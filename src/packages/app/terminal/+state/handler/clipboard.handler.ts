@@ -5,8 +5,9 @@ import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ConfigService } from "../../../config/+state/config.service";
-import { TerminalInputReplacer } from "../input-replacer";
-import { findLastPromptMarkerLine, sanitizePromptMarkerText } from "../prompt-marker";
+import { CommandLineBuffer } from "../advanced/ui/command-line.buffer";
+import { PromptMarkerRegistry } from "../advanced/ui/prompt-marker.registry";
+import { TerminalInputWriter } from "../input-writer";
 import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";
@@ -19,7 +20,6 @@ function base64ToText(base64: string): string {
 export class ClipboardHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private subscription: Subscription = new Subscription();
-  private readonly inputReplacer: TerminalInputReplacer;
 
   constructor(
     private bus: AppBus,
@@ -29,9 +29,15 @@ export class ClipboardHandler implements ITerminalHandler {
     private configService: ConfigService,
     private readonly selectionHandler: SelectionHandler,
     readonly lineEditor?: ShellLineEditorDefinitionContract,
-  ) {
-    this.inputReplacer = new TerminalInputReplacer(pty, stateManager, lineEditor);
-  }
+    private readonly commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(
+      new PromptMarkerRegistry(),
+    ),
+    private readonly inputWriter: TerminalInputWriter = new TerminalInputWriter(
+      pty,
+      stateManager,
+      lineEditor,
+    ),
+  ) {}
 
   dispose(): void {
     this.subscription.unsubscribe();
@@ -39,6 +45,7 @@ export class ClipboardHandler implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
+    this.commandLineBuffer.setTerminal(terminal);
 
     const osc52Disposable = terminal.parser.registerOscHandler(52, (data) => {
       void this.handleOsc52(data);
@@ -67,7 +74,7 @@ export class ClipboardHandler implements ITerminalHandler {
   }
 
   private getSelectionText(): string {
-    const raw = sanitizePromptMarkerText(this.selectionHandler.getSelection());
+    const raw = this.commandLineBuffer.sanitizeCopiedText(this.selectionHandler.getSelection());
     const trimTrailing = this.configService.config.clipboard?.trim_trailing_spaces ?? true;
     if (!trimTrailing) return raw;
     return raw
@@ -82,7 +89,7 @@ export class ClipboardHandler implements ITerminalHandler {
     const ttlSeconds = this.configService.config.clipboard?.image_paste_ttl_seconds ?? 60;
     const filePath = await Clipboard.readImageFromClipboard(ttlSeconds * 1000);
     if (filePath !== null) {
-      this.pty.write(filePath.includes(" ") ? `"${filePath}"` : filePath);
+      this.inputWriter.writeRaw(filePath.includes(" ") ? `"${filePath}"` : filePath);
       return;
     }
 
@@ -163,7 +170,9 @@ export class ClipboardHandler implements ITerminalHandler {
   private replaceSelectedInput(replacementText: string): boolean {
     if (!this.selectionHandler.hasSelection()) return false;
 
-    const selectionRange = this.getSelectedInputRange();
+    const selectionRange = this.commandLineBuffer.selectedInputRange(
+      this.stateManager.input.maxCursorIndex,
+    );
     if (!selectionRange) return false;
 
     const deleteLength = selectionRange.endIndex - selectionRange.startIndex;
@@ -175,21 +184,7 @@ export class ClipboardHandler implements ITerminalHandler {
       replacementText +
       input.text.slice(selectionRange.endIndex);
     this.selectionHandler.clearSelection();
-    this.inputReplacer.replaceInput(nextText, selectionRange.startIndex + replacementText.length);
+    this.inputWriter.replaceInput(nextText, selectionRange.startIndex + replacementText.length);
     return true;
-  }
-
-  private getSelectedInputRange(): { startIndex: number; endIndex: number } | undefined {
-    if (!this._terminal) return undefined;
-    const selection = this.selectionHandler.getSelectionPosition();
-    if (!selection) return undefined;
-
-    const input = this.stateManager.input;
-    const startInputY = findLastPromptMarkerLine(this._terminal.buffer.active) + 1;
-    const startIndex = (selection.start.y - startInputY) * this._terminal.cols + selection.start.x;
-    const endIndex = (selection.end.y - startInputY) * this._terminal.cols + selection.end.x;
-
-    if (startIndex < 0 || endIndex > input.maxCursorIndex) return undefined;
-    return { startIndex, endIndex };
   }
 }

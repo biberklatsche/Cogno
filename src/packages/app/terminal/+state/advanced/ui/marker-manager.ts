@@ -5,21 +5,28 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import { PromptSegment } from "../../../../config/+models/prompt-config";
 import { TerminalStateManager } from "../../state";
 import { CommandBlockResolver } from "./command-block-resolver";
+import { PromptMarkerRegistry } from "./prompt-marker.registry";
 import { PromptMarkerRenderer } from "./prompt-renderer";
 
 type MarkerManagerContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
+
+/** Extra lines around the viewport that keep their decorations alive. */
+const DECORATION_WINDOW_LINES = 20;
 
 export class MarkerManager implements IDisposable {
   private _decorations: Map<IMarker, IDecoration> = new Map();
   private _terminal?: Terminal;
   private _renderer?: PromptMarkerRenderer;
   private readonly commandBlockResolver: CommandBlockResolver;
+  private _lastVisibilitySignature?: string;
+  private _decorationsClearedForAltBuffer = false;
 
   constructor(
     private stateManager: TerminalStateManager,
     promptSegments: PromptSegment[],
     contextMenuOverlayService: MarkerManagerContextMenuOverlayPort,
     appBus: AppBus,
+    private readonly markerRegistry: PromptMarkerRegistry,
   ) {
     this._renderer = new PromptMarkerRenderer(
       stateManager,
@@ -35,126 +42,105 @@ export class MarkerManager implements IDisposable {
   }
 
   disposeMarkers() {
-    for (const [_marker, decoration] of this._decorations.entries()) {
+    for (const [marker, decoration] of this._decorations.entries()) {
       if (!decoration.isDisposed) {
         decoration.dispose();
       }
+      this._decorations.delete(marker);
     }
+    this._lastVisibilitySignature = undefined;
   }
 
   refreshMarkers() {
     if (!this._terminal) return;
 
     const buffer = this._terminal.buffer.active;
+    if (buffer.type === "alternate") {
+      // Fullscreen apps own the whole screen — prompt decorations must not
+      // shine through, and there is nothing to scan or publish per frame.
+      if (!this._decorationsClearedForAltBuffer) {
+        this.disposeMarkers();
+        this._decorationsClearedForAltBuffer = true;
+      }
+      return;
+    }
+    this._decorationsClearedForAltBuffer = false;
+
     const viewportStart = buffer.viewportY - 1;
     const viewportEnd = viewportStart + this._terminal.rows - 1;
 
+    const startScan = Math.max(0, viewportStart - DECORATION_WINDOW_LINES);
+    const endScan = Math.min(buffer.length - 1, viewportEnd + DECORATION_WINDOW_LINES);
+
+    // `clear` and other screen rewrites blank marker lines without disposing
+    // the markers — drop or re-anchor them before rendering decorations.
+    // Rewrites only ever hit on-screen lines, so the window bound keeps this
+    // off the scrollback.
+    this.markerRegistry.validateRange(startScan, endScan);
+
     this.updateViewportVisibility(viewportStart, viewportEnd);
 
-    const startScan = Math.max(0, viewportStart - 20);
-    const endScan = Math.min(buffer.length - 1, viewportEnd + 20);
-
-    const currentMarkerLines = new Set<number>();
-
-    for (let i = startScan; i <= endScan; i++) {
-      const line = buffer.getLine(i);
-      if (line) {
-        const lineText = line.translateToString();
-        if (lineText.startsWith("^^#")) {
-          currentMarkerLines.add(i);
-        }
+    const markersInWindow = new Set<IMarker>();
+    for (const { marker, commandId } of this.markerRegistry.markers) {
+      if (marker.line < startScan || marker.line > endScan) continue;
+      markersInWindow.add(marker);
+      if (!this._decorations.has(marker)) {
+        this.addDecoration(marker, commandId);
       }
     }
 
     for (const [marker, decoration] of this._decorations.entries()) {
-      if (decoration.isDisposed) {
-        this._decorations.delete(marker);
-      }
-    }
-
-    for (const lineIndex of currentMarkerLines) {
-      const existingMarker = this.findMarkerForLine(lineIndex);
-      if (!existingMarker) {
-        this.addMarker(lineIndex);
-      }
-    }
-
-    for (const [marker, decoration] of this._decorations.entries()) {
-      const markerLine = marker.line;
-      if (markerLine < startScan || markerLine > endScan || !currentMarkerLines.has(markerLine)) {
+      if (decoration.isDisposed || marker.isDisposed || !markersInWindow.has(marker)) {
         decoration.dispose();
         this._decorations.delete(marker);
       }
     }
   }
 
-  private findMarkerForLine(lineIndex: number): IMarker | undefined {
-    for (const marker of this._decorations.keys()) {
-      if (marker.line === lineIndex) {
-        return marker;
-      }
-    }
-    return undefined;
-  }
-
   private updateViewportVisibility(viewportStart: number, viewportEnd: number) {
-    if (!this._terminal) return;
-    const buffer = this._terminal.buffer.active;
+    const commands = this.stateManager.commands;
+    const commandIndexById = new Map<string | undefined, number>();
+    for (let idx = 0; idx < commands.length; idx++) {
+      commandIndexById.set(commands[idx].id, idx);
+    }
+
     const visibleCommandIndices = new Set<number>();
     let isCommandOnFirstLine = false;
-    for (let i = viewportStart; i <= viewportEnd; i++) {
-      const line = buffer.getLine(i);
-      if (!line) continue;
-      const text = line.translateToString();
-      const match = text.match(/^\^\^#(\d+)/);
-      if (!match) continue;
-      isCommandOnFirstLine = i === viewportStart;
-      const commandId = match[1];
-      const idx = this.findCommandIndex(commandId);
+    let lastCommandAboveViewportIdx = -1;
+    for (const { marker, commandId } of this.markerRegistry.markers) {
+      const line = marker.line;
+      const idx = commandIndexById.get(commandId) ?? -1;
+      if (line < viewportStart) {
+        if (idx >= 0) lastCommandAboveViewportIdx = idx;
+        continue;
+      }
+      if (line > viewportEnd) continue;
+      if (line === viewportStart) isCommandOnFirstLine = true;
       if (idx >= 0) visibleCommandIndices.add(idx);
     }
 
-    let firstCommandOutOfViewportIdx = -1;
-    if (!isCommandOnFirstLine) {
-      for (let i = viewportStart - 1; i >= 0; i--) {
-        const line = buffer.getLine(i);
-        if (!line) continue;
-        const text = line.translateToString();
-        const match = text.match(/^\^\^#(\d+)/);
-        if (!match) continue;
-        const commandId = match[1];
-        const idx = this.findCommandIndex(commandId);
-        if (idx >= 0) {
-          firstCommandOutOfViewportIdx = idx;
-          break;
-        }
-      }
-    }
+    const firstCommandOutOfViewportIdx = isCommandOnFirstLine ? -1 : lastCommandAboveViewportIdx;
 
-    const commands = [...this.stateManager.commands];
-    for (let idx = 0; idx < commands.length; idx++) {
-      commands[idx].isInViewport = visibleCommandIndices.has(idx);
-      commands[idx].isFirstCommandOutOfViewport = idx === firstCommandOutOfViewportIdx;
+    // Publishing runs at render frequency — skip when nothing changed, so
+    // subscribers (header, system info) only re-run on actual transitions.
+    const signature = `${[...visibleCommandIndices].sort((a, b) => a - b).join(",")}|${firstCommandOutOfViewportIdx}|${commands.length}`;
+    if (signature === this._lastVisibilitySignature) return;
+    this._lastVisibilitySignature = signature;
+
+    const nextCommands = [...commands];
+    for (let idx = 0; idx < nextCommands.length; idx++) {
+      nextCommands[idx].isInViewport = visibleCommandIndices.has(idx);
+      nextCommands[idx].isFirstCommandOutOfViewport = idx === firstCommandOutOfViewportIdx;
     }
-    this.stateManager.updateCommands(commands);
+    this.stateManager.updateCommands(nextCommands);
   }
 
-  private addMarker(lineIndex: number) {
+  private addDecoration(marker: IMarker, commandId: string) {
     if (!this._terminal) return;
 
-    const line = this._terminal.buffer.active.getLine(lineIndex);
-    if (!line) return;
-
-    const lineText = line.translateToString();
-    const match = lineText.match(/^\^\^#(\d+)/);
-    const commandId = match ? match[1] : undefined;
-    const commandIndex = this.findCommandIndex(commandId);
-
-    const buffer = this._terminal.buffer.active;
-    const cursorYAbsolute = buffer.baseY + buffer.cursorY;
-    const cursorYOffset = lineIndex - cursorYAbsolute;
-    const marker = this._terminal.registerMarker(cursorYOffset);
-    if (!marker) return;
+    const lineText =
+      this._terminal.buffer.active.getLine(marker.line)?.translateToString() ?? `^^#${commandId}`;
+    const commandIndex = this.stateManager.commands.findIndex((c) => c.id === commandId);
 
     const decoration = this._terminal.registerDecoration({
       marker,
@@ -162,40 +148,32 @@ export class MarkerManager implements IDisposable {
       width: this._terminal.cols,
       anchor: "left",
     });
+    if (!decoration) return;
 
-    if (decoration) {
-      decoration.onRender((element) => {
-        this._renderer?.render(element, {
-          commandIndex,
-          markerText: lineText,
-          getCommandOutput: () =>
-            this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.outputText ?? "",
-          getBlockRange: () =>
-            this.commandBlockResolver.resolveByMarkerLine(lineIndex)?.blockRange ?? {
-              beginBufferLine: 1,
-              endBufferLine: 0,
-            },
-          scrollToCommandTop: () => {
-            this._terminal?.scrollToLine(lineIndex);
+    decoration.onRender((element) => {
+      this._renderer?.render(element, {
+        commandIndex,
+        markerText: lineText,
+        getCommandOutput: () =>
+          this.commandBlockResolver.resolveByMarkerLine(marker.line)?.outputText ?? "",
+        getBlockRange: () =>
+          this.commandBlockResolver.resolveByMarkerLine(marker.line)?.blockRange ?? {
+            beginBufferLine: 1,
+            endBufferLine: 0,
           },
-          scrollToCommandBottom: () => {
-            const commandBlockDetails = this.commandBlockResolver.resolveByMarkerLine(lineIndex);
-            const targetLineIndex = commandBlockDetails
-              ? Math.max(lineIndex, commandBlockDetails.nextMarkerLineIndex - 1)
-              : lineIndex;
-            this._terminal?.scrollToLine(targetLineIndex);
-          },
-        });
+        scrollToCommandTop: () => {
+          this._terminal?.scrollToLine(marker.line);
+        },
+        scrollToCommandBottom: () => {
+          const commandBlockDetails = this.commandBlockResolver.resolveByMarkerLine(marker.line);
+          const targetLineIndex = commandBlockDetails
+            ? Math.max(marker.line, commandBlockDetails.nextMarkerLineIndex - 1)
+            : marker.line;
+          this._terminal?.scrollToLine(targetLineIndex);
+        },
       });
-      decoration.onDispose(() => {
-        marker.dispose();
-      });
-      this._decorations.set(marker, decoration);
-    }
-  }
-
-  private findCommandIndex(commandId: string | undefined): number {
-    return this.stateManager.commands.findIndex((c) => c.id === commandId);
+    });
+    this._decorations.set(marker, decoration);
   }
 
   dispose() {

@@ -37,6 +37,7 @@ describe("CommandLineEditor", () => {
       input: { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 },
       shellType: "Bash" as any,
       updateInput: vi.fn(),
+      startCommand: vi.fn(),
       // Default: the capability handshake reported every action the static
       // definitions in these tests use, so the native paths are exercised.
       sessionCapabilities: {
@@ -81,6 +82,32 @@ describe("CommandLineEditor", () => {
         }),
       );
       expect(mockPty.write).not.toHaveBeenCalled();
+    });
+
+    it("opens the composer on Shift+Enter at an empty prompt without seeding a blank second line", () => {
+      state.input = { text: "", cursorIndex: 0, maxCursorIndex: 0 };
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+
+      const event = {
+        type: "keydown",
+        key: "Enter",
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as unknown as KeyboardEvent;
+      customKeyHandler(event);
+
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "OpenComposer",
+          payload: {
+            terminalId,
+            seedText: "",
+            cursorIndex: 0,
+          },
+        }),
+      );
     });
 
     it("writes a raw newline on Shift+Enter while a command is running", () => {
@@ -175,7 +202,7 @@ describe("CommandLineEditor", () => {
 
     mockBus.publish({ type: "ClearLineToEnd", payload: terminalId, path: ["app", "terminal"] });
 
-    expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("clearLineToEnd");
+    expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("clearLineToEnd", undefined);
   });
 
   it("should use native shell action for autocomplete replacement when defined", () => {
@@ -233,6 +260,21 @@ describe("CommandLineEditor", () => {
     expect(mockPty.write).not.toHaveBeenCalledWith("\r");
   });
 
+  it("should signal command start for autoExecute on the native path (no DOM keypress fires onKey)", () => {
+    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+      nativeActionsViaShellIntegration: ["replaceCurrentInput"],
+    });
+    editor.registerTerminal(mockTerminal);
+
+    mockBus.publish({
+      type: "ReplaceTerminalInput",
+      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
+      path: ["app", "terminal"],
+    });
+
+    expect(state.startCommand).toHaveBeenCalledWith("pnpm run build");
+  });
+
   it("should still write a carriage return for autoExecute when no native replace action is available", async () => {
     mockBus.publish({
       type: "ReplaceTerminalInput",
@@ -243,6 +285,28 @@ describe("CommandLineEditor", () => {
     await Promise.resolve();
 
     expect(mockPty.write).toHaveBeenCalledWith("\r");
+  });
+
+  it("should signal command start for autoExecute on the raw fallback path (no DOM keypress fires onKey)", async () => {
+    mockBus.publish({
+      type: "ReplaceTerminalInput",
+      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
+      path: ["app", "terminal"],
+    });
+
+    await Promise.resolve();
+
+    expect(state.startCommand).toHaveBeenCalledWith("pnpm run build");
+  });
+
+  it("should not signal command start when autoExecute is not set", () => {
+    mockBus.publish({
+      type: "ReplaceTerminalInput",
+      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4 },
+      path: ["app", "terminal"],
+    });
+
+    expect(state.startCommand).not.toHaveBeenCalled();
   });
 
   describe("multiline replacement", () => {
@@ -798,14 +862,15 @@ describe("CommandLineEditor", () => {
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 0, 1);
     });
 
-    it("should handle findLastCognoMarkerY when buffer is not active", () => {
+    it("should fall back to input start 0 when the buffer is not active", () => {
       const originalBuffer = mockTerminal.buffer;
       mockTerminal.buffer = { active: null }; // Mock active as null
 
       state.input = { text: "test", cursorIndex: 0, maxCursorIndex: 4 };
       mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
 
-      expect(mockTerminal.select).not.toHaveBeenCalled();
+      // No buffer → no marker line (-1) → the selection anchors at row 0.
+      expect(mockTerminal.select).toHaveBeenCalledWith(0, 0, 1);
       mockTerminal.buffer = originalBuffer;
     });
 

@@ -170,7 +170,7 @@ describe("ClipboardHandler", () => {
         i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
       );
       vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
-      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
         start: { x: 0, y: 1 },
         end: { x: 5, y: 1 },
       });
@@ -206,7 +206,7 @@ describe("ClipboardHandler", () => {
         i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
       );
       vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
-      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
         start: { x: 0, y: 1 },
         end: { x: 5, y: 1 },
       });
@@ -257,7 +257,7 @@ describe("ClipboardHandler", () => {
         i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
       );
       vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
-      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
         start: { x: 4, y: 1 },
         end: { x: 7, y: 1 },
       });
@@ -296,7 +296,7 @@ describe("ClipboardHandler", () => {
         i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
       );
       vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
-      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
         start: { x: 0, y: 1 },
         end: { x: 5, y: 1 },
       });

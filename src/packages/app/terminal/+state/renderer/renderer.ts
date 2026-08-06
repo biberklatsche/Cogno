@@ -29,7 +29,66 @@ export interface IRenderer {
   setVisible(visible: boolean): void;
 }
 
-export class Renderer implements IRenderer, IDisposable {
+interface WebglPoolMember {
+  isVisible(): boolean;
+  dropWebglContext(): void;
+}
+
+/**
+ * Browsers cap the number of live WebGL contexts (~8-16); beyond that the
+ * oldest context is force-lost. Instead of disposing every hidden terminal's
+ * context (which forces a full context + glyph-atlas rebuild on each tab
+ * switch), this pool keeps up to `maxContexts` contexts alive and evicts
+ * least-recently-used ones — hidden terminals first — only when the budget is
+ * exceeded. Switching between the handful of recently used tabs therefore
+ * costs nothing.
+ */
+export class WebglContextPool {
+  private static _instance?: WebglContextPool;
+
+  static get instance(): WebglContextPool {
+    WebglContextPool._instance ??= new WebglContextPool();
+    return WebglContextPool._instance;
+  }
+
+  /** Least-recently-used first. */
+  private members: WebglPoolMember[] = [];
+
+  constructor(private readonly maxContexts: number = 6) {}
+
+  /** Register a member that just created a WebGL context. */
+  registerActive(member: WebglPoolMember): void {
+    this.remove(member);
+    this.members.push(member);
+    this.enforceBudget(member);
+  }
+
+  /** Move a member to the most-recently-used end. */
+  touch(member: WebglPoolMember): void {
+    const index = this.members.indexOf(member);
+    if (index < 0) return;
+    this.members.splice(index, 1);
+    this.members.push(member);
+  }
+
+  remove(member: WebglPoolMember): void {
+    const index = this.members.indexOf(member);
+    if (index >= 0) this.members.splice(index, 1);
+  }
+
+  private enforceBudget(protectedMember: WebglPoolMember): void {
+    while (this.members.length > this.maxContexts) {
+      const victim =
+        this.members.find((member) => member !== protectedMember && !member.isVisible()) ??
+        this.members.find((member) => member !== protectedMember);
+      if (!victim) return;
+      this.remove(victim);
+      victim.dropWebglContext();
+    }
+  }
+}
+
+export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
   private static readonly WEBGL_RESTORE_DELAYS_MS = [0, 250, 1000, 3000] as const;
 
   private _terminal: Terminal;
@@ -47,7 +106,10 @@ export class Renderer implements IRenderer, IDisposable {
   private _visible = true;
   private readonly _isWebglContextLostSubject = new BehaviorSubject<boolean>(false);
 
-  constructor(config: Config) {
+  constructor(
+    config: Config,
+    private readonly webglPool: WebglContextPool = WebglContextPool.instance,
+  ) {
     this._webglEnabled = config.terminal?.webgl ?? false;
     this._terminal = new Terminal({
       overviewRuler: {
@@ -129,6 +191,7 @@ export class Renderer implements IRenderer, IDisposable {
       });
     }
     this._terminal.loadAddon(this._webglAddon);
+    this.webglPool.registerActive(this);
   }
 
   public dispose() {
@@ -155,20 +218,35 @@ export class Renderer implements IRenderer, IDisposable {
       return;
     }
     this._visible = visible;
-    if (this._webglRestoreTimeout) {
-      clearTimeout(this._webglRestoreTimeout);
-      this._webglRestoreTimeout = undefined;
+    if (!visible) {
+      // Keep the context alive so switching back is instant; the pool evicts
+      // it (and rebuilding is paid) only when the context budget runs out.
+      if (this._webglRestoreTimeout) {
+        clearTimeout(this._webglRestoreTimeout);
+        this._webglRestoreTimeout = undefined;
+      }
+      return;
     }
-    if (visible) {
-      this._webglRestoreAttempt = 0;
-      this.useWebGl();
-      this._isWebglContextLostSubject.next(false);
+    this._webglRestoreAttempt = 0;
+    if (this._webglAddon) {
+      this.webglPool.touch(this);
     } else {
-      this.disposeWebGlAddon();
+      this.useWebGl();
     }
+    this._isWebglContextLostSubject.next(false);
+  }
+
+  isVisible(): boolean {
+    return this._visible;
+  }
+
+  /** Pool eviction callback: give the WebGL context up; xterm falls back to its DOM renderer. */
+  dropWebglContext(): void {
+    this.disposeWebGlAddon();
   }
 
   private disposeWebGlAddon() {
+    this.webglPool.remove(this);
     this._webglContextLossDisposable?.dispose();
     this._webglContextLossDisposable = undefined;
     this._webglAddon?.dispose();

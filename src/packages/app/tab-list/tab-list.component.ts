@@ -1,5 +1,6 @@
 import { CommonModule } from "@angular/common";
 import {
+  AnimationCallbackEvent,
   Component,
   ElementRef,
   effect,
@@ -48,6 +49,8 @@ import { TabListService } from "./+state/tab-list.service";
 })
 export class TabListComponent implements OnDestroy {
   private static readonly minimumDragStartDistanceInPixels = 4;
+  /** Slightly above the 100ms slide-out animation in tab-list.component.scss. */
+  private static readonly tabLeaveAnimationFallbackMs = 150;
 
   private readonly tabAnimationCountCache = new Map<TabId, Observable<number>>();
   private readonly tabCacheCleanupSub: Subscription;
@@ -114,6 +117,25 @@ export class TabListComponent implements OnDestroy {
 
   closeTab(tabId: TabId): void {
     this.tabListService.removeTab(tabId);
+  }
+
+  /**
+   * Runs the leave animation with a guaranteed completion. The class-based
+   * `[animate.leave]` waits for `animationend`, which never fires when the
+   * tab strip is not being painted (minimized window, background workspace) —
+   * the removed tab would then stay in the DOM forever as an inert ghost.
+   */
+  animateTabLeave(event: AnimationCallbackEvent): void {
+    const element = event.target as HTMLElement;
+    element.classList.add("animate-tab-leave");
+    let completed = false;
+    const complete = (): void => {
+      if (completed) return;
+      completed = true;
+      event.animationComplete();
+    };
+    element.addEventListener("animationend", complete, { once: true });
+    setTimeout(complete, TabListComponent.tabLeaveAnimationFallbackMs);
   }
 
   iconForShell(shell: ShellType | "unknown"): Icon {

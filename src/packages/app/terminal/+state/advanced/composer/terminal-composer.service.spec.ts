@@ -127,6 +127,23 @@ describe("TerminalComposerService", () => {
     expect(currentView().visible).toBe(false);
   });
 
+  it("trims trailing blank lines before submitting", () => {
+    const publishSpy = vi.spyOn(bus, "publish");
+    openViaBus();
+
+    service.submit("echo one\necho two\n\n");
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "ReplaceTerminalInput",
+        payload: expect.objectContaining({
+          inputText: "echo one\necho two",
+          cursorIndex: "echo one\necho two".length,
+        }),
+      }),
+    );
+  });
+
   it("submits without executing when insertOnly is requested", () => {
     const publishSpy = vi.spyOn(bus, "publish");
     openViaBus();

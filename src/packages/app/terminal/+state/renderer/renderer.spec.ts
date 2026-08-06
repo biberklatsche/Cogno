@@ -1,7 +1,7 @@
 import { Terminal } from "@xterm/xterm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Config } from "../../../config/+models/config";
-import { Renderer } from "./renderer";
+import { Renderer, WebglContextPool } from "./renderer";
 
 let webglContextLossListener: (() => void) | undefined;
 let webglContextLossDisposable: { dispose: ReturnType<typeof vi.fn> } | undefined;
@@ -70,7 +70,7 @@ describe("Renderer", () => {
         rescale_overlapping_glyphs: true,
       },
     };
-    renderer = new Renderer(mockConfig);
+    renderer = new Renderer(mockConfig, new WebglContextPool());
   });
 
   afterEach(() => {
@@ -111,7 +111,7 @@ describe("Renderer", () => {
 
   it("should use WebGL addon if enabled in config", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig);
+    renderer = new Renderer(mockConfig, new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
     expect(webglContextLossDisposable).toBeDefined();
@@ -120,7 +120,7 @@ describe("Renderer", () => {
 
   it("should dispose WebGL addon on context loss", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig);
+    renderer = new Renderer(mockConfig, new WebglContextPool());
 
     webglContextLossListener?.();
 
@@ -130,7 +130,7 @@ describe("Renderer", () => {
 
   it("should try to restore WebGL after context loss", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig);
+    renderer = new Renderer(mockConfig, new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
 
@@ -142,7 +142,7 @@ describe("Renderer", () => {
 
   it("should expose WebGL context loss state during restore", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig);
+    renderer = new Renderer(mockConfig, new WebglContextPool());
     const states: boolean[] = [];
     const subscription = renderer.isWebglContextLost$.subscribe((state) => states.push(state));
 
@@ -153,23 +153,63 @@ describe("Renderer", () => {
     subscription.unsubscribe();
   });
 
-  it("should dispose WebGL addon when becoming invisible and recreate it when becoming visible again", () => {
+  it("should keep the WebGL addon alive when becoming invisible", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig);
+    renderer = new Renderer(mockConfig, new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
     const loadAddonCallsBefore = terminalInstance.loadAddon.mock.calls.length;
 
     renderer.setVisible(false);
-    expect(webglAddonDisposeSpy).toHaveBeenCalled();
+    expect(webglAddonDisposeSpy).not.toHaveBeenCalled();
 
+    // Switching back must not rebuild the context.
+    renderer.setVisible(true);
+    expect(terminalInstance.loadAddon.mock.calls.length).toBe(loadAddonCallsBefore);
+  });
+
+  it("should recreate the WebGL addon on becoming visible after a pool eviction", () => {
+    mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
+    const pool = new WebglContextPool(1);
+    renderer = new Renderer(mockConfig, pool);
+    renderer.setVisible(false);
+    const firstAddonDisposeSpy = webglAddonDisposeSpy;
+
+    // A second renderer exceeds the budget of 1 and evicts the hidden one.
+    const evictingRenderer = new Renderer(mockConfig, pool);
+    expect(firstAddonDisposeSpy).toHaveBeenCalled();
+
+    const terminalInstance =
+      vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 2].value;
+    const loadAddonCallsBefore = terminalInstance.loadAddon.mock.calls.length;
     renderer.setVisible(true);
     expect(terminalInstance.loadAddon.mock.calls.length).toBeGreaterThan(loadAddonCallsBefore);
+    evictingRenderer.dispose();
+  });
+
+  it("should evict hidden members before visible ones when over budget", () => {
+    const pool = new WebglContextPool(2);
+    const makeMember = (visible: boolean) => ({
+      isVisible: () => visible,
+      dropWebglContext: vi.fn(),
+    });
+
+    const hiddenMember = makeMember(false);
+    const oldestVisibleMember = makeMember(true);
+    const newestMember = makeMember(true);
+
+    pool.registerActive(oldestVisibleMember);
+    pool.registerActive(hiddenMember);
+    pool.registerActive(newestMember);
+
+    expect(hiddenMember.dropWebglContext).toHaveBeenCalled();
+    expect(oldestVisibleMember.dropWebglContext).not.toHaveBeenCalled();
+    expect(newestMember.dropWebglContext).not.toHaveBeenCalled();
   });
 
   it("should cancel a pending WebGL restore when becoming invisible", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig);
+    renderer = new Renderer(mockConfig, new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
 

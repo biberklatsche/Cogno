@@ -184,6 +184,7 @@ export class TerminalStateManager {
   }
 
   setScrolledLinesFromBottom(scrolledLinesFromBottom: number): void {
+    if (this._stateSubject.value.scrolledLinesFromBottom === scrolledLinesFromBottom) return;
     this.updateState({ scrolledLinesFromBottom });
   }
 
@@ -199,10 +200,14 @@ export class TerminalStateManager {
     if (!this.isTerminalNotificationBadgeEnabled()) {
       return;
     }
+    if (this._stateSubject.value.hasUnreadNotification) return;
     this.updateState({ hasUnreadNotification: true });
   }
 
   clearUnreadNotification(): void {
+    // Called on every keystroke via terminal.onData — skip the state emission
+    // when nothing changes, otherwise every subscriber runs per keypress.
+    if (!this._stateSubject.value.hasUnreadNotification) return;
     this.updateState({ hasUnreadNotification: false });
   }
 
@@ -236,10 +241,16 @@ export class TerminalStateManager {
     return this._stateSubject.pipe(map((s) => s.isCommandRunning));
   }
 
-  startCommand(): void {
+  /**
+   * `overrideInputText` lets programmatic submitters (history auto-execute,
+   * composer, autocomplete) pass the text they are about to submit: unlike a
+   * real Enter keypress, their state update hasn't gone through the terminal
+   * echo yet, so `input.text` here would still be stale.
+   */
+  startCommand(overrideInputText?: string): void {
     const currentInput = this._stateSubject.value.input;
 
-    this._historyStore.startCommand(currentInput.text);
+    this._historyStore.startCommand(overrideInputText ?? currentInput.text);
 
     this.updateState({
       isCommandRunning: true,
