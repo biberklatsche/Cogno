@@ -14,10 +14,6 @@ import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import { Tab, TabList } from "../+model/tab";
 
-export interface TabColorPickerData {
-  selectedColorName: ColorName | undefined;
-}
-
 @Injectable({ providedIn: "root" })
 export class TabListService {
   private static readonly indexedShortcutLimit = 9;
@@ -211,10 +207,7 @@ export class TabListService {
         ? { label: "Reset Tab Name", action: () => this.resetTabName(tabId) }
         : undefined,
       { separator: true },
-      {
-        custom: true,
-        customData: { selectedColorName: tab.color } satisfies TabColorPickerData,
-      },
+      { custom: true },
     ];
     return items.filter((s) => !!s);
   }
