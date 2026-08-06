@@ -1,6 +1,9 @@
 #!/bin/zsh
-# Cogno Bootstrap Script for Zsh
-# This script is loaded as .zshrc in the custom ZDOTDIR
+# Cogno Bootstrap Script for Zsh (installed as ZDOTDIR/.zshrc)
+# The /etc startup files are sourced natively by zsh, exactly once and in the
+# correct order. The ZDOTDIR wrapper files (.zshenv/.zprofile) replay only the
+# user's own startup files; this script replays the user's .zshrc, loads the
+# Cogno integration and finally restores the user's ZDOTDIR.
 
 # Guard against double loading within the same session.
 # Compare against COGNO_SESSION_ID so an inherited value from a parent Cogno
@@ -20,47 +23,46 @@ _cogno_log() {
 
 _cogno_log "Zsh bootstrap started"
 
-# Use login-shell PATH as baseline if provided by backend
+# Safety net: use the backend-captured login-shell PATH as the baseline so
+# lookup order matches a normal terminal (e.g. Homebrew before /usr/bin).
+# Current entries that are not part of the login PATH (profile-configured
+# extras) keep their precedence in front of the baseline.
 if [[ -n "${COGNO_LOGIN_PATH}" ]]; then
-    _cogno_log "Applying COGNO_LOGIN_PATH baseline"
-    export PATH="${COGNO_LOGIN_PATH}"
+    _cogno_log "Merging COGNO_LOGIN_PATH baseline"
+    _cogno_prefix=""
+    for _cogno_dir in ${(s.:.)PATH}; do
+        if [[ -n "${_cogno_dir}" && ":${COGNO_LOGIN_PATH}:${_cogno_prefix}:" != *":${_cogno_dir}:"* ]]; then
+            _cogno_prefix="${_cogno_prefix:+${_cogno_prefix}:}${_cogno_dir}"
+        fi
+    done
+    PATH="${_cogno_prefix:+${_cogno_prefix}:}${COGNO_LOGIN_PATH}"
+    unset _cogno_dir _cogno_prefix
+    export PATH
 fi
 
-# Optionally load user's Zsh startup files (only if COGNO_ALLOW_USER_RC=1)
-# We run with custom ZDOTDIR, so ~/.zshenv/.zprofile are not loaded automatically.
-if [[ "${COGNO_ALLOW_USER_RC}" == "1" ]]; then
-    if [[ -f "/etc/zshenv" ]]; then
-        _cogno_log "Loading /etc/zshenv"
-        source "/etc/zshenv"
-    fi
-    if [[ -f "${HOME}/.zshenv" ]]; then
-        _cogno_log "Loading user .zshenv"
-        source "${HOME}/.zshenv"
-    fi
-    if [[ -f "/etc/zprofile" ]]; then
-        _cogno_log "Loading /etc/zprofile"
-        source "/etc/zprofile"
-    fi
-    if [[ -f "${HOME}/.zprofile" ]]; then
-        _cogno_log "Loading user .zprofile"
-        source "${HOME}/.zprofile"
-    fi
-    if [[ -f "/etc/zshrc" ]]; then
-        _cogno_log "Loading /etc/zshrc"
-        source "/etc/zshrc"
-    fi
-    if [[ -f "${HOME}/.zshrc" ]]; then
-        _cogno_log "Loading user .zshrc"
-        source "${HOME}/.zshrc"
-    fi
-    if [[ -f "/etc/zlogin" ]]; then
-        _cogno_log "Loading /etc/zlogin"
-        source "/etc/zlogin"
-    fi
-    if [[ -f "${HOME}/.zlogin" ]]; then
-        _cogno_log "Loading user .zlogin"
-        source "${HOME}/.zlogin"
-    fi
+# Non-login shells (custom profile args without -l) never reach the
+# .zprofile startup tier natively, so the wrapper .zprofile did not run.
+# Replay the user's .zprofile here to keep profile-tier environment (brew
+# shellenv, PATH exports) available, as previous integration versions did.
+if [[ ! -o login && "${COGNO_ALLOW_USER_RC}" == "1" && -f "${COGNO_USER_ZDOTDIR:-$HOME}/.zprofile" ]]; then
+    _cogno_log "Loading user .zprofile (non-login shell)"
+    typeset -g COGNO_WRAPPER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_USER_ZDOTDIR:-$HOME}"
+    source "${ZDOTDIR}/.zprofile"
+    COGNO_USER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_WRAPPER_ZDOTDIR}"
+    unset COGNO_WRAPPER_ZDOTDIR
+fi
+
+# Replay the user's .zshrc (only if COGNO_ALLOW_USER_RC=1).
+if [[ "${COGNO_ALLOW_USER_RC}" == "1" && -f "${COGNO_USER_ZDOTDIR:-$HOME}/.zshrc" ]]; then
+    _cogno_log "Loading user .zshrc"
+    typeset -g COGNO_WRAPPER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_USER_ZDOTDIR:-$HOME}"
+    source "${ZDOTDIR}/.zshrc"
+    COGNO_USER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_WRAPPER_ZDOTDIR}"
+    unset COGNO_WRAPPER_ZDOTDIR
 fi
 
 # Apply PATH prefix after user startup files, so Cogno CLI stays available.
@@ -85,6 +87,32 @@ if [[ -n "${COGNO_INTEGRATION_ROOT}" ]]; then
         source "${_cogno_integration_script}"
     else
         _cogno_log "WARNING: Integration script not found: ${_cogno_integration_script}"
+    fi
+fi
+
+# Restore the user's ZDOTDIR so nested zsh sessions, HISTFILE and tools that
+# inspect ZDOTDIR behave exactly as in a normal terminal. zsh re-evaluates
+# ZDOTDIR for .zlogin, so a login shell now natively picks up the user's own
+# .zlogin as the final startup file.
+if [[ "${COGNO_ALLOW_USER_RC}" == "1" ]]; then
+    if [[ -n "${COGNO_USER_ZDOTDIR}" && "${COGNO_USER_ZDOTDIR}" != "${HOME}" ]]; then
+        export ZDOTDIR="${COGNO_USER_ZDOTDIR}"
+    else
+        unset ZDOTDIR
+    fi
+    # /etc/zshrc initialized HISTFILE while ZDOTDIR still pointed at Cogno's
+    # integration directory - move it back to the user's default location
+    # (keeping the distro's filename) unless the user's own config chose a
+    # different file.
+    if [[ -n "${COGNO_INTEGRATION_ROOT}" && "${HISTFILE}" == "${COGNO_INTEGRATION_ROOT}"/* ]]; then
+        HISTFILE="${ZDOTDIR:-$HOME}/${HISTFILE:t}"
+    fi
+
+    # Same for the .zlogin tier in non-login shells: previous integration
+    # versions replayed it unconditionally.
+    if [[ ! -o login && -f "${ZDOTDIR:-$HOME}/.zlogin" ]]; then
+        _cogno_log "Loading user .zlogin (non-login shell)"
+        source "${ZDOTDIR:-$HOME}/.zlogin"
     fi
 fi
 

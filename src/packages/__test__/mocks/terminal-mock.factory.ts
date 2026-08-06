@@ -132,6 +132,7 @@ export class TerminalMockFactory {
     const { cursorX = 0, cursorY = 0, viewportY = 0, baseY = 0, length = 100 } = options;
 
     return {
+      type: "normal",
       cursorX,
       cursorY,
       viewportY,

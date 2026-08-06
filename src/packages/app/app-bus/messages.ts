@@ -49,6 +49,7 @@ import {
   GoToNextWordAction,
   GoToPreviousWordAction,
   GoToStartOfLineAction,
+  OpenComposerAction,
   PasteAction,
   ReplaceTerminalInputAction,
   RevealTerminalAction,
@@ -139,6 +140,7 @@ export type AppMessage =
   | SelectTextToEndOfLineAction
   | SelectTextToStartOfLineAction
   | WriteRawToPtyAction
+  | OpenComposerAction
   | ReplaceTerminalInputAction
   | ActionFiredEvent
   | FullScreenAppEnteredEvent

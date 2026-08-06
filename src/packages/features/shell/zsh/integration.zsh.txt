@@ -78,10 +78,95 @@ _cogno_precmd() {
   COGNO_CMD_SEEN=0
   COGNO_LAST_CMD=""
 
+  # Re-assert the Cogno prompt every cycle: prompt frameworks loaded from the
+  # user's rc files (powerlevel10k, starship, oh-my-posh, ...) rewrite PROMPT
+  # from their own precmd hooks and would otherwise remove the hidden marker.
+  PROMPT="${COGNO_PROMPT}"
+  RPROMPT=""
+
   return $last_ec
 }
 
 add-zsh-hook preexec _cogno_preexec
 add-zsh-hook precmd  _cogno_precmd
 
-PROMPT=$'\n%{\e[8m%}^^#${COGNO_COUNT}%{\e[0m%}\n'
+# Keep Cogno's precmd last so it runs after any prompt-framework hooks that
+# were registered by the user's rc files.
+precmd_functions=(${precmd_functions:#_cogno_precmd} _cogno_precmd)
+
+typeset -g COGNO_PROMPT=$'\n%{\e[8m%}^^#${COGNO_COUNT}%{\e[0m%}\n'
+PROMPT="${COGNO_PROMPT}"
+RPROMPT=""
+
+# Native line-editor channel: the app writes replace requests into a
+# per-session FIFO; `zle -F` invokes the handler only while ZLE is reading at
+# the prompt, so a request can never leak into a running program's stdin.
+# Message format (written by the Rust backend, one request per line):
+#   action;cursorIndex;autoExecute;text
+# The text is the last field (may contain raw semicolons); backslash, CR and
+# LF arrive escaped and are decoded with ${(g::)...}.
+
+# Registered with `zle -F -w`, so the handler runs as a widget: only then may
+# it edit BUFFER/CURSOR and call accept-line. A plain `zle -F` handler has no
+# widget facilities and its buffer changes are silently lost. Display updates
+# are not automatic at this level - `zle -R` forces the redisplay.
+_cogno_le_handle() {
+  local fd="$1" line="" action="" cursor="" autoexec="" text=""
+  if ! IFS= read -r -u "$fd" line; then
+    # Broken channel: unregister so ZLE does not spin on a dead fd.
+    zle -F "$fd" 2>/dev/null
+    return 0
+  fi
+  IFS=';' read -r action cursor autoexec text <<< "$line"
+  case "$action" in
+    replaceCurrentInput)
+      BUFFER="${(g::)text}"
+      if [[ "$cursor" == <-> ]] && (( cursor <= ${#BUFFER} )); then
+        CURSOR="$cursor"
+      else
+        CURSOR="${#BUFFER}"
+      fi
+      # The autoexec field is deliberately NOT handled here: accept-line (and
+      # zle -U) are no-ops inside fd-handler widgets. The backend submits by
+      # writing CR to the PTY right after this message - ZLE services fd
+      # handlers before pending keyboard bytes, so that CR always accepts the
+      # freshly replaced buffer. Accepting here too would double-submit.
+      zle -R
+      ;;
+  esac
+  return 0
+}
+
+_cogno_le_setup() {
+  [[ -n "${COGNO_LINE_EDITOR_PIPE}" && -p "${COGNO_LINE_EDITOR_PIPE}" ]] || return 1
+  zle -N _cogno_le_handle 2>/dev/null || return 1
+  # Open read-write: the read end never sees EOF when the app closes its
+  # write end after each request, and the open cannot block.
+  typeset -gi COGNO_LE_FD=-1
+  if ! exec {COGNO_LE_FD}<>"${COGNO_LINE_EDITOR_PIPE}"; then
+    return 1
+  fi
+  # -w requires zsh >= 5.2; on failure the session simply reports no native
+  # actions and the app stays on the raw fallback.
+  if ! zle -F -w "${COGNO_LE_FD}" _cogno_le_handle 2>/dev/null; then
+    exec {COGNO_LE_FD}>&-
+    return 1
+  fi
+  return 0
+}
+
+# Capability handshake: report what this session's integration can actually
+# do. The app gates its native line-editor paths on this report and never
+# assumes a capability statically - native actions are only announced when
+# the FIFO channel actually came up.
+autoload -Uz is-at-least
+_cogno_bracketed_paste="false"
+if is-at-least 5.1 "${ZSH_VERSION}"; then
+  _cogno_bracketed_paste="true"
+fi
+_cogno_native_actions=""
+if _cogno_le_setup; then
+  _cogno_native_actions="replaceCurrentInput"
+fi
+print -n -r -- $'\e]733;COGNO:CAPS;shell=zsh;shellVersion='"${ZSH_VERSION}"$';nativeActions='"${_cogno_native_actions}"$';bracketedPaste='"${_cogno_bracketed_paste}"$';\e\\'
+unset _cogno_bracketed_paste _cogno_native_actions

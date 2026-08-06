@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { NotificationOs } from "@cogno/app-tauri/notification";
+import { NotificationOs, OsNotificationClickListener } from "@cogno/app-tauri/notification";
 import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
@@ -12,7 +12,18 @@ export class OsNotificationChannelService implements NotificationChannelContract
   readonly id = "os";
   readonly sortOrder = 200;
 
-  constructor(private readonly appBus: AppBus) {}
+  constructor(private readonly appBus: AppBus) {
+    void OsNotificationClickListener.register((target) => {
+      if (!target) {
+        return;
+      }
+      this.appBus.publish({
+        path: ["app", "notification"],
+        type: "OpenNotificationTarget",
+        payload: target,
+      });
+    });
+  }
 
   async dispatch(
     notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract,
@@ -20,6 +31,7 @@ export class OsNotificationChannelService implements NotificationChannelContract
     const osNotificationSendResult = await NotificationOs.send(
       notificationChannelDispatchRequest.notification.header,
       notificationChannelDispatchRequest.notification.body,
+      notificationChannelDispatchRequest.notification.target,
     );
 
     if (

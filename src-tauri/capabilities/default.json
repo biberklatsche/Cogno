@@ -46,10 +46,10 @@
           "path": "$TEMP/**"
         },
         {
-          "path": "$HOME/.cogno/shell-integration/zsh/.zshrc"
+          "path": "$HOME/.cogno/shell-integration/*/.*"
         },
         {
-          "path": "$HOME/.cogno-dev/shell-integration/zsh/.zshrc"
+          "path": "$HOME/.cogno-dev/shell-integration/*/.*"
         },
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },

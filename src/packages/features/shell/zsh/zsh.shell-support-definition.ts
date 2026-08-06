@@ -1,6 +1,8 @@
 import { ShellSupportDefinitionContract } from "@cogno/core-api";
 import zshBootstrapScript from "./bootstrap.zsh.txt?raw";
 import zshIntegrationScript from "./integration.zsh.txt?raw";
+import zshProfileWrapperScript from "./zprofile.zsh.txt?raw";
+import zshEnvWrapperScript from "./zshenv.zsh.txt?raw";
 
 export const zshShellSupportDefinition: ShellSupportDefinitionContract = {
   shellType: "ZSH",
@@ -23,6 +25,14 @@ export const zshShellSupportDefinition: ShellSupportDefinitionContract = {
     {
       relativePath: "zsh/.zshrc",
       content: zshBootstrapScript,
+    },
+    {
+      relativePath: "zsh/.zshenv",
+      content: zshEnvWrapperScript,
+    },
+    {
+      relativePath: "zsh/.zprofile",
+      content: zshProfileWrapperScript,
     },
     {
       relativePath: "zsh/integration.zsh",

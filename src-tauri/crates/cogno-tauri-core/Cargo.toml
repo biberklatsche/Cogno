@@ -32,3 +32,10 @@ tokio = { version = "1", features = ["net"] }
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
 winapi = { version = "0.3", features = ["winuser"] }
+tauri-winrt-notification = "0.7"
+
+[target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
+notify-rust = "4"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

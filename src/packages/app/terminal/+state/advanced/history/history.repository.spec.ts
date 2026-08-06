@@ -267,7 +267,7 @@ describe("HistoryRepository", () => {
       expect(sql).toContain("CASE WHEN cl.group_id = ? THEN 1 ELSE 0 END AS isCurrentSession");
       expect(sql).toContain("CASE WHEN p.path = ? THEN 1 ELSE 0 END AS isCurrentCwd");
       expect(sql).not.toContain("WHERE cl.context_id = ? AND c.deleted_at IS NULL AND");
-      expect(params).toEqual(["TE123-abc", "/workspace/project", 7, 50]);
+      expect(params).toEqual(["TE123-abc", "/workspace/project", 7, 500]);
     });
 
     it("filters by normalized cwd for the cwd scope, while still tagging origin", async () => {
@@ -279,7 +279,7 @@ describe("HistoryRepository", () => {
       const [sql, params] = selectSpy.mock.calls[0];
       expect(sql).toContain("p.path = ?");
       expect(sql).toContain("LEFT JOIN path p");
-      expect(params).toEqual([null, "/workspace/project", 7, "/workspace/project", 50]);
+      expect(params).toEqual([null, "/workspace/project", 7, "/workspace/project", 500]);
     });
 
     it("returns an empty list for cwd scope when cwd cannot be normalized", async () => {
@@ -297,7 +297,7 @@ describe("HistoryRepository", () => {
       const [sql, params] = selectSpy.mock.calls[0];
       expect(sql).toContain("cl.group_id = ?");
       expect(sql).toContain("LEFT JOIN path p");
-      expect(params).toEqual(["TE123-abc", "", 7, "TE123-abc", 50]);
+      expect(params).toEqual(["TE123-abc", "", 7, "TE123-abc", 500]);
     });
 
     it("returns an empty list for session scope when no groupId is given", async () => {

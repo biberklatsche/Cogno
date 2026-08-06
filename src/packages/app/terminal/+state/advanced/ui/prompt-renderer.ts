@@ -32,6 +32,10 @@ export class PromptMarkerRenderer {
   private static readonly DEFAULT_LABEL = "COGNO";
   private static readonly BOLD_WEIGHT = "600";
 
+  // Decoration onRender fires on every terminal render pass; rebuilding the
+  // marker DOM each time is wasted work unless the rendered data changed.
+  private readonly _renderedSignatures = new WeakMap<HTMLElement, string>();
+
   public constructor(
     private readonly stateManager: TerminalStateManager,
     private readonly segments: PromptSegment[],
@@ -43,15 +47,24 @@ export class PromptMarkerRenderer {
     hostElement: HTMLElement,
     commandIndexOrContext?: number | PromptMarkerRenderContext,
   ): void {
-    hostElement.replaceChildren();
-    hostElement.style.width = "100%";
     const renderContext = this.resolveRenderContext(commandIndexOrContext);
     const commands = this.stateManager.commands;
     const command = commands[renderContext.commandIndex ?? 0];
 
     if (!command) {
+      hostElement.replaceChildren();
+      this._renderedSignatures.delete(hostElement);
       return;
     }
+
+    const signature = this.buildRenderSignature(renderContext, command);
+    if (this._renderedSignatures.get(hostElement) === signature && hostElement.hasChildNodes()) {
+      return;
+    }
+    this._renderedSignatures.set(hostElement, signature);
+
+    hostElement.replaceChildren();
+    hostElement.style.width = "100%";
 
     const markerElement = this.createMarkerElement(command);
     const markerCoverElement = this.createMarkerCoverElement(renderContext.markerText, command);
@@ -216,6 +229,22 @@ export class PromptMarkerRenderer {
 
   private buildRecord(command: Command): PromptRecord {
     return this.createCommandRecord(command);
+  }
+
+  private buildRenderSignature(renderContext: PromptMarkerRenderContext, command: Command): string {
+    // Command objects are mutated in place when OSC data arrives, so the
+    // signature must cover every field that influences the rendered output.
+    return [
+      renderContext.commandIndex,
+      renderContext.markerText,
+      command.id,
+      command.command,
+      command.directory,
+      command.user,
+      command.machine,
+      command.returnCode,
+      command.duration,
+    ].join(" ");
   }
 
   private createCommandRecord(command: Command): PromptRecord {

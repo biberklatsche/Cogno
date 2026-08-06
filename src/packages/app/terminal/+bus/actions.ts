@@ -34,6 +34,14 @@ export type ReplaceTerminalInputAction = ActionBase<
     autoExecute?: boolean;
   }
 >;
+export type OpenComposerAction = ActionBase<
+  "OpenComposer",
+  {
+    terminalId: TerminalId;
+    seedText: string;
+    cursorIndex: number;
+  }
+>;
 export type WriteRawToPtyAction = ActionBase<
   "WriteRawToPty",
   {

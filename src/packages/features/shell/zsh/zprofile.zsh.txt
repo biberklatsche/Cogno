@@ -1,0 +1,15 @@
+#!/bin/zsh
+# Cogno ZDOTDIR wrapper (.zprofile)
+# Replays the user's .zprofile for login shells. /etc/zprofile has already
+# been sourced natively by zsh at this point (path_helper on macOS), so PATH
+# tools like Homebrew are set up before the user's profile runs - exactly as
+# in a normal terminal.
+
+if [[ "${COGNO_ALLOW_USER_RC}" == "1" && -f "${COGNO_USER_ZDOTDIR:-$HOME}/.zprofile" ]]; then
+    typeset -g COGNO_WRAPPER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_USER_ZDOTDIR:-$HOME}"
+    source "${ZDOTDIR}/.zprofile"
+    COGNO_USER_ZDOTDIR="${ZDOTDIR}"
+    ZDOTDIR="${COGNO_WRAPPER_ZDOTDIR}"
+    unset COGNO_WRAPPER_ZDOTDIR
+fi

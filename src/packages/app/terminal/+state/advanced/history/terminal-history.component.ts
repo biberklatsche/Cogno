@@ -5,6 +5,7 @@ import {
   computed,
   ElementRef,
   effect,
+  signal,
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
@@ -12,7 +13,7 @@ import { TooltipDirective } from "@cogno/core-ui";
 import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
 import { TimeAgoPipe } from "../../../../common/time-ago/time-ago.pipe";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
-import { HistoryEntryOrigin, HistoryScope } from "./recent-history.types";
+import { HistoryEntry, HistoryEntryOrigin, HistoryScope } from "./recent-history.types";
 import { TerminalHistoryService } from "./terminal-history.service";
 
 const INITIAL_VIEW_STATE = {
@@ -51,8 +52,17 @@ const INITIAL_VIEW_STATE = {
               [class.active]="row.originalIndex === viewState().selectedIndex"
               type="button"
               (click)="select(row.originalIndex)"
+              (mouseenter)="hoveredIndex.set(row.originalIndex)"
+              (mouseleave)="hoveredIndex.set(null)"
             >
-              <span class="label" appStartEllipsis [appStartEllipsis]="row.entry.command"></span>
+              <span
+                class="label"
+                appStartEllipsis
+                [appStartEllipsis]="row.entry.command"
+                (appStartEllipsisTruncated)="setTruncated(row.entry, $event)"
+                [appTooltip]="needsTooltip(row.entry) ? row.entry.command : ''"
+                [tooltipVisible]="pinTooltip(row.originalIndex) && needsTooltip(row.entry)"
+              ></span>
               <span class="entry-meta">
                 @if (row.entry.origin) {
                   <span
@@ -237,7 +247,12 @@ export class TerminalHistoryComponent {
   constructor(private readonly history: TerminalHistoryService) {
     effect(() => {
       const view = this.viewState();
-      if (!view.visible || view.selectedIndex === null) return;
+      if (!view.visible) {
+        // The rows are removed with the panel, so no mouseleave fires.
+        this.hoveredIndex.set(null);
+        return;
+      }
+      if (view.selectedIndex === null) return;
       queueMicrotask(() => this.scrollSelectedIntoView());
     });
   }
@@ -250,6 +265,47 @@ export class TerminalHistoryComponent {
 
   protected select(index: number): void {
     this.history.selectEntry(index);
+  }
+
+  /**
+   * Keys (command + executedAt) of entries whose label had to be start-ellipsed. Only those
+   * entries — plus multiline commands, whose newlines collapse to spaces in the one-line
+   * label — get a full-command tooltip.
+   */
+  private readonly truncatedKeys = signal<ReadonlySet<string>>(new Set());
+
+  protected readonly hoveredIndex = signal<number | null>(null);
+
+  /**
+   * Pin the tooltip to the keyboard-selected entry, but yield to the mouse: while the user
+   * hovers a different row, unpin so its hover tooltip is the only one visible.
+   */
+  protected pinTooltip(index: number): boolean {
+    if (index !== this.viewState().selectedIndex) return false;
+    const hovered = this.hoveredIndex();
+    return hovered === null || hovered === index;
+  }
+
+  protected setTruncated(entry: HistoryEntry, truncated: boolean): void {
+    const key = this.entryKey(entry);
+    this.truncatedKeys.update((keys) => {
+      if (keys.has(key) === truncated) return keys;
+      const next = new Set(keys);
+      if (truncated) {
+        next.add(key);
+      } else {
+        next.delete(key);
+      }
+      return next;
+    });
+  }
+
+  protected needsTooltip(entry: HistoryEntry): boolean {
+    return entry.command.includes("\n") || this.truncatedKeys().has(this.entryKey(entry));
+  }
+
+  private entryKey(entry: HistoryEntry): string {
+    return `${entry.command}:${entry.executedAt}`;
   }
 
   protected originTooltip(origin: HistoryEntryOrigin): string {

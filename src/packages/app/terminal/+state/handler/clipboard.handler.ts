@@ -1,11 +1,13 @@
 import { bytesToBase64, Clipboard } from "@cogno/app-tauri/clipboard";
 import { ShellLineEditorDefinitionContract, TerminalId } from "@cogno/core-api";
-import { Char, IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/core-support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ConfigService } from "../../../config/+state/config.service";
-import { findLastPromptMarkerLine, sanitizePromptMarkerText } from "../prompt-marker";
+import { CommandLineBuffer } from "../advanced/ui/command-line.buffer";
+import { PromptMarkerRegistry } from "../advanced/ui/prompt-marker.registry";
+import { TerminalInputWriter } from "../input-writer";
 import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";
@@ -26,7 +28,15 @@ export class ClipboardHandler implements ITerminalHandler {
     private pty: IPty,
     private configService: ConfigService,
     private readonly selectionHandler: SelectionHandler,
-    private readonly lineEditor?: ShellLineEditorDefinitionContract,
+    readonly lineEditor?: ShellLineEditorDefinitionContract,
+    private readonly commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(
+      new PromptMarkerRegistry(),
+    ),
+    private readonly inputWriter: TerminalInputWriter = new TerminalInputWriter(
+      pty,
+      stateManager,
+      lineEditor,
+    ),
   ) {}
 
   dispose(): void {
@@ -35,6 +45,7 @@ export class ClipboardHandler implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
+    this.commandLineBuffer.setTerminal(terminal);
 
     const osc52Disposable = terminal.parser.registerOscHandler(52, (data) => {
       void this.handleOsc52(data);
@@ -63,7 +74,7 @@ export class ClipboardHandler implements ITerminalHandler {
   }
 
   private getSelectionText(): string {
-    const raw = sanitizePromptMarkerText(this.selectionHandler.getSelection());
+    const raw = this.commandLineBuffer.sanitizeCopiedText(this.selectionHandler.getSelection());
     const trimTrailing = this.configService.config.clipboard?.trim_trailing_spaces ?? true;
     if (!trimTrailing) return raw;
     return raw
@@ -78,7 +89,7 @@ export class ClipboardHandler implements ITerminalHandler {
     const ttlSeconds = this.configService.config.clipboard?.image_paste_ttl_seconds ?? 60;
     const filePath = await Clipboard.readImageFromClipboard(ttlSeconds * 1000);
     if (filePath !== null) {
-      this.pty.write(filePath.includes(" ") ? `"${filePath}"` : filePath);
+      this.inputWriter.writeRaw(filePath.includes(" ") ? `"${filePath}"` : filePath);
       return;
     }
 
@@ -89,9 +100,35 @@ export class ClipboardHandler implements ITerminalHandler {
       return;
     }
 
-    if (this.stateManager.isCommandRunning || !this.replaceSelectedInput(clipboardText)) {
+    if (this.stateManager.isCommandRunning) {
       this._terminal.paste(clipboardText);
+      return;
     }
+    if (this.replaceSelectedInput(clipboardText)) return;
+    if (this.openComposerForMultilinePaste(clipboardText)) return;
+    this._terminal.paste(clipboardText);
+  }
+
+  /**
+   * Pasting multiline text at the prompt opens the composer seeded with the
+   * current input plus the pasted text at the cursor: the user reviews and
+   * edits it there instead of the shell receiving half-executed lines.
+   */
+  private openComposerForMultilinePaste(clipboardText: string): boolean {
+    if (!/\r?\n/.test(clipboardText)) return false;
+    const input = this.stateManager.input;
+    const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
+    const pasted = clipboardText.replace(/\r\n/g, "\n");
+    this.bus.publish({
+      path: ["app", "terminal"],
+      type: "OpenComposer",
+      payload: {
+        terminalId: this.terminalId,
+        seedText: input.text.slice(0, cursor) + pasted + input.text.slice(cursor),
+        cursorIndex: cursor + pasted.length,
+      },
+    });
+    return true;
   }
 
   private async handleOsc52(data: string): Promise<void> {
@@ -133,52 +170,21 @@ export class ClipboardHandler implements ITerminalHandler {
   private replaceSelectedInput(replacementText: string): boolean {
     if (!this.selectionHandler.hasSelection()) return false;
 
-    const selectionRange = this.getSelectedInputRange();
+    const selectionRange = this.commandLineBuffer.selectedInputRange(
+      this.stateManager.input.maxCursorIndex,
+    );
     if (!selectionRange) return false;
 
     const deleteLength = selectionRange.endIndex - selectionRange.startIndex;
     if (deleteLength <= 0) return false;
 
     const input = this.stateManager.input;
-    if (this.lineEditor?.nativeActionsViaShellIntegration?.includes("replaceCurrentInput")) {
-      const nextText =
-        input.text.slice(0, selectionRange.startIndex) +
-        replacementText +
-        input.text.slice(selectionRange.endIndex);
-      this.pty.executeLineEditorAction("replaceCurrentInput", {
-        text: nextText,
-        cursorIndex: selectionRange.startIndex + replacementText.length,
-      });
-      this.selectionHandler.clearSelection();
-      return true;
-    }
-
-    const cursorOffsetToSelectionEnd = selectionRange.endIndex - input.cursorIndex;
-    this.pty.write(
-      this.buildCursorMoveCommand(cursorOffsetToSelectionEnd) + Char.Backspace.repeat(deleteLength),
-    );
+    const nextText =
+      input.text.slice(0, selectionRange.startIndex) +
+      replacementText +
+      input.text.slice(selectionRange.endIndex);
     this.selectionHandler.clearSelection();
-    this.pty.write(replacementText);
+    this.inputWriter.replaceInput(nextText, selectionRange.startIndex + replacementText.length);
     return true;
-  }
-
-  private buildCursorMoveCommand(offset: number): string {
-    if (offset === 0) return "";
-    const direction = offset > 0 ? "\x1b[C" : "\x1b[D";
-    return direction.repeat(Math.abs(offset));
-  }
-
-  private getSelectedInputRange(): { startIndex: number; endIndex: number } | undefined {
-    if (!this._terminal) return undefined;
-    const selection = this.selectionHandler.getSelectionPosition();
-    if (!selection) return undefined;
-
-    const input = this.stateManager.input;
-    const startInputY = findLastPromptMarkerLine(this._terminal.buffer.active) + 1;
-    const startIndex = (selection.start.y - startInputY) * this._terminal.cols + selection.start.x;
-    const endIndex = (selection.end.y - startInputY) * this._terminal.cols + selection.end.x;
-
-    if (startIndex < 0 || endIndex > input.maxCursorIndex) return undefined;
-    return { startIndex, endIndex };
   }
 }

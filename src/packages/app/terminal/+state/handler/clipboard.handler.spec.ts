@@ -1,5 +1,6 @@
 import { Clipboard } from "@cogno/app-tauri/clipboard";
 import type { ShellLineEditorDefinitionContract } from "@cogno/core-api";
+import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
@@ -60,7 +61,10 @@ describe("ClipboardHandler", () => {
   let handler: ClipboardHandler;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
-  let mockStateManager: Pick<TerminalStateManager, "isCommandRunning" | "input">;
+  let mockStateManager: Pick<
+    TerminalStateManager,
+    "isCommandRunning" | "input" | "sessionCapabilities"
+  >;
   let mockPty: Pick<IPty, "write" | "executeLineEditorAction">;
   let mockConfigService: ConfigService;
   let mockSelectionHandler: SelectionHandler;
@@ -72,6 +76,7 @@ describe("ClipboardHandler", () => {
     mockStateManager = {
       isCommandRunning: false,
       input: { text: "hello world", cursorIndex: 5, maxCursorIndex: 11 },
+      sessionCapabilities: undefined,
     };
     mockPty = { write: vi.fn(), executeLineEditorAction: vi.fn() };
     mockConfigService = makeConfigService();
@@ -125,6 +130,39 @@ describe("ClipboardHandler", () => {
       expect(pasteSpy).not.toHaveBeenCalled();
     });
 
+    it("opens the composer instead of pasting when multiline text is pasted at the prompt", async () => {
+      const publishSpy = vi.spyOn(mockBus, "publish");
+      const pasteSpy = vi.spyOn(mockTerminal, "paste");
+      vi.mocked(Clipboard.readText).mockResolvedValue("echo one\necho two");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      // Input "hello world" with cursor 5: the pasted block lands at the cursor.
+      await vi.waitFor(() =>
+        expect(publishSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: "OpenComposer",
+            payload: {
+              terminalId,
+              seedText: "helloecho one\necho two world",
+              cursorIndex: 5 + "echo one\necho two".length,
+            },
+          }),
+        ),
+      );
+      expect(pasteSpy).not.toHaveBeenCalled();
+    });
+
+    it("pastes multiline text directly while a command is running", async () => {
+      (mockStateManager as { isCommandRunning: boolean }).isCommandRunning = true;
+      const pasteSpy = vi.spyOn(mockTerminal, "paste");
+      vi.mocked(Clipboard.readText).mockResolvedValue("echo one\necho two");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      await vi.waitFor(() => expect(pasteSpy).toHaveBeenCalledWith("echo one\necho two"));
+    });
+
     it("replaces selected input range when pasting over selection", async () => {
       (mockTerminal as { cols: number }).cols = 80;
       (mockTerminal.buffer.active as { length: number }).length = 2;
@@ -132,7 +170,7 @@ describe("ClipboardHandler", () => {
         i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
       );
       vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
-      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
         start: { x: 0, y: 1 },
         end: { x: 5, y: 1 },
       });
@@ -140,15 +178,62 @@ describe("ClipboardHandler", () => {
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
+      // Unified replace path: clear the whole line ("hello world", cursor 5),
+      // write the recomposed text, then move the cursor after the pasted part.
       await vi.waitFor(() => {
-        expect(mockPty.write).toHaveBeenNthCalledWith(1, "\x08".repeat(5));
-        expect(mockPty.write).toHaveBeenNthCalledWith(2, "bye");
+        expect(mockPty.write).toHaveBeenNthCalledWith(1, "\x1b[C".repeat(6) + "\x08".repeat(11));
+        expect(mockPty.write).toHaveBeenNthCalledWith(2, "bye world");
+        expect(mockPty.write).toHaveBeenNthCalledWith(3, "\x1b[D".repeat(6));
+      });
+    });
+
+    it("flattens continuations and bracket-pastes real newlines when pasting multiline text over a selection", async () => {
+      // POSIX shells provide the insert sanitizer via their shell definition.
+      handler.dispose();
+      handler = new ClipboardHandler(
+        mockBus,
+        terminalId,
+        mockStateManager as TerminalStateManager,
+        mockPty as IPty,
+        mockConfigService,
+        mockSelectionHandler,
+        { insertSanitizer: posixInsertSanitizer },
+      );
+      handler.registerTerminal(mockTerminal);
+      (mockTerminal as { cols: number }).cols = 80;
+      (mockTerminal.buffer.active as { length: number }).length = 2;
+      vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((i) =>
+        i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
+      );
+      vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 },
+      });
+      vi.mocked(Clipboard.readText).mockResolvedValue("echo a \\\n  b\necho c");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      // The backslash continuation is flattened; the remaining real newline is
+      // wrapped in bracketed paste instead of being written raw (accept-line).
+      // The recomposed text keeps the unselected input tail (" world").
+      await vi.waitFor(() => {
+        expect(mockPty.write).toHaveBeenNthCalledWith(
+          2,
+          "\x1b[200~echo a b\necho c world\x1b[201~",
+        );
       });
     });
 
     it("uses native replaceCurrentInput when shell integration supports it", async () => {
       const lineEditor: ShellLineEditorDefinitionContract = {
         nativeActionsViaShellIntegration: ["replaceCurrentInput"],
+      };
+      // The static definition alone is not enough: the session must have
+      // reported the action in the capability handshake.
+      mockStateManager.sessionCapabilities = {
+        nativeActions: ["replaceCurrentInput"],
+        bracketedPaste: false,
       };
       handler = new ClipboardHandler(
         mockBus,
@@ -172,7 +257,7 @@ describe("ClipboardHandler", () => {
         i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
       );
       vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
-      vi.mocked(mockSelectionHandler.getSelectionPosition).mockReturnValue({
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
         start: { x: 4, y: 1 },
         end: { x: 7, y: 1 },
       });
@@ -186,6 +271,41 @@ describe("ClipboardHandler", () => {
           cursorIndex: 7,
         }),
       );
+    });
+
+    it("falls back to raw writes when the session has not reported replaceCurrentInput", async () => {
+      const lineEditor: ShellLineEditorDefinitionContract = {
+        nativeActionsViaShellIntegration: ["replaceCurrentInput"],
+      };
+      // No capability handshake for this session (sessionCapabilities stays
+      // undefined) — the static definition must not enable the native path.
+      handler = new ClipboardHandler(
+        mockBus,
+        terminalId,
+        mockStateManager as TerminalStateManager,
+        mockPty as IPty,
+        mockConfigService,
+        mockSelectionHandler,
+        lineEditor,
+      );
+      handler.registerTerminal(mockTerminal);
+
+      (mockTerminal as { cols: number }).cols = 80;
+      (mockTerminal.buffer.active as { length: number }).length = 2;
+      vi.mocked(mockTerminal.buffer.active.getLine).mockImplementation((i) =>
+        i === 0 ? TerminalMockFactory.createLine("^^#1 COGNO: / $ ") : undefined,
+      );
+      vi.mocked(mockSelectionHandler.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 5, y: 1 },
+      });
+      vi.mocked(Clipboard.readText).mockResolvedValue("bye");
+
+      mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
+
+      await vi.waitFor(() => expect(mockPty.write).toHaveBeenCalledWith("bye world"));
+      expect(mockPty.executeLineEditorAction).not.toHaveBeenCalled();
     });
   });
 

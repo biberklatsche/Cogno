@@ -11,7 +11,7 @@
                 [appTooltip]="displayTitle(tab)"
                 [appTooltipSecondary]="getTabShortcutActionName($index) | actionkeybinding"
                 [animate.enter]="'animate-tab-enter'"
-                [animate.leave]="'animate-tab-leave'"
+                (animate.leave)="animateTabLeave($event)"
                 [attr.data-tab-id]="tab.id"
                 (mousedown)="startTabReorderInteraction($event, tab.id)"
                 (mouseenter)="reorderWhileDragging(tab.id, $event)"

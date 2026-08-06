@@ -40,9 +40,11 @@ import {
   TerminalSystemInfoSource,
 } from "../system-info/terminal-system-info-dialog.component";
 import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
+import { CommandLineBuffer } from "./advanced/ui/command-line.buffer";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
 import { CommandLineObserver } from "./advanced/ui/command-line.observer";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
+import { PromptMarkerRegistry } from "./advanced/ui/prompt-marker.registry";
 import { ClipboardHandler } from "./handler/clipboard.handler";
 import {
   CompletedCommandNotificationHandler,
@@ -66,6 +68,7 @@ import {
 import { TerminalSearchHandler } from "./handler/terminal-search.handler";
 import { TerminalTitleHandler } from "./handler/terminal-title.handler";
 import { ThemeHandler } from "./handler/theme.handler";
+import { TerminalInputWriter } from "./input-writer";
 import { KeybindExecutor } from "./keybind/keybind.executor";
 import { IPty, Pty } from "./pty/pty";
 import { IRenderer, Renderer } from "./renderer/renderer";
@@ -219,6 +222,21 @@ export class TerminalSession {
           )
       : undefined;
 
+    // Shared prompt-marker positions, buffer reads and input writes: the
+    // observer anchors/maintains the markers, the editor and clipboard
+    // handler read them for selection math and share one pty-writing path. A
+    // single instance per session keeps them consistent after a `clear` or
+    // reflow.
+    const promptMarkerRegistry = new PromptMarkerRegistry();
+    const commandLineBuffer = new CommandLineBuffer(promptMarkerRegistry);
+    const inputWriter = new TerminalInputWriter(
+      this.pty,
+      this.stateManager,
+      shellDefinition?.lineEditor,
+      () => this.scrollToBottomOnUserInput(),
+    );
+    this.disposables.push(promptMarkerRegistry);
+
     this.disposables.push(
       this.renderer.register(
         new ClipboardHandler(
@@ -229,12 +247,16 @@ export class TerminalSession {
           this.configService,
           selectionHandler,
           shellDefinition?.lineEditor,
+          commandLineBuffer,
+          inputWriter,
         ),
       ),
     );
     this.disposables.push(
       this.renderer.register(
-        new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty),
+        new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty, () =>
+          this.scrollToBottomOnUserInput(),
+        ),
       ),
     );
 
@@ -250,12 +272,21 @@ export class TerminalSession {
             this.contextMenuOverlayService,
             this.bus,
             this.completedCommandNotificationHandler.handleCompletedCommand,
+            promptMarkerRegistry,
+            commandLineBuffer,
           ),
         ),
       );
       this.disposables.push(
         this.renderer.register(
-          new CommandLineEditor(this.bus, this.pty, this.stateManager, shellDefinition?.lineEditor),
+          new CommandLineEditor(
+            this.bus,
+            this.pty,
+            this.stateManager,
+            shellDefinition?.lineEditor,
+            commandLineBuffer,
+            inputWriter,
+          ),
         ),
       );
     }
@@ -421,6 +452,18 @@ export class TerminalSession {
 
   scrollToBottom(): void {
     this.renderer.terminal.scrollToBottom();
+  }
+
+  /**
+   * Scrolls back to the prompt when the user types while scrolled up. xterm
+   * does this on its own for keys it handles (`scrollOnUserInput`); this is
+   * the equivalent for input paths that bypass xterm's key handling, such as
+   * autocomplete inserts, composer submits and line-editor actions.
+   */
+  private scrollToBottomOnUserInput(): void {
+    if (this.configService.config.scrollbar?.scroll_on_user_input ?? true) {
+      this.renderer.terminal.scrollToBottom();
+    }
   }
 
   getRecentOutputSnapshot(maxLines = 60, maxChars = 4000): string {

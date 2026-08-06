@@ -100,11 +100,123 @@ _cogno_precmd() {
   return $last_ec
 }
 
-# Set up hooks
-trap '_cogno_preexec' DEBUG
+# Re-assert the Cogno prompt after all other PROMPT_COMMAND entries ran:
+# user hooks (starship, oh-my-posh, ...) rewrite PS1 every cycle and would
+# otherwise remove the hidden marker.
+_cogno_reassert_ps1() {
+  PS1="$COGNO_PS1"
+}
 
-# PROMPT_COMMAND must be a simple string in Bash 3.2
-PROMPT_COMMAND='_cogno_precmd'
+# Set up the preexec hook. If the user's rc files installed bash-preexec, it
+# owns the DEBUG trap - register with it instead of fighting over the trap.
+if declare -p preexec_functions >/dev/null 2>&1; then
+  _cogno_preexec_bp() {
+    COGNO_LAST_CMD="$1"
+    COGNO_CMD_SEEN=1
+  }
+  preexec_functions+=(_cogno_preexec_bp)
+else
+  # Chain any existing user DEBUG trap instead of overwriting it.
+  # `trap -p DEBUG` prints `trap -- '<code>' DEBUG`; eval into an array to
+  # extract <code> with the original quoting intact.
+  eval "_cogno_prev_debug_trap=($(trap -p DEBUG))"
+  if [[ -n "${_cogno_prev_debug_trap[2]:-}" ]]; then
+    # Restore $? before the user's trap code runs: it must observe the exit
+    # code of the last real command, not _cogno_preexec's (which is almost
+    # always 0). A function call restores it without forking a subshell.
+    _cogno_restore_ec() { return "${1:-0}"; }
+    trap "_cogno_trap_ec=\$?; _cogno_preexec; _cogno_restore_ec \"\${_cogno_trap_ec}\"; ${_cogno_prev_debug_trap[2]}" DEBUG
+  else
+    trap '_cogno_preexec' DEBUG
+  fi
+  unset _cogno_prev_debug_trap
+fi
+
+# Chain PROMPT_COMMAND instead of overwriting it, so user hooks from rc files
+# (direnv, starship, ...) keep working. Cogno's precmd runs first because it
+# must observe the real $? of the last command; it returns that $? so the
+# user's entries still see the original exit code.
+if [[ "$(declare -p PROMPT_COMMAND 2>/dev/null)" == "declare -a"* ]]; then
+  # Bash >= 5.1 may use an array PROMPT_COMMAND.
+  PROMPT_COMMAND=("_cogno_precmd" "${PROMPT_COMMAND[@]}" "_cogno_reassert_ps1")
+else
+  PROMPT_COMMAND="_cogno_precmd${PROMPT_COMMAND:+;$PROMPT_COMMAND};_cogno_reassert_ps1"
+fi
 
 # Hide the marker from the user while keeping it in the buffer for detection.
-PS1='\n\[\e[8m\]^^#${COGNO_COUNT}\[\e[0m\]\n'
+COGNO_PS1='\n\[\e[8m\]^^#${COGNO_COUNT}\[\e[0m\]\n'
+PS1="$COGNO_PS1"
+
+# Native line-editor channel: the app writes a replace request into a
+# per-session payload file and then injects the trigger sequence \e[5005~
+# into the PTY. readline runs the `bind -x` handler when the sequence
+# arrives, so the request is processed exactly at its position in the input
+# stream - an autoExecute CR sent right behind the trigger always accepts
+# the freshly replaced line.
+# Message format (one request per file):
+#   action;cursorIndex;autoExecute;text
+# The text is the last field (may contain raw semicolons); backslash, CR and
+# LF arrive escaped and are decoded with printf %b.
+_cogno_le_apply() {
+  local line="" action="" cursor="" autoexec="" text=""
+  IFS= read -r line < "${COGNO_LINE_EDITOR_FILE}" 2>/dev/null || return 0
+  [ -n "$line" ] || return 0
+  # Consume the request so a stray re-trigger cannot replay it.
+  : > "${COGNO_LINE_EDITOR_FILE}" 2>/dev/null
+  IFS=';' read -r action cursor autoexec text <<< "$line"
+  case "$action" in
+    replaceCurrentInput)
+      printf -v text '%b' "$text"
+      READLINE_LINE="$text"
+      if [[ "$cursor" =~ ^[0-9]+$ ]] && [ "$cursor" -le "${#READLINE_LINE}" ]; then
+        READLINE_POINT="$cursor"
+      else
+        READLINE_POINT="${#READLINE_LINE}"
+      fi
+      # autoexec is deliberately NOT handled here: bind -x cannot accept the
+      # line; the app submits by sending a CR right after the trigger
+      # sequence, which readline processes strictly in order.
+      ;;
+  esac
+  return 0
+}
+
+# READLINE_LINE/READLINE_POINT need bash >= 4.0 - which is also Cogno's
+# support floor. Bind the trigger in all keymaps so vi-mode users are
+# covered; readline matches the full bound sequence before treating the
+# leading ESC as a mode switch.
+_cogno_le_setup() {
+  [ -n "${COGNO_LINE_EDITOR_FILE}" ] || return 1
+  [ "${BASH_VERSINFO[0]}" -ge 4 ] || return 1
+  bind -m emacs -x '"\e[5005~":_cogno_le_apply' 2>/dev/null || return 1
+  bind -m vi-insert -x '"\e[5005~":_cogno_le_apply' 2>/dev/null
+  bind -m vi-command -x '"\e[5005~":_cogno_le_apply' 2>/dev/null
+  return 0
+}
+
+# Capability handshake: report what this session's integration can actually
+# do. The app gates its native line-editor paths on this report and never
+# assumes a capability statically - native actions are only announced when
+# the trigger binding actually came up. Policy: bash < 4.0 (e.g. the macOS
+# system bash 3.2) is below Cogno's support floor and runs degraded on the
+# sanitizer fallback.
+_cogno_emit_capabilities() {
+  local version="${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}"
+  local degraded=""
+  if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+    degraded="bash-version"
+  fi
+  # Bracketed paste needs readline >= 7 AND must not be disabled by the
+  # user's inputrc - probe the live setting instead of guessing from versions.
+  local bracketed_paste="false"
+  if bind -v 2>/dev/null | grep -q 'set enable-bracketed-paste on'; then
+    bracketed_paste="true"
+  fi
+  local native_actions=""
+  if _cogno_le_setup; then
+    native_actions="replaceCurrentInput"
+  fi
+  printf '\033]733;COGNO:CAPS;shell=bash;shellVersion=%s;nativeActions=%s;bracketedPaste=%s;degraded=%s;\033\\' \
+    "$version" "$native_actions" "$bracketed_paste" "$degraded"
+}
+_cogno_emit_capabilities

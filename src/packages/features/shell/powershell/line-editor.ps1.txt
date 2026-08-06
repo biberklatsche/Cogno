@@ -212,6 +212,9 @@ while ($true) {
     $null = $listener.BeginInvoke()
 
     $global:COGNO_PWSH_LINE_EDITOR_LISTENER = $listener
+    # Read by bootstrap.ps1 for the capability handshake: native actions are
+    # only reported when the pipe listener actually came up.
+    $global:COGNO_PWSH_LINE_EDITOR_READY = $true
 }
 
 Start-CognoLineEditorPipeListener
