@@ -2,13 +2,16 @@ import { CommonModule } from "@angular/common";
 import {
   AnimationCallbackEvent,
   Component,
+  computed,
   ElementRef,
   effect,
   OnDestroy,
   Signal,
+  signal,
   TemplateRef,
   ViewChild,
 } from "@angular/core";
+import { toSignal } from "@angular/core/rxjs-interop";
 import { TabId } from "@cogno/core-api";
 import {
   ContextMenuItem,
@@ -18,7 +21,7 @@ import {
   IconComponent,
   TooltipDirective,
 } from "@cogno/core-ui";
-import { map, Observable, Subscription } from "rxjs";
+import { map, Observable } from "rxjs";
 import { BusyIndicatorComponent } from "../common/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
 import { ColorName } from "../common/color/color";
@@ -53,9 +56,8 @@ export class TabListComponent implements OnDestroy {
   private static readonly tabLeaveAnimationFallbackMs = 150;
 
   private readonly tabAnimationCountCache = new Map<TabId, Observable<number>>();
-  private readonly tabCacheCleanupSub: Subscription;
 
-  tabs: Observable<Tab[]>;
+  readonly tabs: Signal<Tab[]>;
   readonly showRename: Signal<TabId | undefined>;
   isDraggingTab = false;
   draggedTabIdentifier: TabId | undefined;
@@ -71,7 +73,8 @@ export class TabListComponent implements OnDestroy {
   @ViewChild("renameInput") inputRef!: ElementRef<HTMLInputElement>;
   @ViewChild("colorPickerItem") colorPickerItemTpl!: TemplateRef<{ $implicit: ContextMenuItem }>;
 
-  private contextMenuTabId?: TabId;
+  private readonly contextMenuTabId = signal<TabId | undefined>(undefined);
+  readonly contextMenuSelectedColor: Signal<ColorName | undefined>;
 
   constructor(
     private tabListService: TabListService,
@@ -79,11 +82,14 @@ export class TabListComponent implements OnDestroy {
     private dragPreviewService: DragPreviewService,
     readonly busyIndicatorService: BusyIndicatorService,
   ) {
-    this.tabs = this.tabListService.tabs$;
+    this.tabs = toSignal(this.tabListService.tabs$, { initialValue: [] });
     this.showRename = this.tabListService.showRename$;
+    this.contextMenuSelectedColor = computed(
+      () => this.tabs().find((tab) => tab.id === this.contextMenuTabId())?.color,
+    );
 
-    this.tabCacheCleanupSub = this.tabListService.tabs$.subscribe((tabs) => {
-      const currentIds = new Set(tabs.map((t) => t.id));
+    effect(() => {
+      const currentIds = new Set(this.tabs().map((t) => t.id));
       for (const id of this.tabAnimationCountCache.keys()) {
         if (!currentIds.has(id)) this.tabAnimationCountCache.delete(id);
       }
@@ -110,13 +116,18 @@ export class TabListComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.tabCacheCleanupSub.unsubscribe();
     this.removeWindowPointerListeners();
     this.dragPreviewService.stopDragPreview();
   }
 
   closeTab(tabId: TabId): void {
     this.tabListService.removeTab(tabId);
+  }
+
+  tabBackgroundColor(tab: Tab): string | undefined {
+    return tab.color
+      ? `color-mix(in srgb, var(--color-${tab.color}) var(--menu-opacity-ct2), transparent)`
+      : undefined;
   }
 
   /**
@@ -207,7 +218,7 @@ export class TabListComponent implements OnDestroy {
   buildContextMenu(event: MouseEvent, tabId: TabId) {
     event.preventDefault();
     event.stopPropagation();
-    this.contextMenuTabId = tabId;
+    this.contextMenuTabId.set(tabId);
     const items: ContextMenuItem[] = this.tabListService.buildContextMenu(tabId);
     this.menu.openAtElement(event.currentTarget as HTMLElement, {
       items,
@@ -216,8 +227,9 @@ export class TabListComponent implements OnDestroy {
   }
 
   onTabColorPick(color: ColorName | undefined) {
-    if (this.contextMenuTabId) {
-      this.tabListService.setColor(this.contextMenuTabId, color);
+    const tabId = this.contextMenuTabId();
+    if (tabId) {
+      this.tabListService.setColor(tabId, color);
     }
   }
 
