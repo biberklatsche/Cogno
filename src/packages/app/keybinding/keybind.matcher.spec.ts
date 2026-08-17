@@ -213,6 +213,18 @@ describe("KeybindingMatcher (linux)", () => {
     expect(matcher.match(eventB)?.event.payload).toBeUndefined();
   });
 
+  it("user override without always: replaces default with always: (drops the trigger)", () => {
+    // defaults come first, user keybinds are appended (see config.reader)
+    matcher.initBindings(["always:Ctrl+A=doA", "Ctrl+A=doA"]);
+
+    const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });
+    const match = matcher.match(event);
+
+    expect(match?.event.payload).toEqual("doA");
+    expect(match?.event.trigger?.always).toBeFalsy();
+    expect(matcher.getAction("doA")?.trigger?.always).toBeFalsy();
+  });
+
   it("should override same action names twice", () => {
     matcher.initBindings(["Ctrl+B=doA", "Ctrl+A=doA"]);
     matcher.initBindings(["Ctrl+B=doA", "Ctrl+C=doA"]);
