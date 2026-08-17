@@ -2,12 +2,18 @@ import { Observable, Subject } from "rxjs";
 import { vi } from "vitest";
 
 export class TauriMockFactory {
+  /** Minimal stand-in for `Channel` from `@tauri-apps/api/core`. */
+  static createDataChannel<T = ArrayBuffer>() {
+    return { onmessage: (_message: T) => {} };
+  }
+
   static createTauriPty() {
     return {
+      createDataChannel: vi.fn(() => TauriMockFactory.createDataChannel()),
       spawn: vi.fn().mockResolvedValue(undefined),
+      ack: vi.fn().mockResolvedValue(undefined),
       kill: vi.fn().mockResolvedValue(undefined),
       resize: vi.fn().mockResolvedValue(undefined),
-      onData: vi.fn().mockResolvedValue(() => {}),
       onExit: vi.fn().mockResolvedValue(() => {}),
       write: vi.fn().mockResolvedValue(undefined),
       executeLineEditorAction: vi.fn().mockResolvedValue(undefined),

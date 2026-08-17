@@ -2,7 +2,7 @@ import { Environment } from "@cogno/app/common/environment/environment";
 import { ShellProfile } from "@cogno/app/config/+models/shell-config";
 import { TerminalDimensions } from "@cogno/app/terminal/+state/handler/resize.handler";
 import { TerminalId } from "@cogno/core-api";
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 export type ProcessDetails = {
@@ -43,8 +43,24 @@ export type PtySpawnResult = {
   shellProcessId: number | null;
 };
 
+/**
+ * Raw PTY output as delivered by the Rust reader thread. Chunks are ordered;
+ * a chunk may end in the middle of a multi-byte UTF-8 sequence, xterm's
+ * decoder handles that across writes.
+ */
+export type PtyDataChannel = Channel<ArrayBuffer>;
+
 export const TauriPty = {
-  spawn(terminalId: TerminalId, shellProfile: ShellProfile, dimensions: TerminalDimensions) {
+  createDataChannel(): PtyDataChannel {
+    return new Channel<ArrayBuffer>();
+  },
+
+  spawn(
+    terminalId: TerminalId,
+    shellProfile: ShellProfile,
+    dimensions: TerminalDimensions,
+    onData: PtyDataChannel,
+  ) {
     const devMode = Environment.isDevMode();
     return invoke<PtySpawnResult>("pty_spawn", {
       options: {
@@ -54,6 +70,15 @@ export const TauriPty = {
         profile: shellProfile,
         dev_mode: devMode,
       },
+      onData,
+    });
+  },
+
+  /** Tells the reader thread that xterm has parsed `bytes` more bytes (flow control). */
+  ack(terminalId: TerminalId, bytes: number) {
+    return invoke("pty_ack", {
+      terminalId: terminalId,
+      bytes,
     });
   },
 
@@ -68,12 +93,6 @@ export const TauriPty = {
       terminalId: terminalId,
       cols,
       rows,
-    });
-  },
-
-  onData(terminalId: TerminalId, listener: (data: string) => void) {
-    return listen<string>(`pty-data:${terminalId}`, (event) => {
-      listener(event.payload);
     });
   },
 

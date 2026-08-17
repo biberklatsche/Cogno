@@ -69,6 +69,7 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::pty::pty_execute_line_editor_action,
             cogno_tauri_core::commands::pty::pty_resize,
             cogno_tauri_core::commands::pty::pty_kill,
+            cogno_tauri_core::commands::pty::pty_ack,
             cogno_tauri_core::commands::processes::pty_get_process_tree_by_pid,
             cogno_tauri_core::commands::processes::pty_get_process_tree_by_terminal_id,
             cogno_tauri_core::commands::environment::get_exe_path,

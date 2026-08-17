@@ -24,7 +24,6 @@ import { AgentAnimationComponent } from "./agent-animation.component";
     <div class="agents-panel">
       @if (view() === "active") {
         <header class="panel-header">
-          <span class="panel-title">Active Agents</span>
           <div class="header-actions">
             <button
               type="button"
@@ -134,7 +133,6 @@ import { AgentAnimationComponent } from "./agent-animation.component";
     :host {
       display: block;
       height: 100%;
-      padding: 0.25rem 0 0;
     }
 
     .agents-panel {
@@ -151,16 +149,11 @@ import { AgentAnimationComponent } from "./agent-animation.component";
       padding: 0.25rem 0;
     }
 
-    .panel-title {
-      font-size: 0.7rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      opacity: 0.55;
-    }
-
     .header-actions {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
+      flex: 1;
       gap: 0.25rem;
     }
 

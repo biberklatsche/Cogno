@@ -27,9 +27,23 @@ describe("Pty", () => {
     vi.clearAllMocks();
   });
 
-  it("should spawn pty", async () => {
+  function spawnedChannel() {
+    return vi.mocked(TauriPty.createDataChannel).mock.results[0].value;
+  }
+
+  function bytes(text: string): ArrayBuffer {
+    return new TextEncoder().encode(text).buffer as ArrayBuffer;
+  }
+
+  it("should spawn pty with a data channel created before the invoke", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions);
-    expect(TauriPty.spawn).toHaveBeenCalledWith(terminalId, shellConfig, dimensions);
+    expect(TauriPty.createDataChannel).toHaveBeenCalledOnce();
+    expect(TauriPty.spawn).toHaveBeenCalledWith(
+      terminalId,
+      shellConfig,
+      dimensions,
+      spawnedChannel(),
+    );
   });
 
   it("should throw error if resize is called before spawn", () => {
@@ -99,17 +113,53 @@ describe("Pty", () => {
     });
   });
 
-  it("should listen to data", async () => {
+  it("should deliver channel messages to the data listener as bytes", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions);
+    const listener = vi.fn();
+    pty.onData(listener);
+
+    spawnedChannel().onmessage(bytes("hello"));
+
+    expect(listener).toHaveBeenCalledOnce();
+    const chunk = listener.mock.calls[0][0] as Uint8Array;
+    expect(chunk).toBeInstanceOf(Uint8Array);
+    expect(new TextDecoder().decode(chunk)).toBe("hello");
+  });
+
+  it("should replay chunks that arrived before the listener, in order", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions);
+    spawnedChannel().onmessage(bytes("first"));
+    spawnedChannel().onmessage(bytes("second"));
+
+    const listener = vi.fn();
+    pty.onData(listener);
+    spawnedChannel().onmessage(bytes("third"));
+
+    const received = listener.mock.calls.map(([chunk]) => new TextDecoder().decode(chunk));
+    expect(received).toEqual(["first", "second", "third"]);
+  });
+
+  it("should stop delivering data after the listener is disposed", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions);
     const listener = vi.fn();
     const disposable = pty.onData(listener);
-
-    expect(TauriPty.onData).toHaveBeenCalledWith(terminalId, listener);
-
-    // Test dispose
-    const _unlisten = await vi.mocked(TauriPty.onData).mock.results[0].value;
     disposable.dispose();
-    // The mock unlisten function is just a vi.fn() because of the mock setup
+
+    spawnedChannel().onmessage(bytes("late"));
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("should forward acks to the backend", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions);
+    pty.ack(4096);
+    expect(TauriPty.ack).toHaveBeenCalledWith(terminalId, 4096);
+  });
+
+  it("should not send empty acks", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions);
+    pty.ack(0);
+    expect(TauriPty.ack).not.toHaveBeenCalled();
   });
 
   it("should listen to exit", async () => {
