@@ -4,22 +4,28 @@ import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
 import { ShellProfile } from "../../../config/+models/shell-config";
-import { IPty } from "../pty/pty";
+import { IPty, PtyChunk } from "../pty/pty";
 import { ITerminalHandler } from "./handler";
 
 /**
- * Parsed-but-unacknowledged bytes are reported to the PTY reader in batches
- * of this size. Well below the reader's high watermark, so interactive
- * sessions never block; under load the acks keep the reader flowing.
+ * While the window is hidden, browsers throttle the timers xterm parses with
+ * (down to once a minute), so parse-driven acks would stall the shell of any
+ * minimized window. Hidden windows therefore acknowledge chunks on receipt
+ * and let xterm buffer them, up to this many unparsed bytes; beyond that the
+ * reader is held back like in the visible case (xterm itself discards writes
+ * past 50 MiB, so this must stay well below).
  */
-export const PTY_ACK_THRESHOLD_BYTES = 64 * 1024;
+export const HIDDEN_UNPARSED_BUDGET_BYTES = 16 * 1024 * 1024;
 
 export class PtyHandler implements ITerminalHandler {
   private _resizeObserver: ResizeObserver | undefined = undefined;
   private _resizeRaf?: number;
   private _firstWriteEvent: boolean = false;
   private _disposed = false;
-  private _unacknowledgedBytes = 0;
+  private _unparsedBytes = 0;
+  private _lastParsedSeq = -1;
+  private _lastAckedSeq = -1;
+  private _ackScheduled = false;
   private readonly _disposables: IDisposable[] = [];
 
   constructor(
@@ -28,6 +34,7 @@ export class PtyHandler implements ITerminalHandler {
     private _shellProfile: ShellProfile,
     private _bus: AppBus,
     private _terminalActivity?: TerminalActivityService,
+    private _isWindowHidden: () => boolean = () => document.visibilityState === "hidden",
   ) {}
 
   dispose(): void {
@@ -42,17 +49,8 @@ export class PtyHandler implements ITerminalHandler {
 
   registerTerminal(terminal: Terminal): IDisposable {
     this.spawnPty(this._terminalId, terminal).then((_) => {
+      if (this._disposed) return;
       this._disposables.push(terminal.onData((data) => this._pty?.write(data)));
-      this._disposables.push(
-        this._pty?.onData((data) => {
-          this._terminalActivity?.emit(this._terminalId);
-          if (!this._firstWriteEvent) {
-            this._firstWriteEvent = true;
-            this.publishPtyInitializedAfterFirstParse(terminal);
-          }
-          terminal.write(data, () => this.acknowledge(data.byteLength));
-        }),
-      );
       this._disposables.push(
         this._pty?.onExit((_) => {
           this._bus.publish({
@@ -64,6 +62,24 @@ export class PtyHandler implements ITerminalHandler {
       );
     });
     return this;
+  }
+
+  private onPtyChunk(terminal: Terminal, chunk: PtyChunk): void {
+    if (this._disposed) return;
+    this._terminalActivity?.emit(this._terminalId);
+    if (!this._firstWriteEvent) {
+      this._firstWriteEvent = true;
+      this.publishPtyInitializedAfterFirstParse(terminal);
+    }
+    const bytes = chunk.data.byteLength;
+    this._unparsedBytes += bytes;
+    terminal.write(chunk.data, () => {
+      this._unparsedBytes -= bytes;
+      this.parsed(chunk.seq);
+    });
+    if (this._isWindowHidden() && this._unparsedBytes <= HIDDEN_UNPARSED_BUDGET_BYTES) {
+      this.parsed(chunk.seq);
+    }
   }
 
   private publishPtyInitializedAfterFirstParse(terminal: Terminal): void {
@@ -84,19 +100,34 @@ export class PtyHandler implements ITerminalHandler {
     });
   }
 
-  private acknowledge(bytes: number): void {
-    if (this._disposed) return;
-    this._unacknowledgedBytes += bytes;
-    if (this._unacknowledgedBytes < PTY_ACK_THRESHOLD_BYTES) return;
-    const toAck = this._unacknowledgedBytes;
-    this._unacknowledgedBytes = 0;
-    this._pty.ack(toAck);
+  /**
+   * Chunks arrive and are parsed in sequence order, so the newest parsed
+   * sequence number acknowledges everything before it. Acks are coalesced
+   * per microtask: xterm runs the parse callbacks of one time slice
+   * synchronously, so a slice costs one invoke however many chunks it parsed.
+   */
+  private parsed(seq: number): void {
+    if (seq <= this._lastParsedSeq) return;
+    this._lastParsedSeq = seq;
+    if (this._ackScheduled) return;
+    this._ackScheduled = true;
+    queueMicrotask(() => {
+      this._ackScheduled = false;
+      if (this._disposed || this._lastParsedSeq <= this._lastAckedSeq) return;
+      this._lastAckedSeq = this._lastParsedSeq;
+      this._pty.ack(this._lastAckedSeq);
+    });
   }
 
   private spawnPty(terminalId: TerminalId, terminal: Terminal) {
-    return this._pty.spawn(terminalId, this._shellProfile, {
-      cols: terminal.cols,
-      rows: terminal.rows,
-    });
+    return this._pty.spawn(
+      terminalId,
+      this._shellProfile,
+      {
+        cols: terminal.cols,
+        rows: terminal.rows,
+      },
+      (chunk) => this.onPtyChunk(terminal, chunk),
+    );
   }
 }

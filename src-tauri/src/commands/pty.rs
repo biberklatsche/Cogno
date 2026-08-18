@@ -1,9 +1,10 @@
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
+#[cfg(test)]
 use std::time::Duration;
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Emitter, State};
@@ -50,35 +51,43 @@ const LINE_EDITOR_TRIGGER: &[u8] = b"\x1b[5005~";
 /// messages without any extra batching thread.
 const READ_BUF_SIZE: usize = 64 * 1024;
 
-/// Bytes sent to the webview but not yet acknowledged by `pty_ack` before the
-/// reader thread stops reading (and thereby blocks the shell on stdout, like a
-/// real terminal would).
+/// Bytes handed to the webview but not yet acknowledged before the reader
+/// thread stops reading (and thereby blocks the shell on stdout, like a real
+/// terminal would).
 const HIGH_WATERMARK: usize = 1024 * 1024;
 
 /// Reader resumes once unacknowledged bytes drop below this (hysteresis).
 const LOW_WATERMARK: usize = 256 * 1024;
 
-/// Upper bound for one wait slice; the loop re-checks `should_exit` so a
-/// killed session never leaves the reader parked forever.
-const FLOW_CONTROL_WAIT_SLICE: Duration = Duration::from_millis(100);
+/// Every data message starts with the chunk's sequence number (u32, little
+/// endian). The frontend restores order from it and acknowledges by sequence
+/// number, so a chunk lost in transit costs that chunk, not the session.
+const CHUNK_HEADER_LEN: usize = 4;
+
+fn frame_chunk(seq: u32, data: &[u8]) -> Vec<u8> {
+    let mut frame = Vec::with_capacity(CHUNK_HEADER_LEN + data.len());
+    frame.extend_from_slice(&seq.to_le_bytes());
+    frame.extend_from_slice(data);
+    frame
+}
 
 struct FlowState {
     in_flight: usize,
-    /// Once closed (kill/exit), the reader never waits again and acks are
-    /// irrelevant. Permanent, so a late `release_all` cannot be undone by
-    /// further `add` calls from a still-running reader.
-    closed: bool,
+    /// Sent but unacknowledged chunks in sequence order.
+    sent: VecDeque<(u32, usize)>,
 }
 
 /// Backpressure between the PTY reader thread and the webview: the reader
-/// adds bytes as it sends them, the frontend acknowledges bytes once xterm has
-/// parsed them, and the reader waits whenever too much is in flight.
+/// registers every chunk it sends, the frontend acknowledges chunks once xterm
+/// has parsed them, and the reader waits whenever too much is in flight.
 ///
-/// Lives as long as the reader thread (see `PtyState::flows`), independent of
-/// the `Session`, so acks keep working while the reader still runs.
+/// Also the reader's stop signal: `close()` wakes a waiting reader and makes
+/// every later `acquire` fail, so kill/exit never needs an ack to unblock it.
+/// The `Arc<FlowControl>` identifies one spawn (terminal ids can be reused).
 pub(crate) struct FlowControl {
     state: Mutex<FlowState>,
     capacity_available: Condvar,
+    closed: AtomicBool,
     high_watermark: usize,
     low_watermark: usize,
 }
@@ -92,74 +101,60 @@ impl FlowControl {
         Self {
             state: Mutex::new(FlowState {
                 in_flight: 0,
-                closed: false,
+                sent: VecDeque::new(),
             }),
             capacity_available: Condvar::new(),
+            closed: AtomicBool::new(false),
             high_watermark,
             low_watermark,
         }
     }
 
-    fn add(&self, bytes: usize) {
-        let mut state = self.state.lock().unwrap();
-        if state.closed {
-            return;
-        }
-        state.in_flight = state.in_flight.saturating_add(bytes);
+    fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
     }
 
-    fn ack(&self, bytes: usize) {
+    /// Registers chunk `seq` of `bytes` as in flight. Blocks first while more
+    /// than the high watermark is unacknowledged, until acks bring it below
+    /// the low watermark. Returns false once the flow is closed.
+    fn acquire(&self, seq: u32, bytes: usize) -> bool {
         let mut state = self.state.lock().unwrap();
-        state.in_flight = state.in_flight.saturating_sub(bytes);
+        if state.in_flight > self.high_watermark {
+            while !self.is_closed() && state.in_flight >= self.low_watermark {
+                state = self.capacity_available.wait(state).unwrap();
+            }
+        }
+        if self.is_closed() {
+            return false;
+        }
+        state.in_flight = state.in_flight.saturating_add(bytes);
+        state.sent.push_back((seq, bytes));
+        true
+    }
+
+    /// Frontend has parsed every chunk up to and including `seq`.
+    fn ack_through(&self, seq: u32) {
+        let mut state = self.state.lock().unwrap();
+        while state.sent.front().is_some_and(|(sent_seq, _)| *sent_seq <= seq) {
+            let (_, bytes) = state.sent.pop_front().unwrap();
+            state.in_flight = state.in_flight.saturating_sub(bytes);
+        }
         self.capacity_available.notify_all();
     }
 
-    /// Wakes every waiter, forgets all in-flight bytes and closes the flow for
-    /// good. Used on kill/exit so no ack is ever required to unblock the reader.
-    fn release_all(&self) {
-        let mut state = self.state.lock().unwrap();
-        state.in_flight = 0;
-        state.closed = true;
+    /// Stops the reader for good: wakes a waiting reader and makes every later
+    /// `acquire` fail. Idempotent.
+    fn close(&self) {
+        // Set under the lock so a reader that checks `closed` while holding
+        // the state lock can never miss the notification.
+        let _state = self.state.lock().unwrap();
+        self.closed.store(true, Ordering::Release);
         self.capacity_available.notify_all();
     }
 
     #[cfg(test)]
     fn in_flight(&self) -> usize {
         self.state.lock().unwrap().in_flight
-    }
-
-    /// Blocks while more than `high_watermark` bytes are unacknowledged, until
-    /// they drop below `low_watermark`, the flow is closed, or `should_exit`
-    /// is set.
-    fn wait_for_capacity(&self, should_exit: &AtomicBool) {
-        let mut state = self.state.lock().unwrap();
-        if state.closed || state.in_flight <= self.high_watermark {
-            return;
-        }
-        while !state.closed
-            && state.in_flight >= self.low_watermark
-            && !should_exit.load(Ordering::Relaxed)
-        {
-            let (guard, _) = self
-                .capacity_available
-                .wait_timeout(state, FLOW_CONTROL_WAIT_SLICE)
-                .unwrap();
-            state = guard;
-        }
-    }
-}
-
-type FlowRegistry = Arc<Mutex<HashMap<String, Arc<FlowControl>>>>;
-
-/// Removes `flow` from the registry if it is still the registered one for
-/// `terminal_id` (a newer session may have reused the id).
-fn unregister_flow(flows: &FlowRegistry, terminal_id: &str, flow: &Arc<FlowControl>) {
-    let mut flows = flows.lock().unwrap();
-    if flows
-        .get(terminal_id)
-        .is_some_and(|registered| Arc::ptr_eq(registered, flow))
-    {
-        flows.remove(terminal_id);
     }
 }
 
@@ -171,7 +166,6 @@ struct Session {
     /// holding `sessions`. Dropping the session drops the sender, which ends
     /// the writer thread.
     input_tx: std::sync::mpsc::Sender<Vec<u8>>,
-    should_exit: Arc<AtomicBool>,
     flow: Arc<FlowControl>,
     shell_process_id: Option<u32>,
     shell_type: String,
@@ -179,9 +173,11 @@ struct Session {
     line_editor_channel: Option<LineEditorChannel>,
 }
 
+type Sessions = Arc<Mutex<HashMap<String, Session>>>;
+
 /// Removes a session's line-editor channel directory (a private per-session
-/// temp dir holding only the FIFO or payload file). Called from every place
-/// a session is dropped; idempotent, so racing removal paths are harmless.
+/// temp dir holding only the FIFO or payload file). Idempotent, so racing
+/// removal paths are harmless.
 fn remove_line_editor_channel(channel: &Option<LineEditorChannel>) {
     if let Some(channel) = channel {
         if let Some(dir) = channel.path().parent() {
@@ -190,19 +186,53 @@ fn remove_line_editor_channel(channel: &Option<LineEditorChannel>) {
     }
 }
 
+/// Releases everything a session owns: stops the reader, removes the
+/// line-editor channel, drops the master (closes the PTY) and the input sender
+/// (ends the writer thread). Must be called without holding `sessions`:
+/// closing a ConPTY can block until its output pipe is drained.
+fn release_session(session: Session) {
+    session.flow.close();
+    remove_line_editor_channel(&session.line_editor_channel);
+    drop(session);
+}
+
+/// Ends the spawn identified by `flow`, from whichever thread notices first:
+/// removes its map entry (only if the id still belongs to this spawn), releases
+/// it, and emits `pty-exit` for it. A spawn whose entry is already gone was
+/// killed or replaced on purpose, so it emits nothing. Idempotent.
+fn end_session(
+    sessions: &Sessions,
+    terminal_id: &str,
+    flow: &Arc<FlowControl>,
+    app: &AppHandle,
+    exit_code: i32,
+) {
+    let removed = {
+        let mut sessions = sessions.lock().unwrap();
+        match sessions.get(terminal_id) {
+            Some(session) if Arc::ptr_eq(&session.flow, flow) => sessions.remove(terminal_id),
+            _ => None,
+        }
+    };
+    flow.close();
+    let Some(session) = removed else {
+        return;
+    };
+    release_session(session);
+    let _ = app.emit(
+        &format!("pty-exit:{}", terminal_id),
+        serde_json::json!({ "exitCode": exit_code }),
+    );
+}
+
 pub struct PtyState {
-    sessions: Arc<Mutex<HashMap<String, Session>>>,
-    /// Flow controls keyed by terminal id, owned by the reader threads' lifetime
-    /// (registered at spawn, unregistered when the reader exits). Kept apart
-    /// from `sessions` so `pty_ack` never contends with session-holding work.
-    flows: FlowRegistry,
+    sessions: Sessions,
 }
 
 impl PtyState {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
-            flows: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -301,20 +331,12 @@ pub async fn pty_spawn(
         .take_writer()
         .map_err(|e| format!("Failed to take writer: {}", e))?;
 
-    let should_exit = Arc::new(AtomicBool::new(false));
-    let exit_notified = Arc::new(AtomicBool::new(false));
-    let exit_notified_for_child = exit_notified.clone();
-    let exit_notified_for_reader = exit_notified.clone();
     let flow = Arc::new(FlowControl::new());
-    let flow_for_child = flow.clone();
-    let flow_for_reader = flow.clone();
-    let should_exit_for_child = should_exit.clone();
     let (input_tx, input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
 
     let session = Session {
         master: pair.master,
         input_tx,
-        should_exit: should_exit.clone(),
         flow: flow.clone(),
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
@@ -322,13 +344,20 @@ pub async fn pty_spawn(
         line_editor_channel,
     };
 
-    {
+    let replaced = {
         let mut sessions = state.sessions.lock().unwrap();
-        sessions.insert(terminal_id.clone(), session);
-    }
-    {
-        let mut flows = state.flows.lock().unwrap();
-        flows.insert(terminal_id.clone(), flow);
+        sessions.insert(terminal_id.clone(), session)
+    };
+    if let Some(old_session) = replaced {
+        // The id is reused (e.g. webview reload re-spawning a persisted
+        // layout). The old spawn's threads only ever touch their own entry, so
+        // ending it here cannot disturb the new session.
+        log::warn!(
+            target: "pty",
+            "terminal_id={} respawned while a session was still alive; replacing it",
+            terminal_id
+        );
+        release_session(old_session);
     }
 
     // Thread that writes PTY input. Blocking writes happen here, never inside a
@@ -339,129 +368,89 @@ pub async fn pty_spawn(
         terminal_id.clone(),
         app.clone(),
         state.sessions.clone(),
-        exit_notified,
+        flow.clone(),
     );
 
     // Thread that waits for the child process to end
-    let terminal_id_for_child = terminal_id.clone();
-    let app_for_child = app.clone();
-    let sessions_for_child = state.sessions.clone();
-
-    std::thread::spawn(move || {
-        let exit_code = match child.wait() {
-            Ok(status) => status.exit_code() as i32,
-            Err(_) => 1,
-        };
-
-        log::info!(
-            target: "pty",
-            "child process exited terminal_id={} shell_pid={:?} exit_code={}",
-            terminal_id_for_child,
-            shell_process_id,
-            exit_code
-        );
-
-        let mut sessions = sessions_for_child.lock().unwrap();
-        if let Some(session) = sessions.remove(&terminal_id_for_child) {
-            remove_line_editor_channel(&session.line_editor_channel);
-        }
-        drop(sessions);
-        // The pane goes away with the exit event; stop the reader too, even if
-        // a grandchild still holds the slave side and keeps producing output.
-        should_exit_for_child.store(true, Ordering::Relaxed);
-        flow_for_child.release_all();
-
-        if exit_notified_for_child
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
-            .is_ok()
-        {
-            let _ = app_for_child.emit(
-                &format!("pty-exit:{}", terminal_id_for_child),
-                serde_json::json!({
-                    "exitCode": exit_code
-                }),
+    {
+        let terminal_id = terminal_id.clone();
+        let app = app.clone();
+        let sessions = state.sessions.clone();
+        let flow = flow.clone();
+        std::thread::spawn(move || {
+            let exit_code = match child.wait() {
+                Ok(status) => status.exit_code() as i32,
+                Err(_) => 1,
+            };
+            log::info!(
+                target: "pty",
+                "child process exited terminal_id={} shell_pid={:?} exit_code={}",
+                terminal_id,
+                shell_process_id,
+                exit_code
             );
-        }
-    });
+            // The pane goes away with the exit event; this also stops the
+            // reader, even if a grandchild still holds the slave side and
+            // keeps producing output.
+            end_session(&sessions, &terminal_id, &flow, &app, exit_code);
+        });
+    }
 
     // Thread that reads PTY output
-    let terminal_id_clone = terminal_id.clone();
-    let app_clone = app.clone();
-    let should_exit_clone = should_exit.clone();
-    let sessions_for_reader = state.sessions.clone();
-    let flows_for_reader = state.flows.clone();
+    {
+        let terminal_id = terminal_id.clone();
+        let app = app.clone();
+        let sessions = state.sessions.clone();
+        std::thread::spawn(move || {
+            let mut reader = reader;
+            // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful
+            // across writes; splitting a multi-byte sequence between two reads
+            // is fine.
+            let mut buf = vec![0u8; READ_BUF_SIZE];
+            let mut seq: u32 = 0;
 
-    std::thread::spawn(move || {
-        let mut reader = reader;
-        // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful across
-        // writes; splitting a multi-byte sequence between two reads is fine.
-        let mut buf = vec![0u8; READ_BUF_SIZE];
-
-        loop {
-            if should_exit_clone.load(Ordering::Relaxed) {
-                break;
-            }
-            match std::io::Read::read(&mut reader, &mut buf) {
-                Ok(0) => break,
-                Ok(n) => {
-                    if should_exit_clone.load(Ordering::Relaxed) {
-                        break;
-                    }
-                    flow_for_reader.wait_for_capacity(&should_exit_clone);
-                    if should_exit_clone.load(Ordering::Relaxed) {
-                        break;
-                    }
-                    flow_for_reader.add(n);
-                    if on_data
-                        .send(InvokeResponseBody::Raw(buf[..n].to_vec()))
-                        .is_err()
-                    {
-                        // Webview is gone; nothing left to deliver to.
-                        break;
-                    }
-                }
-                Err(_) => {
+            loop {
+                if flow.is_closed() {
                     break;
                 }
+                let n = match std::io::Read::read(&mut reader, &mut buf) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => n,
+                };
+                if !flow.acquire(seq, n) {
+                    break;
+                }
+                if on_data
+                    .send(InvokeResponseBody::Raw(frame_chunk(seq, &buf[..n])))
+                    .is_err()
+                {
+                    // Webview is gone; nothing left to deliver to.
+                    break;
+                }
+                seq = seq.wrapping_add(1);
             }
-        }
 
-        flow_for_reader.release_all();
-        unregister_flow(&flows_for_reader, &terminal_id_clone, &flow_for_reader);
-
-        // PTY died unexpectedly (EOF or read error, not an intentional kill).
-        // Emit exit immediately so the tab closes without waiting for child.wait().
-        if !should_exit_clone.load(Ordering::Relaxed)
-            && exit_notified_for_reader
-                .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
-                .is_ok()
-        {
-            let mut sessions = sessions_for_reader.lock().unwrap();
-            if let Some(session) = sessions.remove(&terminal_id_clone) {
-                remove_line_editor_channel(&session.line_editor_channel);
-            }
-            drop(sessions);
-
-            let _ = app_clone.emit(
-                &format!("pty-exit:{}", terminal_id_clone),
-                serde_json::json!({ "exitCode": -1 }),
-            );
-        }
-    });
+            // EOF, read error or a lost webview: the PTY is unusable. If the
+            // session was killed or replaced instead, the entry is already
+            // gone and this is a no-op.
+            end_session(&sessions, &terminal_id, &flow, &app, -1);
+        });
+    }
 
     Ok(PtySpawnResult { shell_process_id })
 }
 
 /// Per-session writer thread: performs the (potentially blocking) PTY writes in
-/// arrival order. A broken pipe means the PTY is gone: the session is torn down
-/// and the exit event emitted from here.
+/// arrival order. Any write error means the PTY is unusable (broken pipe once
+/// conhost/the slave is gone, EIO on Unix, ...): the session ends and the exit
+/// event is emitted from here, so failed input never disappears silently.
 fn spawn_input_writer_thread(
     mut writer: Box<dyn Write + Send>,
     input_rx: std::sync::mpsc::Receiver<Vec<u8>>,
     terminal_id: String,
     app: AppHandle,
-    sessions: Arc<Mutex<HashMap<String, Session>>>,
-    exit_notified: Arc<AtomicBool>,
+    sessions: Sessions,
+    flow: Arc<FlowControl>,
 ) {
     std::thread::spawn(move || {
         while let Ok(data) = input_rx.recv() {
@@ -475,45 +464,19 @@ fn spawn_input_writer_thread(
                 terminal_id,
                 e
             );
-            // os error 232 = ERROR_NO_DATA ("The pipe is being closed.") on Windows
-            // os error 109 = ERROR_BROKEN_PIPE
-            let is_broken_pipe = e
-                .raw_os_error()
-                .map(|code| code == 109 || code == 232)
-                .unwrap_or(false);
-            if !is_broken_pipe {
-                continue;
-            }
-
-            let (emit_exit, _dead_master) = {
-                let mut sessions = sessions.lock().unwrap();
-                if let Some(session) = sessions.remove(&terminal_id) {
-                    session.should_exit.store(true, Ordering::Relaxed);
-                    session.flow.release_all();
-                    remove_line_editor_channel(&session.line_editor_channel);
-                    let emit = exit_notified
-                        .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
-                        .is_ok();
-                    (emit, Some(session.master))
-                } else {
-                    (false, None)
-                }
-            }; // lock released; _dead_master drops here, after the lock
-            if emit_exit {
-                let _ = app.emit(
-                    &format!("pty-exit:{}", terminal_id),
-                    serde_json::json!({ "exitCode": -1 }),
-                );
-            }
+            end_session(&sessions, &terminal_id, &flow, &app, -1);
             break;
         }
     });
 }
 
 /// Hands `data` to the session's writer thread. Never blocks on the PTY.
-fn queue_pty_input(session: &Session, terminal_id: &str, data: Vec<u8>) -> Result<(), String> {
-    session
-        .input_tx
+fn queue_pty_input(
+    input_tx: &std::sync::mpsc::Sender<Vec<u8>>,
+    terminal_id: &str,
+    data: Vec<u8>,
+) -> Result<(), String> {
+    input_tx
         .send(data)
         .map_err(|_| format!("Session is closing: {}", terminal_id))
 }
@@ -528,7 +491,7 @@ pub fn pty_write(
     let Some(session) = sessions.get(&terminal_id) else {
         return Err(format!("Session not found: {}", terminal_id));
     };
-    queue_pty_input(session, &terminal_id, data.into_bytes())
+    queue_pty_input(&session.input_tx, &terminal_id, data.into_bytes())
 }
 
 #[tauri::command]
@@ -538,14 +501,23 @@ pub fn pty_execute_line_editor_action(
     action: String,
     payload_json: Option<String>,
 ) -> Result<(), String> {
-    let sessions = state.sessions.lock().unwrap();
-
-    let Some(session) = sessions.get(&terminal_id) else {
-        return Err(format!("Session not found: {}", terminal_id));
+    // Copy what the pipe/FIFO/file writes below need and release the lock
+    // first: they can block, and nothing may block while holding `sessions`.
+    let (shell_type, line_editor_pipe_name, line_editor_channel, input_tx) = {
+        let sessions = state.sessions.lock().unwrap();
+        let Some(session) = sessions.get(&terminal_id) else {
+            return Err(format!("Session not found: {}", terminal_id));
+        };
+        (
+            session.shell_type.clone(),
+            session.line_editor_pipe_name.clone(),
+            session.line_editor_channel.clone(),
+            session.input_tx.clone(),
+        )
     };
 
-    if session.shell_type == "PowerShell" {
-        let Some(pipe_name) = session.line_editor_pipe_name.as_deref() else {
+    if shell_type == "PowerShell" {
+        let Some(pipe_name) = line_editor_pipe_name.as_deref() else {
             return Err(format!(
                 "Shell session {} does not expose a line editor pipe",
                 terminal_id
@@ -554,10 +526,10 @@ pub fn pty_execute_line_editor_action(
         return write_shell_action_to_pipe(pipe_name, &action, payload_json.as_deref());
     }
 
-    let Some(channel) = session.line_editor_channel.clone() else {
+    let Some(channel) = line_editor_channel else {
         return Err(format!(
             "Shell actions are not supported for shell type: {}",
-            session.shell_type
+            shell_type
         ));
     };
 
@@ -587,7 +559,7 @@ pub fn pty_execute_line_editor_action(
         pty_input.push(b'\r');
     }
     if !pty_input.is_empty() {
-        queue_pty_input(session, &terminal_id, pty_input)
+        queue_pty_input(&input_tx, &terminal_id, pty_input)
             .map_err(|e| format!("Failed to write line editor trigger: {}", e))?;
     }
 
@@ -625,33 +597,31 @@ pub fn pty_kill(
     state: State<'_, PtyState>,
     terminal_id: String,
 ) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().unwrap();
-
-    if let Some(session) = sessions.remove(&terminal_id) {
-        session.should_exit.store(true, Ordering::Relaxed);
-        session.flow.release_all();
-        remove_line_editor_channel(&session.line_editor_channel);
-        // Dropping the session drops master and input sender (ends the writer thread).
-        drop(session);
-        Ok(())
-    } else {
-        Err(format!("Session not found: {}", terminal_id))
+    let removed = {
+        let mut sessions = state.sessions.lock().unwrap();
+        sessions.remove(&terminal_id)
+    };
+    match removed {
+        // Intentional kill: the frontend already dropped the pane, no exit event.
+        Some(session) => {
+            release_session(session);
+            Ok(())
+        }
+        None => Err(format!("Session not found: {}", terminal_id)),
     }
 }
 
-/// Frontend acknowledgement that xterm has parsed `bytes` of PTY output.
-/// Only touches the flow registry (never `sessions`), so an ack can always get
-/// through, even while another command is busy with a session. Acks for
-/// readers that already ended are expected (data was still in the pipeline)
-/// and are silently accepted.
+/// Frontend acknowledgement that xterm has parsed every chunk up to and
+/// including `seq`. Acks for sessions that already ended are expected (data
+/// was still in the pipeline) and silently accepted.
 #[tauri::command]
-pub fn pty_ack(state: State<'_, PtyState>, terminal_id: String, bytes: u32) -> Result<(), String> {
+pub fn pty_ack(state: State<'_, PtyState>, terminal_id: String, seq: u32) -> Result<(), String> {
     let flow = {
-        let flows = state.flows.lock().unwrap();
-        flows.get(&terminal_id).cloned()
+        let sessions = state.sessions.lock().unwrap();
+        sessions.get(&terminal_id).map(|session| session.flow.clone())
     };
     if let Some(flow) = flow {
-        flow.ack(bytes as usize);
+        flow.ack_through(seq);
     }
     Ok(())
 }
@@ -662,104 +632,93 @@ mod flow_control_tests {
     use std::thread;
     use std::time::Instant;
 
-    #[test]
-    fn does_not_wait_below_high_watermark() {
-        let flow = FlowControl::with_watermarks(100, 50);
-        flow.add(100);
-        let should_exit = AtomicBool::new(false);
-        let start = Instant::now();
-        flow.wait_for_capacity(&should_exit);
-        assert!(start.elapsed() < FLOW_CONTROL_WAIT_SLICE);
+    fn short() -> Duration {
+        Duration::from_millis(50)
     }
 
     #[test]
-    fn waits_until_acks_drop_below_low_watermark() {
+    fn acquire_does_not_wait_below_high_watermark() {
+        let flow = FlowControl::with_watermarks(100, 50);
+        assert!(flow.acquire(0, 100));
+        let start = Instant::now();
+        assert!(flow.acquire(1, 1));
+        assert!(start.elapsed() < short());
+        assert_eq!(flow.in_flight(), 101);
+    }
+
+    #[test]
+    fn acquire_waits_until_acks_drop_below_low_watermark() {
         let flow = Arc::new(FlowControl::with_watermarks(100, 50));
-        flow.add(150);
-        let should_exit = Arc::new(AtomicBool::new(false));
+        assert!(flow.acquire(0, 60));
+        assert!(flow.acquire(1, 90)); // 150 in flight: the next acquire waits
 
         let waiter = {
             let flow = flow.clone();
-            let should_exit = should_exit.clone();
             thread::spawn(move || {
                 let start = Instant::now();
-                flow.wait_for_capacity(&should_exit);
-                start.elapsed()
+                let acquired = flow.acquire(2, 10);
+                (acquired, start.elapsed())
             })
         };
 
         thread::sleep(Duration::from_millis(30));
-        flow.ack(60); // 90 in flight: still >= low watermark, keep waiting
+        flow.ack_through(0); // 90 in flight: still >= low watermark, keep waiting
         thread::sleep(Duration::from_millis(30));
         assert!(!waiter.is_finished());
-        flow.ack(50); // 40 in flight: below low watermark, wake up
-        let waited = waiter.join().unwrap();
+        flow.ack_through(1); // 0 in flight: below low watermark, wake up
+        let (acquired, waited) = waiter.join().unwrap();
+        assert!(acquired);
         assert!(waited >= Duration::from_millis(50));
+        assert_eq!(flow.in_flight(), 10);
+    }
+
+    #[test]
+    fn ack_through_releases_every_chunk_up_to_seq_including_lost_ones() {
+        let flow = FlowControl::with_watermarks(1_000, 500);
+        assert!(flow.acquire(0, 10));
+        assert!(flow.acquire(1, 20)); // never parsed by the frontend (lost in transit)
+        assert!(flow.acquire(2, 30));
+        assert!(flow.acquire(3, 40));
+        flow.ack_through(2);
         assert_eq!(flow.in_flight(), 40);
-    }
-
-    #[test]
-    fn release_all_unblocks_and_resets() {
-        let flow = Arc::new(FlowControl::with_watermarks(100, 50));
-        flow.add(1_000);
-        let should_exit = Arc::new(AtomicBool::new(false));
-        let waiter = {
-            let flow = flow.clone();
-            let should_exit = should_exit.clone();
-            thread::spawn(move || flow.wait_for_capacity(&should_exit))
-        };
-        thread::sleep(Duration::from_millis(20));
-        flow.release_all();
-        waiter.join().unwrap();
+        flow.ack_through(2); // duplicate ack: no effect
+        assert_eq!(flow.in_flight(), 40);
+        flow.ack_through(1_000); // ack beyond what was sent
         assert_eq!(flow.in_flight(), 0);
     }
 
     #[test]
-    fn should_exit_breaks_the_wait_without_acks() {
+    fn close_unblocks_a_waiting_reader_and_fails_the_acquire() {
         let flow = Arc::new(FlowControl::with_watermarks(100, 50));
-        flow.add(1_000);
-        let should_exit = Arc::new(AtomicBool::new(false));
+        assert!(flow.acquire(0, 1_000));
         let waiter = {
             let flow = flow.clone();
-            let should_exit = should_exit.clone();
-            thread::spawn(move || flow.wait_for_capacity(&should_exit))
+            thread::spawn(move || flow.acquire(1, 1))
         };
         thread::sleep(Duration::from_millis(20));
-        should_exit.store(true, Ordering::Relaxed);
-        waiter.join().unwrap();
-        assert_eq!(flow.in_flight(), 1_000);
+        assert!(!waiter.is_finished());
+        flow.close();
+        assert!(!waiter.join().unwrap());
+        assert!(flow.is_closed());
     }
 
     #[test]
-    fn closed_flow_never_waits_again_even_after_more_adds() {
+    fn closed_flow_never_acquires_again() {
         let flow = FlowControl::with_watermarks(100, 50);
-        flow.release_all();
-        flow.add(10_000); // reader still running after kill/exit: ignored
-        assert_eq!(flow.in_flight(), 0);
-        let should_exit = AtomicBool::new(false);
+        flow.close();
         let start = Instant::now();
-        flow.wait_for_capacity(&should_exit);
-        assert!(start.elapsed() < FLOW_CONTROL_WAIT_SLICE);
-    }
-
-    #[test]
-    fn unregister_flow_only_removes_the_matching_arc() {
-        let flows: FlowRegistry = Arc::new(Mutex::new(HashMap::new()));
-        let old = Arc::new(FlowControl::new());
-        let new = Arc::new(FlowControl::new());
-        flows.lock().unwrap().insert("t1".to_string(), new.clone());
-        unregister_flow(&flows, "t1", &old); // stale reader of a reused id
-        assert!(flows.lock().unwrap().contains_key("t1"));
-        unregister_flow(&flows, "t1", &new);
-        assert!(!flows.lock().unwrap().contains_key("t1"));
-    }
-
-    #[test]
-    fn ack_never_underflows() {
-        let flow = FlowControl::with_watermarks(100, 50);
-        flow.add(10);
-        flow.ack(1_000);
+        assert!(!flow.acquire(0, 10));
+        assert!(!flow.acquire(1, 10_000));
+        assert!(start.elapsed() < short());
         assert_eq!(flow.in_flight(), 0);
+        flow.close(); // idempotent
+    }
+
+    #[test]
+    fn frame_chunk_prefixes_the_sequence_number_little_endian() {
+        let frame = frame_chunk(0x0102_0304, b"ab");
+        assert_eq!(frame, vec![0x04, 0x03, 0x02, 0x01, b'a', b'b']);
+        assert_eq!(frame.len(), CHUNK_HEADER_LEN + 2);
     }
 }
 

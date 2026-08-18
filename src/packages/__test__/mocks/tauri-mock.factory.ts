@@ -2,15 +2,18 @@ import { Observable, Subject } from "rxjs";
 import { vi } from "vitest";
 
 export class TauriMockFactory {
-  /** Minimal stand-in for `Channel` from `@tauri-apps/api/core`. */
-  static createDataChannel<T = ArrayBuffer>() {
-    return { onmessage: (_message: T) => {} };
+  /** Spawn handle returned by `createPtyTransport().spawn`; `ready` resolves immediately. */
+  static createPtySpawnHandle() {
+    return {
+      ready: Promise.resolve({ shellProcessId: 1234 }),
+      closeOutput: vi.fn(),
+    };
   }
 
-  static createTauriPty() {
+  /** Fake `PtyTransportPort` (from `@cogno/core-api`). */
+  static createPtyTransport() {
     return {
-      createDataChannel: vi.fn(() => TauriMockFactory.createDataChannel()),
-      spawn: vi.fn().mockResolvedValue(undefined),
+      spawn: vi.fn(() => TauriMockFactory.createPtySpawnHandle()),
       ack: vi.fn().mockResolvedValue(undefined),
       kill: vi.fn().mockResolvedValue(undefined),
       resize: vi.fn().mockResolvedValue(undefined),

@@ -4,6 +4,7 @@ import {
   NotificationChannelsPort,
   NotificationDefinitionContract,
   Opener,
+  PtyTransportPort,
   ShellDefinitionContract,
   TerminalId,
 } from "@cogno/core-api";
@@ -78,7 +79,7 @@ import { TerminalSessionRegistry } from "./terminal-session.registry";
 @Injectable()
 export class TerminalSession {
   private renderer: IRenderer;
-  private pty: IPty = new Pty();
+  private readonly pty: IPty;
 
   private focusHandler?: FocusHandler = undefined;
 
@@ -106,8 +107,10 @@ export class TerminalSession {
     private readonly terminalActivity: TerminalActivityService,
     private readonly notificationChannelsPort: NotificationChannelsPort,
     private readonly keybindService: KeybindService,
+    ptyTransport: PtyTransportPort,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
+    this.pty = new Pty(ptyTransport);
     this.renderer = new Renderer(this.configService.config);
     this.disposables = [this.renderer, this.pty];
     this.completedCommandNotificationHandler = new CompletedCommandNotificationHandler(

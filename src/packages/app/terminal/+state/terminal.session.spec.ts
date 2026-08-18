@@ -6,6 +6,7 @@ import { DialogRef, type DialogService } from "@cogno/core-ui";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
+import { TauriMockFactory } from "../../../__test__/mocks/tauri-mock.factory";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { getAppBus, getKeybindServiceMock, getStateManager } from "../../../__test__/test-factory";
 import type { AppBus } from "../../app-bus/app-bus";
@@ -150,6 +151,7 @@ describe("TerminalSession", () => {
       new TerminalActivityService(),
       notificationChannelsPort,
       getKeybindServiceMock() as never,
+      TauriMockFactory.createPtyTransport() as never,
     );
   });
 
@@ -168,6 +170,7 @@ describe("TerminalSession", () => {
       new TerminalActivityService(),
       notificationChannelsPort,
       getKeybindServiceMock() as never,
+      TauriMockFactory.createPtyTransport() as never,
     );
 
     expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));

@@ -1,14 +1,8 @@
-import { TauriPty } from "@cogno/app-tauri/pty";
+import type { PtyOutputListenerContract, PtyTransportPort } from "@cogno/core-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
 import type { ShellConfig } from "../../../config/+models/config";
 import { Pty } from "./pty";
-
-vi.mock("@cogno/app-tauri/pty", async (_importOriginal) => {
-  const { TauriMockFactory } = await import("../../../../__test__/mocks/tauri-mock.factory");
-  return {
-    TauriPty: TauriMockFactory.createTauriPty(),
-  };
-});
 
 vi.mock("@cogno/app-tauri/logger", () => ({
   Logger: {
@@ -16,33 +10,61 @@ vi.mock("@cogno/app-tauri/logger", () => ({
   },
 }));
 
+vi.mock("../../../common/environment/environment", () => ({
+  Environment: { isDevMode: () => false },
+}));
+
+vi.mock("../../../common/error/error-reporter", () => ({
+  ErrorReporter: { reportException: vi.fn() },
+}));
+
 describe("Pty", () => {
+  let transport: ReturnType<typeof TauriMockFactory.createPtyTransport>;
   let pty: Pty;
   const terminalId = "test-terminal";
   const shellConfig: ShellConfig = { shell_type: "Bash" } as any;
   const dimensions = { cols: 80, rows: 24 };
+  const noopListener = () => {};
 
   beforeEach(() => {
-    pty = new Pty();
-    vi.clearAllMocks();
+    transport = TauriMockFactory.createPtyTransport();
+    pty = new Pty(transport as unknown as PtyTransportPort);
   });
 
-  function spawnedChannel() {
-    return vi.mocked(TauriPty.createDataChannel).mock.results[0].value;
+  /** The n-th spawn handle the transport handed out. */
+  function spawnHandle(index = 0) {
+    return vi.mocked(transport.spawn).mock.results[index].value;
   }
 
-  function bytes(text: string): ArrayBuffer {
-    return new TextEncoder().encode(text).buffer as ArrayBuffer;
+  /** The output listener `Pty` passed to the n-th `transport.spawn`. */
+  function outputListener(index = 0): PtyOutputListenerContract {
+    return vi.mocked(transport.spawn).mock.calls[index][1];
   }
 
-  it("should spawn pty with a data channel created before the invoke", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
-    expect(TauriPty.createDataChannel).toHaveBeenCalledOnce();
-    expect(TauriPty.spawn).toHaveBeenCalledWith(
-      terminalId,
-      shellConfig,
-      dimensions,
-      spawnedChannel(),
+  /** Makes the next `transport.spawn` stay pending until the returned resolver is called. */
+  function holdNextSpawn(): () => void {
+    let resolveSpawn!: () => void;
+    vi.mocked(transport.spawn).mockImplementationOnce(() => ({
+      ready: new Promise<{ shellProcessId: number | null }>((resolve) => {
+        resolveSpawn = () => resolve({ shellProcessId: 1234 });
+      }),
+      closeOutput: vi.fn(),
+    }));
+    return () => resolveSpawn();
+  }
+
+  function chunk(seq: number, text: string) {
+    return { seq, data: new TextEncoder().encode(text) };
+  }
+
+  it("should spawn through the transport with profile, dimensions and dev mode", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    expect(transport.spawn).toHaveBeenCalledWith(
+      { terminalId, cols: 80, rows: 24, profile: shellConfig, devMode: false },
+      expect.objectContaining({
+        onChunk: expect.any(Function),
+        onChunksLost: expect.any(Function),
+      }),
     );
   });
 
@@ -51,129 +73,133 @@ describe("Pty", () => {
   });
 
   it("should resize pty if spawned", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.resize({ cols: 100, rows: 30 });
-    expect(TauriPty.resize).toHaveBeenCalledWith(terminalId, 100, 30);
+    expect(transport.resize).toHaveBeenCalledWith(terminalId, 100, 30);
   });
 
   it("should ignore invalid resize dimensions", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.resize({ cols: null, rows: null } as any);
-    expect(TauriPty.resize).not.toHaveBeenCalled();
+    expect(transport.resize).not.toHaveBeenCalled();
   });
 
   it("should buffer resize until spawn is finished", async () => {
-    let resolveSpawn!: () => void;
-    vi.mocked(TauriPty.spawn).mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveSpawn = resolve;
-        }),
-    );
+    const resolveSpawn = holdNextSpawn();
 
-    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions);
+    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.resize({ cols: 120, rows: 40 });
-    expect(TauriPty.resize).not.toHaveBeenCalled();
+    expect(transport.resize).not.toHaveBeenCalled();
 
     resolveSpawn();
     await spawnPromise;
 
-    expect(TauriPty.resize).toHaveBeenCalledWith(terminalId, 120, 40);
+    expect(transport.resize).toHaveBeenCalledWith(terminalId, 120, 40);
   });
 
   it("should discard invalid buffered resize dimensions", async () => {
-    let resolveSpawn!: () => void;
-    vi.mocked(TauriPty.spawn).mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveSpawn = resolve;
-        }),
-    );
+    const resolveSpawn = holdNextSpawn();
 
-    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions);
+    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.resize({ cols: null, rows: null } as any);
 
     resolveSpawn();
     await spawnPromise;
 
-    expect(TauriPty.resize).not.toHaveBeenCalled();
+    expect(transport.resize).not.toHaveBeenCalled();
   });
 
   it("should write to pty if spawned", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.write("ls\n");
-    expect(TauriPty.write).toHaveBeenCalledWith(terminalId, "ls\n");
+    expect(transport.write).toHaveBeenCalledWith(terminalId, "ls\n");
   });
 
   it("should execute shell action if spawned", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.executeLineEditorAction("clearLine", { start: 0 });
-    expect(TauriPty.executeLineEditorAction).toHaveBeenCalledWith(terminalId, "clearLine", {
+    expect(transport.executeLineEditorAction).toHaveBeenCalledWith(terminalId, "clearLine", {
       start: 0,
     });
   });
 
-  it("should deliver channel messages to the data listener as bytes", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
+  it("should hand output to the data listener from before the spawn settles", async () => {
     const listener = vi.fn();
-    pty.onData(listener);
+    const resolveSpawn = holdNextSpawn();
 
-    spawnedChannel().onmessage(bytes("hello"));
+    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, listener);
+    // Output arriving while the spawn is still pending reaches the listener.
+    outputListener().onChunk(chunk(0, "hello"));
+    expect(listener).toHaveBeenCalledWith(chunk(0, "hello"));
 
-    expect(listener).toHaveBeenCalledOnce();
-    const chunk = listener.mock.calls[0][0] as Uint8Array;
-    expect(chunk).toBeInstanceOf(Uint8Array);
-    expect(new TextDecoder().decode(chunk)).toBe("hello");
+    resolveSpawn();
+    await spawnPromise;
+    outputListener().onChunk(chunk(1, "world"));
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 
-  it("should replay chunks that arrived before the listener, in order", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
-    spawnedChannel().onmessage(bytes("first"));
-    spawnedChannel().onmessage(bytes("second"));
+  it("should report chunks the transport gave up as lost", async () => {
+    const { ErrorReporter } = await import("../../../common/error/error-reporter");
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
 
-    const listener = vi.fn();
-    pty.onData(listener);
-    spawnedChannel().onmessage(bytes("third"));
+    outputListener().onChunksLost(3, 5);
 
-    const received = listener.mock.calls.map(([chunk]) => new TextDecoder().decode(chunk));
-    expect(received).toEqual(["first", "second", "third"]);
+    expect(ErrorReporter.reportException).toHaveBeenCalledWith(
+      expect.objectContaining({
+        handled: true,
+        source: "Pty",
+        context: expect.objectContaining({ fromSeq: 3, toSeq: 5, terminalId }),
+      }),
+    );
   });
 
-  it("should stop delivering data after the listener is disposed", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
-    const listener = vi.fn();
-    const disposable = pty.onData(listener);
-    disposable.dispose();
-
-    spawnedChannel().onmessage(bytes("late"));
-
-    expect(listener).not.toHaveBeenCalled();
+  it("should forward acks by sequence number to the backend", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    pty.ack(42);
+    expect(transport.ack).toHaveBeenCalledWith(terminalId, 42);
   });
 
-  it("should forward acks to the backend", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
-    pty.ack(4096);
-    expect(TauriPty.ack).toHaveBeenCalledWith(terminalId, 4096);
+  it("should not ack after dispose", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    pty.dispose();
+    pty.ack(1);
+    expect(transport.ack).not.toHaveBeenCalled();
   });
 
-  it("should not send empty acks", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
-    pty.ack(0);
-    expect(TauriPty.ack).not.toHaveBeenCalled();
+  it("should kill the session that a spawn in flight produces after dispose", async () => {
+    const resolveSpawn = holdNextSpawn();
+
+    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    pty.dispose();
+    // No session exists yet, so nothing to kill at this point.
+    expect(transport.kill).not.toHaveBeenCalled();
+
+    resolveSpawn();
+    await spawnPromise;
+
+    expect(transport.kill).toHaveBeenCalledWith(terminalId);
+    expect(spawnHandle().closeOutput).toHaveBeenCalled();
+    expect(transport.resize).not.toHaveBeenCalled();
+  });
+
+  it("should close the output on dispose", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    pty.dispose();
+    expect(spawnHandle().closeOutput).toHaveBeenCalled();
   });
 
   it("should listen to exit", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     const listener = vi.fn();
     const disposable = pty.onExit(listener);
 
-    expect(TauriPty.onExit).toHaveBeenCalledWith(terminalId, listener);
+    expect(transport.onExit).toHaveBeenCalledWith(terminalId, listener);
     disposable.dispose();
   });
 
   it("should kill pty on dispose", async () => {
-    await pty.spawn(terminalId, shellConfig, dimensions);
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.dispose();
-    expect(TauriPty.kill).toHaveBeenCalledWith(terminalId);
+    expect(transport.kill).toHaveBeenCalledWith(terminalId);
   });
 });

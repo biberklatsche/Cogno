@@ -21,6 +21,7 @@ import { TerminalSession } from "../app/terminal/+state/terminal.session";
 import type { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";
 import { WindowService } from "../app/window/window.service";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
+import { TauriMockFactory } from "./mocks/tauri-mock.factory";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -95,6 +96,7 @@ export function getTerminalSession(): TerminalSession {
       new TerminalActivityService(),
       { getAvailableChannels: () => [] } as any,
       getKeybindServiceMock() as KeybindService,
+      TauriMockFactory.createPtyTransport() as any,
     );
   }
   return terminalSession;

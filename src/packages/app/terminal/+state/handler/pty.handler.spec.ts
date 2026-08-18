@@ -5,10 +5,18 @@ import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
 import type { ShellProfile } from "../../../config/+models/shell-config";
 import type { IPty } from "../pty/pty";
-import { PTY_ACK_THRESHOLD_BYTES, PtyHandler } from "./pty.handler";
+import { HIDDEN_UNPARSED_BUDGET_BYTES, PtyHandler } from "./pty.handler";
 
-function bytes(text: string): Uint8Array {
-  return new TextEncoder().encode(text);
+function chunk(seq: number, payload: string | number): { seq: number; data: Uint8Array } {
+  const data =
+    typeof payload === "string" ? new TextEncoder().encode(payload) : new Uint8Array(payload);
+  return { seq, data };
+}
+
+/** Lets the coalesced ack microtask run. */
+async function flushMicrotasks() {
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 describe("PtyHandler", () => {
@@ -16,6 +24,7 @@ describe("PtyHandler", () => {
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   let mockPty: IPty;
+  let windowHidden = false;
   const terminalId = "test-terminal-id";
   const shellConfig: ShellProfile = {
     path: "bash",
@@ -27,10 +36,10 @@ describe("PtyHandler", () => {
 
   beforeEach(() => {
     mockBus = new AppBus();
+    windowHidden = false;
     mockPty = {
       spawn: vi.fn().mockResolvedValue(undefined),
       write: vi.fn(),
-      onData: vi.fn().mockReturnValue({ dispose: vi.fn() }),
       onExit: vi.fn().mockReturnValue({ dispose: vi.fn() }),
       resize: vi.fn().mockResolvedValue(undefined),
       ack: vi.fn(),
@@ -43,9 +52,15 @@ describe("PtyHandler", () => {
       shellConfig,
       mockBus,
       new TerminalActivityService(),
+      () => windowHidden,
     );
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
+
+  /** The chunk listener the handler passed to `IPty.spawn`. */
+  function ptyDataCallback() {
+    return vi.mocked(mockPty.spawn).mock.calls[0][3];
+  }
 
   describe("registration", () => {
     it("should spawn PTY and register data handlers", async () => {
@@ -53,11 +68,15 @@ describe("PtyHandler", () => {
 
       // Wait for async spawn
       await vi.waitFor(() => {
-        expect(mockPty.spawn).toHaveBeenCalledWith(terminalId, shellConfig, { cols: 80, rows: 24 });
+        expect(mockPty.spawn).toHaveBeenCalledWith(
+          terminalId,
+          shellConfig,
+          { cols: 80, rows: 24 },
+          expect.any(Function),
+        );
       });
 
       expect(mockTerminal.onData).toHaveBeenCalled();
-      expect(mockPty.onData).toHaveBeenCalled();
       expect(mockPty.onExit).toHaveBeenCalled();
     });
   });
@@ -84,17 +103,17 @@ describe("PtyHandler", () => {
       });
 
       handler.registerTerminal(mockTerminal);
-      await vi.waitFor(() => expect(mockPty.onData).toHaveBeenCalled());
+      await vi.waitFor(() => expect(mockPty.spawn).toHaveBeenCalled());
 
-      const onPtyDataCallback = vi.mocked(mockPty.onData).mock.calls[0][0];
+      const onPtyDataCallback = ptyDataCallback();
 
-      const chunk1 = bytes("pty output 1");
+      const chunk1 = chunk(0, "pty output 1");
       onPtyDataCallback(chunk1);
 
       // onWriteParsed is armed before the first write, and the chunk is written immediately
       expect(mockTerminal.onWriteParsed).toHaveBeenCalledOnce();
       expect(writeSpy).toHaveBeenCalledOnce();
-      expect(writeSpy.mock.calls[0][0]).toBe(chunk1);
+      expect(writeSpy.mock.calls[0][0]).toBe(chunk1.data);
       expect(publishSpy).not.toHaveBeenCalledWith(
         expect.objectContaining({ type: "PtyInitialized" }),
       );
@@ -113,10 +132,10 @@ describe("PtyHandler", () => {
 
       // Second chunk: written as-is, no second PtyInitialized
       publishSpy.mockClear();
-      const chunk2 = bytes("pty output 2");
+      const chunk2 = chunk(1, "pty output 2");
       onPtyDataCallback(chunk2);
       expect(writeSpy).toHaveBeenCalledTimes(2);
-      expect(writeSpy.mock.calls[1][0]).toBe(chunk2);
+      expect(writeSpy.mock.calls[1][0]).toBe(chunk2.data);
       expect(mockTerminal.onWriteParsed).toHaveBeenCalledOnce();
       expect(publishSpy).not.toHaveBeenCalled();
     });
@@ -125,8 +144,8 @@ describe("PtyHandler", () => {
   describe("flow control", () => {
     async function registerAndGetDataCallback() {
       handler.registerTerminal(mockTerminal);
-      await vi.waitFor(() => expect(mockPty.onData).toHaveBeenCalled());
-      return vi.mocked(mockPty.onData).mock.calls[0][0];
+      await vi.waitFor(() => expect(mockPty.spawn).toHaveBeenCalled());
+      return ptyDataCallback();
     }
 
     /** Runs the write callback (xterm "parsed" signal) for the n-th terminal.write call. */
@@ -135,43 +154,82 @@ describe("PtyHandler", () => {
       callback();
     }
 
-    it("should ack once parsed bytes reach the threshold, not before", async () => {
+    it("should ack the newest parsed sequence number, never unparsed chunks", async () => {
       const onPtyData = await registerAndGetDataCallback();
-      const half = new Uint8Array(PTY_ACK_THRESHOLD_BYTES / 2);
-
-      onPtyData(half);
-      onPtyData(half);
-      completeWrite(0);
+      onPtyData(chunk(0, 100));
+      onPtyData(chunk(1, 100));
+      onPtyData(chunk(2, 100));
+      await flushMicrotasks();
       expect(mockPty.ack).not.toHaveBeenCalled();
+
+      completeWrite(0);
+      await flushMicrotasks();
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[0]]);
 
       completeWrite(1);
-      expect(mockPty.ack).toHaveBeenCalledOnce();
-      expect(mockPty.ack).toHaveBeenCalledWith(PTY_ACK_THRESHOLD_BYTES);
+      completeWrite(2);
+      await flushMicrotasks();
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[0], [2]]);
     });
 
-    it("should not ack bytes that were never parsed", async () => {
+    it("should coalesce the acks of chunks parsed in one slice into a single ack", async () => {
       const onPtyData = await registerAndGetDataCallback();
-      onPtyData(new Uint8Array(PTY_ACK_THRESHOLD_BYTES * 4));
-      expect(mockPty.ack).not.toHaveBeenCalled();
-    });
-
-    it("should ack the accumulated total and start counting from zero again", async () => {
-      const onPtyData = await registerAndGetDataCallback();
-      onPtyData(new Uint8Array(PTY_ACK_THRESHOLD_BYTES - 10));
-      onPtyData(new Uint8Array(20));
-      onPtyData(new Uint8Array(PTY_ACK_THRESHOLD_BYTES - 10));
+      onPtyData(chunk(0, 10));
+      onPtyData(chunk(1, 10));
+      onPtyData(chunk(2, 10));
       completeWrite(0);
       completeWrite(1);
       completeWrite(2);
-      // 1st+2nd cross the threshold together; the 3rd alone stays below it
-      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[PTY_ACK_THRESHOLD_BYTES + 10]]);
+      expect(mockPty.ack).not.toHaveBeenCalled(); // not before the microtask
+      await flushMicrotasks();
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[2]]);
+    });
+
+    it("should not repeat an ack when nothing new was parsed", async () => {
+      const onPtyData = await registerAndGetDataCallback();
+      onPtyData(chunk(0, 10));
+      completeWrite(0);
+      await flushMicrotasks();
+      completeWrite(0); // duplicate parse signal
+      await flushMicrotasks();
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[0]]);
     });
 
     it("should stop acking after dispose", async () => {
       const onPtyData = await registerAndGetDataCallback();
-      onPtyData(new Uint8Array(PTY_ACK_THRESHOLD_BYTES));
+      onPtyData(chunk(0, 10));
       handler.dispose();
       completeWrite(0);
+      await flushMicrotasks();
+      expect(mockPty.ack).not.toHaveBeenCalled();
+    });
+
+    it("should ack on receipt while the window is hidden, within the unparsed budget", async () => {
+      const onPtyData = await registerAndGetDataCallback();
+      windowHidden = true;
+
+      onPtyData(chunk(0, HIDDEN_UNPARSED_BUDGET_BYTES / 2));
+      onPtyData(chunk(1, HIDDEN_UNPARSED_BUDGET_BYTES / 2));
+      await flushMicrotasks();
+      // Both fit into the budget: acked although xterm parsed nothing yet.
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[1]]);
+
+      onPtyData(chunk(2, 1));
+      await flushMicrotasks();
+      // Budget exhausted: chunk 2 waits for the parse like in the visible case.
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[1]]);
+
+      completeWrite(0);
+      completeWrite(1);
+      completeWrite(2);
+      await flushMicrotasks();
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[1], [2]]);
+    });
+
+    it("should ack only parsed chunks while the window is visible", async () => {
+      const onPtyData = await registerAndGetDataCallback();
+      onPtyData(chunk(0, 10));
+      await flushMicrotasks();
       expect(mockPty.ack).not.toHaveBeenCalled();
     });
   });
@@ -230,11 +288,9 @@ describe("PtyHandler", () => {
   describe("Lifecycle", () => {
     it("should dispose all registered handlers", async () => {
       const terminalDataDispose = vi.fn();
-      const ptyDataDispose = vi.fn();
       const ptyExitDispose = vi.fn();
 
       vi.mocked(mockTerminal.onData).mockReturnValue({ dispose: terminalDataDispose });
-      vi.mocked(mockPty.onData).mockReturnValue({ dispose: ptyDataDispose });
       vi.mocked(mockPty.onExit).mockReturnValue({ dispose: ptyExitDispose });
 
       handler.registerTerminal(mockTerminal);
@@ -243,7 +299,6 @@ describe("PtyHandler", () => {
       handler.dispose();
 
       expect(terminalDataDispose).toHaveBeenCalled();
-      expect(ptyDataDispose).toHaveBeenCalled();
       expect(ptyExitDispose).toHaveBeenCalled();
     });
   });

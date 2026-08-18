@@ -15,6 +15,7 @@ export default defineConfig({
     ],
     include: [
       "src/packages/app/**/*.spec.ts",
+      "src/packages/app-tauri/**/*.spec.ts",
       "src/packages/core-domain/**/*.spec.ts",
       "src/packages/core-ui/**/*.spec.ts",
       "src/packages/features/**/*.spec.ts",

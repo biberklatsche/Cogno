@@ -185,6 +185,14 @@ module.exports = {
       to: { path: featuresPattern },
     },
     {
+      name: "app-tauri-must-not-import-app",
+      severity: "error",
+      comment:
+        "app-tauri is the Tauri adapter layer below app: it implements core-api ports and must not reach up into app.",
+      from: { path: appTauriPattern },
+      to: { path: appPackagePattern, pathNot: "^src/packages/app/_tauri/" },
+    },
+    {
       name: "app-tauri-must-not-import-products",
       severity: "error",
       comment: "app-tauri must not depend on products.",

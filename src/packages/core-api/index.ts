@@ -27,6 +27,7 @@ export * from "./notification-channels.contract";
 export * from "./opener.contract";
 export * from "./os-platform.contract";
 export * from "./path-adapter.contract";
+export * from "./pty-transport.contract";
 export * from "./shell-context.contract";
 export * from "./shell-definition.contract";
 export * from "./shell-path-adapter-definition.contract";

@@ -1,25 +1,27 @@
-import { PtyDataChannel, TauriPty, TauriUnlistenFn } from "@cogno/app-tauri/pty";
+import { PtyChunkContract, PtySpawnHandleContract, PtyTransportPort } from "@cogno/core-api";
 import { IDisposable } from "@cogno/core-support";
+import { Environment } from "../../../common/environment/environment";
 import { ErrorReporter } from "../../../common/error/error-reporter";
 import { ShellProfile } from "../../../config/+models/shell-config";
 import { TerminalDimensions } from "../handler/resize.handler";
 
-export type PtyDataListener = (data: Uint8Array) => void;
+export type PtyChunk = PtyChunkContract;
+export type PtyChunkListener = (chunk: PtyChunk) => void;
 
 export interface IPty extends IDisposable {
+  /**
+   * Spawns the shell. `onData` receives raw output chunks in order, from the
+   * first byte on (the listener is wired before the shell starts).
+   */
   spawn(
     terminalId: string,
     shellProfile: ShellProfile,
     dimensions: TerminalDimensions,
+    onData: PtyChunkListener,
   ): Promise<void>;
   resize(dimensions: TerminalDimensions): void;
-  /**
-   * Raw output chunks in arrival order. Chunks that arrive before a listener
-   * is attached are buffered and replayed to the first listener.
-   */
-  onData(listener: PtyDataListener): IDisposable;
-  /** Flow control: report `bytes` of output as parsed by the terminal. */
-  ack(bytes: number): void;
+  /** Flow control: the terminal has parsed every chunk up to and including `seq`. */
+  ack(seq: number): void;
   write(data: string): void;
   executeLineEditorAction(action: string, payload?: object): void;
   onExit(listener: (e: { exitCode: number; signal?: number }) => void): IDisposable;
@@ -29,57 +31,92 @@ export interface IPty extends IDisposable {
 export class Pty implements IPty {
   private _terminalId: string | undefined = undefined;
   private _spawned = false;
+  private _disposed = false;
   private _pendingResize?: TerminalDimensions;
-  private _dataChannel: PtyDataChannel | undefined = undefined;
-  private _dataListener: PtyDataListener | undefined = undefined;
-  private _bufferedData: Uint8Array[] = [];
-  private _exitUnlisten: TauriUnlistenFn | undefined = undefined;
+  private _spawn: PtySpawnHandleContract | undefined = undefined;
+  private _exitUnlisten: (() => void) | undefined = undefined;
+
+  constructor(private readonly _transport: PtyTransportPort) {}
 
   async spawn(
     terminalId: string,
     shellProfile: ShellProfile,
     dimensions: TerminalDimensions,
+    onData: PtyChunkListener,
   ): Promise<void> {
+    this._spawn?.closeOutput();
     this._terminalId = terminalId;
     this._spawned = false;
     this._pendingResize = undefined;
-    // The channel exists before the reader thread starts, so no output can be
-    // lost between spawn and listener registration.
-    const channel = TauriPty.createDataChannel();
-    channel.onmessage = (chunk) => this.handleData(new Uint8Array(chunk));
-    this._dataChannel = channel;
-    await TauriPty.spawn(this._terminalId, shellProfile, dimensions, channel);
+    const spawn = this._transport.spawn(
+      {
+        terminalId,
+        cols: dimensions.cols,
+        rows: dimensions.rows,
+        profile: shellProfile,
+        devMode: Environment.isDevMode(),
+      },
+      {
+        onChunk: onData,
+        onChunksLost: (fromSeq, toSeq) => this.reportLostChunks(terminalId, fromSeq, toSeq),
+      },
+    );
+    this._spawn = spawn;
+    await spawn.ready;
+    if (this._disposed || this._spawn !== spawn) {
+      // Disposed (or respawned) while the backend was still spawning. A
+      // session nobody listens to must be killed now, or its reader parks
+      // forever waiting for acks that never come. (A respawn under the same
+      // id replaced it backend-side already.)
+      spawn.closeOutput();
+      if (this._disposed || this._terminalId !== terminalId) {
+        this.killSession(terminalId);
+      }
+      return;
+    }
     this._spawned = true;
     this.flushPendingResize();
   }
 
-  ack(bytes: number): void {
-    if (!this._terminalId || bytes <= 0) return;
-    TauriPty.ack(this._terminalId, bytes).catch((error) =>
+  ack(seq: number): void {
+    if (!this._terminalId || this._disposed) return;
+    this._transport.ack(this._terminalId, seq).catch((error) =>
       ErrorReporter.reportException({
         error,
         handled: true,
         source: "Pty",
         context: {
           operation: "ack",
-          bytes,
+          seq,
           terminalId: this._terminalId,
         },
       }),
     );
   }
 
-  private handleData(chunk: Uint8Array): void {
-    if (this._dataListener) {
-      this._dataListener(chunk);
-    } else {
-      this._bufferedData.push(chunk);
-    }
+  private reportLostChunks(terminalId: string, fromSeq: number, toSeq: number): void {
+    ErrorReporter.reportException({
+      error: new Error(
+        `PTY output chunks ${fromSeq}..${toSeq - 1} were lost in transit and skipped`,
+      ),
+      handled: true,
+      source: "Pty",
+      context: {
+        operation: "onData",
+        fromSeq,
+        toSeq,
+        terminalId,
+      },
+    });
   }
 
   kill(signal?: string): void {
     if (!this._terminalId) return;
-    TauriPty.kill(this._terminalId).catch((error) =>
+    this.killSession(this._terminalId, signal);
+  }
+
+  private killSession(terminalId: string, signal?: string): void {
+    this._transport.kill(terminalId).catch((error) =>
       ErrorReporter.reportException({
         error,
         handled: true,
@@ -87,7 +124,7 @@ export class Pty implements IPty {
         context: {
           operation: "kill",
           signal,
-          terminalId: this._terminalId,
+          terminalId,
         },
       }),
     );
@@ -100,7 +137,7 @@ export class Pty implements IPty {
       this._pendingResize = dimensions;
       return;
     }
-    TauriPty.resize(this._terminalId, dimensions.cols, dimensions.rows).catch((error) =>
+    this._transport.resize(this._terminalId, dimensions.cols, dimensions.rows).catch((error) =>
       ErrorReporter.reportException({
         error,
         handled: true,
@@ -115,26 +152,9 @@ export class Pty implements IPty {
     );
   }
 
-  onData(listener: PtyDataListener): IDisposable {
-    if (!this._terminalId) throw Error("Please spawn Pty before listen on data.");
-    this._dataListener = listener;
-    const buffered = this._bufferedData;
-    this._bufferedData = [];
-    for (const chunk of buffered) {
-      listener(chunk);
-    }
-    return {
-      dispose: () => {
-        if (this._dataListener === listener) {
-          this._dataListener = undefined;
-        }
-      },
-    };
-  }
-
   write(data: string) {
     if (!this._terminalId) throw Error("Please spawn Pty before write to it.");
-    TauriPty.write(this._terminalId, data).catch((error) =>
+    this._transport.write(this._terminalId, data).catch((error) =>
       ErrorReporter.reportException({
         error,
         handled: true,
@@ -149,7 +169,7 @@ export class Pty implements IPty {
 
   executeLineEditorAction(action: string, payload?: object) {
     if (!this._terminalId) throw Error("Please spawn Pty before executing line editor actions.");
-    TauriPty.executeLineEditorAction(this._terminalId, action, payload).catch((error) =>
+    this._transport.executeLineEditorAction(this._terminalId, action, payload).catch((error) =>
       ErrorReporter.reportException({
         error,
         handled: true,
@@ -166,7 +186,7 @@ export class Pty implements IPty {
   onExit(listener: (e: { exitCode: number; signal?: number }) => void): IDisposable {
     if (!this._terminalId) throw Error("Please spawn Pty before listen on exit.");
     const terminalId = this._terminalId;
-    TauriPty.onExit(terminalId, listener).then((unlisten) => {
+    this._transport.onExit(terminalId, listener).then((unlisten) => {
       this._exitUnlisten = unlisten;
     });
     return {
@@ -178,15 +198,14 @@ export class Pty implements IPty {
   }
 
   dispose(): void {
+    this._disposed = true;
+    // While a spawn is still in flight there is no session to kill yet; the
+    // spawn continuation kills it as soon as it exists.
+    if (this._spawned) this.kill();
     this._spawned = false;
     this._pendingResize = undefined;
-    this.kill();
-    if (this._dataChannel) {
-      this._dataChannel.onmessage = () => {};
-      this._dataChannel = undefined;
-    }
-    this._dataListener = undefined;
-    this._bufferedData = [];
+    this._spawn?.closeOutput();
+    this._spawn = undefined;
     this._exitUnlisten?.();
     this._exitUnlisten = undefined;
     this._terminalId = undefined;
@@ -197,19 +216,21 @@ export class Pty implements IPty {
     const pendingResize = this._pendingResize;
     this._pendingResize = undefined;
     if (!this.isValidDimensions(pendingResize)) return;
-    TauriPty.resize(this._terminalId, pendingResize.cols, pendingResize.rows).catch((error) =>
-      ErrorReporter.reportException({
-        error,
-        handled: true,
-        source: "Pty",
-        context: {
-          columns: pendingResize.cols,
-          operation: "flushPendingResize",
-          rows: pendingResize.rows,
-          terminalId: this._terminalId,
-        },
-      }),
-    );
+    this._transport
+      .resize(this._terminalId, pendingResize.cols, pendingResize.rows)
+      .catch((error) =>
+        ErrorReporter.reportException({
+          error,
+          handled: true,
+          source: "Pty",
+          context: {
+            columns: pendingResize.cols,
+            operation: "flushPendingResize",
+            rows: pendingResize.rows,
+            terminalId: this._terminalId,
+          },
+        }),
+      );
   }
 
   private isValidDimensions(

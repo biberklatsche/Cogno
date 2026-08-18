@@ -50,6 +50,7 @@ import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state
 import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
 import { Logger } from "@cogno/app-tauri/logger";
+import { TauriPtyTransport } from "@cogno/app-tauri/pty";
 import {
   ActionCatalog,
   ActionDispatcher,
@@ -66,6 +67,7 @@ import {
   NotificationChannelsPort,
   Opener,
   OsPlatformPort,
+  PtyTransportPort,
   SimpleFileAccess,
   TerminalAnimationPort,
   TerminalGateway,
@@ -130,6 +132,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
     { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
+    { provide: PtyTransportPort, useFactory: () => new TauriPtyTransport() },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
       void Logger.initialize();
