@@ -62,7 +62,15 @@ export class Pty implements IPty {
       },
     );
     this._spawn = spawn;
-    await spawn.ready;
+    try {
+      await spawn.ready;
+    } catch (error) {
+      // A rejected spawn must not leave the channel's transformCallback
+      // registration behind: closeOutput() releases it (see
+      // PtyDataChannel.close), same as the success-path cleanup below does.
+      spawn.closeOutput();
+      throw error;
+    }
     if (this._disposed || this._spawn !== spawn) {
       // Disposed (or respawned) while the backend was still spawning. A
       // session nobody listens to must be killed now, or its reader parks

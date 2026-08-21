@@ -56,6 +56,21 @@ const CHUNK_HEADER_LEN = 4;
 
 type ChannelMessage = { message: ArrayBuffer; index: number } | { end: true; index: number };
 
+/**
+ * Forward distance from `nextSeq` to `seq` in u32 sequence-number space,
+ * wrapping at 2^32 the same way the Rust reader's `seq.wrapping_add(1)`
+ * does. A distance at or past half the range means `seq` is actually behind
+ * `nextSeq` (already consumed or skipped), not merely far in the future -
+ * the standard trick for comparing wrapping counters (e.g. RFC 1982).
+ * Plain numeric comparison breaks the instant `nextSeq` wraps past
+ * `0xffffffff` while a fresh chunk's `seq` starts back at 0.
+ */
+function seqDistance(seq: number, nextSeq: number): number {
+  return (seq - nextSeq) >>> 0;
+}
+
+const U32_HALF_RANGE = 0x8000_0000;
+
 type TauriInternals = { unregisterCallback(id: number): void } | undefined;
 
 /**
@@ -75,6 +90,13 @@ export class PtyDataChannel {
   onmessage: (chunk: PtyChunkContract) => void = () => {};
   /** Chunks `fromSeq` up to (excluding) `toSeq` were given up as lost. */
   onGap: (fromSeq: number, toSeq: number) => void = () => {};
+  /**
+   * A chunk arrived over the transport, fired immediately per raw message
+   * (before reordering/`onmessage`), regardless of delivery order. Paces the
+   * backend's send concurrency; distinct from `onmessage`, which only fires
+   * once a chunk's turn in sequence order comes up.
+   */
+  onReceived: (seq: number) => void = () => {};
 
   constructor() {
     this.id = transformCallback((message: ChannelMessage) => this.receive(message));
@@ -101,7 +123,11 @@ export class PtyDataChannel {
     const buffer = message.message;
     if (buffer.byteLength < CHUNK_HEADER_LEN) return;
     const seq = new DataView(buffer).getUint32(0, true);
-    if (seq < this._nextSeq) return; // late arrival of a chunk already given up
+    this.onReceived(seq);
+    // Late arrival of a chunk already given up. Wraparound-aware: near
+    // 0xffffffff -> 0, `seq` can be numerically *smaller* than `_nextSeq`
+    // while still being the next one due, so this can't be a plain `<`.
+    if (seqDistance(seq, this._nextSeq) >= U32_HALF_RANGE) return;
     this._pending.set(seq, new Uint8Array(buffer, CHUNK_HEADER_LEN));
     this.drain();
   }
@@ -111,7 +137,8 @@ export class PtyDataChannel {
       const data = this._pending.get(this._nextSeq);
       if (!data) break;
       this._pending.delete(this._nextSeq);
-      const seq = this._nextSeq++;
+      const seq = this._nextSeq;
+      this._nextSeq = (this._nextSeq + 1) >>> 0; // wraps, matching the backend
       this.onmessage({ seq, data });
     }
     if (this._pending.size === 0) {
@@ -126,7 +153,18 @@ export class PtyDataChannel {
 
   private skipGap(): void {
     if (this._closed || this._pending.size === 0) return;
-    const oldestPending = Math.min(...this._pending.keys());
+    // The pending entry closest ahead of `_nextSeq` in wraparound order, not
+    // necessarily the numerically smallest key once seq numbers have wrapped.
+    let oldestPending: number | undefined;
+    let oldestDistance = Infinity;
+    for (const seq of this._pending.keys()) {
+      const distance = seqDistance(seq, this._nextSeq);
+      if (distance < oldestDistance) {
+        oldestDistance = distance;
+        oldestPending = seq;
+      }
+    }
+    if (oldestPending === undefined) return; // unreachable: the size check above guarantees a key
     const fromSeq = this._nextSeq;
     this._nextSeq = oldestPending;
     this.onGap(fromSeq, oldestPending);
@@ -162,6 +200,28 @@ export class TauriPtyTransport extends PtyTransportPort {
     const channel = new PtyDataChannel();
     channel.onmessage = (chunk) => output.onChunk(chunk);
     channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
+    // Transport-internal pacing signal (not part of PtyTransportPort): lets
+    // the backend send the next burst as soon as a chunk has arrived,
+    // without waiting for xterm to parse it. Coalesced per microtask, the
+    // same way the (much slower) parse-based ack already is — firing one
+    // invoke per chunk would flood the IPC command channel under exactly the
+    // kind of burst this is meant to protect against, defeating the pacing
+    // during the heavy output it matters most for. Best-effort: a batch lost
+    // in transit just falls back to the backend's slower parse-based release
+    // of the same slots, so no error handling is needed here.
+    let pendingReceivedSeqs: number[] = [];
+    let receivedAckScheduled = false;
+    channel.onReceived = (seq) => {
+      pendingReceivedSeqs.push(seq);
+      if (receivedAckScheduled) return;
+      receivedAckScheduled = true;
+      queueMicrotask(() => {
+        receivedAckScheduled = false;
+        const seqs = pendingReceivedSeqs;
+        pendingReceivedSeqs = [];
+        void invoke("pty_ack_received", { terminalId: options.terminalId, seqs }).catch(() => {});
+      });
+    };
     const ready = invoke<PtySpawnResultContract>("pty_spawn", {
       options: {
         name: options.terminalId,

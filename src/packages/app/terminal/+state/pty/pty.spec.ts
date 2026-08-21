@@ -123,6 +123,20 @@ describe("Pty", () => {
     });
   });
 
+  it("should close the output if the spawn rejects, instead of leaking the channel registration", async () => {
+    const closeOutput = vi.fn();
+    const error = new Error("spawn failed");
+    vi.mocked(transport.spawn).mockReturnValueOnce({
+      ready: Promise.reject(error),
+      closeOutput,
+    });
+
+    await expect(pty.spawn(terminalId, shellConfig, dimensions, noopListener)).rejects.toThrow(
+      "spawn failed",
+    );
+    expect(closeOutput).toHaveBeenCalled();
+  });
+
   it("should hand output to the data listener from before the spawn settles", async () => {
     const listener = vi.fn();
     const resolveSpawn = holdNextSpawn();

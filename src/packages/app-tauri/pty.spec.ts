@@ -36,6 +36,7 @@ describe("PtyDataChannel", () => {
   let channel: PtyDataChannel;
   let received: PtyChunkContract[];
   let gaps: [number, number][];
+  let receivedSeqs: number[];
 
   function deliver(message: RawMessage) {
     registry.callbacks.get(channel.id)!(message);
@@ -51,9 +52,11 @@ describe("PtyDataChannel", () => {
     unregisterCallback.mockClear();
     received = [];
     gaps = [];
+    receivedSeqs = [];
     channel = new PtyDataChannel();
     channel.onmessage = (chunk) => received.push(chunk);
     channel.onGap = (from, to) => gaps.push([from, to]);
+    channel.onReceived = (seq) => receivedSeqs.push(seq);
   });
 
   afterEach(() => {
@@ -82,6 +85,16 @@ describe("PtyDataChannel", () => {
     expect(gaps).toEqual([]);
   });
 
+  it("should fire onReceived immediately per raw message, in arrival order, ahead of onmessage", () => {
+    deliver({ message: frame(1, "b"), index: 1 }); // arrives before its turn
+    expect(receivedSeqs).toEqual([1]);
+    expect(texts()).toEqual([]); // onmessage still held back
+
+    deliver({ message: frame(0, "a"), index: 0 });
+    expect(receivedSeqs).toEqual([1, 0]); // arrival order, not sequence order
+    expect(texts()).toEqual(["a", "b"]);
+  });
+
   it("should give up a chunk that stays missing and continue after the gap", () => {
     deliver({ message: frame(0, "a"), index: 0 });
     deliver({ message: frame(2, "c"), index: 2 });
@@ -97,6 +110,36 @@ describe("PtyDataChannel", () => {
     deliver({ message: frame(1, "b"), index: 1 });
     deliver({ message: frame(4, "e"), index: 4 });
     expect(texts()).toEqual(["a", "c", "d", "e"]);
+  });
+
+  it("should carry the sequence counter through a u32 wraparound without dropping chunks", () => {
+    // Fast-forward to just before the wraparound point instead of actually
+    // delivering 4 billion chunks.
+    (channel as any)._nextSeq = 0xfffffffe;
+
+    deliver({ message: frame(0xfffffffe, "a"), index: 0 });
+    deliver({ message: frame(0xffffffff, "b"), index: 1 });
+    deliver({ message: frame(0, "c"), index: 2 }); // wrapped back to 0
+    deliver({ message: frame(1, "d"), index: 3 });
+
+    // With plain numeric comparison, seq 0 looks "before" _nextSeq (which
+    // was near 0xffffffff) and gets silently dropped as a late arrival,
+    // freezing the stream forever from this point on.
+    expect(texts()).toEqual(["a", "b", "c", "d"]);
+    expect(received.map((chunk) => chunk.seq)).toEqual([0xfffffffe, 0xffffffff, 0, 1]);
+  });
+
+  it("should pick the wraparound-correct oldest pending chunk on a gap, not just the numerically smallest", () => {
+    (channel as any)._nextSeq = 0xfffffffe;
+    deliver({ message: frame(0xffffffff, "b"), index: 0 }); // 1 step away
+    deliver({ message: frame(5, "z"), index: 1 }); // wrapped, much further away
+    // seq 0xfffffffe itself never arrives: Math.min would wrongly pick the
+    // numerically smaller 5 (circular distance 7) over the actually nearest
+    // pending chunk, 0xffffffff (circular distance 1).
+    vi.advanceTimersByTime(PTY_CHUNK_GAP_TIMEOUT_MS);
+
+    expect(gaps).toEqual([[0xfffffffe, 0xffffffff]]);
+    expect(texts()).toEqual(["b"]);
   });
 
   it("should not start the gap timer while nothing is pending", () => {
@@ -181,6 +224,27 @@ describe("TauriPtyTransport", () => {
     expect(output.onChunk).toHaveBeenCalledWith(expect.objectContaining({ seq: 0 }));
 
     await expect(handle.ready).resolves.toEqual({ shellProcessId: 4711 });
+  });
+
+  it("should batch received-acks per microtask instead of one invoke per chunk", async () => {
+    spawn();
+    const channel: PtyDataChannel = (vi.mocked(invoke).mock.calls[0] as any)[1].onData;
+    registry.callbacks.get(channel.id)!({ message: frame(3, "x"), index: 0 });
+    registry.callbacks.get(channel.id)!({ message: frame(4, "y"), index: 1 });
+
+    // Still within the same synchronous burst: not sent yet, and definitely
+    // not one invoke per chunk - that's the flood this batching avoids.
+    expect(vi.mocked(invoke)).not.toHaveBeenCalledWith("pty_ack_received", expect.anything());
+
+    await Promise.resolve(); // flush the microtask
+
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith("pty_ack_received", {
+      terminalId: "t1",
+      seqs: [3, 4],
+    });
+    expect(
+      vi.mocked(invoke).mock.calls.filter((call) => call[0] === "pty_ack_received"),
+    ).toHaveLength(1);
   });
 
   it("should close the channel through the spawn handle", () => {
