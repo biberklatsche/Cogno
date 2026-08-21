@@ -67,6 +67,29 @@
     }
   }
 
+  // Colored tabs: the color itself comes from --tab-color (set inline);
+  // the state (inactive / active / hover) is expressed purely through
+  // how much of the color shows, mirroring the neutral tab styling above.
+  &[style*="--tab-color"] {
+    border-color: color-mix(in srgb, var(--tab-color) calc(var(--menu-opacity-ct2) * 0.6), transparent);
+    background: color-mix(in srgb, var(--tab-color) calc(var(--menu-opacity-ct2) * 0.45), transparent);
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--tab-color) var(--menu-opacity-ct), transparent);
+      background: color-mix(in srgb, var(--tab-color) calc(var(--menu-opacity-ct) * 0.7), transparent);
+    }
+
+    &.is-active {
+      border-color: var(--tab-color);
+      background: color-mix(in srgb, var(--tab-color) var(--menu-opacity-ct), transparent);
+
+      &:hover {
+        border-color: var(--tab-color);
+        background: color-mix(in srgb, var(--tab-color) calc(var(--menu-opacity-ct) * 1.15), transparent);
+      }
+    }
+  }
+
   &.is-dragging {
     border-style: dashed;
   }

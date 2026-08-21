@@ -81,19 +81,19 @@ describe("TabListComponent", () => {
     clear();
   });
 
-  describe("tabBackgroundColor", () => {
-    it("resolves the color-mix expression from the tab's color name", () => {
+  describe("tabColor", () => {
+    it("resolves the css variable from the tab's color name", () => {
       const component = createComponent();
 
-      expect(component.tabBackgroundColor(tab({ color: "red" }))).toBe(
-        "color-mix(in srgb, var(--color-red) var(--menu-opacity-ct2), transparent)",
+      expect(component.tabColor(tab({ color: "red" }))).toBe(
+        "var(--color-red)",
       );
     });
 
     it("returns undefined for tabs without a color", () => {
       const component = createComponent();
 
-      expect(component.tabBackgroundColor(tab({ color: undefined }))).toBeUndefined();
+      expect(component.tabColor(tab({ color: undefined }))).toBeUndefined();
     });
   });
 

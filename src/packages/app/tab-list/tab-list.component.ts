@@ -124,10 +124,8 @@ export class TabListComponent implements OnDestroy {
     this.tabListService.removeTab(tabId);
   }
 
-  tabBackgroundColor(tab: Tab): string | undefined {
-    return tab.color
-      ? `color-mix(in srgb, var(--color-${tab.color}) var(--menu-opacity-ct2), transparent)`
-      : undefined;
+  tabColor(tab: Tab): string | undefined {
+    return tab.color ? `var(--color-${tab.color})` : undefined;
   }
 
   /**
