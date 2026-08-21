@@ -7,6 +7,7 @@
                 [class.is-active] = tab.isActive
                 [class.is-busy]="tabAnimationCount > 0"
                 [class.is-dragging]="isDraggingTab && draggedTabIdentifier === tab.id"
+                [class.has-color]="!!tab.color"
                 [style.--tab-color]="tabColor(tab)"
                 [appTooltip]="displayTitle(tab)"
                 [appTooltipSecondary]="getTabShortcutActionName($index) | actionkeybinding"

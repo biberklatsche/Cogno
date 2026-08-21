@@ -58,6 +58,19 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
                 max-width: 360px;
                 box-sizing: border-box;
                 user-select: none;
+                transform-origin: top center;
+                animation: ctx-menu-in 100ms ease-out;
+            }
+
+            @keyframes ctx-menu-in {
+                from {
+                    opacity: 0;
+                    transform: translateY(-4px) scale(0.98);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
             }
 
             .item {

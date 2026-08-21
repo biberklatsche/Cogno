@@ -132,8 +132,25 @@ export function isSelectedSideMenuItem(
             max-height: 100%;
             min-width: 0;
 
+            /* Slide in from the right on open, slide out on close.
+               \`display\` is transitioned discretely so the element stays
+               rendered until the leave transition has finished. */
+            translate: 0 0;
+            opacity: 1;
+            transition:
+                translate 120ms ease-out,
+                opacity 120ms ease-out,
+                display 120ms allow-discrete;
+
+            @starting-style {
+                translate: 24px 0;
+                opacity: 0;
+            }
+
             &.hidden {
                 display: none;
+                translate: 24px 0;
+                opacity: 0;
             }
 
             &.overlay {

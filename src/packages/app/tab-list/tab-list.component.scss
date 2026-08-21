@@ -70,7 +70,7 @@
   // Colored tabs: the color itself comes from --tab-color (set inline);
   // the state (inactive / active / hover) is expressed purely through
   // how much of the color shows, mirroring the neutral tab styling above.
-  &[style*="--tab-color"] {
+  &.has-color {
     border-color: color-mix(in srgb, var(--tab-color) calc(var(--menu-opacity-ct2) * 0.6), transparent);
     background: color-mix(in srgb, var(--tab-color) calc(var(--menu-opacity-ct2) * 0.45), transparent);
 
