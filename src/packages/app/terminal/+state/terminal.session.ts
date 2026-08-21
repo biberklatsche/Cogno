@@ -49,6 +49,7 @@ import { PromptMarkerRegistry } from "./advanced/ui/prompt-marker.registry";
 import { ClipboardHandler } from "./handler/clipboard.handler";
 import {
   CompletedCommandNotificationHandler,
+  DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
 import { CursorHandler } from "./handler/cursor.handler";
@@ -587,6 +588,7 @@ export class TerminalSession {
 
     return buildNotificationPreferencesMenuItems({
       notificationDefinitions: this.getNotificationDefinitions(),
+      notificationsLabel: "Notify me when…",
       channels: availableNotificationChannels,
       state: notificationPreferencesState,
       hideWhenNoChannels: true,
@@ -635,15 +637,18 @@ export class TerminalSession {
 
   private getNotificationDefinitions(): NotificationDefinitionContract[] {
     const notificationsConfig = this.configService.config.terminal?.notifications;
+    const minimumDurationSeconds =
+      notificationsConfig?.long_running_command?.minimum_duration_seconds ??
+      DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS;
     return [
       {
         id: OSC9_NOTIFICATION_ID,
-        label: "Terminal Notifications (OSC9)",
+        label: "App notifications (OSC 9)",
         defaultEnabled: notificationsConfig?.osc9?.enabled ?? true,
       },
       {
         id: LONG_RUNNING_COMMAND_NOTIFICATION_ID,
-        label: "Long Running Commands",
+        label: `Command finished (ran ≥ ${minimumDurationSeconds} s)`,
         defaultEnabled: notificationsConfig?.long_running_command?.enabled ?? true,
       },
     ];

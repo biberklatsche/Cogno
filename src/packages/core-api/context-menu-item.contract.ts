@@ -13,6 +13,13 @@ export interface ContextMenuItem {
   // Precomputed display string for a keybinding (e.g. "⌘ K")
   keybinding?: string;
 
+  // CSS color applied to the label (e.g. "var(--color-red)")
+  color?: string;
+
+  // Check column on the right. Any defined value (true or false) reserves the
+  // column so that labels do not shift between checked and unchecked items.
+  checked?: boolean;
+
   // Generic projection slot for app-specific embedded content (e.g. a color picker)
   custom?: boolean;
   customData?: unknown;

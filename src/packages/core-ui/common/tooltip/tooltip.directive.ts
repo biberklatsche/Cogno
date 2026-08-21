@@ -87,8 +87,11 @@ export class TooltipDirective implements OnChanges, OnDestroy {
     this.tooltipElement.style.gap = "1rem";
     this.tooltipElement.style.position = "fixed";
     this.tooltipElement.style.padding = "3px 10px";
+    // Same surface as the active tab, but fully opaque for readability.
     this.tooltipElement.style.background =
-      "color-mix(in srgb, var(--background-color) var(--menu-opacity-ct), transparent)";
+      "color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color))";
+    this.tooltipElement.style.border =
+      "1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color))";
     this.tooltipElement.style.color = "var(--foreground-color)";
     this.tooltipElement.style.borderRadius = "4px";
     this.tooltipElement.style.fontSize = "1rem";

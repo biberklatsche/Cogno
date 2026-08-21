@@ -266,8 +266,8 @@ describe("TerminalSession", () => {
     session.initialize(terminalId, shellProfile);
 
     const items = session.buildHeaderMenu();
-    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Notifications" }));
-    const longRunningCommandToggle = items.find((i) => i.label === "Long Running Commands");
+    expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Notify me when…" }));
+    const longRunningCommandToggle = items.find((i) => i.label === "Command finished (ran ≥ 10 s)");
     expect(items).toContainEqual(expect.objectContaining({ header: true, label: "Channels" }));
     const appToggle = items.find((i) => i.label === "App");
     expect(longRunningCommandToggle).toBeDefined();
@@ -359,7 +359,7 @@ describe("TerminalSession", () => {
 
     const toggleItem = session
       .buildHeaderMenu()
-      .find((item) => item.label === "Long Running Commands");
+      .find((item) => item.label === "Command finished (ran ≥ 10 s)");
     expect(toggleItem?.toggled).toBe(true);
 
     toggleItem?.action?.(toggleItem);
@@ -397,7 +397,7 @@ describe("TerminalSession", () => {
         path: ["notification"],
         type: "Notification",
         payload: expect.objectContaining({
-          header: "Long-running command finished",
+          header: "Command finished after 12s",
           terminalId,
           channels: { app: true, os: false },
         }),

@@ -57,6 +57,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                     class="button icon-button workspace-close-button"
                     [class.visible]="workspaceEntry.isOpen || workspaceEntry.isActive"
                     type="button"
+                    [appTooltip]="'Close workspace'"
                     (click)="closeWorkspace(workspaceEntry.id, $event)"
                   >
                     <app-icon name="mdiClose"></app-icon>
@@ -86,7 +87,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
           </li>
         }
         <li class="center">
-          <button class="button icon-button workspace-add-button" type="button" (click)="openCreateWorkspaceDialog()">
+          <button class="button icon-button workspace-add-button" type="button" [appTooltip]="'New workspace'" (click)="openCreateWorkspaceDialog()">
             <app-icon name="mdiPlus"></app-icon>
           </button>
         </li>

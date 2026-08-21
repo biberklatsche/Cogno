@@ -416,6 +416,7 @@ export class CodingAgentsSideComponent {
     event.stopPropagation();
     const items = buildNotificationPreferencesMenuItems({
       notificationDefinitions: this.notificationDefinitions,
+      notificationsLabel: "Notify me when…",
       channels: this.channelOptions,
       state: this.notificationPreferencesState(),
       onToggleNotification: (id) => this.toggleNotification(id),

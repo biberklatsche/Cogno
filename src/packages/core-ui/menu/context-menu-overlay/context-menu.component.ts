@@ -1,11 +1,13 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { Component, Input, TemplateRef } from "@angular/core";
 import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
+import { ToggleSwitchComponent } from "../../common/toggle-switch/toggle-switch.component";
+import { IconComponent } from "../../icons/icon/icon.component";
 
 @Component({
   selector: "app-context-menu",
   standalone: true,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, IconComponent, ToggleSwitchComponent],
   template: `
         <div class="ctx-menu base-overlay" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
             @for (item of items; track item; let i = $index) {
@@ -30,7 +32,7 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
                         <span class="label">{{ item.label }}</span>
                         <span class="toggle-meta">
                             <span class="toggle-state">{{ item.toggled ? 'On' : 'Off' }}</span>
-                            <span class="toggle-switch" [class.on]="item.toggled"></span>
+                            <app-toggle-switch [checked]="item.toggled ?? false"></app-toggle-switch>
                         </span>
                     </button>
                 } @else {
@@ -39,9 +41,19 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
                             type="button"
                             [disabled]="item.disabled"
                             (click)="onItemClick(item)"
-                            role="menuitem">
-                        <span class="label">{{ item.label }}</span>
-                        <span class="keybinding">{{ item.keybinding }}</span>
+                            role="menuitem"
+                            [attr.aria-checked]="item.checked">
+                        <span class="label" [style.color]="item.color">{{ item.label }}</span>
+                        @if (item.keybinding) {
+                            <span class="keybinding">{{ item.keybinding }}</span>
+                        }
+                        @if (item.checked !== undefined) {
+                            <span class="check" aria-hidden="true">
+                                @if (item.checked) {
+                                    <app-icon name="mdiCheck"></app-icon>
+                                }
+                            </span>
+                        }
                     </button>
                 }
             }
@@ -94,53 +106,30 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
                     flex: 0 0 auto;
                     opacity: 0.5;
                 }
+
+                .check {
+                    flex: 0 0 auto;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 1rem;
+                    height: 1rem;
+                    opacity: 0.8;
+                }
             }
 
-            .toggle-item {
-                .toggle-meta {
-                    display: inline-flex;
-                    flex: 0 0 auto;
-                    align-items: center;
-                    gap: 8px;
-                }
+            .toggle-item .toggle-meta {
+                display: inline-flex;
+                flex: 0 0 auto;
+                align-items: center;
+                gap: 8px;
+            }
 
-                .toggle-state {
-                    opacity: 0.55;
-                    font-size: .8rem;
-                    min-width: 1.5rem;
-                    text-align: right;
-                }
-
-                .toggle-switch {
-                    width: 1.8rem;
-                    height: 1rem;
-                    border-radius: 999px;
-                    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-                    border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
-                    position: relative;
-                    transition: background-color .12s ease;
-
-                    &::after {
-                        content: "";
-                        position: absolute;
-                        left: 2px;
-                        top: 50%;
-                        width: 0.74rem;
-                        height: 0.74rem;
-                        border-radius: 50%;
-                        transform: translateY(-50%);
-                        background: var(--foreground-color);
-                        transition: left .12s ease;
-                    }
-
-                    &.on {
-                        background: var(--highlight-color);
-                    }
-
-                    &.on::after {
-                        left: calc(100% - 0.74rem - 2px);
-                    }
-                }
+            .toggle-item .toggle-state {
+                opacity: 0.55;
+                font-size: .8rem;
+                min-width: 1.5rem;
+                text-align: right;
             }
 
             .item:hover:enabled, .item:focus-visible:enabled {
@@ -156,7 +145,6 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
             .header {
                 margin: 4px;
                 opacity: 0.5;
-                text-transform: capitalize;
                 overflow: hidden;
                 white-space: nowrap;
                 text-overflow: ellipsis;
@@ -165,7 +153,6 @@ import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
             .label {
                 flex: 1 1 auto;
                 min-width: 0;
-                text-transform: capitalize;
                 text-align: left;
                 overflow: hidden;
                 white-space: nowrap;

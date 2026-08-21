@@ -30,6 +30,7 @@ import {
           type="button"
           [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
           [appTooltip]="workspaceTooltip(activeWorkspaceEntry)"
+          appTooltipSecondary="Open workspaces"
           aria-haspopup="menu"
           aria-label="Select open workspace"
           (click)="openWorkspaceMenu($event)"
@@ -193,8 +194,10 @@ export class SelectedWorkspaceHeaderComponent {
   private buildWorkspaceMenuItems(): ContextMenuItem[] {
     return this.openWorkspaceEntries().map((workspaceEntry) => ({
       label: workspaceEntry.name,
-      disabled: workspaceEntry.isActive,
+      color: workspaceEntry.color ? `var(--color-${workspaceEntry.color})` : undefined,
+      checked: workspaceEntry.isActive,
       action: () => {
+        if (workspaceEntry.isActive) return;
         void this.workspaceHostPort.restoreWorkspace(workspaceEntry.id);
       },
     }));

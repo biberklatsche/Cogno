@@ -6,6 +6,7 @@ import { ConfigService } from "../../../config/+state/config.service";
 import { ExecutedCommand } from "../advanced/history/terminal-command-history.store";
 
 export const LONG_RUNNING_COMMAND_NOTIFICATION_ID = "long_running_command";
+export const DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS = 10;
 
 export class CompletedCommandNotificationHandler {
   constructor(
@@ -45,7 +46,7 @@ export class CompletedCommandNotificationHandler {
       type: "Notification",
       path: ["notification"],
       payload: {
-        header: "Long-running command finished",
+        header: `Command finished after ${this.formatDuration(executedCommand.duration)}`,
         body: this.renderLongRunningCommandNotificationBody(executedCommand),
         type: executedCommand.returnCode && executedCommand.returnCode !== 0 ? "warning" : "info",
         timestamp: new Date(),
@@ -59,7 +60,7 @@ export class CompletedCommandNotificationHandler {
   private getLongRunningCommandMinimumDurationMilliseconds(): number {
     const minimumDurationSeconds =
       this.configService.config.terminal?.notifications?.long_running_command
-        ?.minimum_duration_seconds ?? 10;
+        ?.minimum_duration_seconds ?? DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS;
     return minimumDurationSeconds * 1000;
   }
 

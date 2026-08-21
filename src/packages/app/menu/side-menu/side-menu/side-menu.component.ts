@@ -49,13 +49,15 @@ export function isSelectedSideMenuItem(
             <header>
                 <h3>{{ selectedItem()?.label }}</h3>
                 <div class="btn-list">
-                    <button class="button icon-button" (click)="togglePin()">
+                    <button class="button icon-button" (click)="togglePin()"
+                            [appTooltip]="selectedItem()?.pinned ? 'Unpin panel' : 'Pin panel (keeps it open)'">
                         <app-icon [name]="selectedItem()?.pinned ? 'mdiPin': 'mdiPinOff'"></app-icon>
                     </button>
-                    <button class="button icon-button" (click)="toggleDisplacement()">
+                    <button class="button icon-button" (click)="toggleDisplacement()"
+                            [appTooltip]="overlay() ? 'Push content aside' : 'Overlay content'">
                         <app-icon [name]="overlay() ? 'mdiCropSquare' : 'mdiDotsSquare'"></app-icon>
                     </button>
-                    <button class="button icon-button" (click)="close()">
+                    <button class="button icon-button" (click)="close()" appTooltip="Close">
                         <app-icon [name]="'mdiClose'"></app-icon>
                     </button>
                 </div>
@@ -125,6 +127,9 @@ export function isSelectedSideMenuItem(
         }
 
         aside {
+            /* Same vertical offsets in docked and overlay mode so toggling
+               between the two does not shift the panel. */
+            margin-top: 2px;
             margin-bottom: 4px;
             z-index: 2;
             display: flex;
@@ -155,8 +160,8 @@ export function isSelectedSideMenuItem(
 
             &.overlay {
                 position: absolute;
-                right: 4px; 
-                top: 2px;
+                right: 4px;
+                top: 0;
                 bottom: 0;
 
                 max-height: 100%;
