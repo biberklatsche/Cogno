@@ -15,6 +15,7 @@ import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coor
 import { RecentCommandRow } from "./history.repository";
 import { HistoryEntry, HistoryScope, TerminalHistoryViewState } from "./recent-history.types";
 import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
+import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const PANEL_MIN_WIDTH = 280;
@@ -25,7 +26,6 @@ const PANEL_ITEM_GAP = 8;
 const PANEL_FOOTER_PX = 38;
 const LABEL_MEASURE_MAX_CHARS = 140;
 const META_COLUMN_PX = 110; // origin dot + time-ago text + gap
-const SCOPE_STORAGE_KEY = "terminal.history.scope";
 
 const INITIAL_VIEW_STATE: TerminalHistoryViewState = {
   visible: false,
@@ -42,7 +42,6 @@ const INITIAL_VIEW_STATE: TerminalHistoryViewState = {
 export class TerminalHistoryService implements OnDestroy {
   private readonly _viewState = new BehaviorSubject<TerminalHistoryViewState>({
     ...INITIAL_VIEW_STATE,
-    scope: this.loadScope(),
   });
   private readonly _subscription = new Subscription();
   private _hostElement?: HTMLElement;
@@ -60,7 +59,9 @@ export class TerminalHistoryService implements OnDestroy {
     private readonly bus: AppBus,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
     private readonly configService: ConfigService,
+    private readonly scopeStore: TerminalHistoryScopeStore,
   ) {
+    this._viewState.next({ ...this._viewState.value, scope: this.scopeStore.scope });
     this.subscribeStateChanges();
   }
 
@@ -117,11 +118,17 @@ export class TerminalHistoryService implements OnDestroy {
         if (event.payload !== "cycle_tab") return;
         if (!this._viewState.value.visible) return;
 
-        void this.cycleScope();
+        // Only advance the shared scope; every tab (this one included) reacts uniformly through
+        // the scope$ subscription below, so there is no separate code path for the originating tab.
+        this.scopeStore.cycle();
         event.performed = true;
         event.defaultPrevented = true;
         event.propagationStopped = true;
       }),
+    );
+
+    this._subscription.add(
+      this.scopeStore.scope$.subscribe((scope) => void this.applyScopeChange(scope)),
     );
   }
 
@@ -186,7 +193,7 @@ export class TerminalHistoryService implements OnDestroy {
   private async showHistory(): Promise<void> {
     const requestId = ++this._activeRequestId;
     const state = this.stateManager.state;
-    const preferredScope = this._viewState.value.scope;
+    const preferredScope = this.scopeStore.scope;
     const { scope, rows } = await this.fetchEntries(preferredScope, state.cwd);
     if (requestId !== this._activeRequestId) return;
     this._allEntries = this.toEntries(rows);
@@ -208,25 +215,35 @@ export class TerminalHistoryService implements OnDestroy {
     });
   }
 
-  private async cycleScope(): Promise<void> {
-    const requestId = ++this._activeRequestId;
-    const preferredScope = this.nextScope(this._viewState.value.scope);
-    this.saveScope(preferredScope);
+  /**
+   * Reacts to a scope change from the shared store — fired for the tab that cycled it and every
+   * other tab. When the panel is closed we only sync the badge so it opens in the current scope;
+   * when it is open we re-query using *this* tab's own cwd/session context.
+   */
+  private async applyScopeChange(scope: HistoryScope): Promise<void> {
+    const view = this._viewState.value;
+    if (view.scope === scope) return;
 
+    if (!view.visible) {
+      this._viewState.next({ ...view, scope });
+      return;
+    }
+
+    const requestId = ++this._activeRequestId;
     const state = this.stateManager.state;
-    const { scope, rows } = await this.fetchEntries(preferredScope, state.cwd);
+    const { rows } = await this.fetchEntries(scope, state.cwd);
     if (requestId !== this._activeRequestId) return;
 
     // Re-read view after the async gap — hide() may have fired during fetchEntries.
-    const view = this._viewState.value;
-    if (!view.visible) return;
+    const current = this._viewState.value;
+    if (!current.visible) return;
 
     this._allEntries = this.toEntries(rows);
     const entries = this.filterEntries(this._allEntries, state.input.text);
 
     const position = this.computePanelPosition(state, entries);
     this._viewState.next({
-      ...view,
+      ...current,
       x: position.x,
       y: position.y,
       width: position.width,
@@ -342,32 +359,6 @@ export class TerminalHistoryService implements OnDestroy {
         PANEL_FOOTER_PX,
       ),
     });
-  }
-
-  private nextScope(scope: HistoryScope): HistoryScope {
-    if (scope === "global") return "cwd";
-    if (scope === "cwd") return "session";
-    return "global";
-  }
-
-  private loadScope(): HistoryScope {
-    try {
-      const raw = window.localStorage.getItem(SCOPE_STORAGE_KEY);
-      if (raw === "global" || raw === "cwd" || raw === "session") {
-        return raw;
-      }
-    } catch {
-      // ignore storage access errors
-    }
-    return "global";
-  }
-
-  private saveScope(scope: HistoryScope): void {
-    try {
-      window.localStorage.setItem(SCOPE_STORAGE_KEY, scope);
-    } catch {
-      // ignore storage access errors
-    }
   }
 
   private inputSignature(state: TerminalState): string {

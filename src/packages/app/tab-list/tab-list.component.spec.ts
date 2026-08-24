@@ -85,9 +85,7 @@ describe("TabListComponent", () => {
     it("resolves the css variable from the tab's color name", () => {
       const component = createComponent();
 
-      expect(component.tabColor(tab({ color: "red" }))).toBe(
-        "var(--color-red)",
-      );
+      expect(component.tabColor(tab({ color: "red" }))).toBe("var(--color-red)");
     });
 
     it("returns undefined for tabs without a color", () => {
