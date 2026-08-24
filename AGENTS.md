@@ -35,11 +35,6 @@
 
 ## Architecture rule
 - Keep the architecture clean. This is the top priority.
-- The intended dependency direction is: `app -> core-api <- features`.
-- `core-api` must only contain general, reusable contracts/capabilities. It must not define feature-specific workflows, feature-specific host ports, or UI-specific orchestration APIs.
-- `features` may depend on `core-api` and `core-ui`, but must not depend on `app`.
-- `app` implements the contracts from `core-api` and wires features to the concrete runtime.
-- `app-host` may contain adapters and composition for concrete features, but those adapters must implement general `core-api` contracts instead of pushing feature-specific APIs into `core-api`.
-- Do not add feature-specific host-port contracts such as feature-owned chat/search/workspace orchestration ports to `core-api`.
-- Do not put UI actions such as opening dialogs, opening menus, or other concrete app interactions into `core-api` contracts. Model general capabilities instead.
-- If a contract is primarily needed by one feature and expresses that feature's workflow rather than a general app capability, keep it out of `core-api`.
+- `ARCHITECTURE.md` is the single source of truth: four packages, `app -> features -> platform -> shared`, nothing imports `app`, only `platform` imports Tauri.
+- A feature that needs something from the app declares its own port (abstract class) next to the code that needs it; the app implements it. Ports move to `shared/ports` only when two or more features need them.
+- While the migration table in `ARCHITECTURE.md` still has open rows, the old package names (`core-api`, `app-host`, …) continue to exist; follow the target layout for new code and do not extend the old one.

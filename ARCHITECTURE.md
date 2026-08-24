@@ -1,138 +1,141 @@
 # Architecture
 
-## Dependency direction
+Cogno is one product in one repository. The architecture exists for two
+reasons only: so that a change stays local, and so that a piece of logic can
+be tested without booting the whole application. Everything that does not
+serve one of those two goals is not part of it.
+
+## Packages
 
 ```
-app -> core-api <- features
+src/
+  app/          the application: shell, wiring, everything product-specific
+  features/     self-contained capabilities plugged into the app
+  platform/     the only code that talks to Tauri
+  shared/       code with no knowledge of the application
 ```
 
-The bootstrap layer (`src/app/`) may import from both.
+| Package | Contains | May import |
+|---|---|---|
+| `shared` | domain models and logic, generic UI building blocks, small utilities, and the few ports that more than one feature needs | nothing internal |
+| `platform` | Tauri bindings as injectable services: database, filesystem, pty, http, clipboard, opener, os, window, logger | `shared` |
+| `features` | one folder per feature: state, services, UI, migrations, settings schema, and the ports it needs from the app | `shared`, `platform`, other features through their `index.ts` |
+| `app` | terminal, tabs, grid, window, menus, config, notifications, bootstrap, and the implementations of every port | everything |
 
-## Layers
+The dependency direction is a straight line:
 
-| Layer | Responsibility |
-|---|---|
-| **core-api** | Stable platform contracts (abstract classes, interfaces) |
-| **core-domain** | Larger domain logic with no framework dependencies |
-| **core-ui** | Generic UI building blocks (no feature or app semantics) |
-| **core-support** | Small, pure, low-dependency utilities |
-| **features** | Complete feature logic: state, services, orchestration, feature UI |
-| **app** | Implements platform contracts, wires features into the runtime |
-| **products** | Composition layer: binds features, app, and Angular components |
-| **Bootstrap** (`src/app/`) | Entry point: configures Angular DI, registers the product |
+```
+app  →  features  →  platform  →  shared
+```
+
+Nothing imports `app`. Only `platform` imports `@tauri-apps/*`. These two
+sentences are the architecture; the rest of this document explains how to
+work inside them.
 
 ## Rules
 
-### core-api
-- Contains only stable, general-purpose platform contracts.
-- No feature names, workflow APIs, UI orchestration, or product semantics.
-- No aggregations or default values for specific features.
+Enforced by `.dependency-cruiser.cjs`; `pnpm lint:architecture` fails on a
+violation.
 
-### app
-- Implements the general platform contracts from `core-api` only.
-- Has no feature-domain knowledge — only adapters and runtime access.
+1. Only `platform` imports `@tauri-apps/*`.
+2. `shared` imports no other internal package. `shared/domain` imports no
+   framework (no Angular, no RxJS).
+3. `platform` imports only `shared`.
+4. `features` never import `app`. A feature imports another feature only
+   through that feature's `index.ts`.
+5. Nothing outside `app` imports `app`.
+6. Only the four `@cogno/*` aliases exist.
 
-### features
-- Contains complete feature logic: state, orchestration, parsing, services, and feature UI.
-- Registers capabilities through neutral contributions only (see Contribution model).
-- May depend on `core-api` and `core-ui`, never on `app`.
+## Ports
 
-### core-ui
-- Contains only generic UI building blocks (buttons, inputs, icons, layouts).
-- No feature or app semantics.
-
-### core-support
-- Contains small, pure, low-dependency utilities.
-- No Angular, app, or feature dependencies.
-
-### core-domain
-- Contains larger domain logic.
-- No app, feature, or UI dependencies.
-
-## Contribution model
-
-Adding a new feature should ideally change exactly three things:
-
-1. The feature itself (`src/packages/features/`)
-2. Its neutral contributions in `featureApplicationFeatureCollection`
-3. The product composition (`src/products/`)
-
-### `featureApplicationFeatureCollection`
-
-Every feature self-registers in `features/feature-application-feature.collection.ts`:
-
-| Contribution slot | Purpose |
-|---|---|
-| `databaseMigrations` | Schema migrations executed on app startup |
-| `shellDefinitions` | Supported shell types (Bash, ZSH, PowerShell …) |
-| `shellPathAdapterDefinitions` | Platform-specific path adapters per shell |
-| `shellSupportDefinitions` | Additional shell capabilities |
-| `sideMenuFeatureDefinitions` | Side-menu entries with icon, action name, and lifecycle |
-| `settingsExtensions` | Zod schema extensions and default values for the config reader |
-| `terminalAutocompleteSuggestorDefinitions` | Autocomplete suggestors for the terminal |
-| `notificationChannels` | Additional notification channels (e.g. OS notifications) |
-
-### Side-menu features
-
-Side-menu entries are registered via a `SideMenuFeatureDefinition`:
+A feature that needs something from the application declares an abstract
+class next to the code that needs it and injects it. The app implements it
+and the bootstrap binds the two:
 
 ```
-createLifecycle(injector, handle) → SideMenuFeatureLifecycleContract
+features/workspace/workspace-close-guard.port.ts
+  export abstract class WorkspaceCloseGuard { abstract confirmClose(...): Promise<boolean>; }
+
+app/adapters/workspace-close-guard.adapter.ts
+  export class WorkspaceCloseGuardAdapter implements WorkspaceCloseGuard { ... }
+
+app/app.config.ts
+  { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapter }
 ```
 
-`createLifecycle` receives the Angular injector (for DI) and a handle to open, close, or focus the panel. The resulting `SideMenuFeatureLifecycleContract` reacts to `onOpen`, `onClose`, `onFocus`, `onBlur`, and `onModeChange`.
+The port belongs to the feature: it describes what the feature needs, in the
+feature's words. Only when two or more features need the same port does it
+move to `shared/ports`. There is no third place.
 
-## Ports vs. adapters
+Platform services need no port. `platform` exports concrete injectable
+classes (`Database`, `Filesystem`, `CommandRunner`, …); tests replace them
+with `vi.mock` or a stub provider. The Tauri boundary is the package, not an
+interface.
 
-### Port (feature owns the DI token)
+## Features
 
-A feature that needs an external capability defines its own abstract port:
+A feature is a folder under `features/` that owns everything about one
+capability and exposes one `index.ts` with a `FeatureDefinition`:
 
-```
-features/side-menu/workspace/workspace-close-guard.port.ts
-  → abstract class WorkspaceCloseGuard  (DI token, owned by the feature)
-  → implements WorkspaceCloseGuardContract  (interface from core-api)
-```
-
-The app implements the interface without knowing the token:
-```
-app/app-host/workspace-close-guard.adapter.service.ts
-  → implements WorkspaceCloseGuardContract
-```
-
-Bootstrap wires them together:
-```typescript
-{ provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService }
+```ts
+export const workspaceFeature: FeatureDefinition = {
+  id: "workspace",
+  migrations: [...],          // schema steps, applied on startup
+  sideMenu: [...],            // side-menu entries with icon, action, lifecycle
+  settings: workspaceSettings, // zod schema extension + defaults
+};
 ```
 
-Use ports when only one feature needs the token.
+`FeatureDefinition` lives in `shared` and has one optional field per
+extension point the app offers (migrations, side-menu entries, settings,
+autocomplete suggestors, shells, notification channels). Adding a feature
+means adding its folder and one line in `app/features.ts`. Adding an
+extension point means adding one optional field and one consumer in `app`.
 
-### Adapter (app implements a platform contract)
+Features talk to each other through their `index.ts` or not at all. A
+feature that needs another feature's state imports its public service; a
+feature that needs to react to something the app does uses an action:
 
-For shared platform capabilities (filesystem, HTTP, workspace, terminal), `core-api` defines the abstract contract. The app implements it; features inject it:
-
-```
-core-api: abstract class WorkspaceHostPort    ← features inject this
-app:      WorkspaceHostPortAdapterService implements WorkspaceHostPortContract
-Bootstrap: { provide: WorkspaceHostPort, useExisting: WorkspaceHostPortAdapterService }
-```
-
-Use adapters for capabilities shared across many features.
-
-## Actions
-
-Features can react to dispatched actions without importing from `app`:
-
-```typescript
-constructor(private readonly actionDispatcher: ActionDispatcher) {
-  this.actionDispatcher.onAction$("select_workspace_1")
+```ts
+constructor(private readonly actions: ActionDispatcher) {
+  this.actions.onAction$("select_workspace_1")
     .pipe(takeUntilDestroyed(destroyRef))
-    .subscribe(() => { /* handle */ });
+    .subscribe(() => { ... });
 }
 ```
 
-`onAction$` returns an `Observable<void>`. Marking the action as "performed" (prevents browser-native key handling) is handled transparently by the adapter.
+`ActionDispatcher` is a `shared/ports` port because every feature uses it.
 
-## Code hygiene
+## The app
 
-Community source code must contain no hints about future extensions — no names, comments, branches, or placeholders for variants that do not yet exist.
+`app` is where the product lives. It is allowed to know every feature by
+name: the feature list, the port implementations, the wiring. It contains the
+terminal itself — pty, renderer, input handling — because the terminal is the
+product, not a feature of it. Anything that plugs *into* the terminal
+(history, autocomplete, the composer) is a feature.
+
+Bootstrap (`app/main.ts`, `app/app.config.ts`) is the only place `inject()`
+is used; everywhere else constructor injection keeps tests plain.
+
+## Testing
+
+- `shared/domain`: plain unit tests, no framework.
+- `features`: unit tests with stubbed ports and mocked platform modules.
+- `platform`: Rust-side tests for the database; the TypeScript side is a
+  thin `invoke` layer and is not unit-tested.
+- `app`: component and wiring tests where behaviour warrants them.
+
+## Migration status
+
+The code is being moved toward this layout in steps. Each step is one
+commit, the app runs after each, and this table is updated with it. Until a
+row is done, the old rule for that area still applies.
+
+| Step | What | Status |
+|---|---|---|
+| 1 | Remove `products/` and `ApplicationProduct`; fold composition into the bootstrap; drop the generic type parameters on the feature registry | open |
+| 2 | Merge `core-support`, `core-domain`, `core-ui` into `shared` | open |
+| 3 | Rename `app-tauri` to `platform`; collapse each platform contract + host adapter pair into one injectable service | open |
+| 4 | Move the remaining `core-api` contracts to feature-owned ports or `shared/ports`; delete `core-api` | open |
+| 5 | Move history, autocomplete and composer out of `app/terminal` into `features` | open |
+| 6 | Fold `src/app` into `app`; replace the registry classes with `FeatureDefinition` and a plain list; rewrite `.dependency-cruiser.cjs` to the six rules above | open |
