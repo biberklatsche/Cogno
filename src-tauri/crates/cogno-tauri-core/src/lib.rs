@@ -4,6 +4,8 @@ pub mod app_identity;
 pub mod cli;
 #[path = "../../../src/commands/mod.rs"]
 pub mod commands;
+#[path = "../../../src/db/mod.rs"]
+pub mod db;
 #[path = "../../../src/http_server.rs"]
 pub mod http_server;
 

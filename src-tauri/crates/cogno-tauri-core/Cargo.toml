@@ -24,6 +24,11 @@ uuid = { version = "1.11", features = ["v4"] }
 base64 = "0.22"
 sysinfo = "0.33"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+# `bundled` compiles SQLite into the binary so every platform runs the same
+# version, with FTS5 included (needed for the trigram command search index).
+# Pinned to the libsqlite3-sys generation that tauri-plugin-sql's sqlx links;
+# cargo allows only one. Bump to the latest once the plugin is removed.
+rusqlite = { version = "0.32", features = ["bundled"] }
 futures-util = "0.3"
 log = "0.4"
 axum = "0.7"

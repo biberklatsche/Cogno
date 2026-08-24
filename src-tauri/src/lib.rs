@@ -1,9 +1,10 @@
 use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
+use cogno_tauri_core::db::Db;
 use cogno_tauri_core::http_server::HttpServerState;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
 use tauri::window::Color;
-use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Builder, Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
@@ -53,7 +54,9 @@ pub fn run(cli: Cli) {
         }))
         .manage(PtyState::new())
         .manage(HttpServerState::new())
+        .manage(Db::new())
         .invoke_handler(tauri::generate_handler![
+            cogno_tauri_core::db::commands::db_open,
             cogno_tauri_core::commands::command_runner::command_runner_execute,
             cogno_tauri_core::commands::git_blob::git_read_blob,
             cogno_tauri_core::commands::config::get_default_config,
@@ -117,6 +120,13 @@ pub fn run(cli: Cli) {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let RunEvent::Exit = event {
+                // Fold the WAL back into the main file so the database is a
+                // single, consistent file once the process is gone.
+                app.state::<Db>().close();
+            }
+        });
 }
