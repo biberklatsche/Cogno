@@ -1,5 +1,5 @@
 import type { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
-import type { ContextMenuOverlayService } from "@cogno/core-ui";
+import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/test-factory";

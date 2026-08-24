@@ -2,7 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActionFired } from "@cogno/app/action/action.models";
 import { AppBus } from "@cogno/app/app-bus/app-bus";
-import { DialogService } from "@cogno/core-ui";
+import { DialogService } from "@cogno/shared/ui";
 import { AboutDialogComponent } from "./about-dialog.component";
 
 @Injectable({ providedIn: "root" })

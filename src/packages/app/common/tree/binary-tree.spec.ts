@@ -1,4 +1,4 @@
-import { BinaryTree } from "@cogno/core-domain";
+import { BinaryTree } from "@cogno/shared/domain";
 import { describe, expect, it } from "vitest";
 
 describe("BinaryTree", () => {

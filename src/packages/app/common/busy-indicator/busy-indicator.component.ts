@@ -1,7 +1,7 @@
 import { DOCUMENT } from "@angular/common";
 import { ChangeDetectionStrategy, Component, effect, Inject, input, signal } from "@angular/core";
 import { TabId, TerminalId } from "@cogno/core-api";
-import { BAR_COUNT, MAX_HEIGHT } from "@cogno/core-ui";
+import { BAR_COUNT, MAX_HEIGHT } from "@cogno/shared/ui";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 
 const FRAME_INTERVAL_MS = 50;

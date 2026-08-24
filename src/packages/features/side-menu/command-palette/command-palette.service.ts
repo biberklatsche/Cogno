@@ -6,7 +6,7 @@ import {
   CommandDiscoveryUseCase,
   CommandDiscoveryEntryState as CommandEntry,
   SelectionDirection,
-} from "@cogno/core-domain";
+} from "@cogno/shared/domain";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,

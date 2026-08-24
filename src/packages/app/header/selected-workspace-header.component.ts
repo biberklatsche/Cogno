@@ -17,7 +17,7 @@ import {
   ContextMenuOverlayService,
   IconComponent,
   TooltipDirective,
-} from "@cogno/core-ui";
+} from "@cogno/shared/ui";
 
 @Component({
   selector: "app-selected-workspace-header",

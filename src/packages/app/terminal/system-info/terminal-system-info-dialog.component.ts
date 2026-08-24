@@ -11,7 +11,7 @@ import {
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ProcessDetails, ProcessTreeSnapshot, TauriPty } from "@cogno/app-tauri/pty";
 import { TerminalId } from "@cogno/core-api";
-import { DIALOG_DATA } from "@cogno/core-ui";
+import { DIALOG_DATA } from "@cogno/shared/ui";
 import { Observable } from "rxjs";
 import { ErrorReporter } from "../../common/error/error-reporter";
 import { KeybindService } from "../../keybinding/keybind.service";

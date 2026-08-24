@@ -5,7 +5,7 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core-api";
-import { Icon } from "@cogno/core-ui";
+import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { KeybindService } from "../../../keybinding/keybind.service";

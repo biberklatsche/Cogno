@@ -1,4 +1,4 @@
-import { Char } from "@cogno/core-support";
+import { Char } from "@cogno/shared/support";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";

@@ -5,7 +5,7 @@ import {
   NotificationChannelsPort,
   NotificationDefinitionContract,
 } from "@cogno/core-api";
-import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
+import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/shared/domain";
 import { take } from "rxjs";
 import { AgentStatus } from "./coding-agent-status.service";
 

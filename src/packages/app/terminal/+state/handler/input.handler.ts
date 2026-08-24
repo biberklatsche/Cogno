@@ -1,5 +1,5 @@
 import { TerminalId } from "@cogno/core-api";
-import { Char, IDisposable } from "@cogno/core-support";
+import { Char, IDisposable } from "@cogno/shared/support";
 import { IDisposable as IXtermDisposable, Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";

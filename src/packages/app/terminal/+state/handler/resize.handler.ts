@@ -1,5 +1,5 @@
 import { TerminalId } from "@cogno/core-api";
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";

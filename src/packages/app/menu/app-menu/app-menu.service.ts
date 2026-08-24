@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ContextMenuItem } from "@cogno/core-ui";
+import { ContextMenuItem } from "@cogno/shared/ui";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { ConfigService } from "../../config/+state/config.service";

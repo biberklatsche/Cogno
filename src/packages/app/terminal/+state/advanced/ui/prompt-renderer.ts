@@ -1,7 +1,7 @@
 import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { PromptSegment } from "@cogno/app/config/+models/prompt-config";
-import { timespan } from "@cogno/core-support";
-import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/core-ui";
+import { timespan } from "@cogno/shared/support";
+import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
 import { mdiDotsVertical } from "@mdi/js";
 import { Command, TerminalStateManager } from "../../state";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";

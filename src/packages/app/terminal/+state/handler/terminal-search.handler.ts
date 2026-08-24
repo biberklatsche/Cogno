@@ -1,5 +1,5 @@
 import { TerminalId } from "@cogno/core-api";
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { ISearchOptions, SearchAddon } from "@xterm/addon-search";
 import { IDecoration, Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";

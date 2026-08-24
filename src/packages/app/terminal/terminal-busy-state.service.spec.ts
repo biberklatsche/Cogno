@@ -1,4 +1,4 @@
-import { DialogRef, type DialogService } from "@cogno/core-ui";
+import { DialogRef, type DialogService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
 import { AppBus } from "../app-bus/app-bus";

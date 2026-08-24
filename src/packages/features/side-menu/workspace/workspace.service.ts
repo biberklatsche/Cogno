@@ -1,7 +1,11 @@
 import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
-import { SelectableItemState, SelectableListUseCase, SelectionDirection } from "@cogno/core-domain";
+import {
+  SelectableItemState,
+  SelectableListUseCase,
+  SelectionDirection,
+} from "@cogno/shared/domain";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,

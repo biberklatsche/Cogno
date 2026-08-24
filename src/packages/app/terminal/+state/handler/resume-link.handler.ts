@@ -2,7 +2,7 @@
 // ITerminalHandler, and IPty — which are app-layer types.
 import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { OS } from "@cogno/app-tauri/os";
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { IPty } from "../pty/pty";
 import { ITerminalHandler } from "./handler";

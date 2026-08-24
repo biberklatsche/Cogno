@@ -1,6 +1,6 @@
 import { CommonModule } from "@angular/common";
 import { Component, EventEmitter, input, Output } from "@angular/core";
-import { TooltipDirective } from "@cogno/core-ui";
+import { TooltipDirective } from "@cogno/shared/ui";
 import { map, Observable } from "rxjs";
 import { Color } from "../../config/+models/config";
 import { ConfigService } from "../../config/+state/config.service";

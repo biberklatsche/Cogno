@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { TerminalId } from "@cogno/core-api";
-import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/core-ui";
+import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
 import { ShellProfile } from "../config/+models/shell-config";
 import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/terminal-autocomplete.component";

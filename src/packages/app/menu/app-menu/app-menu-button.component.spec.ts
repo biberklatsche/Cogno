@@ -1,4 +1,4 @@
-import type { ContextMenuItem, ContextMenuOverlayService } from "@cogno/core-ui";
+import type { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
 import { describe, expect, it, vi } from "vitest";
 import type { AppMenuService } from "./app-menu.service";
 import { AppMenuButtonComponent } from "./app-menu-button.component";

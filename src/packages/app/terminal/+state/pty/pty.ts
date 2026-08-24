@@ -1,5 +1,5 @@
 import { PtyChunkContract, PtySpawnHandleContract, PtyTransportPort } from "@cogno/core-api";
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { Environment } from "../../../common/environment/environment";
 import { ErrorReporter } from "../../../common/error/error-reporter";
 import { ShellProfile } from "../../../config/+models/shell-config";

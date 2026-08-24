@@ -7,7 +7,7 @@ import {
   TabId,
   TerminalId,
 } from "@cogno/core-api";
-import { BinaryNode, BinaryTree } from "@cogno/core-domain";
+import { BinaryNode, BinaryTree } from "@cogno/shared/domain";
 import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";

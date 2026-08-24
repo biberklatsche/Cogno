@@ -7,7 +7,7 @@ import {
   NotificationCenterPort,
   NotificationTargetContract,
 } from "@cogno/core-api";
-import { NotificationInboxState, NotificationInboxUseCase } from "@cogno/core-domain";
+import { NotificationInboxState, NotificationInboxUseCase } from "@cogno/shared/domain";
 
 @Injectable({ providedIn: "root" })
 export class NotificationCenterStateService {

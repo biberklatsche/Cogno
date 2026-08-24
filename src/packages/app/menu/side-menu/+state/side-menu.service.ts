@@ -1,5 +1,5 @@
 import { Injectable, Signal, signal, Type, WritableSignal } from "@angular/core";
-import { Icon } from "@cogno/core-ui";
+import { Icon } from "@cogno/shared/ui";
 import { ActionName } from "../../../action/action.models";
 import { AppBus } from "../../../app-bus/app-bus";
 

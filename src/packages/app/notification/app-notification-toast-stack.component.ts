@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Signal } from "@angular/core";
 import { NotificationTypeContract } from "@cogno/core-api";
-import { Icon, IconComponent } from "@cogno/core-ui";
+import { Icon, IconComponent } from "@cogno/shared/ui";
 import { AppBus } from "../app-bus/app-bus";
 import { AppNotificationChannelService } from "./+state/app-notification-channel.service";
 import {

@@ -204,11 +204,9 @@ importers:
 
   src/packages/core-api: {}
 
-  src/packages/core-domain: {}
-
-  src/packages/core-ui: {}
-
   src/packages/features: {}
+
+  src/packages/shared: {}
 
 packages:
 

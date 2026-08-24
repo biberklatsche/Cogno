@@ -4,8 +4,8 @@ import { TerminalGateway, TerminalNavigator } from "@cogno/core-api";
 import {
   buildNotificationPreferencesMenuItems,
   NotificationPreferencesState,
-} from "@cogno/core-domain";
-import { ContextMenuOverlayService, IconComponent, TooltipDirective } from "@cogno/core-ui";
+} from "@cogno/shared/domain";
+import { ContextMenuOverlayService, IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import {
   ActiveAgent,
   CodingAgentNotificationPreferencesService,

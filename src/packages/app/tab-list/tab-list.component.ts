@@ -20,7 +20,7 @@ import {
   Icon,
   IconComponent,
   TooltipDirective,
-} from "@cogno/core-ui";
+} from "@cogno/shared/ui";
 import { map, Observable } from "rxjs";
 import { BusyIndicatorComponent } from "../common/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";

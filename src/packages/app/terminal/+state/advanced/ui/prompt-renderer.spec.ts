@@ -1,6 +1,6 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { Clipboard } from "@cogno/app-tauri/clipboard";
-import type { ContextMenuOverlayService } from "@cogno/core-ui";
+import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../../app-bus/app-bus";

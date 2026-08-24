@@ -1,5 +1,5 @@
 import { TabId, TerminalId } from "@cogno/core-api";
-import { BinaryTree } from "@cogno/core-domain";
+import { BinaryTree } from "@cogno/shared/domain";
 
 export type GridList = Record<TabId, Grid>;
 

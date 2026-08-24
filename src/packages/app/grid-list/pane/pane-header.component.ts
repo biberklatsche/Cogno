@@ -1,7 +1,7 @@
 import { DOCUMENT } from "@angular/common";
 import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
 import { toObservable, toSignal } from "@angular/core/rxjs-interop";
-import { DragPreviewService, IconComponent } from "@cogno/core-ui";
+import { DragPreviewService, IconComponent } from "@cogno/shared/ui";
 import { switchMap } from "rxjs";
 import { BusyIndicatorComponent } from "../../common/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "../../common/busy-indicator/busy-indicator.service";

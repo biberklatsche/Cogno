@@ -7,7 +7,7 @@ import {
   untracked,
 } from "@angular/core";
 import { Opener } from "@cogno/core-api";
-import { Icon, IconComponent, TooltipDirective } from "@cogno/core-ui";
+import { Icon, IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitDiffContent, GitDiffService } from "./git-diff.service";
 import { GitDiffViewComponent } from "./git-diff-view.component";
 import { GitFile, GitStatusService } from "./git-status.service";

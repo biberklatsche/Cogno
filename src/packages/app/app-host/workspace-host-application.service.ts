@@ -5,7 +5,7 @@ import {
   WorkspaceConfiguration,
   WorkspaceState,
   WorkspaceStateUseCase,
-} from "@cogno/core-domain/workspace";
+} from "@cogno/shared/domain/workspace";
 import { merge } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { Color } from "../common/color/color";

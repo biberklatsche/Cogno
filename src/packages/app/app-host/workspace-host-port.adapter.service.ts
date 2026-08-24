@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
 import { WorkspaceEntryContract, WorkspaceHostPortContract } from "@cogno/core-api";
-import { DialogService } from "@cogno/core-ui";
+import { DialogService } from "@cogno/shared/ui";
 import { map, Observable } from "rxjs";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";

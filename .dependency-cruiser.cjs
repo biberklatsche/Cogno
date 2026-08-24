@@ -1,53 +1,32 @@
 const packageRootPattern = "^src/packages/";
 const bootstrapPattern = "^src/app/";
-const coreDomainPattern = "^src/packages/core-domain/";
+const sharedPattern = "^src/packages/shared/";
+const sharedDomainPattern = "^src/packages/shared/(domain|support)/";
 const coreApiPattern = "^src/packages/core-api/";
-const coreUiPattern = "^src/packages/core-ui/";
-const coreSupportPattern = "^src/packages/core-support/";
 const featuresPattern = "^src/packages/features/";
 const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
 const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
 const appPackagePattern = "^src/packages/app/";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|core-api(?:$|/)|shared(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
     {
-      name: "core-domain-must-not-import-app-angular",
+      name: "shared-knows-nothing-about-the-app",
       severity: "error",
-      comment: "core-domain must not depend on app-angular.",
-      from: { path: coreDomainPattern },
-      to: { path: appAngularPattern },
+      comment:
+        "shared must not depend on app, features, the platform layer or Tauri. (core-api is still allowed until it is dissolved in architecture step 4.)",
+      from: { path: sharedPattern },
+      to: { path: "^(src/packages/app|src/packages/app-tauri|src/packages/features|src/app)/|^@tauri-apps/" },
     },
     {
-      name: "core-domain-must-not-import-app-tauri",
+      name: "shared-domain-is-frameworkfree",
       severity: "error",
-      comment: "core-domain must not depend on app-tauri.",
-      from: { path: coreDomainPattern },
-      to: { path: appTauriPattern },
-    },
-    {
-      name: "core-domain-must-not-import-features",
-      severity: "error",
-      comment: "core-domain must not depend on features.",
-      from: { path: coreDomainPattern },
-      to: { path: featuresPattern },
-    },
-    {
-      name: "core-domain-must-not-import-angular",
-      severity: "error",
-      comment: "core-domain must not depend on Angular.",
-      from: { path: coreDomainPattern },
-      to: { path: "^@angular/" },
-    },
-    {
-      name: "core-domain-must-not-import-tauri",
-      severity: "error",
-      comment: "core-domain must not depend on Tauri.",
-      from: { path: coreDomainPattern },
-      to: { path: "^@tauri-apps/" },
+      comment: "shared/domain and shared/support must not depend on Angular or RxJS.",
+      from: { path: sharedDomainPattern },
+      to: { path: "^(@angular/|rxjs)" },
     },
     {
       name: "core-api-must-not-import-angular",
@@ -90,20 +69,6 @@ module.exports = {
       comment: "core-api must not import feature-level aggregation or default-value files. These belong in the features package. Catches files whose names suggest collected/default state rather than contracts.",
       from: { path: coreApiPattern },
       to: { path: "(feature-settings-extension|feature-.*-defaults?|.*-aggregation|.*-collection\\.ts$)" },
-    },
-    {
-      name: "core-ui-is-isolated",
-      severity: "error",
-      comment: "core-ui must not import other internal modules.",
-      from: { path: coreUiPattern },
-      to: { path: "^(src/packages/app|src/packages/features)/" },
-    },
-    {
-      name: "core-support-must-be-frameworkfree",
-      severity: "error",
-      comment: "core-support must remain framework-free and reusable.",
-      from: { path: coreSupportPattern },
-      to: { path: "^(src/packages/app|src/packages/features|@angular/|@tauri-apps/)" },
     },
     {
       name: "features-must-not-import-app",

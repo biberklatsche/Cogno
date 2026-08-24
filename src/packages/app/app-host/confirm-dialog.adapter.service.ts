@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ConfirmDialogPort } from "@cogno/core-api";
-import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/core-ui";
+import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 
 @Injectable({ providedIn: "root" })
 export class ConfirmDialogAdapterService extends ConfirmDialogPort {

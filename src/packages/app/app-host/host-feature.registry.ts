@@ -10,7 +10,7 @@ import {
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
-import { Icon } from "@cogno/core-ui";
+import { Icon } from "@cogno/shared/ui";
 import { PathFactory } from "./path.factory";
 import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 

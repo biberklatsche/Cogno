@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from "@angular/core";
 import { Opener } from "@cogno/app-tauri/opener";
 import { Path } from "@cogno/app-tauri/path";
-import { DialogRef } from "@cogno/core-ui";
+import { DialogRef } from "@cogno/shared/ui";
 import { getVersion } from "@tauri-apps/api/app";
 
 @Component({

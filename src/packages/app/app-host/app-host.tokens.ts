@@ -1,7 +1,7 @@
 import { InjectionToken } from "@angular/core";
 import { ActionName } from "@cogno/app/action/action.models";
 import { ApplicationFeatureCollectionContract, NotificationChannelContract } from "@cogno/core-api";
-import { Icon } from "@cogno/core-ui";
+import { Icon } from "@cogno/shared/ui";
 
 export const additionalNotificationChannelsToken = new InjectionToken<
   ReadonlyArray<NotificationChannelContract>

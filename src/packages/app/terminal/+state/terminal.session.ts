@@ -13,14 +13,14 @@ import {
   ChannelDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
-} from "@cogno/core-domain";
-import { IDisposable } from "@cogno/core-support";
+} from "@cogno/shared/domain";
+import { IDisposable } from "@cogno/shared/support";
 import {
   ContextMenuItem,
   ContextMenuOverlayService,
   DialogRef,
   DialogService,
-} from "@cogno/core-ui";
+} from "@cogno/shared/ui";
 import { Observable, Subscription } from "rxjs";
 import { ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";

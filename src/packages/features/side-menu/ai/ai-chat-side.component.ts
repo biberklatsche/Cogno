@@ -7,7 +7,7 @@ import {
   Signal,
   viewChild,
 } from "@angular/core";
-import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/core-ui";
+import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/shared/ui";
 import {
   AiChatThreadMessage,
   AiCommandSuggestion,

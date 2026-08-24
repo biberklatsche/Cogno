@@ -1,4 +1,4 @@
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";

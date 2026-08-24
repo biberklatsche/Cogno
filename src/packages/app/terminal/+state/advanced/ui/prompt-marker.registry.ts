@@ -1,4 +1,4 @@
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { IBuffer, IMarker, Terminal } from "@xterm/xterm";
 
 export type PromptMarker = {

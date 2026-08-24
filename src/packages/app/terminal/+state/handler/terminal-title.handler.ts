@@ -1,5 +1,5 @@
 import { TerminalId } from "@cogno/core-api";
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ITerminalHandler } from "./handler";

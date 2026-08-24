@@ -1,7 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type { TerminalId } from "@cogno/core-api";
-import type { ContextMenuOverlayService } from "@cogno/core-ui";
+import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { vi } from "vitest";
 import { AppBus } from "../app/app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";

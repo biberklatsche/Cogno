@@ -1,5 +1,5 @@
-import { IDisposable } from "@cogno/core-support";
-import { ContextMenuOverlayService } from "@cogno/core-ui";
+import { IDisposable } from "@cogno/shared/support";
+import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Terminal } from "@xterm/xterm";
 import { debounceTime, Subject } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";

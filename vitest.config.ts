@@ -16,21 +16,19 @@ export default defineConfig({
     include: [
       "src/packages/app/**/*.spec.ts",
       "src/packages/app-tauri/**/*.spec.ts",
-      "src/packages/core-domain/**/*.spec.ts",
-      "src/packages/core-ui/**/*.spec.ts",
+      "src/packages/shared/**/*.spec.ts",
       "src/packages/features/**/*.spec.ts",
     ],
     exclude: [
       "src/packages/app/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
-      "src/packages/core-ui/icons/icon/icon.component.spec.ts",
+      "src/packages/shared/ui/icons/icon/icon.component.spec.ts",
     ],
     coverage: {
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
       include: [
         "src/packages/app/**/*.ts",
-        "src/packages/core-domain/**/*.ts",
-        "src/packages/core-ui/**/*.ts",
+        "src/packages/shared/**/*.ts",
         "src/packages/features/**/*.ts",
       ],
       exclude: [

@@ -1,6 +1,6 @@
 import { NgStyle } from "@angular/common";
 import { Component, Input } from "@angular/core";
-import { BinaryNode } from "@cogno/core-domain";
+import { BinaryNode } from "@cogno/shared/domain";
 import { Pane, SplitDirection } from "../+model/model";
 import { PaneComponent } from "../pane/pane.component";
 

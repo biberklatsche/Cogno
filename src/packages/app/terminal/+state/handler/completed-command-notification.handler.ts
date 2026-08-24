@@ -1,6 +1,6 @@
 import { NotificationTargetContract, TerminalId } from "@cogno/core-api";
-import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
-import { timespan } from "@cogno/core-support";
+import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/shared/domain";
+import { timespan } from "@cogno/shared/support";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ConfigService } from "../../../config/+state/config.service";
 import { ExecutedCommand } from "../advanced/history/terminal-command-history.store";

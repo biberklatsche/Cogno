@@ -1,4 +1,4 @@
-import { IDisposable } from "@cogno/core-support";
+import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { TerminalStateManager } from "../state";
 import { ITerminalHandler } from "./handler";

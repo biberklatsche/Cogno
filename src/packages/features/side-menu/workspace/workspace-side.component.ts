@@ -5,7 +5,7 @@ import {
   DragPreviewService,
   IconComponent,
   TooltipDirective,
-} from "@cogno/core-ui";
+} from "@cogno/shared/ui";
 import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 

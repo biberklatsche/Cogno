@@ -7,7 +7,7 @@ import {
   PersistedTabConfigurationContract,
   WorkspaceIdentifierContract,
 } from "@cogno/core-api";
-import { WorkspaceConfiguration, WorkspaceTerminalSession } from "@cogno/core-domain/workspace";
+import { WorkspaceConfiguration, WorkspaceTerminalSession } from "@cogno/shared/domain/workspace";
 
 export interface WorkspaceEntity {
   id: string;

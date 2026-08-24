@@ -1,6 +1,6 @@
 import { NotificationTargetContract } from "@cogno/core-api";
-import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/core-domain";
-import { IDisposable } from "@cogno/core-support";
+import { NotificationPreferencesState, NotificationPreferencesUseCase } from "@cogno/shared/domain";
+import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";

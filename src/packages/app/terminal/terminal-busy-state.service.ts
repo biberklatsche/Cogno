@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { TerminalId } from "@cogno/core-api";
-import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/core-ui";
+import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 

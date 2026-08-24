@@ -1,5 +1,5 @@
 import { Component } from "@angular/core";
-import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/core-ui";
+import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { AppMenuService } from "./app-menu.service";
 
 @Component({

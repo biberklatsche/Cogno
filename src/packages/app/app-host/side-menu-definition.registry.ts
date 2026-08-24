@@ -4,7 +4,7 @@ import {
   SideMenuFeatureDefinitionContract,
   SideMenuFeatureRegistryContract,
 } from "@cogno/core-api";
-import { Icon } from "@cogno/core-ui";
+import { Icon } from "@cogno/shared/ui";
 
 type Definition = SideMenuFeatureDefinitionContract<Icon, ActionName>;
 

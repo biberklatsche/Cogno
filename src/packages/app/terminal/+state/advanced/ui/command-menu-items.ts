@@ -1,5 +1,5 @@
 import { Clipboard } from "@cogno/app-tauri/clipboard";
-import { ContextMenuItem } from "@cogno/core-ui";
+import { ContextMenuItem } from "@cogno/shared/ui";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 

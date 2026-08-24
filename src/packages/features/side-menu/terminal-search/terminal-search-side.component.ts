@@ -10,7 +10,7 @@ import {
   viewChildren,
 } from "@angular/core";
 import { TerminalSearchLineMatchContract, TerminalSearchLineResultContract } from "@cogno/core-api";
-import { TooltipDirective } from "@cogno/core-ui";
+import { TooltipDirective } from "@cogno/shared/ui";
 import {
   collectDirectionalNavigationItems,
   scrollSelectedListItemIntoView,

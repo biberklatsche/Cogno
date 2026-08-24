@@ -1,4 +1,4 @@
-import type { ContextMenuOverlayService } from "@cogno/core-ui";
+import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import type { IMarker } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";

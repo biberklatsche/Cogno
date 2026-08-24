@@ -5,7 +5,7 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core-api";
-import { Icon } from "@cogno/core-ui";
+import { Icon } from "@cogno/shared/ui";
 
 export type SideMenuFeatureLifecycleFactory = (
   injector: Injector,

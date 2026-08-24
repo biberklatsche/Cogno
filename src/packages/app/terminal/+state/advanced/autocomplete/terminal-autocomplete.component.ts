@@ -9,7 +9,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { TooltipDirective } from "@cogno/core-ui";
+import { TooltipDirective } from "@cogno/shared/ui";
 import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
 import { AutocompleteSuggestion } from "./autocomplete.types";

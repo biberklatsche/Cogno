@@ -1,7 +1,7 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { TerminalSearchHostPort, TerminalSearchLineResultContract } from "@cogno/core-api";
-import { SelectionDirection, TextSearchState, TextSearchUseCase } from "@cogno/core-domain";
+import { SelectionDirection, TextSearchState, TextSearchUseCase } from "@cogno/shared/domain";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
