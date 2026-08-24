@@ -1,106 +1,84 @@
-const packageRootPattern = "^src/packages/";
-const bootstrapPattern = "^src/app/";
-const sharedPattern = "^src/packages/shared/";
-const sharedDomainPattern = "^src/packages/shared/(domain|support)/";
+// The six rules of ARCHITECTURE.md. `pnpm lint:architecture` fails on a violation.
+const appPattern = "^src/packages/app/";
 const featuresPattern = "^src/packages/features/";
-const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
 const platformPattern = "^src/packages/platform/";
-const appPackagePattern = "^src/packages/app/";
-const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|platform(?:$|/)|features(?:$|/)|shared(?:$|/)).+";
+const sharedPattern = "^src/packages/shared/";
+const sharedFrameworkFreePattern = "^src/packages/shared/(domain|support)/";
+const testSupportPattern = "^src/packages/__test__/";
+const knownCognoAliasPattern = "^@cogno/(?!app(?:$|/)|features(?:$|/)|platform(?:$|/)|shared(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
     {
-      name: "only-platform-talks-to-tauri",
+      name: "1-only-platform-talks-to-tauri",
       severity: "error",
       comment: "Only platform imports @tauri-apps/*; everything else goes through its services.",
-      from: { path: "^src/", pathNot: "^(src/packages/platform/|src/packages/__test__/)" },
+      from: { path: "^src/", pathNot: `${platformPattern}|${testSupportPattern}` },
       to: { path: "^@tauri-apps/" },
     },
     {
-      name: "platform-imports-only-shared",
+      name: "2-shared-knows-nothing-about-the-app",
       severity: "error",
-      comment:
-        "platform is the Tauri binding layer and must not reach into app or features.",
-      from: { path: platformPattern },
-      to: { path: "^(src/packages/app|src/packages/features|src/app)/" },
-    },
-    {
-      name: "shared-knows-nothing-about-the-app",
-      severity: "error",
-      comment:
-        "shared must not depend on app, features, platform or Tauri.",
+      comment: "shared imports no other internal package.",
       from: { path: sharedPattern },
-      to: { path: "^(src/packages/app|src/packages/platform|src/packages/features|src/app)/|^@tauri-apps/" },
+      to: { path: `${appPattern}|${featuresPattern}|${platformPattern}` },
     },
     {
-      name: "shared-domain-is-frameworkfree",
+      name: "2-shared-domain-is-framework-free",
       severity: "error",
-      comment: "shared/domain and shared/support must not depend on Angular or RxJS.",
-      from: { path: sharedDomainPattern },
+      comment: "shared/domain and shared/support import no framework.",
+      from: { path: sharedFrameworkFreePattern },
       to: { path: "^(@angular/|rxjs)" },
     },
     {
-      name: "features-must-not-import-app",
+      name: "3-platform-imports-only-shared",
       severity: "error",
-      comment: "features must not depend on app.",
+      comment: "platform is the Tauri binding layer and must not reach into app or features.",
+      from: { path: platformPattern },
+      to: { path: `${appPattern}|${featuresPattern}` },
+    },
+    {
+      name: "4-features-never-import-app",
+      severity: "error",
+      comment: "A feature that needs something from the app declares a port; it never imports app.",
       from: { path: featuresPattern },
-      to: { path: "^src/packages/app/" },
+      to: { path: appPattern },
     },
     {
-      name: "features-must-not-import-app-angular",
+      name: "4-features-import-each-other-through-index",
       severity: "error",
-      comment: "features must not depend on app-angular.",
-      from: { path: featuresPattern },
-      to: { path: appAngularPattern },
-    },
-    {
-      name: "features-must-not-depend-on-feature-orchestration-in-app",
-      severity: "error",
-      comment: "Feature-specific orchestration services (e.g. *-host-application.service) must not be imported by features — they belong in app-host adapters only.",
-      from: { path: featuresPattern },
-      to: { path: "app-host.*-application\\.service\\.ts$" },
-    },
-    {
-      name: "internal-layers-must-not-import-bootstrap",
-      severity: "error",
-      comment: "Reusable packages must not depend on bootstrap entry points.",
-      from: { path: "^src/packages/" },
-      to: { path: bootstrapPattern },
-    },
-    {
-      name: "known-cogno-aliases-only",
-      severity: "error",
-      comment: "Only defined @cogno/* aliases are allowed.",
-      from: { path: packageRootPattern },
+      comment: "A feature imports another feature only through that feature's index.ts.",
+      from: { path: "^src/packages/features/([^/]+)/" },
       to: {
-        dependencyTypes: ["unknown"],
-        path: knownCognoAliasPattern,
+        path: "^src/packages/features/([^/]+)/.+",
+        pathNot: "^src/packages/features/([^/]+)/index\\.ts$|^src/packages/features/$1/",
       },
+    },
+    {
+      name: "5-nothing-imports-app",
+      severity: "error",
+      comment: "app is the root of the dependency line; nothing depends on it.",
+      from: { path: "^src/", pathNot: `${appPattern}|${testSupportPattern}` },
+      to: { path: appPattern },
+    },
+    {
+      name: "6-known-aliases-only",
+      severity: "error",
+      comment: "Only the four @cogno/* aliases exist.",
+      from: { path: "^src/" },
+      to: { dependencyTypes: ["unknown"], path: knownCognoAliasPattern },
     },
   ],
   options: {
-    doNotFollow: {
-      path: "node_modules",
-    },
-    tsConfig: {
-      fileName: "tsconfig.json",
-    },
+    doNotFollow: { path: "node_modules" },
+    tsConfig: { fileName: "tsconfig.json" },
     enhancedResolveOptions: {
       extensions: [".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs", ".json"],
     },
     tsPreCompilationDeps: true,
     exclude: {
-      path: [
-        "^dist/",
-        "^coverage/",
-        "^\\.angular/",
-        "^src/packages/assets/src/assets/",
-        "\\.spec\\.ts$",
-        "\\.test\\.ts$",
-      ],
+      path: ["^dist/", "^coverage/", "^\\.angular/", "^src/packages/assets/src/assets/", "\\.spec\\.ts$", "\\.test\\.ts$"],
     },
   },
 };

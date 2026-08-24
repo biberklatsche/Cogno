@@ -6,7 +6,7 @@ import { AppBus } from "../../../app-bus/app-bus";
 import { KeybindService } from "../../../keybinding/keybind.service";
 import { SideMenuService } from "./side-menu.service";
 import { SideMenuFeature } from "./side-menu-feature";
-import { SideMenuFeatureDefinition } from "./side-menu-feature-ui.contract";
+import { SideMenuFeatureDefinition } from "./side-menu-feature-definitions";
 
 class DummyComponent {}
 

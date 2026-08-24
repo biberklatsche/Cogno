@@ -1,59 +1,71 @@
 import { Inject, Injectable } from "@angular/core";
 import { ActionName } from "@cogno/app/action/action.models";
-import {
-  SideMenuFeatureDefinition,
-  sideMenuFeatureDefinitionsToken,
-} from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
+import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
 import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
 import {
-  ApplicationFeatureCollectionContract,
   ApplicationSettingsExtensionContract,
+  FeatureDefinition,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
-  SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/shared/contributions";
 import { NotificationChannelContract } from "@cogno/shared/domain";
-import { Icon } from "@cogno/shared/ui";
-import { additionalNotificationChannelsToken, featureCollectionToken } from "./app-host.tokens";
+import { additionalNotificationChannelsToken, featuresToken } from "./app-host.tokens";
 import { DatabaseMigrationService } from "./database-migration.service";
-import { coreDatabaseMigrations } from "./database-migrations";
-import { HostFeatureRegistry } from "./host-feature.registry";
-import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
+import { PathFactory } from "./path.factory";
 
+/**
+ * Collects what the features contribute and hands each extension point to
+ * its consumer. The feature list itself lives in `app/features.ts`.
+ */
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
-  private readonly featureRegistryHost = new HostFeatureRegistry(new SideMenuDefinitionRegistry());
+  private readonly sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition>;
+  private readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract>;
+  private readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
+  private readonly autocompleteSuggestorDefinitions: ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract>;
+  private readonly featureNotificationChannels: ReadonlyArray<NotificationChannelContract>;
 
   constructor(
-    @Inject(featureCollectionToken)
-    featureCollection: ApplicationFeatureCollectionContract<Icon, ActionName>,
-    @Inject(sideMenuFeatureDefinitionsToken)
-    sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition>,
+    @Inject(featuresToken) features: ReadonlyArray<FeatureDefinition<ActionName>>,
     @Inject(additionalNotificationChannelsToken)
     private readonly additionalNotificationChannels: ReadonlyArray<NotificationChannelContract>,
     private readonly appNotificationChannelService: AppNotificationChannelService,
-    private readonly databaseMigrationService: DatabaseMigrationService,
     private readonly osNotificationChannelService: OsNotificationChannelService,
+    databaseMigrationService: DatabaseMigrationService,
   ) {
-    for (const sideMenuFeatureDefinition of sideMenuFeatureDefinitions) {
-      this.featureRegistryHost.registerSideMenuFeatureExtension(sideMenuFeatureDefinition);
-    }
+    rejectDuplicateIds(features, (feature) => feature.id, "Feature");
 
-    this.featureRegistryHost.registerFeatureCollection(featureCollection);
-    this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
-    this.databaseMigrationService.registerFeatureMigrations(
-      this.featureRegistryHost.getDatabaseMigrations(),
+    this.sideMenuFeatureDefinitions = [
+      ...rejectDuplicateIds(
+        features.flatMap((feature) => feature.sideMenu ?? []),
+        (definition) => definition.id,
+        "Side menu feature",
+      ),
+    ].sort((left, right) => left.order - right.order);
+    this.shellDefinitions = features.flatMap((feature) => feature.shells ?? []);
+    this.settingsExtensions = features.flatMap((feature) =>
+      feature.settings ? [feature.settings] : [],
+    );
+    this.autocompleteSuggestorDefinitions = features.flatMap(
+      (feature) => feature.autocompleteSuggestors ?? [],
+    );
+    this.featureNotificationChannels = features.flatMap(
+      (feature) => feature.notificationChannels ?? [],
+    );
+
+    PathFactory.registerDefinitions(this.shellDefinitions.map((shell) => shell.pathAdapter));
+    databaseMigrationService.registerFeatureMigrations(
+      features.flatMap((feature) => feature.migrations ?? []),
     );
   }
 
   getRequiredSideMenuFeatureDefinitionById(
     sideMenuFeatureDefinitionId: string,
   ): SideMenuFeatureDefinition {
-    const sideMenuFeatureDefinition = this.featureRegistryHost.resolveSideMenuFeatureDefinitionById(
-      sideMenuFeatureDefinitionId,
-      (definition, extension) => this.mergeSideMenuFeatureDefinition(definition, extension),
+    const sideMenuFeatureDefinition = this.sideMenuFeatureDefinitions.find(
+      (definition) => definition.id === sideMenuFeatureDefinitionId,
     );
     if (sideMenuFeatureDefinition === undefined) {
       throw new Error(`Unknown side menu feature definition id: ${sideMenuFeatureDefinitionId}`);
@@ -62,13 +74,11 @@ export class AppWiringService {
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
-    return this.featureRegistryHost.resolveSideMenuFeatureDefinitions((definition, extension) =>
-      this.mergeSideMenuFeatureDefinition(definition, extension),
-    );
+    return this.sideMenuFeatureDefinitions;
   }
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
-    return this.featureRegistryHost.getSettingsExtensions();
+    return this.settingsExtensions;
   }
 
   getNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
@@ -76,35 +86,35 @@ export class AppWiringService {
       this.appNotificationChannelService,
       this.osNotificationChannelService,
       ...this.additionalNotificationChannels,
-      ...this.featureRegistryHost.getNotificationChannels(),
+      ...this.featureNotificationChannels,
     ];
   }
 
   getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract> {
-    return this.featureRegistryHost.getTerminalAutocompleteSuggestorDefinitions();
+    return this.autocompleteSuggestorDefinitions;
   }
 
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
-    return this.featureRegistryHost.getShellSupportDefinitions();
+    return this.shellDefinitions.map((shell) => shell.support);
   }
 
   getShellDefinitions(): ReadonlyArray<ShellDefinitionContract> {
-    return this.featureRegistryHost.getShellDefinitions();
+    return this.shellDefinitions;
   }
+}
 
-  private mergeSideMenuFeatureDefinition(
-    sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<Icon, ActionName>,
-    uiDefinition: SideMenuFeatureDefinition | undefined,
-  ): SideMenuFeatureDefinition {
-    if (uiDefinition === undefined) {
-      throw new Error(
-        `Missing side menu UI definition for feature id: ${sideMenuFeatureDefinition.id}`,
-      );
+function rejectDuplicateIds<T>(
+  items: ReadonlyArray<T>,
+  idOf: (item: T) => string,
+  label: string,
+): ReadonlyArray<T> {
+  const seen = new Set<string>();
+  for (const item of items) {
+    const id = idOf(item);
+    if (seen.has(id)) {
+      throw new Error(`${label} registered twice: ${id}`);
     }
-
-    return {
-      ...sideMenuFeatureDefinition,
-      ...uiDefinition,
-    };
+    seen.add(id);
   }
+  return items;
 }

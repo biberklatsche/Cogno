@@ -6,18 +6,13 @@ import {
 } from "@cogno/shared/contributions";
 
 /**
- * Collects the migrations contributed by core, app and features and hands
+ * Collects the migrations contributed by app and features and hands
  * them to the database when it is opened. Applying them — checksums,
  * transactions, legacy attachment — happens on the Rust side.
  */
 @Injectable({ providedIn: "root" })
 export class DatabaseMigrationService {
-  private readonly registeredCoreMigrations: DatabaseMigrationContract[] = [];
   private readonly registeredFeatureMigrations: DatabaseMigrationContract[] = [];
-
-  registerCoreMigrations(databaseMigrations: ReadonlyArray<DatabaseMigrationContract>): void {
-    this.registeredCoreMigrations.push(...databaseMigrations);
-  }
 
   registerFeatureMigrations(databaseMigrations: ReadonlyArray<DatabaseMigrationContract>): void {
     this.registeredFeatureMigrations.push(...databaseMigrations);
@@ -33,11 +28,7 @@ export class DatabaseMigrationService {
     devMode: boolean,
     legacyDatabasePath: string,
   ): Promise<DatabaseOpenReport> {
-    const allDatabaseMigrations = [
-      ...this.registeredCoreMigrations,
-      ...appDatabaseMigrations,
-      ...this.registeredFeatureMigrations,
-    ];
+    const allDatabaseMigrations = [...appDatabaseMigrations, ...this.registeredFeatureMigrations];
 
     const knownMigrationIdentifiers = new Set<string>();
     const migrations = allDatabaseMigrations.map((databaseMigration) => {

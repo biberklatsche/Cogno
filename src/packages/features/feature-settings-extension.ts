@@ -1,4 +1,7 @@
-import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
+import {
+  ApplicationSettingsExtensionContract,
+  FeatureDefinition,
+} from "@cogno/shared/contributions";
 import { z } from "zod";
 import {
   FeatureAiSchema,
@@ -54,3 +57,13 @@ export const defaultFeatureSettingsExtension = {
     { id: "feature.coding_agents", title: "Coding Agents", order: 1000 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;
+
+/**
+ * The configuration schema for every feature. Kept as one extension because
+ * the reader merges extensions by top-level key, and all features share the
+ * `feature` key.
+ */
+export const featureSettingsFeature: FeatureDefinition = {
+  id: "feature-settings",
+  settings: defaultFeatureSettingsExtension,
+};

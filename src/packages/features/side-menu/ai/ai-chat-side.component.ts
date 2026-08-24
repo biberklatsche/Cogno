@@ -8,13 +8,13 @@ import {
   viewChild,
 } from "@angular/core";
 import {
+  AiChatService,
   AiChatThreadMessage,
   AiCommandSuggestion,
+  AiProviderDetectionService,
   AiProviderStatus,
-} from "@cogno/features/ai/ai.models";
-import { AiChatService } from "@cogno/features/ai/ai-chat.service";
-import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
-import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-providers-store.service";
+  DetectedAiProvidersStore,
+} from "@cogno/features/ai";
 import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/shared/ui";
 
 @Component({

@@ -1,3 +1,4 @@
+import { FeatureDefinition } from "@cogno/shared/contributions";
 import { bashShellDefinition } from "./bash/bash.shell-definition";
 import { powerShellShellDefinition } from "./powershell/powershell.shell-definition";
 import { zshShellDefinition } from "./zsh/zsh.shell-definition";
@@ -15,3 +16,8 @@ export const featureShellSupportDefinitions = featureShellDefinitions.map(
 export const featureShellPathAdapterDefinitions = featureShellDefinitions.map(
   (definition) => definition.pathAdapter,
 );
+
+export const shellFeature: FeatureDefinition = {
+  id: "shell",
+  shells: featureShellDefinitions,
+};

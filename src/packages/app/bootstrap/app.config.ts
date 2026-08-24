@@ -11,7 +11,7 @@ import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
 import {
   additionalNotificationChannelsToken,
-  featureCollectionToken,
+  featuresToken,
 } from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
@@ -34,16 +34,15 @@ import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
 import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
+import { features } from "@cogno/app/features";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
-import { sideMenuFeatureDefinitionsToken } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+state/notification-center-port.adapter.service";
 import { NotificationChannelsPortAdapterService } from "@cogno/app/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
-import { featureApplicationFeatureCollection } from "@cogno/features";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
@@ -75,7 +74,6 @@ import {
   TerminalGateway,
 } from "@cogno/shared/ports";
 import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
-import { sideMenuFeatures } from "./side-menu-features";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -100,13 +98,9 @@ export const appConfig: ApplicationConfig = {
       useExisting: AiConfigurationTransformerService,
       multi: true,
     },
-    { provide: featureCollectionToken, useValue: featureApplicationFeatureCollection },
+    { provide: featuresToken, useValue: features },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
-    {
-      provide: sideMenuFeatureDefinitionsToken,
-      useValue: sideMenuFeatures,
-    },
     { provide: TerminalGateway, useExisting: TerminalGatewayAdapterService },
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
     { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService },

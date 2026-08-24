@@ -1,4 +1,5 @@
-export {
-  SideMenuFeatureDefinition,
-  sideMenuFeatureDefinitionsToken,
-} from "./side-menu-feature-ui.contract";
+import { ActionName } from "@cogno/app/action/action.models";
+import { SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+
+/** A side-menu entry as the app sees it: the contract with the app's action names. */
+export type SideMenuFeatureDefinition = SideMenuFeatureDefinitionContract<ActionName>;

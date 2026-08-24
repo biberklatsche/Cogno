@@ -2,11 +2,11 @@ import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   ActiveAgent,
+  AgentStatus,
   CodingAgentNotificationPreferencesService,
   CodingAgentStartupService,
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
-import { AgentStatus } from "@cogno/features/coding-agent/coding-agent-status.service";
 import { TerminalNavigator } from "@cogno/features/side-menu/ports";
 import {
   buildNotificationPreferencesMenuItems,

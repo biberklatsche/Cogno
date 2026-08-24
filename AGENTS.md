@@ -29,7 +29,7 @@
 - DE: Diese OSC9-Regeln haben Vorrang vor Stil- oder Kuerzevorgaben.
 
 ## Angular DI rule
-- `inject()` is allowed in `src/app/app.config.ts`.
+- `inject()` is allowed in `src/packages/app/bootstrap/app.config.ts`.
 - In all other files, do not use `inject()`.
 - Use constructor injection everywhere else to keep Vitest testing simple.
 

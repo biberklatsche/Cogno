@@ -1,4 +1,5 @@
-import { SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
 
 export const terminalSearchFeatureId = "terminal-search";
 
@@ -9,4 +10,13 @@ export const terminalSearchSideMenuFeatureDefinition = {
   order: 40,
   actionName: "open_terminal_search",
   configPath: "feature.search",
+  targetComponent: () =>
+    import("./terminal-search-side.component").then((m) => m.TerminalSearchSideComponent),
+  createLifecycle: (injector, sideMenuFeatureHandle) =>
+    injector.get(TerminalSearchSideMenuLifecycle).create(sideMenuFeatureHandle),
 } as const satisfies SideMenuFeatureDefinitionContract;
+
+export const terminalSearchFeature: FeatureDefinition = {
+  id: terminalSearchSideMenuFeatureDefinition.id,
+  sideMenu: [terminalSearchSideMenuFeatureDefinition],
+};

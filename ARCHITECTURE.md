@@ -116,8 +116,9 @@ terminal itself — pty, renderer, input handling — because the terminal is th
 product, not a feature of it. Anything that plugs *into* the terminal
 (history, autocomplete, the composer) is a feature.
 
-Bootstrap (`app/main.ts`, `app/app.config.ts`) is the only place `inject()`
-is used; everywhere else constructor injection keeps tests plain.
+Bootstrap (`app/bootstrap/main.ts`, `app/bootstrap/app.config.ts`) is the
+only place `inject()` is used; everywhere else constructor injection keeps
+tests plain.
 
 ## Testing
 
@@ -138,6 +139,6 @@ row is done, the old rule for that area still applies.
 | 1 | Remove `products/` and `ApplicationProduct`; fold composition into the bootstrap; drop the generic type parameters on the feature registry | done |
 | 2 | Merge `core-support`, `core-domain`, `core-ui` into `shared` | done |
 | 3 | Rename `app-tauri` to `platform`; collapse each platform contract + host adapter pair into one injectable service | done — `Filesystem` and `CommandRunner` stay ports: they combine platform calls with the shell path adapters, which is app logic |
-| 4 | Move the remaining `core-api` contracts to feature-owned ports or `shared/ports`; delete `core-api` | done — the contribution contracts sit in `shared/contributions` until step 6 folds them into `FeatureDefinition` |
-| 5 | Move history, autocomplete and composer out of `app/terminal` into `features` | open |
-| 6 | Fold `src/app` into `app`; replace the registry classes with `FeatureDefinition` and a plain list; rewrite `.dependency-cruiser.cjs` to the six rules above | open |
+| 4 | Move the remaining `core-api` contracts to feature-owned ports or `shared/ports`; delete `core-api` | done |
+| 5 | Move history, autocomplete and composer out of `app/terminal` into `features` | open — deferred behind step 6; they depend on eight app internals that each need a port first |
+| 6 | Fold `src/app` into `app`; replace the registry classes with `FeatureDefinition` and a plain list; rewrite `.dependency-cruiser.cjs` to the six rules above | done |

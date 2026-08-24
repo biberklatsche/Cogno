@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
+import { AiProviderDetectionService } from "@cogno/features/ai";
 import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/shared/contributions";
-import { AiProviderDetectionService } from "../../ai/ai-provider-detection.service";
 import { focusSideMenuAutofocusElement } from "../focus-side-menu-autofocus-element";
 
 @Injectable({ providedIn: "root" })
