@@ -1,8 +1,8 @@
 import { Component, OnInit, signal } from "@angular/core";
-import { Opener } from "@cogno/app-tauri/opener";
-import { Path } from "@cogno/app-tauri/path";
+import { AppInfo } from "@cogno/platform/app-info";
+import { Opener } from "@cogno/platform/opener";
+import { Path } from "@cogno/platform/path";
 import { DialogRef } from "@cogno/shared/ui";
-import { getVersion } from "@tauri-apps/api/app";
 
 @Component({
   selector: "app-about-dialog",
@@ -82,16 +82,19 @@ import { getVersion } from "@tauri-apps/api/app";
 export class AboutDialogComponent implements OnInit {
   readonly version = signal("…");
 
-  constructor(private readonly dialogRef: DialogRef<void>) {}
+  constructor(
+    private readonly dialogRef: DialogRef<void>,
+    private readonly opener: Opener,
+  ) {}
 
   async ngOnInit(): Promise<void> {
-    const v = await getVersion();
+    const v = await AppInfo.version();
     this.version.set(v);
   }
 
   async openLog(): Promise<void> {
     const logPath = await Path.cognoLogFilePath();
-    await Opener.openPath(logPath);
+    await this.opener.openPath(logPath);
     this.dialogRef.close();
   }
 }

@@ -198,13 +198,13 @@ importers:
 
   src/app: {}
 
-  src/packages/app-tauri: {}
-
   src/packages/assets: {}
 
   src/packages/core-api: {}
 
   src/packages/features: {}
+
+  src/packages/platform: {}
 
   src/packages/shared: {}
 

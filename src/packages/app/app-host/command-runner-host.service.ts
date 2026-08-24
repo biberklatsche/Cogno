@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
-import { CommandRunner } from "@cogno/app-tauri/command-runner";
 import {
   CommandRunner as CommandRunnerPort,
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
 } from "@cogno/core-api";
+import { CommandRunner } from "@cogno/platform/command-runner";
 import { PathFactory } from "./path.factory";
 
 @Injectable({ providedIn: "root" })

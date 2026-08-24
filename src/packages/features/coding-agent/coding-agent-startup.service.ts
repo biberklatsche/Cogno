@@ -3,8 +3,8 @@ import {
   ApplicationConfigurationPort,
   ConfirmDialogPort,
   ICodingAgentProvider,
-  OsPlatformPort,
 } from "@cogno/core-api";
+import { OsPlatform } from "@cogno/platform";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 
 export type InstalledProviderEntry = {
@@ -25,7 +25,7 @@ export class CodingAgentStartupService {
     private readonly registry: CodingAgentProviderRegistry,
     private readonly confirmDialog: ConfirmDialogPort,
     private readonly configPort: ApplicationConfigurationPort,
-    private readonly osPort: OsPlatformPort,
+    private readonly osPort: OsPlatform,
   ) {
     if (!this.isEnabled()) return;
     void this.rescan();

@@ -1,5 +1,5 @@
-import { bytesToBase64, Clipboard } from "@cogno/app-tauri/clipboard";
 import { ShellLineEditorDefinitionContract, TerminalId } from "@cogno/core-api";
+import { bytesToBase64, Clipboard } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";

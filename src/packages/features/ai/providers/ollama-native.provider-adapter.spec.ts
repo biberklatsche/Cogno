@@ -1,4 +1,5 @@
-import { HttpClientPort, HttpStreamEventContract } from "@cogno/core-api";
+import { HttpStreamEventContract } from "@cogno/core-api";
+import { HttpClient } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatRequest, AiProviderConfig, AiStreamChunk } from "../ai.models";
 import { OllamaNativeProviderAdapter } from "./ollama-native.provider-adapter";
@@ -20,7 +21,7 @@ function createRequest(abortSignal?: AbortSignal): AiChatRequest {
 }
 
 describe("OllamaNativeProviderAdapter", () => {
-  let httpClientPort: HttpClientPort;
+  let httpClientPort: HttpClient;
   let adapter: OllamaNativeProviderAdapter;
 
   beforeEach(() => {

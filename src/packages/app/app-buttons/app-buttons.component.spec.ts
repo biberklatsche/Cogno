@@ -1,4 +1,4 @@
-import { AppWindow } from "@cogno/app-tauri/window";
+import { AppWindow } from "@cogno/platform/window";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppButtonsService } from "./+state/app-buttons.service";

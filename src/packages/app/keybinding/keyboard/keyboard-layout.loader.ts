@@ -4,8 +4,8 @@ import {
   LinuxKeyboardLayoutInfo,
   MacKeyboardLayoutInfo,
   WindowsKeyboardLayoutInfo,
-} from "@cogno/app-tauri/keyboard-layout";
-import { OS } from "@cogno/app-tauri/os";
+} from "@cogno/platform/keyboard-layout";
+import { OS } from "@cogno/platform/os";
 import { KeymapInfo } from "./keyboard-layouts/_.contribution";
 
 @Injectable({

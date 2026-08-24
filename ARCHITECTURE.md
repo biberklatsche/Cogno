@@ -68,9 +68,11 @@ feature's words. Only when two or more features need the same port does it
 move to `shared/ports`. There is no third place.
 
 Platform services need no port. `platform` exports concrete injectable
-classes (`Database`, `Filesystem`, `CommandRunner`, …); tests replace them
-with `vi.mock` or a stub provider. The Tauri boundary is the package, not an
-interface.
+classes (`DatabaseAccess`, `PtyTransport`, `HttpClient`, `Opener`, …); tests
+replace them with `vi.mock` or a stub provider. The Tauri boundary is the
+package, not an interface. A service that combines a platform call with app
+logic — `Filesystem` and `CommandRunner` resolve paths through the shell's
+path adapter first — is an app service behind a port, not a platform one.
 
 ## Features
 
@@ -135,7 +137,7 @@ row is done, the old rule for that area still applies.
 |---|---|---|
 | 1 | Remove `products/` and `ApplicationProduct`; fold composition into the bootstrap; drop the generic type parameters on the feature registry | done |
 | 2 | Merge `core-support`, `core-domain`, `core-ui` into `shared` | done — `shared/domain` still imports types from `core-api` until step 4 dissolves it |
-| 3 | Rename `app-tauri` to `platform`; collapse each platform contract + host adapter pair into one injectable service | open |
+| 3 | Rename `app-tauri` to `platform`; collapse each platform contract + host adapter pair into one injectable service | done — `Filesystem` and `CommandRunner` stay ports: they combine platform calls with the shell path adapters, which is app logic |
 | 4 | Move the remaining `core-api` contracts to feature-owned ports or `shared/ports`; delete `core-api` | open |
 | 5 | Move history, autocomplete and composer out of `app/terminal` into `features` | open |
 | 6 | Fold `src/app` into `app`; replace the registry classes with `FeatureDefinition` and a plain list; rewrite `.dependency-cruiser.cjs` to the six rules above | open |

@@ -1,8 +1,8 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
-import { Clipboard } from "@cogno/app-tauri/clipboard";
-import { OS, type OsType } from "@cogno/app-tauri/os";
-import { Opener } from "@cogno/core-api";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { Opener } from "@cogno/platform";
+import { Clipboard } from "@cogno/platform/clipboard";
+import { OS, type OsType } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";

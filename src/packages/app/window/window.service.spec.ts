@@ -20,24 +20,24 @@ const { appWindowMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@cogno/app-tauri/window-core", () => ({
+vi.mock("@cogno/platform/window-core", () => ({
   WindowCore: {
     newWindow: vi.fn(() => Promise.resolve()),
   },
 }));
 
-vi.mock("@cogno/app-tauri/window", () => ({
+vi.mock("@cogno/platform/window", () => ({
   AppWindow: appWindowMock,
 }));
 
-vi.mock("@cogno/app-tauri/process", () => ({
+vi.mock("@cogno/platform/process", () => ({
   Process: {
     exit: vi.fn(() => Promise.resolve()),
     relaunch: vi.fn(() => Promise.resolve()),
   },
 }));
 
-vi.mock("@cogno/app-tauri/logger", () => ({
+vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -46,16 +46,16 @@ vi.mock("@cogno/app-tauri/logger", () => ({
   },
 }));
 
-vi.mock("@cogno/app-tauri/os", () => ({
+vi.mock("@cogno/platform/os", () => ({
   OS: {
     platform: vi.fn(() => "macos"),
   },
 }));
 
-import { Logger } from "@cogno/app-tauri/logger";
-import { Process } from "@cogno/app-tauri/process";
-import { AppWindow } from "@cogno/app-tauri/window";
-import { WindowCore } from "@cogno/app-tauri/window-core";
+import { Logger } from "@cogno/platform/logger";
+import { Process } from "@cogno/platform/process";
+import { AppWindow } from "@cogno/platform/window";
+import { WindowCore } from "@cogno/platform/window-core";
 import {
   clear,
   getAppBus,

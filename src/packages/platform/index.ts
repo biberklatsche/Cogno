@@ -1,4 +1,5 @@
 export * from "./ai-http";
+export * from "./app-info";
 export * from "./cli-action";
 export * from "./cli-config-overrides";
 export * from "./clipboard";
@@ -19,5 +20,6 @@ export * from "./path";
 export * from "./process";
 export * from "./pty";
 export * from "./shells";
+export * from "./simple-file-access";
 export * from "./window";
 export * from "./window-core";

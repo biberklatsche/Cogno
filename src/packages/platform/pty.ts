@@ -1,14 +1,57 @@
-import {
-  PtyChunkContract,
-  PtyExitEventContract,
-  PtyOutputListenerContract,
-  PtySpawnHandleContract,
-  PtySpawnOptionsContract,
-  PtySpawnResultContract,
-  PtyTransportPort,
-} from "@cogno/core-api";
+import { Injectable } from "@angular/core";
+import { ShellTypeContract } from "@cogno/core-api";
 import { invoke, SERIALIZE_TO_IPC_FN, transformCallback } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+
+/**
+ * Shell profile as the backend's spawner expects it (wire format, hence the
+ * snake_case keys). Structurally identical to the app's configured profile.
+ */
+export type PtyShellProfileContract = {
+  shell_type: ShellTypeContract;
+  path?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  use_conpty?: boolean;
+  working_dir?: string;
+  inject_cogno_cli: boolean;
+  enable_shell_integration: boolean;
+  load_user_rc: boolean;
+};
+
+export type PtySpawnOptionsContract = {
+  terminalId: string;
+  cols: number;
+  rows: number;
+  profile: PtyShellProfileContract;
+  devMode: boolean;
+};
+
+export type PtySpawnResultContract = {
+  shellProcessId: number | null;
+};
+
+/** One chunk of raw PTY output. `seq` numbers the chunks of a spawn from 0 up. */
+export type PtyChunkContract = { seq: number; data: Uint8Array };
+
+export type PtyExitEventContract = { exitCode: number; signal?: number };
+
+export interface PtyOutputListenerContract {
+  /** Chunks arrive strictly in sequence order. */
+  onChunk(chunk: PtyChunkContract): void;
+  /** Chunks `fromSeq` up to (excluding) `toSeq` were lost in transit and skipped. */
+  onChunksLost(fromSeq: number, toSeq: number): void;
+}
+
+export interface PtySpawnHandleContract {
+  /** Resolves once the shell runs, rejects when it could not be spawned. */
+  readonly ready: Promise<PtySpawnResultContract>;
+  /**
+   * Stops output delivery for good. Safe to call before `ready` settles;
+   * the backend session (if it comes into existence) still has to be killed.
+   */
+  closeOutput(): void;
+}
 
 export type ProcessDetails = {
   processId: number;
@@ -187,10 +230,15 @@ export class PtyDataChannel {
 }
 
 /**
- * `PtyTransportPort` over Tauri commands: `pty_spawn` with a `PtyDataChannel`
- * for output, `pty_ack` for flow control, plus the usual write/resize/kill.
+ * Transport to the backend's PTY sessions over Tauri commands: `pty_spawn`
+ * with a `PtyDataChannel` for output, `pty_ack` for flow control, plus the
+ * usual write/resize/kill. Output is pushed through the listener handed to
+ * `spawn` (wired before the shell starts, so no byte is lost) and subject
+ * to flow control: the reader stops once too much output is unacknowledged,
+ * so the consumer must `ack` chunks as it processes them.
  */
-export class TauriPtyTransport extends PtyTransportPort {
+@Injectable({ providedIn: "root" })
+export class PtyTransport {
   spawn(
     options: PtySpawnOptionsContract,
     output: PtyOutputListenerContract,
@@ -200,7 +248,7 @@ export class TauriPtyTransport extends PtyTransportPort {
     const channel = new PtyDataChannel();
     channel.onmessage = (chunk) => output.onChunk(chunk);
     channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
-    // Transport-internal pacing signal (not part of PtyTransportPort): lets
+    // Transport-internal pacing signal (not part of PtyTransport): lets
     // the backend send the next burst as soon as a chunk has arrived,
     // without waiting for xterm to parse it. Coalesced per microtask, the
     // same way the (much slower) parse-based ack already is — firing one

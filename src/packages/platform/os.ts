@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { type as tauriType } from "@tauri-apps/plugin-os";
 
 export type OsType = "linux" | "windows" | "macos";
@@ -48,3 +49,11 @@ export const OS = {
     }
   },
 };
+
+/** Injectable view on `OS` for code that prefers constructor injection. */
+@Injectable({ providedIn: "root" })
+export class OsPlatform {
+  platform(): OsType {
+    return OS.platform();
+  }
+}

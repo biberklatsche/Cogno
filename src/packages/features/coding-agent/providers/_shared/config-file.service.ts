@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { SimpleFileAccess } from "@cogno/core-api";
+import { SimpleFileAccess } from "@cogno/platform";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 
 export class ConfigFileError extends Error {

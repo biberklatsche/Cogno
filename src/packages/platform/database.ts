@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 
 export interface DatabaseMigration {
@@ -72,3 +73,36 @@ export const Database = {
     return invoke<DatabaseExecuteResult[]>("db_batch", { statements });
   },
 };
+
+export type DatabaseStatementContract = DatabaseStatement;
+export type DatabaseExecuteResultContract = DatabaseExecuteResult;
+
+/**
+ * SQL access to the application database. Statements passed to `batch` run
+ * in one transaction — all of them take effect or none does. There is
+ * deliberately no way to hold a transaction open across calls.
+ */
+export interface DatabaseAccessContract {
+  execute(query: string, parameters?: ReadonlyArray<unknown>): Promise<DatabaseExecuteResult>;
+  select<T = unknown>(query: string, parameters?: ReadonlyArray<unknown>): Promise<T>;
+  batch(
+    statements: ReadonlyArray<DatabaseStatement>,
+  ): Promise<ReadonlyArray<DatabaseExecuteResult>>;
+}
+
+@Injectable({ providedIn: "root" })
+export class DatabaseAccess implements DatabaseAccessContract {
+  execute(query: string, parameters?: ReadonlyArray<unknown>): Promise<DatabaseExecuteResult> {
+    return Database.execute({ sql: query, params: parameters });
+  }
+
+  select<T = unknown>(query: string, parameters?: ReadonlyArray<unknown>): Promise<T> {
+    return Database.select({ sql: query, params: parameters }) as Promise<T>;
+  }
+
+  batch(
+    statements: ReadonlyArray<DatabaseStatement>,
+  ): Promise<ReadonlyArray<DatabaseExecuteResult>> {
+    return Database.batch(statements);
+  }
+}

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { OS, OsType } from "@cogno/app-tauri/os";
+import { OS, OsType } from "@cogno/platform/os";
 import { AppButtonsService } from "./+state/app-buttons.service";
 
 type WindowControlIconName =

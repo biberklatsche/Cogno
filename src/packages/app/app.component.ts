@@ -1,6 +1,6 @@
 import { Component } from "@angular/core";
-import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/app-tauri/database";
-import { OS } from "@cogno/app-tauri/os";
+import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
+import { OS } from "@cogno/platform/os";
 import { AppBus } from "./app-bus/app-bus";
 import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
 import { DatabaseMigrationService } from "./app-host/database-migration.service";

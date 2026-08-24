@@ -1,4 +1,4 @@
-import { OS } from "@cogno/app-tauri/os";
+import { OS } from "@cogno/platform/os";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";

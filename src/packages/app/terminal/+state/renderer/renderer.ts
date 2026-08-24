@@ -1,4 +1,4 @@
-import { OS } from "@cogno/app-tauri/os";
+import { OS } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import type { LigaturesAddon } from "@xterm/addon-ligatures";

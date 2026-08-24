@@ -1,4 +1,4 @@
-import { OsType } from "@cogno/app-tauri/os";
+import { OsType } from "@cogno/platform/os";
 
 export const Modifier = {
   modifierOrder: (os: OsType): Record<string, number> => {

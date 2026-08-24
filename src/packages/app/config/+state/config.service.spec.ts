@@ -1,5 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { Opener } from "@cogno/platform";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../app-bus/app-bus";
@@ -20,7 +21,14 @@ function createService(config?: Partial<Config>): RealConfigService {
     getShellSupportDefinitions: vi.fn().mockReturnValue([]),
   } as unknown as AppWiringService;
 
-  const service = new RealConfigService(appBus, destroyRef, shellConfigurator, appWiringService);
+  const opener = { openPath: vi.fn(), openUrl: vi.fn() } as unknown as Opener;
+  const service = new RealConfigService(
+    appBus,
+    destroyRef,
+    shellConfigurator,
+    appWiringService,
+    opener,
+  );
   if (config) {
     (service as unknown as { _config: BehaviorSubject<Config | undefined> })._config.next(
       config as Config,

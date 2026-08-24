@@ -1,5 +1,5 @@
-import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-api";
+import { Clipboard } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";

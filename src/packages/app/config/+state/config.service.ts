@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { CliConfigOverrides } from "@cogno/app-tauri/cli-config-overrides";
-import { DefaultConfig } from "@cogno/app-tauri/default-config";
-import { Fs } from "@cogno/app-tauri/fs";
-import { Logger } from "@cogno/app-tauri/logger";
-import { Opener } from "@cogno/app-tauri/opener";
-import { Path } from "@cogno/app-tauri/path";
+import { CliConfigOverrides } from "@cogno/platform/cli-config-overrides";
+import { DefaultConfig } from "@cogno/platform/default-config";
+import { Fs } from "@cogno/platform/fs";
+import { Logger } from "@cogno/platform/logger";
+import { Opener } from "@cogno/platform/opener";
+import { Path } from "@cogno/platform/path";
 import { BehaviorSubject, filter, Observable, Subscription } from "rxjs";
 import { ActionFired } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
@@ -157,6 +157,7 @@ export class RealConfigService extends ConfigService {
     private destroy: DestroyRef,
     private shells: ShellConfigurator,
     private wiringService: AppWiringService,
+    private opener: Opener,
   ) {
     super();
 
@@ -169,10 +170,10 @@ export class RealConfigService extends ConfigService {
 
     this.appBus.on$(ActionFired.listener()).subscribe(async (event) => {
       if (event.payload === "open_config") {
-        await Opener.openPath(Environment.configFilePath());
+        await this.opener.openPath(Environment.configFilePath());
       }
       if (event.payload === "open_documentation") {
-        await Opener.openUrl("https://cogno.rocks/docs/getting-started/");
+        await this.opener.openUrl("https://cogno.rocks/docs/getting-started/");
       }
     });
 

@@ -10,7 +10,7 @@ export class TauriMockFactory {
     };
   }
 
-  /** Fake `PtyTransportPort` (from `@cogno/core-api`). */
+  /** Fake `PtyTransport` (from `@cogno/core-api`). */
   static createPtyTransport() {
     return {
       spawn: vi.fn(() => TauriMockFactory.createPtySpawnHandle()),

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { HttpClientPort } from "@cogno/core-api";
+import { HttpClient } from "@cogno/platform";
 import { AiChatRequest, AiProviderAdapter, AiProviderConfig, AiStreamChunk } from "../ai.models";
 import {
   buildProviderUrl,
@@ -22,7 +22,7 @@ export class OllamaNativeProviderAdapter implements AiProviderAdapter {
     supportsStreaming: true,
   } as const;
 
-  constructor(private readonly httpClientPort: HttpClientPort) {}
+  constructor(private readonly httpClientPort: HttpClient) {}
 
   validateConfiguration(_providerId: string, config: AiProviderConfig): ReadonlyArray<string> {
     const validationErrors: string[] = [];

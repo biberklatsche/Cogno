@@ -1,9 +1,9 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { TauriMenu, TauriMenuItemHandle } from "@cogno/app-tauri/native-menu";
-import { OS } from "@cogno/app-tauri/os";
-import { AppWindow } from "@cogno/app-tauri/window";
+import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
+import { OS } from "@cogno/platform/os";
+import { AppWindow } from "@cogno/platform/window";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { Config, FeatureMode } from "../../config/+models/config";

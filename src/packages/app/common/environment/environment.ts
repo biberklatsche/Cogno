@@ -1,6 +1,6 @@
 import { isDevMode } from "@angular/core";
-import { Logger } from "@cogno/app-tauri/logger";
-import { Path } from "@cogno/app-tauri/path";
+import { Logger } from "@cogno/platform/logger";
+import { Path } from "@cogno/platform/path";
 
 export const Environment = (() => {
   let homeDir = "";

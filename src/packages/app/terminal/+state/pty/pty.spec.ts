@@ -1,10 +1,10 @@
-import type { PtyOutputListenerContract, PtyTransportPort } from "@cogno/core-api";
+import type { PtyOutputListenerContract, PtyTransport } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
 import type { ShellConfig } from "../../../config/+models/config";
 import { Pty } from "./pty";
 
-vi.mock("@cogno/app-tauri/logger", () => ({
+vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     error: vi.fn(),
   },
@@ -28,7 +28,7 @@ describe("Pty", () => {
 
   beforeEach(() => {
     transport = TauriMockFactory.createPtyTransport();
-    pty = new Pty(transport as unknown as PtyTransportPort);
+    pty = new Pty(transport as unknown as PtyTransport);
   });
 
   /** The n-th spawn handle the transport handed out. */

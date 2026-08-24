@@ -1,12 +1,12 @@
-import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
+import { Clipboard } from "@cogno/platform/clipboard";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { IPty } from "../../pty/pty";
 import { CommandLineEditor } from "./command-line.editor";
 
-vi.mock("@cogno/app-tauri/clipboard", () => ({
+vi.mock("@cogno/platform/clipboard", () => ({
   Clipboard: {
     writeText: vi.fn(),
     readText: vi.fn(),

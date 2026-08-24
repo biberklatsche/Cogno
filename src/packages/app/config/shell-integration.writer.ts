@@ -1,7 +1,7 @@
-import { Fs } from "@cogno/app-tauri/fs";
-import { Logger } from "@cogno/app-tauri/logger";
-import { Shells } from "@cogno/app-tauri/shells";
 import { ShellSupportDefinitionContract, ShellTypeContract } from "@cogno/core-api";
+import { Fs } from "@cogno/platform/fs";
+import { Logger } from "@cogno/platform/logger";
+import { Shells } from "@cogno/platform/shells";
 import { Environment } from "../common/environment/environment";
 import { ErrorReporter } from "../common/error/error-reporter";
 

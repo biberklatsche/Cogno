@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from "@angular/core";
-import { OS } from "@cogno/app-tauri/os";
+import { OS } from "@cogno/platform/os";
 import { ActionName } from "../../action/action.models";
 import { KeybindService } from "../keybind.service";
 import { Modifier } from "../modifier";

@@ -1,7 +1,7 @@
 // Lives in app/ rather than features/ because it depends on xterm Terminal,
 // ITerminalHandler, and IPty — which are app-layer types.
-import { Clipboard } from "@cogno/app-tauri/clipboard";
-import { OS } from "@cogno/app-tauri/os";
+import { Clipboard } from "@cogno/platform/clipboard";
+import { OS } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { IPty } from "../pty/pty";

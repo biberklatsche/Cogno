@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
@@ -68,3 +69,39 @@ export const AiHttp = {
     }
   },
 };
+
+export interface HttpRequestContract {
+  readonly method: string;
+  readonly url: string;
+  readonly headers?: Readonly<Record<string, string>>;
+  readonly body?: string;
+  readonly timeoutMs?: number;
+}
+
+export type HttpResponseContract = AiHttpResponsePayload;
+export type HttpStreamEvent = AiHttpStreamEvent;
+
+/** HTTP through the Rust process, so requests are not subject to the webview's CORS rules. */
+@Injectable({ providedIn: "root" })
+export class HttpClient {
+  request(request: HttpRequestContract): Promise<HttpResponseContract> {
+    return AiHttp.request(toPayload(request));
+  }
+
+  streamRequest(
+    request: HttpRequestContract,
+    abortSignal?: AbortSignal,
+  ): AsyncIterable<HttpStreamEvent> {
+    return AiHttp.streamRequest(toPayload(request), abortSignal);
+  }
+}
+
+function toPayload(request: HttpRequestContract): AiHttpRequestPayload {
+  return {
+    method: request.method,
+    url: request.url,
+    headers: request.headers ?? {},
+    body: request.body ?? "",
+    timeoutMs: request.timeoutMs,
+  };
+}

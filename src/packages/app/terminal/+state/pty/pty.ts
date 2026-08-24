@@ -1,4 +1,4 @@
-import { PtyChunkContract, PtySpawnHandleContract, PtyTransportPort } from "@cogno/core-api";
+import { PtyChunkContract, PtySpawnHandleContract, PtyTransport } from "@cogno/platform";
 import { IDisposable } from "@cogno/shared/support";
 import { Environment } from "../../../common/environment/environment";
 import { ErrorReporter } from "../../../common/error/error-reporter";
@@ -36,7 +36,7 @@ export class Pty implements IPty {
   private _spawn: PtySpawnHandleContract | undefined = undefined;
   private _exitUnlisten: (() => void) | undefined = undefined;
 
-  constructor(private readonly _transport: PtyTransportPort) {}
+  constructor(private readonly _transport: PtyTransport) {}
 
   async spawn(
     terminalId: string,

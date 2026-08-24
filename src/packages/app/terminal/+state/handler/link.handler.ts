@@ -1,6 +1,6 @@
-import { Clipboard } from "@cogno/app-tauri/clipboard";
-import { OS } from "@cogno/app-tauri/os";
-import { Opener } from "@cogno/core-api";
+import { Opener } from "@cogno/platform";
+import { Clipboard } from "@cogno/platform/clipboard";
+import { OS } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { TerminalPathResolver } from "../advanced/path/terminal-path.resolver";

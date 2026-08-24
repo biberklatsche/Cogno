@@ -5,21 +5,36 @@ const sharedDomainPattern = "^src/packages/shared/(domain|support)/";
 const coreApiPattern = "^src/packages/core-api/";
 const featuresPattern = "^src/packages/features/";
 const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
-const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
+const platformPattern = "^src/packages/platform/";
 const appPackagePattern = "^src/packages/app/";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|core-api(?:$|/)|shared(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|platform(?:$|/)|features(?:$|/)|core-api(?:$|/)|shared(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
     {
+      name: "only-platform-talks-to-tauri",
+      severity: "error",
+      comment: "Only platform imports @tauri-apps/*; everything else goes through its services.",
+      from: { path: "^src/", pathNot: "^(src/packages/platform/|src/packages/__test__/)" },
+      to: { path: "^@tauri-apps/" },
+    },
+    {
+      name: "platform-imports-only-shared",
+      severity: "error",
+      comment:
+        "platform is the Tauri binding layer and must not reach into app or features. (core-api is still allowed until it is dissolved in architecture step 4.)",
+      from: { path: platformPattern },
+      to: { path: "^(src/packages/app|src/packages/features|src/app)/" },
+    },
+    {
       name: "shared-knows-nothing-about-the-app",
       severity: "error",
       comment:
-        "shared must not depend on app, features, the platform layer or Tauri. (core-api is still allowed until it is dissolved in architecture step 4.)",
+        "shared must not depend on app, features, platform or Tauri. (core-api is still allowed until it is dissolved in architecture step 4.)",
       from: { path: sharedPattern },
-      to: { path: "^(src/packages/app|src/packages/app-tauri|src/packages/features|src/app)/|^@tauri-apps/" },
+      to: { path: "^(src/packages/app|src/packages/platform|src/packages/features|src/app)/|^@tauri-apps/" },
     },
     {
       name: "shared-domain-is-frameworkfree",
@@ -50,13 +65,6 @@ module.exports = {
       to: { path: appAngularPattern },
     },
     {
-      name: "core-api-must-not-import-app-tauri",
-      severity: "error",
-      comment: "core-api must not depend on app-tauri.",
-      from: { path: coreApiPattern },
-      to: { path: appTauriPattern },
-    },
-    {
       name: "core-api-must-not-import-features",
       severity: "error",
       comment: "core-api must not depend on features.",
@@ -85,13 +93,6 @@ module.exports = {
       to: { path: appAngularPattern },
     },
     {
-      name: "features-must-not-import-app-tauri",
-      severity: "error",
-      comment: "features must not depend on app-tauri.",
-      from: { path: featuresPattern },
-      to: { path: appTauriPattern },
-    },
-    {
       name: "app-angular-must-not-import-features",
       severity: "error",
       comment: "app-angular must not depend on concrete features.",
@@ -104,21 +105,6 @@ module.exports = {
       comment: "Feature-specific orchestration services (e.g. *-host-application.service) must not be imported by features — they belong in app-host adapters only.",
       from: { path: featuresPattern },
       to: { path: "app-host.*-application\\.service\\.ts$" },
-    },
-    {
-      name: "app-tauri-must-not-import-features",
-      severity: "error",
-      comment: "app-tauri must not depend on concrete features outside explicit compose/bootstrap boundaries.",
-      from: { path: appTauriPattern },
-      to: { path: featuresPattern },
-    },
-    {
-      name: "app-tauri-must-not-import-app",
-      severity: "error",
-      comment:
-        "app-tauri is the Tauri adapter layer below app: it implements core-api ports and must not reach up into app.",
-      from: { path: appTauriPattern },
-      to: { path: appPackagePattern, pathNot: "^src/packages/app/_tauri/" },
     },
     {
       name: "internal-layers-must-not-import-bootstrap",

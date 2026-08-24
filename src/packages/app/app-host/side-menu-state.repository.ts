@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { DatabaseAccess } from "@cogno/core-api";
+import { DatabaseAccess } from "@cogno/platform";
 
 export interface SideMenuStateEntity {
   selected_item_label: string | null;

@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
-import { Path } from "@cogno/app-tauri/path";
-import { DatabaseAccess, IPathAdapter } from "@cogno/core-api";
+import { IPathAdapter } from "@cogno/core-api";
+import { DatabaseAccess } from "@cogno/platform";
+import { Path } from "@cogno/platform/path";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { ConfigService } from "../../../../config/+state/config.service";

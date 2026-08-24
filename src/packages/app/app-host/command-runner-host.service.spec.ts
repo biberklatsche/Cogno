@@ -1,8 +1,8 @@
-import { CommandRunner } from "@cogno/app-tauri/command-runner";
+import { CommandRunner } from "@cogno/platform/command-runner";
 import { describe, expect, it, vi } from "vitest";
 import { CommandRunnerHostService } from "./command-runner-host.service";
 
-vi.mock("@cogno/app-tauri/command-runner", () => ({
+vi.mock("@cogno/platform/command-runner", () => ({
   CommandRunner: {
     execute: vi.fn(),
   },

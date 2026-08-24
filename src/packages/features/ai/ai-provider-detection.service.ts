@@ -1,5 +1,6 @@
 import { Inject, Injectable, signal } from "@angular/core";
-import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
+import { ApplicationConfigurationPort } from "@cogno/core-api";
+import { HttpClient } from "@cogno/platform";
 import { getAiFeatureConfig, getRawProviderOverrides } from "./ai-config.utils";
 import {
   AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,
@@ -16,7 +17,7 @@ export class AiProviderDetectionService {
     @Inject(AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN)
     private readonly definitions: readonly AiDetectableProviderDefinition[],
     private readonly configPort: ApplicationConfigurationPort,
-    private readonly httpClient: HttpClientPort,
+    private readonly httpClient: HttpClient,
     private readonly store: DetectedAiProvidersStore,
   ) {}
 

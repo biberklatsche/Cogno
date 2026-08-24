@@ -1,6 +1,6 @@
-import { Clipboard } from "@cogno/app-tauri/clipboard";
 import type { ShellLineEditorDefinitionContract } from "@cogno/core-api";
 import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
+import { Clipboard } from "@cogno/platform/clipboard";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
@@ -11,7 +11,7 @@ import type { TerminalStateManager } from "../state";
 import { ClipboardHandler } from "./clipboard.handler";
 import { SelectionHandler } from "./selection.handler";
 
-vi.mock("@cogno/app-tauri/clipboard", () => ({
+vi.mock("@cogno/platform/clipboard", () => ({
   bytesToBase64: (bytes: Uint8Array): string => {
     let binary = "";
     for (let i = 0; i < bytes.length; i += 8192) {

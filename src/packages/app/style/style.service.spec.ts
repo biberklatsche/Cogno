@@ -1,25 +1,25 @@
-import { Fs } from "@cogno/app-tauri/fs";
-import { Logger } from "@cogno/app-tauri/logger";
-import { Path } from "@cogno/app-tauri/path";
+import { Fs } from "@cogno/platform/fs";
+import { Logger } from "@cogno/platform/logger";
+import { Path } from "@cogno/platform/path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../__test__/mocks/config-service.mock";
 import { getDestroyRef } from "../../__test__/test-factory";
 import type { Config } from "../config/+models/config";
 import { StyleService } from "./style.service";
 
-vi.mock("@cogno/app-tauri/fs", () => ({
+vi.mock("@cogno/platform/fs", () => ({
   Fs: {
     convertFileSrc: vi.fn((path: string) => `mock-url://${path}`),
   },
 }));
 
-vi.mock("@cogno/app-tauri/path", () => ({
+vi.mock("@cogno/platform/path", () => ({
   Path: {
     homeDir: vi.fn(async () => "/Users/tester"),
   },
 }));
 
-vi.mock("@cogno/app-tauri/logger", () => ({
+vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("@cogno/app-tauri/logger", () => ({
   },
 }));
 
-vi.mock("@cogno/app-tauri/os", () => ({
+vi.mock("@cogno/platform/os", () => ({
   OS: {
     platform: vi.fn(() => "macos"),
   },

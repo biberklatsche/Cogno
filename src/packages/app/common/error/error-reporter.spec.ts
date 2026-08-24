@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildLogMessage, ErrorReporter, formatUnknownError } from "./error-reporter";
 
-vi.mock("@cogno/app-tauri/logger", () => ({
+vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     error: vi.fn(),
     warn: vi.fn(),

@@ -8,13 +8,13 @@ import { NativeMenuService } from "./native-menu.service";
 
 const menuItemActionCallbacks = new Map<string, () => void>();
 
-vi.mock("@cogno/app-tauri/os", () => ({
+vi.mock("@cogno/platform/os", () => ({
   OS: {
     platform: vi.fn(() => "linux"),
   },
 }));
 
-vi.mock("@cogno/app-tauri/window", () => ({
+vi.mock("@cogno/platform/window", () => ({
   AppWindow: {
     onFocusChanged$: {
       pipe: vi.fn().mockReturnThis(),
@@ -23,7 +23,7 @@ vi.mock("@cogno/app-tauri/window", () => ({
   },
 }));
 
-vi.mock("@cogno/app-tauri/native-menu", () => ({
+vi.mock("@cogno/platform/native-menu", () => ({
   TauriMenu: {
     newPredefinedItem: vi.fn(async (config: unknown) => ({ kind: "predefined", config })),
     newItem: vi.fn(async (config: { id: string; action: () => void }) => {
@@ -116,7 +116,7 @@ describe("NativeMenuService", () => {
   it("builds a native menu with feature enablement derived from config", async () => {
     await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();
 
-    const { TauriMenu } = await import("@cogno/app-tauri/native-menu");
+    const { TauriMenu } = await import("@cogno/platform/native-menu");
     const newItemCalls = vi.mocked(TauriMenu.newItem).mock.calls;
     const workspaceCall = newItemCalls.find((call) => call[0].id === "open_workspace");
     const aiCall = newItemCalls.find((call) => call[0].id === "open_ai");

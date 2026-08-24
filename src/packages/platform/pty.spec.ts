@@ -1,7 +1,7 @@
 import type { PtyChunkContract, PtyOutputListenerContract } from "@cogno/core-api";
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PTY_CHUNK_GAP_TIMEOUT_MS, PtyDataChannel, TauriPtyTransport } from "./pty";
+import { PTY_CHUNK_GAP_TIMEOUT_MS, PtyDataChannel, PtyTransport } from "./pty";
 
 type RawMessage = { message: ArrayBuffer; index: number } | { end: true; index: number };
 
@@ -173,16 +173,16 @@ describe("PtyDataChannel", () => {
   });
 });
 
-describe("TauriPtyTransport", () => {
+describe("PtyTransport", () => {
   const unregisterCallback = vi.fn();
-  let transport: TauriPtyTransport;
+  let transport: PtyTransport;
   let output: PtyOutputListenerContract;
 
   beforeEach(() => {
     (window as any).__TAURI_INTERNALS__ = { unregisterCallback };
     vi.mocked(invoke).mockReset();
     vi.mocked(invoke).mockResolvedValue({ shellProcessId: 4711 });
-    transport = new TauriPtyTransport();
+    transport = new PtyTransport();
     output = { onChunk: vi.fn(), onChunksLost: vi.fn() };
   });
 

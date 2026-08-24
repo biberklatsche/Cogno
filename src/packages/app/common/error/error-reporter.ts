@@ -1,4 +1,4 @@
-import { Logger } from "@cogno/app-tauri/logger";
+import { Logger } from "@cogno/platform/logger";
 
 export type ErrorReportContext = Readonly<Record<string, unknown>>;
 

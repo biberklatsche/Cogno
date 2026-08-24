@@ -1,5 +1,5 @@
-import { OS } from "@cogno/app-tauri/os";
 import { ShellSessionCapabilitiesContract } from "@cogno/core-api";
+import { OS } from "@cogno/platform/os";
 import { ShellContext } from "../advanced/model/models";
 
 export type Position = { col: number; row: number };

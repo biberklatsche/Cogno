@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
-import { CognoMessageListener } from "@cogno/app-tauri/cogno-message";
-import { HttpServer } from "@cogno/app-tauri/http-server";
+import { CognoMessageListener } from "@cogno/platform/cogno-message";
+import { HttpServer } from "@cogno/platform/http-server";
 import { take } from "rxjs";
 import { HTTP_SERVER_DEFAULTS } from "../config/+models/config";
 import { ConfigService } from "../config/+state/config.service";

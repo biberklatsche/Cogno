@@ -4,7 +4,7 @@ import { ConfigService } from "../../config/+state/config.service";
 import { ErrorReporter } from "./error-reporter";
 import { ErrorReportingRuntimeService } from "./error-reporting-runtime.service";
 
-vi.mock("@cogno/app-tauri/logger", () => ({
+vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     error: vi.fn(),
     warn: vi.fn(),

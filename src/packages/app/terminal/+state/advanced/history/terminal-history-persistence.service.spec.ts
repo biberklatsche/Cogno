@@ -1,4 +1,5 @@
-import type { DatabaseAccess, IPathAdapter } from "@cogno/core-api";
+import type { IPathAdapter } from "@cogno/core-api";
+import type { DatabaseAccess } from "@cogno/platform";
 import { describe, expect, it, vi } from "vitest";
 import type { ConfigService } from "../../../../config/+state/config.service";
 import type { ShellContext } from "../model/models";

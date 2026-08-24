@@ -3,11 +3,10 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   NotificationChannelsPort,
   NotificationDefinitionContract,
-  Opener,
-  PtyTransportPort,
   ShellDefinitionContract,
   TerminalId,
 } from "@cogno/core-api";
+import { Opener, PtyTransport } from "@cogno/platform";
 import {
   buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
@@ -108,7 +107,7 @@ export class TerminalSession {
     private readonly terminalActivity: TerminalActivityService,
     private readonly notificationChannelsPort: NotificationChannelsPort,
     private readonly keybindService: KeybindService,
-    ptyTransport: PtyTransportPort,
+    ptyTransport: PtyTransport,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.pty = new Pty(ptyTransport);

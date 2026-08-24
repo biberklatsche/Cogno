@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
-import { Database, DatabaseOpenReport } from "@cogno/app-tauri/database";
 import { buildDatabaseMigrationIdentifier, DatabaseMigrationContract } from "@cogno/core-api";
+import { Database, DatabaseOpenReport } from "@cogno/platform/database";
 
 /**
  * Collects the migrations contributed by core, app and features and hands

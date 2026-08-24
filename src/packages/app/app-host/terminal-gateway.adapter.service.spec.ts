@@ -1,4 +1,4 @@
-import { TauriPty } from "@cogno/app-tauri/pty";
+import { TauriPty } from "@cogno/platform/pty";
 import { firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../app-bus/app-bus";

@@ -1,4 +1,4 @@
-import { OS } from "@cogno/app-tauri/os";
+import { OS } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { KeybindingPipe } from "./keybinding.pipe";
 

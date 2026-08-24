@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
-import { Fs } from "@cogno/app-tauri/fs";
-import { Path } from "@cogno/app-tauri/path";
-import { SimpleFileAccess } from "@cogno/core-api";
+import { Fs } from "./fs";
+import { Path } from "./path";
 
+/** Plain file access by absolute path, for code that does not go through the shell's path adapter. */
 @Injectable({ providedIn: "root" })
-export class SimpleFileAccessAdapterService extends SimpleFileAccess {
+export class SimpleFileAccess {
   async readText(path: string): Promise<string | undefined> {
     if (!(await Fs.exists(path))) return undefined;
     return Fs.readTextFile(path);
@@ -18,7 +18,7 @@ export class SimpleFileAccessAdapterService extends SimpleFileAccess {
     return Fs.exists(path);
   }
 
-  async makeDir(path: string, options?: { recursive?: boolean }): Promise<void> {
+  makeDir(path: string, options?: { recursive?: boolean }): Promise<void> {
     return Fs.mkdir(path, options);
   }
 

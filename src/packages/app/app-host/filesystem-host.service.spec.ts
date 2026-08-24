@@ -1,4 +1,4 @@
-import { Fs } from "@cogno/app-tauri/fs";
+import { Fs } from "@cogno/platform/fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FilesystemHostService } from "./filesystem-host.service";
 

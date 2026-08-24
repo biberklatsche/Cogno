@@ -1,6 +1,6 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
-import { Clipboard } from "@cogno/app-tauri/clipboard";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { Clipboard } from "@cogno/platform/clipboard";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../../app-bus/app-bus";
@@ -8,7 +8,7 @@ import type { PromptSegment } from "../../../../config/+models/prompt-config";
 import { TerminalStateManager } from "../../state";
 import { PromptMarkerRenderer } from "./prompt-renderer";
 
-vi.mock("@cogno/app-tauri/clipboard", () => ({
+vi.mock("@cogno/platform/clipboard", () => ({
   Clipboard: {
     writeText: vi.fn(),
     readText: vi.fn(),

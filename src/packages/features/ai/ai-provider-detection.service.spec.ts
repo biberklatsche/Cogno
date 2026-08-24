@@ -1,4 +1,5 @@
-import { ApplicationConfigurationPort, HttpClientPort } from "@cogno/core-api";
+import { ApplicationConfigurationPort } from "@cogno/core-api";
+import { HttpClient } from "@cogno/platform";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiDetectableProviderDefinition } from "./ai-detection.models";
@@ -31,7 +32,7 @@ const lmStudioDefinition: AiDetectableProviderDefinition = {
 
 describe("AiProviderDetectionService", () => {
   let configPort: ApplicationConfigurationPort;
-  let httpClient: HttpClientPort;
+  let httpClient: HttpClient;
   let store: DetectedAiProvidersStore;
 
   beforeEach(() => {
@@ -43,7 +44,7 @@ describe("AiProviderDetectionService", () => {
     httpClient = {
       request: vi.fn(),
       streamRequest: vi.fn(),
-    } as unknown as HttpClientPort;
+    } as unknown as HttpClient;
 
     store = new DetectedAiProvidersStore();
   });

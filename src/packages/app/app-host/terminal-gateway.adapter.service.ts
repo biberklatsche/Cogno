@@ -1,5 +1,4 @@
 import { Injectable } from "@angular/core";
-import { TauriPty } from "@cogno/app-tauri/pty";
 import {
   TerminalBusyStateChangeContract,
   TerminalGateway,
@@ -9,6 +8,7 @@ import {
   TerminalSnapshotContract,
   TerminalSnapshotOptionsContract,
 } from "@cogno/core-api";
+import { TauriPty } from "@cogno/platform/pty";
 import { map, Observable } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";

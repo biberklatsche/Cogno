@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { Logger } from "@cogno/app-tauri/logger";
-import { OS } from "@cogno/app-tauri/os";
+import { Logger } from "@cogno/platform/logger";
+import { OS } from "@cogno/platform/os";
 import { ActionName } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";

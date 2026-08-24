@@ -1,4 +1,4 @@
-import { OsType } from "@cogno/app-tauri/os";
+import { OsType } from "@cogno/platform/os";
 import { ShellType } from "../../../config/+models/config";
 import { ShellProfile } from "../../../config/+models/shell-config";
 import { ShellContext } from "../advanced/model/models";

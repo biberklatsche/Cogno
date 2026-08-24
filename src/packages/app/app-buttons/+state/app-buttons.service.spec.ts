@@ -20,11 +20,11 @@ const { appWindowMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@cogno/app-tauri/window", () => ({
+vi.mock("@cogno/platform/window", () => ({
   AppWindow: appWindowMock,
 }));
 
-vi.mock("@cogno/app-tauri/logger", () => ({
+vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -33,7 +33,7 @@ vi.mock("@cogno/app-tauri/logger", () => ({
   },
 }));
 
-import { AppWindow } from "@cogno/app-tauri/window";
+import { AppWindow } from "@cogno/platform/window";
 import { AppButtonsService } from "./app-buttons.service";
 
 describe("AppButtonsService", () => {

@@ -17,15 +17,9 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
-import { DatabaseAccessHostService } from "@cogno/app/app-host/database-access-host.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
-import { GitBlobReaderHostService } from "@cogno/app/app-host/git-blob-reader-host.service";
-import { HttpClientPortAdapterService } from "@cogno/app/app-host/http-client-port.adapter.service";
-import { OpenerAdapterService } from "@cogno/app/app-host/opener.adapter.service";
-import { OsPlatformAdapterService } from "@cogno/app/app-host/os-platform.adapter.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { SideMenuStatePersistenceService } from "@cogno/app/app-host/side-menu-state-persistence.service";
-import { SimpleFileAccessAdapterService } from "@cogno/app/app-host/simple-file-access.adapter.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
@@ -49,8 +43,6 @@ import { NotificationDispatchService } from "@cogno/app/notification/+state/noti
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
-import { Logger } from "@cogno/app-tauri/logger";
-import { TauriPtyTransport } from "@cogno/app-tauri/pty";
 import {
   ActionCatalog,
   ActionDispatcher,
@@ -59,15 +51,9 @@ import {
   CommandRunner,
   ConfigurationTransformer,
   ConfirmDialogPort,
-  DatabaseAccess,
   Filesystem,
-  HttpClientPort,
   NotificationCenterPort,
   NotificationChannelsPort,
-  Opener,
-  OsPlatformPort,
-  PtyTransportPort,
-  SimpleFileAccess,
   TerminalAnimationPort,
   TerminalGateway,
   TerminalIpcPort,
@@ -81,9 +67,9 @@ import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configu
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
 import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
-import { GitBlobReader } from "@cogno/features/side-menu/git/git-blob-reader.port";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
+import { Logger } from "@cogno/platform/logger";
 import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
 import { sideMenuFeatures } from "./side-menu-features";
 
@@ -92,10 +78,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     { provide: ConfigService, useClass: RealConfigService },
     { provide: CommandRunner, useExisting: CommandRunnerHostService },
-    { provide: GitBlobReader, useExisting: GitBlobReaderHostService },
-    { provide: Opener, useExisting: OpenerAdapterService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
-    { provide: DatabaseAccess, useExisting: DatabaseAccessHostService },
     { provide: Filesystem, useExisting: FilesystemHostService },
     { provide: additionalNotificationChannelsToken, useValue: [] },
     { provide: ActionCatalog, useExisting: ActionCatalogAdapterService },
@@ -114,7 +97,6 @@ export const appConfig: ApplicationConfig = {
       multi: true,
     },
     { provide: featureCollectionToken, useValue: featureApplicationFeatureCollection },
-    { provide: HttpClientPort, useExisting: HttpClientPortAdapterService },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     {
@@ -125,14 +107,11 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
     { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService },
     { provide: WorkspaceHostPort, useExisting: WorkspaceHostPortAdapterService },
-    { provide: SimpleFileAccess, useExisting: SimpleFileAccessAdapterService },
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
-    { provide: OsPlatformPort, useExisting: OsPlatformAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
     { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
-    { provide: PtyTransportPort, useFactory: () => new TauriPtyTransport() },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
       void Logger.initialize();

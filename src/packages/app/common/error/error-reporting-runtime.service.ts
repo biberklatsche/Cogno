@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { ConfigService } from "@cogno/app/config/+state/config.service";
-import { Logger } from "@cogno/app-tauri/logger";
+import { Logger } from "@cogno/platform/logger";
 import {
   buildLogMessage,
   ErrorReporter,

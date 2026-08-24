@@ -1,9 +1,9 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { Logger } from "@cogno/app-tauri/logger";
-import { Process } from "@cogno/app-tauri/process";
-import { AppWindow } from "@cogno/app-tauri/window";
-import { WindowCore } from "@cogno/app-tauri/window-core";
+import { Logger } from "@cogno/platform/logger";
+import { Process } from "@cogno/platform/process";
+import { AppWindow } from "@cogno/platform/window";
+import { WindowCore } from "@cogno/platform/window-core";
 import { ActionFired } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
 import { ErrorReporter } from "../common/error/error-reporter";

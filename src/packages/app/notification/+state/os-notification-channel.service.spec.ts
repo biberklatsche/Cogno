@@ -2,12 +2,12 @@ import {
   NotificationOs,
   OsNotificationClickListener,
   OsNotificationTarget,
-} from "@cogno/app-tauri/notification";
+} from "@cogno/platform/notification";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../app-bus/app-bus";
 import { OsNotificationChannelService } from "./os-notification-channel.service";
 
-vi.mock("@cogno/app-tauri/notification", () => ({
+vi.mock("@cogno/platform/notification", () => ({
   NotificationOs: {
     send: vi.fn<
       (title: string, body?: string, target?: OsNotificationTarget) => Promise<unknown>

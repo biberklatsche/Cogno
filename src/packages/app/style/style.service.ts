@@ -1,8 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { Fs } from "@cogno/app-tauri/fs";
-import { Logger } from "@cogno/app-tauri/logger";
-import { Path } from "@cogno/app-tauri/path";
+import { Fs } from "@cogno/platform/fs";
+import { Logger } from "@cogno/platform/logger";
+import { Path } from "@cogno/platform/path";
 import { Color } from "../common/color/color";
 import { Config } from "../config/+models/config";
 import { ConfigService } from "../config/+state/config.service";
