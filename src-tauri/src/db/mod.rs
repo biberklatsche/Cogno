@@ -7,10 +7,10 @@
 //! point: a transaction that cannot be split cannot be broken.
 
 pub mod commands;
-mod connection;
+pub(crate) mod connection;
 mod error;
-mod migrations;
-mod recovery;
+pub(crate) mod migrations;
+pub(crate) mod recovery;
 pub mod schema;
 
 pub use error::{DbError, DbResult};

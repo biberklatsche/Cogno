@@ -103,6 +103,18 @@ fn restore_attached(conn: &mut Connection) -> DbResult<Vec<TableRecovery>> {
         });
     }
 
+    // Full-text indexes are not copied (their shadow tables only make sense
+    // together); rebuild them from the content tables that were.
+    for fts_table in fts5_tables(conn, "main")? {
+        let sql = format!(
+            "INSERT INTO {0}({0}) VALUES ('rebuild')",
+            quote_identifier(&fts_table)
+        );
+        if let Err(e) = conn.execute_batch(&sql) {
+            log::warn!("[db] could not rebuild full-text index {fts_table}: {e}");
+        }
+    }
+
     Ok(report)
 }
 
@@ -138,9 +150,11 @@ fn copy_table(tx: &rusqlite::Transaction<'_>, table: &str) -> DbResult<u64> {
     Ok(tx.execute(&sql, [])? as u64)
 }
 
-/// Tables the application owns, in creation order so parents come before
-/// children for foreign keys.
+/// Ordinary tables the application owns, in creation order so parents come
+/// before children for foreign keys. Virtual tables and their shadow tables
+/// are left out: they are derived from ordinary tables and rebuilt after.
 fn user_tables(conn: &Connection, schema: &str) -> DbResult<Vec<String>> {
+    let virtual_tables = virtual_tables(conn, schema)?;
     let mut statement = conn.prepare(&format!(
         "SELECT name FROM {schema}.sqlite_master \
          WHERE type = 'table' \
@@ -151,7 +165,39 @@ fn user_tables(conn: &Connection, schema: &str) -> DbResult<Vec<String>> {
     let names = statement
         .query_map([], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;
+    Ok(names
+        .into_iter()
+        .filter(|name| !is_virtual_or_shadow(name, &virtual_tables))
+        .collect())
+}
+
+fn virtual_tables(conn: &Connection, schema: &str) -> DbResult<Vec<String>> {
+    let mut statement = conn.prepare(&format!(
+        "SELECT name FROM {schema}.sqlite_master \
+         WHERE type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%'"
+    ))?;
+    let names = statement
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
     Ok(names)
+}
+
+fn fts5_tables(conn: &Connection, schema: &str) -> DbResult<Vec<String>> {
+    let mut statement = conn.prepare(&format!(
+        "SELECT name FROM {schema}.sqlite_master \
+         WHERE type = 'table' AND sql LIKE 'CREATE VIRTUAL TABLE%USING fts5%'"
+    ))?;
+    let names = statement
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(names)
+}
+
+/// Shadow tables are named `<virtual>_<suffix>` (e.g. `command_fts_data`).
+fn is_virtual_or_shadow(name: &str, virtual_tables: &[String]) -> bool {
+    virtual_tables
+        .iter()
+        .any(|vt| name == vt || name.starts_with(&format!("{vt}_")))
 }
 
 fn columns(conn: &Connection, schema: &str, table: &str) -> DbResult<Vec<String>> {
