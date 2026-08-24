@@ -3,7 +3,6 @@ export * from "./action-keybinding.contract";
 export * from "./agent-status.contract";
 export * from "./application-configuration.contract";
 export * from "./application-feature-collection.contract";
-export * from "./application-product.contract";
 export * from "./application-settings-extension.contract";
 export * from "./application-settings-section-definition.contract";
 export * from "./base-path.adapter";

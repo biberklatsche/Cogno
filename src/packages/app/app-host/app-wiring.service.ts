@@ -7,7 +7,7 @@ import {
 import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
 import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
 import {
-  ApplicationProduct,
+  ApplicationFeatureCollectionContract,
   ApplicationSettingsExtensionContract,
   NotificationChannelContract,
   ShellDefinitionContract,
@@ -16,7 +16,7 @@ import {
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
 import { Icon } from "@cogno/core-ui";
-import { additionalNotificationChannelsToken } from "./app-host.tokens";
+import { additionalNotificationChannelsToken, featureCollectionToken } from "./app-host.tokens";
 import { DatabaseMigrationService } from "./database-migration.service";
 import { coreDatabaseMigrations } from "./database-migrations";
 import { HostFeatureRegistry } from "./host-feature.registry";
@@ -24,14 +24,11 @@ import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
-  private readonly featureRegistryHost = new HostFeatureRegistry<
-    Icon,
-    ActionName,
-    SideMenuFeatureDefinition
-  >(new SideMenuDefinitionRegistry<Icon, ActionName, SideMenuFeatureDefinition>());
+  private readonly featureRegistryHost = new HostFeatureRegistry(new SideMenuDefinitionRegistry());
 
   constructor(
-    private readonly applicationProduct: ApplicationProduct<Icon, ActionName>,
+    @Inject(featureCollectionToken)
+    featureCollection: ApplicationFeatureCollectionContract<Icon, ActionName>,
     @Inject(sideMenuFeatureDefinitionsToken)
     sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition>,
     @Inject(additionalNotificationChannelsToken)
@@ -44,7 +41,7 @@ export class AppWiringService {
       this.featureRegistryHost.registerSideMenuFeatureExtension(sideMenuFeatureDefinition);
     }
 
-    this.featureRegistryHost.registerFeatureCollection(this.applicationProduct.featureCollection);
+    this.featureRegistryHost.registerFeatureCollection(featureCollection);
     this.databaseMigrationService.registerCoreMigrations(coreDatabaseMigrations);
     this.databaseMigrationService.registerFeatureMigrations(
       this.featureRegistryHost.getDatabaseMigrations(),

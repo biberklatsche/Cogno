@@ -1,122 +1,61 @@
+import { ActionName } from "@cogno/app/action/action.models";
+import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import {
   SideMenuFeatureDefinitionContract,
   SideMenuFeatureRegistryContract,
 } from "@cogno/core-api";
+import { Icon } from "@cogno/core-ui";
 
-export class SideMenuDefinitionRegistry<
-  TIcon = string,
-  TActionName = string,
-  TSideMenuFeatureExtension extends { id: string } = never,
-> implements SideMenuFeatureRegistryContract<TIcon, TActionName>
+type Definition = SideMenuFeatureDefinitionContract<Icon, ActionName>;
+
+/**
+ * Joins the neutral side-menu definitions contributed by features with the
+ * UI half (panel component, lifecycle) provided by the bootstrap, by id.
+ */
+export class SideMenuDefinitionRegistry
+  implements SideMenuFeatureRegistryContract<Icon, ActionName>
 {
-  // Later registrations intentionally override earlier ones by id so product
-  // composition can extend or replace base definitions in a single registry.
-  private readonly sideMenuFeatureDefinitionsById = new Map<
-    string,
-    SideMenuFeatureDefinitionContract<TIcon, TActionName>
-  >();
-  private readonly sideMenuFeatureExtensionsById = new Map<string, TSideMenuFeatureExtension>();
+  private readonly definitionsById = new Map<string, Definition>();
+  private readonly uiById = new Map<string, SideMenuFeatureDefinition>();
 
-  registerSideMenuFeature(
-    sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
-  ): void {
-    const existingDefinition = this.sideMenuFeatureDefinitionsById.get(
-      sideMenuFeatureDefinition.id,
-    );
-    if (existingDefinition !== undefined) {
-      this.sideMenuFeatureDefinitionsById.set(
-        sideMenuFeatureDefinition.id,
-        this.mergeDefinitionOverride(existingDefinition, sideMenuFeatureDefinition),
-      );
-      return;
+  registerSideMenuFeature(definition: Definition): void {
+    if (this.definitionsById.has(definition.id)) {
+      throw new Error(`Side menu feature registered twice: ${definition.id}`);
     }
-
-    this.sideMenuFeatureDefinitionsById.set(
-      sideMenuFeatureDefinition.id,
-      sideMenuFeatureDefinition,
-    );
+    this.definitionsById.set(definition.id, definition);
   }
 
-  registerSideMenuFeatureExtension(sideMenuFeatureExtension: TSideMenuFeatureExtension): void {
-    const existingExtension = this.sideMenuFeatureExtensionsById.get(sideMenuFeatureExtension.id);
-    if (existingExtension !== undefined) {
-      this.sideMenuFeatureExtensionsById.set(
-        sideMenuFeatureExtension.id,
-        this.mergeExtensionOverride(existingExtension, sideMenuFeatureExtension),
-      );
-      return;
+  registerSideMenuFeatureExtension(ui: SideMenuFeatureDefinition): void {
+    if (this.uiById.has(ui.id)) {
+      throw new Error(`Side menu feature UI registered twice: ${ui.id}`);
     }
-
-    this.sideMenuFeatureExtensionsById.set(sideMenuFeatureExtension.id, sideMenuFeatureExtension);
+    this.uiById.set(ui.id, ui);
   }
 
-  getSideMenuFeatureDefinitionById(
-    sideMenuFeatureDefinitionId: string,
-  ): SideMenuFeatureDefinitionContract<TIcon, TActionName> | undefined {
-    return this.sideMenuFeatureDefinitionsById.get(sideMenuFeatureDefinitionId);
+  getSideMenuFeatureDefinitionById(id: string): Definition | undefined {
+    return this.definitionsById.get(id);
   }
 
-  getSideMenuFeatureDefinitions(): ReadonlyArray<
-    SideMenuFeatureDefinitionContract<TIcon, TActionName>
-  > {
-    return [...this.sideMenuFeatureDefinitionsById.values()].sort(
-      (leftDefinition, rightDefinition) => {
-        return leftDefinition.order - rightDefinition.order;
-      },
-    );
+  getSideMenuFeatureDefinitions(): ReadonlyArray<Definition> {
+    return [...this.definitionsById.values()].sort((left, right) => left.order - right.order);
   }
 
   resolveSideMenuFeatureDefinitionById<TResolved>(
-    sideMenuFeatureDefinitionId: string,
-    resolveDefinition: (
-      sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
-      sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
-    ) => TResolved,
+    id: string,
+    resolve: (definition: Definition, ui: SideMenuFeatureDefinition | undefined) => TResolved,
   ): TResolved | undefined {
-    const sideMenuFeatureDefinition = this.getSideMenuFeatureDefinitionById(
-      sideMenuFeatureDefinitionId,
-    );
-    if (sideMenuFeatureDefinition === undefined) {
+    const definition = this.definitionsById.get(id);
+    if (definition === undefined) {
       return undefined;
     }
-
-    return resolveDefinition(
-      sideMenuFeatureDefinition,
-      this.sideMenuFeatureExtensionsById.get(sideMenuFeatureDefinitionId),
-    );
+    return resolve(definition, this.uiById.get(id));
   }
 
   resolveSideMenuFeatureDefinitions<TResolved>(
-    resolveDefinition: (
-      sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
-      sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
-    ) => TResolved,
+    resolve: (definition: Definition, ui: SideMenuFeatureDefinition | undefined) => TResolved,
   ): ReadonlyArray<TResolved> {
-    return this.getSideMenuFeatureDefinitions().map((sideMenuFeatureDefinition) =>
-      resolveDefinition(
-        sideMenuFeatureDefinition,
-        this.sideMenuFeatureExtensionsById.get(sideMenuFeatureDefinition.id),
-      ),
+    return this.getSideMenuFeatureDefinitions().map((definition) =>
+      resolve(definition, this.uiById.get(definition.id)),
     );
-  }
-
-  private mergeDefinitionOverride(
-    existingDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
-    overridingDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
-  ): SideMenuFeatureDefinitionContract<TIcon, TActionName> {
-    return {
-      ...existingDefinition,
-      ...overridingDefinition,
-    };
-  }
-
-  private mergeExtensionOverride(
-    existingExtension: TSideMenuFeatureExtension,
-    overridingExtension: TSideMenuFeatureExtension,
-  ): TSideMenuFeatureExtension {
-    return {
-      ...existingExtension,
-      ...overridingExtension,
-    };
   }
 }

@@ -1,5 +1,4 @@
 const packageRootPattern = "^src/packages/";
-const productsPattern = "^(src/products/|src/packages/products/)";
 const bootstrapPattern = "^src/app/";
 const coreDomainPattern = "^src/packages/core-domain/";
 const coreApiPattern = "^src/packages/core-api/";
@@ -9,9 +8,8 @@ const featuresPattern = "^src/packages/features/";
 const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
 const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
 const appPackagePattern = "^src/packages/app/";
-const privateSiblingPattern = "^(\\.\\./[^/]+-pro/|.*/[^/]+-pro/)";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -36,13 +34,6 @@ module.exports = {
       comment: "core-domain must not depend on features.",
       from: { path: coreDomainPattern },
       to: { path: featuresPattern },
-    },
-    {
-      name: "core-domain-must-not-import-products",
-      severity: "error",
-      comment: "core-domain must not depend on products.",
-      from: { path: coreDomainPattern },
-      to: { path: productsPattern },
     },
     {
       name: "core-domain-must-not-import-angular",
@@ -94,13 +85,6 @@ module.exports = {
       to: { path: featuresPattern },
     },
     {
-      name: "core-api-must-not-import-products",
-      severity: "error",
-      comment: "core-api must not depend on products.",
-      from: { path: coreApiPattern },
-      to: { path: productsPattern },
-    },
-    {
       name: "core-api-must-not-contain-feature-aggregations",
       severity: "warn",
       comment: "core-api must not import feature-level aggregation or default-value files. These belong in the features package. Catches files whose names suggest collected/default state rather than contracts.",
@@ -115,18 +99,11 @@ module.exports = {
       to: { path: "^(src/packages/app|src/packages/features)/" },
     },
     {
-      name: "core-ui-must-not-import-products",
-      severity: "error",
-      comment: "core-ui must not depend on products.",
-      from: { path: coreUiPattern },
-      to: { path: productsPattern },
-    },
-    {
       name: "core-support-must-be-frameworkfree",
       severity: "error",
       comment: "core-support must remain framework-free and reusable.",
       from: { path: coreSupportPattern },
-      to: { path: "^(src/packages/app|src/packages/features|src/products/|src/packages/products/|@angular/|@tauri-apps/)" },
+      to: { path: "^(src/packages/app|src/packages/features|@angular/|@tauri-apps/)" },
     },
     {
       name: "features-must-not-import-app",
@@ -150,13 +127,6 @@ module.exports = {
       to: { path: appTauriPattern },
     },
     {
-      name: "features-must-not-import-products",
-      severity: "error",
-      comment: "features must not depend on products.",
-      from: { path: featuresPattern },
-      to: { path: productsPattern },
-    },
-    {
       name: "app-angular-must-not-import-features",
       severity: "error",
       comment: "app-angular must not depend on concrete features.",
@@ -169,13 +139,6 @@ module.exports = {
       comment: "Feature-specific orchestration services (e.g. *-host-application.service) must not be imported by features — they belong in app-host adapters only.",
       from: { path: featuresPattern },
       to: { path: "app-host.*-application\\.service\\.ts$" },
-    },
-    {
-      name: "app-angular-must-not-import-products",
-      severity: "error",
-      comment: "app-angular must not depend on products.",
-      from: { path: appAngularPattern },
-      to: { path: productsPattern },
     },
     {
       name: "app-tauri-must-not-import-features",
@@ -193,25 +156,11 @@ module.exports = {
       to: { path: appPackagePattern, pathNot: "^src/packages/app/_tauri/" },
     },
     {
-      name: "app-tauri-must-not-import-products",
-      severity: "error",
-      comment: "app-tauri must not depend on products.",
-      from: { path: appTauriPattern },
-      to: { path: productsPattern },
-    },
-    {
       name: "internal-layers-must-not-import-bootstrap",
       severity: "error",
-      comment: "Reusable packages and products must not depend on bootstrap entry points.",
-      from: { path: "^(src/packages/|src/products/|src/packages/products/)" },
+      comment: "Reusable packages must not depend on bootstrap entry points.",
+      from: { path: "^src/packages/" },
       to: { path: bootstrapPattern },
-    },
-    {
-      name: "public-repo-must-not-import-private-sibling",
-      severity: "error",
-      comment: "The public repository must not depend on a private sibling repository.",
-      from: { path: "^(src/|scripts/|package\\.json|angular\\.json|\\.dependency-cruiser\\.cjs)" },
-      to: { path: privateSiblingPattern },
     },
     {
       name: "known-cogno-aliases-only",

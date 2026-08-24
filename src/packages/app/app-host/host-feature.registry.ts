@@ -1,3 +1,5 @@
+import { ActionName } from "@cogno/app/action/action.models";
+import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import {
   ApplicationFeatureCollectionContract,
   ApplicationSettingsExtensionContract,
@@ -8,14 +10,13 @@ import {
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/core-api";
+import { Icon } from "@cogno/core-ui";
 import { PathFactory } from "./path.factory";
 import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";
 
-export class HostFeatureRegistry<
-  TIcon = string,
-  TActionName = string,
-  TSideMenuFeatureExtension extends { id: string } = never,
-> {
+type Definition = SideMenuFeatureDefinitionContract<Icon, ActionName>;
+
+export class HostFeatureRegistry {
   private readonly databaseMigrations: DatabaseMigrationContract[] = [];
   private readonly notificationChannels: NotificationChannelContract[] = [];
   private readonly shellDefinitions: ShellDefinitionContract[] = [];
@@ -24,16 +25,10 @@ export class HostFeatureRegistry<
   private readonly terminalAutocompleteSuggestorDefinitions: TerminalAutocompleteSuggestorDefinitionContract[] =
     [];
 
-  constructor(
-    private readonly sideMenuDefinitionRegistry: SideMenuDefinitionRegistry<
-      TIcon,
-      TActionName,
-      TSideMenuFeatureExtension
-    >,
-  ) {}
+  constructor(private readonly sideMenuDefinitionRegistry: SideMenuDefinitionRegistry) {}
 
   registerFeatureCollection(
-    applicationFeatureCollection: ApplicationFeatureCollectionContract<TIcon, TActionName>,
+    applicationFeatureCollection: ApplicationFeatureCollectionContract<Icon, ActionName>,
   ): void {
     this.databaseMigrations.push(...applicationFeatureCollection.databaseMigrations);
     this.notificationChannels.push(...applicationFeatureCollection.notificationChannels);
@@ -67,44 +62,29 @@ export class HostFeatureRegistry<
     return this.shellSupportDefinitions;
   }
 
-  getSideMenuFeatureDefinitionById(
-    sideMenuFeatureDefinitionId: string,
-  ): SideMenuFeatureDefinitionContract<TIcon, TActionName> | undefined {
-    return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitionById(
-      sideMenuFeatureDefinitionId,
-    );
+  getSideMenuFeatureDefinitionById(id: string): Definition | undefined {
+    return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitionById(id);
   }
 
-  getSideMenuFeatureDefinitions(): ReadonlyArray<
-    SideMenuFeatureDefinitionContract<TIcon, TActionName>
-  > {
+  getSideMenuFeatureDefinitions(): ReadonlyArray<Definition> {
     return this.sideMenuDefinitionRegistry.getSideMenuFeatureDefinitions();
   }
 
-  registerSideMenuFeatureExtension(sideMenuFeatureExtension: TSideMenuFeatureExtension): void {
-    this.sideMenuDefinitionRegistry.registerSideMenuFeatureExtension(sideMenuFeatureExtension);
+  registerSideMenuFeatureExtension(ui: SideMenuFeatureDefinition): void {
+    this.sideMenuDefinitionRegistry.registerSideMenuFeatureExtension(ui);
   }
 
   resolveSideMenuFeatureDefinitionById<TResolved>(
-    sideMenuFeatureDefinitionId: string,
-    resolveDefinition: (
-      sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
-      sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
-    ) => TResolved,
+    id: string,
+    resolve: (definition: Definition, ui: SideMenuFeatureDefinition | undefined) => TResolved,
   ): TResolved | undefined {
-    return this.sideMenuDefinitionRegistry.resolveSideMenuFeatureDefinitionById(
-      sideMenuFeatureDefinitionId,
-      resolveDefinition,
-    );
+    return this.sideMenuDefinitionRegistry.resolveSideMenuFeatureDefinitionById(id, resolve);
   }
 
   resolveSideMenuFeatureDefinitions<TResolved>(
-    resolveDefinition: (
-      sideMenuFeatureDefinition: SideMenuFeatureDefinitionContract<TIcon, TActionName>,
-      sideMenuFeatureExtension: TSideMenuFeatureExtension | undefined,
-    ) => TResolved,
+    resolve: (definition: Definition, ui: SideMenuFeatureDefinition | undefined) => TResolved,
   ): ReadonlyArray<TResolved> {
-    return this.sideMenuDefinitionRegistry.resolveSideMenuFeatureDefinitions(resolveDefinition);
+    return this.sideMenuDefinitionRegistry.resolveSideMenuFeatureDefinitions(resolve);
   }
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {

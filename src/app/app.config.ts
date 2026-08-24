@@ -31,6 +31,7 @@ import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/termin
 import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
+import { featureCollectionToken } from "@cogno/app/app-host/app-host.tokens";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
 import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
@@ -39,10 +40,7 @@ import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler
 import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
-import {
-  sideMenuFeatureDefinitions,
-  sideMenuFeatureDefinitionsToken,
-} from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
+import { sideMenuFeatureDefinitionsToken } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+state/notification-center-port.adapter.service";
 import { NotificationChannelsPortAdapterService } from "@cogno/app/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
@@ -56,7 +54,6 @@ import {
   ActionDispatcher,
   ActionKeybindingPort,
   ApplicationConfigurationPort,
-  ApplicationProduct,
   CommandRunner,
   ConfigurationTransformer,
   ConfirmDialogPort,
@@ -77,6 +74,7 @@ import {
   TerminalSearchHostPort,
   WorkspaceHostPort,
 } from "@cogno/core-api";
+import { featureApplicationFeatureCollection } from "@cogno/features";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
@@ -84,8 +82,8 @@ import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/feat
 import { GitBlobReader } from "@cogno/features/side-menu/git/git-blob-reader.port";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
-import { aiDetectableProviderDefinitions } from "../products/ai-detectable-provider-definitions";
-import { productDefinition } from "../products/product-definition.instance";
+import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
+import { sideMenuFeatures } from "./side-menu-features";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -113,13 +111,13 @@ export const appConfig: ApplicationConfig = {
       useExisting: AiConfigurationTransformerService,
       multi: true,
     },
-    { provide: ApplicationProduct, useValue: productDefinition.applicationProduct },
+    { provide: featureCollectionToken, useValue: featureApplicationFeatureCollection },
     { provide: HttpClientPort, useExisting: HttpClientPortAdapterService },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     {
       provide: sideMenuFeatureDefinitionsToken,
-      useValue: [...sideMenuFeatureDefinitions, ...productDefinition.sideMenuFeatureDefinitions],
+      useValue: sideMenuFeatures,
     },
     { provide: TerminalGateway, useExisting: TerminalGatewayAdapterService },
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },

@@ -14,7 +14,11 @@ import { TerminalSearchSideMenuLifecycle } from "@cogno/features/side-menu/termi
 import { workspaceSideMenuFeatureDefinition } from "@cogno/features/side-menu/workspace/workspace.feature-definition";
 import { WorkspaceSideMenuLifecycle } from "@cogno/features/side-menu/workspace/workspace-side-menu.lifecycle";
 
-export const productSideMenuFeatureDefinitions = [
+/**
+ * The side-menu features of the application, in display order: each feature's
+ * definition joined with its lazily loaded panel and lifecycle.
+ */
+export const sideMenuFeatures = [
   {
     ...workspaceSideMenuFeatureDefinition,
     targetComponent: () =>
