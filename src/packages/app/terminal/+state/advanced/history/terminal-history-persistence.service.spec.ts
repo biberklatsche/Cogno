@@ -1,4 +1,4 @@
-import type { IPathAdapter } from "@cogno/core-api";
+import type { DatabaseAccess, IPathAdapter } from "@cogno/core-api";
 import { describe, expect, it, vi } from "vitest";
 import type { ConfigService } from "../../../../config/+state/config.service";
 import type { ShellContext } from "../model/models";
@@ -21,6 +21,9 @@ const pathAdapter: IPathAdapter = {
   basenameOf: (cognoPath: string) => cognoPath.split("/").at(-1) ?? cognoPath,
   depthOf: (cognoPath: string) => cognoPath.split("/").filter(Boolean).length,
 };
+
+// The repository is replaced wholesale, so the access object is never used.
+const databaseAccess = {} as DatabaseAccess;
 
 type HistoryRepositoryDouble = {
   upsertWorkingDirectory: ReturnType<typeof vi.fn<HistoryRepository["upsertWorkingDirectory"]>>;
@@ -54,7 +57,7 @@ async function createService(
     repositoryDouble as unknown as HistoryRepository,
   );
 
-  const service = new TerminalHistoryPersistenceService(configService);
+  const service = new TerminalHistoryPersistenceService(configService, databaseAccess);
   service.initialize(shellContext, pathAdapter);
   await flushActions();
   return service;
@@ -101,6 +104,7 @@ describe("TerminalHistoryPersistenceService", () => {
       "/tmp",
       undefined,
       undefined,
+      expect.any(Object),
     );
     expect(repositoryDouble.upsertCommandTransition).not.toHaveBeenCalled();
   });
@@ -146,6 +150,7 @@ describe("TerminalHistoryPersistenceService", () => {
       "/tmp",
       undefined,
       undefined,
+      expect.any(Object),
     );
   });
 
@@ -167,6 +172,7 @@ describe("TerminalHistoryPersistenceService", () => {
       "/tmp",
       undefined,
       undefined,
+      expect.any(Object),
     );
     expect(repositoryDouble.upsertCommandExecution).toHaveBeenNthCalledWith(
       2,
@@ -174,6 +180,7 @@ describe("TerminalHistoryPersistenceService", () => {
       "/tmp",
       undefined,
       undefined,
+      expect.any(Object),
     );
     expect(repositoryDouble.upsertCommandTransition).toHaveBeenCalledTimes(1);
     expect(repositoryDouble.upsertCommandTransition).toHaveBeenCalledWith(
@@ -238,6 +245,7 @@ describe("TerminalHistoryPersistenceService", () => {
       "/tmp",
       undefined,
       500,
+      expect.any(Object),
     );
   });
 
@@ -267,6 +275,7 @@ describe("TerminalHistoryPersistenceService", () => {
       "/tmp",
       undefined,
       undefined,
+      expect.any(Object),
     );
   });
 });

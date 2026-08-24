@@ -1,31 +1,27 @@
 import { Injectable } from "@angular/core";
-import { DB } from "@cogno/app-tauri/db";
-import { DatabaseAccess, DatabaseAccessContract } from "@cogno/core-api";
+import { Database } from "@cogno/app-tauri/database";
+import {
+  DatabaseAccess,
+  DatabaseExecuteResultContract,
+  DatabaseStatementContract,
+} from "@cogno/core-api";
 
 @Injectable({ providedIn: "root" })
 export class DatabaseAccessHostService extends DatabaseAccess {
-  async execute(query: string, parameters?: ReadonlyArray<unknown>): Promise<void> {
-    await DB.execute(query, parameters as unknown[] | undefined);
+  execute(
+    query: string,
+    parameters?: ReadonlyArray<unknown>,
+  ): Promise<DatabaseExecuteResultContract> {
+    return Database.execute({ sql: query, params: parameters });
   }
 
-  async select<T = unknown>(query: string, parameters?: ReadonlyArray<unknown>): Promise<T> {
-    return DB.select<T>(query, parameters as unknown[] | undefined);
+  select<T = unknown>(query: string, parameters?: ReadonlyArray<unknown>): Promise<T> {
+    return Database.select({ sql: query, params: parameters }) as Promise<T>;
   }
 
-  async transaction<T>(
-    handler: (databaseAccess: DatabaseAccessContract) => Promise<T>,
-  ): Promise<T> {
-    return DB.transaction(async (database) => {
-      const transactionDatabaseAccess: DatabaseAccessContract = {
-        execute: (query: string, parameters?: ReadonlyArray<unknown>) =>
-          database.execute(query, parameters as unknown[] | undefined),
-        select: <Result = unknown>(query: string, parameters?: ReadonlyArray<unknown>) =>
-          database.select<Result>(query, parameters as unknown[] | undefined),
-        transaction: <NestedResult>(
-          nestedHandler: (databaseAccess: DatabaseAccessContract) => Promise<NestedResult>,
-        ) => database.transaction(() => nestedHandler(transactionDatabaseAccess)),
-      };
-      return handler(transactionDatabaseAccess);
-    });
+  batch(
+    statements: ReadonlyArray<DatabaseStatementContract>,
+  ): Promise<ReadonlyArray<DatabaseExecuteResultContract>> {
+    return Database.batch(statements);
   }
 }

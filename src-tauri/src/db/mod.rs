@@ -454,14 +454,14 @@ mod tests {
                         tx.execute("INSERT INTO big (payload) VALUES (?1)", [&payload])?;
                     }
                     tx.commit()?;
-                    let page_size: u64 =
+                    let page_size: i64 =
                         conn.query_row("PRAGMA page_size", [], |r| r.get(0))?;
-                    let root: u64 = conn.query_row(
+                    let root: i64 = conn.query_row(
                         "SELECT rootpage FROM sqlite_master WHERE name = 'big'",
                         [],
                         |r| r.get(0),
                     )?;
-                    Ok((page_size, root))
+                    Ok((page_size as u64, root as u64))
                 })
                 .unwrap();
             db.close();

@@ -43,7 +43,6 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             use clap::Parser;
             if let Ok(cli) = Cli::try_parse_from(argv) {

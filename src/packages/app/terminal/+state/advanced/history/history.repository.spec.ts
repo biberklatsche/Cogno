@@ -1,11 +1,14 @@
-import { DB, IDatabase } from "@cogno/app-tauri/db";
-import { IPathAdapter } from "@cogno/core-api";
+import type {
+  DatabaseAccessContract,
+  DatabaseStatementContract,
+  IPathAdapter,
+} from "@cogno/core-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HistoryRepository } from "./history.repository";
 
 function createPathAdapter(): IPathAdapter {
   return {
-    normalize: vi.fn((raw: string) => raw.replace(/\/+/g, "/")),
+    normalize: vi.fn((raw: string) => raw.trim().replace(/\/+/g, "/")),
     parentOf: vi.fn((path: string) => {
       const lastSlashIndex = path.lastIndexOf("/");
       return lastSlashIndex > 0 ? path.slice(0, lastSlashIndex) : null;
@@ -16,242 +19,223 @@ function createPathAdapter(): IPathAdapter {
   } as unknown as IPathAdapter;
 }
 
+type DatabaseDouble = {
+  execute: ReturnType<typeof vi.fn>;
+  select: ReturnType<typeof vi.fn>;
+  batch: ReturnType<typeof vi.fn>;
+};
+
+function createDatabase(): DatabaseDouble {
+  return {
+    execute: vi.fn().mockResolvedValue({ rowsAffected: 1, lastInsertId: 1 }),
+    select: vi.fn().mockResolvedValue([]),
+    batch: vi.fn().mockResolvedValue([]),
+  };
+}
+
+async function createRepository(database: DatabaseDouble): Promise<HistoryRepository> {
+  database.select.mockResolvedValueOnce([{ id: 7 }]);
+  return HistoryRepository.createForContext(
+    database as unknown as DatabaseAccessContract,
+    { backendOs: "linux", shellType: "Bash" } as never,
+    createPathAdapter(),
+  );
+}
+
+function batchedStatements(database: DatabaseDouble, call = 0): DatabaseStatementContract[] {
+  return database.batch.mock.calls[call][0] as DatabaseStatementContract[];
+}
+
 describe("HistoryRepository", () => {
-  let pathAdapter: IPathAdapter;
+  let database: DatabaseDouble;
 
   beforeEach(() => {
-    vi.restoreAllMocks();
-    pathAdapter = createPathAdapter();
+    database = createDatabase();
   });
 
-  it("creates repositories per shell context and persists the context id", async () => {
-    const executeSpy = vi.spyOn(DB, "execute").mockResolvedValue(undefined);
-    const selectSpy = vi.spyOn(DB, "select").mockResolvedValue([{ id: 42 }] as never);
+  it("resolves the shell context from its parts and keeps the id", async () => {
+    await createRepository(database);
 
-    const repository = await HistoryRepository.createForContext(
-      {
-        backendOs: "linux",
-        shellType: "Bash",
-      } as never,
-      pathAdapter,
+    expect(database.execute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT OR IGNORE INTO shell_context"),
+      ["linux", "Bash", "", expect.any(Number)],
+    );
+    expect(database.select).toHaveBeenCalledWith(expect.stringContaining("FROM shell_context"), [
+      "linux",
+      "Bash",
+      "",
+    ]);
+  });
+
+  it("includes the WSL distro in the context key", async () => {
+    database.select.mockResolvedValueOnce([{ id: 1 }]);
+    await HistoryRepository.createForContext(
+      database as unknown as DatabaseAccessContract,
+      { backendOs: "windows", shellType: "Bash", wslDistroName: "Ubuntu" } as never,
+      createPathAdapter(),
     );
 
-    expect(repository).toBeInstanceOf(HistoryRepository);
-    expect(executeSpy).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO context"), [
-      "backendOs=linux|shell=Bash",
+    expect(database.execute).toHaveBeenCalledWith(expect.any(String), [
+      "windows",
+      "Bash",
+      "Ubuntu",
       expect.any(Number),
     ]);
-    expect(selectSpy).toHaveBeenCalledWith(expect.stringContaining("SELECT id FROM context"), [
-      "backendOs=linux|shell=Bash",
+  });
+
+  it("writes a directory visit and its ancestors in one batch, root first", async () => {
+    const repository = await createRepository(database);
+
+    await repository.upsertWorkingDirectory("/workspace//project");
+
+    const statements = batchedStatements(database);
+    const pathInserts = statements.filter((s) => s.sql.includes("INSERT INTO path"));
+    expect(pathInserts.map((s) => s.params?.[0])).toEqual(["/workspace", "/workspace/project"]);
+    expect(pathInserts[0].params?.[1]).toBeNull();
+    expect(pathInserts[1].params?.[1]).toBe("/workspace");
+    expect(statements.at(-1)?.sql).toContain("INSERT INTO dir_stat");
+    expect(statements.at(-1)?.params).toEqual([7, "/workspace/project", expect.any(Number)]);
+  });
+
+  it("records an execution as log, ranking row and command in one batch", async () => {
+    const repository = await createRepository(database);
+
+    await repository.upsertCommandExecution("npm test", "/workspace", "TE123-abc", undefined, {
+      durationMs: 118,
+      returnCode: 0,
+    });
+
+    const statements = batchedStatements(database);
+    expect(statements.some((s) => s.sql.includes("INSERT OR IGNORE INTO command"))).toBe(true);
+    expect(statements.some((s) => s.sql.includes("INSERT INTO command_stat"))).toBe(true);
+    const log = statements.find((s) => s.sql.includes("INSERT INTO command_log"));
+    expect(log?.params).toEqual([
+      7,
+      "TE123-abc",
+      "/workspace",
+      "npm test",
+      expect.any(Number),
+      118,
+      0,
+    ]);
+    expect(statements.some((s) => s.sql.includes("DELETE FROM command_log"))).toBe(false);
+  });
+
+  it("logs a null session id and null details when none are given", async () => {
+    const repository = await createRepository(database);
+
+    await repository.upsertCommandExecution("npm test", "/workspace");
+
+    const log = batchedStatements(database).find((s) => s.sql.includes("INSERT INTO command_log"));
+    expect(log?.params).toEqual([
+      7,
+      null,
+      "/workspace",
+      "npm test",
+      expect.any(Number),
+      null,
+      null,
     ]);
   });
 
-  it("upserts working directories and directory edges inside a transaction", async () => {
-    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
-      execute: vi.fn().mockResolvedValue(undefined),
-      select: vi
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 2, parent_id: 1 }]),
-    };
-    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
-      handler(transactionDatabase as IDatabase),
-    );
-
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
-
-    await repository.upsertWorkingDirectory("/workspace/project");
-
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO path"),
-      expect.any(Array),
-    );
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO directory_edge"),
-      expect.any(Array),
-    );
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO dir_stat"),
-      expect.any(Array),
-    );
-  });
-
-  it("upserts and deletes command executions with normalized cwd paths", async () => {
-    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
-      execute: vi.fn().mockResolvedValue(undefined),
-      select: vi
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
-        .mockResolvedValueOnce([{ id: 10 }])
-        .mockResolvedValueOnce([{ id: 10 }])
-        .mockResolvedValueOnce([{ id: 1 }]),
-    };
-    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
-      handler(transactionDatabase as IDatabase),
-    );
-
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
-
-    await repository.upsertCommandExecution("npm test", "/workspace");
-    await repository.deleteCommandExecution("npm test", "/workspace");
-
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO command("),
-      expect.any(Array),
-    );
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO command_stat"),
-      expect.any(Array),
-    );
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE command_stat"),
-      expect.any(Array),
-    );
-  });
-
-  it("also logs the execution to command_log with the given groupId", async () => {
-    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
-      execute: vi.fn().mockResolvedValue(undefined),
-      select: vi
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
-        .mockResolvedValueOnce([{ id: 10 }]),
-    };
-    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
-      handler(transactionDatabase as IDatabase),
-    );
-
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
-
-    await repository.upsertCommandExecution("npm test", "/workspace", "TE123-abc");
-
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO command_log"),
-      [7, "TE123-abc", 1, 10, expect.any(Number)],
-    );
-  });
-
-  it("logs a null groupId when none is provided", async () => {
-    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
-      execute: vi.fn().mockResolvedValue(undefined),
-      select: vi
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
-        .mockResolvedValueOnce([{ id: 10 }]),
-    };
-    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
-      handler(transactionDatabase as IDatabase),
-    );
-
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
-
-    await repository.upsertCommandExecution("npm test", "/workspace");
-
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO command_log"),
-      [7, null, 1, 10, expect.any(Number)],
-    );
-  });
-
-  it("prunes command_log beyond maxEntries when given", async () => {
-    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
-      execute: vi.fn().mockResolvedValue(undefined),
-      select: vi
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
-        .mockResolvedValueOnce([{ id: 10 }]),
-    };
-    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
-      handler(transactionDatabase as IDatabase),
-    );
-
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
+  it("trims the log to maxEntries within the same batch", async () => {
+    const repository = await createRepository(database);
 
     await repository.upsertCommandExecution("npm test", "/workspace", undefined, 500);
 
-    expect(transactionDatabase.execute).toHaveBeenCalledWith(
-      expect.stringContaining("DELETE FROM command_log"),
-      [7, 7, 500],
-    );
+    const trim = batchedStatements(database).find((s) => s.sql.includes("DELETE FROM command_log"));
+    expect(trim?.params).toEqual([7, 500]);
   });
 
-  it("does not prune command_log when maxEntries is not given", async () => {
-    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
-      execute: vi.fn().mockResolvedValue(undefined),
-      select: vi
-        .fn()
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ id: 1, parent_id: null }])
-        .mockResolvedValueOnce([{ id: 10 }]),
-    };
-    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
-      handler(transactionDatabase as IDatabase),
+  it("ignores blank commands and unnormalisable directories", async () => {
+    const repository = await createRepository(database);
+
+    await repository.upsertCommandExecution("   ", "/workspace");
+    await repository.upsertCommandExecution("ls", "");
+
+    expect(database.batch).not.toHaveBeenCalled();
+  });
+
+  it("forgets a command at a directory including its log rows", async () => {
+    const repository = await createRepository(database);
+
+    await repository.deleteCommandExecution("npm test", "/workspace");
+
+    const statements = batchedStatements(database);
+    expect(statements.map((s) => s.sql.split(" ")[2])).toEqual(["command_stat", "command_log"]);
+    for (const statement of statements) {
+      expect(statement.params).toEqual([7, "/workspace", "npm test"]);
+    }
+  });
+
+  it("records a transition together with both commands", async () => {
+    const repository = await createRepository(database);
+
+    await repository.upsertCommandTransition("git add .", "git commit");
+    await repository.upsertCommandTransition("ls", "ls");
+
+    expect(database.batch).toHaveBeenCalledTimes(1);
+    const transition = batchedStatements(database).find((s) =>
+      s.sql.includes("INSERT INTO command_transition_stat"),
     );
+    expect(transition?.params).toEqual([7, "git add .", "git commit", expect.any(Number)]);
+  });
 
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
+  it("imports shell history in batches of 500 entries", async () => {
+    const repository = await createRepository(database);
+    const entries = Array.from({ length: 1200 }, (_, i) => ({
+      command: `cmd${i}`,
+      timestamp: i,
+    }));
 
-    await repository.upsertCommandExecution("npm test", "/workspace");
+    await repository.bulkImportCommands(entries, "/home/me");
 
-    const pruneCalls = (transactionDatabase.execute as ReturnType<typeof vi.fn>).mock.calls.filter(
-      ([sql]) => sql.includes("DELETE FROM command_log"),
-    );
-    expect(pruneCalls).toHaveLength(0);
+    expect(database.batch).toHaveBeenCalledTimes(3);
+    const lastBatch = batchedStatements(database, 2);
+    // 200 entries × 3 statements + the path chain
+    expect(lastBatch.filter((s) => s.sql.includes("INSERT INTO command_log"))).toHaveLength(200);
+  });
+
+  describe("searchCommands", () => {
+    it("uses the full-text index for fragments of three characters or more", async () => {
+      const repository = await createRepository(database);
+
+      await repository.searchCommands("lint", "/workspace", "pnpm install", 25);
+
+      const [sql, params] = database.select.mock.calls.at(-1) as [string, unknown[]];
+      expect(sql).toContain("command_fts MATCH ?4");
+      expect(params).toEqual(["/workspace", "pnpm install", 7, '"lint"', 25]);
+    });
+
+    it("falls back to LIKE for short fragments and escapes wildcards", async () => {
+      const repository = await createRepository(database);
+
+      await repository.searchCommands("g%", "/workspace");
+
+      const [sql, params] = database.select.mock.calls.at(-1) as [string, unknown[]];
+      expect(sql).toContain("c.command_text LIKE ?4");
+      expect(params).toEqual(["/workspace", null, 7, "%g\\%%", 50]);
+    });
+
+    it("applies no filter for an empty fragment", async () => {
+      const repository = await createRepository(database);
+
+      await repository.searchCommands("  ", "/workspace");
+
+      const [sql, params] = database.select.mock.calls.at(-1) as [string, unknown[]];
+      expect(sql).not.toContain("MATCH");
+      expect(sql).not.toContain("LIKE ?4");
+      expect(params[3]).toBeNull();
+    });
   });
 
   describe("getRecentCommands", () => {
-    function makeRepository(): HistoryRepository {
-      return new (
-        HistoryRepository as unknown as new (
-          contextId: number,
-          adapter: IPathAdapter,
-        ) => HistoryRepository
-      )(7, pathAdapter);
-    }
+    it("queries globally but still tags session and cwd origin", async () => {
+      const repository = await createRepository(database);
+      database.select.mockResolvedValueOnce([
+        { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 1 },
+      ]);
 
-    it("queries globally scoped, without a cwd or group filter, but tags origin", async () => {
-      const selectSpy = vi
-        .spyOn(DB, "select")
-        .mockResolvedValue([
-          { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 0 },
-        ] as never);
-
-      const repository = makeRepository();
       const rows = await repository.getRecentCommands({
         scope: "global",
         groupId: "TE123-abc",
@@ -259,83 +243,45 @@ describe("HistoryRepository", () => {
       });
 
       expect(rows).toEqual([
-        { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 0 },
+        { command: "git status", executedAt: 100, isCurrentSession: 0, isCurrentCwd: 1 },
       ]);
-      const [sql, params] = selectSpy.mock.calls[0];
-      expect(sql).toContain("FROM command_log cl");
-      expect(sql).toContain("LEFT JOIN path p");
-      expect(sql).toContain("CASE WHEN cl.group_id = ? THEN 1 ELSE 0 END AS isCurrentSession");
-      expect(sql).toContain("CASE WHEN p.path = ? THEN 1 ELSE 0 END AS isCurrentCwd");
-      expect(sql).not.toContain("WHERE cl.context_id = ? AND c.deleted_at IS NULL AND");
+      const [sql, params] = database.select.mock.calls.at(-1) as [string, unknown[]];
+      expect(sql).not.toContain("AND p.path = ?2");
+      expect(sql).not.toContain("AND cl.session_id = ?1");
       expect(params).toEqual(["TE123-abc", "/workspace/project", 7, 500]);
     });
 
-    it("filters by normalized cwd for the cwd scope, while still tagging origin", async () => {
-      const selectSpy = vi.spyOn(DB, "select").mockResolvedValue([] as never);
+    it("filters by the normalised cwd for the cwd scope", async () => {
+      const repository = await createRepository(database);
 
-      const repository = makeRepository();
       await repository.getRecentCommands({ scope: "cwd", cwdRaw: "/workspace//project" });
 
-      const [sql, params] = selectSpy.mock.calls[0];
-      expect(sql).toContain("p.path = ?");
-      expect(sql).toContain("LEFT JOIN path p");
-      expect(params).toEqual([null, "/workspace/project", 7, "/workspace/project", 500]);
+      const [sql, params] = database.select.mock.calls.at(-1) as [string, unknown[]];
+      expect(sql).toContain("AND p.path = ?2");
+      expect(params).toEqual([null, "/workspace/project", 7, 500]);
     });
 
-    it("returns an empty list for cwd scope when cwd cannot be normalized", async () => {
-      const repository = makeRepository();
-      const rows = await repository.getRecentCommands({ scope: "cwd", cwdRaw: "" });
-      expect(rows).toEqual([]);
+    it("filters by the session id for the session scope", async () => {
+      const repository = await createRepository(database);
+
+      await repository.getRecentCommands({ scope: "session", groupId: "TE123-abc", limit: 10 });
+
+      const [sql, params] = database.select.mock.calls.at(-1) as [string, unknown[]];
+      expect(sql).toContain("AND cl.session_id = ?1");
+      expect(params).toEqual(["TE123-abc", null, 7, 10]);
     });
 
-    it("filters by groupId for the session scope, while still tagging origin", async () => {
-      const selectSpy = vi.spyOn(DB, "select").mockResolvedValue([] as never);
+    it("returns nothing when the narrowing scope has no key", async () => {
+      const repository = await createRepository(database);
 
-      const repository = makeRepository();
-      await repository.getRecentCommands({ scope: "session", groupId: "TE123-abc" });
-
-      const [sql, params] = selectSpy.mock.calls[0];
-      expect(sql).toContain("cl.group_id = ?");
-      expect(sql).toContain("LEFT JOIN path p");
-      expect(params).toEqual(["TE123-abc", "", 7, "TE123-abc", 500]);
-    });
-
-    it("returns an empty list for session scope when no groupId is given", async () => {
-      const repository = makeRepository();
-      const rows = await repository.getRecentCommands({ scope: "session" });
-      expect(rows).toEqual([]);
+      await expect(repository.getRecentCommands({ scope: "cwd", cwdRaw: "" })).resolves.toEqual([]);
+      await expect(repository.getRecentCommands({ scope: "session" })).resolves.toEqual([]);
+      expect(database.select).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("confirmLivePattern seeds slot values from all original commands, not just the first", async () => {
-    const transactionDatabase: Pick<IDatabase, "execute" | "select"> = {
-      execute: vi.fn().mockResolvedValue(undefined),
-      select: vi
-        .fn()
-        // command 1 ("npm install express"): slot value check → none; slot stat check → none
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([])
-        // command 2 ("npm install react"): slot value check → none; slot stat → exists
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([
-          { totalCount: 1, distinctValueCount: 1, topValue: "express", topValueCount: 1 },
-        ])
-        // command 3 ("npm install lodash"): slot value check → none; slot stat → exists
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([
-          { totalCount: 2, distinctValueCount: 2, topValue: "express", topValueCount: 1 },
-        ]),
-    };
-    vi.spyOn(DB, "transaction").mockImplementation(async (handler) =>
-      handler(transactionDatabase as IDatabase),
-    );
-
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
+  it("confirms a pattern with slot values from every matching command", async () => {
+    const repository = await createRepository(database);
 
     await repository.confirmLivePattern([
       "npm install express",
@@ -343,32 +289,28 @@ describe("HistoryRepository", () => {
       "npm install lodash",
     ]);
 
-    const executeCalls = (transactionDatabase.execute as ReturnType<typeof vi.fn>).mock.calls as [
-      string,
-      unknown[],
-    ][];
-    const slotValueInserts = executeCalls.filter(([sql]) =>
-      sql.includes("command_pattern_slot_value_stat"),
-    );
-    expect(slotValueInserts).toHaveLength(3);
+    const statements = batchedStatements(database);
+    expect(statements[0].sql).toContain("INSERT INTO command_pattern (");
+    const slotValues = statements.filter((s) => s.sql.includes("command_pattern_slot_value"));
+    expect(slotValues.map((s) => s.params?.[3])).toEqual(["express", "react", "lodash"]);
   });
 
-  it("returns parsed command patterns and updates selected counter", async () => {
-    const selectSpy = vi
-      .spyOn(DB, "select")
+  it("returns parsed patterns with derived slot statistics", async () => {
+    const repository = await createRepository(database);
+    database.select
       .mockResolvedValueOnce([
         {
           signatureKey: "sig-1",
           signaturePartsJson: JSON.stringify([{ kind: "stable", value: "npm" }]),
-          patternText: "npm <slot>",
           stableTokenCount: 1,
           nonOptionStableTokenCount: 1,
           variableSlotCount: 1,
           totalCount: 4,
           lastSeenAt: 100,
           selectedCount: 1,
+          lastSelectedAt: null,
         },
-      ] as never)
+      ])
       .mockResolvedValueOnce([
         {
           signatureKey: "sig-1",
@@ -378,22 +320,11 @@ describe("HistoryRepository", () => {
           topValue: "test",
           topValueCount: 3,
         },
-      ] as never);
-    const executeSpy = vi.spyOn(DB, "execute").mockResolvedValue(undefined);
-
-    const repository = new (
-      HistoryRepository as unknown as new (
-        contextId: number,
-        adapter: IPathAdapter,
-      ) => HistoryRepository
-    )(7, pathAdapter);
+      ]);
 
     await expect(repository.searchCommandPatterns("npm")).resolves.toEqual([
       {
-        signature: {
-          key: "sig-1",
-          parts: [{ kind: "stable", value: "npm" }],
-        },
+        signature: { key: "sig-1", parts: [{ kind: "stable", value: "npm" }] },
         totalCount: 4,
         stableTokenCount: 1,
         nonOptionStableTokenCount: 1,
@@ -412,13 +343,32 @@ describe("HistoryRepository", () => {
         ],
       },
     ]);
+    const [slotSql, slotParams] = database.select.mock.calls.at(-1) as [string, unknown[]];
+    expect(slotSql).toContain("GROUP BY v.signature_key, v.slot_index");
+    expect(slotParams).toEqual([7, "sig-1"]);
+  });
+
+  it("marks selections without a round trip for ids", async () => {
+    const repository = await createRepository(database);
 
     await repository.markCommandPatternSelected("sig-1");
+    await repository.markDirectorySelected("/workspace");
+    await repository.markCommandSelected("npm test", "/workspace");
 
-    expect(selectSpy).toHaveBeenCalledTimes(2);
-    expect(executeSpy).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE command_pattern_stat"),
-      expect.arrayContaining([7, "sig-1"]),
+    expect(database.execute).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE command_pattern"),
+      [expect.any(Number), 7, "sig-1"],
     );
+    expect(database.execute).toHaveBeenCalledWith(expect.stringContaining("UPDATE dir_stat"), [
+      expect.any(Number),
+      7,
+      "/workspace",
+    ]);
+    expect(database.execute).toHaveBeenCalledWith(expect.stringContaining("UPDATE command_stat"), [
+      expect.any(Number),
+      7,
+      "/workspace",
+      "npm test",
+    ]);
   });
 });

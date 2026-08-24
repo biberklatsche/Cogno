@@ -1,6 +1,5 @@
 import { Component } from "@angular/core";
-import { Database, DatabaseRecoveryReport } from "@cogno/app-tauri/database";
-import { DB } from "@cogno/app-tauri/db";
+import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/app-tauri/database";
 import { OS } from "@cogno/app-tauri/os";
 import { AppBus } from "./app-bus/app-bus";
 import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
@@ -32,31 +31,28 @@ import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-in
     </header>
     <main>
         <app-grid-list></app-grid-list>
-        <app-notification-toast-stack></app-notification-toast-stack>
     </main>
-    `,
+    <app-notification-toast-stack></app-notification-toast-stack>
+  `,
   styles: [
     `
             :host {
-                display: flex;
-                flex-direction: column;
-                --header-height: 34px;
-                overflow: hidden;
+                display: block;
                 height: 100vh;
                 width: 100vw;
+                overflow: hidden;
             }
 
             header {
-                height: var(--header-height);
                 display: flex;
-                flex-direction: row;
-                justify-content: flex-start;
                 align-items: center;
-                overflow: hidden;
-                max-width: 100vw;
-                &.space-left-window-buttons {
-                    padding-left: 70px;
-                }
+                height: var(--header-height);
+                -webkit-app-region: drag;
+                app-region: drag;
+            }
+
+            header.space-left-window-buttons {
+                padding-left: 70px;
             }
 
             main {
@@ -82,32 +78,31 @@ export class AppComponent {
     });
     bus.onceType$("ConfigLoaded").subscribe(async (_e) => {
       await this.openApplicationDatabase(bus);
-      await DB.load(`sqlite:${Environment.dbFilePath()}`);
-      await this.databaseMigrationService.executeMigrations(appDatabaseMigrations);
       bus.publish({ type: "DBInitialized" });
     });
   }
 
   /**
-   * Opens the Rust-owned application database. A file that failed its
-   * integrity check is rebuilt on the Rust side; the user gets told what was
-   * recovered rather than finding silently missing data.
+   * Opens the application database. A file that failed its integrity check
+   * is rebuilt on the Rust side; the user gets told what was recovered (or
+   * what an import could not bring over) rather than finding data missing.
    */
   private async openApplicationDatabase(bus: AppBus): Promise<void> {
     try {
-      const report = await Database.open(Environment.isDevMode(), []);
+      const report = await this.databaseMigrationService.openDatabase(
+        appDatabaseMigrations,
+        Environment.isDevMode(),
+        Environment.legacyDatabaseFilePath(),
+      );
       if (report.recovery) {
-        bus.publish({
-          type: "Notification",
-          path: ["notification"],
-          payload: {
-            body: describeRecovery(report.recovery),
-            header: "Datenbank wiederhergestellt",
-            source: "Database",
-            timestamp: new Date(),
-            type: "warning",
-          },
-        });
+        publishDatabaseWarning(
+          bus,
+          "Datenbank wiederhergestellt",
+          describeRecovery(report.recovery),
+        );
+      }
+      if (report.legacyErrors.length > 0) {
+        publishDatabaseWarning(bus, "Import unvollständig", describeLegacyErrors(report));
       }
     } catch (error) {
       ErrorReporter.reportException({
@@ -121,6 +116,20 @@ export class AppComponent {
   }
 }
 
+function publishDatabaseWarning(bus: AppBus, header: string, body: string): void {
+  bus.publish({
+    type: "Notification",
+    path: ["notification"],
+    payload: {
+      body,
+      header,
+      source: "Database",
+      timestamp: new Date(),
+      type: "warning",
+    },
+  });
+}
+
 function describeRecovery(recovery: DatabaseRecoveryReport): string {
   const restored = recovery.tables.reduce((sum, table) => sum + table.rowsRestored, 0);
   const failed = recovery.tables.filter((table) => table.error !== null).map((table) => table.name);
@@ -132,4 +141,11 @@ function describeRecovery(recovery: DatabaseRecoveryReport): string {
     lines.push(`Nicht lesbar: ${failed.join(", ")}.`);
   }
   return lines.join("\n");
+}
+
+function describeLegacyErrors(report: DatabaseOpenReport): string {
+  const lines = report.legacyErrors.map((entry) => `${entry.id}: ${entry.error}`);
+  return ["Daten aus der vorherigen Datenbank konnten nicht übernommen werden:", ...lines].join(
+    "\n",
+  );
 }

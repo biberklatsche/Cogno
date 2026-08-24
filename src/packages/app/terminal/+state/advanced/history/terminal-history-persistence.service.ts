@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
 import { Path } from "@cogno/app-tauri/path";
-import { IPathAdapter } from "@cogno/core-api";
+import { DatabaseAccess, IPathAdapter } from "@cogno/core-api";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { ConfigService } from "../../../../config/+state/config.service";
@@ -64,7 +64,10 @@ export class TerminalHistoryPersistenceService {
   private _recentCommandExecution?: RecentCommandExecution;
   private _groupId?: string;
 
-  constructor(private readonly configService?: ConfigService) {
+  constructor(
+    private readonly configService?: ConfigService,
+    private readonly databaseAccess?: DatabaseAccess,
+  ) {
     this._actions$
       .pipe(
         concatMap((action) =>
@@ -95,7 +98,14 @@ export class TerminalHistoryPersistenceService {
 
   initialize(shellContext: ShellContext, adapter: IPathAdapter, groupId?: string): void {
     this._groupId = groupId;
-    HistoryRepository.createForContext(shellContext, adapter)
+    if (!this.databaseAccess) {
+      ErrorReporter.reportWarning({
+        message: "No database access available; command history is disabled for this terminal.",
+        source: "TerminalHistoryPersistenceService",
+      });
+      return;
+    }
+    HistoryRepository.createForContext(this.databaseAccess, shellContext, adapter)
       .then((repo) => {
         this._repo$.next(repo);
         if (
@@ -175,6 +185,7 @@ export class TerminalHistoryPersistenceService {
         executedCommand.directory,
         this._groupId,
         maxEntries,
+        { durationMs: executedCommand.duration, returnCode: executedCommand.returnCode },
       );
 
       if (recentPreviousCommand) {

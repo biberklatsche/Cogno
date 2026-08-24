@@ -4,7 +4,7 @@ export * from "./cli-config-overrides";
 export * from "./clipboard";
 export * from "./cogno-message";
 export * from "./command-runner";
-export * from "./db";
+export * from "./database";
 export * from "./default-config";
 export * from "./fs";
 export * from "./git-blob-reader";

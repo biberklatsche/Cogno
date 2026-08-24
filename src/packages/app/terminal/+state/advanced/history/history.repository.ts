@@ -1,8 +1,4 @@
-import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
-import { Hash } from "@cogno/app/common/hash/hash";
-import { DB, IDatabase } from "@cogno/app-tauri/db";
-import { IPathAdapter } from "@cogno/core-api";
-import { sleep } from "@cogno/core-support";
+import { DatabaseAccessContract, DatabaseStatementContract, IPathAdapter } from "@cogno/core-api";
 import { isWslContext, ShellContext } from "../model/models";
 import {
   CommandPattern,
@@ -15,14 +11,8 @@ import { CommandTokenClassifier } from "./command-token-classifier";
 import { CommandTokenizer } from "./command-tokenizer";
 
 type IdRow = { id: number };
-type PathRow = {
-  id: number;
-  parent_id?: number | null;
-  path_hash?: number | null;
-  basename?: string | null;
-  depth?: number | null;
-  deleted_at?: number | null;
-};
+type PathSegment = { path: string; basename: string; depth: number };
+
 export type DirectoryHistoryRow = {
   path: string;
   basename: string;
@@ -51,35 +41,28 @@ export type CommandHistoryRow = {
   outgoingTransitionCount: number;
   lastTransitionAt: number;
 };
+export type CommandExecutionDetails = {
+  durationMs?: number;
+  returnCode?: number;
+};
 type CommandPatternStatRow = {
   signatureKey: string;
   signaturePartsJson: string;
-  patternText: string;
   stableTokenCount: number;
   nonOptionStableTokenCount: number;
   variableSlotCount: number;
   totalCount: number;
   lastSeenAt: number;
   selectedCount: number;
-  lastSelectedAt?: number;
+  lastSelectedAt: number | null;
 };
-type CommandPatternSlotStatRow = {
-  signatureKey: string;
-  slotIndex: number;
-  totalCount: number;
-  distinctValueCount: number;
-  topValue: string;
-  topValueCount: number;
-};
-type CommandPatternSlotValueCountRow = {
-  valueCount: number;
-};
-type CommandPatternSlotStatExistingRow = {
-  totalCount: number;
-  distinctValueCount: number;
-  topValue: string;
-  topValueCount: number;
-};
+type CommandPatternSlotStatRow = CommandPatternSlotStatistics & { signatureKey: string };
+
+const PATH_ID = "(SELECT id FROM path WHERE path = ?)";
+const COMMAND_ID = "(SELECT id FROM command WHERE command_text = ?)";
+/** Trigram FTS needs at least this many characters; shorter fragments use LIKE. */
+const FTS_MINIMUM_FRAGMENT_LENGTH = 3;
+const BULK_IMPORT_BATCH_SIZE = 500;
 
 function nowMs(): number {
   return Date.now();
@@ -92,31 +75,13 @@ function firstToken(cmd: string): string {
   return i === -1 ? t : t.slice(0, i);
 }
 
-function isLockError(e: unknown): boolean {
-  const message = e instanceof Error ? e.message : undefined;
-  const msg = String(message ?? e ?? "");
-  return /database is locked|SQLITE_BUSY|SQLITE_LOCKED|busy|locked/i.test(msg);
+function escapeLike(fragment: string): string {
+  return fragment.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
 }
 
-async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
-  const delaysInMilliseconds = [0, 10, 30, 80];
-  let lastError: unknown;
-
-  for (let index = 0; index < delaysInMilliseconds.length; index += 1) {
-    try {
-      if (delaysInMilliseconds[index] > 0) {
-        await sleep(delaysInMilliseconds[index]);
-      }
-      return await operation();
-    } catch (error) {
-      lastError = error;
-      if (!isLockError(error) || index === delaysInMilliseconds.length - 1) {
-        break;
-      }
-    }
-  }
-
-  throw lastError;
+/** Quotes a fragment as one FTS5 phrase so operators inside it are literal. */
+function ftsPhrase(fragment: string): string {
+  return `"${fragment.replace(/"/g, '""')}"`;
 }
 
 function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
@@ -128,14 +93,11 @@ function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
 }
 
 /**
- * One instance == one contextId + one path adapter.
- * Create via HistoryRepositoryFactory.
+ * One instance == one shell context + one path adapter.
+ * Every write is a single batch, so it either lands completely or not at
+ * all; ids are resolved inside the statements rather than round-tripped.
  */
 export class HistoryRepository {
-  private _inTransaction = false;
-  private activeDatabase: Pick<IDatabase, "execute" | "select"> | undefined;
-  private readonly _pathCache = new Map<string, { id: number; parentId: number | null }>();
-  private readonly _commandCache = new Map<string, number>();
   private readonly commandPatternAnalyzer = new CommandPatternAnalyzer(
     new CommandTokenizer(),
     new CommandTokenClassifier(),
@@ -143,95 +105,60 @@ export class HistoryRepository {
   );
 
   private constructor(
+    private readonly database: DatabaseAccessContract,
     private readonly contextId: number,
     private readonly adapter: IPathAdapter,
   ) {}
 
   static async createForContext(
+    database: DatabaseAccessContract,
     shellContext: ShellContext,
     adapter: IPathAdapter,
   ): Promise<HistoryRepository> {
-    const contextId = await withRetry(() => HistoryRepository.ensureContextId(shellContext));
-    return new HistoryRepository(contextId, adapter);
-  }
-
-  private static contextKey(ctx: ShellContext): string {
-    // include only fields that define behavior/normalization
-    const base = `backendOs=${ctx.backendOs}|shell=${ctx.shellType}`;
-
-    if (isWslContext(ctx)) {
-      // distro affects path normalization -> must be part of the key
-      return `${base}|wsl=${ctx.wslDistroName}`;
-    }
-
-    return base;
-  }
-
-  private static async ensureContextId(ctx: ShellContext): Promise<number> {
-    const key = HistoryRepository.contextKey(ctx);
-    const ts = nowMs();
-
-    await DB.execute(
-      `INSERT INTO context(context_key, created_at, deleted_at)
-       VALUES(?, ?, NULL)
-       ON CONFLICT(context_key) DO UPDATE SET deleted_at = NULL`,
-      [key, ts],
+    // The WSL distro affects path normalisation, so it is part of the key.
+    const key = [
+      shellContext.backendOs,
+      shellContext.shellType,
+      isWslContext(shellContext) ? shellContext.wslDistroName : "",
+    ];
+    await database.execute(
+      `INSERT OR IGNORE INTO shell_context (backend_os, shell_type, wsl_distro, created_at)
+       VALUES (?, ?, ?, ?)`,
+      [...key, nowMs()],
     );
-
-    const rows = await DB.select<IdRow[]>(`SELECT id FROM context WHERE context_key = ? LIMIT 1`, [
+    const rows = await database.select<IdRow[]>(
+      "SELECT id FROM shell_context WHERE backend_os = ? AND shell_type = ? AND wsl_distro = ?",
       key,
-    ]);
+    );
     if (rows.length === 0) throw new Error("ensureContextId failed");
-    return rows[0].id;
+    return new HistoryRepository(database, rows[0].id, adapter);
   }
 
   async upsertWorkingDirectory(cwdRaw: string): Promise<void> {
-    const ts = nowMs();
     const cwd = safeNormalize(this.adapter, cwdRaw);
     if (!cwd) return;
-    const parent = this.adapter.parentOf(cwd);
+    const ts = nowMs();
 
-    await this.tx(async () => {
-      const cwdId = await this.ensurePathId(cwd, parent);
-
-      // optional tree learning
-      if (parent) {
-        const parentId = await this.ensurePathId(parent, this.adapter.parentOf(parent));
-        await this.upsertDirectoryEdge(parentId, cwdId, ts);
-      }
-
-      await this.exec(
-        `INSERT INTO dir_stat(
-           context_id, to_path_id,
-           visit_count, last_visit_at,
-           select_count, last_select_at,
-           created_at, deleted_at
-         ) VALUES(?, ?, 1, ?, 0, NULL, ?, NULL)
-         ON CONFLICT(context_id, to_path_id) DO UPDATE SET
-           visit_count = dir_stat.visit_count + 1,
-           last_visit_at = excluded.last_visit_at,
-           deleted_at = NULL`,
-        [this.contextId, cwdId, ts, ts],
-      );
-    });
+    await this.database.batch([
+      ...this.ensurePathStatements(cwd),
+      {
+        sql: `INSERT INTO dir_stat (context_id, path_id, visit_count, last_visit_at, select_count, last_select_at)
+              VALUES (?, ${PATH_ID}, 1, ?, 0, NULL)
+              ON CONFLICT (context_id, path_id) DO UPDATE SET
+                  visit_count = dir_stat.visit_count + 1,
+                  last_visit_at = excluded.last_visit_at`,
+        params: [this.contextId, cwd, ts],
+      },
+    ]);
   }
 
   async deleteWorkingDirectory(cwdRaw: string): Promise<void> {
-    const ts = nowMs();
     const cwd = safeNormalize(this.adapter, cwdRaw);
     if (!cwd) return;
-
-    await this.tx(async () => {
-      const rows = await this.sel<IdRow[]>(`SELECT id FROM path WHERE path = ? LIMIT 1`, [cwd]);
-      if (rows.length === 0) return;
-
-      await this.exec(
-        `UPDATE dir_stat
-         SET deleted_at = ?
-         WHERE context_id = ? AND to_path_id = ? AND deleted_at IS NULL`,
-        [ts, this.contextId, rows[0].id],
-      );
-    });
+    await this.database.execute(
+      `DELETE FROM dir_stat WHERE context_id = ? AND path_id = ${PATH_ID}`,
+      [this.contextId, cwd],
+    );
   }
 
   async upsertCommandExecution(
@@ -239,48 +166,52 @@ export class HistoryRepository {
     cwdRaw: string,
     groupId?: string,
     maxEntries?: number,
+    details: CommandExecutionDetails = {},
   ): Promise<void> {
     const command = commandRaw.trim();
     if (!command) return;
-
-    const ts = nowMs();
     const cwd = safeNormalize(this.adapter, cwdRaw);
     if (!cwd) return;
-    const parent = this.adapter.parentOf(cwd);
-    await this.tx(async () => {
-      const cwdId = await this.ensurePathId(cwd, parent);
-      const cmdId = await this.ensureCommandId(command);
-      await this.exec(
-        `INSERT INTO command_stat(
-                    context_id, cwd_path_id, command_id,
-                    exec_count, last_exec_at,
-                    select_count, last_select_at,
-                    avg_duration_ms, success_count, last_return_code,
-                    created_at, deleted_at
-                ) VALUES(?, ?, ?, 1, ?, 0, NULL, NULL, 0, NULL, ?, NULL)
-                     ON CONFLICT(context_id, cwd_path_id, command_id) DO UPDATE SET
-                    exec_count = command_stat.exec_count + 1,
-                    last_exec_at = excluded.last_exec_at,
-                    deleted_at = NULL`,
-        [this.contextId, cwdId, cmdId, ts, ts],
-      );
-      await this.exec(
-        `INSERT INTO command_log(context_id, group_id, cwd_path_id, command_id, executed_at)
-         VALUES(?, ?, ?, ?, ?)`,
-        [this.contextId, groupId ?? null, cwdId, cmdId, ts],
-      );
+    const ts = nowMs();
 
-      if (maxEntries !== undefined && maxEntries > 0) {
-        await this.exec(
-          `DELETE FROM command_log
-           WHERE context_id = ?
-             AND id NOT IN (
-               SELECT id FROM command_log WHERE context_id = ? ORDER BY executed_at DESC LIMIT ?
-             )`,
-          [this.contextId, this.contextId, maxEntries],
-        );
-      }
-    });
+    const statements: DatabaseStatementContract[] = [
+      ...this.ensurePathStatements(cwd),
+      this.ensureCommandStatement(command, ts),
+      {
+        sql: `INSERT INTO command_stat (context_id, cwd_path_id, command_id, exec_count, last_exec_at)
+              VALUES (?, ${PATH_ID}, ${COMMAND_ID}, 1, ?)
+              ON CONFLICT (context_id, cwd_path_id, command_id) DO UPDATE SET
+                  exec_count = command_stat.exec_count + 1,
+                  last_exec_at = excluded.last_exec_at`,
+        params: [this.contextId, cwd, command, ts],
+      },
+      {
+        sql: `INSERT INTO command_log (context_id, session_id, cwd_path_id, command_id, executed_at, duration_ms, return_code)
+              VALUES (?, ?, ${PATH_ID}, ${COMMAND_ID}, ?, ?, ?)`,
+        params: [
+          this.contextId,
+          groupId ?? null,
+          cwd,
+          command,
+          ts,
+          details.durationMs ?? null,
+          details.returnCode ?? null,
+        ],
+      },
+    ];
+
+    if (maxEntries !== undefined && maxEntries > 0) {
+      statements.push({
+        sql: `DELETE FROM command_log
+              WHERE context_id = ?1
+                AND id NOT IN (
+                  SELECT id FROM command_log WHERE context_id = ?1 ORDER BY executed_at DESC, id DESC LIMIT ?2
+                )`,
+        params: [this.contextId, maxEntries],
+      });
+    }
+
+    await this.database.batch(statements);
   }
 
   async getRecentCommands(options: {
@@ -290,54 +221,46 @@ export class HistoryRepository {
     limit?: number;
   }): Promise<RecentCommandRow[]> {
     const limit = options.limit ?? 500;
-    const conditions = ["cl.context_id = ?", "c.deleted_at IS NULL"];
-    const params: unknown[] = [this.contextId];
+    const cwd = safeNormalize(this.adapter, options.cwdRaw ?? "") || null;
+    const sessionId = options.groupId || null;
 
+    let scopeSql = "";
     if (options.scope === "cwd") {
-      const cwd = safeNormalize(this.adapter, options.cwdRaw ?? "");
       if (!cwd) return [];
-      conditions.push("p.path = ?");
-      params.push(cwd);
+      scopeSql = "AND p.path = ?2";
     } else if (options.scope === "session") {
-      if (!options.groupId) return [];
-      conditions.push("cl.group_id = ?");
-      params.push(options.groupId);
+      if (!sessionId) return [];
+      scopeSql = "AND cl.session_id = ?1";
     }
 
-    // Every row is tagged with whether it matches the *current* session/cwd, regardless of
-    // scope (SQL's NULL semantics make `column = NULL` false, so this is a no-op when the
-    // current session/cwd is unknown). The UI uses this to mark entries that also belong to
-    // the narrower "session"/"cwd" scopes, even while viewing a different scope.
-    const originParams = [
-      options.groupId ?? null,
-      safeNormalize(this.adapter, options.cwdRaw ?? "") ?? null,
-    ];
-
-    return this.sel<RecentCommandRow[]>(
+    // Every row is tagged with whether it belongs to the current session /
+    // cwd regardless of scope, so the UI can mark entries that also fall
+    // into a narrower scope. Consecutive repeats of a command collapse.
+    return this.database.select<RecentCommandRow[]>(
       `WITH ordered AS (
          SELECT
            c.command_text AS command,
            cl.executed_at AS executedAt,
-           CASE WHEN cl.group_id = ? THEN 1 ELSE 0 END AS isCurrentSession,
-           CASE WHEN p.path = ? THEN 1 ELSE 0 END AS isCurrentCwd,
-           LAG(c.command_text) OVER (ORDER BY cl.executed_at DESC, cl.id DESC) AS prevCommand
+           CASE WHEN cl.session_id = ?1 THEN 1 ELSE 0 END AS isCurrentSession,
+           CASE WHEN p.path = ?2 THEN 1 ELSE 0 END AS isCurrentCwd,
+           LAG(c.command_text) OVER (ORDER BY cl.executed_at DESC, cl.id DESC) AS previous
          FROM command_log cl
-                  JOIN command c ON c.id = cl.command_id
-                  LEFT JOIN path p ON p.id = cl.cwd_path_id
-         WHERE ${conditions.join(" AND ")}
+         JOIN command c ON c.id = cl.command_id
+         JOIN path p ON p.id = cl.cwd_path_id
+         WHERE cl.context_id = ?3 ${scopeSql}
        )
        SELECT command, executedAt, isCurrentSession, isCurrentCwd
        FROM ordered
-       WHERE prevCommand IS NULL OR prevCommand != command
+       WHERE previous IS NULL OR previous != command
        ORDER BY executedAt DESC
-       LIMIT ?`,
-      [...originParams, ...params, limit],
+       LIMIT ?4`,
+      [sessionId, cwd, this.contextId, limit],
     );
   }
 
   async hasAnyCommands(): Promise<boolean> {
-    const rows = await this.sel<{ found: number }[]>(
-      `SELECT 1 AS found FROM command_log WHERE context_id = ? LIMIT 1`,
+    const rows = await this.database.select<{ found: number }[]>(
+      "SELECT 1 AS found FROM command_log WHERE context_id = ? LIMIT 1",
       [this.contextId],
     );
     return rows.length > 0;
@@ -347,145 +270,95 @@ export class HistoryRepository {
     entries: { command: string; timestamp: number }[],
     cwdRaw: string,
   ): Promise<void> {
-    if (entries.length === 0) return;
-
     const cwd = safeNormalize(this.adapter, cwdRaw);
     if (!cwd) return;
-    const parent = this.adapter.parentOf(cwd);
+    const valid = entries.filter((entry) => entry.command.trim().length > 0);
+    if (valid.length === 0) return;
 
-    const BATCH_SIZE = 500;
-    for (let offset = 0; offset < entries.length; offset += BATCH_SIZE) {
-      const batch = entries.slice(offset, offset + BATCH_SIZE);
-      await this.tx(async () => {
-        const cwdId = await this.ensurePathId(cwd, parent);
-
-        for (const entry of batch) {
+    for (let offset = 0; offset < valid.length; offset += BULK_IMPORT_BATCH_SIZE) {
+      const batch = valid.slice(offset, offset + BULK_IMPORT_BATCH_SIZE);
+      await this.database.batch([
+        ...this.ensurePathStatements(cwd),
+        ...batch.flatMap((entry): DatabaseStatementContract[] => {
           const command = entry.command.trim();
-          if (!command) continue;
-
-          const cmdId = await this.ensureCommandId(command);
-
-          await this.exec(
-            `INSERT INTO command_stat(
-               context_id, cwd_path_id, command_id,
-               exec_count, last_exec_at,
-               select_count, last_select_at,
-               avg_duration_ms, success_count, last_return_code,
-               created_at, deleted_at
-             ) VALUES(?, ?, ?, 1, ?, 0, NULL, NULL, 0, NULL, ?, NULL)
-             ON CONFLICT(context_id, cwd_path_id, command_id) DO UPDATE SET
-               exec_count = command_stat.exec_count + 1,
-               last_exec_at = MAX(command_stat.last_exec_at, excluded.last_exec_at),
-               deleted_at = NULL`,
-            [this.contextId, cwdId, cmdId, entry.timestamp, entry.timestamp],
-          );
-
-          await this.exec(
-            `INSERT INTO command_log(context_id, group_id, cwd_path_id, command_id, executed_at)
-             VALUES(?, NULL, ?, ?, ?)`,
-            [this.contextId, cwdId, cmdId, entry.timestamp],
-          );
-        }
-      });
+          return [
+            this.ensureCommandStatement(command, entry.timestamp),
+            {
+              sql: `INSERT INTO command_stat (context_id, cwd_path_id, command_id, exec_count, last_exec_at)
+                    VALUES (?, ${PATH_ID}, ${COMMAND_ID}, 1, ?)
+                    ON CONFLICT (context_id, cwd_path_id, command_id) DO UPDATE SET
+                        exec_count = command_stat.exec_count + 1,
+                        last_exec_at = MAX(COALESCE(command_stat.last_exec_at, 0), excluded.last_exec_at)`,
+              params: [this.contextId, cwd, command, entry.timestamp],
+            },
+            {
+              sql: `INSERT INTO command_log (context_id, session_id, cwd_path_id, command_id, executed_at)
+                    VALUES (?, NULL, ${PATH_ID}, ${COMMAND_ID}, ?)`,
+              params: [this.contextId, cwd, command, entry.timestamp],
+            },
+          ];
+        }),
+      ]);
     }
   }
 
   async upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void> {
     const previousCommand = previousCommandRaw.trim();
     const nextCommand = nextCommandRaw.trim();
-    if (!previousCommand || !nextCommand || previousCommand === nextCommand) {
-      return;
-    }
+    if (!previousCommand || !nextCommand || previousCommand === nextCommand) return;
+    const ts = nowMs();
 
-    const timestamp = nowMs();
-
-    await this.tx(async () => {
-      const previousCommandId = await this.ensureCommandId(previousCommand);
-      const nextCommandId = await this.ensureCommandId(nextCommand);
-
-      await this.exec(
-        `INSERT INTO command_transition_stat(
-                    context_id,
-                    previous_command_id,
-                    next_command_id,
-                    transition_count,
-                    last_transition_at,
-                    created_at,
-                    deleted_at
-                ) VALUES(?, ?, ?, 1, ?, ?, NULL)
-                ON CONFLICT(context_id, previous_command_id, next_command_id) DO UPDATE SET
-                    transition_count = command_transition_stat.transition_count + 1,
-                    last_transition_at = excluded.last_transition_at,
-                    deleted_at = NULL`,
-        [this.contextId, previousCommandId, nextCommandId, timestamp, timestamp],
-      );
-
-      await this.exec(
-        `INSERT INTO command_transition_outgoing_stat(
-                    context_id,
-                    previous_command_id,
-                    outgoing_count,
-                    last_transition_at,
-                    created_at,
-                    deleted_at
-                ) VALUES(?, ?, 1, ?, ?, NULL)
-                ON CONFLICT(context_id, previous_command_id) DO UPDATE SET
-                    outgoing_count = command_transition_outgoing_stat.outgoing_count + 1,
-                    last_transition_at = excluded.last_transition_at,
-                    deleted_at = NULL`,
-        [this.contextId, previousCommandId, timestamp, timestamp],
-      );
-    });
+    await this.database.batch([
+      this.ensureCommandStatement(previousCommand, ts),
+      this.ensureCommandStatement(nextCommand, ts),
+      {
+        sql: `INSERT INTO command_transition_stat
+                  (context_id, previous_command_id, next_command_id, transition_count, last_transition_at)
+              VALUES (?, ${COMMAND_ID}, ${COMMAND_ID}, 1, ?)
+              ON CONFLICT (context_id, previous_command_id, next_command_id) DO UPDATE SET
+                  transition_count = command_transition_stat.transition_count + 1,
+                  last_transition_at = excluded.last_transition_at`,
+        params: [this.contextId, previousCommand, nextCommand, ts],
+      },
+    ]);
   }
 
+  /** Forgets a command at a directory: its ranking row and its log entries. */
   async deleteCommandExecution(commandRaw: string, cwdRaw: string): Promise<void> {
     const command = commandRaw.trim();
     if (!command) return;
-
-    const ts = nowMs();
     const cwd = safeNormalize(this.adapter, cwdRaw);
     if (!cwd) return;
 
-    await this.tx(async () => {
-      const cmdRows = await this.sel<IdRow[]>(
-        `SELECT id FROM command WHERE command_text = ? LIMIT 1`,
-        [command],
-      );
-      const cwdRows = await this.sel<IdRow[]>(`SELECT id FROM path WHERE path = ? LIMIT 1`, [cwd]);
-      if (cmdRows.length === 0 || cwdRows.length === 0) return;
-
-      await this.exec(
-        `UPDATE command_stat
-                 SET deleted_at = ?
-                 WHERE context_id = ? AND cwd_path_id = ? AND command_id = ? AND deleted_at IS NULL`,
-        [ts, this.contextId, cwdRows[0].id, cmdRows[0].id],
-      );
-    });
+    await this.database.batch([
+      {
+        sql: `DELETE FROM command_stat WHERE context_id = ? AND cwd_path_id = ${PATH_ID} AND command_id = ${COMMAND_ID}`,
+        params: [this.contextId, cwd, command],
+      },
+      {
+        sql: `DELETE FROM command_log WHERE context_id = ? AND cwd_path_id = ${PATH_ID} AND command_id = ${COMMAND_ID}`,
+        params: [this.contextId, cwd, command],
+      },
+    ]);
   }
 
   async searchDirectories(fragmentRaw: string, limit: number = 50): Promise<DirectoryHistoryRow[]> {
-    const fragment = fragmentRaw.trim().toLowerCase();
-    const q = `%${fragment}%`;
-    return this.sel<DirectoryHistoryRow[]>(
+    const q = `%${escapeLike(fragmentRaw.trim().toLowerCase())}%`;
+    return this.database.select<DirectoryHistoryRow[]>(
       `SELECT
-                 p.path AS path,
-                 p.basename AS basename,
-                 ds.visit_count AS visitCount,
-                 ds.select_count AS selectCount,
-                 ds.last_visit_at AS lastVisitAt,
-                 COALESCE(ds.last_select_at, 0) AS lastSelectAt
-             FROM dir_stat ds
-                      JOIN path p ON p.id = ds.to_path_id
-             WHERE ds.context_id = ?
-               AND ds.deleted_at IS NULL
-               AND p.deleted_at IS NULL
-               AND (
-                 LOWER(p.path) LIKE ?
-                 OR LOWER(p.basename) LIKE ?
-               )
-             ORDER BY ds.select_count DESC, ds.visit_count DESC, ds.last_visit_at DESC
-             LIMIT ?`,
-      [this.contextId, q, q, limit],
+           p.path AS path,
+           p.basename AS basename,
+           ds.visit_count AS visitCount,
+           ds.select_count AS selectCount,
+           ds.last_visit_at AS lastVisitAt,
+           COALESCE(ds.last_select_at, 0) AS lastSelectAt
+       FROM dir_stat ds
+       JOIN path p ON p.id = ds.path_id
+       WHERE ds.context_id = ?1
+         AND (LOWER(p.path) LIKE ?2 ESCAPE '\\' OR LOWER(p.basename) LIKE ?2 ESCAPE '\\')
+       ORDER BY ds.select_count DESC, ds.visit_count DESC, ds.last_visit_at DESC
+       LIMIT ?3`,
+      [this.contextId, q, limit],
     );
   }
 
@@ -495,125 +368,116 @@ export class HistoryRepository {
     previousCommandRaw?: string,
     limit: number = 50,
   ): Promise<CommandHistoryRow[]> {
-    const fragment = fragmentRaw.trim().toLowerCase();
-    const q = `%${fragment}%`;
     const cwd = safeNormalize(this.adapter, cwdRaw) ?? "";
-    const previousCommandId = await this.findActiveCommandId(previousCommandRaw);
-    return this.sel<CommandHistoryRow[]>(
+    const previousCommand = previousCommandRaw?.trim() || null;
+    const { sql: filterSql, param: filterParam } = this.commandFilter(fragmentRaw);
+
+    return this.database.select<CommandHistoryRow[]>(
       `SELECT
-                 c.command_text AS command,
-                 CAST(SUM(cs.exec_count) AS INTEGER) AS execCount,
-                 CAST(SUM(cs.select_count) AS INTEGER) AS selectCount,
-                 CAST(MAX(cs.last_exec_at) AS INTEGER) AS lastExecAt,
-                 CAST(MAX(COALESCE(cs.last_select_at, 0)) AS INTEGER) AS lastSelectAt,
-                 CAST(COALESCE(SUM(CASE WHEN p.path = ? THEN cs.exec_count ELSE 0 END), 0) AS INTEGER) AS cwdExecCount,
-                 CAST(COALESCE(SUM(CASE WHEN p.path = ? THEN cs.select_count ELSE 0 END), 0) AS INTEGER) AS cwdSelectCount,
-                 CAST(COALESCE(MAX(CASE WHEN p.path = ? THEN cs.last_exec_at ELSE 0 END), 0) AS INTEGER) AS cwdLastExecAt,
-                 CAST(COALESCE(MAX(CASE WHEN p.path = ? THEN cs.last_select_at ELSE 0 END), 0) AS INTEGER) AS cwdLastSelectAt,
-                 CAST(COALESCE(MAX(commandTransitionStat.transition_count), 0) AS INTEGER) AS transitionCount,
-                 CAST(COALESCE(MAX(commandTransitionOutgoingStat.outgoing_count), 0) AS INTEGER) AS outgoingTransitionCount,
-                 CAST(COALESCE(MAX(commandTransitionStat.last_transition_at), 0) AS INTEGER) AS lastTransitionAt
-             FROM command_stat cs
-                      JOIN command c ON c.id = cs.command_id
-                      JOIN path p ON p.id = cs.cwd_path_id
-                      LEFT JOIN command_transition_stat commandTransitionStat
-                                ON commandTransitionStat.context_id = cs.context_id
-                               AND commandTransitionStat.previous_command_id = ?
-                               AND commandTransitionStat.next_command_id = c.id
-                               AND commandTransitionStat.deleted_at IS NULL
-                      LEFT JOIN command_transition_outgoing_stat commandTransitionOutgoingStat
-                                ON commandTransitionOutgoingStat.context_id = cs.context_id
-                               AND commandTransitionOutgoingStat.previous_command_id = ?
-                               AND commandTransitionOutgoingStat.deleted_at IS NULL
-             WHERE cs.context_id = ?
-               AND cs.deleted_at IS NULL
-               AND c.deleted_at IS NULL
-               AND LOWER(c.command_text) LIKE ?
-             GROUP BY c.id
-             ORDER BY SUM(cs.select_count) DESC, SUM(cs.exec_count) DESC, MAX(cs.last_exec_at) DESC
-             LIMIT ?`,
-      [cwd, cwd, cwd, cwd, previousCommandId, previousCommandId, this.contextId, q, limit],
+           c.command_text AS command,
+           CAST(SUM(cs.exec_count) AS INTEGER) AS execCount,
+           CAST(SUM(cs.select_count) AS INTEGER) AS selectCount,
+           CAST(COALESCE(MAX(cs.last_exec_at), 0) AS INTEGER) AS lastExecAt,
+           CAST(COALESCE(MAX(cs.last_select_at), 0) AS INTEGER) AS lastSelectAt,
+           CAST(COALESCE(SUM(CASE WHEN p.path = ?1 THEN cs.exec_count ELSE 0 END), 0) AS INTEGER) AS cwdExecCount,
+           CAST(COALESCE(SUM(CASE WHEN p.path = ?1 THEN cs.select_count ELSE 0 END), 0) AS INTEGER) AS cwdSelectCount,
+           CAST(COALESCE(MAX(CASE WHEN p.path = ?1 THEN cs.last_exec_at END), 0) AS INTEGER) AS cwdLastExecAt,
+           CAST(COALESCE(MAX(CASE WHEN p.path = ?1 THEN cs.last_select_at END), 0) AS INTEGER) AS cwdLastSelectAt,
+           CAST(COALESCE(MAX(t.transition_count), 0) AS INTEGER) AS transitionCount,
+           CAST(COALESCE(MAX(outgoing.total), 0) AS INTEGER) AS outgoingTransitionCount,
+           CAST(COALESCE(MAX(t.last_transition_at), 0) AS INTEGER) AS lastTransitionAt
+       FROM command_stat cs
+       JOIN command c ON c.id = cs.command_id
+       JOIN path p ON p.id = cs.cwd_path_id
+       LEFT JOIN command_transition_stat t
+              ON t.context_id = cs.context_id
+             AND t.previous_command_id = (SELECT id FROM command WHERE command_text = ?2)
+             AND t.next_command_id = c.id
+       LEFT JOIN (
+           SELECT context_id, previous_command_id, SUM(transition_count) AS total
+           FROM command_transition_stat
+           GROUP BY context_id, previous_command_id
+       ) outgoing
+              ON outgoing.context_id = cs.context_id
+             AND outgoing.previous_command_id = (SELECT id FROM command WHERE command_text = ?2)
+       WHERE cs.context_id = ?3
+         ${filterSql}
+       GROUP BY c.id
+       ORDER BY SUM(cs.select_count) DESC, SUM(cs.exec_count) DESC, MAX(cs.last_exec_at) DESC
+       LIMIT ?5`,
+      [cwd, previousCommand, this.contextId, filterParam, limit],
     );
   }
 
   async searchCommandPatterns(fragmentRaw: string, limit: number = 50): Promise<CommandPattern[]> {
     const fragment = fragmentRaw.trim().toLowerCase();
-    if (!fragment) {
-      return [];
-    }
+    if (!fragment) return [];
 
-    const seedToken = firstToken(fragment);
-    const q = `%${seedToken}%`;
-    const patternRows = await this.sel<CommandPatternStatRow[]>(
+    const q = `%${escapeLike(firstToken(fragment))}%`;
+    const patternRows = await this.database.select<CommandPatternStatRow[]>(
       `SELECT
-                signature_key AS signatureKey,
-                signature_parts_json AS signaturePartsJson,
-                pattern_text AS patternText,
-                stable_token_count AS stableTokenCount,
-                non_option_stable_token_count AS nonOptionStableTokenCount,
-                variable_slot_count AS variableSlotCount,
-                total_count AS totalCount,
-                last_seen_at AS lastSeenAt
-                ,selected_count AS selectedCount
-                ,last_selected_at AS lastSelectedAt
-            FROM command_pattern_stat
-            WHERE context_id = ?
-              AND deleted_at IS NULL
-              AND selected_count > 0
-              AND LOWER(pattern_text) LIKE ?
-            ORDER BY total_count DESC, last_seen_at DESC
-            LIMIT ?`,
+           signature_key AS signatureKey,
+           signature_parts_json AS signaturePartsJson,
+           stable_token_count AS stableTokenCount,
+           non_option_stable_token_count AS nonOptionStableTokenCount,
+           variable_slot_count AS variableSlotCount,
+           total_count AS totalCount,
+           last_seen_at AS lastSeenAt,
+           selected_count AS selectedCount,
+           last_selected_at AS lastSelectedAt
+       FROM command_pattern
+       WHERE context_id = ?
+         AND selected_count > 0
+         AND LOWER(pattern_text) LIKE ? ESCAPE '\\'
+       ORDER BY total_count DESC, last_seen_at DESC
+       LIMIT ?`,
       [this.contextId, q, limit],
     );
+    if (patternRows.length === 0) return [];
 
-    if (patternRows.length === 0) {
-      return [];
-    }
-
-    const signatureKeys = patternRows.map((patternRow) => patternRow.signatureKey);
+    // Slot statistics are derived from the value table, not stored.
+    const signatureKeys = patternRows.map((row) => row.signatureKey);
     const placeholders = signatureKeys.map(() => "?").join(", ");
-    const slotRows = await this.sel<CommandPatternSlotStatRow[]>(
+    const slotRows = await this.database.select<CommandPatternSlotStatRow[]>(
       `SELECT
-                signature_key AS signatureKey,
-                slot_index AS slotIndex,
-                total_count AS totalCount,
-                distinct_value_count AS distinctValueCount,
-                top_value AS topValue,
-                top_value_count AS topValueCount
-            FROM command_pattern_slot_stat
-            WHERE context_id = ?
-              AND deleted_at IS NULL
-              AND signature_key IN (${placeholders})
-            ORDER BY signature_key, slot_index`,
+           v.signature_key AS signatureKey,
+           v.slot_index AS slotIndex,
+           CAST(SUM(v.value_count) AS INTEGER) AS totalCount,
+           COUNT(*) AS distinctValueCount,
+           (SELECT slot_value FROM command_pattern_slot_value top
+             WHERE top.context_id = v.context_id
+               AND top.signature_key = v.signature_key
+               AND top.slot_index = v.slot_index
+             ORDER BY top.value_count DESC, top.last_seen_at DESC, top.slot_value
+             LIMIT 1) AS topValue,
+           CAST(MAX(v.value_count) AS INTEGER) AS topValueCount
+       FROM command_pattern_slot_value v
+       WHERE v.context_id = ? AND v.signature_key IN (${placeholders})
+       GROUP BY v.signature_key, v.slot_index
+       ORDER BY v.signature_key, v.slot_index`,
       [this.contextId, ...signatureKeys],
     );
 
-    const slotRowsBySignatureKey = new Map<string, CommandPatternSlotStatistics[]>();
-    for (const slotRow of slotRows) {
-      const existingSlotRows = slotRowsBySignatureKey.get(slotRow.signatureKey) ?? [];
-      existingSlotRows.push({
-        slotIndex: slotRow.slotIndex,
-        totalCount: slotRow.totalCount,
-        distinctValueCount: slotRow.distinctValueCount,
-        topValue: slotRow.topValue,
-        topValueCount: slotRow.topValueCount,
-      });
-      slotRowsBySignatureKey.set(slotRow.signatureKey, existingSlotRows);
+    const slotsBySignature = new Map<string, CommandPatternSlotStatistics[]>();
+    for (const { signatureKey, ...slot } of slotRows) {
+      const slots = slotsBySignature.get(signatureKey) ?? [];
+      slots.push(slot);
+      slotsBySignature.set(signatureKey, slots);
     }
 
-    return patternRows.map((patternRow) => ({
+    return patternRows.map((row) => ({
       signature: {
-        key: patternRow.signatureKey,
-        parts: JSON.parse(patternRow.signaturePartsJson) as CommandSignaturePart[],
+        key: row.signatureKey,
+        parts: JSON.parse(row.signaturePartsJson) as CommandSignaturePart[],
       },
-      totalCount: patternRow.totalCount,
-      stableTokenCount: patternRow.stableTokenCount,
-      nonOptionStableTokenCount: patternRow.nonOptionStableTokenCount,
-      variableSlotCount: patternRow.variableSlotCount,
-      lastSeenAt: patternRow.lastSeenAt,
-      selectedCount: patternRow.selectedCount,
-      lastSelectedAt: patternRow.lastSelectedAt ?? undefined,
-      slotStatistics: slotRowsBySignatureKey.get(patternRow.signatureKey) ?? [],
+      totalCount: row.totalCount,
+      stableTokenCount: row.stableTokenCount,
+      nonOptionStableTokenCount: row.nonOptionStableTokenCount,
+      variableSlotCount: row.variableSlotCount,
+      lastSeenAt: row.lastSeenAt,
+      selectedCount: row.selectedCount,
+      lastSelectedAt: row.lastSelectedAt ?? undefined,
+      slotStatistics: slotsBySignature.get(row.signatureKey) ?? [],
     }));
   }
 
@@ -621,410 +485,137 @@ export class HistoryRepository {
     const representative = originalCommands[0]?.trim() ?? "";
     const occurrence = this.commandPatternAnalyzer.analyzeCommand(representative);
     if (!occurrence) return;
+    const ts = nowMs();
+    const signatureKey = occurrence.signature.key;
 
-    const timestamp = nowMs();
-    await this.tx(async () => {
-      await this.exec(
-        `INSERT INTO command_pattern_stat(
-                    context_id,
-                    signature_key,
-                    signature_parts_json,
-                    pattern_text,
-                    stable_token_count,
-                    non_option_stable_token_count,
-                    variable_slot_count,
-                    total_count,
-                    last_seen_at,
-                    selected_count,
-                    last_selected_at,
-                    created_at,
-                    deleted_at
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, 1, ?, 1, ?, ?, NULL)
-                ON CONFLICT(context_id, signature_key) DO UPDATE SET
-                    total_count = command_pattern_stat.total_count + 1,
-                    selected_count = command_pattern_stat.selected_count + 1,
-                    last_seen_at = excluded.last_seen_at,
-                    last_selected_at = excluded.last_selected_at,
-                    deleted_at = NULL`,
-        [
+    const slotValueStatements = originalCommands.flatMap((cmd): DatabaseStatementContract[] => {
+      const cmdOccurrence = this.commandPatternAnalyzer.analyzeCommand(cmd.trim());
+      if (!cmdOccurrence || cmdOccurrence.signature.key !== signatureKey) return [];
+      return cmdOccurrence.slotValues.map((slotValue) => ({
+        sql: `INSERT INTO command_pattern_slot_value
+                  (context_id, signature_key, slot_index, slot_value, value_count, last_seen_at)
+              VALUES (?, ?, ?, ?, 1, ?)
+              ON CONFLICT (context_id, signature_key, slot_index, slot_value) DO UPDATE SET
+                  value_count = command_pattern_slot_value.value_count + 1,
+                  last_seen_at = excluded.last_seen_at`,
+        params: [this.contextId, signatureKey, slotValue.slotIndex, slotValue.value, ts],
+      }));
+    });
+
+    await this.database.batch([
+      {
+        sql: `INSERT INTO command_pattern (
+                  context_id, signature_key, signature_parts_json, pattern_text,
+                  stable_token_count, non_option_stable_token_count, variable_slot_count,
+                  total_count, last_seen_at, selected_count, last_selected_at, created_at
+              ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8, 1, ?8, ?8)
+              ON CONFLICT (context_id, signature_key) DO UPDATE SET
+                  total_count = command_pattern.total_count + 1,
+                  selected_count = command_pattern.selected_count + 1,
+                  last_seen_at = excluded.last_seen_at,
+                  last_selected_at = excluded.last_selected_at`,
+        params: [
           this.contextId,
-          occurrence.signature.key,
+          signatureKey,
           JSON.stringify(occurrence.signature.parts),
           occurrence.patternText,
           occurrence.stableTokenCount,
           occurrence.nonOptionStableTokenCount,
           occurrence.variableSlotCount,
-          timestamp,
-          timestamp,
-          timestamp,
+          ts,
         ],
-      );
-
-      for (const cmd of originalCommands) {
-        const cmdOccurrence = this.commandPatternAnalyzer.analyzeCommand(cmd.trim());
-        if (!cmdOccurrence || cmdOccurrence.signature.key !== occurrence.signature.key) continue;
-        for (const slotValue of cmdOccurrence.slotValues) {
-          await this.upsertCommandPatternSlotValue(
-            occurrence.signature.key,
-            slotValue.slotIndex,
-            slotValue.value,
-            timestamp,
-          );
-        }
-      }
-    });
+      },
+      ...slotValueStatements,
+    ]);
   }
 
   async markCommandPatternSelected(signatureKeyRaw: string): Promise<void> {
     const signatureKey = signatureKeyRaw.trim();
-    if (!signatureKey) {
-      return;
-    }
-
-    const timestamp = nowMs();
-    await this.exec(
-      `UPDATE command_pattern_stat
-             SET selected_count = selected_count + 1,
-                 last_selected_at = ?,
-                 deleted_at = NULL
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND deleted_at IS NULL`,
-      [timestamp, this.contextId, signatureKey],
+    if (!signatureKey) return;
+    await this.database.execute(
+      `UPDATE command_pattern
+       SET selected_count = selected_count + 1, last_selected_at = ?
+       WHERE context_id = ? AND signature_key = ?`,
+      [nowMs(), this.contextId, signatureKey],
     );
   }
 
   async markDirectorySelected(pathRaw: string): Promise<void> {
-    const ts = nowMs();
     const path = safeNormalize(this.adapter, pathRaw);
     if (!path) return;
-
-    await this.tx(async () => {
-      const rows = await this.sel<IdRow[]>(
-        `SELECT id FROM path WHERE path = ? AND deleted_at IS NULL LIMIT 1`,
-        [path],
-      );
-      if (rows.length === 0) return;
-
-      await this.exec(
-        `UPDATE dir_stat
-                 SET select_count = select_count + 1,
-                     last_select_at = ?,
-                     deleted_at = NULL
-                 WHERE context_id = ?
-                   AND to_path_id = ?
-                   AND deleted_at IS NULL`,
-        [ts, this.contextId, rows[0].id],
-      );
-    });
+    await this.database.execute(
+      `UPDATE dir_stat
+       SET select_count = select_count + 1, last_select_at = ?
+       WHERE context_id = ? AND path_id = ${PATH_ID}`,
+      [nowMs(), this.contextId, path],
+    );
   }
 
   async markCommandSelected(commandRaw: string, cwdRaw: string): Promise<void> {
     const command = commandRaw.trim();
     if (!command) return;
-
-    const ts = nowMs();
     const cwd = safeNormalize(this.adapter, cwdRaw);
     if (!cwd) return;
-
-    await this.tx(async () => {
-      const cmdRows = await this.sel<IdRow[]>(
-        `SELECT id FROM command WHERE command_text = ? AND deleted_at IS NULL LIMIT 1`,
-        [command],
-      );
-      const cwdRows = await this.sel<IdRow[]>(
-        `SELECT id FROM path WHERE path = ? AND deleted_at IS NULL LIMIT 1`,
-        [cwd],
-      );
-      if (cmdRows.length === 0 || cwdRows.length === 0) return;
-
-      await this.exec(
-        `UPDATE command_stat
-                 SET select_count = select_count + 1,
-                     last_select_at = ?,
-                     deleted_at = NULL
-                 WHERE context_id = ?
-                   AND cwd_path_id = ?
-                   AND command_id = ?
-                   AND deleted_at IS NULL`,
-        [ts, this.contextId, cwdRows[0].id, cmdRows[0].id],
-      );
-    });
-  }
-
-  // ---- internals (race-safe UPSERT-first) ----
-
-  private async ensurePathId(pathNorm: string, parentNorm?: string | null): Promise<number> {
-    const ts = nowMs();
-    const h = Hash.create(pathNorm);
-    const basename = this.adapter.basenameOf(pathNorm);
-    const depth = this.adapter.depthOf(pathNorm);
-
-    let parentId: number | null = null;
-    if (parentNorm) {
-      parentId = await this.ensurePathId(parentNorm, this.adapter.parentOf(parentNorm));
-    }
-
-    const cached = this._pathCache.get(pathNorm);
-    if (cached && cached.parentId === parentId) {
-      return cached.id;
-    }
-
-    const existing = await this.sel<PathRow[]>(
-      `SELECT id, parent_id, path_hash, basename, depth, deleted_at FROM path WHERE path = ? LIMIT 1`,
-      [pathNorm],
-    );
-
-    if (existing.length > 0) {
-      const row = existing[0];
-      const needsUpdate =
-        row.deleted_at != null ||
-        row.path_hash !== h ||
-        row.basename !== basename ||
-        row.depth !== depth ||
-        (parentId !== null && row.parent_id !== parentId);
-
-      if (needsUpdate) {
-        await this.exec(
-          `UPDATE path
-                     SET path_hash = ?, basename = ?, depth = ?, parent_id = ?, deleted_at = NULL
-                     WHERE id = ?`,
-          [h, basename, depth, parentId, row.id],
-        );
-      }
-
-      this._pathCache.set(pathNorm, { id: row.id, parentId });
-      return row.id;
-    }
-
-    await this.exec(
-      `INSERT INTO path(path, path_hash, parent_id, basename, depth, created_at, deleted_at)
-       VALUES(?, ?, ?, ?, ?, ?, NULL)
-       ON CONFLICT(path) DO UPDATE SET
-         path_hash = excluded.path_hash,
-         parent_id = excluded.parent_id,
-         basename = excluded.basename,
-         depth = excluded.depth,
-         deleted_at = NULL`,
-      [pathNorm, h, parentId, basename, depth, ts],
-    );
-
-    const rows = await this.sel<PathRow[]>(
-      `SELECT id, parent_id FROM path WHERE path = ? LIMIT 1`,
-      [pathNorm],
-    );
-    if (rows.length === 0) throw new Error("ensurePathId failed");
-    this._pathCache.set(pathNorm, { id: rows[0].id, parentId });
-    return rows[0].id;
-  }
-
-  private async upsertDirectoryEdge(parentId: number, childId: number, ts: number): Promise<void> {
-    await this.exec(
-      `INSERT INTO directory_edge(parent_id, child_id, first_seen_at, last_seen_at, seen_count, deleted_at)
-       VALUES(?, ?, ?, ?, 1, NULL)
-       ON CONFLICT(parent_id, child_id) DO UPDATE SET
-         last_seen_at = excluded.last_seen_at,
-         seen_count = directory_edge.seen_count + 1,
-         deleted_at = NULL`,
-      [parentId, childId, ts, ts],
+    await this.database.execute(
+      `UPDATE command_stat
+       SET select_count = select_count + 1, last_select_at = ?
+       WHERE context_id = ? AND cwd_path_id = ${PATH_ID} AND command_id = ${COMMAND_ID}`,
+      [nowMs(), this.contextId, cwd, command],
     );
   }
 
-  private async ensureCommandId(commandText: string): Promise<number> {
-    const cached = this._commandCache.get(commandText);
-    if (cached) return cached;
+  // ---- statement builders ----
+
+  /**
+   * Inserts the directory and every ancestor, root first, so parent ids can
+   * be resolved by subselect within the same batch.
+   */
+  private ensurePathStatements(cwd: string): DatabaseStatementContract[] {
+    const chain: PathSegment[] = [];
+    const seen = new Set<string>();
+    let current: string | null = cwd;
+    while (current && !seen.has(current)) {
+      seen.add(current);
+      chain.push({
+        path: current,
+        basename: this.adapter.basenameOf(current),
+        depth: this.adapter.depthOf(current),
+      });
+      current = this.adapter.parentOf(current);
+    }
 
     const ts = nowMs();
-    const h = Hash.create(commandText);
-
-    await this.exec(
-      `INSERT INTO command(command_text, command_hash, first_token, created_at, deleted_at)
-       VALUES(?, ?, ?, ?, NULL)
-       ON CONFLICT(command_text) DO UPDATE SET
-         command_hash = excluded.command_hash,
-         first_token = excluded.first_token,
-         deleted_at = NULL`,
-      [commandText, h, firstToken(commandText), ts],
-    );
-
-    const rows = await this.sel<IdRow[]>(`SELECT id FROM command WHERE command_text = ? LIMIT 1`, [
-      commandText,
-    ]);
-    if (rows.length === 0) throw new Error("ensureCommandId failed");
-    this._commandCache.set(commandText, rows[0].id);
-    return rows[0].id;
+    return chain.reverse().map((segment, index) => ({
+      sql: `INSERT INTO path (path, parent_id, basename, depth, created_at)
+            VALUES (?, ${PATH_ID}, ?, ?, ?)
+            ON CONFLICT (path) DO UPDATE SET
+                parent_id = COALESCE(excluded.parent_id, path.parent_id),
+                basename = excluded.basename,
+                depth = excluded.depth`,
+      params: [segment.path, chain[index - 1]?.path ?? null, segment.basename, segment.depth, ts],
+    }));
   }
 
-  private async findActiveCommandId(commandTextRaw?: string): Promise<number | null> {
-    const commandText = commandTextRaw?.trim();
-    if (!commandText) {
-      return null;
-    }
-
-    const cachedCommandId = this._commandCache.get(commandText);
-    if (cachedCommandId !== undefined) {
-      return cachedCommandId;
-    }
-
-    const rows = await this.sel<IdRow[]>(
-      `SELECT id FROM command WHERE command_text = ? AND deleted_at IS NULL LIMIT 1`,
-      [commandText],
-    );
-    if (rows.length === 0) {
-      return null;
-    }
-
-    this._commandCache.set(commandText, rows[0].id);
-    return rows[0].id;
+  private ensureCommandStatement(command: string, ts: number): DatabaseStatementContract {
+    return {
+      sql: "INSERT OR IGNORE INTO command (command_text, created_at) VALUES (?, ?)",
+      params: [command, ts],
+    };
   }
 
-  private async upsertCommandPatternSlotValue(
-    signatureKey: string,
-    slotIndex: number,
-    slotValue: string,
-    timestamp: number,
-  ): Promise<void> {
-    const existingSlotValueRows = await this.sel<CommandPatternSlotValueCountRow[]>(
-      `SELECT value_count AS valueCount
-             FROM command_pattern_slot_value_stat
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND slot_index = ?
-               AND slot_value = ?
-             LIMIT 1`,
-      [this.contextId, signatureKey, slotIndex, slotValue],
-    );
-    const existingSlotValueCount = existingSlotValueRows[0]?.valueCount ?? 0;
-    const nextSlotValueCount = existingSlotValueCount + 1;
-    const isNewDistinctValue = existingSlotValueCount === 0;
-
-    const existingSlotStatRows = await this.sel<CommandPatternSlotStatExistingRow[]>(
-      `SELECT
-                total_count AS totalCount,
-                distinct_value_count AS distinctValueCount,
-                top_value AS topValue,
-                top_value_count AS topValueCount
-             FROM command_pattern_slot_stat
-             WHERE context_id = ?
-               AND signature_key = ?
-               AND slot_index = ?
-             LIMIT 1`,
-      [this.contextId, signatureKey, slotIndex],
-    );
-
-    const existingSlotStat = existingSlotStatRows[0];
-    if (existingSlotStat === undefined) {
-      await this.exec(
-        `INSERT INTO command_pattern_slot_stat(
-                    context_id,
-                    signature_key,
-                    slot_index,
-                    total_count,
-                    distinct_value_count,
-                    top_value,
-                    top_value_count,
-                    last_seen_at,
-                    created_at,
-                    deleted_at
-                ) VALUES(?, ?, ?, 1, 1, ?, 1, ?, ?, NULL)`,
-        [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
-      );
-    } else {
-      const nextDistinctValueCount =
-        existingSlotStat.distinctValueCount + (isNewDistinctValue ? 1 : 0);
-      const shouldReplaceTopValue = nextSlotValueCount > existingSlotStat.topValueCount;
-      const nextTopValue = shouldReplaceTopValue ? slotValue : existingSlotStat.topValue;
-      const nextTopValueCount = shouldReplaceTopValue
-        ? nextSlotValueCount
-        : existingSlotStat.topValueCount;
-
-      await this.exec(
-        `UPDATE command_pattern_slot_stat
-                 SET total_count = ?,
-                     distinct_value_count = ?,
-                     top_value = ?,
-                     top_value_count = ?,
-                     last_seen_at = ?,
-                     deleted_at = NULL
-                 WHERE context_id = ?
-                   AND signature_key = ?
-                   AND slot_index = ?`,
-        [
-          existingSlotStat.totalCount + 1,
-          nextDistinctValueCount,
-          nextTopValue,
-          nextTopValueCount,
-          timestamp,
-          this.contextId,
-          signatureKey,
-          slotIndex,
-        ],
-      );
+  /** Binds to `?4` of the search query. */
+  private commandFilter(fragmentRaw: string): { sql: string; param: string | null } {
+    const fragment = fragmentRaw.trim();
+    if (!fragment) return { sql: "AND ?4 IS NULL", param: null };
+    if (fragment.length >= FTS_MINIMUM_FRAGMENT_LENGTH) {
+      return {
+        sql: "AND c.id IN (SELECT rowid FROM command_fts WHERE command_fts MATCH ?4)",
+        param: ftsPhrase(fragment),
+      };
     }
-
-    await this.exec(
-      `INSERT INTO command_pattern_slot_value_stat(
-                context_id,
-                signature_key,
-                slot_index,
-                slot_value,
-                value_count,
-                last_seen_at,
-                created_at,
-                deleted_at
-            ) VALUES(?, ?, ?, ?, 1, ?, ?, NULL)
-            ON CONFLICT(context_id, signature_key, slot_index, slot_value) DO UPDATE SET
-                value_count = command_pattern_slot_value_stat.value_count + 1,
-                last_seen_at = excluded.last_seen_at,
-                deleted_at = NULL`,
-      [this.contextId, signatureKey, slotIndex, slotValue, timestamp, timestamp],
-    );
-  }
-
-  // ---- DB wrappers with retry + tx ----
-
-  private async exec(query: string, params?: unknown[]): Promise<void> {
-    await (this.activeDatabase ?? DB).execute(query, params);
-  }
-
-  private async sel<T>(query: string, params?: unknown[]): Promise<T> {
-    return (this.activeDatabase ?? DB).select<T>(query, params);
-  }
-
-  private async tx(fn: () => Promise<void>): Promise<void> {
-    // Prevent nested transactions
-    if (this._inTransaction) {
-      // Already in a transaction, just execute fn
-      await fn();
-      return;
-    }
-
-    // Retry the entire transaction as a unit
-    await withRetry(async () => {
-      this._inTransaction = true;
-      try {
-        await DB.transaction(async (database) => {
-          this.activeDatabase = database;
-          try {
-            await fn();
-          } finally {
-            this.activeDatabase = undefined;
-          }
-        });
-        this._inTransaction = false;
-      } catch (e) {
-        ErrorReporter.reportException({
-          error: e,
-          handled: true,
-          source: "HistoryRepository",
-          context: {
-            operation: "transaction",
-          },
-        });
-        this.activeDatabase = undefined;
-        this._inTransaction = false;
-        throw e;
-      }
-    });
+    return {
+      sql: "AND c.command_text LIKE ?4 ESCAPE '\\'",
+      param: `%${escapeLike(fragment)}%`,
+    };
   }
 }

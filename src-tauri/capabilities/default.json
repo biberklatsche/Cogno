@@ -74,8 +74,6 @@
     "core:window:allow-destroy",
     "core:window:allow-inner-size",
     "core:event:allow-listen",
-    "sql:default",
-    "sql:allow-execute",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-read-image",

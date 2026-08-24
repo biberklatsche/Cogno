@@ -28,8 +28,11 @@ export const Environment = (() => {
       return configFilePath;
     },
 
-    /** Returns the full path to the database file */
-    dbFilePath(): string {
+    /**
+     * Returns the full path of the previous-generation database file. It is
+     * only read by import migrations and may not exist.
+     */
+    legacyDatabaseFilePath(): string {
       return dbFilePath;
     },
 
