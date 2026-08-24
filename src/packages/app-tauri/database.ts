@@ -1,5 +1,22 @@
 import { invoke } from "@tauri-apps/api/core";
 
+export interface DatabaseMigration {
+  id: string;
+  sql: string;
+  /** The step reads from the previous-generation database, attached as `legacy`. */
+  usesLegacy?: boolean;
+}
+
+export interface DatabaseStatement {
+  sql: string;
+  params?: ReadonlyArray<unknown>;
+}
+
+export interface DatabaseExecuteResult {
+  rowsAffected: number;
+  lastInsertId: number;
+}
+
 export interface DatabaseTableRecovery {
   name: string;
   rowsRestored: number;
@@ -12,19 +29,46 @@ export interface DatabaseRecoveryReport {
   tables: DatabaseTableRecovery[];
 }
 
+export interface DatabaseLegacyError {
+  id: string;
+  error: string;
+}
+
 export interface DatabaseOpenReport {
   path: string;
   recovery: DatabaseRecoveryReport | null;
   appliedMigrations: string[];
+  legacyErrors: DatabaseLegacyError[];
 }
 
 /**
  * The application database lives in the Rust process behind a single
- * connection. The frontend never sends SQL; it opens the database once and
- * then calls typed commands.
+ * connection. `batch` runs every statement in one transaction — the only
+ * way to group statements atomically, so a transaction can never be left
+ * open between calls.
  */
 export const Database = {
-  open(devMode: boolean): Promise<DatabaseOpenReport> {
-    return invoke<DatabaseOpenReport>("db_open", { devMode });
+  open(
+    devMode: boolean,
+    migrations: ReadonlyArray<DatabaseMigration>,
+    legacyPath?: string,
+  ): Promise<DatabaseOpenReport> {
+    return invoke<DatabaseOpenReport>("db_open", {
+      devMode,
+      migrations,
+      legacyPath: legacyPath ?? null,
+    });
+  },
+
+  execute(statement: DatabaseStatement): Promise<DatabaseExecuteResult> {
+    return invoke<DatabaseExecuteResult>("db_execute", { statement });
+  },
+
+  select<T = unknown>(statement: DatabaseStatement): Promise<T[]> {
+    return invoke<T[]>("db_select", { statement });
+  },
+
+  batch(statements: ReadonlyArray<DatabaseStatement>): Promise<DatabaseExecuteResult[]> {
+    return invoke<DatabaseExecuteResult[]>("db_batch", { statements });
   },
 };

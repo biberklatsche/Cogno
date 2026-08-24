@@ -57,6 +57,9 @@ pub fn run(cli: Cli) {
         .manage(Db::new())
         .invoke_handler(tauri::generate_handler![
             cogno_tauri_core::db::commands::db_open,
+            cogno_tauri_core::db::commands::db_execute,
+            cogno_tauri_core::db::commands::db_select,
+            cogno_tauri_core::db::commands::db_batch,
             cogno_tauri_core::commands::command_runner::command_runner_execute,
             cogno_tauri_core::commands::git_blob::git_read_blob,
             cogno_tauri_core::commands::config::get_default_config,

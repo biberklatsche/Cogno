@@ -1,20 +1,20 @@
 //! The application database.
 //!
-//! One process, one SQLite connection, guarded by a mutex. Every command that
-//! touches the database takes the lock, runs its statements — usually inside
-//! a single transaction — and releases it. There is no connection pool and no
-//! way to spread a transaction over several IPC calls, which is precisely the
-//! point: a transaction that cannot be split cannot be broken.
+//! One process, one SQLite connection, guarded by a mutex. The webview sends
+//! SQL — the schema and every query belong to the frontend packages that
+//! own them — and this module guarantees how it runs: a batch is one
+//! transaction on the one connection. A transaction that cannot be split
+//! across calls cannot be left half-committed.
 
 pub mod commands;
 pub(crate) mod connection;
 mod error;
 pub(crate) mod migrations;
 pub(crate) mod recovery;
-pub mod schema;
+mod values;
 
 pub use error::{DbError, DbResult};
-pub use migrations::Migration;
+pub use migrations::{LegacyMigrationError, Migration};
 pub use recovery::{RecoveryReport, TableRecovery};
 
 use rusqlite::Connection;
@@ -31,6 +31,9 @@ pub struct OpenReport {
     pub recovery: Option<RecoveryReport>,
     /// Migration ids applied during this open.
     pub applied_migrations: Vec<String>,
+    /// Legacy import steps that failed; they are recorded as applied and
+    /// will not run again.
+    pub legacy_errors: Vec<LegacyMigrationError>,
 }
 
 struct OpenDatabase {
@@ -52,7 +55,12 @@ impl Db {
     /// to date. A file that fails `quick_check` is quarantined, a fresh file
     /// is created with the current schema, and every readable row is copied
     /// across. Calling `open` again with the same path is a no-op.
-    pub fn open(&self, path: &Path, migrations: &[Migration]) -> DbResult<OpenReport> {
+    pub fn open(
+        &self,
+        path: &Path,
+        migrations: &[Migration],
+        legacy: Option<&Path>,
+    ) -> DbResult<OpenReport> {
         let mut guard = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
         if let Some(open) = guard.as_ref() {
@@ -61,6 +69,7 @@ impl Db {
                     path: path.display().to_string(),
                     recovery: None,
                     applied_migrations: Vec::new(),
+                    legacy_errors: Vec::new(),
                 });
             }
             // A different path means a different home directory; close the
@@ -96,7 +105,7 @@ impl Db {
         };
 
         // The schema must exist before rows can be restored into it.
-        let applied_migrations = migrations::apply(&mut conn, migrations)?;
+        let outcome = migrations::apply(&mut conn, migrations, legacy)?;
 
         if let Some(report) = recovery.as_mut() {
             let source = PathBuf::from(&report.quarantined_path);
@@ -120,7 +129,8 @@ impl Db {
         Ok(OpenReport {
             path: path.display().to_string(),
             recovery,
-            applied_migrations,
+            applied_migrations: outcome.applied,
+            legacy_errors: outcome.legacy_errors,
         })
     }
 
@@ -190,16 +200,32 @@ mod tests {
         }
     }
 
-    const INIT: Migration = Migration {
-        id: "test/init",
-        sql: "CREATE TABLE small (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE);
-              CREATE TABLE big (id INTEGER PRIMARY KEY, payload TEXT NOT NULL);",
-    };
+    fn migration(id: &str, sql: &str) -> Migration {
+        Migration {
+            id: id.into(),
+            sql: sql.into(),
+            uses_legacy: false,
+        }
+    }
 
-    const ADD_COLUMN: Migration = Migration {
-        id: "test/add-column",
-        sql: "ALTER TABLE small ADD COLUMN extra TEXT;",
-    };
+    fn legacy_migration(id: &str, sql: &str) -> Migration {
+        Migration {
+            uses_legacy: true,
+            ..migration(id, sql)
+        }
+    }
+
+    fn init() -> Migration {
+        migration(
+            "test/init",
+            "CREATE TABLE small (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE);
+             CREATE TABLE big (id INTEGER PRIMARY KEY, payload TEXT NOT NULL);",
+        )
+    }
+
+    fn add_column() -> Migration {
+        migration("test/add-column", "ALTER TABLE small ADD COLUMN extra TEXT;")
+    }
 
     fn count(db: &Db, table: &str) -> i64 {
         db.with_connection(|conn| {
@@ -213,7 +239,9 @@ mod tests {
         let dir = TempDir::new();
         let db = Db::new();
 
-        let report = db.open(&dir.path("app.db"), &[INIT, ADD_COLUMN]).unwrap();
+        let report = db
+            .open(&dir.path("app.db"), &[init(), add_column()], None)
+            .unwrap();
 
         assert!(report.recovery.is_none());
         assert_eq!(report.applied_migrations, vec!["test/init", "test/add-column"]);
@@ -231,7 +259,7 @@ mod tests {
     fn bundled_sqlite_provides_fts5_trigram() {
         let dir = TempDir::new();
         let db = Db::new();
-        db.open(&dir.path("app.db"), &[]).unwrap();
+        db.open(&dir.path("app.db"), &[], None).unwrap();
 
         db.with_connection(|conn| {
             conn.execute_batch(
@@ -255,11 +283,11 @@ mod tests {
         let path = dir.path("app.db");
 
         let first = Db::new();
-        first.open(&path, &[INIT]).unwrap();
+        first.open(&path, &[init()], None).unwrap();
         first.close();
 
         let second = Db::new();
-        let report = second.open(&path, &[INIT, ADD_COLUMN]).unwrap();
+        let report = second.open(&path, &[init(), add_column()], None).unwrap();
 
         assert_eq!(report.applied_migrations, vec!["test/add-column"]);
     }
@@ -270,8 +298,8 @@ mod tests {
         let path = dir.path("app.db");
         let db = Db::new();
 
-        db.open(&path, &[INIT]).unwrap();
-        let report = db.open(&path, &[INIT]).unwrap();
+        db.open(&path, &[init()], None).unwrap();
+        let report = db.open(&path, &[init()], None).unwrap();
 
         assert!(report.applied_migrations.is_empty());
         assert!(report.recovery.is_none());
@@ -283,14 +311,11 @@ mod tests {
         let path = dir.path("app.db");
 
         let first = Db::new();
-        first.open(&path, &[INIT]).unwrap();
+        first.open(&path, &[init()], None).unwrap();
         first.close();
 
-        let edited = Migration {
-            id: INIT.id,
-            sql: "CREATE TABLE small (id INTEGER PRIMARY KEY);",
-        };
-        let error = Db::new().open(&path, &[edited]).unwrap_err();
+        let edited = migration("test/init", "CREATE TABLE small (id INTEGER PRIMARY KEY);");
+        let error = Db::new().open(&path, &[edited], None).unwrap_err();
 
         assert!(matches!(error, DbError::Migration(_)), "{error}");
         assert!(error.to_string().contains("checksum mismatch"));
@@ -304,13 +329,102 @@ mod tests {
     }
 
     #[test]
+    fn legacy_migration_imports_when_the_old_file_exists() {
+        let dir = TempDir::new();
+        let legacy = dir.path("old.db");
+        {
+            let conn = Connection::open(&legacy).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE old_small (id INTEGER, label TEXT);
+                 INSERT INTO old_small VALUES (1, 'alpha'), (2, 'beta');",
+            )
+            .unwrap();
+        }
+
+        let import = legacy_migration(
+            "test/import",
+            "INSERT INTO small (id, name) SELECT id, label FROM legacy.old_small NOT INDEXED;",
+        );
+        let db = Db::new();
+        let report = db
+            .open(&dir.path("app.db"), &[init(), import.clone()], Some(&legacy))
+            .unwrap();
+
+        assert_eq!(report.applied_migrations, vec!["test/init", "test/import"]);
+        assert!(report.legacy_errors.is_empty());
+        assert_eq!(count(&db, "small"), 2);
+
+        // The legacy file must not stay attached.
+        db.with_connection(|conn| {
+            let attached: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM pragma_database_list WHERE name = 'legacy'",
+                [],
+                |r| r.get(0),
+            )?;
+            assert_eq!(attached, 0);
+            Ok(())
+        })
+        .unwrap();
+
+        // Reopening does not import twice.
+        db.close();
+        let report = Db::new()
+            .open(&dir.path("app.db"), &[init(), import], Some(&legacy))
+            .unwrap();
+        assert!(report.applied_migrations.is_empty());
+    }
+
+    #[test]
+    fn legacy_migration_is_skipped_without_the_old_file() {
+        let dir = TempDir::new();
+        let import = legacy_migration(
+            "test/import",
+            "INSERT INTO small (id, name) SELECT id, label FROM legacy.old_small;",
+        );
+
+        let db = Db::new();
+        let report = db
+            .open(&dir.path("app.db"), &[init(), import], Some(&dir.path("missing.db")))
+            .unwrap();
+
+        assert_eq!(report.applied_migrations, vec!["test/init", "test/import"]);
+        assert_eq!(count(&db, "small"), 0);
+    }
+
+    #[test]
+    fn failing_legacy_migration_is_reported_and_does_not_block_startup() {
+        let dir = TempDir::new();
+        let legacy = dir.path("old.db");
+        Connection::open(&legacy).unwrap();
+
+        let import = legacy_migration(
+            "test/import",
+            "INSERT INTO small (id, name) SELECT id, label FROM legacy.does_not_exist;",
+        );
+        let db = Db::new();
+        let report = db
+            .open(&dir.path("app.db"), &[init(), import.clone()], Some(&legacy))
+            .unwrap();
+
+        assert_eq!(report.legacy_errors.len(), 1);
+        assert_eq!(report.legacy_errors[0].id, "test/import");
+        assert_eq!(report.applied_migrations, vec!["test/init", "test/import"]);
+
+        db.close();
+        let report = Db::new()
+            .open(&dir.path("app.db"), &[init(), import], Some(&legacy))
+            .unwrap();
+        assert!(report.applied_migrations.is_empty(), "a failed import is not retried");
+    }
+
+    #[test]
     fn garbage_file_is_quarantined_and_replaced() {
         let dir = TempDir::new();
         let path = dir.path("app.db");
         fs::write(&path, b"this is not a database").unwrap();
 
         let db = Db::new();
-        let report = db.open(&path, &[INIT]).unwrap();
+        let report = db.open(&path, &[init()], None).unwrap();
 
         let recovery = report.recovery.expect("recovery report");
         assert!(!recovery.reasons.is_empty());
@@ -330,7 +444,7 @@ mod tests {
         // lives below the root and survives.
         let (page_size, big_root_page) = {
             let db = Db::new();
-            db.open(&path, &[INIT]).unwrap();
+            db.open(&path, &[init()], None).unwrap();
             let layout = db
                 .with_connection(|conn| {
                     conn.execute_batch("INSERT INTO small (name) VALUES ('alpha'), ('beta')")?;
@@ -362,7 +476,7 @@ mod tests {
         drop(file);
 
         let db = Db::new();
-        let report = db.open(&path, &[INIT]).unwrap();
+        let report = db.open(&path, &[init()], None).unwrap();
 
         let recovery = report.recovery.expect("recovery report");
         let small = recovery.tables.iter().find(|t| t.name == "small").unwrap();
@@ -395,7 +509,8 @@ mod tests {
         }
 
         let db = Db::new();
-        db.open(&dir.path("new.db"), &[INIT, ADD_COLUMN]).unwrap();
+        db.open(&dir.path("new.db"), &[init(), add_column()], None)
+            .unwrap();
         let tables = db
             .with_connection(|conn| recovery::restore_rows(conn, &source))
             .unwrap();
@@ -404,5 +519,48 @@ mod tests {
         assert_eq!(small.rows_restored, 2);
         assert!(small.error.is_none());
         assert_eq!(count(&db, "small"), 2);
+    }
+
+    #[test]
+    fn restore_skips_virtual_tables_and_rebuilds_fts() {
+        let dir = TempDir::new();
+        let schema = migration(
+            "test/fts",
+            "CREATE TABLE doc (id INTEGER PRIMARY KEY, text TEXT NOT NULL);
+             CREATE VIRTUAL TABLE doc_fts USING fts5(text, content='doc', content_rowid='id', tokenize='trigram');
+             CREATE TRIGGER doc_ai AFTER INSERT ON doc BEGIN
+                 INSERT INTO doc_fts (rowid, text) VALUES (new.id, new.text);
+             END;",
+        );
+        let source = dir.path("old.db");
+        {
+            let mut conn = Connection::open(&source).unwrap();
+            connection::configure(&conn).unwrap();
+            migrations::apply(&mut conn, &[schema.clone()], None).unwrap();
+            conn.execute_batch("INSERT INTO doc (text) VALUES ('pnpm run lint:fix'), ('git status')")
+                .unwrap();
+        }
+
+        let db = Db::new();
+        db.open(&dir.path("new.db"), &[schema], None).unwrap();
+        let tables = db
+            .with_connection(|conn| recovery::restore_rows(conn, &source))
+            .unwrap();
+
+        assert!(tables.iter().all(|t| t.error.is_none()), "{tables:#?}");
+        assert!(
+            !tables.iter().any(|t| t.name.starts_with("doc_fts")),
+            "virtual and shadow tables must not be copied: {tables:#?}"
+        );
+        db.with_connection(|conn| {
+            let hits: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM doc_fts WHERE doc_fts MATCH 'lint'",
+                [],
+                |r| r.get(0),
+            )?;
+            assert_eq!(hits, 1, "full-text index must be rebuilt, without duplicates");
+            Ok(())
+        })
+        .unwrap();
     }
 }

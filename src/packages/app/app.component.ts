@@ -95,7 +95,7 @@ export class AppComponent {
    */
   private async openApplicationDatabase(bus: AppBus): Promise<void> {
     try {
-      const report = await Database.open(Environment.isDevMode());
+      const report = await Database.open(Environment.isDevMode(), []);
       if (report.recovery) {
         bus.publish({
           type: "Notification",
