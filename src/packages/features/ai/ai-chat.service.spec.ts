@@ -1,9 +1,9 @@
 import type { DestroyRef } from "@angular/core";
 import {
   ApplicationConfigurationPort,
-  type TerminalBusyStateChangeContract,
+  TerminalBusyStateChangeContract,
   TerminalGateway,
-} from "@cogno/core-api";
+} from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatService } from "./ai-chat.service";

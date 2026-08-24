@@ -1,4 +1,4 @@
-import { ApplicationConfigurationPort } from "@cogno/core-api";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiProviderAdapter } from "./ai.models";
 import { AiProviderRegistryService } from "./ai-provider-registry.service";

@@ -1,4 +1,4 @@
-import { CommandRunnerContract } from "@cogno/core-api";
+import { CommandRunnerContract } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SpecProviderContext } from "../spec.types";
 import { ProcessListSpecProvider } from "./process-list.spec-provider";

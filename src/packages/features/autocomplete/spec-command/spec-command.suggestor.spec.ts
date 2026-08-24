@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CommandRunnerContract, FilesystemContract, QueryContext } from "@cogno/core-api";
+import type { QueryContext } from "@cogno/shared/contributions";
+import type { CommandRunnerContract, FilesystemContract } from "@cogno/shared/ports";
 import { describe, expect, it, vi } from "vitest";
 import { CommandSpecRegistry } from "./spec/command-spec.registry";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";

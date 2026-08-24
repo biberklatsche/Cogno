@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
-import { ShellSupportDefinitionContract } from "@cogno/core-api";
 import { OS, OsType } from "@cogno/platform/os";
 import { Shell, Shells } from "@cogno/platform/shells";
+import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
 import { Config, ShellType } from "./+models/config";
 import { ShellProfile } from "./+models/shell-config";
 

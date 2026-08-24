@@ -1,7 +1,7 @@
 import {
   TerminalSearchLineResultContract,
   TerminalSearchTerminalIdContract,
-} from "@cogno/core-api";
+} from "../terminal-search";
 
 export interface TextSearchState {
   readonly query: string;

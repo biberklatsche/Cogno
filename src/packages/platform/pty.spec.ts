@@ -1,7 +1,12 @@
-import type { PtyChunkContract, PtyOutputListenerContract } from "@cogno/core-api";
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { PTY_CHUNK_GAP_TIMEOUT_MS, PtyDataChannel, PtyTransport } from "./pty";
+import {
+  PTY_CHUNK_GAP_TIMEOUT_MS,
+  type PtyChunkContract,
+  PtyDataChannel,
+  type PtyOutputListenerContract,
+  PtyTransport,
+} from "./pty";
 
 type RawMessage = { message: ArrayBuffer; index: number } | { end: true; index: number };
 

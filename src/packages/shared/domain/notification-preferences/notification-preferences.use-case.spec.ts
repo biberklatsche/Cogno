@@ -1,5 +1,5 @@
-import { NotificationDefinitionContract } from "@cogno/core-api";
 import { describe, expect, it } from "vitest";
+import { NotificationDefinitionContract } from "../notification";
 import {
   ChannelDefinitionContract,
   NotificationPreferencesUseCase,

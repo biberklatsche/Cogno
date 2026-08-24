@@ -2,7 +2,7 @@ import {
   ShellLineEditorActionContract,
   ShellLineEditorDefinitionContract,
   ShellSessionCapabilitiesContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
 import { IPty } from "./pty/pty";
 import { TerminalStateManager } from "./state";
 

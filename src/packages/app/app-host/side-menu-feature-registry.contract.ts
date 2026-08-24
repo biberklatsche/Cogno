@@ -1,4 +1,4 @@
-import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition.contract";
+import { SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 
 export interface SideMenuFeatureRegistryContract<TIcon = string, TActionName = string> {
   registerSideMenuFeature(

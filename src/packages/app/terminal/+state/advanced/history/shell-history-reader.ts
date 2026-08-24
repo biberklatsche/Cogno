@@ -1,6 +1,6 @@
-import { BackendOsContract, ShellTypeContract } from "@cogno/core-api";
 import { Fs } from "@cogno/platform/fs";
 import { Path } from "@cogno/platform/path";
+import { BackendOsContract, ShellTypeContract } from "@cogno/shared/domain";
 
 export type ShellHistoryEntry = {
   command: string;

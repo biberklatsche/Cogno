@@ -1,4 +1,4 @@
-import { TerminalAutocompleteSuggestorDefinitionContract } from "@cogno/core-api";
+import { TerminalAutocompleteSuggestorDefinitionContract } from "@cogno/shared/contributions";
 import { AssetCommandSpecRegistry } from "./spec/asset-command-spec.registry";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";

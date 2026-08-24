@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";

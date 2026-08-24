@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ConfirmDialogPort } from "@cogno/core-api";
+import { ConfirmDialogPort } from "@cogno/features/coding-agent/ports";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 
 @Injectable({ providedIn: "root" })

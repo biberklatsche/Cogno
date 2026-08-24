@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
-import { TerminalIpcMessage, TerminalIpcPort } from "@cogno/core-api";
+import { TerminalIpcPort } from "@cogno/features/coding-agent/ports";
+import { TerminalIpcMessage } from "@cogno/shared/domain";
 import { filter, map } from "rxjs/operators";
 import { AppBus } from "../app-bus/app-bus";
 

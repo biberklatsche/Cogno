@@ -200,8 +200,6 @@ importers:
 
   src/packages/assets: {}
 
-  src/packages/core-api: {}
-
   src/packages/features: {}
 
   src/packages/platform: {}

@@ -1,5 +1,5 @@
 import { DestroyRef, Injectable } from "@angular/core";
-import { WorkspaceHostPort } from "@cogno/core-api";
+import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { GridListService } from "../../grid-list/+state/grid-list.service";

@@ -1,4 +1,4 @@
-import { AgentStatus } from "@cogno/core-api";
+import { AgentStatus } from "@cogno/shared/domain";
 
 export const CODING_AGENT_STATUS_ACTION = "coding_agent_status";
 

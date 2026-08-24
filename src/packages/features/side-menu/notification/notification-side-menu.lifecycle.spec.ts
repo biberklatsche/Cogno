@@ -1,4 +1,4 @@
-import type { SideMenuFeatureHandleContract } from "@cogno/core-api";
+import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NotificationCenterStateService } from "./notification-center-state.service";
 import { NotificationSideMenuLifecycle } from "./notification-side-menu.lifecycle";

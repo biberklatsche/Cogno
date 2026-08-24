@@ -1,4 +1,4 @@
-import { hexColorSchema } from "@cogno/core-api";
+import { hexColorSchema } from "@cogno/shared/contributions";
 import { z } from "zod";
 
 const decorationColorSchema = z.object({

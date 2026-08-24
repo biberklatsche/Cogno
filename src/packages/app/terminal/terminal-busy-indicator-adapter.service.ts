@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { BAR_COUNT, heightFrameToGrid, MAX_HEIGHT, MIN_HEIGHT } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";

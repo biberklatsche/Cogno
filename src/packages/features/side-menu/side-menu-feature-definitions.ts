@@ -1,4 +1,4 @@
-import { SideMenuFeatureDefinitionContract } from "@cogno/core-api";
+import { SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { aiChatSideMenuFeatureDefinition } from "./ai/ai-chat.feature-definition";
 import { codingAgentsSideMenuFeatureDefinition } from "./coding-agents/coding-agents.feature-definition";
 import { commandPaletteSideMenuFeatureDefinition } from "./command-palette/command-palette.feature-definition";

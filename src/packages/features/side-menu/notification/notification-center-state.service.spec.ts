@@ -1,7 +1,5 @@
-import type {
-  NotificationCenterPortContract,
-  NotificationEventPayloadContract,
-} from "@cogno/core-api";
+import type { NotificationEventPayloadContract } from "@cogno/shared/domain";
+import type { NotificationCenterPortContract } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";

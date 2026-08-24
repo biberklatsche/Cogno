@@ -1,13 +1,14 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  BinaryNode,
+  BinaryTree,
   defaultWorkspaceIdContract,
   GridConfig,
   PaneConfig,
   TabId,
-  TerminalId,
-} from "@cogno/core-api";
-import { BinaryNode, BinaryTree } from "@cogno/shared/domain";
+} from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { IdCreator } from "../../common/id-creator/id-creator";

@@ -3,9 +3,9 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   TerminalActivityEvent,
   TerminalCwdChangeEvent,
-  TerminalId,
   TerminalMonitorPort,
-} from "@cogno/core-api";
+} from "@cogno/features/coding-agent/ports";
+import { TerminalId } from "@cogno/shared/ports";
 import { filter, map, Observable, Subject } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";

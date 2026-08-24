@@ -1,4 +1,4 @@
-import { ShellTypeContract } from "@cogno/core-api";
+import { ShellTypeContract } from "@cogno/shared/domain";
 import { invoke } from "@tauri-apps/api/core";
 
 export type Shell = { name: string; path: string; shell_type: ShellTypeContract };

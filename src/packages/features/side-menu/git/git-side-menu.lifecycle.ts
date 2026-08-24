@@ -1,5 +1,8 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
+import {
+  SideMenuFeatureHandleContract,
+  SideMenuFeatureLifecycleContract,
+} from "@cogno/shared/contributions";
 import { GitStatusService } from "./git-status.service";
 
 @Injectable({ providedIn: "root" })

@@ -5,7 +5,7 @@ import {
   TerminalGateway,
   TerminalSnapshotContract,
   TerminalSnapshotOptionsContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/ports";
 import { filter, firstValueFrom, map, timeout } from "rxjs";
 import {
   AiChatMessage,

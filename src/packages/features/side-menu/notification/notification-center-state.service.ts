@@ -4,10 +4,11 @@ import {
   FeatureModeContract,
   NotificationCenterItemContract,
   NotificationCenterItemIdContract,
-  NotificationCenterPort,
+  NotificationInboxState,
+  NotificationInboxUseCase,
   NotificationTargetContract,
-} from "@cogno/core-api";
-import { NotificationInboxState, NotificationInboxUseCase } from "@cogno/shared/domain";
+} from "@cogno/shared/domain";
+import { NotificationCenterPort } from "@cogno/shared/ports";
 
 @Injectable({ providedIn: "root" })
 export class NotificationCenterStateService {

@@ -2,8 +2,8 @@ import {
   NotificationChannelsContract,
   NotificationTargetContract,
   NotificationTypeContract,
-  TerminalId,
-} from "@cogno/core-api";
+} from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { MessageBase } from "../../app-bus/app-bus";
 
 export type NotificationSource = string;

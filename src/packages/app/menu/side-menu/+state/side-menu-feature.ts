@@ -1,10 +1,10 @@
 import { DestroyRef, Type } from "@angular/core";
 import {
-  ApplicationConfigurationPort,
-  FeatureModeContract,
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
+import { FeatureModeContract } from "@cogno/shared/domain";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";

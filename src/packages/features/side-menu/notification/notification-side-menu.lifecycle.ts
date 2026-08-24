@@ -1,5 +1,8 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
+import {
+  SideMenuFeatureHandleContract,
+  SideMenuFeatureLifecycleContract,
+} from "@cogno/shared/contributions";
 import { NotificationCenterStateService } from "./notification-center-state.service";
 
 @Injectable({ providedIn: "root" })

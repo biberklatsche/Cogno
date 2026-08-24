@@ -1,6 +1,6 @@
 import { Inject, Injectable, signal } from "@angular/core";
-import { ApplicationConfigurationPort } from "@cogno/core-api";
 import { HttpClient } from "@cogno/platform";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { getAiFeatureConfig, getRawProviderOverrides } from "./ai-config.utils";
 import {
   AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,

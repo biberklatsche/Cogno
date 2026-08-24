@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from "@angular/core";
-import { TerminalAutocompleteSuggestorContract } from "@cogno/core-api";
+import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";

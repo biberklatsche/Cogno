@@ -1,4 +1,4 @@
-import { registerDatabaseMigrations } from "@cogno/core-api";
+import { registerDatabaseMigrations } from "@cogno/shared/contributions";
 import migration001InitUiState from "./migrations/001_init_ui_state.sql?raw";
 import migration002ImportLegacyUiState from "./migrations/002_import_legacy_ui_state.sql?raw";
 

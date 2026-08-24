@@ -1,4 +1,4 @@
-import { ShellDefinitionContract } from "@cogno/core-api";
+import { ShellDefinitionContract } from "@cogno/shared/contributions";
 import { powerShellShellPathAdapterDefinition } from "./powershell.path-adapter";
 import { powerShellShellSupportDefinition } from "./powershell.shell-support-definition";
 

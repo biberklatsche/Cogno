@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { Component, Input, TemplateRef } from "@angular/core";
-import { ContextMenuItem, ContextMenuOverlayComponent } from "@cogno/core-api";
 import { ToggleSwitchComponent } from "../../common/toggle-switch/toggle-switch.component";
+import { ContextMenuItem, ContextMenuOverlayComponent } from "../../context-menu-item";
 import { IconComponent } from "../../icons/icon/icon.component";
 
 @Component({

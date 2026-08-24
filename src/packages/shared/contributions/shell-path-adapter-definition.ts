@@ -1,5 +1,4 @@
-import { ShellContextContract, ShellTypeContract } from "./filesystem.contract";
-import { IPathAdapter } from "./path-adapter.contract";
+import { IPathAdapter, ShellContextContract, ShellTypeContract } from "@cogno/shared/domain";
 
 export interface ShellPathAdapterDefinitionContract {
   readonly shellType: ShellTypeContract;

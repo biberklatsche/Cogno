@@ -1,4 +1,4 @@
-import { SideMenuFeatureDefinitionContract } from "@cogno/core-api";
+import { SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 
 export const codingAgentsFeatureId = "coding-agents";
 

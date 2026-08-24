@@ -1,4 +1,5 @@
-import { ContextMenuItem, NotificationDefinitionContract } from "@cogno/core-api";
+import { ContextMenuItem } from "@cogno/shared/ui";
+import { NotificationDefinitionContract } from "../notification";
 import { NotificationPreferencesUseCase } from "./notification-preferences.use-case";
 import { NotificationPreferencesState } from "./notification-preferences-state";
 

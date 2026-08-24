@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { ActionBase } from "../../app-bus/app-bus";
 
 export type FocusTerminalAction = ActionBase<"FocusTerminal", TerminalId>;

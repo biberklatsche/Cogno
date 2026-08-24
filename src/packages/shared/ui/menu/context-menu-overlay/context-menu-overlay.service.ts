@@ -5,7 +5,7 @@ import {
   EnvironmentInjector,
   Injectable,
 } from "@angular/core";
-import { ContextMenuOverlayComponent } from "@cogno/core-api";
+import { ContextMenuOverlayComponent } from "../../context-menu-item";
 import { ContextMenuComponent } from "./context-menu.component";
 
 export type Point = { x: number; y: number };

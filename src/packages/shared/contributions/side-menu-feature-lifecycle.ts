@@ -1,4 +1,4 @@
-import { FeatureModeContract } from "./feature-mode.contract";
+import { FeatureModeContract } from "@cogno/shared/domain";
 
 export interface SideMenuFeatureLifecycleContract {
   onModeChange?(mode: FeatureModeContract): void;

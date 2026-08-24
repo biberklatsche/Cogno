@@ -1,6 +1,6 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
-import type { ShellContextContract } from "@cogno/core-api";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import type { ShellContextContract } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import type { QueryContext } from "../autocomplete.types";

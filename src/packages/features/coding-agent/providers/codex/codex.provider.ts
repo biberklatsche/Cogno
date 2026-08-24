@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ICodingAgentProvider } from "@cogno/core-api";
+import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommands } from "../_shared/hook-command.builder";
 import { CODEX_CONFIG, CodexHookGroup, CodexHooksFile } from "./codex.config";

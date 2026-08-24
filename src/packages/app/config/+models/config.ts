@@ -7,7 +7,7 @@ import {
   FeatureNotificationOverviewSchema,
   FeatureSearchSchema,
   FeatureWorkspaceSchema,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
 import { z } from "zod";
 import { AutocompleteSettingsSchema } from "./autocomplete-settings";
 import { ClipboardConfig, ClipboardConfigSchema } from "./clipboard-config";

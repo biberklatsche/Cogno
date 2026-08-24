@@ -1,4 +1,5 @@
-import { defaultWorkspaceIdContract, GridConfig, TabConfig } from "@cogno/core-api";
+import { GridConfig, TabConfig } from "../grid-layout";
+import { defaultWorkspaceIdContract } from "../workspace-entry";
 import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
 
 export interface WorkspaceActivationPlan {

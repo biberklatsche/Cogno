@@ -1,5 +1,5 @@
-import { ApplicationConfigurationPort } from "@cogno/core-api";
 import { HttpClient } from "@cogno/platform";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiDetectableProviderDefinition } from "./ai-detection.models";

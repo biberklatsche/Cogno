@@ -1,5 +1,5 @@
+import { TerminalId } from "@cogno/shared/ports";
 import { Observable } from "rxjs";
-import { TerminalId } from "./terminal-gateway.contract";
 
 export type TerminalActivityEvent = { terminalId: TerminalId; isBusy: boolean };
 export type TerminalCwdChangeEvent = { terminalId: TerminalId; cwd: string };

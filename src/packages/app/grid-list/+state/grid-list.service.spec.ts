@@ -1,4 +1,4 @@
-import type { TerminalConfig } from "@cogno/core-api";
+import type { TerminalConfig } from "@cogno/shared/domain";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,

@@ -1,8 +1,5 @@
-import {
-  BasePathAdapter,
-  ShellContextContract,
-  ShellPathAdapterDefinitionContract,
-} from "@cogno/core-api";
+import { ShellPathAdapterDefinitionContract } from "@cogno/shared/contributions";
+import { BasePathAdapter, ShellContextContract } from "@cogno/shared/domain";
 
 type ShellAdapterContext = {
   backendOs: ShellContextContract["backendOs"];

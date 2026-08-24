@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import {
   NotificationChannelOptionContract,
   NotificationChannelsPortContract,
-} from "@cogno/core-api";
+} from "@cogno/features/coding-agent/ports";
 import { AppWiringService } from "../../app-host/app-wiring.service";
 import { ConfigService } from "../../config/+state/config.service";
 

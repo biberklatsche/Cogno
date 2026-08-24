@@ -4,7 +4,7 @@ import {
   SideMenuFeatureDefinitionContract,
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
 import { Icon } from "@cogno/shared/ui";
 
 export type SideMenuFeatureLifecycleFactory = (

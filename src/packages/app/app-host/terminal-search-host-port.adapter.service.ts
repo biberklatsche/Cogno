@@ -1,13 +1,13 @@
 import { Injectable } from "@angular/core";
+import { TerminalSearchHostPortContract } from "@cogno/features/side-menu/ports";
 import {
   TerminalSearchColorConfigContract,
-  TerminalSearchHostPortContract,
   TerminalSearchPanelRequestContract,
   TerminalSearchRequestContract,
   TerminalSearchResultContract,
   TerminalSearchRevealRequestContract,
   TerminalSearchTerminalIdContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/domain";
 import { map, Observable } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";

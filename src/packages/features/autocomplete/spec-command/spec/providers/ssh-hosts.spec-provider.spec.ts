@@ -1,4 +1,4 @@
-import { CommandRunnerContract, FilesystemContract } from "@cogno/core-api";
+import { CommandRunnerContract, FilesystemContract } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SpecProviderContext } from "../spec.types";
 import { SshHostsSpecProvider } from "./ssh-hosts.spec-provider";

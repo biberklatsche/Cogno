@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ICodingAgentProvider } from "@cogno/core-api";
+import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { AntigravityProvider } from "./providers/antigravity/antigravity.provider";
 import { ClaudeCodeProvider } from "./providers/claude-code/claude-code.provider";
 import { CodexProvider } from "./providers/codex/codex.provider";

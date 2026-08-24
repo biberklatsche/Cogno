@@ -9,12 +9,12 @@ import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-
 import {
   ApplicationFeatureCollectionContract,
   ApplicationSettingsExtensionContract,
-  NotificationChannelContract,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
+import { NotificationChannelContract } from "@cogno/shared/domain";
 import { Icon } from "@cogno/shared/ui";
 import { additionalNotificationChannelsToken, featureCollectionToken } from "./app-host.tokens";
 import { DatabaseMigrationService } from "./database-migration.service";

@@ -1,1 +1,1 @@
-export type { Icon } from "@cogno/core-api";
+export type { Icon } from "../../icon";

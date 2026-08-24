@@ -1,18 +1,16 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import {
-  NotificationChannelsPort,
-  NotificationDefinitionContract,
-  ShellDefinitionContract,
-  TerminalId,
-} from "@cogno/core-api";
+import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { Opener, PtyTransport } from "@cogno/platform";
+import { ShellDefinitionContract } from "@cogno/shared/contributions";
 import {
   buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
+  NotificationDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
 } from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import {
   ContextMenuItem,

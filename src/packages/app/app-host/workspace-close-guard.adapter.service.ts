@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { WorkspaceCloseGuardContract } from "@cogno/core-api";
+import { WorkspaceCloseGuardContract } from "@cogno/features/side-menu/ports";
 import { TerminalBusyStateService } from "../terminal/terminal-busy-state.service";
 
 @Injectable({ providedIn: "root" })

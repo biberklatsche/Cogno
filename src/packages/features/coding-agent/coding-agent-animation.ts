@@ -1,4 +1,4 @@
-import { AnimationSpec } from "@cogno/core-api";
+import { AnimationSpec } from "@cogno/shared/ports";
 
 export const AGENT_STATUS_REGISTRATION_KEY = "coding-agent-status";
 

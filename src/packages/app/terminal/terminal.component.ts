@@ -11,7 +11,7 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
 import { ShellProfile } from "../config/+models/shell-config";

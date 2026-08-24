@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { Char, IDisposable } from "@cogno/shared/support";
 import { IDisposable as IXtermDisposable, Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";

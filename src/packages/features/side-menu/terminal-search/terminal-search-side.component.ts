@@ -9,7 +9,10 @@ import {
   viewChild,
   viewChildren,
 } from "@angular/core";
-import { TerminalSearchLineMatchContract, TerminalSearchLineResultContract } from "@cogno/core-api";
+import {
+  TerminalSearchLineMatchContract,
+  TerminalSearchLineResultContract,
+} from "@cogno/shared/domain";
 import { TooltipDirective } from "@cogno/shared/ui";
 import {
   collectDirectionalNavigationItems,

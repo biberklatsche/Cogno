@@ -1,6 +1,6 @@
 import type { DestroyRef } from "@angular/core";
-import type { ActionDispatcher } from "@cogno/core-api";
 import { CliActionListener } from "@cogno/platform/cli-action";
+import type { ActionDispatcher } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ActionDefinition,

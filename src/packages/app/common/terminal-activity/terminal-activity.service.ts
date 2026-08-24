@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { Observable, Subject } from "rxjs";
 import { throttleTime } from "rxjs/operators";
 

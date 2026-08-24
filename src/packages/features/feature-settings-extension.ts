@@ -1,4 +1,4 @@
-import { ApplicationSettingsExtensionContract } from "@cogno/core-api";
+import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
 import {
   FeatureAiSchema,

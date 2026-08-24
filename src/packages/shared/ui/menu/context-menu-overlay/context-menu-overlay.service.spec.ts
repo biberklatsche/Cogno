@@ -1,6 +1,6 @@
 import { ApplicationRef, createComponent, EnvironmentInjector } from "@angular/core";
-import { ContextMenuOverlayComponent } from "@cogno/core-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ContextMenuOverlayComponent } from "../../context-menu-item";
 import { ContextMenuOverlayService } from "./context-menu-overlay.service";
 
 vi.mock("@angular/core", async (importOriginal) => {

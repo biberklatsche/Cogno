@@ -1,4 +1,4 @@
-import { AgentStatus } from "@cogno/core-api";
+import { AgentStatus } from "@cogno/shared/domain";
 
 export type KimiHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 

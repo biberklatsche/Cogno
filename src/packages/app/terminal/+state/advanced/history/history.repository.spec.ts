@@ -1,5 +1,5 @@
-import type { IPathAdapter } from "@cogno/core-api";
 import type { DatabaseAccessContract, DatabaseStatementContract } from "@cogno/platform";
+import type { IPathAdapter } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HistoryRepository } from "./history.repository";
 

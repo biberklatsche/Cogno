@@ -1,6 +1,7 @@
-import type { WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
 import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
+import type { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
+import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";

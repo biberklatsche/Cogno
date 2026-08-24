@@ -1,4 +1,7 @@
-import { NotificationCenterItemContract, NotificationCenterItemIdContract } from "@cogno/core-api";
+import {
+  NotificationCenterItemContract,
+  NotificationCenterItemIdContract,
+} from "../notification-center-item";
 
 export interface NotificationInboxState {
   readonly enabled: boolean;

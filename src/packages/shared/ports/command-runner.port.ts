@@ -1,4 +1,4 @@
-import { ShellContextContract } from "./filesystem.contract";
+import { ShellContextContract } from "@cogno/shared/domain";
 
 export interface CommandRunnerRequestContract {
   readonly cwd: string;

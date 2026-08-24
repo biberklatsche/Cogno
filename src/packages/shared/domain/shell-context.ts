@@ -1,4 +1,4 @@
-import { ShellContextContract } from "./filesystem.contract";
+import { ShellContextContract } from "./shell";
 
 type BaseShellContextContract = {
   backendOs: ShellContextContract["backendOs"];

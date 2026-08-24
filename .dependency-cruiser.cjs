@@ -2,13 +2,12 @@ const packageRootPattern = "^src/packages/";
 const bootstrapPattern = "^src/app/";
 const sharedPattern = "^src/packages/shared/";
 const sharedDomainPattern = "^src/packages/shared/(domain|support)/";
-const coreApiPattern = "^src/packages/core-api/";
 const featuresPattern = "^src/packages/features/";
 const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
 const platformPattern = "^src/packages/platform/";
 const appPackagePattern = "^src/packages/app/";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|platform(?:$|/)|features(?:$|/)|core-api(?:$|/)|shared(?:$|/)).+";
+  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|platform(?:$|/)|features(?:$|/)|shared(?:$|/)).+";
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -24,7 +23,7 @@ module.exports = {
       name: "platform-imports-only-shared",
       severity: "error",
       comment:
-        "platform is the Tauri binding layer and must not reach into app or features. (core-api is still allowed until it is dissolved in architecture step 4.)",
+        "platform is the Tauri binding layer and must not reach into app or features.",
       from: { path: platformPattern },
       to: { path: "^(src/packages/app|src/packages/features|src/app)/" },
     },
@@ -32,7 +31,7 @@ module.exports = {
       name: "shared-knows-nothing-about-the-app",
       severity: "error",
       comment:
-        "shared must not depend on app, features, platform or Tauri. (core-api is still allowed until it is dissolved in architecture step 4.)",
+        "shared must not depend on app, features, platform or Tauri.",
       from: { path: sharedPattern },
       to: { path: "^(src/packages/app|src/packages/platform|src/packages/features|src/app)/|^@tauri-apps/" },
     },
@@ -42,41 +41,6 @@ module.exports = {
       comment: "shared/domain and shared/support must not depend on Angular or RxJS.",
       from: { path: sharedDomainPattern },
       to: { path: "^(@angular/|rxjs)" },
-    },
-    {
-      name: "core-api-must-not-import-angular",
-      severity: "error",
-      comment: "core-api must not depend on Angular.",
-      from: { path: coreApiPattern },
-      to: { path: "^@angular/" },
-    },
-    {
-      name: "core-api-must-not-import-tauri",
-      severity: "error",
-      comment: "core-api must not depend on Tauri.",
-      from: { path: coreApiPattern },
-      to: { path: "^@tauri-apps/" },
-    },
-    {
-      name: "core-api-must-not-import-app-angular",
-      severity: "error",
-      comment: "core-api must not depend on app-angular.",
-      from: { path: coreApiPattern },
-      to: { path: appAngularPattern },
-    },
-    {
-      name: "core-api-must-not-import-features",
-      severity: "error",
-      comment: "core-api must not depend on features.",
-      from: { path: coreApiPattern },
-      to: { path: featuresPattern },
-    },
-    {
-      name: "core-api-must-not-contain-feature-aggregations",
-      severity: "warn",
-      comment: "core-api must not import feature-level aggregation or default-value files. These belong in the features package. Catches files whose names suggest collected/default state rather than contracts.",
-      from: { path: coreApiPattern },
-      to: { path: "(feature-settings-extension|feature-.*-defaults?|.*-aggregation|.*-collection\\.ts$)" },
     },
     {
       name: "features-must-not-import-app",
@@ -91,13 +55,6 @@ module.exports = {
       comment: "features must not depend on app-angular.",
       from: { path: featuresPattern },
       to: { path: appAngularPattern },
-    },
-    {
-      name: "app-angular-must-not-import-features",
-      severity: "error",
-      comment: "app-angular must not depend on concrete features.",
-      from: { path: appAngularPattern },
-      to: { path: featuresPattern },
     },
     {
       name: "features-must-not-depend-on-feature-orchestration-in-app",

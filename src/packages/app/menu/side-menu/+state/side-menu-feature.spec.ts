@@ -1,5 +1,5 @@
 import type { DestroyRef } from "@angular/core";
-import { ApplicationConfigurationPort } from "@cogno/core-api";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../app-bus/app-bus";

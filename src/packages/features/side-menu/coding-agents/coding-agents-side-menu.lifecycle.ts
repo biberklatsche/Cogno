@@ -1,6 +1,9 @@
 import { Injectable } from "@angular/core";
-import { SideMenuFeatureHandleContract, SideMenuFeatureLifecycleContract } from "@cogno/core-api";
 import { CodingAgentStartupService } from "@cogno/features/coding-agent";
+import {
+  SideMenuFeatureHandleContract,
+  SideMenuFeatureLifecycleContract,
+} from "@cogno/shared/contributions";
 
 @Injectable({ providedIn: "root" })
 export class CodingAgentsSideMenuLifecycle {

@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
-import { Filesystem, ShellContextContract } from "@cogno/core-api";
 import { GitBlobReader } from "@cogno/platform";
+import { ShellContextContract } from "@cogno/shared/domain";
+import { Filesystem } from "@cogno/shared/ports";
 
 export type GitDiffContent = {
   readonly original: string;

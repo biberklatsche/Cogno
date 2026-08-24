@@ -1,7 +1,7 @@
 import {
   ApplicationSettingsExtensionContract,
   ApplicationSettingsSectionDefinitionContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
 import { ZodRawShape, z } from "zod";
 import { baseConfigSchemaShape, baseSettingsSections } from "./+models/config";
 

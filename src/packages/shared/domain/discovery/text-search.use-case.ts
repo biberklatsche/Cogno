@@ -5,7 +5,7 @@ import {
   TerminalSearchResultContract,
   TerminalSearchRevealRequestContract,
   TerminalSearchTerminalIdContract,
-} from "@cogno/core-api";
+} from "../terminal-search";
 import { TextSearchState } from "./text-search-state";
 
 export class TextSearchUseCase {

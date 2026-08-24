@@ -1,9 +1,5 @@
-import {
-  IPathAdapter,
-  ShellContextContract,
-  ShellPathAdapterDefinitionContract,
-  ShellTypeContract,
-} from "@cogno/core-api";
+import { ShellPathAdapterDefinitionContract } from "@cogno/shared/contributions";
+import { IPathAdapter, ShellContextContract, ShellTypeContract } from "@cogno/shared/domain";
 
 export class PathFactory {
   private static definitionsByShellType = new Map<

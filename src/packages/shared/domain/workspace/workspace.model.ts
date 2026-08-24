@@ -2,7 +2,7 @@ import {
   PersistedGridConfigurationContract,
   PersistedTabConfigurationContract,
   WorkspaceIdentifierContract,
-} from "@cogno/core-api";
+} from "../grid-layout";
 
 export interface WorkspaceConfiguration {
   id: WorkspaceIdentifierContract;

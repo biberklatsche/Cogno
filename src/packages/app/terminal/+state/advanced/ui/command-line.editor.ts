@@ -1,5 +1,8 @@
-import { ShellLineEditorActionContract, ShellLineEditorDefinitionContract } from "@cogno/core-api";
 import { Clipboard } from "@cogno/platform/clipboard";
+import {
+  ShellLineEditorActionContract,
+  ShellLineEditorDefinitionContract,
+} from "@cogno/shared/contributions";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";

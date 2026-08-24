@@ -1,4 +1,4 @@
-import { BackendOsContract, ShellContextContract } from "@cogno/core-api";
+import { BackendOsContract, ShellContextContract } from "@cogno/shared/domain";
 import {
   ShellConstraint,
   SpecSuggestionProvider,

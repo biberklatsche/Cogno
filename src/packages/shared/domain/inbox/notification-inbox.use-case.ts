@@ -1,9 +1,9 @@
+import { FeatureModeContract } from "../feature-mode";
+import { NotificationEventPayloadContract } from "../notification";
 import {
-  FeatureModeContract,
   NotificationCenterItemContract,
   NotificationCenterItemIdContract,
-  NotificationEventPayloadContract,
-} from "@cogno/core-api";
+} from "../notification-center-item";
 import { NotificationInboxState } from "./notification-inbox-state";
 
 export interface NotificationInboxEventResult {

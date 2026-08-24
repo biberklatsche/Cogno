@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { ShellProfile } from "../../config/+models/shell-config";
 import { TerminalStateManager } from "./state";
 import { TerminalSession } from "./terminal.session";

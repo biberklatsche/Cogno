@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { AnimationSpec, TerminalAnimationPort, TerminalMonitorPort } from "@cogno/core-api";
+import { TerminalMonitorPort } from "@cogno/features/coding-agent/ports";
+import { AnimationSpec, TerminalAnimationPort } from "@cogno/shared/ports";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { AppBus } from "../app-bus/app-bus";

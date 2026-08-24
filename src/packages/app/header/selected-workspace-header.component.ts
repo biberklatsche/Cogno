@@ -7,11 +7,8 @@ import {
   signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-  defaultWorkspaceIdContract,
-  WorkspaceEntryContract,
-  WorkspaceHostPort,
-} from "@cogno/core-api";
+import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
+import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
   ContextMenuOverlayService,

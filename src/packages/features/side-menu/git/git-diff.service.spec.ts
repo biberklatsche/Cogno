@@ -1,4 +1,5 @@
-import { Filesystem, ShellContextContract } from "@cogno/core-api";
+import { ShellContextContract } from "@cogno/shared/domain";
+import { Filesystem } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitBlobReader } from "./git-blob-reader.port";
 import { GitDiffService } from "./git-diff.service";

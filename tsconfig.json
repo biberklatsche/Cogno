@@ -5,8 +5,6 @@
     "outDir": "./dist/out-tsc",
     "baseUrl": ".",
     "paths": {
-      "@cogno/core-api": ["src/packages/core-api/index.ts"],
-      "@cogno/core-api/*": ["src/packages/core-api/*"],
       "@cogno/shared": ["src/packages/shared/index.ts"],
       "@cogno/shared/*": ["src/packages/shared/*"],
       "@cogno/platform": ["src/packages/platform/index.ts"],

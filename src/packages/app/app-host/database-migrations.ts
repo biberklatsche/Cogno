@@ -1,3 +1,3 @@
-import { DatabaseMigrationContract } from "@cogno/core-api";
+import { DatabaseMigrationContract } from "@cogno/shared/contributions";
 
 export const coreDatabaseMigrations: ReadonlyArray<DatabaseMigrationContract> = [];

@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
-import { NotificationTargetContract, TerminalId } from "@cogno/core-api";
+import { NotificationTargetContract } from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { GridListService } from "../../grid-list/+state/grid-list.service";
 
 @Injectable({ providedIn: "root" })

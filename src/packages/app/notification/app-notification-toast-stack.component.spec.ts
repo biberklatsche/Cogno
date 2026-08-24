@@ -1,5 +1,5 @@
 import { signal } from "@angular/core";
-import type { NotificationTargetContract } from "@cogno/core-api";
+import type { NotificationTargetContract } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
 import type { AppBus } from "../app-bus/app-bus";
 import type { AppNotificationChannelService } from "./+state/app-notification-channel.service";

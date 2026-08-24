@@ -1,9 +1,9 @@
 import { Inject, Injectable } from "@angular/core";
+import { ConfigurationTransformer } from "@cogno/shared/contributions";
 import {
   ApplicationConfigurationContract,
   ApplicationConfigurationPort,
-  ConfigurationTransformer,
-} from "@cogno/core-api";
+} from "@cogno/shared/ports";
 import { combineLatest, map, merge, Observable, of, startWith } from "rxjs";
 import { ConfigService } from "../config/+state/config.service";
 

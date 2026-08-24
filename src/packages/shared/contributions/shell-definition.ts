@@ -1,5 +1,5 @@
-import { ShellPathAdapterDefinitionContract } from "./shell-path-adapter-definition.contract";
-import { ShellSupportDefinitionContract } from "./shell-support.contract";
+import { ShellPathAdapterDefinitionContract } from "./shell-path-adapter-definition";
+import { ShellSupportDefinitionContract } from "./shell-support";
 
 export const SHELL_LINE_EDITOR_ACTIONS = [
   "clearLine",

@@ -3,11 +3,10 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
   AutocompleteProviderIssueContract,
   AutocompleteProviderIssueReporterContract,
-  CommandRunner,
-  Filesystem,
-  ShellTypeContract,
   TerminalAutocompleteSuggestorContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
+import { ShellTypeContract } from "@cogno/shared/domain";
+import { CommandRunner, Filesystem } from "@cogno/shared/ports";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigService } from "../config/+state/config.service";
 

@@ -1,4 +1,4 @@
-import type { SideMenuFeatureHandleContract } from "@cogno/core-api";
+import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommandEntry, CommandPaletteService } from "./command-palette.service";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";

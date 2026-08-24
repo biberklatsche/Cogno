@@ -1,4 +1,6 @@
-import type { ActionDispatcher, WorkspaceEntryContract, WorkspaceHostPort } from "@cogno/core-api";
+import type { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
+import type { WorkspaceEntryContract } from "@cogno/shared/domain";
+import type { ActionDispatcher } from "@cogno/shared/ports";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";

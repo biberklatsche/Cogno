@@ -1,4 +1,4 @@
-import type { SideMenuFeatureHandleContract } from "@cogno/core-api";
+import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TerminalSearchService } from "./terminal-search.service";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";

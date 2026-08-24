@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ActionKeybindingContract } from "@cogno/core-api";
+import { ActionKeybindingContract } from "@cogno/shared/ports";
 import { KeybindService } from "../keybinding/keybind.service";
 import { KeybindingPipe } from "../keybinding/pipe/keybinding.pipe";
 

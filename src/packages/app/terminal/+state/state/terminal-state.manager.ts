@@ -1,7 +1,9 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
-import { IPathAdapter, ShellSessionCapabilitiesContract, TerminalId } from "@cogno/core-api";
 import { OS } from "@cogno/platform/os";
+import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
+import { IPathAdapter } from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { BehaviorSubject, map, Observable, Subject, takeUntil } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import { ShellType } from "../../../config/+models/config";

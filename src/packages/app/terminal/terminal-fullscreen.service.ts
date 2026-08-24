@@ -1,5 +1,5 @@
 import { Injectable, signal } from "@angular/core";
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { AppBus } from "../app-bus/app-bus";
 
 @Injectable({

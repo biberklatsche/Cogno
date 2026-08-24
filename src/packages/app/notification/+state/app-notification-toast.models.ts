@@ -1,4 +1,4 @@
-import { NotificationTargetContract, NotificationTypeContract } from "@cogno/core-api";
+import { NotificationTargetContract, NotificationTypeContract } from "@cogno/shared/domain";
 
 export type AppNotificationToastId = number;
 

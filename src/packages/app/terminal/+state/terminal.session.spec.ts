@@ -1,7 +1,8 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
-import type { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import type { ShellDefinitionContract } from "@cogno/shared/contributions";
+import type { NotificationChannelContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { DialogRef, type DialogService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";

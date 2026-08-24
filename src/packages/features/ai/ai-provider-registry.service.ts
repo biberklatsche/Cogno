@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ApplicationConfigurationPort } from "@cogno/core-api";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { AiProviderAdapter, AiProviderConfig, AiProviderStatus } from "./ai.models";
 import {
   getAiFeatureConfig,

@@ -7,7 +7,7 @@ import {
   input,
   signal,
 } from "@angular/core";
-import { AnimationSpec, TerminalAnimationPort } from "@cogno/core-api";
+import { AnimationSpec, TerminalAnimationPort } from "@cogno/shared/ports";
 import { BAR_COUNT, MAX_HEIGHT } from "@cogno/shared/ui";
 
 const FRAME_INTERVAL_MS = 50;

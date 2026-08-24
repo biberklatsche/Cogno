@@ -7,7 +7,7 @@ import {
   Injector,
   Type,
 } from "@angular/core";
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { ShellProfile } from "../../config/+models/shell-config";
 import { TerminalComponent } from "../../terminal/terminal.component";
 

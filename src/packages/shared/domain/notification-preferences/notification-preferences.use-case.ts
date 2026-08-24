@@ -1,4 +1,4 @@
-import { NotificationChannelsContract, NotificationDefinitionContract } from "@cogno/core-api";
+import { NotificationChannelsContract, NotificationDefinitionContract } from "../notification";
 import { NotificationPreferencesState } from "./notification-preferences-state";
 
 export interface ChannelDefinitionContract {

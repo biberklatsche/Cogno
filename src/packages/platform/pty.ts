@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ShellTypeContract } from "@cogno/core-api";
+import { ShellTypeContract } from "@cogno/shared/domain";
 import { invoke, SERIALIZE_TO_IPC_FN, transformCallback } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 

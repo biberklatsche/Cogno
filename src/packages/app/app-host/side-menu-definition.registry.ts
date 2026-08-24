@@ -1,10 +1,8 @@
 import { ActionName } from "@cogno/app/action/action.models";
 import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
-import {
-  SideMenuFeatureDefinitionContract,
-  SideMenuFeatureRegistryContract,
-} from "@cogno/core-api";
+import { SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { Icon } from "@cogno/shared/ui";
+import { SideMenuFeatureRegistryContract } from "./side-menu-feature-registry.contract";
 
 type Definition = SideMenuFeatureDefinitionContract<Icon, ActionName>;
 

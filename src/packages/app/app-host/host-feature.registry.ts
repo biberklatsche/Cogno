@@ -4,12 +4,12 @@ import {
   ApplicationFeatureCollectionContract,
   ApplicationSettingsExtensionContract,
   DatabaseMigrationContract,
-  NotificationChannelContract,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
   SideMenuFeatureDefinitionContract,
   TerminalAutocompleteSuggestorDefinitionContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
+import { NotificationChannelContract } from "@cogno/shared/domain";
 import { Icon } from "@cogno/shared/ui";
 import { PathFactory } from "./path.factory";
 import { SideMenuDefinitionRegistry } from "./side-menu-definition.registry";

@@ -1,6 +1,6 @@
 import { AsyncPipe } from "@angular/common";
 import { Component } from "@angular/core";
-import { TabId } from "@cogno/core-api";
+import { TabId } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 import { SideMenuComponent } from "../menu/side-menu/side-menu/side-menu.component";
 import { Grid } from "./+model/model";

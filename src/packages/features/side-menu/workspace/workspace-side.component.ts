@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ElementRef, OnDestroy, Signal, viewChildren } from "@angular/core";
-import { ActionKeybindingPort, defaultWorkspaceIdContract } from "@cogno/core-api";
+import { defaultWorkspaceIdContract } from "@cogno/shared/domain";
+import { ActionKeybindingPort } from "@cogno/shared/ports";
 import {
   CopyEditDeleteComponent,
   DragPreviewService,

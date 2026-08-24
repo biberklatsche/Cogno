@@ -2,7 +2,7 @@ import { Injectable, Signal, signal } from "@angular/core";
 import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/domain";
 import { AppNotificationToast, AppNotificationToastId } from "./app-notification-toast.models";
 
 @Injectable({ providedIn: "root" })

@@ -1,4 +1,5 @@
-import type { CommandRunnerContract, QueryContext } from "@cogno/core-api";
+import type { QueryContext } from "@cogno/shared/contributions";
+import type { CommandRunnerContract } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandListSpecProvider } from "./command-list.spec-provider";
 

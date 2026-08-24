@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ActionCatalog, ActionDispatcher } from "@cogno/core-api";
 import {
   CommandDiscoveryState,
   CommandDiscoveryUseCase,
   CommandDiscoveryEntryState as CommandEntry,
   SelectionDirection,
 } from "@cogno/shared/domain";
+import { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,

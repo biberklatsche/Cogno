@@ -1,10 +1,7 @@
 import { Injectable, Signal, signal } from "@angular/core";
-import {
-  ApplicationConfigurationPort,
-  ConfirmDialogPort,
-  ICodingAgentProvider,
-} from "@cogno/core-api";
+import { ConfirmDialogPort, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { OsPlatform } from "@cogno/platform";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 
 export type InstalledProviderEntry = {

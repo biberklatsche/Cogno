@@ -1,4 +1,4 @@
-import { Icon } from "./icon.contract";
+import { Icon } from "@cogno/shared/ui";
 
 export interface SideMenuFeatureDefinitionContract<TIcon = Icon, TActionName = string> {
   readonly id: string;

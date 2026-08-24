@@ -1,8 +1,5 @@
-import type {
-  CdAutocompleteQueryContextContract,
-  FilesystemContract,
-  QueryContext,
-} from "@cogno/core-api";
+import type { CdAutocompleteQueryContextContract, QueryContext } from "@cogno/shared/contributions";
+import type { FilesystemContract } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FilesystemSpecProvider } from "./filesystem.spec-provider";
 

@@ -1,4 +1,4 @@
-import { WorkspaceCloseGuardContract } from "@cogno/core-api";
+import { WorkspaceCloseGuardContract } from "@cogno/features/side-menu/ports";
 
 export type { WorkspaceCloseGuardContract };
 

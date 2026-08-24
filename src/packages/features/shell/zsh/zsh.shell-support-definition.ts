@@ -1,4 +1,4 @@
-import { ShellSupportDefinitionContract } from "@cogno/core-api";
+import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
 import zshBootstrapScript from "./bootstrap.zsh.txt?raw";
 import zshIntegrationScript from "./integration.zsh.txt?raw";
 import zshProfileWrapperScript from "./zprofile.zsh.txt?raw";

@@ -1,4 +1,5 @@
-import { TabId, TerminalId } from "@cogno/core-api";
+import { TabId } from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { MessageBase } from "../../app-bus/app-bus";
 
 export type ChangeTabTitlePayload = {

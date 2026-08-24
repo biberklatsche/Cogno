@@ -1,5 +1,5 @@
 import { ZodRawShape } from "zod";
-import { ApplicationSettingsSectionDefinitionContract } from "./application-settings-section-definition.contract";
+import { ApplicationSettingsSectionDefinitionContract } from "./application-settings-section-definition";
 
 export interface ApplicationSettingsExtensionContract {
   readonly defaults: Readonly<Record<string, unknown>>;

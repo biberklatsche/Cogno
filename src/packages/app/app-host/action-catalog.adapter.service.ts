@@ -1,12 +1,11 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import {
-  ActionCatalog,
   ActionContextContract,
   ActionDefinitionContract,
-  ActionDispatcher,
   ActionEntryContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/domain";
+import { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
 import { filter, map, Observable, share, tap } from "rxjs";
 import { ActionFired } from "../action/action.models";
 import { coreActionNames } from "../action/core-action-names";

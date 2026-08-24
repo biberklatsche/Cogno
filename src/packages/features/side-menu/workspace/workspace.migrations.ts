@@ -1,4 +1,4 @@
-import { registerDatabaseMigrations } from "@cogno/core-api";
+import { registerDatabaseMigrations } from "@cogno/shared/contributions";
 import migration001InitializeWorkspace from "./migrations/001_init_workspace.sql?raw";
 import migration002ImportLegacyWorkspace from "./migrations/002_import_legacy_workspace.sql?raw";
 

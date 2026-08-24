@@ -1,5 +1,5 @@
-import { ShellSessionCapabilitiesContract } from "@cogno/core-api";
 import { OS } from "@cogno/platform/os";
+import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
 import { ShellContext } from "../advanced/model/models";
 
 export type Position = { col: number; row: number };

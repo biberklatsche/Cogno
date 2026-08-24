@@ -1,4 +1,4 @@
-import { ActionEntryContract } from "@cogno/core-api";
+import { ActionEntryContract } from "../action";
 import { SelectableListUseCase, SelectionDirection } from "../selection";
 import { CommandDiscoveryEntryState, CommandDiscoveryState } from "./command-discovery-state";
 

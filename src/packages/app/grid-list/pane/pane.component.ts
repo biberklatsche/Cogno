@@ -9,7 +9,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { ShellProfile } from "../../config/+models/shell-config";
 import { ConfigService } from "../../config/+state/config.service";
 import { Pane } from "../+model/model";

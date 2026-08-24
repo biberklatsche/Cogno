@@ -1,4 +1,4 @@
-import { TabId } from "@cogno/core-api";
+import { TabId } from "@cogno/shared/domain";
 import { ColorName } from "../../common/color/color";
 import { ShellType } from "../../config/+models/config";
 

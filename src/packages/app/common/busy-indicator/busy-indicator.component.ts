@@ -1,6 +1,7 @@
 import { DOCUMENT } from "@angular/common";
 import { ChangeDetectionStrategy, Component, effect, Inject, input, signal } from "@angular/core";
-import { TabId, TerminalId } from "@cogno/core-api";
+import { TabId } from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { BAR_COUNT, MAX_HEIGHT } from "@cogno/shared/ui";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 

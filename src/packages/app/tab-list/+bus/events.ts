@@ -1,4 +1,4 @@
-import { TabId } from "@cogno/core-api";
+import { TabId } from "@cogno/shared/domain";
 import { MessageBase } from "../../app-bus/app-bus";
 
 export type TabAddedEvent = MessageBase<

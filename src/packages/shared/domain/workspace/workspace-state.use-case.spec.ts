@@ -1,5 +1,5 @@
-import { defaultWorkspaceIdContract } from "@cogno/core-api";
 import { describe, expect, it } from "vitest";
+import { defaultWorkspaceIdContract } from "../workspace-entry";
 import { WorkspaceStateUseCase } from "./workspace-state.use-case";
 
 const persistedWorkspace = {

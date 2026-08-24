@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { TabId, TerminalId } from "@cogno/core-api";
+import { TabId } from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/ports";
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { GridListService } from "../../grid-list/+state/grid-list.service";

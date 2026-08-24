@@ -1,7 +1,8 @@
-import { ShellSupportDefinitionContract, ShellTypeContract } from "@cogno/core-api";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Shells } from "@cogno/platform/shells";
+import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
+import { ShellTypeContract } from "@cogno/shared/domain";
 import { Environment } from "../common/environment/environment";
 import { ErrorReporter } from "../common/error/error-reporter";
 

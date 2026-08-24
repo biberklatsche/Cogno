@@ -1,5 +1,4 @@
-import { HttpStreamEventContract } from "@cogno/core-api";
-import { HttpClient } from "@cogno/platform";
+import { HttpClient, HttpStreamEvent } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatRequest, AiProviderConfig, AiStreamChunk } from "../ai.models";
 import { OllamaNativeProviderAdapter } from "./ollama-native.provider-adapter";
@@ -41,7 +40,7 @@ describe("OllamaNativeProviderAdapter", () => {
 
   it("streams ndjson chunks and marks completion", async () => {
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 200 };
         yield {
           type: "data",
@@ -80,7 +79,7 @@ describe("OllamaNativeProviderAdapter", () => {
 
   it("throws provider errors for non-success statuses", async () => {
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 500 };
         yield { type: "data", text: '{"error":"backend failed"}' };
         yield { type: "done" };
@@ -109,7 +108,7 @@ describe("OllamaNativeProviderAdapter", () => {
 
   it("throws when the backend returns no chunks", async () => {
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 200 };
         yield { type: "done" };
       },
@@ -152,7 +151,7 @@ describe("OllamaNativeProviderAdapter", () => {
 
     const controller = new AbortController();
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 200 };
         controller.abort();
         yield { type: "data", text: '{"message":{"content":"x"}}\n' };

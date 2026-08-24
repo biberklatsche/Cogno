@@ -43,33 +43,37 @@ import { NotificationDispatchService } from "@cogno/app/notification/+state/noti
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
+import { featureApplicationFeatureCollection } from "@cogno/features";
+import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
+import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
+import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
+import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
+import {
+  ConfirmDialogPort,
+  NotificationChannelsPort,
+  TerminalIpcPort,
+  TerminalMonitorPort,
+} from "@cogno/features/coding-agent/ports";
+import {
+  TerminalNavigator,
+  TerminalSearchHostPort,
+  WorkspaceHostPort,
+} from "@cogno/features/side-menu/ports";
+import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
+import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
+import { Logger } from "@cogno/platform/logger";
+import { ConfigurationTransformer } from "@cogno/shared/contributions";
 import {
   ActionCatalog,
   ActionDispatcher,
   ActionKeybindingPort,
   ApplicationConfigurationPort,
   CommandRunner,
-  ConfigurationTransformer,
-  ConfirmDialogPort,
   Filesystem,
   NotificationCenterPort,
-  NotificationChannelsPort,
   TerminalAnimationPort,
   TerminalGateway,
-  TerminalIpcPort,
-  TerminalMonitorPort,
-  TerminalNavigator,
-  TerminalSearchHostPort,
-  WorkspaceHostPort,
-} from "@cogno/core-api";
-import { featureApplicationFeatureCollection } from "@cogno/features";
-import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
-import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
-import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
-import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
-import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
-import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
-import { Logger } from "@cogno/platform/logger";
+} from "@cogno/shared/ports";
 import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
 import { sideMenuFeatures } from "./side-menu-features";
 

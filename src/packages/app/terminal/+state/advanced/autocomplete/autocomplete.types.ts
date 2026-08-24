@@ -2,8 +2,8 @@ import {
   AutocompleteMatchRangeContract,
   AutocompleteQueryContextContract,
   AutocompleteSuggestionContract,
-  ShellContextContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
+import { ShellContextContract } from "@cogno/shared/domain";
 
 export type AutocompleteMatchRange = AutocompleteMatchRangeContract;
 export type AutocompleteSuggestion = AutocompleteSuggestionContract;

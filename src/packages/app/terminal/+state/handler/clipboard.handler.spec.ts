@@ -1,6 +1,6 @@
-import type { ShellLineEditorDefinitionContract } from "@cogno/core-api";
 import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
 import { Clipboard } from "@cogno/platform/clipboard";
+import type { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";

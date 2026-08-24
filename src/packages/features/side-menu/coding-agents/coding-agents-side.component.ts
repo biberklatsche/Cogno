@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { TerminalGateway, TerminalNavigator } from "@cogno/core-api";
 import {
   ActiveAgent,
   CodingAgentNotificationPreferencesService,
@@ -8,10 +7,12 @@ import {
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
 import { AgentStatus } from "@cogno/features/coding-agent/coding-agent-status.service";
+import { TerminalNavigator } from "@cogno/features/side-menu/ports";
 import {
   buildNotificationPreferencesMenuItems,
   NotificationPreferencesState,
 } from "@cogno/shared/domain";
+import { TerminalGateway } from "@cogno/shared/ports";
 import { ContextMenuOverlayService, IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { AgentAnimationComponent } from "./agent-animation.component";
 

@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ICodingAgentProvider } from "@cogno/core-api";
+import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
 import { CLAUDE_CODE_CONFIG, ClaudeSettings, CognoManifest } from "./claude-code.config";

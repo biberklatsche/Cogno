@@ -1,5 +1,5 @@
-export type { ResolvedShellContextContract as ShellContext } from "@cogno/core-api";
-export { isWslShellContext as isWslContext } from "@cogno/core-api";
+export type { ResolvedShellContextContract as ShellContext } from "@cogno/shared/domain";
+export { isWslShellContext as isWslContext } from "@cogno/shared/domain";
 
 export type CognoOscDataType =
   | "id"

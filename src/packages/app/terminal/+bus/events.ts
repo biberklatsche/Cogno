@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/core-api";
+import { TerminalId } from "@cogno/shared/ports";
 import { MessageBase } from "../../app-bus/app-bus";
 import { ShellType } from "../../config/+models/config";
 

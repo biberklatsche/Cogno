@@ -7,7 +7,7 @@ import {
   NotificationChannelsContract,
   NotificationReplyChannelContract,
   NotificationTargetContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/domain";
 import { AppBus } from "../../app-bus/app-bus";
 import { ConfigService } from "../../config/+state/config.service";
 

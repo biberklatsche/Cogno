@@ -1,4 +1,4 @@
-import type { SideMenuFeatureHandleContract } from "@cogno/core-api";
+import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
 import { describe, expect, it, vi } from "vitest";
 import { AiProviderDetectionService } from "../../ai/ai-provider-detection.service";
 import { AiChatSideMenuLifecycle } from "./ai-chat-side-menu.lifecycle";

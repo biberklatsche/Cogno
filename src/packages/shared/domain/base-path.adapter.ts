@@ -1,5 +1,5 @@
-import { IPathAdapter, RenderContext } from "./path-adapter.contract";
-import { isWslShellContext, ResolvedShellContextContract } from "./shell-context.contract";
+import { IPathAdapter, RenderContext } from "./path-adapter";
+import { isWslShellContext, ResolvedShellContextContract } from "./shell-context";
 
 export abstract class BasePathAdapter implements IPathAdapter {
   constructor(protected readonly ctx: ResolvedShellContextContract) {}

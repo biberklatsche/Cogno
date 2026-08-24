@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { TerminalNavigator } from "@cogno/core-api";
+import { TerminalNavigator } from "@cogno/features/side-menu/ports";
 import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { TabListService } from "../tab-list/+state/tab-list.service";

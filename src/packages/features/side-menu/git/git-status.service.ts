@@ -1,11 +1,7 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import {
-  CommandRunner,
-  NotificationCenterPort,
-  ShellContextContract,
-  TerminalGateway,
-} from "@cogno/core-api";
+import { ShellContextContract } from "@cogno/shared/domain";
+import { CommandRunner, NotificationCenterPort, TerminalGateway } from "@cogno/shared/ports";
 import { merge } from "rxjs";
 
 export type GitFileStatus = "M" | "A" | "D" | "R" | "?";

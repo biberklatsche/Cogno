@@ -4,7 +4,7 @@ import type {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
   NotificationReplyChannelContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { AppBus } from "../../app-bus/app-bus";

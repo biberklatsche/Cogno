@@ -12,7 +12,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { TabId } from "@cogno/core-api";
+import { TabId } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
   ContextMenuOverlayService,

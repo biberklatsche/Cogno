@@ -1,5 +1,5 @@
-import { CommandRunnerContract } from "./command-runner.contract";
-import { FilesystemContract, ShellContextContract, ShellTypeContract } from "./filesystem.contract";
+import { ShellContextContract, ShellTypeContract } from "@cogno/shared/domain";
+import { CommandRunnerContract, FilesystemContract } from "@cogno/shared/ports";
 
 export type AutocompleteMatchRangeContract = {
   start: number;

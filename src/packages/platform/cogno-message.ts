@@ -1,4 +1,4 @@
-import type { TerminalIpcMessage } from "@cogno/core-api";
+import type { TerminalIpcMessage } from "@cogno/shared/domain";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 
 export const CognoMessageListener = {

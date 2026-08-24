@@ -1,4 +1,4 @@
-import { IPathAdapter, ShellContextContract } from "@cogno/core-api";
+import { IPathAdapter, ShellContextContract } from "@cogno/shared/domain";
 
 export class AutocompletePathSupport {
   private static readonly PARENT_TRAVERSAL_PREFIX_RE = /^(?:\.\.\/){2,}/;

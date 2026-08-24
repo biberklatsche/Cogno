@@ -1,4 +1,4 @@
-import type { WorkspaceHostPort } from "@cogno/core-api";
+import type { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import { of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../features/__test__/destroy-ref";

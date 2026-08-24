@@ -6,4 +6,4 @@ export {
   FeatureNotificationOverviewSchema,
   FeatureSearchSchema,
   FeatureWorkspaceSchema,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";

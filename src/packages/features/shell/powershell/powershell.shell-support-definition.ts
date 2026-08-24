@@ -1,4 +1,4 @@
-import { ShellSupportDefinitionContract } from "@cogno/core-api";
+import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
 import powerShellBootstrapScript from "./bootstrap.ps1.txt?raw";
 import powerShellLineEditorScript from "./line-editor.ps1.txt?raw";
 

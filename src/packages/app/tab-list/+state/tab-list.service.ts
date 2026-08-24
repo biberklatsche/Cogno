@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/core-api";
+import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/shared/domain";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { BehaviorSubject, Observable } from "rxjs";
 import { ActionFired, ActionFiredEvent, ActionName } from "../../action/action.models";

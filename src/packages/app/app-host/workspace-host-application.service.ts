@@ -1,6 +1,9 @@
 import { DestroyRef, Injectable, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { defaultWorkspaceIdContract, PersistedPaneConfigurationContract } from "@cogno/core-api";
+import {
+  defaultWorkspaceIdContract,
+  PersistedPaneConfigurationContract,
+} from "@cogno/shared/domain";
 import {
   WorkspaceConfiguration,
   WorkspaceState,

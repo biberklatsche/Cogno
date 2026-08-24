@@ -2,7 +2,7 @@ import {
   SHELL_LINE_EDITOR_ACTIONS,
   ShellLineEditorActionContract,
   ShellSessionCapabilitiesContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
 
 /**
  * Maps the key/value pairs of a `COGNO:CAPS` handshake payload to the session

@@ -1,5 +1,5 @@
+import { FeatureModeContract } from "@cogno/shared/domain";
 import { z } from "zod";
-import { FeatureModeContract } from "./feature-mode.contract";
 
 export const hexColorSchema = z.preprocess(
   (val) => (typeof val === "string" && val.startsWith("#") ? val.slice(1) : val),

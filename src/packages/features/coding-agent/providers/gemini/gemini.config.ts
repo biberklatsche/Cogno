@@ -1,4 +1,4 @@
-import { AgentStatus } from "@cogno/core-api";
+import { AgentStatus } from "@cogno/shared/domain";
 
 export type GeminiHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 

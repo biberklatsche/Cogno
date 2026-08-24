@@ -1,4 +1,4 @@
-import { BackendOsContract, ShellTypeContract } from "./filesystem.contract";
+import { BackendOsContract, ShellTypeContract } from "@cogno/shared/domain";
 
 export interface ShellIntegrationFileContract {
   readonly relativePath: string;

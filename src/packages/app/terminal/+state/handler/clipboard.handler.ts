@@ -1,5 +1,6 @@
-import { ShellLineEditorDefinitionContract, TerminalId } from "@cogno/core-api";
 import { bytesToBase64, Clipboard } from "@cogno/platform/clipboard";
+import { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
+import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";

@@ -1,5 +1,4 @@
-import { HttpStreamEventContract } from "@cogno/core-api";
-import { HttpClient } from "@cogno/platform";
+import { HttpClient, HttpStreamEvent } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AiChatRequest, AiProviderConfig, AiStreamChunk } from "../ai.models";
 import { OpenAiCompatibleProviderAdapter } from "./openai-compatible.provider-adapter";
@@ -41,7 +40,7 @@ describe("OpenAiCompatibleProviderAdapter", () => {
 
   it("streams sse chunks and marks completion", async () => {
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 200 };
         yield {
           type: "data",
@@ -91,7 +90,7 @@ describe("OpenAiCompatibleProviderAdapter", () => {
 
   it("falls back to plain json response bodies", async () => {
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 200 };
         yield {
           type: "data",
@@ -118,7 +117,7 @@ describe("OpenAiCompatibleProviderAdapter", () => {
 
   it("throws structured provider errors for non-success statuses", async () => {
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 401 };
         yield {
           type: "data",
@@ -168,7 +167,7 @@ describe("OpenAiCompatibleProviderAdapter", () => {
 
     const controller = new AbortController();
     vi.mocked(httpClientPort.streamRequest).mockImplementation(
-      async function* (): AsyncIterable<HttpStreamEventContract> {
+      async function* (): AsyncIterable<HttpStreamEvent> {
         yield { type: "status", status: 200 };
         controller.abort();
         yield { type: "data", text: 'data: {"choices":[{"delta":{"content":"x"}}]}\n' };

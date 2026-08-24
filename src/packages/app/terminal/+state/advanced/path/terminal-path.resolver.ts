@@ -1,4 +1,4 @@
-import { IPathAdapter } from "@cogno/core-api";
+import { IPathAdapter } from "@cogno/shared/domain";
 
 export class TerminalPathResolver {
   resolvePathForOpen(

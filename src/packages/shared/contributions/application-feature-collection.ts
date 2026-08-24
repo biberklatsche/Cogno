@@ -1,11 +1,11 @@
-import { ApplicationSettingsExtensionContract } from "./application-settings-extension.contract";
-import { DatabaseMigrationContract } from "./database-migration.contract";
-import { NotificationChannelContract } from "./notification.contract";
-import { ShellDefinitionContract } from "./shell-definition.contract";
-import { ShellPathAdapterDefinitionContract } from "./shell-path-adapter-definition.contract";
-import { ShellSupportDefinitionContract } from "./shell-support.contract";
-import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition.contract";
-import { TerminalAutocompleteSuggestorDefinitionContract } from "./terminal-autocomplete.contract";
+import { NotificationChannelContract } from "@cogno/shared/domain";
+import { ApplicationSettingsExtensionContract } from "./application-settings-extension";
+import { DatabaseMigrationContract } from "./database-migration";
+import { ShellDefinitionContract } from "./shell-definition";
+import { ShellPathAdapterDefinitionContract } from "./shell-path-adapter-definition";
+import { ShellSupportDefinitionContract } from "./shell-support";
+import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition";
+import { TerminalAutocompleteSuggestorDefinitionContract } from "./terminal-autocomplete";
 
 export interface ApplicationFeatureCollectionContract<TIcon = string, TActionName = string> {
   readonly databaseMigrations: ReadonlyArray<DatabaseMigrationContract>;

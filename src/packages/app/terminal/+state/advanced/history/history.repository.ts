@@ -1,5 +1,5 @@
-import { IPathAdapter } from "@cogno/core-api";
 import { DatabaseAccessContract, DatabaseStatementContract } from "@cogno/platform";
+import { IPathAdapter } from "@cogno/shared/domain";
 import { isWslContext, ShellContext } from "../model/models";
 import {
   CommandPattern,

@@ -1,4 +1,4 @@
-import { ActionDefinitionContract } from "@cogno/core-api";
+import { ActionDefinitionContract } from "../action";
 import { SelectableItemState } from "../selection";
 
 export interface CommandDiscoveryEntryState extends SelectableItemState<string> {

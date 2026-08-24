@@ -2,9 +2,9 @@ import {
   AutocompleteProviderIssueReporterContract,
   AutocompleteQueryContextContract,
   AutocompleteSuggestionContract,
-  ShellTypeContract,
   TerminalAutocompleteSuggestorContract,
-} from "@cogno/core-api";
+} from "@cogno/shared/contributions";
+import { ShellTypeContract } from "@cogno/shared/domain";
 import { CommandSpecSource } from "./spec/command-spec.source";
 import { SpecProviderRegistry } from "./spec/provider-registry";
 import {
