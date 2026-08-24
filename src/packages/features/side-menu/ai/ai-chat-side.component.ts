@@ -7,7 +7,6 @@ import {
   Signal,
   viewChild,
 } from "@angular/core";
-import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/shared/ui";
 import {
   AiChatThreadMessage,
   AiCommandSuggestion,
@@ -16,6 +15,7 @@ import {
 import { AiChatService } from "@cogno/features/ai/ai-chat.service";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
 import { DetectedAiProvidersStore } from "@cogno/features/ai/detected-ai-providers-store.service";
+import { DropdownComponent, DropdownItem, IconComponent } from "@cogno/shared/ui";
 
 @Component({
   selector: "app-ai-chat-side",

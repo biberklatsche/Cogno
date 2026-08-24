@@ -1,9 +1,9 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { NotificationChannelContract, ShellDefinitionContract } from "@cogno/core-api";
+import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { DialogRef, type DialogService } from "@cogno/shared/ui";
-import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { TauriMockFactory } from "../../../__test__/mocks/tauri-mock.factory";

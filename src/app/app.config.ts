@@ -9,7 +9,10 @@ import {
 import { AboutDialogAdapterService } from "@cogno/app/app-host/about-dialog.adapter.service";
 import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.adapter.service";
 import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
-import { additionalNotificationChannelsToken } from "@cogno/app/app-host/app-host.tokens";
+import {
+  additionalNotificationChannelsToken,
+  featureCollectionToken,
+} from "@cogno/app/app-host/app-host.tokens";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
@@ -31,7 +34,6 @@ import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/termin
 import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
 import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
 import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
-import { featureCollectionToken } from "@cogno/app/app-host/app-host.tokens";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
 import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
