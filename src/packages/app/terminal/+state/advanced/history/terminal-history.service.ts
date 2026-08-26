@@ -362,7 +362,10 @@ export class TerminalHistoryService implements OnDestroy {
   }
 
   private inputSignature(state: TerminalState): string {
+    // NUL separates the fields because it cannot occur in the input text; a
+    // printable separator would let two different inputs share a signature and
+    // the panel would miss the change.
     const input = state.input;
-    return `${input.text} ${input.cursorIndex} ${input.maxCursorIndex}`;
+    return `${input.text}\u0000${input.cursorIndex}\u0000${input.maxCursorIndex}`;
   }
 }

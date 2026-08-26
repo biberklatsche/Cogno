@@ -234,6 +234,8 @@ export class PromptMarkerRenderer {
   private buildRenderSignature(renderContext: PromptMarkerRenderContext, command: Command): string {
     // Command objects are mutated in place when OSC data arrives, so the
     // signature must cover every field that influences the rendered output.
+    // NUL joins the fields because it cannot occur in any of them; a printable
+    // separator would let two different commands produce the same signature.
     return [
       renderContext.commandIndex,
       renderContext.markerText,
@@ -244,7 +246,7 @@ export class PromptMarkerRenderer {
       command.machine,
       command.returnCode,
       command.duration,
-    ].join(" ");
+    ].join("\u0000");
   }
 
   private createCommandRecord(command: Command): PromptRecord {
