@@ -92,7 +92,7 @@ button, a {
 input {
     border: none;
     outline: none;
-    color: var(--color-foreground);
+    color: var(--foreground-color);
     font-size: 1rem;
     padding: 0.5rem;
     border-radius: var(--button-border-radius);
