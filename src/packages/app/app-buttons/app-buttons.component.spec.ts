@@ -13,21 +13,20 @@ describe("AppButtonsComponent", () => {
   let windowSize$: Subject<{ width: number; height: number }>;
   let busMock: any;
   let destroyRefMock: any;
+  let appWindowStub: AppWindow;
   let isMaximizedSpy: ReturnType<typeof vi.spyOn>;
-  let _minimizeSpy: ReturnType<typeof vi.spyOn>;
-  let _maximizeSpy: ReturnType<typeof vi.spyOn>;
-  let _unmaximizeSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     windowSize$ = new Subject();
-    // @ts-expect-error
-    AppWindow.windowSize$ = windowSize$;
-
-    // Default spy implementations for AppWindow methods used in service
-    isMaximizedSpy = vi.spyOn(AppWindow, "isMaximized").mockResolvedValue(false);
-    _minimizeSpy = vi.spyOn(AppWindow, "minimize").mockResolvedValue();
-    _maximizeSpy = vi.spyOn(AppWindow, "maximize").mockResolvedValue();
-    _unmaximizeSpy = vi.spyOn(AppWindow, "unmaximize").mockResolvedValue();
+    appWindowStub = {
+      windowSize$,
+      isMaximized: vi.fn().mockResolvedValue(false),
+      minimize: vi.fn().mockResolvedValue(undefined),
+      maximize: vi.fn().mockResolvedValue(undefined),
+      unmaximize: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AppWindow;
+    isMaximizedSpy = vi.mocked(appWindowStub.isMaximized);
 
     busMock = {
       publish: vi.fn(),
@@ -39,7 +38,7 @@ describe("AppButtonsComponent", () => {
     };
 
     // Instantiate real service with mocked dependencies
-    service = new AppButtonsService(destroyRefMock, busMock);
+    service = new AppButtonsService(appWindowStub, destroyRefMock, busMock);
 
     // Instantiate component with the real service
     component = new AppButtonsComponent(service, osStub);

@@ -7,7 +7,10 @@ import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
 
 @Injectable({ providedIn: "root" })
 export class ShellConfigurator {
-  constructor(private readonly os: OsPlatform) {}
+  constructor(
+    private readonly shells: Shells,
+    private readonly os: OsPlatform,
+  ) {}
 
   /**
    * Detects available shells and writes them into config.shell.profiles
@@ -17,7 +20,7 @@ export class ShellConfigurator {
     config: Config,
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
   ): Promise<void> {
-    const installedShells = await Shells.load();
+    const installedShells = await this.shells.load();
     const platform = this.os.platform();
     const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
     const supportedInstalledShells = installedShells.filter((shell) =>

@@ -7,12 +7,18 @@ import { KeybindActionInterpreter } from "../keybinding/keybind-action.interpret
   providedIn: "root",
 })
 export class CliActionService {
-  constructor(dispatcher: ActionDispatcher, ref: DestroyRef) {
-    CliActionListener.register((action) => {
-      const actionDef = KeybindActionInterpreter.parse(action);
-      dispatcher.dispatchAction({ actionName: actionDef.actionName, args: actionDef.args });
-    }).then((unlisten) => {
-      ref.onDestroy(() => unlisten());
-    });
+  constructor(
+    private readonly cliActions: CliActionListener,
+    dispatcher: ActionDispatcher,
+    ref: DestroyRef,
+  ) {
+    this.cliActions
+      .register((action) => {
+        const actionDef = KeybindActionInterpreter.parse(action);
+        dispatcher.dispatchAction({ actionName: actionDef.actionName, args: actionDef.args });
+      })
+      .then((unlisten) => {
+        ref.onDestroy(() => unlisten());
+      });
   }
 }

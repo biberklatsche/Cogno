@@ -17,6 +17,8 @@ export class NativeMenuService {
   private latestConfig?: Config;
 
   constructor(
+    private readonly tauriMenu: TauriMenu,
+    private readonly appWindow: AppWindow,
     private readonly os: OsPlatform,
     private bus: AppBus,
     private keybindService: KeybindService,
@@ -29,7 +31,7 @@ export class NativeMenuService {
         this.latestConfig = config;
         await this.buildMenu();
       });
-      AppWindow.onFocusChanged$.pipe(takeUntilDestroyed(ref)).subscribe(async (focus) => {
+      this.appWindow.onFocusChanged$.pipe(takeUntilDestroyed(ref)).subscribe(async (focus) => {
         if (focus) {
           await this.buildMenu();
         }
@@ -38,30 +40,30 @@ export class NativeMenuService {
   }
 
   private async buildMenu() {
-    const appSubmenu = await TauriMenu.newSubmenu({
+    const appSubmenu = await this.tauriMenu.newSubmenu({
       id: "cogno",
       text: "Cogno",
       items: [
         await this.buildMenuItem("open_about", "About Cogno"),
-        await TauriMenu.newPredefinedItem({ item: "Separator" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
         await this.buildMenuItem("open_config", "Settings"),
         await this.buildMenuItem("load_config", "Reload Configuration"),
-        await TauriMenu.newPredefinedItem({ item: "Separator" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
         await this.buildMenuItem("quit", "Quit"),
       ],
     });
 
-    const fileSubmenu = await TauriMenu.newSubmenu({
+    const fileSubmenu = await this.tauriMenu.newSubmenu({
       text: "File",
       items: [
         await this.buildMenuItem("new_window", "New Window"),
         await this.buildMenuItem("new_tab", "New Tab"),
-        await TauriMenu.newPredefinedItem({ item: "Separator" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
         await this.buildMenuItem("split_right", "Split Right"),
         await this.buildMenuItem("split_left", "Split Left"),
         await this.buildMenuItem("split_down", "Split Down"),
         await this.buildMenuItem("split_up", "Split Up"),
-        await TauriMenu.newPredefinedItem({ item: "Separator" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
         await this.buildMenuItem("close_tab", "Close Tab"),
         await this.buildMenuItem("close_other_tabs", "Close Other Tabs"),
         await this.buildMenuItem("close_all_tabs", "Close All Tabs"),
@@ -85,15 +87,15 @@ export class NativeMenuService {
       }),
     );
 
-    const viewSubmenu = await TauriMenu.newSubmenu({
+    const viewSubmenu = await this.tauriMenu.newSubmenu({
       text: "View",
       items: viewMenuItems,
     });
 
-    const helpSubmenu = await TauriMenu.newSubmenu({
+    const helpSubmenu = await this.tauriMenu.newSubmenu({
       text: "Help",
       items: [
-        await TauriMenu.newItem({
+        await this.tauriMenu.newItem({
           id: "open_documentation",
           text: "Documentation",
           enabled: true,
@@ -104,7 +106,7 @@ export class NativeMenuService {
       ],
     });
 
-    const menu = await TauriMenu.new({
+    const menu = await this.tauriMenu.new({
       items: [appSubmenu, fileSubmenu, viewSubmenu, helpSubmenu],
     });
     await menu.setAsAppMenu();
@@ -115,7 +117,7 @@ export class NativeMenuService {
     text: string,
     enabled: boolean = true,
   ): Promise<TauriMenuItemHandle> {
-    return await TauriMenu.newItem({
+    return await this.tauriMenu.newItem({
       id: actionName,
       text,
       enabled,

@@ -9,12 +9,15 @@ describe("TerminalFileDropService", () => {
   let service: TerminalFileDropService;
   let terminalSession: Pick<TerminalSession, "focus" | "insertPaths">;
   let destroyRef: DestroyRef;
+  let appWindowStub: AppWindow;
   let dragDropStream: Subject<unknown>;
 
   beforeEach(() => {
     dragDropStream = new Subject();
-    AppWindow.onDragDrop$ = dragDropStream as typeof AppWindow.onDragDrop$;
-    vi.spyOn(AppWindow, "setFocus").mockResolvedValue(undefined);
+    appWindowStub = {
+      onDragDrop$: dragDropStream,
+      setFocus: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AppWindow;
 
     terminalSession = {
       focus: vi.fn(),
@@ -26,7 +29,11 @@ describe("TerminalFileDropService", () => {
       destroyed: false,
     };
 
-    service = new TerminalFileDropService(destroyRef, terminalSession as TerminalSession);
+    service = new TerminalFileDropService(
+      appWindowStub,
+      destroyRef,
+      terminalSession as TerminalSession,
+    );
   });
 
   it("should insert dropped paths from native tauri drop events over the terminal host", async () => {
@@ -46,7 +53,7 @@ describe("TerminalFileDropService", () => {
 
       expect(terminalSession.insertPaths).toHaveBeenCalledWith(["C:\\temp\\file.txt"]);
       await Promise.resolve();
-      expect(AppWindow.setFocus).toHaveBeenCalled();
+      expect(appWindowStub.setFocus).toHaveBeenCalled();
       vi.runAllTimers();
       expect(terminalSession.focus).toHaveBeenCalledTimes(1);
     } finally {
@@ -67,7 +74,7 @@ describe("TerminalFileDropService", () => {
       paths: ["C:\\temp\\file.txt"],
     });
 
-    expect(AppWindow.setFocus).not.toHaveBeenCalled();
+    expect(appWindowStub.setFocus).not.toHaveBeenCalled();
     expect(terminalSession.focus).not.toHaveBeenCalled();
     expect(terminalSession.insertPaths).not.toHaveBeenCalled();
   });

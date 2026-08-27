@@ -256,18 +256,31 @@ zerstören.
 **Erlaubter Übergangszustand:** `app/terminal/` importiert
 `@cogno/core/session/shells` (alt → neu, erlaubt).
 
-### Schritt 4: Plattform-Objektliterale zu injectable Klassen
+### Schritt 4: Plattform-Quellen zu injectable Klassen — **erledigt (2026-08-27)**
 
 **Voraussetzungen:** 0.
 
-**Was:** `platform/` (26 Dateien): jedes exportierte Objektliteral
-(`TauriPty`, `Clipboard`, `OS`, `Opener`, …) wird eine `@Injectable`-Klasse
-mit gleicher Oberfläche; Verbraucher bekommen sie per Konstruktor. Specs
-mit `vi.mock("@cogno/platform…")` auf Stub-Provider umstellen (ZA 3.1).
+**Was:** Alle 16 Objektliterale in `platform/` wurden `@Injectable`-Klassen;
+Verbraucher bekommen sie per Konstruktor. Nach der Schärfung von ZA 3.1
+(Quellen injizieren, Senken statisch) bleiben `Logger` und `ErrorReporter`
+statisch — sie liefern nichts, worauf jemand verzweigt, und müssten sonst
+durch jede Hilfsklasse gereicht werden.
+
+Vier Teilcommits: 4a `OS` → `OsPlatform`; 4b `Path` → `Paths` samt Kaskade
+(`Environment`, `ShellIntegrationWriter`, `ShellHistoryReader` werden
+Dienste); 4c `Fs` und `Clipboard` → `ClipboardAccess` (Namenskonflikt mit dem
+DOM-Typ); 4d die übrigen zwölf.
+
+Nicht injiziert, obwohl sie eine Plattformquelle nutzen: `ConfigReader` ist
+ein reiner Transformer und bekommt die Plattform als Wert — 679 Zeilen mit 30
+statischen Methoden umzuschreiben, um eine Abfrage zu bedienen, wäre teurer
+als der Nutzen, und die Funktion wird durch den Parameter reiner.
 
 **Akzeptanzkriterien:**
 
-- `grep -r "vi.mock(\"@cogno/platform" src/` liefert null Treffer.
+- `vi.mock("@cogno/platform…")` nur noch für die Senken `logger` (6×) und
+  `notification` (1×); jede Quelle wird über einen Stub im Konstruktor
+  gesetzt.
 - Regel `platform-imports-only-shared` grün.
 
 **Erlaubter Übergangszustand:** ggf. in Teilcommits je Plattformdienst

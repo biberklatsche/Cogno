@@ -9,6 +9,10 @@ import { PathFactory } from "./path.factory";
 
 @Injectable({ providedIn: "root" })
 export class CommandRunnerHostService extends CommandRunnerPort {
+  constructor(private readonly commandRunner: CommandRunner) {
+    super();
+  }
+
   async run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract> {
     try {
       const adapter = PathFactory.createAdapter(request.shellContext);
@@ -18,7 +22,7 @@ export class CommandRunnerHostService extends CommandRunnerPort {
         return { stdout: "", stderr: "", exitCode: 1 };
       }
 
-      return await CommandRunner.execute(
+      return await this.commandRunner.execute(
         request.program,
         request.args ?? [],
         backendPath,

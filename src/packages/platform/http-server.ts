@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 
 export interface HttpServerConfig {
@@ -6,16 +7,17 @@ export interface HttpServerConfig {
   autoNextPort: boolean;
 }
 
-export const HttpServer = {
+@Injectable({ providedIn: "root" })
+export class HttpServer {
   start(config: HttpServerConfig): Promise<number> {
     return invoke<number>("start_http_server", {
       enabled: config.enabled,
       port: config.port,
       autoNextPort: config.autoNextPort,
     });
-  },
+  }
 
   getPort(): Promise<number> {
     return invoke<number>("get_http_server_port");
-  },
-};
+  }
+}

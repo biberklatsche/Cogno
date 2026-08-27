@@ -76,6 +76,8 @@ export class RealConfigService extends ConfigService {
   private _options: ConfigLoadOptions | undefined;
 
   constructor(
+    private readonly defaultConfig: DefaultConfig,
+    private readonly cliOverrides: CliConfigOverrides,
     private destroy: DestroyRef,
     private readonly os: OsPlatform,
     private readonly paths: Paths,
@@ -241,7 +243,7 @@ export class RealConfigService extends ConfigService {
       await this.fs.mkdir(configFileDirectoryPath, { recursive: true });
     }
 
-    const defaultConfigString = await DefaultConfig.read();
+    const defaultConfigString = await this.defaultConfig.read();
     const defaultConfig = ConfigReader.fromStringToConfig(
       this.os.platform(),
       defaultConfigString,
@@ -294,7 +296,7 @@ export class RealConfigService extends ConfigService {
   }
 
   private async applyCliSetOverrides(userConfigString: string): Promise<string> {
-    const serializedCliOverrides = await CliConfigOverrides.getSerializedOverrides();
+    const serializedCliOverrides = await this.cliOverrides.getSerializedOverrides();
     if (!serializedCliOverrides || serializedCliOverrides.trim().length === 0) {
       return userConfigString;
     }

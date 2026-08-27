@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 
 export type CommandRunnerExecuteResult = {
@@ -6,7 +7,8 @@ export type CommandRunnerExecuteResult = {
   exitCode: number;
 };
 
-export const CommandRunner = {
+@Injectable({ providedIn: "root" })
+export class CommandRunner {
   execute(
     program: string,
     args: readonly string[],
@@ -19,5 +21,5 @@ export const CommandRunner = {
       cwd,
       timeoutMs,
     });
-  },
-};
+  }
+}

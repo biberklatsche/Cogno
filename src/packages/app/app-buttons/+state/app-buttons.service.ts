@@ -11,11 +11,12 @@ export class AppButtonsService {
   readonly isMaximized = this._isMaximized.asReadonly();
 
   constructor(
+    private readonly appWindow: AppWindow,
     destroyRef: DestroyRef,
     private bus: AppBus,
   ) {
-    AppWindow.windowSize$.pipe(takeUntilDestroyed(destroyRef)).subscribe(async (_size) => {
-      this._isMaximized.set(await AppWindow.isMaximized());
+    this.appWindow.windowSize$.pipe(takeUntilDestroyed(destroyRef)).subscribe(async (_size) => {
+      this._isMaximized.set(await this.appWindow.isMaximized());
     });
   }
 
@@ -24,14 +25,14 @@ export class AppButtonsService {
   }
 
   minimizeWindow() {
-    AppWindow.minimize().then(() => Logger.debug("minimize window"));
+    this.appWindow.minimize().then(() => Logger.debug("minimize window"));
   }
 
   maximizeWindow() {
-    AppWindow.maximize().then(() => Logger.debug("maximize window"));
+    this.appWindow.maximize().then(() => Logger.debug("maximize window"));
   }
 
   unmaximizeWindow() {
-    AppWindow.unmaximize().then(() => Logger.debug("unmaximize window"));
+    this.appWindow.unmaximize().then(() => Logger.debug("unmaximize window"));
   }
 }

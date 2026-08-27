@@ -2,21 +2,19 @@ import { CommandRunner } from "@cogno/platform/command-runner";
 import { describe, expect, it, vi } from "vitest";
 import { CommandRunnerHostService } from "./command-runner-host.service";
 
-vi.mock("@cogno/platform/command-runner", () => ({
-  CommandRunner: {
-    execute: vi.fn(),
-  },
-}));
+const commandRunnerStub = {
+  execute: vi.fn(),
+} as unknown as CommandRunner;
 
 describe("CommandRunnerHostService", () => {
   it("normalizes windows cwd before backend execution", async () => {
-    vi.mocked(CommandRunner.execute).mockResolvedValue({
+    vi.mocked(commandRunnerStub.execute).mockResolvedValue({
       stdout: "main",
       stderr: "",
       exitCode: 0,
     });
 
-    const service = new CommandRunnerHostService();
+    const service = new CommandRunnerHostService(commandRunnerStub);
     const result = await service.run({
       cwd: "C:\\repo\\project",
       shellContext: {
@@ -27,7 +25,7 @@ describe("CommandRunnerHostService", () => {
       args: ["tag", "--list"],
     });
 
-    expect(CommandRunner.execute).toHaveBeenCalledWith(
+    expect(commandRunnerStub.execute).toHaveBeenCalledWith(
       "git",
       ["tag", "--list"],
       "C:\\repo\\project",

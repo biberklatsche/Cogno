@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { UnlistenFn } from "@tauri-apps/api/event";
 import { CloseRequestedEvent, DragDropEvent, getCurrentWindow } from "@tauri-apps/api/window";
 import { Observable } from "rxjs";
@@ -7,39 +8,49 @@ function currentWindow() {
   return getCurrentWindow();
 }
 
-export const AppWindow = {
+@Injectable({ providedIn: "root" })
+export class AppWindow {
   isFocused(): Promise<boolean> {
     return currentWindow().isFocused();
-  },
+  }
+
   isVisible(): Promise<boolean> {
     return currentWindow().isVisible();
-  },
+  }
+
   isMaximized(): Promise<boolean> {
     return currentWindow().isMaximized();
-  },
+  }
+
   isMinimized(): Promise<boolean> {
     return currentWindow().isMinimized();
-  },
+  }
+
   setFocus(): Promise<void> {
     return currentWindow().setFocus();
-  },
+  }
+
   close(): Promise<void> {
     return currentWindow().close();
-  },
+  }
+
   minimize(): Promise<void> {
     return currentWindow().minimize();
-  },
+  }
+
   unminimize(): Promise<void> {
     return currentWindow().unminimize();
-  },
+  }
+
   maximize(): Promise<void> {
     return currentWindow().maximize();
-  },
+  }
+
   unmaximize(): Promise<void> {
     return currentWindow().unmaximize();
-  },
+  }
 
-  onCloseRequested$: new Observable<CloseRequestedEvent>((subscriber) => {
+  readonly onCloseRequested$ = new Observable<CloseRequestedEvent>((subscriber) => {
     const win = currentWindow();
     let unlisten: UnlistenFn | null = null;
     let unsubscribed = false;
@@ -67,9 +78,9 @@ export const AppWindow = {
         } catch {}
       }
     };
-  }),
+  });
 
-  windowSize$: new Observable<{ width: number; height: number }>((subscriber) => {
+  readonly windowSize$ = new Observable<{ width: number; height: number }>((subscriber) => {
     const win = currentWindow();
     let unlisten: UnlistenFn | null = null;
     let unsubscribed = false;
@@ -102,9 +113,9 @@ export const AppWindow = {
         } catch {}
       }
     };
-  }).pipe(distinctUntilChanged((a, b) => a.width === b.width && a.height === b.height)),
+  }).pipe(distinctUntilChanged((a, b) => a.width === b.width && a.height === b.height));
 
-  onFocusChanged$: new Observable<boolean>((subscriber) => {
+  readonly onFocusChanged$ = new Observable<boolean>((subscriber) => {
     const win = currentWindow();
     let unlisten: UnlistenFn | null = null;
     let unsubscribed = false;
@@ -137,9 +148,9 @@ export const AppWindow = {
         } catch {}
       }
     };
-  }).pipe(distinctUntilChanged()),
+  }).pipe(distinctUntilChanged());
 
-  onDragDrop$: new Observable<DragDropEvent>((subscriber) => {
+  readonly onDragDrop$ = new Observable<DragDropEvent>((subscriber) => {
     const win = currentWindow();
     let unlisten: UnlistenFn | null = null;
     let unsubscribed = false;
@@ -167,7 +178,7 @@ export const AppWindow = {
         } catch {}
       }
     };
-  }),
-};
+  });
+}
 
 export type WindowSize = { width: number; height: number };

@@ -15,14 +15,14 @@ describe("CliActionService", () => {
   let _service: CliActionService;
   let dispatcherMock: DispatcherPort;
   let destroyRefMock: DestroyRefPort;
-  let registerSpy: ReturnType<typeof vi.spyOn>;
+  let registerSpy: ReturnType<typeof vi.fn>;
   let unlistenMock: ReturnType<typeof vi.fn>;
+  let cliActionsStub: CliActionListener;
 
   beforeEach(() => {
     unlistenMock = vi.fn();
-    registerSpy = vi
-      .spyOn(CliActionListener, "register")
-      .mockResolvedValue(unlistenMock as unknown as () => void);
+    registerSpy = vi.fn().mockResolvedValue(unlistenMock as unknown as () => void);
+    cliActionsStub = { register: registerSpy } as unknown as CliActionListener;
 
     dispatcherMock = {
       dispatchAction: vi.fn(),
@@ -35,6 +35,7 @@ describe("CliActionService", () => {
 
   it("should register a listener on initialization", () => {
     _service = new CliActionService(
+      cliActionsStub,
       dispatcherMock as ActionDispatcher,
       destroyRefMock as unknown as DestroyRef,
     );
@@ -43,6 +44,7 @@ describe("CliActionService", () => {
 
   it("should parse and dispatch action when listener is triggered", async () => {
     _service = new CliActionService(
+      cliActionsStub,
       dispatcherMock as ActionDispatcher,
       destroyRefMock as unknown as DestroyRef,
     );
@@ -70,6 +72,7 @@ describe("CliActionService", () => {
 
   it("should call unlisten when DestroyRef.onDestroy is triggered", async () => {
     _service = new CliActionService(
+      cliActionsStub,
       dispatcherMock as ActionDispatcher,
       destroyRefMock as unknown as DestroyRef,
     );

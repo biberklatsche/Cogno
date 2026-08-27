@@ -20,23 +20,6 @@ const { appWindowMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@cogno/platform/window-core", () => ({
-  WindowCore: {
-    newWindow: vi.fn(() => Promise.resolve()),
-  },
-}));
-
-vi.mock("@cogno/platform/window", () => ({
-  AppWindow: appWindowMock,
-}));
-
-vi.mock("@cogno/platform/process", () => ({
-  Process: {
-    exit: vi.fn(() => Promise.resolve()),
-    relaunch: vi.fn(() => Promise.resolve()),
-  },
-}));
-
 vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     debug: vi.fn(),
@@ -61,6 +44,14 @@ import type { AppBus } from "../app-bus/app-bus";
 import type { TerminalBusyStateService } from "../terminal/terminal-busy-state.service";
 import type { WindowService } from "./window.service";
 
+const windowCoreStub = {
+  newWindow: vi.fn(() => Promise.resolve()),
+} as unknown as WindowCore;
+const processStub = {
+  exit: vi.fn(() => Promise.resolve()),
+  relaunch: vi.fn(() => Promise.resolve()),
+} as unknown as Process;
+
 describe("WindowService", () => {
   let service: WindowService;
   let bus: AppBus;
@@ -74,7 +65,7 @@ describe("WindowService", () => {
     bus = getAppBus();
     terminalBusyStateService = getTerminalBusyStateService();
     vi.spyOn(bus, "publish");
-    service = getWindowService();
+    service = getWindowService(appWindowMock as unknown as AppWindow, windowCoreStub, processStub);
   });
 
   afterEach(() => {
@@ -105,7 +96,7 @@ describe("WindowService", () => {
         expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalledWith(
           "quit the application",
         );
-        expect(Process.exit).toHaveBeenCalled();
+        expect(processStub.exit).toHaveBeenCalled();
         expect(event.performed).toBe(true);
       });
     });
@@ -115,7 +106,7 @@ describe("WindowService", () => {
       bus.publish(event);
 
       await vi.waitFor(() => {
-        expect(WindowCore.newWindow).toHaveBeenCalledWith();
+        expect(windowCoreStub.newWindow).toHaveBeenCalledWith();
         expect(event.performed).toBe(true);
       });
     });
@@ -128,7 +119,7 @@ describe("WindowService", () => {
         expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalledWith(
           "close the application window",
         );
-        expect(AppWindow.close).toHaveBeenCalled();
+        expect(appWindowMock.close).toHaveBeenCalled();
         expect(event.performed).toBe(true);
       });
     });
@@ -144,7 +135,7 @@ describe("WindowService", () => {
         );
       });
 
-      expect(Process.exit).not.toHaveBeenCalled();
+      expect(processStub.exit).not.toHaveBeenCalled();
       expect(event.performed).not.toBe(true);
     });
 
@@ -159,12 +150,12 @@ describe("WindowService", () => {
         );
       });
 
-      expect(AppWindow.close).not.toHaveBeenCalled();
+      expect(appWindowMock.close).not.toHaveBeenCalled();
       expect(event.performed).not.toBe(true);
     });
 
     it("should report an error if new_window fails", async () => {
-      vi.mocked(WindowCore.newWindow).mockRejectedValueOnce(new Error("Failed"));
+      vi.mocked(windowCoreStub.newWindow).mockRejectedValueOnce(new Error("Failed"));
       const event = createActionEvent("new_window");
       bus.publish(event);
 
@@ -178,7 +169,7 @@ describe("WindowService", () => {
 
   describe("onCloseRequested$", () => {
     it("should publish close_window when window close is requested", () => {
-      (AppWindow.onCloseRequested$ as Subject<any>).next({ preventDefault: vi.fn() });
+      (appWindowMock.onCloseRequested$ as Subject<any>).next({ preventDefault: vi.fn() });
 
       expect(bus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -191,14 +182,14 @@ describe("WindowService", () => {
 
     it("should close the window when the native close request is received", async () => {
       const preventDefault = vi.fn();
-      (AppWindow.onCloseRequested$ as Subject<any>).next({ preventDefault });
+      (appWindowMock.onCloseRequested$ as Subject<any>).next({ preventDefault });
 
       await vi.waitFor(() => {
         expect(preventDefault).toHaveBeenCalledTimes(1);
         expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalledWith(
           "close the application window",
         );
-        expect(AppWindow.close).toHaveBeenCalledTimes(1);
+        expect(appWindowMock.close).toHaveBeenCalledTimes(1);
       });
     });
   });

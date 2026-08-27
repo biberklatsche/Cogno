@@ -20,10 +20,6 @@ const { appWindowMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@cogno/platform/window", () => ({
-  AppWindow: appWindowMock,
-}));
-
 vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     debug: vi.fn(),
@@ -59,18 +55,18 @@ describe("AppButtonsService", () => {
       onDestroy: vi.fn(),
     };
 
-    service = new AppButtonsService(destroyRefMock, busMock);
+    service = new AppButtonsService(appWindowMock as unknown as AppWindow, destroyRefMock, busMock);
   });
 
   it("should initialize isMaximized based on AppWindow.isMaximized when windowSize$ emits", async () => {
-    vi.spyOn(AppWindow, "isMaximized").mockResolvedValue(true);
+    appWindowMock.isMaximized.mockResolvedValue(true);
 
     windowSize$.next({ width: 1024, height: 768 });
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(service.isMaximized()).toBe(true);
-    expect(AppWindow.isMaximized).toHaveBeenCalled();
+    expect(appWindowMock.isMaximized).toHaveBeenCalled();
   });
 
   it("should publish close_window action when closeWindow is called", () => {
@@ -86,16 +82,16 @@ describe("AppButtonsService", () => {
 
   it("should call AppWindow.minimize when minimizeWindow is called", () => {
     service.minimizeWindow();
-    expect(AppWindow.minimize).toHaveBeenCalled();
+    expect(appWindowMock.minimize).toHaveBeenCalled();
   });
 
   it("should call AppWindow.maximize when maximizeWindow is called", () => {
     service.maximizeWindow();
-    expect(AppWindow.maximize).toHaveBeenCalled();
+    expect(appWindowMock.maximize).toHaveBeenCalled();
   });
 
   it("should call AppWindow.unmaximize when unmaximizeWindow is called", () => {
     service.unmaximizeWindow();
-    expect(AppWindow.unmaximize).toHaveBeenCalled();
+    expect(appWindowMock.unmaximize).toHaveBeenCalled();
   });
 });

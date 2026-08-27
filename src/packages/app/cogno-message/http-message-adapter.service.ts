@@ -10,21 +10,30 @@ import { CognoMessageDispatcher } from "./cogno-message-dispatcher.service";
   providedIn: "root",
 })
 export class HttpMessageAdapterService {
-  constructor(dispatcher: CognoMessageDispatcher, config: ConfigService, ref: DestroyRef) {
+  constructor(
+    private readonly httpServer: HttpServer,
+    private readonly cognoMessages: CognoMessageListener,
+    dispatcher: CognoMessageDispatcher,
+    config: ConfigService,
+    ref: DestroyRef,
+  ) {
     config.config$.pipe(take(1)).subscribe((cfg) => {
-      HttpServer.start({
-        enabled: cfg.http_server?.enabled ?? HTTP_SERVER_DEFAULTS.enabled,
-        port: cfg.http_server?.port ?? HTTP_SERVER_DEFAULTS.port,
-        autoNextPort: cfg.http_server?.auto_next_port ?? HTTP_SERVER_DEFAULTS.auto_next_port,
-      })
+      this.httpServer
+        .start({
+          enabled: cfg.http_server?.enabled ?? HTTP_SERVER_DEFAULTS.enabled,
+          port: cfg.http_server?.port ?? HTTP_SERVER_DEFAULTS.port,
+          autoNextPort: cfg.http_server?.auto_next_port ?? HTTP_SERVER_DEFAULTS.auto_next_port,
+        })
         .then((port) => console.log(`[http-server] listening on port ${port}`))
         .catch((err) => console.error("[http-server] Failed to start:", err));
     });
 
-    CognoMessageListener.register((message) => {
-      dispatcher.dispatch(message);
-    }).then((unlisten) => {
-      ref.onDestroy(() => unlisten());
-    });
+    this.cognoMessages
+      .register((message) => {
+        dispatcher.dispatch(message);
+      })
+      .then((unlisten) => {
+        ref.onDestroy(() => unlisten());
+      });
   }
 }

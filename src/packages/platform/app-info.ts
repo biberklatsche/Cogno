@@ -1,7 +1,9 @@
+import { Injectable } from "@angular/core";
 import { getVersion } from "@tauri-apps/api/app";
 
-export const AppInfo = {
+@Injectable({ providedIn: "root" })
+export class AppInfo {
   version(): Promise<string> {
     return getVersion();
-  },
-};
+  }
+}

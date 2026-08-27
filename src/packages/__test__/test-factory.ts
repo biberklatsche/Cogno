@@ -1,6 +1,9 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
+import { Process } from "@cogno/platform/process";
+import { AppWindow } from "@cogno/platform/window";
+import { WindowCore } from "@cogno/platform/window-core";
 import type { TerminalId } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { vi } from "vitest";
@@ -199,9 +202,20 @@ export function getDestroyRef(): DestroyRef {
   };
 }
 
-export function getWindowService(): WindowService {
+export function getWindowService(
+  appWindow: AppWindow = {} as AppWindow,
+  windowCore: WindowCore = {} as WindowCore,
+  osProcess: Process = {} as Process,
+): WindowService {
   if (!windowService) {
-    windowService = new WindowService(getAppBus(), getTerminalBusyStateService(), getDestroyRef());
+    windowService = new WindowService(
+      appWindow,
+      windowCore,
+      osProcess,
+      getAppBus(),
+      getTerminalBusyStateService(),
+      getDestroyRef(),
+    );
   }
   return windowService;
 }

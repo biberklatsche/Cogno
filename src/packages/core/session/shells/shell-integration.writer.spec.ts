@@ -16,7 +16,8 @@ const fs = {
 } as unknown as Fs;
 
 const environmentStub = { configDir: () => "/tmp/cogno" } as never;
-const writer = new ShellIntegrationWriter(environmentStub, fs);
+const shellsStub = { load: vi.fn(async () => []) } as unknown as Shells;
+const writer = new ShellIntegrationWriter(shellsStub, environmentStub, fs);
 
 describe("ShellIntegrationWriter", () => {
   beforeEach(() => {
@@ -56,7 +57,7 @@ describe("ShellIntegrationWriter", () => {
     const mkdirSpy = vi.mocked(fs.mkdir).mockResolvedValue(undefined);
     const writeTextFileSpy = vi.mocked(fs.writeTextFile).mockResolvedValue(undefined);
     const loggerSpy = vi.spyOn(Logger, "info").mockImplementation(() => undefined);
-    vi.spyOn(Shells, "load").mockResolvedValue([
+    vi.mocked(shellsStub.load).mockResolvedValue([
       { shell_type: "Bash" },
       { shell_type: "Zsh" },
       { shell_type: "ZSH" },
@@ -105,7 +106,7 @@ describe("ShellIntegrationWriter", () => {
   it("reports and rethrows installation errors", async () => {
     const installError = new Error("shell discovery failed");
     vi.mocked(fs.exists).mockResolvedValue(false);
-    vi.spyOn(Shells, "load").mockRejectedValue(installError);
+    vi.mocked(shellsStub.load).mockRejectedValue(installError);
     const reportExceptionSpy = vi
       .spyOn(ErrorReporter, "reportException")
       .mockImplementation(() => undefined);

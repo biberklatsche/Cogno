@@ -16,6 +16,7 @@ const INTEGRATION_VERSION = "1.2.0";
 @Injectable({ providedIn: "root" })
 export class ShellIntegrationWriter {
   constructor(
+    private readonly shells: Shells,
     private readonly environment: Environment,
     private readonly fs: Fs,
   ) {}
@@ -37,7 +38,7 @@ export class ShellIntegrationWriter {
     Logger.info("Installing/updating shell integration scripts...");
 
     try {
-      const availableShells = await Shells.load();
+      const availableShells = await this.shells.load();
       const availableShellTypes = new Set(availableShells.map((shell) => shell.shell_type));
       const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
 

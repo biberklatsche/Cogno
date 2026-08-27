@@ -83,13 +83,14 @@ export class AboutDialogComponent implements OnInit {
   readonly version = signal("…");
 
   constructor(
+    private readonly appInfo: AppInfo,
     private readonly dialogRef: DialogRef<void>,
     private readonly opener: Opener,
     private readonly paths: Paths,
   ) {}
 
   async ngOnInit(): Promise<void> {
-    const v = await AppInfo.version();
+    const v = await this.appInfo.version();
     this.version.set(v);
   }
 

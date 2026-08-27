@@ -9,31 +9,26 @@ import { NativeMenuService } from "./native-menu.service";
 
 const menuItemActionCallbacks = new Map<string, () => void>();
 
-vi.mock("@cogno/platform/window", () => ({
-  AppWindow: {
-    onFocusChanged$: {
-      pipe: vi.fn().mockReturnThis(),
-      subscribe: vi.fn(),
-    },
-  },
-}));
-
-vi.mock("@cogno/platform/native-menu", () => ({
-  TauriMenu: {
-    newPredefinedItem: vi.fn(async (config: unknown) => ({ kind: "predefined", config })),
-    newItem: vi.fn(async (config: { id: string; action: () => void }) => {
-      menuItemActionCallbacks.set(config.id, config.action);
-      return { kind: "item", ...config };
-    }),
-    newSubmenu: vi.fn(async (config: unknown) => ({ kind: "submenu", ...config })),
-    new: vi.fn(async ({ items }: { items: unknown[] }) => ({
-      items,
-      setAsAppMenu: vi.fn(async () => undefined),
-    })),
-  },
-}));
-
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+
+const appWindowStub = {
+  onFocusChanged$: {
+    pipe: vi.fn().mockReturnThis(),
+    subscribe: vi.fn(),
+  },
+} as unknown as AppWindow;
+const tauriMenuStub = {
+  newPredefinedItem: vi.fn(async (config: unknown) => ({ kind: "predefined", config })),
+  newItem: vi.fn(async (config: { id: string; action: () => void }) => {
+    menuItemActionCallbacks.set(config.id, config.action);
+    return { kind: "item", ...config };
+  }),
+  newSubmenu: vi.fn(async (config: unknown) => ({ kind: "submenu", ...config })),
+  new: vi.fn(async ({ items }: { items: unknown[] }) => ({
+    items,
+    setAsAppMenu: vi.fn(async () => undefined),
+  })),
+} as unknown as TauriMenu;
 
 describe("NativeMenuService", () => {
   let appBus: AppBus;
@@ -98,6 +93,8 @@ describe("NativeMenuService", () => {
     };
 
     nativeMenuService = new NativeMenuService(
+      tauriMenuStub,
+      appWindowStub,
       osStub,
       appBus,
       keybindService,
@@ -114,8 +111,7 @@ describe("NativeMenuService", () => {
   it("builds a native menu with feature enablement derived from config", async () => {
     await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();
 
-    const { TauriMenu } = await import("@cogno/platform/native-menu");
-    const newItemCalls = vi.mocked(TauriMenu.newItem).mock.calls;
+    const newItemCalls = vi.mocked(tauriMenuStub.newItem).mock.calls;
     const workspaceCall = newItemCalls.find((call) => call[0].id === "open_workspace");
     const aiCall = newItemCalls.find((call) => call[0].id === "open_ai");
 

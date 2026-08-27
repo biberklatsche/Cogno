@@ -16,6 +16,9 @@ export class WindowService {
   private isClosing = false;
 
   constructor(
+    private readonly appWindow: AppWindow,
+    private readonly windowCore: WindowCore,
+    private readonly process: Process,
     private readonly bus: AppBus,
     private readonly terminalBusyStateService: TerminalBusyStateService,
     ref: DestroyRef,
@@ -34,11 +37,11 @@ export class WindowService {
             ) {
               return;
             }
-            await Process.exit();
+            await this.process.exit();
             event.performed = true;
             break;
           case "new_window":
-            WindowCore.newWindow().catch((err) => {
+            this.windowCore.newWindow().catch((err) => {
               ErrorReporter.reportException({
                 error: err,
                 handled: true,
@@ -59,13 +62,13 @@ export class WindowService {
               return;
             }
             this.isClosing = true;
-            AppWindow.close().then(() => Logger.debug("close window"));
+            this.appWindow.close().then(() => Logger.debug("close window"));
             event.performed = true;
             break;
         }
       });
 
-    AppWindow.onCloseRequested$.pipe(takeUntilDestroyed(ref)).subscribe(async (evt) => {
+    this.appWindow.onCloseRequested$.pipe(takeUntilDestroyed(ref)).subscribe(async (evt) => {
       if (this.isClosing) return;
       evt.preventDefault();
       this.bus.publish(ActionFired.create("close_window", undefined, []));

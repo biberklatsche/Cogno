@@ -15,6 +15,7 @@ export class TerminalFileDropService {
   private initialized = false;
 
   constructor(
+    private readonly appWindow: AppWindow,
     private readonly destroyRef: DestroyRef,
     private readonly terminalSession: TerminalSession,
   ) {}
@@ -26,7 +27,7 @@ export class TerminalFileDropService {
     }
 
     this.initialized = true;
-    AppWindow.onDragDrop$
+    this.appWindow.onDragDrop$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((event) => this.handleNativeDragDropEvent(event));
   }
@@ -51,7 +52,7 @@ export class TerminalFileDropService {
 
   private insertDroppedPaths(paths: readonly string[]): void {
     this.terminalSession.insertPaths(paths);
-    void AppWindow.setFocus().finally(() => {
+    void this.appWindow.setFocus().finally(() => {
       this.terminalSession.focus();
     });
   }
