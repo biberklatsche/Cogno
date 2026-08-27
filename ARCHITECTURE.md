@@ -853,13 +853,26 @@ drei einfachere Regeln ersetzt, weil es die Rolle „App" nicht mehr gibt:
    Feature-Ports (`workspace-close-guard.port.ts`, `NotificationCenterPort`,
    `TerminalGateway` in `shared/ports` …) gehen darin auf oder entfallen,
    wenn ihr Feature Core wird.
-2. **Plattformdienste sind konkrete injectable Klassen**, keine Ports
-   (`DatabaseAccess`, `PtyTransport`, `HttpClient`, `Opener`, `Clipboard` …).
-   Tests ersetzen sie durch Stub-Provider, nicht durch `vi.mock`. Ein Dienst,
-   der Plattformaufruf und Sitzungskontext kombiniert (`CommandRunner`,
-   `Filesystem` mit Pfadübersetzung nach aktuellem Shell-Kontext), gehört zu
-   `core/session/` und erreicht Features als `boundSession.run`/`.fs` über
-   die API.
+2. **Quellen werden injiziert, Senken bleiben statisch.** Eine **Quelle**
+   liefert etwas, wovon eine Entscheidung abhängt — `OsPlatform.platform()`,
+   `Paths.homeDir()`, `Filesystem.readTextFile()`, `Clipboard.readText()`,
+   `Database`, `PtyTransport`, `HttpServer`. Sie ist eine konkrete injectable
+   Klasse, kein Port; Tests ersetzen sie durch einen Stub-Provider. Eine
+   **Senke** nimmt entgegen und gibt nichts zurück, worauf jemand verzweigt —
+   `Logger`, `ErrorReporter`. Sie bleibt ein statischer Zugriff, weil sie
+   sonst durch jede Hilfsklasse gereicht werden müsste, die einmal etwas
+   meldet.
+
+   Der Grund für die Injektion ist nicht Geschmack: `vi.mock` gilt global je
+   Testdatei und bricht, sobald sich der Modulgraph verschiebt — eine
+   Sammel-Datei im Test-Setup kann Tests kippen, die mit ihr nichts zu tun
+   haben. Konstruktor-Injektion kennt diesen Fehler nicht. Für Senken bleibt
+   `vi.mock` erlaubt, weil niemand ihr Ergebnis auswertet.
+
+   Ein Dienst, der Plattformaufruf und Sitzungskontext kombiniert
+   (`CommandRunner`, `Filesystem` mit Pfadübersetzung nach aktuellem
+   Shell-Kontext), gehört zu `core/session/` und erreicht Features als
+   `boundSession.run`/`.fs` über die API.
 3. **Innerhalb von `core/` gibt es Schnittstellen nur an Besitzgrenzen:**
    die Maschine nach oben (`TerminalMachine`), der Session-Host nach oben
    (`SessionHost`, `SessionModel`, `SessionSnapshot`), die API nach außen.
@@ -925,8 +938,8 @@ selbst in `try/catch` rufen.
 | `bootstrap/` | ein Start-Test: Deklarationsphase über das Manifest — keine doppelten Feature- oder Aktions-IDs, keine Zyklen in `requires`, keine kollidierenden Settings-Pfade, keine Aktion ohne Handler |
 
 Konstruktor-Injektion überall außer `bootstrap/`, damit Tests ohne
-Angular-`TestBed` auskommen, wo es geht. `vi.mock` auf interne Module ist ein
-Geruch — er bedeutet, dass eine Grenze fehlt.
+Angular-`TestBed` auskommen, wo es geht. `vi.mock` auf eine Quelle ist ein Geruch — sie gehört injiziert (3.1);
+für Senken (`Logger`, `ErrorReporter`) bleibt er erlaubt.
 
 ---
 
@@ -1252,7 +1265,7 @@ erreicht, ohne sie zu importieren.
 | **Kommandodaten trennen (Abschnitt 2.4)** | `HistoryRepository` → `core/command-log/` mit getrennter Schreib-/Lese-API; `TerminalHistoryPersistenceService` → Recorder in `core/session/`; die drei Suggestoren und `terminal-history.service.ts` auf die Lese-API umstellen; eigenes SQL aus `history-command.suggestor.ts` entfernen; Migrationen `command*`/`path`/`dir_stat`/`shell_context` wandern zu `command-log/`. Überwiegend Umzug plus eine Schnittstellentrennung. |
 | `hidden` → `on` | `featureModeSchema`/`aiFeatureModeSchema` auf `on | off`; Lesetoleranz für `hidden`/`visible` im Config-Reader; ~20 Code-Stellen mit `"hidden"` entfallen. Keine DB-Migration. |
 | **Aktionskatalog (Abschnitt 5)** | `core-action-names.ts` → `defineAction`-Katalog in `core/workbench/actions/`; `ActionName` von `string` auf Union; `switch`-Handler in `tab-list`, `grid-list`, `window`, `menu`, `config` … auf Registrierung; Labels aus `native-menu.service.ts` in die Definitionen; `FeatureDefinition.actions` für Panel-Aktionen; Codegen-Skript für `cli.rs` (`main.rs:56-58, 172-186`), die generierten `default_*.config` und Doku, mit CI-Aktualitätsprüfung. |
-| `platform`-Objektliterale zu injectable Klassen (3.1) | entfernt `vi.mock` aus den App-Specs |
+| `platform`-Quellen zu injectable Klassen (3.1) | entfernt `vi.mock` für Quellen aus den Specs; `Environment`, `ConfigReader` und `ShellIntegrationWriter` werden dabei Dienste |
 | ~1.500 Zeilen reine Logik nach `shared/domain` | reiner Datei-Umzug |
 
 Bereits erledigt und nicht mehr Teil des Deltas: Migrationen haben eine
