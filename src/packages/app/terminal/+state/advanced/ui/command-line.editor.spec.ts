@@ -1,17 +1,16 @@
 import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { IPty } from "../../pty/pty";
 import { CommandLineEditor } from "./command-line.editor";
 
-vi.mock("@cogno/platform/clipboard", () => ({
-  Clipboard: {
-    writeText: vi.fn(),
-    readText: vi.fn(),
-  },
-}));
+const clipboardStub = {
+  writeText: vi.fn(async () => undefined),
+  readText: vi.fn(async () => ""),
+  readImageFromClipboard: vi.fn(async () => null),
+} as unknown as ClipboardAccess;
 
 describe("CommandLineEditor", () => {
   let editor: CommandLineEditor;
@@ -45,7 +44,7 @@ describe("CommandLineEditor", () => {
         bracketedPaste: true,
       },
     };
-    editor = new CommandLineEditor(mockBus, mockPty, state as any);
+    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any);
     mockTerminal = TerminalMockFactory.createTerminal();
 
     // Default mocks for selection
@@ -184,7 +183,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should prefer native shell input when defined", () => {
-    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
       nativeInputByAction: { clearLineToEnd: "\x0b" },
     });
     editor.registerTerminal(mockTerminal);
@@ -195,7 +194,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should prefer shell integration actions when defined", () => {
-    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["clearLineToEnd"],
     });
     editor.registerTerminal(mockTerminal);
@@ -206,7 +205,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should use native shell action for autocomplete replacement when defined", () => {
-    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
@@ -225,7 +224,7 @@ describe("CommandLineEditor", () => {
 
   it("should not use the native action when the session handshake did not report it", () => {
     state.sessionCapabilities = { nativeActions: [], bracketedPaste: true };
-    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
@@ -241,7 +240,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should forward autoExecute to the native replace action instead of writing a separate carriage return", () => {
-    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
@@ -261,7 +260,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should signal command start for autoExecute on the native path (no DOM keypress fires onKey)", () => {
-    editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
@@ -312,7 +311,7 @@ describe("CommandLineEditor", () => {
   describe("multiline replacement", () => {
     beforeEach(() => {
       // POSIX shells provide the insert sanitizer via their shell definition.
-      editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
         insertSanitizer: posixInsertSanitizer,
       });
       editor.registerTerminal(mockTerminal);
@@ -370,7 +369,7 @@ describe("CommandLineEditor", () => {
     });
 
     it("should not flatten backslash continuations for shells without an insert sanitizer (PowerShell)", () => {
-      editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
         nativeActionsViaShellIntegration: ["replaceCurrentInput"],
       });
       editor.registerTerminal(mockTerminal);
@@ -390,7 +389,7 @@ describe("CommandLineEditor", () => {
     });
 
     it("should still bracket-paste multiline text when no sanitizer is available", () => {
-      editor = new CommandLineEditor(mockBus, mockPty, state as any);
+      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any);
       editor.registerTerminal(mockTerminal);
 
       const inputText = "echo a \\\n  b";
@@ -660,7 +659,7 @@ describe("CommandLineEditor", () => {
     });
 
     it("should use native shell action for selection delete when defined", () => {
-      editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
         nativeActionsViaShellIntegration: ["deleteSelection", "replaceCurrentInput"],
       });
       editor.registerTerminal(mockTerminal);
@@ -721,7 +720,7 @@ describe("CommandLineEditor", () => {
 
       mockBus.publish({ type: "Cut", payload: terminalId, path: ["app", "terminal"] });
 
-      expect(Clipboard.writeText).toHaveBeenCalledWith("hello");
+      expect(clipboardStub.writeText).toHaveBeenCalledWith("hello");
       // Cursor was at 5. Range index 0 to 5. endIdx = 5. currentCursorIdx = 5.
       // Expected: write 5 backspaces.
       expect(mockPty.write).toHaveBeenLastCalledWith("\x08".repeat(5));
@@ -740,7 +739,7 @@ describe("CommandLineEditor", () => {
 
       mockBus.publish({ type: "Cut", payload: terminalId, path: ["app", "terminal"] });
 
-      expect(Clipboard.writeText).toHaveBeenCalledWith("hello\nworld");
+      expect(clipboardStub.writeText).toHaveBeenCalledWith("hello\nworld");
     });
 
     it("should replace selected text when typing a printable character", () => {
@@ -772,7 +771,7 @@ describe("CommandLineEditor", () => {
     });
 
     it("should replace only the selected range via native input replacement when available", () => {
-      editor = new CommandLineEditor(mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
         nativeActionsViaShellIntegration: ["replaceCurrentInput"],
       });
       editor.registerTerminal(mockTerminal);

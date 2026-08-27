@@ -1,4 +1,4 @@
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import {
   ShellLineEditorActionContract,
   ShellLineEditorDefinitionContract,
@@ -24,6 +24,7 @@ export class CommandLineEditor implements ITerminalHandler {
   private _selectionStart: number | null = null;
 
   constructor(
+    private readonly _clipboard: ClipboardAccess,
     private _bus: AppBus,
     _pty: IPty,
     private stateManager: TerminalStateManager,
@@ -438,7 +439,7 @@ export class CommandLineEditor implements ITerminalHandler {
       this.commandLineBuffer.getSelection(),
     );
     if (selectionText) {
-      Clipboard.writeText(selectionText);
+      this._clipboard.writeText(selectionText);
     }
     this.deleteSelection();
   }

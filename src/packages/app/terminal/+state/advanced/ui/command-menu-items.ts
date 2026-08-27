@@ -1,4 +1,4 @@
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
@@ -15,6 +15,7 @@ type CommandMenuItemsOptions = {
   scrollToCommandTop?: () => void;
   scrollToCommandBottom?: () => void;
   appBus?: AppBus;
+  clipboard: ClipboardAccess;
   terminalId?: string;
 };
 
@@ -31,7 +32,7 @@ export function buildCommandMenuItems(options: CommandMenuItemsOptions): Context
           return;
         }
 
-        void Clipboard.writeText(commandText);
+        void options.clipboard.writeText(commandText);
       },
     },
     {
@@ -42,7 +43,7 @@ export function buildCommandMenuItems(options: CommandMenuItemsOptions): Context
           return;
         }
 
-        void Clipboard.writeText(outputText);
+        void options.clipboard.writeText(outputText);
       },
     },
     {

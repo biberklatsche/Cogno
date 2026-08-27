@@ -1,5 +1,5 @@
 import { Opener } from "@cogno/platform";
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
@@ -37,6 +37,7 @@ export class LinkHandler implements ITerminalHandler {
   private _linkProviderDisposable?: IDisposable;
 
   constructor(
+    private readonly _clipboard: ClipboardAccess,
     private readonly _stateManager: TerminalStateManager,
     private readonly _opener: Opener,
     private readonly _os: OsPlatform,
@@ -87,7 +88,7 @@ export class LinkHandler implements ITerminalHandler {
                 if (!backendPath) return;
                 void this._opener.openPath(backendPath);
               } else {
-                void Clipboard.writeText(text);
+                void this._clipboard.writeText(text);
               }
             },
           })),

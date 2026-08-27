@@ -1,5 +1,6 @@
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Terminal } from "@xterm/xterm";
@@ -27,6 +28,7 @@ export class CommandLineObserver implements ITerminalHandler {
     promptSegments: PromptSegment[],
     contextMenuOverlayService: CommandLineObserverContextMenuOverlayPort,
     private readonly appBus: AppBus,
+    clipboard: ClipboardAccess,
     private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
     private readonly _markerRegistry: PromptMarkerRegistry = new PromptMarkerRegistry(),
     private readonly _commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(_markerRegistry),
@@ -36,6 +38,7 @@ export class CommandLineObserver implements ITerminalHandler {
       promptSegments,
       contextMenuOverlayService,
       appBus,
+      clipboard,
       this._markerRegistry,
     );
 

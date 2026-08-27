@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { convertFileSrc as tauriConvertFileSrc } from "@tauri-apps/api/core";
 import {
   DirEntry,
@@ -13,22 +14,28 @@ import { debounceTime, Observable } from "rxjs";
 
 type UnwatchFn = () => void;
 
-export const Fs = {
+@Injectable({ providedIn: "root" })
+export class Fs {
   readTextFile(path: string): Promise<string> {
     return tauriReadTextFile(path);
-  },
+  }
+
   writeTextFile(path: string, data: string): Promise<void> {
     return tauriWriteTextFile(path, data);
-  },
+  }
+
   appendTextFile(path: string, data: string): Promise<void> {
     return tauriWriteTextFile(path, data, { append: true });
-  },
+  }
+
   mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
     return tauriMkdir(path, options);
-  },
+  }
+
   readDir(path: string): Promise<DirEntry[]> {
     return tauriReadDir(path);
-  },
+  }
+
   watchChanges$(path: string, opts?: { recursive?: boolean; delayMs?: number }): Observable<void> {
     return new Observable<void>((subscriber) => {
       let unwatch: UnwatchFn | null = null;
@@ -55,11 +62,13 @@ export const Fs = {
         } catch {}
       };
     }).pipe(debounceTime(500));
-  },
+  }
+
   exists(path: string): Promise<boolean> {
     return tauriExists(path);
-  },
+  }
+
   convertFileSrc(path: string): string {
     return tauriConvertFileSrc(path);
-  },
-};
+  }
+}

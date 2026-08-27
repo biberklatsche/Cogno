@@ -1,4 +1,5 @@
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { IDecoration, IMarker, Terminal } from "@xterm/xterm";
@@ -26,11 +27,13 @@ export class MarkerManager implements IDisposable {
     promptSegments: PromptSegment[],
     contextMenuOverlayService: MarkerManagerContextMenuOverlayPort,
     appBus: AppBus,
+    clipboard: ClipboardAccess,
     private readonly markerRegistry: PromptMarkerRegistry,
   ) {
     this._renderer = new PromptMarkerRenderer(
       stateManager,
       promptSegments,
+      clipboard,
       contextMenuOverlayService,
       appBus,
     );

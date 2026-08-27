@@ -1,5 +1,6 @@
 import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { timespan } from "@cogno/shared/support";
 import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
 import { mdiDotsVertical } from "@mdi/js";
@@ -39,6 +40,7 @@ export class PromptMarkerRenderer {
   public constructor(
     private readonly stateManager: TerminalStateManager,
     private readonly segments: PromptSegment[],
+    private readonly clipboard: ClipboardAccess,
     private readonly contextMenuOverlayService?: PromptMarkerContextMenuOverlayPort,
     private readonly appBus?: AppBus,
   ) {}
@@ -278,6 +280,7 @@ export class PromptMarkerRenderer {
     scrollToCommandBottom?: () => void,
   ): ContextMenuItem[] {
     return buildCommandMenuItems({
+      clipboard: this.clipboard,
       commandText: command.command,
       getCommandOutput,
       getBlockRange,

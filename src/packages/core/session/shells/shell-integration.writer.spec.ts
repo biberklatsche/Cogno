@@ -5,8 +5,18 @@ import { Shells } from "@cogno/platform/shells";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ShellIntegrationWriter } from "./shell-integration.writer";
 
+const fs = {
+  exists: vi.fn(async () => false),
+  readTextFile: vi.fn(async () => ""),
+  writeTextFile: vi.fn(async () => undefined),
+  mkdir: vi.fn(async () => undefined),
+  readDir: vi.fn(async () => []),
+  watchChanges$: vi.fn(),
+  convertFileSrc: vi.fn((path: string) => `mock-url://${path}`),
+} as unknown as Fs;
+
 const environmentStub = { configDir: () => "/tmp/cogno" } as never;
-const writer = new ShellIntegrationWriter(environmentStub);
+const writer = new ShellIntegrationWriter(environmentStub, fs);
 
 describe("ShellIntegrationWriter", () => {
   beforeEach(() => {
@@ -18,9 +28,9 @@ describe("ShellIntegrationWriter", () => {
   });
 
   it("skips installation when the version is already current", async () => {
-    vi.spyOn(Fs, "exists").mockResolvedValue(true);
-    vi.spyOn(Fs, "readTextFile").mockResolvedValue("1.2.0");
-    const mkdirSpy = vi.spyOn(Fs, "mkdir");
+    vi.mocked(fs.exists).mockResolvedValue(true);
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.2.0");
+    const mkdirSpy = vi.mocked(fs.mkdir);
 
     await writer.ensure([]);
 
@@ -33,8 +43,8 @@ describe("ShellIntegrationWriter", () => {
       "/tmp/cogno/shell-integration/logs/updates.log",
     ]);
 
-    vi.spyOn(Fs, "exists").mockImplementation(async (path: string) => existingPaths.has(path));
-    vi.spyOn(Fs, "readTextFile").mockImplementation(async (path: string) => {
+    vi.mocked(fs.exists).mockImplementation(async (path: string) => existingPaths.has(path));
+    vi.mocked(fs.readTextFile).mockImplementation(async (path: string) => {
       if (path.endsWith("/VERSION")) {
         return "1.0.0";
       }
@@ -43,8 +53,8 @@ describe("ShellIntegrationWriter", () => {
       }
       return "";
     });
-    const mkdirSpy = vi.spyOn(Fs, "mkdir").mockResolvedValue(undefined);
-    const writeTextFileSpy = vi.spyOn(Fs, "writeTextFile").mockResolvedValue(undefined);
+    const mkdirSpy = vi.mocked(fs.mkdir).mockResolvedValue(undefined);
+    const writeTextFileSpy = vi.mocked(fs.writeTextFile).mockResolvedValue(undefined);
     const loggerSpy = vi.spyOn(Logger, "info").mockImplementation(() => undefined);
     vi.spyOn(Shells, "load").mockResolvedValue([
       { shell_type: "Bash" },
@@ -94,7 +104,7 @@ describe("ShellIntegrationWriter", () => {
 
   it("reports and rethrows installation errors", async () => {
     const installError = new Error("shell discovery failed");
-    vi.spyOn(Fs, "exists").mockResolvedValue(false);
+    vi.mocked(fs.exists).mockResolvedValue(false);
     vi.spyOn(Shells, "load").mockRejectedValue(installError);
     const reportExceptionSpy = vi
       .spyOn(ErrorReporter, "reportException")

@@ -2,7 +2,7 @@ import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { Opener } from "@cogno/platform";
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform, type OsType } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
@@ -11,6 +11,12 @@ import { TerminalStateManager } from "../state";
 import { LinkHandler } from "./link.handler";
 
 const osFor = (platform: OsType) => ({ platform: () => platform }) as OsPlatform;
+
+const clipboardStub = {
+  writeText: vi.fn(async () => undefined),
+  readText: vi.fn(async () => ""),
+  readImageFromClipboard: vi.fn(async () => null),
+} as unknown as ClipboardAccess;
 
 describe("LinkHandler", () => {
   let handler: LinkHandler;
@@ -26,7 +32,7 @@ describe("LinkHandler", () => {
     openUrlSpy = vi.fn().mockResolvedValue(undefined);
     openPathSpy = vi.fn().mockResolvedValue(undefined);
     opener = { openUrl: openUrlSpy, openPath: openPathSpy } as unknown as Opener;
-    vi.spyOn(Clipboard, "writeText").mockResolvedValue(undefined);
+    vi.mocked(clipboardStub.writeText).mockResolvedValue(undefined);
   });
 
   function createScenario(shellType: ShellType, backendOs: OsType, cwd: string): void {
@@ -36,7 +42,7 @@ describe("LinkHandler", () => {
     stateManager.initialize("term-1", shellType);
     stateManager.updateCwd(cwd);
     terminal = TerminalMockFactory.createTerminal();
-    handler = new LinkHandler(stateManager, opener, os);
+    handler = new LinkHandler(clipboardStub, stateManager, opener, os);
     handler.registerTerminal(terminal);
     provider = vi.mocked(terminal.registerLinkProvider).mock.calls[0]?.[0];
   }

@@ -11,6 +11,10 @@ import { PathFactory } from "./path.factory";
 
 @Injectable({ providedIn: "root" })
 export class FilesystemHostService extends Filesystem {
+  constructor(private readonly fs: Fs) {
+    super();
+  }
+
   normalizePath(path: string, shellContext: ShellContextContract): string {
     return PathFactory.createAdapter(shellContext).normalize(path);
   }
@@ -50,7 +54,7 @@ export class FilesystemHostService extends Filesystem {
     const backendPath = adapter.render(path, { purpose: "backend_fs" });
     if (!backendPath) return [];
 
-    const entries = await Fs.readDir(backendPath);
+    const entries = await this.fs.readDir(backendPath);
     const prefixMatches: FilesystemEntryContract[] = [];
     const containsMatches: FilesystemEntryContract[] = [];
     const sep = backendPath.includes("\\") ? "\\" : "/";
@@ -106,7 +110,7 @@ export class FilesystemHostService extends Filesystem {
     const backendPath = PathFactory.createAdapter(shellContext).render(path, {
       purpose: "backend_fs",
     });
-    return backendPath ? Fs.exists(backendPath) : false;
+    return backendPath ? this.fs.exists(backendPath) : false;
   }
 
   async readTextFile(path: string, shellContext: ShellContextContract): Promise<string> {
@@ -116,7 +120,7 @@ export class FilesystemHostService extends Filesystem {
     if (!backendPath) {
       throw new Error(`Unable to render filesystem path '${path}'.`);
     }
-    return Fs.readTextFile(backendPath);
+    return this.fs.readTextFile(backendPath);
   }
 
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string {

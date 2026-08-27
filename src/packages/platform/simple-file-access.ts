@@ -6,22 +6,23 @@ import { Paths } from "./path";
 @Injectable({ providedIn: "root" })
 export class SimpleFileAccess {
   private readonly paths = new Paths();
+  private readonly fs = new Fs();
 
   async readText(path: string): Promise<string | undefined> {
-    if (!(await Fs.exists(path))) return undefined;
-    return Fs.readTextFile(path);
+    if (!(await this.fs.exists(path))) return undefined;
+    return this.fs.readTextFile(path);
   }
 
   writeText(path: string, content: string): Promise<void> {
-    return Fs.writeTextFile(path, content);
+    return this.fs.writeTextFile(path, content);
   }
 
   exists(path: string): Promise<boolean> {
-    return Fs.exists(path);
+    return this.fs.exists(path);
   }
 
   makeDir(path: string, options?: { recursive?: boolean }): Promise<void> {
-    return Fs.mkdir(path, options);
+    return this.fs.mkdir(path, options);
   }
 
   homeDir(): Promise<string> {

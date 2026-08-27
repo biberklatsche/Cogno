@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { remove } from "@tauri-apps/plugin-fs";
@@ -47,14 +48,15 @@ async function saveImageBlobToFile(blob: Blob, ttlMs: number): Promise<string> {
   return filePath;
 }
 
-export const Clipboard = {
+@Injectable({ providedIn: "root" })
+export class ClipboardAccess {
   async writeText(text: string) {
     return await writeText(text);
-  },
+  }
 
   async readText(): Promise<string> {
     return await readText();
-  },
+  }
 
   async readImageFromClipboard(ttlMs: number = DEFAULT_PASTE_FILE_TTL_MS): Promise<string | null> {
     try {
@@ -65,5 +67,5 @@ export const Clipboard = {
     } catch {
       return null;
     }
-  },
-};
+  }
+}

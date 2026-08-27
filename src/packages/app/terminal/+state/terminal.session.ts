@@ -5,6 +5,7 @@ import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-con
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { ShellDefinitionContract } from "@cogno/shared/contributions";
 import {
   buildNotificationPreferencesMenuItems,
@@ -96,6 +97,7 @@ export class TerminalSession {
   constructor(
     private readonly os: OsPlatform,
     private readonly environment: Environment,
+    private readonly clipboard: ClipboardAccess,
     private configService: ConfigService,
     private bus: AppBus,
     private stateManager: TerminalStateManager,
@@ -214,9 +216,13 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
     this.disposables.push(
-      this.renderer.register(new LinkHandler(this.stateManager, this.opener, this.os)),
+      this.renderer.register(
+        new LinkHandler(this.clipboard, this.stateManager, this.opener, this.os),
+      ),
     );
-    this.disposables.push(this.renderer.register(new ResumeLinkHandler(this.pty, this.os)));
+    this.disposables.push(
+      this.renderer.register(new ResumeLinkHandler(this.clipboard, this.pty, this.os)),
+    );
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));
 
     const shellDefinition = this.shellProfile.enable_shell_integration
@@ -246,6 +252,7 @@ export class TerminalSession {
     this.disposables.push(
       this.renderer.register(
         new ClipboardHandler(
+          this.clipboard,
           this.bus,
           this.terminalId,
           this.stateManager,
@@ -277,6 +284,7 @@ export class TerminalSession {
             this.configService.getPromptSegments(),
             this.contextMenuOverlayService,
             this.bus,
+            this.clipboard,
             this.completedCommandNotificationHandler.handleCompletedCommand,
             promptMarkerRegistry,
             commandLineBuffer,
@@ -286,6 +294,7 @@ export class TerminalSession {
       this.disposables.push(
         this.renderer.register(
           new CommandLineEditor(
+            this.clipboard,
             this.bus,
             this.pty,
             this.stateManager,
@@ -669,6 +678,7 @@ export class TerminalSession {
     }
 
     return buildCommandMenuItems({
+      clipboard: this.clipboard,
       commandText: commandOutOfView.command,
       getCommandOutput: () =>
         this.commandBlockResolver.resolveByCommandId(commandOutOfView.id)?.outputText ?? "",

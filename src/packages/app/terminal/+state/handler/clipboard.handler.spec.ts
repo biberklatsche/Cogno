@@ -1,6 +1,6 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,21 +10,6 @@ import type { IPty } from "../pty/pty";
 import type { TerminalStateManager } from "../state";
 import { ClipboardHandler } from "./clipboard.handler";
 import { SelectionHandler } from "./selection.handler";
-
-vi.mock("@cogno/platform/clipboard", () => ({
-  bytesToBase64: (bytes: Uint8Array): string => {
-    let binary = "";
-    for (let i = 0; i < bytes.length; i += 8192) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
-    }
-    return btoa(binary);
-  },
-  Clipboard: {
-    writeText: vi.fn(),
-    readText: vi.fn(),
-    readImageFromClipboard: vi.fn().mockResolvedValue(null),
-  },
-}));
 
 function makeConfigService(
   overrides: {
@@ -57,6 +42,12 @@ function makeMockSelectionHandler(): SelectionHandler {
   } as unknown as SelectionHandler;
 }
 
+const clipboardStub = {
+  writeText: vi.fn(async () => undefined),
+  readText: vi.fn(async () => ""),
+  readImageFromClipboard: vi.fn(async () => null),
+} as unknown as ClipboardAccess;
+
 describe("ClipboardHandler", () => {
   let handler: ClipboardHandler;
   let mockTerminal: Terminal;
@@ -82,6 +73,7 @@ describe("ClipboardHandler", () => {
     mockConfigService = makeConfigService();
     mockSelectionHandler = makeMockSelectionHandler();
     handler = new ClipboardHandler(
+      clipboardStub,
       mockBus,
       terminalId,
       mockStateManager as TerminalStateManager,
@@ -96,13 +88,13 @@ describe("ClipboardHandler", () => {
 
   describe("paste", () => {
     beforeEach(() => {
-      vi.mocked(Clipboard.readImageFromClipboard).mockResolvedValue(null);
+      vi.mocked(clipboardStub.readImageFromClipboard).mockResolvedValue(null);
       handler.registerTerminal(mockTerminal);
     });
 
     it("pastes text from clipboard", async () => {
       const pasteSpy = vi.spyOn(mockTerminal, "paste");
-      vi.mocked(Clipboard.readText).mockResolvedValue("pasted content");
+      vi.mocked(clipboardStub.readText).mockResolvedValue("pasted content");
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -111,7 +103,9 @@ describe("ClipboardHandler", () => {
 
     it("writes image file path instead of pasting text when clipboard contains image", async () => {
       const pasteSpy = vi.spyOn(mockTerminal, "paste");
-      vi.mocked(Clipboard.readImageFromClipboard).mockResolvedValueOnce("/tmp/cogno_paste_abc.png");
+      vi.mocked(clipboardStub.readImageFromClipboard).mockResolvedValueOnce(
+        "/tmp/cogno_paste_abc.png",
+      );
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -133,7 +127,7 @@ describe("ClipboardHandler", () => {
     it("opens the composer instead of pasting when multiline text is pasted at the prompt", async () => {
       const publishSpy = vi.spyOn(mockBus, "publish");
       const pasteSpy = vi.spyOn(mockTerminal, "paste");
-      vi.mocked(Clipboard.readText).mockResolvedValue("echo one\necho two");
+      vi.mocked(clipboardStub.readText).mockResolvedValue("echo one\necho two");
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -156,7 +150,7 @@ describe("ClipboardHandler", () => {
     it("pastes multiline text directly while a command is running", async () => {
       (mockStateManager as { isCommandRunning: boolean }).isCommandRunning = true;
       const pasteSpy = vi.spyOn(mockTerminal, "paste");
-      vi.mocked(Clipboard.readText).mockResolvedValue("echo one\necho two");
+      vi.mocked(clipboardStub.readText).mockResolvedValue("echo one\necho two");
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -174,7 +168,7 @@ describe("ClipboardHandler", () => {
         start: { x: 0, y: 1 },
         end: { x: 5, y: 1 },
       });
-      vi.mocked(Clipboard.readText).mockResolvedValue("bye");
+      vi.mocked(clipboardStub.readText).mockResolvedValue("bye");
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -191,6 +185,7 @@ describe("ClipboardHandler", () => {
       // POSIX shells provide the insert sanitizer via their shell definition.
       handler.dispose();
       handler = new ClipboardHandler(
+        clipboardStub,
         mockBus,
         terminalId,
         mockStateManager as TerminalStateManager,
@@ -210,7 +205,7 @@ describe("ClipboardHandler", () => {
         start: { x: 0, y: 1 },
         end: { x: 5, y: 1 },
       });
-      vi.mocked(Clipboard.readText).mockResolvedValue("echo a \\\n  b\necho c");
+      vi.mocked(clipboardStub.readText).mockResolvedValue("echo a \\\n  b\necho c");
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -236,6 +231,7 @@ describe("ClipboardHandler", () => {
         bracketedPaste: false,
       };
       handler = new ClipboardHandler(
+        clipboardStub,
         mockBus,
         terminalId,
         mockStateManager as TerminalStateManager,
@@ -261,7 +257,7 @@ describe("ClipboardHandler", () => {
         start: { x: 4, y: 1 },
         end: { x: 7, y: 1 },
       });
-      vi.mocked(Clipboard.readText).mockResolvedValue("ccc");
+      vi.mocked(clipboardStub.readText).mockResolvedValue("ccc");
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -280,6 +276,7 @@ describe("ClipboardHandler", () => {
       // No capability handshake for this session (sessionCapabilities stays
       // undefined) — the static definition must not enable the native path.
       handler = new ClipboardHandler(
+        clipboardStub,
         mockBus,
         terminalId,
         mockStateManager as TerminalStateManager,
@@ -300,7 +297,7 @@ describe("ClipboardHandler", () => {
         start: { x: 0, y: 1 },
         end: { x: 5, y: 1 },
       });
-      vi.mocked(Clipboard.readText).mockResolvedValue("bye");
+      vi.mocked(clipboardStub.readText).mockResolvedValue("bye");
 
       mockBus.publish({ type: "Paste", payload: terminalId, path: ["app", "terminal"] });
 
@@ -321,7 +318,7 @@ describe("ClipboardHandler", () => {
     it("writes selection to clipboard on Copy event", async () => {
       mockBus.publish({ type: "Copy", payload: terminalId, path: ["app", "terminal"] });
 
-      await vi.waitFor(() => expect(Clipboard.writeText).toHaveBeenCalledWith("selected text"));
+      await vi.waitFor(() => expect(clipboardStub.writeText).toHaveBeenCalledWith("selected text"));
     });
 
     it("trims trailing whitespace from each line when trim_trailing_spaces is true", async () => {
@@ -330,12 +327,13 @@ describe("ClipboardHandler", () => {
       mockBus.publish({ type: "Copy", payload: terminalId, path: ["app", "terminal"] });
 
       await vi.waitFor(() =>
-        expect(Clipboard.writeText).toHaveBeenCalledWith("line one\nline two\n"),
+        expect(clipboardStub.writeText).toHaveBeenCalledWith("line one\nline two\n"),
       );
     });
 
     it("does not trim trailing whitespace when trim_trailing_spaces is false", async () => {
       handler = new ClipboardHandler(
+        clipboardStub,
         mockBus,
         terminalId,
         mockStateManager as TerminalStateManager,
@@ -348,11 +346,12 @@ describe("ClipboardHandler", () => {
 
       mockBus.publish({ type: "Copy", payload: terminalId, path: ["app", "terminal"] });
 
-      await vi.waitFor(() => expect(Clipboard.writeText).toHaveBeenCalledWith("line one   \n"));
+      await vi.waitFor(() => expect(clipboardStub.writeText).toHaveBeenCalledWith("line one   \n"));
     });
 
     it("clears selection after copy when clear_on_copy is true", async () => {
       handler = new ClipboardHandler(
+        clipboardStub,
         mockBus,
         terminalId,
         mockStateManager as TerminalStateManager,
@@ -364,7 +363,7 @@ describe("ClipboardHandler", () => {
 
       mockBus.publish({ type: "Copy", payload: terminalId, path: ["app", "terminal"] });
 
-      await vi.waitFor(() => expect(Clipboard.writeText).toHaveBeenCalled());
+      await vi.waitFor(() => expect(clipboardStub.writeText).toHaveBeenCalled());
       expect(mockSelectionHandler.clearSelection).toHaveBeenCalled();
     });
 
@@ -372,7 +371,7 @@ describe("ClipboardHandler", () => {
       mockBus.publish({ type: "Copy", payload: "other-id", path: ["app", "terminal"] });
 
       await new Promise((r) => setTimeout(r, 10));
-      expect(Clipboard.writeText).not.toHaveBeenCalled();
+      expect(clipboardStub.writeText).not.toHaveBeenCalled();
     });
   });
 
@@ -398,11 +397,12 @@ describe("ClipboardHandler", () => {
         const base64 = btoa(String.fromCharCode(...new TextEncoder().encode("Hello OSC")));
         triggerOsc52(`c;${base64}`);
 
-        await vi.waitFor(() => expect(Clipboard.writeText).toHaveBeenCalledWith("Hello OSC"));
+        await vi.waitFor(() => expect(clipboardStub.writeText).toHaveBeenCalledWith("Hello OSC"));
       });
 
       it("does nothing when clipboard.write is deny", async () => {
         handler = new ClipboardHandler(
+          clipboardStub,
           mockBus,
           terminalId,
           mockStateManager as TerminalStateManager,
@@ -420,13 +420,13 @@ describe("ClipboardHandler", () => {
         triggerOsc52(`c;${base64}`);
 
         await new Promise((r) => setTimeout(r, 10));
-        expect(Clipboard.writeText).not.toHaveBeenCalled();
+        expect(clipboardStub.writeText).not.toHaveBeenCalled();
       });
     });
 
     describe("read (Pd = ?)", () => {
       it("responds with base64-encoded clipboard contents", async () => {
-        vi.mocked(Clipboard.readText).mockResolvedValue("clipboard text");
+        vi.mocked(clipboardStub.readText).mockResolvedValue("clipboard text");
 
         triggerOsc52("c;?");
 
@@ -443,6 +443,7 @@ describe("ClipboardHandler", () => {
 
       it("responds with empty payload when clipboard.read is deny", async () => {
         handler = new ClipboardHandler(
+          clipboardStub,
           mockBus,
           terminalId,
           mockStateManager as TerminalStateManager,
@@ -459,7 +460,7 @@ describe("ClipboardHandler", () => {
         triggerOsc52("c;?");
 
         await vi.waitFor(() => expect(mockPty.write).toHaveBeenCalledWith("\x1b]52;c;\x07"));
-        expect(Clipboard.readText).not.toHaveBeenCalled();
+        expect(clipboardStub.readText).not.toHaveBeenCalled();
       });
     });
   });

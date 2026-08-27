@@ -1,5 +1,5 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { bytesToBase64, Clipboard } from "@cogno/platform/clipboard";
+import { bytesToBase64, ClipboardAccess } from "@cogno/platform/clipboard";
 import { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
@@ -23,6 +23,7 @@ export class ClipboardHandler implements ITerminalHandler {
   private subscription: Subscription = new Subscription();
 
   constructor(
+    private readonly _clipboard: ClipboardAccess,
     private bus: AppBus,
     private terminalId: TerminalId,
     private stateManager: TerminalStateManager,
@@ -64,7 +65,7 @@ export class ClipboardHandler implements ITerminalHandler {
     this.subscription.add(
       this.bus.on$({ path: ["app", "terminal"], type: "Copy" }).subscribe(async (event) => {
         if (event.payload !== this.terminalId || !this.selectionHandler.hasSelection()) return;
-        await Clipboard.writeText(this.getSelectionText());
+        await this._clipboard.writeText(this.getSelectionText());
         if (this.configService.config.selection?.clear_on_copy) {
           this.selectionHandler.clearSelection();
         }
@@ -88,7 +89,7 @@ export class ClipboardHandler implements ITerminalHandler {
     if (!this._terminal) return;
 
     const ttlSeconds = this.configService.config.clipboard?.image_paste_ttl_seconds ?? 60;
-    const filePath = await Clipboard.readImageFromClipboard(ttlSeconds * 1000);
+    const filePath = await this._clipboard.readImageFromClipboard(ttlSeconds * 1000);
     if (filePath !== null) {
       this.inputWriter.writeRaw(filePath.includes(" ") ? `"${filePath}"` : filePath);
       return;
@@ -96,7 +97,7 @@ export class ClipboardHandler implements ITerminalHandler {
 
     let clipboardText: string;
     try {
-      clipboardText = await Clipboard.readText();
+      clipboardText = await this._clipboard.readText();
     } catch {
       return;
     }
@@ -151,7 +152,7 @@ export class ClipboardHandler implements ITerminalHandler {
       return;
     }
     try {
-      const text = await Clipboard.readText();
+      const text = await this._clipboard.readText();
       this.pty.write(`\x1b]52;c;${bytesToBase64(new TextEncoder().encode(text))}\x07`);
     } catch {
       this.pty.write("\x1b]52;c;\x07");
@@ -162,7 +163,7 @@ export class ClipboardHandler implements ITerminalHandler {
     const allowed = (this.configService.config.clipboard?.write ?? "allow") === "allow";
     if (!allowed) return;
     try {
-      await Clipboard.writeText(base64ToText(base64Data));
+      await this._clipboard.writeText(base64ToText(base64Data));
     } catch {
       // Silently ignore malformed base64
     }

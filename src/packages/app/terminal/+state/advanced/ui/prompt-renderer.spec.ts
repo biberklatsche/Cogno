@@ -1,7 +1,7 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,14 +9,13 @@ import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalStateManager } from "../../state";
 import { PromptMarkerRenderer } from "./prompt-renderer";
 
-vi.mock("@cogno/platform/clipboard", () => ({
-  Clipboard: {
-    writeText: vi.fn(),
-    readText: vi.fn(),
-  },
-}));
-
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+
+const clipboardStub = {
+  writeText: vi.fn(async () => undefined),
+  readText: vi.fn(async () => ""),
+  readImageFromClipboard: vi.fn(async () => null),
+} as unknown as ClipboardAccess;
 
 describe("PromptMarkerRenderer", () => {
   let stateManager: TerminalStateManager;
@@ -39,7 +38,7 @@ describe("PromptMarkerRenderer", () => {
   it("should render default label when no segments are provided", () => {
     stateManager.updateCommand({ id: "cmd-1" });
 
-    const renderer = new PromptMarkerRenderer(stateManager, []);
+    const renderer = new PromptMarkerRenderer(stateManager, [], clipboardStub);
     renderer.render(hostElement, 0);
 
     const marker = hostElement.querySelector(".cogno-marker");
@@ -51,7 +50,7 @@ describe("PromptMarkerRenderer", () => {
     stateManager.updateCommand({ id: "cmd-1" });
 
     const segments: PromptSegment[] = [{ text: "Hello " }, { text: "World" }];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     renderer.render(hostElement, 0);
 
     const spans = hostElement.querySelectorAll(".prompt-segment");
@@ -63,7 +62,7 @@ describe("PromptMarkerRenderer", () => {
   it("should render a cover sized to the marker text and keep the prompt on one line", () => {
     stateManager.updateCommand({ id: "123" });
 
-    const renderer = new PromptMarkerRenderer(stateManager, [{ text: "Prompt" }]);
+    const renderer = new PromptMarkerRenderer(stateManager, [{ text: "Prompt" }], clipboardStub);
     renderer.render(hostElement, { commandIndex: 0, markerText: "^^#123" });
 
     const cover = hostElement.querySelector(".cogno-marker__cover") as HTMLElement;
@@ -91,7 +90,7 @@ describe("PromptMarkerRenderer", () => {
       { text: ":" },
       { field: "directory" },
     ];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     renderer.render(hostElement, 0);
 
     const marker = hostElement.querySelector(".cogno-marker");
@@ -117,7 +116,7 @@ describe("PromptMarkerRenderer", () => {
         title: "Hover me",
       },
     ];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     renderer.render(hostElement, 0);
 
     const span = hostElement.querySelector(".prompt-segment") as HTMLElement;
@@ -150,7 +149,7 @@ describe("PromptMarkerRenderer", () => {
       { text: "OK", when: "returnCode == 0" },
       { text: "FAIL", when: "returnCode != 0" },
     ];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
 
     // Render cmd-1 (index 0).
     // In createCommandRecord for index 0:
@@ -176,7 +175,7 @@ describe("PromptMarkerRenderer", () => {
       { text: "|" },
       { field: "user", format: "json" },
     ];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     renderer.render(hostElement, 0);
 
     expect(hostElement.textContent).toBe('JOHN|"john"');
@@ -185,7 +184,7 @@ describe("PromptMarkerRenderer", () => {
   it('should add "input" class for the last command', () => {
     stateManager.updateCommand({ id: "cmd-1" });
 
-    const renderer = new PromptMarkerRenderer(stateManager, [{ text: "Prompt" }]);
+    const renderer = new PromptMarkerRenderer(stateManager, [{ text: "Prompt" }], clipboardStub);
     renderer.render(hostElement, 0);
 
     const marker = hostElement.querySelector(".cogno-marker");
@@ -196,7 +195,7 @@ describe("PromptMarkerRenderer", () => {
     stateManager.updateCommand({ id: "cmd-1" });
 
     const segments: PromptSegment[] = [{ field: "nonexistent", fallback: "MISSING" }];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     renderer.render(hostElement, 0);
 
     expect(hostElement.textContent).toBe("MISSING");
@@ -206,7 +205,7 @@ describe("PromptMarkerRenderer", () => {
     stateManager.updateCommand({ id: "cmd-1" });
 
     const segments: PromptSegment[] = [{ field: "user", fallback: "anonymous" }];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     renderer.render(hostElement, 0);
 
     expect(hostElement.textContent).toBe("anonymous");
@@ -219,7 +218,7 @@ describe("PromptMarkerRenderer", () => {
       { text: "Hidden", when: "isInput == true" },
       { text: "Visible", when: "isInput == false" },
     ];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     // Command at index 0 with undefined command field returns isInput: true
     // So we need to add a command field to make it not the input line
     stateManager.commands[0].set("command", "ls");
@@ -230,7 +229,7 @@ describe("PromptMarkerRenderer", () => {
 
   it('should handle invalid "when" expressions', () => {
     const segments: PromptSegment[] = [{ text: "ShouldNotAppear", when: "invalid expression" }];
-    const renderer = new PromptMarkerRenderer(stateManager, segments);
+    const renderer = new PromptMarkerRenderer(stateManager, segments, clipboardStub);
     renderer.render(hostElement, undefined);
 
     expect(hostElement.textContent).toBe("");
@@ -244,6 +243,7 @@ describe("PromptMarkerRenderer", () => {
     const renderer = new PromptMarkerRenderer(
       stateManager,
       [{ text: "Prompt" }],
+      clipboardStub,
       contextMenuOverlayService,
       busMock,
     );
@@ -283,6 +283,7 @@ describe("PromptMarkerRenderer", () => {
     const renderer = new PromptMarkerRenderer(
       stateManager,
       [{ text: "Prompt" }],
+      clipboardStub,
       contextMenuOverlayService,
       busMock,
     );
@@ -296,7 +297,7 @@ describe("PromptMarkerRenderer", () => {
 
     await copyCommandItem?.action?.();
 
-    expect(Clipboard.writeText).toHaveBeenCalledWith("pnpm test");
+    expect(clipboardStub.writeText).toHaveBeenCalledWith("pnpm test");
   });
 
   it("should not resolve command output before the menu is opened", () => {
@@ -307,6 +308,7 @@ describe("PromptMarkerRenderer", () => {
     const renderer = new PromptMarkerRenderer(
       stateManager,
       [{ text: "Prompt" }],
+      clipboardStub,
       contextMenuOverlayService,
       busMock,
     );
@@ -326,6 +328,7 @@ describe("PromptMarkerRenderer", () => {
     const renderer = new PromptMarkerRenderer(
       stateManager,
       [{ text: "Prompt" }],
+      clipboardStub,
       contextMenuOverlayService,
       busMock,
     );
@@ -369,6 +372,7 @@ describe("PromptMarkerRenderer", () => {
     const renderer = new PromptMarkerRenderer(
       stateManager,
       [{ text: "Prompt" }],
+      clipboardStub,
       contextMenuOverlayService,
       busMock,
     );

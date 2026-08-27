@@ -78,7 +78,10 @@ export function parseZshHistory(content: string): ShellHistoryEntry[] {
 
 @Injectable({ providedIn: "root" })
 export class ShellHistoryReader {
-  constructor(private readonly paths: Paths) {}
+  constructor(
+    private readonly paths: Paths,
+    private readonly fs: Fs,
+  ) {}
 
   async read(
     shellType: ShellTypeContract,
@@ -88,10 +91,10 @@ export class ShellHistoryReader {
     const filePath = await resolveHistoryFilePath(this.paths, shellType, backendOs, homeDir);
     if (!filePath) return [];
 
-    const exists = await Fs.exists(filePath);
+    const exists = await this.fs.exists(filePath);
     if (!exists) return [];
 
-    const content = await Fs.readTextFile(filePath);
+    const content = await this.fs.readTextFile(filePath);
 
     switch (shellType) {
       case "ZSH":

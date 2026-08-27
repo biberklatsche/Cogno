@@ -15,7 +15,10 @@ const INTEGRATION_VERSION = "1.2.0";
  */
 @Injectable({ providedIn: "root" })
 export class ShellIntegrationWriter {
-  constructor(private readonly environment: Environment) {}
+  constructor(
+    private readonly environment: Environment,
+    private readonly fs: Fs,
+  ) {}
 
   /**
    * Ensures shell integration scripts are installed and up-to-date.
@@ -81,11 +84,11 @@ export class ShellIntegrationWriter {
   private async needsUpdate(integrationRoot: string): Promise<boolean> {
     const versionFile = `${integrationRoot}/VERSION`;
 
-    if (!(await Fs.exists(versionFile))) {
+    if (!(await this.fs.exists(versionFile))) {
       return true;
     }
 
-    const currentVersion = await Fs.readTextFile(versionFile);
+    const currentVersion = await this.fs.readTextFile(versionFile);
     return currentVersion.trim() !== INTEGRATION_VERSION;
   }
 
@@ -93,8 +96,8 @@ export class ShellIntegrationWriter {
     const directories = [integrationRoot, `${integrationRoot}/logs`];
 
     for (const directory of directories) {
-      if (!(await Fs.exists(directory))) {
-        await Fs.mkdir(directory, { recursive: true });
+      if (!(await this.fs.exists(directory))) {
+        await this.fs.mkdir(directory, { recursive: true });
       }
     }
   }
@@ -124,11 +127,11 @@ export class ShellIntegrationWriter {
 
         const filePath = `${integrationRoot}/${integrationFile.relativePath}`;
         const directoryPath = this.getDirectoryPath(filePath);
-        if (!(await Fs.exists(directoryPath))) {
-          await Fs.mkdir(directoryPath, { recursive: true });
+        if (!(await this.fs.exists(directoryPath))) {
+          await this.fs.mkdir(directoryPath, { recursive: true });
         }
 
-        await Fs.writeTextFile(filePath, integrationFile.content);
+        await this.fs.writeTextFile(filePath, integrationFile.content);
       }
     }
   }
@@ -175,7 +178,7 @@ export class ShellIntegrationWriter {
   }
 
   private async writeVersion(integrationRoot: string): Promise<void> {
-    await Fs.writeTextFile(`${integrationRoot}/VERSION`, INTEGRATION_VERSION);
+    await this.fs.writeTextFile(`${integrationRoot}/VERSION`, INTEGRATION_VERSION);
   }
 
   private async logUpdate(integrationRoot: string): Promise<void> {
@@ -184,10 +187,10 @@ export class ShellIntegrationWriter {
     const entry = `[${timestamp}] Updated shell integration to version ${INTEGRATION_VERSION}\n`;
 
     let existing = "";
-    if (await Fs.exists(logFile)) {
-      existing = await Fs.readTextFile(logFile);
+    if (await this.fs.exists(logFile)) {
+      existing = await this.fs.readTextFile(logFile);
     }
 
-    await Fs.writeTextFile(logFile, existing + entry);
+    await this.fs.writeTextFile(logFile, existing + entry);
   }
 }

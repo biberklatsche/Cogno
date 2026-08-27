@@ -7,12 +7,6 @@ import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { getDestroyRef } from "../../../__test__/test-factory";
 import { StyleService } from "./style.service";
 
-vi.mock("@cogno/platform/fs", () => ({
-  Fs: {
-    convertFileSrc: vi.fn((path: string) => `mock-url://${path}`),
-  },
-}));
-
 vi.mock("@cogno/platform/logger", () => ({
   Logger: {
     debug: vi.fn(),
@@ -24,6 +18,16 @@ vi.mock("@cogno/platform/logger", () => ({
 
 const homeDirSpy = vi.fn(async () => "/Users/tester");
 const pathsStub = { homeDir: homeDirSpy } as unknown as Paths;
+
+const fs = {
+  exists: vi.fn(async () => false),
+  readTextFile: vi.fn(async () => ""),
+  writeTextFile: vi.fn(async () => undefined),
+  mkdir: vi.fn(async () => undefined),
+  readDir: vi.fn(async () => []),
+  watchChanges$: vi.fn(),
+  convertFileSrc: vi.fn((path: string) => `mock-url://${path}`),
+} as unknown as Fs;
 
 describe("StyleService", () => {
   let _styleService: StyleService;
@@ -87,7 +91,7 @@ describe("StyleService", () => {
   };
 
   it("should initialize and subscribe to config changes", () => {
-    _styleService = new StyleService(configService, destroyRef, pathsStub);
+    _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
     configService.setConfig(baseConfig);
 
     expect(Logger.info).toHaveBeenCalledWith("StyleService constructor");
@@ -96,7 +100,7 @@ describe("StyleService", () => {
 
   describe("CSS Variables", () => {
     it("should set basic color variables", () => {
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(baseConfig);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
@@ -118,7 +122,7 @@ describe("StyleService", () => {
         ...baseConfig,
         color: { ...baseConfig.color, background: "ffffff" },
       };
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(lightConfig);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
@@ -128,7 +132,7 @@ describe("StyleService", () => {
     });
 
     it("should set font variables correctly", () => {
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(baseConfig);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
@@ -142,7 +146,7 @@ describe("StyleService", () => {
     });
 
     it("should set padding variables correctly", () => {
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(baseConfig);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
@@ -158,7 +162,7 @@ describe("StyleService", () => {
         ...baseConfig,
         menu: { opacity: 50 },
       };
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(configWithOpacity);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
@@ -176,7 +180,7 @@ describe("StyleService", () => {
         ...baseConfig,
         menu: { opacity: 100 },
       };
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(configWithFullOpacity);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
@@ -203,11 +207,11 @@ describe("StyleService", () => {
           blur: 5,
         },
       };
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(configWithImage);
       await waitForAsyncEffects();
 
-      expect(Fs.convertFileSrc).toHaveBeenCalledWith("/path/to/image.png");
+      expect(fs.convertFileSrc).toHaveBeenCalledWith("/path/to/image.png");
       expect(document.body.style.setProperty).toHaveBeenCalledWith(
         "--background-image",
         'url("mock-url:///path/to/image.png")',
@@ -228,18 +232,18 @@ describe("StyleService", () => {
           blur: 0,
         },
       };
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(configWithTildePath);
       await waitForAsyncEffects();
 
       expect(homeDirSpy).toHaveBeenCalled();
-      expect(Fs.convertFileSrc).toHaveBeenCalledWith(
+      expect(fs.convertFileSrc).toHaveBeenCalledWith(
         "/Users/tester/.cogno-dev/background-image.png",
       );
     });
 
     it("should remove background image properties when path is missing", async () => {
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
 
       configService.setConfig({
         ...baseConfig,
@@ -263,7 +267,7 @@ describe("StyleService", () => {
   describe("Edge Cases", () => {
     it("should handle missing menu config by defaulting to 100% opacity", () => {
       const configNoMenu = { ...baseConfig, menu: undefined };
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(configNoMenu);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
@@ -274,7 +278,7 @@ describe("StyleService", () => {
 
     it("should handle zero opacity correctly", () => {
       const configZeroOpacity = { ...baseConfig, menu: { opacity: 0 } };
-      _styleService = new StyleService(configService, destroyRef, pathsStub);
+      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
       configService.setConfig(configZeroOpacity);
 
       expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(

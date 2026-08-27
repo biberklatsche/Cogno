@@ -1,3 +1,4 @@
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import type { IMarker } from "@xterm/xterm";
@@ -16,6 +17,12 @@ function createRegistryMarker(commandId: string, line: number): PromptMarker {
 }
 
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+
+const clipboardStub = {
+  writeText: vi.fn(async () => undefined),
+  readText: vi.fn(async () => ""),
+  readImageFromClipboard: vi.fn(async () => null),
+} as unknown as ClipboardAccess;
 
 describe("MarkerManager", () => {
   let markerManager: MarkerManager;
@@ -45,6 +52,7 @@ describe("MarkerManager", () => {
       [],
       contextMenuOverlayService,
       mockBus,
+      clipboardStub,
       registry,
     );
     mockTerminal = TerminalMockFactory.createTerminal();

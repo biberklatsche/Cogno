@@ -80,6 +80,7 @@ export class RealConfigService extends ConfigService {
     private readonly os: OsPlatform,
     private readonly paths: Paths,
     private readonly environment: Environment,
+    private readonly fs: Fs,
   ) {
     super();
   }
@@ -213,7 +214,8 @@ export class RealConfigService extends ConfigService {
     Logger.info("Load and watch config...");
     const path = this.environment.configFilePath();
 
-    this._unwatch = Fs.watchChanges$(path, { delayMs: 1000 })
+    this._unwatch = this.fs
+      .watchChanges$(path, { delayMs: 1000 })
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe(async () => {
         await this.read();
@@ -229,14 +231,14 @@ export class RealConfigService extends ConfigService {
     const settingsExtensions = options.settingsExtensions;
 
     const configDir = this.environment.configDir();
-    if (!(await Fs.exists(configDir))) {
-      await Fs.mkdir(configDir);
+    if (!(await this.fs.exists(configDir))) {
+      await this.fs.mkdir(configDir);
     }
 
     const path = this.environment.configFilePath();
     const configFileDirectoryPath = await this.paths.dirname(path);
-    if (!(await Fs.exists(configFileDirectoryPath))) {
-      await Fs.mkdir(configFileDirectoryPath, { recursive: true });
+    if (!(await this.fs.exists(configFileDirectoryPath))) {
+      await this.fs.mkdir(configFileDirectoryPath, { recursive: true });
     }
 
     const defaultConfigString = await DefaultConfig.read();
@@ -247,12 +249,12 @@ export class RealConfigService extends ConfigService {
       settingsExtensions,
     );
     const writeConfig = (config: Config) =>
-      Fs.writeTextFile(
+      this.fs.writeTextFile(
         path,
         InitialConfigOverridesWriter.toDotString(config, { defaultSettings: defaultConfig }),
       );
     const readConfig = async () => {
-      let userConfigString = await Fs.readTextFile(path);
+      let userConfigString = await this.fs.readTextFile(path);
       userConfigString = await this.applyCliSetOverrides(userConfigString);
       return ConfigReader.fromStringToConfigWithDiagnostics(
         this.os.platform(),
@@ -262,7 +264,7 @@ export class RealConfigService extends ConfigService {
       );
     };
 
-    if (!(await Fs.exists(path))) {
+    if (!(await this.fs.exists(path))) {
       const userConfig = ConfigReader.fromStringToConfig(
         this.os.platform(),
         defaultConfigString,

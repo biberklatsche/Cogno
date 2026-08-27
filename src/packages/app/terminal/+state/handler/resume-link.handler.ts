@@ -1,6 +1,6 @@
 // Lives in app/ rather than features/ because it depends on xterm Terminal,
 // ITerminalHandler, and IPty — which are app-layer types.
-import { Clipboard } from "@cogno/platform/clipboard";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
@@ -16,6 +16,7 @@ export class ResumeLinkHandler implements ITerminalHandler {
   private readonly _isMac: boolean;
 
   constructor(
+    private readonly _clipboard: ClipboardAccess,
     private readonly _pty: IPty,
     os: OsPlatform,
   ) {
@@ -55,7 +56,7 @@ export class ResumeLinkHandler implements ITerminalHandler {
               if (this.isExecuteModifierPressed(event)) {
                 this._pty.write(`${text}\r`);
               } else {
-                void Clipboard.writeText(text);
+                void this._clipboard.writeText(text);
               }
             },
           })),

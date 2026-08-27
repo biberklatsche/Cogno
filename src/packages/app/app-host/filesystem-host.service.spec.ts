@@ -7,11 +7,21 @@ const shellContext = {
   shellType: "Bash",
 } as const;
 
+const fs = {
+  exists: vi.fn(async () => false),
+  readTextFile: vi.fn(async () => ""),
+  writeTextFile: vi.fn(async () => undefined),
+  mkdir: vi.fn(async () => undefined),
+  readDir: vi.fn(async () => []),
+  watchChanges$: vi.fn(),
+  convertFileSrc: vi.fn((path: string) => `mock-url://${path}`),
+} as unknown as Fs;
+
 describe("FilesystemHostService", () => {
   let service: FilesystemHostService;
 
   beforeEach(() => {
-    service = new FilesystemHostService();
+    service = new FilesystemHostService(fs);
   });
 
   it("normalizes and resolves relative and absolute paths", () => {
@@ -27,7 +37,7 @@ describe("FilesystemHostService", () => {
   });
 
   it("lists entries with query prioritization and filtering", async () => {
-    vi.spyOn(Fs, "readDir").mockResolvedValue([
+    vi.mocked(fs.readDir).mockResolvedValue([
       { name: "apple", isDirectory: true, isFile: false },
       { name: "application.log", isDirectory: false, isFile: true },
       { name: "grape", isDirectory: false, isFile: true },
@@ -52,14 +62,14 @@ describe("FilesystemHostService", () => {
   });
 
   it("returns an empty list when the directory read yields no results", async () => {
-    vi.spyOn(Fs, "readDir").mockResolvedValue([]);
+    vi.mocked(fs.readDir).mockResolvedValue([]);
 
     await expect(service.list("/workspace", shellContext)).resolves.toEqual([]);
   });
 
   it("delegates existence and text file reads to fs", async () => {
-    vi.spyOn(Fs, "exists").mockResolvedValue(true);
-    vi.spyOn(Fs, "readTextFile").mockResolvedValue("hello");
+    vi.mocked(fs.exists).mockResolvedValue(true);
+    vi.mocked(fs.readTextFile).mockResolvedValue("hello");
 
     await expect(service.exists("/workspace/file.txt", shellContext)).resolves.toBe(true);
     await expect(service.readTextFile("/workspace/file.txt", shellContext)).resolves.toBe("hello");

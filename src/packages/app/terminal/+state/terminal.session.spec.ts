@@ -2,6 +2,7 @@ import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import type { ShellDefinitionContract } from "@cogno/shared/contributions";
 import type { NotificationChannelContract } from "@cogno/shared/domain";
@@ -58,6 +59,12 @@ vi.mock("./pty/pty", () => {
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 const environmentStub = { isDevMode: () => false } as never;
+
+const clipboardStub = {
+  writeText: vi.fn(async () => undefined),
+  readText: vi.fn(async () => ""),
+  readImageFromClipboard: vi.fn(async () => null),
+} as unknown as ClipboardAccess;
 
 describe("TerminalSession", () => {
   let session: TerminalSession;
@@ -147,6 +154,7 @@ describe("TerminalSession", () => {
     session = new TerminalSession(
       osStub,
       environmentStub,
+      clipboardStub,
       configService,
       appBus,
       getStateManager(),
@@ -168,6 +176,7 @@ describe("TerminalSession", () => {
     session = new TerminalSession(
       osStub,
       environmentStub,
+      clipboardStub,
       configService,
       appBus,
       getStateManager(),

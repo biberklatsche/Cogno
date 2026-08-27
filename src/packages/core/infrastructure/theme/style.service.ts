@@ -15,6 +15,7 @@ export class StyleService {
     configService: ConfigService,
     destroyRef: DestroyRef,
     private readonly paths: Paths,
+    private readonly fs: Fs,
   ) {
     Logger.info("StyleService constructor");
     configService.config$
@@ -101,7 +102,7 @@ export class StyleService {
       const resolvedBackgroundImagePath = await this.resolveBackgroundImagePath(
         config.background_image.path,
       );
-      const url = Fs.convertFileSrc(resolvedBackgroundImagePath);
+      const url = this.fs.convertFileSrc(resolvedBackgroundImagePath);
       const color = `#${config.color?.background}${Color.getHexOpacity(config.background_image.opacity)}`;
 
       // separate variables, no shorthand "fixed" tokens in the CSS variable
