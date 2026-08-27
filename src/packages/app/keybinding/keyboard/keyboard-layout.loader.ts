@@ -5,17 +5,19 @@ import {
   MacKeyboardLayoutInfo,
   WindowsKeyboardLayoutInfo,
 } from "@cogno/platform/keyboard-layout";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform } from "@cogno/platform/os";
 import { KeymapInfo } from "./keyboard-layouts/_.contribution";
 
 @Injectable({
   providedIn: "root",
 })
 export class KeyboardMappingService {
+  constructor(private readonly os: OsPlatform) {}
+
   async loadLayout(): Promise<{ keymapInfo: KeymapInfo; isFallback: boolean }> {
     const layoutFromOS = await KeyboardLayout.load();
     let keymapInfo: KeymapInfo | undefined;
-    switch (OS.platform()) {
+    switch (this.os.platform()) {
       case "windows": {
         const winKeyboardMappings = (await import("./keyboard-layouts/layout.contribution.win"))
           .KeyboardLayoutContribution.INSTANCE.layoutInfos;

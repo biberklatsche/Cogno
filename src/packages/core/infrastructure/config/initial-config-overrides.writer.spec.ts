@@ -15,7 +15,7 @@ beforeAll(() => {
   const p = join(process.cwd(), "src-tauri", "src", "default_windows.config");
   defaultText = readFileSync(p, "utf-8");
   // Parse defaults from text (no user overrides)
-  DEFAULTS = ConfigReader.fromStringToConfig(defaultText, "", extensions);
+  DEFAULTS = ConfigReader.fromStringToConfig("linux", defaultText, "", extensions);
 });
 
 describe("InitialConfigOverridesWriter", () => {

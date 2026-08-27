@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Logger } from "@cogno/platform/logger";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform } from "@cogno/platform/os";
 import { ActionName } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
 import { KeybindingMatcher } from "./keybind.matcher";
@@ -29,6 +29,7 @@ export class KeybindService {
   private readonly _lastFiredKeybinding = signal<string | undefined>(undefined);
 
   constructor(
+    private readonly os: OsPlatform,
     keyboardMappingService: KeyboardMappingService,
     configService: ConfigService,
     bus: AppBus,
@@ -196,7 +197,7 @@ export class KeybindService {
       return true;
     }
 
-    const isMac = OS.platform() === "macos";
+    const isMac = this.os.platform() === "macos";
     const primaryModifierPressed = isMac ? event.metaKey : event.ctrlKey;
     if (primaryModifierPressed) {
       if (["a", "c", "v", "x", "z"].includes(lowerKey)) {

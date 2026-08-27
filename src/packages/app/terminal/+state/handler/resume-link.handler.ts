@@ -1,7 +1,7 @@
 // Lives in app/ rather than features/ because it depends on xterm Terminal,
 // ITerminalHandler, and IPty — which are app-layer types.
 import { Clipboard } from "@cogno/platform/clipboard";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { IPty } from "../pty/pty";
@@ -15,8 +15,11 @@ export class ResumeLinkHandler implements ITerminalHandler {
   private _linkProviderDisposable?: IDisposable;
   private readonly _isMac: boolean;
 
-  constructor(private readonly _pty: IPty) {
-    this._isMac = OS.platform() === "macos";
+  constructor(
+    private readonly _pty: IPty,
+    os: OsPlatform,
+  ) {
+    this._isMac = os.platform() === "macos";
   }
 
   registerTerminal(terminal: Terminal): IDisposable {

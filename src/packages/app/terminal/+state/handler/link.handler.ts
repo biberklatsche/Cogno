@@ -1,6 +1,6 @@
 import { Opener } from "@cogno/platform";
 import { Clipboard } from "@cogno/platform/clipboard";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { TerminalPathResolver } from "../advanced/path/terminal-path.resolver";
@@ -39,6 +39,7 @@ export class LinkHandler implements ITerminalHandler {
   constructor(
     private readonly _stateManager: TerminalStateManager,
     private readonly _opener: Opener,
+    private readonly _os: OsPlatform,
     private readonly _pathResolver: TerminalPathResolver = new TerminalPathResolver(),
   ) {}
 
@@ -169,10 +170,10 @@ export class LinkHandler implements ITerminalHandler {
   }
 
   private get openModifierLabel(): string {
-    return OS.platform() === "macos" ? "Cmd" : "Ctrl";
+    return this._os.platform() === "macos" ? "Cmd" : "Ctrl";
   }
 
   private isOpenModifierPressed(event: MouseEvent): boolean {
-    return OS.platform() === "macos" ? event.metaKey : event.ctrlKey;
+    return this._os.platform() === "macos" ? event.metaKey : event.ctrlKey;
   }
 }

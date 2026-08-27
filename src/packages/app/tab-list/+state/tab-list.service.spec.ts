@@ -1,3 +1,4 @@
+import { OsPlatform } from "@cogno/platform/os";
 import { IdCreator } from "@cogno/shared/support";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
@@ -15,6 +16,8 @@ import type { KeybindService } from "../../keybinding/keybind.service";
 import type { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("TabListService", () => {
   let service: TabListService;
@@ -38,6 +41,7 @@ describe("TabListService", () => {
     });
 
     service = new TabListService(
+      osStub,
       bus,
       configService,
       getKeybindServiceMock() as KeybindService,

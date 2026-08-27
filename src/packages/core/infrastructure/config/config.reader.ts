@@ -1,4 +1,4 @@
-import { OS, OsType } from "@cogno/platform/os";
+import { OsType } from "@cogno/platform/os";
 import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
 import {
@@ -14,15 +14,18 @@ export type ConfigDiagnostic = {
 
 export class ConfigReader {
   static fromStringToConfig(
+    platform: OsType,
     defaultConfigString: string,
     userConfigString: string,
     settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
   ): Config;
   static fromStringToConfig(
+    platform: OsType,
     userConfigStringOnly: string,
     settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
   ): Config;
   static fromStringToConfig(
+    platform: OsType,
     firstArgument: string,
     secondArgument?: string | ReadonlyArray<ApplicationSettingsExtensionContract>,
     thirdArgument: ReadonlyArray<ApplicationSettingsExtensionContract> = [],
@@ -45,19 +48,23 @@ export class ConfigReader {
       defaultConfig,
       userConfig,
       applicationSettingsDefinition,
+      platform,
     ).config;
   }
 
   static fromStringToConfigWithDiagnostics(
+    platform: OsType,
     defaultConfigString: string,
     userConfigString: string,
     settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
   ): { config: Config; diagnostics: ConfigDiagnostic[] };
   static fromStringToConfigWithDiagnostics(
+    platform: OsType,
     userConfigStringOnly: string,
     settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
   ): { config: Config; diagnostics: ConfigDiagnostic[] };
   static fromStringToConfigWithDiagnostics(
+    platform: OsType,
     firstArgument: string,
     secondArgument?: string | ReadonlyArray<ApplicationSettingsExtensionContract>,
     thirdArgument: ReadonlyArray<ApplicationSettingsExtensionContract> = [],
@@ -80,6 +87,7 @@ export class ConfigReader {
       defaultConfig,
       userConfig,
       applicationSettingsDefinition,
+      platform,
     );
   }
 
@@ -87,6 +95,7 @@ export class ConfigReader {
     defaultConfig: Record<string, unknown>,
     userConfig: Record<string, unknown>,
     applicationSettingsDefinition: ApplicationSettingsDefinition,
+    platform: OsType,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
     const defaultConfigWithExtensions = mergeConfigObjects(
       applicationSettingsDefinition.defaults,
@@ -105,7 +114,7 @@ export class ConfigReader {
       if (result.success) {
         const config = result.data as Config;
         if (config.font?.family) {
-          config.font.family = ConfigReader.addFontFallbacks(config.font.family);
+          config.font.family = ConfigReader.addFontFallbacks(config.font.family, platform);
         }
         return { config, diagnostics };
       }
@@ -130,7 +139,7 @@ export class ConfigReader {
       : applicationSettingsDefinition.schema.safeParse({});
     const fallback = (emptyResult.success ? emptyResult.data : {}) as Config;
     if (fallback.font?.family) {
-      fallback.font.family = ConfigReader.addFontFallbacks(fallback.font.family);
+      fallback.font.family = ConfigReader.addFontFallbacks(fallback.font.family, platform);
     }
     diagnostics.push({
       level: "error",
@@ -186,8 +195,7 @@ export class ConfigReader {
     return mergedConfig;
   }
 
-  private static addFontFallbacks(fontFamily: string): string {
-    const platform = OS.platform();
+  private static addFontFallbacks(fontFamily: string, platform: OsType): string {
     const fallbacks = ConfigReader.getPlatformFontFallbacks(platform);
     const cleanedFontFamily = ConfigReader.quoteFontName(fontFamily);
     const genericFonts = ["monospace", "sans-serif", "serif", "cursive", "fantasy"];

@@ -1,5 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { OsPlatform, OsType } from "@cogno/platform/os";
 import type { TerminalId } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { vi } from "vitest";
@@ -45,6 +46,11 @@ let contextMenuOverlayService: ContextMenuOverlayService | undefined;
 let notificationTargetResolverService: NotificationTargetResolverService | undefined;
 let terminalKeybindingContextService: TerminalKeybindingContextService | undefined;
 
+/** A fixed platform so specs behave the same on every developer's machine. */
+export function getOsPlatform(platform: OsType = "linux"): OsPlatform {
+  return { platform: () => platform } as OsPlatform;
+}
+
 export function getAppBus(): AppBus {
   if (!appBus) appBus = new AppBus();
   return appBus;
@@ -52,7 +58,7 @@ export function getAppBus(): AppBus {
 
 export function getStateManager(): TerminalStateManager {
   if (!stateManager) {
-    stateManager = new TerminalStateManager(getAppBus());
+    stateManager = new TerminalStateManager(getOsPlatform(), getAppBus());
     stateManager.initialize("test-terminal", "Bash" as any);
   }
   return stateManager;
@@ -84,6 +90,7 @@ export function getTerminalKeybindingContextService(): TerminalKeybindingContext
 export function getTerminalSession(): TerminalSession {
   if (!terminalSession) {
     terminalSession = new TerminalSession(
+      getOsPlatform(),
       getConfigService(),
       getAppBus(),
       getStateManager(),
@@ -129,6 +136,7 @@ export function getAppWiringService(): AppWiringService {
 export function getKeybindService(): KeybindService {
   if (!keybindService)
     keybindService = new KeybindService(
+      getOsPlatform(),
       getKeyboardMappingService(),
       getConfigService(),
       getAppBus(),
@@ -143,7 +151,7 @@ export function getKeybindServiceMock(): Pick<KeybindService, "getKeybinding"> {
 }
 
 export function getKeyboardMappingService(): KeyboardMappingService {
-  if (!keybindMappingService) keybindMappingService = new KeyboardMappingService();
+  if (!keybindMappingService) keybindMappingService = new KeyboardMappingService(getOsPlatform());
   return keybindMappingService;
 }
 
@@ -161,6 +169,7 @@ export function getGridListService(): GridListService {
 export function getTabListService(): TabListService {
   if (!tabListService) {
     tabListService = new TabListService(
+      getOsPlatform(),
       getAppBus(),
       getConfigService(),
       getKeybindServiceMock() as KeybindService,

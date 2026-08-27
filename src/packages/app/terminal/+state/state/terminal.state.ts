@@ -1,4 +1,4 @@
-import { OS } from "@cogno/platform/os";
+import { OsType } from "@cogno/platform/os";
 import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
 import { ShellContext } from "../advanced/model/models";
 
@@ -59,10 +59,10 @@ export type TerminalState = {
   sessionCapabilities: ShellSessionCapabilitiesContract | undefined;
 };
 
-export const INITIAL_STATE: TerminalState = {
+export const createInitialState = (backendOs: OsType): TerminalState => ({
   terminalId: "",
   cwd: "",
-  shellContext: { shellType: "Bash", backendOs: OS.platform() },
+  shellContext: { shellType: "Bash", backendOs },
   cursorPosition: {
     viewport: { col: 1, row: 1 },
     col: 1,
@@ -97,4 +97,4 @@ export const INITIAL_STATE: TerminalState = {
   input: { cursorIndex: 0, maxCursorIndex: 0, text: "" },
   scrolledLinesFromBottom: 0,
   sessionCapabilities: undefined,
-};
+});

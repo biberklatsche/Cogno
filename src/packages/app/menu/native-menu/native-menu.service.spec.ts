@@ -1,5 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionFired } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
@@ -7,12 +8,6 @@ import { KeybindService } from "../../keybinding/keybind.service";
 import { NativeMenuService } from "./native-menu.service";
 
 const menuItemActionCallbacks = new Map<string, () => void>();
-
-vi.mock("@cogno/platform/os", () => ({
-  OS: {
-    platform: vi.fn(() => "linux"),
-  },
-}));
 
 vi.mock("@cogno/platform/window", () => ({
   AppWindow: {
@@ -37,6 +32,8 @@ vi.mock("@cogno/platform/native-menu", () => ({
     })),
   },
 }));
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("NativeMenuService", () => {
   let appBus: AppBus;
@@ -101,6 +98,7 @@ describe("NativeMenuService", () => {
     };
 
     nativeMenuService = new NativeMenuService(
+      osStub,
       appBus,
       keybindService,
       appWiringService as never,

@@ -1,5 +1,5 @@
 import { Config } from "@cogno/core/infrastructure/config/models/config";
-import { OS } from "@cogno/platform/os";
+import { OsType } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import type { LigaturesAddon } from "@xterm/addon-ligatures";
@@ -108,6 +108,7 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
 
   constructor(
     config: Config,
+    backendOs: OsType,
     private readonly webglPool: WebglContextPool = WebglContextPool.instance,
   ) {
     this._webglEnabled = config.terminal?.webgl ?? false;
@@ -133,7 +134,7 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
       rightClickSelectsWord: config.selection?.right_click_selects_word,
       screenReaderMode: config.terminal?.screen_reader_mode,
       wordSeparator: config.terminal?.word_separator,
-      windowsPty: OS.platform() === "windows" ? { backend: "conpty" } : undefined,
+      windowsPty: backendOs === "windows" ? { backend: "conpty" } : undefined,
       allowProposedApi: true,
       windowOptions: {
         pushTitle: true, //handle CSI Ps=22 vim on gitbash uses this to enter full screen

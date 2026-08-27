@@ -1,8 +1,11 @@
+import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { clear, getAppBus, getDestroyRef } from "../../../../__test__/test-factory";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";
 import { KeybindExecutor } from "./keybind.executor";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("KeybindExecutor", () => {
   let executor: KeybindExecutor;
@@ -14,7 +17,7 @@ describe("KeybindExecutor", () => {
     clear();
     mockBus = getAppBus();
 
-    terminalStateManager = new TerminalStateManager(mockBus);
+    terminalStateManager = new TerminalStateManager(osStub, mockBus);
     terminalStateManager.initialize(terminalId, "Bash");
     terminalStateManager.setFocus(true);
     terminalStateManager.setHasSelection(true);
@@ -379,12 +382,14 @@ describe("KeybindExecutor", () => {
   it("should handle ActionFired only once even if focus changes during handling", async () => {
     const bus = new AppBus();
     const firstTerminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,
       getDestroyRef(),
     );
     const secondTerminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,

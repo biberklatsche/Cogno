@@ -1,9 +1,12 @@
+import { OsPlatform } from "@cogno/platform/os";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";
 import { FullScreenAppHandler } from "./full-screen-app.handler";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("FullScreenAppHandler", () => {
   let handler: FullScreenAppHandler;
@@ -14,7 +17,7 @@ describe("FullScreenAppHandler", () => {
 
   beforeEach(() => {
     mockBus = new AppBus();
-    mockStateManager = new TerminalStateManager(mockBus);
+    mockStateManager = new TerminalStateManager(osStub, mockBus);
     handler = new FullScreenAppHandler(terminalId, mockBus, mockStateManager);
     mockTerminal = TerminalMockFactory.createTerminal();
   });

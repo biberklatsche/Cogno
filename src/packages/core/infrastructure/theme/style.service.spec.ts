@@ -28,12 +28,6 @@ vi.mock("@cogno/platform/logger", () => ({
   },
 }));
 
-vi.mock("@cogno/platform/os", () => ({
-  OS: {
-    platform: vi.fn(() => "macos"),
-  },
-}));
-
 describe("StyleService", () => {
   let _styleService: StyleService;
   let configService: ConfigServiceMock;

@@ -1,9 +1,12 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionFired } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { AppMenuService } from "./app-menu.service";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("AppMenuService", () => {
   let appBus: AppBus;
@@ -42,7 +45,7 @@ describe("AppMenuService", () => {
       getShellProfileByShortcutIndex: vi.fn(),
       getPromptSegments: vi.fn(),
     };
-    service = new AppMenuService(appBus, keybindService, configService);
+    service = new AppMenuService(osStub, appBus, keybindService, configService);
   });
 
   it("builds terminal items, separator and default actions", () => {

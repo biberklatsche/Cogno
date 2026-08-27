@@ -1,3 +1,4 @@
+import { OsPlatform } from "@cogno/platform/os";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import type { IMarker } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +15,8 @@ function createRegistryMarker(commandId: string, line: number): PromptMarker {
   };
 }
 
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+
 describe("MarkerManager", () => {
   let markerManager: MarkerManager;
   let stateManager: TerminalStateManager;
@@ -26,7 +29,7 @@ describe("MarkerManager", () => {
   beforeEach(() => {
     mockBus = new AppBus();
     vi.spyOn(mockBus, "publish");
-    stateManager = new TerminalStateManager(mockBus);
+    stateManager = new TerminalStateManager(osStub, mockBus);
     stateManager.initialize("test-id", "Bash" as any);
     contextMenuOverlayService = {
       openAtElement: vi.fn(),

@@ -46,12 +46,6 @@ vi.mock("@cogno/platform/logger", () => ({
   },
 }));
 
-vi.mock("@cogno/platform/os", () => ({
-  OS: {
-    platform: vi.fn(() => "macos"),
-  },
-}));
-
 import { Logger } from "@cogno/platform/logger";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";

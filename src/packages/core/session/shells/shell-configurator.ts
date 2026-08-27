@@ -1,12 +1,14 @@
 import { Injectable } from "@angular/core";
 import { Config, ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { OS, OsType } from "@cogno/platform/os";
+import { OsPlatform, OsType } from "@cogno/platform/os";
 import { Shell, Shells } from "@cogno/platform/shells";
 import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
 
 @Injectable({ providedIn: "root" })
 export class ShellConfigurator {
+  constructor(private readonly os: OsPlatform) {}
+
   /**
    * Detects available shells and writes them into config.shell.profiles
    * and sets config.shell.default + (optional) config.shell.order.
@@ -16,7 +18,7 @@ export class ShellConfigurator {
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
   ): Promise<void> {
     const installedShells = await Shells.load();
-    const platform = OS.platform();
+    const platform = this.os.platform();
     const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
     const supportedInstalledShells = installedShells.filter((shell) =>
       definitionsByShellType.has(shell.shell_type),

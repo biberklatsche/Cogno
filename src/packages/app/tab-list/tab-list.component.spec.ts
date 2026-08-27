@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
+import { OsPlatform } from "@cogno/platform/os";
 import { ContextMenuOverlayService, DragPreviewService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -27,6 +28,8 @@ function tab(overrides: Partial<Tab> = {}): Tab {
 }
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("TabListComponent", () => {
   let tabListService: TabListService;
@@ -63,6 +66,7 @@ describe("TabListComponent", () => {
 
   beforeEach(() => {
     tabListService = new TabListService(
+      osStub,
       getAppBus(),
       getConfigService(),
       getKeybindServiceMock() as KeybindService,

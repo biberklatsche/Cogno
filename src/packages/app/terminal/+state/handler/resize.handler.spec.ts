@@ -1,3 +1,4 @@
+import { OsPlatform } from "@cogno/platform/os";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { Terminal } from "@xterm/xterm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +7,8 @@ import { AppBus } from "../../../app-bus/app-bus";
 import type { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
 import { ResizeHandler } from "./resize.handler";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("ResizeHandler", () => {
   let handler: ResizeHandler;
@@ -21,7 +24,7 @@ describe("ResizeHandler", () => {
     vi.useFakeTimers();
     mockBus = new AppBus();
     vi.spyOn(mockBus, "publish");
-    stateManager = new TerminalStateManager(mockBus);
+    stateManager = new TerminalStateManager(osStub, mockBus);
     stateManager.initialize(terminalId, "Bash");
     mockPty = {
       resize: vi.fn().mockResolvedValue(undefined),

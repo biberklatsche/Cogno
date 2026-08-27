@@ -2,6 +2,7 @@ import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { OsPlatform } from "@cogno/platform/os";
 import type { ShellDefinitionContract } from "@cogno/shared/contributions";
 import type { NotificationChannelContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
@@ -53,6 +54,8 @@ vi.mock("./pty/pty", () => {
     Pty: vi.fn(PtyMock),
   };
 });
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("TerminalSession", () => {
   let session: TerminalSession;
@@ -140,6 +143,7 @@ describe("TerminalSession", () => {
     );
 
     session = new TerminalSession(
+      osStub,
       configService,
       appBus,
       getStateManager(),
@@ -159,6 +163,7 @@ describe("TerminalSession", () => {
   it("should initialize with correct renderer settings based on config", () => {
     configService.setConfig({ terminal: { webgl: true }, font: { family: "Fira Code" } } as any);
     session = new TerminalSession(
+      osStub,
       configService,
       appBus,
       getStateManager(),
@@ -174,7 +179,10 @@ describe("TerminalSession", () => {
       TauriMockFactory.createPtyTransport() as never,
     );
 
-    expect(Renderer).toHaveBeenCalledWith(expect.objectContaining({ terminal: { webgl: true } }));
+    expect(Renderer).toHaveBeenCalledWith(
+      expect.objectContaining({ terminal: { webgl: true } }),
+      "linux",
+    );
   });
 
   it("should initialize terminal and register handlers", () => {

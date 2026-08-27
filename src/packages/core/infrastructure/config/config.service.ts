@@ -4,6 +4,7 @@ import { CliConfigOverrides } from "@cogno/platform/cli-config-overrides";
 import { DefaultConfig } from "@cogno/platform/default-config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
+import { OsPlatform } from "@cogno/platform/os";
 import { Path } from "@cogno/platform/path";
 import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
@@ -74,7 +75,10 @@ export class RealConfigService extends ConfigService {
   private _unwatch: Subscription | undefined;
   private _options: ConfigLoadOptions | undefined;
 
-  constructor(private destroy: DestroyRef) {
+  constructor(
+    private destroy: DestroyRef,
+    private readonly os: OsPlatform,
+  ) {
     super();
   }
 
@@ -235,6 +239,7 @@ export class RealConfigService extends ConfigService {
 
     const defaultConfigString = await DefaultConfig.read();
     const defaultConfig = ConfigReader.fromStringToConfig(
+      this.os.platform(),
       defaultConfigString,
       "",
       settingsExtensions,
@@ -248,6 +253,7 @@ export class RealConfigService extends ConfigService {
       let userConfigString = await Fs.readTextFile(path);
       userConfigString = await this.applyCliSetOverrides(userConfigString);
       return ConfigReader.fromStringToConfigWithDiagnostics(
+        this.os.platform(),
         defaultConfigString,
         userConfigString,
         settingsExtensions,
@@ -256,6 +262,7 @@ export class RealConfigService extends ConfigService {
 
     if (!(await Fs.exists(path))) {
       const userConfig = ConfigReader.fromStringToConfig(
+        this.os.platform(),
         defaultConfigString,
         "",
         settingsExtensions,

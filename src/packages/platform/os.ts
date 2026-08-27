@@ -35,7 +35,8 @@ function getFallbackPlatform(): OsType {
   return "linux";
 }
 
-export const OS = {
+@Injectable({ providedIn: "root" })
+export class OsPlatform {
   platform(): OsType {
     try {
       const rawPlatform = tauriType();
@@ -47,13 +48,5 @@ export const OS = {
     } catch {
       return getFallbackPlatform();
     }
-  },
-};
-
-/** Injectable view on `OS` for code that prefers constructor injection. */
-@Injectable({ providedIn: "root" })
-export class OsPlatform {
-  platform(): OsType {
-    return OS.platform();
   }
 }

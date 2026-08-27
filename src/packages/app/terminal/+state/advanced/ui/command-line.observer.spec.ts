@@ -1,9 +1,12 @@
+import { OsPlatform } from "@cogno/platform/os";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalStateManager } from "../../state";
 import { CommandLineObserver } from "./command-line.observer";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("CommandLineObserver", () => {
   let observer: CommandLineObserver;
@@ -17,7 +20,7 @@ describe("CommandLineObserver", () => {
     vi.useFakeTimers();
     mockBus = new AppBus();
     vi.spyOn(mockBus, "publish");
-    stateManager = new TerminalStateManager(mockBus);
+    stateManager = new TerminalStateManager(osStub, mockBus);
     stateManager.initialize(terminalId, "Bash" as any);
     contextMenuOverlayService = {
       openAtElement: vi.fn(),

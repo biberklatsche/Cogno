@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from "@angular/core";
-import { OS, OsType } from "@cogno/platform/os";
+import { OsPlatform, OsType } from "@cogno/platform/os";
 import { AppButtonsService } from "./+state/app-buttons.service";
 
 type WindowControlIconName =
@@ -119,9 +119,14 @@ type WindowControlIconName =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppButtonsComponent {
-  protected readonly operatingSystem: OsType = OS.platform();
+  protected readonly operatingSystem: OsType;
 
-  constructor(protected readonly appButtonsService: AppButtonsService) {}
+  constructor(
+    protected readonly appButtonsService: AppButtonsService,
+    os: OsPlatform,
+  ) {
+    this.operatingSystem = os.platform();
+  }
 
   protected iconMask(iconName: WindowControlIconName): string {
     return `url('assets/icons/window-controls/${iconName}.svg')`;

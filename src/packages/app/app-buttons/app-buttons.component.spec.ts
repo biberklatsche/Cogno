@@ -1,8 +1,11 @@
+import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppButtonsService } from "./+state/app-buttons.service";
 import { AppButtonsComponent } from "./app-buttons.component";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("AppButtonsComponent", () => {
   let component: AppButtonsComponent;
@@ -39,7 +42,7 @@ describe("AppButtonsComponent", () => {
     service = new AppButtonsService(destroyRefMock, busMock);
 
     // Instantiate component with the real service
-    component = new AppButtonsComponent(service);
+    component = new AppButtonsComponent(service, osStub);
   });
 
   it("should call service.closeWindow when close is called", () => {

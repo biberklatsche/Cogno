@@ -3,7 +3,7 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
-import { Opener, PtyTransport } from "@cogno/platform";
+import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ShellDefinitionContract } from "@cogno/shared/contributions";
 import {
   buildNotificationPreferencesMenuItems,
@@ -93,6 +93,7 @@ export class TerminalSession {
   private shellProfile?: ShellProfile;
 
   constructor(
+    private readonly os: OsPlatform,
     private configService: ConfigService,
     private bus: AppBus,
     private stateManager: TerminalStateManager,
@@ -109,7 +110,7 @@ export class TerminalSession {
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.pty = new Pty(ptyTransport);
-    this.renderer = new Renderer(this.configService.config);
+    this.renderer = new Renderer(this.configService.config, this.os.platform());
     this.disposables = [this.renderer, this.pty];
     this.completedCommandNotificationHandler = new CompletedCommandNotificationHandler(
       this.configService,
@@ -210,8 +211,10 @@ export class TerminalSession {
     );
     this.disposables.push(this.renderer.register(new CursorHandler(this.stateManager)));
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
-    this.disposables.push(this.renderer.register(new LinkHandler(this.stateManager, this.opener)));
-    this.disposables.push(this.renderer.register(new ResumeLinkHandler(this.pty)));
+    this.disposables.push(
+      this.renderer.register(new LinkHandler(this.stateManager, this.opener, this.os)),
+    );
+    this.disposables.push(this.renderer.register(new ResumeLinkHandler(this.pty, this.os)));
     this.disposables.push(new KeybindExecutor(this.bus, this.stateManager));
 
     const shellDefinition = this.shellProfile.enable_shell_integration
@@ -417,7 +420,7 @@ export class TerminalSession {
   }
 
   private keybindingFor(actionName: ActionName): string {
-    return formatKeybinding(this.keybindService.getKeybinding(actionName));
+    return formatKeybinding(this.keybindService.getKeybinding(actionName), this.os.platform());
   }
 
   buildHeaderMenu(): ContextMenuItem[] {

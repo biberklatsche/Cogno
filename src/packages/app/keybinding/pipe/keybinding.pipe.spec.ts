@@ -1,13 +1,12 @@
-import { OS } from "@cogno/platform/os";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { OsPlatform, OsType } from "@cogno/platform/os";
+import { describe, expect, it } from "vitest";
 import { KeybindingPipe } from "./keybinding.pipe";
 
-describe("KeybindingPipe", () => {
-  let pipe: KeybindingPipe;
+const pipeFor = (platform: OsType) =>
+  new KeybindingPipe({ platform: () => platform } as OsPlatform);
 
-  beforeEach(() => {
-    pipe = new KeybindingPipe();
-  });
+describe("KeybindingPipe", () => {
+  const pipe = pipeFor("linux");
 
   it("null", () => {
     expect(pipe.transform(null)).toBe("");
@@ -18,28 +17,22 @@ describe("KeybindingPipe", () => {
   });
 
   it("macos command", () => {
-    vi.spyOn(OS, "platform").mockReturnValue("macos");
-    expect(pipe.transform("Command + A")).toBe("⌘ A");
+    expect(pipeFor("macos").transform("Command + A")).toBe("⌘ A");
   });
 
   it("macos control", () => {
-    vi.spyOn(OS, "platform").mockReturnValue("macos");
-    expect(pipe.transform("Control + A")).toBe("⌃ A");
+    expect(pipeFor("macos").transform("Control + A")).toBe("⌃ A");
   });
 
   it("macos option", () => {
-    vi.spyOn(OS, "platform").mockReturnValue("macos");
-    expect(pipe.transform("Alt + A")).toBe("⌥ A");
+    expect(pipeFor("macos").transform("Alt + A")).toBe("⌥ A");
   });
 
   it("macos order", () => {
-    vi.spyOn(OS, "platform").mockReturnValue("macos");
-
-    expect(pipe.transform("Command + Shift + Alt + Control + A")).toBe("⌃ ⌥ ⇧ ⌘ A");
+    expect(pipeFor("macos").transform("Command + Shift + Alt + Control + A")).toBe("⌃ ⌥ ⇧ ⌘ A");
   });
 
   it("other", () => {
-    vi.spyOn(OS, "platform").mockReturnValue("windows");
-    expect(pipe.transform("Control + A")).toBe("Ctrl+A");
+    expect(pipeFor("windows").transform("Control + A")).toBe("Ctrl+A");
   });
 });

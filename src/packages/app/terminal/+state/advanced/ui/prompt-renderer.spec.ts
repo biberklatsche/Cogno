@@ -2,6 +2,7 @@ import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { Clipboard } from "@cogno/platform/clipboard";
+import { OsPlatform } from "@cogno/platform/os";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../../app-bus/app-bus";
@@ -15,6 +16,8 @@ vi.mock("@cogno/platform/clipboard", () => ({
   },
 }));
 
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+
 describe("PromptMarkerRenderer", () => {
   let stateManager: TerminalStateManager;
   let busMock: AppBus;
@@ -25,7 +28,7 @@ describe("PromptMarkerRenderer", () => {
     PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
     busMock = new AppBus();
     vi.spyOn(busMock, "publish");
-    stateManager = new TerminalStateManager(busMock);
+    stateManager = new TerminalStateManager(osStub, busMock);
     stateManager.initialize("test-term", "Bash" as any);
     hostElement = document.createElement("div");
     contextMenuOverlayService = {

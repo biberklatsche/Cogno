@@ -1,10 +1,10 @@
 import { Pipe, PipeTransform } from "@angular/core";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform, OsType } from "@cogno/platform/os";
 import { ActionName } from "../../action/action.models";
 import { KeybindService } from "../keybind.service";
 import { Modifier } from "../modifier";
 
-export function formatKeybinding(keybinding: string | null | undefined): string {
+export function formatKeybinding(keybinding: string | null | undefined, os: OsType): string {
   if (!keybinding) {
     return "";
   }
@@ -14,10 +14,10 @@ export function formatKeybinding(keybinding: string | null | undefined): string 
     .filter(Boolean);
   if (parts.length === 0) return "";
 
-  const modifiers = Modifier.normalizeView(parts.slice(0, -1), OS.platform());
+  const modifiers = Modifier.normalizeView(parts.slice(0, -1), os);
   const key = parts[parts.length - 1];
 
-  switch (OS.platform()) {
+  switch (os) {
     case "macos":
       return [...modifiers, key].join(" ");
     default:
@@ -29,8 +29,10 @@ export function formatKeybinding(keybinding: string | null | undefined): string 
   name: "keybinding",
 })
 export class KeybindingPipe implements PipeTransform {
+  constructor(protected readonly os: OsPlatform) {}
+
   transform(keybinding: string | null | undefined): string {
-    return formatKeybinding(keybinding);
+    return formatKeybinding(keybinding, this.os.platform());
   }
 }
 
@@ -38,8 +40,11 @@ export class KeybindingPipe implements PipeTransform {
   name: "actionkeybinding",
 })
 export class ActionKeybindingPipe extends KeybindingPipe {
-  constructor(private keybindingService: KeybindService) {
-    super();
+  constructor(
+    private keybindingService: KeybindService,
+    os: OsPlatform,
+  ) {
+    super(os);
   }
 
   override transform(action: ActionName | null | undefined): string {

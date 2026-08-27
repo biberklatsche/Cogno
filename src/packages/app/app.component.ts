@@ -4,7 +4,7 @@ import { appDatabaseMigrations } from "@cogno/core/infrastructure/database/migra
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform, OsType } from "@cogno/platform/os";
 import { AppBus } from "./app-bus/app-bus";
 import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
 import { BusyIndicatorService } from "./common/busy-indicator/busy-indicator.service";
@@ -70,13 +70,15 @@ import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-in
   standalone: true,
 })
 export class AppComponent {
-  os = OS.platform();
+  os: OsType;
   constructor(
+    os: OsPlatform,
     bus: AppBus,
     private readonly databaseMigrationService: DatabaseMigrationService,
     _busyIndicatorService: BusyIndicatorService,
     _terminalBusyIndicatorAdapter: TerminalBusyIndicatorAdapterService,
   ) {
+    this.os = os.platform();
     window.addEventListener("contextmenu", (event) => {
       event.preventDefault();
     });

@@ -1,8 +1,11 @@
+import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";
 import { CursorHandler } from "./cursor.handler";
+
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("CursorHandler", () => {
   let bus: AppBus;
@@ -17,7 +20,7 @@ describe("CursorHandler", () => {
     bus = new AppBus();
     vi.spyOn(bus, "publish");
 
-    stateManager = new TerminalStateManager(bus);
+    stateManager = new TerminalStateManager(osStub, bus);
     stateManager.initialize(terminalId, "Bash");
     handler = new CursorHandler(stateManager);
   });

@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { OsPlatform } from "@cogno/platform/os";
 import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/shared/domain";
 import { ColorName, IdCreator } from "@cogno/shared/support";
 import { ContextMenuItem } from "@cogno/shared/ui";
@@ -65,6 +66,7 @@ export class TabListService {
   }
 
   constructor(
+    private readonly os: OsPlatform,
     private bus: AppBus,
     private readonly configService: ConfigService,
     private readonly keybindService: KeybindService,
@@ -212,7 +214,7 @@ export class TabListService {
   }
 
   private keybindingFor(actionName: ActionName): string {
-    return formatKeybinding(this.keybindService.getKeybinding(actionName));
+    return formatKeybinding(this.keybindService.getKeybinding(actionName), this.os.platform());
   }
 
   removeAllTabs(except?: TabId) {

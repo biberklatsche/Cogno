@@ -1,5 +1,5 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform, OsType } from "@cogno/platform/os";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
@@ -8,6 +8,9 @@ import { TerminalFullscreenService } from "../terminal/terminal-fullscreen.servi
 import { KeybindService } from "./keybind.service";
 import type { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
 import { TerminalKeybindingContextService } from "./terminal-keybinding-context.service";
+
+let platform: OsType = "linux";
+const osStub = { platform: () => platform } as unknown as OsPlatform;
 
 describe("KeybindService", () => {
   const config$ = new BehaviorSubject<{ keybind: never[] }>({ keybind: [] });
@@ -32,6 +35,7 @@ describe("KeybindService", () => {
 
   beforeAll(() => {
     service = new KeybindService(
+      osStub,
       keyboardMappingService as KeyboardMappingService,
       configService as ConfigService,
       bus,
@@ -153,7 +157,7 @@ describe("KeybindService", () => {
   });
 
   it("keeps native macOS copy/paste shortcuts in editable fields", () => {
-    vi.spyOn(OS, "platform").mockReturnValue("macos");
+    platform = "macos";
     const handler = vi.fn();
     service.registerListener("test-listener", ["c"], handler);
 
@@ -170,6 +174,8 @@ describe("KeybindService", () => {
 
     expect(handler).not.toHaveBeenCalled();
     expect(dispatchResult).toBe(true);
+
+    platform = "linux";
   });
 
   it("does not treat the xterm helper textarea as a native editable field", () => {

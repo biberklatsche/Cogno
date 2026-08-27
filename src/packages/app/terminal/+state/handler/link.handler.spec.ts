@@ -3,12 +3,14 @@ import type { ShellType } from "@cogno/core/infrastructure/config/models/config"
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { Opener } from "@cogno/platform";
 import { Clipboard } from "@cogno/platform/clipboard";
-import { OS, type OsType } from "@cogno/platform/os";
+import { OsPlatform, type OsType } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";
 import { LinkHandler } from "./link.handler";
+
+const osFor = (platform: OsType) => ({ platform: () => platform }) as OsPlatform;
 
 describe("LinkHandler", () => {
   let handler: LinkHandler;
@@ -18,7 +20,6 @@ describe("LinkHandler", () => {
   let opener: Opener;
   let openUrlSpy: ReturnType<typeof vi.fn>;
   let openPathSpy: ReturnType<typeof vi.fn>;
-  let _osPlatformSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
@@ -29,13 +30,13 @@ describe("LinkHandler", () => {
   });
 
   function createScenario(shellType: ShellType, backendOs: OsType, cwd: string): void {
-    _osPlatformSpy = vi.spyOn(OS, "platform").mockReturnValue(backendOs);
+    const os = osFor(backendOs);
     const bus = new AppBus();
-    stateManager = new TerminalStateManager(bus);
+    stateManager = new TerminalStateManager(os, bus);
     stateManager.initialize("term-1", shellType);
     stateManager.updateCwd(cwd);
     terminal = TerminalMockFactory.createTerminal();
-    handler = new LinkHandler(stateManager, opener);
+    handler = new LinkHandler(stateManager, opener, os);
     handler.registerTerminal(terminal);
     provider = vi.mocked(terminal.registerLinkProvider).mock.calls[0]?.[0];
   }

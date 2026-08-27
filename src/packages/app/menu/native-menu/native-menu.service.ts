@@ -4,7 +4,7 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
@@ -17,13 +17,14 @@ export class NativeMenuService {
   private latestConfig?: Config;
 
   constructor(
+    private readonly os: OsPlatform,
     private bus: AppBus,
     private keybindService: KeybindService,
     private readonly wiringService: AppWiringService,
     configService: ConfigService,
     ref: DestroyRef,
   ) {
-    if (OS.platform() === "macos") {
+    if (this.os.platform() === "macos") {
       configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(async (config) => {
         this.latestConfig = config;
         await this.buildMenu();

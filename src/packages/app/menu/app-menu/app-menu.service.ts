@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { OsPlatform } from "@cogno/platform/os";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
@@ -11,6 +12,7 @@ import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 })
 export class AppMenuService {
   constructor(
+    private readonly os: OsPlatform,
     private readonly bus: AppBus,
     private readonly keybindService: KeybindService,
     private readonly configService: ConfigService,
@@ -63,6 +65,6 @@ export class AppMenuService {
   }
 
   private keybindingFor(actionName: ActionName): string {
-    return formatKeybinding(this.keybindService.getKeybinding(actionName));
+    return formatKeybinding(this.keybindService.getKeybinding(actionName), this.os.platform());
   }
 }

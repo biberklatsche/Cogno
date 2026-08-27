@@ -4,6 +4,7 @@ import type { Config, ShellType } from "@cogno/core/infrastructure/config/models
 import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { OsPlatform } from "@cogno/platform/os";
 import type { Observable } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getDestroyRef } from "../../../../__test__/test-factory";
@@ -44,6 +45,8 @@ class ConfigServiceMockForNotificationBadge extends ConfigService {
   }
 }
 
+const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+
 describe("TerminalStateManager", () => {
   beforeEach(() => {
     PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
@@ -52,12 +55,14 @@ describe("TerminalStateManager", () => {
   it("should keep only the focused terminal state manager focused", () => {
     const bus = new AppBus();
     const firstTerminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,
       getDestroyRef(),
     );
     const secondTerminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,
@@ -79,6 +84,7 @@ describe("TerminalStateManager", () => {
   it("should set and clear unread notification state", () => {
     const bus = new AppBus();
     const terminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,
@@ -98,6 +104,7 @@ describe("TerminalStateManager", () => {
     const notificationBadgeEnabledState = { value: false };
     const configService = new ConfigServiceMockForNotificationBadge(notificationBadgeEnabledState);
     const terminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,
@@ -116,6 +123,7 @@ describe("TerminalStateManager", () => {
     const notificationBadgeEnabledState = { value: true };
     const configService = new ConfigServiceMockForNotificationBadge(notificationBadgeEnabledState);
     const terminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,
@@ -136,6 +144,7 @@ describe("TerminalStateManager", () => {
   it("should store bounded terminal progress state", () => {
     const bus = new AppBus();
     const terminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,
@@ -154,6 +163,7 @@ describe("TerminalStateManager", () => {
   it("should clear terminal progress when hidden state is set", () => {
     const bus = new AppBus();
     const terminalStateManager = new TerminalStateManager(
+      osStub,
       bus,
       undefined,
       undefined,

@@ -70,7 +70,7 @@ describe("Renderer", () => {
         rescale_overlapping_glyphs: true,
       },
     };
-    renderer = new Renderer(mockConfig, new WebglContextPool());
+    renderer = new Renderer(mockConfig, "linux", new WebglContextPool());
   });
 
   afterEach(() => {
@@ -111,7 +111,7 @@ describe("Renderer", () => {
 
   it("should use WebGL addon if enabled in config", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig, new WebglContextPool());
+    renderer = new Renderer(mockConfig, "linux", new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
     expect(webglContextLossDisposable).toBeDefined();
@@ -120,7 +120,7 @@ describe("Renderer", () => {
 
   it("should dispose WebGL addon on context loss", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig, new WebglContextPool());
+    renderer = new Renderer(mockConfig, "linux", new WebglContextPool());
 
     webglContextLossListener?.();
 
@@ -130,7 +130,7 @@ describe("Renderer", () => {
 
   it("should try to restore WebGL after context loss", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig, new WebglContextPool());
+    renderer = new Renderer(mockConfig, "linux", new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
 
@@ -142,7 +142,7 @@ describe("Renderer", () => {
 
   it("should expose WebGL context loss state during restore", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig, new WebglContextPool());
+    renderer = new Renderer(mockConfig, "linux", new WebglContextPool());
     const states: boolean[] = [];
     const subscription = renderer.isWebglContextLost$.subscribe((state) => states.push(state));
 
@@ -155,7 +155,7 @@ describe("Renderer", () => {
 
   it("should keep the WebGL addon alive when becoming invisible", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig, new WebglContextPool());
+    renderer = new Renderer(mockConfig, "linux", new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
     const loadAddonCallsBefore = terminalInstance.loadAddon.mock.calls.length;
@@ -171,12 +171,12 @@ describe("Renderer", () => {
   it("should recreate the WebGL addon on becoming visible after a pool eviction", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
     const pool = new WebglContextPool(1);
-    renderer = new Renderer(mockConfig, pool);
+    renderer = new Renderer(mockConfig, "linux", pool);
     renderer.setVisible(false);
     const firstAddonDisposeSpy = webglAddonDisposeSpy;
 
     // A second renderer exceeds the budget of 1 and evicts the hidden one.
-    const evictingRenderer = new Renderer(mockConfig, pool);
+    const evictingRenderer = new Renderer(mockConfig, "linux", pool);
     expect(firstAddonDisposeSpy).toHaveBeenCalled();
 
     const terminalInstance =
@@ -209,7 +209,7 @@ describe("Renderer", () => {
 
   it("should cancel a pending WebGL restore when becoming invisible", () => {
     mockConfig.terminal = { ...(mockConfig.terminal ?? {}), webgl: true };
-    renderer = new Renderer(mockConfig, new WebglContextPool());
+    renderer = new Renderer(mockConfig, "linux", new WebglContextPool());
     const terminalInstance =
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
 

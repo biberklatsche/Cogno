@@ -3,7 +3,7 @@ import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { OS } from "@cogno/platform/os";
+import { OsPlatform } from "@cogno/platform/os";
 import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
 import { IPathAdapter } from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
@@ -17,7 +17,7 @@ import { TerminalHistoryPersistenceService } from "../advanced/history/terminal-
 import { ShellContext } from "../advanced/model/models";
 import { Command } from "./command.model";
 import {
-  INITIAL_STATE,
+  createInitialState,
   TerminalCursorPosition,
   TerminalDimensions,
   TerminalInput,
@@ -35,6 +35,7 @@ export class TerminalStateManager {
   private isDisposed = false;
 
   constructor(
+    private readonly os: OsPlatform,
     private _bus: AppBus,
     private _historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
     private _historyPersistence: TerminalHistoryPersistenceService = new TerminalHistoryPersistenceService(),
@@ -42,7 +43,7 @@ export class TerminalStateManager {
     private configService?: ConfigService,
   ) {
     destroyRef?.onDestroy(() => this.dispose());
-    this._stateSubject = new BehaviorSubject<TerminalState>(INITIAL_STATE);
+    this._stateSubject = new BehaviorSubject<TerminalState>(createInitialState(this.os.platform()));
 
     this._bus
       .onType$("FocusTerminal", { path: ["app", "terminal"] })
@@ -76,7 +77,11 @@ export class TerminalStateManager {
   }
 
   initialize(terminalId: string, shellType: ShellType, shellProfile?: ShellProfile): void {
-    const shellContext: ShellContext = deriveShellContext(shellType, shellProfile, OS.platform());
+    const shellContext: ShellContext = deriveShellContext(
+      shellType,
+      shellProfile,
+      this.os.platform(),
+    );
     this._pathAdapter = PathFactory.createAdapter(shellContext);
     this._historyPersistence.initialize(shellContext, this._pathAdapter, terminalId);
     this.updateState({
