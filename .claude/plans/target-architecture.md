@@ -1,9 +1,9 @@
-# Zielarchitektur
+# Zielarchitektur (Abstimmungsstand, übernommen)
 
-Stand 2026-08-26. Ergebnis der Bestandsaufnahme (`capability-inventory.md`).
-Dieses Dokument ist die Zielarchitektur und ersetzt bei ihrer Übernahme die
-bisherige `ARCHITECTURE.md` vollständig. Konzept, kein Umsetzungsplan —
-der steht in `umsetzungsplan.md` (30 Schritte, je ein Commit).
+> **Diese Datei wird nicht mehr gepflegt.** Ihr Inhalt ist in Schritt 0 nach
+> `ARCHITECTURE.md` übernommen worden; dort steht die geltende Architektur,
+> und dort wird sie geändert. Diese Datei bleibt als Protokoll der
+> Abstimmung vom 26./27.08.2026 liegen.
 
 ---
 

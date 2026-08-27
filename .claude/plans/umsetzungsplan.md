@@ -1,7 +1,8 @@
 # Umsetzungsplan Zielarchitektur
 
-Stand 2026-08-27. Setzt `target-architecture.md` um; Abschnittsnummern
-darin werden mit „ZA x.y" zitiert. Konzeptfragen werden hier nicht neu
+Stand 2026-08-27. Setzt `ARCHITECTURE.md` um; Abschnittsnummern darin
+werden mit „ZA x.y" zitiert (`target-architecture.md` ist nur noch das
+Protokoll der Abstimmung). Konzeptfragen werden hier nicht neu
 entschieden — wer eine findet, ändert erst die Zielarchitektur.
 
 ## Regeln für jeden Schritt

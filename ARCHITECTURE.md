@@ -67,8 +67,8 @@ Konsumenten entstehen lazy und müssen ziehen können.
 ### 2.1 Schichten
 
 ```
-shared/              Fundament: reine Logik, generische UI, Utilities — kein Produktwissen
-platform/            Fundament: Tauri-Grenze — kein Produktwissen
+shared/              allgemeine, frameworkfreie Bausteine; auch Domänenwissen
+platform/            Tauri-Grenze; kein Produktwissen
 core/                das Produkt, immer an
   infrastructure/    Config, Theming, DB-Bridge, Migrations-Runner, Fehler, Logging, Pfade, Bus, Keybind-Parser
   terminal/          die Maschine: pty, renderer, byte-I/O, resize
@@ -80,11 +80,28 @@ features/            das Produkt, abschaltbar
 bootstrap/           Kompositionswurzel — kennt alle, niemand hängt daran
 ```
 
-Zwei Fragen ordnen die oberste Ebene: *Weiß der Code, dass er Cogno ist?*
-(`shared/`, `platform/`: nein — sie könnten in jeder Tauri-App liegen) und
-*Ist er abschaltbar?* (nur `features/`). Alles mit Produktwissen, das immer
-an ist, liegt in `core/` — auch die Maschine: xterm-Renderer, Ack-Flow-Control
-und ConPTY-Handling sind Cogno-Code, nur der unterste.
+Zwei Fragen ordnen die oberste Ebene: *Kennt der Code die Anwendung —
+Sitzungen, Layout, Fenster, Features?* (`shared/` und `platform/`: nein) und
+*Ist er abschaltbar?* (nur `features/`). Alles, was die Anwendung kennt und
+immer an ist, liegt in `core/` — auch die Maschine: xterm-Renderer,
+Ack-Flow-Control und ConPTY-Handling sind Cogno-Code, nur der unterste.
+
+**Shared** trägt allgemeine, frameworkfreie Bausteine — **auch mit
+Produktwissen**. Domänenmodelle und Logik, die Core *und* Features
+gleichermaßen brauchen (Shell-Kontext, Pfadadapter, Benachrichtigungsmodell,
+Workspace-Modell), gehören dorthin; schwere Logik soll nicht zweimal
+existieren. Drei Grenzen halten das sauber:
+
+1. **Keine Abhängigkeit nach innen.** `shared/` importiert nichts aus
+   `platform/`, `core/`, `features/` oder `bootstrap/`.
+2. **Keine Fremdtechnik.** Kein Tauri, kein xterm; in `shared/domain` und
+   `shared/support` auch kein Angular und kein RxJS.
+3. **Kein Adapter zwischen Core und Features.** Was dort liegt, ist für sich
+   allgemein und an keinen Aufrufer gebunden — man muss es verstehen können,
+   ohne zu wissen, wer es benutzt. Die Verbindung zwischen Feature und Core
+   läuft ausschließlich über `core/api/`; ein Typ, der nur existiert, damit
+   ein bestimmtes Feature mit einem bestimmten Core-Teil sprechen kann,
+   gehört in die API, nicht nach `shared/`.
 
 **Infrastructure** ist alles, was jede Schicht braucht und was selbst weder
 eine Sitzung noch das Layout kennt. Test: braucht der Code eine `sessionId`
@@ -394,8 +411,8 @@ Schritt des Umsetzungsplans löscht diesen Block und den Alias.
 
 Daraus folgen die Regeln, die man sich merken muss:
 
-- Nur `platform/` importiert Tauri; `shared/` und `platform/` sind frei von
-  Produktwissen.
+- Nur `platform/` importiert Tauri. `shared/` importiert nichts Internes und
+  kennt keine Fremdtechnik; es ist kein Adapter zwischen Core und Features.
 - `core/terminal/` importiert nichts anderes aus `core/` — auch nicht
   `infrastructure/` (Grenz-Entscheidung 2 unten).
 - `core/session/` importiert weder `workbench/` noch `api/`; `workbench/`
