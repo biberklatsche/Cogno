@@ -219,7 +219,7 @@ ohnehin in `shared/ui`.
 
 **Erlaubter Übergangszustand:** keiner nötig — Umzug in bestehende Schichten.
 
-### Schritt 3: `features/shell/` → `core/session/shells/`
+### Schritt 3: `features/shell/` → `core/session/shells/` — **erledigt (2026-08-27)**
 
 **Voraussetzungen:** 1.
 
@@ -227,8 +227,19 @@ ohnehin in `shared/ui`.
 `core/session/shells/`; `app/config/shell-configurator.ts` und
 `shell-integration.writer.ts` dazu. `shellFeature` und Contribution-Punkt
 `shells?` in `FeatureDefinition` entfernen; `AppWiringService` liest die
-Shell-Liste direkt aus `core/session/shells/`. `Fish` und `GitBash` aus
-`ShellType` entfernen samt Verzweigungen.
+Shell-Liste direkt aus `core/session/shells/`. `Fish` und `GitBash` **bleiben vorerst** — anders als geplant: sie sind
+nicht tot, sondern halb verdrahtet. Ohne Shell-Definition bekommt ein
+solches Profil `shellDefinition = undefined` und läuft als schlichtes
+Terminal ohne Cogno-Integration; `shell-history-reader.ts` importiert
+außerdem ihre native History. Sie zu entfernen wäre eine Produktänderung
+(bestehende Profile mit `shell_type = GitBash` würden ungültig), keine
+Aufräumarbeit — das entscheidet der Nutzer.
+
+Nachtrag aus der Umsetzung: `setup-vitest.ts` und die sechs Specs importieren
+`shellPathAdapterDefinitions` aus `core/session/shells/shell-definitions`,
+nicht über eine Sammel-Datei. Eine Barrel-Datei würde beim Setup den
+Integration-Writer mitladen und die `vi.mock`-Isolation seiner Spec
+zerstören.
 
 **Akzeptanzkriterien:**
 

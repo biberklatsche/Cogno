@@ -1,5 +1,5 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
-import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import type { ShellContextContract } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
@@ -39,7 +39,7 @@ function cdContext(fragment: string): QueryContext {
 
 describe("Autocomplete History Suggestors", () => {
   beforeEach(() => {
-    PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
+    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
     vi.restoreAllMocks();
   });
 

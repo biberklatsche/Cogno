@@ -4,6 +4,7 @@ import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side
 import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
 import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
+import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import {
   ApplicationSettingsExtensionContract,
   FeatureDefinition,
@@ -22,7 +23,6 @@ import { PathFactory } from "./path.factory";
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
   private readonly sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition>;
-  private readonly shellDefinitions: ReadonlyArray<ShellDefinitionContract>;
   private readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
   private readonly autocompleteSuggestorDefinitions: ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract>;
   private readonly featureNotificationChannels: ReadonlyArray<NotificationChannelContract>;
@@ -44,7 +44,6 @@ export class AppWiringService {
         "Side menu feature",
       ),
     ].sort((left, right) => left.order - right.order);
-    this.shellDefinitions = features.flatMap((feature) => feature.shells ?? []);
     this.settingsExtensions = features.flatMap((feature) =>
       feature.settings ? [feature.settings] : [],
     );
@@ -55,7 +54,7 @@ export class AppWiringService {
       (feature) => feature.notificationChannels ?? [],
     );
 
-    PathFactory.registerDefinitions(this.shellDefinitions.map((shell) => shell.pathAdapter));
+    PathFactory.registerDefinitions(shellDefinitions.map((shell) => shell.pathAdapter));
     databaseMigrationService.registerFeatureMigrations(
       features.flatMap((feature) => feature.migrations ?? []),
     );
@@ -95,11 +94,11 @@ export class AppWiringService {
   }
 
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
-    return this.shellDefinitions.map((shell) => shell.support);
+    return shellDefinitions.map((shell) => shell.support);
   }
 
   getShellDefinitions(): ReadonlyArray<ShellDefinitionContract> {
-    return this.shellDefinitions;
+    return shellDefinitions;
   }
 }
 

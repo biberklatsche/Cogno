@@ -1,7 +1,6 @@
 import { NotificationChannelContract } from "@cogno/shared/domain";
 import { ApplicationSettingsExtensionContract } from "./application-settings-extension";
 import { DatabaseMigrationContract } from "./database-migration";
-import { ShellDefinitionContract } from "./shell-definition";
 import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition";
 import { TerminalAutocompleteSuggestorDefinitionContract } from "./terminal-autocomplete";
 
@@ -14,8 +13,6 @@ export interface FeatureDefinition<TActionName = string> {
   readonly id: string;
   /** Schema steps, applied on startup in list order. */
   readonly migrations?: ReadonlyArray<DatabaseMigrationContract>;
-  /** Supported shells with their path adapters and integration files. */
-  readonly shells?: ReadonlyArray<ShellDefinitionContract>;
   /** Side-menu entries with panel component and lifecycle. */
   readonly sideMenu?: ReadonlyArray<SideMenuFeatureDefinitionContract<TActionName>>;
   /** Zod schema extension and defaults for the configuration reader. */

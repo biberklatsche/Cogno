@@ -1,6 +1,5 @@
 import { autocompleteFeature } from "@cogno/features/autocomplete/autocomplete.feature";
 import { featureSettingsFeature } from "@cogno/features/feature-settings-extension";
-import { shellFeature } from "@cogno/features/shell/shell-definitions";
 import { aiChatFeature } from "@cogno/features/side-menu/ai/ai-chat.feature-definition";
 import { codingAgentsFeature } from "@cogno/features/side-menu/coding-agents/coding-agents.feature-definition";
 import { commandPaletteFeature } from "@cogno/features/side-menu/command-palette/command-palette.feature-definition";
@@ -14,7 +13,6 @@ import { ActionName } from "./action/action.models";
 
 /** Every feature of the application. Adding one means adding it here. */
 export const features: ReadonlyArray<FeatureDefinition<ActionName>> = [
-  shellFeature,
   autocompleteFeature,
   featureSettingsFeature,
   workspaceFeature,

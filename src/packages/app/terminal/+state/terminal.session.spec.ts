@@ -1,7 +1,7 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import type { ShellDefinitionContract } from "@cogno/shared/contributions";
 import type { NotificationChannelContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
@@ -71,7 +71,7 @@ describe("TerminalSession", () => {
   const terminalId = "test-terminal-id";
 
   beforeEach(() => {
-    PathFactory.setDefinitions(featureShellPathAdapterDefinitions);
+    PathFactory.setDefinitions(shellPathAdapterDefinitions);
     configService = new ConfigServiceMock();
     configService.setConfig({
       font: { enable_ligatures: false },

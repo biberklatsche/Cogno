@@ -1,6 +1,6 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
-import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { Opener } from "@cogno/platform";
 import { Clipboard } from "@cogno/platform/clipboard";
 import { OS, type OsType } from "@cogno/platform/os";
@@ -21,7 +21,7 @@ describe("LinkHandler", () => {
   let _osPlatformSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
+    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
     openUrlSpy = vi.fn().mockResolvedValue(undefined);
     openPathSpy = vi.fn().mockResolvedValue(undefined);
     opener = { openUrl: openUrlSpy, openPath: openPathSpy } as unknown as Opener;

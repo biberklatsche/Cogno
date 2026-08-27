@@ -3,7 +3,7 @@ import { ConfigService, ShellProfileEntry } from "@cogno/core/infrastructure/con
 import type { Config, ShellType } from "@cogno/core/infrastructure/config/models/config";
 import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import type { Observable } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getDestroyRef } from "../../../../__test__/test-factory";
@@ -46,7 +46,7 @@ class ConfigServiceMockForNotificationBadge extends ConfigService {
 
 describe("TerminalStateManager", () => {
   beforeEach(() => {
-    PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
+    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
   });
 
   it("should keep only the focused terminal state manager focused", () => {

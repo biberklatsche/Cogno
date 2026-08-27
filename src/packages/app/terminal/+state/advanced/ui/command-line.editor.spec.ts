@@ -1,4 +1,4 @@
-import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
+import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
 import { Clipboard } from "@cogno/platform/clipboard";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";

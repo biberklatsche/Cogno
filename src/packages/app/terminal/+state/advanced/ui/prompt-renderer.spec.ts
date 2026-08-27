@@ -1,6 +1,6 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
-import { featureShellPathAdapterDefinitions } from "@cogno/features";
+import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { Clipboard } from "@cogno/platform/clipboard";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -22,7 +22,7 @@ describe("PromptMarkerRenderer", () => {
   let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
 
   beforeEach(() => {
-    PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
+    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
     busMock = new AppBus();
     vi.spyOn(busMock, "publish");
     stateManager = new TerminalStateManager(busMock);

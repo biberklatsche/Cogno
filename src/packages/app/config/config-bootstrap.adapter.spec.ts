@@ -6,13 +6,13 @@ import type {
   ConfigService,
 } from "@cogno/core/infrastructure/config/config.service";
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
+import type { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
 import type { Opener } from "@cogno/platform/opener";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionFired } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigBootstrapAdapter } from "./config-bootstrap.adapter";
-import type { ShellConfigurator } from "./shell-configurator";
 
 /**
  * The adapter carries what `ConfigService` gave up when it moved to

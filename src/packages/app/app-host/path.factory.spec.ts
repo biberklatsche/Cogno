@@ -1,14 +1,12 @@
-import {
-  BashPathAdapter,
-  featureShellPathAdapterDefinitions,
-  PowerShellPathAdapter,
-  ZshPathAdapter,
-} from "@cogno/features";
+import { BashPathAdapter } from "@cogno/core/session/shells/bash/bash.path-adapter";
+import { PowerShellPathAdapter } from "@cogno/core/session/shells/powershell/powershell.path-adapter";
+import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { ZshPathAdapter } from "@cogno/core/session/shells/zsh/zsh.path-adapter";
 import { beforeAll, describe, expect, it } from "vitest";
 import { PathFactory } from "./path.factory";
 
 beforeAll(() => {
-  PathFactory.setDefinitions([...featureShellPathAdapterDefinitions]);
+  PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
 });
 
 describe("PathFactory", () => {

@@ -1,5 +1,5 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
+import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
 import { Clipboard } from "@cogno/platform/clipboard";
 import type { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
 import type { Terminal } from "@xterm/xterm";
