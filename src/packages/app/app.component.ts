@@ -37,6 +37,10 @@ import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-in
   styles: [
     `
             :host {
+                /* Read by header, main, the tab list and the window buttons.
+                   Without it every calc() using it is invalid, and main
+                   collapses to its content height. */
+                --header-height: 34px;
                 display: block;
                 height: 100vh;
                 width: 100vw;
