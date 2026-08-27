@@ -15,7 +15,9 @@ yarn-error.log
 .idea/
 .project
 .classpath
-.claude
+# .claude is tracked: it holds the architecture plans referenced by ARCHITECTURE.md.
+# Only the personal permission allowlist stays out.
+.claude/settings.local.json
 .codex
 .c9/
 *.launch
