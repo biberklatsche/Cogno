@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
-import { ConfigService } from "../../config/+state/config.service";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 

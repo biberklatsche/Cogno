@@ -1,11 +1,11 @@
 import { Inject, Injectable } from "@angular/core";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ConfigurationTransformer } from "@cogno/shared/contributions";
 import {
   ApplicationConfigurationContract,
   ApplicationConfigurationPort,
 } from "@cogno/shared/ports";
 import { combineLatest, map, merge, Observable, of, startWith } from "rxjs";
-import { ConfigService } from "../config/+state/config.service";
 
 @Injectable({ providedIn: "root" })
 export class ApplicationConfigurationPortAdapterService extends ApplicationConfigurationPort {

@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   AutocompleteProviderIssueContract,
   AutocompleteProviderIssueReporterContract,
@@ -8,7 +9,6 @@ import {
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { CommandRunner, Filesystem } from "@cogno/shared/ports";
 import { AppBus } from "../app-bus/app-bus";
-import { ConfigService } from "../config/+state/config.service";
 
 const AUTOCOMPLETE_PROVIDER_NOTIFICATION_THROTTLE_MS = 10_000;
 const DEFAULT_AUTOCOMPLETE_PROVIDER_TIMEOUT_MS = 160;

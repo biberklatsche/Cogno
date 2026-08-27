@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
-import { ErrorReporter } from "@cogno/app/common/error/error-reporter";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseAccess } from "@cogno/platform";
 import { Path } from "@cogno/platform/path";
 import { IPathAdapter } from "@cogno/shared/domain";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
-import { ConfigService } from "../../../../config/+state/config.service";
 import { ShellContext } from "../model/models";
 import { CommandPattern } from "./command-pattern.models";
 import {

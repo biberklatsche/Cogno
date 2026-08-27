@@ -1,10 +1,18 @@
 #!/usr/bin/env node
 // Migration guard (ARCHITECTURE.md 2.1, transition rules).
 //
-// While src/packages/app/ still exists, it may only shrink, and the frozen
-// alias @cogno/app may only lose consumers. This script counts both and
-// compares them with .architecture-baseline.json. It fails when a number
-// grows and updates the baseline when a number falls.
+// Two guarantees while the rebuild runs:
+//
+// 1. src/packages/app/ may only shrink, and the frozen alias @cogno/app may
+//    only lose consumers. Both are counted and compared with
+//    .architecture-baseline.json.
+// 2. Scaffolding put up for one step gets torn down again. Anything that only
+//    exists to bridge the migration carries a marker
+//
+//      // MIGRATION-TEMP(step 19): reason
+//
+//    naming the step that removes it. Once that step is done - baseline
+//    currentStep has reached it - the marker is an error until it is gone.
 //
 // Deleted in migration step 29 together with app/ and the alias.
 
@@ -32,20 +40,46 @@ function sourceFiles(dir) {
   return found;
 }
 
+const allSources = sourceFiles(sourceRoot);
 const legacyFiles = sourceFiles(legacyRoot);
-const legacyAliasImports = sourceFiles(sourceRoot).filter((file) =>
+const legacyAliasImports = allSources.filter((file) =>
   /from\s+["']@cogno\/app(?:["'/])/.test(readFileSync(file, "utf8")),
 ).length;
 
 const current = { legacyFiles: legacyFiles.length, legacyAliasImports };
 
 if (!existsSync(baselineFile)) {
-  writeFileSync(baselineFile, `${JSON.stringify(current, null, 2)}\n`);
+  writeFileSync(baselineFile, `${JSON.stringify({ currentStep: 0, ...current }, null, 2)}\n`);
   console.log("architecture-guard: baseline written", current);
   process.exit(0);
 }
 
 const baseline = JSON.parse(readFileSync(baselineFile, "utf8"));
+const currentStep = baseline.currentStep ?? 0;
+
+// --- 2. scaffolding is torn down on time ---------------------------------
+const markerPattern = /MIGRATION-TEMP\(step (\d+)\)/g;
+const overdue = [];
+for (const file of [...allSources, ...sourceFiles(join(repoRoot, "scripts"))]) {
+  const text = readFileSync(file, "utf8");
+  for (const [, step] of text.matchAll(markerPattern)) {
+    if (Number(step) <= currentStep) {
+      overdue.push(`${relative(repoRoot, file)} -> step ${step}`);
+    }
+  }
+}
+if (overdue.length > 0) {
+  console.error(
+    `architecture-guard: migration step ${currentStep} is done, so this scaffolding must be gone.`,
+  );
+  console.error("");
+  for (const entry of overdue) console.error(`  ${entry}`);
+  console.error("");
+  console.error("Remove it, or move the marker to the step that really removes it.");
+  process.exit(1);
+}
+
+// --- 1. app/ only shrinks ------------------------------------------------
 const grown = Object.keys(current).filter((key) => current[key] > (baseline[key] ?? 0));
 
 if (grown.length > 0) {
@@ -63,11 +97,11 @@ if (grown.length > 0) {
 
 const shrunk = Object.keys(current).filter((key) => current[key] < (baseline[key] ?? 0));
 if (shrunk.length > 0) {
-  writeFileSync(baselineFile, `${JSON.stringify(current, null, 2)}\n`);
+  writeFileSync(baselineFile, `${JSON.stringify({ ...baseline, ...current }, null, 2)}\n`);
   console.log(
     "architecture-guard: baseline lowered",
     shrunk.map((key) => `${key} ${baseline[key]} -> ${current[key]}`).join(", "),
   );
 } else {
-  console.log("architecture-guard: unchanged", current);
+  console.log(`architecture-guard: step ${currentStep}, unchanged`, current);
 }

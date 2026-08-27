@@ -1,7 +1,7 @@
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionFired } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
-import { ConfigService } from "../../config/+state/config.service";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { AppMenuService } from "./app-menu.service";
 

@@ -1,24 +1,18 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { CliConfigOverrides } from "@cogno/platform/cli-config-overrides";
 import { DefaultConfig } from "@cogno/platform/default-config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
-import { Opener } from "@cogno/platform/opener";
 import { Path } from "@cogno/platform/path";
-import { BehaviorSubject, filter, Observable, Subscription } from "rxjs";
-import { ActionFired } from "../../action/action.models";
-import { AppBus } from "../../app-bus/app-bus";
-import { Environment } from "../../common/environment/environment";
-import { Hash } from "../../common/hash/hash";
-import { Config } from "../+models/config";
-import { PromptSegment } from "../+models/prompt-config";
-import { ShellProfile } from "../+models/shell-config";
-import { ShellConfigurator } from "../shell-configurator";
-import { ShellIntegrationWriter } from "../shell-integration.writer";
-import { ConfigReader } from "./config.reader";
+import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
+import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
+import { Environment } from "../environment/environment";
+import { ConfigDiagnostic, ConfigReader } from "./config.reader";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
+import { Config } from "./models/config";
+import { PromptSegment } from "./models/prompt-config";
+import { ShellProfile } from "./models/shell-config";
 
 export interface ShellProfileEntry {
   readonly name: string;
@@ -26,9 +20,40 @@ export interface ShellProfileEntry {
   readonly isDefault: boolean;
 }
 
+/**
+ * What the configuration needs from layers it must not know about.
+ *
+ * The reader knows the file, the schema and the watch; it knows nothing about
+ * shells, actions or notifications. Whoever composes the application fills
+ * these in (ARCHITECTURE.md 2.1: infrastructure knows neither a session nor
+ * the layout).
+ */
+export interface ConfigLoadOptions {
+  /** Zod extensions the features contribute; the schema is built from them. */
+  readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
+  /**
+   * Fills in values that have to exist before the file is written - today the
+   * shell profiles of the first start. Returns true when it changed the
+   * config; then the file is written and read again.
+   */
+  readonly completeDefaults?: (config: Config) => Promise<boolean>;
+  /** Runs after the config was read and before the file watch starts. */
+  readonly beforeWatch?: (config: Config) => Promise<void>;
+}
+
 export abstract class ConfigService {
   abstract get config(): Config;
   abstract get config$(): Observable<Config>;
+
+  /** Diagnostics of the last load; empty when the file is clean. */
+  abstract get diagnostics$(): Observable<ReadonlyArray<ConfigDiagnostic>>;
+  /** Emits every time a config was loaded, including reloads. */
+  abstract get loaded$(): Observable<Config>;
+
+  /** Reads the file, validates it and starts watching when enabled. */
+  abstract load(options: ConfigLoadOptions): Promise<void>;
+  /** Reads again with the options of the last `load`. */
+  abstract reload(): Promise<void>;
 
   /**
    * Returns the shell config for a given profile name.
@@ -44,8 +69,14 @@ export abstract class ConfigService {
 @Injectable()
 export class RealConfigService extends ConfigService {
   private _config = new BehaviorSubject<Config | undefined>(undefined);
+  private _diagnostics = new BehaviorSubject<ReadonlyArray<ConfigDiagnostic>>([]);
+  private _loaded = new Subject<Config>();
   private _unwatch: Subscription | undefined;
-  private lastDiagnosticsHash?: number;
+  private _options: ConfigLoadOptions | undefined;
+
+  constructor(private destroy: DestroyRef) {
+    super();
+  }
 
   get config(): Config {
     if (!this._config.value) {
@@ -56,6 +87,14 @@ export class RealConfigService extends ConfigService {
 
   get config$(): Observable<Config> {
     return this._config.pipe(filter(Boolean));
+  }
+
+  get diagnostics$(): Observable<ReadonlyArray<ConfigDiagnostic>> {
+    return this._diagnostics.asObservable();
+  }
+
+  get loaded$(): Observable<Config> {
+    return this._loaded.asObservable();
   }
 
   /**
@@ -152,41 +191,16 @@ export class RealConfigService extends ConfigService {
     return segments;
   }
 
-  constructor(
-    private appBus: AppBus,
-    private destroy: DestroyRef,
-    private shells: ShellConfigurator,
-    private wiringService: AppWiringService,
-    private opener: Opener,
-  ) {
-    super();
+  async load(options: ConfigLoadOptions): Promise<void> {
+    this._options = options;
+    await this.read();
+  }
 
-    this.appBus
-      .onceType$("InitConfigCommand")
-      .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(async () => {
-        await this.loadConfig();
-      });
-
-    this.appBus.on$(ActionFired.listener()).subscribe(async (event) => {
-      if (event.payload === "open_config") {
-        await this.opener.openPath(Environment.configFilePath());
-      }
-      if (event.payload === "open_documentation") {
-        await this.opener.openUrl("https://cogno.rocks/docs/getting-started/");
-      }
-    });
-
-    this.appBus.on$(ActionFired.listener()).subscribe(async (event) => {
-      if (event.payload === "load_config") {
-        await this.loadConfig();
-        this.appBus.publish({
-          type: "Notification",
-          path: ["notification"],
-          payload: { header: "System", body: "Config loaded" },
-        });
-      }
-    });
+  async reload(): Promise<void> {
+    if (!this._options) {
+      throw new Error("Config was never loaded!");
+    }
+    await this.read();
   }
 
   private async watch() {
@@ -196,19 +210,17 @@ export class RealConfigService extends ConfigService {
     this._unwatch = Fs.watchChanges$(path, { delayMs: 1000 })
       .pipe(takeUntilDestroyed(this.destroy))
       .subscribe(async () => {
-        await this.loadConfig();
-        this.appBus.publish({
-          type: "Notification",
-          path: ["notification"],
-          payload: { header: "System", body: "Config loaded" },
-        });
+        await this.read();
       });
   }
 
-  private async loadConfig() {
+  private async read() {
     this._unwatch?.unsubscribe();
-    const settingsExtensions = this.wiringService.getSettingsExtensions();
-    const shellSupportDefinitions = this.wiringService.getShellSupportDefinitions();
+    const options = this._options;
+    if (!options) {
+      throw new Error("Config was never loaded!");
+    }
+    const settingsExtensions = options.settingsExtensions;
 
     const configDir = Environment.configDir();
     if (!(await Fs.exists(configDir))) {
@@ -248,57 +260,26 @@ export class RealConfigService extends ConfigService {
         "",
         settingsExtensions,
       );
-      await this.shells.apply(userConfig, shellSupportDefinitions);
+      await options.completeDefaults?.(userConfig);
       await writeConfig(userConfig);
     }
 
     let { config, diagnostics } = await readConfig();
-    if (Object.keys(config.shell?.profiles ?? {}).length === 0) {
-      await this.shells.apply(config, shellSupportDefinitions);
+    if (await options.completeDefaults?.(config)) {
       await writeConfig(config);
       ({ config, diagnostics } = await readConfig());
     }
 
-    // Ensure shell integration scripts are installed
-    await ShellIntegrationWriter.ensure(shellSupportDefinitions);
+    await options.beforeWatch?.(config);
 
     if (config.enable_watch_config) {
       await this.watch();
     }
 
     this._config.next(config);
-    this.appBus.publish({ type: "ConfigLoaded", path: ["app", "settings"] });
+    this._loaded.next(config);
     Logger.info("Config loaded...");
-
-    if (diagnostics.length > 0) {
-      const diagnosticsHash = Hash.create(JSON.stringify(diagnostics));
-      if (this.lastDiagnosticsHash === diagnosticsHash) {
-        return;
-      }
-      this.lastDiagnosticsHash = diagnosticsHash;
-      const errors = diagnostics.filter((d) => d.level === "error");
-      const warnings = diagnostics.filter((d) => d.level === "warning");
-      const header = errors.length > 0 ? "Config errors" : "Config warnings";
-      const lines: string[] = [];
-      if (errors.length > 0) lines.push(`Errors: ${errors.length}`);
-      if (warnings.length > 0) lines.push(`Warnings: ${warnings.length}`);
-      const detailLines = diagnostics.slice(0, 6).map((d) => `- ${d.message}`);
-      if (diagnostics.length > 6) {
-        detailLines.push(`- ...and ${diagnostics.length - 6} more`);
-      }
-      const body = [...lines, ...detailLines].join("\n");
-      this.appBus.publish({
-        type: "Notification",
-        path: ["notification"],
-        payload: {
-          header,
-          body,
-          type: errors.length > 0 ? "error" : "warning",
-        },
-      });
-    } else {
-      this.lastDiagnosticsHash = undefined;
-    }
+    this._diagnostics.next(diagnostics);
   }
 
   private async applyCliSetOverrides(userConfigString: string): Promise<string> {

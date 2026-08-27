@@ -1,3 +1,4 @@
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { posixInsertSanitizer } from "@cogno/features/shell/common/posix-insert-sanitizer";
 import { Clipboard } from "@cogno/platform/clipboard";
 import type { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
@@ -5,7 +6,6 @@ import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import type { ConfigService } from "../../../config/+state/config.service";
 import type { IPty } from "../pty/pty";
 import type { TerminalStateManager } from "../state";
 import { ClipboardHandler } from "./clipboard.handler";

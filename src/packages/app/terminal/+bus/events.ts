@@ -1,6 +1,6 @@
+import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { TerminalId } from "@cogno/shared/ports";
 import { MessageBase } from "../../app-bus/app-bus";
-import { ShellType } from "../../config/+models/config";
 
 export type TerminalTitle = {
   oscCode: 0 | 2;

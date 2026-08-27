@@ -1,8 +1,8 @@
+import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { Environment } from "@cogno/core/infrastructure/environment/environment";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { PtyChunkContract, PtySpawnHandleContract, PtyTransport } from "@cogno/platform";
 import { IDisposable } from "@cogno/shared/support";
-import { Environment } from "../../../common/environment/environment";
-import { ErrorReporter } from "../../../common/error/error-reporter";
-import { ShellProfile } from "../../../config/+models/shell-config";
 import { TerminalDimensions } from "../handler/resize.handler";
 
 export type PtyChunk = PtyChunkContract;

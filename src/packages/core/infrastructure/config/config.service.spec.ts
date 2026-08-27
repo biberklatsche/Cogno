@@ -1,34 +1,15 @@
 import type { DestroyRef } from "@angular/core";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import { Opener } from "@cogno/platform";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../../app-bus/app-bus";
-import { Config } from "../+models/config";
-import { ShellConfigurator } from "../shell-configurator";
 import { RealConfigService } from "./config.service";
+import { Config } from "./models/config";
 
 function createService(config?: Partial<Config>): RealConfigService {
-  const appBus = new AppBus();
   const destroyRef = {
     onDestroy: vi.fn(),
   } as unknown as DestroyRef;
-  const shellConfigurator = {
-    apply: vi.fn(),
-  } as unknown as ShellConfigurator;
-  const appWiringService = {
-    getSettingsExtensions: vi.fn().mockReturnValue([]),
-    getShellSupportDefinitions: vi.fn().mockReturnValue([]),
-  } as unknown as AppWiringService;
 
-  const opener = { openPath: vi.fn(), openUrl: vi.fn() } as unknown as Opener;
-  const service = new RealConfigService(
-    appBus,
-    destroyRef,
-    shellConfigurator,
-    appWiringService,
-    opener,
-  );
+  const service = new RealConfigService(destroyRef);
   if (config) {
     (service as unknown as { _config: BehaviorSubject<Config | undefined> })._config.next(
       config as Config,

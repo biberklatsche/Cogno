@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   ActionContextContract,
   ActionDefinitionContract,
@@ -10,7 +11,6 @@ import { filter, map, Observable, share, tap } from "rxjs";
 import { ActionFired } from "../action/action.models";
 import { coreActionNames } from "../action/core-action-names";
 import { AppBus } from "../app-bus/app-bus";
-import { ConfigService } from "../config/+state/config.service";
 import { KeybindService } from "../keybinding/keybind.service";
 
 @Injectable({ providedIn: "root" })

@@ -9,9 +9,9 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { TerminalId } from "@cogno/shared/ports";
-import { ShellProfile } from "../../config/+models/shell-config";
-import { ConfigService } from "../../config/+state/config.service";
 import { Pane } from "../+model/model";
 import { GridListService } from "../+state/grid-list.service";
 import { TerminalComponentFactory } from "../+state/terminal-component.factory";

@@ -1,3 +1,4 @@
+import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { OS } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
@@ -7,7 +8,6 @@ import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
 import { BehaviorSubject, Observable } from "rxjs";
-import { Config } from "../../../config/+models/config";
 import {
   IFitHandler,
   ISearchHandler,

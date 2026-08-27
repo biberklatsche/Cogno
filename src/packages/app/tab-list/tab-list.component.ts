@@ -12,6 +12,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { TabId } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
@@ -28,7 +29,6 @@ import { ColorName } from "../common/color/color";
 import { ColorSelectComponent } from "../common/color/color-select.component";
 import { IdCreator } from "../common/id-creator/id-creator";
 import { StartEllipsisDirective } from "../common/text/start-ellipsis.directive";
-import { ShellType } from "../config/+models/config";
 import { ActionKeybindingPipe } from "../keybinding/pipe/keybinding.pipe";
 import { AppMenuButtonComponent } from "../menu/app-menu/app-menu-button.component";
 import { Tab } from "./+model/tab";

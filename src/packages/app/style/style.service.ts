@@ -1,11 +1,11 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Path } from "@cogno/platform/path";
 import { Color } from "../common/color/color";
-import { Config } from "../config/+models/config";
-import { ConfigService } from "../config/+state/config.service";
 
 @Injectable({
   providedIn: "root",

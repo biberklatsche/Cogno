@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Logger } from "@cogno/platform/logger";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 import { ActionFired } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
-import { ErrorReporter } from "../common/error/error-reporter";
 import { TerminalBusyStateService } from "../terminal/terminal-busy-state.service";
 
 @Injectable({

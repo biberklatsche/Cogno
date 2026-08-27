@@ -1,7 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/app/app-bus/app-bus";
-import { ConfigService } from "@cogno/app/config/+state/config.service";
-import { Logger } from "@cogno/platform/logger";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   buildLogMessage,
   ErrorReporter,
@@ -9,7 +8,8 @@ import {
   ExceptionReport,
   formatUnknownError,
   WarningReport,
-} from "./error-reporter";
+} from "@cogno/core/infrastructure/error/error-reporter";
+import { Logger } from "@cogno/platform/logger";
 
 const DEDUPLICATION_WINDOW_MS = 1000;
 const MAX_NOTIFICATION_BODY_LENGTH = 2000;

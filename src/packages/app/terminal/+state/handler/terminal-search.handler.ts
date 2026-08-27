@@ -1,10 +1,10 @@
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { ISearchOptions, SearchAddon } from "@xterm/addon-search";
 import { IDecoration, Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { ConfigService } from "../../../config/+state/config.service";
 import {
   TerminalSearchLineMatch,
   TerminalSearchLineResult,

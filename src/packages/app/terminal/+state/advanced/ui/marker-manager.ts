@@ -1,8 +1,8 @@
+import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { IDecoration, IMarker, Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { PromptSegment } from "../../../../config/+models/prompt-config";
 import { TerminalStateManager } from "../../state";
 import { CommandBlockResolver } from "./command-block-resolver";
 import { PromptMarkerRegistry } from "./prompt-marker.registry";

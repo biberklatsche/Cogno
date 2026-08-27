@@ -1,4 +1,4 @@
-import { Config, ConfigSchema } from "../+models/config";
+import { Config, ConfigSchema } from "./models/config";
 
 interface DotStringOptions {
   readonly defaultSettings?: Config;

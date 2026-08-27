@@ -1,11 +1,11 @@
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Shells } from "@cogno/platform/shells";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ErrorReporter } from "../common/error/error-reporter";
 import { ShellIntegrationWriter } from "./shell-integration.writer";
 
-vi.mock("../common/environment/environment", () => ({
+vi.mock("@cogno/core/infrastructure/environment/environment", () => ({
   Environment: {
     configDir: vi.fn(() => "/tmp/cogno"),
   },

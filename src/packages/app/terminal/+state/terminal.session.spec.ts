@@ -1,5 +1,6 @@
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
+import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import type { ShellDefinitionContract } from "@cogno/shared/contributions";
 import type { NotificationChannelContract } from "@cogno/shared/domain";
@@ -13,7 +14,6 @@ import { getAppBus, getKeybindServiceMock, getStateManager } from "../../../__te
 import type { AppBus } from "../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
-import type { ShellProfile } from "../../config/+models/shell-config";
 import { NotificationChannelsPortAdapterService } from "../../notification/+state/notification-channels-port.adapter.service";
 import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import { Renderer } from "./renderer/renderer";

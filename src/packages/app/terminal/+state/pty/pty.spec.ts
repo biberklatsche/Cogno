@@ -1,7 +1,7 @@
+import type { ShellConfig } from "@cogno/core/infrastructure/config/models/config";
 import type { PtyOutputListenerContract, PtyTransport } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
-import type { ShellConfig } from "../../../config/+models/config";
 import { Pty } from "./pty";
 
 vi.mock("@cogno/platform/logger", () => ({
@@ -10,11 +10,11 @@ vi.mock("@cogno/platform/logger", () => ({
   },
 }));
 
-vi.mock("../../../common/environment/environment", () => ({
+vi.mock("@cogno/core/infrastructure/environment/environment", () => ({
   Environment: { isDevMode: () => false },
 }));
 
-vi.mock("../../../common/error/error-reporter", () => ({
+vi.mock("@cogno/core/infrastructure/error/error-reporter", () => ({
   ErrorReporter: { reportException: vi.fn() },
 }));
 
@@ -153,7 +153,7 @@ describe("Pty", () => {
   });
 
   it("should report chunks the transport gave up as lost", async () => {
-    const { ErrorReporter } = await import("../../../common/error/error-reporter");
+    const { ErrorReporter } = await import("@cogno/core/infrastructure/error/error-reporter");
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
 
     outputListener().onChunksLost(3, 5);

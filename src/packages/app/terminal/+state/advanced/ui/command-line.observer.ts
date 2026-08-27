@@ -1,10 +1,10 @@
+import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Terminal } from "@xterm/xterm";
 import { debounceTime, Subject } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { ErrorReporter } from "../../../../common/error/error-reporter";
-import { PromptSegment } from "../../../../config/+models/prompt-config";
 import { ITerminalHandler } from "../../handler/handler";
 import { TerminalStateManager } from "../../state";
 import { ExecutedCommand } from "../history/terminal-command-history.store";

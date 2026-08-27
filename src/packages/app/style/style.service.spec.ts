@@ -1,10 +1,10 @@
+import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Path } from "@cogno/platform/path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../__test__/mocks/config-service.mock";
 import { getDestroyRef } from "../../__test__/test-factory";
-import type { Config } from "../config/+models/config";
 import { StyleService } from "./style.service";
 
 vi.mock("@cogno/platform/fs", () => ({

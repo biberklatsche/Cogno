@@ -32,8 +32,7 @@ import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
 import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
-import { GlobalErrorHandler } from "@cogno/app/common/error/global-error.handler";
-import { ConfigService, RealConfigService } from "@cogno/app/config/+state/config.service";
+import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
@@ -43,6 +42,8 @@ import { NotificationDispatchService } from "@cogno/app/notification/+state/noti
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { StyleService } from "@cogno/app/style/style.service";
 import { WindowService } from "@cogno/app/window/window.service";
+import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
@@ -115,6 +116,10 @@ export const appConfig: ApplicationConfig = {
       void Logger.initialize();
       inject(StyleService);
       inject(AppWiringService);
+      // MIGRATION-TEMP(step 19): keeps the config's actions, notifications and
+      // shell bootstrap alive until they reach their own layer. Must exist
+      // before WindowService publishes InitConfigCommand.
+      inject(ConfigBootstrapAdapter);
       inject(ErrorReportingRuntimeService).initialize();
 
       const injector = inject(Injector);

@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/shared/domain";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { BehaviorSubject, Observable } from "rxjs";
@@ -7,7 +8,6 @@ import { ActionFired, ActionFiredEvent, ActionName } from "../../action/action.m
 import { AppBus } from "../../app-bus/app-bus";
 import { ColorName } from "../../common/color/color";
 import { IdCreator } from "../../common/id-creator/id-creator";
-import { ConfigService } from "../../config/+state/config.service";
 import { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";

@@ -1,9 +1,9 @@
+import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
-import { ShellProfile } from "../../../config/+models/shell-config";
 import { IPty, PtyChunk } from "../pty/pty";
 import { ITerminalHandler } from "./handler";
 

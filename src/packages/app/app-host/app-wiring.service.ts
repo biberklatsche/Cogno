@@ -3,6 +3,7 @@ import { ActionName } from "@cogno/app/action/action.models";
 import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
 import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
 import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
+import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import {
   ApplicationSettingsExtensionContract,
   FeatureDefinition,
@@ -12,7 +13,6 @@ import {
 } from "@cogno/shared/contributions";
 import { NotificationChannelContract } from "@cogno/shared/domain";
 import { additionalNotificationChannelsToken, featuresToken } from "./app-host.tokens";
-import { DatabaseMigrationService } from "./database-migration.service";
 import { PathFactory } from "./path.factory";
 
 /**

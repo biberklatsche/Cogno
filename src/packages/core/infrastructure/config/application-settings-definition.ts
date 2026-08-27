@@ -3,7 +3,7 @@ import {
   ApplicationSettingsSectionDefinitionContract,
 } from "@cogno/shared/contributions";
 import { ZodRawShape, z } from "zod";
-import { baseConfigSchemaShape, baseSettingsSections } from "./+models/config";
+import { baseConfigSchemaShape, baseSettingsSections } from "./models/config";
 
 export interface ApplicationSettingsDefinition {
   readonly defaults: Readonly<Record<string, unknown>>;

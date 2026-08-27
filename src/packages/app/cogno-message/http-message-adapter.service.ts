@@ -1,9 +1,9 @@
 import { DestroyRef, Injectable } from "@angular/core";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { HTTP_SERVER_DEFAULTS } from "@cogno/core/infrastructure/config/models/config";
 import { CognoMessageListener } from "@cogno/platform/cogno-message";
 import { HttpServer } from "@cogno/platform/http-server";
 import { take } from "rxjs";
-import { HTTP_SERVER_DEFAULTS } from "../config/+models/config";
-import { ConfigService } from "../config/+state/config.service";
 import { CognoMessageDispatcher } from "./cogno-message-dispatcher.service";
 
 @Injectable({

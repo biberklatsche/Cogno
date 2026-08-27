@@ -1,6 +1,6 @@
+import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import { Terminal } from "@xterm/xterm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Config } from "../../../config/+models/config";
 import { Renderer, WebglContextPool } from "./renderer";
 
 let webglContextLossListener: (() => void) | undefined;

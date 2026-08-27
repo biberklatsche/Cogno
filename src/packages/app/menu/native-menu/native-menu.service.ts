@@ -1,13 +1,13 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OS } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
-import { Config, FeatureMode } from "../../config/+models/config";
-import { ConfigService } from "../../config/+state/config.service";
 import { KeybindService } from "../../keybinding/keybind.service";
 
 @Injectable({

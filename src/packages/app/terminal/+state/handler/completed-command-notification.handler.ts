@@ -1,3 +1,4 @@
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
@@ -6,7 +7,6 @@ import {
 import { TerminalId } from "@cogno/shared/ports";
 import { timespan } from "@cogno/shared/support";
 import { AppBus } from "../../../app-bus/app-bus";
-import { ConfigService } from "../../../config/+state/config.service";
 import { ExecutedCommand } from "../advanced/history/terminal-command-history.store";
 
 export const LONG_RUNNING_COMMAND_NOTIFICATION_ID = "long_running_command";

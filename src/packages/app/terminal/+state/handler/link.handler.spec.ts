@@ -1,4 +1,5 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
+import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import { Opener } from "@cogno/platform";
 import { Clipboard } from "@cogno/platform/clipboard";
@@ -6,7 +7,6 @@ import { OS, type OsType } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import type { ShellType } from "../../../config/+models/config";
 import { TerminalStateManager } from "../state";
 import { LinkHandler } from "./link.handler";
 

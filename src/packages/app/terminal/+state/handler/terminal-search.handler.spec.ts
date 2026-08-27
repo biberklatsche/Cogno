@@ -1,8 +1,8 @@
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import type { ConfigService } from "../../../config/+state/config.service";
 import { TerminalSearchHandler } from "./terminal-search.handler";
 
 describe("TerminalSearchHandler", () => {

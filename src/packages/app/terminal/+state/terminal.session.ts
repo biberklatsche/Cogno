@@ -1,5 +1,7 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { Opener, PtyTransport } from "@cogno/platform";
 import { ShellDefinitionContract } from "@cogno/shared/contributions";
@@ -23,8 +25,6 @@ import { ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
-import { ShellProfile } from "../../config/+models/shell-config";
-import { ConfigService } from "../../config/+state/config.service";
 import {
   PaneMaximizedChangedEvent,
   VisibleTerminalsChangedEvent,

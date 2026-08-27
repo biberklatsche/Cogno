@@ -11,10 +11,10 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
-import { ShellProfile } from "../config/+models/shell-config";
 import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 import { TerminalAutocompleteService } from "./+state/advanced/autocomplete/terminal-autocomplete.service";
 import { TerminalComposerComponent } from "./+state/advanced/composer/terminal-composer.component";

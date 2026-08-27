@@ -1,4 +1,7 @@
-import { ConfigService, type ShellProfileEntry } from "@cogno/app/config/+state/config.service";
+import {
+  ConfigService,
+  type ShellProfileEntry,
+} from "@cogno/core/infrastructure/config/config.service";
 import { BehaviorSubject, type Observable } from "rxjs";
 import { filter } from "rxjs/operators";
 import type { Config } from "../../app/config/+models/config";

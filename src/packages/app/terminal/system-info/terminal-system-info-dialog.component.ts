@@ -9,11 +9,11 @@ import {
   signal,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessDetails, ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
 import { TerminalId } from "@cogno/shared/ports";
 import { DIALOG_DATA } from "@cogno/shared/ui";
 import { Observable } from "rxjs";
-import { ErrorReporter } from "../../common/error/error-reporter";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { Command, TerminalState } from "../+state/state";
 

@@ -1,13 +1,13 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
+import { ConfigService, ShellProfileEntry } from "@cogno/core/infrastructure/config/config.service";
+import type { Config, ShellType } from "@cogno/core/infrastructure/config/models/config";
+import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
+import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { featureShellPathAdapterDefinitions } from "@cogno/features";
 import type { Observable } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { getDestroyRef } from "../../../../__test__/test-factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import type { Config, ShellType } from "../../../config/+models/config";
-import type { PromptSegment } from "../../../config/+models/prompt-config";
-import type { ShellProfile } from "../../../config/+models/shell-config";
-import { ConfigService, ShellProfileEntry } from "../../../config/+state/config.service";
 import { TerminalStateManager } from "./terminal-state.manager";
 
 class ConfigServiceMockForNotificationBadge extends ConfigService {

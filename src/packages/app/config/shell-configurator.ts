@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
+import { Config, ShellType } from "@cogno/core/infrastructure/config/models/config";
+import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { OS, OsType } from "@cogno/platform/os";
 import { Shell, Shells } from "@cogno/platform/shells";
 import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
-import { Config, ShellType } from "./+models/config";
-import { ShellProfile } from "./+models/shell-config";
 
 @Injectable({ providedIn: "root" })
 export class ShellConfigurator {

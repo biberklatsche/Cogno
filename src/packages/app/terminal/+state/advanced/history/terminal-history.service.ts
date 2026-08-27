@@ -1,9 +1,9 @@
 import { Injectable, OnDestroy } from "@angular/core";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { ConfigService } from "../../../../config/+state/config.service";
 import { TerminalState, TerminalStateManager } from "../../state";
 import {
   computeDropdownPanelPosition,

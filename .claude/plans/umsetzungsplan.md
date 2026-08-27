@@ -109,7 +109,7 @@ Schritte spät kommen, wenn die Regeln sich bewährt haben.
 
 ## Phase B — Fundament
 
-### Schritt 1: `core/infrastructure/` — Config, DB, Fehler, Pfade
+### Schritt 1: `core/infrastructure/` — Config, DB, Fehler, Pfade — **erledigt (2026-08-27)**
 
 **Voraussetzungen:** 0.
 
@@ -127,6 +127,29 @@ Schritte spät kommen, wenn die Regeln sich bewährt haben.
 `config/shell-configurator.ts` und `shell-integration.writer.ts` bleiben
 in `app/` bis Schritt 3 (sie gehören zu Shells).
 
+**Bei der Umsetzung entschieden (dünner Schnitt + Aufteilung):**
+
+- `ConfigService` wurde geteilt. Der Kern in `core/infrastructure/config/`
+  liest, validiert, überwacht und veröffentlicht `config$`, `diagnostics$`
+  und `loaded$`; er kennt weder Actions noch Shells noch Notifications.
+  Zwei optionale Callbacks in `load()` (`completeDefaults`, `beforeWatch`)
+  sind die Erweiterungspunkte — sie bleiben dauerhaft, nur ihr Aufrufer
+  wandert (Schritt 3, 22).
+- `app/config/config-bootstrap.adapter.ts` behält bis Schritt 19 das
+  Action-Abo, die drei Notifications und den Shell-Erststart; markiert mit
+  `MIGRATION-TEMP(step 19)`, mit eigener Spec (5 Tests), die das Verhalten
+  festnagelt.
+- Der App-Bus zieht **nicht** mit: `app-bus.ts` ist auf die konkrete
+  Nachrichten-Union getippt. Generisch machen heißt 72 Importstellen
+  anfassen; das passiert in Schritt 16, wenn `messages.ts` ohnehin zur
+  Workbench zieht. `error-reporting-runtime.service.ts` bleibt deshalb
+  ebenfalls in `app/`.
+- `style.service.ts` zieht in Schritt 2 nach, sobald `Color` in `shared/`
+  liegt.
+- Der Guard prüft zusätzlich `MIGRATION-TEMP(step N)`-Marker: sobald
+  `currentStep` in `.architecture-baseline.json` N erreicht, ist der Marker
+  ein Fehler. Damit kann kein Provisorium überleben.
+
 **Akzeptanzkriterien:**
 
 - Regel `infrastructure-knows-no-product-layer` grün: nichts unter
@@ -134,7 +157,7 @@ in `app/` bis Schritt 3 (sie gehören zu Shells).
   aus `config/` nach `app/` zeigt (z. B. `ShellProfile`-Typen aus Shells),
   wird vorher nach `shared/domain` gezogen oder in diesem Schritt als
   Typ-Import aufgelöst.
-- `app/` verliert ≥ 45 Dateien.
+- `app/` verliert 26 Quelldateien (260 → 234), `@cogno/app`-Importe 20 → 18.
 
 **Erlaubter Übergangszustand:** `app/` importiert `@cogno/core/infrastructure`
 (erlaubt: alt → neu). Migrationen laufen wie bisher.

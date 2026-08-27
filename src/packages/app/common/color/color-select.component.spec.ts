@@ -1,8 +1,8 @@
 import { Injector, runInInjectionContext } from "@angular/core";
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import { BehaviorSubject, firstValueFrom } from "rxjs";
 import { describe, expect, it, vi } from "vitest";
-import type { Config } from "../../config/+models/config";
-import type { ConfigService } from "../../config/+state/config.service";
 import { ColorSelectComponent } from "./color-select.component";
 
 describe("ColorSelectComponent", () => {

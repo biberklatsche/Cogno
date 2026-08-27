@@ -1,11 +1,11 @@
 import { OS, OsType } from "@cogno/platform/os";
 import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
-import { Config } from "../+models/config";
 import {
   ApplicationSettingsDefinition,
   createApplicationSettingsDefinition,
-} from "../application-settings-definition";
+} from "./application-settings-definition";
+import { Config } from "./models/config";
 
 export type ConfigDiagnostic = {
   level: "warning" | "error";
