@@ -5,9 +5,9 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { Opener } from "@cogno/platform/opener";
+import { Hash } from "@cogno/shared/support";
 import { ActionFired } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
-import { Hash } from "../common/hash/hash";
 import { ShellConfigurator } from "./shell-configurator";
 import { ShellIntegrationWriter } from "./shell-integration.writer";
 

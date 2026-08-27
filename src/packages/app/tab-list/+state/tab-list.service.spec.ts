@@ -1,3 +1,4 @@
+import { IdCreator } from "@cogno/shared/support";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import {
@@ -9,7 +10,6 @@ import {
 } from "../../../__test__/test-factory";
 import { ActionFired, type ActionFiredEvent } from "../../action/action.models";
 import type { AppBus } from "../../app-bus/app-bus";
-import { IdCreator } from "../../common/id-creator/id-creator";
 import type { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
 import type { KeybindService } from "../../keybinding/keybind.service";
 import type { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";

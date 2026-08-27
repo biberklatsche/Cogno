@@ -163,30 +163,56 @@ in `app/` bis Schritt 3 (sie gehören zu Shells).
 **Erlaubter Übergangszustand:** `app/` importiert `@cogno/core/infrastructure`
 (erlaubt: alt → neu). Migrationen laufen wie bisher.
 
-### Schritt 2: Reine Logik nach `shared/domain`
+### Schritt 2: Allgemeine Bausteine nach `shared/` — **erledigt (2026-08-27)**
 
 **Voraussetzungen:** 0.
 
-**Was:** Die ~1 500 Zeilen aus der Delta-Zeile: alles unter `app/common/`,
-das weder Angular noch RxJS importiert (`hash/`, `id-creator/`, `text/`,
-`time-ago/`, `timespan/`, `tree/`, `color/`), sowie reine Logik aus
-`app/terminal/+state/advanced/` (`command-tokenizer.ts`,
-`command-signature-builder.ts`, `command-token-classifier.ts`,
-`suggestion-collapser.ts`, `suggestion-highlighter.ts`,
-`autocomplete-context.parser.ts`, `token-match.ts`, `cogno-osc.parser.ts`,
-`session-capabilities.parser.ts`) und
-`features/side-menu/navigation/directional-navigation.engine.ts`
-(räumliche Listen-Navigation, 273 Zeilen, drei Konsumenten). Angular-UI
-aus `common/` (`busy-indicator/`, `checkbox/`, `drag-preview/`, `grid/`,
-`autofocus/`) und `directional-navigation.dom.ts` nach `shared/ui`.
+**Was:** Nach der Schärfung der `shared`-Definition (ZA 2.1: allgemein,
+frameworkfrei, nicht an einen Aufrufer gebunden, kein Adapter zwischen Core
+und Features) zieht nur um, was für sich allgemein ist:
+
+| von `app/common/` | nach |
+|---|---|
+| `hash/hash.ts` | `shared/support/hash/` |
+| `id-creator/id-creator.ts` | `shared/support/id/` |
+| `color/color.ts` | `shared/support/color/` |
+| `autofocus/autofocus.directive.ts` | `shared/ui/common/autofocus/` |
+| `text/start-ellipsis.directive.ts` | `shared/ui/common/text/` |
+| `time-ago/time-ago.pipe.ts` | `shared/ui/common/time-ago/` |
+| `tree/binary-tree.spec.ts` | `shared/domain/tree/` (Implementierung lag schon dort) |
+
+Dazu `app/style/style.service.ts` → `core/infrastructure/theme/` (in
+Schritt 1 aufgeschoben, weil es `Color` brauchte).
+
+**Nicht umgezogen und warum:**
+
+- Die Parser aus `app/terminal/+state/advanced/` (`cogno-osc.parser`,
+  `session-capabilities.parser`, `command-signature-builder`, `token-match`,
+  Tokenizer, Klassifizierer, Suggestion-Helfer). Der ursprüngliche Plan
+  wollte sie nach `shared/domain`; nach der geschärften Definition gehören
+  sie nicht dorthin: sie sind an genau einen Aufrufer gebunden (die Sitzung)
+  und werden von keinem Feature gebraucht. Sie ziehen mit ihrer Schicht um —
+  Schritt 12 (`core/session/model`, Dekoration) und Schritt 14
+  (`core/session/autocomplete`, `history`); die kommandobezogenen mit dem
+  Kommando-Modell in Schritt 6.
+- `common/busy-indicator/` hängt an `app-bus` und `grid-list` → Workbench,
+  Schritt 16. Der generische Teil liegt bereits in `shared/ui`.
+- `common/color/color-select.component.ts` liest `ConfigService` → Workbench,
+  Schritt 16 (`shared/` darf `core/` nicht importieren).
+- `common/terminal-activity/` ist sitzungsgebunden → Schritt 28.
+
+**Toter Code gefunden**, nicht in diesem Schritt entfernt (ZA Entscheidung 8
+hat dafür keinen eigenen Schritt): `common/checkbox/`, `common/grid/`,
+`common/timespan/` haben außer ihren eigenen Specs keinen Verbraucher;
+`common/drag-preview/` ist ein leeres Verzeichnis.
 
 **Akzeptanzkriterien:**
 
-- Regel `shared-domain-framework-free` grün für jede verschobene Datei.
-- Specs ziehen mit; keine Spec wird gelöscht.
+- Regel `t2-shared-domain-is-framework-free` grün für jede verschobene Datei.
+- Specs ziehen mit; keine Spec gelöscht (1139 Tests grün).
+- `app/` verliert 7 Quelldateien (234 → 227).
 
-**Erlaubter Übergangszustand:** keiner nötig — Umzug in eine bestehende
-Schicht.
+**Erlaubter Übergangszustand:** keiner nötig — Umzug in bestehende Schichten.
 
 ### Schritt 3: `features/shell/` → `core/session/shells/`
 

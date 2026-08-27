@@ -5,7 +5,7 @@ import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Path } from "@cogno/platform/path";
-import { Color } from "../common/color/color";
+import { Color } from "@cogno/shared/support";
 
 @Injectable({
   providedIn: "root",

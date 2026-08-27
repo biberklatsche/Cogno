@@ -1,4 +1,5 @@
 import type { TerminalConfig } from "@cogno/shared/domain";
+import { IdCreator } from "@cogno/shared/support";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
@@ -7,7 +8,6 @@ import {
   getTerminalComponentFactory,
 } from "../../../__test__/test-factory";
 import type { AppBus } from "../../app-bus/app-bus";
-import { IdCreator } from "../../common/id-creator/id-creator";
 import type { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
 import type { TerminalFocusedEvent } from "../../terminal/+state/handler/focus.handler";
 import type { TerminalTitleChangedEvent } from "../../terminal/+state/handler/terminal-title.handler";

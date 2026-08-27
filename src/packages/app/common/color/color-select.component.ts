@@ -2,9 +2,9 @@ import { CommonModule } from "@angular/common";
 import { Component, EventEmitter, input, Output } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Color } from "@cogno/core/infrastructure/config/models/config";
+import { ColorName } from "@cogno/shared/support";
 import { TooltipDirective } from "@cogno/shared/ui";
 import { map, Observable } from "rxjs";
-import { ColorName } from "./color";
 
 interface ColorItem {
   name: ColorName;

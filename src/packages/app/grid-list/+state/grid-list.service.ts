@@ -9,9 +9,9 @@ import {
   TabId,
 } from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
+import { IdCreator } from "@cogno/shared/support";
 import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
-import { IdCreator } from "../../common/id-creator/id-creator";
 import { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
 import { TerminalCwdChangedEvent, TerminalTitleChangedEvent } from "../../terminal/+bus/events";
 import { TerminalFocusedEvent } from "../../terminal/+state/handler/focus.handler";

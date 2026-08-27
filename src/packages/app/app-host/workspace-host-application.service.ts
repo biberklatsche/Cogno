@@ -9,10 +9,9 @@ import {
   WorkspaceState,
   WorkspaceStateUseCase,
 } from "@cogno/shared/domain/workspace";
+import { Color, IdCreator } from "@cogno/shared/support";
 import { merge } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
-import { Color } from "../common/color/color";
-import { IdCreator } from "../common/id-creator/id-creator";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
 import { TabListService } from "../tab-list/+state/tab-list.service";

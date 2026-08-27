@@ -9,9 +9,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { TooltipDirective } from "@cogno/shared/ui";
-import { StartEllipsisDirective } from "../../../../common/text/start-ellipsis.directive";
-import { TimeAgoPipe } from "../../../../common/time-ago/time-ago.pipe";
+import { StartEllipsisDirective, TimeAgoPipe, TooltipDirective } from "@cogno/shared/ui";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
 import { HistoryEntry, HistoryEntryOrigin, HistoryScope } from "./recent-history.types";
 import { TerminalHistoryService } from "./terminal-history.service";
