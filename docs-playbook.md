@@ -1,5 +1,12 @@
 # Cogno Docs Playbook
 
+> **Outdated during the architecture migration.** File paths and some
+> config keys in this playbook no longer match the code; pages for Git and
+> Coding Agents are missing. It is corrected in migration step 26
+> (`.claude/plans/umsetzungsplan.md`), when the action catalogue and the
+> settings schema become the generated source of the docs. Until then,
+> verify every path against the code before using it.
+
 This file contains precise instructions for an AI agent to generate the Cogno documentation.
 The agent reads this file, reads all listed source files, and writes the output markdown files.
 

@@ -18,6 +18,8 @@ export default defineConfig({
       "src/packages/platform/**/*.spec.ts",
       "src/packages/shared/**/*.spec.ts",
       "src/packages/features/**/*.spec.ts",
+      "src/packages/core/**/*.spec.ts",
+      "src/packages/bootstrap/**/*.spec.ts",
     ],
     exclude: [
       "src/packages/app/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
@@ -30,6 +32,8 @@ export default defineConfig({
         "src/packages/app/**/*.ts",
         "src/packages/shared/**/*.ts",
         "src/packages/features/**/*.ts",
+        "src/packages/core/**/*.ts",
+        "src/packages/bootstrap/**/*.ts",
       ],
       exclude: [
         "src/packages/app/_tauri/**",

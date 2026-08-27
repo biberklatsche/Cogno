@@ -29,12 +29,26 @@
 - DE: Diese OSC9-Regeln haben Vorrang vor Stil- oder Kuerzevorgaben.
 
 ## Angular DI rule
-- `inject()` is allowed in `src/packages/app/bootstrap/app.config.ts`.
+- `inject()` is allowed in `src/packages/bootstrap/app.config.ts` (and, until migration step 28, in `src/packages/app/bootstrap/app.config.ts`).
 - In all other files, do not use `inject()`.
 - Use constructor injection everywhere else to keep Vitest testing simple.
 
 ## Architecture rule
 - Keep the architecture clean. This is the top priority.
-- `ARCHITECTURE.md` is the single source of truth: four packages, `app -> features -> platform -> shared`, nothing imports `app`, only `platform` imports Tauri.
-- A feature that needs something from the app declares its own port (abstract class) next to the code that needs it; the app implements it. Ports move to `shared/ports` only when two or more features need them.
-- While the migration table in `ARCHITECTURE.md` still has open rows, the old package names (`core-api`, `app-host`, …) continue to exist; follow the target layout for new code and do not extend the old one.
+- `ARCHITECTURE.md` is the single source of truth. Layers and allowed imports:
+  `shared/` and `platform/` (foundation, no product knowledge), `core/` with
+  `infrastructure/`, `terminal/`, `command-log/`, `session/`, `workbench/`, `api/`
+  (the product, always on), `features/` (the product, switchable), `bootstrap/`
+  (composition root). Only `platform` imports Tauri. Features import `shared`,
+  `platform` and `core/api` — nothing else. The full import matrix is in
+  `ARCHITECTURE.md` section 2.1 and enforced by `pnpm lint:architecture`.
+- Aliases: `@cogno/shared`, `@cogno/platform`, `@cogno/core`, `@cogno/features`,
+  `@cogno/bootstrap`. `@cogno/app` is frozen legacy and must not gain new consumers.
+- Migration is in progress (`.claude/plans/umsetzungsplan.md`, steps 0-29). While
+  `src/packages/app/` still exists: nothing under `core/` or `bootstrap/` may import
+  `app/`, `app/` only shrinks, and every moved slice satisfies its final rules
+  immediately. Write new code in the target layout; do not extend `app/`.
+- Do not change the architecture on your own. If implementation reveals a
+  contradiction or a gap, stop and ask; never decide by assumption.
+- Build nothing on spec: no field, state, hook or abstraction without a consumer
+  in the change at hand. Keep it as simple as it has to be right now.
