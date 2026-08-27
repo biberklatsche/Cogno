@@ -16,6 +16,10 @@ entschieden — wer eine findet, ändert erst die Zielarchitektur.
   gebraucht" wird, wird später gebaut.
 - **Nicht komplizierter als jetzt nötig.** Die einfachste Lösung, die die
   Akzeptanzkriterien erfüllt und die Regeln einhält.
+- **Toter Code fliegt sofort raus.** Was in einem Schritt auffällt und
+  keinen Verbraucher hat, wird in diesem Schritt entfernt (ZA Entscheidung
+  8) — nicht in einem Aufräumschritt am Ende gesammelt. Vorher prüfen:
+  Selektoren, Pipe-Namen und Templates, nicht nur Importe.
 - **Ein Schritt = ein Commit.** Titel `arch(<nr>): <titel>`.
 - **Grün heißt:** `pnpm lint` (Code + `lint:architecture`), `pnpm test`,
   `pnpm build` laufen durch; die App startet, ein Terminal öffnet, ein
@@ -201,10 +205,11 @@ Schritt 1 aufgeschoben, weil es `Color` brauchte).
   Schritt 16 (`shared/` darf `core/` nicht importieren).
 - `common/terminal-activity/` ist sitzungsgebunden → Schritt 28.
 
-**Toter Code gefunden**, nicht in diesem Schritt entfernt (ZA Entscheidung 8
-hat dafür keinen eigenen Schritt): `common/checkbox/`, `common/grid/`,
-`common/timespan/` haben außer ihren eigenen Specs keinen Verbraucher;
-`common/drag-preview/` ist ein leeres Verzeichnis.
+**Toter Code entfernt:** `common/checkbox/` (kein `app-checkbox` in einem
+Template), `common/grid/` (kein `Grid.`-Aufruf), `common/timespan/` (keine
+`| timespan`-Verwendung) — je Implementierung plus Spec; `common/drag-preview/`
+war ein leeres Verzeichnis. Der generische Teil dieser Bausteine liegt
+ohnehin in `shared/ui`.
 
 **Akzeptanzkriterien:**
 
