@@ -1100,7 +1100,7 @@ fn create_line_editor_channel(
     let session_id = env.get("COGNO_SESSION_ID")?;
 
     let wants_fifo = shell_type == "ZSH";
-    let wants_trigger_file = shell_type == "Bash" || shell_type == "GitBash";
+    let wants_trigger_file = shell_type == "Bash";
     if !wants_fifo && !wants_trigger_file {
         return None;
     }

@@ -227,13 +227,16 @@ ohnehin in `shared/ui`.
 `core/session/shells/`; `app/config/shell-configurator.ts` und
 `shell-integration.writer.ts` dazu. `shellFeature` und Contribution-Punkt
 `shells?` in `FeatureDefinition` entfernen; `AppWiringService` liest die
-Shell-Liste direkt aus `core/session/shells/`. `Fish` und `GitBash` **bleiben vorerst** — anders als geplant: sie sind
-nicht tot, sondern halb verdrahtet. Ohne Shell-Definition bekommt ein
-solches Profil `shellDefinition = undefined` und läuft als schlichtes
-Terminal ohne Cogno-Integration; `shell-history-reader.ts` importiert
-außerdem ihre native History. Sie zu entfernen wäre eine Produktänderung
-(bestehende Profile mit `shell_type = GitBash` würden ungültig), keine
-Aufräumarbeit — das entscheidet der Nutzer.
+Shell-Liste direkt aus `core/session/shells/`. `Fish` und `GitBash` sind entfernt — auf Entscheidung des Nutzers, nachdem
+die Prüfung ergeben hatte, dass sie nicht tot, sondern halb verdrahtet
+waren: „entferne sie erstmal. wir fügen die shell typen später hinzu."
+Betroffen waren `ShellTypeEnum`, `ShellTypeContract`, der POSIX-Kontext,
+der History-Reader und auf der Rust-Seite die Git-Bash-Registry-Erkennung,
+die Fish-Erkennung in `/etc/shells`, die Git-Bash-Pfadumsetzung, die
+Integrations-Argumente und die shell-spezifische Umgebung. Die dadurch
+ungenutzte Abhängigkeit `winreg` ist aus beiden `Cargo.toml` verschwunden.
+Risiko für bestehende Configs: gering — `shell-configurator` filtert seit
+je auf Shells mit Definition und hat solche Profile nie erzeugt.
 
 Nachtrag aus der Umsetzung: `setup-vitest.ts` und die sechs Specs importieren
 `shellPathAdapterDefinitions` aus `core/session/shells/shell-definitions`,

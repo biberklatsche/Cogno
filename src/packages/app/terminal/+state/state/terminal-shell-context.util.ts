@@ -12,7 +12,7 @@ export function deriveShellContext(
     return { shellType, backendOs };
   }
 
-  if (!(shellType === "Bash" || shellType === "ZSH" || shellType === "Fish")) {
+  if (!(shellType === "Bash" || shellType === "ZSH")) {
     return { shellType, backendOs };
   }
 

@@ -48,7 +48,6 @@ uuid = { version = "1.11", features = ["v4"] }
 sysinfo = "0.33"
 
 [target.'cfg(windows)'.dependencies]
-winreg = "0.52"
 winapi = { version = "0.3", features = ["winuser"] }
 
 [profile.release]

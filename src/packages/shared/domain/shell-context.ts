@@ -8,7 +8,7 @@ type BaseShellContextContract = {
 export type WslShellContextContract = BaseShellContextContract & {
   wslDistroName: string;
   backendOs: "windows";
-  shellType: "Bash" | "ZSH" | "Fish";
+  shellType: "Bash" | "ZSH";
 };
 
 export type ResolvedShellContextContract = BaseShellContextContract | WslShellContextContract;
@@ -16,7 +16,7 @@ export type ResolvedShellContextContract = BaseShellContextContract | WslShellCo
 export function isWslShellContext(ctx: ShellContextContract): ctx is WslShellContextContract {
   return (
     ctx.backendOs === "windows" &&
-    (ctx.shellType === "Bash" || ctx.shellType === "ZSH" || ctx.shellType === "Fish") &&
+    (ctx.shellType === "Bash" || ctx.shellType === "ZSH") &&
     "wslDistroName" in ctx
   );
 }

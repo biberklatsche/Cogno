@@ -142,31 +142,8 @@ impl EnvironmentBuilder {
         self
     }
 
-    fn format_path_for_shell(path: &PathBuf, shell_type: &str) -> String {
-        let raw = path.to_string_lossy().to_string();
-
-        if cfg!(windows) && shell_type == "GitBash" {
-            return Self::to_git_bash_path(&raw);
-        }
-
-        raw
-    }
-
-    fn to_git_bash_path(path: &str) -> String {
-        let normalized = path.replace('\\', "/");
-        let bytes = normalized.as_bytes();
-
-        if bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic() {
-            let drive = (bytes[0] as char).to_ascii_lowercase();
-            let rest = normalized[2..].trim_start_matches('/');
-            if rest.is_empty() {
-                format!("/{drive}")
-            } else {
-                format!("/{drive}/{rest}")
-            }
-        } else {
-            normalized
-        }
+    fn format_path_for_shell(path: &PathBuf, _shell_type: &str) -> String {
+        path.to_string_lossy().to_string()
     }
 
     pub fn with_shell_specific_env(
@@ -177,7 +154,7 @@ impl EnvironmentBuilder {
     ) -> Self {
         if enable_integration {
             match shell_type {
-                "Bash" | "GitBash" => {
+                "Bash" => {
                     // Note: BASH_ENV is not used for interactive shells with --rcfile
                     // We keep it for compatibility but shells are started with --rcfile in shell_spawner
                 }
@@ -187,18 +164,6 @@ impl EnvironmentBuilder {
                     let zsh_dir = self.integration_root.join("zsh");
                     self.env
                         .insert("ZDOTDIR".to_string(), zsh_dir.to_string_lossy().to_string());
-                }
-                "Fish" => {
-                    // TODO: Replace with `fish --init-command 'source ...'` (fish >= 3.4)
-                    // before Fish support ships. Redirecting XDG_CONFIG_HOME leaks into
-                    // every XDG-aware tool in the session (git, gh, ...) and hides the
-                    // user's real fish config.
-                    // Fish expects XDG_CONFIG_HOME/fish/config.fish
-                    // So we point XDG_CONFIG_HOME to integration_root (contains fish/ subdirectory)
-                    self.env.insert(
-                        "XDG_CONFIG_HOME".to_string(),
-                        self.integration_root.to_string_lossy().to_string(),
-                    );
                 }
                 _ => {}
             }

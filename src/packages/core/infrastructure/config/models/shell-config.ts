@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash", "GitBash", "Fish"]);
+export const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash"]);
 
 export type ShellType = z.infer<typeof ShellTypeEnum>;
 

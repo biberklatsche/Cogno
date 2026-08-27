@@ -64,10 +64,10 @@ impl ShellSpawner {
             // Integration mode: filter incompatible args and add integration-specific args
             let mut args = profile.args.clone().unwrap_or_default();
 
-            // For Bash/GitBash: remove incompatible flags
+            // For Bash: remove incompatible flags
             // -l/--login conflicts with --rcfile
             // -i is redundant as --rcfile implies interactive mode
-            if matches!(profile.shell_type.as_str(), "Bash" | "GitBash") {
+            if profile.shell_type == "Bash" {
                 args.retain(|arg| arg != "-l" && arg != "--login" && arg != "-i");
             }
 
@@ -134,20 +134,8 @@ impl ShellSpawner {
                     rcfile.to_string_lossy().to_string(),
                 ])
             }
-            "GitBash" => {
-                let rcfile = self.integration_root.join("gitbash").join("bootstrap.bash");
-                // Add --rcfile to load our integration
-                Ok(vec![
-                    "--rcfile".to_string(),
-                    rcfile.to_string_lossy().to_string(),
-                ])
-            }
             "ZSH" => {
                 // ZDOTDIR is set in environment, .zshrc loaded automatically
-                Ok(vec![])
-            }
-            "Fish" => {
-                // XDG_CONFIG_HOME is set in environment
                 Ok(vec![])
             }
             "PowerShell" => {

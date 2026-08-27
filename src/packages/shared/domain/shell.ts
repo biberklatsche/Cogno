@@ -1,4 +1,4 @@
-export type ShellTypeContract = "PowerShell" | "ZSH" | "Bash" | "GitBash" | "Fish";
+export type ShellTypeContract = "PowerShell" | "ZSH" | "Bash";
 
 export type BackendOsContract = "windows" | "linux" | "macos";
 

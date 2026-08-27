@@ -53,7 +53,7 @@ describe("RealConfigService", () => {
       shell: {
         profiles: {
           fish: {
-            shell_type: "Fish",
+            shell_type: "ZSH",
             path: "/usr/bin/fish",
           },
         },
@@ -61,7 +61,7 @@ describe("RealConfigService", () => {
     });
 
     expect(fallbackService.getShellProfileOrDefault()).toEqual({
-      shell_type: "Fish",
+      shell_type: "ZSH",
       path: "/usr/bin/fish",
     });
   });
@@ -73,7 +73,7 @@ describe("RealConfigService", () => {
         order: ["bash", "zsh", "fish", "missing"],
         profiles: {
           fish: {
-            shell_type: "Fish",
+            shell_type: "ZSH",
             path: "/usr/bin/fish",
           },
           bash: {
@@ -101,7 +101,7 @@ describe("RealConfigService", () => {
       },
       {
         name: "fish",
-        profile: { shell_type: "Fish", path: "/usr/bin/fish" },
+        profile: { shell_type: "ZSH", path: "/usr/bin/fish" },
         isDefault: false,
       },
     ]);

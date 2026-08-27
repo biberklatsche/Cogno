@@ -27,16 +27,16 @@ describe("deriveShellContext", () => {
 
   it("returns WSL context when distro is set in env", () => {
     const ctx = deriveShellContext(
-      "Fish",
+      "ZSH",
       {
-        shell_type: "Fish",
+        shell_type: "ZSH",
         path: "wsl.exe",
         env: { WSL_DISTRO_NAME: "Debian" },
       } as any,
       "windows",
     );
 
-    expect(ctx).toEqual({ shellType: "Fish", backendOs: "windows", wslDistroName: "Debian" });
+    expect(ctx).toEqual({ shellType: "ZSH", backendOs: "windows", wslDistroName: "Debian" });
   });
 
   it("does not force WSL context when distro is unknown", () => {

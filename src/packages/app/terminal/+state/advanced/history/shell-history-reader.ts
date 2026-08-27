@@ -14,7 +14,6 @@ async function resolveHistoryFilePath(
 ): Promise<string | null> {
   switch (shellType) {
     case "Bash":
-    case "GitBash":
       return Path.join(homeDir, ".bash_history");
     case "ZSH":
       return Path.join(homeDir, ".zsh_history");
@@ -39,8 +38,6 @@ async function resolveHistoryFilePath(
         "PSReadLine",
         "ConsoleHost_history.txt",
       );
-    case "Fish":
-      return null;
   }
 }
 
@@ -95,11 +92,8 @@ export const ShellHistoryReader = {
       case "ZSH":
         return parseZshHistory(content);
       case "Bash":
-      case "GitBash":
       case "PowerShell":
         return parseBashHistory(content);
-      case "Fish":
-        return [];
     }
   },
 };

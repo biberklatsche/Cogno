@@ -54,7 +54,7 @@ describe("ShellIntegrationWriter", () => {
     vi.spyOn(Shells, "load").mockResolvedValue([
       { shell_type: "Bash" },
       { shell_type: "Zsh" },
-      { shell_type: "Fish" },
+      { shell_type: "ZSH" },
     ] as never);
 
     await ShellIntegrationWriter.ensure([
