@@ -39,6 +39,8 @@ export class ConfigBootstrapAdapter {
     private readonly shells: ShellConfigurator,
     private readonly wiringService: AppWiringService,
     private readonly opener: Opener,
+    private readonly environment: Environment,
+    private readonly shellIntegration: ShellIntegrationWriter,
     destroyRef: DestroyRef,
   ) {
     this.appBus
@@ -53,7 +55,7 @@ export class ConfigBootstrapAdapter {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(async (event) => {
         if (event.payload === "open_config") {
-          await this.opener.openPath(Environment.configFilePath());
+          await this.opener.openPath(this.environment.configFilePath());
         }
         if (event.payload === "open_documentation") {
           await this.opener.openUrl("https://cogno.rocks/docs/getting-started/");
@@ -91,7 +93,7 @@ export class ConfigBootstrapAdapter {
         return true;
       },
       beforeWatch: async () => {
-        await ShellIntegrationWriter.ensure(shellSupportDefinitions);
+        await this.shellIntegration.ensure(shellSupportDefinitions);
       },
     });
   }

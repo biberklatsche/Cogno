@@ -1,5 +1,4 @@
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { PtyChunkContract, PtySpawnHandleContract, PtyTransport } from "@cogno/platform";
 import { IDisposable } from "@cogno/shared/support";
@@ -36,7 +35,10 @@ export class Pty implements IPty {
   private _spawn: PtySpawnHandleContract | undefined = undefined;
   private _exitUnlisten: (() => void) | undefined = undefined;
 
-  constructor(private readonly _transport: PtyTransport) {}
+  constructor(
+    private readonly _transport: PtyTransport,
+    private readonly _devMode: boolean,
+  ) {}
 
   async spawn(
     terminalId: string,
@@ -54,7 +56,7 @@ export class Pty implements IPty {
         cols: dimensions.cols,
         rows: dimensions.rows,
         profile: shellProfile,
-        devMode: Environment.isDevMode(),
+        devMode: this._devMode,
       },
       {
         onChunk: onData,

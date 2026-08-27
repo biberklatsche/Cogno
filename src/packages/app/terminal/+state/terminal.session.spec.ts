@@ -57,6 +57,8 @@ vi.mock("./pty/pty", () => {
 
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
+const environmentStub = { isDevMode: () => false } as never;
+
 describe("TerminalSession", () => {
   let session: TerminalSession;
   let configService: ConfigServiceMock;
@@ -144,6 +146,7 @@ describe("TerminalSession", () => {
 
     session = new TerminalSession(
       osStub,
+      environmentStub,
       configService,
       appBus,
       getStateManager(),
@@ -164,6 +167,7 @@ describe("TerminalSession", () => {
     configService.setConfig({ terminal: { webgl: true }, font: { family: "Fira Code" } } as any);
     session = new TerminalSession(
       osStub,
+      environmentStub,
       configService,
       appBus,
       getStateManager(),

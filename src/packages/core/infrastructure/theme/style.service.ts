@@ -4,14 +4,18 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
-import { Path } from "@cogno/platform/path";
+import { Paths } from "@cogno/platform/path";
 import { Color } from "@cogno/shared/support";
 
 @Injectable({
   providedIn: "root",
 })
 export class StyleService {
-  constructor(configService: ConfigService, destroyRef: DestroyRef) {
+  constructor(
+    configService: ConfigService,
+    destroyRef: DestroyRef,
+    private readonly paths: Paths,
+  ) {
     Logger.info("StyleService constructor");
     configService.config$
       .pipe(takeUntilDestroyed(destroyRef))
@@ -126,7 +130,7 @@ export class StyleService {
       return backgroundImagePath;
     }
 
-    const homeDirectoryPath = await Path.homeDir();
+    const homeDirectoryPath = await this.paths.homeDir();
     const normalizedHomeDirectoryPath = homeDirectoryPath.endsWith("/")
       ? homeDirectoryPath.slice(0, -1)
       : homeDirectoryPath;

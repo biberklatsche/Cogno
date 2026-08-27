@@ -5,7 +5,7 @@ import { DefaultConfig } from "@cogno/platform/default-config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { OsPlatform } from "@cogno/platform/os";
-import { Path } from "@cogno/platform/path";
+import { Paths } from "@cogno/platform/path";
 import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
 import { Environment } from "../environment/environment";
@@ -78,6 +78,8 @@ export class RealConfigService extends ConfigService {
   constructor(
     private destroy: DestroyRef,
     private readonly os: OsPlatform,
+    private readonly paths: Paths,
+    private readonly environment: Environment,
   ) {
     super();
   }
@@ -209,7 +211,7 @@ export class RealConfigService extends ConfigService {
 
   private async watch() {
     Logger.info("Load and watch config...");
-    const path = Environment.configFilePath();
+    const path = this.environment.configFilePath();
 
     this._unwatch = Fs.watchChanges$(path, { delayMs: 1000 })
       .pipe(takeUntilDestroyed(this.destroy))
@@ -226,13 +228,13 @@ export class RealConfigService extends ConfigService {
     }
     const settingsExtensions = options.settingsExtensions;
 
-    const configDir = Environment.configDir();
+    const configDir = this.environment.configDir();
     if (!(await Fs.exists(configDir))) {
       await Fs.mkdir(configDir);
     }
 
-    const path = Environment.configFilePath();
-    const configFileDirectoryPath = await Path.dirname(path);
+    const path = this.environment.configFilePath();
+    const configFileDirectoryPath = await this.paths.dirname(path);
     if (!(await Fs.exists(configFileDirectoryPath))) {
       await Fs.mkdir(configFileDirectoryPath, { recursive: true });
     }

@@ -14,6 +14,9 @@ import { ActionFired } from "../action/action.models";
 import { AppBus } from "../app-bus/app-bus";
 import { ConfigBootstrapAdapter } from "./config-bootstrap.adapter";
 
+const environmentStub = { configFilePath: () => "/home/test/.cogno/cogno.config" } as never;
+const shellIntegrationStub = { ensure: async () => undefined } as never;
+
 /**
  * The adapter carries what `ConfigService` gave up when it moved to
  * `core/infrastructure` (migration step 1): actions, notifications and the
@@ -50,7 +53,16 @@ function setup() {
     .on$({ path: ["app", "settings"], type: "ConfigLoaded" })
     .subscribe((message) => configLoadedEvents.push(message));
 
-  new ConfigBootstrapAdapter(bus, config, shells, wiring, opener, destroyRef);
+  new ConfigBootstrapAdapter(
+    bus,
+    config,
+    shells,
+    wiring,
+    opener,
+    environmentStub,
+    shellIntegrationStub,
+    destroyRef,
+  );
 
   return {
     bus,

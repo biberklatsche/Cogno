@@ -58,7 +58,12 @@ async function createService(
     repositoryDouble as unknown as HistoryRepository,
   );
 
-  const service = new TerminalHistoryPersistenceService(configService, databaseAccess);
+  const service = new TerminalHistoryPersistenceService(
+    undefined,
+    undefined,
+    configService,
+    databaseAccess,
+  );
   service.initialize(shellContext, pathAdapter);
   await flushActions();
   return service;

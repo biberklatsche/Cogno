@@ -1,7 +1,7 @@
 import { Component, OnInit, signal } from "@angular/core";
 import { AppInfo } from "@cogno/platform/app-info";
 import { Opener } from "@cogno/platform/opener";
-import { Path } from "@cogno/platform/path";
+import { Paths } from "@cogno/platform/path";
 import { DialogRef } from "@cogno/shared/ui";
 
 @Component({
@@ -85,6 +85,7 @@ export class AboutDialogComponent implements OnInit {
   constructor(
     private readonly dialogRef: DialogRef<void>,
     private readonly opener: Opener,
+    private readonly paths: Paths,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -93,7 +94,7 @@ export class AboutDialogComponent implements OnInit {
   }
 
   async openLog(): Promise<void> {
-    const logPath = await Path.cognoLogFilePath();
+    const logPath = await this.paths.cognoLogFilePath();
     await this.opener.openPath(logPath);
     this.dialogRef.close();
   }

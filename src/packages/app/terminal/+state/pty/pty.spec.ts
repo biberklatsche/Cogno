@@ -10,10 +10,6 @@ vi.mock("@cogno/platform/logger", () => ({
   },
 }));
 
-vi.mock("@cogno/core/infrastructure/environment/environment", () => ({
-  Environment: { isDevMode: () => false },
-}));
-
 vi.mock("@cogno/core/infrastructure/error/error-reporter", () => ({
   ErrorReporter: { reportException: vi.fn() },
 }));
@@ -28,7 +24,7 @@ describe("Pty", () => {
 
   beforeEach(() => {
     transport = TauriMockFactory.createPtyTransport();
-    pty = new Pty(transport as unknown as PtyTransport);
+    pty = new Pty(transport as unknown as PtyTransport, false);
   });
 
   /** The n-th spawn handle the transport handed out. */

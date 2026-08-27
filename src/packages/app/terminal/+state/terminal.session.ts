@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ShellDefinitionContract } from "@cogno/shared/contributions";
@@ -94,6 +95,7 @@ export class TerminalSession {
 
   constructor(
     private readonly os: OsPlatform,
+    private readonly environment: Environment,
     private configService: ConfigService,
     private bus: AppBus,
     private stateManager: TerminalStateManager,
@@ -109,7 +111,7 @@ export class TerminalSession {
     ptyTransport: PtyTransport,
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
-    this.pty = new Pty(ptyTransport);
+    this.pty = new Pty(ptyTransport, this.environment.isDevMode());
     this.renderer = new Renderer(this.configService.config, this.os.platform());
     this.disposables = [this.renderer, this.pty];
     this.completedCommandNotificationHandler = new CompletedCommandNotificationHandler(

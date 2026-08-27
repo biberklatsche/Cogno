@@ -1,5 +1,6 @@
+import { Injectable } from "@angular/core";
 import { Fs } from "@cogno/platform/fs";
-import { Path } from "@cogno/platform/path";
+import { Paths } from "@cogno/platform/path";
 import { BackendOsContract, ShellTypeContract } from "@cogno/shared/domain";
 
 export type ShellHistoryEntry = {
@@ -8,18 +9,19 @@ export type ShellHistoryEntry = {
 };
 
 async function resolveHistoryFilePath(
+  paths: Paths,
   shellType: ShellTypeContract,
   backendOs: BackendOsContract,
   homeDir: string,
 ): Promise<string | null> {
   switch (shellType) {
     case "Bash":
-      return Path.join(homeDir, ".bash_history");
+      return paths.join(homeDir, ".bash_history");
     case "ZSH":
-      return Path.join(homeDir, ".zsh_history");
+      return paths.join(homeDir, ".zsh_history");
     case "PowerShell":
       if (backendOs === "windows") {
-        return Path.join(
+        return paths.join(
           homeDir,
           "AppData",
           "Roaming",
@@ -30,7 +32,7 @@ async function resolveHistoryFilePath(
           "ConsoleHost_history.txt",
         );
       }
-      return Path.join(
+      return paths.join(
         homeDir,
         ".local",
         "share",
@@ -74,13 +76,16 @@ export function parseZshHistory(content: string): ShellHistoryEntry[] {
   return entries;
 }
 
-export const ShellHistoryReader = {
+@Injectable({ providedIn: "root" })
+export class ShellHistoryReader {
+  constructor(private readonly paths: Paths) {}
+
   async read(
     shellType: ShellTypeContract,
     backendOs: BackendOsContract,
     homeDir: string,
   ): Promise<ShellHistoryEntry[]> {
-    const filePath = await resolveHistoryFilePath(shellType, backendOs, homeDir);
+    const filePath = await resolveHistoryFilePath(this.paths, shellType, backendOs, homeDir);
     if (!filePath) return [];
 
     const exists = await Fs.exists(filePath);
@@ -95,5 +100,5 @@ export const ShellHistoryReader = {
       case "PowerShell":
         return parseBashHistory(content);
     }
-  },
-};
+  }
+}

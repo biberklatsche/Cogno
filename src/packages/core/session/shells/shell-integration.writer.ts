@@ -1,3 +1,4 @@
+import { Injectable } from "@angular/core";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Fs } from "@cogno/platform/fs";
@@ -12,17 +13,20 @@ const INTEGRATION_VERSION = "1.2.0";
  * Manages shell integration scripts in ~/.cogno/shell-integration
  * (or ~/.cogno-dev/shell-integration in development mode)
  */
+@Injectable({ providedIn: "root" })
 export class ShellIntegrationWriter {
+  constructor(private readonly environment: Environment) {}
+
   /**
    * Ensures shell integration scripts are installed and up-to-date.
    * Only installs scripts for shells that are available and supported in the active feature set.
    */
-  static async ensure(
+  async ensure(
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
   ): Promise<void> {
-    const integrationRoot = await ShellIntegrationWriter.getIntegrationRoot();
+    const integrationRoot = await this.getIntegrationRoot();
 
-    const needsUpdate = await ShellIntegrationWriter.needsUpdate(integrationRoot);
+    const needsUpdate = await this.needsUpdate(integrationRoot);
     if (!needsUpdate) {
       return;
     }
@@ -32,19 +36,18 @@ export class ShellIntegrationWriter {
     try {
       const availableShells = await Shells.load();
       const availableShellTypes = new Set(availableShells.map((shell) => shell.shell_type));
-      const definitionsByShellType =
-        ShellIntegrationWriter.createDefinitionsByShellType(shellSupportDefinitions);
+      const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
 
       Logger.info(`Found shells: ${Array.from(availableShellTypes).join(", ")}`);
 
-      await ShellIntegrationWriter.createBaseDirectories(integrationRoot);
-      await ShellIntegrationWriter.writeIntegrationFiles(
+      await this.createBaseDirectories(integrationRoot);
+      await this.writeIntegrationFiles(
         integrationRoot,
         availableShellTypes,
         definitionsByShellType,
       );
-      await ShellIntegrationWriter.writeVersion(integrationRoot);
-      await ShellIntegrationWriter.logUpdate(integrationRoot);
+      await this.writeVersion(integrationRoot);
+      await this.logUpdate(integrationRoot);
 
       Logger.info("Shell integration scripts installed successfully");
     } catch (error) {
@@ -60,12 +63,12 @@ export class ShellIntegrationWriter {
     }
   }
 
-  static async getIntegrationRoot(): Promise<string> {
-    const cognoHome = Environment.configDir();
+  async getIntegrationRoot(): Promise<string> {
+    const cognoHome = this.environment.configDir();
     return `${cognoHome}/shell-integration`;
   }
 
-  private static createDefinitionsByShellType(
+  private createDefinitionsByShellType(
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
   ): Map<ShellTypeContract, ShellSupportDefinitionContract> {
     const definitionsByShellType = new Map<ShellTypeContract, ShellSupportDefinitionContract>();
@@ -75,7 +78,7 @@ export class ShellIntegrationWriter {
     return definitionsByShellType;
   }
 
-  private static async needsUpdate(integrationRoot: string): Promise<boolean> {
+  private async needsUpdate(integrationRoot: string): Promise<boolean> {
     const versionFile = `${integrationRoot}/VERSION`;
 
     if (!(await Fs.exists(versionFile))) {
@@ -86,7 +89,7 @@ export class ShellIntegrationWriter {
     return currentVersion.trim() !== INTEGRATION_VERSION;
   }
 
-  private static async createBaseDirectories(integrationRoot: string): Promise<void> {
+  private async createBaseDirectories(integrationRoot: string): Promise<void> {
     const directories = [integrationRoot, `${integrationRoot}/logs`];
 
     for (const directory of directories) {
@@ -96,7 +99,7 @@ export class ShellIntegrationWriter {
     }
   }
 
-  private static async writeIntegrationFiles(
+  private async writeIntegrationFiles(
     integrationRoot: string,
     availableShellTypes: ReadonlySet<ShellTypeContract>,
     definitionsByShellType: ReadonlyMap<ShellTypeContract, ShellSupportDefinitionContract>,
@@ -109,7 +112,7 @@ export class ShellIntegrationWriter {
         continue;
       }
 
-      const integrationFiles = ShellIntegrationWriter.resolveIntegrationFiles(
+      const integrationFiles = this.resolveIntegrationFiles(
         shellDefinition,
         definitionsByShellType,
       );
@@ -120,7 +123,7 @@ export class ShellIntegrationWriter {
         writtenRelativePaths.add(integrationFile.relativePath);
 
         const filePath = `${integrationRoot}/${integrationFile.relativePath}`;
-        const directoryPath = ShellIntegrationWriter.getDirectoryPath(filePath);
+        const directoryPath = this.getDirectoryPath(filePath);
         if (!(await Fs.exists(directoryPath))) {
           await Fs.mkdir(directoryPath, { recursive: true });
         }
@@ -130,7 +133,7 @@ export class ShellIntegrationWriter {
     }
   }
 
-  private static resolveIntegrationFiles(
+  private resolveIntegrationFiles(
     shellDefinition: ShellSupportDefinitionContract,
     definitionsByShellType: ReadonlyMap<ShellTypeContract, ShellSupportDefinitionContract>,
   ): ReadonlyArray<{ relativePath: string; content: string }> {
@@ -163,7 +166,7 @@ export class ShellIntegrationWriter {
     return [...filesByPath.values()];
   }
 
-  private static getDirectoryPath(path: string): string {
+  private getDirectoryPath(path: string): string {
     const separatorIndex = path.lastIndexOf("/");
     if (separatorIndex < 0) {
       return path;
@@ -171,11 +174,11 @@ export class ShellIntegrationWriter {
     return path.slice(0, separatorIndex);
   }
 
-  private static async writeVersion(integrationRoot: string): Promise<void> {
+  private async writeVersion(integrationRoot: string): Promise<void> {
     await Fs.writeTextFile(`${integrationRoot}/VERSION`, INTEGRATION_VERSION);
   }
 
-  private static async logUpdate(integrationRoot: string): Promise<void> {
+  private async logUpdate(integrationRoot: string): Promise<void> {
     const logFile = `${integrationRoot}/logs/updates.log`;
     const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
     const entry = `[${timestamp}] Updated shell integration to version ${INTEGRATION_VERSION}\n`;

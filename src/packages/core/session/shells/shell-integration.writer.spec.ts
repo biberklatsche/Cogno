@@ -5,11 +5,8 @@ import { Shells } from "@cogno/platform/shells";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ShellIntegrationWriter } from "./shell-integration.writer";
 
-vi.mock("@cogno/core/infrastructure/environment/environment", () => ({
-  Environment: {
-    configDir: vi.fn(() => "/tmp/cogno"),
-  },
-}));
+const environmentStub = { configDir: () => "/tmp/cogno" } as never;
+const writer = new ShellIntegrationWriter(environmentStub);
 
 describe("ShellIntegrationWriter", () => {
   beforeEach(() => {
@@ -17,9 +14,7 @@ describe("ShellIntegrationWriter", () => {
   });
 
   it("returns the configured integration root", async () => {
-    await expect(ShellIntegrationWriter.getIntegrationRoot()).resolves.toBe(
-      "/tmp/cogno/shell-integration",
-    );
+    await expect(writer.getIntegrationRoot()).resolves.toBe("/tmp/cogno/shell-integration");
   });
 
   it("skips installation when the version is already current", async () => {
@@ -27,7 +22,7 @@ describe("ShellIntegrationWriter", () => {
     vi.spyOn(Fs, "readTextFile").mockResolvedValue("1.2.0");
     const mkdirSpy = vi.spyOn(Fs, "mkdir");
 
-    await ShellIntegrationWriter.ensure([]);
+    await writer.ensure([]);
 
     expect(mkdirSpy).not.toHaveBeenCalled();
   });
@@ -57,7 +52,7 @@ describe("ShellIntegrationWriter", () => {
       { shell_type: "ZSH" },
     ] as never);
 
-    await ShellIntegrationWriter.ensure([
+    await writer.ensure([
       {
         shellType: "Bash",
         integrationFiles: [
@@ -105,7 +100,7 @@ describe("ShellIntegrationWriter", () => {
       .spyOn(ErrorReporter, "reportException")
       .mockImplementation(() => undefined);
 
-    await expect(ShellIntegrationWriter.ensure([])).rejects.toThrow("shell discovery failed");
+    await expect(writer.ensure([])).rejects.toThrow("shell discovery failed");
 
     expect(reportExceptionSpy).toHaveBeenCalledWith({
       error: installError,

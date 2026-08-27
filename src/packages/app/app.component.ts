@@ -73,6 +73,7 @@ export class AppComponent {
   os: OsType;
   constructor(
     os: OsPlatform,
+    private readonly environment: Environment,
     bus: AppBus,
     private readonly databaseMigrationService: DatabaseMigrationService,
     _busyIndicatorService: BusyIndicatorService,
@@ -97,8 +98,8 @@ export class AppComponent {
     try {
       const report = await this.databaseMigrationService.openDatabase(
         appDatabaseMigrations,
-        Environment.isDevMode(),
-        Environment.legacyDatabaseFilePath(),
+        this.environment.isDevMode(),
+        this.environment.legacyDatabaseFilePath(),
       );
       if (report.recovery) {
         publishDatabaseWarning(

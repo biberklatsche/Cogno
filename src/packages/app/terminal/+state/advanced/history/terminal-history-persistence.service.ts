@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseAccess } from "@cogno/platform";
-import { Path } from "@cogno/platform/path";
+import { Paths } from "@cogno/platform/path";
 import { IPathAdapter } from "@cogno/shared/domain";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
@@ -66,6 +66,8 @@ export class TerminalHistoryPersistenceService {
   private _groupId?: string;
 
   constructor(
+    private readonly paths?: Paths,
+    private readonly historyReader?: ShellHistoryReader,
     private readonly configService?: ConfigService,
     private readonly databaseAccess?: DatabaseAccess,
   ) {
@@ -137,8 +139,9 @@ export class TerminalHistoryPersistenceService {
     if (hasCommands) return;
 
     try {
-      const homeDir = await Path.homeDir();
-      const entries = await ShellHistoryReader.read(
+      if (!this.paths || !this.historyReader) return;
+      const homeDir = await this.paths.homeDir();
+      const entries = await this.historyReader.read(
         shellContext.shellType,
         shellContext.backendOs,
         homeDir,
