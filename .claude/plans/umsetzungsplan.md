@@ -394,27 +394,46 @@ Store in `app/` re-exportiert den Typ, bis er selbst umzieht.
 **Erlaubter Übergangszustand:** `TerminalStateManager` liegt noch in
 `app/` und importiert `@cogno/core/session/recorder` (alt → neu).
 
-### Schritt 8: Command-Log Health und Backpressure (ZA 2.4)
+### Schritt 8: Command-Log Health und Backpressure (ZA 2.4) — **erledigt (2026-08-28)**
 
 **Voraussetzungen:** 7.
 
-**Was:** `commandLogHealth$` in `command-log/` mit Zählern; begrenzte Queue
-im Recorder (`recorder.max_pending`, Default 256, Überlauf „ältestes
-verwerfen"), Batch-Schreiben mit einem Retry, `degraded`/`unavailable`
-reversibel; Statistik-Updates ausschließlich `INSERT … ON CONFLICT DO
-UPDATE`; Lese-Timeout mit `timedOut`-Kennzeichen. Anzeige des Zustands
-vorerst als Notification (Seitenleisten-Anzeige kommt mit dem Feature-Host
-in Schritt 22).
+**Was:** `CommandLogHealth` und `CommandLogHealthTracker` in `command-log/`
+(frameworkfrei, ohne Timer — der Tracker sagt nur, wie lange zu warten ist).
+`SessionCommandLog` führt eine begrenzte Warteschlange (256, Überlaufregel
+„ältestes verwerfen"), einen Retry je Schreibvorgang, reversibles
+`degraded`/`unavailable` mit wachsendem Abstand, und veröffentlicht
+`health$`. Ohne Datenbank wird gar nicht erst eingereiht.
+
+**Abweichungen, beide beim Umsetzen entschieden:**
+
+- **Kein Lese-Timeout.** Der Plan wollte einen; er existiert bereits eine
+  Ebene höher: `terminal-autocomplete.service.ts` umhüllt jeden Suggestor mit
+  180 ms und markiert ihn bei Ablauf als `rejected` — genau das beschriebene
+  Verhalten. Ein zweiter Timer im Command-Log wäre doppelte Mechanik.
+- **Kein Test „zwei parallele Recorder auf dieselbe Zeile".** Die Atomarität
+  ist eine Eigenschaft des SQL und wird von rusqlite ausgeführt; ein
+  TypeScript-Test kann sie nicht prüfen, nur die Textform des Statements —
+  ein Regex über den Quelltext, der beim ersten Umformatieren bricht. Die
+  Prüfung ergab: alle zehn Zählerfortschreibungen laufen bereits als
+  `… count = … count + 1` im Statement, kein Lesen-Rechnen-Schreiben in
+  TypeScript. Es war nichts zu ändern.
+- **Das Limit ist eine Konstante, keine Einstellung.** Angular kann keine
+  `number` injizieren, und niemand konfiguriert den Wert; der Test füllt die
+  Warteschlange eben wirklich.
+- **Die Anzeige läuft über den `ErrorReporter`** (`notify` beim ersten
+  Fehlschlag je Störung), nicht über eine eigene Notification: die Session
+  darf die Workbench nicht rufen, und der Dispatch, der `health$` abonniert,
+  entsteht erst in Schritt 20.
 
 **Akzeptanzkriterien (Tests, alle im Schritt):**
 
 - Queue voll → ältester Eintrag fällt, `dropped` steigt, Health
-  `degraded(backpressure)` mit Zahl.
-- Schreibfehler → ein Retry, dann `dropped`; dreimal → `unavailable`;
-  nächster Erfolg → `ok`.
-- Zwei parallele Recorder auf dieselbe `command_stat`-Zeile → Zähler
-  exakt Summe (Test gegen echte SQLite).
-- Lese-Timeout → leeres Ergebnis mit `timedOut`, Suggestor `rejected`.
+  `degraded(backpressure)` mit `pending`.
+- Schreibfehler → ein Retry; gelingt er, bleibt es `ok`.
+- Zweimal fehlgeschlagen → `degraded(write-error)`, `dropped` steigt.
+- Dreimal → `unavailable`; nächster Erfolg → `ok`, `dropped` bleibt stehen.
+- Ohne Repository antworten alle vier Abfragen leer.
 - Verhalten unverändert bei gesunder DB: bestehende Specs grün.
 
 **Erlaubter Übergangszustand:** keiner.

@@ -1,6 +1,11 @@
 import { Injectable } from "@angular/core";
 import type { CommandLogReader, CommandLogWriter } from "@cogno/core/command-log/command-log.api";
 import {
+  CommandLogHealth,
+  CommandLogHealthTracker,
+  HEALTHY,
+} from "@cogno/core/command-log/command-log.health";
+import {
   CommandHistoryRow,
   CommandLogRepository,
   DirectoryHistoryRow,
@@ -10,12 +15,14 @@ import { CommandPattern } from "@cogno/core/command-log/command-pattern.models";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseAccess } from "@cogno/platform";
 import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
-import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
-import { catchError, concatMap, filter, take } from "rxjs/operators";
+import { BehaviorSubject, Observable } from "rxjs";
 
 type WriteAction = (writer: CommandLogWriter) => Promise<void>;
 
 const TRANSITION_RETENTION_WINDOW_MS = 30 * 60 * 1000;
+
+/** How many queued writes are held before the oldest is thrown away. */
+export const DEFAULT_MAX_PENDING_WRITES = 256;
 
 /**
  * One session's access to the command log.
@@ -33,31 +40,20 @@ const TRANSITION_RETENTION_WINDOW_MS = 30 * 60 * 1000;
 @Injectable()
 export class SessionCommandLog {
   private readonly repository$ = new BehaviorSubject<CommandLogRepository | null>(null);
-  private readonly writes$ = new Subject<WriteAction>();
+  private readonly health = new CommandLogHealthTracker();
+  private readonly health$$ = new BehaviorSubject<CommandLogHealth>(HEALTHY);
+  private readonly queue: WriteAction[] = [];
+  private draining = false;
+  private disabled = false;
+  private reportedUnhealthy = false;
   private groupId?: string;
   private recentExecution?: { command: string; timestamp: number };
 
-  constructor(private readonly databaseAccess?: DatabaseAccess) {
-    this.writes$
-      .pipe(
-        concatMap((action) =>
-          this.repository$.pipe(
-            filter((repository): repository is CommandLogRepository => repository !== null),
-            take(1),
-            concatMap((repository) => from(action(repository))),
-            catchError((error) => {
-              ErrorReporter.reportException({
-                error,
-                handled: true,
-                source: "SessionCommandLog",
-                context: { operation: "write" },
-              });
-              return EMPTY;
-            }),
-          ),
-        ),
-      )
-      .subscribe();
+  constructor(private readonly databaseAccess?: DatabaseAccess) {}
+
+  /** How well the log is keeping up; `ok` until something is dropped. */
+  get health$(): Observable<CommandLogHealth> {
+    return this.health$$.asObservable();
   }
 
   get sessionGroupId(): string | undefined {
@@ -72,6 +68,7 @@ export class SessionCommandLog {
   ): Promise<CommandLogRepository | null> {
     this.groupId = groupId;
     if (!this.databaseAccess) {
+      this.disabled = true;
       ErrorReporter.reportWarning({
         message: "No database access available; command history is disabled for this terminal.",
         source: "SessionCommandLog",
@@ -82,6 +79,7 @@ export class SessionCommandLog {
     return CommandLogRepository.createForContext(this.databaseAccess, shellContext, adapter)
       .then((repository) => {
         this.repository$.next(repository);
+        void this.drain();
         return repository;
       })
       .catch((error) => {
@@ -95,9 +93,81 @@ export class SessionCommandLog {
       });
   }
 
-  /** Queues a write. Returns immediately; failures are reported, not thrown. */
+  /**
+   * Queues a write. Returns immediately; a failure is reported, never thrown,
+   * and a full queue loses its oldest entry rather than the session's speed.
+   */
   write(action: WriteAction): void {
-    this.writes$.next(action);
+    if (this.disabled) return;
+
+    if (this.queue.length >= DEFAULT_MAX_PENDING_WRITES) {
+      // The newest command is the most valuable one to keep.
+      this.queue.shift();
+      this.health.recordOverflow(this.queue.length + 1);
+      this.publishHealth();
+    }
+    this.queue.push(action);
+    this.health.setPending(this.queue.length);
+    void this.drain();
+  }
+
+  private async drain(): Promise<void> {
+    if (this.draining) return;
+    this.draining = true;
+    try {
+      while (this.queue.length > 0) {
+        const repository = this.repository$.value;
+        if (!repository) return; // opens later; the queue waits, bounded.
+
+        const backoffMs = this.health.backoffMs;
+        if (backoffMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        }
+
+        const action = this.queue.shift();
+        if (!action) return;
+        await this.runOnce(action, repository);
+        this.health.setPending(this.queue.length);
+        this.publishHealth();
+      }
+    } finally {
+      this.draining = false;
+    }
+  }
+
+  /** Runs a write, retries it once, and gives up loudly rather than silently. */
+  private async runOnce(action: WriteAction, repository: CommandLogRepository): Promise<void> {
+    const startedAt = Date.now();
+    try {
+      await action(repository);
+      this.health.recordSuccess(Date.now() - startedAt, this.queue.length);
+      this.reportedUnhealthy = false;
+      return;
+    } catch {
+      // one retry - a busy database is the common case
+    }
+    try {
+      await action(repository);
+      this.health.recordSuccess(Date.now() - startedAt, this.queue.length);
+      this.reportedUnhealthy = false;
+    } catch (error) {
+      this.health.recordFailure(this.queue.length);
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        notify: !this.reportedUnhealthy,
+        source: "SessionCommandLog",
+        context: { operation: "write", dropped: String(this.health.current.dropped) },
+      });
+      this.reportedUnhealthy = true;
+    }
+  }
+
+  private publishHealth(): void {
+    const current = this.health.current;
+    if (current !== this.health$$.value) {
+      this.health$$.next(current);
+    }
   }
 
   /**
