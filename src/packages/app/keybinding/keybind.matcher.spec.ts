@@ -214,7 +214,7 @@ describe("KeybindingMatcher (linux)", () => {
   });
 
   it("user override without always: replaces default with always: (drops the trigger)", () => {
-    // defaults come first, user keybinds are appended (see config.reader)
+    // defaults come first, user keybinds are appended (see config.mapper)
     matcher.initBindings(["always:Ctrl+A=doA", "Ctrl+A=doA"]);
 
     const event = makeEvent({ key: "a", code: "KeyA", ctrlKey: true });

@@ -271,7 +271,8 @@ Vier Teilcommits: 4a `OS` → `OsPlatform`; 4b `Path` → `Paths` samt Kaskade
 Dienste); 4c `Fs` und `Clipboard` → `ClipboardAccess` (Namenskonflikt mit dem
 DOM-Typ); 4d die übrigen zwölf.
 
-Nicht injiziert, obwohl sie eine Plattformquelle nutzen: `ConfigReader` ist
+Nicht injiziert, obwohl sie eine Plattformquelle nutzen: `ConfigMapper` (bis
+dahin `ConfigReader` — er liest keine Datei, er bildet Text auf `Config` ab) ist
 ein reiner Transformer und bekommt die Plattform als Wert — 679 Zeilen mit 30
 statischen Methoden umzuschreiben, um eine Abfrage zu bedienen, wäre teurer
 als der Nutzen, und die Funktion wird durch den Parameter reiner.

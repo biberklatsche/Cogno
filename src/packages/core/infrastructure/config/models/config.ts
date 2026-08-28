@@ -84,7 +84,7 @@ export const baseSettingsSections: ReadonlyArray<ApplicationSettingsSectionDefin
 // All toggleable features live under the `feature` namespace (e.g. `feature.ai.*`,
 // `feature.git.*`) so the key itself signals "optional feature" vs. everything else
 // being core. Mirrors features/feature-settings-extension.ts's runtime shape — kept
-// here too only so the static `Config` type reflects it (see config.reader.ts for why
+// here too only so the static `Config` type reflects it (see config.mapper.ts for why
 // this duplication exists: createApplicationSettingsDefinition() is the real runtime
 // validator, seeded from baseConfigSchemaShape and merged with registered extensions).
 export const featureConfigSchemaShape = {

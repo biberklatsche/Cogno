@@ -4,7 +4,7 @@ import { defaultFeatureSettingsExtension } from "@cogno/features/feature-setting
 import { beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
 import type { Config } from "../+models/config";
-import { ConfigReader } from "./config.reader";
+import { ConfigMapper } from "./config.mapper";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 
 const extensions = [defaultFeatureSettingsExtension];
@@ -15,7 +15,7 @@ beforeAll(() => {
   const p = join(process.cwd(), "src-tauri", "src", "default_windows.config");
   defaultText = readFileSync(p, "utf-8");
   // Parse defaults from text (no user overrides)
-  DEFAULTS = ConfigReader.fromStringToConfig("linux", defaultText, "", extensions);
+  DEFAULTS = ConfigMapper.fromStringToConfig("linux", defaultText, "", extensions);
 });
 
 describe("InitialConfigOverridesWriter", () => {

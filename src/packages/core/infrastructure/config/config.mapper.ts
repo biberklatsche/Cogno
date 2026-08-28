@@ -12,7 +12,13 @@ export type ConfigDiagnostic = {
   message: string;
 };
 
-export class ConfigReader {
+/**
+ * Turns configuration text into a validated `Config`: parses the
+ * `key = value` lines, merges the defaults with the user's file, checks both
+ * against the schema and reports what it had to correct. It touches no file -
+ * `ConfigService` does the reading and writing.
+ */
+export class ConfigMapper {
   static fromStringToConfig(
     platform: OsType,
     defaultConfigString: string,
@@ -36,15 +42,15 @@ export class ConfigReader {
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
     const applicationSettingsDefinition = createApplicationSettingsDefinition(settingsExtensions);
-    const userConfig = ConfigReader.parseConfigString(
+    const userConfig = ConfigMapper.parseConfigString(
       userConfigString || "",
       applicationSettingsDefinition.schema,
     );
-    const defaultConfig = ConfigReader.parseConfigString(
+    const defaultConfig = ConfigMapper.parseConfigString(
       defaultConfigString || "",
       applicationSettingsDefinition.schema,
     );
-    return ConfigReader.toConfigWithDiagnostics(
+    return ConfigMapper.toConfigWithDiagnostics(
       defaultConfig,
       userConfig,
       applicationSettingsDefinition,
@@ -75,15 +81,15 @@ export class ConfigReader {
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
     const applicationSettingsDefinition = createApplicationSettingsDefinition(settingsExtensions);
-    const userConfig = ConfigReader.parseConfigString(
+    const userConfig = ConfigMapper.parseConfigString(
       userConfigString || "",
       applicationSettingsDefinition.schema,
     );
-    const defaultConfig = ConfigReader.parseConfigString(
+    const defaultConfig = ConfigMapper.parseConfigString(
       defaultConfigString || "",
       applicationSettingsDefinition.schema,
     );
-    return ConfigReader.toConfigWithDiagnostics(
+    return ConfigMapper.toConfigWithDiagnostics(
       defaultConfig,
       userConfig,
       applicationSettingsDefinition,
@@ -101,12 +107,12 @@ export class ConfigReader {
       applicationSettingsDefinition.defaults,
       defaultConfig ?? {},
     );
-    const mergedConfig = ConfigReader.mergeConfigValues(
+    const mergedConfig = ConfigMapper.mergeConfigValues(
       defaultConfigWithExtensions,
       userConfig ?? {},
     ) as Record<string, unknown>;
     const diagnostics: ConfigDiagnostic[] = [];
-    const initialCandidate = ConfigReader.clone(mergedConfig);
+    const initialCandidate = ConfigMapper.clone(mergedConfig);
     let candidate: Record<string, unknown> = initialCandidate === undefined ? {} : initialCandidate;
 
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -114,11 +120,11 @@ export class ConfigReader {
       if (result.success) {
         const config = result.data as Config;
         if (config.font?.family) {
-          config.font.family = ConfigReader.addFontFallbacks(config.font.family, platform);
+          config.font.family = ConfigMapper.addFontFallbacks(config.font.family, platform);
         }
         return { config, diagnostics };
       }
-      const changed = ConfigReader.applyDiagnosticsAndStrip(
+      const changed = ConfigMapper.applyDiagnosticsAndStrip(
         candidate,
         defaultConfigWithExtensions,
         result.error,
@@ -127,7 +133,7 @@ export class ConfigReader {
       if (!changed) {
         break;
       }
-      const clonedCandidate = ConfigReader.clone(candidate);
+      const clonedCandidate = ConfigMapper.clone(candidate);
       candidate = clonedCandidate === undefined ? {} : clonedCandidate;
     }
 
@@ -139,7 +145,7 @@ export class ConfigReader {
       : applicationSettingsDefinition.schema.safeParse({});
     const fallback = (emptyResult.success ? emptyResult.data : {}) as Config;
     if (fallback.font?.family) {
-      fallback.font.family = ConfigReader.addFontFallbacks(fallback.font.family, platform);
+      fallback.font.family = ConfigMapper.addFontFallbacks(fallback.font.family, platform);
     }
     diagnostics.push({
       level: "error",
@@ -150,7 +156,7 @@ export class ConfigReader {
 
   private static mergeConfigValues(defaultValue: unknown, userValue: unknown): unknown {
     if (userValue === undefined) {
-      return ConfigReader.clone(defaultValue);
+      return ConfigMapper.clone(defaultValue);
     }
     if (Array.isArray(userValue)) {
       return userValue;
@@ -158,7 +164,7 @@ export class ConfigReader {
     if (Array.isArray(defaultValue)) {
       return userValue;
     }
-    if (!ConfigReader.isPlainObject(userValue) || !ConfigReader.isPlainObject(defaultValue)) {
+    if (!ConfigMapper.isPlainObject(userValue) || !ConfigMapper.isPlainObject(defaultValue)) {
       return userValue;
     }
 
@@ -186,7 +192,7 @@ export class ConfigReader {
         continue;
       }
 
-      mergedConfig[configKey] = ConfigReader.mergeConfigValues(
+      mergedConfig[configKey] = ConfigMapper.mergeConfigValues(
         defaultValue[configKey],
         userValue[configKey],
       );
@@ -196,8 +202,8 @@ export class ConfigReader {
   }
 
   private static addFontFallbacks(fontFamily: string, platform: OsType): string {
-    const fallbacks = ConfigReader.getPlatformFontFallbacks(platform);
-    const cleanedFontFamily = ConfigReader.quoteFontName(fontFamily);
+    const fallbacks = ConfigMapper.getPlatformFontFallbacks(platform);
+    const cleanedFontFamily = ConfigMapper.quoteFontName(fontFamily);
     const genericFonts = ["monospace", "sans-serif", "serif", "cursive", "fantasy"];
     if (genericFonts.includes(cleanedFontFamily.toLowerCase())) {
       return fallbacks;
@@ -250,12 +256,12 @@ export class ConfigReader {
         (part): part is string | number => typeof part === "string" || typeof part === "number",
       );
       if (issue.code === "unrecognized_keys") {
-        const pathLabel = ConfigReader.pathToString(path);
+        const pathLabel = ConfigMapper.pathToString(path);
         diagnostics.push({
           level: "warning",
           message: `Unrecognized setting(s) in ${pathLabel}: ${issue.keys.map((k) => `'${k}'`).join(", ")} — these will be ignored`,
         });
-        const parent = ConfigReader.getByPath(target, path);
+        const parent = ConfigMapper.getByPath(target, path);
         if (parent && typeof parent === "object") {
           for (const key of issue.keys) {
             if (key in parent) {
@@ -267,18 +273,18 @@ export class ConfigReader {
         continue;
       }
 
-      const pathLabel = ConfigReader.pathToString(path);
+      const pathLabel = ConfigMapper.pathToString(path);
       diagnostics.push({
         level: "error",
         message: `${pathLabel}: ${issue.message}`,
       });
       if (path.length > 0) {
-        const fallback = ConfigReader.getByPath(defaults, path);
+        const fallback = ConfigMapper.getByPath(defaults, path);
         if (fallback !== undefined) {
-          if (ConfigReader.setByPath(target, path, ConfigReader.clone(fallback))) {
+          if (ConfigMapper.setByPath(target, path, ConfigMapper.clone(fallback))) {
             changed = true;
           }
-        } else if (ConfigReader.deleteByPath(target, path)) {
+        } else if (ConfigMapper.deleteByPath(target, path)) {
           diagnostics.push({
             level: "warning",
             message: `${pathLabel}: Removed setting (no default available).`,
@@ -332,7 +338,7 @@ export class ConfigReader {
 
     const parentPath = path.slice(0, -1);
     const leafPathSegment = path[path.length - 1];
-    const parent = parentPath.length === 0 ? target : ConfigReader.getByPath(target, parentPath);
+    const parent = parentPath.length === 0 ? target : ConfigMapper.getByPath(target, parentPath);
     if (parent === undefined || parent === null) {
       return false;
     }
@@ -410,9 +416,9 @@ export class ConfigReader {
 
       const configKey = configEntryMatch[1];
       const configValueString = configEntryMatch[2].trim();
-      const valueSchema = ConfigReader.getSchemaAtDotPath(schema, configKey);
-      const configValue = ConfigReader.parseValue(configValueString, valueSchema);
-      ConfigReader.setDotPath(root, configKey, configValue, valueSchema);
+      const valueSchema = ConfigMapper.getSchemaAtDotPath(schema, configKey);
+      const configValue = ConfigMapper.parseValue(configValueString, valueSchema);
+      ConfigMapper.setDotPath(root, configKey, configValue, valueSchema);
     }
 
     return root;
@@ -428,14 +434,14 @@ export class ConfigReader {
     let currentObject: Record<string, unknown> = target;
     for (let index = 0; index < pathSegments.length - 1; index++) {
       const pathSegment = pathSegments[index];
-      if (!ConfigReader.isPlainObject(currentObject[pathSegment])) {
+      if (!ConfigMapper.isPlainObject(currentObject[pathSegment])) {
         currentObject[pathSegment] = {};
       }
       currentObject = currentObject[pathSegment] as Record<string, unknown>;
     }
 
     const leafPathSegment = pathSegments[pathSegments.length - 1];
-    if (ConfigReader.isArraySchema(schema) && !Array.isArray(value)) {
+    if (ConfigMapper.isArraySchema(schema) && !Array.isArray(value)) {
       const existingKeybindValue = currentObject[leafPathSegment];
       if (existingKeybindValue === undefined) {
         currentObject[leafPathSegment] = [value];
@@ -459,7 +465,7 @@ export class ConfigReader {
       return trimmedValue.slice(1, -1);
     }
 
-    const schemaValue = ConfigReader.parseValueForSchema(trimmedValue, schema);
+    const schemaValue = ConfigMapper.parseValueForSchema(trimmedValue, schema);
     if (schemaValue !== undefined) {
       return schemaValue;
     }
@@ -483,62 +489,62 @@ export class ConfigReader {
       }
       return arrayContent
         .split(",")
-        .map((arrayEntry) => ConfigReader.parseValue(arrayEntry.trim()));
+        .map((arrayEntry) => ConfigMapper.parseValue(arrayEntry.trim()));
     }
     return trimmedValue;
   }
 
   private static parseValueForSchema(rawValue: string, schema: z.ZodType | undefined): unknown {
-    const unwrappedSchema = ConfigReader.unwrapSchema(schema);
+    const unwrappedSchema = ConfigMapper.unwrapSchema(schema);
     if (!unwrappedSchema) {
       return undefined;
     }
 
-    if (ConfigReader.safeParseSchema(unwrappedSchema, rawValue).success) {
+    if (ConfigMapper.safeParseSchema(unwrappedSchema, rawValue).success) {
       return rawValue;
     }
 
     if (rawValue === "true" || rawValue === "false") {
       const booleanValue = rawValue === "true";
-      if (ConfigReader.safeParseSchema(unwrappedSchema, booleanValue).success) {
+      if (ConfigMapper.safeParseSchema(unwrappedSchema, booleanValue).success) {
         return booleanValue;
       }
     }
 
     if (/^-?\d+$/.test(rawValue) || /^-?\d+\.\d+$/.test(rawValue)) {
       const numberValue = Number(rawValue);
-      if (ConfigReader.safeParseSchema(unwrappedSchema, numberValue).success) {
+      if (ConfigMapper.safeParseSchema(unwrappedSchema, numberValue).success) {
         return numberValue;
       }
     }
 
     if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
-      const arraySchema = ConfigReader.unwrapSchema(unwrappedSchema);
-      if (arraySchema && ConfigReader.isArraySchema(arraySchema)) {
+      const arraySchema = ConfigMapper.unwrapSchema(unwrappedSchema);
+      if (arraySchema && ConfigMapper.isArraySchema(arraySchema)) {
         const arrayContent = rawValue.slice(1, -1).trim();
         if (!arrayContent) {
           return [];
         }
-        const itemSchema = ConfigReader.getArrayItemSchema(arraySchema);
+        const itemSchema = ConfigMapper.getArrayItemSchema(arraySchema);
         if (!itemSchema) {
           return undefined;
         }
         const arrayValue = arrayContent
           .split(",")
-          .map((arrayEntry) => ConfigReader.parseValue(arrayEntry.trim(), itemSchema));
-        if (ConfigReader.safeParseSchema(arraySchema, arrayValue).success) {
+          .map((arrayEntry) => ConfigMapper.parseValue(arrayEntry.trim(), itemSchema));
+        if (ConfigMapper.safeParseSchema(arraySchema, arrayValue).success) {
           return arrayValue;
         }
       }
     }
 
-    if (ConfigReader.isArraySchema(unwrappedSchema)) {
-      const itemSchema = ConfigReader.getArrayItemSchema(unwrappedSchema);
+    if (ConfigMapper.isArraySchema(unwrappedSchema)) {
+      const itemSchema = ConfigMapper.getArrayItemSchema(unwrappedSchema);
       if (!itemSchema) {
         return undefined;
       }
-      const itemValue = ConfigReader.parseValue(rawValue, itemSchema);
-      if (ConfigReader.safeParseSchema(unwrappedSchema, [itemValue]).success) {
+      const itemValue = ConfigMapper.parseValue(rawValue, itemSchema);
+      if (ConfigMapper.safeParseSchema(unwrappedSchema, [itemValue]).success) {
         return itemValue;
       }
     }
@@ -550,9 +556,9 @@ export class ConfigReader {
     schema: z.ZodType | undefined,
     dottedPath: string,
   ): z.ZodType | undefined {
-    let currentSchema = ConfigReader.unwrapSchema(schema);
+    let currentSchema = ConfigMapper.unwrapSchema(schema);
     for (const pathSegment of dottedPath.split(".")) {
-      currentSchema = ConfigReader.getChildSchema(currentSchema, pathSegment);
+      currentSchema = ConfigMapper.getChildSchema(currentSchema, pathSegment);
       if (!currentSchema) {
         return undefined;
       }
@@ -561,22 +567,22 @@ export class ConfigReader {
   }
 
   private static getChildSchema(schema: z.ZodType | undefined, key: string): z.ZodType | undefined {
-    const unwrappedSchema = ConfigReader.unwrapSchema(schema);
+    const unwrappedSchema = ConfigMapper.unwrapSchema(schema);
     if (!unwrappedSchema) {
       return undefined;
     }
 
-    const definition = ConfigReader.getSchemaDefinition(unwrappedSchema);
+    const definition = ConfigMapper.getSchemaDefinition(unwrappedSchema);
     if (definition?.["type"] === "object") {
-      const shape = ConfigReader.getObjectShape(unwrappedSchema);
-      return ConfigReader.isPlainObject(shape) ? (shape[key] as z.ZodType | undefined) : undefined;
+      const shape = ConfigMapper.getObjectShape(unwrappedSchema);
+      return ConfigMapper.isPlainObject(shape) ? (shape[key] as z.ZodType | undefined) : undefined;
     }
     if (definition?.["type"] === "record") {
       return definition["valueType"] as z.ZodType | undefined;
     }
     if (definition?.["type"] === "union") {
       for (const option of definition["options"] as z.ZodType[]) {
-        const childSchema = ConfigReader.getChildSchema(option, key);
+        const childSchema = ConfigMapper.getChildSchema(option, key);
         if (childSchema) {
           return childSchema;
         }
@@ -588,7 +594,7 @@ export class ConfigReader {
   private static unwrapSchema(schema: z.ZodType | undefined): z.ZodType | undefined {
     let currentSchema: z.ZodType | undefined = schema;
     while (currentSchema) {
-      const definition = ConfigReader.getSchemaDefinition(currentSchema);
+      const definition = ConfigMapper.getSchemaDefinition(currentSchema);
       if (definition?.["innerType"]) {
         currentSchema = definition["innerType"] as z.ZodType;
         continue;
@@ -604,17 +610,17 @@ export class ConfigReader {
 
   private static isArraySchema(schema: z.ZodType | undefined): schema is z.ZodType {
     return (
-      ConfigReader.getSchemaDefinition(ConfigReader.unwrapSchema(schema))?.["type"] === "array"
+      ConfigMapper.getSchemaDefinition(ConfigMapper.unwrapSchema(schema))?.["type"] === "array"
     );
   }
 
   private static getArrayItemSchema(schema: z.ZodType): z.ZodType | undefined {
-    const definition = ConfigReader.getSchemaDefinition(ConfigReader.unwrapSchema(schema));
+    const definition = ConfigMapper.getSchemaDefinition(ConfigMapper.unwrapSchema(schema));
     return definition?.["element"] as z.ZodType | undefined;
   }
 
   private static getObjectShape(schema: z.ZodType): unknown {
-    const definition = ConfigReader.getSchemaDefinition(schema);
+    const definition = ConfigMapper.getSchemaDefinition(schema);
     const shape = definition?.["shape"];
     return typeof shape === "function" ? shape() : shape;
   }
@@ -622,11 +628,11 @@ export class ConfigReader {
   private static getSchemaDefinition(
     schema: z.ZodType | undefined,
   ): Record<string, unknown> | undefined {
-    if (!schema || !ConfigReader.isPlainObject(schema)) {
+    if (!schema || !ConfigMapper.isPlainObject(schema)) {
       return undefined;
     }
     const definition = schema["def"] ?? schema["_def"];
-    return ConfigReader.isPlainObject(definition) ? definition : undefined;
+    return ConfigMapper.isPlainObject(definition) ? definition : undefined;
   }
 
   private static safeParseSchema(

@@ -9,7 +9,7 @@ import { Paths } from "@cogno/platform/path";
 import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
 import { Environment } from "../environment/environment";
-import { ConfigDiagnostic, ConfigReader } from "./config.reader";
+import { ConfigDiagnostic, ConfigMapper } from "./config.mapper";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 import { Config } from "./models/config";
 import { PromptSegment } from "./models/prompt-config";
@@ -244,7 +244,7 @@ export class RealConfigService extends ConfigService {
     }
 
     const defaultConfigString = await this.defaultConfig.read();
-    const defaultConfig = ConfigReader.fromStringToConfig(
+    const defaultConfig = ConfigMapper.fromStringToConfig(
       this.os.platform(),
       defaultConfigString,
       "",
@@ -258,7 +258,7 @@ export class RealConfigService extends ConfigService {
     const readConfig = async () => {
       let userConfigString = await this.fs.readTextFile(path);
       userConfigString = await this.applyCliSetOverrides(userConfigString);
-      return ConfigReader.fromStringToConfigWithDiagnostics(
+      return ConfigMapper.fromStringToConfigWithDiagnostics(
         this.os.platform(),
         defaultConfigString,
         userConfigString,
@@ -267,7 +267,7 @@ export class RealConfigService extends ConfigService {
     };
 
     if (!(await this.fs.exists(path))) {
-      const userConfig = ConfigReader.fromStringToConfig(
+      const userConfig = ConfigMapper.fromStringToConfig(
         this.os.platform(),
         defaultConfigString,
         "",

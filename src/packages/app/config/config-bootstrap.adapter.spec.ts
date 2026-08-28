@@ -1,6 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
-import type { ConfigDiagnostic } from "@cogno/core/infrastructure/config/config.reader";
+import type { ConfigDiagnostic } from "@cogno/core/infrastructure/config/config.mapper";
 import type {
   ConfigLoadOptions,
   ConfigService,

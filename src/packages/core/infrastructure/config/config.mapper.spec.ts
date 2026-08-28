@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defaultFeatureSettingsExtension } from "@cogno/features/feature-settings-extension";
 import { beforeAll, describe, expect, it } from "vitest";
-import { ConfigReader } from "./config.reader";
+import { ConfigMapper } from "./config.mapper";
 
 const extensions = [defaultFeatureSettingsExtension];
 let defaultText = "";
@@ -11,10 +11,10 @@ let DEFAULTS: any;
 beforeAll(() => {
   const p = path.join(process.cwd(), "src-tauri", "src", "default_windows.config");
   defaultText = fs.readFileSync(p, "utf-8");
-  DEFAULTS = ConfigReader.fromStringToConfig("linux", defaultText, "", extensions);
+  DEFAULTS = ConfigMapper.fromStringToConfig("linux", defaultText, "", extensions);
 });
 
-describe("ConfigReader", () => {
+describe("ConfigMapper", () => {
   it("parses booleans, numbers, arrays and merges defaults with user (keybind concatenated)", () => {
     const text = `
       # comment
@@ -29,7 +29,7 @@ describe("ConfigReader", () => {
       keybind=Ctrl+5=run5
     `;
 
-    const parsed = ConfigReader.fromStringToConfig("linux", defaultText, text, extensions);
+    const parsed = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Basic values
     expect(parsed.terminal?.webgl).toBe(true);
@@ -50,7 +50,7 @@ describe("ConfigReader", () => {
       terminal.webgl=true
     `;
 
-    const settings = ConfigReader.fromStringToConfig("linux", defaultText, text, extensions);
+    const settings = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Override applied
     expect(settings.terminal?.webgl).toBe(true);
@@ -64,7 +64,7 @@ describe("ConfigReader", () => {
     const text = `
       scrollbar.scrollback_lines=-1
     `;
-    const result = ConfigReader.fromStringToConfigWithDiagnostics(
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
       "linux",
       defaultText,
       text,
@@ -80,7 +80,7 @@ describe("ConfigReader", () => {
       unknown_key=123
       font.size=13
     `;
-    const result = ConfigReader.fromStringToConfigWithDiagnostics(
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
       "linux",
       defaultText,
       text,
@@ -92,7 +92,7 @@ describe("ConfigReader", () => {
 
   it("single-arg overload still works (no defaults)", () => {
     const proper = `terminal.webgl=false\nscrollbar.scrollback_lines=9999\n`;
-    const settings = ConfigReader.fromStringToConfig("linux", proper, extensions);
+    const settings = ConfigMapper.fromStringToConfig("linux", proper, extensions);
     expect(settings.terminal?.webgl).toBe(false);
     expect(settings.scrollbar?.scrollback_lines).toBe(9999);
   });
@@ -102,7 +102,7 @@ describe("ConfigReader", () => {
       keybind=Ctrl+5=custom1
       keybind=Ctrl+6=custom2
     `;
-    const config = ConfigReader.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // User keybinds should be appended to defaults
     const defaultKeybindCount = DEFAULTS.keybind.length;
@@ -123,7 +123,7 @@ describe("ConfigReader", () => {
       shell.profiles.default.path=/bin/test
       shell.profiles.default.args=[--custom,--args]
     `;
-    const config = ConfigReader.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Shell args should be replaced, not concatenated with defaults
     expect(config.shell?.profiles.default?.args).toEqual(["--custom", "--args"]);
@@ -137,7 +137,7 @@ describe("ConfigReader", () => {
       shell.profiles.default.path=/bin/test
       shell.profiles.default.args=[]
     `;
-    const config = ConfigReader.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Empty array should be [], not [undefined]
     expect(config.shell?.profiles.default?.args).toEqual([]);
@@ -148,7 +148,7 @@ describe("ConfigReader", () => {
     const text = `
       font.family=monospace
     `;
-    const config = ConfigReader.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Font should have fallbacks added
     expect(config.font?.family).toContain("monospace");
@@ -160,7 +160,7 @@ describe("ConfigReader", () => {
     const text = `
       font.family=Fira Code
     `;
-    const config = ConfigReader.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Font name with spaces should be preserved without quotes
     expect(config.font?.family).toMatch(/^Fira Code,/);
@@ -179,7 +179,7 @@ describe("ConfigReader", () => {
       terminal.notifications.long_running_command.minimum_duration_seconds=15
       feature.notification_overview.overview.max_items=42
     `;
-    const result = ConfigReader.fromStringToConfigWithDiagnostics(
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
       "linux",
       defaultText,
       text,
@@ -205,7 +205,7 @@ describe("ConfigReader", () => {
       terminal.decoration.color.background=2f8fda55
       terminal.decoration.active_color.border=f5e663
     `;
-    const result = ConfigReader.fromStringToConfigWithDiagnostics(
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
       "linux",
       defaultText,
       text,
@@ -226,7 +226,7 @@ describe("ConfigReader", () => {
       terminal.decoration.color.border=123
       prompt.segment.user.background=050505
     `;
-    const result = ConfigReader.fromStringToConfigWithDiagnostics(
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
       "linux",
       defaultText,
       text,
@@ -246,7 +246,7 @@ describe("ConfigReader", () => {
     const text = `
       terminal.progress_bar.enabled=false
     `;
-    const result = ConfigReader.fromStringToConfigWithDiagnostics(
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
       "linux",
       defaultText,
       text,
@@ -274,10 +274,10 @@ describe("ConfigReader", () => {
     `;
 
     expect(() =>
-      ConfigReader.fromStringToConfigWithDiagnostics("linux", defaultText, text, extensions),
+      ConfigMapper.fromStringToConfigWithDiagnostics("linux", defaultText, text, extensions),
     ).not.toThrow();
 
-    const result = ConfigReader.fromStringToConfigWithDiagnostics(
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
       "linux",
       defaultText,
       text,
