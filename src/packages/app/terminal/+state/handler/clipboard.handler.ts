@@ -1,4 +1,5 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { bytesToBase64, ClipboardAccess } from "@cogno/platform/clipboard";
@@ -12,7 +13,6 @@ import { CommandLineBuffer } from "../advanced/ui/command-line.buffer";
 import { PromptMarkerRegistry } from "../advanced/ui/prompt-marker.registry";
 import { TerminalInputWriter } from "../input-writer";
 import { TerminalStateManager } from "../state";
-import { SelectionHandler } from "./selection.handler";
 
 function base64ToText(base64: string): string {
   return new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));

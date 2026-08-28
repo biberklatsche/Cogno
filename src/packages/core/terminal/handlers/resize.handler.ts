@@ -1,15 +1,13 @@
-import { IPty } from "@cogno/core/terminal/pty";
-import { IFitHandler, ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
-import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
+import { IPty } from "../pty";
+import { IFitHandler, ITerminalHandler } from "../terminal-handler";
+import type { TerminalMachineState } from "../terminal-machine.state";
 
-export type TerminalDimensions = { rows: number; cols: number };
-type NullableTerminalDimensions = {
+export type TerminalViewportDimensions = { rows: number; cols: number };
+type NullableTerminalViewportDimensions = {
   rows: number | null | undefined;
   cols: number | null | undefined;
 };
@@ -33,11 +31,9 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
   private _resizeRaf?: number;
 
   constructor(
-    private _terminalId: TerminalId,
     private _pty: IPty,
-    private _bus: AppBus,
     private _terminalContainer: HTMLDivElement,
-    private _stateManager: TerminalStateManager,
+    private _stateManager: TerminalMachineState,
   ) {}
 
   registerFitAddon(fitAddon: FitAddon) {
@@ -70,26 +66,12 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
       });
     });
     this._resizeObserver.observe(this._terminalContainer, { box: "content-box" });
-    this._subscription = new Subscription();
-    this._subscription = this._bus
-      .on$({ path: ["app", "terminal", this._terminalId] })
-      .subscribe((e) => {
-        switch (e.type) {
-          case "TerminalThemeChanged":
-          case "TerminalThemePaddingRemoved":
-            setTimeout(() => this.resize(), 100);
-            break;
-          case "TerminalThemePaddingAdded":
-            setTimeout(() => this.resize(), 100);
-            break;
-        }
-      });
     return this;
   }
 
   public resize() {
     if (this._terminal === undefined || this._fitAddon === undefined) return;
-    const currentDimensions: TerminalDimensions = {
+    const currentDimensions: TerminalViewportDimensions = {
       cols: this._terminal.cols,
       rows: this._terminal.rows,
     };
@@ -122,13 +104,13 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
     });
   }
 
-  private areDimensionsEqual(a?: TerminalDimensions, b?: TerminalDimensions) {
+  private areDimensionsEqual(a?: TerminalViewportDimensions, b?: TerminalViewportDimensions) {
     return a?.rows === b?.rows && a?.cols === b?.cols;
   }
 
   private isValidDimensions(
-    dimensions: NullableTerminalDimensions,
-  ): dimensions is TerminalDimensions {
+    dimensions: NullableTerminalViewportDimensions,
+  ): dimensions is TerminalViewportDimensions {
     const { cols, rows } = dimensions;
     return (
       Number.isInteger(cols) &&

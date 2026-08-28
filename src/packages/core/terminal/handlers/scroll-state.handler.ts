@@ -1,13 +1,13 @@
-import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { TerminalStateManager } from "../state";
+import { ITerminalHandler } from "../terminal-handler";
+import type { TerminalMachineState } from "../terminal-machine.state";
 
 export class ScrollStateHandler implements ITerminalHandler {
   private terminal?: Terminal;
   private scrollDisposable?: IDisposable;
 
-  constructor(private readonly terminalStateManager: TerminalStateManager) {}
+  constructor(private readonly terminalStateManager: TerminalMachineState) {}
 
   registerTerminal(terminal: Terminal): IDisposable {
     this.terminal = terminal;

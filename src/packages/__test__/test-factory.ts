@@ -1,5 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
@@ -19,7 +20,6 @@ import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service"
 import type { NotificationTargetResolverService } from "../app/notification/+state/notification-target-resolver.service";
 import { TabListService } from "../app/tab-list/+state/tab-list.service";
 import { FocusHandler } from "../app/terminal/+state/handler/focus.handler";
-import { SelectionHandler } from "../app/terminal/+state/handler/selection.handler";
 import { TerminalStateManager } from "../app/terminal/+state/state";
 import { TerminalSession } from "../app/terminal/+state/terminal.session";
 import type { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";

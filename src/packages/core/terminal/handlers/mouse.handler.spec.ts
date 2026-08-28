@@ -1,27 +1,48 @@
-import { OsPlatform } from "@cogno/platform/os";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import type {
+  TerminalCursorPosition,
+  TerminalMousePosition,
+  TerminalViewportDimensions,
+} from "../terminal-machine.state";
 import { MouseHandler } from "./mouse.handler";
 
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+/** Records what the machine reports, which is all these handlers do. */
+function createMachineState() {
+  return {
+    cursorPosition: undefined as TerminalCursorPosition | undefined,
+    mousePosition: undefined as TerminalMousePosition | undefined,
+    dimensions: undefined as TerminalViewportDimensions | undefined,
+    hasSelection: false,
+    scrolledLinesFromBottom: 0,
+    updateCursorPosition(position: TerminalCursorPosition) {
+      this.cursorPosition = position;
+    },
+    updateMousePosition(position: TerminalMousePosition) {
+      this.mousePosition = position;
+    },
+    updateDimensions(dimensions: TerminalViewportDimensions) {
+      this.dimensions = dimensions;
+    },
+    setHasSelection(hasSelection: boolean) {
+      this.hasSelection = hasSelection;
+    },
+    setScrolledLinesFromBottom(lines: number) {
+      this.scrolledLinesFromBottom = lines;
+    },
+  };
+}
 
 describe("MouseHandler", () => {
   let handler: MouseHandler;
   let mockTerminal: Terminal;
-  let mockBus: AppBus;
   let container: HTMLDivElement;
   let screenElement: HTMLDivElement;
-  let stateManager: TerminalStateManager;
-  const terminalId = "test-terminal-id";
+  let stateManager: ReturnType<typeof createMachineState>;
 
   beforeEach(() => {
-    mockBus = new AppBus();
-    vi.spyOn(mockBus, "publish");
-    stateManager = new TerminalStateManager(osStub, mockBus);
-    stateManager.initialize(terminalId, "Bash" as any);
+    stateManager = createMachineState();
     container = document.createElement("div");
     screenElement = document.createElement("div");
     screenElement.className = "xterm-screen";

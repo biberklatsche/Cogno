@@ -5,6 +5,11 @@ import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-con
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { toTerminalMachineOptions } from "@cogno/core/session/host/terminal-machine-options.mapper";
+import { CursorHandler } from "@cogno/core/terminal/handlers/cursor.handler";
+import { MouseHandler } from "@cogno/core/terminal/handlers/mouse.handler";
+import { ResizeHandler } from "@cogno/core/terminal/handlers/resize.handler";
+import { ScrollStateHandler } from "@cogno/core/terminal/handlers/scroll-state.handler";
+import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { IPty, Pty } from "@cogno/core/terminal/pty";
 import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
@@ -55,17 +60,12 @@ import {
   DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
-import { CursorHandler } from "./handler/cursor.handler";
 import { FocusHandler } from "./handler/focus.handler";
 import { FullScreenAppHandler } from "./handler/full-screen-app.handler";
 import { InputHandler } from "./handler/input.handler";
 import { LinkHandler } from "./handler/link.handler";
-import { MouseHandler } from "./handler/mouse.handler";
 import { PtyHandler } from "./handler/pty.handler";
-import { ResizeHandler } from "./handler/resize.handler";
 import { ResumeLinkHandler } from "./handler/resume-link.handler";
-import { ScrollStateHandler } from "./handler/scroll-state.handler";
-import { SelectionHandler } from "./handler/selection.handler";
 import {
   OSC9_NOTIFICATION_ID,
   TerminalNotificationHandler,
@@ -174,16 +174,20 @@ export class TerminalSession {
       this.configService.config.font?.enable_ligatures ?? false,
     );
     this.focusHandler = new FocusHandler(this.terminalId, this.bus, this.stateManager);
-    this.disposables.push(
-      this.renderer.register(
-        new ResizeHandler(
-          this.terminalId,
-          this.pty,
-          this.bus,
-          terminalContainer,
-          this.stateManager,
-        ),
-      ),
+    const resizeHandler = new ResizeHandler(this.pty, terminalContainer, this.stateManager);
+    this.disposables.push(this.renderer.register(resizeHandler));
+    // Padding and theme changes alter the usable area. The machine offers
+    // `resize()`; deciding when it is needed is session knowledge.
+    this.subscription.add(
+      this.bus.on$({ path: ["app", "terminal", this.terminalId] }).subscribe((event) => {
+        if (
+          event.type === "TerminalThemeChanged" ||
+          event.type === "TerminalThemePaddingAdded" ||
+          event.type === "TerminalThemePaddingRemoved"
+        ) {
+          setTimeout(() => resizeHandler.resize(), 100);
+        }
+      }),
     );
     this.disposables.push(
       this.renderer.register(

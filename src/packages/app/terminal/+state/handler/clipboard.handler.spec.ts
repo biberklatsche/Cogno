@@ -1,5 +1,6 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
+import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import type { IPty } from "@cogno/core/terminal/pty";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
@@ -9,7 +10,6 @@ import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.fa
 import { AppBus } from "../../../app-bus/app-bus";
 import type { TerminalStateManager } from "../state";
 import { ClipboardHandler } from "./clipboard.handler";
-import { SelectionHandler } from "./selection.handler";
 
 function makeConfigService(
   overrides: {

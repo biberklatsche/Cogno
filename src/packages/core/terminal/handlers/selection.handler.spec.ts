@@ -1,7 +1,7 @@
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { clear, getSelectionHandler, getStateManager } from "../../../../__test__/test-factory";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { clear, getSelectionHandler, getStateManager } from "../../../__test__/test-factory";
 import type { SelectionHandler } from "./selection.handler";
 
 describe("SelectionHandler", () => {

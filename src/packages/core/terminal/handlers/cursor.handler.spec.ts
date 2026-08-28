@@ -1,27 +1,47 @@
-import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import type {
+  TerminalCursorPosition,
+  TerminalMousePosition,
+  TerminalViewportDimensions,
+} from "../terminal-machine.state";
 import { CursorHandler } from "./cursor.handler";
 
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+/** Records what the machine reports, which is all these handlers do. */
+function createMachineState() {
+  return {
+    cursorPosition: undefined as TerminalCursorPosition | undefined,
+    mousePosition: undefined as TerminalMousePosition | undefined,
+    dimensions: undefined as TerminalViewportDimensions | undefined,
+    hasSelection: false,
+    scrolledLinesFromBottom: 0,
+    updateCursorPosition(position: TerminalCursorPosition) {
+      this.cursorPosition = position;
+    },
+    updateMousePosition(position: TerminalMousePosition) {
+      this.mousePosition = position;
+    },
+    updateDimensions(dimensions: TerminalViewportDimensions) {
+      this.dimensions = dimensions;
+    },
+    setHasSelection(hasSelection: boolean) {
+      this.hasSelection = hasSelection;
+    },
+    setScrolledLinesFromBottom(lines: number) {
+      this.scrolledLinesFromBottom = lines;
+    },
+  };
+}
 
 describe("CursorHandler", () => {
-  let bus: AppBus;
   let handler: CursorHandler;
-  let stateManager: TerminalStateManager;
+  let stateManager: ReturnType<typeof createMachineState>;
   let cursorMoveCallback: (() => void) | null = null;
-  const terminalId = "test-terminal-id";
 
   beforeEach(() => {
     cursorMoveCallback = null;
 
-    bus = new AppBus();
-    vi.spyOn(bus, "publish");
-
-    stateManager = new TerminalStateManager(osStub, bus);
-    stateManager.initialize(terminalId, "Bash");
+    stateManager = createMachineState();
     handler = new CursorHandler(stateManager);
   });
 

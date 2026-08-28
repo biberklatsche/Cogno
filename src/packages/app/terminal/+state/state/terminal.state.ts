@@ -2,25 +2,19 @@ import { OsType } from "@cogno/platform/os";
 import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
 import { ShellContext } from "../advanced/model/models";
 
-export type Position = { col: number; row: number };
-export type TerminalCursorPosition = Position & {
-  viewport: Position;
-  char: string;
-};
+export type {
+  Position,
+  TerminalCursorPosition,
+  TerminalMousePosition,
+} from "@cogno/core/terminal/terminal-machine.state";
 
-export type TerminalMousePosition = Position & {
-  viewport: Position;
-  char: string;
-};
+import type {
+  TerminalCursorPosition,
+  TerminalMousePosition,
+  TerminalViewportDimensions,
+} from "@cogno/core/terminal/terminal-machine.state";
 
-export type TerminalDimensions = {
-  rows: number;
-  cols: number;
-  cellHeight: number;
-  cellWidth: number;
-  viewportWidth?: number;
-  viewportHeight?: number;
-};
+export type TerminalDimensions = TerminalViewportDimensions;
 
 export type TerminalInput = {
   cursorIndex: number;

@@ -1,31 +1,52 @@
-import type { IPty } from "@cogno/core/terminal/pty";
-import { OsPlatform } from "@cogno/platform/os";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { Terminal } from "@xterm/xterm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import type { IPty } from "../pty";
+import type {
+  TerminalCursorPosition,
+  TerminalMousePosition,
+  TerminalViewportDimensions,
+} from "../terminal-machine.state";
 import { ResizeHandler } from "./resize.handler";
 
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+/** Records what the machine reports, which is all these handlers do. */
+function createMachineState() {
+  return {
+    cursorPosition: undefined as TerminalCursorPosition | undefined,
+    mousePosition: undefined as TerminalMousePosition | undefined,
+    dimensions: undefined as TerminalViewportDimensions | undefined,
+    hasSelection: false,
+    scrolledLinesFromBottom: 0,
+    updateCursorPosition(position: TerminalCursorPosition) {
+      this.cursorPosition = position;
+    },
+    updateMousePosition(position: TerminalMousePosition) {
+      this.mousePosition = position;
+    },
+    updateDimensions(dimensions: TerminalViewportDimensions) {
+      this.dimensions = dimensions;
+    },
+    setHasSelection(hasSelection: boolean) {
+      this.hasSelection = hasSelection;
+    },
+    setScrolledLinesFromBottom(lines: number) {
+      this.scrolledLinesFromBottom = lines;
+    },
+  };
+}
 
 describe("ResizeHandler", () => {
   let handler: ResizeHandler;
   let mockTerminal: Terminal;
-  let mockBus: AppBus;
   let mockPty: IPty;
   let mockFitAddon: FitAddon;
   let container: HTMLDivElement;
-  let stateManager: TerminalStateManager;
-  const terminalId = "test-terminal-id";
+  let stateManager: ReturnType<typeof createMachineState>;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    mockBus = new AppBus();
-    vi.spyOn(mockBus, "publish");
-    stateManager = new TerminalStateManager(osStub, mockBus);
-    stateManager.initialize(terminalId, "Bash");
+    stateManager = createMachineState();
     mockPty = {
       resize: vi.fn().mockResolvedValue(undefined),
     } as unknown as IPty;
@@ -37,7 +58,7 @@ describe("ResizeHandler", () => {
       fit: vi.fn(),
     } as unknown as FitAddon;
 
-    handler = new ResizeHandler(terminalId, mockPty, mockBus, container, stateManager);
+    handler = new ResizeHandler(mockPty, container, stateManager);
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
@@ -46,15 +67,13 @@ describe("ResizeHandler", () => {
   });
 
   describe("registration", () => {
-    it("should setup ResizeObserver and subscribe to bus", () => {
+    it("should setup ResizeObserver", () => {
       const observeSpy = vi.spyOn(ResizeObserver.prototype, "observe");
-      const subscribeSpy = vi.spyOn(mockBus, "on$");
 
       handler.registerFitAddon(mockFitAddon);
       handler.registerTerminal(mockTerminal);
 
       expect(observeSpy).toHaveBeenCalledWith(container, { box: "content-box" });
-      expect(subscribeSpy).toHaveBeenCalled();
     });
   });
 
@@ -130,21 +149,11 @@ describe("ResizeHandler", () => {
     });
   });
 
-  describe("bus events", () => {
-    it("should trigger resize on TerminalThemeChanged", () => {
-      handler.registerFitAddon(mockFitAddon);
-      handler.registerTerminal(mockTerminal);
-      const resizeSpy = vi.spyOn(handler, "resize");
-
-      mockBus.publish({ type: "TerminalThemeChanged", path: ["app", "terminal", terminalId] });
-
-      vi.runAllTimers();
-      expect(resizeSpy).toHaveBeenCalled();
-    });
-  });
+  // Re-fitting after a theme or padding change is triggered by the session,
+  // which knows what a theme is; the machine only offers `resize()`.
 
   describe("Lifecycle", () => {
-    it("should disconnect observer and unsubscribe on dispose", () => {
+    it("should disconnect the observer on dispose", () => {
       const disconnectSpy = vi.spyOn(ResizeObserver.prototype, "disconnect");
       handler.registerFitAddon(mockFitAddon);
       handler.registerTerminal(mockTerminal);

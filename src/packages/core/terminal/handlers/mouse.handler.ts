@@ -1,7 +1,7 @@
-import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { TerminalStateManager } from "../state";
+import { ITerminalHandler } from "../terminal-handler";
+import type { TerminalMachineState } from "../terminal-machine.state";
 
 type TerminalBufferWithViewport = Terminal["buffer"]["active"] & {
   viewportY?: number;
@@ -20,7 +20,7 @@ export class MouseHandler implements ITerminalHandler {
 
   constructor(
     private _terminalContainer: HTMLDivElement,
-    private _stateManager: TerminalStateManager,
+    private _stateManager: TerminalMachineState,
   ) {
     this._screenElement = this._terminalContainer.querySelector(".xterm-screen") as HTMLElement;
   }

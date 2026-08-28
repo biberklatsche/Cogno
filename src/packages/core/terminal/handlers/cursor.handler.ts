@@ -1,12 +1,12 @@
-import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { TerminalStateManager } from "../state";
+import { ITerminalHandler } from "../terminal-handler";
+import type { TerminalMachineState } from "../terminal-machine.state";
 
 export class CursorHandler implements ITerminalHandler {
   private _cursorListener?: IDisposable;
 
-  constructor(private stateManager: TerminalStateManager) {}
+  constructor(private stateManager: TerminalMachineState) {}
 
   dispose(): void {
     this._cursorListener?.dispose?.();
