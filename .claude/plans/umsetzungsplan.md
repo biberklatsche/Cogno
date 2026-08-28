@@ -442,12 +442,14 @@ Store in `app/` re-exportiert den Typ, bis er selbst umzieht.
 
 ## Phase D — Maschine und Session
 
-### Schritt 9: `core/terminal/` — die Maschine, Teil 1 (PTY, Renderer, Input)
+### Schritt 9: `core/terminal/` — die Maschine, Teil 1 (PTY, Renderer)
 
 **Voraussetzungen:** 1, 4.
 
-**Was:** `app/terminal/+state/pty/pty.ts`, `renderer/renderer.ts`,
-`input-writer.ts` nach `core/terminal/`. Dabei die Grenz-Entscheidungen
+**Was:** `app/terminal/+state/pty/pty.ts` und `renderer/renderer.ts` nach
+`core/terminal/`. **Nicht** `input-writer.ts`: er liest Eingabezeile,
+Cursorposition und Capabilities aus dem Sitzungsmodell und ist damit Session
+(ZA 2.1 korrigiert; er zieht in Schritt 12 mit den Editor-Aktionen). Dabei die Grenz-Entscheidungen
 ZA 2.1 umsetzen, soweit diese Dateien betroffen sind: `renderer.ts`
 bekommt Optionen (Theme, Font, Scrollback, Cursor) als Werte statt
 `ConfigService`; Fehler werden als Ereignis (`errors$`) veröffentlicht

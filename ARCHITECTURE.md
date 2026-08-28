@@ -130,11 +130,18 @@ ließe sich ein Terminal ohne Cogno bauen. Schnittstelle nach oben — rein:
 `write`, `resize`, `focus`, `attach(element)`/`detach()`, `setOptions`,
 `dispose`; raus: Ausgabe-Bytes, OSC/CSI-Hooks, Cursor-/Größen-/Fokus-/
 Selektions-/Scroll-/Alt-Screen-Änderungen, PTY-Exit; Zugriff: Buffer lesen,
-Marker, Search-Addon. Heutige Dateien: `pty/pty.ts`, `renderer/renderer.ts`,
-`input-writer.ts`, die Handler `pty`, `resize`, `cursor`, `mouse`,
-`selection`, `scroll-state`, `focus`, `input`, `theme`, und der
+Marker, Search-Addon. **Das Basis-Terminal ohne Zauber.** Heutige Dateien:
+`pty/pty.ts`, `renderer/renderer.ts`, die Handler `pty`, `resize`, `cursor`,
+`mouse`, `selection`, `scroll-state`, `focus`, `input`, `theme`, und der
 Maschinen-Anteil von `TerminalStateManager` (Cursor, Maße, Fokus, Selektion,
 Scroll, Progress).
+
+`input-writer.ts` gehört **nicht** hierher, obwohl sein Name danach klingt:
+die Maschine schreibt Bytes (`pty.write`), er entscheidet *welche* — um aus
+„git sta" ein „git status" zu machen, muss er wissen, was in der Eingabezeile
+steht, wo der Cursor ist und ob die Shell „Zeile ersetzen" im
+`COGNO:CAPS`-Handshake gemeldet hat. Alle drei sind Sitzungswissen; er zieht
+mit den Editor-Aktionen nach `core/session/`.
 
 **Session** ist die Bedeutung einer laufenden Sitzung: der Session-Host, der
 eine Maschine besitzt und konfiguriert, das Sitzungsmodell (siehe unten), die
@@ -144,7 +151,8 @@ Such-Engine, Links, Menüs, Snapshots. Alles darin lebt und stirbt mit der
 Sitzung. Prüfkriterium: der Code braucht genau eine `sessionId` und wäre ohne
 diese Sitzung sinnlos. Heutige Dateien: `terminal.session.ts` (wird der Host),
 der Modell-Anteil von `TerminalStateManager` (`startCommand`/`endCommand`,
-`updateCwd`, `updateSessionCapabilities`, `updateInput`, Shell-Kontext), die
+`updateCwd`, `updateSessionCapabilities`, `updateInput`, Shell-Kontext),
+`input-writer.ts`, die
 Handler `terminal-title`, `terminal-notification`, `full-screen-app`¹,
 `link`, `resume-link`, `clipboard`, `completed-command-notification`,
 `terminal-search`, sowie `advanced/*` vollständig, `header/`, und die
