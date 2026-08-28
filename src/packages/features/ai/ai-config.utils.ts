@@ -1,3 +1,4 @@
+import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
 import { DetectedAiProvider } from "./ai-detection.models";
 
 export type AiProviderTypeConfigValue = "openai_compatible" | "ollama_native";
@@ -13,7 +14,7 @@ export type AiProviderConfigValue = {
 };
 
 export type AiFeatureConfigValue = {
-  readonly mode?: "off" | "hidden" | "visible";
+  readonly mode?: FeatureModeContract;
   readonly active_provider?: string;
   readonly providers?: Readonly<Record<string, AiProviderConfigValue>>;
   readonly request?: {
@@ -146,7 +147,7 @@ function normalizeProviderType(value: unknown): AiProviderTypeConfigValue | unde
 }
 
 function normalizeMode(value: unknown): AiFeatureConfigValue["mode"] | undefined {
-  return value === "off" || value === "hidden" || value === "visible" ? value : undefined;
+  return normalizeFeatureMode(value);
 }
 
 function asNonEmptyString(value: unknown): string | undefined {

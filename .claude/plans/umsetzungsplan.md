@@ -287,20 +287,29 @@ als der Nutzen, und die Funktion wird durch den Parameter reiner.
 **Erlaubter Übergangszustand:** ggf. in Teilcommits je Plattformdienst
 nach gleichem Muster.
 
-### Schritt 5: `hidden` → `on`
+### Schritt 5: `hidden` → `on` — **erledigt (2026-08-28)**
 
 **Voraussetzungen:** 1.
 
-**Was:** `featureModeSchema` und `aiFeatureModeSchema` auf `["on","off"]`;
-Config-Reader mappt `hidden`/`visible` → `on` mit Info-Diagnose; die ~20
-Code-Stellen mit `"hidden"` entfernen; Default-Configs anpassen.
+**Was:** `FeatureModeContract` ist `"off" | "on"`; `normalizeFeatureMode()`
+daneben liest die alten Schreibweisen. Beide Zod-Schemas (`featureModeSchema`
+in `shared/contributions`, `FeatureModeEnum` in `core/infrastructure`) nehmen
+sie per `z.preprocess` entgegen und geben `on` zurück — **still, ohne
+Diagnose**: der Wert bedeutet exakt, was er soll, es ist kein Fehler des
+Nutzers, und die ausgelieferten Default-Configs trugen selbst `= visible`.
+`aiFeatureModeSchema` ist jetzt dasselbe Schema statt einer Kopie.
+
+Der Modus `hidden` hatte eine eigene Wirkung: Menüeintrag mit `hidden: true`,
+Keybinding aktiv. Die entfällt — ein Feature ist an oder aus. Wer das Icon
+verbergen und die Tastenkombination behalten will, braucht künftig eine
+Darstellungsoption; die wird nicht auf Vorrat gebaut.
 
 **Akzeptanzkriterien:**
 
-- Test: eine Config mit `feature.git.mode = hidden` lädt ohne Fehler,
-  Git ist an, eine Diagnose-Notification nennt den Schlüssel.
-- `grep -rn "\"hidden\"" src/packages` nur noch in Specs für die
-  Lesetoleranz.
+- Test in `config.mapper.spec.ts`: `visible`/`hidden` werden zu `on`, `off`
+  bleibt `off`, keine Fehlerdiagnose.
+- Die drei `default_*.config` schreiben `= on`; kein `"visible"` mehr im
+  Quellcode außer in der Lesetoleranz und ihrem Test.
 
 **Erlaubter Übergangszustand:** keiner.
 

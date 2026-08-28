@@ -24,7 +24,7 @@ describe("AiProviderRegistryService", () => {
       getConfiguration: vi.fn().mockReturnValue({
         feature: {
           ai: {
-            mode: "visible",
+            mode: "on",
             active_provider: "openai",
             providers: {
               openai: {
@@ -94,7 +94,7 @@ describe("AiProviderRegistryService", () => {
     vi.mocked(applicationConfigurationPort.getConfiguration).mockReturnValue({
       feature: {
         ai: {
-          mode: "visible",
+          mode: "on",
           active_provider: "custom",
           providers: {
             custom: {

@@ -11,11 +11,11 @@ export const hexColorSchema = z.preprocess(
     ),
 );
 
-export const featureModeSchema = z.enum([
-  "off",
-  "hidden",
-  "visible",
-] satisfies ReadonlyArray<FeatureModeContract>);
+/** Accepts the legacy "hidden"/"visible" and reads both as "on". */
+export const featureModeSchema = z.preprocess(
+  (value) => (value === "hidden" || value === "visible" ? "on" : value),
+  z.enum(["off", "on"] satisfies ReadonlyArray<FeatureModeContract>),
+);
 
 const featureOrderSchema = z
   .number()
@@ -52,7 +52,7 @@ export const FeatureSearchSchema = z.object({
 
 const aiProviderTypeSchema = z.enum(["openai_compatible", "ollama_native"] as const);
 
-const aiFeatureModeSchema = z.enum(["off", "hidden", "visible"]);
+const aiFeatureModeSchema = featureModeSchema;
 
 const aiProviderSchema = z.object({
   type: aiProviderTypeSchema,

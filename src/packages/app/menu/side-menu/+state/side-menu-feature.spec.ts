@@ -42,7 +42,7 @@ describe("SideMenuFeature", () => {
   beforeEach(() => {
     appBus = new AppBus();
     configSubject = new BehaviorSubject<Record<string, unknown>>({
-      feature: { workspace: { mode: "visible" } },
+      feature: { workspace: { mode: "on" } },
     });
     applicationConfigurationPort = {
       configuration$: configSubject.asObservable(),
@@ -91,9 +91,10 @@ describe("SideMenuFeature", () => {
       expect.objectContaining({ label: "Workspace", hidden: false }),
     );
 
+    // "hidden" is a legacy value and now simply means "on".
     configSubject.next({ feature: { workspace: { mode: "hidden" } } });
     expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
-      expect.objectContaining({ label: "Workspace", hidden: true }),
+      expect.objectContaining({ label: "Workspace", hidden: false }),
     );
 
     configSubject.next({ feature: { workspace: { mode: "off" } } });
@@ -102,7 +103,7 @@ describe("SideMenuFeature", () => {
     vi.mocked(sideMenuService.isSelected).mockReturnValue(true);
     configSubject.next({
       workspace_available: false,
-      feature: { workspace: { mode: "visible" } },
+      feature: { workspace: { mode: "on" } },
     });
     expect(sideMenuService.close).toHaveBeenCalledWith(true);
     expect(lifecycle.onModeChange).toHaveBeenCalled();
@@ -125,12 +126,12 @@ describe("SideMenuFeature", () => {
       expect.objectContaining({ order: definition.order }),
     );
 
-    configSubject.next({ feature: { workspace: { mode: "visible", order: 5 } } });
+    configSubject.next({ feature: { workspace: { mode: "on", order: 5 } } });
     expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
       expect.objectContaining({ order: 5 }),
     );
 
-    configSubject.next({ feature: { workspace: { mode: "visible" } } });
+    configSubject.next({ feature: { workspace: { mode: "on" } } });
     expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
       expect.objectContaining({ order: definition.order }),
     );

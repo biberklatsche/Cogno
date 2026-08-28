@@ -3,7 +3,7 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/shared/contributions";
-import { FeatureModeContract } from "@cogno/shared/domain";
+import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
@@ -104,15 +104,11 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
 
   private getFeatureMode(featureConfiguration: unknown): FeatureModeContract {
     if (typeof featureConfiguration !== "object" || featureConfiguration === null) {
-      return "visible";
+      return "on";
     }
 
     const modeValue = (featureConfiguration as { mode?: unknown }).mode;
-    if (modeValue === "off" || modeValue === "hidden" || modeValue === "visible") {
-      return modeValue;
-    }
-
-    return "visible";
+    return normalizeFeatureMode(modeValue) ?? "on";
   }
 
   private getFeatureOrder(featureConfiguration: unknown): number {
@@ -148,11 +144,7 @@ export class SideMenuFeature implements SideMenuFeatureHandleContract<Icon> {
         this.removeKeybindHandler();
         this.sideMenuService.removeMenuItem(this.menuItem.label);
         break;
-      case "hidden":
-        this.sideMenuService.addMenuItem({ ...this.menuItem, hidden: true });
-        this.addKeybindHandler();
-        break;
-      case "visible":
+      case "on":
         this.sideMenuService.addMenuItem({ ...this.menuItem, hidden: false });
         this.addKeybindHandler();
         break;

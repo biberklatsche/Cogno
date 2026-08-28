@@ -291,4 +291,23 @@ describe("ConfigMapper", () => {
     expect(result.config.notification?.exception?.handled?.enabled).toBe(false);
     expect(result.config.notification?.channel?.app?.enabled).toBe(true);
   });
+
+  it("reads the legacy feature modes as on", () => {
+    const text = `
+      feature.git.mode=visible
+      feature.ai.mode=hidden
+      feature.workspace.mode=off
+    `;
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
+      "linux",
+      defaultText,
+      text,
+      extensions,
+    );
+
+    expect(result.config.feature?.git?.mode).toBe("on");
+    expect(result.config.feature?.ai?.mode).toBe("on");
+    expect(result.config.feature?.workspace?.mode).toBe("off");
+    expect(result.diagnostics.filter((d) => d.level === "error")).toHaveLength(0);
+  });
 });

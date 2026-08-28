@@ -6,6 +6,7 @@ import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/co
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
+import { normalizeFeatureMode } from "@cogno/shared/domain";
 import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { KeybindService } from "../../keybinding/keybind.service";
@@ -142,10 +143,6 @@ export class NativeMenuService {
     if (typeof featureConfigValue !== "object" || featureConfigValue === null) {
       return undefined;
     }
-    const modeValue = (featureConfigValue as { mode?: unknown }).mode;
-    if (modeValue === "off" || modeValue === "hidden" || modeValue === "visible") {
-      return modeValue;
-    }
-    return undefined;
+    return normalizeFeatureMode((featureConfigValue as { mode?: unknown }).mode);
   }
 }

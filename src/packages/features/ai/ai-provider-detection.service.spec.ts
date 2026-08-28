@@ -38,7 +38,7 @@ describe("AiProviderDetectionService", () => {
   beforeEach(() => {
     configPort = {
       configuration$: new Subject(),
-      getConfiguration: vi.fn().mockReturnValue({ feature: { ai: { mode: "visible" } } }),
+      getConfiguration: vi.fn().mockReturnValue({ feature: { ai: { mode: "on" } } }),
     } as unknown as ApplicationConfigurationPort;
 
     httpClient = {
@@ -120,7 +120,7 @@ describe("AiProviderDetectionService", () => {
 
   it("skips provider when user has explicitly disabled it in config", async () => {
     vi.mocked(configPort.getConfiguration).mockReturnValue({
-      feature: { ai: { mode: "visible", providers: { ollama: { enabled: false } } } },
+      feature: { ai: { mode: "on", providers: { ollama: { enabled: false } } } },
     });
 
     const service = new AiProviderDetectionService(
@@ -138,7 +138,7 @@ describe("AiProviderDetectionService", () => {
   it("uses user-configured base_url instead of default", async () => {
     vi.mocked(configPort.getConfiguration).mockReturnValue({
       feature: {
-        ai: { mode: "visible", providers: { ollama: { base_url: "http://custom-host:11434" } } },
+        ai: { mode: "on", providers: { ollama: { base_url: "http://custom-host:11434" } } },
       },
     });
     vi.mocked(httpClient.request).mockResolvedValue({

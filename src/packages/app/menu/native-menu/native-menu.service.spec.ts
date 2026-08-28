@@ -103,7 +103,7 @@ describe("NativeMenuService", () => {
       destroyRef,
     );
     (nativeMenuService as unknown as { latestConfig?: Record<string, unknown> }).latestConfig = {
-      workspace: { mode: "visible" },
+      workspace: { mode: "on" },
       ai: { mode: "off" },
     };
   });
@@ -153,7 +153,7 @@ describe("NativeMenuService", () => {
       (
         nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }
       ).getFeatureMode("workspace"),
-    ).toBe("visible");
+    ).toBe("on");
     expect(
       (
         nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }

@@ -31,7 +31,7 @@ export const defaultFeatureSettingsExtension = {
   defaults: {
     feature: {
       ai: {
-        mode: "visible",
+        mode: "on",
         request: {
           include_process_tree: false,
           max_commands: 8,
@@ -39,10 +39,10 @@ export const defaultFeatureSettingsExtension = {
         },
       },
       git: {
-        mode: "visible",
+        mode: "on",
       },
       coding_agents: {
-        mode: "visible",
+        mode: "on",
       },
     },
   },

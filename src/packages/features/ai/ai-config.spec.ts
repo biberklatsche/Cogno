@@ -96,7 +96,7 @@ describe("ai-config", () => {
       hasUsableAiProvider({
         feature: {
           ai: {
-            mode: "visible",
+            mode: "on",
             providers: {
               ollama: {
                 type: "ollama_native",
@@ -122,7 +122,7 @@ describe("mergeDetectedProviders", () => {
   };
 
   it("adds detected provider to config using first model as default", () => {
-    const config = { feature: { ai: { mode: "visible" } } };
+    const config = { feature: { ai: { mode: "on" } } };
     const result = mergeDetectedProviders(config, [detectedOllama]);
     const featureConfig = (result as Record<string, unknown>)["feature"] as Record<string, unknown>;
     expect(featureConfig["ai"]).toMatchObject({
@@ -166,7 +166,7 @@ describe("mergeDetectedProviders", () => {
   });
 
   it("returns the same config reference when no providers are detected", () => {
-    const config = { feature: { ai: { mode: "visible" } } };
+    const config = { feature: { ai: { mode: "on" } } };
     expect(mergeDetectedProviders(config, [])).toBe(config);
   });
 
