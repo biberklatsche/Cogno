@@ -9,9 +9,13 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import {
+  HistoryEntry,
+  HistoryEntryOrigin,
+  HistoryScope,
+} from "@cogno/core/command-log/recent-history.types";
 import { StartEllipsisDirective, TimeAgoPipe, TooltipDirective } from "@cogno/shared/ui";
 import { ActionKeybindingPipe } from "../../../../keybinding/pipe/keybinding.pipe";
-import { HistoryEntry, HistoryEntryOrigin, HistoryScope } from "./recent-history.types";
 import { TerminalHistoryService } from "./terminal-history.service";
 
 const INITIAL_VIEW_STATE = {

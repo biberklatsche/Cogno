@@ -1,4 +1,4 @@
-import { CommandHistoryRow } from "../../../history/history.repository";
+import { CommandHistoryRow } from "@cogno/core/command-log/command-log.repository";
 import { tokenMatchQuality } from "../../token-match";
 
 const SCORING = {

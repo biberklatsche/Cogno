@@ -2,7 +2,7 @@ import {
   ClassifiedCommandToken,
   CommandSignature,
   CommandSignaturePart,
-} from "./command-pattern.models";
+} from "../command-pattern.models";
 
 export class CommandSignatureBuilder {
   build(classifiedCommandTokens: ClassifiedCommandToken[]): CommandSignature | undefined {

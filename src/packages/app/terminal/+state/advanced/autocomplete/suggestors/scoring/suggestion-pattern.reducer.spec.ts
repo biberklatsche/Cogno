@@ -1,5 +1,5 @@
+import type { CommandPattern } from "@cogno/core/command-log/command-pattern.models";
 import { describe, expect, it } from "vitest";
-import type { CommandPattern } from "../../../history/command-pattern.models";
 import type { QueryContext } from "../../autocomplete.types";
 import { SuggestionPatternReducer } from "./suggestion-pattern.reducer";
 

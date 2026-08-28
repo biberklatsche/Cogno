@@ -1,4 +1,4 @@
-import { ClassifiedCommandToken, CommandToken } from "./command-pattern.models";
+import { ClassifiedCommandToken, CommandToken } from "../command-pattern.models";
 
 export class CommandTokenClassifier {
   classify(commandTokens: CommandToken[]): ClassifiedCommandToken[] {

@@ -1,4 +1,10 @@
 import { Injectable, OnDestroy } from "@angular/core";
+import { RecentCommandRow } from "@cogno/core/command-log/command-log.repository";
+import {
+  HistoryEntry,
+  HistoryScope,
+  TerminalHistoryViewState,
+} from "@cogno/core/command-log/recent-history.types";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
@@ -12,8 +18,6 @@ import {
   resolveRightUiInset,
 } from "../ui/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
-import { RecentCommandRow } from "./history.repository";
-import { HistoryEntry, HistoryScope, TerminalHistoryViewState } from "./recent-history.types";
 import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 

@@ -1,15 +1,20 @@
 import { DatabaseAccessContract, DatabaseStatementContract } from "@cogno/platform";
-import { IPathAdapter } from "@cogno/shared/domain";
-import { isWslContext, ShellContext } from "../model/models";
+import {
+  IPathAdapter,
+  isWslShellContext,
+  ResolvedShellContextContract,
+} from "@cogno/shared/domain";
+import type { CommandLogReader, CommandLogWriter } from "./command-log.api";
+
 import {
   CommandPattern,
   CommandPatternSlotStatistics,
   CommandSignaturePart,
 } from "./command-pattern.models";
-import { CommandPatternAnalyzer } from "./command-pattern-analyzer";
-import { CommandSignatureBuilder } from "./command-signature-builder";
-import { CommandTokenClassifier } from "./command-token-classifier";
-import { CommandTokenizer } from "./command-tokenizer";
+import { CommandPatternAnalyzer } from "./derive/command-pattern-analyzer";
+import { CommandSignatureBuilder } from "./derive/command-signature-builder";
+import { CommandTokenClassifier } from "./derive/command-token-classifier";
+import { CommandTokenizer } from "./derive/command-tokenizer";
 
 type IdRow = { id: number };
 type PathSegment = { path: string; basename: string; depth: number };
@@ -98,7 +103,7 @@ function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
  * Every write is a single batch, so it either lands completely or not at
  * all; ids are resolved inside the statements rather than round-tripped.
  */
-export class HistoryRepository {
+export class CommandLogRepository implements CommandLogWriter, CommandLogReader {
   private readonly commandPatternAnalyzer = new CommandPatternAnalyzer(
     new CommandTokenizer(),
     new CommandTokenClassifier(),
@@ -113,14 +118,14 @@ export class HistoryRepository {
 
   static async createForContext(
     database: DatabaseAccessContract,
-    shellContext: ShellContext,
+    shellContext: ResolvedShellContextContract,
     adapter: IPathAdapter,
-  ): Promise<HistoryRepository> {
+  ): Promise<CommandLogRepository> {
     // The WSL distro affects path normalisation, so it is part of the key.
     const key = [
       shellContext.backendOs,
       shellContext.shellType,
-      isWslContext(shellContext) ? shellContext.wslDistroName : "",
+      isWslShellContext(shellContext) ? shellContext.wslDistroName : "",
     ];
     await database.execute(
       `INSERT OR IGNORE INTO shell_context (backend_os, shell_type, wsl_distro, created_at)
@@ -132,7 +137,7 @@ export class HistoryRepository {
       key,
     );
     if (rows.length === 0) throw new Error("ensureContextId failed");
-    return new HistoryRepository(database, rows[0].id, adapter);
+    return new CommandLogRepository(database, rows[0].id, adapter);
   }
 
   async upsertWorkingDirectory(cwdRaw: string): Promise<void> {

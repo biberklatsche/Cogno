@@ -317,7 +317,7 @@ Darstellungsoption; die wird nicht auf Vorrat gebaut.
 
 ## Phase C — Kommandodaten
 
-### Schritt 6: `core/command-log/` — Schema und Lese-API
+### Schritt 6: `core/command-log/` — Schema und Lese-API — **erledigt (2026-08-28)**
 
 **Voraussetzungen:** 1.
 
@@ -333,8 +333,22 @@ und `read/` (`searchCommands`, `getRecentCommands`, `searchDirectories`,
 Kommando-Modell (`command.model.ts`, `command-pattern.models.ts`,
 `recent-history.types.ts`) dazu. `command-pattern-analyzer.ts` und
 `shell-history-reader.ts` nach `core/command-log/derive/` bzw. `import/`.
-Das eigene SQL in `history-command.suggestor.ts` durch einen Aufruf der
-Lese-API ersetzen.
+Kein Fremd-SQL zu ersetzen: die im Plan vermutete Stelle in
+`history-command.suggestor.ts` war ein Fehlbefund — der `SELECT`-Treffer kam
+von Konstanten wie `EMPTY_QUERY_SELECT_WEIGHT`. Die Suggestoren und Scorer
+importieren nur Zeilentypen.
+
+Statt zweier Klassen trennen **zwei Schnittstellen** die Seiten
+(`command-log.api.ts`): `CommandLogWriter` (Shell-Ereignisse, Import,
+Feedback) und `CommandLogReader` (die vier Abfragen plus `hasAnyCommands`).
+Das Repository implementiert beide; wer nur schreibt, bekommt nur den
+Writer — das ist ein Compilerfehler statt einer Konvention und ersetzt die
+für Schritt 7 geplante Depcruise-Regel.
+
+Die Migrationen behalten die Quelle `"app"`, obwohl sie jetzt in
+`core/command-log/schema/` liegen: eine Migration wird über `source/name`
+identifiziert, ein neuer Quellname ließe jede bestehende Datenbank als
+unmigriert erscheinen.
 
 **Akzeptanzkriterien:**
 

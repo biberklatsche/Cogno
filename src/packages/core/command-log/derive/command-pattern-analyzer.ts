@@ -1,4 +1,8 @@
-import { CommandPatternOccurrence, CommandSignature, CommandToken } from "./command-pattern.models";
+import {
+  CommandPatternOccurrence,
+  CommandSignature,
+  CommandToken,
+} from "../command-pattern.models";
 import { CommandSignatureBuilder } from "./command-signature-builder";
 import { CommandTokenClassifier } from "./command-token-classifier";
 import { CommandTokenizer } from "./command-tokenizer";

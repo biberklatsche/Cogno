@@ -1,7 +1,7 @@
 import type { DatabaseAccessContract, DatabaseStatementContract } from "@cogno/platform";
 import type { IPathAdapter } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { HistoryRepository } from "./history.repository";
+import { CommandLogRepository } from "./command-log.repository";
 
 function createPathAdapter(): IPathAdapter {
   return {
@@ -30,9 +30,9 @@ function createDatabase(): DatabaseDouble {
   };
 }
 
-async function createRepository(database: DatabaseDouble): Promise<HistoryRepository> {
+async function createRepository(database: DatabaseDouble): Promise<CommandLogRepository> {
   database.select.mockResolvedValueOnce([{ id: 7 }]);
-  return HistoryRepository.createForContext(
+  return CommandLogRepository.createForContext(
     database as unknown as DatabaseAccessContract,
     { backendOs: "linux", shellType: "Bash" } as never,
     createPathAdapter(),
@@ -43,7 +43,7 @@ function batchedStatements(database: DatabaseDouble, call = 0): DatabaseStatemen
   return database.batch.mock.calls[call][0] as DatabaseStatementContract[];
 }
 
-describe("HistoryRepository", () => {
+describe("CommandLogRepository", () => {
   let database: DatabaseDouble;
 
   beforeEach(() => {
@@ -66,7 +66,7 @@ describe("HistoryRepository", () => {
 
   it("includes the WSL distro in the context key", async () => {
     database.select.mockResolvedValueOnce([{ id: 1 }]);
-    await HistoryRepository.createForContext(
+    await CommandLogRepository.createForContext(
       database as unknown as DatabaseAccessContract,
       { backendOs: "windows", shellType: "Bash", wslDistroName: "Ubuntu" } as never,
       createPathAdapter(),

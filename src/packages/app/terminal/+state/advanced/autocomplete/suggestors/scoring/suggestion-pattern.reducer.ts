@@ -1,7 +1,7 @@
 import {
   CommandPattern,
   CommandPatternSlotStatistics,
-} from "../../../history/command-pattern.models";
+} from "@cogno/core/command-log/command-pattern.models";
 import { AutocompleteSuggestion, QueryContext } from "../../autocomplete.types";
 import { HistoryCommandScorer } from "./history-command.scorer";
 

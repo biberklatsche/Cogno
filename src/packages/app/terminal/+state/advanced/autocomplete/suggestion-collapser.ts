@@ -1,4 +1,4 @@
-import { CommandTokenizer } from "../history/command-tokenizer";
+import { CommandTokenizer } from "@cogno/core/command-log/derive/command-tokenizer";
 import { AutocompleteSuggestion } from "./autocomplete.types";
 import { tokenMatchQuality } from "./token-match";
 

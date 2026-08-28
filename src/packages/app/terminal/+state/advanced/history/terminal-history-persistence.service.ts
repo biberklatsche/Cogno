@@ -1,4 +1,12 @@
 import { Injectable } from "@angular/core";
+import {
+  CommandHistoryRow,
+  CommandLogRepository,
+  DirectoryHistoryRow,
+  RecentCommandRow,
+} from "@cogno/core/command-log/command-log.repository";
+import { CommandPattern } from "@cogno/core/command-log/command-pattern.models";
+import { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history-reader";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseAccess } from "@cogno/platform";
@@ -7,17 +15,9 @@ import { IPathAdapter } from "@cogno/shared/domain";
 import { BehaviorSubject, EMPTY, from, Subject } from "rxjs";
 import { catchError, concatMap, filter, take } from "rxjs/operators";
 import { ShellContext } from "../model/models";
-import { CommandPattern } from "./command-pattern.models";
-import {
-  CommandHistoryRow,
-  DirectoryHistoryRow,
-  HistoryRepository,
-  RecentCommandRow,
-} from "./history.repository";
-import { ShellHistoryReader } from "./shell-history-reader";
 import { ExecutedCommand } from "./terminal-command-history.store";
 
-type PersistenceAction = (repo: HistoryRepository) => Promise<void>;
+type PersistenceAction = (repo: CommandLogRepository) => Promise<void>;
 type ReturnCodePolicy = {
   defaultAllowedCodes: Set<number>;
   perCommandAllowedCodes: Map<string, Set<number>>;
@@ -55,7 +55,7 @@ function firstToken(commandRaw: string): string {
 export class TerminalHistoryPersistenceService {
   private static _shellHistoryImportStarted = false;
 
-  private readonly _repo$ = new BehaviorSubject<HistoryRepository | null>(null);
+  private readonly _repo$ = new BehaviorSubject<CommandLogRepository | null>(null);
   private readonly _actions$ = new Subject<PersistenceAction>();
   private readonly _returnCodePolicy: ReturnCodePolicy = {
     defaultAllowedCodes: new Set([0]),
@@ -75,7 +75,7 @@ export class TerminalHistoryPersistenceService {
       .pipe(
         concatMap((action) =>
           this._repo$.pipe(
-            filter((r): r is HistoryRepository => r !== null),
+            filter((r): r is CommandLogRepository => r !== null),
             take(1),
             concatMap((repo) => from(action(repo))),
             catchError((err) => {
@@ -108,7 +108,7 @@ export class TerminalHistoryPersistenceService {
       });
       return;
     }
-    HistoryRepository.createForContext(this.databaseAccess, shellContext, adapter)
+    CommandLogRepository.createForContext(this.databaseAccess, shellContext, adapter)
       .then((repo) => {
         this._repo$.next(repo);
         if (
@@ -132,7 +132,7 @@ export class TerminalHistoryPersistenceService {
   }
 
   private async importShellHistoryIfEmpty(
-    repo: HistoryRepository,
+    repo: CommandLogRepository,
     shellContext: ShellContext,
   ): Promise<void> {
     const hasCommands = await repo.hasAnyCommands();

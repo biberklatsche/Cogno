@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
+import { HistoryScope } from "@cogno/core/command-log/recent-history.types";
 import { BehaviorSubject, Observable } from "rxjs";
-import { HistoryScope } from "./recent-history.types";
 
 const SCOPE_STORAGE_KEY = "terminal.history.scope";
 

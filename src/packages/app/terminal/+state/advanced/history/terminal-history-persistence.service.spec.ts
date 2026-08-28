@@ -1,9 +1,9 @@
+import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { DatabaseAccess } from "@cogno/platform";
 import type { IPathAdapter } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
 import type { ShellContext } from "../model/models";
-import { HistoryRepository } from "./history.repository";
 import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 
 function flushActions(): Promise<void> {
@@ -26,19 +26,21 @@ const pathAdapter: IPathAdapter = {
 // The repository is replaced wholesale, so the access object is never used.
 const databaseAccess = {} as DatabaseAccess;
 
-type HistoryRepositoryDouble = {
-  upsertWorkingDirectory: ReturnType<typeof vi.fn<HistoryRepository["upsertWorkingDirectory"]>>;
-  upsertCommandExecution: ReturnType<typeof vi.fn<HistoryRepository["upsertCommandExecution"]>>;
-  upsertCommandTransition: ReturnType<typeof vi.fn<HistoryRepository["upsertCommandTransition"]>>;
-  deleteCommandExecution: ReturnType<typeof vi.fn<HistoryRepository["deleteCommandExecution"]>>;
-  searchCommandPatterns: ReturnType<typeof vi.fn<HistoryRepository["searchCommandPatterns"]>>;
-  confirmLivePattern: ReturnType<typeof vi.fn<HistoryRepository["confirmLivePattern"]>>;
+type CommandLogRepositoryDouble = {
+  upsertWorkingDirectory: ReturnType<typeof vi.fn<CommandLogRepository["upsertWorkingDirectory"]>>;
+  upsertCommandExecution: ReturnType<typeof vi.fn<CommandLogRepository["upsertCommandExecution"]>>;
+  upsertCommandTransition: ReturnType<
+    typeof vi.fn<CommandLogRepository["upsertCommandTransition"]>
+  >;
+  deleteCommandExecution: ReturnType<typeof vi.fn<CommandLogRepository["deleteCommandExecution"]>>;
+  searchCommandPatterns: ReturnType<typeof vi.fn<CommandLogRepository["searchCommandPatterns"]>>;
+  confirmLivePattern: ReturnType<typeof vi.fn<CommandLogRepository["confirmLivePattern"]>>;
   markCommandPatternSelected: ReturnType<
-    typeof vi.fn<HistoryRepository["markCommandPatternSelected"]>
+    typeof vi.fn<CommandLogRepository["markCommandPatternSelected"]>
   >;
 };
 
-function createRepositoryDouble(): HistoryRepositoryDouble {
+function createRepositoryDouble(): CommandLogRepositoryDouble {
   return {
     upsertWorkingDirectory: vi.fn().mockResolvedValue(undefined),
     upsertCommandExecution: vi.fn().mockResolvedValue(undefined),
@@ -51,11 +53,11 @@ function createRepositoryDouble(): HistoryRepositoryDouble {
 }
 
 async function createService(
-  repositoryDouble: HistoryRepositoryDouble,
+  repositoryDouble: CommandLogRepositoryDouble,
   configService?: ConfigService,
 ): Promise<TerminalHistoryPersistenceService> {
-  vi.spyOn(HistoryRepository, "createForContext").mockResolvedValue(
-    repositoryDouble as unknown as HistoryRepository,
+  vi.spyOn(CommandLogRepository, "createForContext").mockResolvedValue(
+    repositoryDouble as unknown as CommandLogRepository,
   );
 
   const service = new TerminalHistoryPersistenceService(

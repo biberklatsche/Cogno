@@ -1,4 +1,4 @@
-import { CommandToken } from "./command-pattern.models";
+import { CommandToken } from "../command-pattern.models";
 
 export class CommandTokenizer {
   tokenize(commandText: string): CommandToken[] {

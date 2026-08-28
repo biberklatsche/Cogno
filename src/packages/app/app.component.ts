@@ -1,6 +1,6 @@
 import { Component } from "@angular/core";
+import { commandLogMigrations } from "@cogno/core/command-log/schema/migrations";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
-import { appDatabaseMigrations } from "@cogno/core/infrastructure/database/migrate";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
@@ -97,7 +97,7 @@ export class AppComponent {
   private async openApplicationDatabase(bus: AppBus): Promise<void> {
     try {
       const report = await this.databaseMigrationService.openDatabase(
-        appDatabaseMigrations,
+        commandLogMigrations,
         this.environment.isDevMode(),
         this.environment.legacyDatabaseFilePath(),
       );

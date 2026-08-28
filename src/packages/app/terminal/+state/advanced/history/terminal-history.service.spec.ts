@@ -1,10 +1,10 @@
+import type { RecentCommandRow } from "@cogno/core/command-log/command-log.repository";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalState } from "../../state";
 import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
-import type { RecentCommandRow } from "./history.repository";
 import { TerminalHistoryService } from "./terminal-history.service";
 import type { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
