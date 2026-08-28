@@ -37,6 +37,8 @@ vi.mock("@cogno/core/terminal/renderer", () => {
     register = vi.fn().mockReturnValue({ dispose: vi.fn() });
     dispose = vi.fn();
     setVisible = vi.fn();
+    setOptions = vi.fn();
+    restoreCursorColor = vi.fn();
     terminal = TerminalMockFactory.createTerminal();
   }
 

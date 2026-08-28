@@ -10,7 +10,6 @@ import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { vi } from "vitest";
 import { AppBus } from "../app/app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
-import { TerminalActivityService } from "../app/common/terminal-activity/terminal-activity.service";
 import { GridListService } from "../app/grid-list/+state/grid-list.service";
 import type { TerminalComponentFactory } from "../app/grid-list/+state/terminal-component.factory";
 import { KeybindService } from "../app/keybinding/keybind.service";
@@ -19,13 +18,10 @@ import type { TerminalKeybindingContextService } from "../app/keybinding/termina
 import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service";
 import type { NotificationTargetResolverService } from "../app/notification/+state/notification-target-resolver.service";
 import { TabListService } from "../app/tab-list/+state/tab-list.service";
-import { FocusHandler } from "../app/terminal/+state/handler/focus.handler";
 import { TerminalStateManager } from "../app/terminal/+state/state";
-import { TerminalSession } from "../app/terminal/+state/terminal.session";
 import type { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";
 import { WindowService } from "../app/window/window.service";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
-import { TauriMockFactory } from "./mocks/tauri-mock.factory";
 
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
@@ -36,10 +32,8 @@ let gridListService: GridListService | undefined;
 let tabListService: TabListService | undefined;
 let terminalComponentFactory: TerminalComponentFactory | undefined;
 let windowService: WindowService | undefined;
-let focusHandler: FocusHandler | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let stateManager: TerminalStateManager | undefined;
-let terminalSession: TerminalSession | undefined;
 let terminalAutocompleteFeatureSuggestorService:
   | TerminalAutocompleteFeatureSuggestorService
   | undefined;
@@ -88,28 +82,6 @@ export function getTerminalKeybindingContextService(): TerminalKeybindingContext
     } as unknown as TerminalKeybindingContextService;
   }
   return terminalKeybindingContextService;
-}
-
-export function getTerminalSession(): TerminalSession {
-  if (!terminalSession) {
-    terminalSession = new TerminalSession(
-      getOsPlatform(),
-      getConfigService(),
-      getAppBus(),
-      getStateManager(),
-      getTerminalAutocompleteFeatureSuggestorService(),
-      { open: () => ({ close: () => undefined }) } as any,
-      getAppWiringService(),
-      getContextMenuOverlayService(),
-      getNotificationTargetResolverService() as any,
-      {} as any,
-      new TerminalActivityService(),
-      { getAvailableChannels: () => [] } as any,
-      getKeybindServiceMock() as KeybindService,
-      TauriMockFactory.createPtyTransport() as any,
-    );
-  }
-  return terminalSession;
 }
 
 export function getTerminalAutocompleteFeatureSuggestorService(): TerminalAutocompleteFeatureSuggestorService {
@@ -246,13 +218,6 @@ export function getContextMenuOverlayService(): ContextMenuOverlayService {
   return contextMenuOverlayService;
 }
 
-export function getFocusHandler(terminalId: TerminalId): FocusHandler {
-  if (!focusHandler) {
-    focusHandler = new FocusHandler(terminalId, getAppBus(), getStateManager());
-  }
-  return focusHandler;
-}
-
 export function getSelectionHandler(_terminalId: TerminalId): SelectionHandler {
   if (!selectionHandler) {
     selectionHandler = new SelectionHandler(getStateManager());
@@ -270,10 +235,8 @@ export function clear() {
   tabListService = undefined;
   terminalComponentFactory = undefined;
   windowService = undefined;
-  focusHandler = undefined;
   selectionHandler = undefined;
   stateManager = undefined;
-  terminalSession = undefined;
   terminalAutocompleteFeatureSuggestorService = undefined;
   appWiringService = undefined;
   terminalBusyStateService = undefined;

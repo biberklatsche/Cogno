@@ -1,10 +1,8 @@
-import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import type { IPty } from "@cogno/core/terminal/pty";
+import type { PtyShellProfileContract } from "@cogno/platform";
 import type { Terminal } from "@xterm/xterm";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { HIDDEN_UNPARSED_BUDGET_BYTES, PtyHandler } from "./pty.handler";
 
 function chunk(seq: number, payload: string | number): { seq: number; data: Uint8Array } {
@@ -22,11 +20,15 @@ async function flushMicrotasks() {
 describe("PtyHandler", () => {
   let handler: PtyHandler;
   let mockTerminal: Terminal;
-  let mockBus: AppBus;
+  let listener: {
+    onStarted: Mock<(shellType: string) => void>;
+    onExited: Mock<() => void>;
+    onOutput: Mock<() => void>;
+  };
   let mockPty: IPty;
   let windowHidden = false;
   const terminalId = "test-terminal-id";
-  const shellConfig: ShellProfile = {
+  const shellConfig: PtyShellProfileContract = {
     path: "bash",
     shell_type: "Bash",
     inject_cogno_cli: false,
@@ -35,7 +37,11 @@ describe("PtyHandler", () => {
   };
 
   beforeEach(() => {
-    mockBus = new AppBus();
+    listener = {
+      onStarted: vi.fn<(shellType: string) => void>(),
+      onExited: vi.fn<() => void>(),
+      onOutput: vi.fn<() => void>(),
+    };
     windowHidden = false;
     mockPty = {
       spawn: vi.fn().mockResolvedValue(undefined),
@@ -46,14 +52,7 @@ describe("PtyHandler", () => {
       kill: vi.fn(),
     } as unknown as IPty;
 
-    handler = new PtyHandler(
-      terminalId,
-      mockPty,
-      shellConfig,
-      mockBus,
-      new TerminalActivityService(),
-      () => windowHidden,
-    );
+    handler = new PtyHandler(terminalId, mockPty, shellConfig, listener, () => windowHidden);
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
@@ -92,8 +91,7 @@ describe("PtyHandler", () => {
       expect(mockPty.write).toHaveBeenCalledWith("user input");
     });
 
-    it("should write PTY data to terminal in order and publish PtyInitialized after the first parse", async () => {
-      const publishSpy = vi.spyOn(mockBus, "publish");
+    it("should write PTY data to terminal in order and report started after the first parse", async () => {
       const writeSpy = vi.spyOn(mockTerminal, "write");
       const onWriteParsedDispose = vi.fn();
       let onWriteParsedCallback: any;
@@ -114,30 +112,21 @@ describe("PtyHandler", () => {
       expect(mockTerminal.onWriteParsed).toHaveBeenCalledOnce();
       expect(writeSpy).toHaveBeenCalledOnce();
       expect(writeSpy.mock.calls[0][0]).toBe(chunk1.data);
-      expect(publishSpy).not.toHaveBeenCalledWith(
-        expect.objectContaining({ type: "PtyInitialized" }),
-      );
+      expect(listener.onStarted).not.toHaveBeenCalled();
 
       onWriteParsedCallback();
 
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "PtyInitialized",
-          payload: expect.objectContaining({
-            terminalId: terminalId,
-          }),
-        }),
-      );
+      expect(listener.onStarted).toHaveBeenCalledWith("Bash");
       expect(onWriteParsedDispose).toHaveBeenCalled();
 
       // Second chunk: written as-is, no second PtyInitialized
-      publishSpy.mockClear();
+      listener.onStarted.mockClear();
       const chunk2 = chunk(1, "pty output 2");
       onPtyDataCallback(chunk2);
       expect(writeSpy).toHaveBeenCalledTimes(2);
       expect(writeSpy.mock.calls[1][0]).toBe(chunk2.data);
       expect(mockTerminal.onWriteParsed).toHaveBeenCalledOnce();
-      expect(publishSpy).not.toHaveBeenCalled();
+      expect(listener.onStarted).not.toHaveBeenCalled();
     });
   });
 
@@ -235,39 +224,25 @@ describe("PtyHandler", () => {
   });
 
   describe("exit handling", () => {
-    it("should publish RemovePane when PTY exits", async () => {
-      const publishSpy = vi.spyOn(mockBus, "publish");
-
+    it("reports the exit when the PTY ends", async () => {
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
 
       const onExitCallback = vi.mocked(mockPty.onExit).mock.calls[0][0];
       onExitCallback({ exitCode: 0 });
 
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "RemovePane",
-          payload: terminalId,
-        }),
-      );
+      expect(listener.onExited).toHaveBeenCalled();
     });
 
-    it("should publish RemovePane when PowerShell exits abnormally", async () => {
-      const publishSpy = vi.spyOn(mockBus, "publish");
-      const powerShellProfile: ShellProfile = {
+    it("reports the exit when PowerShell ends abnormally", async () => {
+      const powerPtyShellProfileContract: PtyShellProfileContract = {
         path: "powershell.exe",
         shell_type: "PowerShell",
         inject_cogno_cli: false,
         enable_shell_integration: false,
         load_user_rc: true,
       };
-      handler = new PtyHandler(
-        terminalId,
-        mockPty,
-        powerShellProfile,
-        mockBus,
-        new TerminalActivityService(),
-      );
+      handler = new PtyHandler(terminalId, mockPty, powerPtyShellProfileContract, listener);
 
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
@@ -275,12 +250,7 @@ describe("PtyHandler", () => {
       const onExitCallback = vi.mocked(mockPty.onExit).mock.calls[0][0];
       onExitCallback({ exitCode: -2146232797 });
 
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "RemovePane",
-          payload: terminalId,
-        }),
-      );
+      expect(listener.onExited).toHaveBeenCalled();
       expect(mockPty.spawn).toHaveBeenCalledTimes(1);
     });
   });

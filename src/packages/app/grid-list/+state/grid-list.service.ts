@@ -14,7 +14,7 @@ import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { AppBus } from "../../app-bus/app-bus";
 import { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
 import { TerminalCwdChangedEvent, TerminalTitleChangedEvent } from "../../terminal/+bus/events";
-import { TerminalFocusedEvent } from "../../terminal/+state/handler/focus.handler";
+import { TerminalFocusedEvent } from "../../terminal/+state/handler/terminal-focus.coordinator";
 import {
   FocusActiveTerminalAction,
   MaximizePaneAction,

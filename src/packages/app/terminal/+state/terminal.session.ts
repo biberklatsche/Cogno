@@ -1,12 +1,15 @@
 import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { toTerminalMachineOptions } from "@cogno/core/session/host/terminal-machine-options.mapper";
 import { CursorHandler } from "@cogno/core/terminal/handlers/cursor.handler";
+import { FocusHandler } from "@cogno/core/terminal/handlers/focus.handler";
 import { MouseHandler } from "@cogno/core/terminal/handlers/mouse.handler";
+import { PtyHandler } from "@cogno/core/terminal/handlers/pty.handler";
 import { ResizeHandler } from "@cogno/core/terminal/handlers/resize.handler";
 import { ScrollStateHandler } from "@cogno/core/terminal/handlers/scroll-state.handler";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
@@ -60,12 +63,11 @@ import {
   DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
-import { FocusHandler } from "./handler/focus.handler";
 import { FullScreenAppHandler } from "./handler/full-screen-app.handler";
 import { InputHandler } from "./handler/input.handler";
 import { LinkHandler } from "./handler/link.handler";
-import { PtyHandler } from "./handler/pty.handler";
 import { ResumeLinkHandler } from "./handler/resume-link.handler";
+import { TerminalFocusCoordinator } from "./handler/terminal-focus.coordinator";
 import {
   OSC9_NOTIFICATION_ID,
   TerminalNotificationHandler,
@@ -83,7 +85,7 @@ export class TerminalSession {
   private renderer: IRenderer;
   private readonly pty: IPty;
 
-  private focusHandler?: FocusHandler = undefined;
+  private focusCoordinator?: TerminalFocusCoordinator = undefined;
 
   private subscription: Subscription = new Subscription();
   private readonly disposables: IDisposable[];
@@ -185,7 +187,16 @@ export class TerminalSession {
         });
       }),
     );
-    this.focusHandler = new FocusHandler(this.terminalId, this.bus, this.stateManager);
+    const focusHandler = new FocusHandler((focused) =>
+      this.focusCoordinator?.onFocusChanged(focused),
+    );
+    this.focusCoordinator = new TerminalFocusCoordinator(
+      terminalId,
+      this.bus,
+      this.stateManager,
+      focusHandler,
+    );
+    this.disposables.push(this.focusCoordinator);
     const resizeHandler = new ResizeHandler(this.pty, terminalContainer, this.stateManager);
     this.disposables.push(this.renderer.register(resizeHandler));
     // Padding and theme changes alter the usable area. The machine offers
@@ -203,13 +214,23 @@ export class TerminalSession {
     );
     this.disposables.push(
       this.renderer.register(
-        new PtyHandler(
-          this.terminalId,
-          this.pty,
-          this.shellProfile,
-          this.bus,
-          this.terminalActivity,
-        ),
+        new PtyHandler(this.terminalId, this.pty, this.shellProfile, {
+          // The machine reports; publishing these is the session's job, and
+          // deciding what to do with them is the workbench's (step 20).
+          onStarted: (shellType: string) =>
+            this.bus.publish({
+              path: ["app", "terminal", terminalId],
+              type: "PtyInitialized",
+              payload: { terminalId, shellType: shellType as ShellType },
+            }),
+          onExited: () =>
+            this.bus.publish({
+              path: ["app", "terminal"],
+              type: "RemovePane",
+              payload: terminalId,
+            }),
+          onOutput: () => this.terminalActivity?.emit(terminalId),
+        }),
       ),
     );
     this.disposables.push(
@@ -241,7 +262,7 @@ export class TerminalSession {
         new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager),
       ),
     );
-    this.disposables.push(this.renderer.register(this.focusHandler));
+    this.disposables.push(this.renderer.register(focusHandler));
     const selectionHandler = new SelectionHandler(this.stateManager);
     this.disposables.push(this.renderer.register(selectionHandler));
     this.disposables.push(
@@ -351,7 +372,7 @@ export class TerminalSession {
       {
         label: "Paste",
         action: async () => {
-          this.focusHandler?.focus();
+          this.focusCoordinator?.focus();
           this.bus.publish({ path: ["app", "terminal"], type: "Paste", payload: this.terminalId });
         },
         keybinding: this.keybindingFor("paste"),
@@ -429,7 +450,7 @@ export class TerminalSession {
       {
         label: "Clear",
         action: () => {
-          this.focusHandler?.focus();
+          this.focusCoordinator?.focus();
           this.bus.publish({
             path: ["app", "terminal"],
             type: "ClearBuffer",
@@ -460,7 +481,7 @@ export class TerminalSession {
       items.unshift({
         label: "Copy",
         action: () => {
-          this.focusHandler?.focus();
+          this.focusCoordinator?.focus();
           this.bus.publish({ path: ["app", "action"], type: "ActionFired", payload: "copy" });
         },
         keybinding: this.keybindingFor("copy"),
@@ -501,7 +522,7 @@ export class TerminalSession {
   }
 
   focus(): void {
-    this.focusHandler?.focus();
+    this.focusCoordinator?.focus();
   }
 
   scrollToBottom(): void {

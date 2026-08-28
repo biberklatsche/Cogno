@@ -75,13 +75,13 @@ import {
   TerminalTitleChangedEvent,
 } from "../terminal/+bus/events";
 import {
-  TerminalBlurredEvent,
-  TerminalFocusedEvent,
-} from "../terminal/+state/handler/focus.handler";
-import {
   FullScreenAppEnteredEvent,
   FullScreenAppLeavedEvent,
 } from "../terminal/+state/handler/full-screen-app.handler";
+import {
+  TerminalBlurredEvent,
+  TerminalFocusedEvent,
+} from "../terminal/+state/handler/terminal-focus.coordinator";
 import {
   TerminalThemeChangedEvent,
   TerminalThemePaddingAddedEvent,

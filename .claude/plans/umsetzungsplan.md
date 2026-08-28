@@ -472,7 +472,7 @@ Maschine aus `@cogno/core/terminal` und reicht Config-Werte hinein
 (alt → neu). `TerminalStateManager` bleibt ungeteilt in `app/` und
 implementiert das Maschinen-Interface zusätzlich.
 
-### Schritt 10: Maschine, Teil 2 — Handler einsortieren
+### Schritt 10: Maschine, Teil 2 — Handler einsortieren — **erledigt (2026-08-28)**
 
 **Voraussetzungen:** 9.
 
@@ -501,6 +501,21 @@ Fokus/Theme/PTY) nach gleichem Muster.
 **Erlaubter Übergangszustand:** `terminal.session.ts` ist Übersetzer
 zwischen Maschinen-Ereignissen und altem Bus — das ist der einzige Ort,
 der beide kennt, und er liegt in `app/`.
+
+**Abweichungen bei der Umsetzung** (jeweils vorher abgestimmt, ZA-Datei-
+listen entsprechend korrigiert): Drei der neun aufgezählten Handler
+machen keine Maschinenarbeit und sind deshalb nicht mitgezogen.
+
+- `input.handler` liest Eingabezeile und Capabilities — Session; zieht in
+  Schritt 12 mit den übrigen Session-Handlern um.
+- `theme.handler` ist geteilt: die Optionen wurden zu
+  `renderer.setOptions()`, der Rest (Alt-Screen, Padding, vier
+  Bus-Nachrichten) bleibt als `TerminalPaddingHandler` Session.
+- `focus.handler` ist geteilt: `core/terminal/handlers/focus.handler.ts`
+  gibt xterm die Tastatur und meldet über einen `FocusListener`;
+  `app/terminal/+state/handler/terminal-focus.coordinator.ts` entscheidet
+  wer den Fokus bekommt, löscht das Ungelesen-Abzeichen und publiziert
+  `TerminalFocused`/`TerminalBlurred`.
 
 ### Schritt 11: `TerminalStateManager` teilen
 

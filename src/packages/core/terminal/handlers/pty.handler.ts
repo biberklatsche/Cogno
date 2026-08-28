@@ -1,11 +1,9 @@
-import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { IPty, PtyChunk } from "@cogno/core/terminal/pty";
-import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
+import { PtyShellProfileContract } from "@cogno/platform";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
+import { IPty, PtyChunk } from "../pty";
+import { ITerminalHandler } from "../terminal-handler";
 
 /**
  * While the window is hidden, browsers throttle the timers xterm parses with
@@ -16,6 +14,20 @@ import { TerminalActivityService } from "../../../common/terminal-activity/termi
  * past 50 MiB, so this must stay well below).
  */
 export const HIDDEN_UNPARSED_BUDGET_BYTES = 16 * 1024 * 1024;
+
+/**
+ * What the shell did, told to whoever is listening. The machine reports;
+ * turning these into notifications, panes or activity indicators is session
+ * and workbench work (ARCHITECTURE.md 2.1).
+ */
+export type PtyHandlerListener = {
+  /** The shell answered for the first time and xterm has parsed it. */
+  readonly onStarted?: (shellType: string) => void;
+  /** The shell process ended. */
+  readonly onExited?: () => void;
+  /** Output arrived - before it is parsed. */
+  readonly onOutput?: () => void;
+};
 
 export class PtyHandler implements ITerminalHandler {
   private _resizeObserver: ResizeObserver | undefined = undefined;
@@ -31,9 +43,8 @@ export class PtyHandler implements ITerminalHandler {
   constructor(
     private _terminalId: TerminalId,
     private _pty: IPty,
-    private _shellProfile: ShellProfile,
-    private _bus: AppBus,
-    private _terminalActivity?: TerminalActivityService,
+    private _shellProfile: PtyShellProfileContract,
+    private _listener: PtyHandlerListener = {},
     private _isWindowHidden: () => boolean = () => document.visibilityState === "hidden",
   ) {}
 
@@ -53,11 +64,7 @@ export class PtyHandler implements ITerminalHandler {
       this._disposables.push(terminal.onData((data) => this._pty?.write(data)));
       this._disposables.push(
         this._pty?.onExit((_) => {
-          this._bus.publish({
-            path: ["app", "terminal"],
-            type: "RemovePane",
-            payload: this._terminalId,
-          });
+          this._listener.onExited?.();
         }),
       );
     });
@@ -66,10 +73,10 @@ export class PtyHandler implements ITerminalHandler {
 
   private onPtyChunk(terminal: Terminal, chunk: PtyChunk): void {
     if (this._disposed) return;
-    this._terminalActivity?.emit(this._terminalId);
+    this._listener.onOutput?.();
     if (!this._firstWriteEvent) {
       this._firstWriteEvent = true;
-      this.publishPtyInitializedAfterFirstParse(terminal);
+      this.reportStartedAfterFirstParse(terminal);
     }
     const bytes = chunk.data.byteLength;
     this._unparsedBytes += bytes;
@@ -82,20 +89,13 @@ export class PtyHandler implements ITerminalHandler {
     }
   }
 
-  private publishPtyInitializedAfterFirstParse(terminal: Terminal): void {
+  private reportStartedAfterFirstParse(terminal: Terminal): void {
     const shellType = this._shellProfile.shell_type;
     if (!shellType) {
       throw new Error("Shell profile must define a shell type.");
     }
     const disposable = terminal.onWriteParsed(() => {
-      this._bus.publish({
-        path: ["app", "terminal", this._terminalId],
-        type: "PtyInitialized",
-        payload: {
-          terminalId: this._terminalId,
-          shellType,
-        },
-      });
+      this._listener.onStarted?.(shellType);
       disposable.dispose();
     });
   }

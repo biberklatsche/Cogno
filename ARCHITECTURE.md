@@ -7,7 +7,7 @@ Grundlage ist die Bestandsaufnahme in `.claude/plans/capability-inventory.md`.
 
 **Umbaustand:** Die Architektur wird in Schritten umgesetzt; der
 Umsetzungsplan liegt unter `.claude/plans/umsetzungsplan.md` (Schritte 0–29).
-**Aktueller Schritt: 9 (`core/terminal/`, Teil 1).** Bis Schritt 28 liegt Code zusätzlich
+**Aktueller Schritt: 10 (`core/terminal/`, Teil 2 — Handler).** Bis Schritt 28 liegt Code zusätzlich
 unter `src/packages/app/` nach dem alten Vier-Paket-Layout; dafür gelten die
 Übergangsregeln in 2.1.
 
@@ -132,11 +132,18 @@ ließe sich ein Terminal ohne Cogno bauen. Schnittstelle nach oben — rein:
 Selektions-/Scroll-/Alt-Screen-Änderungen, PTY-Exit; Zugriff: Buffer lesen,
 Marker, Search-Addon. **Das Basis-Terminal ohne Zauber.** Heutige Dateien:
 `pty/pty.ts`, `renderer/renderer.ts`, die Handler `pty`, `resize`, `cursor`,
-`mouse`, `selection`, `scroll-state`, `focus`, `input`, `theme`, und der
+`mouse`, `selection`, `scroll-state` und der Maschinen-Anteil von `focus`
+(fokussieren und melden — das Löschen des Ungelesen-Abzeichens nicht), und der
 Maschinen-Anteil von `TerminalStateManager` (Cursor, Maße, Fokus, Selektion,
 Scroll, Progress).
 
-`input-writer.ts` gehört **nicht** hierher, obwohl sein Name danach klingt:
+`input.handler` und `theme.handler` gehören **nicht** hierher: der eine ist
+die Empfangsseite für „schreib das in dieses Terminal" (die spätere
+`injectInput`-Operation der API), der andere reagierte auf den Alt-Screen —
+beides Sitzungsarbeit. Vom Theme-Handler bleibt in der Maschine nur, was
+`setOptions` anwendet.
+
+`input-writer.ts` gehört ebenfalls nicht hierher, obwohl sein Name danach klingt:
 die Maschine schreibt Bytes (`pty.write`), er entscheidet *welche* — um aus
 „git sta" ein „git status" zu machen, muss er wissen, was in der Eingabezeile
 steht, wo der Cursor ist und ob die Shell „Zeile ersetzen" im
@@ -153,7 +160,8 @@ diese Sitzung sinnlos. Heutige Dateien: `terminal.session.ts` (wird der Host),
 der Modell-Anteil von `TerminalStateManager` (`startCommand`/`endCommand`,
 `updateCwd`, `updateSessionCapabilities`, `updateInput`, Shell-Kontext),
 `input-writer.ts`, die
-Handler `terminal-title`, `terminal-notification`, `full-screen-app`¹,
+Handler `input`, `terminal-padding`, `terminal-title`,
+`terminal-notification`, `full-screen-app`¹,
 `link`, `resume-link`, `clipboard`, `completed-command-notification`,
 `terminal-search`, sowie `advanced/*` vollständig, `header/`, und die
 Shell-Integration aus `features/shell/` als `core/session/shells/`
