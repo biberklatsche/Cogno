@@ -1,10 +1,10 @@
+import type { IPty } from "@cogno/core/terminal/pty";
 import { OsPlatform } from "@cogno/platform/os";
 import type { FitAddon } from "@xterm/addon-fit";
 import type { Terminal } from "@xterm/xterm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import type { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
 import { ResizeHandler } from "./resize.handler";
 

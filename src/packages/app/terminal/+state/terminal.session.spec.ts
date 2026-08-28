@@ -2,12 +2,14 @@ import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { Renderer } from "@cogno/core/terminal/renderer";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import type { ShellDefinitionContract } from "@cogno/shared/contributions";
 import type { NotificationChannelContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { DialogRef, type DialogService } from "@cogno/shared/ui";
+import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { TauriMockFactory } from "../../../__test__/mocks/tauri-mock.factory";
@@ -18,7 +20,6 @@ import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { NotificationChannelsPortAdapterService } from "../../notification/+state/notification-channels-port.adapter.service";
 import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
-import { Renderer } from "./renderer/renderer";
 import { TerminalSession } from "./terminal.session";
 
 type TerminalAutocompleteSuggestorPort = Pick<
@@ -30,7 +31,7 @@ type DialogPort = Pick<DialogService, "open">;
 type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 type NotificationTargetResolverPort = Pick<NotificationTargetResolverService, "resolveForTerminal">;
 
-vi.mock("./renderer/renderer", () => {
+vi.mock("@cogno/core/terminal/renderer", () => {
   class RendererMock {
     open = vi.fn();
     register = vi.fn().mockReturnValue({ dispose: vi.fn() });
@@ -44,11 +45,12 @@ vi.mock("./renderer/renderer", () => {
   };
 });
 
-vi.mock("./pty/pty", () => {
+vi.mock("@cogno/core/terminal/pty", () => {
   class PtyMock {
     dispose = vi.fn();
     write = vi.fn();
     spawn = vi.fn().mockResolvedValue(undefined);
+    faults$ = new Subject();
   }
 
   return {
@@ -192,8 +194,9 @@ describe("TerminalSession", () => {
       TauriMockFactory.createPtyTransport() as never,
     );
 
+    // The machine gets values, not the config (ARCHITECTURE.md 2.1).
     expect(Renderer).toHaveBeenCalledWith(
-      expect.objectContaining({ terminal: { webgl: true } }),
+      expect.objectContaining({ webgl: true, fontFamily: "Fira Code" }),
       "linux",
     );
   });

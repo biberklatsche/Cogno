@@ -1,8 +1,8 @@
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { TerminalStateManager } from "../state";
-import { ITerminalHandler } from "./handler";
 
 export class SelectionHandler implements ITerminalHandler {
   private subscription: Subscription = new Subscription();

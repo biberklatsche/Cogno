@@ -1,10 +1,10 @@
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import type { IPty } from "@cogno/core/terminal/pty";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
-import type { IPty } from "../pty/pty";
 import { HIDDEN_UNPARSED_BUDGET_BYTES, PtyHandler } from "./pty.handler";
 
 function chunk(seq: number, payload: string | number): { seq: number; data: Uint8Array } {

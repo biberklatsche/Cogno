@@ -1,4 +1,6 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { IPty } from "@cogno/core/terminal/pty";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { bytesToBase64, ClipboardAccess } from "@cogno/platform/clipboard";
 import { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
 import { TerminalId } from "@cogno/shared/ports";
@@ -9,9 +11,7 @@ import { AppBus } from "../../../app-bus/app-bus";
 import { CommandLineBuffer } from "../advanced/ui/command-line.buffer";
 import { PromptMarkerRegistry } from "../advanced/ui/prompt-marker.registry";
 import { TerminalInputWriter } from "../input-writer";
-import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
-import { ITerminalHandler } from "./handler";
 import { SelectionHandler } from "./selection.handler";
 
 function base64ToText(base64: string): string {

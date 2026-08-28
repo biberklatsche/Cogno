@@ -1,11 +1,11 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus, MessageBase } from "../../../app-bus/app-bus";
-import { ITerminalHandler } from "./handler";
 
 export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
 export type TerminalThemePaddingAddedEvent = MessageBase<"TerminalThemePaddingAdded", TerminalId>;

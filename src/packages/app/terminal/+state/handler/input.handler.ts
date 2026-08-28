@@ -1,11 +1,11 @@
+import { IPty } from "@cogno/core/terminal/pty";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { TerminalId } from "@cogno/shared/ports";
 import { Char, IDisposable } from "@cogno/shared/support";
 import { IDisposable as IXtermDisposable, Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
-import { ITerminalHandler } from "./handler";
 
 export class InputHandler implements ITerminalHandler {
   private _terminal?: Terminal;

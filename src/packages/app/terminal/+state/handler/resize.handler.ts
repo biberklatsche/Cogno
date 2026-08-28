@@ -1,12 +1,12 @@
+import { IPty } from "@cogno/core/terminal/pty";
+import { IFitHandler, ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { IPty } from "../pty/pty";
 import { TerminalStateManager } from "../state";
-import { IFitHandler, ITerminalHandler } from "./handler";
 
 export type TerminalDimensions = { rows: number; cols: number };
 type NullableTerminalDimensions = {

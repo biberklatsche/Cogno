@@ -1,4 +1,3 @@
-import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { OsType } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
@@ -15,7 +14,8 @@ import {
   isFitHandler,
   isSearchHandler,
   isTerminalHandler,
-} from "../handler/handler";
+} from "./terminal-handler";
+import { TerminalMachineOptions } from "./terminal-machine.options";
 
 export interface IRenderer {
   open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
@@ -107,33 +107,33 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
   private readonly _isWebglContextLostSubject = new BehaviorSubject<boolean>(false);
 
   constructor(
-    config: Config,
+    options: TerminalMachineOptions,
     backendOs: OsType,
     private readonly webglPool: WebglContextPool = WebglContextPool.instance,
   ) {
-    this._webglEnabled = config.terminal?.webgl ?? false;
+    this._webglEnabled = options.webgl ?? false;
     this._terminal = new Terminal({
       overviewRuler: {
-        width: config.scrollbar?.width,
+        width: options.overviewRulerWidth,
         showBottomBorder: false,
         showTopBorder: false,
       },
-      scrollback: config.scrollbar?.scrollback_lines,
-      tabStopWidth: config.terminal?.tab_stop_width,
-      scrollSensitivity: config.scrollbar?.sensitivity,
-      fastScrollSensitivity: config.scrollbar?.fast_scroll_sensitivity,
-      scrollOnUserInput: config.scrollbar?.scroll_on_user_input,
-      smoothScrollDuration: config.scrollbar?.smooth_scroll_duration,
-      allowTransparency: config.terminal?.allow_transparency,
-      altClickMovesCursor: config.cursor?.alt_click_moves_cursor,
-      customGlyphs: config.font?.custom_glyphs,
-      drawBoldTextInBrightColors: config.font?.draw_bold_text_in_bright_colors,
-      ignoreBracketedPasteMode: config.terminal?.ignore_bracketed_paste_mode,
-      minimumContrastRatio: config.terminal?.minimum_contrast_ratio,
-      rescaleOverlappingGlyphs: config.font?.rescale_overlapping_glyphs,
-      rightClickSelectsWord: config.selection?.right_click_selects_word,
-      screenReaderMode: config.terminal?.screen_reader_mode,
-      wordSeparator: config.terminal?.word_separator,
+      scrollback: options.scrollbackLines,
+      tabStopWidth: options.tabStopWidth,
+      scrollSensitivity: options.scrollSensitivity,
+      fastScrollSensitivity: options.fastScrollSensitivity,
+      scrollOnUserInput: options.scrollOnUserInput,
+      smoothScrollDuration: options.smoothScrollDuration,
+      allowTransparency: options.allowTransparency,
+      altClickMovesCursor: options.altClickMovesCursor,
+      customGlyphs: options.customGlyphs,
+      drawBoldTextInBrightColors: options.drawBoldTextInBrightColors,
+      ignoreBracketedPasteMode: options.ignoreBracketedPasteMode,
+      minimumContrastRatio: options.minimumContrastRatio,
+      rescaleOverlappingGlyphs: options.rescaleOverlappingGlyphs,
+      rightClickSelectsWord: options.rightClickSelectsWord,
+      screenReaderMode: options.screenReaderMode,
+      wordSeparator: options.wordSeparator,
       windowsPty: backendOs === "windows" ? { backend: "conpty" } : undefined,
       allowProposedApi: true,
       windowOptions: {
@@ -141,10 +141,10 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
         popTitle: true, //handle CSI Ps=23 vim on gitbash uses this to leaf full screen
       },
       // Font settings - must be set during initialization
-      fontFamily: config.font?.family,
-      fontSize: config.font?.size,
-      fontWeight: config.font?.weight,
-      fontWeightBold: config.font?.weight_bold,
+      fontFamily: options.fontFamily,
+      fontSize: options.fontSize,
+      fontWeight: options.fontWeight,
+      fontWeightBold: options.fontWeightBold,
     });
 
     this._terminal.loadAddon(this._fitAddon);

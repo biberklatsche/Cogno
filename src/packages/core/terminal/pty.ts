@@ -1,20 +1,27 @@
-import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { PtyChunkContract, PtySpawnHandleContract, PtyTransport } from "@cogno/platform";
+import {
+  PtyChunkContract,
+  PtyShellProfileContract,
+  PtySpawnHandleContract,
+  PtyTransport,
+} from "@cogno/platform";
 import { IDisposable } from "@cogno/shared/support";
-import { TerminalDimensions } from "../handler/resize.handler";
+import { Observable, Subject } from "rxjs";
+import { TerminalDimensions, TerminalMachineFault } from "./terminal-machine.events";
 
 export type PtyChunk = PtyChunkContract;
 export type PtyChunkListener = (chunk: PtyChunk) => void;
 
 export interface IPty extends IDisposable {
+  /** Things the machine could not do; the host decides who is told. */
+  readonly faults$: Observable<TerminalMachineFault>;
+
   /**
    * Spawns the shell. `onData` receives raw output chunks in order, from the
    * first byte on (the listener is wired before the shell starts).
    */
   spawn(
     terminalId: string,
-    shellProfile: ShellProfile,
+    shellProfile: PtyShellProfileContract,
     dimensions: TerminalDimensions,
     onData: PtyChunkListener,
   ): Promise<void>;
@@ -28,6 +35,20 @@ export interface IPty extends IDisposable {
 }
 
 export class Pty implements IPty {
+  private readonly faults$$ = new Subject<TerminalMachineFault>();
+
+  /**
+   * Things that went wrong down here. The machine reports, it does not
+   * handle: the session host subscribes and decides who is told.
+   */
+  get faults$(): Observable<TerminalMachineFault> {
+    return this.faults$$.asObservable();
+  }
+
+  private reportFault(fault: TerminalMachineFault): void {
+    this.faults$$.next(fault);
+  }
+
   private _terminalId: string | undefined = undefined;
   private _spawned = false;
   private _disposed = false;
@@ -42,7 +63,7 @@ export class Pty implements IPty {
 
   async spawn(
     terminalId: string,
-    shellProfile: ShellProfile,
+    shellProfile: PtyShellProfileContract,
     dimensions: TerminalDimensions,
     onData: PtyChunkListener,
   ): Promise<void> {
@@ -91,32 +112,21 @@ export class Pty implements IPty {
   ack(seq: number): void {
     if (!this._terminalId || this._disposed) return;
     this._transport.ack(this._terminalId, seq).catch((error) =>
-      ErrorReporter.reportException({
+      this.reportFault({
+        operation: "ack",
         error,
-        handled: true,
-        source: "Pty",
-        context: {
-          operation: "ack",
-          seq,
-          terminalId: this._terminalId,
-        },
+        context: { seq, terminalId: this._terminalId },
       }),
     );
   }
 
   private reportLostChunks(terminalId: string, fromSeq: number, toSeq: number): void {
-    ErrorReporter.reportException({
+    this.reportFault({
+      operation: "onData",
       error: new Error(
         `PTY output chunks ${fromSeq}..${toSeq - 1} were lost in transit and skipped`,
       ),
-      handled: true,
-      source: "Pty",
-      context: {
-        operation: "onData",
-        fromSeq,
-        toSeq,
-        terminalId,
-      },
+      context: { fromSeq, toSeq, terminalId },
     });
   }
 
@@ -126,18 +136,11 @@ export class Pty implements IPty {
   }
 
   private killSession(terminalId: string, signal?: string): void {
-    this._transport.kill(terminalId).catch((error) =>
-      ErrorReporter.reportException({
-        error,
-        handled: true,
-        source: "Pty",
-        context: {
-          operation: "kill",
-          signal,
-          terminalId,
-        },
-      }),
-    );
+    this._transport
+      .kill(terminalId)
+      .catch((error) =>
+        this.reportFault({ operation: "kill", error, context: { signal, terminalId } }),
+      );
   }
 
   resize(dimensions: TerminalDimensions) {
@@ -148,47 +151,30 @@ export class Pty implements IPty {
       return;
     }
     this._transport.resize(this._terminalId, dimensions.cols, dimensions.rows).catch((error) =>
-      ErrorReporter.reportException({
+      this.reportFault({
+        operation: "resize",
         error,
-        handled: true,
-        source: "Pty",
-        context: {
-          columns: dimensions.cols,
-          operation: "resize",
-          rows: dimensions.rows,
-          terminalId: this._terminalId,
-        },
+        context: { columns: dimensions.cols, rows: dimensions.rows, terminalId: this._terminalId },
       }),
     );
   }
 
   write(data: string) {
     if (!this._terminalId) throw Error("Please spawn Pty before write to it.");
-    this._transport.write(this._terminalId, data).catch((error) =>
-      ErrorReporter.reportException({
-        error,
-        handled: true,
-        source: "Pty",
-        context: {
-          operation: "write",
-          terminalId: this._terminalId,
-        },
-      }),
-    );
+    this._transport
+      .write(this._terminalId, data)
+      .catch((error) =>
+        this.reportFault({ operation: "write", error, context: { terminalId: this._terminalId } }),
+      );
   }
 
   executeLineEditorAction(action: string, payload?: object) {
     if (!this._terminalId) throw Error("Please spawn Pty before executing line editor actions.");
     this._transport.executeLineEditorAction(this._terminalId, action, payload).catch((error) =>
-      ErrorReporter.reportException({
+      this.reportFault({
+        operation: "executeLineEditorAction",
         error,
-        handled: true,
-        source: "Pty",
-        context: {
-          action,
-          operation: "executeLineEditorAction",
-          terminalId: this._terminalId,
-        },
+        context: { action, terminalId: this._terminalId },
       }),
     );
   }
@@ -229,13 +215,11 @@ export class Pty implements IPty {
     this._transport
       .resize(this._terminalId, pendingResize.cols, pendingResize.rows)
       .catch((error) =>
-        ErrorReporter.reportException({
+        this.reportFault({
+          operation: "flushPendingResize",
           error,
-          handled: true,
-          source: "Pty",
           context: {
             columns: pendingResize.cols,
-            operation: "flushPendingResize",
             rows: pendingResize.rows,
             terminalId: this._terminalId,
           },

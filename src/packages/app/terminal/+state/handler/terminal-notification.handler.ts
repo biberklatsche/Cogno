@@ -1,3 +1,4 @@
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import {
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
@@ -7,7 +8,6 @@ import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";
-import { ITerminalHandler } from "./handler";
 
 export const OSC9_NOTIFICATION_ID = "osc9";
 

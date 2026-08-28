@@ -1,9 +1,9 @@
+import { IPty } from "@cogno/core/terminal/pty";
 import {
   ShellLineEditorActionContract,
   ShellLineEditorDefinitionContract,
   ShellSessionCapabilitiesContract,
 } from "@cogno/shared/contributions";
-import { IPty } from "./pty/pty";
 import { TerminalStateManager } from "./state";
 
 /** Builds an escape sequence that moves the cursor by `offset` columns. */

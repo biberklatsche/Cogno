@@ -442,7 +442,7 @@ Store in `app/` re-exportiert den Typ, bis er selbst umzieht.
 
 ## Phase D — Maschine und Session
 
-### Schritt 9: `core/terminal/` — die Maschine, Teil 1 (PTY, Renderer)
+### Schritt 9: `core/terminal/` — die Maschine, Teil 1 (PTY, Renderer) — **erledigt (2026-08-28)**
 
 **Voraussetzungen:** 1, 4.
 

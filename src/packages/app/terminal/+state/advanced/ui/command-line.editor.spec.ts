@@ -1,9 +1,9 @@
 import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
+import type { IPty } from "@cogno/core/terminal/pty";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../../app-bus/app-bus";
-import type { IPty } from "../../pty/pty";
 import { CommandLineEditor } from "./command-line.editor";
 
 const clipboardStub = {

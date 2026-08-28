@@ -1,12 +1,12 @@
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Terminal } from "@xterm/xterm";
 import { debounceTime, Subject } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { ITerminalHandler } from "../../handler/handler";
 import { TerminalStateManager } from "../../state";
 import { ExecutedCommand } from "../history/terminal-command-history.store";
 import OscParser from "../osc/cogno-osc.parser";

@@ -1,9 +1,9 @@
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus, MessageBase } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "../state";
-import { ITerminalHandler } from "./handler";
 
 export type FullScreenAppEnteredEvent = MessageBase<"FullScreenAppEntered", TerminalId>;
 export type FullScreenAppLeavedEvent = MessageBase<"FullScreenAppLeaved", TerminalId>;

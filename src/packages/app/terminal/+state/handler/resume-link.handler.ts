@@ -1,11 +1,12 @@
 // Lives in app/ rather than features/ because it depends on xterm Terminal,
 // ITerminalHandler, and IPty — which are app-layer types.
+
+import { IPty } from "@cogno/core/terminal/pty";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { IPty } from "../pty/pty";
-import { ITerminalHandler } from "./handler";
 
 const RESUME_PATTERN =
   /\b([a-zA-Z][\w-]*)\s+(resume|--resume|-r)\s+([a-zA-Z0-9][a-zA-Z0-9_-]{7,})/gi;

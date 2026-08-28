@@ -1,3 +1,5 @@
+import { IPty } from "@cogno/core/terminal/pty";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import {
   ShellLineEditorActionContract,
@@ -9,9 +11,7 @@ import { Subscription } from "rxjs";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { AppMessage } from "../../../../app-bus/messages";
-import { ITerminalHandler } from "../../handler/handler";
 import { TerminalInputWriter } from "../../input-writer";
-import { IPty } from "../../pty/pty";
 import { TerminalStateManager } from "../../state";
 import { CommandLineBuffer } from "./command-line.buffer";
 import { PromptMarkerRegistry } from "./prompt-marker.registry";

@@ -1,4 +1,5 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { ISearchOptions, SearchAddon } from "@xterm/addon-search";
@@ -11,7 +12,6 @@ import {
   TerminalSearchRequestedEvent,
   TerminalSearchRevealRequestedEvent,
 } from "../../+bus/events";
-import { ITerminalHandler } from "./handler";
 
 export class TerminalSearchHandler implements ITerminalHandler {
   private readonly subscription: Subscription = new Subscription();

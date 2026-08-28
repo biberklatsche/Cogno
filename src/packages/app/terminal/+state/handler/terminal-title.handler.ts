@@ -1,8 +1,8 @@
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
-import { ITerminalHandler } from "./handler";
 
 export class TerminalTitleHandler implements ITerminalHandler {
   private _disposables?: IDisposable[] = undefined;

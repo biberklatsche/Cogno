@@ -1,11 +1,11 @@
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { IPty, PtyChunk } from "@cogno/core/terminal/pty";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalActivityService } from "../../../common/terminal-activity/terminal-activity.service";
-import { IPty, PtyChunk } from "../pty/pty";
-import { ITerminalHandler } from "./handler";
 
 /**
  * While the window is hidden, browsers throttle the timers xterm parses with

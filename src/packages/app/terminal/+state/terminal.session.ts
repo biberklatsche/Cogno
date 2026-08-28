@@ -3,6 +3,10 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { toTerminalMachineOptions } from "@cogno/core/session/host/terminal-machine-options.mapper";
+import { IPty, Pty } from "@cogno/core/terminal/pty";
+import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
@@ -71,8 +75,6 @@ import { TerminalTitleHandler } from "./handler/terminal-title.handler";
 import { ThemeHandler } from "./handler/theme.handler";
 import { TerminalInputWriter } from "./input-writer";
 import { KeybindExecutor } from "./keybind/keybind.executor";
-import { IPty, Pty } from "./pty/pty";
-import { IRenderer, Renderer } from "./renderer/renderer";
 import { TerminalStateManager } from "./state";
 import { TerminalSessionRegistry } from "./terminal-session.registry";
 
@@ -114,8 +116,23 @@ export class TerminalSession {
     private terminalSessionRegistry: TerminalSessionRegistry = new TerminalSessionRegistry(),
   ) {
     this.pty = new Pty(ptyTransport, this.environment.isDevMode());
-    this.renderer = new Renderer(this.configService.config, this.os.platform());
+    this.renderer = new Renderer(
+      toTerminalMachineOptions(this.configService.config),
+      this.os.platform(),
+    );
     this.disposables = [this.renderer, this.pty];
+    // The machine reports faults, it does not handle them: the host decides
+    // who hears about it (ARCHITECTURE.md 2.1, boundary decision 2).
+    this.subscription.add(
+      this.pty.faults$.subscribe((fault) =>
+        ErrorReporter.reportException({
+          error: fault.error,
+          handled: true,
+          source: "Pty",
+          context: { operation: fault.operation, ...fault.context },
+        }),
+      ),
+    );
     this.completedCommandNotificationHandler = new CompletedCommandNotificationHandler(
       this.configService,
       this.bus,

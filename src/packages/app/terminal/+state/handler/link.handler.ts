@@ -1,3 +1,4 @@
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { Opener } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
@@ -5,7 +6,6 @@ import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { TerminalPathResolver } from "../advanced/path/terminal-path.resolver";
 import { TerminalStateManager } from "../state";
-import { ITerminalHandler } from "./handler";
 
 type LinkMatch = {
   text: string;

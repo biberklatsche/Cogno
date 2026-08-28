@@ -1,8 +1,12 @@
-import type { ShellConfig } from "@cogno/core/infrastructure/config/models/config";
-import type { PtyOutputListenerContract, PtyTransport } from "@cogno/platform";
+import type {
+  PtyOutputListenerContract,
+  PtyShellProfileContract,
+  PtyTransport,
+} from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
+import { TauriMockFactory } from "../../__test__/mocks/tauri-mock.factory";
 import { Pty } from "./pty";
+import type { TerminalMachineFault } from "./terminal-machine.events";
 
 vi.mock("@cogno/platform/logger", () => ({
   Logger: {
@@ -10,15 +14,16 @@ vi.mock("@cogno/platform/logger", () => ({
   },
 }));
 
-vi.mock("@cogno/core/infrastructure/error/error-reporter", () => ({
-  ErrorReporter: { reportException: vi.fn() },
-}));
-
 describe("Pty", () => {
   let transport: ReturnType<typeof TauriMockFactory.createPtyTransport>;
   let pty: Pty;
   const terminalId = "test-terminal";
-  const shellConfig: ShellConfig = { shell_type: "Bash" } as any;
+  const shellConfig: PtyShellProfileContract = {
+    shell_type: "Bash",
+    inject_cogno_cli: false,
+    enable_shell_integration: false,
+    load_user_rc: false,
+  };
   const dimensions = { cols: 80, rows: 24 };
   const noopListener = () => {};
 
@@ -148,19 +153,16 @@ describe("Pty", () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
-  it("should report chunks the transport gave up as lost", async () => {
-    const { ErrorReporter } = await import("@cogno/core/infrastructure/error/error-reporter");
+  it("reports chunks the transport gave up as a fault rather than handling it", async () => {
+    const faults: TerminalMachineFault[] = [];
+    pty.faults$.subscribe((fault) => faults.push(fault));
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
 
     outputListener().onChunksLost(3, 5);
 
-    expect(ErrorReporter.reportException).toHaveBeenCalledWith(
-      expect.objectContaining({
-        handled: true,
-        source: "Pty",
-        context: expect.objectContaining({ fromSeq: 3, toSeq: 5, terminalId }),
-      }),
-    );
+    expect(faults).toHaveLength(1);
+    expect(faults[0].operation).toBe("onData");
+    expect(faults[0].context).toMatchObject({ fromSeq: 3, toSeq: 5, terminalId });
   });
 
   it("should forward acks by sequence number to the backend", async () => {
