@@ -1,16 +1,10 @@
 import { Injectable } from "@angular/core";
+import type { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
 import { BehaviorSubject, Observable } from "rxjs";
-
 import { Command } from "../../state";
 import { OscDataType } from "../model/models";
 
-export type ExecutedCommand = {
-  command: string;
-  duration?: number;
-  directory: string;
-  returnCode?: number;
-  commandExists?: boolean;
-};
+export type { ExecutedCommand };
 
 @Injectable()
 export class TerminalCommandHistoryStore {

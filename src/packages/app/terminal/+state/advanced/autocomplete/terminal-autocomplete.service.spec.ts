@@ -5,7 +5,7 @@ import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import type { TerminalState } from "../../state";
-import type { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
+import type { TerminalHistoryPersistenceService } from "../history/terminal-history-commandLog.service";
 import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
@@ -114,7 +114,7 @@ describe("TerminalAutocompleteService", () => {
     fakeState = new FakeStateManager();
     bus = new AppBus();
     vi.spyOn(bus, "publish");
-    const persistence = {
+    const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([]),
       searchCommands: vi.fn().mockResolvedValue([]),
       searchCommandPatterns: vi.fn().mockResolvedValue([]),
@@ -124,7 +124,7 @@ describe("TerminalAutocompleteService", () => {
     } as unknown as TerminalHistoryPersistenceService;
     service = new TerminalAutocompleteService(
       fakeState as unknown as any,
-      persistence,
+      commandLog,
       bus,
       {
         getSharedSuggestors: vi.fn(() => []),
@@ -267,7 +267,7 @@ describe("TerminalAutocompleteService", () => {
   });
 
   it("tracks shown and selected feedback for history patterns", async () => {
-    const persistence = (service as any).persistence;
+    const commandLog = (service as any).commandLog;
     service.registerSuggestor(
       new DummySuggestor(
         async () => [
@@ -299,7 +299,7 @@ describe("TerminalAutocompleteService", () => {
       new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
     );
 
-    expect(persistence.markCommandPatternSelected).toHaveBeenCalledWith(
+    expect(commandLog.markCommandPatternSelected).toHaveBeenCalledWith(
       "stable:git|stable:commit|stable:-am|slot:0",
     );
   });
@@ -387,7 +387,7 @@ describe("TerminalAutocompleteService", () => {
 
     service.ngOnDestroy();
 
-    const persistence = {
+    const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([]),
       searchCommands: vi.fn().mockResolvedValue([]),
       searchCommandPatterns: vi.fn().mockResolvedValue([]),
@@ -397,7 +397,7 @@ describe("TerminalAutocompleteService", () => {
     } as unknown as TerminalHistoryPersistenceService;
     const second = new TerminalAutocompleteService(
       fakeState as unknown as any,
-      persistence,
+      commandLog,
       new AppBus(),
       {
         getSharedSuggestors: vi.fn(() => []),

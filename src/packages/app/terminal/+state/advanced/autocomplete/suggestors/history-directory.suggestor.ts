@@ -1,6 +1,6 @@
 import { PathFactory } from "@cogno/app/app-host/path.factory";
+import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { AutocompletePathSupport } from "@cogno/shared/support";
-import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";
 import { HistoryDirectoryScorer } from "./scoring/history-directory.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
@@ -9,7 +9,7 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
   readonly id = "history-directory";
   readonly inputPattern = /^\s*cd(?:\s+.*)?$/;
 
-  constructor(private readonly persistence: TerminalHistoryPersistenceService) {}
+  constructor(private readonly commandLog: SessionCommandLog) {}
 
   matches(context: QueryContext): boolean {
     return context.mode === "cd" && this.inputPattern.test(context.beforeCursor);
@@ -23,7 +23,7 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
   private async suggestDirectories(context: CdQueryContext): Promise<AutocompleteSuggestion[]> {
     const tokens = this.extractTokens(context.fragment, context.shellContext);
     const lookupFragment = tokens[0] ?? context.fragment;
-    const rows = await this.persistence.searchDirectories(lookupFragment, 100);
+    const rows = await this.commandLog.searchDirectories(lookupFragment, 100);
     const pathAdapter = PathFactory.createAdapter(context.shellContext);
     const cwdNorm = AutocompletePathSupport.normalizeCwd(context.cwd, pathAdapter);
     const now = Date.now();

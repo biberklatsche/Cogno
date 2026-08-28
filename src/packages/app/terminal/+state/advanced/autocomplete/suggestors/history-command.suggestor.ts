@@ -1,4 +1,4 @@
-import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
+import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { HistoryCommandScorer } from "./scoring/history-command.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
@@ -20,7 +20,7 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
   readonly id = "history-command";
   readonly inputPattern = /.*/;
 
-  constructor(private readonly persistence: TerminalHistoryPersistenceService) {}
+  constructor(private readonly commandLog: SessionCommandLog) {}
 
   matches(context: QueryContext): boolean {
     return context.mode === "command" && this.inputPattern.test(context.beforeCursor);
@@ -32,7 +32,7 @@ export class HistoryCommandSuggestor implements TerminalAutocompleteSuggestor {
 
     // Seed lookup with first token to also support multi-token queries like "gi pu".
     const repoSeed = queryTokens[0] ?? "";
-    const rows = await this.persistence.searchCommands(repoSeed, context.cwd, 250);
+    const rows = await this.commandLog.searchCommands(repoSeed, context.cwd, 250);
     if (!query && rows.length === 0) return [];
     if (query && queryTokens.length === 0) return [];
 

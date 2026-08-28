@@ -1,16 +1,17 @@
 import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { DatabaseAccess } from "@cogno/platform";
-import type { IPathAdapter } from "@cogno/shared/domain";
+import type { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
-import type { ShellContext } from "../model/models";
-import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
+
+import { SessionCommandLog } from "../command-log/session-command-log";
+import { CommandRecorder } from "./command-recorder";
 
 function flushActions(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-const shellContext: ShellContext = {
+const shellContext: ResolvedShellContextContract = {
   shellType: "Bash",
   backendOs: "macos",
 };
@@ -52,23 +53,21 @@ function createRepositoryDouble(): CommandLogRepositoryDouble {
   };
 }
 
+type Subject = { recorder: CommandRecorder; commandLog: SessionCommandLog };
+
 async function createService(
   repositoryDouble: CommandLogRepositoryDouble,
   configService?: ConfigService,
-): Promise<TerminalHistoryPersistenceService> {
+): Promise<Subject> {
   vi.spyOn(CommandLogRepository, "createForContext").mockResolvedValue(
     repositoryDouble as unknown as CommandLogRepository,
   );
 
-  const service = new TerminalHistoryPersistenceService(
-    undefined,
-    undefined,
-    configService,
-    databaseAccess,
-  );
-  service.initialize(shellContext, pathAdapter);
+  const commandLog = new SessionCommandLog(databaseAccess);
+  const recorder = new CommandRecorder(commandLog, undefined, undefined, configService);
+  recorder.initialize(shellContext, pathAdapter);
   await flushActions();
-  return service;
+  return { recorder, commandLog };
 }
 
 function createConfigServiceDouble(history: {
@@ -80,10 +79,10 @@ function createConfigServiceDouble(history: {
   } as unknown as ConfigService;
 }
 
-describe("TerminalHistoryPersistenceService", () => {
+describe("CommandRecorder", () => {
   it("deduplicates identical cwd updates", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { recorder: service } = await createService(repositoryDouble);
 
     service.onCwdChanged("/tmp");
     service.onCwdChanged("/tmp");
@@ -96,7 +95,7 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("persists existing commands even when they exit non-zero", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { recorder: service } = await createService(repositoryDouble);
 
     service.onCommandExecuted({
       command: "npm test",
@@ -119,7 +118,7 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("does not persist commands that the shell reports as missing", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { recorder: service } = await createService(repositoryDouble);
 
     service.onCommandExecuted({
       command: "sdlfjhksdjf",
@@ -134,7 +133,7 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("never persists cd commands", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { recorder: service } = await createService(repositoryDouble);
 
     service.setAllowedReturnCodesForCommand("cd", [0, 1, 2]);
     service.onCommandExecuted({ command: "cd ..", directory: "/tmp", returnCode: 0 });
@@ -145,7 +144,7 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("supports per-command return code whitelist", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { recorder: service } = await createService(repositoryDouble);
 
     service.setAllowedReturnCodesForCommand("grep", [0, 1]);
     service.onCommandExecuted({ command: "grep foo file.txt", directory: "/tmp", returnCode: 1 });
@@ -164,7 +163,7 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("persists transitions for consecutive successful commands", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { recorder: service } = await createService(repositoryDouble);
 
     service.onCommandExecuted({ command: "git pull", directory: "/tmp", returnCode: 0 });
     service.onCommandExecuted({
@@ -199,7 +198,7 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("does not write pattern rows during command ingest — patterns are only created on confirmation", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { recorder: service } = await createService(repositoryDouble);
 
     service.onCommandExecuted({
       command: 'git commit -am "fix bug"',
@@ -219,9 +218,9 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("tracks selected pattern feedback through the repository", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { commandLog } = await createService(repositoryDouble);
 
-    service.markCommandPatternSelected("pattern-a");
+    commandLog.markCommandPatternSelected("pattern-a");
     await flushActions();
 
     expect(repositoryDouble.markCommandPatternSelected).toHaveBeenCalledWith("pattern-a");
@@ -229,9 +228,9 @@ describe("TerminalHistoryPersistenceService", () => {
 
   it("deletes command executions from history without touching pattern rows", async () => {
     const repositoryDouble = createRepositoryDouble();
-    const service = await createService(repositoryDouble);
+    const { commandLog } = await createService(repositoryDouble);
 
-    service.deleteCommandExecution('git commit -am "fix bug"', "/tmp");
+    commandLog.deleteCommandExecution('git commit -am "fix bug"', "/tmp");
     await flushActions();
 
     expect(repositoryDouble.deleteCommandExecution).toHaveBeenCalledWith(
@@ -243,7 +242,7 @@ describe("TerminalHistoryPersistenceService", () => {
   it("passes the configured max_entries through to the repository", async () => {
     const repositoryDouble = createRepositoryDouble();
     const configService = createConfigServiceDouble({ max_entries: 500 });
-    const service = await createService(repositoryDouble, configService);
+    const { recorder: service } = await createService(repositoryDouble, configService);
 
     service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 0 });
     await flushActions();
@@ -260,7 +259,7 @@ describe("TerminalHistoryPersistenceService", () => {
   it("does not persist a command with a leading space when ignore_commands_with_leading_space is enabled", async () => {
     const repositoryDouble = createRepositoryDouble();
     const configService = createConfigServiceDouble({ ignore_commands_with_leading_space: true });
-    const service = await createService(repositoryDouble, configService);
+    const { recorder: service } = await createService(repositoryDouble, configService);
 
     service.onCommandExecuted({ command: " secret-token-cmd", directory: "/tmp", returnCode: 0 });
     await flushActions();
@@ -273,7 +272,7 @@ describe("TerminalHistoryPersistenceService", () => {
     const configService = createConfigServiceDouble({
       ignore_commands_with_leading_space: false,
     });
-    const service = await createService(repositoryDouble, configService);
+    const { recorder: service } = await createService(repositoryDouble, configService);
 
     service.onCommandExecuted({ command: " npm test", directory: "/tmp", returnCode: 0 });
     await flushActions();
@@ -285,5 +284,26 @@ describe("TerminalHistoryPersistenceService", () => {
       undefined,
       expect.any(Object),
     );
+  });
+
+  it("stays silent and keeps the session going when there is no database", async () => {
+    const repositoryDouble = createRepositoryDouble();
+    const createForContext = vi
+      .spyOn(CommandLogRepository, "createForContext")
+      .mockResolvedValue(repositoryDouble as unknown as CommandLogRepository);
+
+    const commandLog = new SessionCommandLog(undefined);
+    const recorder = new CommandRecorder(commandLog);
+    recorder.initialize(shellContext, pathAdapter);
+    await flushActions();
+
+    recorder.onCwdChanged("/tmp");
+    recorder.onCommandExecuted({ command: "ls", directory: "/tmp", returnCode: 0 });
+    await flushActions();
+
+    expect(createForContext).not.toHaveBeenCalled();
+    expect(repositoryDouble.upsertWorkingDirectory).not.toHaveBeenCalled();
+    expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
+    await expect(commandLog.getRecentCommands({ scope: "global" })).resolves.toEqual([]);
   });
 });

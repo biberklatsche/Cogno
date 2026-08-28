@@ -2,7 +2,7 @@ import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import type { ShellContextContract } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
+import type { SessionCommandLog } from "../../history/terminal-history-commandLog.service";
 import type { QueryContext } from "../autocomplete.types";
 import { CommandPatternSuggestor } from "./command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
@@ -44,7 +44,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("HistoryDirectorySuggestor filters current dir and parent traversal suggestions", async () => {
-    const persistence = {
+    const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([
         {
           path: "/Users/larswolfram/projects",
@@ -71,9 +71,9 @@ describe("Autocomplete History Suggestors", () => {
           ...baseDirHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryDirectorySuggestor(persistence);
+    const suggestor = new HistoryDirectorySuggestor(commandLog);
     const result = await suggestor.suggest(cdContext("u"));
 
     expect(result.some((r) => r.label === "." || r.label === "..")).toBe(false);
@@ -83,7 +83,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("HistoryDirectorySuggestor uses backslashes for PowerShell directory labels", async () => {
-    const persistence = {
+    const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([
         {
           path: "/Users",
@@ -94,9 +94,9 @@ describe("Autocomplete History Suggestors", () => {
           ...baseDirHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryDirectorySuggestor(persistence);
+    const suggestor = new HistoryDirectorySuggestor(commandLog);
     const result = await suggestor.suggest({
       ...cdContext("u"),
       shellContext: { shellType: "PowerShell", backendOs: "windows" },
@@ -109,7 +109,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("HistoryDirectorySuggestor escapes bash insert text for directories with spaces", async () => {
-    const persistence = {
+    const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([
         {
           path: "/Users/larswolfram/projects/My Folder",
@@ -120,9 +120,9 @@ describe("Autocomplete History Suggestors", () => {
           ...baseDirHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryDirectorySuggestor(persistence);
+    const suggestor = new HistoryDirectorySuggestor(commandLog);
     const result = await suggestor.suggest(cdContext("My\\ Fo"));
 
     expect(result).toHaveLength(1);
@@ -131,7 +131,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("HistoryDirectorySuggestor matches multi-token fragments against visited paths", async () => {
-    const persistence = {
+    const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([
         {
           path: "/c/projects/grimace-tracker/src",
@@ -150,19 +150,19 @@ describe("Autocomplete History Suggestors", () => {
           ...baseDirHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryDirectorySuggestor(persistence);
+    const suggestor = new HistoryDirectorySuggestor(commandLog);
     const result = await suggestor.suggest(cdContext("gr tr"));
 
-    expect(persistence.searchDirectories).toHaveBeenCalledWith("gr", 100);
+    expect(commandLog.searchDirectories).toHaveBeenCalledWith("gr", 100);
     expect(result).toHaveLength(1);
     expect(result[0].label).toBe("/c/projects/grimace-tracker/src/");
   });
 
   it("HistoryDirectorySuggestor ranks multi-token ba src and prefers recently selected backend/src", async () => {
     const now = Date.now();
-    const persistence = {
+    const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([
         {
           path: "/work/backend/src",
@@ -181,9 +181,9 @@ describe("Autocomplete History Suggestors", () => {
           lastSelectAt: now - 20 * 24 * 60 * 60 * 1000,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryDirectorySuggestor(persistence);
+    const suggestor = new HistoryDirectorySuggestor(commandLog);
     const result = await suggestor.suggest(cdContext("ba src"));
 
     expect(result.length).toBeGreaterThan(0);
@@ -193,7 +193,7 @@ describe("Autocomplete History Suggestors", () => {
   it("HistoryCommandSuggestor returns ranked command suggestions", async () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           command: "npm test",
@@ -224,9 +224,9 @@ describe("Autocomplete History Suggestors", () => {
           ...baseHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "npm",
@@ -254,7 +254,7 @@ describe("Autocomplete History Suggestors", () => {
   it("HistoryCommandSuggestor returns recent commands for empty query", async () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           command: "git status",
@@ -278,9 +278,9 @@ describe("Autocomplete History Suggestors", () => {
           ...baseHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "",
@@ -294,14 +294,14 @@ describe("Autocomplete History Suggestors", () => {
     };
 
     const result = await suggestor.suggest(ctx);
-    expect(persistence.searchCommands).toHaveBeenCalledWith("", "/Users/larswolfram/projects", 250);
+    expect(commandLog.searchCommands).toHaveBeenCalledWith("", "/Users/larswolfram/projects", 250);
     expect(result.map((item) => item.label)).toEqual(["git status", "npm test", "pnpm lint"]);
   });
 
   it("HistoryCommandSuggestor marks commands from current cwd differently than commands from elsewhere", async () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           ...baseHistoryRow,
@@ -319,9 +319,9 @@ describe("Autocomplete History Suggestors", () => {
           lastExecAt: now - 3_600_000,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "npm",
@@ -342,7 +342,7 @@ describe("Autocomplete History Suggestors", () => {
   it("HistoryCommandSuggestor returns more than three suggestions when only history commands are available", async () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           command: "npm test",
@@ -380,9 +380,9 @@ describe("Autocomplete History Suggestors", () => {
           ...baseHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "npm",
@@ -409,7 +409,7 @@ describe("Autocomplete History Suggestors", () => {
   it("HistoryCommandSuggestor prefers current cwd commands over stronger global history matches", async () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           ...baseHistoryRow,
@@ -430,9 +430,9 @@ describe("Autocomplete History Suggestors", () => {
           cwdLastSelectAt: now - 20_000,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "npm t",
@@ -453,7 +453,7 @@ describe("Autocomplete History Suggestors", () => {
   it("HistoryCommandSuggestor prefers current cwd commands for empty query suggestions", async () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           ...baseHistoryRow,
@@ -474,9 +474,9 @@ describe("Autocomplete History Suggestors", () => {
           cwdLastSelectAt: now - 8_000,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "",
@@ -495,7 +495,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("CommandPatternSuggestor returns confirmed pattern suggestions", async () => {
-    const persistence = {
+    const commandLog = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
           signature: {
@@ -525,9 +525,9 @@ describe("Autocomplete History Suggestors", () => {
           ],
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new CommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(commandLog);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git comm",
@@ -550,7 +550,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("CommandPatternSuggestor rejects overly generic patterns", async () => {
-    const persistence = {
+    const commandLog = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
           signature: {
@@ -578,9 +578,9 @@ describe("Autocomplete History Suggestors", () => {
           ],
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new CommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(commandLog);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git",
@@ -597,7 +597,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("CommandPatternSuggestor suppresses patterns that were shown often but never selected", async () => {
-    const persistence = {
+    const commandLog = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
           signature: {
@@ -627,9 +627,9 @@ describe("Autocomplete History Suggestors", () => {
           ],
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new CommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(commandLog);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git commit",
@@ -647,7 +647,7 @@ describe("Autocomplete History Suggestors", () => {
 
   it("CommandPatternSuggestor ages out stale unselected patterns", async () => {
     const now = Date.now();
-    const persistence = {
+    const commandLog = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
           signature: {
@@ -677,9 +677,9 @@ describe("Autocomplete History Suggestors", () => {
           ],
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new CommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(commandLog);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git commit",
@@ -697,7 +697,7 @@ describe("Autocomplete History Suggestors", () => {
 
   it("CommandPatternSuggestor keeps selected patterns visible despite age", async () => {
     const now = Date.now();
-    const persistence = {
+    const commandLog = {
       searchCommandPatterns: vi.fn().mockResolvedValue([
         {
           signature: {
@@ -727,9 +727,9 @@ describe("Autocomplete History Suggestors", () => {
           ],
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new CommandPatternSuggestor(persistence);
+    const suggestor = new CommandPatternSuggestor(commandLog);
     const result = await suggestor.suggest({
       mode: "command",
       beforeCursor: "git commit",
@@ -747,7 +747,7 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("HistoryCommandSuggestor boosts only same command token over general matches", async () => {
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         { command: "npm test", execCount: 0, selectCount: 0, lastExecAt: 1, ...baseHistoryRow },
         {
@@ -758,9 +758,9 @@ describe("Autocomplete History Suggestors", () => {
           ...baseHistoryRow,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "npm",
@@ -779,15 +779,15 @@ describe("Autocomplete History Suggestors", () => {
   });
 
   it("HistoryCommandSuggestor filters suggestions made only from words already in prompt", async () => {
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         { command: "npm", execCount: 10, selectCount: 5, lastExecAt: 1, ...baseHistoryRow },
         { command: "npm run", execCount: 8, selectCount: 4, lastExecAt: 1, ...baseHistoryRow },
         { command: "npm test", execCount: 6, selectCount: 3, lastExecAt: 1, ...baseHistoryRow },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "npm t",
@@ -810,7 +810,7 @@ describe("Autocomplete History Suggestors", () => {
 
   it("HistoryCommandSuggestor matches multi-token input like gi pu to git push", async () => {
     const now = Date.now();
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           command: "git push",
@@ -835,9 +835,9 @@ describe("Autocomplete History Suggestors", () => {
           cwdLastSelectAt: now - 30_000,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const ctx: QueryContext = {
       mode: "command",
       beforeCursor: "gi pu",
@@ -856,7 +856,7 @@ describe("Autocomplete History Suggestors", () => {
 
   it("HistoryCommandSuggestor boosts strong previous-to-next transitions", async () => {
     const now = Date.now();
-    const persistence = {
+    const commandLog = {
       searchCommands: vi.fn().mockResolvedValue([
         {
           command: "docker compose build",
@@ -887,9 +887,9 @@ describe("Autocomplete History Suggestors", () => {
           lastTransitionAt: now - 14 * 24 * 60 * 60 * 1000,
         },
       ]),
-    } as unknown as TerminalHistoryPersistenceService;
+    } as unknown as SessionCommandLog;
 
-    const suggestor = new HistoryCommandSuggestor(persistence);
+    const suggestor = new HistoryCommandSuggestor(commandLog);
     const context: QueryContext = {
       mode: "command",
       beforeCursor: "docker compose",

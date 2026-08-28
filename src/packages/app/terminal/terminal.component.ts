@@ -12,6 +12,8 @@ import {
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
@@ -22,7 +24,6 @@ import { TerminalComposerService } from "./+state/advanced/composer/terminal-com
 import { TerminalCommandHistoryStore } from "./+state/advanced/history/terminal-command-history.store";
 import { TerminalHistoryComponent } from "./+state/advanced/history/terminal-history.component";
 import { TerminalHistoryService } from "./+state/advanced/history/terminal-history.service";
-import { TerminalHistoryPersistenceService } from "./+state/advanced/history/terminal-history-persistence.service";
 import { TerminalStateManager } from "./+state/state";
 import { TerminalSession } from "./+state/terminal.session";
 import { TerminalHeaderComponent } from "./header/terminal-header.component";
@@ -43,7 +44,8 @@ import { TerminalFileDropService } from "./terminal-file-drop.service";
   ],
   providers: [
     TerminalCommandHistoryStore,
-    TerminalHistoryPersistenceService,
+    SessionCommandLog,
+    CommandRecorder,
     TerminalAutocompleteService,
     TerminalComposerService,
     TerminalHistoryService,

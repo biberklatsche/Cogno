@@ -1,4 +1,4 @@
-import { TerminalHistoryPersistenceService } from "../../history/terminal-history-persistence.service";
+import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { AutocompleteSuggestion, QueryContext } from "../autocomplete.types";
 import { SuggestionPatternReducer } from "./scoring/suggestion-pattern.reducer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
@@ -8,7 +8,7 @@ export class CommandPatternSuggestor implements TerminalAutocompleteSuggestor {
   readonly inputPattern = /.+/;
 
   constructor(
-    private readonly persistence: TerminalHistoryPersistenceService,
+    private readonly commandLog: SessionCommandLog,
     private readonly suggestionPatternReducer: SuggestionPatternReducer = new SuggestionPatternReducer(),
   ) {}
 
@@ -22,7 +22,7 @@ export class CommandPatternSuggestor implements TerminalAutocompleteSuggestor {
       return [];
     }
 
-    const patterns = await this.persistence.searchCommandPatterns(query, 100);
+    const patterns = await this.commandLog.searchCommandPatterns(query, 100);
     return this.suggestionPatternReducer.reduce(patterns, context);
   }
 }

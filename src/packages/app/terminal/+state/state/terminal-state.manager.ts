@@ -3,6 +3,8 @@ import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { OsPlatform } from "@cogno/platform/os";
 import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
 import { IPathAdapter } from "@cogno/shared/domain";
@@ -13,7 +15,6 @@ import {
   ExecutedCommand,
   TerminalCommandHistoryStore,
 } from "../advanced/history/terminal-command-history.store";
-import { TerminalHistoryPersistenceService } from "../advanced/history/terminal-history-persistence.service";
 import { ShellContext } from "../advanced/model/models";
 import { Command } from "./command.model";
 import {
@@ -38,7 +39,7 @@ export class TerminalStateManager {
     private readonly os: OsPlatform,
     private _bus: AppBus,
     private _historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
-    private _historyPersistence: TerminalHistoryPersistenceService = new TerminalHistoryPersistenceService(),
+    private _recorder: CommandRecorder = new CommandRecorder(new SessionCommandLog()),
     destroyRef?: DestroyRef,
     private configService?: ConfigService,
   ) {
@@ -83,7 +84,7 @@ export class TerminalStateManager {
       this.os.platform(),
     );
     this._pathAdapter = PathFactory.createAdapter(shellContext);
-    this._historyPersistence.initialize(shellContext, this._pathAdapter, terminalId);
+    this._recorder.initialize(shellContext, this._pathAdapter, terminalId);
     this.updateState({
       terminalId,
       shellContext,
@@ -334,7 +335,7 @@ export class TerminalStateManager {
 
   updateCommand(data: Record<string, string>): ExecutedCommand | undefined {
     const executedCommand = this._historyStore.updateCommand(data);
-    this._historyPersistence.onCommandExecuted(executedCommand);
+    this._recorder.onCommandExecuted(executedCommand);
     return executedCommand;
   }
 
@@ -354,7 +355,7 @@ export class TerminalStateManager {
     if (!backendOsPath) return;
 
     if (cwdChanged) {
-      this._historyPersistence.onCwdChanged(normalizedPath);
+      this._recorder.onCwdChanged(normalizedPath);
     }
 
     this._bus.publish({

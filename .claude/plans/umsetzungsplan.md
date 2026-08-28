@@ -361,25 +361,35 @@ unmigriert erscheinen.
 `app/` delegiert an `core/command-log/` (alt → neu). History-Dropdown und
 Suggestoren bleiben in `app/`.
 
-### Schritt 7: Recorder nach `core/session/recorder/`
+### Schritt 7: Recorder nach `core/session/recorder/` — **erledigt (2026-08-28)**
 
 **Voraussetzungen:** 6.
 
-**Was:** Aus `TerminalHistoryPersistenceService` den schreibenden Teil
-(`initialize`, `onCwdChanged`, `onCommandExecuted`, Rückkehrcode-Whitelist)
-als `CommandRecorder` nach `core/session/recorder/`; der lesende Teil geht
-in die Sichten auf (Schritt 6 hat die Lese-API). `TerminalStateManager`
-ruft den Recorder statt des Persistence-Service. Die Klasse wird gelöscht.
+**Was:** `TerminalHistoryPersistenceService` ist in zwei Klassen aufgelöst:
+
+- `core/session/recorder/command-recorder.ts` — Shell-Ereignisse
+  (`initialize`, `onCwdChanged`, `onCommandExecuted`), Rückkehrcode-Politik,
+  Erststart-Import. Bekommt ausschließlich `CommandLogWriter`.
+- `core/session/command-log/session-command-log.ts` — der Zugang der Sitzung
+  zum Log: erzeugt das Repository für den Shell-Kontext, führt die
+  Schreib-Warteschlange (fire and forget, Fehler gemeldet statt geworfen),
+  beantwortet die vier Abfragen und nimmt das Auswahl-Feedback entgegen.
+
+Warum zwei statt einer: das Repository gehört einem Shell-Kontext und muss
+von beiden Seiten erreichbar sein; die Warteschlange und die
+Degradation „kein Repository → leere Antwort" liegen genau einmal.
+`ExecutedCommand` zieht mit dem Recorder um, weil er sie interpretiert; der
+Store in `app/` re-exportiert den Typ, bis er selbst umzieht.
 
 **Akzeptanzkriterien:**
 
-- `core/session/recorder/` importiert nur `command-log/` (Schreib-API),
-  `infrastructure/`, `shared/`, `platform/`.
-- Test: der Recorder liest nie — kein Import aus `command-log/read/`
-  (Depcruise-Regel `recorder-writes-only`, in diesem Schritt ergänzt).
-- Test: „DB fehlt" → Recorder ist stumm, Session läuft, Health
-  `unavailable` (Health kommt in Schritt 8; hier nur der Stumm-Pfad wie
-  heute).
+- `core/session/` importiert nur `command-log/`, `infrastructure/`,
+  `shared/`, `platform/`.
+- Der Recorder liest nie: er nimmt `CommandLogWriter` entgegen, die
+  Lesemethoden stehen ihm nicht zur Verfügung — Compilerfehler statt
+  Depcruise-Regel.
+- Test „kein Repository": ohne `DatabaseAccess` wird keines erzeugt, kein
+  Schreibaufruf erreicht das Repository, und Abfragen liefern leer.
 
 **Erlaubter Übergangszustand:** `TerminalStateManager` liegt noch in
 `app/` und importiert `@cogno/core/session/recorder` (alt → neu).

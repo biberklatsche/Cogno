@@ -1,4 +1,5 @@
 import { Injectable, OnDestroy } from "@angular/core";
+import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
@@ -6,7 +7,6 @@ import { ActionFired, ActionFiredEvent } from "../../../../action/action.models"
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalState, TerminalStateManager } from "../../state";
-import { TerminalHistoryPersistenceService } from "../history/terminal-history-persistence.service";
 import {
   computeDropdownPanelPosition,
   estimateDropdownPanelHeight,
@@ -100,7 +100,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
   constructor(
     private readonly stateManager: TerminalStateManager,
-    private readonly persistence: TerminalHistoryPersistenceService,
+    private readonly commandLog: SessionCommandLog,
     private readonly bus: AppBus,
     private readonly featureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
@@ -140,9 +140,9 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   private registerDefaultSuggestors(): void {
-    this.registerSuggestor(new HistoryDirectorySuggestor(this.persistence));
-    this.registerSuggestor(new CommandPatternSuggestor(this.persistence));
-    this.registerSuggestor(new HistoryCommandSuggestor(this.persistence));
+    this.registerSuggestor(new HistoryDirectorySuggestor(this.commandLog));
+    this.registerSuggestor(new CommandPatternSuggestor(this.commandLog));
+    this.registerSuggestor(new HistoryCommandSuggestor(this.commandLog));
     for (const suggestor of this.featureSuggestorService.getSharedSuggestors()) {
       this.registerSuggestor(suggestor);
     }
@@ -487,16 +487,16 @@ export class TerminalAutocompleteService implements OnDestroy {
     const cursorIndex = start + suggestion.insertText.length;
 
     if (suggestion.selectedPath) {
-      this.persistence.markDirectorySelected(suggestion.selectedPath);
+      this.commandLog.markDirectorySelected(suggestion.selectedPath);
     }
     if (suggestion.selectedCommand && this.stateManager.state.cwd) {
-      this.persistence.markCommandSelected(suggestion.selectedCommand, this.stateManager.state.cwd);
+      this.commandLog.markCommandSelected(suggestion.selectedCommand, this.stateManager.state.cwd);
     }
     if (suggestion.selectedPatternSignature) {
-      this.persistence.markCommandPatternSelected(suggestion.selectedPatternSignature);
+      this.commandLog.markCommandPatternSelected(suggestion.selectedPatternSignature);
     }
     if (suggestion.liveCollapsedFrom && suggestion.liveCollapsedFrom.length > 0) {
-      this.persistence.confirmLivePattern(suggestion.liveCollapsedFrom);
+      this.commandLog.confirmLivePattern(suggestion.liveCollapsedFrom);
     }
 
     this.bus.publish({

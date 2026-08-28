@@ -6,6 +6,7 @@ import {
   TerminalHistoryViewState,
 } from "@cogno/core/command-log/recent-history.types";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
@@ -18,7 +19,6 @@ import {
   resolveRightUiInset,
 } from "../ui/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
-import { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 const REFRESH_DEBOUNCE_MS = 80;
@@ -59,7 +59,7 @@ export class TerminalHistoryService implements OnDestroy {
 
   constructor(
     private readonly stateManager: TerminalStateManager,
-    private readonly persistence: TerminalHistoryPersistenceService,
+    private readonly commandLog: SessionCommandLog,
     private readonly bus: AppBus,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
     private readonly configService: ConfigService,
@@ -262,7 +262,7 @@ export class TerminalHistoryService implements OnDestroy {
     preferredScope: HistoryScope,
     cwdRaw?: string,
   ): Promise<{ scope: HistoryScope; rows: RecentCommandRow[] }> {
-    const rows = await this.persistence.getRecentCommands({ scope: preferredScope, cwdRaw });
+    const rows = await this.commandLog.getRecentCommands({ scope: preferredScope, cwdRaw });
     return { scope: preferredScope, rows };
   }
 
@@ -296,7 +296,7 @@ export class TerminalHistoryService implements OnDestroy {
     if (!entry) return;
 
     if (this.stateManager.state.cwd) {
-      this.persistence.markCommandSelected(entry.command, this.stateManager.state.cwd);
+      this.commandLog.markCommandSelected(entry.command, this.stateManager.state.cwd);
     }
 
     const autoExecute = this.configService.config.terminal?.history?.auto_execute ?? false;
