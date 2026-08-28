@@ -86,7 +86,7 @@ import {
   TerminalThemeChangedEvent,
   TerminalThemePaddingAddedEvent,
   TerminalThemePaddingRemovedEvent,
-} from "../terminal/+state/handler/theme.handler";
+} from "../terminal/+state/handler/terminal-padding.handler";
 
 export type TerminalCommandType = AppMessage["type"];
 

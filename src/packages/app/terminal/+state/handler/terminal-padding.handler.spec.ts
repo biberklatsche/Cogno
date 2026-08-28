@@ -1,12 +1,14 @@
+import type { IRenderer } from "@cogno/core/terminal/renderer";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import { ThemeHandler } from "./theme.handler";
+import { TerminalPaddingHandler } from "./terminal-padding.handler";
 
-describe("ThemeHandler", () => {
-  let handler: ThemeHandler;
+describe("TerminalPaddingHandler", () => {
+  let handler: TerminalPaddingHandler;
+  let rendererStub: IRenderer;
   let mockTerminal: Terminal;
   let mockBus: AppBus;
   let mockConfig: ConfigServiceMock;
@@ -35,45 +37,15 @@ describe("ThemeHandler", () => {
       padding: { remove_on_full_screen_app: false },
     });
     container = document.createElement("div");
-    handler = new ThemeHandler(terminalId, mockConfig as any, mockBus, container);
+    rendererStub = { restoreCursorColor: vi.fn() } as unknown as IRenderer;
+    handler = new TerminalPaddingHandler(
+      terminalId,
+      mockConfig as any,
+      mockBus,
+      container,
+      rendererStub,
+    );
     mockTerminal = TerminalMockFactory.createTerminal();
-  });
-
-  describe("configureTerminal", () => {
-    it("should throw error if terminal is not registered", () => {
-      expect(() => handler.configureTerminal(mockConfig.config)).toThrow(
-        "Terminal has no terminal",
-      );
-    });
-
-    it("should apply config options to terminal", () => {
-      handler.registerTerminal(mockTerminal);
-
-      const config = { ...mockConfig.config };
-      config.scrollbar!.scrollback_lines = 5000;
-      config.font = { size: 14, family: "Fira Code", weight: "normal", weight_bold: "bold" };
-
-      handler.configureTerminal(config);
-
-      expect(mockTerminal.options.scrollback).toBe(5000);
-      expect(mockTerminal.options.fontSize).toBe(14);
-      expect(mockTerminal.options.fontFamily).toContain("Fira Code");
-      expect(mockTerminal.options.theme?.foreground).toBe(`#${config.color?.foreground}`);
-    });
-
-    it("should publish TerminalThemeChanged event", () => {
-      const publishSpy = vi.spyOn(mockBus, "publish");
-      handler.registerTerminal(mockTerminal);
-      publishSpy.mockClear(); // Clear initial publish from register/configureTerminal
-      handler.configureTerminal(mockConfig.config);
-
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "TerminalThemeChanged",
-          path: ["app", "terminal", terminalId],
-        }),
-      );
-    });
   });
 
   describe("bus events", () => {
@@ -135,43 +107,29 @@ describe("ThemeHandler", () => {
       expect(container.style.getPropertyValue("--padding-xterm")).toBe("");
     });
 
-    it("should restore cursor theme when requested", () => {
-      const initialTheme = { cursor: "#ff00ff", cursorAccent: "#000000", foreground: "#ffffff" };
-      const optionState = {
-        theme: initialTheme,
-      };
-      const themeAssignments: unknown[] = [];
-
-      Object.defineProperty(mockTerminal.options, "theme", {
-        get: () => optionState.theme,
-        set: (value) => {
-          themeAssignments.push(value);
-          optionState.theme = value as typeof initialTheme;
-        },
-        configurable: true,
-      });
+    it("asks the renderer to restore the cursor colour when requested", () => {
+      handler.registerTerminal(mockTerminal);
 
       mockBus.publish({
         type: "TerminalCursorRestoreRequested",
         path: ["app", "terminal", terminalId],
-        payload: terminalId,
       });
 
-      expect(themeAssignments).toHaveLength(1);
-      expect(themeAssignments[0]).toEqual(initialTheme);
-      expect(themeAssignments[0]).not.toBe(initialTheme);
+      expect(rendererStub.restoreCursorColor).toHaveBeenCalled();
     });
   });
 
   describe("Lifecycle", () => {
-    it("should unsubscribe on dispose", () => {
+    it("stops reacting once disposed", () => {
       handler.registerTerminal(mockTerminal);
-      const configureSpy = vi.spyOn(handler, "configureTerminal");
-
       handler.dispose();
-      mockConfig.setConfig(mockConfig.config);
 
-      expect(configureSpy).not.toHaveBeenCalled();
+      mockBus.publish({
+        type: "TerminalCursorRestoreRequested",
+        path: ["app", "terminal", terminalId],
+      });
+
+      expect(rendererStub.restoreCursorColor).not.toHaveBeenCalled();
     });
   });
 });

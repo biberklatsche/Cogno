@@ -1,4 +1,5 @@
-import type { FontWeight } from "@xterm/xterm";
+import type { FontWeight, ITheme } from "@xterm/xterm";
+import type { ICursorStyle } from "./terminal-machine.state";
 
 /**
  * What the machine needs to build a terminal, as plain values.
@@ -34,4 +35,12 @@ export type TerminalMachineOptions = {
 
   readonly altClickMovesCursor?: boolean;
   readonly rightClickSelectsWord?: boolean;
+
+  readonly cursorWidth?: number;
+  readonly cursorBlink?: boolean;
+  readonly cursorStyle?: ICursorStyle;
+  readonly cursorInactiveStyle?: "outline" | "block" | "bar" | "underline" | "none";
+
+  /** Colours, ready to use - the machine does not know a config key. */
+  readonly theme?: ITheme;
 };

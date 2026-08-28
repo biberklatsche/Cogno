@@ -70,9 +70,9 @@ import {
   OSC9_NOTIFICATION_ID,
   TerminalNotificationHandler,
 } from "./handler/terminal-notification.handler";
+import { TerminalPaddingHandler } from "./handler/terminal-padding.handler";
 import { TerminalSearchHandler } from "./handler/terminal-search.handler";
 import { TerminalTitleHandler } from "./handler/terminal-title.handler";
-import { ThemeHandler } from "./handler/theme.handler";
 import { TerminalInputWriter } from "./input-writer";
 import { KeybindExecutor } from "./keybind/keybind.executor";
 import { TerminalStateManager } from "./state";
@@ -173,6 +173,18 @@ export class TerminalSession {
       terminalContainer,
       this.configService.config.font?.enable_ligatures ?? false,
     );
+    // The machine takes values; reading the config and pushing them again
+    // when it changes is the host's job (ARCHITECTURE.md 2.1).
+    const terminalId = this.terminalId;
+    this.subscription.add(
+      this.configService.config$.subscribe((config) => {
+        this.renderer.setOptions(toTerminalMachineOptions(config));
+        this.bus.publish({
+          path: ["app", "terminal", terminalId],
+          type: "TerminalThemeChanged",
+        });
+      }),
+    );
     this.focusHandler = new FocusHandler(this.terminalId, this.bus, this.stateManager);
     const resizeHandler = new ResizeHandler(this.pty, terminalContainer, this.stateManager);
     this.disposables.push(this.renderer.register(resizeHandler));
@@ -202,7 +214,13 @@ export class TerminalSession {
     );
     this.disposables.push(
       this.renderer.register(
-        new ThemeHandler(this.terminalId, this.configService, this.bus, terminalContainer),
+        new TerminalPaddingHandler(
+          this.terminalId,
+          this.configService,
+          this.bus,
+          terminalContainer,
+          this.renderer,
+        ),
       ),
     );
     this.disposables.push(

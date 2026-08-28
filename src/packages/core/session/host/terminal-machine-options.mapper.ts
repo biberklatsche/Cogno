@@ -1,5 +1,6 @@
 import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { TerminalMachineOptions } from "@cogno/core/terminal/terminal-machine.options";
+import { toTerminalTheme } from "./terminal-theme.mapper";
 
 /**
  * Reads the configuration for the machine, which reads none itself
@@ -33,5 +34,11 @@ export function toTerminalMachineOptions(config: Config): TerminalMachineOptions
 
     altClickMovesCursor: config.cursor?.alt_click_moves_cursor,
     rightClickSelectsWord: config.selection?.right_click_selects_word,
+
+    cursorWidth: config.cursor?.width,
+    cursorBlink: config.cursor?.blink,
+    cursorStyle: config.cursor?.style,
+    cursorInactiveStyle: config.cursor?.inactive_style,
+    theme: toTerminalTheme(config),
   };
 }

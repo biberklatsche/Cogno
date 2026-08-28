@@ -19,6 +19,8 @@ import { TerminalMachineOptions } from "./terminal-machine.options";
 
 export interface IRenderer {
   open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
+  setOptions(options: TerminalMachineOptions): void;
+  restoreCursorColor(): void;
   readonly terminal: Terminal;
   readonly isWebglContextLost$: Observable<boolean>;
 
@@ -167,6 +169,35 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
       return handler.registerTerminal(this._terminal);
     }
     throw new Error("unknown handler type");
+  }
+
+  /**
+   * Applies options to the running terminal. Called once at construction and
+   * again whenever they change - the machine takes values and never asks
+   * where they came from (ARCHITECTURE.md 2.1).
+   */
+  public setOptions(options: TerminalMachineOptions): void {
+    const target = this._terminal.options;
+    target.fontFamily = options.fontFamily;
+    target.fontSize = options.fontSize;
+    target.fontWeight = options.fontWeight;
+    target.fontWeightBold = options.fontWeightBold;
+    target.scrollback = options.scrollbackLines;
+    target.cursorWidth = options.cursorWidth;
+    target.cursorBlink = options.cursorBlink;
+    target.cursorStyle = options.cursorStyle;
+    target.cursorInactiveStyle = options.cursorInactiveStyle;
+    if (options.theme) {
+      target.theme = options.theme;
+    }
+  }
+
+  /** Re-applies the cursor colour after something else overwrote it. */
+  public restoreCursorColor(): void {
+    const theme = this._terminal.options.theme;
+    if (theme?.cursor) {
+      this._terminal.options.theme = { ...theme, cursor: theme.cursor };
+    }
   }
 
   public open(terminalContainer: HTMLDivElement, enableLigatures: boolean) {

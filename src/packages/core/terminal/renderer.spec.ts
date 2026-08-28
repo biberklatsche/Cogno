@@ -14,6 +14,7 @@ vi.mock("@xterm/xterm", () => {
     open = vi.fn();
     dispose = vi.fn();
     unicode = { activeVersion: "" };
+    options: Record<string, unknown> = {};
   }
 
   return {
@@ -231,5 +232,41 @@ describe("Renderer", () => {
     renderer.dispose();
     const terminalInstance = vi.mocked(Terminal).mock.results[0].value;
     expect(terminalInstance.dispose).toHaveBeenCalled();
+  });
+
+  describe("setOptions", () => {
+    it("applies fonts, cursor and colours to the running terminal", () => {
+      renderer = new Renderer(mockOptions, "linux", new WebglContextPool());
+      const terminal = vi.mocked(Terminal).mock.results.at(-1)?.value;
+
+      renderer.setOptions({
+        ...mockOptions,
+        fontFamily: "Fira Code",
+        fontSize: 13,
+        scrollbackLines: 5000,
+        cursorWidth: 2,
+        cursorBlink: true,
+        cursorStyle: "bar",
+        theme: { background: "#0e1925", cursor: "#ffffff" },
+      });
+
+      expect(terminal.options.fontFamily).toBe("Fira Code");
+      expect(terminal.options.fontSize).toBe(13);
+      expect(terminal.options.scrollback).toBe(5000);
+      expect(terminal.options.cursorWidth).toBe(2);
+      expect(terminal.options.cursorBlink).toBe(true);
+      expect(terminal.options.cursorStyle).toBe("bar");
+      expect(terminal.options.theme).toEqual({ background: "#0e1925", cursor: "#ffffff" });
+    });
+
+    it("keeps the current colours when none are given", () => {
+      renderer = new Renderer(mockOptions, "linux", new WebglContextPool());
+      const terminal = vi.mocked(Terminal).mock.results.at(-1)?.value;
+      terminal.options.theme = { background: "#000000" };
+
+      renderer.setOptions({ ...mockOptions, theme: undefined });
+
+      expect(terminal.options.theme).toEqual({ background: "#000000" });
+    });
   });
 });
