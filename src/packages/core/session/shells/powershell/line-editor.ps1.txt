@@ -162,6 +162,18 @@ function Invoke-CognoReplaceCurrentInput {
     }
 }
 
+# Every wait in this listener must be bounded. This runspace is joined by
+# the engine when PowerShell exits, and the engine can only stop a script
+# that is running PowerShell code - not one parked inside a native call. A
+# blocking WaitForConnection() or ReadLine() here keeps powershell.exe alive
+# forever after `exit`, so the PTY never reports the shell as gone.
+function Wait-CognoTask {
+    param([System.Threading.Tasks.Task]$Task)
+
+    while (-not $Task.Wait(200)) { }
+    return $Task
+}
+
 while ($true) {
     $pipe = $null
     $reader = $null
@@ -174,10 +186,10 @@ while ($true) {
             [System.IO.Pipes.PipeTransmissionMode]::Byte,
             [System.IO.Pipes.PipeOptions]::Asynchronous
         )
-        $pipe.WaitForConnection()
+        $null = Wait-CognoTask $pipe.WaitForConnectionAsync()
         $reader = [System.IO.StreamReader]::new($pipe)
 
-        while (($messageJson = $reader.ReadLine()) -ne $null) {
+        while (($messageJson = (Wait-CognoTask $reader.ReadLineAsync()).Result) -ne $null) {
             $message = $null
 
             try {

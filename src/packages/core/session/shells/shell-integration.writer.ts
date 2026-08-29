@@ -7,7 +7,7 @@ import { Shells } from "@cogno/platform/shells";
 import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
 import { ShellTypeContract } from "@cogno/shared/domain";
 
-const INTEGRATION_VERSION = "1.2.0";
+const INTEGRATION_VERSION = "1.2.1";
 
 /**
  * Manages shell integration scripts in ~/.cogno/shell-integration
