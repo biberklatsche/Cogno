@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveShellContext } from "./terminal-shell-context.util";
+import { deriveShellContext } from "./shell-context";
 
 describe("deriveShellContext", () => {
   it("returns base context on non-windows", () => {

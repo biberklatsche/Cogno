@@ -13,6 +13,7 @@ import {
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
@@ -21,7 +22,6 @@ import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/te
 import { TerminalAutocompleteService } from "./+state/advanced/autocomplete/terminal-autocomplete.service";
 import { TerminalComposerComponent } from "./+state/advanced/composer/terminal-composer.component";
 import { TerminalComposerService } from "./+state/advanced/composer/terminal-composer.service";
-import { TerminalCommandHistoryStore } from "./+state/advanced/history/terminal-command-history.store";
 import { TerminalHistoryComponent } from "./+state/advanced/history/terminal-history.component";
 import { TerminalHistoryService } from "./+state/advanced/history/terminal-history.service";
 import { TerminalStateManager } from "./+state/state";

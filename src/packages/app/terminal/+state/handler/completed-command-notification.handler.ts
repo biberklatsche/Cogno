@@ -1,4 +1,5 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
 import {
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
@@ -7,7 +8,6 @@ import {
 import { TerminalId } from "@cogno/shared/ports";
 import { timespan } from "@cogno/shared/support";
 import { AppBus } from "../../../app-bus/app-bus";
-import { ExecutedCommand } from "../advanced/history/terminal-command-history.store";
 
 export const LONG_RUNNING_COMMAND_NOTIFICATION_ID = "long_running_command";
 export const DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS = 10;

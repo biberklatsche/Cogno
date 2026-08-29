@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
-import type { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
 import { BehaviorSubject, Observable } from "rxjs";
-import { Command } from "../../state";
-import { OscDataType } from "../model/models";
+import type { ExecutedCommand } from "../recorder/executed-command";
+import { Command, CommandData } from "./command.model";
 
 export type { ExecutedCommand };
 
+/** The commands of one session, in order, as the prompts reported them. */
 @Injectable()
 export class TerminalCommandHistoryStore {
   private readonly _historySubject = new BehaviorSubject<Command[]>([]);
@@ -18,7 +18,7 @@ export class TerminalCommandHistoryStore {
     return this._historySubject.asObservable();
   }
 
-  updateCommand(data: Record<OscDataType, string>): ExecutedCommand | undefined {
+  updateCommand(data: CommandData): ExecutedCommand | undefined {
     const id = data["id"];
     const directory = data["directory"];
     const user = data["user"];

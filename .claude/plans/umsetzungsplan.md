@@ -517,7 +517,7 @@ machen keine Maschinenarbeit und sind deshalb nicht mitgezogen.
   wer den Fokus bekommt, löscht das Ungelesen-Abzeichen und publiziert
   `TerminalFocused`/`TerminalBlurred`.
 
-### Schritt 11: `TerminalStateManager` teilen
+### Schritt 11: `TerminalStateManager` teilen — **erledigt (2026-08-29)**
 
 **Voraussetzungen:** 10.
 
@@ -546,6 +546,28 @@ werden entsprechend aufgeteilt.
 
 **Erlaubter Übergangszustand:** `terminal.session.ts` in `app/` besitzt
 beide Hälften. Keine Datei in `core/session/model/` importiert `app/`.
+
+**Abweichungen bei der Umsetzung** (vorher abgestimmt):
+
+- `TerminalStateManager` bleibt in `app/` als reine Fassade
+  (`MIGRATION-TEMP(step 14)`): unveränderter Konstruktor, komponiert
+  `MachineState` und `SessionModel`, trägt den Bus-Kleber
+  (`cwdReported$` → `TerminalCwdChanged`, `busy$` → `TerminalBusyChanged`,
+  `ConfigLoaded` → Abzeichen löschen). Die 21 Konsumenten bleiben
+  unberührt; sie ziehen in 12 und 14 um, die Fassade fällt mit ihnen.
+- `hasUnreadNotification` und `isPaneMaximized` standen in keiner
+  Hälfte; beide liegen im Sitzungsmodell. Maximierung ist
+  Workbench-Sache und zieht in Phase E weiter.
+- Das `FocusTerminal`-Abo des alten Managers entfällt ersatzlos: seit
+  Schritt 10c setzt der `TerminalFocusCoordinator` den Fokus für eigene
+  und fremde IDs; der alte Test dazu lebt in dessen Spec.
+- `TerminalCommandHistoryStore` und `Command` ziehen mit nach
+  `core/session/model/` (nur dort in Gebrauch); der Pfadadapter kommt
+  über `createPathAdapter()` in `core/session/shells/` statt über die
+  statische `PathFactory` in `app/`.
+- `state$` der Fassade ist `combineLatest` beider Hälften; `initialize()`
+  schreibt in beide, also dort ein zweites Emit. Alle Abonnenten sind
+  debounced oder signaturgeprüft.
 
 ### Schritt 12: `CommandLineObserver` teilen und Session-Handler umziehen
 

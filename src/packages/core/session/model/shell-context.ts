@@ -1,7 +1,7 @@
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { OsType } from "@cogno/platform/os";
-import { ShellContext } from "../advanced/model/models";
+import { ResolvedShellContextContract as ShellContext } from "@cogno/shared/domain";
 
 export function deriveShellContext(
   shellType: ShellType,

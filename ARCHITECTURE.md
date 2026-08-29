@@ -7,7 +7,7 @@ Grundlage ist die Bestandsaufnahme in `.claude/plans/capability-inventory.md`.
 
 **Umbaustand:** Die Architektur wird in Schritten umgesetzt; der
 Umsetzungsplan liegt unter `.claude/plans/umsetzungsplan.md` (Schritte 0–29).
-**Aktueller Schritt: 10 (`core/terminal/`, Teil 2 — Handler).** Bis Schritt 28 liegt Code zusätzlich
+**Aktueller Schritt: 11 (`TerminalStateManager` geteilt).** Bis Schritt 28 liegt Code zusätzlich
 unter `src/packages/app/` nach dem alten Vier-Paket-Layout; dafür gelten die
 Übergangsregeln in 2.1.
 

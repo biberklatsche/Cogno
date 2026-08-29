@@ -1,182 +1,68 @@
-import { PathFactory } from "@cogno/app/app-host/path.factory";
-import { ConfigService, ShellProfileEntry } from "@cogno/core/infrastructure/config/config.service";
-import type { Config, ShellType } from "@cogno/core/infrastructure/config/models/config";
-import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
-import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { OsPlatform } from "@cogno/platform/os";
-import type { Observable } from "rxjs";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getDestroyRef } from "../../../../__test__/test-factory";
 import { AppBus } from "../../../app-bus/app-bus";
 import { TerminalStateManager } from "./terminal-state.manager";
 
-class ConfigServiceMockForNotificationBadge extends ConfigService {
-  override getOrderedShellProfiles(_limit?: number): ShellProfileEntry[] {
-    throw new Error("Method not implemented.");
-  }
-  override getShellProfileByShortcutIndex(_index: number): ShellProfileEntry | undefined {
-    throw new Error("Method not implemented.");
-  }
-  constructor(private readonly notificationBadgeEnabledState: { value: boolean }) {
-    super();
-  }
-
-  get config(): Config {
-    return {
-      terminal: {
-        notifications: {
-          unread_badge: this.notificationBadgeEnabledState.value,
-        },
-      },
-    } as Config;
-  }
-
-  get config$(): Observable<Config> {
-    throw new Error("Not used in this test.");
-  }
-
-  getShellProfileOrDefault(_name?: string): ShellProfile {
-    throw new Error("Not used in this test.");
-  }
-
-  getPromptSegments(): PromptSegment[] {
-    return [];
-  }
+/** Only `config.terminal.notifications.unread_badge` is read here. */
+function configWithBadge(badge: { value: boolean }): ConfigService {
+  return {
+    get config() {
+      return { terminal: { notifications: { unread_badge: badge.value } } };
+    },
+  } as unknown as ConfigService;
 }
 
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
-describe("TerminalStateManager", () => {
-  beforeEach(() => {
-    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
-  });
-
-  it("should keep only the focused terminal state manager focused", () => {
+describe("TerminalStateManager (bus glue)", () => {
+  it("clears the unread notification on ConfigLoaded when unread_badge is switched off", () => {
     const bus = new AppBus();
-    const firstTerminalStateManager = new TerminalStateManager(
+    const badge = { value: true };
+    const stateManager = new TerminalStateManager(
       osStub,
       bus,
       undefined,
       undefined,
       getDestroyRef(),
+      configWithBadge(badge),
     );
-    const secondTerminalStateManager = new TerminalStateManager(
-      osStub,
-      bus,
-      undefined,
-      undefined,
-      getDestroyRef(),
-    );
+    stateManager.initialize("terminal-1", "Bash");
 
-    firstTerminalStateManager.initialize("terminal-1", "Bash" as ShellType);
-    secondTerminalStateManager.initialize("terminal-2", "Bash" as ShellType);
+    stateManager.markUnreadNotification();
+    expect(stateManager.hasUnreadNotification).toBe(true);
 
-    bus.publish({ type: "FocusTerminal", payload: "terminal-1", path: ["app", "terminal"] });
-    expect(firstTerminalStateManager.isFocused).toBe(true);
-    expect(secondTerminalStateManager.isFocused).toBe(false);
-
-    bus.publish({ type: "FocusTerminal", payload: "terminal-2", path: ["app", "terminal"] });
-    expect(firstTerminalStateManager.isFocused).toBe(false);
-    expect(secondTerminalStateManager.isFocused).toBe(true);
-  });
-
-  it("should set and clear unread notification state", () => {
-    const bus = new AppBus();
-    const terminalStateManager = new TerminalStateManager(
-      osStub,
-      bus,
-      undefined,
-      undefined,
-      getDestroyRef(),
-    );
-    terminalStateManager.initialize("terminal-1", "Bash" as ShellType);
-
-    expect(terminalStateManager.hasUnreadNotification).toBe(false);
-    terminalStateManager.markUnreadNotification();
-    expect(terminalStateManager.hasUnreadNotification).toBe(true);
-    terminalStateManager.clearUnreadNotification();
-    expect(terminalStateManager.hasUnreadNotification).toBe(false);
-  });
-
-  it("should not mark unread notification when terminal.notifications.unread_badge is false", () => {
-    const bus = new AppBus();
-    const notificationBadgeEnabledState = { value: false };
-    const configService = new ConfigServiceMockForNotificationBadge(notificationBadgeEnabledState);
-    const terminalStateManager = new TerminalStateManager(
-      osStub,
-      bus,
-      undefined,
-      undefined,
-      getDestroyRef(),
-      configService,
-    );
-    terminalStateManager.initialize("terminal-1", "Bash" as ShellType);
-
-    terminalStateManager.markUnreadNotification();
-
-    expect(terminalStateManager.hasUnreadNotification).toBe(false);
-  });
-
-  it("should clear unread notification on ConfigLoaded when unread_badge is switched to false", () => {
-    const bus = new AppBus();
-    const notificationBadgeEnabledState = { value: true };
-    const configService = new ConfigServiceMockForNotificationBadge(notificationBadgeEnabledState);
-    const terminalStateManager = new TerminalStateManager(
-      osStub,
-      bus,
-      undefined,
-      undefined,
-      getDestroyRef(),
-      configService,
-    );
-    terminalStateManager.initialize("terminal-1", "Bash" as ShellType);
-
-    terminalStateManager.markUnreadNotification();
-    expect(terminalStateManager.hasUnreadNotification).toBe(true);
-
-    notificationBadgeEnabledState.value = false;
+    badge.value = false;
     bus.publish({ type: "ConfigLoaded", path: ["app", "settings"] });
 
-    expect(terminalStateManager.hasUnreadNotification).toBe(false);
+    expect(stateManager.hasUnreadNotification).toBe(false);
   });
 
-  it("should store bounded terminal progress state", () => {
+  it("publishes busy and cwd facts as the old bus messages", () => {
     const bus = new AppBus();
-    const terminalStateManager = new TerminalStateManager(
+    const published: unknown[] = [];
+    bus
+      .onType$("TerminalBusyChanged", { path: ["app", "terminal"], phase: "target" })
+      .subscribe((e) => published.push(e.payload));
+    bus
+      .onType$("TerminalCwdChanged", { path: ["app", "terminal", "terminal-1"], phase: "target" })
+      .subscribe((e) => published.push(e.payload));
+    const stateManager = new TerminalStateManager(
       osStub,
       bus,
       undefined,
       undefined,
       getDestroyRef(),
     );
-    terminalStateManager.initialize("terminal-1", "Bash" as ShellType);
+    stateManager.initialize("terminal-1", "Bash");
 
-    terminalStateManager.setProgress("warning", 132);
+    stateManager.startCommand();
+    stateManager.updateCwd("/tmp");
 
-    expect(terminalStateManager.state.progress).toEqual({
-      state: "warning",
-      value: 100,
-    });
-  });
-
-  it("should clear terminal progress when hidden state is set", () => {
-    const bus = new AppBus();
-    const terminalStateManager = new TerminalStateManager(
-      osStub,
-      bus,
-      undefined,
-      undefined,
-      getDestroyRef(),
-    );
-    terminalStateManager.initialize("terminal-1", "Bash" as ShellType);
-
-    terminalStateManager.setProgress("default", 55);
-    terminalStateManager.setProgress("hidden", 55);
-
-    expect(terminalStateManager.state.progress).toEqual({
-      state: "hidden",
-      value: 0,
-    });
+    expect(published).toEqual([
+      { terminalId: "terminal-1", isBusy: true },
+      { cwd: "/tmp", terminalId: "terminal-1" },
+    ]);
   });
 });

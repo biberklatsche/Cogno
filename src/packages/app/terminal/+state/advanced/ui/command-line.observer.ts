@@ -1,5 +1,6 @@
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
@@ -8,7 +9,6 @@ import { Terminal } from "@xterm/xterm";
 import { debounceTime, Subject } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalStateManager } from "../../state";
-import { ExecutedCommand } from "../history/terminal-command-history.store";
 import OscParser from "../osc/cogno-osc.parser";
 import { toSessionCapabilities } from "../osc/session-capabilities.parser";
 import { CommandLineBuffer } from "./command-line.buffer";

@@ -1,7 +1,8 @@
-import { OscDataType } from "../advanced/model/models";
+/** Keys the shell integration reports per prompt; `command`/`duration` are added by the session. */
+export type CommandData = Record<string, string>;
 
 export class Command {
-  private data: Record<OscDataType, string> = {};
+  private data: CommandData = {};
   public isInViewport: boolean = false;
   public isFirstCommandOutOfViewport: boolean = false;
 
@@ -12,7 +13,7 @@ export class Command {
     private _user: string,
   ) {}
 
-  setData(data: Record<OscDataType, string>) {
+  setData(data: CommandData) {
     this.data = data;
   }
 

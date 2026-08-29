@@ -1,383 +1,252 @@
+// MIGRATION-TEMP(step 14): the state is split into MachineState (core/terminal)
+// and SessionModel (core/session); this keeps the old single object and the
+// old bus glue alive for the consumers in app/ until they move.
 import { DestroyRef, Injectable } from "@angular/core";
-import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import { Command, CommandData } from "@cogno/core/session/model/command.model";
+import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
+import { SessionModel, TerminalInput } from "@cogno/core/session/model/session-model";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
+import { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
+import { MachineState, TerminalProgressState } from "@cogno/core/terminal/machine-state";
 import { OsPlatform } from "@cogno/platform/os";
 import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
 import { IPathAdapter } from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
-import { BehaviorSubject, map, Observable, Subject, takeUntil } from "rxjs";
+import { combineLatest, map, Observable, Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
 import {
-  ExecutedCommand,
-  TerminalCommandHistoryStore,
-} from "../advanced/history/terminal-command-history.store";
-import { ShellContext } from "../advanced/model/models";
-import { Command } from "./command.model";
-import {
-  createInitialState,
   TerminalCursorPosition,
   TerminalDimensions,
-  TerminalInput,
   TerminalMousePosition,
-  TerminalProgressState,
   TerminalState,
 } from "./terminal.state";
-import { deriveShellContext } from "./terminal-shell-context.util";
 
 @Injectable()
 export class TerminalStateManager {
-  private readonly _stateSubject: BehaviorSubject<TerminalState>;
-  private readonly disposeSignal: Subject<void> = new Subject<void>();
-  private _pathAdapter?: IPathAdapter;
+  readonly machine = new MachineState();
+  readonly model: SessionModel;
+  private readonly subscription = new Subscription();
   private isDisposed = false;
 
   constructor(
     private readonly os: OsPlatform,
     private _bus: AppBus,
-    private _historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
-    private _recorder: CommandRecorder = new CommandRecorder(new SessionCommandLog()),
+    historyStore: TerminalCommandHistoryStore = new TerminalCommandHistoryStore(),
+    recorder: CommandRecorder = new CommandRecorder(new SessionCommandLog()),
     destroyRef?: DestroyRef,
     private configService?: ConfigService,
   ) {
     destroyRef?.onDestroy(() => this.dispose());
-    this._stateSubject = new BehaviorSubject<TerminalState>(createInitialState(this.os.platform()));
+    this.model = new SessionModel(this.os.platform(), historyStore, recorder, () =>
+      this.isTerminalNotificationBadgeEnabled(),
+    );
 
-    this._bus
-      .onType$("FocusTerminal", { path: ["app", "terminal"] })
-      .pipe(takeUntil(this.disposeSignal))
-      .subscribe((event) => {
-        const ownTerminalId = this._stateSubject.value.terminalId;
-        const focusedTerminalId = event.payload;
-        if (!ownTerminalId || !focusedTerminalId) return;
-        this.updateState({ isFocused: ownTerminalId === focusedTerminalId });
-      });
+    this.subscription.add(
+      this.model.cwdReported$.subscribe((cwd) => {
+        const terminalId = this.model.terminalId;
+        this._bus.publish({
+          path: ["app", "terminal", terminalId],
+          payload: { cwd, terminalId },
+          type: "TerminalCwdChanged",
+        });
+      }),
+    );
 
-    this._bus
-      .onType$("ConfigLoaded", { path: ["app", "settings"] })
-      .pipe(takeUntil(this.disposeSignal))
-      .subscribe(() => {
+    this.subscription.add(
+      this.model.busy$.subscribe((isBusy) => {
+        const terminalId = this.model.terminalId;
+        if (!terminalId) return;
+        this._bus.publish({
+          path: ["app", "terminal"],
+          type: "TerminalBusyChanged",
+          payload: { terminalId, isBusy },
+        });
+      }),
+    );
+
+    this.subscription.add(
+      this._bus.onType$("ConfigLoaded", { path: ["app", "settings"] }).subscribe(() => {
         if (!this.isTerminalNotificationBadgeEnabled()) {
-          this.clearUnreadNotification();
+          this.model.clearUnreadNotification();
         }
-      });
+      }),
+    );
   }
 
   dispose(): void {
-    if (this.isDisposed) {
-      return;
-    }
-
+    if (this.isDisposed) return;
     this.isDisposed = true;
-    this.publishTerminalBusyChanged(false);
-    this.disposeSignal.next();
-    this.disposeSignal.complete();
+    this.model.dispose();
+    this.subscription.unsubscribe();
   }
 
   initialize(terminalId: string, shellType: ShellType, shellProfile?: ShellProfile): void {
-    const shellContext: ShellContext = deriveShellContext(
-      shellType,
-      shellProfile,
-      this.os.platform(),
-    );
-    this._pathAdapter = PathFactory.createAdapter(shellContext);
-    this._recorder.initialize(shellContext, this._pathAdapter, terminalId);
-    this.updateState({
-      terminalId,
-      shellContext,
-      isPaneMaximized: false,
-      hasSelection: false,
-      isFocused: false,
-    });
-  }
-
-  private updateState(updates: Partial<TerminalState>): void {
-    this._stateSubject.next({
-      ...this._stateSubject.value,
-      ...updates,
-    });
-  }
-
-  // ---- State getters/streams wie vorher ----
-
-  get state$(): Observable<TerminalState> {
-    return this._stateSubject.asObservable();
-  }
-
-  get state(): TerminalState {
-    return this._stateSubject.value;
-  }
-
-  get cursorPosition$(): Observable<TerminalCursorPosition> {
-    return this._stateSubject.pipe(map((s) => s.cursorPosition));
-  }
-
-  get cursorPosition(): TerminalCursorPosition {
-    return this._stateSubject.value.cursorPosition;
-  }
-
-  updateCursorPosition(position: TerminalCursorPosition): void {
-    this.updateState({ cursorPosition: position });
-  }
-
-  get mousePosition(): TerminalMousePosition {
-    return this._stateSubject.value.mousePosition;
-  }
-
-  updateMousePosition(position: TerminalMousePosition): void {
-    this.updateState({ mousePosition: position });
-  }
-
-  get dimensions(): TerminalDimensions {
-    return this._stateSubject.value.dimensions;
-  }
-
-  updateDimensions(dimensions: TerminalDimensions): void {
-    this.updateState({ dimensions });
-  }
-
-  get isFocused(): boolean {
-    return this._stateSubject.value.isFocused;
-  }
-
-  get isFocused$(): Observable<boolean> {
-    return this._stateSubject.pipe(map((s) => s.isFocused));
-  }
-
-  setFocus(focused: boolean): void {
-    this.updateState({ isFocused: focused });
-  }
-
-  get hasSelection(): boolean {
-    return this._stateSubject.value.hasSelection;
-  }
-
-  get hasSelection$(): Observable<boolean> {
-    return this._stateSubject.pipe(map((s) => s.hasSelection));
-  }
-
-  setHasSelection(hasSelection: boolean): void {
-    this.updateState({ hasSelection });
-  }
-
-  get isInFullScreenMode$(): Observable<boolean> {
-    return this._stateSubject.pipe(map((s) => s.isInFullScreenMode));
-  }
-
-  setInFullScreenMode(fullSizeMode: boolean): void {
-    this.updateState({ isInFullScreenMode: fullSizeMode });
-  }
-
-  get isPaneMaximized(): boolean {
-    return this._stateSubject.value.isPaneMaximized;
-  }
-
-  get isPaneMaximized$(): Observable<boolean> {
-    return this._stateSubject.pipe(map((s) => s.isPaneMaximized));
-  }
-
-  setPaneMaximized(isPaneMaximized: boolean): void {
-    this.updateState({ isPaneMaximized });
-  }
-
-  get scrolledLinesFromBottom(): number {
-    return this._stateSubject.value.scrolledLinesFromBottom;
-  }
-
-  get scrolledLinesFromBottom$(): Observable<number> {
-    return this._stateSubject.pipe(map((s) => s.scrolledLinesFromBottom));
-  }
-
-  setScrolledLinesFromBottom(scrolledLinesFromBottom: number): void {
-    if (this._stateSubject.value.scrolledLinesFromBottom === scrolledLinesFromBottom) return;
-    this.updateState({ scrolledLinesFromBottom });
-  }
-
-  get hasUnreadNotification(): boolean {
-    return this._stateSubject.value.hasUnreadNotification;
-  }
-
-  get hasUnreadNotification$(): Observable<boolean> {
-    return this._stateSubject.pipe(map((s) => s.hasUnreadNotification));
-  }
-
-  markUnreadNotification(): void {
-    if (!this.isTerminalNotificationBadgeEnabled()) {
-      return;
-    }
-    if (this._stateSubject.value.hasUnreadNotification) return;
-    this.updateState({ hasUnreadNotification: true });
-  }
-
-  clearUnreadNotification(): void {
-    // Called on every keystroke via terminal.onData — skip the state emission
-    // when nothing changes, otherwise every subscriber runs per keypress.
-    if (!this._stateSubject.value.hasUnreadNotification) return;
-    this.updateState({ hasUnreadNotification: false });
-  }
-
-  setProgress(state: TerminalProgressState, value: number): void {
-    const normalizedValue = Math.max(0, Math.min(100, Math.round(value)));
-    this.updateState({
-      progress: {
-        state,
-        value: state === "hidden" ? 0 : normalizedValue,
-      },
-    });
+    this.model.initialize(terminalId, shellType, shellProfile, this.os.platform());
   }
 
   private isTerminalNotificationBadgeEnabled(): boolean {
-    if (!this.configService) {
-      return true;
-    }
+    if (!this.configService) return true;
     try {
-      const notificationsConfig = this.configService.config.terminal?.notifications;
-      return notificationsConfig?.unread_badge ?? true;
+      return this.configService.config.terminal?.notifications?.unread_badge ?? true;
     } catch {
       return true;
     }
   }
 
-  get isCommandRunning(): boolean {
-    return this._stateSubject.value.isCommandRunning;
+  // ---- both halves as one -----------------------------------------------
+
+  get state$(): Observable<TerminalState> {
+    return combineLatest([this.machine.state$, this.model.state$]).pipe(
+      map(([machine, model]) => ({ ...machine, ...model })),
+    );
   }
 
-  get isCommandRunning$(): Observable<boolean> {
-    return this._stateSubject.pipe(map((s) => s.isCommandRunning));
+  get state(): TerminalState {
+    return { ...this.machine.state, ...this.model.state };
   }
 
-  /**
-   * `overrideInputText` lets programmatic submitters (history auto-execute,
-   * composer, autocomplete) pass the text they are about to submit: unlike a
-   * real Enter keypress, their state update hasn't gone through the terminal
-   * echo yet, so `input.text` here would still be stale.
-   */
-  startCommand(overrideInputText?: string): void {
-    const currentInput = this._stateSubject.value.input;
+  // ---- machine ----------------------------------------------------------
 
-    this._historyStore.startCommand(overrideInputText ?? currentInput.text);
-
-    this.updateState({
-      isCommandRunning: true,
-      commandStartTime: Date.now(),
-      input: { text: "", maxCursorIndex: 0, cursorIndex: 0 },
-    });
-    this.publishTerminalBusyChanged(true);
+  get cursorPosition$(): Observable<TerminalCursorPosition> {
+    return this.machine.cursorPosition$;
+  }
+  get cursorPosition(): TerminalCursorPosition {
+    return this.machine.cursorPosition;
+  }
+  updateCursorPosition(position: TerminalCursorPosition): void {
+    this.machine.updateCursorPosition(position);
+  }
+  get mousePosition(): TerminalMousePosition {
+    return this.machine.mousePosition;
+  }
+  updateMousePosition(position: TerminalMousePosition): void {
+    this.machine.updateMousePosition(position);
+  }
+  get dimensions(): TerminalDimensions {
+    return this.machine.dimensions;
+  }
+  updateDimensions(dimensions: TerminalDimensions): void {
+    this.machine.updateDimensions(dimensions);
+  }
+  get isFocused(): boolean {
+    return this.machine.isFocused;
+  }
+  get isFocused$(): Observable<boolean> {
+    return this.machine.isFocused$;
+  }
+  setFocus(focused: boolean): void {
+    this.machine.setFocus(focused);
+  }
+  get hasSelection(): boolean {
+    return this.machine.hasSelection;
+  }
+  get hasSelection$(): Observable<boolean> {
+    return this.machine.hasSelection$;
+  }
+  setHasSelection(hasSelection: boolean): void {
+    this.machine.setHasSelection(hasSelection);
+  }
+  get isInFullScreenMode$(): Observable<boolean> {
+    return this.machine.isInFullScreenMode$;
+  }
+  setInFullScreenMode(fullSizeMode: boolean): void {
+    this.machine.setInFullScreenMode(fullSizeMode);
+  }
+  get scrolledLinesFromBottom(): number {
+    return this.machine.scrolledLinesFromBottom;
+  }
+  get scrolledLinesFromBottom$(): Observable<number> {
+    return this.machine.scrolledLinesFromBottom$;
+  }
+  setScrolledLinesFromBottom(scrolledLinesFromBottom: number): void {
+    this.machine.setScrolledLinesFromBottom(scrolledLinesFromBottom);
+  }
+  setProgress(state: TerminalProgressState, value: number): void {
+    this.machine.setProgress(state, value);
   }
 
-  endCommand(): void {
-    this.updateState({ isCommandRunning: false });
-    this.publishTerminalBusyChanged(false);
-  }
-
-  getCommandDuration(): number | undefined {
-    const startTime = this._stateSubject.value.commandStartTime;
-    return startTime !== undefined ? Date.now() - startTime : undefined;
-  }
-
-  get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {
-    return this._stateSubject.value.sessionCapabilities;
-  }
-
-  get sessionCapabilities$(): Observable<ShellSessionCapabilitiesContract | undefined> {
-    return this._stateSubject.pipe(map((s) => s.sessionCapabilities));
-  }
-
-  updateSessionCapabilities(sessionCapabilities: ShellSessionCapabilitiesContract): void {
-    this.updateState({ sessionCapabilities });
-  }
-
-  get input(): TerminalInput {
-    return this._stateSubject.value.input;
-  }
-
-  get input$(): Observable<TerminalInput> {
-    return this._stateSubject.pipe(map((s) => s.input));
-  }
-
-  updateInput(input: TerminalInput): void {
-    this.updateState({ input });
-  }
+  // ---- session ----------------------------------------------------------
 
   get terminalId(): TerminalId {
-    return this._stateSubject.value.terminalId;
+    return this.model.terminalId;
   }
-
   get pathAdapter(): IPathAdapter | undefined {
-    return this._pathAdapter;
+    return this.model.pathAdapter;
   }
-
   renderPathForInsertion(path: string): string | undefined {
-    if (!this._pathAdapter) {
-      return undefined;
-    }
-
-    try {
-      const normalizedPath = this._pathAdapter.normalize(path);
-      return this._pathAdapter.render(normalizedPath, { purpose: "insert_arg" });
-    } catch {
-      return undefined;
-    }
+    return this.model.renderPathForInsertion(path);
   }
-
-  // ---- History Zugriff ----
-
-  get commands$(): Observable<Command[]> {
-    return this._historyStore.commands$;
+  get isCommandRunning(): boolean {
+    return this.model.isCommandRunning;
   }
-
-  get commands(): Command[] {
-    return this._historyStore.commands;
+  get isCommandRunning$(): Observable<boolean> {
+    return this.model.isCommandRunning$;
   }
-
-  updateCommand(data: Record<string, string>): ExecutedCommand | undefined {
-    const executedCommand = this._historyStore.updateCommand(data);
-    this._recorder.onCommandExecuted(executedCommand);
-    return executedCommand;
+  startCommand(overrideInputText?: string): void {
+    this.model.startCommand(overrideInputText);
   }
-
-  updateCommands(commands: Command[]): void {
-    this._historyStore.updateCommands(commands);
+  endCommand(): void {
+    this.model.endCommand();
   }
-
+  getCommandDuration(): number | undefined {
+    return this.model.getCommandDuration();
+  }
+  get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {
+    return this.model.sessionCapabilities;
+  }
+  get sessionCapabilities$(): Observable<ShellSessionCapabilitiesContract | undefined> {
+    return this.model.sessionCapabilities$;
+  }
+  updateSessionCapabilities(sessionCapabilities: ShellSessionCapabilitiesContract): void {
+    this.model.updateSessionCapabilities(sessionCapabilities);
+  }
+  get input(): TerminalInput {
+    return this.model.input;
+  }
+  get input$(): Observable<TerminalInput> {
+    return this.model.input$;
+  }
+  updateInput(input: TerminalInput): void {
+    this.model.updateInput(input);
+  }
   updateCwd(cwd: string): void {
-    const normalizedPath = this._pathAdapter?.normalize(cwd);
-    const storedCwd = normalizedPath ?? cwd;
-    const cwdChanged = storedCwd !== this._stateSubject.value.cwd;
-
-    this.updateState({ cwd: storedCwd });
-
-    if (!normalizedPath) return;
-    const backendOsPath = this._pathAdapter?.render(normalizedPath, { purpose: "backend_fs" });
-    if (!backendOsPath) return;
-
-    if (cwdChanged) {
-      this._recorder.onCwdChanged(normalizedPath);
-    }
-
-    this._bus.publish({
-      path: ["app", "terminal", this._stateSubject.value.terminalId],
-      payload: { cwd: backendOsPath, terminalId: this._stateSubject.value.terminalId },
-      type: "TerminalCwdChanged",
-    });
+    this.model.updateCwd(cwd);
   }
-
-  private publishTerminalBusyChanged(isBusy: boolean): void {
-    const terminalId = this._stateSubject.value.terminalId;
-    if (!terminalId) {
-      return;
-    }
-
-    this._bus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalBusyChanged",
-      payload: {
-        terminalId,
-        isBusy,
-      },
-    });
+  get commands$(): Observable<Command[]> {
+    return this.model.commands$;
+  }
+  get commands(): Command[] {
+    return this.model.commands;
+  }
+  updateCommand(data: CommandData): ExecutedCommand | undefined {
+    return this.model.updateCommand(data);
+  }
+  updateCommands(commands: Command[]): void {
+    this.model.updateCommands(commands);
+  }
+  get hasUnreadNotification(): boolean {
+    return this.model.hasUnreadNotification;
+  }
+  get hasUnreadNotification$(): Observable<boolean> {
+    return this.model.hasUnreadNotification$;
+  }
+  markUnreadNotification(): void {
+    this.model.markUnreadNotification();
+  }
+  clearUnreadNotification(): void {
+    this.model.clearUnreadNotification();
+  }
+  get isPaneMaximized(): boolean {
+    return this.model.isPaneMaximized;
+  }
+  get isPaneMaximized$(): Observable<boolean> {
+    return this.model.isPaneMaximized$;
+  }
+  setPaneMaximized(isPaneMaximized: boolean): void {
+    this.model.setPaneMaximized(isPaneMaximized);
   }
 }
