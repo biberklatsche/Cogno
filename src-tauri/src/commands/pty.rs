@@ -1,4 +1,4 @@
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Write;
@@ -306,6 +306,12 @@ struct Session {
     /// the writer thread.
     input_tx: std::sync::mpsc::Sender<Vec<u8>>,
     flow: Arc<FlowControl>,
+    /// Ends the shell when the session is released. On Unix closing the
+    /// master already hangs up the shell (and lets it write its history on
+    /// the way out); ConPTY does not terminate its clients when the console
+    /// closes, so on Windows this is the only thing that does.
+    #[cfg_attr(not(windows), allow(dead_code))]
+    child_killer: Box<dyn ChildKiller + Send + Sync>,
     shell_process_id: Option<u32>,
     shell_type: String,
     line_editor_pipe_name: Option<String>,
@@ -329,9 +335,15 @@ fn remove_line_editor_channel(channel: &Option<LineEditorChannel>) {
 /// line-editor channel, drops the master (closes the PTY) and the input sender
 /// (ends the writer thread). Must be called without holding `sessions`:
 /// closing a ConPTY can block until its output pipe is drained.
-fn release_session(session: Session) {
+fn release_session(mut session: Session) {
     session.flow.close();
     remove_line_editor_channel(&session.line_editor_channel);
+    #[cfg(windows)]
+    if let Err(e) = session.child_killer.kill() {
+        // Already gone (the wait thread ends the entry in that case) or not
+        // ours to kill any more; nothing to do about either.
+        log::debug!(target: "pty", "kill of shell failed: {}", e);
+    }
     drop(session);
 }
 
@@ -477,6 +489,7 @@ pub async fn pty_spawn(
         master: pair.master,
         input_tx,
         flow: flow.clone(),
+        child_killer: child.clone_killer(),
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
         line_editor_pipe_name,
