@@ -1,8 +1,8 @@
+import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalState } from "../../state";
-import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import { TerminalComposerService } from "./terminal-composer.service";
 
 class FakeStateManager {

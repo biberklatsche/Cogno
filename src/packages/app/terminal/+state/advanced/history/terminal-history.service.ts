@@ -7,18 +7,18 @@ import {
 } from "@cogno/core/command-log/recent-history.types";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
-import { BehaviorSubject, Subscription } from "rxjs";
-import { debounceTime } from "rxjs/operators";
-import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalState, TerminalStateManager } from "../../state";
 import {
   computeDropdownPanelPosition,
   estimateDropdownPanelHeight,
   resolveBoundsRect,
   resolveRightUiInset,
-} from "../ui/dropdown-panel-positioning";
-import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
+} from "@cogno/core/session/dropdown/dropdown-panel-positioning";
+import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import { BehaviorSubject, Subscription } from "rxjs";
+import { debounceTime } from "rxjs/operators";
+import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
+import { AppBus } from "../../../../app-bus/app-bus";
+import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 const REFRESH_DEBOUNCE_MS = 80;

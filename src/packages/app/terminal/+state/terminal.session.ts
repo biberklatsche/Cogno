@@ -11,12 +11,16 @@ import {
   CommandMenuBlockRange,
 } from "@cogno/core/session/decoration/command-menu-items";
 import { PromptMarkerRegistry } from "@cogno/core/session/decoration/prompt-marker.registry";
+import { CommandLineEditor } from "@cogno/core/session/editor/command-line.editor";
+import { TerminalInputWriter } from "@cogno/core/session/editor/input-writer";
+import { ClipboardHandler } from "@cogno/core/session/handlers/clipboard.handler";
 import { FullScreenAppHandler } from "@cogno/core/session/handlers/full-screen-app.handler";
 import { InputHandler } from "@cogno/core/session/handlers/input.handler";
 import { LinkHandler } from "@cogno/core/session/handlers/link.handler";
 import { ResumeLinkHandler } from "@cogno/core/session/handlers/resume-link.handler";
 import { TerminalNotificationHandler } from "@cogno/core/session/handlers/terminal-notification.handler";
 import { TerminalPaddingHandler } from "@cogno/core/session/handlers/terminal-padding.handler";
+import { TerminalSearchHandler } from "@cogno/core/session/handlers/terminal-search.handler";
 import { TerminalTitleHandler } from "@cogno/core/session/handlers/terminal-title.handler";
 import { toTerminalMachineOptions } from "@cogno/core/session/host/terminal-machine-options.mapper";
 import { CommandLineBuffer } from "@cogno/core/session/model/command-line.buffer";
@@ -33,7 +37,10 @@ import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
-import { ShellDefinitionContract } from "@cogno/shared/contributions";
+import {
+  ShellDefinitionContract,
+  ShellLineEditorActionContract,
+} from "@cogno/shared/contributions";
 import {
   buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
@@ -66,21 +73,36 @@ import {
   TerminalSystemInfoDialogData,
   TerminalSystemInfoSource,
 } from "../system-info/terminal-system-info-dialog.component";
-import { CommandLineEditor } from "./advanced/ui/command-line.editor";
-import { ClipboardHandler } from "./handler/clipboard.handler";
 import {
   CompletedCommandNotificationHandler,
   DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
 import { TerminalFocusCoordinator } from "./handler/terminal-focus.coordinator";
-import { TerminalSearchHandler } from "./handler/terminal-search.handler";
-import { TerminalInputWriter } from "./input-writer";
 import { KeybindExecutor } from "./keybind/keybind.executor";
 import { TerminalStateManager } from "./state";
 import { TerminalSessionRegistry } from "./terminal-session.registry";
 
 export const OSC9_NOTIFICATION_ID = "osc9";
+
+const EDITOR_ACTION_BY_MESSAGE = {
+  ClearLine: "clearLine",
+  ClearLineToEnd: "clearLineToEnd",
+  ClearLineToStart: "clearLineToStart",
+  DeletePreviousWord: "deletePreviousWord",
+  DeleteNextWord: "deleteNextWord",
+  GoToNextWord: "goToNextWord",
+  GoToPreviousWord: "goToPreviousWord",
+  GoToStartOfLine: "goToStartOfLine",
+  GoToEndOfLine: "goToEndOfLine",
+  SelectAll: "selectAll",
+  SelectTextRight: "selectTextRight",
+  SelectTextLeft: "selectTextLeft",
+  SelectWordRight: "selectWordRight",
+  SelectWordLeft: "selectWordLeft",
+  SelectTextToEndOfLine: "selectTextToEndOfLine",
+  SelectTextToStartOfLine: "selectTextToStartOfLine",
+} as const satisfies Record<string, ShellLineEditorActionContract>;
 
 @Injectable()
 export class TerminalSession {
@@ -180,6 +202,23 @@ export class TerminalSession {
               type: fact.active ? "FullScreenAppEntered" : "FullScreenAppLeaved",
               path: ["app", "terminal", terminalId],
               payload: terminalId,
+            });
+            break;
+          case "composerRequested":
+            this.bus.publish({
+              path: ["app", "terminal"],
+              type: "OpenComposer",
+              payload: { terminalId, seedText: fact.seedText, cursorIndex: fact.cursorIndex },
+            });
+            break;
+          case "commandHistoryRequested":
+            this.bus.publish(ActionFired.create("trigger_command_history"));
+            break;
+          case "searchResult":
+            this.bus.publish({
+              path: ["app", "terminal"],
+              type: "TerminalSearchResult",
+              payload: fact.result,
             });
             break;
         }
@@ -290,10 +329,24 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(focusHandler));
     const selectionHandler = new SelectionHandler(this.stateManager);
     this.disposables.push(this.renderer.register(selectionHandler));
-    this.disposables.push(
-      this.renderer.register(
-        new TerminalSearchHandler(this.bus, this.terminalId, this.configService),
-      ),
+    const searchHandler = new TerminalSearchHandler(this.stateManager.model, this.configService);
+    this.disposables.push(this.renderer.register(searchHandler));
+    this.subscription.add(
+      this.bus
+        .on$({ path: ["app", "terminal"], type: "TerminalSearchRequested" })
+        .subscribe((event) => {
+          const payload = event.payload;
+          if (!payload || (payload.terminalId && payload.terminalId !== terminalId)) return;
+          searchHandler.search(payload);
+        }),
+    );
+    this.subscription.add(
+      this.bus
+        .on$({ path: ["app", "terminal"], type: "TerminalSearchRevealRequested" })
+        .subscribe((event) => {
+          if (event.payload?.terminalId !== terminalId) return;
+          searchHandler.reveal(event.payload);
+        }),
     );
     this.disposables.push(
       this.renderer.register(new MouseHandler(terminalContainer, this.stateManager)),
@@ -328,27 +381,32 @@ export class TerminalSession {
     const commandLineBuffer = new CommandLineBuffer(promptMarkerRegistry);
     const inputWriter = new TerminalInputWriter(
       this.pty,
-      this.stateManager,
+      this.stateManager.model,
       shellDefinition?.lineEditor,
       () => this.scrollToBottomOnUserInput(),
     );
     this.disposables.push(promptMarkerRegistry);
 
-    this.disposables.push(
-      this.renderer.register(
-        new ClipboardHandler(
-          this.clipboard,
-          this.bus,
-          this.terminalId,
-          this.stateManager,
-          this.pty,
-          this.configService,
-          selectionHandler,
-          shellDefinition?.lineEditor,
-          commandLineBuffer,
-          inputWriter,
-        ),
-      ),
+    const clipboardHandler = new ClipboardHandler(
+      this.clipboard,
+      this.stateManager.model,
+      this.pty,
+      this.configService,
+      selectionHandler,
+      shellDefinition?.lineEditor,
+      commandLineBuffer,
+      inputWriter,
+    );
+    this.disposables.push(this.renderer.register(clipboardHandler));
+    this.subscription.add(
+      this.bus.on$({ path: ["app", "terminal"], type: "Paste" }).subscribe((event) => {
+        if (event.payload === terminalId) void clipboardHandler.paste();
+      }),
+    );
+    this.subscription.add(
+      this.bus.on$({ path: ["app", "terminal"], type: "Copy" }).subscribe((event) => {
+        if (event.payload === terminalId) void clipboardHandler.copy();
+      }),
     );
     const inputHandler = new InputHandler(this.stateManager.model, this.pty, () =>
       this.scrollToBottomOnUserInput(),
@@ -382,20 +440,45 @@ export class TerminalSession {
           ),
         ),
       );
-      this.disposables.push(
-        this.renderer.register(
-          new CommandLineEditor(
-            this.clipboard,
-            this.bus,
-            this.pty,
-            this.stateManager,
-            shellDefinition?.lineEditor,
-            commandLineBuffer,
-            inputWriter,
-          ),
-        ),
+      const editor = new CommandLineEditor(
+        this.clipboard,
+        this.pty,
+        this.stateManager.model,
+        shellDefinition?.lineEditor,
+        commandLineBuffer,
+        inputWriter,
+      );
+      this.disposables.push(this.renderer.register(editor));
+      this.wireEditorActions(editor, terminalId);
+    }
+  }
+
+  /** The old bus messages for the line editor, translated into the editor's actions. */
+  private wireEditorActions(editor: CommandLineEditor, terminalId: TerminalId): void {
+    for (const [type, actionId] of Object.entries(EDITOR_ACTION_BY_MESSAGE)) {
+      this.subscription.add(
+        this.bus
+          .on$({ path: ["app", "terminal"], type: type as keyof typeof EDITOR_ACTION_BY_MESSAGE })
+          .subscribe((event) => {
+            if (event.payload !== terminalId) return;
+            editor.runEditorAction(actionId);
+          }),
       );
     }
+    this.subscription.add(
+      this.bus.on$({ path: ["app", "terminal"], type: "Cut" }).subscribe((event) => {
+        if (event.payload === terminalId) editor.cut();
+      }),
+    );
+    this.subscription.add(
+      this.bus
+        .on$({ path: ["app", "terminal"], type: "ReplaceTerminalInput" })
+        .subscribe((event) => {
+          const payload = event.payload;
+          if (payload?.terminalId !== terminalId) return;
+          editor.replaceInput(payload.inputText, payload.cursorIndex, payload.autoExecute);
+        }),
+    );
   }
 
   buildContextMenu(): ContextMenuItem[] {

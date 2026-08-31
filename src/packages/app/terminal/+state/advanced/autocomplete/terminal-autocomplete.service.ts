@@ -1,5 +1,12 @@
 import { Injectable, OnDestroy } from "@angular/core";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import {
+  computeDropdownPanelPosition,
+  estimateDropdownPanelHeight,
+  resolveBoundsRect,
+  resolveRightUiInset,
+} from "@cogno/core/session/dropdown/dropdown-panel-positioning";
+import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
@@ -7,13 +14,6 @@ import { ActionFired, ActionFiredEvent } from "../../../../action/action.models"
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalState, TerminalStateManager } from "../../state";
-import {
-  computeDropdownPanelPosition,
-  estimateDropdownPanelHeight,
-  resolveBoundsRect,
-  resolveRightUiInset,
-} from "../ui/dropdown-panel-positioning";
-import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
 import { SuggestionCollapser } from "./suggestion-collapser";

@@ -1,5 +1,3 @@
-import { PromptMarkerRegistry } from "@cogno/core/session/decoration/prompt-marker.registry";
-import { CommandLineBuffer } from "@cogno/core/session/model/command-line.buffer";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
@@ -9,38 +7,39 @@ import {
 } from "@cogno/shared/contributions";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { Subscription } from "rxjs";
-import { ActionFired } from "../../../../action/action.models";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { AppMessage } from "../../../../app-bus/messages";
-import { TerminalInputWriter } from "../../input-writer";
-import { TerminalStateManager } from "../../state";
+import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
+import { CommandLineBuffer } from "../model/command-line.buffer";
+import { SessionModel } from "../model/session-model";
+import { TerminalInputWriter } from "./input-writer";
 
+/**
+ * Edits the shell's input line: the line-editor actions, selection handling
+ * and the whole-line replacement that autocomplete, history and composer
+ * use. Runs whatever it is asked to run through `runEditorAction`; who asks
+ * is not its business (ARCHITECTURE.md 2.1).
+ */
 export class CommandLineEditor implements ITerminalHandler {
   private _terminal?: Terminal;
-  private subscription: Subscription = new Subscription();
   private _onSelectionChange?: IDisposable;
   private readonly WORD_SEPARATORS = "()[]{}'\"\\,;:/&<>*+=$^!~` ";
   private _selectionStart: number | null = null;
 
   constructor(
     private readonly _clipboard: ClipboardAccess,
-    private _bus: AppBus,
     _pty: IPty,
-    private stateManager: TerminalStateManager,
+    private readonly model: SessionModel,
     private readonly lineEditor?: ShellLineEditorDefinitionContract,
     private readonly commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(
       new PromptMarkerRegistry(),
     ),
     private readonly inputWriter: TerminalInputWriter = new TerminalInputWriter(
       _pty,
-      stateManager,
+      model,
       lineEditor,
     ),
   ) {}
 
   dispose(): void {
-    this.subscription.unsubscribe();
     this._onSelectionChange?.dispose();
     this._onSelectionChange = undefined;
   }
@@ -58,36 +57,30 @@ export class CommandLineEditor implements ITerminalHandler {
     terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
       if (event.type !== "keydown") return true;
       if (event.key === "Enter" && event.shiftKey) {
-        if (this.stateManager.isCommandRunning) {
+        if (this.model.isCommandRunning) {
           // A program is reading stdin (REPL, heredoc prompt): a raw newline
           // is the only sensible meaning here.
           this._ptyWrite(String.fromCharCode(10));
         } else {
           // At the prompt, multiline input is edited in the composer overlay
           // instead of fighting the shell's single-line editing model.
-          const input = this.stateManager.input;
+          const input = this.model.input;
           const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
           // An empty prompt has no line to split — inserting "\n" there would
           // seed the composer with two blank lines instead of one. Just place
           // the cursor at the end of what's already there.
           const hasText = input.text.length > 0;
-          this._bus.publish({
-            path: ["app", "terminal"],
-            type: "OpenComposer",
-            payload: {
-              terminalId: this.stateManager.terminalId,
-              seedText: hasText
-                ? `${input.text.slice(0, cursor)}\n${input.text.slice(cursor)}`
-                : "",
-              cursorIndex: hasText ? cursor + 1 : 0,
-            },
+          this.model.report({
+            type: "composerRequested",
+            seedText: hasText ? `${input.text.slice(0, cursor)}\n${input.text.slice(cursor)}` : "",
+            cursorIndex: hasText ? cursor + 1 : 0,
           });
         }
         event.preventDefault();
         event.stopPropagation();
         return false;
       }
-      if (this.stateManager.isCommandRunning) return true;
+      if (this.model.isCommandRunning) return true;
       if (
         (event.key === "Backspace" || event.key === "Delete") &&
         this.commandLineBuffer.hasSelection()
@@ -109,93 +102,62 @@ export class CommandLineEditor implements ITerminalHandler {
       return true;
     });
 
-    const actions: Record<string, { actionId: ShellLineEditorActionContract; run: () => void }> = {
-      ClearLine: { actionId: "clearLine", run: () => this.clearCurrentInput() },
-      ClearLineToEnd: { actionId: "clearLineToEnd", run: () => this.clearLineToEnd() },
-      ClearLineToStart: { actionId: "clearLineToStart", run: () => this.clearLineToStart() },
-      DeletePreviousWord: { actionId: "deletePreviousWord", run: () => this.deletePreviousWord() },
-      DeleteNextWord: { actionId: "deleteNextWord", run: () => this.deleteNextWord() },
-      GoToNextWord: { actionId: "goToNextWord", run: () => this.goToNextWord() },
-      GoToPreviousWord: { actionId: "goToPreviousWord", run: () => this.goToPreviousWord() },
-      GoToStartOfLine: { actionId: "goToStartOfLine", run: () => this.goToStartOfLine() },
-      GoToEndOfLine: { actionId: "goToEndOfLine", run: () => this.goToEndOfLine() },
-      SelectAll: { actionId: "selectAll", run: () => this.selectAll() },
-      SelectTextRight: { actionId: "selectTextRight", run: () => this.selectTextRight() },
-      SelectTextLeft: { actionId: "selectTextLeft", run: () => this.selectTextLeft() },
-      SelectWordRight: { actionId: "selectWordRight", run: () => this.selectWordRight() },
-      SelectWordLeft: { actionId: "selectWordLeft", run: () => this.selectWordLeft() },
-      SelectTextToEndOfLine: {
-        actionId: "selectTextToEndOfLine",
-        run: () => this.selectTextToEndOfLine(),
-      },
-      SelectTextToStartOfLine: {
-        actionId: "selectTextToStartOfLine",
-        run: () => this.selectTextToStartOfLine(),
-      },
-    };
-
-    Object.entries(actions).forEach(([key, handler]) => {
-      const type = key as AppMessage["type"];
-      this.subscription.add(
-        this._bus.on$({ path: ["app", "terminal"], type }).subscribe(async (event) => {
-          const payloadTerminalId =
-            typeof event.payload === "string"
-              ? event.payload
-              : typeof event.payload === "object" &&
-                  event.payload !== null &&
-                  "terminalId" in event.payload
-                ? String(event.payload.terminalId)
-                : undefined;
-          if (
-            payloadTerminalId !== this.stateManager.terminalId ||
-            this.stateManager.isCommandRunning
-          )
-            return;
-
-          // Reset selection start for non-selection actions
-          if (!type.startsWith("Select")) {
-            this._selectionStart = null;
-          }
-
-          if (this.executeNativeAction(handler.actionId)) {
-            return;
-          }
-
-          handler.run();
-        }),
-      );
-    });
-
-    this.subscription.add(
-      this._bus.on$({ path: ["app", "terminal"], type: "Cut" }).subscribe((event) => {
-        if (event.payload !== this.stateManager.terminalId || this.stateManager.isCommandRunning)
-          return;
-        this._selectionStart = null;
-        this.cutSelection();
-      }),
-    );
-    this.subscription.add(
-      this._bus
-        .on$({ path: ["app", "terminal"], type: "ReplaceTerminalInput" })
-        .subscribe((event) => {
-          const payload = event.payload;
-          if (
-            !payload ||
-            payload.terminalId !== this.stateManager.terminalId ||
-            this.stateManager.isCommandRunning
-          )
-            return;
-          this._selectionStart = null;
-          if (!this._terminal) return;
-          this.inputWriter.replaceInput(
-            payload.inputText,
-            payload.cursorIndex,
-            payload.autoExecute,
-          );
-        }),
-    );
-
     return this;
+  }
+
+  private readonly editorActions: Partial<Record<ShellLineEditorActionContract, () => void>> = {
+    clearLine: () => this.clearCurrentInput(),
+    clearLineToEnd: () => this.clearLineToEnd(),
+    clearLineToStart: () => this.clearLineToStart(),
+    deletePreviousWord: () => this.deletePreviousWord(),
+    deleteNextWord: () => this.deleteNextWord(),
+    goToNextWord: () => this.goToNextWord(),
+    goToPreviousWord: () => this.goToPreviousWord(),
+    goToStartOfLine: () => this.goToStartOfLine(),
+    goToEndOfLine: () => this.goToEndOfLine(),
+    selectAll: () => this.selectAll(),
+    selectTextRight: () => this.selectTextRight(),
+    selectTextLeft: () => this.selectTextLeft(),
+    selectWordRight: () => this.selectWordRight(),
+    selectWordLeft: () => this.selectWordLeft(),
+    selectTextToEndOfLine: () => this.selectTextToEndOfLine(),
+    selectTextToStartOfLine: () => this.selectTextToStartOfLine(),
+  };
+
+  /**
+   * Runs a line-editor action at the prompt - natively through the shell
+   * integration when the session reported it, otherwise by emulating it.
+   * Nothing happens while a command runs: the line is not ours then.
+   */
+  runEditorAction(actionId: ShellLineEditorActionContract): void {
+    const run = this.editorActions[actionId];
+    if (!run || this.model.isCommandRunning) return;
+
+    // Reset selection start for non-selection actions
+    if (!actionId.startsWith("select")) {
+      this._selectionStart = null;
+    }
+
+    if (this.executeNativeAction(actionId)) {
+      return;
+    }
+
+    run();
+  }
+
+  /** Cuts the selected part of the input line to the clipboard. */
+  cut(): void {
+    if (this.model.isCommandRunning) return;
+    this._selectionStart = null;
+    this.cutSelection();
+  }
+
+  /** Replaces the whole input line, e.g. with a picked suggestion. */
+  replaceInput(inputText: string, cursorIndex: number, autoExecute?: boolean): void {
+    if (this.model.isCommandRunning) return;
+    this._selectionStart = null;
+    if (!this._terminal) return;
+    this.inputWriter.replaceInput(inputText, cursorIndex, autoExecute);
   }
 
   private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
@@ -226,14 +188,14 @@ export class CommandLineEditor implements ITerminalHandler {
    * would cut real input off the inference.
    */
   private shrinkMaxCursorIndexTo(upperBound: number): void {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     if (upperBound >= input.maxCursorIndex) return;
-    this.stateManager.updateInput({ ...input, maxCursorIndex: Math.max(0, upperBound) });
+    this.model.updateInput({ ...input, maxCursorIndex: Math.max(0, upperBound) });
   }
 
   clearCurrentInput() {
     if (!this._terminal) return;
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const text = input.text;
     const countToEnd = text.length - input.cursorIndex;
     this.inputWriter.deleteChars(countToEnd, text.length);
@@ -241,7 +203,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   clearLineToEnd() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const countToEnd = input.text.length - input.cursorIndex;
     if (countToEnd > 0) {
       this.inputWriter.deleteChars(countToEnd, countToEnd);
@@ -250,7 +212,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   clearLineToStart() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const countToStart = input.cursorIndex;
     if (countToStart > 0) {
       this.inputWriter.deleteChars(0, countToStart);
@@ -259,7 +221,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   deletePreviousWord() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentPos = input.cursorIndex;
     if (currentPos === 0) return;
 
@@ -273,7 +235,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   deleteNextWord() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentPos = input.cursorIndex;
     const text = input.text;
     if (currentPos >= text.length) return;
@@ -285,7 +247,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   goToNextWord() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentPos = input.cursorIndex;
     const text = input.text;
     if (currentPos >= text.length) return;
@@ -297,7 +259,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   goToPreviousWord() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentPos = input.cursorIndex;
     if (currentPos === 0) return;
 
@@ -308,14 +270,14 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   goToStartOfLine() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     if (input.cursorIndex === 0) return;
 
     this.inputWriter.moveCursor(-input.cursorIndex);
   }
 
   goToEndOfLine() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const countToMove = input.text.length - input.cursorIndex;
     if (countToMove <= 0) return;
 
@@ -331,7 +293,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   selectWordRight() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentPos = input.cursorIndex;
     const nextWordEnd = this.findNextWordEnd(input.text, currentPos);
     const countToMove = nextWordEnd - currentPos;
@@ -341,7 +303,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   selectWordLeft() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentPos = input.cursorIndex;
     const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
     const countToMove = currentPos - prevWordStart;
@@ -351,7 +313,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   selectTextToEndOfLine() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const countToMove = input.text.length - input.cursorIndex;
     if (countToMove > 0) {
       this._selectAndMove(countToMove);
@@ -359,7 +321,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   selectTextToStartOfLine() {
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const countToMove = input.cursorIndex;
     if (countToMove > 0) {
       this._selectAndMove(-countToMove);
@@ -369,7 +331,7 @@ export class CommandLineEditor implements ITerminalHandler {
   private selectAll() {
     this._clearSelection();
     this._selectionStart = 0;
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentCursorIdx = input.cursorIndex;
     const textLength = input.text.length;
 
@@ -392,14 +354,14 @@ export class CommandLineEditor implements ITerminalHandler {
   private handleVerticalArrow(event: KeyboardEvent): boolean {
     if (!this._terminal) return true;
 
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const cols = this.commandLineBuffer.cols;
     const row = Math.floor(input.cursorIndex / cols);
     const lastRow = Math.floor(input.maxCursorIndex / cols);
     const direction = event.key === "ArrowUp" ? -1 : 1;
 
     if (direction === -1 && row === 0) {
-      this._bus.publish(ActionFired.create("trigger_command_history"));
+      this.model.report({ type: "commandHistoryRequested" });
       event.preventDefault();
       event.stopPropagation();
       return false;
@@ -420,7 +382,7 @@ export class CommandLineEditor implements ITerminalHandler {
       // Optimistically reflect the move locally: the authoritative onCursorMove
       // event lags behind the pty round-trip, so without this a fast key-repeat
       // would read a stale cursorIndex and miscompute the next row boundary.
-      this.stateManager.updateInput({
+      this.model.updateInput({
         ...input,
         cursorIndex: newIndex,
         maxCursorIndex: Math.max(input.maxCursorIndex, newIndex),
@@ -462,7 +424,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private deleteSelection(): boolean {
-    const range = this.commandLineBuffer.selectedInputRange(this.stateManager.input.maxCursorIndex);
+    const range = this.commandLineBuffer.selectedInputRange(this.model.input.maxCursorIndex);
     if (!range) {
       return false;
     }
@@ -486,7 +448,7 @@ export class CommandLineEditor implements ITerminalHandler {
       return true;
     }
 
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentCursorIdx = input.cursorIndex;
     const cursorOffsetToEnd = range.endIndex - currentCursorIdx;
 
@@ -515,12 +477,12 @@ export class CommandLineEditor implements ITerminalHandler {
       return false;
     }
 
-    const range = this.commandLineBuffer.selectedInputRange(this.stateManager.input.maxCursorIndex);
+    const range = this.commandLineBuffer.selectedInputRange(this.model.input.maxCursorIndex);
     if (!range) {
       return false;
     }
 
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const nextText =
       input.text.slice(0, range.startIndex) + replacementText + input.text.slice(range.endIndex);
     const nextCursorIndex = range.startIndex + replacementText.length;
@@ -536,7 +498,7 @@ export class CommandLineEditor implements ITerminalHandler {
   private select(count: number) {
     if (!this._terminal) return;
 
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const currentPos = input.cursorIndex;
 
     if (this._selectionStart === null) {

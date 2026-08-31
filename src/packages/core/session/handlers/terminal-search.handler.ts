@@ -1,18 +1,22 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
-import { TerminalId } from "@cogno/shared/ports";
+import {
+  TerminalSearchLineMatchContract as TerminalSearchLineMatch,
+  TerminalSearchLineResultContract as TerminalSearchLineResult,
+  TerminalSearchRequestContract,
+  TerminalSearchRevealRequestContract,
+} from "@cogno/shared/domain";
 import { IDisposable } from "@cogno/shared/support";
 import { ISearchOptions, SearchAddon } from "@xterm/addon-search";
 import { IDecoration, Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
-import { AppBus } from "../../../app-bus/app-bus";
-import {
-  TerminalSearchLineMatch,
-  TerminalSearchLineResult,
-  TerminalSearchRequestedEvent,
-  TerminalSearchRevealRequestedEvent,
-} from "../../+bus/events";
+import { SessionModel } from "../model/session-model";
 
+/**
+ * Searches this session's scrollback, whole or within one command block,
+ * and highlights what it finds. `search()` and `reveal()` are asked for;
+ * the result is stated as a fact.
+ */
 export class TerminalSearchHandler implements ITerminalHandler {
   private readonly subscription: Subscription = new Subscription();
   private readonly blockSearchDecorations: IDisposable[] = [];
@@ -24,10 +28,13 @@ export class TerminalSearchHandler implements ITerminalHandler {
   private currentSearchRange?: TerminalSearchRange;
 
   constructor(
-    private readonly bus: AppBus,
-    private readonly terminalId: TerminalId,
+    private readonly model: SessionModel,
     private readonly configService: ConfigService,
   ) {}
+
+  private get terminalId(): string {
+    return this.model.terminalId;
+  }
 
   registerSearchAddon(searchAddon: SearchAddon): void {
     this.searchAddon = searchAddon;
@@ -42,20 +49,6 @@ export class TerminalSearchHandler implements ITerminalHandler {
       terminalWriteParsedDisposable.dispose();
     });
 
-    this.subscription.add(
-      this.bus
-        .on$({ path: ["app", "terminal"], type: "TerminalSearchRequested" })
-        .subscribe((event) => {
-          this.handleSearchRequest(event);
-        }),
-    );
-    this.subscription.add(
-      this.bus
-        .on$({ path: ["app", "terminal"], type: "TerminalSearchRevealRequested" })
-        .subscribe((event) => {
-          this.handleSearchRevealRequest(event);
-        }),
-    );
     this.subscription.add(
       this.configService.config$.subscribe((config) => {
         this.updateSearchDecorationOptions(
@@ -78,16 +71,8 @@ export class TerminalSearchHandler implements ITerminalHandler {
     this.subscription.unsubscribe();
   }
 
-  private handleSearchRequest(event: TerminalSearchRequestedEvent): void {
-    const payload = event.payload;
-    if (!payload) {
-      return;
-    }
-
-    if (payload.terminalId && payload.terminalId !== this.terminalId) {
-      return;
-    }
-
+  /** Runs a search; an empty query clears the highlights. */
+  search(payload: TerminalSearchRequestContract): void {
     const query = payload.query.trim();
     const caseSensitive = payload.caseSensitive;
     const regularExpression = payload.regularExpression;
@@ -159,16 +144,8 @@ export class TerminalSearchHandler implements ITerminalHandler {
     );
   }
 
-  private handleSearchRevealRequest(event: TerminalSearchRevealRequestedEvent): void {
-    const revealPayload = event.payload;
-    if (!revealPayload) {
-      return;
-    }
-
-    if (revealPayload.terminalId !== this.terminalId) {
-      return;
-    }
-
+  /** Scrolls to and selects one match of the current search. */
+  reveal(revealPayload: TerminalSearchRevealRequestContract): void {
     if (revealPayload.query.trim().length === 0) {
       return;
     }
@@ -204,10 +181,9 @@ export class TerminalSearchHandler implements ITerminalHandler {
     hasMore: boolean,
     nextCursorBufferLine: number | undefined,
   ): void {
-    this.bus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchResult",
-      payload: {
+    this.model.report({
+      type: "searchResult",
+      result: {
         terminalId: this.terminalId,
         query,
         caseSensitive,

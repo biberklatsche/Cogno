@@ -1,9 +1,12 @@
 import { Injectable, OnDestroy } from "@angular/core";
+import {
+  resolveBoundsRect,
+  resolveRightUiInset,
+} from "@cogno/core/session/dropdown/dropdown-panel-positioning";
+import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalState, TerminalStateManager } from "../../state";
-import { resolveBoundsRect, resolveRightUiInset } from "../ui/dropdown-panel-positioning";
-import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 
 const PANEL_MIN_WIDTH = 320;
 const PANEL_MAX_WIDTH = 920;

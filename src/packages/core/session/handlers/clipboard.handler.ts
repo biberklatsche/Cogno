@@ -1,32 +1,31 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { PromptMarkerRegistry } from "@cogno/core/session/decoration/prompt-marker.registry";
-import { CommandLineBuffer } from "@cogno/core/session/model/command-line.buffer";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { bytesToBase64, ClipboardAccess } from "@cogno/platform/clipboard";
 import { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
-import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { Subscription } from "rxjs";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalInputWriter } from "../input-writer";
-import { TerminalStateManager } from "../state";
+import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
+import { TerminalInputWriter } from "../editor/input-writer";
+import { CommandLineBuffer } from "../model/command-line.buffer";
+import { SessionModel } from "../model/session-model";
 
 function base64ToText(base64: string): string {
   return new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
 }
 
+/**
+ * Copy, paste and OSC 52 for one session. `paste()` and `copy()` are asked
+ * for; what they do with the input line is decided here.
+ */
 export class ClipboardHandler implements ITerminalHandler {
   private _terminal?: Terminal;
-  private subscription: Subscription = new Subscription();
+  private osc52Disposable?: IDisposable;
 
   constructor(
     private readonly _clipboard: ClipboardAccess,
-    private bus: AppBus,
-    private terminalId: TerminalId,
-    private stateManager: TerminalStateManager,
+    private readonly model: SessionModel,
     private pty: IPty,
     private configService: ConfigService,
     private readonly selectionHandler: SelectionHandler,
@@ -36,43 +35,33 @@ export class ClipboardHandler implements ITerminalHandler {
     ),
     private readonly inputWriter: TerminalInputWriter = new TerminalInputWriter(
       pty,
-      stateManager,
+      model,
       lineEditor,
     ),
   ) {}
 
   dispose(): void {
-    this.subscription.unsubscribe();
+    this.osc52Disposable?.dispose();
+    this.osc52Disposable = undefined;
   }
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
     this.commandLineBuffer.setTerminal(terminal);
-
-    const osc52Disposable = terminal.parser.registerOscHandler(52, (data) => {
+    this.osc52Disposable = terminal.parser.registerOscHandler(52, (data) => {
       void this.handleOsc52(data);
       return true;
     });
-    this.subscription.add(() => osc52Disposable.dispose());
-
-    this.subscription.add(
-      this.bus.on$({ path: ["app", "terminal"], type: "Paste" }).subscribe(async (event) => {
-        if (event.payload !== this.terminalId) return;
-        await this.pasteFromClipboard();
-      }),
-    );
-
-    this.subscription.add(
-      this.bus.on$({ path: ["app", "terminal"], type: "Copy" }).subscribe(async (event) => {
-        if (event.payload !== this.terminalId || !this.selectionHandler.hasSelection()) return;
-        await this._clipboard.writeText(this.getSelectionText());
-        if (this.configService.config.selection?.clear_on_copy) {
-          this.selectionHandler.clearSelection();
-        }
-      }),
-    );
-
     return this;
+  }
+
+  /** Copies the selection, if there is one. */
+  async copy(): Promise<void> {
+    if (!this.selectionHandler.hasSelection()) return;
+    await this._clipboard.writeText(this.getSelectionText());
+    if (this.configService.config.selection?.clear_on_copy) {
+      this.selectionHandler.clearSelection();
+    }
   }
 
   private getSelectionText(): string {
@@ -85,7 +74,8 @@ export class ClipboardHandler implements ITerminalHandler {
       .join("\n");
   }
 
-  private async pasteFromClipboard(): Promise<void> {
+  /** Pastes the clipboard: an image as its file path, text into the line or the composer. */
+  async paste(): Promise<void> {
     if (!this._terminal) return;
 
     const ttlSeconds = this.configService.config.clipboard?.image_paste_ttl_seconds ?? 60;
@@ -102,7 +92,7 @@ export class ClipboardHandler implements ITerminalHandler {
       return;
     }
 
-    if (this.stateManager.isCommandRunning) {
+    if (this.model.isCommandRunning) {
       this._terminal.paste(clipboardText);
       return;
     }
@@ -118,17 +108,13 @@ export class ClipboardHandler implements ITerminalHandler {
    */
   private openComposerForMultilinePaste(clipboardText: string): boolean {
     if (!/\r?\n/.test(clipboardText)) return false;
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
     const pasted = clipboardText.replace(/\r\n/g, "\n");
-    this.bus.publish({
-      path: ["app", "terminal"],
-      type: "OpenComposer",
-      payload: {
-        terminalId: this.terminalId,
-        seedText: input.text.slice(0, cursor) + pasted + input.text.slice(cursor),
-        cursorIndex: cursor + pasted.length,
-      },
+    this.model.report({
+      type: "composerRequested",
+      seedText: input.text.slice(0, cursor) + pasted + input.text.slice(cursor),
+      cursorIndex: cursor + pasted.length,
     });
     return true;
   }
@@ -173,14 +159,14 @@ export class ClipboardHandler implements ITerminalHandler {
     if (!this.selectionHandler.hasSelection()) return false;
 
     const selectionRange = this.commandLineBuffer.selectedInputRange(
-      this.stateManager.input.maxCursorIndex,
+      this.model.input.maxCursorIndex,
     );
     if (!selectionRange) return false;
 
     const deleteLength = selectionRange.endIndex - selectionRange.startIndex;
     if (deleteLength <= 0) return false;
 
-    const input = this.stateManager.input;
+    const input = this.model.input;
     const nextText =
       input.text.slice(0, selectionRange.startIndex) +
       replacementText +

@@ -4,7 +4,7 @@ import {
   ShellLineEditorDefinitionContract,
   ShellSessionCapabilitiesContract,
 } from "@cogno/shared/contributions";
-import { TerminalStateManager } from "./state";
+import { SessionModel } from "../model/session-model";
 
 /** Builds an escape sequence that moves the cursor by `offset` columns. */
 function buildCursorMoveSequence(offset: number): string {
@@ -39,7 +39,7 @@ function isNativeActionAvailable(
 export class TerminalInputWriter {
   constructor(
     private readonly pty: IPty,
-    private readonly stateManager: TerminalStateManager,
+    private readonly stateManager: SessionModel,
     private readonly lineEditor?: ShellLineEditorDefinitionContract,
     /**
      * Invoked on every user-initiated write. Direct keyboard input scrolls

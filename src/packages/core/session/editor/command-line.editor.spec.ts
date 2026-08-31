@@ -2,8 +2,7 @@ import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-in
 import type { IPty } from "@cogno/core/terminal/pty";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../../app-bus/app-bus";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { CommandLineEditor } from "./command-line.editor";
 
 const clipboardStub = {
@@ -14,14 +13,12 @@ const clipboardStub = {
 
 describe("CommandLineEditor", () => {
   let editor: CommandLineEditor;
-  let mockBus: AppBus;
   let mockPty: IPty;
   let mockTerminal: any;
   let state: any;
   const terminalId = "test-terminal-id";
 
   beforeEach(() => {
-    mockBus = new AppBus();
     mockPty = {
       write: vi.fn(),
       executeLineEditorAction: vi.fn(),
@@ -37,6 +34,7 @@ describe("CommandLineEditor", () => {
       shellType: "Bash" as any,
       updateInput: vi.fn(),
       startCommand: vi.fn(),
+      report: vi.fn(),
       // Default: the capability handshake reported every action the static
       // definitions in these tests use, so the native paths are exercised.
       sessionCapabilities: {
@@ -44,7 +42,7 @@ describe("CommandLineEditor", () => {
         bracketedPaste: true,
       },
     };
-    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any);
+    editor = new CommandLineEditor(clipboardStub, mockPty, state as any);
     mockTerminal = TerminalMockFactory.createTerminal();
 
     // Default mocks for selection
@@ -56,7 +54,6 @@ describe("CommandLineEditor", () => {
 
   describe("composer trigger", () => {
     it("opens the composer on Shift+Enter at the prompt, seeded with the input plus a newline", () => {
-      const publishSpy = vi.spyOn(mockBus, "publish");
       const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
 
       const event = {
@@ -70,22 +67,16 @@ describe("CommandLineEditor", () => {
 
       expect(result).toBe(false);
       // Input "hello world example" with cursor 6: the newline lands at the cursor.
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "OpenComposer",
-          payload: {
-            terminalId,
-            seedText: "hello \nworld example",
-            cursorIndex: 7,
-          },
-        }),
-      );
+      expect(state.report).toHaveBeenCalledWith({
+        type: "composerRequested",
+        seedText: "hello \nworld example",
+        cursorIndex: 7,
+      });
       expect(mockPty.write).not.toHaveBeenCalled();
     });
 
     it("opens the composer on Shift+Enter at an empty prompt without seeding a blank second line", () => {
       state.input = { text: "", cursorIndex: 0, maxCursorIndex: 0 };
-      const publishSpy = vi.spyOn(mockBus, "publish");
       const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
 
       const event = {
@@ -97,21 +88,15 @@ describe("CommandLineEditor", () => {
       } as unknown as KeyboardEvent;
       customKeyHandler(event);
 
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "OpenComposer",
-          payload: {
-            terminalId,
-            seedText: "",
-            cursorIndex: 0,
-          },
-        }),
-      );
+      expect(state.report).toHaveBeenCalledWith({
+        type: "composerRequested",
+        seedText: "",
+        cursorIndex: 0,
+      });
     });
 
     it("writes a raw newline on Shift+Enter while a command is running", () => {
       state.isCommandRunning = true;
-      const publishSpy = vi.spyOn(mockBus, "publish");
       const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
 
       const event = {
@@ -124,9 +109,7 @@ describe("CommandLineEditor", () => {
       customKeyHandler(event);
 
       expect(mockPty.write).toHaveBeenCalledWith("\n");
-      expect(publishSpy).not.toHaveBeenCalledWith(
-        expect.objectContaining({ type: "OpenComposer" }),
-      );
+      expect(state.report).not.toHaveBeenCalled();
     });
   });
 
@@ -183,38 +166,34 @@ describe("CommandLineEditor", () => {
   });
 
   it("should prefer native shell input when defined", () => {
-    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
       nativeInputByAction: { clearLineToEnd: "\x0b" },
     });
     editor.registerTerminal(mockTerminal);
 
-    mockBus.publish({ type: "ClearLineToEnd", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("clearLineToEnd");
 
     expect(mockPty.write).toHaveBeenCalledWith("\x0b");
   });
 
   it("should prefer shell integration actions when defined", () => {
-    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["clearLineToEnd"],
     });
     editor.registerTerminal(mockTerminal);
 
-    mockBus.publish({ type: "ClearLineToEnd", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("clearLineToEnd");
 
     expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("clearLineToEnd", undefined);
   });
 
   it("should use native shell action for autocomplete replacement when defined", () => {
-    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
 
-    mockBus.publish({
-      type: "ReplaceTerminalInput",
-      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4 },
-      path: ["app", "terminal"],
-    });
+    editor.replaceInput("pnpm run build", 4);
 
     expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
       text: "pnpm run build",
@@ -224,32 +203,24 @@ describe("CommandLineEditor", () => {
 
   it("should not use the native action when the session handshake did not report it", () => {
     state.sessionCapabilities = { nativeActions: [], bracketedPaste: true };
-    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
 
-    mockBus.publish({
-      type: "ReplaceTerminalInput",
-      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4 },
-      path: ["app", "terminal"],
-    });
+    editor.replaceInput("pnpm run build", 4);
 
     expect(mockPty.executeLineEditorAction).not.toHaveBeenCalled();
     expect(mockPty.write).toHaveBeenCalled();
   });
 
   it("should forward autoExecute to the native replace action instead of writing a separate carriage return", () => {
-    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
 
-    mockBus.publish({
-      type: "ReplaceTerminalInput",
-      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
-      path: ["app", "terminal"],
-    });
+    editor.replaceInput("pnpm run build", 4, true);
 
     expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
       text: "pnpm run build",
@@ -260,26 +231,18 @@ describe("CommandLineEditor", () => {
   });
 
   it("should signal command start for autoExecute on the native path (no DOM keypress fires onKey)", () => {
-    editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+    editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
       nativeActionsViaShellIntegration: ["replaceCurrentInput"],
     });
     editor.registerTerminal(mockTerminal);
 
-    mockBus.publish({
-      type: "ReplaceTerminalInput",
-      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
-      path: ["app", "terminal"],
-    });
+    editor.replaceInput("pnpm run build", 4, true);
 
     expect(state.startCommand).toHaveBeenCalledWith("pnpm run build");
   });
 
   it("should still write a carriage return for autoExecute when no native replace action is available", async () => {
-    mockBus.publish({
-      type: "ReplaceTerminalInput",
-      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
-      path: ["app", "terminal"],
-    });
+    editor.replaceInput("pnpm run build", 4, true);
 
     await Promise.resolve();
 
@@ -287,11 +250,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should signal command start for autoExecute on the raw fallback path (no DOM keypress fires onKey)", async () => {
-    mockBus.publish({
-      type: "ReplaceTerminalInput",
-      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4, autoExecute: true },
-      path: ["app", "terminal"],
-    });
+    editor.replaceInput("pnpm run build", 4, true);
 
     await Promise.resolve();
 
@@ -299,11 +258,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should not signal command start when autoExecute is not set", () => {
-    mockBus.publish({
-      type: "ReplaceTerminalInput",
-      payload: { terminalId, inputText: "pnpm run build", cursorIndex: 4 },
-      path: ["app", "terminal"],
-    });
+    editor.replaceInput("pnpm run build", 4);
 
     expect(state.startCommand).not.toHaveBeenCalled();
   });
@@ -311,22 +266,17 @@ describe("CommandLineEditor", () => {
   describe("multiline replacement", () => {
     beforeEach(() => {
       // POSIX shells provide the insert sanitizer via their shell definition.
-      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
         insertSanitizer: posixInsertSanitizer,
       });
       editor.registerTerminal(mockTerminal);
     });
 
     it("should flatten backslash-newline continuations into single spaces", () => {
-      mockBus.publish({
-        type: "ReplaceTerminalInput",
-        payload: {
-          terminalId,
-          inputText: "node cli.mjs check \\\n    --input ./data.con \\\n    --format kvdt",
-          cursorIndex: 60,
-        },
-        path: ["app", "terminal"],
-      });
+      editor.replaceInput(
+        "node cli.mjs check \\\n    --input ./data.con \\\n    --format kvdt",
+        60,
+      );
 
       expect(mockPty.write).toHaveBeenCalledWith(
         "node cli.mjs check --input ./data.con --format kvdt",
@@ -335,11 +285,7 @@ describe("CommandLineEditor", () => {
 
     it("should map an end-of-text cursor to the end of the flattened text", () => {
       const inputText = "echo a \\\n    b";
-      mockBus.publish({
-        type: "ReplaceTerminalInput",
-        payload: { terminalId, inputText, cursorIndex: inputText.length },
-        path: ["app", "terminal"],
-      });
+      editor.replaceInput(inputText, inputText.length);
 
       // "echo a b" — cursor at end, so no cursor-left movement is written.
       expect(mockPty.write).toHaveBeenCalledWith("echo a b");
@@ -348,38 +294,26 @@ describe("CommandLineEditor", () => {
 
     it("should keep an escaped backslash before a newline and preserve the real newline", () => {
       // "foo\\" + newline: the first backslash escapes the second, the newline is real.
-      mockBus.publish({
-        type: "ReplaceTerminalInput",
-        payload: { terminalId, inputText: "echo foo\\\\\ndone", cursorIndex: 0 },
-        path: ["app", "terminal"],
-      });
+      editor.replaceInput("echo foo\\\\\ndone", 0);
 
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[200~echo foo\\\\\ndone\x1b[201~");
     });
 
     it("should wrap unescaped multiline constructs in bracketed paste", () => {
       const inputText = "for f in *.txt\ndo\n  echo $f\ndone";
-      mockBus.publish({
-        type: "ReplaceTerminalInput",
-        payload: { terminalId, inputText, cursorIndex: inputText.length },
-        path: ["app", "terminal"],
-      });
+      editor.replaceInput(inputText, inputText.length);
 
       expect(mockPty.write).toHaveBeenCalledWith(`\x1b[200~${inputText}\x1b[201~`);
     });
 
     it("should not flatten backslash continuations for shells without an insert sanitizer (PowerShell)", () => {
-      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
         nativeActionsViaShellIntegration: ["replaceCurrentInput"],
       });
       editor.registerTerminal(mockTerminal);
 
       const inputText = "Get-ChildItem C:\\foo\\\n  | Select Name";
-      mockBus.publish({
-        type: "ReplaceTerminalInput",
-        payload: { terminalId, inputText, cursorIndex: 4 },
-        path: ["app", "terminal"],
-      });
+      editor.replaceInput(inputText, 4);
 
       expect(mockPty.executeLineEditorAction).toHaveBeenCalledWith("replaceCurrentInput", {
         text: inputText,
@@ -389,15 +323,11 @@ describe("CommandLineEditor", () => {
     });
 
     it("should still bracket-paste multiline text when no sanitizer is available", () => {
-      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any);
+      editor = new CommandLineEditor(clipboardStub, mockPty, state as any);
       editor.registerTerminal(mockTerminal);
 
       const inputText = "echo a \\\n  b";
-      mockBus.publish({
-        type: "ReplaceTerminalInput",
-        payload: { terminalId, inputText, cursorIndex: inputText.length },
-        path: ["app", "terminal"],
-      });
+      editor.replaceInput(inputText, inputText.length);
 
       // Unknown shell: no flatten, but the raw newline must never be written
       // bare — the conservative fallback wraps it in bracketed paste.
@@ -406,7 +336,7 @@ describe("CommandLineEditor", () => {
   });
 
   it("should clear line to end", () => {
-    mockBus.publish({ type: "ClearLineToEnd", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("clearLineToEnd");
     // text: 'hello world example' (len 19), cursor: 6 (at 'w')
     // to end: 13 chars
     // Implementation: repeat(13) [C + repeat(13) backspace
@@ -415,21 +345,21 @@ describe("CommandLineEditor", () => {
   });
 
   it("should clear line to start", () => {
-    mockBus.publish({ type: "ClearLineToStart", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("clearLineToStart");
     // cursor: 6. Implementation: repeat(6) backspace
     expect(mockPty.write).toHaveBeenCalledWith("\x08".repeat(6));
   });
 
   it("should delete previous word", () => {
     state.input = { text: "hello world example", cursorIndex: 12, maxCursorIndex: 19 }; // after 'world '
-    mockBus.publish({ type: "DeletePreviousWord", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("deletePreviousWord");
     // 'world ' is 6 chars. Implementation: repeat(6) backspace
     expect(mockPty.write).toHaveBeenCalledWith("\x08".repeat(6));
   });
 
   it("should delete next word", () => {
     state.input = { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 }; // at 'w'
-    mockBus.publish({ type: "DeleteNextWord", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("deleteNextWord");
     // next word is 'world' (5 chars). Implementation: repeat(5) [C + repeat(5) backspace
     const expected = "\x1b[C".repeat(5) + "\x08".repeat(5);
     expect(mockPty.write).toHaveBeenCalledWith(expected);
@@ -437,40 +367,35 @@ describe("CommandLineEditor", () => {
 
   it("should go to next word", () => {
     state.input = { text: "hello world example", cursorIndex: 0, maxCursorIndex: 19 };
-    mockBus.publish({ type: "GoToNextWord", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("goToNextWord");
     // 'hello' is 5 chars.
     expect(mockPty.write).toHaveBeenCalledWith("\x1b[C".repeat(5));
   });
 
   it("should go to previous word", () => {
     state.input = { text: "hello world example", cursorIndex: 11, maxCursorIndex: 19 }; // after 'world'
-    mockBus.publish({ type: "GoToPreviousWord", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("goToPreviousWord");
     // 'world' is 5 chars.
     expect(mockPty.write).toHaveBeenCalledWith("\x1b[D".repeat(5));
   });
 
   it("should go to start of line", () => {
     state.input = { text: "hello world example", cursorIndex: 11, maxCursorIndex: 19 };
-    mockBus.publish({ type: "GoToStartOfLine", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("goToStartOfLine");
 
     expect(mockPty.write).toHaveBeenCalledWith("\x1b[D".repeat(11));
   });
 
   it("should go to end of line", () => {
     state.input = { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 };
-    mockBus.publish({ type: "GoToEndOfLine", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("goToEndOfLine");
 
     expect(mockPty.write).toHaveBeenCalledWith("\x1b[C".repeat(13));
   });
 
-  it("should not perform action if terminalId mismatch", () => {
-    mockBus.publish({ type: "ClearLineToEnd", payload: "wrong-id", path: ["app", "terminal"] });
-    expect(mockPty.write).not.toHaveBeenCalled();
-  });
-
   it("should not perform action if command is running", () => {
     state.isCommandRunning = true;
-    mockBus.publish({ type: "ClearLineToEnd", payload: terminalId, path: ["app", "terminal"] });
+    editor.runEditorAction("clearLineToEnd");
     expect(mockPty.write).not.toHaveBeenCalled();
   });
 
@@ -487,7 +412,7 @@ describe("CommandLineEditor", () => {
 
     it("should select text to the right and move cursor", () => {
       state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       // startCol: 0%80=0, startRow: 0+1=1, length: 1
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[C");
@@ -502,7 +427,7 @@ describe("CommandLineEditor", () => {
 
     it("should select text to the left and move cursor", () => {
       state.input = { text: "hello world", cursorIndex: 5, maxCursorIndex: 11 };
-      mockBus.publish({ type: "SelectTextLeft", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextLeft");
       // newPos: 4, start: 4, length: 1. startCol: 4%80=4, startRow: 1, length: 1
       expect(mockTerminal.select).toHaveBeenCalledWith(4, 1, 1);
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[D");
@@ -510,7 +435,7 @@ describe("CommandLineEditor", () => {
 
     it("should select word to the right and move cursor", () => {
       state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
-      mockBus.publish({ type: "SelectWordRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectWordRight");
       // next word 'hello' ends at 5. length: 5
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 5);
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[C".repeat(5));
@@ -518,7 +443,7 @@ describe("CommandLineEditor", () => {
 
     it("should select word to the left and move cursor", () => {
       state.input = { text: "hello world", cursorIndex: 11, maxCursorIndex: 11 };
-      mockBus.publish({ type: "SelectWordLeft", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectWordLeft");
       // previous word 'world' starts at 6. length: 11-6=5. start: 6
       expect(mockTerminal.select).toHaveBeenCalledWith(6, 1, 5);
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[D".repeat(5));
@@ -526,11 +451,7 @@ describe("CommandLineEditor", () => {
 
     it("should select text to end of line and move cursor", () => {
       state.input = { text: "hello world", cursorIndex: 6, maxCursorIndex: 11 };
-      mockBus.publish({
-        type: "SelectTextToEndOfLine",
-        payload: terminalId,
-        path: ["app", "terminal"],
-      });
+      editor.runEditorAction("selectTextToEndOfLine");
       // text length: 11. length: 11-6=5. start: 6
       expect(mockTerminal.select).toHaveBeenCalledWith(6, 1, 5);
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[C".repeat(5));
@@ -538,11 +459,7 @@ describe("CommandLineEditor", () => {
 
     it("should select text to start of line and move cursor", () => {
       state.input = { text: "hello world", cursorIndex: 6, maxCursorIndex: 11 };
-      mockBus.publish({
-        type: "SelectTextToStartOfLine",
-        payload: terminalId,
-        path: ["app", "terminal"],
-      });
+      editor.runEditorAction("selectTextToStartOfLine");
       // start: 0, length: 6
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 6);
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[D".repeat(6));
@@ -551,7 +468,7 @@ describe("CommandLineEditor", () => {
     it("should select all text and move cursor to end of line", async () => {
       state.input = { text: "hello world", cursorIndex: 6, maxCursorIndex: 11 };
 
-      mockBus.publish({ type: "SelectAll", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectAll");
 
       // Move to end: text len 11, cursor 6 -> move 5 right
       expect(mockPty.write).toHaveBeenCalledWith("\x1b[C".repeat(5));
@@ -564,7 +481,7 @@ describe("CommandLineEditor", () => {
       state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
 
       // First selection (1 char right)
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
 
       // Simuliere xterm selektion nach erstem Schritt
@@ -578,7 +495,7 @@ describe("CommandLineEditor", () => {
       state.input.cursorIndex = 1;
 
       // Second selection (another char right)
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       // Should now select from 0 to 2
       expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 2);
     });
@@ -587,7 +504,7 @@ describe("CommandLineEditor", () => {
       state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
 
       // Select 1 char right
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       state.input.cursorIndex = 1;
 
       // Simuliere xterm selektion
@@ -598,7 +515,7 @@ describe("CommandLineEditor", () => {
       });
 
       // Select another char right
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       state.input.cursorIndex = 2;
 
       vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
@@ -609,7 +526,7 @@ describe("CommandLineEditor", () => {
       expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 2);
 
       // Select 1 char left
-      mockBus.publish({ type: "SelectTextLeft", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextLeft");
       // Should now select from 0 to 1
       expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 1);
     });
@@ -618,16 +535,16 @@ describe("CommandLineEditor", () => {
       state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
 
       // Select 1 char right
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 1, 1);
       state.input.cursorIndex = 1;
 
       // Move cursor without shift
-      mockBus.publish({ type: "GoToNextWord", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("goToNextWord");
       state.input.cursorIndex = 5; // 'hello'
 
       // Select right again
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       // Should start new selection from 5 to 6
       expect(mockTerminal.select).toHaveBeenLastCalledWith(5, 1, 1);
     });
@@ -659,7 +576,7 @@ describe("CommandLineEditor", () => {
     });
 
     it("should use native shell action for selection delete when defined", () => {
-      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
         nativeActionsViaShellIntegration: ["deleteSelection", "replaceCurrentInput"],
       });
       editor.registerTerminal(mockTerminal);
@@ -718,7 +635,7 @@ describe("CommandLineEditor", () => {
       });
       vi.mocked(mockTerminal.getSelection).mockReturnValue("hello");
 
-      mockBus.publish({ type: "Cut", payload: terminalId, path: ["app", "terminal"] });
+      editor.cut();
 
       expect(clipboardStub.writeText).toHaveBeenCalledWith("hello");
       // Cursor was at 5. Range index 0 to 5. endIdx = 5. currentCursorIdx = 5.
@@ -737,7 +654,7 @@ describe("CommandLineEditor", () => {
       });
       vi.mocked(mockTerminal.getSelection).mockReturnValue("hello\n^^#12\nworld");
 
-      mockBus.publish({ type: "Cut", payload: terminalId, path: ["app", "terminal"] });
+      editor.cut();
 
       expect(clipboardStub.writeText).toHaveBeenCalledWith("hello\nworld");
     });
@@ -771,7 +688,7 @@ describe("CommandLineEditor", () => {
     });
 
     it("should replace only the selected range via native input replacement when available", () => {
-      editor = new CommandLineEditor(clipboardStub, mockBus, mockPty, state as any, {
+      editor = new CommandLineEditor(clipboardStub, mockPty, state as any, {
         nativeActionsViaShellIntegration: ["replaceCurrentInput"],
       });
       editor.registerTerminal(mockTerminal);
@@ -828,7 +745,7 @@ describe("CommandLineEditor", () => {
     it("should not delete selection if command is running", () => {
       state.isCommandRunning = true;
       state.input = { text: "hello", cursorIndex: 0, maxCursorIndex: 5 };
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
 
       const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
       const event = { type: "keydown", key: "Backspace" } as KeyboardEvent;
@@ -855,7 +772,7 @@ describe("CommandLineEditor", () => {
 
       // selectTextRight internally calls findLastCognoMarkerY
       state.input = { text: "test", cursorIndex: 0, maxCursorIndex: 4 };
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
 
       // findLastCognoMarkerY returns -1. startInputY = -1 + 1 = 0.
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 0, 1);
@@ -866,7 +783,7 @@ describe("CommandLineEditor", () => {
       mockTerminal.buffer = { active: null }; // Mock active as null
 
       state.input = { text: "test", cursorIndex: 0, maxCursorIndex: 4 };
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
 
       // No buffer → no marker line (-1) → the selection anchors at row 0.
       expect(mockTerminal.select).toHaveBeenCalledWith(0, 0, 1);
@@ -875,11 +792,7 @@ describe("CommandLineEditor", () => {
 
     it("should handle findPreviousWordStart with leading separators", () => {
       state.input = { text: "   abc", cursorIndex: 6, maxCursorIndex: 6 };
-      mockBus.publish({
-        type: "DeletePreviousWord",
-        payload: terminalId,
-        path: ["app", "terminal"],
-      });
+      editor.runEditorAction("deletePreviousWord");
 
       // '   abc' has 3 separators and 3 chars.
       // Starting at 6: skips nothing (it's at end), then finds 'abc' (3 chars), stops at index 3.
@@ -892,11 +805,7 @@ describe("CommandLineEditor", () => {
 
     it("should handle findPreviousWordStart with only separators", () => {
       state.input = { text: "   ", cursorIndex: 3, maxCursorIndex: 3 };
-      mockBus.publish({
-        type: "DeletePreviousWord",
-        payload: terminalId,
-        path: ["app", "terminal"],
-      });
+      editor.runEditorAction("deletePreviousWord");
 
       // pos = 2 (' '). is separator. while(separator) pos-- until -1.
       // returns -1 + 1 = 0. count = 3.
@@ -905,7 +814,7 @@ describe("CommandLineEditor", () => {
 
     it("should handle findNextWordEnd with trailing separators", () => {
       state.input = { text: "abc   ", cursorIndex: 0, maxCursorIndex: 6 };
-      mockBus.publish({ type: "DeleteNextWord", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("deleteNextWord");
 
       // starts at 0 ('a'). not separator. while(!separator) pos++ until 3.
       // returns 3.
@@ -916,7 +825,7 @@ describe("CommandLineEditor", () => {
 
     it("should handle findNextWordEnd with only separators", () => {
       state.input = { text: "   ", cursorIndex: 0, maxCursorIndex: 3 };
-      mockBus.publish({ type: "DeleteNextWord", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("deleteNextWord");
 
       // starts at 0 (' '). is separator. while(separator) pos++ until 3.
       // returns 3.
@@ -944,7 +853,7 @@ describe("CommandLineEditor", () => {
       state.input = { text: "0123456789ABCDEF", cursorIndex: 0, maxCursorIndex: 16 };
 
       // Select 1 char right. cursor moved to 1.
-      mockBus.publish({ type: "SelectTextRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectTextRight");
       state.input.cursorIndex = 1;
 
       // Simuliere xterm selektion
@@ -957,7 +866,7 @@ describe("CommandLineEditor", () => {
       // Select another 11 chars right (total 12).
       // next word '0123456789ABCDEF' (all one word because no separators)
       // SelectWordRight will move cursor to end of word (16)
-      mockBus.publish({ type: "SelectWordRight", payload: terminalId, path: ["app", "terminal"] });
+      editor.runEditorAction("selectWordRight");
 
       // startIdx=0, endIdx=16. length=16.
       expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 16);
@@ -982,14 +891,11 @@ describe("CommandLineEditor", () => {
 
     it("triggers command history on ArrowUp and passes ArrowDown through for single-line input", () => {
       state.input = { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 };
-      const publishSpy = vi.spyOn(mockBus, "publish");
 
       const up = pressArrow("ArrowUp");
       expect(up.result).toBe(false);
       expect(up.preventDefault).toHaveBeenCalled();
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "ActionFired", payload: "trigger_command_history" }),
-      );
+      expect(state.report).toHaveBeenCalledWith({ type: "commandHistoryRequested" });
 
       const down = pressArrow("ArrowDown");
       expect(down.result).toBe(true);
@@ -1001,14 +907,11 @@ describe("CommandLineEditor", () => {
     it("triggers command history on ArrowUp on the first row but moves the cursor down for multi-line input", () => {
       mockTerminal.cols = 10;
       state.input = { text: "0123456789ABCDEF", cursorIndex: 3, maxCursorIndex: 16 };
-      const publishSpy = vi.spyOn(mockBus, "publish");
 
       const up = pressArrow("ArrowUp");
       expect(up.result).toBe(false);
       expect(up.preventDefault).toHaveBeenCalled();
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "ActionFired", payload: "trigger_command_history" }),
-      );
+      expect(state.report).toHaveBeenCalledWith({ type: "commandHistoryRequested" });
 
       const down = pressArrow("ArrowDown");
       expect(down.result).toBe(false);

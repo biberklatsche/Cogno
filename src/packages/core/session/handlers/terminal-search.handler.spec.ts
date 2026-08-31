@@ -1,12 +1,26 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../app-bus/app-bus";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { TerminalCommandHistoryStore } from "../model/command-history.store";
+import { SessionModel } from "../model/session-model";
+import { CommandRecorder } from "../recorder/command-recorder";
+import type { SessionFact } from "../session-facts";
 import { TerminalSearchHandler } from "./terminal-search.handler";
 
+function createModel(terminalId: string): SessionModel {
+  const recorder = {
+    initialize: vi.fn(),
+    onCwdChanged: vi.fn(),
+    onCommandExecuted: vi.fn(),
+  } as unknown as CommandRecorder;
+  const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorder);
+  model.initialize(terminalId, "Bash", undefined, "linux");
+  return model;
+}
+
 describe("TerminalSearchHandler", () => {
-  let appBus: AppBus;
+  let facts: SessionFact[];
   let terminalSearchHandler: TerminalSearchHandler;
   let terminalMock: ReturnType<typeof TerminalMockFactory.createTerminal>;
   let searchAddonMock: {
@@ -15,13 +29,14 @@ describe("TerminalSearchHandler", () => {
   };
 
   beforeEach(() => {
-    appBus = new AppBus();
-    vi.spyOn(appBus, "publish");
+    const model = createModel("terminal-1");
+    facts = [];
+    model.facts$.subscribe((fact) => facts.push(fact));
     searchAddonMock = {
       clearDecorations: vi.fn(),
       findNext: vi.fn(),
     };
-    terminalSearchHandler = new TerminalSearchHandler(appBus, "terminal-1", {
+    terminalSearchHandler = new TerminalSearchHandler(model, {
       config$: of({
         terminal: {
           decoration: {
@@ -54,35 +69,28 @@ describe("TerminalSearchHandler", () => {
     });
     terminalMock.buffer.active.length = 4;
 
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchRequested",
-      payload: {
-        terminalId: "terminal-1",
-        query: "needle",
-        caseSensitive: false,
-        regularExpression: false,
-        beginBufferLine: 2,
-        endBufferLine: 3,
-      },
+    terminalSearchHandler.search({
+      terminalId: "terminal-1",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 2,
+      endBufferLine: 3,
     });
 
-    expect(appBus.publish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: ["app", "terminal"],
-        type: "TerminalSearchResult",
-        payload: expect.objectContaining({
-          terminalId: "terminal-1",
-          beginBufferLine: 2,
-          endBufferLine: 3,
-          hasMore: false,
-          lines: [
-            expect.objectContaining({ lineNumber: 2 }),
-            expect.objectContaining({ lineNumber: 3 }),
-          ],
-        }),
+    expect(facts).toContainEqual({
+      type: "searchResult",
+      result: expect.objectContaining({
+        terminalId: "terminal-1",
+        beginBufferLine: 2,
+        endBufferLine: 3,
+        hasMore: false,
+        lines: [
+          expect.objectContaining({ lineNumber: 2 }),
+          expect.objectContaining({ lineNumber: 3 }),
+        ],
       }),
-    );
+    });
     expect(searchAddonMock.clearDecorations).toHaveBeenCalledTimes(1);
     expect(searchAddonMock.findNext).not.toHaveBeenCalled();
     expect(terminalMock.registerDecoration).toHaveBeenCalledTimes(2);
@@ -96,15 +104,11 @@ describe("TerminalSearchHandler", () => {
     });
     terminalMock.buffer.active.length = 2;
 
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchRequested",
-      payload: {
-        terminalId: "terminal-1",
-        query: "needle",
-        caseSensitive: false,
-        regularExpression: false,
-      },
+    terminalSearchHandler.search({
+      terminalId: "terminal-1",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
     });
 
     expect(searchAddonMock.findNext).toHaveBeenCalledTimes(1);
@@ -122,30 +126,22 @@ describe("TerminalSearchHandler", () => {
     });
     terminalMock.buffer.active.length = 2;
 
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchRequested",
-      payload: {
-        terminalId: "terminal-1",
-        query: "needle",
-        caseSensitive: false,
-        regularExpression: false,
-        beginBufferLine: 1,
-        endBufferLine: 2,
-      },
+    terminalSearchHandler.search({
+      terminalId: "terminal-1",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 1,
+      endBufferLine: 2,
     });
 
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchRequested",
-      payload: {
-        terminalId: "terminal-1",
-        query: "one",
-        caseSensitive: false,
-        regularExpression: false,
-        beginBufferLine: 1,
-        endBufferLine: 2,
-      },
+    terminalSearchHandler.search({
+      terminalId: "terminal-1",
+      query: "one",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 1,
+      endBufferLine: 2,
     });
 
     expect(firstLine.translateToString).toHaveBeenCalledTimes(1);
@@ -161,34 +157,27 @@ describe("TerminalSearchHandler", () => {
     });
     terminalMock.buffer.active.length = 3;
 
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchRequested",
-      payload: {
-        terminalId: "terminal-1",
-        query: "needle",
-        caseSensitive: false,
-        regularExpression: false,
-        beginBufferLine: 1,
-        endBufferLine: 3,
-        resultLineLimit: 2,
-      },
+    terminalSearchHandler.search({
+      terminalId: "terminal-1",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 1,
+      endBufferLine: 3,
+      resultLineLimit: 2,
     });
 
-    expect(appBus.publish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: ["app", "terminal"],
-        type: "TerminalSearchResult",
-        payload: expect.objectContaining({
-          hasMore: true,
-          nextCursorBufferLine: 3,
-          lines: [
-            expect.objectContaining({ lineNumber: 1 }),
-            expect.objectContaining({ lineNumber: 2 }),
-          ],
-        }),
+    expect(facts).toContainEqual({
+      type: "searchResult",
+      result: expect.objectContaining({
+        hasMore: true,
+        nextCursorBufferLine: 3,
+        lines: [
+          expect.objectContaining({ lineNumber: 1 }),
+          expect.objectContaining({ lineNumber: 2 }),
+        ],
       }),
-    );
+    });
   });
 
   it("keeps earlier block highlights when loading the next page", () => {
@@ -200,33 +189,25 @@ describe("TerminalSearchHandler", () => {
     });
     terminalMock.buffer.active.length = 3;
 
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchRequested",
-      payload: {
-        terminalId: "terminal-1",
-        query: "needle",
-        caseSensitive: false,
-        regularExpression: false,
-        beginBufferLine: 1,
-        endBufferLine: 3,
-        resultLineLimit: 2,
-      },
+    terminalSearchHandler.search({
+      terminalId: "terminal-1",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 1,
+      endBufferLine: 3,
+      resultLineLimit: 2,
     });
 
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalSearchRequested",
-      payload: {
-        terminalId: "terminal-1",
-        query: "needle",
-        caseSensitive: false,
-        regularExpression: false,
-        beginBufferLine: 1,
-        endBufferLine: 3,
-        cursorBufferLine: 3,
-        resultLineLimit: 2,
-      },
+    terminalSearchHandler.search({
+      terminalId: "terminal-1",
+      query: "needle",
+      caseSensitive: false,
+      regularExpression: false,
+      beginBufferLine: 1,
+      endBufferLine: 3,
+      cursorBufferLine: 3,
+      resultLineLimit: 2,
     });
 
     expect(terminalMock.registerDecoration).toHaveBeenCalledTimes(3);

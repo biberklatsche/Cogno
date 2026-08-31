@@ -569,7 +569,7 @@ beide Hälften. Keine Datei in `core/session/model/` importiert `app/`.
   schreibt in beide, also dort ein zweites Emit. Alle Abonnenten sind
   debounced oder signaturgeprüft.
 
-### Schritt 12: `CommandLineObserver` teilen und Session-Handler umziehen
+### Schritt 12: `CommandLineObserver` teilen und Session-Handler umziehen — **erledigt (2026-08-31)**
 
 **Voraussetzungen:** 11.
 
@@ -606,6 +606,36 @@ Ggf. zwei Teilcommits (Observer-Split · Handler).
 der Übersetzer Fakt → alte Bus-Nachricht (`TerminalTitleChanged`,
 `RemovePane`, Notification-Erzeugung). Er ist jetzt der einzige Rest der
 alten Terminal-Welt in `app/terminal/+state/`.
+
+**Abweichungen bei der Umsetzung** (vorher abgestimmt; drei Teilcommits
+12a–12c):
+
+- Verdrahtungs-Invariante: umgezogener Code konsumiert Modell-Fakten und
+  bietet Methoden an, er berührt den AppBus in keiner Richtung.
+  `terminal.session.ts` ist der einzige Übersetzer, in beide Richtungen
+  (`facts$` → Bus, Bus → `runEditorAction`/`paste`/`search`/…).
+- Fakten leben als `SessionFact`-Union in `core/session/session-facts.ts`
+  und werden über `SessionModel.facts$`/`report()` ausgesprochen; die
+  `cwdReported$`/`busy$`-Ströme aus Schritt 11 sind darin aufgegangen.
+  Der Typtest liegt als Spec neben der Union (Specs prüft der Cruiser
+  nicht, sonst dürfte er `core/workbench/` nicht importieren);
+  `core/workbench/workbench-actions.ts` ist der reine Typ-Keim dafür.
+- `completed-command-notification.handler` bleibt in `app/`: er *ist* die
+  Übersetzung Fakt → Notification (Config, Präferenzen, Kanäle), die
+  laut Übergangszustand beim Host bleibt; er konsumiert `commandCompleted`.
+  OSC 9 ist analog geteilt: Parsen (Progress → Maschine, Nachricht →
+  Fakt) im Core, Präferenz-Prüfung, Abzeichen und Notification beim Host.
+- `input-writer.ts` und `command-line.buffer.ts` ziehen mit (Editor und
+  Clipboard im Core konstruieren sie); Ablage `core/session/editor/`.
+- Die Bus-Typen `TerminalThemePaddingAdded/Removed` und
+  `TerminalCursorRestoreRequested` hatten keine Konsumenten außerhalb der
+  Session und sind entfernt; der Padding-Handler hört sitzungsintern auf
+  `fullScreenChanged`/`promptReported`. Die Such-Payloads nutzen die
+  Verträge aus `shared/domain/terminal-search.ts` statt eigener Kopien.
+- Neben `terminal.session.ts` bleiben in `app/terminal/+state/` noch:
+  die Fassade `state/` (bis 14), `keybind/`, `terminal-focus.coordinator`,
+  `completed-command-notification`, die Registry und `advanced/{autocomplete,
+  composer,history}` — alles laut Plan Schritt 14.
 
 ### Schritt 13: Spike — Kommandozeilen-Modell aus einem ungeöffneten Core
 

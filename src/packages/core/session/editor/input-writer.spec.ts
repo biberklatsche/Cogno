@@ -1,11 +1,11 @@
+import type { IPty } from "@cogno/core/terminal/pty";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { SessionModel } from "../model/session-model";
 import { TerminalInputWriter } from "./input-writer";
-import type { IPty } from "./pty/pty";
-import type { TerminalStateManager } from "./state";
 
 describe("TerminalInputWriter", () => {
   let mockPty: IPty;
-  let stateManager: TerminalStateManager;
+  let stateManager: SessionModel;
   let inputState: { text: string; cursorIndex: number; maxCursorIndex: number };
   let onUserInput: ReturnType<typeof vi.fn<() => void>>;
   let inputWriter: TerminalInputWriter;
@@ -22,7 +22,7 @@ describe("TerminalInputWriter", () => {
       },
       sessionCapabilities: undefined,
       startCommand: vi.fn(),
-    } as unknown as TerminalStateManager;
+    } as unknown as SessionModel;
     onUserInput = vi.fn<() => void>();
     inputWriter = new TerminalInputWriter(mockPty, stateManager, undefined, onUserInput);
   });

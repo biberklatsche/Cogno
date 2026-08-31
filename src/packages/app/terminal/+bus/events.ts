@@ -1,4 +1,9 @@
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
+import {
+  TerminalSearchRequestContract,
+  TerminalSearchResultContract,
+  TerminalSearchRevealRequestContract,
+} from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
 import { MessageBase } from "../../app-bus/app-bus";
 
@@ -6,27 +11,6 @@ export type TerminalTitle = {
   oscCode: 0 | 2;
   terminalId: TerminalId;
   title: string;
-};
-
-export type TerminalSearchLineMatch = {
-  startIndex: number;
-  endIndex: number;
-};
-
-export type TerminalSearchLineResult = {
-  lineNumber: number;
-  lineText: string;
-  matches: TerminalSearchLineMatch[];
-};
-
-export type TerminalSearchRevealPayload = {
-  terminalId: TerminalId;
-  query: string;
-  caseSensitive: boolean;
-  regularExpression: boolean;
-  lineNumber: number;
-  matchStartIndex: number;
-  matchLength: number;
 };
 
 export type PtyInitializedEvent = MessageBase<
@@ -40,16 +24,7 @@ export type TerminalCwdChangedEvent = MessageBase<
 export type TerminalTitleChangedEvent = MessageBase<"TerminalTitleChanged", TerminalTitle>;
 export type TerminalSearchRequestedEvent = MessageBase<
   "TerminalSearchRequested",
-  {
-    terminalId?: TerminalId;
-    query: string;
-    caseSensitive: boolean;
-    regularExpression: boolean;
-    beginBufferLine?: number;
-    endBufferLine?: number;
-    cursorBufferLine?: number;
-    resultLineLimit?: number;
-  }
+  TerminalSearchRequestContract
 >;
 export type TerminalSearchPanelRequestedEvent = MessageBase<
   "TerminalSearchPanelRequested",
@@ -71,20 +46,9 @@ export type FullScreenAppEnteredEvent = MessageBase<"FullScreenAppEntered", Term
 export type FullScreenAppLeavedEvent = MessageBase<"FullScreenAppLeaved", TerminalId>;
 export type TerminalSearchResultEvent = MessageBase<
   "TerminalSearchResult",
-  {
-    terminalId: TerminalId;
-    query: string;
-    caseSensitive: boolean;
-    regularExpression: boolean;
-    beginBufferLine?: number;
-    endBufferLine?: number;
-    cursorBufferLine?: number;
-    hasMore: boolean;
-    nextCursorBufferLine?: number;
-    lines: TerminalSearchLineResult[];
-  }
+  TerminalSearchResultContract
 >;
 export type TerminalSearchRevealRequestedEvent = MessageBase<
   "TerminalSearchRevealRequested",
-  TerminalSearchRevealPayload
+  TerminalSearchRevealRequestContract
 >;

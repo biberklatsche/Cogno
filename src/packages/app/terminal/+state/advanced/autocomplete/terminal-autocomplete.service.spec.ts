@@ -1,12 +1,11 @@
+import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import type { TerminalState } from "../../state";
 import type { TerminalHistoryPersistenceService } from "../history/terminal-history-commandLog.service";
-import { TerminalDropdownCoordinatorService } from "../ui/terminal-dropdown-coordinator.service";
 import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";

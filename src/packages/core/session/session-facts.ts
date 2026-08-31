@@ -1,3 +1,4 @@
+import type { TerminalSearchResultContract } from "@cogno/shared/domain";
 import type { CommandMenuBlockRange } from "./decoration/command-menu-items";
 import type { ExecutedCommand } from "./recorder/executed-command";
 
@@ -26,4 +27,10 @@ export type SessionFact =
   /** A full-screen program took over the terminal, or gave it back. */
   | { readonly type: "fullScreenChanged"; readonly active: boolean }
   /** The padding around the terminal was removed or restored; the usable area changed. */
-  | { readonly type: "paddingChanged"; readonly removed: boolean };
+  | { readonly type: "paddingChanged"; readonly removed: boolean }
+  /** The user wants to edit a multi-line command; this is what it should start with. */
+  | { readonly type: "composerRequested"; readonly seedText: string; readonly cursorIndex: number }
+  /** The user pressed ArrowUp on an empty first row: they want the command history. */
+  | { readonly type: "commandHistoryRequested" }
+  /** A search over the scrollback finished. */
+  | { readonly type: "searchResult"; readonly result: TerminalSearchResultContract };
