@@ -5,7 +5,15 @@ import type { ShellType } from "@cogno/core/infrastructure/config/models/config"
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { CommandBlockResolver } from "@cogno/core/session/decoration/command-block-resolver";
+import {
+  buildCommandMenuItems,
+  CommandMenuBlockRange,
+} from "@cogno/core/session/decoration/command-menu-items";
+import { PromptMarkerRegistry } from "@cogno/core/session/decoration/prompt-marker.registry";
 import { toTerminalMachineOptions } from "@cogno/core/session/host/terminal-machine-options.mapper";
+import { CommandLineBuffer } from "@cogno/core/session/model/command-line.buffer";
+import { CommandLineObserver } from "@cogno/core/session/model/command-line.observer";
 import { CursorHandler } from "@cogno/core/terminal/handlers/cursor.handler";
 import { FocusHandler } from "@cogno/core/terminal/handlers/focus.handler";
 import { MouseHandler } from "@cogno/core/terminal/handlers/mouse.handler";
@@ -35,7 +43,7 @@ import {
   DialogService,
 } from "@cogno/shared/ui";
 import { Observable, Subscription } from "rxjs";
-import { ActionName } from "../../action/action.models";
+import { ActionFired, ActionName } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
@@ -51,12 +59,7 @@ import {
   TerminalSystemInfoDialogData,
   TerminalSystemInfoSource,
 } from "../system-info/terminal-system-info-dialog.component";
-import { CommandBlockResolver } from "./advanced/ui/command-block-resolver";
-import { CommandLineBuffer } from "./advanced/ui/command-line.buffer";
 import { CommandLineEditor } from "./advanced/ui/command-line.editor";
-import { CommandLineObserver } from "./advanced/ui/command-line.observer";
-import { buildCommandMenuItems, CommandMenuBlockRange } from "./advanced/ui/command-menu-items";
-import { PromptMarkerRegistry } from "./advanced/ui/prompt-marker.registry";
 import { ClipboardHandler } from "./handler/clipboard.handler";
 import {
   CompletedCommandNotificationHandler,
@@ -153,6 +156,26 @@ export class TerminalSession {
       throw new Error("Shell profile must define a shell type.");
     }
     this.stateManager.initialize(terminalId, shellProfile.shell_type, shellProfile);
+    // The session states facts; turning them into the old bus messages is
+    // this host's job until the workbench listens to facts itself.
+    this.subscription.add(
+      this.stateManager.model.facts$.subscribe((fact) => {
+        switch (fact.type) {
+          case "promptReported":
+            this.bus.publish({
+              path: ["app", "terminal", terminalId],
+              type: "TerminalCursorRestoreRequested",
+            });
+            break;
+          case "commandCompleted":
+            this.completedCommandNotificationHandler.handleCompletedCommand(fact.command);
+            break;
+          case "filterBlockRequested":
+            this.requestBlockFilter(fact.range);
+            break;
+        }
+      }),
+    );
     this.subscription.add(
       this.bus.onType$("PaneMaximizedChanged").subscribe((event: PaneMaximizedChangedEvent) => {
         this.stateManager.setPaneMaximized(event.payload?.terminalId === this.terminalId);
@@ -340,12 +363,10 @@ export class TerminalSession {
       this.disposables.push(
         this.renderer.register(
           new CommandLineObserver(
-            this.stateManager,
+            this.stateManager.model,
             this.configService.getPromptSegments(),
             this.contextMenuOverlayService,
-            this.bus,
             this.clipboard,
-            this.completedCommandNotificationHandler.handleCompletedCommand,
             promptMarkerRegistry,
             commandLineBuffer,
           ),
@@ -770,8 +791,20 @@ export class TerminalSession {
           ),
         );
       },
-      appBus: this.bus,
-      terminalId: this.terminalId,
+      onFilterBlock: (range) => this.requestBlockFilter(range),
+    });
+  }
+
+  private requestBlockFilter(range: CommandMenuBlockRange): void {
+    this.bus.publish(ActionFired.create("open_terminal_search"));
+    this.bus.publish({
+      path: ["app", "terminal"],
+      type: "TerminalSearchPanelRequested",
+      payload: {
+        terminalId: this.terminalId,
+        beginBufferLine: range.beginBufferLine,
+        endBufferLine: range.endBufferLine,
+      },
     });
   }
 

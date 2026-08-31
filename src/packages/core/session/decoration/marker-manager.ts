@@ -3,8 +3,7 @@ import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { IDecoration, IMarker, Terminal } from "@xterm/xterm";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalStateManager } from "../../state";
+import { SessionModel } from "../model/session-model";
 import { CommandBlockResolver } from "./command-block-resolver";
 import { PromptMarkerRegistry } from "./prompt-marker.registry";
 import { PromptMarkerRenderer } from "./prompt-renderer";
@@ -23,19 +22,17 @@ export class MarkerManager implements IDisposable {
   private _decorationsClearedForAltBuffer = false;
 
   constructor(
-    private stateManager: TerminalStateManager,
+    private readonly model: SessionModel,
     promptSegments: PromptSegment[],
     contextMenuOverlayService: MarkerManagerContextMenuOverlayPort,
-    appBus: AppBus,
     clipboard: ClipboardAccess,
     private readonly markerRegistry: PromptMarkerRegistry,
   ) {
     this._renderer = new PromptMarkerRenderer(
-      stateManager,
+      model,
       promptSegments,
       clipboard,
       contextMenuOverlayService,
-      appBus,
     );
     this.commandBlockResolver = new CommandBlockResolver(() => this._terminal);
   }
@@ -101,7 +98,7 @@ export class MarkerManager implements IDisposable {
   }
 
   private updateViewportVisibility(viewportStart: number, viewportEnd: number) {
-    const commands = this.stateManager.commands;
+    const commands = this.model.commands;
     const commandIndexById = new Map<string | undefined, number>();
     for (let idx = 0; idx < commands.length; idx++) {
       commandIndexById.set(commands[idx].id, idx);
@@ -135,7 +132,7 @@ export class MarkerManager implements IDisposable {
       nextCommands[idx].isInViewport = visibleCommandIndices.has(idx);
       nextCommands[idx].isFirstCommandOutOfViewport = idx === firstCommandOutOfViewportIdx;
     }
-    this.stateManager.updateCommands(nextCommands);
+    this.model.updateCommands(nextCommands);
   }
 
   private addDecoration(marker: IMarker, commandId: string) {
@@ -143,7 +140,7 @@ export class MarkerManager implements IDisposable {
 
     const lineText =
       this._terminal.buffer.active.getLine(marker.line)?.translateToString() ?? `^^#${commandId}`;
-    const commandIndex = this.stateManager.commands.findIndex((c) => c.id === commandId);
+    const commandIndex = this.model.commands.findIndex((c) => c.id === commandId);
 
     const decoration = this._terminal.registerDecoration({
       marker,

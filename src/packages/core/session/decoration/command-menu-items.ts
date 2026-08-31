@@ -1,7 +1,5 @@
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { ContextMenuItem } from "@cogno/shared/ui";
-import { ActionFired } from "../../../../action/action.models";
-import { AppBus } from "../../../../app-bus/app-bus";
 
 export type CommandMenuBlockRange = {
   beginBufferLine: number;
@@ -14,9 +12,9 @@ type CommandMenuItemsOptions = {
   getBlockRange?: () => CommandMenuBlockRange;
   scrollToCommandTop?: () => void;
   scrollToCommandBottom?: () => void;
-  appBus?: AppBus;
+  /** Present when there is somewhere to filter to; the menu only asks. */
+  onFilterBlock?: (range: CommandMenuBlockRange) => void;
   clipboard: ClipboardAccess;
-  terminalId?: string;
 };
 
 export function buildCommandMenuItems(options: CommandMenuItemsOptions): ContextMenuItem[] {
@@ -68,23 +66,13 @@ export function buildCommandMenuItems(options: CommandMenuItemsOptions): Context
     },
     {
       label: "Filter Block",
-      disabled: !options.getBlockRange || !options.appBus || !options.terminalId,
+      disabled: !options.getBlockRange || !options.onFilterBlock,
       action: () => {
-        if (!options.getBlockRange || !options.appBus || !options.terminalId) {
+        if (!options.getBlockRange || !options.onFilterBlock) {
           return;
         }
 
-        const commandMenuBlockRange = options.getBlockRange();
-        options.appBus.publish(ActionFired.create("open_terminal_search"));
-        options.appBus.publish({
-          path: ["app", "terminal"],
-          type: "TerminalSearchPanelRequested",
-          payload: {
-            terminalId: options.terminalId,
-            beginBufferLine: commandMenuBlockRange.beginBufferLine,
-            endBufferLine: commandMenuBlockRange.endBufferLine,
-          },
-        });
+        options.onFilterBlock(options.getBlockRange());
       },
     },
   ];

@@ -1,5 +1,5 @@
 import { Terminal } from "@xterm/xterm";
-import { PromptMarkerRegistry } from "./prompt-marker.registry";
+import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 
 export type InputRange = { startIndex: number; endIndex: number };
 

@@ -1,10 +1,10 @@
-import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { timespan } from "@cogno/shared/support";
 import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
 import { mdiDotsVertical } from "@mdi/js";
-import { Command, TerminalStateManager } from "../../state";
+import { Command } from "../model/command.model";
+import { SessionModel } from "../model/session-model";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";
 
 type PromptRecord = {
@@ -38,11 +38,10 @@ export class PromptMarkerRenderer {
   private readonly _renderedSignatures = new WeakMap<HTMLElement, string>();
 
   public constructor(
-    private readonly stateManager: TerminalStateManager,
+    private readonly model: SessionModel,
     private readonly segments: PromptSegment[],
     private readonly clipboard: ClipboardAccess,
     private readonly contextMenuOverlayService?: PromptMarkerContextMenuOverlayPort,
-    private readonly appBus?: AppBus,
   ) {}
 
   public render(
@@ -50,7 +49,7 @@ export class PromptMarkerRenderer {
     commandIndexOrContext?: number | PromptMarkerRenderContext,
   ): void {
     const renderContext = this.resolveRenderContext(commandIndexOrContext);
-    const commands = this.stateManager.commands;
+    const commands = this.model.commands;
     const command = commands[renderContext.commandIndex ?? 0];
 
     if (!command) {
@@ -286,8 +285,7 @@ export class PromptMarkerRenderer {
       getBlockRange,
       scrollToCommandTop,
       scrollToCommandBottom,
-      appBus: this.appBus,
-      terminalId: this.stateManager.terminalId,
+      onFilterBlock: (range) => this.model.report({ type: "filterBlockRequested", range }),
     });
   }
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { PromptMarkerRegistry } from "./prompt-marker.registry";
 
 describe("PromptMarkerRegistry", () => {

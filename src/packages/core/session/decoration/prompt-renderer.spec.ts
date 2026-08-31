@@ -1,15 +1,24 @@
-import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
-import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
-import { OsPlatform } from "@cogno/platform/os";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalStateManager } from "../../state";
-import { PromptMarkerRenderer } from "./prompt-renderer";
+import { TerminalCommandHistoryStore } from "../model/command-history.store";
+import { SessionModel } from "../model/session-model";
+import { CommandRecorder } from "../recorder/command-recorder";
+import type { SessionFact } from "../session-facts";
 
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+function createModel(terminalId: string): SessionModel {
+  const recorder = {
+    initialize: vi.fn(),
+    onCwdChanged: vi.fn(),
+    onCommandExecuted: vi.fn(),
+  } as unknown as CommandRecorder;
+  const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorder);
+  model.initialize(terminalId, "Bash", undefined, "linux");
+  return model;
+}
+
+import { PromptMarkerRenderer } from "./prompt-renderer";
 
 const clipboardStub = {
   writeText: vi.fn(async () => undefined),
@@ -18,17 +27,15 @@ const clipboardStub = {
 } as unknown as ClipboardAccess;
 
 describe("PromptMarkerRenderer", () => {
-  let stateManager: TerminalStateManager;
-  let busMock: AppBus;
+  let stateManager: SessionModel;
+  let facts: SessionFact[];
   let hostElement: HTMLElement;
   let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
 
   beforeEach(() => {
-    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
-    busMock = new AppBus();
-    vi.spyOn(busMock, "publish");
-    stateManager = new TerminalStateManager(osStub, busMock);
-    stateManager.initialize("test-term", "Bash" as any);
+    stateManager = createModel("test-term");
+    facts = [];
+    stateManager.facts$.subscribe((fact) => facts.push(fact));
     hostElement = document.createElement("div");
     contextMenuOverlayService = {
       openAtElement: vi.fn(),
@@ -245,7 +252,6 @@ describe("PromptMarkerRenderer", () => {
       [{ text: "Prompt" }],
       clipboardStub,
       contextMenuOverlayService,
-      busMock,
     );
     renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
 
@@ -285,7 +291,6 @@ describe("PromptMarkerRenderer", () => {
       [{ text: "Prompt" }],
       clipboardStub,
       contextMenuOverlayService,
-      busMock,
     );
     renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
 
@@ -310,14 +315,13 @@ describe("PromptMarkerRenderer", () => {
       [{ text: "Prompt" }],
       clipboardStub,
       contextMenuOverlayService,
-      busMock,
     );
     renderer.render(hostElement, { commandIndex: 0, getCommandOutput });
 
     expect(getCommandOutput).not.toHaveBeenCalled();
   });
 
-  it("should publish search open and block filter events for filter block", () => {
+  it("states a filter-block request from the marker menu", () => {
     stateManager.updateCommand({ id: "cmd-1" });
     stateManager.commands[0].set("command", "pnpm test");
     const getBlockRange = vi.fn().mockReturnValue({
@@ -330,7 +334,6 @@ describe("PromptMarkerRenderer", () => {
       [{ text: "Prompt" }],
       clipboardStub,
       contextMenuOverlayService,
-      busMock,
     );
     renderer.render(hostElement, { commandIndex: 0, getBlockRange });
 
@@ -343,24 +346,9 @@ describe("PromptMarkerRenderer", () => {
     filterBlockItem?.action?.();
 
     expect(getBlockRange).toHaveBeenCalledTimes(1);
-    expect(busMock.publish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: ["app", "action"],
-        type: "ActionFired",
-        payload: "open_terminal_search",
-      }),
-    );
-    expect(busMock.publish).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: ["app", "terminal"],
-        type: "TerminalSearchPanelRequested",
-        payload: expect.objectContaining({
-          terminalId: "test-term",
-          beginBufferLine: 12,
-          endBufferLine: 20,
-        }),
-      }),
-    );
+    expect(facts).toEqual([
+      { type: "filterBlockRequested", range: { beginBufferLine: 12, endBufferLine: 20 } },
+    ]);
   });
 
   it("should execute scroll actions from the marker menu", () => {
@@ -374,7 +362,6 @@ describe("PromptMarkerRenderer", () => {
       [{ text: "Prompt" }],
       clipboardStub,
       contextMenuOverlayService,
-      busMock,
     );
     renderer.render(hostElement, {
       commandIndex: 0,

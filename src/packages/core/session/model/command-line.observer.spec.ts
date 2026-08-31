@@ -1,31 +1,38 @@
-import { OsPlatform } from "@cogno/platform/os";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalStateManager } from "../../state";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { CommandRecorder } from "../recorder/command-recorder";
+import type { SessionFact } from "../session-facts";
+import { TerminalCommandHistoryStore } from "./command-history.store";
 import { CommandLineObserver } from "./command-line.observer";
+import { SessionModel } from "./session-model";
 
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+const clipboardStub = { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess;
 
 describe("CommandLineObserver", () => {
   let observer: CommandLineObserver;
   let mockTerminal: any;
-  let stateManager: TerminalStateManager;
-  let mockBus: AppBus;
+  let stateManager: SessionModel;
+  let facts: SessionFact[];
   let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
   const terminalId = "test-terminal-id";
 
   beforeEach(() => {
     vi.useFakeTimers();
-    mockBus = new AppBus();
-    vi.spyOn(mockBus, "publish");
-    stateManager = new TerminalStateManager(osStub, mockBus);
-    stateManager.initialize(terminalId, "Bash" as any);
+    const recorder = {
+      initialize: vi.fn(),
+      onCwdChanged: vi.fn(),
+      onCommandExecuted: vi.fn(),
+    } as unknown as CommandRecorder;
+    stateManager = new SessionModel("linux", new TerminalCommandHistoryStore(), recorder);
+    stateManager.initialize(terminalId, "Bash", undefined, "linux");
+    facts = [];
+    stateManager.facts$.subscribe((fact) => facts.push(fact));
     contextMenuOverlayService = {
       openAtElement: vi.fn(),
     };
-    observer = new CommandLineObserver(stateManager, [], contextMenuOverlayService, mockBus);
+    observer = new CommandLineObserver(stateManager, [], contextMenuOverlayService, clipboardStub);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -325,35 +332,26 @@ describe("CommandLineObserver", () => {
   it("should not run the prompt logic for a COGNO:CAPS handshake", () => {
     observer.registerTerminal(mockTerminal);
     stateManager.startCommand();
-    const publishSpy = vi.spyOn(mockBus, "publish");
-    publishSpy.mockClear();
+    facts.length = 0;
 
     const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
     oscHandler("COGNO:CAPS;shell=bash;shellVersion=3.2;degraded=bash-version;");
 
-    // The handshake must neither end the running command nor request a
-    // cursor restore — that is prompt-cycle behavior.
+    // The handshake must neither end the running command nor report a
+    // prompt - that is prompt-cycle behavior.
     expect(stateManager.isCommandRunning).toBe(true);
-    expect(publishSpy).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "TerminalCursorRestoreRequested" }),
-    );
+    expect(facts).not.toContainEqual({ type: "promptReported" });
     expect(stateManager.sessionCapabilities?.degradedReason).toBe("bash-version");
   });
 
-  it("should publish cursor restore request when OSC 733 is received", () => {
+  it("should state that a prompt was reported when OSC 733 is received", () => {
     observer.registerTerminal(mockTerminal);
-    const publishSpy = vi.spyOn(mockBus, "publish");
+    facts.length = 0;
 
-    publishSpy.mockClear();
     const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
     oscHandler("COGNO:PROMPT;returnCode=0;id=1;command=fresh;");
 
-    expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: ["app", "terminal", terminalId],
-        type: "TerminalCursorRestoreRequested",
-      }),
-    );
+    expect(facts).toContainEqual({ type: "promptReported" });
   });
 
   it("should dispose registered OSC handler", () => {

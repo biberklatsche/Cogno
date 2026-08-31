@@ -1,4 +1,6 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { PromptMarkerRegistry } from "@cogno/core/session/decoration/prompt-marker.registry";
+import { CommandLineBuffer } from "@cogno/core/session/model/command-line.buffer";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
@@ -9,8 +11,6 @@ import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { CommandLineBuffer } from "../advanced/ui/command-line.buffer";
-import { PromptMarkerRegistry } from "../advanced/ui/prompt-marker.registry";
 import { TerminalInputWriter } from "../input-writer";
 import { TerminalStateManager } from "../state";
 

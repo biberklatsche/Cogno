@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { CommandLineBuffer } from "./command-line.buffer";
-import { PromptMarkerRegistry } from "./prompt-marker.registry";
 
 describe("CommandLineBuffer", () => {
   let buffer: CommandLineBuffer;

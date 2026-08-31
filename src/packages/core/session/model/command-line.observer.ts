@@ -1,22 +1,25 @@
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Terminal } from "@xterm/xterm";
 import { debounceTime, Subject } from "rxjs";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalStateManager } from "../../state";
-import OscParser from "../osc/cogno-osc.parser";
-import { toSessionCapabilities } from "../osc/session-capabilities.parser";
+import { MarkerManager } from "../decoration/marker-manager";
+import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { CommandLineBuffer } from "./command-line.buffer";
-import { MarkerManager } from "./marker-manager";
-import { PromptMarkerRegistry } from "./prompt-marker.registry";
+import { interpretCognoOsc } from "./osc-interpreter";
+import { SessionModel } from "./session-model";
 
 type CommandLineObserverContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
+/**
+ * Watches the terminal for the session model: mirrors the input line and
+ * the cursor into it, notices Enter, reads the shell integration's OSC 733,
+ * and keeps the prompt decorations fresh. It writes to the model and states
+ * facts; what follows from them is decided elsewhere (ARCHITECTURE.md 2.1).
+ */
 export class CommandLineObserver implements ITerminalHandler {
   private _disposables: IDisposable[] = [];
   private _terminal?: Terminal;
@@ -24,20 +27,17 @@ export class CommandLineObserver implements ITerminalHandler {
   private _refreshMarkerSubject = new Subject<void>();
 
   constructor(
-    private stateManager: TerminalStateManager,
+    private readonly model: SessionModel,
     promptSegments: PromptSegment[],
     contextMenuOverlayService: CommandLineObserverContextMenuOverlayPort,
-    private readonly appBus: AppBus,
     clipboard: ClipboardAccess,
-    private readonly commandCompletedHandler?: (executedCommand: ExecutedCommand) => void,
     private readonly _markerRegistry: PromptMarkerRegistry = new PromptMarkerRegistry(),
     private readonly _commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(_markerRegistry),
   ) {
     this._markerManager = new MarkerManager(
-      stateManager,
+      model,
       promptSegments,
       contextMenuOverlayService,
-      appBus,
       clipboard,
       this._markerRegistry,
     );
@@ -57,14 +57,14 @@ export class CommandLineObserver implements ITerminalHandler {
     this._disposables.push(
       terminal.onCursorMove(() => {
         if (!terminal?.buffer?.active) return;
-        if (this.stateManager.isCommandRunning) return;
+        if (this.model.isCommandRunning) return;
         try {
           const cursorIndex = this._commandLineBuffer.cursorInputIndex();
-          const input = this.stateManager.input;
+          const input = this.model.input;
           if (cursorIndex === input.cursorIndex) return;
           const maxCursorIndex =
             cursorIndex > input.maxCursorIndex ? cursorIndex : input.maxCursorIndex;
-          this.stateManager.updateInput({
+          this.model.updateInput({
             ...input,
             cursorIndex: cursorIndex,
             maxCursorIndex: maxCursorIndex,
@@ -104,53 +104,29 @@ export class CommandLineObserver implements ITerminalHandler {
     this._disposables.push(
       this._terminal.onWriteParsed(() => {
         this._markerRegistry.onWriteParsed();
-        if (this.stateManager.isCommandRunning) return;
-        const input = this.stateManager.input;
+        if (this.model.isCommandRunning) return;
+        const input = this.model.input;
         const text = this._commandLineBuffer.readInputText(input.maxCursorIndex);
         if (text === input.text) return;
-        this.stateManager.updateInput({ ...input, text: text });
+        this.model.updateInput({ ...input, text: text });
       }),
     );
     this._disposables.push(
       this._terminal.onKey((event) => {
         if (event.key === "\r" || event.key === "\n") {
-          this.stateManager.startCommand();
+          this.model.startCommand();
           return;
         }
-        if (this.stateManager.isCommandRunning) return;
+        if (this.model.isCommandRunning) return;
         this.shrinkMaxCursorIndexOnDelete(event.domEvent);
       }),
     );
     this._disposables.push(
       terminal.parser.registerOscHandler(733, (data: string) => {
-        // The capability handshake arrives once while the integration script
-        // loads, before the first prompt — it must not run the prompt logic
-        // (endCommand, cursor restore, command update).
-        if (data.startsWith("COGNO:CAPS;")) {
-          const caps = OscParser.parse(data.slice("COGNO:CAPS;".length));
-          if (caps) {
-            this.stateManager.updateSessionCapabilities(toSessionCapabilities(caps));
-          }
-          return true;
-        }
-        this.stateManager.endCommand();
-        // PS1 prints the `^^#<id>` marker line right after this sequence —
-        // arm the registry so the next parsed writes anchor it.
-        this._markerRegistry.expectMarker();
-        this.appBus.publish({
-          path: ["app", "terminal", this.stateManager.terminalId],
-          type: "TerminalCursorRestoreRequested",
-        });
-        const kv = OscParser.parse(data);
-        if (!kv) return true;
-        kv["duration"] = this.stateManager.getCommandDuration()?.toString() ?? "";
-        const executedCommand = this.stateManager.updateCommand(kv);
-        const directory = kv["directory"];
-        if (directory?.trim()) {
-          this.stateManager.updateCwd(directory);
-        }
-        if (executedCommand) {
-          this.commandCompletedHandler?.(executedCommand);
+        if (interpretCognoOsc(data, this.model) !== "capabilities") {
+          // PS1 prints the `^^#<id>` marker line right after this sequence -
+          // arm the registry so the next parsed writes anchor it.
+          this._markerRegistry.expectMarker();
         }
         return true;
       }),
@@ -182,7 +158,7 @@ export class CommandLineObserver implements ITerminalHandler {
     const key = domEvent?.key;
     if (key !== "Backspace" && key !== "Delete") return;
 
-    const input = this.stateManager.input;
+    const input = this.model.input;
     // Only shrink when the keystroke deletes something real. For Delete the
     // inferred text length may over-approximate (leaked ghost), but then the
     // bound sits at least one above the real length, so shrinking by one
@@ -192,7 +168,7 @@ export class CommandLineObserver implements ITerminalHandler {
     if (!deletesSomething) return;
 
     const cursorAfterDelete = key === "Backspace" ? input.cursorIndex - 1 : input.cursorIndex;
-    this.stateManager.updateInput({
+    this.model.updateInput({
       ...input,
       maxCursorIndex: Math.max(cursorAfterDelete, input.maxCursorIndex - 1),
     });

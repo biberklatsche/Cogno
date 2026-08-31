@@ -46,25 +46,25 @@ export class TerminalStateManager {
     );
 
     this.subscription.add(
-      this.model.cwdReported$.subscribe((cwd) => {
+      this.model.facts$.subscribe((fact) => {
         const terminalId = this.model.terminalId;
-        this._bus.publish({
-          path: ["app", "terminal", terminalId],
-          payload: { cwd, terminalId },
-          type: "TerminalCwdChanged",
-        });
-      }),
-    );
-
-    this.subscription.add(
-      this.model.busy$.subscribe((isBusy) => {
-        const terminalId = this.model.terminalId;
-        if (!terminalId) return;
-        this._bus.publish({
-          path: ["app", "terminal"],
-          type: "TerminalBusyChanged",
-          payload: { terminalId, isBusy },
-        });
+        switch (fact.type) {
+          case "cwdReported":
+            this._bus.publish({
+              path: ["app", "terminal", terminalId],
+              payload: { cwd: fact.cwd, terminalId },
+              type: "TerminalCwdChanged",
+            });
+            break;
+          case "busyChanged":
+            if (!terminalId) return;
+            this._bus.publish({
+              path: ["app", "terminal"],
+              type: "TerminalBusyChanged",
+              payload: { terminalId, isBusy: fact.isBusy },
+            });
+            break;
+        }
       }),
     );
 

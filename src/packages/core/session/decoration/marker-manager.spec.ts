@@ -1,11 +1,23 @@
 import { ClipboardAccess } from "@cogno/platform/clipboard";
-import { OsPlatform } from "@cogno/platform/os";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import type { IMarker } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalStateManager } from "../../state";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { TerminalCommandHistoryStore } from "../model/command-history.store";
+import { SessionModel } from "../model/session-model";
+import { CommandRecorder } from "../recorder/command-recorder";
+
+function createModel(terminalId: string): SessionModel {
+  const recorder = {
+    initialize: vi.fn(),
+    onCwdChanged: vi.fn(),
+    onCommandExecuted: vi.fn(),
+  } as unknown as CommandRecorder;
+  const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorder);
+  model.initialize(terminalId, "Bash", undefined, "linux");
+  return model;
+}
+
 import { MarkerManager } from "./marker-manager";
 import { PromptMarker, PromptMarkerRegistry } from "./prompt-marker.registry";
 
@@ -16,8 +28,6 @@ function createRegistryMarker(commandId: string, line: number): PromptMarker {
   };
 }
 
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
-
 const clipboardStub = {
   writeText: vi.fn(async () => undefined),
   readText: vi.fn(async () => ""),
@@ -26,18 +36,14 @@ const clipboardStub = {
 
 describe("MarkerManager", () => {
   let markerManager: MarkerManager;
-  let stateManager: TerminalStateManager;
+  let stateManager: SessionModel;
   let mockTerminal: any;
   let contextMenuOverlayService: Pick<ContextMenuOverlayService, "openAtElement">;
-  let mockBus: AppBus;
   let registryMarkers: PromptMarker[];
   let registryValidateRange: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    mockBus = new AppBus();
-    vi.spyOn(mockBus, "publish");
-    stateManager = new TerminalStateManager(osStub, mockBus);
-    stateManager.initialize("test-id", "Bash" as any);
+    stateManager = createModel("test-id");
     contextMenuOverlayService = {
       openAtElement: vi.fn(),
     };
@@ -51,7 +57,6 @@ describe("MarkerManager", () => {
       stateManager,
       [],
       contextMenuOverlayService,
-      mockBus,
       clipboardStub,
       registry,
     );

@@ -6,6 +6,7 @@ import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain
 import { TerminalId } from "@cogno/shared/ports";
 import { BehaviorSubject, map, Observable, Subject } from "rxjs";
 import { CommandRecorder } from "../recorder/command-recorder";
+import type { SessionFact } from "../session-facts";
 import { createPathAdapter } from "../shells/shell-definitions";
 import { Command, CommandData } from "./command.model";
 import { ExecutedCommand, TerminalCommandHistoryStore } from "./command-history.store";
@@ -50,16 +51,15 @@ export const createInitialSessionState = (backendOs: OsType): SessionModelSnapsh
  * The session's half of what used to be one state manager: which shell runs
  * in which context, where it is, what is typed, whether a command runs, what
  * the integration can do, and the commands so far. It feeds the recorder and
- * reports what the workbench needs to hear - `cwdReported$`, `busy$` - as
- * facts, without knowing who listens (ARCHITECTURE.md 2.1).
+ * states what happened as facts on `facts$`, without knowing who listens
+ * (ARCHITECTURE.md 2.1).
  *
  * The unread badge and pane maximization sit here for now because they die
  * with the session; maximization is workbench business and moves there.
  */
 export class SessionModel {
   private readonly _state: BehaviorSubject<SessionModelSnapshot>;
-  private readonly _cwdReported = new Subject<string>();
-  private readonly _busy = new Subject<boolean>();
+  private readonly _facts = new Subject<SessionFact>();
   private _pathAdapter?: IPathAdapter;
 
   constructor(
@@ -72,14 +72,14 @@ export class SessionModel {
     this._state = new BehaviorSubject<SessionModelSnapshot>(createInitialSessionState(backendOs));
   }
 
-  /** The working directory as the backend sees it, every time the shell reports one. */
-  get cwdReported$(): Observable<string> {
-    return this._cwdReported.asObservable();
+  /** What happened in this session, in order. */
+  get facts$(): Observable<SessionFact> {
+    return this._facts.asObservable();
   }
 
-  /** Whether a command is running, every time that is decided. */
-  get busy$(): Observable<boolean> {
-    return this._busy.asObservable();
+  /** States a fact. Session code calls this; nothing outside the session does. */
+  report(fact: SessionFact): void {
+    this._facts.next(fact);
   }
 
   initialize(
@@ -95,9 +95,8 @@ export class SessionModel {
   }
 
   dispose(): void {
-    this._busy.next(false);
-    this._busy.complete();
-    this._cwdReported.complete();
+    this.report({ type: "busyChanged", isBusy: false });
+    this._facts.complete();
   }
 
   get state$(): Observable<SessionModelSnapshot> {
@@ -155,12 +154,12 @@ export class SessionModel {
       commandStartTime: Date.now(),
       input: { text: "", maxCursorIndex: 0, cursorIndex: 0 },
     });
-    this._busy.next(true);
+    this.report({ type: "busyChanged", isBusy: true });
   }
 
   endCommand(): void {
     this.update({ isCommandRunning: false });
-    this._busy.next(false);
+    this.report({ type: "busyChanged", isBusy: false });
   }
 
   getCommandDuration(): number | undefined {
@@ -211,7 +210,7 @@ export class SessionModel {
       this._recorder.onCwdChanged(normalizedPath);
     }
 
-    this._cwdReported.next(backendOsPath);
+    this.report({ type: "cwdReported", cwd: backendOsPath });
   }
 
   // ---- commands so far --------------------------------------------------
@@ -227,6 +226,9 @@ export class SessionModel {
   updateCommand(data: CommandData): ExecutedCommand | undefined {
     const executedCommand = this._historyStore.updateCommand(data);
     this._recorder.onCommandExecuted(executedCommand);
+    if (executedCommand) {
+      this.report({ type: "commandCompleted", command: executedCommand });
+    }
     return executedCommand;
   }
 
