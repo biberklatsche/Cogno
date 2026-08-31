@@ -18,4 +18,12 @@ export type SessionFact =
   /** A new prompt was printed. */
   | { readonly type: "promptReported" }
   /** The user asked, from a command's marker menu, to see only that block. */
-  | { readonly type: "filterBlockRequested"; readonly range: CommandMenuBlockRange };
+  | { readonly type: "filterBlockRequested"; readonly range: CommandMenuBlockRange }
+  /** A program set the terminal title (OSC 2). */
+  | { readonly type: "titleChanged"; readonly oscCode: 2; readonly title: string }
+  /** A program asked for the user's attention (OSC 9). */
+  | { readonly type: "notificationRequested"; readonly message: string }
+  /** A full-screen program took over the terminal, or gave it back. */
+  | { readonly type: "fullScreenChanged"; readonly active: boolean }
+  /** The padding around the terminal was removed or restored; the usable area changed. */
+  | { readonly type: "paddingChanged"; readonly removed: boolean };

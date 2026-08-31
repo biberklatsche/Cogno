@@ -4,8 +4,8 @@ import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { TerminalPathResolver } from "../advanced/path/terminal-path.resolver";
-import { TerminalStateManager } from "../state";
+import { SessionModel } from "../model/session-model";
+import { TerminalPathResolver } from "./terminal-path.resolver";
 
 type LinkMatch = {
   text: string;
@@ -38,7 +38,7 @@ export class LinkHandler implements ITerminalHandler {
 
   constructor(
     private readonly _clipboard: ClipboardAccess,
-    private readonly _stateManager: TerminalStateManager,
+    private readonly _model: SessionModel,
     private readonly _opener: Opener,
     private readonly _os: OsPlatform,
     private readonly _pathResolver: TerminalPathResolver = new TerminalPathResolver(),
@@ -82,8 +82,8 @@ export class LinkHandler implements ITerminalHandler {
                 }
                 const backendPath = this._pathResolver.resolvePathForOpen(
                   text,
-                  this._stateManager.state.cwd,
-                  this._stateManager.pathAdapter,
+                  this._model.state.cwd,
+                  this._model.pathAdapter,
                 );
                 if (!backendPath) return;
                 void this._opener.openPath(backendPath);
@@ -121,8 +121,8 @@ export class LinkHandler implements ITerminalHandler {
       if (
         !this._pathResolver.resolvePathForOpen(
           candidate.text,
-          this._stateManager.state.cwd,
-          this._stateManager.pathAdapter,
+          this._model.state.cwd,
+          this._model.pathAdapter,
         )
       )
         continue;

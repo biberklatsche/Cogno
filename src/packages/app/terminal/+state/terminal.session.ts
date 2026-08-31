@@ -11,6 +11,13 @@ import {
   CommandMenuBlockRange,
 } from "@cogno/core/session/decoration/command-menu-items";
 import { PromptMarkerRegistry } from "@cogno/core/session/decoration/prompt-marker.registry";
+import { FullScreenAppHandler } from "@cogno/core/session/handlers/full-screen-app.handler";
+import { InputHandler } from "@cogno/core/session/handlers/input.handler";
+import { LinkHandler } from "@cogno/core/session/handlers/link.handler";
+import { ResumeLinkHandler } from "@cogno/core/session/handlers/resume-link.handler";
+import { TerminalNotificationHandler } from "@cogno/core/session/handlers/terminal-notification.handler";
+import { TerminalPaddingHandler } from "@cogno/core/session/handlers/terminal-padding.handler";
+import { TerminalTitleHandler } from "@cogno/core/session/handlers/terminal-title.handler";
 import { toTerminalMachineOptions } from "@cogno/core/session/host/terminal-machine-options.mapper";
 import { CommandLineBuffer } from "@cogno/core/session/model/command-line.buffer";
 import { CommandLineObserver } from "@cogno/core/session/model/command-line.observer";
@@ -66,22 +73,14 @@ import {
   DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
-import { FullScreenAppHandler } from "./handler/full-screen-app.handler";
-import { InputHandler } from "./handler/input.handler";
-import { LinkHandler } from "./handler/link.handler";
-import { ResumeLinkHandler } from "./handler/resume-link.handler";
 import { TerminalFocusCoordinator } from "./handler/terminal-focus.coordinator";
-import {
-  OSC9_NOTIFICATION_ID,
-  TerminalNotificationHandler,
-} from "./handler/terminal-notification.handler";
-import { TerminalPaddingHandler } from "./handler/terminal-padding.handler";
 import { TerminalSearchHandler } from "./handler/terminal-search.handler";
-import { TerminalTitleHandler } from "./handler/terminal-title.handler";
 import { TerminalInputWriter } from "./input-writer";
 import { KeybindExecutor } from "./keybind/keybind.executor";
 import { TerminalStateManager } from "./state";
 import { TerminalSessionRegistry } from "./terminal-session.registry";
+
+export const OSC9_NOTIFICATION_ID = "osc9";
 
 @Injectable()
 export class TerminalSession {
@@ -161,17 +160,27 @@ export class TerminalSession {
     this.subscription.add(
       this.stateManager.model.facts$.subscribe((fact) => {
         switch (fact.type) {
-          case "promptReported":
-            this.bus.publish({
-              path: ["app", "terminal", terminalId],
-              type: "TerminalCursorRestoreRequested",
-            });
-            break;
           case "commandCompleted":
             this.completedCommandNotificationHandler.handleCompletedCommand(fact.command);
             break;
           case "filterBlockRequested":
             this.requestBlockFilter(fact.range);
+            break;
+          case "titleChanged":
+            this.bus.publish({
+              type: "TerminalTitleChanged",
+              payload: { oscCode: fact.oscCode, terminalId, title: fact.title },
+            });
+            break;
+          case "notificationRequested":
+            this.notifyFromTerminal(fact.message);
+            break;
+          case "fullScreenChanged":
+            this.bus.publish({
+              type: fact.active ? "FullScreenAppEntered" : "FullScreenAppLeaved",
+              path: ["app", "terminal", terminalId],
+              payload: terminalId,
+            });
             break;
         }
       }),
@@ -225,14 +234,13 @@ export class TerminalSession {
     // Padding and theme changes alter the usable area. The machine offers
     // `resize()`; deciding when it is needed is session knowledge.
     this.subscription.add(
-      this.bus.on$({ path: ["app", "terminal", this.terminalId] }).subscribe((event) => {
-        if (
-          event.type === "TerminalThemeChanged" ||
-          event.type === "TerminalThemePaddingAdded" ||
-          event.type === "TerminalThemePaddingRemoved"
-        ) {
-          setTimeout(() => resizeHandler.resize(), 100);
-        }
+      this.bus
+        .on$({ path: ["app", "terminal", this.terminalId], type: "TerminalThemeChanged" })
+        .subscribe(() => setTimeout(() => resizeHandler.resize(), 100)),
+    );
+    this.subscription.add(
+      this.stateManager.model.facts$.subscribe((fact) => {
+        if (fact.type === "paddingChanged") setTimeout(() => resizeHandler.resize(), 100);
       }),
     );
     this.disposables.push(
@@ -259,30 +267,24 @@ export class TerminalSession {
     this.disposables.push(
       this.renderer.register(
         new TerminalPaddingHandler(
-          this.terminalId,
+          this.stateManager.model,
           this.configService,
-          this.bus,
           terminalContainer,
           this.renderer,
         ),
       ),
     );
     this.disposables.push(
-      this.renderer.register(new TerminalTitleHandler(this.terminalId, this.bus)),
+      this.renderer.register(new TerminalTitleHandler(this.stateManager.model)),
     );
     this.disposables.push(
       this.renderer.register(
-        new TerminalNotificationHandler(
-          this.bus,
-          this.stateManager,
-          () => this.getNotificationPreferencesState(),
-          () => this.resolveNotificationTarget(),
-        ),
+        new TerminalNotificationHandler(this.stateManager.model, this.stateManager.machine),
       ),
     );
     this.disposables.push(
       this.renderer.register(
-        new FullScreenAppHandler(this.terminalId, this.bus, this.stateManager),
+        new FullScreenAppHandler(this.stateManager.model, this.stateManager.machine),
       ),
     );
     this.disposables.push(this.renderer.register(focusHandler));
@@ -300,7 +302,7 @@ export class TerminalSession {
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.stateManager)));
     this.disposables.push(
       this.renderer.register(
-        new LinkHandler(this.clipboard, this.stateManager, this.opener, this.os),
+        new LinkHandler(this.clipboard, this.stateManager.model, this.opener, this.os),
       ),
     );
     this.disposables.push(
@@ -348,12 +350,20 @@ export class TerminalSession {
         ),
       ),
     );
-    this.disposables.push(
-      this.renderer.register(
-        new InputHandler(this.bus, this.terminalId, this.stateManager, this.pty, () =>
-          this.scrollToBottomOnUserInput(),
-        ),
-      ),
+    const inputHandler = new InputHandler(this.stateManager.model, this.pty, () =>
+      this.scrollToBottomOnUserInput(),
+    );
+    this.disposables.push(this.renderer.register(inputHandler));
+    this.subscription.add(
+      this.bus.on$({ path: ["app", "terminal"], type: "ClearBuffer" }).subscribe((event) => {
+        if (event.payload === terminalId) inputHandler.clearBuffer();
+      }),
+    );
+    this.subscription.add(
+      this.bus.on$({ path: ["app", "terminal"], type: "WriteRawToPty" }).subscribe((event) => {
+        if (event.payload?.terminalId !== terminalId) return;
+        inputHandler.writeRaw(event.payload.text, event.payload.autoExecute);
+      }),
     );
 
     if (this.shellProfile.enable_shell_integration) {
@@ -792,6 +802,33 @@ export class TerminalSession {
         );
       },
       onFilterBlock: (range) => this.requestBlockFilter(range),
+    });
+  }
+
+  /** OSC 9 asked for attention: check the preferences, then tell the user. */
+  private notifyFromTerminal(message: string): void {
+    const notificationPreferencesState = this.getNotificationPreferencesState();
+    if (
+      !NotificationPreferencesUseCase.shouldNotify(
+        notificationPreferencesState,
+        OSC9_NOTIFICATION_ID,
+      )
+    ) {
+      return;
+    }
+    this.stateManager.markUnreadNotification();
+    this.bus.publish({
+      type: "Notification",
+      path: ["notification"],
+      payload: {
+        header: "Terminal Notification",
+        body: message,
+        type: "info",
+        timestamp: new Date(),
+        terminalId: this.terminalId,
+        target: this.resolveNotificationTarget(),
+        channels: NotificationPreferencesUseCase.getActiveChannels(notificationPreferencesState),
+      },
     });
   }
 

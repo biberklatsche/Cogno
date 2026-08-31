@@ -1,6 +1,3 @@
-// Lives in app/ rather than features/ because it depends on xterm Terminal,
-// ITerminalHandler, and IPty — which are app-layer types.
-
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";

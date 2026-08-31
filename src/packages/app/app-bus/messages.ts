@@ -64,29 +64,22 @@ import {
   WriteRawToPtyAction,
 } from "../terminal/+bus/actions";
 import {
+  FullScreenAppEnteredEvent,
+  FullScreenAppLeavedEvent,
   PtyInitializedEvent,
   TerminalBusyChangedEvent,
-  TerminalCursorRestoreRequestedEvent,
   TerminalCwdChangedEvent,
   TerminalSearchPanelRequestedEvent,
   TerminalSearchRequestedEvent,
   TerminalSearchResultEvent,
   TerminalSearchRevealRequestedEvent,
+  TerminalThemeChangedEvent,
   TerminalTitleChangedEvent,
 } from "../terminal/+bus/events";
-import {
-  FullScreenAppEnteredEvent,
-  FullScreenAppLeavedEvent,
-} from "../terminal/+state/handler/full-screen-app.handler";
 import {
   TerminalBlurredEvent,
   TerminalFocusedEvent,
 } from "../terminal/+state/handler/terminal-focus.coordinator";
-import {
-  TerminalThemeChangedEvent,
-  TerminalThemePaddingAddedEvent,
-  TerminalThemePaddingRemovedEvent,
-} from "../terminal/+state/handler/terminal-padding.handler";
 
 export type TerminalCommandType = AppMessage["type"];
 
@@ -107,7 +100,6 @@ export type AppMessage =
   | InitConfigAction
   | PtyInitializedEvent
   | TerminalBusyChangedEvent
-  | TerminalCursorRestoreRequestedEvent
   | TerminalCwdChangedEvent
   | TerminalSearchPanelRequestedEvent
   | TerminalTitleChangedEvent
@@ -115,8 +107,6 @@ export type AppMessage =
   | TerminalSearchResultEvent
   | TerminalSearchRevealRequestedEvent
   | TerminalThemeChangedEvent
-  | TerminalThemePaddingAddedEvent
-  | TerminalThemePaddingRemovedEvent
   | FocusTerminalAction
   | RevealTerminalAction
   | BlurTerminalAction

@@ -1,22 +1,22 @@
+import { MachineState } from "@cogno/core/terminal/machine-state";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
-import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { AppBus, MessageBase } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
+import { SessionModel } from "../model/session-model";
 
-export type FullScreenAppEnteredEvent = MessageBase<"FullScreenAppEntered", TerminalId>;
-export type FullScreenAppLeavedEvent = MessageBase<"FullScreenAppLeaved", TerminalId>;
-
+/**
+ * Notices when a full-screen program (vim, helix, ...) takes the terminal
+ * over or hands it back, from the sequences such programs send. Records it
+ * on the machine state and states it as a fact.
+ */
 export class FullScreenAppHandler implements ITerminalHandler {
   private readonly _disposables: IDisposable[] = [];
   private static readonly ALTERNATE_SCREEN_PARAMS = new Set([47, 1047, 1049]);
   private static readonly HELIX_MOUSE_TRACKING_PARAMS = [1003, 1006] as const;
 
   constructor(
-    private _terminalId: TerminalId,
-    private _bus: AppBus,
-    private _stateManager: TerminalStateManager,
+    private readonly model: SessionModel,
+    private readonly machine: MachineState,
   ) {}
 
   dispose(): void {
@@ -26,21 +26,13 @@ export class FullScreenAppHandler implements ITerminalHandler {
   }
 
   private publishEntered(): void {
-    this._stateManager.setInFullScreenMode(true);
-    this._bus.publish({
-      type: "FullScreenAppEntered",
-      path: ["app", "terminal", this._terminalId],
-      payload: this._terminalId,
-    });
+    this.machine.setInFullScreenMode(true);
+    this.model.report({ type: "fullScreenChanged", active: true });
   }
 
   private publishLeaved(): void {
-    this._stateManager.setInFullScreenMode(false);
-    this._bus.publish({
-      type: "FullScreenAppLeaved",
-      path: ["app", "terminal", this._terminalId],
-      payload: this._terminalId,
-    });
+    this.machine.setInFullScreenMode(false);
+    this.model.report({ type: "fullScreenChanged", active: false });
   }
 
   private isAlternateScreenSequence(params: readonly (number | readonly number[])[]): boolean {

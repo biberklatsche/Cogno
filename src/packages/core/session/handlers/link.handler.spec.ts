@@ -1,13 +1,28 @@
-import { PathFactory } from "@cogno/app/app-host/path.factory";
 import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
-import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { Opener } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform, type OsType } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
+import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { TerminalCommandHistoryStore } from "../model/command-history.store";
+import { SessionModel } from "../model/session-model";
+import { CommandRecorder } from "../recorder/command-recorder";
+
+function createModel(
+  terminalId: string,
+  backendOs: OsType = "linux",
+  shellType: ShellType = "Bash",
+): SessionModel {
+  const recorder = {
+    initialize: vi.fn(),
+    onCwdChanged: vi.fn(),
+    onCommandExecuted: vi.fn(),
+  } as unknown as CommandRecorder;
+  const model = new SessionModel(backendOs, new TerminalCommandHistoryStore(), recorder);
+  model.initialize(terminalId, shellType, undefined, backendOs);
+  return model;
+}
+
 import { LinkHandler } from "./link.handler";
 
 const osFor = (platform: OsType) => ({ platform: () => platform }) as OsPlatform;
@@ -20,7 +35,7 @@ const clipboardStub = {
 
 describe("LinkHandler", () => {
   let handler: LinkHandler;
-  let stateManager: TerminalStateManager;
+  let stateManager: SessionModel;
   let terminal: ReturnType<typeof TerminalMockFactory.createTerminal>;
   let provider: any;
   let opener: Opener;
@@ -28,7 +43,6 @@ describe("LinkHandler", () => {
   let openPathSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
     openUrlSpy = vi.fn().mockResolvedValue(undefined);
     openPathSpy = vi.fn().mockResolvedValue(undefined);
     opener = { openUrl: openUrlSpy, openPath: openPathSpy } as unknown as Opener;
@@ -37,9 +51,7 @@ describe("LinkHandler", () => {
 
   function createScenario(shellType: ShellType, backendOs: OsType, cwd: string): void {
     const os = osFor(backendOs);
-    const bus = new AppBus();
-    stateManager = new TerminalStateManager(os, bus);
-    stateManager.initialize("term-1", shellType);
+    stateManager = createModel("term-1", backendOs, shellType);
     stateManager.updateCwd(cwd);
     terminal = TerminalMockFactory.createTerminal();
     handler = new LinkHandler(clipboardStub, stateManager, opener, os);

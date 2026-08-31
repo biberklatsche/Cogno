@@ -66,7 +66,9 @@ export type TerminalBusyChangedEvent = MessageBase<
     isBusy: boolean;
   }
 >;
-export type TerminalCursorRestoreRequestedEvent = MessageBase<"TerminalCursorRestoreRequested">;
+export type TerminalThemeChangedEvent = MessageBase<"TerminalThemeChanged", TerminalId>;
+export type FullScreenAppEnteredEvent = MessageBase<"FullScreenAppEntered", TerminalId>;
+export type FullScreenAppLeavedEvent = MessageBase<"FullScreenAppLeaved", TerminalId>;
 export type TerminalSearchResultEvent = MessageBase<
   "TerminalSearchResult",
   {
