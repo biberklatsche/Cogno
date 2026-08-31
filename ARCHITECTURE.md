@@ -7,7 +7,7 @@ Grundlage ist die Bestandsaufnahme in `.claude/plans/capability-inventory.md`.
 
 **Umbaustand:** Die Architektur wird in Schritten umgesetzt; der
 Umsetzungsplan liegt unter `.claude/plans/umsetzungsplan.md` (Schritte 0–29).
-**Aktueller Schritt: 12 (Observer geteilt, Session-Handler in `core/session/`).** Bis Schritt 28 liegt Code zusätzlich
+**Aktueller Schritt: 13 (Spike Headless-Session: bestanden).** Bis Schritt 28 liegt Code zusätzlich
 unter `src/packages/app/` nach dem alten Vier-Paket-Layout; dafür gelten die
 Übergangsregeln in 2.1.
 

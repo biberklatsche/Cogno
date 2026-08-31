@@ -637,7 +637,7 @@ alten Terminal-Welt in `app/terminal/+state/`.
   `completed-command-notification`, die Registry und `advanced/{autocomplete,
   composer,history}` — alles laut Plan Schritt 14.
 
-### Schritt 13: Spike — Kommandozeilen-Modell aus einem ungeöffneten Core
+### Schritt 13: Spike — Kommandozeilen-Modell aus einem ungeöffneten Core — **erledigt (2026-08-31), bestanden**
 
 **Voraussetzungen:** 12.
 
@@ -659,6 +659,17 @@ im Modell stimmen. Dazu: Größe vor `open()` setzen (`cols/rows`), danach
   der Grund für den Spike.
 
 **Erlaubter Übergangszustand:** keiner — reiner Test.
+
+**Befund (Spike bestanden):** `core/session/session-headless.spec.ts`,
+12 Tests grün. Ein nie geöffnetes xterm parst, verankert Marker,
+spiegelt die Eingabezeile ins Modell und führt Kommandoliste/cwd — für
+bash, zsh (OSC mit ST) und pwsh (OSC mit BEL). Keine Buffer-Eigenschaft
+verhielt sich vor `open()` anders; auch Reflow läuft ungeöffnet. Die
+eine Ausnahme ist xterm-Verhalten, kein Headless-Effekt: die Zeile, auf
+der der Cursor steht (die Eingabezeile), wird nie reflowt — im Betrieb
+zeichnet die Shell sie nach SIGWINCH neu. Konsequenz für Schritt 14:
+Größe beim `attach` setzen (open + fit), eine abgehängte Session nicht
+resizen. Achse B (detached ↔ attached) ist damit tragfähig.
 
 ### Schritt 14: Session-Host mit zwei Zustandsachsen (ZA 2.3)
 
