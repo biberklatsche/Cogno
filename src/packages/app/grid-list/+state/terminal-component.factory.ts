@@ -157,8 +157,9 @@ export class TerminalComponentFactory {
     if (!entry) return;
     try {
       entry.componentRef?.destroy();
-      entry.host.close();
+      // The app hears TerminalRemoved before the machine goes, as it always did.
       entry.bridge.dispose();
+      entry.host.close();
       entry.injector.destroy();
     } finally {
       this.sessions.delete(terminalId);

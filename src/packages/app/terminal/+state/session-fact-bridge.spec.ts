@@ -167,6 +167,7 @@ describe("SessionFactBridge", () => {
     it("publishes TerminalRemoved and unregisters on dispose, once", () => {
       bridge.dispose();
       bridge.dispose();
+      host.close();
 
       expect(bus.publish).toHaveBeenCalledWith(
         expect.objectContaining({ type: "TerminalRemoved", payload: terminalId }),
