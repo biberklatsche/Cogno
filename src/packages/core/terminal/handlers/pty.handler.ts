@@ -21,15 +21,20 @@ export const HIDDEN_UNPARSED_BUDGET_BYTES = 16 * 1024 * 1024;
  * and workbench work (ARCHITECTURE.md 2.1).
  */
 export type PtyHandlerListener = {
+  /** The shell process is up; nothing has been parsed yet. */
+  readonly onSpawned?: () => void;
+  /** The shell could not be started. */
+  readonly onFailed?: (error: unknown) => void;
   /** The shell answered for the first time and xterm has parsed it. */
   readonly onStarted?: (shellType: string) => void;
   /** The shell process ended. */
-  readonly onExited?: () => void;
+  readonly onExited?: (exitCode: number) => void;
   /** Output arrived - before it is parsed. */
   readonly onOutput?: () => void;
 };
 
 export class PtyHandler implements ITerminalHandler {
+  private _terminal?: Terminal;
   private _resizeObserver: ResizeObserver | undefined = undefined;
   private _resizeRaf?: number;
   private _firstWriteEvent: boolean = false;
@@ -59,16 +64,33 @@ export class PtyHandler implements ITerminalHandler {
   }
 
   registerTerminal(terminal: Terminal): IDisposable {
-    this.spawnPty(this._terminalId, terminal).then((_) => {
-      if (this._disposed) return;
-      this._disposables.push(terminal.onData((data) => this._pty?.write(data)));
-      this._disposables.push(
-        this._pty?.onExit((_) => {
-          this._listener.onExited?.();
-        }),
-      );
-    });
+    this._terminal = terminal;
+    void this.start();
     return this;
+  }
+
+  /** Tries the spawn again after a failure; the terminal stays registered. */
+  restart(): void {
+    void this.start();
+  }
+
+  private async start(): Promise<void> {
+    const terminal = this._terminal;
+    if (!terminal) return;
+    try {
+      await this.spawnPty(this._terminalId, terminal);
+    } catch (error) {
+      if (!this._disposed) this._listener.onFailed?.(error);
+      return;
+    }
+    if (this._disposed) return;
+    this._listener.onSpawned?.();
+    this._disposables.push(terminal.onData((data) => this._pty?.write(data)));
+    this._disposables.push(
+      this._pty?.onExit((event) => {
+        this._listener.onExited?.(event.exitCode);
+      }),
+    );
   }
 
   private onPtyChunk(terminal: Terminal, chunk: PtyChunk): void {

@@ -25,7 +25,15 @@ import {
 import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
-import { combineLatest, map, merge, Observable, Subject, Subscription } from "rxjs";
+import {
+  BehaviorSubject,
+  combineLatest,
+  map,
+  merge,
+  Observable,
+  Subject,
+  Subscription,
+} from "rxjs";
 import { CommandBlockResolver } from "../decoration/command-block-resolver";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "../decoration/command-menu-items";
 import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
@@ -52,6 +60,32 @@ import { toTerminalMachineOptions } from "./terminal-machine-options.mapper";
 /** Both halves of a session's state as one read-only view. */
 export type SessionState = MachineStateSnapshot & SessionModelSnapshot;
 
+/**
+ * Axis A - runtime (ARCHITECTURE.md 2.3). `allocated` until started;
+ * `starting` while the shell spawns; `running` once it does, `failed` with
+ * a reason when it does not. A running shell either `exited` on its own or
+ * is `closing` because the workbench said so; both end in `closed`.
+ */
+export type SessionRuntimeStatus =
+  | "allocated"
+  | "starting"
+  | "running"
+  | "failed"
+  | "exited"
+  | "closing"
+  | "closed";
+
+export type SessionRuntime = {
+  readonly status: SessionRuntimeStatus;
+  /** Why the start failed; only while `failed`. */
+  readonly reason?: string;
+  /** How the shell ended; only from `exited` on. */
+  readonly exitCode?: number;
+};
+
+/** Axis B - display: whether the machine is in the DOM right now. */
+export type SessionDisplay = "detached" | "attached";
+
 type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 /** How long after the shell answered the terminal takes the keyboard. */
@@ -64,6 +98,11 @@ const RESIZE_AFTER_LAYOUT_CHANGE_MS = 100;
  * recorder and every handler, and composes them. It states facts on
  * `facts$` and offers methods; it holds no bus and knows nothing about
  * panes, tabs or the workbench (ARCHITECTURE.md 2.3).
+ *
+ * Two axes, independent of each other: the runtime (`start`, `retry`,
+ * `close`) and the display (`attach`, `detach`). The shell runs and the
+ * model is kept whether or not the terminal is on screen; `detach` never
+ * ends a session, only `close` does.
  */
 export class SessionHost {
   readonly machine = new MachineState();
@@ -72,13 +111,18 @@ export class SessionHost {
   private readonly renderer: IRenderer;
   private readonly pty: IPty;
   private readonly hostFacts = new Subject<SessionFact>();
+  private readonly runtime$$ = new BehaviorSubject<SessionRuntime>({ status: "allocated" });
+  private readonly display$$ = new BehaviorSubject<SessionDisplay>("detached");
   private readonly subscription = new Subscription();
-  private readonly disposables: IDisposable[];
+  private readonly disposables: IDisposable[] = [];
   private readonly commandBlockResolver: CommandBlockResolver;
-  private disposed = false;
 
   private _terminalId?: TerminalId;
   private _shellProfile?: ShellProfile;
+  /** The element the machine renders into; created on the first attach. */
+  private hostElement?: HTMLDivElement;
+  private ptyHandler?: PtyHandler;
+  private resizeHandler?: ResizeHandler;
   private focusHandler?: FocusHandler;
   private selectionHandler?: SelectionHandler;
   private inputHandler?: InputHandler;
@@ -105,7 +149,6 @@ export class SessionHost {
       toTerminalMachineOptions(this.configService.config),
       this.os.platform(),
     );
-    this.disposables = [];
     // The machine reports faults, it does not handle them: the host decides
     // who hears about it (ARCHITECTURE.md 2.1, boundary decision 2).
     this.subscription.add(
@@ -126,6 +169,22 @@ export class SessionHost {
   /** What happened in this session, in order: the model's facts and the host's own. */
   get facts$(): Observable<SessionFact> {
     return merge(this.model.facts$, this.hostFacts.asObservable());
+  }
+
+  get runtime(): SessionRuntime {
+    return this.runtime$$.value;
+  }
+
+  get runtime$(): Observable<SessionRuntime> {
+    return this.runtime$$.asObservable();
+  }
+
+  get display(): SessionDisplay {
+    return this.display$$.value;
+  }
+
+  get display$(): Observable<SessionDisplay> {
+    return this.display$$.asObservable();
   }
 
   get terminalId(): TerminalId | undefined {
@@ -170,7 +229,7 @@ export class SessionHost {
     return this.renderer.isWebglContextLost$;
   }
 
-  // ---- lifecycle -------------------------------------------------------
+  // ---- axis A: runtime ---------------------------------------------------
 
   initialize(terminalId: TerminalId, shellProfile: ShellProfile): void {
     if (!shellProfile.shell_type) {
@@ -181,21 +240,18 @@ export class SessionHost {
     this.model.initialize(terminalId, shellProfile.shell_type, shellProfile, this.os.platform());
   }
 
-  initializeTerminal(terminalContainer: HTMLDivElement): void {
+  /**
+   * Spawns the shell and wires everything that works without a DOM: the
+   * core parses, the markers anchor, the model lives - on screen or not.
+   */
+  start(): void {
     const terminalId = this._terminalId;
     const shellProfile = this._shellProfile;
     if (!terminalId || !shellProfile) {
-      throw new Error("SessionHost must be initialized before initializeTerminal");
+      throw new Error("SessionHost must be initialized before start");
     }
-    this.renderer.open(
-      terminalContainer,
-      this.configService.config.font?.enable_ligatures ?? false,
-    );
-
-    const resizeHandler = new ResizeHandler(this.pty, terminalContainer, this.machine);
-    this.disposables.push(this.renderer.register(resizeHandler));
-    const resizeSoon = () =>
-      setTimeout(() => resizeHandler.resize(), RESIZE_AFTER_LAYOUT_CHANGE_MS);
+    if (this.runtime.status !== "allocated") return;
+    this.setRuntime({ status: "starting" });
 
     // The machine takes values; reading the config and pushing them again
     // when it changes is the host's job (ARCHITECTURE.md 2.1). A theme
@@ -206,38 +262,31 @@ export class SessionHost {
         if (!this.isUnreadBadgeEnabled()) {
           this.model.clearUnreadNotification();
         }
-        resizeSoon();
+        this.resizeSoon();
       }),
     );
     this.subscription.add(
       this.model.facts$.subscribe((fact) => {
-        if (fact.type === "paddingChanged") resizeSoon();
+        if (fact.type === "paddingChanged") this.resizeSoon();
       }),
     );
 
+    this.ptyHandler = new PtyHandler(terminalId, this.pty, shellProfile, {
+      onSpawned: () => this.setRuntime({ status: "running" }),
+      onFailed: (error) => this.onStartFailed(error),
+      onStarted: (shellType) => {
+        this.hostFacts.next({ type: "started", shellType });
+        setTimeout(() => this.focus(), FOCUS_AFTER_START_MS);
+      },
+      onExited: (exitCode) => {
+        this.setRuntime({ status: "exited", exitCode });
+        this.hostFacts.next({ type: "exited", exitCode });
+      },
+      onOutput: () => this.hostFacts.next({ type: "outputReceived" }),
+    });
+    this.disposables.push(this.renderer.register(this.ptyHandler));
+
     this.focusHandler = new FocusHandler((focused) => this.onFocusChanged(focused));
-    this.disposables.push(
-      this.renderer.register(
-        new PtyHandler(terminalId, this.pty, shellProfile, {
-          onStarted: (shellType) => {
-            this.hostFacts.next({ type: "started", shellType });
-            setTimeout(() => this.focus(), FOCUS_AFTER_START_MS);
-          },
-          onExited: () => this.hostFacts.next({ type: "exited" }),
-          onOutput: () => this.hostFacts.next({ type: "outputReceived" }),
-        }),
-      ),
-    );
-    this.disposables.push(
-      this.renderer.register(
-        new TerminalPaddingHandler(
-          this.model,
-          this.configService,
-          terminalContainer,
-          this.renderer,
-        ),
-      ),
-    );
     this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.model)));
     this.disposables.push(
       this.renderer.register(new TerminalNotificationHandler(this.model, this.machine)),
@@ -250,9 +299,6 @@ export class SessionHost {
     this.disposables.push(this.renderer.register(this.selectionHandler));
     this.searchHandler = new TerminalSearchHandler(this.model, this.configService);
     this.disposables.push(this.renderer.register(this.searchHandler));
-    this.disposables.push(
-      this.renderer.register(new MouseHandler(terminalContainer, this.machine)),
-    );
     this.disposables.push(this.renderer.register(new CursorHandler(this.machine)));
     this.disposables.push(this.renderer.register(new ScrollStateHandler(this.machine)));
     this.disposables.push(
@@ -324,9 +370,19 @@ export class SessionHost {
     }
   }
 
-  dispose(): void {
-    if (this.disposed) return;
-    this.disposed = true;
+  /** Tries the shell again after a failed start. */
+  retry(): void {
+    if (this.runtime.status !== "failed" || !this.ptyHandler) return;
+    this.setRuntime({ status: "starting" });
+    this.ptyHandler.restart();
+  }
+
+  /** Ends the session for good: the workbench decided so. Idempotent. */
+  close(): void {
+    const status = this.runtime.status;
+    if (status === "closed" || status === "closing") return;
+    this.setRuntime({ status: "closing" });
+    this.detach();
     this.model.dispose();
     this.hostFacts.complete();
     this.renderer.dispose();
@@ -335,11 +391,62 @@ export class SessionHost {
       disposable.dispose();
     });
     this.subscription.unsubscribe();
+    this.setRuntime({ status: "closed" });
+    this.runtime$$.complete();
+    this.display$$.complete();
+  }
+
+  // ---- axis B: display -----------------------------------------------------
+
+  /**
+   * Puts the terminal on screen inside `parent`. The first time it opens the
+   * machine and hooks up what needs a DOM; afterwards it only moves the
+   * element. Sizing happens here, never while detached (the spike in step 13:
+   * a detached resize reflows nothing the cursor sits on).
+   */
+  attach(parent: HTMLElement): void {
+    if (!this._terminalId) {
+      throw new Error("SessionHost must be initialized before attach");
+    }
+    if (!this.hostElement) {
+      this.hostElement = this.openInto(document.createElement("div"));
+    }
+    if (this.hostElement.parentElement !== parent) {
+      parent.appendChild(this.hostElement);
+    }
+    this.display$$.next("attached");
+    this.renderer.setVisible(true);
+    this.resizeHandler?.resize();
+  }
+
+  /** Takes the terminal off screen; the shell and the model carry on. */
+  detach(): void {
+    if (this.display === "detached") return;
+    this.hostElement?.remove();
+    this.renderer.setVisible(false);
+    this.display$$.next("detached");
+  }
+
+  private openInto(element: HTMLDivElement): HTMLDivElement {
+    element.classList.add("session-host");
+    element.style.width = "100%";
+    element.style.height = "100%";
+    this.renderer.open(element, this.configService.config.font?.enable_ligatures ?? false);
+    this.resizeHandler = new ResizeHandler(this.pty, element, this.machine);
+    this.disposables.push(this.renderer.register(this.resizeHandler));
+    this.disposables.push(this.renderer.register(new MouseHandler(element, this.machine)));
+    this.disposables.push(
+      this.renderer.register(
+        new TerminalPaddingHandler(this.model, this.configService, element, this.renderer),
+      ),
+    );
+    return element;
   }
 
   // ---- focus and view --------------------------------------------------
 
   focus(): void {
+    if (this.display !== "attached") return;
     this.focusHandler?.focus();
   }
 
@@ -489,12 +596,34 @@ export class SessionHost {
 
   // ---- internals -------------------------------------------------------
 
+  private setRuntime(runtime: SessionRuntime): void {
+    if (this.runtime$$.closed) return;
+    this.runtime$$.next(runtime);
+  }
+
+  private onStartFailed(error: unknown): void {
+    const reason = error instanceof Error ? error.message : String(error);
+    this.setRuntime({ status: "failed", reason });
+    this.hostFacts.next({ type: "startFailed", reason });
+    ErrorReporter.reportException({
+      error,
+      handled: true,
+      source: "SessionHost",
+      context: { operation: "start", terminalId: this._terminalId },
+    });
+  }
+
   private onFocusChanged(focused: boolean): void {
     this.machine.setFocus(focused);
     if (focused) {
       this.model.clearUnreadNotification();
     }
     this.hostFacts.next({ type: "focusChanged", focused });
+  }
+
+  private resizeSoon(): void {
+    if (this.display !== "attached") return;
+    setTimeout(() => this.resizeHandler?.resize(), RESIZE_AFTER_LAYOUT_CHANGE_MS);
   }
 
   /**

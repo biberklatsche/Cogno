@@ -145,12 +145,17 @@ export class TerminalComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.host.initialize(this.terminalId(), this.shellProfile());
     this.bridge.start(this.terminalId(), this.shellProfile());
+    // The shell starts now; the DOM comes with attach() once the view is there.
+    this.host.start();
     const keybindExecutor = new KeybindExecutor(this.bus, this.host);
     this.destroyRef.onDestroy(() => {
       keybindExecutor.dispose();
       this.menus.dispose();
       this.bridge.dispose();
-      this.host.dispose();
+      // Destroying this view is the explicit close today; the factory only
+      // destroys it on RemovePane (reparenting keeps it alive).
+      this.host.detach();
+      this.host.close();
     });
   }
 
@@ -158,7 +163,7 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     this.terminalAutocomplete.setHostElement(this.terminalContainer.nativeElement);
     this.terminalComposer.setHostElement(this.terminalContainer.nativeElement);
     this.terminalHistory.setHostElement(this.terminalContainer.nativeElement);
-    this.host.initializeTerminal(this.terminalContainer.nativeElement);
+    this.host.attach(this.terminalContainer.nativeElement);
     this.terminalFileDropService.initialize(this.terminalContainer.nativeElement);
   }
 

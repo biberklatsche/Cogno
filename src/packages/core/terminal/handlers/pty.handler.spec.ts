@@ -22,7 +22,7 @@ describe("PtyHandler", () => {
   let mockTerminal: Terminal;
   let listener: {
     onStarted: Mock<(shellType: string) => void>;
-    onExited: Mock<() => void>;
+    onExited: Mock<(exitCode: number) => void>;
     onOutput: Mock<() => void>;
   };
   let mockPty: IPty;
@@ -39,7 +39,7 @@ describe("PtyHandler", () => {
   beforeEach(() => {
     listener = {
       onStarted: vi.fn<(shellType: string) => void>(),
-      onExited: vi.fn<() => void>(),
+      onExited: vi.fn<(exitCode: number) => void>(),
       onOutput: vi.fn<() => void>(),
     };
     windowHidden = false;

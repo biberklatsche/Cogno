@@ -198,7 +198,8 @@ export class SessionFactBridge {
       case "promptReported":
       case "paddingChanged":
       case "composerRequested":
-        // session-internal; the host and the composer react themselves
+      case "startFailed":
+        // session-internal; the host, the composer and the pane react themselves
         break;
     }
   }

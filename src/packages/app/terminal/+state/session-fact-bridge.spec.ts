@@ -42,6 +42,8 @@ vi.mock("@cogno/core/terminal/pty", () => {
     dispose = vi.fn();
     write = vi.fn();
     spawn = vi.fn().mockResolvedValue(undefined);
+    onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    kill = vi.fn();
     faults$ = new Subject();
   }
   return { Pty: vi.fn(PtyMock) };
@@ -202,7 +204,8 @@ describe("SessionFactBridge", () => {
     describe("focus", () => {
       beforeEach(() => {
         vi.useFakeTimers();
-        host.initializeTerminal(document.createElement("div"));
+        host.start();
+        host.attach(document.createElement("div"));
       });
 
       it("focuses on FocusTerminal for this id and says so", () => {
