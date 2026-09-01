@@ -1,8 +1,8 @@
-import { TerminalState } from "../../state";
+import type { SessionState } from "@cogno/core/session/host/session-host";
 import { QueryContext } from "./autocomplete.types";
 
 export class AutocompleteContextParser {
-  static parse(state: TerminalState): QueryContext | undefined {
+  static parse(state: SessionState): QueryContext | undefined {
     const inputText = state.input.text;
     const cursorIndex = state.input.cursorIndex;
     // `input.text` may be trimmed by observers; preserve typed trailing spaces

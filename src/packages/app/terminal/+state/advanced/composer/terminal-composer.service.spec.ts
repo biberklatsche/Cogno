@@ -1,12 +1,12 @@
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppBus } from "../../../../app-bus/app-bus";
-import type { TerminalState } from "../../state";
 import { TerminalComposerService } from "./terminal-composer.service";
 
 class FakeStateManager {
-  private readonly subject = new BehaviorSubject<Partial<TerminalState>>({
+  private readonly subject = new BehaviorSubject<Partial<SessionState>>({
     terminalId: "t1",
     cursorPosition: { viewport: { col: 5, row: 3 }, col: 5, row: 3, char: "" },
     dimensions: {
@@ -31,7 +31,7 @@ class FakeStateManager {
     return this.subject.value.isCommandRunning;
   }
 
-  emit(next: Partial<TerminalState>) {
+  emit(next: Partial<SessionState>) {
     this.subject.next({ ...this.subject.value, ...next });
   }
 }

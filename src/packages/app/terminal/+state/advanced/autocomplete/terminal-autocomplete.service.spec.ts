@@ -1,17 +1,17 @@
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
-import type { TerminalState } from "../../state";
 import type { TerminalHistoryPersistenceService } from "../history/terminal-history-commandLog.service";
 import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
 
 class FakeStateManager {
-  private readonly subject = new BehaviorSubject<TerminalState>({
+  private readonly subject = new BehaviorSubject<SessionState>({
     hasUnreadNotification: false,
     progress: { state: "hidden", value: 0 },
     terminalId: "t1",
@@ -52,7 +52,7 @@ class FakeStateManager {
     return this.subject.value.terminalId;
   }
 
-  emit(next: TerminalState) {
+  emit(next: SessionState) {
     this.subject.next(next);
   }
 }
@@ -980,7 +980,7 @@ describe("TerminalAutocompleteService", () => {
       });
       service.setHostElement(hostElement);
 
-      const nearBottomState: TerminalState = {
+      const nearBottomState: SessionState = {
         ...fakeState.state,
         cursorPosition: {
           ...fakeState.state.cursorPosition,

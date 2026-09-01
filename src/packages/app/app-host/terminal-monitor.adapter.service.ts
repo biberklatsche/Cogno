@@ -54,6 +54,6 @@ export class TerminalMonitorAdapterService extends TerminalMonitorPort {
   }
 
   getCwd(terminalId: TerminalId): string | undefined {
-    return this.sessionRegistry.get(terminalId)?.stateManager.state.cwd || undefined;
+    return this.sessionRegistry.get(terminalId)?.host.state.cwd || undefined;
   }
 }

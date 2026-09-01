@@ -33,4 +33,12 @@ export type SessionFact =
   /** The user pressed ArrowUp on an empty first row: they want the command history. */
   | { readonly type: "commandHistoryRequested" }
   /** A search over the scrollback finished. */
-  | { readonly type: "searchResult"; readonly result: TerminalSearchResultContract };
+  | { readonly type: "searchResult"; readonly result: TerminalSearchResultContract }
+  /** The shell answered for the first time; the session is running. */
+  | { readonly type: "started"; readonly shellType: string }
+  /** The shell process ended. */
+  | { readonly type: "exited" }
+  /** Output arrived from the shell. */
+  | { readonly type: "outputReceived" }
+  /** The terminal gained or lost the keyboard. */
+  | { readonly type: "focusChanged"; readonly focused: boolean };

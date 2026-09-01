@@ -1,6 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
+import { MachineState } from "@cogno/core/terminal/machine-state";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
@@ -18,7 +19,6 @@ import type { TerminalKeybindingContextService } from "../app/keybinding/termina
 import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service";
 import type { NotificationTargetResolverService } from "../app/notification/+state/notification-target-resolver.service";
 import { TabListService } from "../app/tab-list/+state/tab-list.service";
-import { TerminalStateManager } from "../app/terminal/+state/state";
 import type { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";
 import { WindowService } from "../app/window/window.service";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
@@ -33,7 +33,7 @@ let tabListService: TabListService | undefined;
 let terminalComponentFactory: TerminalComponentFactory | undefined;
 let windowService: WindowService | undefined;
 let selectionHandler: SelectionHandler | undefined;
-let stateManager: TerminalStateManager | undefined;
+let machineState: MachineState | undefined;
 let terminalAutocompleteFeatureSuggestorService:
   | TerminalAutocompleteFeatureSuggestorService
   | undefined;
@@ -53,12 +53,9 @@ export function getAppBus(): AppBus {
   return appBus;
 }
 
-export function getStateManager(): TerminalStateManager {
-  if (!stateManager) {
-    stateManager = new TerminalStateManager(getOsPlatform(), getAppBus());
-    stateManager.initialize("test-terminal", "Bash" as any);
-  }
-  return stateManager;
+export function getMachineState(): MachineState {
+  if (!machineState) machineState = new MachineState();
+  return machineState;
 }
 
 export function getSideMenuService(): SideMenuService {
@@ -220,7 +217,7 @@ export function getContextMenuOverlayService(): ContextMenuOverlayService {
 
 export function getSelectionHandler(_terminalId: TerminalId): SelectionHandler {
   if (!selectionHandler) {
-    selectionHandler = new SelectionHandler(getStateManager());
+    selectionHandler = new SelectionHandler(getMachineState());
   }
   return selectionHandler;
 }
@@ -236,7 +233,7 @@ export function clear() {
   terminalComponentFactory = undefined;
   windowService = undefined;
   selectionHandler = undefined;
-  stateManager = undefined;
+  machineState = undefined;
   terminalAutocompleteFeatureSuggestorService = undefined;
   appWiringService = undefined;
   terminalBusyStateService = undefined;

@@ -1,26 +1,25 @@
-import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { clear, getAppBus, getDestroyRef } from "../../../../__test__/test-factory";
+import { clear, getAppBus } from "../../../../__test__/test-factory";
 import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
-import { KeybindExecutor } from "./keybind.executor";
+import { KeybindExecutor, KeybindExecutorSession } from "./keybind.executor";
 
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
+type SessionStub = { -readonly [K in keyof KeybindExecutorSession]: KeybindExecutorSession[K] };
+
+function sessionStub(terminalId: string, isFocused: boolean): SessionStub {
+  return { terminalId, isFocused, hasSelection: true };
+}
 
 describe("KeybindExecutor", () => {
   let executor: KeybindExecutor;
   let mockBus: AppBus;
-  let terminalStateManager: TerminalStateManager;
+  let terminalStateManager: SessionStub;
   const terminalId = "test-terminal-id";
 
   beforeEach(() => {
     clear();
     mockBus = getAppBus();
 
-    terminalStateManager = new TerminalStateManager(osStub, mockBus);
-    terminalStateManager.initialize(terminalId, "Bash");
-    terminalStateManager.setFocus(true);
-    terminalStateManager.setHasSelection(true);
+    terminalStateManager = sessionStub(terminalId, true);
 
     executor = new KeybindExecutor(mockBus, terminalStateManager);
   });
@@ -174,7 +173,7 @@ describe("KeybindExecutor", () => {
   });
 
   it("should NOT publish Copy when copy action is fired but NO selection", async () => {
-    terminalStateManager.setHasSelection(false);
+    terminalStateManager.hasSelection = false;
     const publishSpy = vi.spyOn(mockBus, "publish");
     const event: any = {
       path: ["app", "action"],
@@ -322,7 +321,7 @@ describe("KeybindExecutor", () => {
   });
 
   it("should ignore events if terminal has no focus", async () => {
-    terminalStateManager.setFocus(false);
+    terminalStateManager.isFocused = false;
     const publishSpy = vi.spyOn(mockBus, "publish");
     const event: any = {
       path: ["app", "action"],
@@ -339,7 +338,7 @@ describe("KeybindExecutor", () => {
   });
 
   it("should NOT ignore events if trigger.broadcast is true even without focus", async () => {
-    terminalStateManager.setFocus(false);
+    terminalStateManager.isFocused = false;
     const publishSpy = vi.spyOn(mockBus, "publish");
     const event: any = {
       path: ["app", "action"],
@@ -381,24 +380,8 @@ describe("KeybindExecutor", () => {
 
   it("should handle ActionFired only once even if focus changes during handling", async () => {
     const bus = new AppBus();
-    const firstTerminalStateManager = new TerminalStateManager(
-      osStub,
-      bus,
-      undefined,
-      undefined,
-      getDestroyRef(),
-    );
-    const secondTerminalStateManager = new TerminalStateManager(
-      osStub,
-      bus,
-      undefined,
-      undefined,
-      getDestroyRef(),
-    );
-    firstTerminalStateManager.initialize("terminal-1", "Bash");
-    secondTerminalStateManager.initialize("terminal-2", "Bash");
-    firstTerminalStateManager.setFocus(true);
-    secondTerminalStateManager.setFocus(false);
+    const firstTerminalStateManager = sessionStub("terminal-1", true);
+    const secondTerminalStateManager = sessionStub("terminal-2", false);
 
     const firstExecutor = new KeybindExecutor(bus, firstTerminalStateManager);
     const secondExecutor = new KeybindExecutor(bus, secondTerminalStateManager);

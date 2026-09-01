@@ -4,9 +4,9 @@ import {
   resolveRightUiInset,
 } from "@cogno/core/session/dropdown/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalState, TerminalStateManager } from "../../state";
 
 const PANEL_MIN_WIDTH = 320;
 const PANEL_MAX_WIDTH = 920;
@@ -52,7 +52,7 @@ export class TerminalComposerService implements OnDestroy {
   }
 
   constructor(
-    private readonly stateManager: TerminalStateManager,
+    private readonly stateManager: SessionHost,
     private readonly bus: AppBus,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
@@ -107,11 +107,13 @@ export class TerminalComposerService implements OnDestroy {
     // left over from Shift+Enter), not intentional input — drop them before
     // handing the text to the shell.
     const trimmedText = text.trimEnd();
+    const terminalId = this.stateManager.terminalId;
+    if (!terminalId) return;
     this.bus.publish({
       path: ["app", "terminal"],
       type: "ReplaceTerminalInput",
       payload: {
-        terminalId: this.stateManager.terminalId,
+        terminalId,
         inputText: trimmedText,
         cursorIndex: trimmedText.length,
         autoExecute: !options?.insertOnly,
@@ -137,7 +139,7 @@ export class TerminalComposerService implements OnDestroy {
     }
   }
 
-  private computePanelPosition(state: TerminalState): {
+  private computePanelPosition(state: SessionState): {
     x: number;
     y: number;
     width: number;

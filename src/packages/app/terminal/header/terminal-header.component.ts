@@ -1,11 +1,11 @@
 import { Component, computed } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { SessionHost } from "@cogno/core/session/host/session-host";
 import { timespan } from "@cogno/shared/support";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
-import { TerminalStateManager } from "../+state/state";
-import { TerminalSession } from "../+state/terminal.session";
+import { SessionMenus } from "../+state/session-menus";
 
 type HeaderCommandViewModel = {
   command?: string;
@@ -177,14 +177,14 @@ type HeaderCommandViewModel = {
 })
 export class TerminalHeaderComponent {
   constructor(
-    private stateManager: TerminalStateManager,
-    private terminalSession: TerminalSession,
+    private host: SessionHost,
+    private menus: SessionMenus,
     private menu: ContextMenuOverlayService,
     private configService: ConfigService,
   ) {}
 
   commandOutOfView = toSignal(
-    this.stateManager.commands$.pipe(
+    this.host.model.commands$.pipe(
       map((commands): HeaderCommandViewModel | undefined => {
         const commandOutOfView = commands.find((command) => command.isFirstCommandOutOfViewport);
         if (!commandOutOfView) {
@@ -201,13 +201,13 @@ export class TerminalHeaderComponent {
     { initialValue: undefined },
   );
 
-  cwd = toSignal(this.stateManager.state$.pipe(map((state) => state.cwd)));
+  cwd = toSignal(this.host.state$.pipe(map((state) => state.cwd)));
 
-  isNotificationBadgeVisible = toSignal(this.stateManager.hasUnreadNotification$, {
+  isNotificationBadgeVisible = toSignal(this.host.model.hasUnreadNotification$, {
     initialValue: false,
   });
-  progress = toSignal(this.stateManager.state$.pipe(map((state) => state.progress)), {
-    initialValue: this.stateManager.state.progress,
+  progress = toSignal(this.host.state$.pipe(map((state) => state.progress)), {
+    initialValue: this.host.machine.state.progress,
   });
 
   isOsc9ProgressBarEnabled = toSignal(
@@ -231,8 +231,8 @@ export class TerminalHeaderComponent {
   openMenu(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    this.terminalSession.focus();
-    const items: ContextMenuItem[] = this.terminalSession.buildHeaderMenu();
+    this.host.focus();
+    const items: ContextMenuItem[] = this.menus.buildHeaderMenu();
     this.menu.openAtElement(
       event.currentTarget as HTMLElement,
       { items },
@@ -243,8 +243,8 @@ export class TerminalHeaderComponent {
   openCommandMenu(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    this.terminalSession.focus();
-    const items: ContextMenuItem[] = this.terminalSession.buildHeaderCommandMenu();
+    this.host.focus();
+    const items: ContextMenuItem[] = this.menus.buildHeaderCommandMenu();
     if (items.length === 0) {
       return;
     }

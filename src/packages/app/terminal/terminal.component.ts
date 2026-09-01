@@ -11,23 +11,55 @@ import {
   ViewEncapsulation,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
+import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
+import { AppBus } from "../app-bus/app-bus";
 import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/terminal-autocomplete.component";
 import { TerminalAutocompleteService } from "./+state/advanced/autocomplete/terminal-autocomplete.service";
 import { TerminalComposerComponent } from "./+state/advanced/composer/terminal-composer.component";
 import { TerminalComposerService } from "./+state/advanced/composer/terminal-composer.service";
 import { TerminalHistoryComponent } from "./+state/advanced/history/terminal-history.component";
 import { TerminalHistoryService } from "./+state/advanced/history/terminal-history.service";
-import { TerminalStateManager } from "./+state/state";
-import { TerminalSession } from "./+state/terminal.session";
+import { KeybindExecutor } from "./+state/keybind/keybind.executor";
+import { SessionFactBridge } from "./+state/session-fact-bridge";
+import { SessionMenus } from "./+state/session-menus";
 import { TerminalHeaderComponent } from "./header/terminal-header.component";
 import { TerminalFileDropService } from "./terminal-file-drop.service";
+
+/** The host is a plain class; Angular only wires its sources. */
+export function createSessionHost(
+  os: OsPlatform,
+  environment: Environment,
+  clipboard: ClipboardAccess,
+  configService: ConfigService,
+  opener: Opener,
+  contextMenuOverlay: ContextMenuOverlayService,
+  ptyTransport: PtyTransport,
+  historyStore: TerminalCommandHistoryStore,
+  recorder: CommandRecorder,
+): SessionHost {
+  return new SessionHost(
+    os,
+    environment,
+    clipboard,
+    configService,
+    opener,
+    contextMenuOverlay,
+    ptyTransport,
+    historyStore,
+    recorder,
+  );
+}
 
 @Component({
   selector: "app-terminal",
@@ -46,12 +78,27 @@ import { TerminalFileDropService } from "./terminal-file-drop.service";
     TerminalCommandHistoryStore,
     SessionCommandLog,
     CommandRecorder,
+    {
+      provide: SessionHost,
+      useFactory: createSessionHost,
+      deps: [
+        OsPlatform,
+        Environment,
+        ClipboardAccess,
+        ConfigService,
+        Opener,
+        ContextMenuOverlayService,
+        PtyTransport,
+        TerminalCommandHistoryStore,
+        CommandRecorder,
+      ],
+    },
+    SessionFactBridge,
+    SessionMenus,
     TerminalAutocompleteService,
     TerminalComposerService,
     TerminalHistoryService,
     TerminalFileDropService,
-    TerminalSession,
-    TerminalStateManager,
   ],
   encapsulation: ViewEncapsulation.None,
 })
@@ -69,30 +116,35 @@ export class TerminalComponent implements OnInit, AfterViewInit {
   constructor(
     private destroyRef: DestroyRef,
     private menu: ContextMenuOverlayService,
-    private terminalSession: TerminalSession,
-    private terminalStateManager: TerminalStateManager,
+    private bus: AppBus,
+    private host: SessionHost,
+    private bridge: SessionFactBridge,
+    private menus: SessionMenus,
     private terminalAutocomplete: TerminalAutocompleteService,
     private terminalComposer: TerminalComposerService,
     private terminalHistory: TerminalHistoryService,
     private terminalFileDropService: TerminalFileDropService,
   ) {
-    this.isFocused = toSignal(this.terminalStateManager.isFocused$);
-    this.isInFullScreenMode = toSignal(this.terminalStateManager.isInFullScreenMode$);
+    this.isFocused = toSignal(this.host.machine.isFocused$);
+    this.isInFullScreenMode = toSignal(this.host.machine.isInFullScreenMode$);
     this.showScrollToBottomButton = toSignal(
-      this.terminalStateManager.scrolledLinesFromBottom$.pipe(
+      this.host.machine.scrolledLinesFromBottom$.pipe(
         map((scrolledLinesFromBottom) => scrolledLinesFromBottom > 20),
       ),
       { initialValue: false },
     );
-    this.isWebglContextLost = toSignal(this.terminalSession.isWebglContextLost$, {
-      initialValue: false,
-    });
+    this.isWebglContextLost = toSignal(this.host.isWebglContextLost$, { initialValue: false });
   }
 
   ngOnInit(): void {
-    this.terminalSession.initialize(this.terminalId(), this.shellProfile());
+    this.host.initialize(this.terminalId(), this.shellProfile());
+    this.bridge.start(this.terminalId(), this.shellProfile());
+    const keybindExecutor = new KeybindExecutor(this.bus, this.host);
     this.destroyRef.onDestroy(() => {
-      this.terminalSession.dispose();
+      keybindExecutor.dispose();
+      this.menus.dispose();
+      this.bridge.dispose();
+      this.host.dispose();
     });
   }
 
@@ -100,27 +152,27 @@ export class TerminalComponent implements OnInit, AfterViewInit {
     this.terminalAutocomplete.setHostElement(this.terminalContainer.nativeElement);
     this.terminalComposer.setHostElement(this.terminalContainer.nativeElement);
     this.terminalHistory.setHostElement(this.terminalContainer.nativeElement);
-    this.terminalSession.initializeTerminal(this.terminalContainer.nativeElement);
+    this.host.initializeTerminal(this.terminalContainer.nativeElement);
     this.terminalFileDropService.initialize(this.terminalContainer.nativeElement);
   }
 
   onContextMenu(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
-    this.terminalSession.focus();
-    const items: ContextMenuItem[] = this.terminalSession.buildContextMenu();
+    this.host.focus();
+    const items: ContextMenuItem[] = this.menus.buildContextMenu();
     this.menu.openAtPoint(event, { items });
   }
 
   focus(event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
-    this.terminalSession.focus();
+    this.host.focus();
   }
 
   scrollToBottom(event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.terminalSession.scrollToBottom();
+    this.host.scrollToBottom();
   }
 }

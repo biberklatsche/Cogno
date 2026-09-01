@@ -9,8 +9,7 @@ import {
 } from "../../../__test__/test-factory";
 import type { AppBus } from "../../app-bus/app-bus";
 import type { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
-import type { TerminalFocusedEvent } from "../../terminal/+state/handler/terminal-focus.coordinator";
-import type { TerminalTitleChangedEvent } from "../../terminal/+state/handler/terminal-title.handler";
+import type { TerminalFocusedEvent, TerminalTitleChangedEvent } from "../../terminal/+bus/events";
 import type {
   FocusActiveTerminalAction,
   MaximizePaneAction,

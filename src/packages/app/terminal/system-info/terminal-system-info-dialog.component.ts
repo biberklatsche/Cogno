@@ -10,15 +10,16 @@ import {
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { SessionState } from "@cogno/core/session/host/session-host";
+import { Command } from "@cogno/core/session/model/command.model";
 import { ProcessDetails, ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
 import { TerminalId } from "@cogno/shared/ports";
 import { DIALOG_DATA } from "@cogno/shared/ui";
 import { Observable } from "rxjs";
 import { KeybindService } from "../../keybinding/keybind.service";
-import { Command, TerminalState } from "../+state/state";
 
 export type TerminalSystemInfoSource = {
-  state$: Observable<TerminalState>;
+  state$: Observable<SessionState>;
   commands$: Observable<Command[]>;
 };
 
@@ -351,7 +352,7 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   private refreshInFlight = false;
 
   readonly activeTab = signal<"process" | "terminal">("process");
-  readonly terminalState: Signal<TerminalState | null> = toSignal(this.data.systemInfo.state$, {
+  readonly terminalState: Signal<SessionState | null> = toSignal(this.data.systemInfo.state$, {
     initialValue: null,
   });
   readonly lastKeybinding = this.keybindService.lastFiredKeybinding;

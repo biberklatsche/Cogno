@@ -14,11 +14,11 @@ import {
   resolveRightUiInset,
 } from "@cogno/core/session/dropdown/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalState, TerminalStateManager } from "../../state";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 const REFRESH_DEBOUNCE_MS = 80;
@@ -58,7 +58,7 @@ export class TerminalHistoryService implements OnDestroy {
   }
 
   constructor(
-    private readonly stateManager: TerminalStateManager,
+    private readonly stateManager: SessionHost,
     private readonly commandLog: SessionCommandLog,
     private readonly bus: AppBus,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
@@ -301,11 +301,17 @@ export class TerminalHistoryService implements OnDestroy {
 
     const autoExecute = this.configService.config.terminal?.history?.auto_execute ?? false;
 
+    const terminalId = this.stateManager.terminalId;
+
+    if (!terminalId) return;
+
     this.bus.publish({
       path: ["app", "terminal"],
+
       type: "ReplaceTerminalInput",
+
       payload: {
-        terminalId: this.stateManager.terminalId,
+        terminalId,
         inputText: entry.command,
         cursorIndex: entry.command.length,
         autoExecute,
@@ -316,7 +322,7 @@ export class TerminalHistoryService implements OnDestroy {
   }
 
   private computePanelPosition(
-    state: TerminalState,
+    state: SessionState,
     entries: HistoryEntry[],
   ): { x: number; y: number; width: number; placement: "below" | "above" } {
     const cellWidth = Math.max(1, state.dimensions.cellWidth || 9);
@@ -365,7 +371,7 @@ export class TerminalHistoryService implements OnDestroy {
     });
   }
 
-  private inputSignature(state: TerminalState): string {
+  private inputSignature(state: SessionState): string {
     // NUL separates the fields because it cannot occur in the input text; a
     // printable separator would let two different inputs share a signature and
     // the panel would miss the change.

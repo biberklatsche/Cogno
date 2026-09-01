@@ -1,14 +1,17 @@
+import { SessionHost } from "@cogno/core/session/host/session-host";
 import { IDisposable } from "@cogno/shared/support";
 import { Subscription } from "rxjs";
 import { AppBus } from "../../../app-bus/app-bus";
-import { TerminalStateManager } from "../state";
+
+/** What the executor needs to know about its session. */
+export type KeybindExecutorSession = Pick<SessionHost, "terminalId" | "isFocused" | "hasSelection">;
 
 export class KeybindExecutor implements IDisposable {
   private _subscription?: Subscription;
 
   constructor(
     private _bus: AppBus,
-    private _stateManager: TerminalStateManager,
+    private _stateManager: KeybindExecutorSession,
   ) {
     this._subscription = new Subscription();
     this._subscription.add(

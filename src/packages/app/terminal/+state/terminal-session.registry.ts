@@ -1,32 +1,21 @@
 import { Injectable } from "@angular/core";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalId } from "@cogno/shared/ports";
-import { TerminalStateManager } from "./state";
-import { TerminalSession } from "./terminal.session";
 
 type TerminalSessionRegistryEntry = {
   readonly terminalId: TerminalId;
   readonly shellProfile: ShellProfile;
-  readonly session: TerminalSession;
-  readonly stateManager: TerminalStateManager;
+  readonly host: SessionHost;
 };
 
+/** The running sessions by terminal id, for the adapters that answer for them. */
 @Injectable({ providedIn: "root" })
 export class TerminalSessionRegistry {
   private readonly entriesByTerminalId = new Map<TerminalId, TerminalSessionRegistryEntry>();
 
-  register(
-    terminalId: TerminalId,
-    shellProfile: ShellProfile,
-    session: TerminalSession,
-    stateManager: TerminalStateManager,
-  ): void {
-    this.entriesByTerminalId.set(terminalId, {
-      terminalId,
-      shellProfile,
-      session,
-      stateManager,
-    });
+  register(terminalId: TerminalId, shellProfile: ShellProfile, host: SessionHost): void {
+    this.entriesByTerminalId.set(terminalId, { terminalId, shellProfile, host });
   }
 
   unregister(terminalId: TerminalId | undefined): void {

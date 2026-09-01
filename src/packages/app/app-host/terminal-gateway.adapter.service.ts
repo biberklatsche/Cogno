@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { Command } from "@cogno/core/session/model/command.model";
 import { TauriPty } from "@cogno/platform/pty";
 import {
   TerminalBusyStateChangeContract,
@@ -12,7 +13,6 @@ import {
 import { map, Observable } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
-import { Command } from "../terminal/+state/state";
 import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";
 
 @Injectable({ providedIn: "root" })
@@ -97,8 +97,8 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
 
     const maxCommands = options?.maxCommands ?? 8;
     const maxOutputChars = options?.maxOutputChars ?? 4000;
-    const terminalState = terminalSessionEntry.stateManager.state;
-    const commandSummaries = terminalSessionEntry.stateManager.commands
+    const terminalState = terminalSessionEntry.host.state;
+    const commandSummaries = terminalSessionEntry.host.model.commands
       .slice(-maxCommands)
       .map((command) => this.toCommandSummary(command));
 
@@ -126,8 +126,8 @@ export class TerminalGatewayAdapterService extends TerminalGateway {
       input: terminalState.input.text,
       isCommandRunning: terminalState.isCommandRunning,
       commands: commandSummaries,
-      lastOutput: terminalSessionEntry.session.getRecentOutputSnapshot(60, maxOutputChars),
-      latestCommandOutput: terminalSessionEntry.session.getLatestCommandOutputSnapshot(
+      lastOutput: terminalSessionEntry.host.getRecentOutputSnapshot(60, maxOutputChars),
+      latestCommandOutput: terminalSessionEntry.host.getLatestCommandOutputSnapshot(
         Math.min(maxOutputChars, 3000),
       ),
       process,

@@ -1,7 +1,7 @@
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
-import { clear, getSelectionHandler, getStateManager } from "../../../__test__/test-factory";
+import { clear, getMachineState, getSelectionHandler } from "../../../__test__/test-factory";
 import type { SelectionHandler } from "./selection.handler";
 
 describe("SelectionHandler", () => {
@@ -39,7 +39,7 @@ describe("SelectionHandler", () => {
     });
 
     it("should report selection changes to terminal state", () => {
-      const stateManager = getStateManager();
+      const stateManager = getMachineState();
       vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
 
       const selectionChangeCallback = vi.mocked(mockTerminal.onSelectionChange).mock

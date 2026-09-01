@@ -25,26 +25,26 @@ describe("TerminalGatewayAdapterService", () => {
     terminalSessionRegistry = {
       has: vi.fn().mockReturnValue(true),
       get: vi.fn().mockReturnValue({
-        session: {
+        host: {
           getRecentOutputSnapshot: vi.fn().mockReturnValue("recent output"),
           getLatestCommandOutputSnapshot: vi.fn().mockReturnValue("latest output"),
-        },
-        stateManager: {
           state: {
             shellContext: { shellType: "Bash" },
             cwd: "/workspace",
             input: { text: "pwd" },
             isCommandRunning: true,
           },
-          commands: [
-            {
-              id: "command-1",
-              command: "pwd",
-              directory: "/workspace",
-              duration: 10,
-              returnCode: 0,
-            },
-          ],
+          model: {
+            commands: [
+              {
+                id: "command-1",
+                command: "pwd",
+                directory: "/workspace",
+                duration: 10,
+                returnCode: 0,
+              },
+            ],
+          },
         },
       }),
     };

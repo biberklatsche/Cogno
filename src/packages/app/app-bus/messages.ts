@@ -67,19 +67,16 @@ import {
   FullScreenAppEnteredEvent,
   FullScreenAppLeavedEvent,
   PtyInitializedEvent,
+  TerminalBlurredEvent,
   TerminalBusyChangedEvent,
   TerminalCwdChangedEvent,
+  TerminalFocusedEvent,
   TerminalSearchPanelRequestedEvent,
   TerminalSearchRequestedEvent,
   TerminalSearchResultEvent,
   TerminalSearchRevealRequestedEvent,
-  TerminalThemeChangedEvent,
   TerminalTitleChangedEvent,
 } from "../terminal/+bus/events";
-import {
-  TerminalBlurredEvent,
-  TerminalFocusedEvent,
-} from "../terminal/+state/handler/terminal-focus.coordinator";
 
 export type TerminalCommandType = AppMessage["type"];
 
@@ -106,7 +103,6 @@ export type AppMessage =
   | TerminalSearchRequestedEvent
   | TerminalSearchResultEvent
   | TerminalSearchRevealRequestedEvent
-  | TerminalThemeChangedEvent
   | FocusTerminalAction
   | RevealTerminalAction
   | BlurTerminalAction

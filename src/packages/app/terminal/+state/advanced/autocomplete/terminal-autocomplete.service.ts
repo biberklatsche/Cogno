@@ -7,13 +7,13 @@ import {
   resolveRightUiInset,
 } from "@cogno/core/session/dropdown/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
 import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { TerminalState, TerminalStateManager } from "../../state";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
 import { SuggestionCollapser } from "./suggestion-collapser";
@@ -99,7 +99,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   constructor(
-    private readonly stateManager: TerminalStateManager,
+    private readonly stateManager: SessionHost,
     private readonly commandLog: SessionCommandLog,
     private readonly bus: AppBus,
     private readonly featureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
@@ -256,7 +256,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
   }
 
-  private async refreshSuggestions(state: TerminalState): Promise<void> {
+  private async refreshSuggestions(state: SessionState): Promise<void> {
     if (this._suppressUntilTyping) {
       this.hide();
       return;
@@ -267,11 +267,11 @@ export class TerminalAutocompleteService implements OnDestroy {
     await this.showSuggestions(state, false);
   }
 
-  private async showSuggestionsOnDemand(state: TerminalState): Promise<void> {
+  private async showSuggestionsOnDemand(state: SessionState): Promise<void> {
     await this.showSuggestions(state, true);
   }
 
-  private async showSuggestions(state: TerminalState, allowEmptyInput: boolean): Promise<void> {
+  private async showSuggestions(state: SessionState, allowEmptyInput: boolean): Promise<void> {
     if (this.shouldHideForState(state)) return;
 
     const context = this.resolveQueryContext(state, allowEmptyInput);
@@ -329,7 +329,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   private resolveQueryContext(
-    state: TerminalState,
+    state: SessionState,
     allowEmptyInput: boolean,
   ): QueryContext | undefined {
     const parsedContext = AutocompleteContextParser.parse(state);
@@ -377,7 +377,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
   }
 
-  private shouldHideForState(state: TerminalState): boolean {
+  private shouldHideForState(state: SessionState): boolean {
     if (!state.isFocused || state.isCommandRunning) {
       this.hide();
       return true;
@@ -433,7 +433,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
   private rankSuggestions(
     settled: SuggestorRunResult[],
-    state: TerminalState,
+    state: SessionState,
   ): AutocompleteSuggestion[] {
     return settled
       .filter(
@@ -499,11 +499,17 @@ export class TerminalAutocompleteService implements OnDestroy {
       this.commandLog.confirmLivePattern(suggestion.liveCollapsedFrom);
     }
 
+    const terminalId = this.stateManager.terminalId;
+
+    if (!terminalId) return;
+
     this.bus.publish({
       path: ["app", "terminal"],
+
       type: "ReplaceTerminalInput",
+
       payload: {
-        terminalId: this.stateManager.terminalId,
+        terminalId,
         inputText,
         cursorIndex,
       },
@@ -514,7 +520,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   private computePanelPosition(
-    state: TerminalState,
+    state: SessionState,
     suggestions: AutocompleteSuggestion[],
     measuredPanelHeight: number | null,
   ): { x: number; y: number; width: number; placement: "below" | "above" } {
@@ -809,11 +815,11 @@ export class TerminalAutocompleteService implements OnDestroy {
     });
   }
 
-  private hasInputChanged(state: TerminalState): boolean {
+  private hasInputChanged(state: SessionState): boolean {
     return this.inputSignature(state) !== this._lastInputSignature;
   }
 
-  private inputSignature(state: TerminalState): string {
+  private inputSignature(state: SessionState): string {
     const input = state.input;
     return `${input.text}\u0000${input.cursorIndex}\u0000${input.maxCursorIndex}`;
   }

@@ -1,9 +1,8 @@
+import type { SessionState } from "@cogno/core/session/host/session-host";
 import { describe, expect, it } from "vitest";
-
-import type { TerminalState } from "../../state";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
 
-function baseState(input: string, cursorIndex: number): TerminalState {
+function baseState(input: string, cursorIndex: number): SessionState {
   return {
     terminalId: "t1",
     shellContext: { shellType: "Bash", backendOs: "macos" } as any,

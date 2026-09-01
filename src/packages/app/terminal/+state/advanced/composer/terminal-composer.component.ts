@@ -10,7 +10,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { TerminalSession } from "../../terminal.session";
+import { SessionHost } from "@cogno/core/session/host/session-host";
 import { ComposerViewState, TerminalComposerService } from "./terminal-composer.service";
 
 const MIN_ROWS = 3;
@@ -148,7 +148,7 @@ export class TerminalComposerComponent {
 
   constructor(
     private readonly composer: TerminalComposerService,
-    private readonly session: TerminalSession,
+    private readonly session: SessionHost,
     destroyRef: DestroyRef,
   ) {
     effect(() => {

@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { SessionHost } from "@cogno/core/session/host/session-host";
 import { AppWindow } from "@cogno/platform/window";
-import { TerminalSession } from "./+state/terminal.session";
 
 type NativeDragDropEvent = {
   type: "enter" | "over" | "drop" | "leave";
@@ -17,7 +17,7 @@ export class TerminalFileDropService {
   constructor(
     private readonly appWindow: AppWindow,
     private readonly destroyRef: DestroyRef,
-    private readonly terminalSession: TerminalSession,
+    private readonly terminalSession: SessionHost,
   ) {}
 
   initialize(hostElement: HTMLDivElement): void {

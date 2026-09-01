@@ -1,16 +1,16 @@
 import type { RecentCommandRow } from "@cogno/core/command-log/command-log.repository";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionFired } from "../../../../action/action.models";
 import { AppBus } from "../../../../app-bus/app-bus";
-import type { TerminalState } from "../../state";
 import { TerminalHistoryService } from "./terminal-history.service";
 import type { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 class FakeStateManager {
-  private readonly subject = new BehaviorSubject<TerminalState>({
+  private readonly subject = new BehaviorSubject<SessionState>({
     hasUnreadNotification: false,
     progress: { state: "hidden", value: 0 },
     terminalId: "t1",
@@ -49,7 +49,7 @@ class FakeStateManager {
     return this.subject.value.terminalId;
   }
 
-  emit(next: Partial<TerminalState>) {
+  emit(next: Partial<SessionState>) {
     this.subject.next({ ...this.subject.value, ...next });
   }
 }
