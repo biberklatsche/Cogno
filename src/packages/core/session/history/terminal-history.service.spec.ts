@@ -1,15 +1,14 @@
 import type { RecentCommandRow } from "@cogno/core/command-log/command-log.repository";
+import type { SessionCommandLog as TerminalHistoryPersistenceService } from "@cogno/core/session/command-log/session-command-log";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ActionFired } from "../../../../action/action.models";
-import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalHistoryService } from "./terminal-history.service";
-import type { TerminalHistoryPersistenceService } from "./terminal-history-persistence.service";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 class FakeStateManager {
+  readonly replaceInput = vi.fn();
   private readonly subject = new BehaviorSubject<SessionState>({
     hasUnreadNotification: false,
     progress: { state: "hidden", value: 0 },
@@ -60,7 +59,6 @@ function makeRows(commands: string[]): RecentCommandRow[] {
 
 describe("TerminalHistoryService", () => {
   let fakeState: FakeStateManager;
-  let bus: AppBus;
   let coordinator: TerminalDropdownCoordinatorService;
   let persistence: {
     getRecentCommands: ReturnType<typeof vi.fn>;
@@ -72,7 +70,6 @@ describe("TerminalHistoryService", () => {
   beforeEach(() => {
     window.localStorage.removeItem("terminal.history.scope");
     fakeState = new FakeStateManager();
-    bus = new AppBus();
     coordinator = new TerminalDropdownCoordinatorService();
     persistence = {
       getRecentCommands: vi.fn().mockResolvedValue(makeRows(["git status", "npm test"])),
@@ -82,7 +79,6 @@ describe("TerminalHistoryService", () => {
     service = new TerminalHistoryService(
       fakeState as unknown as any,
       persistence as unknown as TerminalHistoryPersistenceService,
-      bus,
       coordinator,
       { config: {} } as any,
       scopeStore,
@@ -94,7 +90,7 @@ describe("TerminalHistoryService", () => {
   });
 
   it("shows the panel with the most recent entry preselected when triggered", async () => {
-    bus.publish(ActionFired.create("trigger_command_history"));
+    void service.triggerCommandHistory();
 
     const view = await new Promise((resolve) => {
       service.viewState$.subscribe((v) => v.visible && resolve(v));
@@ -114,27 +110,21 @@ describe("TerminalHistoryService", () => {
 
   it("does nothing when not focused", async () => {
     fakeState.emit({ isFocused: false });
-    bus.publish(ActionFired.create("trigger_command_history"));
+    void service.triggerCommandHistory();
     await Promise.resolve();
 
     expect(persistence.getRecentCommands).not.toHaveBeenCalled();
   });
 
-  it("publishes ReplaceTerminalInput and hides when an entry is selected", async () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-    bus.publish(ActionFired.create("trigger_command_history"));
+  it("replaces the input and hides when an entry is selected", async () => {
+    void service.triggerCommandHistory();
     await new Promise((resolve) => {
       service.viewState$.subscribe((v) => v.visible && resolve(v));
     });
 
     service.selectEntry(1);
 
-    expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "ReplaceTerminalInput",
-        payload: { terminalId: "t1", inputText: "npm test", cursorIndex: 8, autoExecute: false },
-      }),
-    );
+    expect(fakeState.replaceInput).toHaveBeenCalledWith("npm test", 8, false);
     expect(persistence.markCommandSelected).toHaveBeenCalledWith(
       "npm test",
       "/Users/larswolfram/projects",
@@ -147,13 +137,13 @@ describe("TerminalHistoryService", () => {
   });
 
   it("re-queries and cycles through scopes on cycle_tab while visible", async () => {
-    bus.publish(ActionFired.create("trigger_command_history"));
+    void service.triggerCommandHistory();
     await new Promise((resolve) => {
       service.viewState$.subscribe((v) => v.visible && resolve(v));
     });
     expect(persistence.getRecentCommands).toHaveBeenCalledTimes(1);
 
-    bus.publish(ActionFired.create("cycle_tab"));
+    service.cycleTab();
     await vi.waitFor(() => expect(persistence.getRecentCommands).toHaveBeenCalledTimes(2));
 
     expect(persistence.getRecentCommands).toHaveBeenLastCalledWith({
@@ -163,7 +153,7 @@ describe("TerminalHistoryService", () => {
   });
 
   it("ignores cycle_tab while hidden", async () => {
-    bus.publish(ActionFired.create("cycle_tab"));
+    service.cycleTab();
     await Promise.resolve();
 
     expect(persistence.getRecentCommands).not.toHaveBeenCalled();
@@ -175,18 +165,16 @@ describe("TerminalHistoryService", () => {
       scope === "global" ? makeRows(["git status", "npm test"]) : [],
     );
 
-    const localBus = new AppBus();
     // Fresh store constructed after the localStorage write so it loads the persisted "session".
     const stickyScopeStore = new TerminalHistoryScopeStore();
     const stickyScopeService = new TerminalHistoryService(
       fakeState as unknown as any,
       persistence as unknown as TerminalHistoryPersistenceService,
-      localBus,
       coordinator,
       { config: {} } as any,
       stickyScopeStore,
     );
-    localBus.publish(ActionFired.create("trigger_command_history"));
+    void stickyScopeService.triggerCommandHistory();
 
     const view = await new Promise((resolve) => {
       stickyScopeService.viewState$.subscribe((v) => v.visible && resolve(v));
@@ -211,7 +199,7 @@ describe("TerminalHistoryService", () => {
       { command: "ls", executedAt: 998, isCurrentSession: 0, isCurrentCwd: 0 },
     ]);
 
-    bus.publish(ActionFired.create("trigger_command_history"));
+    void service.triggerCommandHistory();
     const view = (await new Promise((resolve) => {
       service.viewState$.subscribe((v) => v.visible && resolve(v));
     })) as { entries: { command: string; origin?: string }[] };
@@ -224,24 +212,22 @@ describe("TerminalHistoryService", () => {
   });
 
   it("shares the scope across tabs through the store", async () => {
-    // A second tab on its own bus/coordinator, but sharing the one scope store.
+    // A second tab with its own coordinator, but sharing the one scope store.
     const otherCoordinator = new TerminalDropdownCoordinatorService();
-    const otherBus = new AppBus();
     const otherService = new TerminalHistoryService(
       fakeState as unknown as any,
       persistence as unknown as TerminalHistoryPersistenceService,
-      otherBus,
       otherCoordinator,
       { config: {} } as any,
       scopeStore,
     );
 
     // First tab opens and cycles the shared scope while the second tab's panel is closed.
-    bus.publish(ActionFired.create("trigger_command_history"));
+    void service.triggerCommandHistory();
     await new Promise((resolve) => {
       service.viewState$.subscribe((v) => v.visible && resolve(v));
     });
-    bus.publish(ActionFired.create("cycle_tab"));
+    service.cycleTab();
 
     // The closed second tab silently follows the shared scope...
     const otherView = await new Promise<any>((resolve) => {
@@ -251,7 +237,7 @@ describe("TerminalHistoryService", () => {
 
     // ...and opens directly in that scope, querying with its own context.
     persistence.getRecentCommands.mockClear();
-    otherBus.publish(ActionFired.create("trigger_command_history"));
+    void otherService.triggerCommandHistory();
     await new Promise((resolve) => {
       otherService.viewState$.subscribe((v) => v.visible && resolve(v));
     });

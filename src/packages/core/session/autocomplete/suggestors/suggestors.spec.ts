@@ -1,8 +1,6 @@
-import { PathFactory } from "@cogno/app/app-host/path.factory";
-import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import type { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import type { ShellContextContract } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SessionCommandLog } from "../../history/terminal-history-commandLog.service";
 import type { QueryContext } from "../autocomplete.types";
 import { CommandPatternSuggestor } from "./command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./history-command.suggestor";
@@ -39,7 +37,6 @@ function cdContext(fragment: string): QueryContext {
 
 describe("Autocomplete History Suggestors", () => {
   beforeEach(() => {
-    PathFactory.setDefinitions([...shellPathAdapterDefinitions]);
     vi.restoreAllMocks();
   });
 

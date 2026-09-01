@@ -22,7 +22,7 @@ export default defineConfig({
       "src/packages/bootstrap/**/*.spec.ts",
     ],
     exclude: [
-      "src/packages/app/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
+      "src/packages/core/session/autocomplete/spec/imported/commands/**/*.spec.ts",
       "src/packages/shared/ui/icons/icon/icon.component.spec.ts",
     ],
     coverage: {

@@ -2,6 +2,9 @@ import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/terminal-autocomplete.service";
+import { TerminalComposerService } from "@cogno/core/session/composer/terminal-composer.service";
+import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
@@ -16,7 +19,7 @@ import {
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
-import { ActionFired } from "../../action/action.models";
+import { ActionFired, ActionFiredEvent } from "../../action/action.models";
 import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
@@ -75,6 +78,10 @@ export class SessionFactBridge {
     private readonly notificationChannelsPort: NotificationChannelsPort,
     private readonly featureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
     private readonly registry: TerminalSessionRegistry,
+    private readonly autocomplete: TerminalAutocompleteService,
+    private readonly history: TerminalHistoryService,
+    // Listens to the host's facts itself; injected so it exists for the session.
+    _composer: TerminalComposerService,
   ) {
     this.completedCommandNotificationHandler = new CompletedCommandNotificationHandler(
       this.configService,
@@ -159,15 +166,8 @@ export class SessionFactBridge {
           payload: terminalId,
         });
         break;
-      case "composerRequested":
-        this.bus.publish({
-          path: ["app", "terminal"],
-          type: "OpenComposer",
-          payload: { terminalId, seedText: fact.seedText, cursorIndex: fact.cursorIndex },
-        });
-        break;
       case "commandHistoryRequested":
-        this.bus.publish(ActionFired.create("trigger_command_history"));
+        void this.history.triggerCommandHistory();
         break;
       case "searchResult":
         this.bus.publish({
@@ -197,7 +197,8 @@ export class SessionFactBridge {
         break;
       case "promptReported":
       case "paddingChanged":
-        // session-internal; the host reacts itself
+      case "composerRequested":
+        // session-internal; the host and the composer react themselves
         break;
     }
   }
@@ -254,13 +255,13 @@ export class SessionFactBridge {
       }),
     );
     add(
-      this.bus
-        .on$({ path: ["app", "terminal"], type: "ReplaceTerminalInput" })
-        .subscribe((event) => {
-          const payload = event.payload;
-          if (payload?.terminalId !== terminalId) return;
-          this.host.replaceInput(payload.inputText, payload.cursorIndex, payload.autoExecute);
-        }),
+      this.bus.on$(ActionFired.listener()).subscribe(async (event: ActionFiredEvent) => {
+        const performed = await this.performAction(event.payload ?? "");
+        if (!performed) return;
+        event.performed = true;
+        event.defaultPrevented = true;
+        event.propagationStopped = true;
+      }),
     );
     for (const [type, actionId] of Object.entries(EDITOR_ACTION_BY_MESSAGE)) {
       add(
@@ -288,6 +289,20 @@ export class SessionFactBridge {
           this.host.reveal(event.payload);
         }),
     );
+  }
+
+  /** The keybinding actions the session's dropdowns answer to. */
+  private performAction(action: string): Promise<boolean> | boolean {
+    switch (action) {
+      case "trigger_autocomplete":
+        return this.autocomplete.triggerAutocomplete();
+      case "trigger_command_history":
+        return this.history.triggerCommandHistory();
+      case "cycle_tab":
+        return this.autocomplete.cycleTab() || this.history.cycleTab();
+      default:
+        return false;
+    }
   }
 
   // ---- notifications -----------------------------------------------------

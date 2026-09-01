@@ -11,11 +11,9 @@ import { SessionHost, SessionState } from "@cogno/core/session/host/session-host
 import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
-import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
-import { AppBus } from "../../../../app-bus/app-bus";
-import { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
+import { AutocompleteSuggestorSource } from "./autocomplete-suggestor.source";
 import { SuggestionCollapser } from "./suggestion-collapser";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
 import { CommandPatternSuggestor } from "./suggestors/command-pattern.suggestor";
@@ -99,14 +97,13 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   constructor(
-    private readonly stateManager: SessionHost,
+    private readonly host: SessionHost,
     private readonly commandLog: SessionCommandLog,
-    private readonly bus: AppBus,
-    private readonly featureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
+    private readonly suggestorSource: AutocompleteSuggestorSource,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
     this._filterMode.next(this.loadFilterMode());
-    this._lastInputSignature = this.inputSignature(this.stateManager.state);
+    this._lastInputSignature = this.inputSignature(this.host.state);
     this.registerDefaultSuggestors();
     this.subscribeStateChanges();
 
@@ -143,59 +140,57 @@ export class TerminalAutocompleteService implements OnDestroy {
     this.registerSuggestor(new HistoryDirectorySuggestor(this.commandLog));
     this.registerSuggestor(new CommandPatternSuggestor(this.commandLog));
     this.registerSuggestor(new HistoryCommandSuggestor(this.commandLog));
-    for (const suggestor of this.featureSuggestorService.getSharedSuggestors()) {
+    for (const suggestor of this.suggestorSource.getSharedSuggestors()) {
       this.registerSuggestor(suggestor);
     }
   }
 
   private subscribeStateChanges(): void {
     this._subscription.add(
-      this.stateManager.state$
-        .pipe(debounceTime(REFRESH_DEBOUNCE_MS))
-        .subscribe((terminalState) => {
-          const viewState = this._viewState.value;
-          const currentInputSignature = this.inputSignature(terminalState);
-          if (
-            this._manualTriggerInputSignature !== undefined &&
-            currentInputSignature !== this._manualTriggerInputSignature
-          ) {
-            this._manualTriggerInputSignature = undefined;
+      this.host.state$.pipe(debounceTime(REFRESH_DEBOUNCE_MS)).subscribe((terminalState) => {
+        const viewState = this._viewState.value;
+        const currentInputSignature = this.inputSignature(terminalState);
+        if (
+          this._manualTriggerInputSignature !== undefined &&
+          currentInputSignature !== this._manualTriggerInputSignature
+        ) {
+          this._manualTriggerInputSignature = undefined;
+        }
+        if (!this.hasInputChanged(terminalState)) {
+          if (viewState.visible && (!terminalState.isFocused || terminalState.isCommandRunning)) {
+            this.hide();
           }
-          if (!this.hasInputChanged(terminalState)) {
-            if (viewState.visible && (!terminalState.isFocused || terminalState.isCommandRunning)) {
-              this.hide();
-            }
-            return;
-          }
-          this._viewState.next({ ...viewState, selectedIndex: null });
-          this._lastInputSignature = this.inputSignature(terminalState);
-          void this.refreshSuggestions(terminalState);
-        }),
-    );
-
-    this._subscription.add(
-      this.bus.on$(ActionFired.listener()).subscribe((event: ActionFiredEvent) => {
-        if (event.payload === "trigger_autocomplete") {
-          void this.handleTriggerAutocompleteAction(event);
           return;
         }
-
-        if (event.payload !== "cycle_tab") return;
-
-        const view = this._viewState.value;
-        if (!view.visible) return;
-
-        this.cycleFilterMode();
-        event.performed = true;
-        event.defaultPrevented = true;
-        event.propagationStopped = true;
+        this._viewState.next({ ...viewState, selectedIndex: null });
+        this._lastInputSignature = this.inputSignature(terminalState);
+        void this.refreshSuggestions(terminalState);
       }),
     );
   }
 
+  /** Shows the suggestions on request; true when they are showing afterwards. */
+  async triggerAutocomplete(): Promise<boolean> {
+    if (!this.host.isFocused) {
+      return false;
+    }
+
+    this._suppressUntilTyping = false;
+    this._manualTriggerInputSignature = this.inputSignature(this.host.state);
+    await this.showSuggestionsOnDemand(this.host.state);
+    return this._viewState.value.visible;
+  }
+
+  /** Cycles the filter mode while the suggestions are showing; true when it did. */
+  cycleTab(): boolean {
+    if (!this._viewState.value.visible) return false;
+    this.cycleFilterMode();
+    return true;
+  }
+
   // Called by the coordinator's single global listener when this service is the active owner.
   dispatchKeydown(event: KeyboardEvent): void {
-    if (!this.stateManager.isFocused) return;
+    if (!this.host.isFocused) return;
 
     const view = this._viewState.value;
     if (!view.visible) return;
@@ -246,7 +241,7 @@ export class TerminalAutocompleteService implements OnDestroy {
 
   // Lightweight per-instance listener for suppress-until-typing tracking (runs even when not visible).
   private handleSuppressKeydown(event: KeyboardEvent): void {
-    if (!this.stateManager.isFocused) return;
+    if (!this.host.isFocused) return;
     if (this._viewState.value.visible) return; // handled by coordinator
 
     if (this.isArrowKey(event.key)) {
@@ -361,22 +356,6 @@ export class TerminalAutocompleteService implements OnDestroy {
     };
   }
 
-  private async handleTriggerAutocompleteAction(event: ActionFiredEvent): Promise<void> {
-    if (!this.stateManager.isFocused) {
-      return;
-    }
-
-    this._suppressUntilTyping = false;
-    this._manualTriggerInputSignature = this.inputSignature(this.stateManager.state);
-    await this.showSuggestionsOnDemand(this.stateManager.state);
-
-    if (this._viewState.value.visible) {
-      event.performed = true;
-      event.defaultPrevented = true;
-      event.propagationStopped = true;
-    }
-  }
-
   private shouldHideForState(state: SessionState): boolean {
     if (!state.isFocused || state.isCommandRunning) {
       this.hide();
@@ -475,7 +454,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     const suggestion = view.suggestions[index];
     if (!suggestion) return;
 
-    const input = this.stateManager.input;
+    const input = this.host.input;
     const paddedInputText = input.text.padEnd(
       Math.max(input.text.length, suggestion.replaceEnd),
       " ",
@@ -489,8 +468,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     if (suggestion.selectedPath) {
       this.commandLog.markDirectorySelected(suggestion.selectedPath);
     }
-    if (suggestion.selectedCommand && this.stateManager.state.cwd) {
-      this.commandLog.markCommandSelected(suggestion.selectedCommand, this.stateManager.state.cwd);
+    if (suggestion.selectedCommand && this.host.state.cwd) {
+      this.commandLog.markCommandSelected(suggestion.selectedCommand, this.host.state.cwd);
     }
     if (suggestion.selectedPatternSignature) {
       this.commandLog.markCommandPatternSelected(suggestion.selectedPatternSignature);
@@ -498,22 +477,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     if (suggestion.liveCollapsedFrom && suggestion.liveCollapsedFrom.length > 0) {
       this.commandLog.confirmLivePattern(suggestion.liveCollapsedFrom);
     }
-
-    const terminalId = this.stateManager.terminalId;
-
-    if (!terminalId) return;
-
-    this.bus.publish({
-      path: ["app", "terminal"],
-
-      type: "ReplaceTerminalInput",
-
-      payload: {
-        terminalId,
-        inputText,
-        cursorIndex,
-      },
-    });
+    this.host.replaceInput(inputText, cursorIndex);
 
     this._suppressNextRefresh = this.shouldSuppressRefreshAfterSelection(suggestion);
     this.hide();
@@ -593,7 +557,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     if (measuredPanelHeight === null) return;
 
     const position = this.computePanelPosition(
-      this.stateManager.state,
+      this.host.state,
       view.suggestions,
       measuredPanelHeight,
     );
@@ -800,18 +764,12 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
     this._lastSuggestorIssueNotificationAt.set(key, now);
 
-    this.bus.publish({
-      type: "Notification",
-      path: ["notification"],
-      payload: {
-        header:
-          kind === "timeout" ? "Autocomplete provider timed out" : "Autocomplete provider failed",
-        body: `Provider: ${suggestor.id}\nInput: ${context.beforeCursor}\n${message}`,
-        source: "autocomplete",
-        terminalId: this.stateManager.terminalId,
-        timestamp: new Date(),
-        type: kind === "timeout" ? "warning" : "error",
-      },
+    this.suggestorSource.reportSuggestorIssue({
+      kind,
+      suggestorId: suggestor.id,
+      message,
+      input: context.beforeCursor,
+      terminalId: this.host.terminalId,
     });
   }
 

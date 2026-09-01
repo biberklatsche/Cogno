@@ -1,11 +1,14 @@
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import type { SessionState } from "@cogno/core/session/host/session-host";
-import { BehaviorSubject } from "rxjs";
+import type { SessionFact } from "@cogno/core/session/session-facts";
+import { BehaviorSubject, Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalComposerService } from "./terminal-composer.service";
 
 class FakeStateManager {
+  readonly facts = new Subject<SessionFact>();
+  readonly facts$ = this.facts.asObservable();
+  readonly replaceInput = vi.fn();
   private readonly subject = new BehaviorSubject<Partial<SessionState>>({
     terminalId: "t1",
     cursorPosition: { viewport: { col: 5, row: 3 }, col: 5, row: 3, char: "" },
@@ -38,23 +41,17 @@ class FakeStateManager {
 
 describe("TerminalComposerService", () => {
   let fakeState: FakeStateManager;
-  let bus: AppBus;
   let coordinator: TerminalDropdownCoordinatorService;
   let service: TerminalComposerService;
 
-  function openViaBus(seedText = "echo a\necho b", cursorIndex = 7, terminalId = "t1") {
-    bus.publish({
-      path: ["app", "terminal"],
-      type: "OpenComposer",
-      payload: { terminalId, seedText, cursorIndex },
-    });
+  function requestComposer(seedText = "echo a\necho b", cursorIndex = 7) {
+    fakeState.facts.next({ type: "composerRequested", seedText, cursorIndex });
   }
 
   beforeEach(() => {
     fakeState = new FakeStateManager();
-    bus = new AppBus();
     coordinator = new TerminalDropdownCoordinatorService();
-    service = new TerminalComposerService(fakeState as unknown as any, bus, coordinator);
+    service = new TerminalComposerService(fakeState as unknown as any, coordinator);
   });
 
   afterEach(() => {
@@ -67,8 +64,8 @@ describe("TerminalComposerService", () => {
     return view;
   }
 
-  it("opens with the seed when the OpenComposer event targets this terminal", () => {
-    openViaBus("echo a\necho b", 7);
+  it("opens with the seed when the session asks for the composer", () => {
+    requestComposer("echo a\necho b", 7);
 
     expect(currentView()).toMatchObject({
       visible: true,
@@ -78,23 +75,17 @@ describe("TerminalComposerService", () => {
   });
 
   it("normalizes CRLF in the seed and clamps the cursor index", () => {
-    openViaBus("echo a\r\necho b", 999);
+    requestComposer("echo a\r\necho b", 999);
 
     const view = currentView();
     expect(view.seedText).toBe("echo a\necho b");
     expect(view.seedCursorIndex).toBeLessThanOrEqual(view.seedText.length + 1);
   });
 
-  it("ignores OpenComposer events for other terminals", () => {
-    openViaBus("echo a\necho b", 0, "other-terminal");
-
-    expect(currentView().visible).toBe(false);
-  });
-
-  it("ignores OpenComposer while a command is running", () => {
+  it("ignores the request while a command is running", () => {
     fakeState.emit({ isCommandRunning: true });
 
-    openViaBus();
+    requestComposer();
 
     expect(currentView().visible).toBe(false);
   });
@@ -102,64 +93,46 @@ describe("TerminalComposerService", () => {
   it("closes other dropdowns by claiming the coordinator", () => {
     const claimSpy = vi.spyOn(coordinator, "claim");
 
-    openViaBus();
+    requestComposer();
 
     expect(claimSpy).toHaveBeenCalledWith(service);
   });
 
   it("submits the composed text as one atomic replace with autoExecute", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-    openViaBus();
+    requestComposer();
 
     service.submit("echo one\necho two");
 
-    expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "ReplaceTerminalInput",
-        payload: {
-          terminalId: "t1",
-          inputText: "echo one\necho two",
-          cursorIndex: "echo one\necho two".length,
-          autoExecute: true,
-        },
-      }),
+    expect(fakeState.replaceInput).toHaveBeenCalledWith(
+      "echo one\necho two",
+      "echo one\necho two".length,
+      true,
     );
     expect(currentView().visible).toBe(false);
   });
 
   it("trims trailing blank lines before submitting", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-    openViaBus();
+    requestComposer();
 
     service.submit("echo one\necho two\n\n");
 
-    expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "ReplaceTerminalInput",
-        payload: expect.objectContaining({
-          inputText: "echo one\necho two",
-          cursorIndex: "echo one\necho two".length,
-        }),
-      }),
+    expect(fakeState.replaceInput).toHaveBeenCalledWith(
+      "echo one\necho two",
+      "echo one\necho two".length,
+      true,
     );
   });
 
   it("submits without executing when insertOnly is requested", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-    openViaBus();
+    requestComposer();
 
     service.submit("echo draft", { insertOnly: true });
 
-    expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "ReplaceTerminalInput",
-        payload: expect.objectContaining({ autoExecute: false }),
-      }),
-    );
+    expect(fakeState.replaceInput).toHaveBeenCalledWith("echo draft", "echo draft".length, false);
   });
 
   it("closes on Escape dispatched from outside the panel", () => {
-    openViaBus();
+    requestComposer();
 
     const event = new KeyboardEvent("keydown", { key: "Escape" });
     service.dispatchKeydown(event);
@@ -169,7 +142,7 @@ describe("TerminalComposerService", () => {
 
   it("releases the coordinator when hidden", () => {
     const releaseSpy = vi.spyOn(coordinator, "release");
-    openViaBus();
+    requestComposer();
 
     service.hide();
 

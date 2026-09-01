@@ -25,23 +25,6 @@ export type SelectWordRightAction = ActionBase<"SelectWordRight", TerminalId>;
 export type SelectWordLeftAction = ActionBase<"SelectWordLeft", TerminalId>;
 export type SelectTextToEndOfLineAction = ActionBase<"SelectTextToEndOfLine", TerminalId>;
 export type SelectTextToStartOfLineAction = ActionBase<"SelectTextToStartOfLine", TerminalId>;
-export type ReplaceTerminalInputAction = ActionBase<
-  "ReplaceTerminalInput",
-  {
-    terminalId: TerminalId;
-    inputText: string;
-    cursorIndex: number;
-    autoExecute?: boolean;
-  }
->;
-export type OpenComposerAction = ActionBase<
-  "OpenComposer",
-  {
-    terminalId: TerminalId;
-    seedText: string;
-    cursorIndex: number;
-  }
->;
 export type WriteRawToPtyAction = ActionBase<
   "WriteRawToPty",
   {

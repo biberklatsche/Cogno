@@ -2,6 +2,10 @@ import { Injectable } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
+  AutocompleteSuggestorIssue,
+  AutocompleteSuggestorSource,
+} from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+import {
   AutocompleteProviderIssueContract,
   AutocompleteProviderIssueReporterContract,
   TerminalAutocompleteSuggestorContract,
@@ -14,7 +18,7 @@ const AUTOCOMPLETE_PROVIDER_NOTIFICATION_THROTTLE_MS = 10_000;
 const DEFAULT_AUTOCOMPLETE_PROVIDER_TIMEOUT_MS = 160;
 
 @Injectable({ providedIn: "root" })
-export class TerminalAutocompleteFeatureSuggestorService {
+export class TerminalAutocompleteFeatureSuggestorService extends AutocompleteSuggestorSource {
   private sharedSuggestors?: ReadonlyArray<TerminalAutocompleteSuggestorContract>;
   private readonly lastIssueNotificationAt = new Map<string, number>();
   private readonly issueReporter: AutocompleteProviderIssueReporterContract = {
@@ -27,7 +31,9 @@ export class TerminalAutocompleteFeatureSuggestorService {
     private readonly configService: ConfigService,
     private readonly filesystem: Filesystem,
     private readonly commandRunner: CommandRunner,
-  ) {}
+  ) {
+    super();
+  }
 
   getSharedSuggestors(): ReadonlyArray<TerminalAutocompleteSuggestorContract> {
     if (!this.sharedSuggestors) {
@@ -50,6 +56,25 @@ export class TerminalAutocompleteFeatureSuggestorService {
     for (const suggestor of this.getSharedSuggestors()) {
       void suggestor.warmUpForShellIntegration?.(shellType);
     }
+  }
+
+  /** A session's suggestor failed or timed out; the user is told, once per issue. */
+  reportSuggestorIssue(issue: AutocompleteSuggestorIssue): void {
+    this.bus.publish({
+      type: "Notification",
+      path: ["notification"],
+      payload: {
+        header:
+          issue.kind === "timeout"
+            ? "Autocomplete provider timed out"
+            : "Autocomplete provider failed",
+        body: `Provider: ${issue.suggestorId}\nInput: ${issue.input}\n${issue.message}`,
+        source: "autocomplete",
+        terminalId: issue.terminalId,
+        timestamp: new Date(),
+        type: issue.kind === "timeout" ? "warning" : "error",
+      },
+    });
   }
 
   private reportAutocompleteProviderIssue(issue: AutocompleteProviderIssueContract): void {

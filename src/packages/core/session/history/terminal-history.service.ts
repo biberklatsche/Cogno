@@ -17,8 +17,6 @@ import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown
 import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
-import { ActionFired, ActionFiredEvent } from "../../../../action/action.models";
-import { AppBus } from "../../../../app-bus/app-bus";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 const REFRESH_DEBOUNCE_MS = 80;
@@ -58,9 +56,8 @@ export class TerminalHistoryService implements OnDestroy {
   }
 
   constructor(
-    private readonly stateManager: SessionHost,
+    private readonly host: SessionHost,
     private readonly commandLog: SessionCommandLog,
-    private readonly bus: AppBus,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
     private readonly configService: ConfigService,
     private readonly scopeStore: TerminalHistoryScopeStore,
@@ -96,7 +93,7 @@ export class TerminalHistoryService implements OnDestroy {
 
   private subscribeStateChanges(): void {
     this._subscription.add(
-      this.stateManager.state$.pipe(debounceTime(REFRESH_DEBOUNCE_MS)).subscribe((state) => {
+      this.host.state$.pipe(debounceTime(REFRESH_DEBOUNCE_MS)).subscribe((state) => {
         const view = this._viewState.value;
         if (!view.visible) return;
 
@@ -113,31 +110,12 @@ export class TerminalHistoryService implements OnDestroy {
     );
 
     this._subscription.add(
-      this.bus.on$(ActionFired.listener()).subscribe((event: ActionFiredEvent) => {
-        if (event.payload === "trigger_command_history") {
-          void this.handleTriggerCommandHistory(event);
-          return;
-        }
-
-        if (event.payload !== "cycle_tab") return;
-        if (!this._viewState.value.visible) return;
-
-        // Only advance the shared scope; every tab (this one included) reacts uniformly through
-        // the scope$ subscription below, so there is no separate code path for the originating tab.
-        this.scopeStore.cycle();
-        event.performed = true;
-        event.defaultPrevented = true;
-        event.propagationStopped = true;
-      }),
-    );
-
-    this._subscription.add(
       this.scopeStore.scope$.subscribe((scope) => void this.applyScopeChange(scope)),
     );
   }
 
   dispatchKeydown(event: KeyboardEvent): void {
-    if (!this.stateManager.isFocused) return;
+    if (!this.host.isFocused) return;
 
     const view = this._viewState.value;
     if (!view.visible) return;
@@ -182,21 +160,26 @@ export class TerminalHistoryService implements OnDestroy {
     }
   }
 
-  private async handleTriggerCommandHistory(event: ActionFiredEvent): Promise<void> {
-    if (!this.stateManager.isFocused) return;
+  /** Shows the history on request; true when it is showing afterwards. */
+  async triggerCommandHistory(): Promise<boolean> {
+    if (!this.host.isFocused) return false;
 
     await this.showHistory();
+    return this._viewState.value.visible;
+  }
 
-    if (this._viewState.value.visible) {
-      event.performed = true;
-      event.defaultPrevented = true;
-      event.propagationStopped = true;
-    }
+  /** Advances the shared scope while the history is showing; true when it did. */
+  cycleTab(): boolean {
+    if (!this._viewState.value.visible) return false;
+    // Only advance the shared scope; every tab (this one included) reacts uniformly through
+    // the scope$ subscription, so there is no separate code path for the originating tab.
+    this.scopeStore.cycle();
+    return true;
   }
 
   private async showHistory(): Promise<void> {
     const requestId = ++this._activeRequestId;
-    const state = this.stateManager.state;
+    const state = this.host.state;
     const preferredScope = this.scopeStore.scope;
     const { scope, rows } = await this.fetchEntries(preferredScope, state.cwd);
     if (requestId !== this._activeRequestId) return;
@@ -234,7 +217,7 @@ export class TerminalHistoryService implements OnDestroy {
     }
 
     const requestId = ++this._activeRequestId;
-    const state = this.stateManager.state;
+    const state = this.host.state;
     const { rows } = await this.fetchEntries(scope, state.cwd);
     if (requestId !== this._activeRequestId) return;
 
@@ -295,28 +278,12 @@ export class TerminalHistoryService implements OnDestroy {
     const entry = view.entries[index];
     if (!entry) return;
 
-    if (this.stateManager.state.cwd) {
-      this.commandLog.markCommandSelected(entry.command, this.stateManager.state.cwd);
+    if (this.host.state.cwd) {
+      this.commandLog.markCommandSelected(entry.command, this.host.state.cwd);
     }
 
     const autoExecute = this.configService.config.terminal?.history?.auto_execute ?? false;
-
-    const terminalId = this.stateManager.terminalId;
-
-    if (!terminalId) return;
-
-    this.bus.publish({
-      path: ["app", "terminal"],
-
-      type: "ReplaceTerminalInput",
-
-      payload: {
-        terminalId,
-        inputText: entry.command,
-        cursorIndex: entry.command.length,
-        autoExecute,
-      },
-    });
+    this.host.replaceInput(entry.command, entry.command.length, autoExecute);
 
     this.hide();
   }

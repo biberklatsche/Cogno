@@ -1,5 +1,5 @@
-import { PathFactory } from "@cogno/app/app-host/path.factory";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import { createPathAdapter } from "@cogno/core/session/shells/shell-definitions";
 import { AutocompletePathSupport } from "@cogno/shared/support";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";
 import { HistoryDirectoryScorer } from "./scoring/history-directory.scorer";
@@ -24,7 +24,7 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
     const tokens = this.extractTokens(context.fragment, context.shellContext);
     const lookupFragment = tokens[0] ?? context.fragment;
     const rows = await this.commandLog.searchDirectories(lookupFragment, 100);
-    const pathAdapter = PathFactory.createAdapter(context.shellContext);
+    const pathAdapter = createPathAdapter(context.shellContext);
     const cwdNorm = AutocompletePathSupport.normalizeCwd(context.cwd, pathAdapter);
     const now = Date.now();
 

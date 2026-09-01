@@ -6,7 +6,6 @@ import {
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject, Subscription } from "rxjs";
-import { AppBus } from "../../../../app-bus/app-bus";
 
 const PANEL_MIN_WIDTH = 320;
 const PANEL_MAX_WIDTH = 920;
@@ -37,7 +36,7 @@ const INITIAL_VIEW_STATE: ComposerViewState = {
  * The multiline composer: a small editor opened instead of fiddling with
  * multiline input at the shell prompt (Shift+Enter, multiline paste). The
  * shell's own input line stays untouched while it is open; submitting hands
- * the final text to the shell in one atomic ReplaceTerminalInput — so all the
+ * the final text to the shell in one atomic replace — so all the
  * editing happens in the DOM where it is trivially editor-like, and the shell
  * only ever sees finished input.
  */
@@ -52,16 +51,16 @@ export class TerminalComposerService implements OnDestroy {
   }
 
   constructor(
-    private readonly stateManager: SessionHost,
-    private readonly bus: AppBus,
+    private readonly host: SessionHost,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
+    // Shift+Enter and a multi-line paste ask for the composer; the session
+    // says so and this is the one who listens.
     this._subscription.add(
-      this.bus.on$({ path: ["app", "terminal"], type: "OpenComposer" }).subscribe((event) => {
-        const payload = event.payload;
-        if (!payload || payload.terminalId !== this.stateManager.terminalId) return;
-        if (this.stateManager.isCommandRunning) return;
-        this.open(payload.seedText, payload.cursorIndex);
+      this.host.facts$.subscribe((fact) => {
+        if (fact.type !== "composerRequested") return;
+        if (this.host.isCommandRunning) return;
+        this.open(fact.seedText, fact.cursorIndex);
       }),
     );
   }
@@ -76,7 +75,7 @@ export class TerminalComposerService implements OnDestroy {
   }
 
   open(seedText: string, cursorIndex: number): void {
-    const position = this.computePanelPosition(this.stateManager.state);
+    const position = this.computePanelPosition(this.host.state);
     // Claiming closes autocomplete/history; the composer replaces them while
     // open (its textarea owns the keyboard anyway).
     this.dropdownCoordinator.claim(this);
@@ -107,18 +106,7 @@ export class TerminalComposerService implements OnDestroy {
     // left over from Shift+Enter), not intentional input — drop them before
     // handing the text to the shell.
     const trimmedText = text.trimEnd();
-    const terminalId = this.stateManager.terminalId;
-    if (!terminalId) return;
-    this.bus.publish({
-      path: ["app", "terminal"],
-      type: "ReplaceTerminalInput",
-      payload: {
-        terminalId,
-        inputText: trimmedText,
-        cursorIndex: trimmedText.length,
-        autoExecute: !options?.insertOnly,
-      },
-    });
+    this.host.replaceInput(trimmedText, trimmedText.length, !options?.insertOnly);
     this.hide();
   }
 

@@ -1,7 +1,5 @@
 import { Pipe, PipeTransform } from "@angular/core";
 import { OsPlatform, OsType } from "@cogno/platform/os";
-import { ActionName } from "../../action/action.models";
-import { KeybindService } from "../keybind.service";
 import { Modifier } from "../modifier";
 
 export function formatKeybinding(keybinding: string | null | undefined, os: OsType): string {
@@ -33,25 +31,5 @@ export class KeybindingPipe implements PipeTransform {
 
   transform(keybinding: string | null | undefined): string {
     return formatKeybinding(keybinding, this.os.platform());
-  }
-}
-
-@Pipe({
-  name: "actionkeybinding",
-})
-export class ActionKeybindingPipe extends KeybindingPipe {
-  constructor(
-    private keybindingService: KeybindService,
-    os: OsPlatform,
-  ) {
-    super(os);
-  }
-
-  override transform(action: ActionName | null | undefined): string {
-    if (!action) {
-      return "";
-    }
-    const keybinding = this.keybindingService.getKeybinding(action);
-    return super.transform(keybinding);
   }
 }

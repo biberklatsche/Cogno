@@ -1,16 +1,15 @@
+import type { SessionCommandLog as TerminalHistoryPersistenceService } from "@cogno/core/session/command-log/session-command-log";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ActionFired } from "../../../../action/action.models";
-import { AppBus } from "../../../../app-bus/app-bus";
-import type { TerminalAutocompleteFeatureSuggestorService } from "../../../../app-host/terminal-autocomplete-feature-suggestor.service";
-import type { TerminalHistoryPersistenceService } from "../history/terminal-history-commandLog.service";
 import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
+import type { AutocompleteSuggestorSource } from "./autocomplete-suggestor.source";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
 
 class FakeStateManager {
+  readonly replaceInput = vi.fn();
   private readonly subject = new BehaviorSubject<SessionState>({
     hasUnreadNotification: false,
     progress: { state: "hidden", value: 0 },
@@ -102,7 +101,7 @@ class DummySuggestor implements TerminalAutocompleteSuggestor {
 
 describe("TerminalAutocompleteService", () => {
   let fakeState: FakeStateManager;
-  let bus: AppBus;
+  let suggestorSource: AutocompleteSuggestorSource;
   let service: TerminalAutocompleteService;
   const currentFilterMode = (target: TerminalAutocompleteService) =>
     (target as any)._filterMode.value;
@@ -111,8 +110,11 @@ describe("TerminalAutocompleteService", () => {
     vi.useFakeTimers();
     window.localStorage.clear();
     fakeState = new FakeStateManager();
-    bus = new AppBus();
-    vi.spyOn(bus, "publish");
+    suggestorSource = {
+      getSharedSuggestors: vi.fn(() => []),
+      preloadForShellIntegration: vi.fn(),
+      reportSuggestorIssue: vi.fn(),
+    };
     const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([]),
       searchCommands: vi.fn().mockResolvedValue([]),
@@ -124,10 +126,7 @@ describe("TerminalAutocompleteService", () => {
     service = new TerminalAutocompleteService(
       fakeState as unknown as any,
       commandLog,
-      bus,
-      {
-        getSharedSuggestors: vi.fn(() => []),
-      } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      suggestorSource,
       new TerminalDropdownCoordinatorService(),
     );
     (service as any)._suggestors = [];
@@ -173,12 +172,13 @@ describe("TerminalAutocompleteService", () => {
     expect(view.visible).toBe(true);
     expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
 
-    const notificationCall = (bus.publish as any).mock.calls.find(
-      (c: any[]) => c[0]?.type === "Notification",
+    expect(suggestorSource.reportSuggestorIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "error",
+        suggestorId: "broken-provider",
+        message: expect.stringContaining("git executable not found"),
+      }),
     );
-    expect(notificationCall?.[0].payload.header).toBe("Autocomplete provider failed");
-    expect(notificationCall?.[0].payload.body).toContain("Provider: broken-provider");
-    expect(notificationCall?.[0].payload.body).toContain("git executable not found");
   });
 
   it("keeps autocomplete alive without notifying when a suggestor times out", async () => {
@@ -200,9 +200,7 @@ describe("TerminalAutocompleteService", () => {
     expect(view.visible).toBe(true);
     expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
 
-    expect((bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "Notification")).toBe(
-      false,
-    );
+    expect(suggestorSource.reportSuggestorIssue).not.toHaveBeenCalled();
   });
 
   it("does not start another run for a suggestor that is still unresolved after timeout", async () => {
@@ -236,9 +234,7 @@ describe("TerminalAutocompleteService", () => {
       new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
     );
 
-    expect(
-      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
-    ).toBe(false);
+    expect(fakeState.replaceInput).not.toHaveBeenCalled();
   });
 
   it("ArrowDown then Enter applies selected suggestion", async () => {
@@ -260,9 +256,7 @@ describe("TerminalAutocompleteService", () => {
       new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
     );
 
-    expect(
-      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
-    ).toBe(true);
+    expect(fakeState.replaceInput).toHaveBeenCalled();
   });
 
   it("tracks shown and selected feedback for history patterns", async () => {
@@ -323,25 +317,13 @@ describe("TerminalAutocompleteService", () => {
     ]);
     expect(currentFilterMode(service)).toBe("all");
 
-    bus.publish(
-      ActionFired.create("cycle_tab", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    );
+    service.cycleTab();
     expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual([
       "spec-cmd",
     ]);
     expect(currentFilterMode(service)).toBe("context-only");
 
-    bus.publish(
-      ActionFired.create("cycle_tab", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    );
+    service.cycleTab();
     expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual([
       "history-cmd",
     ]);
@@ -350,16 +332,8 @@ describe("TerminalAutocompleteService", () => {
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
     );
-    bus.publish(
-      ActionFired.create("cycle_tab", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    );
-    expect(
-      (bus.publish as any).mock.calls.some((c: any[]) => c[0]?.type === "ReplaceTerminalInput"),
-    ).toBe(false);
+    service.cycleTab();
+    expect(fakeState.replaceInput).not.toHaveBeenCalled();
   });
 
   it("restores previously selected filter mode from storage", async () => {
@@ -375,13 +349,7 @@ describe("TerminalAutocompleteService", () => {
     });
     await vi.advanceTimersByTimeAsync(400);
 
-    bus.publish(
-      ActionFired.create("cycle_tab", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    ); // context-only
+    service.cycleTab(); // context-only
     expect(currentFilterMode(service)).toBe("context-only");
 
     service.ngOnDestroy();
@@ -397,10 +365,7 @@ describe("TerminalAutocompleteService", () => {
     const second = new TerminalAutocompleteService(
       fakeState as unknown as any,
       commandLog,
-      new AppBus(),
-      {
-        getSharedSuggestors: vi.fn(() => []),
-      } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      suggestorSource,
       new TerminalDropdownCoordinatorService(),
     );
     (second as any)._suggestors = [];
@@ -426,16 +391,10 @@ describe("TerminalAutocompleteService", () => {
   it("does not cycle mode when autocomplete is hidden", () => {
     expect(currentFilterMode(service)).toBe("all");
 
-    const result = bus.publish(
-      ActionFired.create("cycle_tab", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    );
+    const performed = service.cycleTab();
 
     expect(currentFilterMode(service)).toBe("all");
-    expect(result.performed).not.toBe(true);
+    expect(performed).toBe(false);
   });
 
   it("in all mode puts top history first, then top non-history in visible rows", async () => {
@@ -545,14 +504,11 @@ describe("TerminalAutocompleteService", () => {
     await vi.advanceTimersByTimeAsync(400);
 
     expect((service as any)._viewState.value.visible).toBe(true);
-
-    bus.publish({ type: "SideMenuViewOpened", payload: { label: "Command Palette" } } as any);
     expect((service as any)._viewState.value.visible).toBe(true);
   });
 
   it("stays open while side menu is open", async () => {
     service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
-    bus.publish({ type: "SideMenuViewOpened", payload: { label: "Command Palette" } } as any);
 
     fakeState.emit({
       ...fakeState.state,
@@ -603,13 +559,7 @@ describe("TerminalAutocompleteService", () => {
     });
     await vi.advanceTimersByTimeAsync(50);
 
-    bus.publish(
-      ActionFired.create("trigger_autocomplete", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    );
+    void service.triggerAutocomplete();
     await vi.advanceTimersByTimeAsync(50);
 
     const view = (service as any)._viewState.value;
@@ -633,13 +583,7 @@ describe("TerminalAutocompleteService", () => {
     (service as any).hide();
     expect((service as any)._viewState.value.visible).toBe(false);
 
-    bus.publish(
-      ActionFired.create("trigger_autocomplete", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    );
+    void service.triggerAutocomplete();
     await vi.advanceTimersByTimeAsync(50);
 
     expect((service as any)._viewState.value.visible).toBe(true);
@@ -699,11 +643,7 @@ describe("TerminalAutocompleteService", () => {
       new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
     );
 
-    const applyCall = (bus.publish as any).mock.calls.find(
-      (c: any[]) => c[0]?.type === "ReplaceTerminalInput",
-    );
-    expect(applyCall).toBeTruthy();
-    expect(applyCall[0].payload.inputText).toBe("cd projects");
+    expect(fakeState.replaceInput).toHaveBeenCalledWith("cd projects", expect.any(Number));
   });
 
   it("does not suppress the next refresh after selecting a suggestion with continue behavior", async () => {
@@ -850,13 +790,7 @@ describe("TerminalAutocompleteService", () => {
     expect((service as any)._viewState.value.suggestions).toHaveLength(1);
     expect((service as any)._viewState.value.suggestions[0].source).toBe("history-cmd + spec-cmd");
 
-    bus.publish(
-      ActionFired.create("cycle_tab", {
-        all: false,
-        unconsumed: false,
-        performable: true,
-      }),
-    );
+    service.cycleTab();
 
     const view = (service as any)._viewState.value;
     expect(currentFilterMode(service)).toBe("context-only");

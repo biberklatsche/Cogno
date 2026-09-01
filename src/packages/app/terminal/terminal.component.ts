@@ -14,7 +14,14 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
+import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+import { TerminalAutocompleteComponent } from "@cogno/core/session/autocomplete/terminal-autocomplete.component";
+import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/terminal-autocomplete.service";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
+import { TerminalComposerComponent } from "@cogno/core/session/composer/terminal-composer.component";
+import { TerminalComposerService } from "@cogno/core/session/composer/terminal-composer.service";
+import { TerminalHistoryComponent } from "@cogno/core/session/history/terminal-history.component";
+import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
@@ -24,12 +31,7 @@ import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
 import { AppBus } from "../app-bus/app-bus";
-import { TerminalAutocompleteComponent } from "./+state/advanced/autocomplete/terminal-autocomplete.component";
-import { TerminalAutocompleteService } from "./+state/advanced/autocomplete/terminal-autocomplete.service";
-import { TerminalComposerComponent } from "./+state/advanced/composer/terminal-composer.component";
-import { TerminalComposerService } from "./+state/advanced/composer/terminal-composer.service";
-import { TerminalHistoryComponent } from "./+state/advanced/history/terminal-history.component";
-import { TerminalHistoryService } from "./+state/advanced/history/terminal-history.service";
+import { TerminalAutocompleteFeatureSuggestorService } from "../app-host/terminal-autocomplete-feature-suggestor.service";
 import { KeybindExecutor } from "./+state/keybind/keybind.executor";
 import { SessionFactBridge } from "./+state/session-fact-bridge";
 import { SessionMenus } from "./+state/session-menus";
@@ -92,6 +94,10 @@ export function createSessionHost(
         TerminalCommandHistoryStore,
         CommandRecorder,
       ],
+    },
+    {
+      provide: AutocompleteSuggestorSource,
+      useExisting: TerminalAutocompleteFeatureSuggestorService,
     },
     SessionFactBridge,
     SessionMenus,

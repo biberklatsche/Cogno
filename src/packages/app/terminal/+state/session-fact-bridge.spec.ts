@@ -136,6 +136,9 @@ describe("SessionFactBridge", () => {
       new NotificationChannelsPortAdapterService(wiringService, configService as never),
       { preloadForShellIntegration } as unknown as TerminalAutocompleteFeatureSuggestorService,
       registry,
+      { triggerAutocomplete: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
+      { triggerCommandHistory: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
+      {} as never,
     );
 
     processInfoDialogRef = new DialogRef<void>(1, vi.fn());
