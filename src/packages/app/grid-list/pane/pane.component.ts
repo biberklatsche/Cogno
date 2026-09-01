@@ -9,8 +9,6 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { TerminalId } from "@cogno/shared/ports";
 import { Pane } from "../+model/model";
 import { GridListService } from "../+state/grid-list.service";
@@ -80,7 +78,6 @@ export class PaneComponent implements AfterViewInit {
 
   constructor(
     private _terminalComponents: TerminalComponentFactory,
-    private _configService: ConfigService,
     private gridListService: GridListService,
   ) {
     // Create the effect within an injection context (constructor)
@@ -88,23 +85,14 @@ export class PaneComponent implements AfterViewInit {
       if (!this._viewReady()) return;
       const pane = this.pane();
       const id = pane.terminalId;
-      const shellProfile = this.getShellProfile(pane);
       const host = this.hostRef?.nativeElement;
       if (!id || !host) return;
       if (this._attachedTerminalId !== id) {
         while (host.firstChild) host.removeChild(host.firstChild);
-        this._terminalComponents.attach(id, shellProfile, host);
+        this._terminalComponents.attach(pane, host);
         this._attachedTerminalId = id;
       }
     });
-  }
-
-  private getShellProfile(pane: Pane): ShellProfile {
-    const shellProfile = this._configService.getShellProfileOrDefault(pane.shellName);
-    if (pane.workingDir) {
-      shellProfile.working_dir = pane.workingDir;
-    }
-    return shellProfile;
   }
 
   ngAfterViewInit() {

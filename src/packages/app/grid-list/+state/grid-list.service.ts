@@ -486,8 +486,22 @@ export class GridListService {
       restoredGridList[grid.tabId] = { tabId: grid.tabId, tree: this.createTree(grid) };
     }
     this.gridListByWorkspaceIdentifier.set(workspaceIdentifier, restoredGridList);
+    this.ensureSessions(restoredGridList);
     if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
       this._gridList.next({ ...restoredGridList });
+    }
+  }
+
+  /**
+   * Every pane in a layout has a running session, on screen or not
+   * (ARCHITECTURE.md 2.3): the shell runs, commands are recorded, the title
+   * follows. Only the visible panes are attached.
+   */
+  private ensureSessions(gridList: GridList): void {
+    for (const grid of Object.values(gridList)) {
+      for (const node of grid.tree.find((node) => node.isLeaf)) {
+        if (node.data?.terminalId) this.componentFactory.ensureSession(node.data);
+      }
     }
   }
 
@@ -721,6 +735,7 @@ export class GridListService {
   private setActiveWorkspaceGridList(gridList: GridList): void {
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
     this.gridListByWorkspaceIdentifier.set(workspaceIdentifier, gridList);
+    this.ensureSessions(gridList);
     this._gridList.next({ ...gridList });
   }
 

@@ -18,6 +18,38 @@ app-terminal {
         }
     }
 
+    .start-failed-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 41;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: var(--background-color);
+        color: var(--foreground-color);
+
+        .start-failed-title {
+            font-weight: 600;
+        }
+
+        .start-failed-reason {
+            opacity: 0.8;
+            font-family: monospace;
+            font-size: 0.85rem;
+            max-width: 80%;
+            text-align: center;
+            white-space: pre-wrap;
+        }
+
+        .start-failed-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+    }
+
     .webgl-restore-overlay {
         position: absolute;
         inset: 0;

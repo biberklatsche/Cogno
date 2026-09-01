@@ -11,6 +11,18 @@
     @if (isWebglContextLost()) {
         <div class="webgl-restore-overlay">Restoring terminal renderer…</div>
     }
+    @if (runtime(); as runtime) {
+        @if (runtime.status === 'failed') {
+            <div class="start-failed-overlay">
+                <div class="start-failed-title">The shell could not be started</div>
+                <div class="start-failed-reason">{{ runtime.reason }}</div>
+                <div class="start-failed-actions">
+                    <button type="button" class="button" (click)="retry()">Retry</button>
+                    <button type="button" class="button" (click)="closeAfterFailure()">Close</button>
+                </div>
+            </div>
+        }
+    }
     <app-terminal-autocomplete></app-terminal-autocomplete>
     <app-terminal-composer></app-terminal-composer>
     <app-terminal-history></app-terminal-history>

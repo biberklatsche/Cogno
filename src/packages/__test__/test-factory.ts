@@ -155,7 +155,7 @@ export function getTerminalComponentFactory(): TerminalComponentFactory {
   if (!terminalComponentFactory) {
     terminalComponentFactory = {
       destroy: vi.fn(),
-      getSnapshot: vi.fn(),
+      ensureSession: vi.fn(),
       attach: vi.fn(),
     } as unknown as TerminalComponentFactory;
   }

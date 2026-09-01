@@ -29,6 +29,7 @@ import {
   DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
+import { KeybindExecutor } from "./keybind/keybind.executor";
 import { TerminalSessionRegistry } from "./terminal-session.registry";
 
 export const OSC9_NOTIFICATION_ID = "osc9";
@@ -67,6 +68,7 @@ export class SessionFactBridge {
   private readonly completedCommandNotificationHandler: CompletedCommandNotificationHandler;
   private notificationPreferencesState?: NotificationPreferencesState;
   private terminalId?: TerminalId;
+  private keybindExecutor?: KeybindExecutor;
   private disposed = false;
 
   constructor(
@@ -101,6 +103,7 @@ export class SessionFactBridge {
     }
     this.subscription.add(this.host.facts$.subscribe((fact) => this.onFact(terminalId, fact)));
     this.listenToBus(terminalId);
+    this.keybindExecutor = new KeybindExecutor(this.bus, this.host);
   }
 
   dispose(): void {
@@ -114,6 +117,7 @@ export class SessionFactBridge {
         payload: this.terminalId,
       });
     }
+    this.keybindExecutor?.dispose();
     this.subscription.unsubscribe();
   }
 

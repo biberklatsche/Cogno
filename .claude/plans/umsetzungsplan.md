@@ -671,7 +671,7 @@ zeichnet die Shell sie nach SIGWINCH neu. Konsequenz für Schritt 14:
 Größe beim `attach` setzen (open + fit), eine abgehängte Session nicht
 resizen. Achse B (detached ↔ attached) ist damit tragfähig.
 
-### Schritt 14: Session-Host mit zwei Zustandsachsen (ZA 2.3)
+### Schritt 14: Session-Host mit zwei Zustandsachsen (ZA 2.3) — **erledigt (2026-09-01)**
 
 **Voraussetzungen:** 13 grün.
 
@@ -712,6 +712,43 @@ Start).
 **Erlaubter Übergangszustand:** `TerminalComponent`, `TerminalComponentFactory`
 und `SessionFactBridge` in `app/` importieren `@cogno/core/session`
 (alt → neu). Der alte Bus lebt weiter, gespeist nur noch von der Bridge.
+
+**Abweichungen bei der Umsetzung** (vorher abgestimmt; vier Teilcommits
+14a₁/14a₂/14b/14c):
+
+- `app/terminal/+state/` ist nicht „leer bis auf `SessionFactBridge`“,
+  sondern leer bis auf den **Bridge-Komplex**: `session-fact-bridge.ts`
+  (Fakt → Bus, Bus → Host-Methode, Tastenkürzel-Aktionen, Notification-
+  Präferenzen und -Erzeugung, `KeybindExecutor`), `session-menus.ts`
+  (Kontext-/Header-Menüs, Prozess-Info-Dialog bis Phase F), `handler/
+  completed-command-notification`, `keybind/` und die Registry (bis der
+  Gateway in Phase E auf die API umzieht).
+- Zwei Quellen werden injiziert (ZA 3.1), damit Autocomplete und die drei
+  Komponenten nach `core/` dürfen: `AutocompleteSuggestorSource`
+  (`core/session/autocomplete/`, erfüllt vom App-Host-Service) und die
+  `actionkeybinding`-Pipe in `shared/ui` auf dem bestehenden
+  `ActionKeybindingPort`; die App-Kopie der Pipe ist gelöscht.
+- Der Host bietet `state`/`state$` als zusammengeführte Lesesicht seiner
+  zwei Hälften (keine Fassade: reine Leserichtung).
+- Sitzungsinterne Wege laufen nicht mehr über den Bus: Composer hört auf
+  `composerRequested`, Autocomplete/History/Composer rufen
+  `host.replaceInput`; `OpenComposer`, `ReplaceTerminalInput`,
+  `TerminalThemeChanged` sind aus dem Bus entfernt (keine Nutzer mehr).
+- Die Sitzung lebt in einem eigenen `EnvironmentInjector` pro Terminal
+  (`TerminalComponentFactory.ensureSession`): Host, Bridge, Menüs,
+  Dropdown-Services, Recorder, Command-Log. Die Factory startet jede Session
+  beim Setzen des Layouts (`GridListService.ensureSessions`), auch für
+  unsichtbare Panes; die View entsteht beim ersten `attach` und wird danach
+  nur umgehängt. `destroy` schließt Host, Bridge und Injector.
+- `attach` öffnet die Maschine in ein host-eigenes Element (`.session-host`)
+  im Pane-Container; nie geöffnete Sessions haben keinen WebGL-Kontext,
+  einmal sichtbare behalten ihn im Rahmen des Pools (wie bisher) — das
+  Kriterium „nur der sichtbare Tab hat einen Kontext“ gilt für nie
+  gezeigte Tabs exakt, für schon gezeigte bis zur Pool-Verdrängung.
+- Startfehler-Spec: Host-Ebene (`failed` mit Grund, `retry` → `running`)
+  und Komponenten-Klasse (Retry → `host.retry`, Close → `RemovePane`);
+  die Template-Darstellung des Overlays ist nur manuell prüfbar, da die
+  Vitest-Umgebung keine `templateUrl`-Komponenten rendert.
 
 ### Schritt 15: Veränderlicher Shell-Kontext und Handshake-Token (ZA 2.1)
 
