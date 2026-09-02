@@ -7,6 +7,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
@@ -18,7 +19,6 @@ import type { ActionKeybindingPort, TerminalId } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { vi } from "vitest";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
-import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
 
 let appBus: AppBus | undefined;

@@ -7,7 +7,7 @@ import {
   IconComponent,
   TooltipDirective,
 } from "@cogno/shared/ui";
-import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
+import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({

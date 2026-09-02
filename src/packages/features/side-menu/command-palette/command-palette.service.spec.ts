@@ -1,7 +1,7 @@
 import { CommandPaletteService } from "@cogno/features/side-menu/command-palette/command-palette.service";
-import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import type { ActionEntryContract } from "@cogno/shared/domain";
 import type { ActionCatalogContract, ActionDispatcherContract } from "@cogno/shared/ports";
+import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";

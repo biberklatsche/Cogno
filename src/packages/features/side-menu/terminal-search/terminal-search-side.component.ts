@@ -17,8 +17,8 @@ import { TooltipDirective } from "@cogno/shared/ui";
 import {
   collectDirectionalNavigationItems,
   scrollSelectedListItemIntoView,
-} from "../navigation/directional-navigation.dom";
-import { DirectionalNavigationItem } from "../navigation/directional-navigation.engine";
+} from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
+import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { TerminalSearchService } from "./terminal-search.service";
 
 type SearchTextSegment = {

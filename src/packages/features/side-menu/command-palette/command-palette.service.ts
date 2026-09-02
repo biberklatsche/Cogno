@@ -10,7 +10,7 @@ import { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
-} from "../navigation/directional-navigation.engine";
+} from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 
 export type { CommandEntry };
 

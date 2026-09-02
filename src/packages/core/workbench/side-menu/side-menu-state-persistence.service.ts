@@ -1,8 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed, toObservable } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { combineLatest, debounceTime, filter, skip } from "rxjs";
-import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
 import { SideMenuStateRepository } from "./side-menu-state.repository";
 
 @Injectable({ providedIn: "root" })

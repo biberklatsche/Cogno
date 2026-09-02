@@ -1,6 +1,11 @@
 import { DestroyRef, Type } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
+  SideMenuItem,
+  SideMenuService,
+} from "@cogno/core/workbench/side-menu/+state/side-menu.service";
+import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
+import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/shared/contributions";
@@ -9,8 +14,6 @@ import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import { KeybindService } from "../../../keybinding/keybind.service";
-import { SideMenuItem, SideMenuService } from "./side-menu.service";
-import { SideMenuFeatureDefinition } from "./side-menu-feature-definitions";
 
 /**
  * Manages the integration of a feature with the side menu system.

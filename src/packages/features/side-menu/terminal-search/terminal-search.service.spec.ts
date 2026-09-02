@@ -1,10 +1,10 @@
-import type { DirectionalNavigationItem } from "@cogno/features/side-menu/navigation/directional-navigation.engine";
 import type { TerminalSearchHostPortContract } from "@cogno/features/side-menu/ports";
 import type {
   TerminalSearchColorConfigContract,
   TerminalSearchPanelRequestContract,
   TerminalSearchResultContract,
 } from "@cogno/shared/domain";
+import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";

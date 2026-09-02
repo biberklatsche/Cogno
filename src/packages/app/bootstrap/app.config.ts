@@ -20,7 +20,6 @@ import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
 import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
-import { SideMenuStatePersistenceService } from "@cogno/app/app-host/side-menu-state-persistence.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalAutocompleteFeatureSuggestorService } from "@cogno/app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
@@ -47,6 +46,7 @@ import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/noti
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
+import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";

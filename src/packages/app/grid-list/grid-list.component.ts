@@ -4,9 +4,9 @@ import { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { EmtpyComponent } from "@cogno/core/workbench/grid-list/emtpy/emtpy.component";
 import { GridComponent } from "@cogno/core/workbench/grid-list/grid/grid.component";
+import { SideMenuComponent } from "@cogno/core/workbench/side-menu/side-menu/side-menu.component";
 import { TabId } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
-import { SideMenuComponent } from "../menu/side-menu/side-menu/side-menu.component";
 
 @Component({
   selector: "app-grid-list",

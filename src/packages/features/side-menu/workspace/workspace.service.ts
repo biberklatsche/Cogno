@@ -10,7 +10,7 @@ import {
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
-} from "../navigation/directional-navigation.engine";
+} from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { WorkspaceCloseGuard } from "./workspace-close-guard.port";
 
 export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemState<string>;

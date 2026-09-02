@@ -10,7 +10,7 @@ import {
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
-} from "../navigation/directional-navigation.engine";
+} from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 
 @Injectable({ providedIn: "root" })
 export class TerminalSearchService {

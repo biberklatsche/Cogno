@@ -1,7 +1,7 @@
 import {
   type DirectionalNavigationItem,
   resolveNextNavigationTarget,
-} from "@cogno/features/side-menu/navigation/directional-navigation.engine";
+} from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { describe, expect, it } from "vitest";
 
 function createNavigationItem(
