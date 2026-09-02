@@ -1,6 +1,8 @@
 import { DestroyRef, Injectable, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import {
   defaultWorkspaceIdContract,
   PersistedPaneConfigurationContract,
@@ -12,9 +14,7 @@ import {
 } from "@cogno/shared/domain/workspace";
 import { Color, IdCreator } from "@cogno/shared/support";
 import { merge } from "rxjs";
-import { GridListService } from "../grid-list/+state/grid-list.service";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
-import { TabListService } from "../tab-list/+state/tab-list.service";
 import { WorkspaceRepository } from "./workspace.repository";
 
 export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;

@@ -1,7 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { GridListService } from "../../grid-list/+state/grid-list.service";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 
 const defaultKeyframes = [

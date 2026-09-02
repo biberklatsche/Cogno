@@ -4,6 +4,11 @@ import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { MachineState } from "@cogno/core/terminal/machine-state";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
+import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
+import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
@@ -12,12 +17,7 @@ import type { ActionKeybindingPort, TerminalId } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { vi } from "vitest";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
-import { GridListService } from "../app/grid-list/+state/grid-list.service";
-import type { TerminalComponentFactory } from "../app/grid-list/+state/terminal-component.factory";
 import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service";
-import type { NotificationTargetResolverService } from "../app/notification/+state/notification-target-resolver.service";
-import { TabListService } from "../app/tab-list/+state/tab-list.service";
-import type { TerminalBusyStateService } from "../app/terminal/terminal-busy-state.service";
 import { WindowService } from "../app/window/window.service";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
 
@@ -26,7 +26,7 @@ let sideMenuService: SideMenuService | undefined;
 let configService: ConfigServiceMock | undefined;
 let gridListService: GridListService | undefined;
 let tabListService: TabListService | undefined;
-let terminalComponentFactory: TerminalComponentFactory | undefined;
+let terminalComponentFactory: SessionHostFactory | undefined;
 let windowService: WindowService | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let machineState: MachineState | undefined;
@@ -100,11 +100,7 @@ export function getActionKeybindingPortMock(): ActionKeybindingPort {
 
 export function getGridListService(): GridListService {
   if (!gridListService) {
-    gridListService = new GridListService(
-      getAppBus(),
-      getTerminalComponentFactory(),
-      getDestroyRef(),
-    );
+    gridListService = new GridListService(getAppBus(), getSessionHostFactory(), getDestroyRef());
   }
   return gridListService;
 }
@@ -122,13 +118,13 @@ export function getTabListService(): TabListService {
   return tabListService;
 }
 
-export function getTerminalComponentFactory(): TerminalComponentFactory {
+export function getSessionHostFactory(): SessionHostFactory {
   if (!terminalComponentFactory) {
     terminalComponentFactory = {
       destroy: vi.fn(),
       ensureSession: vi.fn(),
       attach: vi.fn(),
-    } as unknown as TerminalComponentFactory;
+    } as unknown as SessionHostFactory;
   }
   return terminalComponentFactory;
 }

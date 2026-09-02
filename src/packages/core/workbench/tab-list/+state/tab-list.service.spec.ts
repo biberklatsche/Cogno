@@ -9,14 +9,14 @@ import type {
 import { OsPlatform } from "@cogno/platform/os";
 import { IdCreator } from "@cogno/shared/support";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
+import type { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
 import {
   clear,
   getActionKeybindingPortMock,
   getAppBus,
   getConfigService,
   getDestroyRef,
-} from "../../../__test__/test-factory";
+} from "../../../../__test__/test-factory";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
 

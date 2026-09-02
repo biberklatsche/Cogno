@@ -1,10 +1,10 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
 import { TerminalId } from "@cogno/shared/ports";
 import { BAR_COUNT, heightFrameToGrid, MAX_HEIGHT, MIN_HEIGHT } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
-import { TerminalActivityService } from "../common/terminal-activity/terminal-activity.service";
 
 const ACTIVE_FRAME_COUNT = 6;
 const IDLE_FRAME_COUNT = 20;

@@ -1,6 +1,6 @@
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { clear, getAppBus } from "../../../../__test__/test-factory";
+import { clear, getAppBus } from "../../../../../__test__/test-factory";
 import { KeybindExecutor, KeybindExecutorSession } from "./keybind.executor";
 
 type SessionStub = { -readonly [K in keyof KeybindExecutorSession]: KeybindExecutorSession[K] };

@@ -1,6 +1,8 @@
 import { Injectable } from "@angular/core";
 import { Command } from "@cogno/core/session/model/command.model";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TauriPty } from "@cogno/platform/pty";
 import {
   TerminalBusyStateChangeContract,
@@ -12,8 +14,6 @@ import {
   TerminalSnapshotOptionsContract,
 } from "@cogno/shared/ports";
 import { map, Observable } from "rxjs";
-import { GridListService } from "../grid-list/+state/grid-list.service";
-import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";
 
 @Injectable({ providedIn: "root" })
 export class TerminalGatewayAdapterService extends TerminalGateway {

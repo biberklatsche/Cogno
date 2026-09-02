@@ -2,10 +2,10 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { BusyIndicatorTarget } from "@cogno/core/workbench/bus/busy-indicator/events";
+import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TabId } from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
-import { GridListService } from "../../grid-list/+state/grid-list.service";
 
 export type BusyIndicatorRegistration = {
   registrationId: string;

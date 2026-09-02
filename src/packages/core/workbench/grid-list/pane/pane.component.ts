@@ -9,10 +9,10 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import { TerminalId } from "@cogno/shared/ports";
 import { Pane } from "../+model/model";
 import { GridListService } from "../+state/grid-list.service";
-import { TerminalComponentFactory } from "../+state/terminal-component.factory";
 import { PaneHeaderComponent } from "./pane-header.component";
 
 @Component({
@@ -77,7 +77,7 @@ export class PaneComponent implements AfterViewInit {
   });
 
   constructor(
-    private _terminalComponents: TerminalComponentFactory,
+    private _terminalComponents: SessionHostFactory,
     private gridListService: GridListService,
   ) {
     // Create the effect within an injection context (constructor)

@@ -1,9 +1,9 @@
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import type { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import { of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../../features/__test__/destroy-ref";
-import type { GridListService } from "../../grid-list/+state/grid-list.service";
+import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { NotificationTargetRuntimeService } from "./notification-target-runtime.service";
 
 describe("NotificationTargetRuntimeService", () => {

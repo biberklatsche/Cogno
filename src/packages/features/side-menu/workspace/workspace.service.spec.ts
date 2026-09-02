@@ -4,7 +4,7 @@ import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../__test__/destroy-ref";
+import { getDestroyRef } from "../../../__test__/destroy-ref";
 import type { WorkspaceCloseGuard } from "./workspace-close-guard.port";
 
 describe("WorkspaceService", () => {

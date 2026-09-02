@@ -4,15 +4,15 @@ import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/da
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
+import { TerminalBusyIndicatorAdapterService } from "@cogno/core/workbench/terminal/terminal-busy-indicator-adapter.service";
 import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
-import { BusyIndicatorService } from "./common/busy-indicator/busy-indicator.service";
 import { GridListComponent } from "./grid-list/grid-list.component";
 import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-header.component";
 import { AppNotificationToastStackComponent } from "./notification/app-notification-toast-stack.component";
 import { TabListComponent } from "./tab-list/tab-list.component";
-import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-indicator-adapter.service";
 
 @Component({
   selector: "app-root",

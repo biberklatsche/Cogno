@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalNavigator } from "@cogno/features/side-menu/ports";
-import { GridListService } from "../grid-list/+state/grid-list.service";
-import { TabListService } from "../tab-list/+state/tab-list.service";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 @Injectable({ providedIn: "root" })

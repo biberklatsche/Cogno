@@ -7,7 +7,7 @@ import type {
 } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../__test__/destroy-ref";
+import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { TerminalSearchService } from "./terminal-search.service";
 
 describe("TerminalSearchService", () => {

@@ -13,6 +13,10 @@ import {
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
+import { BusyIndicatorComponent } from "@cogno/core/workbench/busy-indicator/busy-indicator.component";
+import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
+import { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
+import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TabId } from "@cogno/shared/domain";
 import { ColorName, IdCreator } from "@cogno/shared/support";
 import {
@@ -26,12 +30,8 @@ import {
   TooltipDirective,
 } from "@cogno/shared/ui";
 import { map, Observable } from "rxjs";
-import { BusyIndicatorComponent } from "../common/busy-indicator/busy-indicator.component";
-import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
 import { ColorSelectComponent } from "../common/color/color-select.component";
 import { AppMenuButtonComponent } from "../menu/app-menu/app-menu-button.component";
-import { Tab } from "./+model/tab";
-import { TabListService } from "./+state/tab-list.service";
 
 @Component({
   selector: "app-tab-list",

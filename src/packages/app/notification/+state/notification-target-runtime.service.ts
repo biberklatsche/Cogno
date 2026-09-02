@@ -1,8 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import { Subscription } from "rxjs";
-import { GridListService } from "../../grid-list/+state/grid-list.service";
 
 export interface NotificationTargetRuntime {
   readonly workspaceId: string;

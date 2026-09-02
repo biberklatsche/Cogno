@@ -1,6 +1,9 @@
 import { provideZonelessChangeDetection } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
+import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
+import type { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
+import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { OsPlatform } from "@cogno/platform/os";
 import { ContextMenuOverlayService, DragPreviewService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,9 +14,6 @@ import {
   getConfigService,
   getDestroyRef,
 } from "../../__test__/test-factory";
-import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
-import type { Tab } from "./+model/tab";
-import { TabListService } from "./+state/tab-list.service";
 import { TabListComponent } from "./tab-list.component";
 
 function tab(overrides: Partial<Tab> = {}): Tab {

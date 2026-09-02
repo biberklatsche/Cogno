@@ -31,6 +31,7 @@ vi.mock("@cogno/platform/logger", () => ({
 
 import { ActionFired, type ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { Logger } from "@cogno/platform/logger";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
@@ -41,7 +42,6 @@ import {
   getTerminalBusyStateService,
   getWindowService,
 } from "../../__test__/test-factory";
-import type { TerminalBusyStateService } from "../terminal/terminal-busy-state.service";
 import type { WindowService } from "./window.service";
 
 const windowCoreStub = {

@@ -10,6 +10,8 @@ import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
 import { ActionFired, ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
+import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
 import { ShellLineEditorActionContract } from "@cogno/shared/contributions";
 import {
   buildNotificationPreferencesMenuItems,
@@ -21,8 +23,6 @@ import {
 import { NotificationChannelsPort, TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
-import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
-import { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import {
   CompletedCommandNotificationHandler,
   DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,

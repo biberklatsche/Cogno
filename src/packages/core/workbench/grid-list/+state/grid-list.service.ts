@@ -18,6 +18,7 @@ import {
   TerminalFocusedEvent,
   TerminalTitleChangedEvent,
 } from "@cogno/core/workbench/bus/terminal/events";
+import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import {
   BinaryNode,
   BinaryTree,
@@ -30,7 +31,6 @@ import { TerminalId } from "@cogno/shared/ports";
 import { IdCreator } from "@cogno/shared/support";
 import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { Grid, GridList, Pane, SplitDirection } from "../+model/model";
-import { TerminalComponentFactory } from "./terminal-component.factory";
 
 @Injectable({ providedIn: "root" })
 export class GridListService {
@@ -145,7 +145,7 @@ export class GridListService {
 
   constructor(
     private bus: AppBus,
-    private componentFactory: TerminalComponentFactory,
+    private componentFactory: SessionHostFactory,
     destroyRef: DestroyRef,
   ) {
     combineLatest([this._gridList, this._activeTabId])

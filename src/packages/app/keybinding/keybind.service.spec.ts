@@ -1,10 +1,10 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../features/__test__/destroy-ref";
-import { TerminalFullscreenService } from "../terminal/terminal-fullscreen.service";
+import { getDestroyRef } from "../../__test__/destroy-ref";
 import { KeybindService } from "./keybind.service";
 import type { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
 import { TerminalKeybindingContextService } from "./terminal-keybinding-context.service";

@@ -1,24 +1,22 @@
-import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import type { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { Renderer } from "@cogno/core/terminal/renderer";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
+import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
-import type { NotificationChannelContract } from "@cogno/shared/domain";
+import type { NotificationChannelsPort } from "@cogno/shared/ports";
 import { DialogRef, type DialogService } from "@cogno/shared/ui";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
-import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
-import { getActionKeybindingPortMock, getAppBus } from "../../../__test__/test-factory";
-import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
-import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
-import { NotificationChannelsPortAdapterService } from "../../notification/+state/notification-channels-port.adapter.service";
-import type { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
+import { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
+import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
+import { getActionKeybindingPortMock, getAppBus } from "../../../../__test__/test-factory";
 import { SessionFactBridge } from "./session-fact-bridge";
 import { SessionMenus } from "./session-menus";
 import { TerminalSessionRegistry } from "./terminal-session.registry";
@@ -117,15 +115,26 @@ describe("SessionFactBridge", () => {
     );
 
     preloadForShellIntegration = vi.fn();
-    const wiringService = {
-      getShellDefinitions: vi.fn().mockReturnValue([]),
-      getNotificationChannels: vi
-        .fn<() => ReadonlyArray<NotificationChannelContract>>()
-        .mockReturnValue([
-          { displayName: "App", id: "app", sortOrder: 100, dispatch: vi.fn() },
-          { displayName: "OS", id: "os", sortOrder: 90, dispatch: vi.fn() },
-        ]),
-    } as unknown as AppWiringService;
+    // The port as the bridge sees it: the two channels, filtered and defaulted
+    // from config the way the real adapter (app/notification) does.
+    const notificationChannelsPort: NotificationChannelsPort = {
+      getAvailableChannels() {
+        const channelConfig = configService.config.notification?.channel as
+          | Readonly<Record<string, { readonly available?: boolean; readonly enabled?: boolean }>>
+          | undefined;
+        return [
+          { id: "app", displayName: "App", sortOrder: 100 },
+          { id: "os", displayName: "OS", sortOrder: 90 },
+        ]
+          .filter((channel) => channelConfig?.[channel.id]?.available ?? true)
+          .sort((left, right) => right.sortOrder - left.sortOrder)
+          .map((channel) => ({
+            id: channel.id,
+            displayName: channel.displayName,
+            defaultEnabled: channelConfig?.[channel.id]?.enabled ?? false,
+          }));
+      },
+    };
     registry = new TerminalSessionRegistry();
     bridge = new SessionFactBridge(
       bus,
@@ -135,8 +144,8 @@ describe("SessionFactBridge", () => {
       {
         resolveForTerminal: vi.fn().mockReturnValue({ workspaceId: "w", tabId: "t", terminalId }),
       } as unknown as NotificationTargetResolverService,
-      new NotificationChannelsPortAdapterService(wiringService, configService as never),
-      { preloadForShellIntegration } as unknown as TerminalAutocompleteFeatureSuggestorService,
+      notificationChannelsPort,
+      { preloadForShellIntegration } as unknown as AutocompleteSuggestorSource,
       registry,
       { triggerAutocomplete: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
       { triggerCommandHistory: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,

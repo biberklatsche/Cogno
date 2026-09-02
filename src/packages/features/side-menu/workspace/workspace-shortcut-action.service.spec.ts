@@ -3,7 +3,7 @@ import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import type { ActionDispatcher } from "@cogno/shared/ports";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../__test__/destroy-ref";
+import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 
 describe("WorkspaceShortcutActionService", () => {

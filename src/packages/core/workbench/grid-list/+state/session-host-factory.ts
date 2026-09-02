@@ -68,7 +68,7 @@ type SessionEntry = {
  * afterwards; destroying a view never ends a session (ARCHITECTURE.md 2.3).
  */
 @Injectable({ providedIn: "root" })
-export class TerminalComponentFactory {
+export class SessionHostFactory {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
 
   constructor(
