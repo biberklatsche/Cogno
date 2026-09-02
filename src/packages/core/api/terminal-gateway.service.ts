@@ -14,12 +14,18 @@ import {
   TerminalSnapshotOptionsContract,
 } from "@cogno/shared/ports";
 import { map, Observable } from "rxjs";
+import { BoundSession, BoundSessionIdentity } from "./bound-session";
+import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 
 @Injectable({ providedIn: "root" })
 export class TerminalGatewayService extends TerminalGateway {
   readonly focusedTerminalId$: Observable<TerminalId | undefined>;
   readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
   readonly cwdChanges$: Observable<void>;
+
+  /** The session the API is bound to; follows focus unless held. */
+  readonly boundSession$: Observable<BoundSession>;
+  private readonly boundSessionTracker: BoundSessionTracker;
 
   constructor(
     private readonly appBus: AppBus,
@@ -41,6 +47,58 @@ export class TerminalGatewayService extends TerminalGateway {
     this.cwdChanges$ = this.appBus
       .onType$("TerminalCwdChanged", { path: ["app", "terminal"] })
       .pipe(map(() => undefined));
+
+    this.boundSessionTracker = new BoundSessionTracker(
+      this.focusedTerminalId$,
+      (terminalId) => this.identityOf(terminalId),
+      (terminalId) => this.runtimeOf(terminalId),
+    );
+    this.boundSession$ = this.boundSessionTracker.boundSession$;
+  }
+
+  /** Pin the binding to the current session across focus changes. */
+  hold(): void {
+    this.boundSessionTracker.hold();
+  }
+
+  /** Return to following focus. */
+  release(): void {
+    this.boundSessionTracker.release();
+  }
+
+  /** Bring a session into view (workspace + tab + focus). */
+  revealSession(terminalId: TerminalId): void {
+    this.revealTerminal(terminalId);
+  }
+
+  private identityOf(terminalId: TerminalId): BoundSessionIdentity | undefined {
+    const entry = this.terminalSessionRegistry.get(terminalId);
+    if (!entry) {
+      return undefined;
+    }
+    return { terminalId, sessionToken: entry.host.model.sessionToken };
+  }
+
+  private runtimeOf(terminalId: TerminalId): Observable<BoundRuntimeStatus> {
+    const entry = this.terminalSessionRegistry.get(terminalId);
+    if (!entry) {
+      return new Observable<BoundRuntimeStatus>((subscriber) => subscriber.next("closed"));
+    }
+    return entry.host.runtime$.pipe(
+      map((runtime): BoundRuntimeStatus => {
+        if (runtime.status === "closing") {
+          return "closing";
+        }
+        if (
+          runtime.status === "exited" ||
+          runtime.status === "closed" ||
+          runtime.status === "failed"
+        ) {
+          return "closed";
+        }
+        return "active";
+      }),
+    );
   }
 
   getFocusedTerminalId(): TerminalId | undefined {

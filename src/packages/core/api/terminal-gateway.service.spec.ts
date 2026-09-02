@@ -3,7 +3,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TauriPty } from "@cogno/platform/pty";
-import { firstValueFrom } from "rxjs";
+import { BehaviorSubject, firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("TerminalGatewayService", () => {
@@ -26,6 +26,7 @@ describe("TerminalGatewayService", () => {
       has: vi.fn().mockReturnValue(true),
       get: vi.fn().mockReturnValue({
         host: {
+          runtime$: new BehaviorSubject({ status: "running" }),
           getRecentOutputSnapshot: vi.fn().mockReturnValue("recent output"),
           getLatestCommandOutputSnapshot: vi.fn().mockReturnValue("latest output"),
           state: {
@@ -35,6 +36,7 @@ describe("TerminalGatewayService", () => {
             isCommandRunning: true,
           },
           model: {
+            sessionToken: "token-1",
             commands: [
               {
                 id: "command-1",
