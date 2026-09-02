@@ -10,16 +10,17 @@ const CAPS_PREFIX = "COGNO:CAPS;";
  * Reads what the shell integration says on OSC 733 and updates the session
  * model accordingly.
  *
- * `COGNO:CAPS` arrives while the integration script loads, before the first
- * prompt; it records what this session can do. Everything else is a
- * `COGNO:PROMPT`: the previous command is over, and the prompt carries
- * where the shell is and how the command went.
+ * `COGNO:CAPS` records what the shell can do and, through the context
+ * timeline, which shell it is: a handshake while a command runs is a new
+ * inner context (`wsl`, `ssh` with the integration), otherwise it
+ * re-handshakes the current one. `COGNO:PROMPT` ends the running command -
+ * and if that command had opened an inner context, the prompt is the outer
+ * shell's, so the context returns first.
  *
  * Both change the model, so both must prove they come from this session's
- * integration: anything in the pty can print an OSC sequence (a `cat`, a
- * build log, an ssh host), but only the integration knows the session
- * token. A sequence without it is dropped before it touches the model
- * (ARCHITECTURE.md 2.1, "Der Handshake ist authentisiert").
+ * integration: anything in the pty can print an OSC sequence, but only the
+ * integration knows the session token. A sequence without it is dropped
+ * before it touches the model (ARCHITECTURE.md 2.1).
  */
 export function interpretCognoOsc(data: string, model: SessionModel): CognoOscResult {
   const isCaps = data.startsWith(CAPS_PREFIX);
@@ -33,11 +34,16 @@ export function interpretCognoOsc(data: string, model: SessionModel): CognoOscRe
 
   if (isCaps) {
     if (kv) {
-      model.updateSessionCapabilities(toSessionCapabilities(kv));
+      model.applyHandshake(toSessionCapabilities(kv), {
+        shell: kv["shell"],
+        os: kv["os"],
+        distro: kv["distro"],
+      });
     }
     return "capabilities";
   }
 
+  model.onPromptBeforeCommandEnd();
   model.endCommand();
   model.report({ type: "promptReported" });
   if (!kv) return "ignored";

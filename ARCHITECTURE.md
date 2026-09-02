@@ -7,7 +7,7 @@ Grundlage ist die Bestandsaufnahme in `.claude/plans/capability-inventory.md`.
 
 **Umbaustand:** Die Architektur wird in Schritten umgesetzt; der
 Umsetzungsplan liegt unter `.claude/plans/umsetzungsplan.md` (Schritte 0–29).
-**Aktueller Schritt: 14 (Session-Host mit zwei Achsen).** Bis Schritt 28 liegt Code zusätzlich
+**Aktueller Schritt: 15 (Handshake-Token + Kontext-Zeitachse).** Bis Schritt 28 liegt Code zusätzlich
 unter `src/packages/app/` nach dem alten Vier-Paket-Layout; dafür gelten die
 Übergangsregeln in 2.1.
 

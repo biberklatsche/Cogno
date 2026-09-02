@@ -21,6 +21,7 @@ import { CommandLineBuffer } from "./model/command-line.buffer";
 import { CommandLineObserver } from "./model/command-line.observer";
 import { SessionModel } from "./model/session-model";
 import { CommandRecorder } from "./recorder/command-recorder";
+import type { SessionFact } from "./session-facts";
 
 const ESC = "\x1b";
 const ST = `${ESC}\\`;
@@ -212,6 +213,110 @@ describe("headless session (handshake token)", () => {
   });
 });
 
+describe("headless session (context timeline)", () => {
+  // A prompt cycle in the current context, token included, that ends the
+  // command that opened an inner context.
+  function outerPrompt(
+    session: ReturnType<typeof createHeadlessSession>,
+    id: number,
+    command: string,
+  ) {
+    return session.write(
+      `${ESC}]733;COGNO:PROMPT;token=${TOKEN};returnCode=0;user=dev;machine=box;directory=/home/dev;id=${id};command=${command};${ST}`,
+    );
+  }
+
+  it("pushes an inner context on a second handshake and pops it on command end", async () => {
+    const session = createHeadlessSession("PowerShell", "windows");
+    await session.write(pwsh("C:\\Users\\dev").caps);
+    await session.write(pwsh("C:\\Users\\dev").prompt(1));
+    expect(session.model.state.shellContext).toEqual({
+      shellType: "PowerShell",
+      backendOs: "windows",
+    });
+    const baseRevision = session.model.state.contextRevision;
+
+    // A command runs, and inside it a Linux bash authenticates.
+    session.model.startCommand("wsl");
+    expect(session.model.isCommandRunning).toBe(true);
+    await session.write(
+      `${ESC}]733;COGNO:CAPS;token=${TOKEN};shell=bash;os=linux;distro=;shellVersion=5.2;nativeActions=clearLine;bracketedPaste=true;${ST}`,
+    );
+
+    expect(session.model.state.shellContext).toEqual({ shellType: "Bash", backendOs: "linux" });
+    expect(session.model.state.isContextKnown).toBe(true);
+    expect(session.model.state.contextRevision).not.toBe(baseRevision);
+    expect(session.model.sessionCapabilities?.nativeActions).toContain("clearLine");
+
+    // The wsl command ends: the outer PowerShell context is back.
+    await outerPrompt(session, 2, "wsl");
+
+    expect(session.model.state.shellContext).toEqual({
+      shellType: "PowerShell",
+      backendOs: "windows",
+    });
+    expect(session.model.sessionCapabilities?.nativeActions).toContain(
+      "clearLine,replaceCurrentInput".split(",")[1],
+    );
+  });
+
+  it("reads a distro on a Windows host as a WSL context, not the reported linux os", async () => {
+    const session = createHeadlessSession("PowerShell", "windows");
+    await session.write(pwsh("C:\\Users\\dev").caps);
+    await session.write(pwsh("C:\\Users\\dev").prompt(1));
+
+    session.model.startCommand("wsl");
+    await session.write(
+      `${ESC}]733;COGNO:CAPS;token=${TOKEN};shell=bash;os=linux;distro=Ubuntu;shellVersion=5.2;nativeActions=;bracketedPaste=true;${ST}`,
+    );
+
+    expect(session.model.state.shellContext).toEqual({
+      shellType: "Bash",
+      backendOs: "windows",
+      wslDistroName: "Ubuntu",
+    });
+  });
+
+  it("degrades into an unknown context on ssh without a handshake and recovers on return", async () => {
+    const session = createHeadlessSession("Bash", "linux");
+    await session.write(bashLike("bash", "/home/dev").caps);
+    await session.write(bashLike("bash", "/home/dev").prompt(1));
+    expect(session.model.pathAdapter).toBeDefined();
+
+    session.model.startCommand("ssh remote-host");
+
+    // No handshake from the remote host: path translation and editor
+    // actions are off until the command returns.
+    expect(session.model.state.isContextKnown).toBe(false);
+    expect(session.model.pathAdapter).toBeUndefined();
+    expect(session.model.sessionCapabilities).toBeUndefined();
+
+    await session.write(
+      `${ESC}]733;COGNO:PROMPT;token=${TOKEN};returnCode=0;user=dev;machine=box;directory=/home/dev;id=2;command=ssh remote-host;${ST}`,
+    );
+
+    expect(session.model.state.isContextKnown).toBe(true);
+    expect(session.model.pathAdapter).toBeDefined();
+  });
+
+  it("does not record commands run in a foreign context", async () => {
+    const session = createHeadlessSession("Bash", "linux");
+    await session.write(bashLike("bash", "/home/dev").caps);
+    await session.write(bashLike("bash", "/home/dev").prompt(1));
+    vi.mocked(session.recorder.onCommandExecuted).mockClear();
+
+    session.model.startCommand("ssh remote-host");
+    // A prompt-shaped line arrives, but the token proves it is still ours;
+    // it ends the ssh command and returns - the command inside is not recorded.
+    await session.write(
+      `${ESC}]733;COGNO:PROMPT;token=${TOKEN};returnCode=0;user=dev;machine=box;directory=/home/dev;id=2;command=ssh remote-host;${ST}`,
+    );
+
+    // The ssh command itself (base context) is recorded on its completion.
+    expect(session.recorder.onCommandExecuted).toHaveBeenCalled();
+  });
+});
+
 describe("headless session (size and reflow)", () => {
   // Documented spike findings on resize before open():
   // - An unopened terminal takes cols/rows from its options and accepts
@@ -280,3 +385,5 @@ describe("headless session (size and reflow)", () => {
     expect(session.buffer.readInputText("echo hi".length)).toBe("echo hi");
   });
 });
+
+// M2

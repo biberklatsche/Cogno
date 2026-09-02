@@ -10,7 +10,7 @@ import type { SessionFact } from "../session-facts";
 import { createPathAdapter } from "../shells/shell-definitions";
 import { Command, CommandData } from "./command.model";
 import { ExecutedCommand, TerminalCommandHistoryStore } from "./command-history.store";
-import { deriveShellContext } from "./shell-context";
+import { contextFromHandshake, deriveShellContext } from "./shell-context";
 
 export type TerminalInput = {
   cursorIndex: number;
@@ -31,6 +31,16 @@ export type SessionModelSnapshot = {
    * COGNO:CAPS handshake; undefined until (and unless) the handshake arrives.
    */
   sessionCapabilities: ShellSessionCapabilitiesContract | undefined;
+  /**
+   * The context timeline's current entry (ARCHITECTURE.md 2.1, "Das
+   * Sitzungsmodell ist veränderlich"). `contextRevision` rises on every
+   * push and pop, so a feature that planned against one context can tell it
+   * has moved on. `isContextKnown` is false in a foreign shell whose
+   * integration did not authenticate - path translation, editor actions and
+   * recording degrade visibly there rather than guess.
+   */
+  contextRevision: number;
+  isContextKnown: boolean;
   hasUnreadNotification: boolean;
   isPaneMaximized: boolean;
 };
@@ -43,9 +53,20 @@ export const createInitialSessionState = (backendOs: OsType): SessionModelSnapsh
   isCommandRunning: false,
   commandStartTime: undefined,
   sessionCapabilities: undefined,
+  contextRevision: 0,
+  isContextKnown: true,
   hasUnreadNotification: false,
   isPaneMaximized: false,
 });
+
+/** One entry of the context timeline: what the shell is, and what it can do. */
+type ContextEntry = {
+  /** The resolved shell context; undefined means an unauthenticated foreign shell. */
+  readonly context: ResolvedShellContextContract | undefined;
+  readonly capabilities: ShellSessionCapabilitiesContract | undefined;
+  readonly pathAdapter: IPathAdapter | undefined;
+  readonly revision: number;
+};
 
 /**
  * The session's half of what used to be one state manager: which shell runs
@@ -63,7 +84,9 @@ export const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
 export class SessionModel {
   private readonly _state: BehaviorSubject<SessionModelSnapshot>;
   private readonly _facts = new Subject<SessionFact>();
-  private _pathAdapter?: IPathAdapter;
+  /** The context timeline; the base context is always entry 0 (ARCHITECTURE.md 2.1). */
+  private _contextStack: ContextEntry[] = [];
+  private _nextRevision = 1;
   private _sessionToken?: string;
   private _untrustedSequenceCount = 0;
 
@@ -119,9 +142,103 @@ export class SessionModel {
     backendOs: OsType,
   ): void {
     const shellContext = deriveShellContext(shellType, shellProfile, backendOs);
-    this._pathAdapter = createPathAdapter(shellContext);
-    this._recorder.initialize(shellContext, this._pathAdapter, terminalId);
-    this.update({ terminalId, shellContext, isPaneMaximized: false });
+    const pathAdapter = createPathAdapter(shellContext);
+    this._contextStack = [
+      { context: shellContext, capabilities: undefined, pathAdapter, revision: 0 },
+    ];
+    this._recorder.initialize(shellContext, pathAdapter, terminalId);
+    this.update({
+      terminalId,
+      shellContext,
+      contextRevision: 0,
+      isContextKnown: true,
+      isPaneMaximized: false,
+    });
+  }
+
+  // ---- context timeline -------------------------------------------------
+
+  private get currentContextEntry(): ContextEntry | undefined {
+    return this._contextStack[this._contextStack.length - 1];
+  }
+
+  /** Whether the session is in its original context (entry 0), where it records. */
+  private get isBaseContext(): boolean {
+    return this._contextStack.length === 1;
+  }
+
+  /** The nearest known context from the top down; the base is always known. */
+  private currentKnownContext(): ResolvedShellContextContract {
+    for (let i = this._contextStack.length - 1; i >= 0; i--) {
+      const context = this._contextStack[i].context;
+      if (context) return context;
+    }
+    return this._state.value.shellContext;
+  }
+
+  /**
+   * A trusted `COGNO:CAPS` handshake. While a command runs it is a new inner
+   * context (`wsl`, `ssh` with the integration installed and the token
+   * forwarded); otherwise it re-handshakes the current context - the boot
+   * handshake, or an `exec` that replaced the shell in place.
+   */
+  applyHandshake(
+    capabilities: ShellSessionCapabilitiesContract,
+    fields: { shell?: string; os?: string; distro?: string },
+  ): void {
+    const context = contextFromHandshake(fields, this.currentKnownContext());
+    const entry: ContextEntry = {
+      context,
+      capabilities,
+      pathAdapter: context ? createPathAdapter(context) : undefined,
+      revision: this._nextRevision++,
+    };
+    // Push only for a genuinely nested known context - a handshake inside a
+    // shell that already authenticated. Otherwise replace the current entry:
+    // the command that ran (`wsl`, `ssh`) had degraded to an unknown context
+    // and its inner shell now authenticates (same level, resolved, so the one
+    // returning prompt unwinds the whole command), or it is the boot handshake
+    // or an `exec` that replaced the shell in place.
+    if (this.isCommandRunning && this.currentContextEntry?.context !== undefined) {
+      this._contextStack.push(entry);
+    } else {
+      this._contextStack[this._contextStack.length - 1] = entry;
+    }
+    this.syncContext();
+  }
+
+  /**
+   * A running command left the known context without an authenticated
+   * handshake (`ssh`/`wsl` into a host that has no integration, or has it but
+   * did not forward the token). Everything context-bound degrades until the
+   * command ends (ARCHITECTURE.md 4.3, not 4.4 - visible, not guessed).
+   */
+  enterUnknownContext(): void {
+    this._contextStack.push({
+      context: undefined,
+      capabilities: undefined,
+      pathAdapter: undefined,
+      revision: this._nextRevision++,
+    });
+    this.syncContext();
+  }
+
+  /** The command that opened an inner context ended; the outer context is back. */
+  private popContextOnCommandEnd(): void {
+    if (this._contextStack.length <= 1) return;
+    this._contextStack.pop();
+    this._nextRevision++;
+    this.syncContext();
+  }
+
+  private syncContext(): void {
+    const entry = this.currentContextEntry;
+    this.update({
+      shellContext: this.currentKnownContext(),
+      sessionCapabilities: entry?.capabilities,
+      contextRevision: entry?.revision ?? 0,
+      isContextKnown: entry?.context !== undefined,
+    });
   }
 
   dispose(): void {
@@ -142,17 +259,18 @@ export class SessionModel {
   }
 
   get pathAdapter(): IPathAdapter | undefined {
-    return this._pathAdapter;
+    return this.currentContextEntry?.pathAdapter;
   }
 
   renderPathForInsertion(path: string): string | undefined {
-    if (!this._pathAdapter) {
+    const pathAdapter = this.pathAdapter;
+    if (!pathAdapter) {
       return undefined;
     }
 
     try {
-      const normalizedPath = this._pathAdapter.normalize(path);
-      return this._pathAdapter.render(normalizedPath, { purpose: "insert_arg" });
+      const normalizedPath = pathAdapter.normalize(path);
+      return pathAdapter.render(normalizedPath, { purpose: "insert_arg" });
     } catch {
       return undefined;
     }
@@ -179,12 +297,18 @@ export class SessionModel {
 
     this._historyStore.startCommand(overrideInputText ?? currentInput.text);
 
+    const commandText = overrideInputText ?? currentInput.text;
     this.update({
       isCommandRunning: true,
       commandStartTime: Date.now(),
       input: { text: "", maxCursorIndex: 0, cursorIndex: 0 },
     });
     this.report({ type: "busyChanged", isBusy: true });
+    if (this.isBaseContext && leavesTheKnownContext(commandText)) {
+      // ssh/wsl take the shell somewhere Cogno cannot resolve unless the
+      // inner shell authenticates; until then, degrade.
+      this.enterUnknownContext();
+    }
   }
 
   endCommand(): void {
@@ -219,24 +343,26 @@ export class SessionModel {
     return this._state.pipe(map((s) => s.sessionCapabilities));
   }
 
-  updateSessionCapabilities(sessionCapabilities: ShellSessionCapabilitiesContract): void {
-    this.update({ sessionCapabilities });
+  /** Ends the current command's context if it opened one; then the prompt is the outer shell's. */
+  onPromptBeforeCommandEnd(): void {
+    this.popContextOnCommandEnd();
   }
 
   // ---- working directory ------------------------------------------------
 
   updateCwd(cwd: string): void {
-    const normalizedPath = this._pathAdapter?.normalize(cwd);
+    const pathAdapter = this.pathAdapter;
+    const normalizedPath = pathAdapter?.normalize(cwd);
     const storedCwd = normalizedPath ?? cwd;
     const cwdChanged = storedCwd !== this._state.value.cwd;
 
     this.update({ cwd: storedCwd });
 
     if (!normalizedPath) return;
-    const backendOsPath = this._pathAdapter?.render(normalizedPath, { purpose: "backend_fs" });
+    const backendOsPath = pathAdapter?.render(normalizedPath, { purpose: "backend_fs" });
     if (!backendOsPath) return;
 
-    if (cwdChanged) {
+    if (cwdChanged && this.isBaseContext) {
       this._recorder.onCwdChanged(normalizedPath);
     }
 
@@ -255,7 +381,9 @@ export class SessionModel {
 
   updateCommand(data: CommandData): ExecutedCommand | undefined {
     const executedCommand = this._historyStore.updateCommand(data);
-    this._recorder.onCommandExecuted(executedCommand);
+    if (this.isBaseContext) {
+      this._recorder.onCommandExecuted(executedCommand);
+    }
     if (executedCommand) {
       this.report({ type: "commandCompleted", command: executedCommand });
     }
@@ -304,4 +432,12 @@ export class SessionModel {
   private update(updates: Partial<SessionModelSnapshot>): void {
     this._state.next({ ...this._state.value, ...updates });
   }
+}
+
+const CONTEXT_CHANGING_COMMANDS = new Set(["ssh", "wsl"]);
+
+/** True when the command's program takes the shell into a context Cogno cannot resolve. */
+function leavesTheKnownContext(commandText: string): boolean {
+  const program = commandText.trim().split(/\s+/, 1)[0];
+  return CONTEXT_CHANGING_COMMANDS.has(program);
 }

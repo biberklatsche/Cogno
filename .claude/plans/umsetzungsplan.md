@@ -750,7 +750,7 @@ und `SessionFactBridge` in `app/` importieren `@cogno/core/session`
   die Template-Darstellung des Overlays ist nur manuell prüfbar, da die
   Vitest-Umgebung keine `templateUrl`-Komponenten rendert.
 
-### Schritt 15: Veränderlicher Shell-Kontext und Handshake-Token (ZA 2.1)
+### Schritt 15: Veränderlicher Shell-Kontext und Handshake-Token (ZA 2.1) — **erledigt (2026-09-02)**
 
 **Voraussetzungen:** 14, 3.
 
@@ -777,6 +777,29 @@ versioniert bereits). Doku: `SendEnv COGNO_SESSION_TOKEN`.
   `exit` → zurück, Windows-Pfade.
 
 **Erlaubter Übergangszustand:** keiner.
+
+**Abweichungen bei der Umsetzung** (vorher abgestimmt; zwei Teilcommits
+15a/15b):
+
+- Das Token entsteht im Host (TS) und geht über `profile.env` in den
+  Spawn, nicht in Rusts `environment_builder.rs`: der Rust-Weg liefert das
+  Token erst mit dem Spawn-Ergebnis, aber der erste `COGNO:CAPS` kann über
+  den Ausgabekanal vorher eintreffen — ein Verifikationsloch beim
+  wichtigsten Handshake. Gleiche Vertrauensgrenze, gleicher IPC-Weg.
+- `COGNO:CAPS` meldet jetzt `os=` (Architektur-Delta ohnehin) **und**
+  `distro=`; auf einem Windows-Host gewinnt die Distro-Priorität (uname
+  meldet linux, der Pfadraum ist WSL). `COGNO:PROMPT` bekommt nur `token=`.
+- Recorder pausiert außerhalb des **Basis**-Kontexts (auch im bekannten
+  inneren), nicht nur im unbekannten: das Command-Log ist pro Startkontext
+  geöffnet. Die `cwdReported`/`commandCompleted`-Fakten fließen weiter.
+- Schwelle 3 für den Fakt `untrustedSequencesIgnored` (Bridge → Warnung).
+- Pop-Regel bewusst einfach (ZA-treu): ein innerer Kontext lebt bis zum
+  nächsten Kommando-Ende; ein per Heuristik degradierter Eintrag wird vom
+  authentifizierenden inneren Handshake **ersetzt** (gleiche Ebene), damit
+  ein zurückkehrender Prompt das ganze Kommando abwickelt. Tiefer
+  verschachtelte, per Token authentifizierte Shells sind nicht getestet
+  und im Default (ohne Token-Weiterleitung) nicht erreichbar.
+- Docker/su/Container-Heuristik weggelassen (nur `ssh`/`wsl`).
 
 ---
 
