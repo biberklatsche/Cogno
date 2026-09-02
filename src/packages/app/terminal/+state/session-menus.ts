@@ -3,9 +3,8 @@ import { SessionHost } from "@cogno/core/session/host/session-host";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { OsPlatform } from "@cogno/platform/os";
+import { ActionKeybindingPort } from "@cogno/shared/ports";
 import { ContextMenuItem, DialogRef, DialogService } from "@cogno/shared/ui";
-import { KeybindService } from "../../keybinding/keybind.service";
-import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 import {
   TerminalSystemInfoDialogComponent,
   TerminalSystemInfoDialogData,
@@ -27,7 +26,7 @@ export class SessionMenus {
     private readonly bus: AppBus,
     private readonly host: SessionHost,
     private readonly bridge: SessionFactBridge,
-    private readonly keybindService: KeybindService,
+    private readonly keybindings: ActionKeybindingPort,
     private readonly os: OsPlatform,
     private readonly dialog: DialogService,
   ) {}
@@ -137,7 +136,7 @@ export class SessionMenus {
   }
 
   private keybindingFor(actionName: ActionName): string {
-    return formatKeybinding(this.keybindService.getKeybinding(actionName), this.os.platform());
+    return this.keybindings.getKeybindingLabel(actionName);
   }
 
   private openProcessInfoDialog(): void {

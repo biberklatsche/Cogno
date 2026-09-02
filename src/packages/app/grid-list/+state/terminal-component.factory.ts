@@ -10,7 +10,6 @@ import {
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
-import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/terminal-autocomplete.service";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { TerminalComposerService } from "@cogno/core/session/composer/terminal-composer.service";
@@ -22,7 +21,6 @@ import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
-import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { SessionFactBridge } from "../../terminal/+state/session-fact-bridge";
 import { SessionMenus } from "../../terminal/+state/session-menus";
 import { TerminalComponent } from "../../terminal/terminal.component";
@@ -105,10 +103,6 @@ export class TerminalComponentFactory {
             TerminalCommandHistoryStore,
             CommandRecorder,
           ],
-        },
-        {
-          provide: AutocompleteSuggestorSource,
-          useExisting: TerminalAutocompleteFeatureSuggestorService,
         },
         SessionFactBridge,
         SessionMenus,

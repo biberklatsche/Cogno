@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/terminal-autocomplete.service";
 import { TerminalComposerService } from "@cogno/core/session/composer/terminal-composer.service";
 import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
@@ -9,7 +10,6 @@ import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
 import { ActionFired, ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { ShellLineEditorActionContract } from "@cogno/shared/contributions";
 import {
   buildNotificationPreferencesMenuItems,
@@ -18,10 +18,9 @@ import {
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
 } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
+import { NotificationChannelsPort, TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
-import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";
 import {
@@ -78,7 +77,7 @@ export class SessionFactBridge {
     private readonly terminalActivity: TerminalActivityService,
     private readonly notificationTargetResolverService: NotificationTargetResolverService,
     private readonly notificationChannelsPort: NotificationChannelsPort,
-    private readonly featureSuggestorService: TerminalAutocompleteFeatureSuggestorService,
+    private readonly featureSuggestorService: AutocompleteSuggestorSource,
     private readonly registry: TerminalSessionRegistry,
     private readonly autocomplete: TerminalAutocompleteService,
     private readonly history: TerminalHistoryService,

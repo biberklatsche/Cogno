@@ -21,6 +21,7 @@ import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.servi
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { SideMenuStatePersistenceService } from "@cogno/app/app-host/side-menu-state-persistence.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
+import { TerminalAutocompleteFeatureSuggestorService } from "@cogno/app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
@@ -44,13 +45,13 @@ import { WindowService } from "@cogno/app/window/window.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
+import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
 import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
 import {
   ConfirmDialogPort,
-  NotificationChannelsPort,
   TerminalIpcPort,
   TerminalMonitorPort,
 } from "@cogno/features/coding-agent/ports";
@@ -71,6 +72,7 @@ import {
   CommandRunner,
   Filesystem,
   NotificationCenterPort,
+  NotificationChannelsPort,
   TerminalAnimationPort,
   TerminalGateway,
 } from "@cogno/shared/ports";
@@ -82,6 +84,10 @@ export const appConfig: ApplicationConfig = {
     { provide: ConfigService, useClass: RealConfigService },
     { provide: CommandRunner, useExisting: CommandRunnerHostService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
+    {
+      provide: AutocompleteSuggestorSource,
+      useExisting: TerminalAutocompleteFeatureSuggestorService,
+    },
     { provide: Filesystem, useExisting: FilesystemHostService },
     { provide: additionalNotificationChannelsToken, useValue: [] },
     { provide: ActionCatalog, useExisting: ActionCatalogAdapterService },

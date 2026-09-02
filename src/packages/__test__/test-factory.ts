@@ -1,4 +1,5 @@
 import type { DestroyRef } from "@angular/core";
+import { signal } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { MachineState } from "@cogno/core/terminal/machine-state";
@@ -7,15 +8,12 @@ import { OsPlatform, OsType } from "@cogno/platform/os";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
-import type { TerminalId } from "@cogno/shared/ports";
+import type { ActionKeybindingPort, TerminalId } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { vi } from "vitest";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { GridListService } from "../app/grid-list/+state/grid-list.service";
 import type { TerminalComponentFactory } from "../app/grid-list/+state/terminal-component.factory";
-import { KeybindService } from "../app/keybinding/keybind.service";
-import { KeyboardMappingService } from "../app/keybinding/keyboard/keyboard-layout.loader";
-import type { TerminalKeybindingContextService } from "../app/keybinding/terminal-keybinding-context.service";
 import { SideMenuService } from "../app/menu/side-menu/+state/side-menu.service";
 import type { NotificationTargetResolverService } from "../app/notification/+state/notification-target-resolver.service";
 import { TabListService } from "../app/tab-list/+state/tab-list.service";
@@ -26,8 +24,6 @@ import { ConfigServiceMock } from "./mocks/config-service.mock";
 let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
 let configService: ConfigServiceMock | undefined;
-let keybindService: KeybindService | undefined;
-let keybindMappingService: KeyboardMappingService | undefined;
 let gridListService: GridListService | undefined;
 let tabListService: TabListService | undefined;
 let terminalComponentFactory: TerminalComponentFactory | undefined;
@@ -41,7 +37,6 @@ let appWiringService: AppWiringService | undefined;
 let terminalBusyStateService: TerminalBusyStateService | undefined;
 let contextMenuOverlayService: ContextMenuOverlayService | undefined;
 let notificationTargetResolverService: NotificationTargetResolverService | undefined;
-let terminalKeybindingContextService: TerminalKeybindingContextService | undefined;
 
 /** A fixed platform so specs behave the same on every developer's machine. */
 export function getOsPlatform(platform: OsType = "linux"): OsPlatform {
@@ -72,15 +67,6 @@ export function getNotificationTargetResolverService(): NotificationTargetResolv
   return notificationTargetResolverService;
 }
 
-export function getTerminalKeybindingContextService(): TerminalKeybindingContextService {
-  if (!terminalKeybindingContextService) {
-    terminalKeybindingContextService = {
-      shouldSuppressAppKeybindings: vi.fn().mockReturnValue(false),
-    } as unknown as TerminalKeybindingContextService;
-  }
-  return terminalKeybindingContextService;
-}
-
 export function getTerminalAutocompleteFeatureSuggestorService(): TerminalAutocompleteFeatureSuggestorService {
   if (!terminalAutocompleteFeatureSuggestorService) {
     terminalAutocompleteFeatureSuggestorService = {
@@ -105,26 +91,11 @@ export function getAppWiringService(): AppWiringService {
   return appWiringService;
 }
 
-export function getKeybindService(): KeybindService {
-  if (!keybindService)
-    keybindService = new KeybindService(
-      getOsPlatform(),
-      getKeyboardMappingService(),
-      getConfigService(),
-      getAppBus(),
-      getTerminalKeybindingContextService() as any,
-      getDestroyRef(),
-    );
-  return keybindService;
-}
-
-export function getKeybindServiceMock(): Pick<KeybindService, "getKeybinding"> {
-  return { getKeybinding: vi.fn().mockReturnValue(undefined) };
-}
-
-export function getKeyboardMappingService(): KeyboardMappingService {
-  if (!keybindMappingService) keybindMappingService = new KeyboardMappingService(getOsPlatform());
-  return keybindMappingService;
+export function getActionKeybindingPortMock(): ActionKeybindingPort {
+  return {
+    getKeybindingLabel: vi.fn().mockReturnValue(""),
+    lastFiredKeybinding: signal<string | undefined>(undefined),
+  };
 }
 
 export function getGridListService(): GridListService {
@@ -144,7 +115,7 @@ export function getTabListService(): TabListService {
       getOsPlatform(),
       getAppBus(),
       getConfigService(),
-      getKeybindServiceMock() as KeybindService,
+      getActionKeybindingPortMock(),
       getDestroyRef(),
     );
   }
@@ -226,8 +197,6 @@ export function clear() {
   appBus = undefined;
   sideMenuService = undefined;
   configService = undefined;
-  keybindService = undefined;
-  keybindMappingService = undefined;
   gridListService = undefined;
   tabListService = undefined;
   terminalComponentFactory = undefined;
@@ -239,5 +208,4 @@ export function clear() {
   terminalBusyStateService = undefined;
   contextMenuOverlayService = undefined;
   notificationTargetResolverService = undefined;
-  terminalKeybindingContextService = undefined;
 }

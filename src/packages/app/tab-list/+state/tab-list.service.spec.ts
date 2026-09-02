@@ -12,12 +12,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import {
   clear,
+  getActionKeybindingPortMock,
   getAppBus,
   getConfigService,
   getDestroyRef,
-  getKeybindServiceMock,
 } from "../../../__test__/test-factory";
-import type { KeybindService } from "../../keybinding/keybind.service";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
 
@@ -48,7 +47,7 @@ describe("TabListService", () => {
       osStub,
       bus,
       configService,
-      getKeybindServiceMock() as KeybindService,
+      getActionKeybindingPortMock(),
       getDestroyRef(),
     );
   });

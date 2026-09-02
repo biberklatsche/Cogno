@@ -13,10 +13,9 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { SessionState } from "@cogno/core/session/host/session-host";
 import { Command } from "@cogno/core/session/model/command.model";
 import { ProcessDetails, ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
-import { TerminalId } from "@cogno/shared/ports";
+import { ActionKeybindingPort, TerminalId } from "@cogno/shared/ports";
 import { DIALOG_DATA } from "@cogno/shared/ui";
 import { Observable } from "rxjs";
-import { KeybindService } from "../../keybinding/keybind.service";
 
 export type TerminalSystemInfoSource = {
   state$: Observable<SessionState>;
@@ -355,7 +354,7 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
   readonly terminalState: Signal<SessionState | null> = toSignal(this.data.systemInfo.state$, {
     initialValue: null,
   });
-  readonly lastKeybinding = this.keybindService.lastFiredKeybinding;
+  readonly lastKeybinding = this.keybindings.lastFiredKeybinding;
   readonly terminalCommands = toSignal(this.data.systemInfo.commands$, { initialValue: [] });
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -364,7 +363,7 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
 
   constructor(
     @Inject(DIALOG_DATA) private readonly data: TerminalSystemInfoDialogData,
-    private readonly keybindService: KeybindService,
+    private readonly keybindings: ActionKeybindingPort,
   ) {}
 
   ngOnInit(): void {

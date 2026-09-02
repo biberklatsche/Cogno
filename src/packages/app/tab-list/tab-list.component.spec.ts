@@ -6,13 +6,12 @@ import { ContextMenuOverlayService, DragPreviewService } from "@cogno/shared/ui"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
+  getActionKeybindingPortMock,
   getAppBus,
   getConfigService,
   getDestroyRef,
-  getKeybindServiceMock,
 } from "../../__test__/test-factory";
 import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
-import type { KeybindService } from "../keybinding/keybind.service";
 import type { Tab } from "./+model/tab";
 import { TabListService } from "./+state/tab-list.service";
 import { TabListComponent } from "./tab-list.component";
@@ -69,7 +68,7 @@ describe("TabListComponent", () => {
       osStub,
       getAppBus(),
       getConfigService(),
-      getKeybindServiceMock() as KeybindService,
+      getActionKeybindingPortMock(),
       getDestroyRef(),
     );
     tabListService.activateWorkspace("ws-1");

@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, Signal } from "@angular/core";
 import { OsPlatform } from "@cogno/platform/os";
 import { ActionKeybindingContract } from "@cogno/shared/ports";
 import { KeybindService } from "../keybinding/keybind.service";
@@ -18,5 +18,9 @@ export class ActionKeybindingPortAdapterService implements ActionKeybindingContr
   getKeybindingLabel(actionName: string): string {
     const keybinding = this.keybindService.getKeybinding(actionName);
     return this.keybindingPipe.transform(keybinding);
+  }
+
+  get lastFiredKeybinding(): Signal<string | undefined> {
+    return this.keybindService.lastFiredKeybinding;
   }
 }

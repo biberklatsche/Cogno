@@ -1,14 +1,14 @@
 import { Injectable, Signal, signal } from "@angular/core";
 import {
-  NotificationChannelOptionContract,
-  NotificationChannelsPort,
-} from "@cogno/features/coding-agent/ports";
-import {
   NotificationDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
 } from "@cogno/shared/domain";
-import { ApplicationConfigurationPort } from "@cogno/shared/ports";
+import {
+  ApplicationConfigurationPort,
+  NotificationChannelOptionContract,
+  NotificationChannelsPort,
+} from "@cogno/shared/ports";
 import { take } from "rxjs";
 import { AgentStatus } from "./coding-agent-status.service";
 

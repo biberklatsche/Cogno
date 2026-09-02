@@ -11,11 +11,10 @@ import {
 } from "@cogno/core/workbench/bus/tab-list/actions";
 import { OsPlatform } from "@cogno/platform/os";
 import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/shared/domain";
+import { ActionKeybindingPort } from "@cogno/shared/ports";
 import { ColorName, IdCreator } from "@cogno/shared/support";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { BehaviorSubject, Observable } from "rxjs";
-import { KeybindService } from "../../keybinding/keybind.service";
-import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 import { Tab, TabList } from "../+model/tab";
 
 @Injectable({ providedIn: "root" })
@@ -73,7 +72,7 @@ export class TabListService {
     private readonly os: OsPlatform,
     private bus: AppBus,
     private readonly configService: ConfigService,
-    private readonly keybindService: KeybindService,
+    private readonly keybindings: ActionKeybindingPort,
     destroyRef: DestroyRef,
   ) {
     this.bus
@@ -218,7 +217,7 @@ export class TabListService {
   }
 
   private keybindingFor(actionName: ActionName): string {
-    return formatKeybinding(this.keybindService.getKeybinding(actionName), this.os.platform());
+    return this.keybindings.getKeybindingLabel(actionName);
   }
 
   removeAllTabs(except?: TabId) {

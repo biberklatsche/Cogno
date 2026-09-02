@@ -3,7 +3,7 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import {
   NotificationChannelOptionContract,
   NotificationChannelsPortContract,
-} from "@cogno/features/coding-agent/ports";
+} from "@cogno/shared/ports";
 import { AppWiringService } from "../../app-host/app-wiring.service";
 
 @Injectable({ providedIn: "root" })

@@ -14,7 +14,7 @@ import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
-import { getAppBus, getKeybindServiceMock } from "../../../__test__/test-factory";
+import { getActionKeybindingPortMock, getAppBus } from "../../../__test__/test-factory";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { NotificationChannelsPortAdapterService } from "../../notification/+state/notification-channels-port.adapter.service";
@@ -145,7 +145,7 @@ describe("SessionFactBridge", () => {
 
     processInfoDialogRef = new DialogRef<void>(1, vi.fn());
     openDialog = vi.fn().mockReturnValue(processInfoDialogRef);
-    menus = new SessionMenus(bus, host, bridge, getKeybindServiceMock() as never, osStub, {
+    menus = new SessionMenus(bus, host, bridge, getActionKeybindingPortMock(), osStub, {
       open: openDialog,
     } as unknown as DialogService);
 
