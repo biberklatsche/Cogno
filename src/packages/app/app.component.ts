@@ -3,12 +3,12 @@ import { commandLogMigrations } from "@cogno/core/command-log/schema/migrations"
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { AppButtonsComponent } from "@cogno/core/workbench/app-buttons/app-buttons.component";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import { TerminalBusyIndicatorAdapterService } from "@cogno/core/workbench/terminal/terminal-busy-indicator-adapter.service";
 import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
 import { OsPlatform, OsType } from "@cogno/platform/os";
-import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
 import { GridListComponent } from "./grid-list/grid-list.component";
 import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-header.component";
 import { AppNotificationToastStackComponent } from "./notification/app-notification-toast-stack.component";

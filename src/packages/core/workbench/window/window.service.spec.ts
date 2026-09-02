@@ -41,7 +41,7 @@ import {
   getAppBus,
   getTerminalBusyStateService,
   getWindowService,
-} from "../../__test__/test-factory";
+} from "../../../__test__/test-factory";
 import type { WindowService } from "./window.service";
 
 const windowCoreStub = {

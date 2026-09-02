@@ -41,11 +41,11 @@ import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+s
 import { NotificationChannelsPortAdapterService } from "@cogno/app/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
-import { WindowService } from "@cogno/app/window/window.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
