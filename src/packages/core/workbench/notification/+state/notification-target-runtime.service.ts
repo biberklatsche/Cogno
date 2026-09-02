@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
+import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import { Subscription } from "rxjs";
 
 export interface NotificationTargetRuntime {
@@ -15,7 +15,7 @@ export class NotificationTargetRuntimeService {
   constructor(
     private readonly appBus: AppBus,
     private readonly gridListService: GridListService,
-    private readonly workspaceHostPort: WorkspaceHostPort,
+    private readonly workspaceHostPort: WorkspaceHostService,
     destroyRef: DestroyRef,
   ) {
     const subscription = new Subscription();

@@ -1,6 +1,5 @@
 import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import {
   SelectableItemState,
   SelectableListUseCase,
@@ -11,7 +10,8 @@ import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
 } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
-import { WorkspaceCloseGuard } from "./workspace-close-guard.port";
+import { WorkspaceCloseGuardService } from "./workspace-close-guard.service";
+import { WorkspaceHostService } from "./workspace-host.service";
 
 export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemState<string>;
 
@@ -24,8 +24,8 @@ export class WorkspaceService {
     this.workspaceEntriesSignal.asReadonly();
 
   constructor(
-    private readonly workspaceHostPort: WorkspaceHostPort,
-    private readonly workspaceCloseGuard: WorkspaceCloseGuard,
+    private readonly workspaceHostPort: WorkspaceHostService,
+    private readonly workspaceCloseGuard: WorkspaceCloseGuardService,
     destroyRef: DestroyRef,
   ) {
     this.workspaceHostPort.workspaceEntries$

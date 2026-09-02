@@ -1,11 +1,11 @@
-import type { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
-import { WorkspaceService } from "@cogno/features/side-menu/workspace/workspace.service";
+import { WorkspaceService } from "@cogno/core/workbench/workspace/workspace.service";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
-import type { WorkspaceCloseGuard } from "./workspace-close-guard.port";
+import type { WorkspaceCloseGuardService } from "./workspace-close-guard.service";
+import type { WorkspaceHostService } from "./workspace-host.service";
 
 describe("WorkspaceService", () => {
   let workspaceService: WorkspaceService;
@@ -37,7 +37,7 @@ describe("WorkspaceService", () => {
     deleteWorkspaceMock = vi.fn().mockResolvedValue(undefined);
     confirmCloseWorkspaceMock = vi.fn().mockResolvedValue(true);
 
-    const workspaceHostPort: WorkspaceHostPort = {
+    const workspaceHostPort: WorkspaceHostService = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
       saveWorkspace: saveWorkspaceMock,
@@ -51,7 +51,7 @@ describe("WorkspaceService", () => {
 
     const workspaceCloseGuard = {
       confirmCloseWorkspace: confirmCloseWorkspaceMock,
-    } as unknown as WorkspaceCloseGuard;
+    } as unknown as WorkspaceCloseGuardService;
 
     workspaceService = new WorkspaceService(
       workspaceHostPort,

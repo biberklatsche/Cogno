@@ -12,7 +12,7 @@ import {
   getGridListService,
   getSideMenuService,
   getTabListService,
-} from "../../__test__/test-factory";
+} from "../../../__test__/test-factory";
 import type { WorkspaceRepository } from "./workspace.repository";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 

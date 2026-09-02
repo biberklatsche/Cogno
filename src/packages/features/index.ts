@@ -14,7 +14,3 @@ export * from "./side-menu/notification/notification.feature-definition";
 export * from "./side-menu/notification/notification-center-state.service";
 export * from "./side-menu/terminal-search/terminal-search.feature-definition";
 export * from "./side-menu/terminal-search/terminal-search.service";
-export * from "./side-menu/workspace/workspace.feature-definition";
-export * from "./side-menu/workspace/workspace.migrations";
-export * from "./side-menu/workspace/workspace.service";
-export * from "./side-menu/workspace/workspace-close-guard.port";

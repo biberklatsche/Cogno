@@ -1,5 +1,6 @@
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { sideMenuUiStateFeature } from "@cogno/core/workbench/side-menu/ui-state/ui-state.feature";
+import { workspaceFeature } from "@cogno/core/workbench/workspace/workspace.feature-definition";
 import { autocompleteFeature } from "@cogno/features/autocomplete/autocomplete.feature";
 import { featureSettingsFeature } from "@cogno/features/feature-settings-extension";
 import { aiChatFeature } from "@cogno/features/side-menu/ai/ai-chat.feature-definition";
@@ -8,7 +9,6 @@ import { commandPaletteFeature } from "@cogno/features/side-menu/command-palette
 import { gitFeature } from "@cogno/features/side-menu/git/git.feature-definition";
 import { notificationFeature } from "@cogno/features/side-menu/notification/notification.feature-definition";
 import { terminalSearchFeature } from "@cogno/features/side-menu/terminal-search/terminal-search.feature-definition";
-import { workspaceFeature } from "@cogno/features/side-menu/workspace/workspace.feature-definition";
 import { FeatureDefinition } from "@cogno/shared/contributions";
 
 /** Every feature of the application. Adding one means adding it here. */

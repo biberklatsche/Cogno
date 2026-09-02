@@ -1,9 +1,9 @@
-import type { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import type { ActionDispatcher } from "@cogno/shared/ports";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
+import type { WorkspaceHostService } from "./workspace-host.service";
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 
 describe("WorkspaceShortcutActionService", () => {
@@ -41,7 +41,7 @@ describe("WorkspaceShortcutActionService", () => {
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
-    } as unknown as WorkspaceHostPort;
+    } as unknown as WorkspaceHostService;
 
     new WorkspaceShortcutActionService(actionDispatcher, workspaceHostPort, getDestroyRef());
   });

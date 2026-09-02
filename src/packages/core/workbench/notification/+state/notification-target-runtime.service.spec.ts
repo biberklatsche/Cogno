@@ -1,15 +1,15 @@
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import type { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
+import type { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import { of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../../__test__/destroy-ref";
+import { getDestroyRef } from "../../../../__test__/destroy-ref";
 import { NotificationTargetRuntimeService } from "./notification-target-runtime.service";
 
 describe("NotificationTargetRuntimeService", () => {
   let appBus: AppBus;
   let gridListService: GridListService;
-  let workspaceHostPort: WorkspaceHostPort;
+  let workspaceHostPort: WorkspaceHostService;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {

@@ -2,8 +2,8 @@ import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
+import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { TerminalNavigator } from "@cogno/shared/ports";
-import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalNavigatorAdapterService extends TerminalNavigator {

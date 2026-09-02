@@ -26,9 +26,6 @@ import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gate
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
-import { WorkspaceCloseGuardAdapterService } from "@cogno/app/app-host/workspace-close-guard.adapter.service";
-import { WorkspaceHostApplicationService } from "@cogno/app/app-host/workspace-host-application.service";
-import { WorkspaceHostPortAdapterService } from "@cogno/app/app-host/workspace-host-port.adapter.service";
 import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
 import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
@@ -37,7 +34,6 @@ import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapt
 import { features } from "@cogno/app/features";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
-import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
@@ -45,9 +41,13 @@ import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/au
 import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-center-port.adapter.service";
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
+import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
 import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
+import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
+import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
+import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
 import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
@@ -57,9 +57,6 @@ import {
   TerminalIpcPort,
   TerminalMonitorPort,
 } from "@cogno/features/coding-agent/ports";
-import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
-import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
-import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
 import { Logger } from "@cogno/platform/logger";
 import { ConfigurationTransformer } from "@cogno/shared/contributions";
 import {
@@ -114,8 +111,6 @@ export const appConfig: ApplicationConfig = {
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     { provide: TerminalGateway, useExisting: TerminalGatewayAdapterService },
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
-    { provide: WorkspaceCloseGuard, useExisting: WorkspaceCloseGuardAdapterService },
-    { provide: WorkspaceHostPort, useExisting: WorkspaceHostPortAdapterService },
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
@@ -147,7 +142,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(ActionCatalogAdapterService);
         injector.get(ActionKeybindingPortAdapterService);
         injector.get(TerminalSearchHostPortAdapterService);
-        injector.get(WorkspaceHostPortAdapterService);
+        injector.get(WorkspaceHostService);
         injector.get(WorkspaceShortcutActionService);
         injector.get(AiProviderDetectionService);
         injector.get(CodingAgentStatusService);

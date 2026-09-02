@@ -1,9 +1,9 @@
-import type { WorkspaceHostPortContract } from "@cogno/features/side-menu/ports";
+import type { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../__test__/test-factory";
+import { getDestroyRef } from "../../../__test__/test-factory";
 import { SelectedWorkspaceHeaderComponent } from "./selected-workspace-header.component";
 
 type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
@@ -23,7 +23,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
     restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
     openAtElementMock = vi.fn();
 
-    const workspaceHostPort: WorkspaceHostPortContract = {
+    const workspaceHostPort: WorkspaceHostService = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
       saveWorkspace: vi.fn().mockResolvedValue(undefined),

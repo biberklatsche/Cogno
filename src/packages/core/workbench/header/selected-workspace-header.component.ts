@@ -7,7 +7,7 @@ import {
   signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
+import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
@@ -140,7 +140,7 @@ export class SelectedWorkspaceHeaderComponent {
   protected readonly hasWorkspaceMenu: Signal<boolean>;
 
   constructor(
-    private readonly workspaceHostPort: WorkspaceHostPort,
+    private readonly workspaceHostPort: WorkspaceHostService,
     private readonly contextMenuOverlayService: ContextMenuOverlayService,
     destroyRef: DestroyRef,
   ) {

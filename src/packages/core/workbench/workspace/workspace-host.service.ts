@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 import { toObservable } from "@angular/core/rxjs-interop";
-import { WorkspaceHostPortContract } from "@cogno/features/side-menu/ports";
 import { WorkspaceEntryContract } from "@cogno/shared/domain";
 import { DialogService } from "@cogno/shared/ui";
 import { map, Observable } from "rxjs";
@@ -8,7 +7,7 @@ import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component"
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 @Injectable({ providedIn: "root" })
-export class WorkspaceHostPortAdapterService implements WorkspaceHostPortContract {
+export class WorkspaceHostService {
   readonly workspaceEntries$: Observable<ReadonlyArray<WorkspaceEntryContract>>;
 
   constructor(
