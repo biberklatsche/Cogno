@@ -51,8 +51,6 @@ import { TerminalBusyIndicatorAdapterService } from "./terminal/terminal-busy-in
                 display: flex;
                 align-items: center;
                 height: var(--header-height);
-                -webkit-app-region: drag;
-                app-region: drag;
             }
 
             header.space-left-window-buttons {
