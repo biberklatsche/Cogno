@@ -7,3 +7,5 @@ export * from "./notification-center.port";
 export * from "./notification-channels.port";
 export * from "./terminal-animation.port";
 export * from "./terminal-gateway.port";
+export * from "./terminal-navigator.port";
+export * from "./terminal-search-host.port";

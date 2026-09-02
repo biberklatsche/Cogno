@@ -57,11 +57,7 @@ import {
   TerminalIpcPort,
   TerminalMonitorPort,
 } from "@cogno/features/coding-agent/ports";
-import {
-  TerminalNavigator,
-  TerminalSearchHostPort,
-  WorkspaceHostPort,
-} from "@cogno/features/side-menu/ports";
+import { WorkspaceHostPort } from "@cogno/features/side-menu/ports";
 import { WorkspaceCloseGuard } from "@cogno/features/side-menu/workspace/workspace-close-guard.port";
 import { WorkspaceShortcutActionService } from "@cogno/features/side-menu/workspace/workspace-shortcut-action.service";
 import { Logger } from "@cogno/platform/logger";
@@ -77,6 +73,8 @@ import {
   NotificationChannelsPort,
   TerminalAnimationPort,
   TerminalGateway,
+  TerminalNavigator,
+  TerminalSearchHostPort,
 } from "@cogno/shared/ports";
 import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
 

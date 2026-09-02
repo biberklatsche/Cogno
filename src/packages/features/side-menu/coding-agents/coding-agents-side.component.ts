@@ -7,12 +7,11 @@ import {
   CodingAgentStartupService,
   CodingAgentStatusService,
 } from "@cogno/features/coding-agent";
-import { TerminalNavigator } from "@cogno/features/side-menu/ports";
 import {
   buildNotificationPreferencesMenuItems,
   NotificationPreferencesState,
 } from "@cogno/shared/domain";
-import { TerminalGateway } from "@cogno/shared/ports";
+import { TerminalGateway, TerminalNavigator } from "@cogno/shared/ports";
 import { ContextMenuOverlayService, IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { AgentAnimationComponent } from "./agent-animation.component";
 

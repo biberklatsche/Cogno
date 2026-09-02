@@ -2,7 +2,6 @@ import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { TerminalSearchHostPortContract } from "@cogno/features/side-menu/ports";
 import {
   TerminalSearchColorConfigContract,
   TerminalSearchPanelRequestContract,
@@ -11,6 +10,7 @@ import {
   TerminalSearchRevealRequestContract,
   TerminalSearchTerminalIdContract,
 } from "@cogno/shared/domain";
+import { TerminalSearchHostPortContract } from "@cogno/shared/ports";
 import { map, Observable } from "rxjs";
 
 @Injectable({ providedIn: "root" })
