@@ -1,8 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
 import {
   NotificationChannelContract,
   NotificationChannelSettingsContract,
@@ -15,7 +15,7 @@ import {
 export class NotificationDispatchService {
   constructor(
     private readonly appBus: AppBus,
-    private readonly appWiringService: AppWiringService,
+    private readonly notificationChannelsSource: NotificationChannelsSource,
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
@@ -39,7 +39,7 @@ export class NotificationDispatchService {
       return;
     }
 
-    for (const notificationChannel of this.appWiringService.getNotificationChannels()) {
+    for (const notificationChannel of this.notificationChannelsSource.getNotificationChannels()) {
       if (!this.isNotificationChannelEnabled(notificationChannel, notificationPayload.channels)) {
         continue;
       }
@@ -85,7 +85,7 @@ export class NotificationDispatchService {
   }
 
   private async reconcileReplyChannels(): Promise<void> {
-    for (const notificationChannel of this.appWiringService.getNotificationChannels()) {
+    for (const notificationChannel of this.notificationChannelsSource.getNotificationChannels()) {
       if (!isNotificationReplyChannel(notificationChannel)) {
         continue;
       }
@@ -106,7 +106,7 @@ export class NotificationDispatchService {
   }
 
   private stopReplyChannels(): void {
-    for (const notificationChannel of this.appWiringService.getNotificationChannels()) {
+    for (const notificationChannel of this.notificationChannelsSource.getNotificationChannels()) {
       if (isNotificationReplyChannel(notificationChannel)) {
         void notificationChannel.stopReceivingReplies?.();
       }

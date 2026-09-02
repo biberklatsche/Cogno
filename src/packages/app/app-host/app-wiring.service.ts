@@ -1,10 +1,10 @@
 import { Inject, Injectable } from "@angular/core";
 import { SideMenuFeatureDefinition } from "@cogno/app/menu/side-menu/+state/side-menu-feature-definitions";
-import { AppNotificationChannelService } from "@cogno/app/notification/+state/app-notification-channel.service";
-import { OsNotificationChannelService } from "@cogno/app/notification/+state/os-notification-channel.service";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
+import { AppNotificationChannelService } from "@cogno/core/workbench/notification/+state/app-notification-channel.service";
+import { OsNotificationChannelService } from "@cogno/core/workbench/notification/+state/os-notification-channel.service";
 import {
   ApplicationSettingsExtensionContract,
   FeatureDefinition,

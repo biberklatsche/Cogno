@@ -18,6 +18,7 @@ import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/
 import { CommandRunnerHostService } from "@cogno/app/app-host/command-runner-host.service";
 import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
 import { FilesystemHostService } from "@cogno/app/app-host/filesystem-host.service";
+import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { SideMenuStatePersistenceService } from "@cogno/app/app-host/side-menu-state-persistence.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
@@ -37,14 +38,15 @@ import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapt
 import { features } from "@cogno/app/features";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
-import { NotificationCenterPortAdapterService } from "@cogno/app/notification/+state/notification-center-port.adapter.service";
-import { NotificationChannelsPortAdapterService } from "@cogno/app/notification/+state/notification-channels-port.adapter.service";
-import { NotificationDispatchService } from "@cogno/app/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/app/notification/+state/notification-target-runtime.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-center-port.adapter.service";
+import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
+import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
+import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
 import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
@@ -87,6 +89,10 @@ export const appConfig: ApplicationConfig = {
     {
       provide: AutocompleteSuggestorSource,
       useExisting: TerminalAutocompleteFeatureSuggestorService,
+    },
+    {
+      provide: NotificationChannelsSource,
+      useExisting: NotificationChannelsFeatureSourceService,
     },
     { provide: Filesystem, useExisting: FilesystemHostService },
     { provide: additionalNotificationChannelsToken, useValue: [] },

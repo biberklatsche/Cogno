@@ -6,12 +6,12 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppButtonsComponent } from "@cogno/core/workbench/app-buttons/app-buttons.component";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
+import { AppNotificationToastStackComponent } from "@cogno/core/workbench/notification/app-notification-toast-stack.component";
 import { TerminalBusyIndicatorAdapterService } from "@cogno/core/workbench/terminal/terminal-busy-indicator-adapter.service";
 import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { GridListComponent } from "./grid-list/grid-list.component";
 import { SelectedWorkspaceHeaderComponent } from "./header/selected-workspace-header.component";
-import { AppNotificationToastStackComponent } from "./notification/app-notification-toast-stack.component";
 import { TabListComponent } from "./tab-list/tab-list.component";
 
 @Component({
