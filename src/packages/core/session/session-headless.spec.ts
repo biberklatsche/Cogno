@@ -8,10 +8,14 @@
 // COGNO:CAPS once at boot, then per prompt an OSC 733 COGNO:PROMPT followed
 // by the concealed `^^#<id>` marker line. bash/zsh terminate the OSC with
 // ST (ESC \), PowerShell with BEL — both must parse.
+
+import { MachineState } from "@cogno/core/terminal/machine-state";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PromptMarkerRegistry } from "./decoration/prompt-marker.registry";
+import { TerminalNotificationHandler } from "./handlers/terminal-notification.handler";
+import { TerminalTitleHandler } from "./handlers/terminal-title.handler";
 import { TerminalCommandHistoryStore } from "./model/command-history.store";
 import { CommandLineBuffer } from "./model/command-line.buffer";
 import { CommandLineObserver } from "./model/command-line.observer";
@@ -24,6 +28,8 @@ const BEL = "\x07";
 const CONCEAL = `${ESC}[8m`;
 const RESET = `${ESC}[0m`;
 
+const TOKEN = "test-session-token";
+
 const clipboardStub = { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess;
 
 type ShellStream = {
@@ -35,9 +41,9 @@ type ShellStream = {
 
 const bashLike = (shell: "bash" | "zsh", directory: string): ShellStream => ({
   directory,
-  caps: `${ESC}]733;COGNO:CAPS;shell=${shell};shellVersion=5.2;nativeActions=replaceCurrentInput;bracketedPaste=true;${ST}`,
+  caps: `${ESC}]733;COGNO:CAPS;token=${TOKEN};shell=${shell};os=linux;distro=;shellVersion=5.2;nativeActions=replaceCurrentInput;bracketedPaste=true;${ST}`,
   prompt: (id, opts = {}) =>
-    `${ESC}]733;COGNO:PROMPT;returnCode=${opts.returnCode ?? 0};user=dev;machine=box;directory=${
+    `${ESC}]733;COGNO:PROMPT;token=${TOKEN};returnCode=${opts.returnCode ?? 0};user=dev;machine=box;directory=${
       opts.directory ?? directory
     };id=${id};command=${opts.command ?? ""};commandExists=${opts.command ? "true" : "false"};${ST}` +
     `\r\n${CONCEAL}^^#${id}${RESET}\r\n`,
@@ -45,9 +51,9 @@ const bashLike = (shell: "bash" | "zsh", directory: string): ShellStream => ({
 
 const pwsh = (directory: string): ShellStream => ({
   directory,
-  caps: `${ESC}]733;COGNO:CAPS;shell=pwsh;shellVersion=5.1.22621;nativeActions=clearLine,replaceCurrentInput;bracketedPaste=false;${BEL}`,
+  caps: `${ESC}]733;COGNO:CAPS;token=${TOKEN};shell=pwsh;os=windows;distro=;shellVersion=5.1.22621;nativeActions=clearLine,replaceCurrentInput;bracketedPaste=false;${BEL}`,
   prompt: (id, opts = {}) =>
-    `${ESC}]733;COGNO:PROMPT;returnCode=${opts.returnCode ?? 0};user=dev;machine=box;directory=${
+    `${ESC}]733;COGNO:PROMPT;token=${TOKEN};returnCode=${opts.returnCode ?? 0};user=dev;machine=box;directory=${
       opts.directory ?? directory
     };id=${id};command=${opts.command ?? ""};commandExists=${opts.command ? "true" : "false"};${BEL}` +
     `\r\n${CONCEAL}^^#${id}${RESET}\r\n`,
@@ -76,6 +82,9 @@ function createHeadlessSession(
   } as unknown as CommandRecorder;
   const model = new SessionModel(backendOs, new TerminalCommandHistoryStore(), recorder);
   model.initialize("headless-1", shellType, undefined, backendOs);
+  // The host sets the session's token before the shell spawns; the streams
+  // above echo it, as the real integration scripts do since 1.3.0.
+  model.setSessionToken(TOKEN);
 
   // The machine, never opened: no element, no renderer, no DOM.
   const terminal = new Terminal({ cols, rows: 24, allowProposedApi: true });
@@ -137,6 +146,69 @@ describe.each(STREAMS)("headless session ($name)", ({ shellType, backendOs, stre
       expect.objectContaining({ command: "echo hello", returnCode: 0 }),
     );
     expect(session.registry.markers).toHaveLength(2);
+  });
+});
+
+describe("headless session (handshake token)", () => {
+  let session: ReturnType<typeof createHeadlessSession>;
+  const stream = bashLike("bash", "/home/dev");
+
+  beforeEach(async () => {
+    session = createHeadlessSession("Bash", "linux");
+    await session.write(stream.caps);
+    await session.write(stream.prompt(1));
+  });
+
+  it("drops a prompt without a token and leaves the model untouched", async () => {
+    const facts: SessionFact[] = [];
+    session.model.facts$.subscribe((fact) => facts.push(fact));
+
+    await session.write(
+      `${ESC}]733;COGNO:PROMPT;returnCode=0;directory=/somewhere/else;id=99;command=evil;${ST}`,
+    );
+
+    expect(session.model.commands).toHaveLength(1);
+    expect(session.model.state.cwd).not.toBe("/somewhere/else");
+    expect(session.model.untrustedSequenceCount).toBe(1);
+    expect(facts).toEqual([]);
+  });
+
+  it("treats a wrong token like a missing one", async () => {
+    await session.write(
+      `${ESC}]733;COGNO:CAPS;token=not-the-token;shell=bash;os=linux;nativeActions=clearLine;bracketedPaste=true;${ST}`,
+    );
+
+    expect(session.model.sessionCapabilities?.nativeActions).not.toContain("clearLine");
+    expect(session.model.untrustedSequenceCount).toBe(1);
+  });
+
+  it("says so once when the third untrusted sequence is dropped", async () => {
+    const facts: SessionFact[] = [];
+    session.model.facts$.subscribe((fact) => facts.push(fact));
+
+    for (let i = 0; i < 4; i++) {
+      await session.write(`${ESC}]733;COGNO:PROMPT;returnCode=0;id=9${i};${ST}`);
+    }
+
+    expect(session.model.untrustedSequenceCount).toBe(4);
+    expect(facts.filter((fact) => fact.type === "untrustedSequencesIgnored")).toEqual([
+      { type: "untrustedSequencesIgnored", count: 3 },
+    ]);
+  });
+
+  it("still processes OSC 2 and OSC 9, which carry no token", async () => {
+    const facts: SessionFact[] = [];
+    session.model.facts$.subscribe((fact) => facts.push(fact));
+    new TerminalTitleHandler(session.model).registerTerminal(session.terminal);
+    new TerminalNotificationHandler(session.model, new MachineState()).registerTerminal(
+      session.terminal,
+    );
+
+    await session.write(`${ESC}]2;my title${BEL}`);
+    await session.write(`${ESC}]9;hello${BEL}`);
+
+    expect(facts).toContainEqual({ type: "titleChanged", oscCode: 2, title: "my title" });
+    expect(facts).toContainEqual({ type: "notificationRequested", message: "hello" });
   });
 });
 

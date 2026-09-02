@@ -84,7 +84,8 @@ if ($global:COGNO_PWSH_LINE_EDITOR_READY -eq $true) {
         $cognoNativeActions = "$cognoNativeActions,replaceCurrentInput"
     }
 }
-Write-Host -NoNewline "${esc}]733;COGNO:CAPS;shell=pwsh;shellVersion=$($PSVersionTable.PSVersion);nativeActions=$cognoNativeActions;bracketedPaste=false;${bel}"
+$cognoOsName = if ($env:OS -eq "Windows_NT") { "windows" } elseif ($IsMacOS) { "macos" } else { "linux" }
+Write-Host -NoNewline "${esc}]733;COGNO:CAPS;token=$($env:COGNO_SESSION_TOKEN);shell=pwsh;os=$cognoOsName;distro=;shellVersion=$($PSVersionTable.PSVersion);nativeActions=$cognoNativeActions;bracketedPaste=false;${bel}"
 
 # State
 $global:COGNO_COUNT = 0
@@ -175,7 +176,8 @@ function prompt {
     }
 
     # Compute and insert commandExists into the existing OSC payload
-    $osc = "${esc}]733;COGNO:PROMPT;returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;commandExists=$commandExists;${bel}"
+    # The token proves the sequence comes from this session's integration.
+    $osc = "${esc}]733;COGNO:PROMPT;token=$($env:COGNO_SESSION_TOKEN);returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;commandExists=$commandExists;${bel}"
     Write-Host -NoNewline $osc
 
     # Reset for next prompt

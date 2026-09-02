@@ -89,9 +89,10 @@ _cogno_precmd() {
     fi
   fi
 
-  # Compute and insert commandExists into the existing OSC payload
-  printf '\033]733;COGNO:PROMPT;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;commandExists=%s;\033\\' \
-    "$last_ec" "$user" "$host" "$cwd" "$ts" "$cmd" "$command_exists"
+  # Compute and insert commandExists into the existing OSC payload. The
+  # token proves the sequence comes from this session's integration.
+  printf '\033]733;COGNO:PROMPT;token=%s;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;commandExists=%s;\033\\' \
+    "$COGNO_SESSION_TOKEN" "$last_ec" "$user" "$host" "$cwd" "$ts" "$cmd" "$command_exists"
 
   # Reset for next prompt
   COGNO_CMD_SEEN=0
@@ -216,7 +217,13 @@ _cogno_emit_capabilities() {
   if _cogno_le_setup; then
     native_actions="replaceCurrentInput"
   fi
-  printf '\033]733;COGNO:CAPS;shell=bash;shellVersion=%s;nativeActions=%s;bracketedPaste=%s;degraded=%s;\033\\' \
-    "$version" "$native_actions" "$bracketed_paste" "$degraded"
+  local os_name
+  case "$(uname -s 2>/dev/null)" in
+    Linux*) os_name="linux" ;;
+    Darwin*) os_name="macos" ;;
+    *) os_name="windows" ;;
+  esac
+  printf '\033]733;COGNO:CAPS;token=%s;shell=bash;os=%s;distro=%s;shellVersion=%s;nativeActions=%s;bracketedPaste=%s;degraded=%s;\033\\' \
+    "$COGNO_SESSION_TOKEN" "$os_name" "${WSL_DISTRO_NAME:-}" "$version" "$native_actions" "$bracketed_paste" "$degraded"
 }
 _cogno_emit_capabilities

@@ -43,4 +43,10 @@ export type SessionFact =
   /** Output arrived from the shell. */
   | { readonly type: "outputReceived" }
   /** The terminal gained or lost the keyboard. */
-  | { readonly type: "focusChanged"; readonly focused: boolean };
+  | { readonly type: "focusChanged"; readonly focused: boolean }
+  /**
+   * Cogno sequences without this session's token were dropped - something in
+   * the output stream pretends to be the integration (ARCHITECTURE.md 2.1,
+   * "Der Handshake ist authentisiert"). Stated once, at the threshold.
+   */
+  | { readonly type: "untrustedSequencesIgnored"; readonly count: number };

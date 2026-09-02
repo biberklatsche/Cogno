@@ -30,7 +30,7 @@ describe("ShellIntegrationWriter", () => {
 
   it("skips installation when the version is already current", async () => {
     vi.mocked(fs.exists).mockResolvedValue(true);
-    vi.mocked(fs.readTextFile).mockResolvedValue("1.2.1");
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
     const mkdirSpy = vi.mocked(fs.mkdir);
 
     await writer.ensure([]);
@@ -95,10 +95,10 @@ describe("ShellIntegrationWriter", () => {
       "/tmp/cogno/shell-integration/zsh/entry.zsh",
       "entry",
     );
-    expect(writeTextFileSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/VERSION", "1.2.1");
+    expect(writeTextFileSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/VERSION", "1.3.0");
     expect(writeTextFileSpy).toHaveBeenCalledWith(
       "/tmp/cogno/shell-integration/logs/updates.log",
-      expect.stringContaining("Updated shell integration to version 1.2.1"),
+      expect.stringContaining("Updated shell integration to version 1.3.0"),
     );
     expect(loggerSpy).toHaveBeenCalledWith("Installing/updating shell integration scripts...");
   });

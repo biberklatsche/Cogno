@@ -253,6 +253,16 @@ export class SessionHost {
     if (this.runtime.status !== "allocated") return;
     this.setRuntime({ status: "starting" });
 
+    // The session's secret: the integration scripts echo it back in every
+    // model-changing OSC sequence, so output content cannot impersonate
+    // them. Created here, before the first byte can arrive.
+    const sessionToken = createSessionToken();
+    this.model.setSessionToken(sessionToken);
+    const spawnProfile: ShellProfile = {
+      ...shellProfile,
+      env: { ...shellProfile.env, COGNO_SESSION_TOKEN: sessionToken },
+    };
+
     // The machine takes values; reading the config and pushing them again
     // when it changes is the host's job (ARCHITECTURE.md 2.1). A theme
     // change alters the usable area, so the terminal is measured again.
@@ -271,7 +281,7 @@ export class SessionHost {
       }),
     );
 
-    this.ptyHandler = new PtyHandler(terminalId, this.pty, shellProfile, {
+    this.ptyHandler = new PtyHandler(terminalId, this.pty, spawnProfile, {
       onSpawned: () => this.setRuntime({ status: "running" }),
       onFailed: (error) => this.onStartFailed(error),
       onStarted: (shellType) => {
@@ -648,3 +658,9 @@ export class SessionHost {
 }
 
 const EMPTY_BLOCK_RANGE: CommandMenuBlockRange = { beginBufferLine: 1, endBufferLine: 0 };
+
+function createSessionToken(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}

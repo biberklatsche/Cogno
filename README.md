@@ -94,6 +94,15 @@ There you will find:
 - generated shell integration scripts under `shell-integration/`
 - database file `cogno.db`
 
+### Shell integration over SSH
+
+Cogno authenticates its shell-integration sequences with a per-session
+secret in `COGNO_SESSION_TOKEN`. A remote host does not know it, so its
+output cannot change the session's context. If you install the
+integration on a host and want it to work through SSH, forward the token
+explicitly: `SendEnv COGNO_SESSION_TOKEN` in your `ssh_config` (and
+`AcceptEnv COGNO_SESSION_TOKEN` in the host's `sshd_config`).
+
 ## CLI
 
 ```bash

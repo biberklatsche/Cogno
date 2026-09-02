@@ -70,7 +70,8 @@ _cogno_precmd() {
   cmd="${cmd//|/\\|}"
 
   # Compute and insert commandExists into the existing OSC payload
-  local osc=$'\e]733;COGNO:PROMPT;'"returnCode=${last_ec};user=${USER};machine=${host};directory=${cwd};id=${ts};command=${cmd};commandExists=${command_exists};"$'\e\\'
+  # The token proves the sequence comes from this session's integration.
+  local osc=$'\e]733;COGNO:PROMPT;'"token=${COGNO_SESSION_TOKEN};returnCode=${last_ec};user=${USER};machine=${host};directory=${cwd};id=${ts};command=${cmd};commandExists=${command_exists};"$'\e\\'
 
   print -n -r -- "$osc"
 
@@ -168,5 +169,12 @@ _cogno_native_actions=""
 if _cogno_le_setup; then
   _cogno_native_actions="replaceCurrentInput"
 fi
-print -n -r -- $'\e]733;COGNO:CAPS;shell=zsh;shellVersion='"${ZSH_VERSION}"$';nativeActions='"${_cogno_native_actions}"$';bracketedPaste='"${_cogno_bracketed_paste}"$';\e\\'
+_cogno_os_name="linux"
+case "$(uname -s 2>/dev/null)" in
+  Darwin*) _cogno_os_name="macos" ;;
+  Linux*) _cogno_os_name="linux" ;;
+  *) _cogno_os_name="windows" ;;
+esac
+print -n -r -- $'\e]733;COGNO:CAPS;token='"${COGNO_SESSION_TOKEN}"$';shell=zsh;os='"${_cogno_os_name}"$';distro='"${WSL_DISTRO_NAME:-}"$';shellVersion='"${ZSH_VERSION}"$';nativeActions='"${_cogno_native_actions}"$';bracketedPaste='"${_cogno_bracketed_paste}"$';\e\\'
+unset _cogno_os_name
 unset _cogno_bracketed_paste _cogno_native_actions

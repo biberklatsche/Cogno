@@ -123,9 +123,11 @@ export class CommandLineObserver implements ITerminalHandler {
     );
     this._disposables.push(
       terminal.parser.registerOscHandler(733, (data: string) => {
-        if (interpretCognoOsc(data, this.model) !== "capabilities") {
+        const result = interpretCognoOsc(data, this.model);
+        if (result === "prompt" || result === "ignored") {
           // PS1 prints the `^^#<id>` marker line right after this sequence -
-          // arm the registry so the next parsed writes anchor it.
+          // arm the registry so the next parsed writes anchor it. An
+          // untrusted sequence arms nothing: its content is not ours.
           this._markerRegistry.expectMarker();
         }
         return true;

@@ -173,6 +173,20 @@ export class SessionFactBridge {
       case "commandHistoryRequested":
         void this.history.triggerCommandHistory();
         break;
+      case "untrustedSequencesIgnored":
+        this.bus.publish({
+          type: "Notification",
+          path: ["notification"],
+          payload: {
+            header: "Untrusted Cogno sequences ignored",
+            body: `Something in this terminal's output pretends to be the Cogno shell integration; ${fact.count} sequences were ignored.`,
+            type: "warning",
+            timestamp: new Date(),
+            terminalId,
+            target: this.resolveNotificationTarget(),
+          },
+        });
+        break;
       case "searchResult":
         this.bus.publish({
           path: ["app", "terminal"],

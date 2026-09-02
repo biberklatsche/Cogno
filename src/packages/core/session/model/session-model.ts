@@ -57,10 +57,15 @@ export const createInitialSessionState = (backendOs: OsType): SessionModelSnapsh
  * The unread badge and pane maximization sit here for now because they die
  * with the session; maximization is workbench business and moves there.
  */
+/** Dropped impostor sequences before the session says so once. */
+export const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
+
 export class SessionModel {
   private readonly _state: BehaviorSubject<SessionModelSnapshot>;
   private readonly _facts = new Subject<SessionFact>();
   private _pathAdapter?: IPathAdapter;
+  private _sessionToken?: string;
+  private _untrustedSequenceCount = 0;
 
   constructor(
     backendOs: OsType,
@@ -80,6 +85,31 @@ export class SessionModel {
   /** States a fact. Session code calls this; nothing outside the session does. */
   report(fact: SessionFact): void {
     this._facts.next(fact);
+  }
+
+  /**
+   * The secret this session's integration scripts echo back in every
+   * model-changing sequence. Set before the shell spawns; while unset (old
+   * scripts, tests without a spawn) sequences are accepted unverified.
+   */
+  setSessionToken(token: string): void {
+    this._sessionToken = token;
+  }
+
+  get sessionToken(): string | undefined {
+    return this._sessionToken;
+  }
+
+  /** A Cogno sequence without this session's token was dropped. */
+  recordUntrustedSequence(): void {
+    this._untrustedSequenceCount += 1;
+    if (this._untrustedSequenceCount === UNTRUSTED_SEQUENCES_THRESHOLD) {
+      this.report({ type: "untrustedSequencesIgnored", count: this._untrustedSequenceCount });
+    }
+  }
+
+  get untrustedSequenceCount(): number {
+    return this._untrustedSequenceCount;
   }
 
   initialize(
