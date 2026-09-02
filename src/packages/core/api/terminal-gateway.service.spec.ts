@@ -1,19 +1,19 @@
+import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TauriPty } from "@cogno/platform/pty";
 import { firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TerminalGatewayAdapterService } from "./terminal-gateway.adapter.service";
 
-describe("TerminalGatewayAdapterService", () => {
+describe("TerminalGatewayService", () => {
   let appBus: AppBus;
   let gridListService: Pick<
     GridListService,
     "getFocusedTerminalId" | "findTabIdByTerminalId" | "findWorkspaceIdentifierByTerminalId"
   >;
   let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has">;
-  let service: TerminalGatewayAdapterService;
+  let service: TerminalGatewayService;
 
   beforeEach(() => {
     appBus = new AppBus();
@@ -48,7 +48,7 @@ describe("TerminalGatewayAdapterService", () => {
         },
       }),
     };
-    service = new TerminalGatewayAdapterService(
+    service = new TerminalGatewayService(
       appBus,
       gridListService as GridListService,
       terminalSessionRegistry as TerminalSessionRegistry,

@@ -16,7 +16,7 @@ import {
 import { map, Observable } from "rxjs";
 
 @Injectable({ providedIn: "root" })
-export class TerminalGatewayAdapterService extends TerminalGateway {
+export class TerminalGatewayService extends TerminalGateway {
   readonly focusedTerminalId$: Observable<TerminalId | undefined>;
   readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
   readonly cwdChanges$: Observable<void>;

@@ -22,7 +22,6 @@ import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/no
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalAutocompleteFeatureSuggestorService } from "@cogno/app/app-host/terminal-autocomplete-feature-suggestor.service";
-import { TerminalGatewayAdapterService } from "@cogno/app/app-host/terminal-gateway.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
@@ -34,6 +33,7 @@ import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapt
 import { features } from "@cogno/app/features";
 import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
+import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
@@ -109,7 +109,7 @@ export const appConfig: ApplicationConfig = {
     { provide: featuresToken, useValue: features },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
-    { provide: TerminalGateway, useExisting: TerminalGatewayAdapterService },
+    { provide: TerminalGateway, useExisting: TerminalGatewayService },
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
