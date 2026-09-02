@@ -1,8 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalId } from "@cogno/shared/ports";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
-import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 
 @Injectable({ providedIn: "root" })

@@ -1,4 +1,4 @@
-import { MessageBase } from "../../../app-bus/app-bus";
+import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
 
 export type BusyIndicatorTarget = { kind: "terminal"; id: string } | { kind: "tab"; id: string };
 

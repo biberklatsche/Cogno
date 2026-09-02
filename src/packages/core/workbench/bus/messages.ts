@@ -1,12 +1,16 @@
-import { ActionFiredEvent } from "../action/action.models";
-import { TerminalIpcMessageEvent } from "../cogno-message/+bus/events";
+import { ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import {
   BusyIndicatorClearForTerminalEvent,
   BusyIndicatorRegisterEvent,
   BusyIndicatorUnregisterEvent,
-} from "../common/busy-indicator/+bus/events";
-import { InitConfigAction } from "../config/+bus/actions";
-import { ConfigLoadedEvent, DBInitializedEvent, ThemeChangedEvent } from "../config/+bus/events";
+} from "@cogno/core/workbench/bus/busy-indicator/events";
+import { TerminalIpcMessageEvent } from "@cogno/core/workbench/bus/cogno-message/events";
+import { InitConfigAction } from "@cogno/core/workbench/bus/config/actions";
+import {
+  ConfigLoadedEvent,
+  DBInitializedEvent,
+  ThemeChangedEvent,
+} from "@cogno/core/workbench/bus/config/events";
 import {
   FocusActiveTerminalAction,
   MaximizePaneAction,
@@ -18,22 +22,26 @@ import {
   SplitPaneLeftAction,
   SplitPaneRightAction,
   SplitPaneUpAction,
-} from "../grid-list/+bus/actions";
+} from "@cogno/core/workbench/bus/grid-list/actions";
 import {
   ChangeTabTitleEvent,
   PaneMaximizedChangedEvent,
   VisibleTerminalsChangedEvent,
-} from "../grid-list/+bus/events";
-import { SideMenuEvent } from "../menu/side-menu/+bus/events";
-import { OpenNotificationTargetAction } from "../notification/+bus/actions";
-import { NotificationEvent } from "../notification/+bus/events";
-import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../tab-list/+bus/actions";
+} from "@cogno/core/workbench/bus/grid-list/events";
+import { OpenNotificationTargetAction } from "@cogno/core/workbench/bus/notification/actions";
+import { NotificationEvent } from "@cogno/core/workbench/bus/notification/events";
+import { SideMenuEvent } from "@cogno/core/workbench/bus/side-menu/events";
+import {
+  CreateTabAction,
+  RemoveTabAction,
+  SelectTabAction,
+} from "@cogno/core/workbench/bus/tab-list/actions";
 import {
   TabAddedEvent,
   TabRemovedEvent,
   TabRenamedEvent,
   TabSelectedEvent,
-} from "../tab-list/+bus/events";
+} from "@cogno/core/workbench/bus/tab-list/events";
 import {
   BlurTerminalAction,
   ClearBufferAction,
@@ -60,7 +68,7 @@ import {
   SelectWordRightAction,
   TerminalRemovedAction,
   WriteRawToPtyAction,
-} from "../terminal/+bus/actions";
+} from "@cogno/core/workbench/bus/terminal/actions";
 import {
   FullScreenAppEnteredEvent,
   FullScreenAppLeavedEvent,
@@ -74,7 +82,7 @@ import {
   TerminalSearchResultEvent,
   TerminalSearchRevealRequestedEvent,
   TerminalTitleChangedEvent,
-} from "../terminal/+bus/events";
+} from "@cogno/core/workbench/bus/terminal/events";
 
 export type TerminalCommandType = AppMessage["type"];
 

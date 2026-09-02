@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
-import { AppBus } from "../../app-bus/app-bus";
-import { BusyIndicatorTarget } from "./+bus/events";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { BusyIndicatorTarget } from "@cogno/core/workbench/bus/busy-indicator/events";
 
 export interface BusyIndicatorHandle {
   unregister: () => void;

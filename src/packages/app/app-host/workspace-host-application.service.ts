@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   defaultWorkspaceIdContract,
   PersistedPaneConfigurationContract,
@@ -11,7 +12,6 @@ import {
 } from "@cogno/shared/domain/workspace";
 import { Color, IdCreator } from "@cogno/shared/support";
 import { merge } from "rxjs";
-import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
 import { TabListService } from "../tab-list/+state/tab-list.service";

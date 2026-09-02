@@ -1,4 +1,4 @@
-import { ActionFired, ActionFiredEvent, ActionName } from "../action/action.models";
+import { ActionFired, ActionFiredEvent, ActionName } from "@cogno/core/workbench/bus/action.models";
 import {
   ActionDefinition,
   KeybindInterpreter,

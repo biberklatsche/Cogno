@@ -1,3 +1,4 @@
+import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
@@ -8,7 +9,6 @@ import {
   getSideMenuService,
   getTabListService,
 } from "../../__test__/test-factory";
-import type { AppBus } from "../app-bus/app-bus";
 import type { Grid } from "../grid-list/+model/model";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";

@@ -3,12 +3,12 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
+import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
 import { normalizeFeatureMode } from "@cogno/shared/domain";
-import { ActionFired, ActionName } from "../../action/action.models";
-import { AppBus } from "../../app-bus/app-bus";
 import { KeybindService } from "../../keybinding/keybind.service";
 
 @Injectable({

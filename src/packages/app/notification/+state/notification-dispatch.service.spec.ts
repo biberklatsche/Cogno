@@ -1,6 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
@@ -8,7 +9,6 @@ import type {
 } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
-import { AppBus } from "../../app-bus/app-bus";
 import { NotificationDispatchService } from "./notification-dispatch.service";
 
 type DestroyRefMock = DestroyRef & {

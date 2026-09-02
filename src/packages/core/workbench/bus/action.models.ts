@@ -1,5 +1,4 @@
-import { ActionBase, BusPath } from "../app-bus/app-bus";
-import { ActionDefinition } from "../keybinding/keybind-action.interpreter";
+import { ActionBase, BusPath } from "@cogno/core/workbench/bus/app-bus";
 
 export type ActionFiredEvent = ActionBase<"ActionFired", ActionName> & {
   /** Set when the action targets a specific terminal, e.g. via HTTP IPC. Handlers that need terminal-scoped behaviour should check this field. */
@@ -8,7 +7,11 @@ export type ActionFiredEvent = ActionBase<"ActionFired", ActionName> & {
 export type ActionName = string;
 
 export const ActionFired = {
-  createFromDefinition: (actionDefinition: ActionDefinition): ActionFiredEvent =>
+  createFromDefinition: (actionDefinition: {
+    actionName: ActionName;
+    trigger?: ActionFiredEvent["trigger"];
+    args?: string[];
+  }): ActionFiredEvent =>
     ActionFired.create(
       actionDefinition.actionName,
       actionDefinition.trigger,

@@ -1,5 +1,5 @@
+import { ActionBase } from "@cogno/core/workbench/bus/app-bus";
 import { TabId } from "@cogno/shared/domain";
-import { ActionBase } from "../../app-bus/app-bus";
 
 export type SelectTabAction = ActionBase<"SelectTab", TabId>;
 export type RemoveTabAction = ActionBase<"RemoveTab", TabId>;

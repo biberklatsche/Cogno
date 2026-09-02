@@ -1,3 +1,3 @@
-import { ActionBase } from "../../app-bus/app-bus";
+import { ActionBase } from "@cogno/core/workbench/bus/app-bus";
 
 export type InitConfigAction = ActionBase<"InitConfigCommand", void>;

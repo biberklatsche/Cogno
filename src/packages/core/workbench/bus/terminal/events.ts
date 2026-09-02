@@ -1,11 +1,11 @@
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
+import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
 import {
   TerminalSearchRequestContract,
   TerminalSearchResultContract,
   TerminalSearchRevealRequestContract,
 } from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
-import { MessageBase } from "../../app-bus/app-bus";
 
 export type TerminalTitle = {
   oscCode: 0 | 2;

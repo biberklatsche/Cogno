@@ -1,7 +1,7 @@
 import { signal } from "@angular/core";
+import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { NotificationTargetContract } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
-import type { AppBus } from "../app-bus/app-bus";
 import type { AppNotificationChannelService } from "./+state/app-notification-channel.service";
 import type { AppNotificationToast } from "./+state/app-notification-toast.models";
 import { AppNotificationToastStackComponent } from "./app-notification-toast-stack.component";

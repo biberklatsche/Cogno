@@ -5,6 +5,7 @@ import {
   AutocompleteSuggestorIssue,
   AutocompleteSuggestorSource,
 } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   AutocompleteProviderIssueContract,
   AutocompleteProviderIssueReporterContract,
@@ -12,7 +13,6 @@ import {
 } from "@cogno/shared/contributions";
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { CommandRunner, Filesystem } from "@cogno/shared/ports";
-import { AppBus } from "../app-bus/app-bus";
 
 const AUTOCOMPLETE_PROVIDER_NOTIFICATION_THROTTLE_MS = 10_000;
 const DEFAULT_AUTOCOMPLETE_PROVIDER_TIMEOUT_MS = 160;

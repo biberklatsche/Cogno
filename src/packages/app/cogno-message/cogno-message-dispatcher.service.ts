@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { AppBus } from "../app-bus/app-bus";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { CognoMessage } from "./cogno-message.models";
 
 @Injectable({

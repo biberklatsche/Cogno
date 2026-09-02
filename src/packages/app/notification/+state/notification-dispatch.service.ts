@@ -2,6 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   NotificationChannelContract,
   NotificationChannelSettingsContract,
@@ -9,7 +10,6 @@ import {
   NotificationReplyChannelContract,
   NotificationTargetContract,
 } from "@cogno/shared/domain";
-import { AppBus } from "../../app-bus/app-bus";
 
 @Injectable({ providedIn: "root" })
 export class NotificationDispatchService {

@@ -1,5 +1,5 @@
+import { ActionBase } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalId } from "@cogno/shared/ports";
-import { ActionBase } from "../../app-bus/app-bus";
 
 export type FocusActiveTerminalAction = ActionBase<"FocusActiveTerminal", TerminalId>;
 export type RemovePaneAction = ActionBase<"RemovePane", TerminalId>;

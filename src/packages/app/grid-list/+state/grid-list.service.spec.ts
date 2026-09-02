@@ -1,15 +1,4 @@
-import type { TerminalConfig } from "@cogno/shared/domain";
-import { IdCreator } from "@cogno/shared/support";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  clear,
-  getAppBus,
-  getDestroyRef,
-  getTerminalComponentFactory,
-} from "../../../__test__/test-factory";
-import type { AppBus } from "../../app-bus/app-bus";
-import type { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
-import type { TerminalFocusedEvent, TerminalTitleChangedEvent } from "../../terminal/+bus/events";
+import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type {
   FocusActiveTerminalAction,
   MaximizePaneAction,
@@ -19,7 +8,25 @@ import type {
   SelectPreviousPaneAction,
   SplitPaneDownAction,
   SplitPaneRightAction,
-} from "../+bus/actions";
+} from "@cogno/core/workbench/bus/grid-list/actions";
+import type {
+  TabAddedEvent,
+  TabRemovedEvent,
+  TabSelectedEvent,
+} from "@cogno/core/workbench/bus/tab-list/events";
+import type {
+  TerminalFocusedEvent,
+  TerminalTitleChangedEvent,
+} from "@cogno/core/workbench/bus/terminal/events";
+import type { TerminalConfig } from "@cogno/shared/domain";
+import { IdCreator } from "@cogno/shared/support";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  clear,
+  getAppBus,
+  getDestroyRef,
+  getTerminalComponentFactory,
+} from "../../../__test__/test-factory";
 import type { Grid } from "../+model/model";
 import { GridListService } from "./grid-list.service";
 import type { TerminalComponentFactory } from "./terminal-component.factory";

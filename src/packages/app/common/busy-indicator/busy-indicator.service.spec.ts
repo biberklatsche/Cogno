@@ -1,6 +1,6 @@
 import type { DestroyRef } from "@angular/core";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { beforeEach, describe, expect, it } from "vitest";
-import { AppBus } from "../../app-bus/app-bus";
 import type { GridListService } from "../../grid-list/+state/grid-list.service";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 

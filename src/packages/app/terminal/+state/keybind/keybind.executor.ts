@@ -1,7 +1,7 @@
 import { SessionHost } from "@cogno/core/session/host/session-host";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { IDisposable } from "@cogno/shared/support";
 import { Subscription } from "rxjs";
-import { AppBus } from "../../../app-bus/app-bus";
 
 /** What the executor needs to know about its session. */
 export type KeybindExecutorSession = Pick<SessionHost, "terminalId" | "isFocused" | "hasSelection">;

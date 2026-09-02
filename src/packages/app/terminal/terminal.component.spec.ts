@@ -2,9 +2,9 @@ import { provideZonelessChangeDetection } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
 import type { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../app-bus/app-bus";
 import { TerminalComponent } from "./terminal.component";
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());

@@ -1,7 +1,7 @@
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { AppMessage } from "@cogno/core/workbench/bus/messages";
 import { firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
-import { AppBus } from "./app-bus";
-import type { AppMessage } from "./messages";
 
 describe("AppBus", () => {
   let bus: AppBus;

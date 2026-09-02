@@ -1,10 +1,10 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalMonitorPort } from "@cogno/features/coding-agent/ports";
 import { AnimationSpec, TerminalAnimationPort } from "@cogno/shared/ports";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
-import { AppBus } from "../app-bus/app-bus";
 import { BusyIndicatorService } from "../common/busy-indicator/busy-indicator.service";
 
 @Injectable({ providedIn: "root" })

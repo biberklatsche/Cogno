@@ -1,7 +1,7 @@
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TauriPty } from "@cogno/platform/pty";
 import { firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";
 import { TerminalGatewayAdapterService } from "./terminal-gateway.adapter.service";

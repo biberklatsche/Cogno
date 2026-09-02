@@ -1,3 +1,11 @@
+import { ActionFired, type ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
+import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { ChangeTabTitleEvent } from "@cogno/core/workbench/bus/grid-list/events";
+import type {
+  CreateTabAction,
+  RemoveTabAction,
+  SelectTabAction,
+} from "@cogno/core/workbench/bus/tab-list/actions";
 import { OsPlatform } from "@cogno/platform/os";
 import { IdCreator } from "@cogno/shared/support";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,11 +17,7 @@ import {
   getDestroyRef,
   getKeybindServiceMock,
 } from "../../../__test__/test-factory";
-import { ActionFired, type ActionFiredEvent } from "../../action/action.models";
-import type { AppBus } from "../../app-bus/app-bus";
-import type { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
 import type { KeybindService } from "../../keybinding/keybind.service";
-import type { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
 

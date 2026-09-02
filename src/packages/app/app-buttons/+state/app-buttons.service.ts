@@ -1,9 +1,9 @@
 import { DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActionFired } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Logger } from "@cogno/platform/logger";
 import { AppWindow } from "@cogno/platform/window";
-import { ActionFired } from "../../action/action.models";
-import { AppBus } from "../../app-bus/app-bus";
 
 @Injectable({ providedIn: "root" })
 export class AppButtonsService {

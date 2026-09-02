@@ -1,5 +1,5 @@
+import { ActionBase } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationTargetContract } from "@cogno/shared/domain";
-import { ActionBase } from "../../app-bus/app-bus";
 
 export type OpenNotificationTargetAction = ActionBase<
   "OpenNotificationTarget",

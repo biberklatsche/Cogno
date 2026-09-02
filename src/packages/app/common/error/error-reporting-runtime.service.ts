@@ -1,5 +1,4 @@
 import { Injectable } from "@angular/core";
-import { AppBus } from "@cogno/app/app-bus/app-bus";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   buildLogMessage,
@@ -9,6 +8,7 @@ import {
   formatUnknownError,
   WarningReport,
 } from "@cogno/core/infrastructure/error/error-reporter";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Logger } from "@cogno/platform/logger";
 
 const DEDUPLICATION_WINDOW_MS = 1000;

@@ -1,11 +1,11 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { BusyIndicatorTarget } from "@cogno/core/workbench/bus/busy-indicator/events";
 import { TabId } from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
-import { AppBus } from "../../app-bus/app-bus";
 import { GridListService } from "../../grid-list/+state/grid-list.service";
-import { BusyIndicatorTarget } from "./+bus/events";
 
 export type BusyIndicatorRegistration = {
   registrationId: string;

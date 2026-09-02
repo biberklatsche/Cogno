@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   TerminalActivityEvent,
   TerminalCwdChangeEvent,
@@ -7,7 +8,6 @@ import {
 } from "@cogno/features/coding-agent/ports";
 import { TerminalId } from "@cogno/shared/ports";
 import { filter, map, Observable, Subject } from "rxjs";
-import { AppBus } from "../app-bus/app-bus";
 import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";
 
 @Injectable({ providedIn: "root" })

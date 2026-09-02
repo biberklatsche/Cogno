@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationOs, OsNotificationClickListener } from "@cogno/platform/notification";
 import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
 } from "@cogno/shared/domain";
-import { AppBus } from "../../app-bus/app-bus";
 
 @Injectable({ providedIn: "root" })
 export class OsNotificationChannelService implements NotificationChannelContract {

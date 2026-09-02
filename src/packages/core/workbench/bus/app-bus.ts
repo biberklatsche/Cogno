@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
+import { AppMessage } from "@cogno/core/workbench/bus/messages";
 import { fromEvent, Observable, Subject } from "rxjs";
 import { filter, timeout as rxTimeout, take, takeUntil } from "rxjs/operators";
-import { AppMessage } from "./messages";
 
 export type BusPath = string[];
 export type Phase = "capture" | "target" | "bubble";

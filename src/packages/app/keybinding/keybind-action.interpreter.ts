@@ -1,4 +1,4 @@
-import { ActionName } from "../action/action.models";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { Modifier } from "./modifier";
 
 export type ActionDefinition = {

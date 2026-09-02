@@ -1,5 +1,23 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import {
+  FocusActiveTerminalAction,
+  MaximizePaneAction,
+  MinimizePaneAction,
+  SelectNextPaneAction,
+  SelectPreviousPaneAction,
+} from "@cogno/core/workbench/bus/grid-list/actions";
+import {
+  TabAddedEvent,
+  TabRemovedEvent,
+  TabSelectedEvent,
+} from "@cogno/core/workbench/bus/tab-list/events";
+import {
+  TerminalCwdChangedEvent,
+  TerminalFocusedEvent,
+  TerminalTitleChangedEvent,
+} from "@cogno/core/workbench/bus/terminal/events";
 import {
   BinaryNode,
   BinaryTree,
@@ -11,20 +29,6 @@ import {
 import { TerminalId } from "@cogno/shared/ports";
 import { IdCreator } from "@cogno/shared/support";
 import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
-import { AppBus } from "../../app-bus/app-bus";
-import { TabAddedEvent, TabRemovedEvent, TabSelectedEvent } from "../../tab-list/+bus/events";
-import {
-  TerminalCwdChangedEvent,
-  TerminalFocusedEvent,
-  TerminalTitleChangedEvent,
-} from "../../terminal/+bus/events";
-import {
-  FocusActiveTerminalAction,
-  MaximizePaneAction,
-  MinimizePaneAction,
-  SelectNextPaneAction,
-  SelectPreviousPaneAction,
-} from "../+bus/actions";
 import { Grid, GridList, Pane, SplitDirection } from "../+model/model";
 import { TerminalComponentFactory } from "./terminal-component.factory";
 

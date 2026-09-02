@@ -7,6 +7,8 @@ import { TerminalComposerService } from "@cogno/core/session/composer/terminal-c
 import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
+import { ActionFired, ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationChannelsPort } from "@cogno/features/coding-agent/ports";
 import { ShellLineEditorActionContract } from "@cogno/shared/contributions";
 import {
@@ -19,8 +21,6 @@ import {
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
-import { ActionFired, ActionFiredEvent } from "../../action/action.models";
-import { AppBus } from "../../app-bus/app-bus";
 import { TerminalAutocompleteFeatureSuggestorService } from "../../app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalActivityService } from "../../common/terminal-activity/terminal-activity.service";
 import { NotificationTargetResolverService } from "../../notification/+state/notification-target-resolver.service";

@@ -16,9 +16,9 @@ import { TerminalComposerService } from "@cogno/core/session/composer/terminal-c
 import { TerminalHistoryComponent } from "@cogno/core/session/history/terminal-history.component";
 import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
-import { AppBus } from "../app-bus/app-bus";
 import { SessionMenus } from "./+state/session-menus";
 import { TerminalHeaderComponent } from "./header/terminal-header.component";
 import { TerminalFileDropService } from "./terminal-file-drop.service";

@@ -1,7 +1,7 @@
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { DialogRef, type DialogService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../features/__test__/destroy-ref";
-import { AppBus } from "../app-bus/app-bus";
 import type { GridListService } from "../grid-list/+state/grid-list.service";
 import { TerminalBusyStateService } from "./terminal-busy-state.service";
 

@@ -1,17 +1,21 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ActionFired, ActionFiredEvent, ActionName } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { ChangeTabTitleEvent } from "@cogno/core/workbench/bus/grid-list/events";
+import {
+  CreateTabAction,
+  RemoveTabAction,
+  SelectTabAction,
+} from "@cogno/core/workbench/bus/tab-list/actions";
 import { OsPlatform } from "@cogno/platform/os";
 import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/shared/domain";
 import { ColorName, IdCreator } from "@cogno/shared/support";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { BehaviorSubject, Observable } from "rxjs";
-import { ActionFired, ActionFiredEvent, ActionName } from "../../action/action.models";
-import { AppBus } from "../../app-bus/app-bus";
-import { ChangeTabTitleEvent } from "../../grid-list/+bus/events";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
-import { CreateTabAction, RemoveTabAction, SelectTabAction } from "../+bus/actions";
 import { Tab, TabList } from "../+model/tab";
 
 @Injectable({ providedIn: "root" })

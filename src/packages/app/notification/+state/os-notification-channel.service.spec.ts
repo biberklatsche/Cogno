@@ -1,10 +1,10 @@
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   NotificationOs,
   OsNotificationClickListener,
   OsNotificationTarget,
 } from "@cogno/platform/notification";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../../app-bus/app-bus";
 import { OsNotificationChannelService } from "./os-notification-channel.service";
 
 vi.mock("@cogno/platform/notification", () => ({

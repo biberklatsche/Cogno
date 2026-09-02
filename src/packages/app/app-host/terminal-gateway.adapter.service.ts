@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { Command } from "@cogno/core/session/model/command.model";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TauriPty } from "@cogno/platform/pty";
 import {
   TerminalBusyStateChangeContract,
@@ -11,7 +12,6 @@ import {
   TerminalSnapshotOptionsContract,
 } from "@cogno/shared/ports";
 import { map, Observable } from "rxjs";
-import { AppBus } from "../app-bus/app-bus";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";
 

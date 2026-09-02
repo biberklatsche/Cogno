@@ -3,9 +3,9 @@ import { commandLogMigrations } from "@cogno/core/command-log/schema/migrations"
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
 import { OsPlatform, OsType } from "@cogno/platform/os";
-import { AppBus } from "./app-bus/app-bus";
 import { AppButtonsComponent } from "./app-buttons/app-buttons.component";
 import { BusyIndicatorService } from "./common/busy-indicator/busy-indicator.service";
 import { GridListComponent } from "./grid-list/grid-list.component";

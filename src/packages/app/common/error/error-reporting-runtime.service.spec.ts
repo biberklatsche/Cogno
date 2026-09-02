@@ -1,7 +1,7 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../../app-bus/app-bus";
 import { ErrorReportingRuntimeService } from "./error-reporting-runtime.service";
 
 vi.mock("@cogno/platform/logger", () => ({

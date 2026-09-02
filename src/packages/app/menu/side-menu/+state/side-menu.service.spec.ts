@@ -1,5 +1,5 @@
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../../../app-bus/app-bus";
 import { type SideMenuItem, SideMenuService } from "./side-menu.service";
 
 class DummyComponent {}

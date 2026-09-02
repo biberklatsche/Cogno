@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
 import { SessionHost } from "@cogno/core/session/host/session-host";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { OsPlatform } from "@cogno/platform/os";
 import { ContextMenuItem, DialogRef, DialogService } from "@cogno/shared/ui";
-import { ActionName } from "../../action/action.models";
-import { AppBus } from "../../app-bus/app-bus";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 import {

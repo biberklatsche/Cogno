@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable, Injector } from "@angular/core";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/shared/contributions";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { Icon } from "@cogno/shared/ui";
-import { AppBus } from "../app-bus/app-bus";
 import { KeybindService } from "../keybinding/keybind.service";
 import { SideMenuService } from "../menu/side-menu/+state/side-menu.service";
 import { createSideMenuFeature, SideMenuFeature } from "../menu/side-menu/+state/side-menu-feature";

@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationEventPayloadContract, NotificationTargetContract } from "@cogno/shared/domain";
 import { NotificationCenterPortContract } from "@cogno/shared/ports";
 import { map, Observable } from "rxjs";
-import { AppBus } from "../../app-bus/app-bus";
 
 @Injectable({ providedIn: "root" })
 export class NotificationCenterPortAdapterService implements NotificationCenterPortContract {

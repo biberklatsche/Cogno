@@ -1,5 +1,5 @@
 import { InjectionToken } from "@angular/core";
-import { ActionName } from "@cogno/app/action/action.models";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { FeatureDefinition } from "@cogno/shared/contributions";
 import { NotificationChannelContract } from "@cogno/shared/domain";
 

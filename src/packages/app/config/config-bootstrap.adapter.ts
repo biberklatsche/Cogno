@@ -6,10 +6,10 @@ import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
 import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integration.writer";
+import { ActionFired } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Opener } from "@cogno/platform/opener";
 import { Hash } from "@cogno/shared/support";
-import { ActionFired } from "../action/action.models";
-import { AppBus } from "../app-bus/app-bus";
 
 /**
  * MIGRATION-TEMP(step 19): everything the configuration used to do besides

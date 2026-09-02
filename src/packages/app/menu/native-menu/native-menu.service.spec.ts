@@ -1,9 +1,9 @@
 import type { DestroyRef } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ActionFired } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ActionFired } from "../../action/action.models";
-import { AppBus } from "../../app-bus/app-bus";
 import { KeybindService } from "../../keybinding/keybind.service";
 import { NativeMenuService } from "./native-menu.service";
 

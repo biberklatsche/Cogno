@@ -1,8 +1,8 @@
 import type { DestroyRef } from "@angular/core";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppBus } from "../../../app-bus/app-bus";
 import { KeybindService } from "../../../keybinding/keybind.service";
 import { SideMenuService } from "./side-menu.service";
 import { SideMenuFeature } from "./side-menu-feature";

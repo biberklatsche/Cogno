@@ -1,10 +1,10 @@
 import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Logger } from "@cogno/platform/logger";
 import { OsPlatform } from "@cogno/platform/os";
-import { ActionName } from "../action/action.models";
-import { AppBus } from "../app-bus/app-bus";
 import { KeybindingMatcher } from "./keybind.matcher";
 import { ActionDefinition } from "./keybind-action.interpreter";
 import { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
