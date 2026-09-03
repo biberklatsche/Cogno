@@ -13,7 +13,6 @@ import {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
-import { TerminalFocusedEvent } from "@cogno/core/workbench/bus/terminal/events";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import {
@@ -223,27 +222,14 @@ export class GridListService {
         });
       });
 
-    this.bus
-      .onType$("TerminalFocused")
+    // Focus is a session fact now; kept in its own subscription so its
+    // invariant check can't disturb the title/cwd/exited stream.
+    this.sessionRegistry.facts$
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: TerminalFocusedEvent) => {
-        if (!event.payload) return;
-        if (!this._activeTabId.value) throw new Error("No active tab id found.");
-        const gridList = this.getActiveWorkspaceGridList();
-        const focusedTabId = this.determineTabId(gridList, event.payload);
-        if (!focusedTabId || focusedTabId !== this._activeTabId.value) return;
-        const activeGrid = gridList[this._activeTabId.value];
-        const currentFocusedTab = activeGrid.tree.first(
-          (s) => (s.isLeaf && s.data?.isFocused) ?? false,
-        );
-        if (currentFocusedTab?.data) currentFocusedTab.data.isFocused = false;
-        const paneConfig = gridList[this._activeTabId.value].tree.first(
-          (s) => s.isLeaf && s.data?.terminalId === event.payload,
-        )?.data;
-        if (!paneConfig) return;
-        paneConfig.isFocused = true;
-        this.setActiveWorkspaceGridList(gridList);
-        this.publishPaneTitleToTab(this._activeTabId.value, paneConfig);
+      .subscribe(({ terminalId, fact }) => {
+        if (fact.type === "focusChanged" && fact.focused) {
+          this.applyPaneFocus(terminalId);
+        }
       });
 
     this.bus
@@ -600,6 +586,25 @@ export class GridListService {
     }
     if (!node.left) throw new Error("Split pane does not contain a left child.");
     return this.getFirstTerminalId(node.left);
+  }
+
+  private applyPaneFocus(terminalId: TerminalId): void {
+    if (!this._activeTabId.value) throw new Error("No active tab id found.");
+    const gridList = this.getActiveWorkspaceGridList();
+    const focusedTabId = this.determineTabId(gridList, terminalId);
+    if (!focusedTabId || focusedTabId !== this._activeTabId.value) return;
+    const activeGrid = gridList[this._activeTabId.value];
+    const currentFocusedTab = activeGrid.tree.first(
+      (s) => (s.isLeaf && s.data?.isFocused) ?? false,
+    );
+    if (currentFocusedTab?.data) currentFocusedTab.data.isFocused = false;
+    const paneConfig = gridList[this._activeTabId.value].tree.first(
+      (s) => s.isLeaf && s.data?.terminalId === terminalId,
+    )?.data;
+    if (!paneConfig) return;
+    paneConfig.isFocused = true;
+    this.setActiveWorkspaceGridList(gridList);
+    this.publishPaneTitleToTab(this._activeTabId.value, paneConfig);
   }
 
   private applyPaneTitle(terminalId: TerminalId, title: string): void {

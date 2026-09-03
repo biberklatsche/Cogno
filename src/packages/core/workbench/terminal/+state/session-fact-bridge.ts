@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import type { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/terminal-autocomplete.service";
@@ -11,7 +10,6 @@ import { SessionFact } from "@cogno/core/session/session-facts";
 import { ActionFired, ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
-import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
 import {
   buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
@@ -53,7 +51,6 @@ export class SessionFactBridge {
     private readonly bus: AppBus,
     private readonly host: SessionHost,
     private readonly configService: ConfigService,
-    private readonly terminalActivity: TerminalActivityService,
     private readonly notificationTargetResolverService: NotificationTargetResolverService,
     private readonly notificationChannelsPort: NotificationChannelsPort,
     private readonly featureSuggestorService: AutocompleteSuggestorSource,
@@ -96,27 +93,8 @@ export class SessionFactBridge {
       case "commandCompleted":
         this.completedCommandNotificationHandler.handleCompletedCommand(fact.command);
         break;
-      case "filterBlockRequested":
-        this.bus.publish(ActionFired.create("open_terminal_search"));
-        this.bus.publish({
-          path: ["app", "terminal"],
-          type: "TerminalSearchPanelRequested",
-          payload: {
-            terminalId,
-            beginBufferLine: fact.range.beginBufferLine,
-            endBufferLine: fact.range.endBufferLine,
-          },
-        });
-        break;
       case "notificationRequested":
         this.notifyFromTerminal(terminalId, fact.message);
-        break;
-      case "fullScreenChanged":
-        this.bus.publish({
-          type: fact.active ? "FullScreenAppEntered" : "FullScreenAppLeaved",
-          path: ["app", "terminal", terminalId],
-          payload: terminalId,
-        });
         break;
       case "commandHistoryRequested":
         void this.history.triggerCommandHistory();
@@ -135,34 +113,9 @@ export class SessionFactBridge {
           },
         });
         break;
-      case "searchResult":
-        this.bus.publish({
-          path: ["app", "terminal"],
-          type: "TerminalSearchResult",
-          payload: fact.result,
-        });
-        break;
-      case "started":
-        this.bus.publish({
-          path: ["app", "terminal", terminalId],
-          type: "PtyInitialized",
-          payload: { terminalId, shellType: fact.shellType as ShellType },
-        });
-        break;
-      case "outputReceived":
-        this.terminalActivity.emit(terminalId);
-        break;
-      case "focusChanged":
-        this.bus.publish({
-          type: fact.focused ? "TerminalFocused" : "TerminalBlurred",
-          payload: terminalId,
-        });
-        break;
-      case "promptReported":
-      case "paddingChanged":
-      case "composerRequested":
-      case "startFailed":
-        // session-internal; the host, the composer and the pane react themselves
+      default:
+        // Every other fact is handled off the bridge now (registry.facts$
+        // consumers) or is session-internal.
         break;
     }
   }

@@ -70,14 +70,7 @@ import {
   WriteRawToPtyAction,
 } from "@cogno/core/workbench/bus/terminal/actions";
 import {
-  FullScreenAppEnteredEvent,
-  FullScreenAppLeavedEvent,
-  PtyInitializedEvent,
-  TerminalBlurredEvent,
-  TerminalFocusedEvent,
-  TerminalSearchPanelRequestedEvent,
   TerminalSearchRequestedEvent,
-  TerminalSearchResultEvent,
   TerminalSearchRevealRequestedEvent,
 } from "@cogno/core/workbench/bus/terminal/events";
 
@@ -98,10 +91,7 @@ export type AppMessage =
   | DBInitializedEvent
   | ThemeChangedEvent
   | InitConfigAction
-  | PtyInitializedEvent
-  | TerminalSearchPanelRequestedEvent
   | TerminalSearchRequestedEvent
-  | TerminalSearchResultEvent
   | TerminalSearchRevealRequestedEvent
   | FocusTerminalAction
   | RevealTerminalAction
@@ -127,10 +117,6 @@ export type AppMessage =
   | SelectTextToStartOfLineAction
   | WriteRawToPtyAction
   | ActionFiredEvent
-  | FullScreenAppEnteredEvent
-  | FullScreenAppLeavedEvent
-  | TerminalFocusedEvent
-  | TerminalBlurredEvent
   | RemovePaneAction
   | TerminalRemovedAction
   | SplitPaneRightAction

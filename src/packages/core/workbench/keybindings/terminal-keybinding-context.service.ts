@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
 import { TerminalId } from "@cogno/shared/ports";
 
@@ -13,17 +14,17 @@ export class TerminalKeybindingContextService {
   constructor(
     private readonly bus: AppBus,
     private readonly terminalFullscreenService: TerminalFullscreenService,
+    sessionRegistry: TerminalSessionRegistry,
   ) {
     this.bus.onType$("FocusTerminal", { path: ["app", "terminal"] }).subscribe((event) => {
       this.selectedTerminalId = event.payload;
     });
 
-    this.bus.onType$("TerminalFocused").subscribe((event) => {
-      this.focusedTerminalId = event.payload;
-    });
-
-    this.bus.onType$("TerminalBlurred").subscribe((event) => {
-      if (this.focusedTerminalId === event.payload) {
+    sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
+      if (fact.type !== "focusChanged") return;
+      if (fact.focused) {
+        this.focusedTerminalId = terminalId;
+      } else if (this.focusedTerminalId === terminalId) {
         this.focusedTerminalId = undefined;
       }
     });

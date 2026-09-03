@@ -1,5 +1,6 @@
 import { Injectable, signal } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalId } from "@cogno/shared/ports";
 
 @Injectable({
@@ -8,24 +9,18 @@ import { TerminalId } from "@cogno/shared/ports";
 export class TerminalFullscreenService {
   private readonly fullScreenTerminalIds = signal<ReadonlySet<TerminalId>>(new Set());
 
-  constructor(private readonly bus: AppBus) {
-    this.bus.onType$("FullScreenAppEntered").subscribe((event) => {
-      const terminalId = event.payload;
-      if (!terminalId) {
-        return;
-      }
+  constructor(
+    private readonly bus: AppBus,
+    sessionRegistry: TerminalSessionRegistry,
+  ) {
+    sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
+      if (fact.type !== "fullScreenChanged") return;
       this.updateFullScreenTerminalIds((terminalIds) => {
-        terminalIds.add(terminalId);
-      });
-    });
-
-    this.bus.onType$("FullScreenAppLeaved").subscribe((event) => {
-      const terminalId = event.payload;
-      if (!terminalId) {
-        return;
-      }
-      this.updateFullScreenTerminalIds((terminalIds) => {
-        terminalIds.delete(terminalId);
+        if (fact.active) {
+          terminalIds.add(terminalId);
+        } else {
+          terminalIds.delete(terminalId);
+        }
       });
     });
 

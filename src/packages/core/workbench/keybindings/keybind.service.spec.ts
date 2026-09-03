@@ -1,9 +1,13 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import type { KeyboardMappingService } from "@cogno/core/infrastructure/keybindings/keyboard/keyboard-layout.loader";
+import type { SessionHost } from "@cogno/core/session/host/session-host";
+import type { SessionFact } from "@cogno/core/session/session-facts";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subject } from "rxjs";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { KeybindService } from "./keybind.service";
@@ -25,10 +29,28 @@ describe("KeybindService", () => {
     config$,
   };
   const bus = new AppBus();
-  const terminalFullscreenService = new TerminalFullscreenService(bus);
+  const sessionRegistry = new TerminalSessionRegistry();
+  const sessionFactSubjects = new Map<string, Subject<SessionFact>>();
+  const emitFact = (terminalId: string, fact: SessionFact): void => {
+    let subject = sessionFactSubjects.get(terminalId);
+    if (!subject) {
+      subject = new Subject<SessionFact>();
+      sessionFactSubjects.set(terminalId, subject);
+      sessionRegistry.register(
+        terminalId,
+        {} as ShellProfile,
+        {
+          facts$: subject.asObservable(),
+        } as unknown as SessionHost,
+      );
+    }
+    subject.next(fact);
+  };
+  const terminalFullscreenService = new TerminalFullscreenService(bus, sessionRegistry);
   const terminalKeybindingContext = new TerminalKeybindingContextService(
     bus,
     terminalFullscreenService,
+    sessionRegistry,
   );
 
   let service: KeybindService;
@@ -91,12 +113,8 @@ describe("KeybindService", () => {
     service.registerListener("test-listener", ["ArrowDown"], handler);
 
     bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-1" });
-    bus.publish({ type: "TerminalFocused", payload: "terminal-1" });
-    bus.publish({
-      path: ["app", "terminal", "terminal-1"],
-      type: "FullScreenAppEntered",
-      payload: "terminal-1",
-    });
+    emitFact("terminal-1", { type: "focusChanged", focused: true });
+    emitFact("terminal-1", { type: "fullScreenChanged", active: true });
 
     const event = new KeyboardEvent("keydown", {
       key: "ArrowDown",
@@ -113,12 +131,8 @@ describe("KeybindService", () => {
     config$.next({ keybind: ["always:ctrl+shift+k=test_always_action"] as never[] });
 
     bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-1" });
-    bus.publish({ type: "TerminalFocused", payload: "terminal-1" });
-    bus.publish({
-      path: ["app", "terminal", "terminal-1"],
-      type: "FullScreenAppEntered",
-      payload: "terminal-1",
-    });
+    emitFact("terminal-1", { type: "focusChanged", focused: true });
+    emitFact("terminal-1", { type: "fullScreenChanged", active: true });
 
     const publishSpy = vi.spyOn(bus, "publish");
 

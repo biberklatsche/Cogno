@@ -24,9 +24,9 @@ describe("AppBus", () => {
   it("should go through Capture, Target and Bubble phases", async () => {
     const path = ["app", "workspace", "terminal"];
     const message: AppMessage = {
-      type: "PtyInitialized",
+      type: "Cut",
       path,
-      payload: { terminalId: "term1", shellType: "Bash" },
+      payload: "term1",
     };
 
     const events: { path: string; phase: string }[] = [];
@@ -54,9 +54,9 @@ describe("AppBus", () => {
   it("should stop propagation when propagationStopped is set", async () => {
     const path = ["app", "child"];
     const message: AppMessage = {
-      type: "PtyInitialized",
+      type: "Cut",
       path,
-      payload: { terminalId: "term1", shellType: "Bash" },
+      payload: "term1",
     };
 
     const events: string[] = [];

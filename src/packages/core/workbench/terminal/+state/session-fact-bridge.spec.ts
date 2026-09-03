@@ -7,7 +7,6 @@ import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { Renderer } from "@cogno/core/terminal/renderer";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
-import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import type { NotificationChannelsPort } from "@cogno/shared/ports";
@@ -137,7 +136,6 @@ describe("SessionFactBridge", () => {
       bus,
       host,
       configService as unknown as ConfigService,
-      new TerminalActivityService(),
       {
         resolveForTerminal: vi.fn().mockReturnValue({ workspaceId: "w", tabId: "t", terminalId }),
       } as unknown as NotificationTargetResolverService,

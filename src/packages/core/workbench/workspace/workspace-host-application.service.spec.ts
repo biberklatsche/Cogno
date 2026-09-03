@@ -80,7 +80,7 @@ describe("WorkspaceHostApplicationService", () => {
     });
 
     const terminalId = getSingleTerminalId(gridListService);
-    bus.publish({ type: "TerminalFocused", payload: terminalId });
+    emitSessionFact(terminalId, { type: "focusChanged", focused: true });
     emitSessionFact(terminalId, { type: "titleChanged", oscCode: 2, title: "pwsh" });
 
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);

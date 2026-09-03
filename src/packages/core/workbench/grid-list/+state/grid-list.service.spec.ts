@@ -14,7 +14,6 @@ import type {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
-import type { TerminalFocusedEvent } from "@cogno/core/workbench/bus/terminal/events";
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import type { TerminalConfig } from "@cogno/shared/domain";
 import { IdCreator } from "@cogno/shared/support";
@@ -404,9 +403,9 @@ describe("GridListService", () => {
       expect(movedGrid.tree.root.data?.terminalId).toBe("term-2");
     });
 
-    it("should handle TerminalTitleChanged event", () => {
+    it("should handle titleChanged fact", () => {
       const publishSpy = vi.spyOn(bus, "publish");
-      bus.publish({ type: "TerminalFocused", payload: initialTerminalId } as TerminalFocusedEvent);
+      emitSessionFact(initialTerminalId, { type: "focusChanged", focused: true });
 
       emitSessionFact(initialTerminalId, { type: "titleChanged", oscCode: 2, title: "New Title" });
 
@@ -427,7 +426,7 @@ describe("GridListService", () => {
         type: "SplitPaneRight",
         payload: initialTerminalId,
       } as SplitPaneRightAction);
-      bus.publish({ type: "TerminalFocused", payload: initialTerminalId } as TerminalFocusedEvent);
+      emitSessionFact(initialTerminalId, { type: "focusChanged", focused: true });
 
       const publishSpy = vi.spyOn(bus, "publish");
       emitSessionFact("term-2", { type: "titleChanged", oscCode: 2, title: "Second Pane" });
@@ -453,7 +452,7 @@ describe("GridListService", () => {
       emitSessionFact("term-2", { type: "titleChanged", oscCode: 2, title: "Second Pane" });
 
       const publishSpy = vi.spyOn(bus, "publish");
-      bus.publish({ type: "TerminalFocused", payload: "term-2" } as TerminalFocusedEvent);
+      emitSessionFact("term-2", { type: "focusChanged", focused: true });
 
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -468,7 +467,7 @@ describe("GridListService", () => {
       bus.publish({ type: "SplitPaneRight", payload: initialTerminalId } as SplitPaneRightAction);
 
       // Focus term-2
-      bus.publish({ type: "TerminalFocused", payload: "term-2" } as TerminalFocusedEvent);
+      emitSessionFact("term-2", { type: "focusChanged", focused: true });
 
       const publishSpy = vi.spyOn(bus, "publish");
 
@@ -563,7 +562,7 @@ describe("GridListService", () => {
       expect(maximizedTerminalId).toBeUndefined();
     });
 
-    it("should handle TerminalFocused event", () => {
+    it("should handle focusChanged fact", () => {
       const tabId = "tab-1";
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-1");
       bus.publish({
@@ -571,17 +570,14 @@ describe("GridListService", () => {
         payload: { tabId, isActive: true },
       } as TabAddedEvent);
 
-      bus.publish({
-        type: "TerminalFocused",
-        payload: "term-1",
-      } as TerminalFocusedEvent);
+      emitSessionFact("term-1", { type: "focusChanged", focused: true });
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
       expect(grids[0].tree.root.data?.isFocused).toBe(true);
     });
 
-    it("should ignore TerminalFocused events from inactive tabs", () => {
+    it("should ignore focusChanged facts from inactive tabs", () => {
       vi.spyOn(IdCreator, "newTerminalId")
         .mockReturnValueOnce("term-1")
         .mockReturnValueOnce("term-2");
@@ -595,15 +591,9 @@ describe("GridListService", () => {
         payload: { tabId: "tab-2", isActive: false },
       } as TabAddedEvent);
 
-      bus.publish({
-        type: "TerminalFocused",
-        payload: "term-1",
-      } as TerminalFocusedEvent);
+      emitSessionFact("term-1", { type: "focusChanged", focused: true });
 
-      bus.publish({
-        type: "TerminalFocused",
-        payload: "term-2",
-      } as TerminalFocusedEvent);
+      emitSessionFact("term-2", { type: "focusChanged", focused: true });
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));

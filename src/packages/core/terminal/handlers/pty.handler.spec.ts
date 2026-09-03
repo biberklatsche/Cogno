@@ -119,7 +119,7 @@ describe("PtyHandler", () => {
       expect(listener.onStarted).toHaveBeenCalledWith("Bash");
       expect(onWriteParsedDispose).toHaveBeenCalled();
 
-      // Second chunk: written as-is, no second PtyInitialized
+      // Second chunk: written as-is, no second started fact
       listener.onStarted.mockClear();
       const chunk2 = chunk(1, "pty output 2");
       onPtyDataCallback(chunk2);
