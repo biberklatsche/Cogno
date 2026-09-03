@@ -1,6 +1,6 @@
 // Vitest setup file
 import "@angular/compiler";
-import { PathFactory } from "@cogno/app/app-host/path.factory";
+import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { shellPathAdapterDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { afterEach, beforeEach, vi } from "vitest";
 

@@ -1,5 +1,6 @@
 import { Inject, Injectable } from "@angular/core";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
+import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppNotificationChannelService } from "@cogno/core/workbench/notification/+state/app-notification-channel.service";
@@ -14,7 +15,6 @@ import {
 } from "@cogno/shared/contributions";
 import { NotificationChannelContract } from "@cogno/shared/domain";
 import { additionalNotificationChannelsToken, featuresToken } from "./app-host.tokens";
-import { PathFactory } from "./path.factory";
 
 /**
  * Collects what the features contribute and hands each extension point to
