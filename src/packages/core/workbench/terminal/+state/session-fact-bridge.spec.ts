@@ -169,68 +169,13 @@ describe("SessionFactBridge", () => {
     });
   });
 
-  describe("bus to host", () => {
-    it("shows and hides the renderer with the visible set", () => {
-      bus.publish({
-        type: "VisibleTerminalsChanged",
-        payload: { terminalIds: ["other"] },
-      } as never);
-      expect(lastRenderer().setVisible).toHaveBeenCalledWith(false);
-
-      bus.publish({
-        type: "VisibleTerminalsChanged",
-        payload: { terminalIds: [terminalId] },
-      } as never);
-      expect(lastRenderer().setVisible).toHaveBeenCalledWith(true);
-    });
-
-    it("tells the host when its pane is maximized, and the menu shows Minimize", () => {
-      bus.publish({ type: "PaneMaximizedChanged", payload: { terminalId } } as never);
+  describe("menu reads host state", () => {
+    it("shows Minimize when the pane is maximized", () => {
+      host.setPaneMaximized(true);
 
       const items = menus.buildContextMenu();
       expect(items.find((i) => i.label === "Minimize")).toBeDefined();
       expect(items.find((i) => i.label === "Maximize")).toBeUndefined();
-    });
-
-    describe("focus", () => {
-      beforeEach(() => {
-        vi.useFakeTimers();
-        host.start();
-        host.attach(document.createElement("div"));
-      });
-
-      it("focuses on FocusTerminal for this id and says so", () => {
-        bus.publish({ type: "FocusTerminal", payload: terminalId, path: ["app", "terminal"] });
-
-        expect(host.isFocused).toBe(true);
-        expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({ type: "TerminalFocused", payload: terminalId }),
-        );
-      });
-
-      it("blurs on FocusTerminal for another id and says so", () => {
-        bus.publish({ type: "FocusTerminal", payload: "other-id", path: ["app", "terminal"] });
-
-        expect(host.isFocused).toBe(false);
-        expect(bus.publish).toHaveBeenCalledWith(
-          expect.objectContaining({ type: "TerminalBlurred", payload: terminalId }),
-        );
-      });
-
-      it("blurs on BlurTerminal for this id", () => {
-        bus.publish({ type: "FocusTerminal", payload: terminalId, path: ["app", "terminal"] });
-        bus.publish({ type: "BlurTerminal", payload: terminalId, path: ["app", "terminal"] });
-
-        expect(host.isFocused).toBe(false);
-      });
-
-      it("stops listening once disposed", () => {
-        bridge.dispose();
-
-        bus.publish({ type: "FocusTerminal", payload: terminalId, path: ["app", "terminal"] });
-
-        expect(host.isFocused).toBe(false);
-      });
     });
   });
 

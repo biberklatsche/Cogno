@@ -12,7 +12,6 @@ import { ActionFired, ActionFiredEvent } from "@cogno/core/workbench/bus/action.
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
 import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
-import { ShellLineEditorActionContract } from "@cogno/shared/contributions";
 import {
   buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
@@ -31,25 +30,6 @@ import {
 import { KeybindExecutor } from "./keybind/keybind.executor";
 
 export const OSC9_NOTIFICATION_ID = "osc9";
-
-const EDITOR_ACTION_BY_MESSAGE = {
-  ClearLine: "clearLine",
-  ClearLineToEnd: "clearLineToEnd",
-  ClearLineToStart: "clearLineToStart",
-  DeletePreviousWord: "deletePreviousWord",
-  DeleteNextWord: "deleteNextWord",
-  GoToNextWord: "goToNextWord",
-  GoToPreviousWord: "goToPreviousWord",
-  GoToStartOfLine: "goToStartOfLine",
-  GoToEndOfLine: "goToEndOfLine",
-  SelectAll: "selectAll",
-  SelectTextRight: "selectTextRight",
-  SelectTextLeft: "selectTextLeft",
-  SelectWordRight: "selectWordRight",
-  SelectWordLeft: "selectWordLeft",
-  SelectTextToEndOfLine: "selectTextToEndOfLine",
-  SelectTextToStartOfLine: "selectTextToStartOfLine",
-} as const satisfies Record<string, ShellLineEditorActionContract>;
 
 /**
  * The only translator between a session host and the old app bus, in both
@@ -189,56 +169,12 @@ export class SessionFactBridge {
 
   // ---- bus -> host -------------------------------------------------------
 
-  private listenToBus(terminalId: TerminalId): void {
-    const add = (subscription: Subscription) => this.subscription.add(subscription);
-    add(
-      this.bus.on$({ path: ["app", "terminal"], type: "FocusTerminal" }).subscribe((event) => {
-        if (event.payload === terminalId) this.host.focus();
-        else this.host.blur();
-      }),
-    );
-    add(
-      this.bus.on$({ path: ["app", "terminal"], type: "BlurTerminal" }).subscribe((event) => {
-        if (event.payload === terminalId) this.host.blur();
-      }),
-    );
-    add(
-      this.bus.onType$("PaneMaximizedChanged").subscribe((event) => {
-        this.host.setPaneMaximized(event.payload?.terminalId === terminalId);
-      }),
-    );
-    add(
-      this.bus.onType$("VisibleTerminalsChanged").subscribe((event) => {
-        this.host.setVisible(event.payload?.terminalIds.includes(terminalId) ?? true);
-      }),
-    );
-    add(
-      this.bus.on$({ path: ["app", "terminal"], type: "ClearBuffer" }).subscribe((event) => {
-        if (event.payload === terminalId) this.host.clearBuffer();
-      }),
-    );
-    add(
-      this.bus.on$({ path: ["app", "terminal"], type: "WriteRawToPty" }).subscribe((event) => {
-        if (event.payload?.terminalId !== terminalId) return;
-        this.host.writeRaw(event.payload.text, event.payload.autoExecute);
-      }),
-    );
-    add(
-      this.bus.on$({ path: ["app", "terminal"], type: "Paste" }).subscribe((event) => {
-        if (event.payload === terminalId) void this.host.paste();
-      }),
-    );
-    add(
-      this.bus.on$({ path: ["app", "terminal"], type: "Copy" }).subscribe((event) => {
-        if (event.payload === terminalId) void this.host.copy();
-      }),
-    );
-    add(
-      this.bus.on$({ path: ["app", "terminal"], type: "Cut" }).subscribe((event) => {
-        if (event.payload === terminalId) this.host.cut();
-      }),
-    );
-    add(
+  private listenToBus(_terminalId: TerminalId): void {
+    // The bus -> host routing (focus/write/clear/paste/copy/cut/editor
+    // actions/search/visible/maximized) is the TerminalInputDispatcher's job
+    // now. What stays here is the keybind action triggers, which need this
+    // session's autocomplete/history and depend on focus.
+    this.subscription.add(
       this.bus.on$(ActionFired.listener()).subscribe(async (event: ActionFiredEvent) => {
         const performed = await this.performAction(event.payload ?? "");
         if (!performed) return;
@@ -246,32 +182,6 @@ export class SessionFactBridge {
         event.defaultPrevented = true;
         event.propagationStopped = true;
       }),
-    );
-    for (const [type, actionId] of Object.entries(EDITOR_ACTION_BY_MESSAGE)) {
-      add(
-        this.bus
-          .on$({ path: ["app", "terminal"], type: type as keyof typeof EDITOR_ACTION_BY_MESSAGE })
-          .subscribe((event) => {
-            if (event.payload === terminalId) this.host.runEditorAction(actionId);
-          }),
-      );
-    }
-    add(
-      this.bus
-        .on$({ path: ["app", "terminal"], type: "TerminalSearchRequested" })
-        .subscribe((event) => {
-          const payload = event.payload;
-          if (!payload || (payload.terminalId && payload.terminalId !== terminalId)) return;
-          this.host.search(payload);
-        }),
-    );
-    add(
-      this.bus
-        .on$({ path: ["app", "terminal"], type: "TerminalSearchRevealRequested" })
-        .subscribe((event) => {
-          if (event.payload?.terminalId !== terminalId) return;
-          this.host.reveal(event.payload);
-        }),
     );
   }
 

@@ -60,6 +60,11 @@ export class TerminalSessionRegistry {
     return this.entriesByTerminalId.get(terminalId);
   }
 
+  /** Every live session, for the broadcasts that fan out to all of them. */
+  get entries(): ReadonlyArray<TerminalSessionRegistryEntry> {
+    return Array.from(this.entriesByTerminalId.values());
+  }
+
   has(terminalId: TerminalId | undefined): boolean {
     return this.get(terminalId) !== undefined;
   }

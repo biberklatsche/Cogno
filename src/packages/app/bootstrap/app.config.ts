@@ -46,6 +46,7 @@ import { NotificationDispatchService } from "@cogno/core/workbench/notification/
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
 import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
+import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
@@ -135,6 +136,8 @@ export const appConfig: ApplicationConfig = {
       // The config actions now live in the workbench; instantiate the handler
       // so it listens.
       inject(ConfigActionsHandler);
+      // Routes bus messages to the session hosts (was the per-session bridge).
+      inject(TerminalInputDispatcher);
       inject(ErrorReportingRuntimeService).initialize();
 
       const injector = inject(Injector);
