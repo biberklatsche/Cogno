@@ -17,12 +17,14 @@ import { TerminalHistoryService } from "@cogno/core/session/history/terminal-his
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { SessionFactBridge } from "../../terminal/+state/session-fact-bridge";
 import { SessionMenus } from "../../terminal/+state/session-menus";
+import { TerminalSessionRegistry } from "../../terminal/+state/terminal-session.registry";
 import { TerminalComponent } from "../../terminal/terminal.component";
 import { TerminalFileDropService } from "../../terminal/terminal-file-drop.service";
 import { Pane } from "../+model/model";
@@ -75,6 +77,8 @@ export class SessionHostFactory {
     private readonly env: EnvironmentInjector,
     private readonly appRef: ApplicationRef,
     private readonly configService: ConfigService,
+    private readonly bus: AppBus,
+    private readonly sessionRegistry: TerminalSessionRegistry,
   ) {}
 
   /** Makes sure the pane's session exists and runs; a no-op once it does. */
@@ -117,6 +121,9 @@ export class SessionHostFactory {
     const host = injector.get(SessionHost);
     const bridge = injector.get(SessionFactBridge);
     host.initialize(terminalId, shellProfile);
+    // The registry owns the session's lifecycle now: it must know the host
+    // before it starts so its facts$ carries every fact from the first one.
+    this.sessionRegistry.register(terminalId, shellProfile, host);
     bridge.start(terminalId, shellProfile);
     // The composer and the menus listen from the start; the view comes later.
     injector.get(TerminalComposerService);
@@ -151,8 +158,10 @@ export class SessionHostFactory {
     if (!entry) return;
     try {
       entry.componentRef?.destroy();
-      // The app hears TerminalRemoved before the machine goes, as it always did.
       entry.bridge.dispose();
+      // The app hears TerminalRemoved before the machine goes, as it always did.
+      this.sessionRegistry.unregister(terminalId);
+      this.bus.publish({ type: "TerminalRemoved", path: ["app", "terminal"], payload: terminalId });
       entry.host.close();
       entry.injector.destroy();
     } finally {

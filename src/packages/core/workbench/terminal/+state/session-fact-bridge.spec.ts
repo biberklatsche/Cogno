@@ -19,7 +19,6 @@ import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.fa
 import { getActionKeybindingPortMock, getAppBus } from "../../../../__test__/test-factory";
 import { SessionFactBridge } from "./session-fact-bridge";
 import { SessionMenus } from "./session-menus";
-import { TerminalSessionRegistry } from "./terminal-session.registry";
 
 vi.mock("@cogno/core/terminal/renderer", () => {
   class RendererMock {
@@ -70,7 +69,6 @@ describe("SessionFactBridge", () => {
   let bridge: SessionFactBridge;
   let menus: SessionMenus;
   let configService: ConfigServiceMock;
-  let registry: TerminalSessionRegistry;
   let preloadForShellIntegration: ReturnType<typeof vi.fn>;
   let openDialog: ReturnType<typeof vi.fn>;
   let processInfoDialogRef: DialogRef<void>;
@@ -135,7 +133,6 @@ describe("SessionFactBridge", () => {
           }));
       },
     };
-    registry = new TerminalSessionRegistry();
     bridge = new SessionFactBridge(
       bus,
       host,
@@ -146,7 +143,6 @@ describe("SessionFactBridge", () => {
       } as unknown as NotificationTargetResolverService,
       notificationChannelsPort,
       { preloadForShellIntegration } as unknown as AutocompleteSuggestorSource,
-      registry,
       { triggerAutocomplete: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
       { triggerCommandHistory: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
       {} as never,
@@ -162,29 +158,14 @@ describe("SessionFactBridge", () => {
     bridge.start(terminalId, bashProfile);
   });
 
-  describe("registry and lifecycle", () => {
-    it("registers the host and preloads the autocomplete when the integration is on", () => {
-      expect(registry.get(terminalId)?.host).toBe(host);
+  describe("lifecycle", () => {
+    it("preloads the autocomplete when the integration is on", () => {
       expect(preloadForShellIntegration).not.toHaveBeenCalled();
 
       const withIntegration = { ...bashProfile, enable_shell_integration: true };
       bridge.start("other-terminal", withIntegration);
 
       expect(preloadForShellIntegration).toHaveBeenCalledWith("Bash");
-    });
-
-    it("publishes TerminalRemoved and unregisters on dispose, once", () => {
-      bridge.dispose();
-      bridge.dispose();
-      host.close();
-
-      expect(bus.publish).toHaveBeenCalledWith(
-        expect.objectContaining({ type: "TerminalRemoved", payload: terminalId }),
-      );
-      expect(
-        vi.mocked(bus.publish).mock.calls.filter((c) => c[0].type === "TerminalRemoved"),
-      ).toHaveLength(1);
-      expect(registry.has(terminalId)).toBe(false);
     });
   });
 

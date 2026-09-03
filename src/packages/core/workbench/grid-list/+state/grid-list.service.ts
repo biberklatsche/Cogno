@@ -204,6 +204,10 @@ export class GridListService {
           this.applyPaneTitle(terminalId, fact.title);
         } else if (fact.type === "cwdReported") {
           this.applyPaneCwd(terminalId, fact.cwd);
+        } else if (fact.type === "exited") {
+          // The shell ended: drop its pane (and the tab/session with the last
+          // one). No bus hop - the session reports, the workbench acts.
+          this.removePane(terminalId);
         }
       });
     this.bus

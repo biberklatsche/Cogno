@@ -29,7 +29,6 @@ import {
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
 import { KeybindExecutor } from "./keybind/keybind.executor";
-import { TerminalSessionRegistry } from "./terminal-session.registry";
 
 export const OSC9_NOTIFICATION_ID = "osc9";
 
@@ -78,7 +77,6 @@ export class SessionFactBridge {
     private readonly notificationTargetResolverService: NotificationTargetResolverService,
     private readonly notificationChannelsPort: NotificationChannelsPort,
     private readonly featureSuggestorService: AutocompleteSuggestorSource,
-    private readonly registry: TerminalSessionRegistry,
     private readonly autocomplete: TerminalAutocompleteService,
     private readonly history: TerminalHistoryService,
     // Listens to the host's facts itself; injected so it exists for the session.
@@ -96,7 +94,6 @@ export class SessionFactBridge {
   /** Starts translating for `terminalId`; the host must be initialized already. */
   start(terminalId: TerminalId, shellProfile: ShellProfile): void {
     this.terminalId = terminalId;
-    this.registry.register(terminalId, shellProfile, this.host);
     if (shellProfile.enable_shell_integration) {
       this.featureSuggestorService.preloadForShellIntegration(shellProfile.shell_type);
     }
@@ -108,14 +105,6 @@ export class SessionFactBridge {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    this.registry.unregister(this.terminalId);
-    if (this.terminalId) {
-      this.bus.publish({
-        type: "TerminalRemoved",
-        path: ["app", "terminal"],
-        payload: this.terminalId,
-      });
-    }
     this.keybindExecutor?.dispose();
     this.subscription.unsubscribe();
   }
@@ -179,9 +168,6 @@ export class SessionFactBridge {
           type: "PtyInitialized",
           payload: { terminalId, shellType: fact.shellType as ShellType },
         });
-        break;
-      case "exited":
-        this.bus.publish({ path: ["app", "terminal"], type: "RemovePane", payload: terminalId });
         break;
       case "outputReceived":
         this.terminalActivity.emit(terminalId);
