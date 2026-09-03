@@ -22,9 +22,6 @@ import { TerminalAutocompleteFeatureSuggestorService } from "@cogno/app/app-host
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
-import { CliActionService } from "@cogno/app/cli-command/cli-action.service";
-import { HttpMessageAdapterService } from "@cogno/app/cogno-message/http-message-adapter.service";
-import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc.adapter.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
@@ -39,6 +36,8 @@ import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
 import { SideMenuActionNamesSource } from "@cogno/core/workbench/actions/side-menu-action-names.source";
+import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
+import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-center-port.adapter.service";
@@ -76,6 +75,7 @@ import {
   TerminalNavigator,
   TerminalSearchHostPort,
 } from "@cogno/shared/ports";
+import { TerminalIpcAdapterService } from "../app-host/terminal-ipc.adapter.service";
 import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
 
 export const appConfig: ApplicationConfig = {
