@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
 import { getAppBus } from "../../../../__test__/test-factory";
-import { SessionFactBridge } from "./session-fact-bridge";
+import { SessionKeybindings } from "./session-keybindings";
 
 vi.mock("@cogno/core/terminal/renderer", () => {
   class RendererMock {
@@ -52,10 +52,10 @@ const bashProfile: ShellProfile = {
   load_user_rc: false,
 };
 
-describe("SessionFactBridge", () => {
+describe("SessionKeybindings", () => {
   let bus: AppBus;
   let host: SessionHost;
-  let bridge: SessionFactBridge;
+  let keybindings: SessionKeybindings;
   let configService: ConfigServiceMock;
   let preloadForShellIntegration: ReturnType<typeof vi.fn>;
 
@@ -82,17 +82,16 @@ describe("SessionFactBridge", () => {
     );
 
     preloadForShellIntegration = vi.fn();
-    bridge = new SessionFactBridge(
+    keybindings = new SessionKeybindings(
       bus,
       host,
       { preloadForShellIntegration } as unknown as AutocompleteSuggestorSource,
       { triggerAutocomplete: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
       { triggerCommandHistory: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
-      {} as never,
     );
 
     host.initialize(terminalId, bashProfile);
-    bridge.start(terminalId, bashProfile);
+    keybindings.start(terminalId, bashProfile);
   });
 
   describe("lifecycle", () => {
@@ -100,7 +99,7 @@ describe("SessionFactBridge", () => {
       expect(preloadForShellIntegration).not.toHaveBeenCalled();
 
       const withIntegration = { ...bashProfile, enable_shell_integration: true };
-      bridge.start("other-terminal", withIntegration);
+      keybindings.start("other-terminal", withIntegration);
 
       expect(preloadForShellIntegration).toHaveBeenCalledWith("Bash");
     });

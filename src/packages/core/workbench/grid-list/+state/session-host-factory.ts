@@ -22,7 +22,7 @@ import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
-import { SessionFactBridge } from "../../terminal/+state/session-fact-bridge";
+import { SessionKeybindings } from "../../terminal/+state/session-keybindings";
 import { SessionMenus } from "../../terminal/+state/session-menus";
 import { SessionNotifications } from "../../terminal/+state/session-notifications";
 import { TerminalSessionRegistry } from "../../terminal/+state/terminal-session.registry";
@@ -59,7 +59,7 @@ type SessionEntry = {
   /** Everything that lives and dies with the session (ARCHITECTURE.md 2.2, axis 2). */
   readonly injector: EnvironmentInjector;
   readonly host: SessionHost;
-  readonly bridge: SessionFactBridge;
+  readonly keybindings: SessionKeybindings;
   readonly notifications: SessionNotifications;
   /** The pane's view; exists only once the pane was on screen. */
   componentRef?: ComponentRef<TerminalComponent>;
@@ -110,7 +110,7 @@ export class SessionHostFactory {
             CommandRecorder,
           ],
         },
-        SessionFactBridge,
+        SessionKeybindings,
         SessionNotifications,
         SessionMenus,
         TerminalAutocompleteService,
@@ -122,12 +122,12 @@ export class SessionHostFactory {
     );
     const shellProfile = this.shellProfileFor(pane);
     const host = injector.get(SessionHost);
-    const bridge = injector.get(SessionFactBridge);
+    const keybindings = injector.get(SessionKeybindings);
     host.initialize(terminalId, shellProfile);
     // The registry owns the session's lifecycle now: it must know the host
     // before it starts so its facts$ carries every fact from the first one.
     this.sessionRegistry.register(terminalId, shellProfile, host);
-    bridge.start(terminalId, shellProfile);
+    keybindings.start(terminalId, shellProfile);
     // The composer, notifications and menus listen from the start; the view
     // comes later.
     injector.get(TerminalComposerService);
@@ -135,7 +135,7 @@ export class SessionHostFactory {
     injector.get(SessionMenus);
     host.start();
 
-    const entry: SessionEntry = { injector, host, bridge, notifications };
+    const entry: SessionEntry = { injector, host, keybindings, notifications };
     this.sessions.set(terminalId, entry);
     return entry;
   }
@@ -163,7 +163,7 @@ export class SessionHostFactory {
     if (!entry) return;
     try {
       entry.componentRef?.destroy();
-      entry.bridge.dispose();
+      entry.keybindings.dispose();
       entry.notifications.dispose();
       // The app hears TerminalRemoved before the machine goes, as it always did.
       this.sessionRegistry.unregister(terminalId);

@@ -28,7 +28,7 @@ const EDITOR_ACTION_BY_MESSAGE = {
 /**
  * Routes the terminal bus messages addressed to a session onto its host,
  * resolving `terminalId -> host` through the registry. One root service in
- * place of the per-session subscriptions the bridge used to hold: most
+ * place of the per-session subscriptions that used to hold them: most
  * messages carry a terminal id and hit one host; a couple are broadcasts that
  * fan out to all of them. (The keybind action triggers stay per-session - they
  * need the session's autocomplete/history and depend on focus.)

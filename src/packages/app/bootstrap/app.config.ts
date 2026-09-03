@@ -136,7 +136,7 @@ export const appConfig: ApplicationConfig = {
       // The config actions now live in the workbench; instantiate the handler
       // so it listens.
       inject(ConfigActionsHandler);
-      // Routes bus messages to the session hosts (was the per-session bridge).
+      // Routes bus messages addressed to a session onto its host.
       inject(TerminalInputDispatcher);
       inject(ErrorReportingRuntimeService).initialize();
 
