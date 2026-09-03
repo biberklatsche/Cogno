@@ -25,15 +25,11 @@ export class TerminalMonitorAdapterService extends TerminalMonitorPort {
     private readonly sessionRegistry: TerminalSessionRegistry,
   ) {
     super();
-    bus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
+    this.sessionRegistry.facts$
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this._activity$.next({
-          terminalId: event.payload.terminalId,
-          isBusy: event.payload.isBusy,
-        });
+      .subscribe(({ terminalId, fact }) => {
+        if (fact.type !== "busyChanged") return;
+        this._activity$.next({ terminalId, isBusy: fact.isBusy });
       });
 
     bus

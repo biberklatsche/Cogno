@@ -2,6 +2,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { DialogRef, type DialogService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
+import { clear, emitSessionFact, getTerminalSessionRegistry } from "../../../__test__/test-factory";
 import type { GridListService } from "../grid-list/+state/grid-list.service";
 import { TerminalBusyStateService } from "./terminal-busy-state.service";
 
@@ -25,23 +26,18 @@ describe("TerminalBusyStateService", () => {
             : undefined,
       ),
     } as unknown as GridListService;
+    clear();
     terminalBusyStateService = new TerminalBusyStateService(
       appBus,
       dialogService,
       gridListService,
+      getTerminalSessionRegistry(),
       getDestroyRef(),
     );
   });
 
   it("tracks busy terminal ids through bus events", () => {
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalBusyChanged",
-      payload: {
-        terminalId: "terminal-1",
-        isBusy: true,
-      },
-    });
+    emitSessionFact("terminal-1", { type: "busyChanged", isBusy: true });
 
     expect(terminalBusyStateService.hasBusyTerminals()).toBe(true);
     expect(terminalBusyStateService.getBusyTerminalCount()).toBe(1);
@@ -64,14 +60,7 @@ describe("TerminalBusyStateService", () => {
   });
 
   it("returns the dialog result when busy terminals exist", async () => {
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalBusyChanged",
-      payload: {
-        terminalId: "terminal-1",
-        isBusy: true,
-      },
-    });
+    emitSessionFact("terminal-1", { type: "busyChanged", isBusy: true });
 
     const dialogRef = new DialogRef<boolean>(1, vi.fn());
     vi.mocked(dialogService.open).mockImplementation(() => {
@@ -95,14 +84,7 @@ describe("TerminalBusyStateService", () => {
   });
 
   it("returns false when the user cancels the dialog", async () => {
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalBusyChanged",
-      payload: {
-        terminalId: "terminal-1",
-        isBusy: true,
-      },
-    });
+    emitSessionFact("terminal-1", { type: "busyChanged", isBusy: true });
 
     const dialogRef = new DialogRef<boolean>(1, vi.fn());
     vi.mocked(dialogService.open).mockImplementation(() => {
@@ -116,14 +98,7 @@ describe("TerminalBusyStateService", () => {
   });
 
   it("checks busy terminals only inside the requested workspace", async () => {
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalBusyChanged",
-      payload: {
-        terminalId: "terminal-1",
-        isBusy: true,
-      },
-    });
+    emitSessionFact("terminal-1", { type: "busyChanged", isBusy: true });
 
     await expect(
       terminalBusyStateService.confirmProceedIfNoBusyTerminalsInWorkspace(

@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
 import { TerminalId } from "@cogno/shared/ports";
 import { BAR_COUNT, heightFrameToGrid, MAX_HEIGHT, MIN_HEIGHT } from "@cogno/shared/ui";
@@ -49,21 +50,20 @@ export class TerminalBusyIndicatorAdapterService {
   constructor(
     private readonly bus: AppBus,
     private readonly terminalActivity: TerminalActivityService,
+    sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
-    this.bus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
+    sessionRegistry.facts$
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        const payload = event.payload;
-        if (!payload) return;
-        if (payload.isBusy) {
-          this.registerActive(payload.terminalId);
-          this.waveStates.set(payload.terminalId, "active");
-          this.startActivityTracking(payload.terminalId);
+      .subscribe(({ terminalId, fact }) => {
+        if (fact.type !== "busyChanged") return;
+        if (fact.isBusy) {
+          this.registerActive(terminalId);
+          this.waveStates.set(terminalId, "active");
+          this.startActivityTracking(terminalId);
         } else {
-          this.stopActivityTracking(payload.terminalId);
-          this.unregisterBoth(payload.terminalId);
+          this.stopActivityTracking(terminalId);
+          this.unregisterBoth(terminalId);
         }
       });
 

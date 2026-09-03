@@ -124,13 +124,6 @@ export class SessionFactBridge {
 
   private onFact(terminalId: TerminalId, fact: SessionFact): void {
     switch (fact.type) {
-      case "busyChanged":
-        this.bus.publish({
-          path: ["app", "terminal"],
-          type: "TerminalBusyChanged",
-          payload: { terminalId, isBusy: fact.isBusy },
-        });
-        break;
       case "commandCompleted":
         this.completedCommandNotificationHandler.handleCompletedCommand(fact.command);
         break;

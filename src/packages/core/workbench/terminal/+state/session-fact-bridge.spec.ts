@@ -254,17 +254,6 @@ describe("SessionFactBridge", () => {
   });
 
   describe("facts to bus", () => {
-    it("publishes the busy fact as the old message", () => {
-      host.model.startCommand();
-
-      expect(bus.publish).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "TerminalBusyChanged",
-          payload: { terminalId, isBusy: true },
-        }),
-      );
-    });
-
     it("publishes a notification when a long-running command has finished", () => {
       configure({ notification: { channel: { app: { available: true, enabled: true } } } });
 

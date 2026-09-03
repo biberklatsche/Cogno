@@ -23,13 +23,6 @@ export type TerminalSearchPanelRequestedEvent = MessageBase<
     endBufferLine?: number;
   }
 >;
-export type TerminalBusyChangedEvent = MessageBase<
-  "TerminalBusyChanged",
-  {
-    terminalId: TerminalId;
-    isBusy: boolean;
-  }
->;
 export type TerminalFocusedEvent = MessageBase<"TerminalFocused", TerminalId>;
 export type TerminalBlurredEvent = MessageBase<"TerminalBlurred", TerminalId>;
 export type FullScreenAppEnteredEvent = MessageBase<"FullScreenAppEntered", TerminalId>;

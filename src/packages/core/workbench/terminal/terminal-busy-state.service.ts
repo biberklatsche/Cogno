@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalId } from "@cogno/shared/ports";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import { GridListService } from "../grid-list/+state/grid-list.service";
@@ -13,26 +14,22 @@ export class TerminalBusyStateService {
     private readonly appBus: AppBus,
     private readonly dialogService: DialogService,
     private readonly gridListService: GridListService,
+    sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
-    this.appBus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
+    sessionRegistry.facts$
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((terminalBusyChangedEvent) => {
-        const terminalBusyPayload = terminalBusyChangedEvent.payload;
-        if (!terminalBusyPayload) {
+      .subscribe(({ terminalId, fact }) => {
+        if (fact.type !== "busyChanged") {
           return;
         }
-
-        const terminalId = terminalBusyPayload.terminalId;
-        if (terminalBusyPayload.isBusy) {
+        if (fact.isBusy) {
           this.busyTerminalWorkspaceIds.set(
             terminalId,
             this.resolveWorkspaceIdentifierForTerminal(terminalId),
           );
           return;
         }
-
         this.busyTerminalWorkspaceIds.delete(terminalId);
       });
 

@@ -74,7 +74,6 @@ import {
   FullScreenAppLeavedEvent,
   PtyInitializedEvent,
   TerminalBlurredEvent,
-  TerminalBusyChangedEvent,
   TerminalFocusedEvent,
   TerminalSearchPanelRequestedEvent,
   TerminalSearchRequestedEvent,
@@ -100,7 +99,6 @@ export type AppMessage =
   | ThemeChangedEvent
   | InitConfigAction
   | PtyInitializedEvent
-  | TerminalBusyChangedEvent
   | TerminalSearchPanelRequestedEvent
   | TerminalSearchRequestedEvent
   | TerminalSearchResultEvent

@@ -1,10 +1,13 @@
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import {
+  type IdentifiedSessionFact,
+  TerminalSessionRegistry,
+} from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TauriPty } from "@cogno/platform/pty";
 import { CommandRunner } from "@cogno/shared/ports";
-import { BehaviorSubject, EMPTY, firstValueFrom } from "rxjs";
+import { BehaviorSubject, firstValueFrom, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("TerminalGatewayService", () => {
@@ -15,10 +18,12 @@ describe("TerminalGatewayService", () => {
   >;
   let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has" | "facts$">;
   let commandRunner: Pick<CommandRunner, "run">;
+  let sessionFacts: Subject<IdentifiedSessionFact>;
   let service: TerminalGatewayService;
 
   beforeEach(() => {
     appBus = new AppBus();
+    sessionFacts = new Subject<IdentifiedSessionFact>();
     commandRunner = {
       run: vi.fn().mockResolvedValue({ stdout: "ok", stderr: "", exitCode: 0 }),
     };
@@ -28,7 +33,7 @@ describe("TerminalGatewayService", () => {
       findWorkspaceIdentifierByTerminalId: vi.fn().mockReturnValue("workspace-1"),
     };
     terminalSessionRegistry = {
-      facts$: EMPTY,
+      facts$: sessionFacts,
       has: vi.fn().mockReturnValue(true),
       get: vi.fn().mockReturnValue({
         host: {
@@ -93,11 +98,7 @@ describe("TerminalGatewayService", () => {
     const busyStatePromise = firstValueFrom(service.busyStateChanges$);
 
     appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-3" });
-    appBus.publish({
-      path: ["app", "terminal"],
-      type: "TerminalBusyChanged",
-      payload: { terminalId: "terminal-3", isBusy: true },
-    });
+    sessionFacts.next({ terminalId: "terminal-3", fact: { type: "busyChanged", isBusy: true } });
 
     await expect(focusedTerminalIdPromise).resolves.toBe("terminal-3");
     await expect(busyStatePromise).resolves.toEqual({

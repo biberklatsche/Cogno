@@ -134,26 +134,6 @@ describe("TabListService", () => {
       expect(currentTabs[0].systemTitle).toBe("New Title");
       expect(event.propagationStopped).toBe(true);
     });
-
-    it("should not modify tabs on TerminalBusyChanged (busy state handled by BusyIndicatorService)", () => {
-      service.activateWorkspace("workspace-1");
-      service.addTab({
-        id: "t1",
-        systemTitle: "Busy Tab",
-        isActive: true,
-        activeShellType: "unknown",
-      });
-
-      bus.publish({
-        path: ["app", "terminal"],
-        type: "TerminalBusyChanged",
-        payload: { terminalId: "terminal-1", isBusy: true },
-      });
-
-      let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
-      expect(currentTabs[0].id).toBe("t1");
-    });
   });
 
   describe("ActionFired events", () => {

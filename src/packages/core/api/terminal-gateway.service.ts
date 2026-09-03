@@ -40,14 +40,12 @@ export class TerminalGatewayService extends TerminalGateway {
     this.focusedTerminalId$ = this.appBus
       .onType$("FocusTerminal", { path: ["app", "terminal"] })
       .pipe(map((event) => event.payload));
-    this.busyStateChanges$ = this.appBus
-      .onType$("TerminalBusyChanged", { path: ["app", "terminal"] })
-      .pipe(
-        map((event) => ({
-          terminalId: event.payload?.terminalId ?? "",
-          isBusy: event.payload?.isBusy ?? false,
-        })),
-      );
+    this.busyStateChanges$ = this.terminalSessionRegistry.facts$.pipe(
+      map(({ terminalId, fact }) =>
+        fact.type === "busyChanged" ? { terminalId, isBusy: fact.isBusy } : undefined,
+      ),
+      filter((change): change is TerminalBusyStateChangeContract => change !== undefined),
+    );
     this.cwdChanges$ = this.terminalSessionRegistry.facts$.pipe(
       filter(({ fact }) => fact.type === "cwdReported"),
       map(() => undefined),
