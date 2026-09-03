@@ -101,6 +101,8 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::environment::get_system_path,
             cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
             cogno_tauri_core::commands::window::new_window,
+            cogno_tauri_core::commands::window::window_claim_workspace,
+            cogno_tauri_core::commands::window::window_release_workspace,
             cogno_tauri_core::commands::notification::send_os_notification,
             cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file,
             cogno_tauri_core::http_server::start_http_server,

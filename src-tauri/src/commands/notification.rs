@@ -32,12 +32,27 @@ pub async fn send_os_notification(
 fn focus_window_and_emit_click(app: &tauri::AppHandle, window_label: &str, target: &Option<Value>) {
     use tauri::Emitter;
 
-    if let Some(webview_window) = app.get_webview_window(window_label) {
+    // Route the click to the window that owns the target's workspace, so a
+    // notification about workspace A jumps to A's window even when it fired
+    // from another. Fall back to the originating window when unknown.
+    let effective_label =
+        target_workspace_window(app, target).unwrap_or_else(|| window_label.to_string());
+
+    if let Some(webview_window) = app.get_webview_window(&effective_label) {
         let _ = webview_window.show();
         let _ = webview_window.unminimize();
         let _ = webview_window.set_focus();
     }
-    let _ = app.emit_to(window_label, OS_NOTIFICATION_CLICKED_EVENT, target.clone());
+    let _ = app.emit_to(&effective_label, OS_NOTIFICATION_CLICKED_EVENT, target.clone());
+}
+
+/// The window holding the target's `workspaceId`, if the registry knows it.
+#[cfg(any(windows, target_os = "linux"))]
+fn target_workspace_window(app: &tauri::AppHandle, target: &Option<Value>) -> Option<String> {
+    use super::window_registry::WindowRegistry;
+
+    let workspace_id = target.as_ref()?.get("workspaceId")?.as_str()?;
+    app.state::<WindowRegistry>().label_for_workspace(workspace_id)
 }
 
 #[cfg(windows)]
