@@ -1,6 +1,30 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, Manager};
+
+/// Emit `event` to the window that owns `terminal_id` (or the last-focused
+/// window when no terminal is given or known), falling back to a broadcast
+/// when no target window is known yet. This is the only window-routing code
+/// that touches Tauri; the resolution it relies on lives on the (pure,
+/// unit-tested) registry.
+pub fn route<P: Serialize + Clone>(
+    app: &AppHandle,
+    event: &str,
+    payload: P,
+    terminal_id: Option<&str>,
+) {
+    match app.state::<WindowRegistry>().resolve_target(terminal_id) {
+        Some(label) => {
+            let _ = app.emit_to(label, event, payload);
+        }
+        None => {
+            let _ = app.emit(event, payload);
+        }
+    }
+}
+
 /// Maps sessions and workspaces to the window that owns them, and remembers
 /// which window was focused last. Backend events are then routed to a single
 /// window instead of broadcast to all of them (ARCHITECTURE.md 2.6).

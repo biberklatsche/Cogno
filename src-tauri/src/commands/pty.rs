@@ -6,7 +6,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::{Duration, Instant};
 use tauri::ipc::{Channel, InvokeResponseBody};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Manager, State};
+
+use super::window_registry::{route, WindowRegistry};
 
 use crate::http_server::HttpServerState;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
@@ -370,9 +372,11 @@ fn end_session(
         return;
     };
     release_session(session);
-    let _ = app.emit(
+    route(
+        app,
         &format!("pty-exit:{}", terminal_id),
         serde_json::json!({ "exitCode": exit_code }),
+        Some(terminal_id),
     );
 }
 
@@ -404,12 +408,17 @@ pub struct PtySpawnResult {
 #[tauri::command]
 pub async fn pty_spawn(
     app: AppHandle,
+    window: tauri::WebviewWindow,
     state: State<'_, PtyState>,
     http_server: State<'_, HttpServerState>,
     options: SpawnOptions,
     on_data: Channel<InvokeResponseBody>,
 ) -> Result<PtySpawnResult, String> {
     let terminal_id = options.name.clone();
+    // Bind the session to the window that spawned it, so its events route back
+    // to that window instead of broadcasting to all of them.
+    app.state::<WindowRegistry>()
+        .bind_terminal(&terminal_id, window.label());
 
     // Prepare shell spawn with integration
     let dev_mode = options.dev_mode.unwrap_or(false);

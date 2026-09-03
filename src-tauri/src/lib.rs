@@ -1,11 +1,11 @@
 use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
-use cogno_tauri_core::commands::window_registry::WindowRegistry;
+use cogno_tauri_core::commands::window_registry::{route, WindowRegistry};
 use cogno_tauri_core::db::Db;
 use cogno_tauri_core::http_server::HttpServerState;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
 use tauri::window::Color;
-use tauri::{Builder, Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
@@ -44,7 +44,7 @@ pub fn run(cli: Cli) {
             use clap::Parser;
             if let Ok(cli) = Cli::try_parse_from(argv) {
                 if let Some(action_payload) = cli.action_payload() {
-                    let _ = app.emit("cli-action", &action_payload);
+                    route(app, "cli-action", &action_payload, None);
                 }
             }
         }))
@@ -125,7 +125,7 @@ pub fn run(cli: Cli) {
 
             // Run the requested command on first launch when present.
             if let Some(action_payload) = cli.action_payload() {
-                let _ = app.emit("cli-action", &action_payload);
+                route(app.handle(), "cli-action", &action_payload, None);
             }
 
             #[cfg(debug_assertions)] // only include this code on debug builds

@@ -1,7 +1,8 @@
+use crate::commands::window_registry::route;
 use serde::{Deserialize, Serialize};
 use std::net::TcpListener;
 use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Manager, State};
 
 pub struct HttpServerState {
     port: AtomicU16,
@@ -126,7 +127,8 @@ pub fn start_http_server(
                     match result {
                         Ok(Json(payload)) => {
                             log::info!(target: "http_server", "POST /action: command={} terminal_id={:?}", payload.command, payload.terminal_id);
-                            let _ = app.emit("cogno-message", payload);
+                            let terminal_id = payload.terminal_id.clone();
+                            route(&app, "cogno-message", payload, terminal_id.as_deref());
                             StatusCode::NO_CONTENT
                         }
                         Err(e) => {
