@@ -124,13 +124,6 @@ export class SessionFactBridge {
 
   private onFact(terminalId: TerminalId, fact: SessionFact): void {
     switch (fact.type) {
-      case "cwdReported":
-        this.bus.publish({
-          path: ["app", "terminal", terminalId],
-          payload: { cwd: fact.cwd, terminalId },
-          type: "TerminalCwdChanged",
-        });
-        break;
       case "busyChanged":
         this.bus.publish({
           path: ["app", "terminal"],
@@ -151,12 +144,6 @@ export class SessionFactBridge {
             beginBufferLine: fact.range.beginBufferLine,
             endBufferLine: fact.range.endBufferLine,
           },
-        });
-        break;
-      case "titleChanged":
-        this.bus.publish({
-          type: "TerminalTitleChanged",
-          payload: { oscCode: fact.oscCode, terminalId, title: fact.title },
         });
         break;
       case "notificationRequested":

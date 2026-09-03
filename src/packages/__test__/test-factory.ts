@@ -1,6 +1,9 @@
 import type { DestroyRef } from "@angular/core";
 import { signal } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import type { SessionHost } from "@cogno/core/session/host/session-host";
+import type { SessionFact } from "@cogno/core/session/session-facts";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { MachineState } from "@cogno/core/terminal/machine-state";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
@@ -9,6 +12,7 @@ import type { NotificationTargetResolverService } from "@cogno/core/workbench/gr
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
@@ -17,6 +21,7 @@ import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 import type { ActionKeybindingPort, TerminalId } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
+import { Subject } from "rxjs";
 import { vi } from "vitest";
 import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
@@ -25,6 +30,8 @@ let appBus: AppBus | undefined;
 let sideMenuService: SideMenuService | undefined;
 let configService: ConfigServiceMock | undefined;
 let gridListService: GridListService | undefined;
+let terminalSessionRegistry: TerminalSessionRegistry | undefined;
+const sessionFactSubjects = new Map<TerminalId, Subject<SessionFact>>();
 let tabListService: TabListService | undefined;
 let terminalComponentFactory: SessionHostFactory | undefined;
 let windowService: WindowService | undefined;
@@ -100,9 +107,43 @@ export function getActionKeybindingPortMock(): ActionKeybindingPort {
 
 export function getGridListService(): GridListService {
   if (!gridListService) {
-    gridListService = new GridListService(getAppBus(), getSessionHostFactory(), getDestroyRef());
+    gridListService = new GridListService(
+      getAppBus(),
+      getSessionHostFactory(),
+      getTerminalSessionRegistry(),
+      getDestroyRef(),
+    );
   }
   return gridListService;
+}
+
+export function getTerminalSessionRegistry(): TerminalSessionRegistry {
+  if (!terminalSessionRegistry) {
+    terminalSessionRegistry = new TerminalSessionRegistry();
+  }
+  return terminalSessionRegistry;
+}
+
+/**
+ * Emit a session fact through the registry the workbench services listen to,
+ * as if the session at `terminalId` reported it. Registers a stub host on first
+ * use so `registry.facts$` carries the fact tagged with `terminalId`.
+ */
+export function emitSessionFact(terminalId: TerminalId, fact: SessionFact): void {
+  const registry = getTerminalSessionRegistry();
+  let subject = sessionFactSubjects.get(terminalId);
+  if (!subject) {
+    subject = new Subject<SessionFact>();
+    sessionFactSubjects.set(terminalId, subject);
+    registry.register(
+      terminalId,
+      {} as ShellProfile,
+      {
+        facts$: subject.asObservable(),
+      } as unknown as SessionHost,
+    );
+  }
+  subject.next(fact);
 }
 
 export function getTabListService(): TabListService {
@@ -194,6 +235,8 @@ export function clear() {
   sideMenuService = undefined;
   configService = undefined;
   gridListService = undefined;
+  terminalSessionRegistry = undefined;
+  sessionFactSubjects.clear();
   tabListService = undefined;
   terminalComponentFactory = undefined;
   windowService = undefined;

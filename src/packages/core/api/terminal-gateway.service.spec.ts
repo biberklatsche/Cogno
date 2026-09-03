@@ -4,7 +4,7 @@ import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-lis
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TauriPty } from "@cogno/platform/pty";
 import { CommandRunner } from "@cogno/shared/ports";
-import { BehaviorSubject, firstValueFrom } from "rxjs";
+import { BehaviorSubject, EMPTY, firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("TerminalGatewayService", () => {
@@ -13,7 +13,7 @@ describe("TerminalGatewayService", () => {
     GridListService,
     "getFocusedTerminalId" | "findTabIdByTerminalId" | "findWorkspaceIdentifierByTerminalId"
   >;
-  let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has">;
+  let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has" | "facts$">;
   let commandRunner: Pick<CommandRunner, "run">;
   let service: TerminalGatewayService;
 
@@ -28,6 +28,7 @@ describe("TerminalGatewayService", () => {
       findWorkspaceIdentifierByTerminalId: vi.fn().mockReturnValue("workspace-1"),
     };
     terminalSessionRegistry = {
+      facts$: EMPTY,
       has: vi.fn().mockReturnValue(true),
       get: vi.fn().mockReturnValue({
         host: {

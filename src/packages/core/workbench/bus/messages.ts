@@ -75,13 +75,11 @@ import {
   PtyInitializedEvent,
   TerminalBlurredEvent,
   TerminalBusyChangedEvent,
-  TerminalCwdChangedEvent,
   TerminalFocusedEvent,
   TerminalSearchPanelRequestedEvent,
   TerminalSearchRequestedEvent,
   TerminalSearchResultEvent,
   TerminalSearchRevealRequestedEvent,
-  TerminalTitleChangedEvent,
 } from "@cogno/core/workbench/bus/terminal/events";
 
 export type TerminalCommandType = AppMessage["type"];
@@ -103,9 +101,7 @@ export type AppMessage =
   | InitConfigAction
   | PtyInitializedEvent
   | TerminalBusyChangedEvent
-  | TerminalCwdChangedEvent
   | TerminalSearchPanelRequestedEvent
-  | TerminalTitleChangedEvent
   | TerminalSearchRequestedEvent
   | TerminalSearchResultEvent
   | TerminalSearchRevealRequestedEvent

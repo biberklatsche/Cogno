@@ -7,21 +7,10 @@ import {
 } from "@cogno/shared/domain";
 import { TerminalId } from "@cogno/shared/ports";
 
-export type TerminalTitle = {
-  oscCode: 0 | 2;
-  terminalId: TerminalId;
-  title: string;
-};
-
 export type PtyInitializedEvent = MessageBase<
   "PtyInitialized",
   { terminalId: TerminalId; shellType: ShellType }
 >;
-export type TerminalCwdChangedEvent = MessageBase<
-  "TerminalCwdChanged",
-  { terminalId: TerminalId; cwd: string }
->;
-export type TerminalTitleChangedEvent = MessageBase<"TerminalTitleChanged", TerminalTitle>;
 export type TerminalSearchRequestedEvent = MessageBase<
   "TerminalSearchRequested",
   TerminalSearchRequestContract

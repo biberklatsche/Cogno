@@ -43,9 +43,11 @@ export class TerminalMonitorAdapterService extends TerminalMonitorPort {
         if (event.payload) this._terminated$.next(event.payload);
       });
 
-    this.cwdChanges$ = bus.onType$("TerminalCwdChanged", { path: ["app", "terminal"] }).pipe(
-      map((event) => event.payload),
-      filter((payload): payload is TerminalCwdChangeEvent => !!payload),
+    this.cwdChanges$ = this.sessionRegistry.facts$.pipe(
+      map(({ terminalId, fact }) =>
+        fact.type === "cwdReported" ? { terminalId, cwd: fact.cwd } : undefined,
+      ),
+      filter((change): change is TerminalCwdChangeEvent => change !== undefined),
     );
   }
 

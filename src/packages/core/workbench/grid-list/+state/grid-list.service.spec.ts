@@ -14,19 +14,18 @@ import type {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
-import type {
-  TerminalFocusedEvent,
-  TerminalTitleChangedEvent,
-} from "@cogno/core/workbench/bus/terminal/events";
+import type { TerminalFocusedEvent } from "@cogno/core/workbench/bus/terminal/events";
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import type { TerminalConfig } from "@cogno/shared/domain";
 import { IdCreator } from "@cogno/shared/support";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
+  emitSessionFact,
   getAppBus,
   getDestroyRef,
   getSessionHostFactory,
+  getTerminalSessionRegistry,
 } from "../../../../__test__/test-factory";
 import type { Grid } from "../+model/model";
 import { GridListService } from "./grid-list.service";
@@ -39,7 +38,12 @@ describe("GridListService", () => {
   beforeEach(() => {
     bus = getAppBus();
     componentFactory = getSessionHostFactory();
-    service = new GridListService(bus, componentFactory, getDestroyRef());
+    service = new GridListService(
+      bus,
+      componentFactory,
+      getTerminalSessionRegistry(),
+      getDestroyRef(),
+    );
   });
 
   afterEach(() => {
@@ -156,7 +160,7 @@ describe("GridListService", () => {
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
-      initialTerminalId = grids[0].tree.root.data?.terminalId;
+      initialTerminalId = grids[0].tree.root.data?.terminalId as string;
     });
 
     it("should split pane right", () => {
@@ -380,10 +384,7 @@ describe("GridListService", () => {
       const publishSpy = vi.spyOn(bus, "publish");
       bus.publish({ type: "TerminalFocused", payload: initialTerminalId } as TerminalFocusedEvent);
 
-      bus.publish({
-        type: "TerminalTitleChanged",
-        payload: { oscCode: 0, terminalId: initialTerminalId, title: "New Title" },
-      } as TerminalTitleChangedEvent);
+      emitSessionFact(initialTerminalId, { type: "titleChanged", oscCode: 2, title: "New Title" });
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -405,10 +406,7 @@ describe("GridListService", () => {
       bus.publish({ type: "TerminalFocused", payload: initialTerminalId } as TerminalFocusedEvent);
 
       const publishSpy = vi.spyOn(bus, "publish");
-      bus.publish({
-        type: "TerminalTitleChanged",
-        payload: { oscCode: 0, terminalId: "term-2", title: "Second Pane" },
-      } as TerminalTitleChangedEvent);
+      emitSessionFact("term-2", { type: "titleChanged", oscCode: 2, title: "Second Pane" });
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -427,14 +425,8 @@ describe("GridListService", () => {
         type: "SplitPaneRight",
         payload: initialTerminalId,
       } as SplitPaneRightAction);
-      bus.publish({
-        type: "TerminalTitleChanged",
-        payload: { oscCode: 0, terminalId: initialTerminalId, title: "First Pane" },
-      } as TerminalTitleChangedEvent);
-      bus.publish({
-        type: "TerminalTitleChanged",
-        payload: { oscCode: 0, terminalId: "term-2", title: "Second Pane" },
-      } as TerminalTitleChangedEvent);
+      emitSessionFact(initialTerminalId, { type: "titleChanged", oscCode: 2, title: "First Pane" });
+      emitSessionFact("term-2", { type: "titleChanged", oscCode: 2, title: "Second Pane" });
 
       const publishSpy = vi.spyOn(bus, "publish");
       bus.publish({ type: "TerminalFocused", payload: "term-2" } as TerminalFocusedEvent);
@@ -502,10 +494,7 @@ describe("GridListService", () => {
         type: "TabAdded",
         payload: { tabId, isActive: true },
       } as TabAddedEvent);
-      bus.publish({
-        type: "TerminalTitleChanged",
-        payload: { oscCode: 0, terminalId: "term-1", title: "Pane Title" },
-      } as TerminalTitleChangedEvent);
+      emitSessionFact("term-1", { type: "titleChanged", oscCode: 2, title: "Pane Title" });
 
       const configs = service.getGridConfigs();
       expect((configs[0].pane as TerminalConfig).title).toBe("Pane Title");

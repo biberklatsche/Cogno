@@ -15,7 +15,7 @@ import {
   TerminalSnapshotContract,
   TerminalSnapshotOptionsContract,
 } from "@cogno/shared/ports";
-import { map, Observable } from "rxjs";
+import { filter, map, Observable } from "rxjs";
 import { BoundSession, BoundSessionIdentity } from "./bound-session";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 import { SessionRunRequest, SessionRunResult } from "./session-run";
@@ -48,9 +48,10 @@ export class TerminalGatewayService extends TerminalGateway {
           isBusy: event.payload?.isBusy ?? false,
         })),
       );
-    this.cwdChanges$ = this.appBus
-      .onType$("TerminalCwdChanged", { path: ["app", "terminal"] })
-      .pipe(map(() => undefined));
+    this.cwdChanges$ = this.terminalSessionRegistry.facts$.pipe(
+      filter(({ fact }) => fact.type === "cwdReported"),
+      map(() => undefined),
+    );
 
     this.boundSessionTracker = new BoundSessionTracker(
       this.focusedTerminalId$,

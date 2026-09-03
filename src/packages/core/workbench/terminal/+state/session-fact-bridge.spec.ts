@@ -254,20 +254,13 @@ describe("SessionFactBridge", () => {
   });
 
   describe("facts to bus", () => {
-    it("publishes cwd and busy facts as the old messages", () => {
+    it("publishes the busy fact as the old message", () => {
       host.model.startCommand();
-      host.model.updateCwd("/tmp");
 
       expect(bus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "TerminalBusyChanged",
           payload: { terminalId, isBusy: true },
-        }),
-      );
-      expect(bus.publish).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "TerminalCwdChanged",
-          payload: { cwd: "/tmp", terminalId },
         }),
       );
     });

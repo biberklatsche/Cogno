@@ -13,12 +13,9 @@ import {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
-import {
-  TerminalCwdChangedEvent,
-  TerminalFocusedEvent,
-  TerminalTitleChangedEvent,
-} from "@cogno/core/workbench/bus/terminal/events";
+import { TerminalFocusedEvent } from "@cogno/core/workbench/bus/terminal/events";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import {
   BinaryNode,
   BinaryTree,
@@ -146,6 +143,7 @@ export class GridListService {
   constructor(
     private bus: AppBus,
     private componentFactory: SessionHostFactory,
+    private readonly sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
     combineLatest([this._gridList, this._activeTabId])
@@ -197,35 +195,15 @@ export class GridListService {
         this.selectGrid(event.payload);
       });
 
-    this.bus
-      .onType$("TerminalTitleChanged")
+    // Title and cwd come straight from the session's facts now, tagged with
+    // the terminal id by the registry.
+    this.sessionRegistry.facts$
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: TerminalTitleChangedEvent) => {
-        const gridList = this.getActiveWorkspaceGridList();
-        const gridAndNode = this.determineGrid(gridList, event.payload?.terminalId);
-        if (!gridAndNode?.node.data || !event.payload?.title) return;
-        gridAndNode.node.data = { ...gridAndNode.node.data, title: event.payload.title };
-        this.setActiveWorkspaceGridList(gridList);
-        if (gridAndNode.node.data.isFocused) {
-          this.publishPaneTitleToTab(gridAndNode.grid.tabId, gridAndNode.node.data);
-        }
-      });
-
-    this.bus
-      .onType$("TerminalCwdChanged")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: TerminalCwdChangedEvent) => {
-        const gridList = this.getActiveWorkspaceGridList();
-        const tabId = this.determineTabId(gridList, event.payload?.terminalId);
-        if (!tabId || !event.payload?.cwd) return;
-        const node = gridList[tabId].tree.first(
-          (s) => s.isLeaf && s.data?.terminalId === event.payload?.terminalId,
-        );
-        if (!node?.data) return;
-        node.data = { ...node.data, workingDir: event.payload.cwd };
-        this.setActiveWorkspaceGridList(gridList);
-        if (node.data.isFocused && !node.data.title) {
-          this.publishPaneTitleToTab(tabId, node.data);
+      .subscribe(({ terminalId, fact }) => {
+        if (fact.type === "titleChanged") {
+          this.applyPaneTitle(terminalId, fact.title);
+        } else if (fact.type === "cwdReported") {
+          this.applyPaneCwd(terminalId, fact.cwd);
         }
       });
     this.bus
@@ -618,6 +596,32 @@ export class GridListService {
     }
     if (!node.left) throw new Error("Split pane does not contain a left child.");
     return this.getFirstTerminalId(node.left);
+  }
+
+  private applyPaneTitle(terminalId: TerminalId, title: string): void {
+    if (!title) return;
+    const gridList = this.getActiveWorkspaceGridList();
+    const gridAndNode = this.determineGrid(gridList, terminalId);
+    if (!gridAndNode?.node.data) return;
+    gridAndNode.node.data = { ...gridAndNode.node.data, title };
+    this.setActiveWorkspaceGridList(gridList);
+    if (gridAndNode.node.data.isFocused) {
+      this.publishPaneTitleToTab(gridAndNode.grid.tabId, gridAndNode.node.data);
+    }
+  }
+
+  private applyPaneCwd(terminalId: TerminalId, cwd: string): void {
+    if (!cwd) return;
+    const gridList = this.getActiveWorkspaceGridList();
+    const tabId = this.determineTabId(gridList, terminalId);
+    if (!tabId) return;
+    const node = gridList[tabId].tree.first((s) => s.isLeaf && s.data?.terminalId === terminalId);
+    if (!node?.data) return;
+    node.data = { ...node.data, workingDir: cwd };
+    this.setActiveWorkspaceGridList(gridList);
+    if (node.data.isFocused && !node.data.title) {
+      this.publishPaneTitleToTab(tabId, node.data);
+    }
   }
 
   getFocusedTerminalId(): TerminalId | undefined {

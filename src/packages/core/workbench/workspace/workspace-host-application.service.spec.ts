@@ -6,6 +6,7 @@ import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.s
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
+  emitSessionFact,
   getAppBus,
   getConfigService,
   getDestroyRef,
@@ -80,10 +81,7 @@ describe("WorkspaceHostApplicationService", () => {
 
     const terminalId = getSingleTerminalId(gridListService);
     bus.publish({ type: "TerminalFocused", payload: terminalId });
-    bus.publish({
-      type: "TerminalTitleChanged",
-      payload: { oscCode: 0, terminalId, title: "pwsh" },
-    });
+    emitSessionFact(terminalId, { type: "titleChanged", oscCode: 2, title: "pwsh" });
 
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
   });
@@ -95,10 +93,7 @@ describe("WorkspaceHostApplicationService", () => {
       expect(getSingleTerminalId(gridListService)).toBeTruthy();
     });
     const terminalId = getSingleTerminalId(gridListService);
-    bus.publish({
-      type: "TerminalCwdChanged",
-      payload: { terminalId, cwd: "C:\\other" },
-    });
+    emitSessionFact(terminalId, { type: "cwdReported", cwd: "C:\\other" });
 
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(true);
   });
