@@ -7,8 +7,6 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { AboutDialogAdapterService } from "@cogno/app/app-host/about-dialog.adapter.service";
-import { ActionCatalogAdapterService } from "@cogno/app/app-host/action-catalog.adapter.service";
-import { ActionKeybindingPortAdapterService } from "@cogno/app/app-host/action-keybinding-port.adapter.service";
 import {
   additionalNotificationChannelsToken,
   featuresToken,
@@ -17,6 +15,7 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
 import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
 import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
+import { SideMenuActionNamesFeatureSourceService } from "@cogno/app/app-host/side-menu-action-names-feature-source.service";
 import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalAutocompleteFeatureSuggestorService } from "@cogno/app/app-host/terminal-autocomplete-feature-suggestor.service";
@@ -37,6 +36,10 @@ import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
+import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
+import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
+import { SideMenuActionNamesSource } from "@cogno/core/workbench/actions/side-menu-action-names.source";
+import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-center-port.adapter.service";
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
@@ -89,6 +92,10 @@ export const appConfig: ApplicationConfig = {
       provide: NotificationChannelsSource,
       useExisting: NotificationChannelsFeatureSourceService,
     },
+    {
+      provide: SideMenuActionNamesSource,
+      useExisting: SideMenuActionNamesFeatureSourceService,
+    },
     { provide: Filesystem, useExisting: FilesystemHostService },
     { provide: additionalNotificationChannelsToken, useValue: [] },
     { provide: ActionCatalog, useExisting: ActionCatalogAdapterService },
@@ -121,10 +128,13 @@ export const appConfig: ApplicationConfig = {
       void Logger.initialize();
       inject(StyleService);
       inject(AppWiringService);
-      // MIGRATION-TEMP(step 19): keeps the config's actions, notifications and
-      // shell bootstrap alive until they reach their own layer. Must exist
-      // before WindowService publishes InitConfigCommand.
+      // MIGRATION-TEMP(step 22): keeps the config's notifications and shell
+      // bootstrap alive until they reach their own layer. Must exist before
+      // WindowService publishes InitConfigCommand.
       inject(ConfigBootstrapAdapter);
+      // The config actions now live in the workbench; instantiate the handler
+      // so it listens.
+      inject(ConfigActionsHandler);
       inject(ErrorReportingRuntimeService).initialize();
 
       const injector = inject(Injector);

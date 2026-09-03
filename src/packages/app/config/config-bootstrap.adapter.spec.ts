@@ -7,14 +7,11 @@ import type {
 } from "@cogno/core/infrastructure/config/config.service";
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import type { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
-import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import type { Opener } from "@cogno/platform/opener";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigBootstrapAdapter } from "./config-bootstrap.adapter";
 
-const environmentStub = { configFilePath: () => "/home/test/.cogno/cogno.config" } as never;
 const shellIntegrationStub = { ensure: async () => undefined } as never;
 
 /**
@@ -43,7 +40,6 @@ function setup() {
     getSettingsExtensions: vi.fn().mockReturnValue([]),
     getShellSupportDefinitions: vi.fn().mockReturnValue([]),
   } as unknown as AppWiringService;
-  const opener = { openPath: vi.fn(), openUrl: vi.fn() } as unknown as Opener;
   const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
 
   const notifications: unknown[] = [];
@@ -53,22 +49,12 @@ function setup() {
     .on$({ path: ["app", "settings"], type: "ConfigLoaded" })
     .subscribe((message) => configLoadedEvents.push(message));
 
-  new ConfigBootstrapAdapter(
-    bus,
-    config,
-    shells,
-    wiring,
-    opener,
-    environmentStub,
-    shellIntegrationStub,
-    destroyRef,
-  );
+  new ConfigBootstrapAdapter(bus, config, shells, wiring, shellIntegrationStub, destroyRef);
 
   return {
     bus,
     config,
     shells,
-    opener,
     loaded,
     diagnostics,
     notifications,
@@ -104,22 +90,6 @@ describe("ConfigBootstrapAdapter", () => {
     loaded.next({} as Config);
     expect(configLoadedEvents).toHaveLength(2);
     expect(notifications).toHaveLength(1);
-  });
-
-  it("reloads on the load_config action and opens paths on the others", async () => {
-    const { bus, config, opener } = setup();
-
-    bus.publish(ActionFired.create("load_config"));
-    await Promise.resolve();
-    expect(config.reload).toHaveBeenCalledTimes(1);
-
-    bus.publish(ActionFired.create("open_config"));
-    await Promise.resolve();
-    expect(opener.openPath).toHaveBeenCalledTimes(1);
-
-    bus.publish(ActionFired.create("open_documentation"));
-    await Promise.resolve();
-    expect(opener.openUrl).toHaveBeenCalledTimes(1);
   });
 
   it("reports diagnostics once and again when they change", () => {

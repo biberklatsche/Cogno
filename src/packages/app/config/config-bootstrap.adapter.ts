@@ -3,28 +3,25 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
-import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
 import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integration.writer";
-import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { Opener } from "@cogno/platform/opener";
 import { Hash } from "@cogno/shared/support";
 
 /**
- * MIGRATION-TEMP(step 19): everything the configuration used to do besides
- * reading its file.
+ * MIGRATION-TEMP(step 22): what the configuration used to do besides reading
+ * its file, minus the parts already re-homed.
  *
  * `ConfigService` now only reads, validates and watches (ARCHITECTURE.md 2.1:
- * infrastructure knows neither a session nor the layout). The three jobs it
- * lost live here until they reach their own layer:
+ * infrastructure knows neither a session nor the layout). Of the jobs it lost:
  *
- * - action handling (`open_config`, `open_documentation`, `load_config`) goes
- *   to the workbench with the action catalogue in step 19,
+ * - action handling (`open_config`, `open_documentation`, `load_config`) moved
+ *   to the workbench with the action catalogue (step 19, done - see
+ *   core/workbench/actions/config-actions.handler.ts),
  * - the notifications go to the notification dispatch, which subscribes to
  *   `diagnostics$` directly, in step 20,
- * - the shell bootstrap goes to `core/session/shells` in step 3, and the
- *   settings extensions come from the feature host in step 22.
+ * - the shell bootstrap goes to `core/session/shells`, and the settings
+ *   extensions come from the feature host in step 22.
  *
  * When the last of those has moved, this file goes away.
  */
@@ -38,8 +35,6 @@ export class ConfigBootstrapAdapter {
     private readonly config: ConfigService,
     private readonly shells: ShellConfigurator,
     private readonly wiringService: AppWiringService,
-    private readonly opener: Opener,
-    private readonly environment: Environment,
     private readonly shellIntegration: ShellIntegrationWriter,
     destroyRef: DestroyRef,
   ) {
@@ -48,21 +43,6 @@ export class ConfigBootstrapAdapter {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(async () => {
         await this.load();
-      });
-
-    this.appBus
-      .on$(ActionFired.listener())
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(async (event) => {
-        if (event.payload === "open_config") {
-          await this.opener.openPath(this.environment.configFilePath());
-        }
-        if (event.payload === "open_documentation") {
-          await this.opener.openUrl("https://cogno.rocks/docs/getting-started/");
-        }
-        if (event.payload === "load_config") {
-          await this.config.reload();
-        }
       });
 
     // Every load announces itself on the bus; every load but the first one -

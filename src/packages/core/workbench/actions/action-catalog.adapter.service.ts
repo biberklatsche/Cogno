@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { coreActionNames } from "@cogno/core/workbench/actions/core-action-names";
+import { SideMenuActionNamesSource } from "@cogno/core/workbench/actions/side-menu-action-names.source";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
@@ -11,7 +12,6 @@ import {
 } from "@cogno/shared/domain";
 import { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
 import { filter, map, Observable, share, tap } from "rxjs";
-import { coreActionNames } from "../action/core-action-names";
 
 @Injectable({ providedIn: "root" })
 export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatcher {
@@ -23,7 +23,7 @@ export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatc
     private readonly appBus: AppBus,
     configService: ConfigService,
     private readonly keybindService: KeybindService,
-    private readonly wiringService: AppWiringService,
+    private readonly sideMenuActionNames: SideMenuActionNamesSource,
   ) {
     this.actionEntries$ = configService.config$.pipe(map(() => this.buildActionEntries()));
   }
@@ -72,15 +72,11 @@ export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatc
   }
 
   private buildActionEntries(): ReadonlyArray<ActionEntryContract> {
-    const sideMenuActionNames = this.wiringService
-      .getSideMenuFeatureDefinitions()
-      .map((sideMenuFeatureDefinition) => sideMenuFeatureDefinition.actionName);
-
     const actionNames = Array.from(
       new Set<string>([
         ...coreActionNames,
         ...this.keybindService.getActionNames(),
-        ...sideMenuActionNames,
+        ...this.sideMenuActionNames.getSideMenuActionNames(),
       ]),
     );
 
