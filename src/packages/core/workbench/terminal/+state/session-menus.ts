@@ -9,14 +9,14 @@ import {
   TerminalSystemInfoDialogComponent,
   TerminalSystemInfoDialogData,
 } from "../system-info/terminal-system-info-dialog.component";
-import { SessionFactBridge } from "./session-fact-bridge";
+import { SessionNotifications } from "./session-notifications";
 
 /**
  * The context and header menus of one terminal. They issue workbench
  * commands (split, maximize, close) on the old bus and open the process
- * info dialog; both are app concerns, so this sits next to the bridge, not
- * in the session. The process info dialog leaves with phase F
- * (ARCHITECTURE.md 2.2).
+ * info dialog; both are app concerns, so this sits with the session's other
+ * app-facing collaborators, not in the session. The process info dialog
+ * leaves with phase F (ARCHITECTURE.md 2.2).
  */
 @Injectable()
 export class SessionMenus {
@@ -25,7 +25,7 @@ export class SessionMenus {
   constructor(
     private readonly bus: AppBus,
     private readonly host: SessionHost,
-    private readonly bridge: SessionFactBridge,
+    private readonly notifications: SessionNotifications,
     private readonly keybindings: ActionKeybindingPort,
     private readonly os: OsPlatform,
     private readonly dialog: DialogService,
@@ -128,7 +128,7 @@ export class SessionMenus {
   }
 
   buildHeaderMenu(): ContextMenuItem[] {
-    return this.bridge.buildNotificationMenuItems();
+    return this.notifications.buildNotificationMenuItems();
   }
 
   buildHeaderCommandMenu(): ContextMenuItem[] {

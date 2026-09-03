@@ -24,6 +24,7 @@ import { TerminalId } from "@cogno/shared/ports";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { SessionFactBridge } from "../../terminal/+state/session-fact-bridge";
 import { SessionMenus } from "../../terminal/+state/session-menus";
+import { SessionNotifications } from "../../terminal/+state/session-notifications";
 import { TerminalSessionRegistry } from "../../terminal/+state/terminal-session.registry";
 import { TerminalComponent } from "../../terminal/terminal.component";
 import { TerminalFileDropService } from "../../terminal/terminal-file-drop.service";
@@ -59,6 +60,7 @@ type SessionEntry = {
   readonly injector: EnvironmentInjector;
   readonly host: SessionHost;
   readonly bridge: SessionFactBridge;
+  readonly notifications: SessionNotifications;
   /** The pane's view; exists only once the pane was on screen. */
   componentRef?: ComponentRef<TerminalComponent>;
 };
@@ -109,6 +111,7 @@ export class SessionHostFactory {
           ],
         },
         SessionFactBridge,
+        SessionNotifications,
         SessionMenus,
         TerminalAutocompleteService,
         TerminalComposerService,
@@ -125,12 +128,14 @@ export class SessionHostFactory {
     // before it starts so its facts$ carries every fact from the first one.
     this.sessionRegistry.register(terminalId, shellProfile, host);
     bridge.start(terminalId, shellProfile);
-    // The composer and the menus listen from the start; the view comes later.
+    // The composer, notifications and menus listen from the start; the view
+    // comes later.
     injector.get(TerminalComposerService);
+    const notifications = injector.get(SessionNotifications);
     injector.get(SessionMenus);
     host.start();
 
-    const entry: SessionEntry = { injector, host, bridge };
+    const entry: SessionEntry = { injector, host, bridge, notifications };
     this.sessions.set(terminalId, entry);
     return entry;
   }
@@ -159,6 +164,7 @@ export class SessionHostFactory {
     try {
       entry.componentRef?.destroy();
       entry.bridge.dispose();
+      entry.notifications.dispose();
       // The app hears TerminalRemoved before the machine goes, as it always did.
       this.sessionRegistry.unregister(terminalId);
       this.bus.publish({ type: "TerminalRemoved", path: ["app", "terminal"], payload: terminalId });
