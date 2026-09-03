@@ -15,3 +15,4 @@ pub mod pty;
 pub mod shell_spawner;
 pub mod shells;
 pub mod window;
+pub mod window_registry;

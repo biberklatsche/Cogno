@@ -1,18 +1,15 @@
 use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
+use cogno_tauri_core::commands::window_registry::WindowRegistry;
 use cogno_tauri_core::db::Db;
 use cogno_tauri_core::http_server::HttpServerState;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
 use tauri::window::Color;
-use tauri::{Builder, Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Builder, Emitter, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
-    initialize_app_identity(AppIdentity::new(
-        "cogno",
-        ".cogno",
-        ".cogno-dev",
-    ));
+    initialize_app_identity(AppIdentity::new("cogno", ".cogno", ".cogno-dev"));
 
     // Capture the user's login-shell environment in the background so the
     // first terminal spawn does not pay the login-shell startup cost.
@@ -32,9 +29,9 @@ pub fn run(cli: Cli) {
                 .level_for("tao", tauri_plugin_log::log::LevelFilter::Error)
                 .targets([
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
-                    tauri_plugin_log::Target::new(
-                        tauri_plugin_log::TargetKind::LogDir { file_name: None },
-                    ),
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
+                        file_name: None,
+                    }),
                 ])
                 .build()
         })
@@ -54,6 +51,22 @@ pub fn run(cli: Cli) {
         .manage(PtyState::new())
         .manage(HttpServerState::new())
         .manage(Db::new())
+        .manage(WindowRegistry::new())
+        .on_window_event(|window, event| match event {
+            WindowEvent::Focused(true) => {
+                window
+                    .app_handle()
+                    .state::<WindowRegistry>()
+                    .set_focus(window.label());
+            }
+            WindowEvent::Destroyed => {
+                window
+                    .app_handle()
+                    .state::<WindowRegistry>()
+                    .on_destroyed(window.label());
+            }
+            _ => {}
+        })
         .invoke_handler(tauri::generate_handler![
             cogno_tauri_core::db::commands::db_open,
             cogno_tauri_core::db::commands::db_execute,
