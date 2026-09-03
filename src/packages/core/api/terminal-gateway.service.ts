@@ -125,12 +125,42 @@ export class TerminalGatewayService extends TerminalGateway {
     });
   }
 
-  injectInput(request: TerminalInputRequestContract): void {
+  /**
+   * Write into a session. When an `identity` is given (the future, guarded
+   * path) the write is rechecked against the live bound session immediately
+   * before it goes out: it only lands if that session is still active and
+   * still carries the same terminal and trust token the caller captured.
+   * After a focus change, or once the session was replaced, the old identity
+   * no longer matches and nothing is written. Without an identity the legacy
+   * fire-and-forget behaviour is kept for features until they migrate (23-25).
+   */
+  injectInput(request: TerminalInputRequestContract, identity?: BoundSessionIdentity): void {
+    if (identity && !this.boundSessionMatches(identity)) {
+      return;
+    }
     this.appBus.publish({
       path: ["app", "terminal"],
       type: "WriteRawToPty",
       payload: request,
     });
+  }
+
+  /** True only if `identity` is the session bound right now, still live. */
+  private boundSessionMatches(identity: BoundSessionIdentity): boolean {
+    const bound = this.boundSessionTracker.boundSession;
+    if (bound.status !== "active") {
+      return false;
+    }
+    if (
+      bound.identity.terminalId !== identity.terminalId ||
+      bound.identity.sessionToken !== identity.sessionToken
+    ) {
+      return false;
+    }
+    // Recheck against the live session: it may have been replaced (new token)
+    // since the binding last emitted.
+    const live = this.identityOf(identity.terminalId);
+    return live !== undefined && live.sessionToken === identity.sessionToken;
   }
 
   async captureFocusedSnapshot(

@@ -153,4 +153,58 @@ describe("TerminalGatewayService", () => {
     expect(service.getFocusedTerminalId()).toBe("terminal-1");
     expect(service.hasTerminal("terminal-1")).toBe(true);
   });
+
+  describe("write protection", () => {
+    function bindTo(terminalId: string): void {
+      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: terminalId });
+    }
+
+    it("writes when the identity still matches the bound session", () => {
+      bindTo("t1");
+      const publishSpy = vi.spyOn(appBus, "publish");
+
+      service.injectInput(
+        { terminalId: "t1", text: "ls\n" },
+        { terminalId: "t1", sessionToken: "token-1" },
+      );
+
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "WriteRawToPty",
+          payload: { terminalId: "t1", text: "ls\n" },
+        }),
+      );
+    });
+
+    it("rejects a stale identity after focus moved, and writes nothing", () => {
+      bindTo("t1");
+      const identityForT1 = { terminalId: "t1", sessionToken: "token-1" };
+      bindTo("t2");
+      const publishSpy = vi.spyOn(appBus, "publish");
+
+      service.injectInput({ terminalId: "t1", text: "rm -rf /\n" }, identityForT1);
+
+      expect(publishSpy).not.toHaveBeenCalled();
+    });
+
+    it("rejects a write whose token no longer matches the live session", () => {
+      bindTo("t1");
+      const publishSpy = vi.spyOn(appBus, "publish");
+
+      service.injectInput(
+        { terminalId: "t1", text: "x\n" },
+        { terminalId: "t1", sessionToken: "stale-token" },
+      );
+
+      expect(publishSpy).not.toHaveBeenCalled();
+    });
+
+    it("still writes fire-and-forget when no identity is given (legacy path)", () => {
+      const publishSpy = vi.spyOn(appBus, "publish");
+
+      service.injectInput({ terminalId: "t9", text: "echo hi\n" });
+
+      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "WriteRawToPty" }));
+    });
+  });
 });
