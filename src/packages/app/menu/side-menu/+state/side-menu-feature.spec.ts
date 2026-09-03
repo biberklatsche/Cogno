@@ -1,11 +1,11 @@
 import type { DestroyRef } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { KeybindService } from "../../../keybinding/keybind.service";
 import { SideMenuFeature } from "./side-menu-feature";
 
 class DummyComponent {}

@@ -1,6 +1,6 @@
+import type { KeyboardMapping } from "@cogno/core/infrastructure/keybindings/keyboard/keyboard-layouts/_.contribution";
 import { beforeEach, describe, expect, it } from "vitest";
 import { KeybindingMatcher } from "./keybind.matcher";
-import type { KeyboardMapping } from "./keyboard/keyboard-layouts/_.contribution";
 
 function makeEvent(
   init: KeyboardEventInit & {

@@ -1,13 +1,13 @@
 import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ActionDefinition } from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
+import { KeyboardMappingService } from "@cogno/core/infrastructure/keybindings/keyboard/keyboard-layout.loader";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Logger } from "@cogno/platform/logger";
 import { OsPlatform } from "@cogno/platform/os";
 import { KeybindingMatcher } from "./keybind.matcher";
-import { ActionDefinition } from "./keybind-action.interpreter";
-import { KeyboardMappingService } from "./keyboard/keyboard-layout.loader";
 import { TerminalKeybindingContextService } from "./terminal-keybinding-context.service";
 
 type Key = string;

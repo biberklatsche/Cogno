@@ -1,11 +1,11 @@
 import type { DestroyRef } from "@angular/core";
-import { CliActionListener } from "@cogno/platform/cli-action";
-import type { ActionDispatcher } from "@cogno/shared/ports";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type ActionDefinition,
   KeybindActionInterpreter,
-} from "../keybinding/keybind-action.interpreter";
+} from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
+import { CliActionListener } from "@cogno/platform/cli-action";
+import type { ActionDispatcher } from "@cogno/shared/ports";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CliActionService } from "./cli-action.service";
 
 type DispatcherPort = Pick<ActionDispatcher, "dispatchAction">;

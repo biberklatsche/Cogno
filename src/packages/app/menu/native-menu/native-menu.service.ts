@@ -5,11 +5,11 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
 import { normalizeFeatureMode } from "@cogno/shared/domain";
-import { KeybindService } from "../../keybinding/keybind.service";
 
 @Injectable({
   providedIn: "root",

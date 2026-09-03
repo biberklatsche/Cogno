@@ -1,8 +1,10 @@
-import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { Modifier } from "./modifier";
 
+// The action name is the catalogue's identifier (a string). Kept as `string`
+// here so the parser stays in infrastructure, which must not import the
+// workbench bus where the ActionName alias lives (rule t5).
 export type ActionDefinition = {
-  actionName: ActionName;
+  actionName: string;
   trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
   args?: string[];
 };
@@ -77,7 +79,7 @@ export const KeybindInterpreter = {
 export const KeybindActionInterpreter = {
   parse(actionDef: string): ActionDefinition {
     const args = actionDef.split(":");
-    const actionName = args.splice(0, 1)[0] as ActionName;
+    const actionName = args.splice(0, 1)[0];
     return { actionName, args };
   },
 };

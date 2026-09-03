@@ -3,6 +3,7 @@ import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import {
   ActionContextContract,
   ActionDefinitionContract,
@@ -11,7 +12,6 @@ import {
 import { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
 import { filter, map, Observable, share, tap } from "rxjs";
 import { coreActionNames } from "../action/core-action-names";
-import { KeybindService } from "../keybinding/keybind.service";
 
 @Injectable({ providedIn: "root" })
 export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatcher {

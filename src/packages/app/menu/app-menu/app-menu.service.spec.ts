@@ -1,9 +1,9 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { OsPlatform } from "@cogno/platform/os";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { KeybindService } from "../../keybinding/keybind.service";
 import { AppMenuService } from "./app-menu.service";
 
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;

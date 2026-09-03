@@ -1,8 +1,8 @@
 import { Injectable, Signal } from "@angular/core";
+import { KeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/keybinding.pipe";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { OsPlatform } from "@cogno/platform/os";
 import { ActionKeybindingContract } from "@cogno/shared/ports";
-import { KeybindService } from "../keybinding/keybind.service";
-import { KeybindingPipe } from "../keybinding/pipe/keybinding.pipe";
 
 @Injectable({ providedIn: "root" })
 export class ActionKeybindingPortAdapterService implements ActionKeybindingContract {

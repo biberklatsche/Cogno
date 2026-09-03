@@ -29,7 +29,6 @@ import { TerminalIpcAdapterService } from "@cogno/app/cogno-message/terminal-ipc
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
-import { KeybindService } from "@cogno/app/keybinding/keybind.service";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
@@ -38,6 +37,7 @@ import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-center-port.adapter.service";
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";

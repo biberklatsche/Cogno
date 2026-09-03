@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { formatKeybinding } from "@cogno/core/infrastructure/keybindings/pipe/keybinding.pipe";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { OsPlatform } from "@cogno/platform/os";
 import { ContextMenuItem } from "@cogno/shared/ui";
-import { KeybindService } from "../../keybinding/keybind.service";
-import { formatKeybinding } from "../../keybinding/pipe/keybinding.pipe";
 
 @Injectable({
   providedIn: "root",

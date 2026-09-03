@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
+import { KeybindActionInterpreter } from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
 import { CliActionListener } from "@cogno/platform/cli-action";
 import { ActionDispatcher } from "@cogno/shared/ports";
-import { KeybindActionInterpreter } from "../keybinding/keybind-action.interpreter";
 
 @Injectable({
   providedIn: "root",

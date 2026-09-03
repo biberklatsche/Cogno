@@ -1,11 +1,11 @@
-import { ActionFired, ActionFiredEvent, ActionName } from "@cogno/core/workbench/bus/action.models";
 import {
   ActionDefinition,
   KeybindInterpreter,
   ShortcutDefinition,
-} from "./keybind-action.interpreter";
-import { KeyboardMapping } from "./keyboard/keyboard-layouts/_.contribution";
-import { Modifier } from "./modifier";
+} from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
+import { KeyboardMapping } from "@cogno/core/infrastructure/keybindings/keyboard/keyboard-layouts/_.contribution";
+import { Modifier } from "@cogno/core/infrastructure/keybindings/modifier";
+import { ActionFired, ActionFiredEvent, ActionName } from "@cogno/core/workbench/bus/action.models";
 
 type Sequence = { steps: string[]; event: ActionFiredEvent };
 
