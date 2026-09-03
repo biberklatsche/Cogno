@@ -4,7 +4,9 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TauriPty } from "@cogno/platform/pty";
+import { isWslShellContext } from "@cogno/shared/domain";
 import {
+  CommandRunner,
   TerminalBusyStateChangeContract,
   TerminalGateway,
   TerminalId,
@@ -16,6 +18,7 @@ import {
 import { map, Observable } from "rxjs";
 import { BoundSession, BoundSessionIdentity } from "./bound-session";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
+import { SessionRunRequest, SessionRunResult } from "./session-run";
 
 @Injectable({ providedIn: "root" })
 export class TerminalGatewayService extends TerminalGateway {
@@ -31,6 +34,7 @@ export class TerminalGatewayService extends TerminalGateway {
     private readonly appBus: AppBus,
     private readonly gridListService: GridListService,
     private readonly terminalSessionRegistry: TerminalSessionRegistry,
+    private readonly commandRunner: CommandRunner,
   ) {
     super();
     this.focusedTerminalId$ = this.appBus
@@ -161,6 +165,49 @@ export class TerminalGatewayService extends TerminalGateway {
     // since the binding last emitted.
     const live = this.identityOf(identity.terminalId);
     return live !== undefined && live.sessionToken === identity.sessionToken;
+  }
+
+  /**
+   * Run a command on the bound session, in its own context. Rejected unless
+   * the identity is still the live bound session, the caller's context
+   * revision still matches (nothing opened/closed under it), and the context
+   * is known (a foreign shell such as ssh is refused). A WSL session runs the
+   * command inside its distro via `wsl.exe -d`; a local one runs it directly,
+   * both in the session's current working directory.
+   */
+  async run(request: SessionRunRequest, identity: BoundSessionIdentity): Promise<SessionRunResult> {
+    if (!this.boundSessionMatches(identity)) {
+      return { status: "rejected", reason: "unbound" };
+    }
+    const entry = this.terminalSessionRegistry.get(identity.terminalId);
+    if (!entry) {
+      return { status: "rejected", reason: "unbound" };
+    }
+
+    const state = entry.host.state;
+    if (state.contextRevision !== request.contextRevision) {
+      return { status: "rejected", reason: "stale-context" };
+    }
+    if (!state.isContextKnown) {
+      return { status: "rejected", reason: "unknown-context" };
+    }
+
+    const shellContext = state.shellContext;
+    const requestedArgs = request.args ?? [];
+    const isWsl = isWslShellContext(shellContext);
+    const program = isWsl ? "wsl.exe" : request.executable;
+    const args = isWsl
+      ? ["-d", shellContext.wslDistroName, request.executable, ...requestedArgs]
+      : requestedArgs;
+
+    const result = await this.commandRunner.run({
+      cwd: state.cwd,
+      shellContext,
+      program,
+      args,
+      timeoutMs: request.timeoutMs,
+    });
+    return { status: "ran", result };
   }
 
   async captureFocusedSnapshot(

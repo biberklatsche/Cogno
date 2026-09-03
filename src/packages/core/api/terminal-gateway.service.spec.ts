@@ -3,6 +3,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TauriPty } from "@cogno/platform/pty";
+import { CommandRunner } from "@cogno/shared/ports";
 import { BehaviorSubject, firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -13,10 +14,14 @@ describe("TerminalGatewayService", () => {
     "getFocusedTerminalId" | "findTabIdByTerminalId" | "findWorkspaceIdentifierByTerminalId"
   >;
   let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has">;
+  let commandRunner: Pick<CommandRunner, "run">;
   let service: TerminalGatewayService;
 
   beforeEach(() => {
     appBus = new AppBus();
+    commandRunner = {
+      run: vi.fn().mockResolvedValue({ stdout: "ok", stderr: "", exitCode: 0 }),
+    };
     gridListService = {
       getFocusedTerminalId: vi.fn().mockReturnValue("terminal-1"),
       findTabIdByTerminalId: vi.fn().mockReturnValue("tab-1"),
@@ -30,10 +35,12 @@ describe("TerminalGatewayService", () => {
           getRecentOutputSnapshot: vi.fn().mockReturnValue("recent output"),
           getLatestCommandOutputSnapshot: vi.fn().mockReturnValue("latest output"),
           state: {
-            shellContext: { shellType: "Bash" },
+            shellContext: { shellType: "Bash", backendOs: "linux" },
             cwd: "/workspace",
             input: { text: "pwd" },
             isCommandRunning: true,
+            contextRevision: 3,
+            isContextKnown: true,
           },
           model: {
             sessionToken: "token-1",
@@ -54,6 +61,7 @@ describe("TerminalGatewayService", () => {
       appBus,
       gridListService as GridListService,
       terminalSessionRegistry as TerminalSessionRegistry,
+      commandRunner as CommandRunner,
     );
   });
 
@@ -117,7 +125,7 @@ describe("TerminalGatewayService", () => {
       tabId: "tab-1",
       workspaceId: "workspace-1",
       shellType: "Bash",
-      shellContext: { shellType: "Bash" },
+      shellContext: { shellType: "Bash", backendOs: "linux" },
       cwd: "/workspace",
       input: "pwd",
       isCommandRunning: true,
@@ -205,6 +213,103 @@ describe("TerminalGatewayService", () => {
       service.injectInput({ terminalId: "t9", text: "echo hi\n" });
 
       expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({ type: "WriteRawToPty" }));
+    });
+  });
+
+  describe("context-bound run", () => {
+    const identity = { terminalId: "t1", sessionToken: "token-1" };
+
+    function bindWith(stateOverrides: Record<string, unknown>): void {
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue({
+        host: {
+          runtime$: new BehaviorSubject({ status: "running" }),
+          model: { sessionToken: "token-1" },
+          state: {
+            shellContext: { shellType: "Bash", backendOs: "linux" },
+            cwd: "/workspace",
+            input: { text: "" },
+            isCommandRunning: false,
+            contextRevision: 3,
+            isContextKnown: true,
+            ...stateOverrides,
+          },
+        },
+      } as unknown as ReturnType<TerminalSessionRegistry["get"]>);
+      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "t1" });
+    }
+
+    it("runs a local command in the session cwd", async () => {
+      bindWith({});
+
+      const runResult = await service.run(
+        { executable: "git", args: ["status"], contextRevision: 3 },
+        identity,
+      );
+
+      expect(runResult).toEqual({
+        status: "ran",
+        result: { stdout: "ok", stderr: "", exitCode: 0 },
+      });
+      expect(commandRunner.run).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cwd: "/workspace",
+          program: "git",
+          args: ["status"],
+          shellContext: { shellType: "Bash", backendOs: "linux" },
+        }),
+      );
+    });
+
+    it("runs a WSL command through wsl.exe -d <distro>", async () => {
+      bindWith({
+        shellContext: { shellType: "Bash", backendOs: "windows", wslDistroName: "Ubuntu" },
+      });
+
+      await service.run({ executable: "git", args: ["status"], contextRevision: 3 }, identity);
+
+      expect(commandRunner.run).toHaveBeenCalledWith(
+        expect.objectContaining({
+          program: "wsl.exe",
+          args: ["-d", "Ubuntu", "git", "status"],
+        }),
+      );
+    });
+
+    it("rejects a stale context revision without running anything", async () => {
+      bindWith({});
+
+      const runResult = await service.run(
+        { executable: "git", args: ["status"], contextRevision: 2 },
+        identity,
+      );
+
+      expect(runResult).toEqual({ status: "rejected", reason: "stale-context" });
+      expect(commandRunner.run).not.toHaveBeenCalled();
+    });
+
+    it("rejects an unknown (foreign) context with a reason", async () => {
+      bindWith({ isContextKnown: false });
+
+      const runResult = await service.run(
+        { executable: "git", args: ["status"], contextRevision: 3 },
+        identity,
+      );
+
+      expect(runResult).toEqual({ status: "rejected", reason: "unknown-context" });
+      expect(commandRunner.run).not.toHaveBeenCalled();
+    });
+
+    it("rejects when the identity is no longer the bound session", async () => {
+      bindWith({});
+      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "t2" });
+
+      const runResult = await service.run(
+        { executable: "git", args: ["status"], contextRevision: 3 },
+        identity,
+      );
+
+      expect(runResult).toEqual({ status: "rejected", reason: "unbound" });
+      expect(commandRunner.run).not.toHaveBeenCalled();
     });
   });
 });
