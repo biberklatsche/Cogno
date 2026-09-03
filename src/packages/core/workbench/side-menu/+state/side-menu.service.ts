@@ -90,10 +90,16 @@ export class SideMenuService {
     return this._selectedItem()?.label === label;
   }
 
-  open(label: string): void {
+  /**
+   * Open a panel. `focusView` is false only when a panel is brought back as a
+   * side effect (a pinned panel reappearing when a transient one closes): the
+   * panel becomes visible but must not grab the keyboard, so focus can go where
+   * the caller wants it (the terminal).
+   */
+  open(label: string, focusView = true): void {
     const current = this._selectedItem();
     if (current?.label === label) {
-      this.focus();
+      if (focusView) this.focus();
       return;
     }
 
@@ -107,7 +113,7 @@ export class SideMenuService {
 
     if (item) {
       this.bus.publish({ type: "SideMenuViewOpened", payload: { label: item.label } });
-      this.focus();
+      if (focusView) this.focus();
     } else {
       this.blur();
     }
@@ -138,7 +144,9 @@ export class SideMenuService {
     }
     if (this._pinnedStack.length > 0) {
       const pinnedItemLabel = this._pinnedStack[this._pinnedStack.length - 1];
-      this.open(pinnedItemLabel);
+      // Bring the pinned panel back visible, but do not let it take the
+      // keyboard - the focus belongs to the terminal (below).
+      this.open(pinnedItemLabel, false);
     }
     this.bus.publish({ type: "FocusActiveTerminal", path: ["app", "terminal"] });
   }

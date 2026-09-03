@@ -142,6 +142,36 @@ describe("SideMenuService", () => {
     expect(service.panelWidthInPixels()).toBe(999);
   });
 
+  it("reopens a pinned panel unfocused and focuses the terminal when a transient panel closes", () => {
+    service.addMenuItem({
+      label: "Search",
+      icon: "mdiConsole",
+      hidden: false,
+      pinned: false,
+      actionName: "open_terminal_search",
+      component: DummyComponent,
+    });
+
+    // Pin Workspace, then open the transient Search over it.
+    service.open("Workspace");
+    service.togglePin();
+    service.open("Search");
+    expect(service.selectedItem()?.label).toBe("Search");
+
+    const publishSpy = vi.spyOn(bus, "publish");
+    service.close();
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    // The pinned panel comes back visible...
+    expect(service.selectedItem()?.label).toBe("Workspace");
+    expect(publishedTypes).toContain("SideMenuViewOpened");
+    // ...but does not grab the keyboard...
+    expect(service.isFocused()).toBe(false);
+    expect(publishedTypes).not.toContain("SideMenuViewFocused");
+    // ...so the focus can return to the terminal.
+    expect(publishedTypes).toContain("FocusActiveTerminal");
+  });
+
   it("preserves runtime pin state when a menu item is re-registered", () => {
     service.open("Workspace");
     service.togglePin();
