@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+import { SuggestorRegistry } from "@cogno/core/session/autocomplete/suggestor-registry";
 import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/terminal-autocomplete.service";
 import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
 import { SessionHost } from "@cogno/core/session/host/session-host";
@@ -26,7 +26,7 @@ export class SessionKeybindings {
   constructor(
     private readonly bus: AppBus,
     private readonly host: SessionHost,
-    private readonly featureSuggestorService: AutocompleteSuggestorSource,
+    private readonly suggestorRegistry: SuggestorRegistry,
     private readonly autocomplete: TerminalAutocompleteService,
     private readonly history: TerminalHistoryService,
   ) {}
@@ -34,7 +34,7 @@ export class SessionKeybindings {
   /** Starts listening for `terminalId`; the host must be initialized already. */
   start(_terminalId: TerminalId, shellProfile: ShellProfile): void {
     if (shellProfile.enable_shell_integration) {
-      this.featureSuggestorService.preloadForShellIntegration(shellProfile.shell_type);
+      this.suggestorRegistry.preloadForShellIntegration(shellProfile.shell_type);
     }
     this.subscription.add(this.host.facts$.subscribe((fact) => this.onFact(fact)));
     this.subscription.add(

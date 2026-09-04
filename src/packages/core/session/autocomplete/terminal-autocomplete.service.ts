@@ -13,9 +13,9 @@ import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
-import { AutocompleteSuggestorSource } from "./autocomplete-suggestor.source";
 import { SuggestionCollapser } from "./suggestion-collapser";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
+import { SuggestorRegistry } from "./suggestor-registry";
 import { CommandPatternSuggestor } from "./suggestors/command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
@@ -74,7 +74,8 @@ export class TerminalAutocompleteService implements OnDestroy {
 
   private readonly _viewState = new BehaviorSubject<AutocompleteViewState>(INITIAL_VIEW_STATE);
   private readonly _subscription = new Subscription();
-  private readonly _suggestors: TerminalAutocompleteSuggestorContract[] = [];
+  private _suggestors: TerminalAutocompleteSuggestorContract[] = [];
+  private _sharedSuggestorIds = new Set<string>();
   private _activeRequestId = 0;
   private _suppressNextRefresh = false;
   private _suppressUntilTyping = false;
@@ -99,7 +100,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   constructor(
     private readonly host: SessionHost,
     private readonly commandLog: SessionCommandLog,
-    private readonly suggestorSource: AutocompleteSuggestorSource,
+    private readonly suggestorRegistry: SuggestorRegistry,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
     this._filterMode.next(this.loadFilterMode());
@@ -140,8 +141,22 @@ export class TerminalAutocompleteService implements OnDestroy {
     this.registerSuggestor(new HistoryDirectorySuggestor(this.commandLog));
     this.registerSuggestor(new CommandPatternSuggestor(this.commandLog));
     this.registerSuggestor(new HistoryCommandSuggestor(this.commandLog));
-    for (const suggestor of this.suggestorSource.getSharedSuggestors()) {
-      this.registerSuggestor(suggestor);
+    // The feature-contributed suggestors are a live set: follow it so a
+    // suggestor turned on reaches this running session at once.
+    this._subscription.add(
+      this.suggestorRegistry.suggestors$.subscribe((shared) => this.syncSharedSuggestors(shared)),
+    );
+  }
+
+  private syncSharedSuggestors(shared: ReadonlyArray<TerminalAutocompleteSuggestorContract>): void {
+    this._suggestors = this._suggestors.filter(
+      (suggestor) => !this._sharedSuggestorIds.has(suggestor.id),
+    );
+    this._sharedSuggestorIds = new Set(shared.map((suggestor) => suggestor.id));
+    for (const suggestor of shared) {
+      if (!this._suggestors.some((existing) => existing.id === suggestor.id)) {
+        this._suggestors.push(suggestor);
+      }
     }
   }
 
@@ -764,7 +779,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
     this._lastSuggestorIssueNotificationAt.set(key, now);
 
-    this.suggestorSource.reportSuggestorIssue({
+    this.suggestorRegistry.reportIssue({
       kind,
       suggestorId: suggestor.id,
       message,

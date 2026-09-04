@@ -8,6 +8,7 @@ import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
+import type { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 type FakeFeature = Partial<FeatureDefinition<ActionName>> & { id: string };
 
@@ -28,6 +29,10 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     register: vi.fn(),
     unregister: vi.fn(),
   } as unknown as SideMenuFeatureRegistrar;
+  const suggestorRegistrar = {
+    register: vi.fn(),
+    unregister: vi.fn(),
+  } as unknown as SuggestorFeatureRegistrar;
   const applicationConfigurationPort = {
     configuration$: new BehaviorSubject<Record<string, unknown>>({}),
     getConfiguration: () => ({}),
@@ -37,6 +42,7 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     features.map(feature),
     databaseMigrationService,
     sideMenuRegistrar,
+    suggestorRegistrar,
     applicationConfigurationPort,
     destroyRef,
   );

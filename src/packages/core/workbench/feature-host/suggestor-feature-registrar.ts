@@ -1,65 +1,89 @@
-import { Injectable } from "@angular/core";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
+import { DestroyRef, Injectable } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   AutocompleteSuggestorIssue,
-  AutocompleteSuggestorSource,
-} from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+  SuggestorRegistry,
+} from "@cogno/core/session/autocomplete/suggestor-registry";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   AutocompleteProviderIssueContract,
   AutocompleteProviderIssueReporterContract,
+  FeatureDefinition,
   TerminalAutocompleteSuggestorContract,
 } from "@cogno/shared/contributions";
-import { ShellTypeContract } from "@cogno/shared/domain";
 import { CommandRunner, Filesystem } from "@cogno/shared/ports";
+import { FeatureContributionRegistrar } from "./feature-reconciler";
 
 const AUTOCOMPLETE_PROVIDER_NOTIFICATION_THROTTLE_MS = 10_000;
 const DEFAULT_AUTOCOMPLETE_PROVIDER_TIMEOUT_MS = 160;
 
+/**
+ * The autocomplete-suggestor contribution as the reconciler sees it: activating
+ * a feature builds its suggestors and puts them in the session-side
+ * SuggestorRegistry, deactivating takes them out. This is also where the
+ * suggestors reach the workbench bus: it provides their issue reporter and
+ * turns the registry's failures into notifications - the session side stays off
+ * the bus (ARCHITECTURE.md 6.1).
+ */
 @Injectable({ providedIn: "root" })
-export class TerminalAutocompleteFeatureSuggestorService extends AutocompleteSuggestorSource {
-  private sharedSuggestors?: ReadonlyArray<TerminalAutocompleteSuggestorContract>;
+export class SuggestorFeatureRegistrar implements FeatureContributionRegistrar {
+  private readonly suggestorsByFeatureId = new Map<
+    string,
+    ReadonlyArray<TerminalAutocompleteSuggestorContract>
+  >();
   private readonly lastIssueNotificationAt = new Map<string, number>();
   private readonly issueReporter: AutocompleteProviderIssueReporterContract = {
     reportAutocompleteProviderIssue: (issue) => this.reportAutocompleteProviderIssue(issue),
   };
 
   constructor(
-    private readonly wiringService: AppWiringService,
+    private readonly suggestorRegistry: SuggestorRegistry,
     private readonly bus: AppBus,
     private readonly configService: ConfigService,
     private readonly filesystem: Filesystem,
     private readonly commandRunner: CommandRunner,
+    destroyRef: DestroyRef,
   ) {
-    super();
+    this.suggestorRegistry.issues$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((issue) => this.reportSuggestorIssue(issue));
   }
 
-  getSharedSuggestors(): ReadonlyArray<TerminalAutocompleteSuggestorContract> {
-    if (!this.sharedSuggestors) {
-      this.sharedSuggestors = this.wiringService
-        .getTerminalAutocompleteSuggestorDefinitions()
-        .map((definition) =>
-          definition.createSuggestor({
-            filesystem: this.filesystem,
-            commandRunner: this.commandRunner,
-            issueReporter: this.issueReporter,
-            getProviderTimeoutMs: () => this.getProviderTimeoutMs(),
-          }),
-        );
+  register(feature: FeatureDefinition<ActionName>): void {
+    for (const suggestor of this.suggestorsFor(feature)) {
+      this.suggestorRegistry.register(suggestor);
     }
-
-    return this.sharedSuggestors;
   }
 
-  preloadForShellIntegration(shellType: ShellTypeContract): void {
-    for (const suggestor of this.getSharedSuggestors()) {
-      void suggestor.warmUpForShellIntegration?.(shellType);
+  unregister(feature: FeatureDefinition<ActionName>): void {
+    for (const suggestor of this.suggestorsByFeatureId.get(feature.id) ?? []) {
+      this.suggestorRegistry.unregister(suggestor.id);
     }
+  }
+
+  private suggestorsFor(
+    feature: FeatureDefinition<ActionName>,
+  ): ReadonlyArray<TerminalAutocompleteSuggestorContract> {
+    const existing = this.suggestorsByFeatureId.get(feature.id);
+    if (existing) {
+      return existing;
+    }
+    const suggestors = (feature.autocompleteSuggestors ?? []).map((definition) =>
+      definition.createSuggestor({
+        filesystem: this.filesystem,
+        commandRunner: this.commandRunner,
+        issueReporter: this.issueReporter,
+        getProviderTimeoutMs: () => this.getProviderTimeoutMs(),
+      }),
+    );
+    this.suggestorsByFeatureId.set(feature.id, suggestors);
+    return suggestors;
   }
 
   /** A session's suggestor failed or timed out; the user is told, once per issue. */
-  reportSuggestorIssue(issue: AutocompleteSuggestorIssue): void {
+  private reportSuggestorIssue(issue: AutocompleteSuggestorIssue): void {
     this.bus.publish({
       type: "Notification",
       path: ["notification"],

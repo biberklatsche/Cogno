@@ -23,7 +23,6 @@ import type { ActionKeybindingPort, TerminalId } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Subject } from "rxjs";
 import { vi } from "vitest";
-import type { TerminalAutocompleteFeatureSuggestorService } from "../app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
 
 let appBus: AppBus | undefined;
@@ -37,9 +36,6 @@ let terminalComponentFactory: SessionHostFactory | undefined;
 let windowService: WindowService | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let machineState: MachineState | undefined;
-let terminalAutocompleteFeatureSuggestorService:
-  | TerminalAutocompleteFeatureSuggestorService
-  | undefined;
 let appWiringService: AppWiringService | undefined;
 let terminalBusyStateService: TerminalBusyStateService | undefined;
 let contextMenuOverlayService: ContextMenuOverlayService | undefined;
@@ -72,16 +68,6 @@ export function getNotificationTargetResolverService(): NotificationTargetResolv
     } as unknown as NotificationTargetResolverService;
   }
   return notificationTargetResolverService;
-}
-
-export function getTerminalAutocompleteFeatureSuggestorService(): TerminalAutocompleteFeatureSuggestorService {
-  if (!terminalAutocompleteFeatureSuggestorService) {
-    terminalAutocompleteFeatureSuggestorService = {
-      getSharedSuggestors: vi.fn().mockReturnValue([]),
-      preloadForShellIntegration: vi.fn(),
-    } as unknown as TerminalAutocompleteFeatureSuggestorService;
-  }
-  return terminalAutocompleteFeatureSuggestorService;
 }
 
 export function getConfigService(): ConfigServiceMock {
@@ -242,7 +228,6 @@ export function clear() {
   windowService = undefined;
   selectionHandler = undefined;
   machineState = undefined;
-  terminalAutocompleteFeatureSuggestorService = undefined;
   appWiringService = undefined;
   terminalBusyStateService = undefined;
   contextMenuOverlayService = undefined;

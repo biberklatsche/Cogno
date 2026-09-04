@@ -9,7 +9,6 @@ import {
   FeatureDefinition,
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
-  TerminalAutocompleteSuggestorDefinitionContract,
 } from "@cogno/shared/contributions";
 import { NotificationChannelContract } from "@cogno/shared/domain";
 import { additionalNotificationChannelsToken, featuresToken } from "./app-host.tokens";
@@ -24,7 +23,6 @@ import { additionalNotificationChannelsToken, featuresToken } from "./app-host.t
 export class AppWiringService {
   private readonly sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition>;
   private readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
-  private readonly autocompleteSuggestorDefinitions: ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract>;
   private readonly featureNotificationChannels: ReadonlyArray<NotificationChannelContract>;
 
   constructor(
@@ -44,24 +42,9 @@ export class AppWiringService {
     this.settingsExtensions = features.flatMap((feature) =>
       feature.settings ? [feature.settings] : [],
     );
-    this.autocompleteSuggestorDefinitions = features.flatMap(
-      (feature) => feature.autocompleteSuggestors ?? [],
-    );
     this.featureNotificationChannels = features.flatMap(
       (feature) => feature.notificationChannels ?? [],
     );
-  }
-
-  getRequiredSideMenuFeatureDefinitionById(
-    sideMenuFeatureDefinitionId: string,
-  ): SideMenuFeatureDefinition {
-    const sideMenuFeatureDefinition = this.sideMenuFeatureDefinitions.find(
-      (definition) => definition.id === sideMenuFeatureDefinitionId,
-    );
-    if (sideMenuFeatureDefinition === undefined) {
-      throw new Error(`Unknown side menu feature definition id: ${sideMenuFeatureDefinitionId}`);
-    }
-    return sideMenuFeatureDefinition;
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
@@ -79,10 +62,6 @@ export class AppWiringService {
       ...this.additionalNotificationChannels,
       ...this.featureNotificationChannels,
     ];
-  }
-
-  getTerminalAutocompleteSuggestorDefinitions(): ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract> {
-    return this.autocompleteSuggestorDefinitions;
   }
 
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {

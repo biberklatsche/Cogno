@@ -1,6 +1,6 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import type { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
+import type { SuggestorRegistry } from "@cogno/core/session/autocomplete/suggestor-registry";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
@@ -85,7 +85,7 @@ describe("SessionKeybindings", () => {
     keybindings = new SessionKeybindings(
       bus,
       host,
-      { preloadForShellIntegration } as unknown as AutocompleteSuggestorSource,
+      { preloadForShellIntegration } as unknown as SuggestorRegistry,
       { triggerAutocomplete: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
       { triggerCommandHistory: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,
     );

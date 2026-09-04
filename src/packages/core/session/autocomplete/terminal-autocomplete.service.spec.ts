@@ -4,7 +4,7 @@ import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
-import type { AutocompleteSuggestorSource } from "./autocomplete-suggestor.source";
+import type { SuggestorRegistry } from "./suggestor-registry";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
 
@@ -101,7 +101,7 @@ class DummySuggestor implements TerminalAutocompleteSuggestor {
 
 describe("TerminalAutocompleteService", () => {
   let fakeState: FakeStateManager;
-  let suggestorSource: AutocompleteSuggestorSource;
+  let suggestorRegistry: SuggestorRegistry;
   let service: TerminalAutocompleteService;
   const currentFilterMode = (target: TerminalAutocompleteService) =>
     (target as any)._filterMode.value;
@@ -110,11 +110,11 @@ describe("TerminalAutocompleteService", () => {
     vi.useFakeTimers();
     window.localStorage.clear();
     fakeState = new FakeStateManager();
-    suggestorSource = {
-      getSharedSuggestors: vi.fn(() => []),
+    suggestorRegistry = {
+      suggestors$: new BehaviorSubject([]),
       preloadForShellIntegration: vi.fn(),
-      reportSuggestorIssue: vi.fn(),
-    };
+      reportIssue: vi.fn(),
+    } as unknown as SuggestorRegistry;
     const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([]),
       searchCommands: vi.fn().mockResolvedValue([]),
@@ -126,7 +126,7 @@ describe("TerminalAutocompleteService", () => {
     service = new TerminalAutocompleteService(
       fakeState as unknown as any,
       commandLog,
-      suggestorSource,
+      suggestorRegistry,
       new TerminalDropdownCoordinatorService(),
     );
     (service as any)._suggestors = [];
@@ -172,7 +172,7 @@ describe("TerminalAutocompleteService", () => {
     expect(view.visible).toBe(true);
     expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
 
-    expect(suggestorSource.reportSuggestorIssue).toHaveBeenCalledWith(
+    expect(suggestorRegistry.reportIssue).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: "error",
         suggestorId: "broken-provider",
@@ -200,7 +200,7 @@ describe("TerminalAutocompleteService", () => {
     expect(view.visible).toBe(true);
     expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
 
-    expect(suggestorSource.reportSuggestorIssue).not.toHaveBeenCalled();
+    expect(suggestorRegistry.reportIssue).not.toHaveBeenCalled();
   });
 
   it("does not start another run for a suggestor that is still unresolved after timeout", async () => {
@@ -365,7 +365,7 @@ describe("TerminalAutocompleteService", () => {
     const second = new TerminalAutocompleteService(
       fakeState as unknown as any,
       commandLog,
-      suggestorSource,
+      suggestorRegistry,
       new TerminalDropdownCoordinatorService(),
     );
     (second as any)._suggestors = [];

@@ -9,8 +9,13 @@ import { FeatureDefinition } from "@cogno/shared/contributions";
 import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
-import { FeatureReconciler, FeatureRuntimeState } from "./feature-reconciler";
+import {
+  FeatureContributionRegistrar,
+  FeatureReconciler,
+  FeatureRuntimeState,
+} from "./feature-reconciler";
 import { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
+import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 /**
  * The one service that handles features (ARCHITECTURE.md 6.1). Its declaration
@@ -39,6 +44,7 @@ export class FeatureHost {
     private readonly features: ReadonlyArray<FeatureDefinition<ActionName>>,
     private readonly databaseMigrationService: DatabaseMigrationService,
     private readonly sideMenuRegistrar: SideMenuFeatureRegistrar,
+    private readonly suggestorRegistrar: SuggestorFeatureRegistrar,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
     private readonly destroyRef: DestroyRef,
   ) {
@@ -49,11 +55,24 @@ export class FeatureHost {
     this.declare();
     this.reconciler = new FeatureReconciler(
       this.features,
-      this.sideMenuRegistrar,
+      this.contributionRegistrar(),
       (feature) => this.desiredModeOf(feature),
       (featureId, error) => reportActivationError(featureId, error),
     );
     this.startActivation();
+  }
+
+  /** Fans a feature's activation out to every contribution consumer. */
+  private contributionRegistrar(): FeatureContributionRegistrar {
+    const registrars = [this.sideMenuRegistrar, this.suggestorRegistrar];
+    return {
+      register: (feature) => {
+        for (const registrar of registrars) registrar.register(feature);
+      },
+      unregister: (feature) => {
+        for (const registrar of [...registrars].reverse()) registrar.unregister(feature);
+      },
+    };
   }
 
   /** True when the feature set is inconsistent and the app started empty. */

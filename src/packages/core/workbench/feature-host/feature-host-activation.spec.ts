@@ -8,6 +8,7 @@ import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
+import type { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 /** A feature with a side-menu entry at `configPath`; only its id and path matter here. */
 function sideMenuFeature(id: string, configPath: string): FeatureDefinition<ActionName> {
@@ -50,6 +51,10 @@ describe("FeatureHost activation", () => {
       registerFeatureMigrations: vi.fn(),
     } as unknown as DatabaseMigrationService;
     const sideMenuRegistrar = { register, unregister } as unknown as SideMenuFeatureRegistrar;
+    const suggestorRegistrar = {
+      register: vi.fn(),
+      unregister: vi.fn(),
+    } as unknown as SuggestorFeatureRegistrar;
     const applicationConfigurationPort = {
       configuration$: configSubject.asObservable(),
       getConfiguration: () => configSubject.value,
@@ -59,6 +64,7 @@ describe("FeatureHost activation", () => {
       [sideMenuFeature("ai-chat", "feature.ai"), sideMenuFeature("git", "feature.git")],
       databaseMigrationService,
       sideMenuRegistrar,
+      suggestorRegistrar,
       applicationConfigurationPort,
       destroyRef,
     );

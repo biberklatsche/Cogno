@@ -16,7 +16,6 @@ import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.
 import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
 import { SideMenuActionNamesFeatureSourceService } from "@cogno/app/app-host/side-menu-action-names-feature-source.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
-import { TerminalAutocompleteFeatureSuggestorService } from "@cogno/app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
 import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
@@ -28,7 +27,6 @@ import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
-import { AutocompleteSuggestorSource } from "@cogno/core/session/autocomplete/autocomplete-suggestor.source";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
@@ -85,10 +83,6 @@ export const appConfig: ApplicationConfig = {
     { provide: ConfigService, useClass: RealConfigService },
     { provide: CommandRunner, useExisting: CommandRunnerHostService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
-    {
-      provide: AutocompleteSuggestorSource,
-      useExisting: TerminalAutocompleteFeatureSuggestorService,
-    },
     {
       provide: NotificationChannelsSource,
       useExisting: NotificationChannelsFeatureSourceService,
