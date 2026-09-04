@@ -17,6 +17,8 @@ export const terminalSearchSideMenuFeatureDefinition = {
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const terminalSearchFeature: FeatureDefinition = {
+  mode: "on",
+  target: "session",
   id: terminalSearchSideMenuFeatureDefinition.id,
   sideMenu: [terminalSearchSideMenuFeatureDefinition],
 };

@@ -64,6 +64,8 @@ export const defaultFeatureSettingsExtension = {
  * `feature` key.
  */
 export const featureSettingsFeature: FeatureDefinition = {
+  mode: "on",
+  target: "workbench",
   id: "feature-settings",
   settings: defaultFeatureSettingsExtension,
 };

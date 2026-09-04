@@ -17,6 +17,8 @@ export const commandPaletteSideMenuFeatureDefinition = {
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const commandPaletteFeature: FeatureDefinition = {
+  mode: "on",
+  target: "workbench",
   id: commandPaletteSideMenuFeatureDefinition.id,
   sideMenu: [commandPaletteSideMenuFeatureDefinition],
 };

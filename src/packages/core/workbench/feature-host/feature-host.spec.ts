@@ -5,7 +5,14 @@ import type { FeatureDefinition } from "@cogno/shared/contributions";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 
-function makeHost(features: ReadonlyArray<FeatureDefinition<ActionName>>): {
+type FakeFeature = Partial<FeatureDefinition<ActionName>> & { id: string };
+
+/** A feature with the declaration fields under test; mode/target are irrelevant here. */
+function feature(partial: FakeFeature): FeatureDefinition<ActionName> {
+  return { mode: "on", target: "workbench", ...partial };
+}
+
+function makeHost(features: ReadonlyArray<FakeFeature>): {
   host: FeatureHost;
   registerFeatureMigrations: ReturnType<typeof vi.fn>;
 } {
@@ -13,7 +20,7 @@ function makeHost(features: ReadonlyArray<FeatureDefinition<ActionName>>): {
   const databaseMigrationService = {
     registerFeatureMigrations,
   } as unknown as DatabaseMigrationService;
-  const host = new FeatureHost(features, databaseMigrationService);
+  const host = new FeatureHost(features.map(feature), databaseMigrationService);
   return { host, registerFeatureMigrations };
 }
 

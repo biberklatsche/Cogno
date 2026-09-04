@@ -17,6 +17,8 @@ export const workspaceSideMenuFeatureDefinition = {
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const workspaceFeature: FeatureDefinition = {
+  mode: "on",
+  target: "workbench",
   id: workspaceSideMenuFeatureDefinition.id,
   migrations: workspaceDatabaseMigrations,
   sideMenu: [workspaceSideMenuFeatureDefinition],

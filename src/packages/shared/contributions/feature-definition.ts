@@ -1,4 +1,4 @@
-import { NotificationChannelContract } from "@cogno/shared/domain";
+import { FeatureModeContract, NotificationChannelContract } from "@cogno/shared/domain";
 import { ApplicationSettingsExtensionContract } from "./application-settings-extension";
 import { DatabaseMigrationContract } from "./database-migration";
 import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition";
@@ -21,10 +21,26 @@ export interface FeatureActionContract<TActionName = string> {
 export interface FeatureDefinition<TActionName = string> {
   readonly id: string;
   /**
+   * The feature's default mode; the config's `feature.<id>.mode` overrides it.
+   * Every feature has one - what has no mode lives in `core/` (ARCHITECTURE.md
+   * decision 4).
+   */
+  readonly mode: FeatureModeContract;
+  /**
+   * What the feature points at (ARCHITECTURE.md 6, axis 1). Its lifetime is
+   * always the application; `target` only says whether it acts on a session or
+   * on the workbench.
+   */
+  readonly target: "session" | "workbench";
+  /**
    * Other features this one needs; resolved transitively by the feature-host
    * before activation. Unknown or cyclic requires abort the start (step 22a).
    */
   readonly requires?: ReadonlyArray<string>;
+  /** Runs when the feature is activated, after its contributions are registered. */
+  readonly activate?: () => void | Promise<void>;
+  /** Runs when the feature is deactivated, before its contributions are removed. */
+  readonly deactivate?: () => void | Promise<void>;
   /** Schema steps, applied on startup in list order. */
   readonly migrations?: ReadonlyArray<DatabaseMigrationContract>;
   /** Action names the feature owns; known from declaration, handled on activation. */

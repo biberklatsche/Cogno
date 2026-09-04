@@ -17,6 +17,8 @@ export const codingAgentsSideMenuFeatureDefinition = {
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const codingAgentsFeature: FeatureDefinition = {
+  mode: "on",
+  target: "session",
   id: codingAgentsSideMenuFeatureDefinition.id,
   sideMenu: [codingAgentsSideMenuFeatureDefinition],
 };

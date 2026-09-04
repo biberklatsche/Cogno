@@ -16,6 +16,8 @@ export const gitSideMenuFeatureDefinition = {
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const gitFeature: FeatureDefinition = {
+  mode: "on",
+  target: "session",
   id: gitSideMenuFeatureDefinition.id,
   sideMenu: [gitSideMenuFeatureDefinition],
 };

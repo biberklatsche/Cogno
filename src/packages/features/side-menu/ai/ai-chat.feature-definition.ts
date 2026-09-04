@@ -16,6 +16,8 @@ export const aiChatSideMenuFeatureDefinition = {
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const aiChatFeature: FeatureDefinition = {
+  mode: "on",
+  target: "session",
   id: aiChatSideMenuFeatureDefinition.id,
   sideMenu: [aiChatSideMenuFeatureDefinition],
 };

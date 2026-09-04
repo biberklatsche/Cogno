@@ -17,6 +17,8 @@ export const notificationSideMenuFeatureDefinition = {
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const notificationFeature: FeatureDefinition = {
+  mode: "on",
+  target: "workbench",
   id: notificationSideMenuFeatureDefinition.id,
   sideMenu: [notificationSideMenuFeatureDefinition],
 };
