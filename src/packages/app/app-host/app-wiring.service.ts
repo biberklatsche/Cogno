@@ -1,8 +1,6 @@
 import { Inject, Injectable } from "@angular/core";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
-import { AppNotificationChannelService } from "@cogno/core/workbench/notification/+state/app-notification-channel.service";
-import { OsNotificationChannelService } from "@cogno/core/workbench/notification/+state/os-notification-channel.service";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import {
   ApplicationSettingsExtensionContract,
@@ -10,28 +8,20 @@ import {
   ShellDefinitionContract,
   ShellSupportDefinitionContract,
 } from "@cogno/shared/contributions";
-import { NotificationChannelContract } from "@cogno/shared/domain";
-import { additionalNotificationChannelsToken, featuresToken } from "./app-host.tokens";
+import { featuresToken } from "./app-host.tokens";
 
 /**
  * Collects what the features contribute and hands each extension point to
- * its consumer. The feature list itself lives in `app/features.ts`; the
- * declaration-phase side effects (migrations, path adapters, whole-set
- * validation) belong to the feature-host now.
+ * its consumer. What is left is the native menu's side-menu list, the settings
+ * extensions and the shell definitions; the rest moved to the feature-host.
+ * The whole service dissolves with config-bootstrap in step 22d.
  */
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
   private readonly sideMenuFeatureDefinitions: ReadonlyArray<SideMenuFeatureDefinition>;
   private readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
-  private readonly featureNotificationChannels: ReadonlyArray<NotificationChannelContract>;
 
-  constructor(
-    @Inject(featuresToken) features: ReadonlyArray<FeatureDefinition<ActionName>>,
-    @Inject(additionalNotificationChannelsToken)
-    private readonly additionalNotificationChannels: ReadonlyArray<NotificationChannelContract>,
-    private readonly appNotificationChannelService: AppNotificationChannelService,
-    private readonly osNotificationChannelService: OsNotificationChannelService,
-  ) {
+  constructor(@Inject(featuresToken) features: ReadonlyArray<FeatureDefinition<ActionName>>) {
     this.sideMenuFeatureDefinitions = [
       ...rejectDuplicateIds(
         features.flatMap((feature) => feature.sideMenu ?? []),
@@ -42,9 +32,6 @@ export class AppWiringService {
     this.settingsExtensions = features.flatMap((feature) =>
       feature.settings ? [feature.settings] : [],
     );
-    this.featureNotificationChannels = features.flatMap(
-      (feature) => feature.notificationChannels ?? [],
-    );
   }
 
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
@@ -53,15 +40,6 @@ export class AppWiringService {
 
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
     return this.settingsExtensions;
-  }
-
-  getNotificationChannels(): ReadonlyArray<NotificationChannelContract> {
-    return [
-      this.appNotificationChannelService,
-      this.osNotificationChannelService,
-      ...this.additionalNotificationChannels,
-      ...this.featureNotificationChannels,
-    ];
   }
 
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {

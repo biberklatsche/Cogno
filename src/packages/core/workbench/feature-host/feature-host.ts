@@ -15,6 +15,7 @@ import {
   FeatureReconciler,
   FeatureRuntimeState,
 } from "./feature-reconciler";
+import { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
 import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
@@ -47,6 +48,7 @@ export class FeatureHost {
     private readonly actionNameRegistry: ActionNameRegistry,
     private readonly sideMenuRegistrar: SideMenuFeatureRegistrar,
     private readonly suggestorRegistrar: SuggestorFeatureRegistrar,
+    private readonly notificationChannelRegistrar: NotificationChannelFeatureRegistrar,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
     private readonly destroyRef: DestroyRef,
   ) {
@@ -66,7 +68,11 @@ export class FeatureHost {
 
   /** Fans a feature's activation out to every contribution consumer. */
   private contributionRegistrar(): FeatureContributionRegistrar {
-    const registrars = [this.sideMenuRegistrar, this.suggestorRegistrar];
+    const registrars = [
+      this.sideMenuRegistrar,
+      this.suggestorRegistrar,
+      this.notificationChannelRegistrar,
+    ];
     return {
       register: (feature) => {
         for (const registrar of registrars) registrar.register(feature);

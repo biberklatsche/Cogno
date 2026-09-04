@@ -1,7 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import type { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
+import type { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
 import type {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
@@ -15,7 +15,7 @@ type DestroyRefMock = DestroyRef & {
   destroy(): void;
 };
 
-type NotificationChannelsWiringPort = Pick<NotificationChannelsSource, "getNotificationChannels">;
+type NotificationChannelRegistryPort = Pick<NotificationChannelRegistry, "getChannels">;
 
 describe("NotificationDispatchService", () => {
   let appBus: AppBus;
@@ -106,11 +106,16 @@ describe("NotificationDispatchService", () => {
     notificationChannels: ReadonlyArray<NotificationChannelContract>,
     destroyRef = createDestroyRefMock(),
   ): NotificationDispatchService {
-    const appWiringService: NotificationChannelsWiringPort = {
-      getNotificationChannels: () => notificationChannels,
+    const notificationChannelRegistry: NotificationChannelRegistryPort = {
+      getChannels: () => notificationChannels,
     };
 
-    return new NotificationDispatchService(appBus, appWiringService, configService, destroyRef);
+    return new NotificationDispatchService(
+      appBus,
+      notificationChannelRegistry as NotificationChannelRegistry,
+      configService,
+      destroyRef,
+    );
   }
 });
 

@@ -8,6 +8,7 @@ import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
+import type { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
 import type { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
@@ -21,6 +22,7 @@ function feature(partial: FakeFeature): FeatureDefinition<ActionName> {
 function makeHost(features: ReadonlyArray<FakeFeature>): {
   host: FeatureHost;
   registerFeatureMigrations: ReturnType<typeof vi.fn>;
+  actionNameRegistry: ActionNameRegistry;
 } {
   const registerFeatureMigrations = vi.fn();
   const databaseMigrationService = {
@@ -35,6 +37,10 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     register: vi.fn(),
     unregister: vi.fn(),
   } as unknown as SuggestorFeatureRegistrar;
+  const notificationChannelRegistrar = {
+    register: vi.fn(),
+    unregister: vi.fn(),
+  } as unknown as NotificationChannelFeatureRegistrar;
   const applicationConfigurationPort = {
     configuration$: new BehaviorSubject<Record<string, unknown>>({}),
     getConfiguration: () => ({}),
@@ -46,6 +52,7 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     actionNameRegistry,
     sideMenuRegistrar,
     suggestorRegistrar,
+    notificationChannelRegistrar,
     applicationConfigurationPort,
     destroyRef,
   );

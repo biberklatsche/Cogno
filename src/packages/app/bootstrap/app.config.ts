@@ -7,13 +7,9 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { AboutDialogAdapterService } from "@cogno/app/app-host/about-dialog.adapter.service";
-import {
-  additionalNotificationChannelsToken,
-  featuresToken,
-} from "@cogno/app/app-host/app-host.tokens";
+import { featuresToken } from "@cogno/app/app-host/app-host.tokens";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
 import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
-import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
@@ -40,7 +36,6 @@ import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/noti
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
-import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
@@ -81,12 +76,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ConfigService, useClass: RealConfigService },
     { provide: CommandRunner, useExisting: CommandRunnerHostService },
     { provide: ActionKeybindingPort, useExisting: ActionKeybindingPortAdapterService },
-    {
-      provide: NotificationChannelsSource,
-      useExisting: NotificationChannelsFeatureSourceService,
-    },
     { provide: Filesystem, useExisting: FilesystemHostService },
-    { provide: additionalNotificationChannelsToken, useValue: [] },
     { provide: ActionCatalog, useExisting: ActionCatalogAdapterService },
     { provide: ActionDispatcher, useExisting: ActionCatalogAdapterService },
     {

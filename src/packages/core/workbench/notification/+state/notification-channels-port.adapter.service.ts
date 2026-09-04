@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
+import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
 import {
   NotificationChannelOptionContract,
   NotificationChannelsPortContract,
@@ -9,7 +9,7 @@ import {
 @Injectable({ providedIn: "root" })
 export class NotificationChannelsPortAdapterService implements NotificationChannelsPortContract {
   constructor(
-    private readonly channelsSource: NotificationChannelsSource,
+    private readonly channelRegistry: NotificationChannelRegistry,
     private readonly configService: ConfigService,
   ) {}
 
@@ -18,8 +18,8 @@ export class NotificationChannelsPortAdapterService implements NotificationChann
       | Readonly<Record<string, { readonly available?: boolean; readonly enabled?: boolean }>>
       | undefined;
 
-    return this.channelsSource
-      .getNotificationChannels()
+    return this.channelRegistry
+      .getChannels()
       .filter((notificationChannel) => {
         const notificationChannelConfiguration = notificationsConfig?.[notificationChannel.id];
         return (

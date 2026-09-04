@@ -2,7 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { NotificationChannelsSource } from "@cogno/core/workbench/notification/notification-channels.source";
+import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
 import {
   NotificationChannelContract,
   NotificationChannelSettingsContract,
@@ -15,7 +15,7 @@ import {
 export class NotificationDispatchService {
   constructor(
     private readonly appBus: AppBus,
-    private readonly notificationChannelsSource: NotificationChannelsSource,
+    private readonly notificationChannelRegistry: NotificationChannelRegistry,
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
@@ -39,7 +39,7 @@ export class NotificationDispatchService {
       return;
     }
 
-    for (const notificationChannel of this.notificationChannelsSource.getNotificationChannels()) {
+    for (const notificationChannel of this.notificationChannelRegistry.getChannels()) {
       if (!this.isNotificationChannelEnabled(notificationChannel, notificationPayload.channels)) {
         continue;
       }
@@ -85,7 +85,7 @@ export class NotificationDispatchService {
   }
 
   private async reconcileReplyChannels(): Promise<void> {
-    for (const notificationChannel of this.notificationChannelsSource.getNotificationChannels()) {
+    for (const notificationChannel of this.notificationChannelRegistry.getChannels()) {
       if (!isNotificationReplyChannel(notificationChannel)) {
         continue;
       }
@@ -106,7 +106,7 @@ export class NotificationDispatchService {
   }
 
   private stopReplyChannels(): void {
-    for (const notificationChannel of this.notificationChannelsSource.getNotificationChannels()) {
+    for (const notificationChannel of this.notificationChannelRegistry.getChannels()) {
       if (isNotificationReplyChannel(notificationChannel)) {
         void notificationChannel.stopReceivingReplies?.();
       }
