@@ -1,6 +1,4 @@
 import { Inject, Injectable } from "@angular/core";
-import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
-import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppNotificationChannelService } from "@cogno/core/workbench/notification/+state/app-notification-channel.service";
@@ -18,7 +16,9 @@ import { additionalNotificationChannelsToken, featuresToken } from "./app-host.t
 
 /**
  * Collects what the features contribute and hands each extension point to
- * its consumer. The feature list itself lives in `app/features.ts`.
+ * its consumer. The feature list itself lives in `app/features.ts`; the
+ * declaration-phase side effects (migrations, path adapters, whole-set
+ * validation) belong to the feature-host now.
  */
 @Injectable({ providedIn: "root" })
 export class AppWiringService {
@@ -33,10 +33,7 @@ export class AppWiringService {
     private readonly additionalNotificationChannels: ReadonlyArray<NotificationChannelContract>,
     private readonly appNotificationChannelService: AppNotificationChannelService,
     private readonly osNotificationChannelService: OsNotificationChannelService,
-    databaseMigrationService: DatabaseMigrationService,
   ) {
-    rejectDuplicateIds(features, (feature) => feature.id, "Feature");
-
     this.sideMenuFeatureDefinitions = [
       ...rejectDuplicateIds(
         features.flatMap((feature) => feature.sideMenu ?? []),
@@ -52,11 +49,6 @@ export class AppWiringService {
     );
     this.featureNotificationChannels = features.flatMap(
       (feature) => feature.notificationChannels ?? [],
-    );
-
-    PathFactory.registerDefinitions(shellDefinitions.map((shell) => shell.pathAdapter));
-    databaseMigrationService.registerFeatureMigrations(
-      features.flatMap((feature) => feature.migrations ?? []),
     );
   }
 

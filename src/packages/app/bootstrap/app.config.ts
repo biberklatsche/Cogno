@@ -11,7 +11,6 @@ import {
   additionalNotificationChannelsToken,
   featuresToken,
 } from "@cogno/app/app-host/app-host.tokens";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
 import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
 import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
@@ -38,6 +37,8 @@ import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actio
 import { SideMenuActionNamesSource } from "@cogno/core/workbench/actions/side-menu-action-names.source";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
+import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-definitions.token";
+import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-center-port.adapter.service";
@@ -115,6 +116,7 @@ export const appConfig: ApplicationConfig = {
       multi: true,
     },
     { provide: featuresToken, useValue: features },
+    { provide: FEATURE_DEFINITIONS, useValue: features },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     { provide: TerminalGateway, useExisting: TerminalGatewayService },
@@ -128,7 +130,9 @@ export const appConfig: ApplicationConfig = {
     provideEnvironmentInitializer(() => {
       void Logger.initialize();
       inject(StyleService);
-      inject(AppWiringService);
+      // The feature-host's declaration phase: whole-set validation, then the
+      // migrations and path adapters that must exist before the config is read.
+      inject(FeatureHost);
       // MIGRATION-TEMP(step 22): keeps the config's notifications and shell
       // bootstrap alive until they reach their own layer. Must exist before
       // WindowService publishes InitConfigCommand.

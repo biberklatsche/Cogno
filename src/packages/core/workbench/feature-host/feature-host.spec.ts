@@ -1,0 +1,97 @@
+import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
+import { PathFactory } from "@cogno/core/session/exec/path.factory";
+import type { ActionName } from "@cogno/core/workbench/bus/action.models";
+import type { FeatureDefinition } from "@cogno/shared/contributions";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FeatureHost } from "./feature-host";
+
+function makeHost(features: ReadonlyArray<FeatureDefinition<ActionName>>): {
+  host: FeatureHost;
+  registerFeatureMigrations: ReturnType<typeof vi.fn>;
+} {
+  const registerFeatureMigrations = vi.fn();
+  const databaseMigrationService = {
+    registerFeatureMigrations,
+  } as unknown as DatabaseMigrationService;
+  const host = new FeatureHost(features, databaseMigrationService);
+  return { host, registerFeatureMigrations };
+}
+
+/** A settings extension whose only relevant part is which top-level paths it owns. */
+function settingsWithPaths(...paths: string[]): FeatureDefinition["settings"] {
+  const schemaShape = Object.fromEntries(paths.map((path) => [path, undefined]));
+  return { schemaShape, defaults: {}, settingsSections: [] } as never;
+}
+
+describe("FeatureHost declaration phase", () => {
+  let registerDefinitions: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    registerDefinitions = vi.spyOn(PathFactory, "registerDefinitions").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("registers migrations and path adapters when the set is valid", () => {
+    const migration = { id: "m1" } as never;
+    const { host, registerFeatureMigrations } = makeHost([
+      { id: "a", migrations: [migration] },
+      { id: "b", requires: ["a"] },
+    ]);
+
+    expect(host.hasDeclarationConflict).toBe(false);
+    expect(host.getDeclarationConflicts()).toEqual([]);
+    expect(registerFeatureMigrations).toHaveBeenCalledWith([migration]);
+    expect(registerDefinitions).toHaveBeenCalledTimes(1);
+  });
+
+  it("aborts on a duplicate feature id and registers nothing", () => {
+    const { host, registerFeatureMigrations } = makeHost([{ id: "dup" }, { id: "dup" }]);
+
+    expect(host.hasDeclarationConflict).toBe(true);
+    expect(host.getDeclarationConflicts()).toContain("Feature declared twice: dup");
+    expect(registerFeatureMigrations).not.toHaveBeenCalled();
+    expect(registerDefinitions).not.toHaveBeenCalled();
+  });
+
+  it("aborts on an unknown requires", () => {
+    const { host } = makeHost([{ id: "a", requires: ["ghost"] }]);
+
+    expect(host.hasDeclarationConflict).toBe(true);
+    expect(host.getDeclarationConflicts()).toContain('Feature "a" requires unknown feature: ghost');
+  });
+
+  it("aborts on a requires cycle", () => {
+    const { host } = makeHost([
+      { id: "a", requires: ["b"] },
+      { id: "b", requires: ["a"] },
+    ]);
+
+    expect(host.hasDeclarationConflict).toBe(true);
+    expect(host.getDeclarationConflicts().some((c) => c.startsWith("Cyclic requires:"))).toBe(true);
+  });
+
+  it("aborts on a settings path collision", () => {
+    const { host } = makeHost([
+      { id: "a", settings: settingsWithPaths("feature") },
+      { id: "b", settings: settingsWithPaths("feature") },
+    ]);
+
+    expect(host.hasDeclarationConflict).toBe(true);
+    expect(host.getDeclarationConflicts()).toContain(
+      "Settings path declared by two features: feature",
+    );
+  });
+
+  it("aborts on a duplicate action", () => {
+    const { host } = makeHost([
+      { id: "a", actions: [{ actionName: "open_x" }] },
+      { id: "b", actions: [{ actionName: "open_x" }] },
+    ]);
+
+    expect(host.hasDeclarationConflict).toBe(true);
+    expect(host.getDeclarationConflicts()).toContain("Action declared by two features: open_x");
+  });
+});

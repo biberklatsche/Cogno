@@ -11,8 +11,12 @@ import { notificationFeature } from "@cogno/features/side-menu/notification/noti
 import { terminalSearchFeature } from "@cogno/features/side-menu/terminal-search/terminal-search.feature-definition";
 import { FeatureDefinition } from "@cogno/shared/contributions";
 
-/** Every feature of the application. Adding one means adding it here. */
-export const features: ReadonlyArray<FeatureDefinition<ActionName>> = [
+/**
+ * Every feature of the application. Adding one means adding it here. `as
+ * const` keeps each entry's literal types so the action-name manifest (step
+ * 26) can read them; `satisfies` still checks every entry is a feature.
+ */
+export const features = [
   autocompleteFeature,
   featureSettingsFeature,
   workspaceFeature,
@@ -23,4 +27,4 @@ export const features: ReadonlyArray<FeatureDefinition<ActionName>> = [
   aiChatFeature,
   gitFeature,
   codingAgentsFeature,
-] as ReadonlyArray<FeatureDefinition<ActionName>>;
+] as const satisfies readonly FeatureDefinition<ActionName>[];
