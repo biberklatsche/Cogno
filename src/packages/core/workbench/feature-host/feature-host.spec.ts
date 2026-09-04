@@ -1,9 +1,13 @@
+import type { DestroyRef } from "@angular/core";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
 import type { FeatureDefinition } from "@cogno/shared/contributions";
+import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
+import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
+import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
 
 type FakeFeature = Partial<FeatureDefinition<ActionName>> & { id: string };
 
@@ -20,7 +24,22 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
   const databaseMigrationService = {
     registerFeatureMigrations,
   } as unknown as DatabaseMigrationService;
-  const host = new FeatureHost(features.map(feature), databaseMigrationService);
+  const sideMenuRegistrar = {
+    register: vi.fn(),
+    unregister: vi.fn(),
+  } as unknown as SideMenuFeatureRegistrar;
+  const applicationConfigurationPort = {
+    configuration$: new BehaviorSubject<Record<string, unknown>>({}),
+    getConfiguration: () => ({}),
+  } as unknown as ApplicationConfigurationPort;
+  const destroyRef = { onDestroy: vi.fn(() => () => {}) } as unknown as DestroyRef;
+  const host = new FeatureHost(
+    features.map(feature),
+    databaseMigrationService,
+    sideMenuRegistrar,
+    applicationConfigurationPort,
+    destroyRef,
+  );
   return { host, registerFeatureMigrations };
 }
 

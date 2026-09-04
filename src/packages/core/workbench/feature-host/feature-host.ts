@@ -1,36 +1,59 @@
-import { Inject, Injectable } from "@angular/core";
+import { DestroyRef, Inject, Injectable } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { FeatureDefinition } from "@cogno/shared/contributions";
+import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
+import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
+import { FeatureReconciler, FeatureRuntimeState } from "./feature-reconciler";
+import { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
 
 /**
- * The one service that handles features. This is its declaration phase
- * (ARCHITECTURE.md 6.1, task 1): before the config that holds `mode` is read,
- * it checks the whole feature set for the errors a single declaration cannot
- * catch - duplicate ids, unknown or cyclic `requires`, colliding settings
- * paths, duplicate action names - and only then registers what must be known
- * independent of mode: the schema migrations and the shell path adapters.
+ * The one service that handles features (ARCHITECTURE.md 6.1). Its declaration
+ * phase runs first: before the config that holds `mode` is read, it checks the
+ * whole feature set for the errors a single declaration cannot catch -
+ * duplicate ids, unknown or cyclic `requires`, colliding settings paths,
+ * duplicate action names - and only then registers what must be known
+ * independent of mode (schema migrations, shell path adapters). A conflict is a
+ * programming error: the host registers nothing, the app starts with an empty
+ * feature set, and the reasons are kept for the start-up message.
  *
- * A conflict is a programming error, not a runtime state: the host registers
- * nothing, the app starts with an empty feature set, and the reason is kept
- * for the start-up message. Activation (step 22b) builds on this.
+ * Its activation phase then reconciles each feature's status against the mode
+ * the config wants and re-reconciles on every config change (hot-reload). The
+ * mode is read through the feature's existing `configPath`, whose key is not
+ * always the feature id (ai-chat -> feature.ai, and so on) - the transition
+ * state keeps the old contribution form (step 22b).
  */
 @Injectable({ providedIn: "root" })
 export class FeatureHost {
   private readonly declarationConflicts: ReadonlyArray<string>;
+  private reconciler?: FeatureReconciler;
+  private pendingReconcile = Promise.resolve();
 
   constructor(
     @Inject(FEATURE_DEFINITIONS)
     private readonly features: ReadonlyArray<FeatureDefinition<ActionName>>,
     private readonly databaseMigrationService: DatabaseMigrationService,
+    private readonly sideMenuRegistrar: SideMenuFeatureRegistrar,
+    private readonly applicationConfigurationPort: ApplicationConfigurationPort,
+    private readonly destroyRef: DestroyRef,
   ) {
     this.declarationConflicts = findDeclarationConflicts(this.features);
-    if (this.declarationConflicts.length === 0) {
-      this.declare();
+    if (this.declarationConflicts.length > 0) {
+      return;
     }
+    this.declare();
+    this.reconciler = new FeatureReconciler(
+      this.features,
+      this.sideMenuRegistrar,
+      (feature) => this.desiredModeOf(feature),
+      (featureId, error) => reportActivationError(featureId, error),
+    );
+    this.startActivation();
   }
 
   /** True when the feature set is inconsistent and the app started empty. */
@@ -43,12 +66,66 @@ export class FeatureHost {
     return this.declarationConflicts;
   }
 
+  /** Each feature's runtime status, for the sidebar and the API (step 22d). */
+  featureStates(): ReadonlyArray<FeatureRuntimeState> {
+    return this.reconciler?.states() ?? [];
+  }
+
+  /** Resolves once the latest reconciliation has settled (for tests and startup). */
+  whenSettled(): Promise<void> {
+    return this.pendingReconcile;
+  }
+
   private declare(): void {
     PathFactory.registerDefinitions(shellDefinitions.map((shell) => shell.pathAdapter));
     this.databaseMigrationService.registerFeatureMigrations(
       this.features.flatMap((feature) => feature.migrations ?? []),
     );
   }
+
+  private startActivation(): void {
+    this.applicationConfigurationPort.configuration$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.pendingReconcile = this.reconciler?.reconcile() ?? Promise.resolve();
+      });
+  }
+
+  /**
+   * The mode a feature is configured for: for a side-menu feature, read from
+   * its `configPath` (whose key differs from the id for several features);
+   * otherwise the feature's declared default.
+   */
+  private desiredModeOf(feature: FeatureDefinition<ActionName>): FeatureModeContract {
+    const configPath = feature.sideMenu?.[0]?.configPath;
+    if (!configPath) {
+      return feature.mode;
+    }
+    const featureConfiguration = resolveConfigPath(
+      this.applicationConfigurationPort.getConfiguration() as Record<string, unknown>,
+      configPath,
+    );
+    if (typeof featureConfiguration !== "object" || featureConfiguration === null) {
+      return feature.mode;
+    }
+    return normalizeFeatureMode((featureConfiguration as { mode?: unknown }).mode) ?? feature.mode;
+  }
+}
+
+function resolveConfigPath(source: Record<string, unknown>, path: string): unknown {
+  return path.split(".").reduce<unknown>((value, segment) => {
+    if (typeof value !== "object" || value === null) return undefined;
+    return (value as Record<string, unknown>)[segment];
+  }, source);
+}
+
+function reportActivationError(featureId: string, error: unknown): void {
+  ErrorReporter.reportException({
+    error,
+    handled: true,
+    source: "FeatureHost",
+    context: { operation: "activate", featureId },
+  });
 }
 
 /**

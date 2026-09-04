@@ -15,7 +15,6 @@ import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/
 import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
 import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
 import { SideMenuActionNamesFeatureSourceService } from "@cogno/app/app-host/side-menu-action-names-feature-source.service";
-import { SideMenuLifecycleRuntimeService } from "@cogno/app/app-host/side-menu-lifecycle-runtime.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalAutocompleteFeatureSuggestorService } from "@cogno/app/app-host/terminal-autocomplete-feature-suggestor.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
@@ -154,7 +153,6 @@ export const appConfig: ApplicationConfig = {
         injector.get(HttpMessageAdapterService);
         injector.get(NativeMenuService);
         injector.get(WindowService);
-        injector.get(SideMenuLifecycleRuntimeService);
         injector.get(SideMenuStatePersistenceService);
         injector.get(ActionCatalogAdapterService);
         injector.get(ActionKeybindingPortAdapterService);

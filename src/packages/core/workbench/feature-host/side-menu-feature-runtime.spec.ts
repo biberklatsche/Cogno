@@ -1,26 +1,27 @@
-import type { DestroyRef } from "@angular/core";
+import type { DestroyRef, Injector } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
-import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
-import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
-import { ApplicationConfigurationPort } from "@cogno/shared/ports";
+import type { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
+import type { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
+import type { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
+import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { SideMenuFeature } from "./side-menu-feature";
+import { SideMenuFeatureRuntime } from "./side-menu-feature-runtime";
 
 class DummyComponent {}
 
-describe("SideMenuFeature", () => {
+describe("SideMenuFeatureRuntime", () => {
   let appBus: AppBus;
   let configSubject: BehaviorSubject<Record<string, unknown>>;
   let applicationConfigurationPort: ApplicationConfigurationPort;
+  let injector: Injector;
   let sideMenuService: {
     addMenuItem: ReturnType<typeof vi.fn>;
     removeMenuItem: ReturnType<typeof vi.fn>;
     open: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
     updateIcon: ReturnType<typeof vi.fn>;
-    isSelected: ReturnType<typeof vi.fn>;
+    resolveComponent: ReturnType<typeof vi.fn>;
   };
   let keybindService: {
     registerListener: ReturnType<typeof vi.fn>;
@@ -39,6 +40,26 @@ describe("SideMenuFeature", () => {
     targetComponent: DummyComponent,
   };
 
+  function createRuntime(
+    config: SideMenuFeatureDefinition = definition,
+    lifecycle: Record<string, unknown> = {},
+  ): SideMenuFeatureRuntime {
+    injector = { get: vi.fn() } as unknown as Injector;
+    const withLifecycle: SideMenuFeatureDefinition = {
+      ...config,
+      createLifecycle: () => lifecycle,
+    };
+    return new SideMenuFeatureRuntime(
+      withLifecycle,
+      injector,
+      sideMenuService as unknown as SideMenuService,
+      appBus,
+      keybindService as unknown as KeybindService,
+      applicationConfigurationPort,
+      destroyRef,
+    );
+  }
+
   beforeEach(() => {
     appBus = new AppBus();
     configSubject = new BehaviorSubject<Record<string, unknown>>({
@@ -54,7 +75,7 @@ describe("SideMenuFeature", () => {
       open: vi.fn(),
       close: vi.fn(),
       updateIcon: vi.fn(),
-      isSelected: vi.fn().mockReturnValue(false),
+      resolveComponent: vi.fn(),
     };
     keybindService = {
       registerListener: vi.fn(),
@@ -67,63 +88,27 @@ describe("SideMenuFeature", () => {
     } as unknown as DestroyRef;
   });
 
-  it("reacts to feature mode changes and availability", () => {
-    const lifecycle = {
-      onModeChange: vi.fn(),
-    };
+  it("adds the entry on activate and removes it on deactivate", () => {
+    const lifecycle = { onModeChange: vi.fn() };
+    const runtime = createRuntime(definition, lifecycle);
 
-    new SideMenuFeature(
-      {
-        ...definition,
-        isAvailable: vi.fn().mockImplementation((config: Record<string, unknown>) => {
-          return config["workspace_available"] !== false;
-        }),
-      },
-      lifecycle,
-      sideMenuService as unknown as SideMenuService,
-      appBus,
-      applicationConfigurationPort,
-      keybindService as unknown as KeybindService,
-      destroyRef,
-    );
-
+    runtime.activate();
+    expect(lifecycle.onModeChange).toHaveBeenCalledWith("on");
     expect(sideMenuService.addMenuItem).toHaveBeenCalledWith(
-      expect.objectContaining({ label: "Workspace", hidden: false }),
+      expect.objectContaining({ label: "Workspace", hidden: false, order: 1 }),
     );
 
-    // "hidden" is a legacy value and now simply means "on".
-    configSubject.next({ feature: { workspace: { mode: "hidden" } } });
-    expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
-      expect.objectContaining({ label: "Workspace", hidden: false }),
-    );
-
-    configSubject.next({ feature: { workspace: { mode: "off" } } });
+    runtime.deactivate();
+    expect(lifecycle.onModeChange).toHaveBeenCalledWith("off");
     expect(sideMenuService.removeMenuItem).toHaveBeenCalledWith("Workspace");
-
-    vi.mocked(sideMenuService.isSelected).mockReturnValue(true);
-    configSubject.next({
-      workspace_available: false,
-      feature: { workspace: { mode: "on" } },
-    });
-    expect(sideMenuService.close).toHaveBeenCalledWith(true);
-    expect(lifecycle.onModeChange).toHaveBeenCalled();
   });
 
-  it("applies a user-configured order override and falls back to the static default", () => {
-    const lifecycle = { onModeChange: vi.fn() };
+  it("follows a config order override while active and falls back to the default", () => {
+    const runtime = createRuntime();
 
-    new SideMenuFeature(
-      definition,
-      lifecycle,
-      sideMenuService as unknown as SideMenuService,
-      appBus,
-      applicationConfigurationPort,
-      keybindService as unknown as KeybindService,
-      destroyRef,
-    );
-
+    runtime.activate();
     expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
-      expect.objectContaining({ order: definition.order }),
+      expect.objectContaining({ order: 1 }),
     );
 
     configSubject.next({ feature: { workspace: { mode: "on", order: 5 } } });
@@ -133,47 +118,62 @@ describe("SideMenuFeature", () => {
 
     configSubject.next({ feature: { workspace: { mode: "on" } } });
     expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
-      expect.objectContaining({ order: definition.order }),
+      expect.objectContaining({ order: 1 }),
     );
   });
 
-  it("wires action handling, lifecycle callbacks and teardown", () => {
-    const lifecycle = {
-      onOpen: vi.fn(),
-      onClose: vi.fn(),
-      onFocus: vi.fn(),
-      onBlur: vi.fn(),
-    };
+  it("ignores order changes while inactive", () => {
+    createRuntime();
+    sideMenuService.addMenuItem.mockClear();
 
-    const feature = new SideMenuFeature(
-      definition,
-      lifecycle,
-      sideMenuService as unknown as SideMenuService,
-      appBus,
-      applicationConfigurationPort,
-      keybindService as unknown as KeybindService,
-      destroyRef,
-    );
+    configSubject.next({ feature: { workspace: { mode: "on", order: 9 } } });
+
+    expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
+  });
+
+  it("routes view events to the lifecycle and the action to open (only while active)", () => {
+    const lifecycle = { onOpen: vi.fn(), onClose: vi.fn(), onFocus: vi.fn(), onBlur: vi.fn() };
+    const runtime = createRuntime(definition, lifecycle);
 
     appBus.publish({ type: "SideMenuViewOpened", payload: { label: "Workspace" } });
     appBus.publish({ type: "SideMenuViewFocused", payload: { label: "Workspace" } });
     appBus.publish({ type: "SideMenuViewBlurred", payload: { label: "Workspace" } });
     appBus.publish({ type: "SideMenuViewClosed", payload: { label: "Workspace" } });
-
     expect(lifecycle.onOpen).toHaveBeenCalled();
     expect(lifecycle.onFocus).toHaveBeenCalled();
     expect(lifecycle.onBlur).toHaveBeenCalled();
     expect(lifecycle.onClose).toHaveBeenCalled();
 
+    // The action opens the panel only once the feature is on.
+    appBus.publish({
+      type: "ActionFired",
+      path: ["app", "action"],
+      payload: "open_workspace",
+    } as never);
+    expect(sideMenuService.open).not.toHaveBeenCalled();
+
+    runtime.activate();
     const actionEvent = { type: "ActionFired", path: ["app", "action"], payload: "open_workspace" };
-    appBus.publish(actionEvent);
+    appBus.publish(actionEvent as never);
     expect(sideMenuService.open).toHaveBeenCalledWith("Workspace");
     expect((actionEvent as { performed?: boolean }).performed).toBe(true);
 
-    feature.registerKeybindListener(["Enter"], vi.fn());
-    feature.unregisterKeybindListener();
-    feature.updateIcon("mdiRobot");
-    feature.close();
+    runtime.deactivate();
+    appBus.publish({
+      type: "ActionFired",
+      path: ["app", "action"],
+      payload: "open_workspace",
+    } as never);
+    expect(sideMenuService.open).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes the feature handle and tears down on destroy", () => {
+    const runtime = createRuntime();
+
+    runtime.registerKeybindListener(["Enter"], vi.fn());
+    runtime.unregisterKeybindListener();
+    runtime.updateIcon("mdiRobot");
+    runtime.close();
 
     expect(keybindService.registerListener).toHaveBeenCalledWith(
       "feature.workspace",
@@ -184,8 +184,13 @@ describe("SideMenuFeature", () => {
     expect(sideMenuService.updateIcon).toHaveBeenCalledWith("Workspace", "mdiRobot");
     expect(sideMenuService.close).toHaveBeenCalled();
 
+    runtime.activate();
     onDestroyHandler?.();
-    appBus.publish({ type: "ActionFired", path: ["app", "action"], payload: "open_workspace" });
-    expect(sideMenuService.open).toHaveBeenCalledTimes(1);
+    appBus.publish({
+      type: "ActionFired",
+      path: ["app", "action"],
+      payload: "open_workspace",
+    } as never);
+    expect(sideMenuService.open).not.toHaveBeenCalled();
   });
 });
