@@ -3,7 +3,6 @@ import { Command } from "@cogno/core/session/model/command.model";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { TauriPty } from "@cogno/platform/pty";
 import { isWslShellContext } from "@cogno/shared/domain";
 import {
   CommandRunner,
@@ -239,7 +238,7 @@ export class TerminalGatewayService extends TerminalGateway {
     let process: TerminalSnapshotContract["process"];
     if (options?.includeProcessSummary) {
       try {
-        const processTreeSnapshot = await TauriPty.getProcessTreeByTerminalId(terminalId);
+        const processTreeSnapshot = await terminalSessionEntry.host.getProcessTree();
         process = {
           processId: processTreeSnapshot.rootProcess.processId,
           name: processTreeSnapshot.rootProcess.name,

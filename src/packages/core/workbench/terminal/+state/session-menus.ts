@@ -159,6 +159,7 @@ export class SessionMenus {
         data: {
           terminalId,
           systemInfo: { state$: this.host.state$, commands$: this.host.model.commands$ },
+          getProcessTree: () => this.host.getProcessTree(),
         },
       },
     );

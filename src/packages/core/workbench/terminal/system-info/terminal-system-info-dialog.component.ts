@@ -12,7 +12,7 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { SessionState } from "@cogno/core/session/host/session-host";
 import { Command } from "@cogno/core/session/model/command.model";
-import { ProcessDetails, ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
+import { ProcessDetails, ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { ActionKeybindingPort, TerminalId } from "@cogno/shared/ports";
 import { DIALOG_DATA } from "@cogno/shared/ui";
 import { Observable } from "rxjs";
@@ -25,6 +25,8 @@ export type TerminalSystemInfoSource = {
 export type TerminalSystemInfoDialogData = {
   terminalId: TerminalId;
   systemInfo: TerminalSystemInfoSource;
+  /** A fresh, live process tree of the session on every call. */
+  getProcessTree: () => Promise<ProcessTreeSnapshot>;
 };
 
 type ProcessTreeNode = {
@@ -432,7 +434,7 @@ export class TerminalSystemInfoDialogComponent implements OnInit, OnDestroy {
       if (showLoading) {
         this.loading.set(true);
       }
-      const snapshot = await TauriPty.getProcessTreeByTerminalId(this.data.terminalId);
+      const snapshot = await this.data.getProcessTree();
       this.snapshot.set(snapshot);
     } catch (err) {
       ErrorReporter.reportException({

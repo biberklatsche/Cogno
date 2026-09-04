@@ -14,6 +14,7 @@ import { IPty, Pty } from "@cogno/core/terminal/pty";
 import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
+import { ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
 import {
   ShellLineEditorActionContract,
   ShellSessionCapabilitiesContract,
@@ -557,6 +558,18 @@ export class SessionHost {
     }
 
     return snapshot.slice(snapshot.length - maxChars);
+  }
+
+  /**
+   * The session's process tree, queried fresh on every call - it is a live
+   * view of what the shell is running now, never cached or reported as a fact.
+   */
+  getProcessTree(): Promise<ProcessTreeSnapshot> {
+    const terminalId = this.terminalId;
+    if (!terminalId) {
+      return Promise.reject(new Error("Session has no terminal id yet."));
+    }
+    return TauriPty.getProcessTreeByTerminalId(terminalId);
   }
 
   getLatestCommandOutputSnapshot(maxChars = 3000): string {

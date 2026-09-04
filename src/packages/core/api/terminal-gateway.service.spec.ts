@@ -5,7 +5,6 @@ import {
   type IdentifiedSessionFact,
   TerminalSessionRegistry,
 } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { TauriPty } from "@cogno/platform/pty";
 import { CommandRunner } from "@cogno/shared/ports";
 import { BehaviorSubject, firstValueFrom, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -40,6 +39,13 @@ describe("TerminalGatewayService", () => {
           runtime$: new BehaviorSubject({ status: "running" }),
           getRecentOutputSnapshot: vi.fn().mockReturnValue("recent output"),
           getLatestCommandOutputSnapshot: vi.fn().mockReturnValue("latest output"),
+          getProcessTree: vi.fn().mockResolvedValue({
+            rootProcess: {
+              processId: 42,
+              name: "bash",
+              currentWorkingDirectory: "/workspace",
+            },
+          } as never),
           state: {
             shellContext: { shellType: "Bash", backendOs: "linux" },
             cwd: "/workspace",
@@ -108,14 +114,6 @@ describe("TerminalGatewayService", () => {
   });
 
   it("captures focused terminal snapshots with optional process info", async () => {
-    vi.spyOn(TauriPty, "getProcessTreeByTerminalId").mockResolvedValue({
-      rootProcess: {
-        processId: 42,
-        name: "bash",
-        currentWorkingDirectory: "/workspace",
-      },
-    });
-
     await expect(
       service.captureFocusedSnapshot({
         includeProcessSummary: true,

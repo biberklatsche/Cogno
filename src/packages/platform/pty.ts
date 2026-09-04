@@ -319,12 +319,6 @@ export class PtyTransport {
 
 /** Process inspection of PTY sessions (not part of the transport port). */
 export const TauriPty = {
-  getProcessTreeByProcessId(processId: number) {
-    return invoke<ProcessTreeSnapshot>("pty_get_process_tree_by_pid", {
-      processId,
-    });
-  },
-
   getProcessTreeByTerminalId(terminalId: string) {
     return invoke<ProcessTreeSnapshot>("pty_get_process_tree_by_terminal_id", {
       terminalId,
