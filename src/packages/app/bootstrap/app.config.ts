@@ -14,7 +14,6 @@ import {
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
 import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
 import { NotificationChannelsFeatureSourceService } from "@cogno/app/app-host/notification-channels-feature-source.service";
-import { SideMenuActionNamesFeatureSourceService } from "@cogno/app/app-host/side-menu-action-names-feature-source.service";
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
@@ -31,7 +30,6 @@ import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runne
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
-import { SideMenuActionNamesSource } from "@cogno/core/workbench/actions/side-menu-action-names.source";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
 import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-definitions.token";
@@ -86,10 +84,6 @@ export const appConfig: ApplicationConfig = {
     {
       provide: NotificationChannelsSource,
       useExisting: NotificationChannelsFeatureSourceService,
-    },
-    {
-      provide: SideMenuActionNamesSource,
-      useExisting: SideMenuActionNamesFeatureSourceService,
     },
     { provide: Filesystem, useExisting: FilesystemHostService },
     { provide: additionalNotificationChannelsToken, useValue: [] },

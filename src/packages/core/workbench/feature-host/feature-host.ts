@@ -4,6 +4,7 @@ import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/da
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { FeatureDefinition } from "@cogno/shared/contributions";
 import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
@@ -43,6 +44,7 @@ export class FeatureHost {
     @Inject(FEATURE_DEFINITIONS)
     private readonly features: ReadonlyArray<FeatureDefinition<ActionName>>,
     private readonly databaseMigrationService: DatabaseMigrationService,
+    private readonly actionNameRegistry: ActionNameRegistry,
     private readonly sideMenuRegistrar: SideMenuFeatureRegistrar,
     private readonly suggestorRegistrar: SuggestorFeatureRegistrar,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
@@ -99,6 +101,12 @@ export class FeatureHost {
     PathFactory.registerDefinitions(shellDefinitions.map((shell) => shell.pathAdapter));
     this.databaseMigrationService.registerFeatureMigrations(
       this.features.flatMap((feature) => feature.migrations ?? []),
+    );
+    this.actionNameRegistry.register(
+      this.features.flatMap((feature) => [
+        ...(feature.sideMenu ?? []).map((definition) => definition.actionName),
+        ...(feature.actions ?? []).map((action) => action.actionName),
+      ]),
     );
   }
 

@@ -1,6 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { PathFactory } from "@cogno/core/session/exec/path.factory";
+import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
 import type { FeatureDefinition } from "@cogno/shared/contributions";
 import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
@@ -25,6 +26,7 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
   const databaseMigrationService = {
     registerFeatureMigrations,
   } as unknown as DatabaseMigrationService;
+  const actionNameRegistry = new ActionNameRegistry();
   const sideMenuRegistrar = {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -41,12 +43,13 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
   const host = new FeatureHost(
     features.map(feature),
     databaseMigrationService,
+    actionNameRegistry,
     sideMenuRegistrar,
     suggestorRegistrar,
     applicationConfigurationPort,
     destroyRef,
   );
-  return { host, registerFeatureMigrations };
+  return { host, registerFeatureMigrations, actionNameRegistry };
 }
 
 /** A settings extension whose only relevant part is which top-level paths it owns. */
@@ -77,6 +80,17 @@ describe("FeatureHost declaration phase", () => {
     expect(host.getDeclarationConflicts()).toEqual([]);
     expect(registerFeatureMigrations).toHaveBeenCalledWith([migration]);
     expect(registerDefinitions).toHaveBeenCalledTimes(1);
+  });
+
+  it("registers feature action names for the catalogue", () => {
+    const { actionNameRegistry } = makeHost([
+      { id: "a", sideMenu: [{ actionName: "open_a" }] as never },
+      { id: "b", actions: [{ actionName: "run_b" }] },
+    ]);
+
+    expect(actionNameRegistry.getActionNames()).toEqual(
+      expect.arrayContaining(["open_a", "run_b"]),
+    );
   });
 
   it("aborts on a duplicate feature id and registers nothing", () => {

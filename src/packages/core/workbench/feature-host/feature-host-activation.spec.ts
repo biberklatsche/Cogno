@@ -1,6 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { PathFactory } from "@cogno/core/session/exec/path.factory";
+import type { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
 import type { FeatureDefinition } from "@cogno/shared/contributions";
 import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
@@ -50,6 +51,10 @@ describe("FeatureHost activation", () => {
     const databaseMigrationService = {
       registerFeatureMigrations: vi.fn(),
     } as unknown as DatabaseMigrationService;
+    const actionNameRegistry = {
+      register: vi.fn(),
+      getActionNames: () => [],
+    } as unknown as ActionNameRegistry;
     const sideMenuRegistrar = { register, unregister } as unknown as SideMenuFeatureRegistrar;
     const suggestorRegistrar = {
       register: vi.fn(),
@@ -63,6 +68,7 @@ describe("FeatureHost activation", () => {
     return new FeatureHost(
       [sideMenuFeature("ai-chat", "feature.ai"), sideMenuFeature("git", "feature.git")],
       databaseMigrationService,
+      actionNameRegistry,
       sideMenuRegistrar,
       suggestorRegistrar,
       applicationConfigurationPort,
