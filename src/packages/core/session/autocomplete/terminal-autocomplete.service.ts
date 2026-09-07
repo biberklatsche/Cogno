@@ -290,7 +290,7 @@ export class TerminalAutocompleteService implements OnDestroy {
       return;
     }
 
-    const suggestors = this._suggestors.filter((s) => s.matches(context));
+    const suggestors = this._suggestors.filter((s) => this.suggestorMatches(s, context));
     if (suggestors.length === 0) {
       this.hide();
       return;
@@ -761,6 +761,19 @@ export class TerminalAutocompleteService implements OnDestroy {
       return await Promise.race([promise, timeoutPromise]);
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
+    }
+  }
+
+  /** A suggestor's `matches` must not take the panel down; a throw means "no match". */
+  private suggestorMatches(
+    suggestor: TerminalAutocompleteSuggestorContract,
+    context: QueryContext,
+  ): boolean {
+    try {
+      return suggestor.matches(context);
+    } catch (reason) {
+      this.notifySuggestorIssue(suggestor, reason, context);
+      return false;
     }
   }
 

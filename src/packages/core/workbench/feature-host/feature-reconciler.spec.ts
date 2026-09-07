@@ -20,6 +20,8 @@ function deferred<T = void>(): {
   return { promise, resolve, reject };
 }
 
+const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
 function harness(fakes: ReadonlyArray<FakeFeature>) {
   const features = fakes.map(
     (fake): FeatureDefinition<ActionName> => ({ mode: "on", target: "workbench", ...fake }),
@@ -153,5 +155,63 @@ describe("FeatureReconciler", () => {
 
     await reconciler.retry("a");
     expect(reconciler.stateOf("a").status).toBe("active");
+  });
+
+  describe("circuit breaker (rule 5)", () => {
+    it("degrades on a contribution failure and opens after three in a row", async () => {
+      const { reconciler } = harness([{ id: "a" }]);
+      await reconciler.reconcile();
+      expect(reconciler.stateOf("a").status).toBe("active");
+
+      reconciler.reportContributionFailure("a");
+      expect(reconciler.stateOf("a").status).toBe("degraded");
+
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionFailure("a");
+      await flush();
+      expect(reconciler.stateOf("a").status).toBe("failed");
+    });
+
+    it("resets the count on a success", async () => {
+      const { reconciler } = harness([{ id: "a" }]);
+      await reconciler.reconcile();
+
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionSuccess("a");
+      expect(reconciler.stateOf("a").status).toBe("active");
+
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionFailure("a");
+      await flush();
+      expect(reconciler.stateOf("a").status).toBe("degraded");
+    });
+
+    it("trips only the failing feature (others keep running)", async () => {
+      const { reconciler } = harness([{ id: "a" }, { id: "b" }]);
+      await reconciler.reconcile();
+
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionFailure("a");
+      await flush();
+
+      expect(reconciler.stateOf("a").status).toBe("failed");
+      expect(reconciler.stateOf("b").status).toBe("active");
+    });
+
+    it("comes back on retry after the breaker opened", async () => {
+      const { reconciler } = harness([{ id: "a" }]);
+      await reconciler.reconcile();
+
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionFailure("a");
+      reconciler.reportContributionFailure("a");
+      await flush();
+      expect(reconciler.stateOf("a").status).toBe("failed");
+
+      await reconciler.retry("a");
+      expect(reconciler.stateOf("a").status).toBe("active");
+    });
   });
 });

@@ -3,11 +3,21 @@ import { FeatureDefinition } from "@cogno/shared/contributions";
 import { FeatureModeContract } from "@cogno/shared/domain";
 
 /**
- * A feature's runtime status (ARCHITECTURE.md 6.1). `degraded` (a panel that
- * threw) and its circuit breaker arrive with the isolation in step 22c; the
- * transitions here are activation, deactivation and failure.
+ * A feature's runtime status (ARCHITECTURE.md 6.1). `degraded` is a live state
+ * (a contribution threw but the feature is still registered); a contribution
+ * that throws three times in a row opens the feature's circuit breaker and it
+ * goes through deactivation to `failed`, left only by retry.
  */
-export type FeatureRuntimeStatus = "inactive" | "activating" | "active" | "deactivating" | "failed";
+export type FeatureRuntimeStatus =
+  | "inactive"
+  | "activating"
+  | "active"
+  | "deactivating"
+  | "degraded"
+  | "failed";
+
+/** Consecutive failures of one contribution that open a feature's breaker (rule 5). */
+const CONTRIBUTION_FAILURE_LIMIT = 3;
 
 export interface FeatureRuntimeState {
   readonly id: string;
@@ -40,6 +50,7 @@ export class FeatureReconciler {
   private readonly status = new Map<string, FeatureRuntimeStatus>();
   private readonly reason = new Map<string, string | undefined>();
   private readonly inFlight = new Set<string>();
+  private readonly consecutiveFailures = new Map<string, number>();
   private running?: Promise<void>;
   private rerunRequested = false;
 
@@ -86,13 +97,59 @@ export class FeatureReconciler {
     return this.running;
   }
 
-  /** Retry a failed feature: back to inactive, then reconcile (rule 6). */
+  /** Retry a failed or degraded feature (rule 6): reset it, then reconcile. */
   retry(featureId: string): Promise<void> {
-    if (this.status.get(featureId) === "failed") {
+    this.consecutiveFailures.delete(featureId);
+    const status = this.status.get(featureId);
+    if (status === "failed") {
       this.status.set(featureId, "inactive");
+      this.reason.delete(featureId);
+    } else if (status === "degraded") {
+      this.status.set(featureId, "active");
       this.reason.delete(featureId);
     }
     return this.reconcile();
+  }
+
+  /**
+   * A contribution of `featureId` threw (rule 5). While the feature is running,
+   * it goes `degraded`; three failures in a row open the breaker and the feature
+   * is deactivated and left `failed`. A success resets the count.
+   */
+  reportContributionFailure(featureId: string): void {
+    const status = this.status.get(featureId);
+    if ((status !== "active" && status !== "degraded") || this.inFlight.has(featureId)) {
+      return;
+    }
+    const failures = (this.consecutiveFailures.get(featureId) ?? 0) + 1;
+    if (failures >= CONTRIBUTION_FAILURE_LIMIT) {
+      this.consecutiveFailures.delete(featureId);
+      void this.tripBreaker(featureId);
+      return;
+    }
+    this.consecutiveFailures.set(featureId, failures);
+    this.status.set(featureId, "degraded");
+  }
+
+  /** A contribution of `featureId` worked: clear the breaker count and un-degrade. */
+  reportContributionSuccess(featureId: string): void {
+    this.consecutiveFailures.delete(featureId);
+    if (this.status.get(featureId) === "degraded") {
+      this.status.set(featureId, "active");
+      this.reason.delete(featureId);
+    }
+  }
+
+  /** The breaker opened: deactivate the feature (rule 3), then leave it failed. */
+  private async tripBreaker(featureId: string): Promise<void> {
+    const feature = this.byId.get(featureId);
+    if (!feature) {
+      return;
+    }
+    await this.deactivate(feature, "failed");
+    this.reason.set(featureId, "a contribution failed repeatedly");
+    // A failed requirement takes its dependents down (rule 4).
+    void this.reconcile();
   }
 
   private async runReconcile(): Promise<void> {
@@ -106,10 +163,11 @@ export class FeatureReconciler {
         }
         const status = this.status.get(feature.id) ?? "inactive";
         const wanted = this.effectiveDesired(feature.id, new Set());
+        const isRunning = status === "active" || status === "degraded";
         if (wanted === "on" && status === "inactive" && this.requiresActive(feature)) {
           operations.push(this.activate(feature));
           progressed = true;
-        } else if (status === "active" && wanted === "off" && this.dependentsInactive(feature)) {
+        } else if (isRunning && wanted === "off" && this.dependentsInactive(feature)) {
           operations.push(this.deactivate(feature));
           progressed = true;
         }
@@ -130,6 +188,7 @@ export class FeatureReconciler {
       this.registrar.register(feature);
       await feature.activate?.();
       this.status.set(feature.id, "active");
+      this.consecutiveFailures.delete(feature.id);
     } catch (error) {
       this.registrar.unregister(feature);
       this.status.set(feature.id, "failed");
@@ -140,8 +199,14 @@ export class FeatureReconciler {
     }
   }
 
-  /** Rule 3: deactivate() first (contributions still there), then unregister; always ends inactive. */
-  private async deactivate(feature: FeatureDefinition<ActionName>): Promise<void> {
+  /**
+   * Rule 3: deactivate() first (contributions still there), then unregister.
+   * Ends `inactive`, or `failed` when the breaker opened it (rule 5).
+   */
+  private async deactivate(
+    feature: FeatureDefinition<ActionName>,
+    finalStatus: "inactive" | "failed" = "inactive",
+  ): Promise<void> {
     this.inFlight.add(feature.id);
     this.status.set(feature.id, "deactivating");
     try {
@@ -150,7 +215,7 @@ export class FeatureReconciler {
       this.reportError(feature.id, error);
     } finally {
       this.registrar.unregister(feature);
-      this.status.set(feature.id, "inactive");
+      this.status.set(feature.id, finalStatus);
       this.inFlight.delete(feature.id);
     }
   }

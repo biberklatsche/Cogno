@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
 import {
@@ -43,10 +44,30 @@ export class NotificationDispatchService {
       if (!this.isNotificationChannelEnabled(notificationChannel, notificationPayload.channels)) {
         continue;
       }
+      // Isolate each channel: one that throws or hangs is skipped for this
+      // notification, the others still run (ARCHITECTURE.md 6.1).
+      await this.dispatchToChannel(notificationChannel, notificationPayload);
+    }
+  }
 
-      await notificationChannel.dispatch({
-        notification: notificationPayload,
-        settings: this.getNotificationChannelSettings(notificationChannel.id),
+  private async dispatchToChannel(
+    notificationChannel: NotificationChannelContract,
+    notificationPayload: NotificationPayload,
+  ): Promise<void> {
+    try {
+      await withTimeout(
+        notificationChannel.dispatch({
+          notification: notificationPayload,
+          settings: this.getNotificationChannelSettings(notificationChannel.id),
+        }),
+        NOTIFICATION_CHANNEL_TIMEOUT_MS,
+      );
+    } catch (error) {
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "NotificationDispatchService",
+        context: { operation: "dispatch", channelId: notificationChannel.id },
       });
     }
   }
@@ -144,6 +165,30 @@ type NotificationPayload = {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** A channel gets this long to dispatch before it is considered stuck. */
+const NOTIFICATION_CHANNEL_TIMEOUT_MS = 5_000;
+
+/** Resolve `value`, but reject if it has not settled within `timeoutMs`. */
+async function withTimeout(value: Promise<void> | void, timeoutMs: number): Promise<void> {
+  if (!(value instanceof Promise)) {
+    return;
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Channel did not respond within ${timeoutMs}ms.`)),
+      timeoutMs,
+    );
+  });
+  try {
+    await Promise.race([value, timeout]);
+  } finally {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+    }
+  }
 }
 
 function isNotificationReplyChannel(

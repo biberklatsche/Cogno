@@ -81,6 +81,27 @@ describe("NotificationDispatchService", () => {
     );
   });
 
+  it("isolates a throwing channel so the others still receive the notification", async () => {
+    const throwingDispatch = vi.fn(() => {
+      throw new Error("channel boom");
+    });
+    const workingDispatch = vi.fn();
+
+    createService([
+      createNotificationChannel({ id: "app", dispatch: throwingDispatch }),
+      createNotificationChannel({ id: "reply-channel", dispatch: workingDispatch }),
+    ]);
+    appBus.publish({
+      path: ["notification"],
+      type: "Notification",
+      payload: { header: "Build completed" },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(throwingDispatch).toHaveBeenCalledTimes(1);
+    expect(workingDispatch).toHaveBeenCalledTimes(1);
+  });
+
   it("starts and stops reply channels with the dispatch service lifecycle", () => {
     const notificationReplyChannel = createReplyNotificationChannel({
       id: "reply-channel",
