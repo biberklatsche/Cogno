@@ -11,9 +11,9 @@ import { SideMenuFeatureRuntime } from "./side-menu-feature-runtime";
 
 /**
  * The side-menu contribution as the reconciler sees it: activating a feature
- * shows its side-menu entries, deactivating hides them. Each entry's runtime is
- * built once (its lifecycle, view listeners and panel outlive on/off cycles)
- * and reused, mirroring how the side menu behaved before the feature-host.
+ * builds and shows its side-menu entries, deactivating disposes them. One
+ * runtime per activation - nothing outlives the feature being off - and every
+ * live runtime is disposed when the app shuts down.
  */
 @Injectable({ providedIn: "root" })
 export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
@@ -25,31 +25,36 @@ export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
     private readonly bus: AppBus,
     private readonly keybinds: KeybindService,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
-    private readonly destroyRef: DestroyRef,
-  ) {}
+    destroyRef: DestroyRef,
+  ) {
+    destroyRef.onDestroy(() => {
+      for (const featureId of [...this.runtimesByFeatureId.keys()]) {
+        this.disposeRuntimes(featureId);
+      }
+    });
+  }
 
   register(feature: FeatureDefinition<ActionName>): void {
-    for (const runtime of this.runtimesFor(feature)) {
-      runtime.activate();
+    if (this.runtimesByFeatureId.has(feature.id)) {
+      return;
     }
+    const runtimes = (feature.sideMenu ?? []).map((definition) => {
+      const runtime = this.createRuntime(definition as SideMenuFeatureDefinition);
+      runtime.activate();
+      return runtime;
+    });
+    this.runtimesByFeatureId.set(feature.id, runtimes);
   }
 
   unregister(feature: FeatureDefinition<ActionName>): void {
-    for (const runtime of this.runtimesByFeatureId.get(feature.id) ?? []) {
-      runtime.deactivate();
-    }
+    this.disposeRuntimes(feature.id);
   }
 
-  private runtimesFor(feature: FeatureDefinition<ActionName>): SideMenuFeatureRuntime[] {
-    const existing = this.runtimesByFeatureId.get(feature.id);
-    if (existing) {
-      return existing;
+  private disposeRuntimes(featureId: string): void {
+    for (const runtime of this.runtimesByFeatureId.get(featureId) ?? []) {
+      runtime.dispose();
     }
-    const runtimes = (feature.sideMenu ?? []).map((definition) =>
-      this.createRuntime(definition as SideMenuFeatureDefinition),
-    );
-    this.runtimesByFeatureId.set(feature.id, runtimes);
-    return runtimes;
+    this.runtimesByFeatureId.delete(featureId);
   }
 
   private createRuntime(definition: SideMenuFeatureDefinition): SideMenuFeatureRuntime {
@@ -60,7 +65,6 @@ export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
       this.bus,
       this.keybinds,
       this.applicationConfigurationPort,
-      this.destroyRef,
     );
   }
 }

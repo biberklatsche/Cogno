@@ -1,4 +1,4 @@
-import type { DestroyRef, Injector } from "@angular/core";
+import type { Injector } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import type { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
@@ -27,8 +27,6 @@ describe("SideMenuFeatureRuntime", () => {
     registerListener: ReturnType<typeof vi.fn>;
     unregisterListener: ReturnType<typeof vi.fn>;
   };
-  let destroyRef: DestroyRef;
-  let onDestroyHandler: (() => void) | undefined;
 
   const definition: SideMenuFeatureDefinition = {
     id: "workspace",
@@ -40,13 +38,10 @@ describe("SideMenuFeatureRuntime", () => {
     targetComponent: DummyComponent,
   };
 
-  function createRuntime(
-    config: SideMenuFeatureDefinition = definition,
-    lifecycle: Record<string, unknown> = {},
-  ): SideMenuFeatureRuntime {
+  function createRuntime(lifecycle: Record<string, unknown> = {}): SideMenuFeatureRuntime {
     injector = { get: vi.fn() } as unknown as Injector;
     const withLifecycle: SideMenuFeatureDefinition = {
-      ...config,
+      ...definition,
       createLifecycle: () => lifecycle,
     };
     return new SideMenuFeatureRuntime(
@@ -56,7 +51,6 @@ describe("SideMenuFeatureRuntime", () => {
       appBus,
       keybindService as unknown as KeybindService,
       applicationConfigurationPort,
-      destroyRef,
     );
   }
 
@@ -81,16 +75,11 @@ describe("SideMenuFeatureRuntime", () => {
       registerListener: vi.fn(),
       unregisterListener: vi.fn(),
     };
-    destroyRef = {
-      onDestroy: vi.fn((handler: () => void) => {
-        onDestroyHandler = handler;
-      }),
-    } as unknown as DestroyRef;
   });
 
-  it("adds the entry on activate and removes it on deactivate", () => {
+  it("adds the entry on activate and removes it on dispose", () => {
     const lifecycle = { onModeChange: vi.fn() };
-    const runtime = createRuntime(definition, lifecycle);
+    const runtime = createRuntime(lifecycle);
 
     runtime.activate();
     expect(lifecycle.onModeChange).toHaveBeenCalledWith("on");
@@ -98,14 +87,13 @@ describe("SideMenuFeatureRuntime", () => {
       expect.objectContaining({ label: "Workspace", hidden: false, order: 1 }),
     );
 
-    runtime.deactivate();
+    runtime.dispose();
     expect(lifecycle.onModeChange).toHaveBeenCalledWith("off");
     expect(sideMenuService.removeMenuItem).toHaveBeenCalledWith("Workspace");
   });
 
-  it("follows a config order override while active and falls back to the default", () => {
+  it("follows a config order override and falls back to the default", () => {
     const runtime = createRuntime();
-
     runtime.activate();
     expect(sideMenuService.addMenuItem).toHaveBeenLastCalledWith(
       expect.objectContaining({ order: 1 }),
@@ -122,18 +110,10 @@ describe("SideMenuFeatureRuntime", () => {
     );
   });
 
-  it("ignores order changes while inactive", () => {
-    createRuntime();
-    sideMenuService.addMenuItem.mockClear();
-
-    configSubject.next({ feature: { workspace: { mode: "on", order: 9 } } });
-
-    expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
-  });
-
-  it("routes view events to the lifecycle and the action to open (only while active)", () => {
+  it("routes view events to the lifecycle and the action to open", () => {
     const lifecycle = { onOpen: vi.fn(), onClose: vi.fn(), onFocus: vi.fn(), onBlur: vi.fn() };
-    const runtime = createRuntime(definition, lifecycle);
+    const runtime = createRuntime(lifecycle);
+    runtime.activate();
 
     appBus.publish({ type: "SideMenuViewOpened", payload: { label: "Workspace" } });
     appBus.publish({ type: "SideMenuViewFocused", payload: { label: "Workspace" } });
@@ -144,31 +124,15 @@ describe("SideMenuFeatureRuntime", () => {
     expect(lifecycle.onBlur).toHaveBeenCalled();
     expect(lifecycle.onClose).toHaveBeenCalled();
 
-    // The action opens the panel only once the feature is on.
-    appBus.publish({
-      type: "ActionFired",
-      path: ["app", "action"],
-      payload: "open_workspace",
-    } as never);
-    expect(sideMenuService.open).not.toHaveBeenCalled();
-
-    runtime.activate();
     const actionEvent = { type: "ActionFired", path: ["app", "action"], payload: "open_workspace" };
     appBus.publish(actionEvent as never);
     expect(sideMenuService.open).toHaveBeenCalledWith("Workspace");
     expect((actionEvent as { performed?: boolean }).performed).toBe(true);
-
-    runtime.deactivate();
-    appBus.publish({
-      type: "ActionFired",
-      path: ["app", "action"],
-      payload: "open_workspace",
-    } as never);
-    expect(sideMenuService.open).toHaveBeenCalledTimes(1);
   });
 
-  it("exposes the feature handle and tears down on destroy", () => {
+  it("exposes the feature handle", () => {
     const runtime = createRuntime();
+    runtime.activate();
 
     runtime.registerKeybindListener(["Enter"], vi.fn());
     runtime.unregisterKeybindListener();
@@ -183,14 +147,26 @@ describe("SideMenuFeatureRuntime", () => {
     expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
     expect(sideMenuService.updateIcon).toHaveBeenCalledWith("Workspace", "mdiRobot");
     expect(sideMenuService.close).toHaveBeenCalled();
+  });
 
+  it("leaves nothing subscribed after dispose (leak check)", () => {
+    const lifecycle = { onOpen: vi.fn() };
+    const runtime = createRuntime(lifecycle);
     runtime.activate();
-    onDestroyHandler?.();
+    runtime.dispose();
+
+    // View events, the open action and the order override are all detached.
+    appBus.publish({ type: "SideMenuViewOpened", payload: { label: "Workspace" } });
     appBus.publish({
       type: "ActionFired",
       path: ["app", "action"],
       payload: "open_workspace",
     } as never);
+    sideMenuService.addMenuItem.mockClear();
+    configSubject.next({ feature: { workspace: { mode: "on", order: 9 } } });
+
+    expect(lifecycle.onOpen).not.toHaveBeenCalled();
     expect(sideMenuService.open).not.toHaveBeenCalled();
+    expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
   });
 });

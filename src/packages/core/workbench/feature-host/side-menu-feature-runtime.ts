@@ -1,4 +1,4 @@
-import { DestroyRef, Injector, Type } from "@angular/core";
+import { Injector, Type } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import {
@@ -15,18 +15,19 @@ import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 
 /**
- * One side-menu entry as the feature-host drives it. The feature-host decides
- * whether it is on (activate/deactivate); this owns everything that entry needs
- * while it exists - the menu item, its lazily loaded panel, the open keybinding,
- * the view lifecycle hooks and the config-driven order override. What it no
- * longer does is read `mode`: that is the reconciler's job now (step 22b).
+ * One side-menu entry for as long as its feature is on. The feature-host builds
+ * it when the feature activates and disposes it when the feature deactivates -
+ * one runtime per activation, so nothing (menu item, keybinding, view listeners,
+ * the config-order subscription) outlives the feature being off (ARCHITECTURE.md
+ * 6.1). It owns the menu item, its lazily loaded panel, the open keybinding, the
+ * view lifecycle hooks and the live `feature.<id>.order` override.
  */
 export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Icon> {
   private menuItem: SideMenuItem;
   private readonly lifecycle: SideMenuFeatureLifecycleContract;
   private keybindSubscription?: Subscription;
   private readonly subscriptions = new Subscription();
-  private active = false;
+  private disposed = false;
 
   constructor(
     private readonly config: SideMenuFeatureDefinition,
@@ -35,7 +36,6 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
     private readonly bus: AppBus,
     private readonly keybinds: KeybindService,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
-    destroyRef: DestroyRef,
   ) {
     const isLazy =
       typeof config.targetComponent === "function" && !config.targetComponent.prototype;
@@ -60,25 +60,24 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
     this.lifecycle = config.createLifecycle?.(injector, this) ?? {};
     this.setupSideMenuListeners();
     this.setupOrderListener();
-
-    destroyRef.onDestroy(() => this.destroy());
   }
 
-  /** The feature is on: show the entry, honour the keybinding, tell the lifecycle. */
+  /** Show the entry, honour the keybinding, tell the lifecycle the feature is on. */
   activate(): void {
-    this.active = true;
     this.lifecycle.onModeChange?.("on");
     this.menuItem = { ...this.menuItem, order: this.resolveOrder() };
     this.sideMenuService.addMenuItem({ ...this.menuItem, hidden: false });
     this.addKeybindHandler();
   }
 
-  /** The feature is off: tell the lifecycle, drop the keybinding and the entry. */
-  deactivate(): void {
-    this.active = false;
+  /** Tear the entry down completely: lifecycle off, keybinding, item, subscriptions. */
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
     this.lifecycle.onModeChange?.("off");
     this.removeKeybindHandler();
     this.sideMenuService.removeMenuItem(this.menuItem.label);
+    this.subscriptions.unsubscribe();
   }
 
   registerKeybindListener(keys: string[], handler: (evt: KeyboardEvent) => void): void {
@@ -120,11 +119,10 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
     );
   }
 
-  /** Live order override: while the entry is shown, follow `feature.<id>.order`. */
+  /** Live order override: follow `feature.<id>.order` while the entry is shown. */
   private setupOrderListener(): void {
     this.subscriptions.add(
       this.applicationConfigurationPort.configuration$.subscribe(() => {
-        if (!this.active) return;
         const order = this.resolveOrder();
         if (order === this.menuItem.order) return;
         this.menuItem = { ...this.menuItem, order };
@@ -166,10 +164,5 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
   private removeKeybindHandler(): void {
     this.keybindSubscription?.unsubscribe();
     this.keybindSubscription = undefined;
-  }
-
-  private destroy(): void {
-    this.subscriptions.unsubscribe();
-    this.removeKeybindHandler();
   }
 }
