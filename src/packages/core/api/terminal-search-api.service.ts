@@ -12,11 +12,17 @@ import {
   TerminalSearchRevealRequestContract,
   TerminalSearchTerminalIdContract,
 } from "@cogno/shared/domain";
-import { TerminalSearchHostPortContract } from "@cogno/shared/ports";
 import { filter, map, Observable } from "rxjs";
+import { TerminalSearchApi } from "./terminal-search-api";
 
+/**
+ * The API's terminal-search wiring: it turns the session's search facts into
+ * streams and the feature's requests into the terminal bus messages the input
+ * dispatcher acts on. This is the workbench-facing half that used to live in
+ * app-host; the feature now sees only `core/api`.
+ */
 @Injectable({ providedIn: "root" })
-export class TerminalSearchHostPortAdapterService implements TerminalSearchHostPortContract {
+export class TerminalSearchApiService extends TerminalSearchApi {
   readonly terminalSearchResult$: Observable<TerminalSearchResultContract>;
   readonly terminalSearchColorConfig$: Observable<TerminalSearchColorConfigContract>;
   readonly terminalSearchPanelRequest$: Observable<TerminalSearchPanelRequestContract>;
@@ -27,6 +33,7 @@ export class TerminalSearchHostPortAdapterService implements TerminalSearchHostP
     private readonly configService: ConfigService,
     sessionRegistry: TerminalSessionRegistry,
   ) {
+    super();
     this.terminalSearchResult$ = sessionRegistry.facts$.pipe(
       filter(({ fact }) => fact.type === "searchResult"),
       map(

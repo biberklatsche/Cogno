@@ -8,7 +8,7 @@ import { aiChatFeature } from "@cogno/features/side-menu/ai/ai-chat.feature-defi
 import { codingAgentsFeature } from "@cogno/features/side-menu/coding-agents/coding-agents.feature-definition";
 import { commandPaletteFeature } from "@cogno/features/side-menu/command-palette/command-palette.feature-definition";
 import { notificationFeature } from "@cogno/features/side-menu/notification/notification.feature-definition";
-import { terminalSearchFeature } from "@cogno/features/side-menu/terminal-search/terminal-search.feature-definition";
+import { terminalSearchFeature } from "@cogno/features/terminal-search";
 import { FeatureDefinition } from "@cogno/shared/contributions";
 
 /**

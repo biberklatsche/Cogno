@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AiProviderDetectionService } from "../../ai/ai-provider-detection.service";
 import { AiChatSideMenuLifecycle } from "./ai-chat-side-menu.lifecycle";
 
-vi.mock("../focus-side-menu-autofocus-element", () => ({
+vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", () => ({
   focusSideMenuAutofocusElement: vi.fn(),
 }));
 

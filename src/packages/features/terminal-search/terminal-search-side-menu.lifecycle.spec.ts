@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TerminalSearchService } from "./terminal-search.service";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
 
-vi.mock("../focus-side-menu-autofocus-element", () => ({
+vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", () => ({
   focusSideMenuAutofocusElement: vi.fn(),
 }));
 

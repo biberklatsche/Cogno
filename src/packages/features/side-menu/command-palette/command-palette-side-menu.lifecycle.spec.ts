@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommandEntry, CommandPaletteService } from "./command-palette.service";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";
 
-vi.mock("../focus-side-menu-autofocus-element", () => ({
+vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", () => ({
   focusSideMenuAutofocusElement: vi.fn(),
 }));
 

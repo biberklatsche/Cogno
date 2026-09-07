@@ -1,13 +1,13 @@
+import type { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
 import type {
   TerminalSearchColorConfigContract,
   TerminalSearchPanelRequestContract,
   TerminalSearchResultContract,
 } from "@cogno/shared/domain";
-import type { TerminalSearchHostPortContract } from "@cogno/shared/ports";
 import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../../__test__/destroy-ref";
+import { getDestroyRef } from "../../__test__/destroy-ref";
 import { TerminalSearchService } from "./terminal-search.service";
 
 describe("TerminalSearchService", () => {
@@ -33,7 +33,7 @@ describe("TerminalSearchService", () => {
     requestSearchMock = vi.fn();
     requestRevealMock = vi.fn();
 
-    const terminalSearchHostPort = {
+    const terminalSearchApi = {
       terminalSearchResult$: terminalSearchResultSubject.asObservable(),
       terminalSearchColorConfig$: terminalSearchColorConfigSubject.asObservable(),
       terminalSearchPanelRequest$: terminalSearchPanelRequestSubject.asObservable(),
@@ -41,9 +41,9 @@ describe("TerminalSearchService", () => {
       requestSearch: requestSearchMock,
       requestSearchDecorationClear: vi.fn(),
       requestReveal: requestRevealMock,
-    } as TerminalSearchHostPortContract;
+    } as unknown as TerminalSearchApi;
 
-    terminalSearchService = new TerminalSearchService(terminalSearchHostPort, getDestroyRef());
+    terminalSearchService = new TerminalSearchService(terminalSearchApi, getDestroyRef());
   });
 
   afterEach(() => {

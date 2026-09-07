@@ -1,12 +1,12 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
 import {
   SelectionDirection,
   TerminalSearchLineResultContract,
   TextSearchState,
   TextSearchUseCase,
 } from "@cogno/shared/domain";
-import { TerminalSearchHostPort } from "@cogno/shared/ports";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
@@ -55,10 +55,10 @@ export class TerminalSearchService {
   );
 
   constructor(
-    private readonly terminalSearchHostPort: TerminalSearchHostPort,
+    private readonly terminalSearchApi: TerminalSearchApi,
     private readonly destroyRef: DestroyRef,
   ) {
-    this.terminalSearchHostPort.terminalSearchResult$
+    this.terminalSearchApi.terminalSearchResult$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((terminalSearchResult) => {
         this.applySearchState(
@@ -66,7 +66,7 @@ export class TerminalSearchService {
         );
       });
 
-    this.terminalSearchHostPort.terminalSearchColorConfig$
+    this.terminalSearchApi.terminalSearchColorConfig$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((terminalSearchColorConfig) => {
         this.updateSearchColors(
@@ -75,7 +75,7 @@ export class TerminalSearchService {
         );
       });
 
-    this.terminalSearchHostPort.terminalSearchPanelRequest$
+    this.terminalSearchApi.terminalSearchPanelRequest$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((terminalSearchPanelPayload) => {
         this.applySearchState(
@@ -133,7 +133,7 @@ export class TerminalSearchService {
       return;
     }
 
-    this.terminalSearchHostPort.requestReveal(revealPayload);
+    this.terminalSearchApi.requestReveal(revealPayload);
   }
 
   revealSelectedSearchResult(): boolean {
@@ -202,8 +202,7 @@ export class TerminalSearchService {
 
   private searchInActiveTerminal(cursorBufferLine: number | undefined): void {
     const activeTerminalId =
-      this.searchStateSignal().activeTerminalId ??
-      this.terminalSearchHostPort.getFocusedTerminalId();
+      this.searchStateSignal().activeTerminalId ?? this.terminalSearchApi.getFocusedTerminalId();
     this.applySearchState(
       TextSearchUseCase.setActiveCollectionId(this.searchStateSignal(), activeTerminalId),
     );
@@ -221,11 +220,11 @@ export class TerminalSearchService {
       return;
     }
 
-    this.terminalSearchHostPort.requestSearch(terminalSearchRequest);
+    this.terminalSearchApi.requestSearch(terminalSearchRequest);
   }
 
   private clearDecorationsInAllTerminals(): void {
-    this.terminalSearchHostPort.requestSearchDecorationClear();
+    this.terminalSearchApi.requestSearchDecorationClear();
   }
 
   private updateSearchColors(matchBackgroundColor?: string, matchBorderColor?: string): void {

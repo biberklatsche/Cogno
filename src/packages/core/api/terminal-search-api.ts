@@ -1,4 +1,4 @@
-import type {
+import {
   TerminalSearchColorConfigContract,
   TerminalSearchPanelRequestContract,
   TerminalSearchRequestContract,
@@ -8,17 +8,13 @@ import type {
 } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 
-export interface TerminalSearchHostPortContract {
-  readonly terminalSearchResult$: Observable<TerminalSearchResultContract>;
-  readonly terminalSearchColorConfig$: Observable<TerminalSearchColorConfigContract>;
-  readonly terminalSearchPanelRequest$: Observable<TerminalSearchPanelRequestContract>;
-  getFocusedTerminalId(): TerminalSearchTerminalIdContract | undefined;
-  requestSearch(terminalSearchRequest: TerminalSearchRequestContract): void;
-  requestSearchDecorationClear(): void;
-  requestReveal(terminalSearchRevealRequest: TerminalSearchRevealRequestContract): void;
-}
-
-export abstract class TerminalSearchHostPort implements TerminalSearchHostPortContract {
+/**
+ * How the terminal-search feature reaches the terminal it searches: result and
+ * panel-request streams to observe, and search/reveal requests to send. The API
+ * owns the wiring to focus, the session facts and the config; the feature only
+ * talks search (ARCHITECTURE.md 3).
+ */
+export abstract class TerminalSearchApi {
   abstract readonly terminalSearchResult$: Observable<TerminalSearchResultContract>;
   abstract readonly terminalSearchColorConfig$: Observable<TerminalSearchColorConfigContract>;
   abstract readonly terminalSearchPanelRequest$: Observable<TerminalSearchPanelRequestContract>;

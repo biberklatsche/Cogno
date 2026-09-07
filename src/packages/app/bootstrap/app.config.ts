@@ -13,13 +13,14 @@ import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.
 import { TerminalAnimationAdapterService } from "@cogno/app/app-host/terminal-animation.adapter.service";
 import { TerminalMonitorAdapterService } from "@cogno/app/app-host/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/app/app-host/terminal-navigator.adapter.service";
-import { TerminalSearchHostPortAdapterService } from "@cogno/app/app-host/terminal-search-host-port.adapter.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
+import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
+import { TerminalSearchApiService } from "@cogno/core/api/terminal-search-api.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
@@ -66,7 +67,6 @@ import {
   TerminalAnimationPort,
   TerminalGateway,
   TerminalNavigator,
-  TerminalSearchHostPort,
 } from "@cogno/shared/ports";
 import { TerminalIpcAdapterService } from "../app-host/terminal-ipc.adapter.service";
 import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
@@ -99,7 +99,7 @@ export const appConfig: ApplicationConfig = {
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     { provide: TerminalGateway, useExisting: TerminalGatewayService },
     { provide: SessionApi, useExisting: TerminalGatewayService },
-    { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
+    { provide: TerminalSearchApi, useExisting: TerminalSearchApiService },
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
@@ -136,7 +136,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(SideMenuStatePersistenceService);
         injector.get(ActionCatalogAdapterService);
         injector.get(ActionKeybindingPortAdapterService);
-        injector.get(TerminalSearchHostPortAdapterService);
+        injector.get(TerminalSearchApiService);
         injector.get(WorkspaceHostService);
         injector.get(WorkspaceShortcutActionService);
         injector.get(AiProviderDetectionService);

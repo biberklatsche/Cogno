@@ -3,7 +3,7 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/shared/contributions";
-import { focusSideMenuAutofocusElement } from "../focus-side-menu-autofocus-element";
+import { focusSideMenuAutofocusElement } from "@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element";
 import { TerminalSearchService } from "./terminal-search.service";
 
 @Injectable({ providedIn: "root" })
