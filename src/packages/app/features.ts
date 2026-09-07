@@ -3,10 +3,10 @@ import { sideMenuUiStateFeature } from "@cogno/core/workbench/side-menu/ui-state
 import { workspaceFeature } from "@cogno/core/workbench/workspace/workspace.feature-definition";
 import { autocompleteFeature } from "@cogno/features/autocomplete/autocomplete.feature";
 import { featureSettingsFeature } from "@cogno/features/feature-settings-extension";
+import { gitFeature } from "@cogno/features/git";
 import { aiChatFeature } from "@cogno/features/side-menu/ai/ai-chat.feature-definition";
 import { codingAgentsFeature } from "@cogno/features/side-menu/coding-agents/coding-agents.feature-definition";
 import { commandPaletteFeature } from "@cogno/features/side-menu/command-palette/command-palette.feature-definition";
-import { gitFeature } from "@cogno/features/side-menu/git/git.feature-definition";
 import { notificationFeature } from "@cogno/features/side-menu/notification/notification.feature-definition";
 import { terminalSearchFeature } from "@cogno/features/side-menu/terminal-search/terminal-search.feature-definition";
 import { FeatureDefinition } from "@cogno/shared/contributions";
