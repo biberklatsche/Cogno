@@ -18,6 +18,7 @@ import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-repo
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
+import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
@@ -97,6 +98,7 @@ export const appConfig: ApplicationConfig = {
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     { provide: TerminalGateway, useExisting: TerminalGatewayService },
+    { provide: SessionApi, useExisting: TerminalGatewayService },
     { provide: TerminalSearchHostPort, useExisting: TerminalSearchHostPortAdapterService },
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },

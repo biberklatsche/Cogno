@@ -1,3 +1,4 @@
+import type { BoundSession } from "@cogno/core/api/session-api";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
@@ -5,7 +6,7 @@ import {
   type IdentifiedSessionFact,
   TerminalSessionRegistry,
 } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { CommandRunner } from "@cogno/shared/ports";
+import { CommandRunner, Filesystem } from "@cogno/shared/ports";
 import { BehaviorSubject, firstValueFrom, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,6 +18,7 @@ describe("TerminalGatewayService", () => {
   >;
   let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has" | "facts$">;
   let commandRunner: Pick<CommandRunner, "run">;
+  let filesystem: Pick<Filesystem, "readTextFile" | "normalizePath">;
   let sessionFacts: Subject<IdentifiedSessionFact>;
   let service: TerminalGatewayService;
 
@@ -69,11 +71,16 @@ describe("TerminalGatewayService", () => {
         },
       }),
     };
+    filesystem = {
+      readTextFile: vi.fn().mockResolvedValue("file contents"),
+      normalizePath: vi.fn((path: string) => path),
+    };
     service = new TerminalGatewayService(
       appBus,
       gridListService as GridListService,
       terminalSessionRegistry as TerminalSessionRegistry,
       commandRunner as CommandRunner,
+      filesystem as Filesystem,
     );
   });
 
@@ -310,6 +317,66 @@ describe("TerminalGatewayService", () => {
 
       expect(runResult).toEqual({ status: "rejected", reason: "unbound" });
       expect(commandRunner.run).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("bound session handle", () => {
+    function currentBoundSession(): BoundSession {
+      let latest: BoundSession = { status: "unbound" };
+      const subscription = service.boundSession$.subscribe((boundSession) => {
+        latest = boundSession;
+      });
+      subscription.unsubscribe();
+      return latest;
+    }
+
+    beforeEach(() => {
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue({
+        host: {
+          runtime$: new BehaviorSubject({ status: "running" }),
+          model: { sessionToken: "token-1" },
+          state: {
+            shellContext: { shellType: "Bash", backendOs: "linux" },
+            cwd: "/workspace",
+            input: { text: "" },
+            isCommandRunning: false,
+            contextRevision: 7,
+            isContextKnown: true,
+          },
+        },
+      } as unknown as ReturnType<TerminalSessionRegistry["get"]>);
+      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "t1" });
+    });
+
+    it("exposes a live handle on the active binding", () => {
+      const boundSession = currentBoundSession();
+      expect(boundSession.status).toBe("active");
+      if (boundSession.status !== "active") return;
+      expect(boundSession.session.identity).toEqual({ terminalId: "t1", sessionToken: "token-1" });
+      expect(boundSession.session.contextRevision).toBe(7);
+      expect(boundSession.session.cwd).toBe("/workspace");
+    });
+
+    it("runs through the guarded run and reads files in the session context", async () => {
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      const runResult = await boundSession.session.run({
+        executable: "git",
+        args: ["status"],
+        contextRevision: 7,
+      });
+      expect(runResult).toEqual({
+        status: "ran",
+        result: { stdout: "ok", stderr: "", exitCode: 0 },
+      });
+
+      const contents = await boundSession.session.fs.readTextFile("/workspace/a.txt");
+      expect(contents).toBe("file contents");
+      expect(filesystem.readTextFile).toHaveBeenCalledWith("/workspace/a.txt", {
+        shellType: "Bash",
+        backendOs: "linux",
+      });
     });
   });
 });

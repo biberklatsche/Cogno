@@ -21,7 +21,7 @@ function setup() {
     runtimeOf,
   );
   const emissions: BoundSession[] = [];
-  tracker.boundSession$.subscribe((boundSession) => emissions.push(boundSession));
+  tracker.binding$.subscribe((boundSession) => emissions.push(boundSession));
   return { focus$, runtimeOf, tracker, emissions };
 }
 
@@ -30,14 +30,14 @@ describe("BoundSessionTracker", () => {
     const { focus$, tracker } = setup();
 
     focus$.next("t1");
-    expect(tracker.boundSession).toEqual({
+    expect(tracker.binding).toEqual({
       status: "active",
       identity: { terminalId: "t1", sessionToken: "token-t1" },
       mode: "following",
     });
 
     focus$.next("t2");
-    expect(tracker.boundSession).toMatchObject({
+    expect(tracker.binding).toMatchObject({
       status: "active",
       identity: { terminalId: "t2" },
     });
@@ -49,7 +49,7 @@ describe("BoundSessionTracker", () => {
 
     focus$.next(undefined);
 
-    expect(tracker.boundSession).toEqual({ status: "unbound" });
+    expect(tracker.binding).toEqual({ status: "unbound" });
   });
 
   it("stays on the held session across focus changes, then release re-follows", () => {
@@ -57,17 +57,17 @@ describe("BoundSessionTracker", () => {
     focus$.next("t1");
 
     tracker.hold();
-    expect(tracker.boundSession).toMatchObject({ status: "active", mode: "held" });
+    expect(tracker.binding).toMatchObject({ status: "active", mode: "held" });
 
     focus$.next("t2");
-    expect(tracker.boundSession).toMatchObject({
+    expect(tracker.binding).toMatchObject({
       status: "active",
       identity: { terminalId: "t1" },
       mode: "held",
     });
 
     tracker.release();
-    expect(tracker.boundSession).toMatchObject({
+    expect(tracker.binding).toMatchObject({
       status: "active",
       identity: { terminalId: "t2" },
       mode: "following",
@@ -79,20 +79,20 @@ describe("BoundSessionTracker", () => {
     focus$.next("t1");
 
     runtimeOf("t1").next("closing");
-    expect(tracker.boundSession).toEqual({
+    expect(tracker.binding).toEqual({
       status: "closing",
       identity: { terminalId: "t1", sessionToken: "token-t1" },
     });
 
     runtimeOf("t1").next("closed");
-    expect(tracker.boundSession).toEqual({
+    expect(tracker.binding).toEqual({
       status: "closed",
       identity: { terminalId: "t1", sessionToken: "token-t1" },
     });
 
     // the closed pane's removal focuses another session
     focus$.next("t2");
-    expect(tracker.boundSession).toMatchObject({
+    expect(tracker.binding).toMatchObject({
       status: "active",
       identity: { terminalId: "t2" },
     });
@@ -112,14 +112,14 @@ describe("BoundSessionTracker", () => {
     tracker.hold();
 
     runtimeOf("t1").next("closing");
-    expect(tracker.boundSession).toMatchObject({ status: "closing" });
+    expect(tracker.binding).toMatchObject({ status: "closing" });
 
     runtimeOf("t1").next("closed");
-    expect(tracker.boundSession).toEqual({ status: "unbound" });
+    expect(tracker.binding).toEqual({ status: "unbound" });
 
     // following resumes: the next focus binds again
     focus$.next("t2");
-    expect(tracker.boundSession).toMatchObject({
+    expect(tracker.binding).toMatchObject({
       status: "active",
       identity: { terminalId: "t2" },
       mode: "following",

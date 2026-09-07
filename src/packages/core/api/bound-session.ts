@@ -16,13 +16,15 @@ export interface BoundSessionIdentity {
 export type BoundSessionMode = "following" | "held";
 
 /**
- * The session the API is currently bound to, as one of four states:
+ * Which session the API is bound to, as one of four states (the tracker's
+ * internal view). The public API turns the `active` state into a
+ * `BoundSession` handle with `run`/`fs` (see session-api.ts).
  * - unbound: nothing to act on (no focus, or a held session ended).
  * - active: bound and writable.
  * - closing / closed: the bound session is ending; a following binding moves
  *   on to the next focus, a held one falls back to unbound.
  */
-export type BoundSession =
+export type SessionBinding =
   | { readonly status: "unbound" }
   | {
       readonly status: "active";

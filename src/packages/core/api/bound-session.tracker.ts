@@ -1,7 +1,7 @@
 import { TerminalId } from "@cogno/shared/ports";
 import { BehaviorSubject, Observable, Subscription } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
-import { BoundSession, BoundSessionIdentity, BoundSessionMode } from "./bound-session";
+import { BoundSessionIdentity, BoundSessionMode, SessionBinding } from "./bound-session";
 
 /** The bound session's lifecycle, reduced to what the binding cares about. */
 export type BoundRuntimeStatus = "active" | "closing" | "closed";
@@ -16,14 +16,14 @@ export type BoundRuntimeStatus = "active" | "closing" | "closed";
  * can be tested without Angular or a live registry.
  */
 export class BoundSessionTracker {
-  private readonly state = new BehaviorSubject<BoundSession>({ status: "unbound" });
+  private readonly state = new BehaviorSubject<SessionBinding>({ status: "unbound" });
   private mode: BoundSessionMode = "following";
   private lastFocus: TerminalId | undefined;
   private boundId: TerminalId | undefined;
   private runtimeSubscription?: Subscription;
 
-  readonly boundSession$: Observable<BoundSession> = this.state.pipe(
-    distinctUntilChanged(boundSessionsEqual),
+  readonly binding$: Observable<SessionBinding> = this.state.pipe(
+    distinctUntilChanged(sessionBindingsEqual),
   );
 
   constructor(
@@ -39,7 +39,7 @@ export class BoundSessionTracker {
     });
   }
 
-  get boundSession(): BoundSession {
+  get binding(): SessionBinding {
     return this.state.value;
   }
 
@@ -96,7 +96,7 @@ export class BoundSessionTracker {
   }
 }
 
-function boundSessionsEqual(left: BoundSession, right: BoundSession): boolean {
+function sessionBindingsEqual(left: SessionBinding, right: SessionBinding): boolean {
   if (left.status !== right.status) {
     return false;
   }

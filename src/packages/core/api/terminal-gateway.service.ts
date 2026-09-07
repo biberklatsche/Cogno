@@ -6,6 +6,7 @@ import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/t
 import { isWslShellContext } from "@cogno/shared/domain";
 import {
   CommandRunner,
+  Filesystem,
   TerminalBusyStateChangeContract,
   TerminalGateway,
   TerminalId,
@@ -15,12 +16,13 @@ import {
   TerminalSnapshotOptionsContract,
 } from "@cogno/shared/ports";
 import { filter, map, Observable } from "rxjs";
-import { BoundSession, BoundSessionIdentity } from "./bound-session";
+import { BoundSessionIdentity, BoundSessionMode, SessionBinding } from "./bound-session";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
+import { BoundSession, BoundSessionHandle, SessionApi } from "./session-api";
 import { SessionRunRequest, SessionRunResult } from "./session-run";
 
 @Injectable({ providedIn: "root" })
-export class TerminalGatewayService extends TerminalGateway {
+export class TerminalGatewayService extends TerminalGateway implements SessionApi {
   readonly focusedTerminalId$: Observable<TerminalId | undefined>;
   readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
   readonly cwdChanges$: Observable<void>;
@@ -34,6 +36,7 @@ export class TerminalGatewayService extends TerminalGateway {
     private readonly gridListService: GridListService,
     private readonly terminalSessionRegistry: TerminalSessionRegistry,
     private readonly commandRunner: CommandRunner,
+    private readonly filesystem: Filesystem,
   ) {
     super();
     this.focusedTerminalId$ = this.appBus
@@ -55,7 +58,69 @@ export class TerminalGatewayService extends TerminalGateway {
       (terminalId) => this.identityOf(terminalId),
       (terminalId) => this.runtimeOf(terminalId),
     );
-    this.boundSession$ = this.boundSessionTracker.boundSession$;
+    this.boundSession$ = this.boundSessionTracker.binding$.pipe(
+      map((binding) => this.toBoundSession(binding)),
+    );
+  }
+
+  /** Turn the tracker's binding into the public bound session (a handle when active). */
+  private toBoundSession(binding: SessionBinding): BoundSession {
+    if (binding.status === "active") {
+      return { status: "active", session: this.createHandle(binding.identity, binding.mode) };
+    }
+    return binding;
+  }
+
+  /** A live handle bound to `identity`: run/fs recheck it before they act. */
+  private createHandle(identity: BoundSessionIdentity, mode: BoundSessionMode): BoundSessionHandle {
+    const stateOf = () => this.terminalSessionRegistry.get(identity.terminalId)?.host.state;
+    return {
+      identity,
+      mode,
+      get cwd() {
+        return stateOf()?.cwd ?? "";
+      },
+      get shellContext() {
+        const state = stateOf();
+        if (!state) {
+          throw new Error("Bound session has ended.");
+        }
+        return state.shellContext;
+      },
+      get contextRevision() {
+        return stateOf()?.contextRevision ?? -1;
+      },
+      run: (request) => this.run(request, identity),
+      fs: {
+        readTextFile: (path) => this.readBoundTextFile(path, identity),
+        normalizePath: (path) => this.normalizeBoundPath(path, identity),
+      },
+    };
+  }
+
+  /** Read a file in the bound session's live context; rejects like `run`. */
+  private async readBoundTextFile(path: string, identity: BoundSessionIdentity): Promise<string> {
+    const shellContext = this.boundShellContextOrThrow(identity);
+    return this.filesystem.readTextFile(path, shellContext);
+  }
+
+  private normalizeBoundPath(path: string, identity: BoundSessionIdentity): string {
+    const shellContext = this.boundShellContextOrThrow(identity);
+    return this.filesystem.normalizePath(path, shellContext);
+  }
+
+  private boundShellContextOrThrow(identity: BoundSessionIdentity) {
+    if (!this.boundSessionMatches(identity)) {
+      throw new Error("The bound session is no longer active.");
+    }
+    const state = this.terminalSessionRegistry.get(identity.terminalId)?.host.state;
+    if (!state) {
+      throw new Error("The bound session is no longer active.");
+    }
+    if (!state.isContextKnown) {
+      throw new Error("The bound session's context is not available (remote or unknown shell).");
+    }
+    return state.shellContext;
   }
 
   /** Pin the binding to the current session across focus changes. */
@@ -149,7 +214,7 @@ export class TerminalGatewayService extends TerminalGateway {
 
   /** True only if `identity` is the session bound right now, still live. */
   private boundSessionMatches(identity: BoundSessionIdentity): boolean {
-    const bound = this.boundSessionTracker.boundSession;
+    const bound = this.boundSessionTracker.binding;
     if (bound.status !== "active") {
       return false;
     }
