@@ -9,7 +9,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Hash } from "@cogno/shared/support";
 
 /**
- * MIGRATION-TEMP(step 22): what the configuration used to do besides reading
+ * MIGRATION-TEMP(step 28): what the configuration used to do besides reading
  * its file, minus the parts already re-homed.
  *
  * `ConfigService` now only reads, validates and watches (ARCHITECTURE.md 2.1:
@@ -20,10 +20,11 @@ import { Hash } from "@cogno/shared/support";
  *   core/workbench/actions/config-actions.handler.ts),
  * - the notifications go to the notification dispatch, which subscribes to
  *   `diagnostics$` directly, in step 20,
- * - the shell bootstrap goes to `core/session/shells`, and the settings
- *   extensions come from the feature host in step 22.
+ * - the shell bootstrap goes to `core/session/shells`, and the config-load
+ *   orchestration and diagnostics notifications find their own layer.
  *
- * When the last of those has moved, this file goes away.
+ * That is a config/shell relocation, not feature-host work: it happens when
+ * `app/` is dissolved (step 28), and this file goes away with it.
  */
 @Injectable({ providedIn: "root" })
 export class ConfigBootstrapAdapter {

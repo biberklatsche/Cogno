@@ -110,7 +110,7 @@ export const appConfig: ApplicationConfig = {
       // The feature-host's declaration phase: whole-set validation, then the
       // migrations and path adapters that must exist before the config is read.
       inject(FeatureHost);
-      // MIGRATION-TEMP(step 22): keeps the config's notifications and shell
+      // MIGRATION-TEMP(step 28): keeps the config's notifications and shell
       // bootstrap alive until they reach their own layer. Must exist before
       // WindowService publishes InitConfigCommand.
       inject(ConfigBootstrapAdapter);
