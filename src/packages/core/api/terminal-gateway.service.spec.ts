@@ -120,6 +120,27 @@ describe("TerminalGatewayService", () => {
     });
   });
 
+  it("follows focus reported as a session fact (a plain terminal click)", async () => {
+    const focusedTerminalIdPromise = firstValueFrom(service.focusedTerminalId$);
+
+    sessionFacts.next({
+      terminalId: "clicked-terminal",
+      fact: { type: "focusChanged", focused: true },
+    });
+
+    await expect(focusedTerminalIdPromise).resolves.toBe("clicked-terminal");
+  });
+
+  it("binds to a session focused by a click (fact), not just FocusTerminal", async () => {
+    sessionFacts.next({ terminalId: "t1", fact: { type: "focusChanged", focused: true } });
+
+    const boundSession = await firstValueFrom(service.boundSession$);
+    expect(boundSession.status).toBe("active");
+    if (boundSession.status === "active") {
+      expect(boundSession.session.identity.terminalId).toBe("t1");
+    }
+  });
+
   it("captures focused terminal snapshots with optional process info", async () => {
     await expect(
       service.captureFocusedSnapshot({

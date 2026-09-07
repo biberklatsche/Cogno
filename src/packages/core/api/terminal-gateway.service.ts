@@ -15,7 +15,7 @@ import {
   TerminalSnapshotContract,
   TerminalSnapshotOptionsContract,
 } from "@cogno/shared/ports";
-import { filter, map, Observable } from "rxjs";
+import { distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
 import { BoundSessionIdentity, BoundSessionMode, SessionBinding } from "./bound-session";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 import { BoundSession, BoundSessionHandle, SessionApi } from "./session-api";
@@ -39,9 +39,19 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
     private readonly filesystem: Filesystem,
   ) {
     super();
-    this.focusedTerminalId$ = this.appBus
+    // Focus reaches the binding two ways: an explicit FocusTerminal command
+    // (keybind, palette, reveal) and the focusChanged fact a terminal reports
+    // when it actually takes focus - a plain click only does the latter, so the
+    // binding must follow both or it lags behind clicks.
+    const focusFromCommand$: Observable<TerminalId | undefined> = this.appBus
       .onType$("FocusTerminal", { path: ["app", "terminal"] })
       .pipe(map((event) => event.payload));
+    const focusFromFact$: Observable<TerminalId | undefined> =
+      this.terminalSessionRegistry.facts$.pipe(
+        filter(({ fact }) => fact.type === "focusChanged" && fact.focused),
+        map(({ terminalId }) => terminalId),
+      );
+    this.focusedTerminalId$ = merge(focusFromCommand$, focusFromFact$).pipe(distinctUntilChanged());
     this.busyStateChanges$ = this.terminalSessionRegistry.facts$.pipe(
       map(({ terminalId, fact }) =>
         fact.type === "busyChanged" ? { terminalId, isBusy: fact.isBusy } : undefined,
