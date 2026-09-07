@@ -932,8 +932,6 @@ export class GitSideComponent {
       return;
     }
 
-    const snapshot = status.shellContext;
-
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => resolve());
     });
@@ -944,7 +942,6 @@ export class GitSideComponent {
         isStaged,
         file.status === "D",
         status.gitRoot,
-        snapshot,
       );
       if (!this.isSelected(file, isStaged)) return;
       this.diffSignal.set(diff);

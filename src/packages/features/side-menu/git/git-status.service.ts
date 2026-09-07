@@ -1,8 +1,7 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ShellContextContract } from "@cogno/shared/domain";
-import { CommandRunner, NotificationCenterPort, TerminalGateway } from "@cogno/shared/ports";
-import { merge } from "rxjs";
+import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
+import { CommandRunnerResultContract, NotificationCenterPort } from "@cogno/shared/ports";
 
 export type GitFileStatus = "M" | "A" | "D" | "R" | "?";
 
@@ -15,13 +14,14 @@ export type GitFile = {
 export type GitStatus = {
   readonly gitRoot: string;
   readonly branch: string;
-  readonly shellContext: ShellContextContract;
   readonly staged: ReadonlyArray<GitFile>;
   readonly unstaged: ReadonlyArray<GitFile>;
   readonly untracked: ReadonlyArray<GitFile>;
 };
 
-export type GitError = "not_installed" | "no_repo" | "status_failed" | "no_commits";
+export type GitError = "not_installed" | "no_repo" | "status_failed" | "no_commits" | "unavailable";
+
+const GIT_TIMEOUT_MS = 5_000;
 
 @Injectable({ providedIn: "root" })
 export class GitStatusService {
@@ -34,28 +34,28 @@ export class GitStatusService {
   readonly loading = this.loadingSignal.asReadonly();
   readonly stagedCount = computed(() => this.gitStatusSignal()?.staged.length ?? 0);
 
+  private boundSession: BoundSessionHandle | null = null;
   private currentGitRoot: string | null = null;
-  private currentShellContext: ShellContextContract | null = null;
+  private active = false;
   private refreshContextInFlight = false;
   private refreshStatusInFlight = false;
   private refreshStatusPending = false;
 
   constructor(
-    private readonly terminalGateway: TerminalGateway,
-    private readonly commandRunner: CommandRunner,
+    sessionApi: SessionApi,
     private readonly notificationCenterPort: NotificationCenterPort,
     destroyRef: DestroyRef,
   ) {
-    merge(this.terminalGateway.focusedTerminalId$, this.terminalGateway.cwdChanges$)
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(() => {
-        if (this.active) void this.refreshContext();
-      });
+    sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
+      this.boundSession = boundSession.status === "active" ? boundSession.session : null;
+      if (this.active) void this.refreshContext();
+    });
+    sessionApi.cwdChanges$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      if (this.active) void this.refreshContext();
+    });
 
     destroyRef.onDestroy(() => this.stop());
   }
-
-  private active = false;
 
   start(): void {
     if (this.active) return;
@@ -72,15 +72,14 @@ export class GitStatusService {
   }
 
   async listFilesInDir(dirPath: string): Promise<GitFile[]> {
-    if (!this.currentGitRoot || !this.currentShellContext) return [];
-    const result = await this.commandRunner.run({
-      cwd: this.currentGitRoot,
-      shellContext: this.currentShellContext,
-      program: "git",
-      args: ["status", "--porcelain=v1", "-uall", "--", dirPath],
-      timeoutMs: 5_000,
-    });
-    if (result.exitCode !== 0) return [];
+    const session = this.boundSession;
+    if (!session || !this.currentGitRoot) return [];
+    const result = await this.runGit(
+      session,
+      ["status", "--porcelain=v1", "-uall", "--", dirPath],
+      GIT_TIMEOUT_MS,
+    );
+    if (!result || result.exitCode !== 0) return [];
     const { unstaged, untracked } = parseGitStatus(result.stdout);
     return [...unstaged, ...untracked];
   }
@@ -113,25 +112,44 @@ export class GitStatusService {
     if (this.refreshContextInFlight) return;
     this.refreshContextInFlight = true;
     try {
-      const snapshot = await this.terminalGateway.captureFocusedSnapshot();
-      if (!snapshot?.cwd || !snapshot.shellContext) {
-        this.gitStatusSignal.set(null);
-        this.gitErrorSignal.set(null);
+      const session = this.boundSession;
+      if (!session) {
+        this.clear();
+        return;
+      }
+      // `rev-parse --show-toplevel` runs in the session's own cwd to find the root.
+      const outcome = await session.run({
+        executable: "git",
+        args: ["rev-parse", "--show-toplevel"],
+        contextRevision: session.contextRevision,
+        timeoutMs: GIT_TIMEOUT_MS,
+      });
+      if (outcome.status === "rejected") {
         this.currentGitRoot = null;
-        this.currentShellContext = null;
-        return;
-      }
-
-      this.currentShellContext = snapshot.shellContext;
-      const result = await this.detectGitRoot(snapshot.cwd, snapshot.shellContext);
-      this.currentGitRoot = result.gitRoot;
-
-      if (!result.gitRoot) {
         this.gitStatusSignal.set(null);
-        this.gitErrorSignal.set(result.error);
+        // A remote/unknown session has no local git; a stale binding just retries.
+        this.gitErrorSignal.set(outcome.reason === "unknown-context" ? "unavailable" : null);
         return;
       }
 
+      const result = outcome.result;
+      if (result.exitCode !== 0) {
+        this.currentGitRoot = null;
+        this.gitStatusSignal.set(null);
+        // exit 128 = "not a git repository"; anything else means git isn't usable.
+        this.gitErrorSignal.set(result.exitCode === 128 ? "no_repo" : "not_installed");
+        return;
+      }
+
+      const root = result.stdout.trim();
+      if (!root) {
+        this.currentGitRoot = null;
+        this.gitStatusSignal.set(null);
+        this.gitErrorSignal.set("no_repo");
+        return;
+      }
+
+      this.currentGitRoot = root;
       this.gitErrorSignal.set(null);
       await this.refreshStatus();
     } finally {
@@ -157,32 +175,25 @@ export class GitStatusService {
   }
 
   private async doRefreshStatus(): Promise<void> {
-    if (!this.currentGitRoot || !this.currentShellContext) return;
+    const session = this.boundSession;
+    const gitRoot = this.currentGitRoot;
+    if (!session || !gitRoot) return;
     this.loadingSignal.set(true);
     try {
       const [statusResult, branchResult] = await Promise.all([
-        this.commandRunner.run({
-          cwd: this.currentGitRoot,
-          shellContext: this.currentShellContext,
-          program: "git",
-          args: ["status", "--porcelain=v1"],
-          timeoutMs: 5_000,
-        }),
-        this.commandRunner.run({
-          cwd: this.currentGitRoot,
-          shellContext: this.currentShellContext,
-          program: "git",
-          args: ["rev-parse", "--abbrev-ref", "HEAD"],
-          timeoutMs: 5_000,
-        }),
+        this.runGit(session, ["-C", gitRoot, "status", "--porcelain=v1"], GIT_TIMEOUT_MS),
+        this.runGit(session, ["-C", gitRoot, "rev-parse", "--abbrev-ref", "HEAD"], GIT_TIMEOUT_MS),
       ]);
+
+      // A rejection (focus moved, remote) leaves the last status; the next
+      // refresh triggered by the binding change resolves it.
+      if (!statusResult || !branchResult) return;
 
       if (statusResult.exitCode !== 0) {
         this.gitStatusSignal.set(null);
         this.gitErrorSignal.set("status_failed");
         return;
       }
-
       if (branchResult.exitCode !== 0) {
         this.gitStatusSignal.set(null);
         this.gitErrorSignal.set("no_commits");
@@ -190,38 +201,35 @@ export class GitStatusService {
       }
 
       this.gitErrorSignal.set(null);
-      const parsed = parseGitStatus(statusResult.stdout);
       this.gitStatusSignal.set({
-        gitRoot: this.currentGitRoot,
+        gitRoot,
         branch: branchResult.stdout.trim() || "HEAD",
-        shellContext: this.currentShellContext,
-        ...parsed,
+        ...parseGitStatus(statusResult.stdout),
       });
     } finally {
       this.loadingSignal.set(false);
     }
   }
 
-  private async detectGitRoot(
-    cwd: string,
-    shellContext: ShellContextContract,
-  ): Promise<{ gitRoot: string; error: null } | { gitRoot: null; error: GitError }> {
-    const result = await this.commandRunner.run({
-      cwd,
-      shellContext,
-      program: "git",
-      args: ["rev-parse", "--show-toplevel"],
-      timeoutMs: 5_000,
+  private clear(): void {
+    this.currentGitRoot = null;
+    this.gitStatusSignal.set(null);
+    this.gitErrorSignal.set(null);
+  }
+
+  /** Run `git` in the bound session; returns null when the session rejects it. */
+  private async runGit(
+    session: BoundSessionHandle,
+    args: ReadonlyArray<string>,
+    timeoutMs: number,
+  ): Promise<CommandRunnerResultContract | null> {
+    const outcome = await session.run({
+      executable: "git",
+      args: [...args],
+      contextRevision: session.contextRevision,
+      timeoutMs,
     });
-
-    if (result.exitCode === 0) {
-      const root = result.stdout.trim();
-      return root ? { gitRoot: root, error: null } : { gitRoot: null, error: "no_repo" };
-    }
-
-    // exit 128 = git's "not a git repository"; anything else means git itself isn't usable
-    const error: GitError = result.exitCode === 128 ? "no_repo" : "not_installed";
-    return { gitRoot: null, error };
+    return outcome.status === "ran" ? outcome.result : null;
   }
 
   private async runGitCommand(
@@ -233,15 +241,12 @@ export class GitStatusService {
       successBody?: (stdout: string) => string;
     } = {},
   ): Promise<void> {
-    if (!this.currentGitRoot || !this.currentShellContext) return;
+    const session = this.boundSession;
+    const gitRoot = this.currentGitRoot;
+    if (!session || !gitRoot) return;
     const { timeoutMs = 10_000, successHeader, successBody } = options;
-    const result = await this.commandRunner.run({
-      cwd: this.currentGitRoot,
-      shellContext: this.currentShellContext,
-      program: "git",
-      args,
-      timeoutMs,
-    });
+    const result = await this.runGit(session, ["-C", gitRoot, ...args], timeoutMs);
+    if (!result) return;
     if (result.exitCode !== 0) {
       this.notificationCenterPort.dispatch({
         header: errorHeader,

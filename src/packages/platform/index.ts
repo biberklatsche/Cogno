@@ -8,7 +8,6 @@ export * from "./command-runner";
 export * from "./database";
 export * from "./default-config";
 export * from "./fs";
-export * from "./git-blob-reader";
 export * from "./http-server";
 export * from "./keyboard-layout";
 export * from "./logger";

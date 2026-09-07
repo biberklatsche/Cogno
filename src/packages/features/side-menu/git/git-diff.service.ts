@@ -1,7 +1,6 @@
-import { Injectable } from "@angular/core";
-import { GitBlobReader } from "@cogno/platform";
-import { ShellContextContract } from "@cogno/shared/domain";
-import { Filesystem } from "@cogno/shared/ports";
+import { DestroyRef, Injectable } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 
 export type GitDiffContent = {
   readonly original: string;
@@ -11,39 +10,64 @@ export type GitDiffContent = {
 
 /** Truncate files larger than this to avoid passing huge strings to CodeMirror at all. */
 const TRUNCATE_THRESHOLD_BYTES = 500_000;
+const BLOB_TIMEOUT_MS = 10_000;
 
 @Injectable({ providedIn: "root" })
 export class GitDiffService {
-  constructor(
-    private readonly gitBlobReader: GitBlobReader,
-    private readonly filesystem: Filesystem,
-  ) {}
+  private boundSession: BoundSessionHandle | null = null;
+
+  constructor(sessionApi: SessionApi, destroyRef: DestroyRef) {
+    sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
+      this.boundSession = boundSession.status === "active" ? boundSession.session : null;
+    });
+  }
 
   async loadDiff(
     filePath: string,
     isStaged: boolean,
     isDeletedFile: boolean,
     gitRoot: string,
-    shellContext: ShellContextContract,
   ): Promise<GitDiffContent> {
     const language = detectGitDiffLanguage(filePath);
-    const absolutePath = this.filesystem.normalizePath(
-      this.buildAbsolutePath(gitRoot, filePath),
-      shellContext,
-    );
+    const session = this.boundSession;
+    if (!session) {
+      return { original: "", modified: "", language };
+    }
+    const absolutePath = session.fs.normalizePath(this.buildAbsolutePath(gitRoot, filePath));
 
-    // Always read HEAD as original. If the file is genuinely new (doesn't exist
-    // in HEAD), git cat-file returns nothing and readBlob resolves to "".
-    const original = await this.gitBlobReader.readBlob(gitRoot, `HEAD:${filePath}`);
+    // Always read HEAD as original. If the file is genuinely new (missing in
+    // HEAD), `git cat-file` fails and the blob read resolves to "".
+    const original = await this.readBlob(session, gitRoot, `HEAD:${filePath}`);
 
     let modified = "";
     if (!isDeletedFile) {
       modified = isStaged
-        ? await this.gitBlobReader.readBlob(gitRoot, `:0:${filePath}`)
-        : await this.filesystem.readTextFile(absolutePath, shellContext).catch(() => "");
+        ? await this.readBlob(session, gitRoot, `:0:${filePath}`)
+        : await session.fs.readTextFile(absolutePath).catch(() => "");
     }
 
     return { original: this.truncate(original), modified: this.truncate(modified), language };
+  }
+
+  /**
+   * Read a git object through the bound session, so it is correct in a WSL or
+   * remote context; empty string when the object does not exist or is rejected.
+   */
+  private async readBlob(
+    session: BoundSessionHandle,
+    gitRoot: string,
+    revision: string,
+  ): Promise<string> {
+    const outcome = await session.run({
+      executable: "git",
+      args: ["-C", gitRoot, "cat-file", "-p", revision],
+      contextRevision: session.contextRevision,
+      timeoutMs: BLOB_TIMEOUT_MS,
+    });
+    if (outcome.status !== "ran" || outcome.result.exitCode !== 0) {
+      return "";
+    }
+    return outcome.result.stdout;
   }
 
   private truncate(content: string): string {

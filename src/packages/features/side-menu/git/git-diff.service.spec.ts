@@ -1,34 +1,57 @@
-import { ShellContextContract } from "@cogno/shared/domain";
-import { Filesystem } from "@cogno/shared/ports";
+import type { DestroyRef } from "@angular/core";
+import type { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
+import type { SessionRunRequest, SessionRunResult } from "@cogno/core/api/session-run";
+import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { GitBlobReader } from "./git-blob-reader.port";
 import { GitDiffService } from "./git-diff.service";
 
 describe("GitDiffService", () => {
-  const shellContext: ShellContextContract = { backendOs: "windows", shellType: "Bash" };
-  let gitBlobReader: GitBlobReader;
-  let filesystem: Filesystem;
+  let run: ReturnType<typeof vi.fn>;
+  let readTextFile: ReturnType<typeof vi.fn>;
   let service: GitDiffService;
 
+  function ran(stdout: string): SessionRunResult {
+    return { status: "ran", result: { stdout, stderr: "", exitCode: 0 } };
+  }
+
   beforeEach(() => {
-    gitBlobReader = {
-      readBlob: vi.fn().mockResolvedValue("head content"),
-    };
-    filesystem = {
-      normalizePath: vi.fn((path: string) => `/normalized${path}`),
-      readTextFile: vi.fn().mockResolvedValue("working tree content"),
-    } as unknown as Filesystem;
-    service = new GitDiffService(gitBlobReader, filesystem);
+    run = vi.fn((request: SessionRunRequest) => {
+      const revision = request.args?.at(-1) ?? "";
+      if (revision.startsWith("HEAD:")) return Promise.resolve(ran("head content"));
+      if (revision.startsWith(":0:")) return Promise.resolve(ran("index content"));
+      return Promise.resolve(ran(""));
+    });
+    readTextFile = vi.fn().mockResolvedValue("working tree content");
+    const handle = {
+      identity: { terminalId: "t1", sessionToken: "token" },
+      mode: "following",
+      cwd: "/c/repo",
+      shellContext: { shellType: "Bash", backendOs: "windows" },
+      contextRevision: 1,
+      run,
+      fs: {
+        readTextFile,
+        normalizePath: (path: string) => `/normalized${path}`,
+      },
+    } as unknown as BoundSessionHandle;
+    const sessionApi: SessionApi = {
+      boundSession$: new BehaviorSubject({ status: "active", session: handle }),
+      cwdChanges$: new BehaviorSubject<void>(undefined),
+    } as unknown as SessionApi;
+    const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
+    service = new GitDiffService(sessionApi, destroyRef);
   });
 
-  it("normalizes the working tree path before loading unstaged content", async () => {
-    const diff = await service.loadDiff("src/file.ts", false, false, "/c/repo", shellContext);
+  it("reads HEAD via the session and the working tree via fs for unstaged content", async () => {
+    const diff = await service.loadDiff("src/file.ts", false, false, "/c/repo");
 
-    expect(filesystem.normalizePath).toHaveBeenCalledWith("/c/repo/src/file.ts", shellContext);
-    expect(filesystem.readTextFile).toHaveBeenCalledWith(
-      "/normalized/c/repo/src/file.ts",
-      shellContext,
+    expect(run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        executable: "git",
+        args: ["-C", "/c/repo", "cat-file", "-p", "HEAD:src/file.ts"],
+      }),
     );
+    expect(readTextFile).toHaveBeenCalledWith("/normalized/c/repo/src/file.ts");
     expect(diff).toEqual({
       original: "head content",
       modified: "working tree content",
@@ -36,16 +59,13 @@ describe("GitDiffService", () => {
     });
   });
 
-  it("loads staged content from the git index", async () => {
-    vi.mocked(gitBlobReader.readBlob)
-      .mockResolvedValueOnce("head content")
-      .mockResolvedValueOnce("index content");
+  it("reads staged content from the index and never touches the working tree", async () => {
+    const diff = await service.loadDiff("src/file.ts", true, false, "/c/repo");
 
-    const diff = await service.loadDiff("src/file.ts", true, false, "/c/repo", shellContext);
-
-    expect(filesystem.readTextFile).not.toHaveBeenCalled();
-    expect(gitBlobReader.readBlob).toHaveBeenNthCalledWith(1, "/c/repo", "HEAD:src/file.ts");
-    expect(gitBlobReader.readBlob).toHaveBeenNthCalledWith(2, "/c/repo", ":0:src/file.ts");
+    expect(readTextFile).not.toHaveBeenCalled();
+    expect(run).toHaveBeenCalledWith(
+      expect.objectContaining({ args: ["-C", "/c/repo", "cat-file", "-p", ":0:src/file.ts"] }),
+    );
     expect(diff.modified).toBe("index content");
   });
 });
