@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@angular/core";
+import { Inject, Injectable, Optional } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ConfigurationTransformer } from "@cogno/shared/contributions";
 import {
@@ -10,13 +10,18 @@ import { combineLatest, map, merge, Observable, of, startWith } from "rxjs";
 @Injectable({ providedIn: "root" })
 export class ApplicationConfigurationPortAdapterService extends ApplicationConfigurationPort {
   readonly configuration$: Observable<ApplicationConfigurationContract>;
+  private readonly transformers: readonly ConfigurationTransformer[];
 
   constructor(
     private readonly configService: ConfigService,
+    // No configuration transformers are registered today; optional so the empty
+    // multi-token does not fail injection.
+    @Optional()
     @Inject(ConfigurationTransformer)
-    private readonly transformers: readonly ConfigurationTransformer[],
+    transformers: readonly ConfigurationTransformer[] | null,
   ) {
     super();
+    this.transformers = transformers ?? [];
     const transformerChanges$ =
       this.transformers.length > 0
         ? merge(...this.transformers.map((t) => t.changes$)).pipe(startWith(undefined))

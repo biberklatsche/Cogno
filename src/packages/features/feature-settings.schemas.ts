@@ -1,5 +1,4 @@
 export {
-  FeatureAiSchema,
   FeatureCodingAgentsSchema,
   FeatureCommandPaletteSchema,
   FeatureGitSchema,

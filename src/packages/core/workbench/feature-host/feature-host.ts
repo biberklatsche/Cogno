@@ -32,7 +32,7 @@ import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
  * Its activation phase then reconciles each feature's status against the mode
  * the config wants and re-reconciles on every config change (hot-reload). The
  * mode is read through the feature's existing `configPath`, whose key is not
- * always the feature id (ai-chat -> feature.ai, and so on) - the transition
+ * always the feature id (coding-agents -> feature.coding_agents, and so on) - the transition
  * state keeps the old contribution form (step 22b).
  */
 @Injectable({ providedIn: "root" })

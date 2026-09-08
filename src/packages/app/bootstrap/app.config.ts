@@ -45,9 +45,6 @@ import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
-import { AiConfigurationTransformerService } from "@cogno/features/ai/ai-configuration-transformer.service";
-import { AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN } from "@cogno/features/ai/ai-detection.models";
-import { AiProviderDetectionService } from "@cogno/features/ai/ai-provider-detection.service";
 import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
 import {
   ConfirmDialogPort,
@@ -55,7 +52,6 @@ import {
   TerminalMonitorPort,
 } from "@cogno/features/coding-agent/ports";
 import { Logger } from "@cogno/platform/logger";
-import { ConfigurationTransformer } from "@cogno/shared/contributions";
 import {
   ActionCatalog,
   ActionDispatcher,
@@ -69,7 +65,6 @@ import {
   TerminalNavigator,
 } from "@cogno/shared/ports";
 import { TerminalIpcAdapterService } from "../app-host/terminal-ipc.adapter.service";
-import { aiDetectableProviderDefinitions } from "./ai-detectable-providers";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -83,15 +78,6 @@ export const appConfig: ApplicationConfig = {
     {
       provide: ApplicationConfigurationPort,
       useExisting: ApplicationConfigurationPortAdapterService,
-    },
-    {
-      provide: AI_DETECTABLE_PROVIDER_DEFINITIONS_TOKEN,
-      useValue: aiDetectableProviderDefinitions,
-    },
-    {
-      provide: ConfigurationTransformer,
-      useExisting: AiConfigurationTransformerService,
-      multi: true,
     },
     { provide: featuresToken, useValue: features },
     { provide: FEATURE_DEFINITIONS, useValue: features },
@@ -139,7 +125,6 @@ export const appConfig: ApplicationConfig = {
         injector.get(TerminalSearchApiService);
         injector.get(WorkspaceHostService);
         injector.get(WorkspaceShortcutActionService);
-        injector.get(AiProviderDetectionService);
         injector.get(CodingAgentStatusService);
         injector.get(CodingAgentStartupService);
         injector.get(AboutDialogAdapterService);

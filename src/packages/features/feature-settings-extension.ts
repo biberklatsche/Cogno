@@ -4,7 +4,6 @@ import {
 } from "@cogno/shared/contributions";
 import { z } from "zod";
 import {
-  FeatureAiSchema,
   FeatureCodingAgentsSchema,
   FeatureCommandPaletteSchema,
   FeatureGitSchema,
@@ -20,7 +19,6 @@ const featureSettingsSchemaShape = {
       notification_overview: FeatureNotificationOverviewSchema.optional(),
       command_palette: FeatureCommandPaletteSchema.optional(),
       search: FeatureSearchSchema.optional(),
-      ai: FeatureAiSchema.optional(),
       git: FeatureGitSchema.optional(),
       coding_agents: FeatureCodingAgentsSchema.optional(),
     })
@@ -30,14 +28,6 @@ const featureSettingsSchemaShape = {
 export const defaultFeatureSettingsExtension = {
   defaults: {
     feature: {
-      ai: {
-        mode: "on",
-        request: {
-          include_process_tree: false,
-          max_commands: 8,
-          max_output_chars: 4000,
-        },
-      },
       git: {
         mode: "on",
       },
@@ -52,7 +42,6 @@ export const defaultFeatureSettingsExtension = {
     { id: "feature.notification_overview", title: "Notification Overview", order: 200 },
     { id: "feature.command_palette", title: "Command Palette", order: 400 },
     { id: "feature.search", title: "Search", order: 700 },
-    { id: "feature.ai", title: "AI", order: 800 },
     { id: "feature.git", title: "Git", order: 900 },
     { id: "feature.coding_agents", title: "Coding Agents", order: 1000 },
   ],

@@ -71,7 +71,10 @@ describe("FeatureHost activation", () => {
     } as unknown as ApplicationConfigurationPort;
     const destroyRef = { onDestroy: vi.fn(() => () => {}) } as unknown as DestroyRef;
     return new FeatureHost(
-      [sideMenuFeature("ai-chat", "feature.ai"), sideMenuFeature("git", "feature.git")],
+      [
+        sideMenuFeature("coding-agents", "feature.coding_agents"),
+        sideMenuFeature("git", "feature.git"),
+      ],
       databaseMigrationService,
       actionNameRegistry,
       sideMenuRegistrar,
@@ -84,28 +87,32 @@ describe("FeatureHost activation", () => {
 
   it("reads the mode from the feature's configPath, not its id", async () => {
     const host = makeHost({
-      feature: { ai: { mode: "on" }, git: { mode: "off" } },
+      feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
     });
     await host.whenSettled();
 
-    expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "ai-chat" }));
+    expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
     expect(register).not.toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
-    expect(host.featureStates().find((state) => state.id === "ai-chat")?.status).toBe("active");
+    expect(host.featureStates().find((state) => state.id === "coding-agents")?.status).toBe(
+      "active",
+    );
   });
 
   it("activates and deactivates on config changes (hot-reload)", async () => {
     const host = makeHost({
-      feature: { ai: { mode: "on" }, git: { mode: "off" } },
+      feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
     });
     await host.whenSettled();
     register.mockClear();
 
-    configSubject.next({ feature: { ai: { mode: "off" }, git: { mode: "on" } } });
+    configSubject.next({ feature: { coding_agents: { mode: "off" }, git: { mode: "on" } } });
     await host.whenSettled();
 
     expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
-    expect(unregister).toHaveBeenCalledWith(expect.objectContaining({ id: "ai-chat" }));
+    expect(unregister).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
     expect(host.featureStates().find((state) => state.id === "git")?.status).toBe("active");
-    expect(host.featureStates().find((state) => state.id === "ai-chat")?.status).toBe("inactive");
+    expect(host.featureStates().find((state) => state.id === "coding-agents")?.status).toBe(
+      "inactive",
+    );
   });
 });

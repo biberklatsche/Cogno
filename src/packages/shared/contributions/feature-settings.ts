@@ -50,22 +50,8 @@ export const FeatureSearchSchema = z.object({
   order: featureOrderSchema,
 });
 
-const aiProviderTypeSchema = z.enum(["openai_compatible", "ollama_native"] as const);
-
-const aiFeatureModeSchema = featureModeSchema;
-
-const aiProviderSchema = z.object({
-  type: aiProviderTypeSchema,
-  base_url: z.string().optional(),
-  model: z.string().optional(),
-  api_key: z.string().optional(),
-  headers: z.record(z.string(), z.string()).optional(),
-  enabled: z.boolean().optional(),
-  auto_detected: z.boolean().optional(),
-});
-
 export const FeatureGitSchema = z.object({
-  mode: aiFeatureModeSchema.optional(),
+  mode: featureModeSchema.optional(),
   order: featureOrderSchema,
 });
 
@@ -97,26 +83,6 @@ export const FeatureCodingAgentsSchema = z.object({
           enabled: z.boolean().optional().describe("Notify when an agent reports an error."),
         })
         .optional(),
-    })
-    .optional(),
-});
-
-export const FeatureAiSchema = z.object({
-  mode: aiFeatureModeSchema.optional(),
-  order: featureOrderSchema,
-  active_provider: z.string().optional(),
-  resume_pattern: z
-    .string()
-    .optional()
-    .describe(
-      "Regex pattern (source only, no flags) to detect AI CLI resume commands in terminal output.",
-    ),
-  providers: z.record(z.string(), aiProviderSchema).optional(),
-  request: z
-    .object({
-      include_process_tree: z.boolean().optional(),
-      max_commands: z.number().int().min(0).optional(),
-      max_output_chars: z.number().int().min(0).optional(),
     })
     .optional(),
 });

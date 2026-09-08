@@ -286,7 +286,6 @@ describe("ConfigMapper", () => {
 
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
     // Stale keys are stripped, not applied — the bundled feature.*/notification.* defaults win instead.
-    expect(result.config.feature?.ai?.mode).toBe("off");
     expect(result.config.feature?.git?.mode).toBe("off");
     expect(result.config.notification?.exception?.handled?.enabled).toBe(false);
     expect(result.config.notification?.channel?.app?.enabled).toBe(true);
@@ -295,7 +294,7 @@ describe("ConfigMapper", () => {
   it("reads the legacy feature modes as on", () => {
     const text = `
       feature.git.mode=visible
-      feature.ai.mode=hidden
+      feature.coding_agents.mode=hidden
       feature.workspace.mode=off
     `;
     const result = ConfigMapper.fromStringToConfigWithDiagnostics(
@@ -306,7 +305,7 @@ describe("ConfigMapper", () => {
     );
 
     expect(result.config.feature?.git?.mode).toBe("on");
-    expect(result.config.feature?.ai?.mode).toBe("on");
+    expect(result.config.feature?.coding_agents?.mode).toBe("on");
     expect(result.config.feature?.workspace?.mode).toBe("off");
     expect(result.diagnostics.filter((d) => d.level === "error")).toHaveLength(0);
   });
