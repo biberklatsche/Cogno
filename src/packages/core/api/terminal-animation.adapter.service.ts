@@ -2,10 +2,10 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
-import { TerminalMonitorPort } from "@cogno/features/coding-agent/ports";
-import { AnimationSpec, TerminalAnimationPort } from "@cogno/shared/ports";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
+import { AnimationSpec, TerminalAnimationPort } from "./terminal-animation-port";
+import { TerminalMonitorPort } from "./terminal-monitor-port";
 
 @Injectable({ providedIn: "root" })
 export class TerminalAnimationAdapterService extends TerminalAnimationPort {

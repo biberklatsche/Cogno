@@ -2,13 +2,13 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import { TerminalId } from "@cogno/shared/ports";
+import { filter, map, Observable, Subject } from "rxjs";
 import {
   TerminalActivityEvent,
   TerminalCwdChangeEvent,
   TerminalMonitorPort,
-} from "@cogno/features/coding-agent/ports";
-import { TerminalId } from "@cogno/shared/ports";
-import { filter, map, Observable, Subject } from "rxjs";
+} from "./terminal-monitor-port";
 
 @Injectable({ providedIn: "root" })
 export class TerminalMonitorAdapterService extends TerminalMonitorPort {

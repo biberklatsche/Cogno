@@ -1,8 +1,8 @@
 import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { TerminalIpcPort } from "@cogno/features/coding-agent/ports";
 import { TerminalIpcMessage } from "@cogno/shared/domain";
 import { filter, map } from "rxjs/operators";
+import { TerminalIpcPort } from "./terminal-ipc-port";
 
 @Injectable({ providedIn: "root" })
 export class TerminalIpcAdapterService extends TerminalIpcPort {
