@@ -1,3 +1,6 @@
+// Stays in shared/: dual-consumed by core/workbench (cli-action,
+// workspace-shortcut) and features (command-palette). A port both the workbench
+// and features need cannot move to core/api (ARCHITECTURE.md 6, step 24f).
 import type {
   ActionContextContract,
   ActionDefinitionContract,

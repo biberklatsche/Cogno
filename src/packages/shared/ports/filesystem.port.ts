@@ -1,3 +1,6 @@
+// Stays in shared/: dual-consumed by core (api/session/workbench suggestor),
+// features (autocomplete) and shared/contributions. A contract this widely
+// shared cannot move to core/api (step 24f).
 import type {
   FilesystemEntryContract,
   FilesystemListOptionsContract,

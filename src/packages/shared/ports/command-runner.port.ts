@@ -1,3 +1,6 @@
+// Stays in shared/: dual-consumed by core (api/session/workbench suggestor) and
+// features (autocomplete suggestor providers). A contract both layers need
+// cannot move to core/api (step 24f).
 import { ShellContextContract } from "@cogno/shared/domain";
 
 export interface CommandRunnerRequestContract {
