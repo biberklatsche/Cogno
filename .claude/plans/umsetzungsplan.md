@@ -1084,10 +1084,12 @@ Teilcommits (granularer als „je Feature", ~8–10):
 - **24b** notification-overview: `NotificationCenterPort`(+Adapter) → `core/api`
   (repoint git + notification + coding-agent), Umzug
   `features/notification-overview/`.
-- **24c** ai: Terminal-Zugriff `TerminalGateway` → `SessionApi`/boundSession
-  (Write-Protection/Fokus wie git), side-menu-Shell → `features/ai/`.
-- **24d** coding-agents: `TerminalNavigator`/`TerminalAnimationPort`(+Adapter)
-  → `core/api`, Shell → `features/coding-agent/` (nutzt weiter shared
+- **24c** ai: **ENTFÄLLT — AI wurde komplett gelöscht** (Nutzerentscheidung,
+  2026-09; PoC, passte nicht auf boundSession). Damit muss `TerminalGateway`
+  NICHT nach core/api gesplittet werden.
+- **24d** coding-agents: Read-only-Fokus `TerminalGateway` →
+  `SessionApi`/boundSession (wie git), `TerminalNavigator`/`TerminalAnimationPort`
+  (+Adapter) → `core/api`, Shell → `features/coding-agent/` (nutzt weiter shared
   `NotificationChannelsPort`).
 - **24e** Feature-eigene Zod-Schemas; `feature-settings.schemas.ts`-Reexport
   und den statischen `Config`-Feature-Anteil löschen; die 2 core-Specs
