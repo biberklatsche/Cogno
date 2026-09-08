@@ -5,9 +5,9 @@ import { autocompleteFeature } from "@cogno/features/autocomplete/autocomplete.f
 import { commandPaletteFeature } from "@cogno/features/command-palette";
 import { featureSettingsFeature } from "@cogno/features/feature-settings-extension";
 import { gitFeature } from "@cogno/features/git";
+import { notificationFeature } from "@cogno/features/notification-overview";
 import { aiChatFeature } from "@cogno/features/side-menu/ai/ai-chat.feature-definition";
 import { codingAgentsFeature } from "@cogno/features/side-menu/coding-agents/coding-agents.feature-definition";
-import { notificationFeature } from "@cogno/features/side-menu/notification/notification.feature-definition";
 import { terminalSearchFeature } from "@cogno/features/terminal-search";
 import { FeatureDefinition } from "@cogno/shared/contributions";
 

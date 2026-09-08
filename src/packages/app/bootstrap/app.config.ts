@@ -17,6 +17,8 @@ import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-repo
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
+import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import { NotificationCenterPortAdapterService } from "@cogno/core/api/notification-center-port.adapter.service";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
@@ -34,7 +36,6 @@ import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
-import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-center-port.adapter.service";
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
@@ -62,7 +63,6 @@ import {
   ApplicationConfigurationPort,
   CommandRunner,
   Filesystem,
-  NotificationCenterPort,
   NotificationChannelsPort,
   TerminalAnimationPort,
   TerminalGateway,

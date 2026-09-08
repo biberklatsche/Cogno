@@ -1,7 +1,7 @@
 import type { DestroyRef } from "@angular/core";
+import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import type { SessionRunRequest, SessionRunResult } from "@cogno/core/api/session-run";
-import type { NotificationCenterPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitFile, GitFileStatus, GitStatusService, parseGitStatus } from "./git-status.service";

@@ -1,7 +1,8 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
-import { CommandRunnerResultContract, NotificationCenterPort } from "@cogno/shared/ports";
+import { CommandRunnerResultContract } from "@cogno/shared/ports";
 
 export type GitFileStatus = "M" | "A" | "D" | "R" | "?";
 
