@@ -9,7 +9,6 @@ import {
 import { AboutDialogAdapterService } from "@cogno/app/app-host/about-dialog.adapter.service";
 import { featuresToken } from "@cogno/app/app-host/app-host.tokens";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
-import { ConfirmDialogAdapterService } from "@cogno/app/app-host/confirm-dialog.adapter.service";
 import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
@@ -51,7 +50,6 @@ import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
 import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
-import { ConfirmDialogPort } from "@cogno/features/coding-agent/ports";
 import { Logger } from "@cogno/platform/logger";
 import {
   ActionCatalog,
@@ -87,7 +85,6 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
-    { provide: ConfirmDialogPort, useExisting: ConfirmDialogAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {

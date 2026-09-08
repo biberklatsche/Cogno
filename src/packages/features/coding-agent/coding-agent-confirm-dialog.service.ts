@@ -1,12 +1,14 @@
 import { Injectable } from "@angular/core";
-import { ConfirmDialogPort } from "@cogno/features/coding-agent/ports";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 
+/**
+ * The coding-agent's confirm dialog. A confirm is plain UI, so the feature
+ * asks the shared dialog service directly rather than through an app-provided
+ * port.
+ */
 @Injectable({ providedIn: "root" })
-export class ConfirmDialogAdapterService extends ConfirmDialogPort {
-  constructor(private readonly dialog: DialogService) {
-    super();
-  }
+export class CodingAgentConfirmDialogService {
+  constructor(private readonly dialog: DialogService) {}
 
   confirm(title: string, message: string): Promise<boolean> {
     const dialogRef = this.dialog.open<ConfirmDialogData, boolean>(ConfirmDialogComponent, {

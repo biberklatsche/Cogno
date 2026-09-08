@@ -1,7 +1,8 @@
 import { Injectable, Signal, signal } from "@angular/core";
-import { ConfirmDialogPort, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { OsPlatform } from "@cogno/platform";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
+import { CodingAgentConfirmDialogService } from "./coding-agent-confirm-dialog.service";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 
 export type InstalledProviderEntry = {
@@ -20,7 +21,7 @@ export class CodingAgentStartupService {
 
   constructor(
     private readonly registry: CodingAgentProviderRegistry,
-    private readonly confirmDialog: ConfirmDialogPort,
+    private readonly confirmDialog: CodingAgentConfirmDialogService,
     private readonly configPort: ApplicationConfigurationPort,
     private readonly osPort: OsPlatform,
   ) {
