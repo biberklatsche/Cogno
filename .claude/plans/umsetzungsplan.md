@@ -1053,19 +1053,56 @@ alle Panels umgezogen sind (Schritt 25).
 
 **Was:** wie Schritt 23 je Feature: `features/ai/` (+ Panel),
 `features/coding-agent/` (+ Panel; Hook-Installation und Statusempfang
-bleiben im Feature; `NotificationChannelsPort` wird API-Contribution —
-damit fällt der Import `@cogno/features/coding-agent/ports` aus dem Core),
-`features/command-palette/`, `features/notification-overview/`. Feature-
-eigene Zod-Schemas als einzige Deklaration (`feature-settings.schemas.ts`
-und der statische `Config`-Typ-Anteil entfallen).
+bleiben im Feature), `features/command-palette/`,
+`features/notification-overview/`. Feature-eigene Zod-Schemas als einzige
+Deklaration (`feature-settings.schemas.ts` und der statische
+`Config`-Typ-Anteil entfallen).
 
-Ein Teilcommit je Feature.
+> **Präzisierung nach Survey (2026-09, während der Umsetzung):** Die
+> ursprüngliche Beschreibung war an zwei Stellen falsch — die Zielarchitektur
+> selbst bleibt unverändert, nur dieser Schritt wird konkretisiert:
+> 1. **Core importiert produktiv nichts aus `features/`** (nur 2 Spec-Dateien
+>    `defaultFeatureSettingsExtension`). Die coding-agent-Ports liegen im
+>    **app**-Layer, nicht in core — der Satz „damit fällt der Import aus dem
+>    Core" ist gegenstandslos. `NotificationChannelsPort` ist ein
+>    `shared/ports`-Port (Adapter in core), keine coding-agent-Contribution.
+> 2. **`shared/ports` kann NICHT geleert werden.** Ein Port, den
+>    `core/workbench` **und** `features` brauchen, kann nicht nach `core/api`
+>    (Regel `workbench-knows-no-api`); gemeinsamer Boden ist nur `shared/`.
+>    Dual genutzt (Workbench-**Konsumenten**, per Grep verifiziert) und daher
+>    in `shared/` bleibend: **`ApplicationConfigurationPort`** (feature-host),
+>    **`NotificationChannelsPort`** (session-notifications),
+>    **`ActionCatalog`/`ActionDispatcher`** (`cli-action.service`,
+>    `workspace-shortcut-action.service`). Verschiebbar nach `core/api` (nur
+>    Feature-Konsumenten, Adapter zieht mit): `NotificationCenterPort`,
+>    `TerminalAnimationPort`, `TerminalNavigator`, `TerminalGateway` (nachdem
+>    ai/coding-agents auf `SessionApi` umgestellt sind).
+
+Teilcommits (granularer als „je Feature", ~8–10):
+- **24a** command-palette: reiner Umzug `features/command-palette/` — nutzt
+  weiter shared `ActionCatalog`/`ActionDispatcher` (dual, bleiben in shared).
+- **24b** notification-overview: `NotificationCenterPort`(+Adapter) → `core/api`
+  (repoint git + notification + coding-agent), Umzug
+  `features/notification-overview/`.
+- **24c** ai: Terminal-Zugriff `TerminalGateway` → `SessionApi`/boundSession
+  (Write-Protection/Fokus wie git), side-menu-Shell → `features/ai/`.
+- **24d** coding-agents: `TerminalNavigator`/`TerminalAnimationPort`(+Adapter)
+  → `core/api`, Shell → `features/coding-agent/` (nutzt weiter shared
+  `NotificationChannelsPort`).
+- **24e** Feature-eigene Zod-Schemas; `feature-settings.schemas.ts`-Reexport
+  und den statischen `Config`-Feature-Anteil löschen; die 2 core-Specs
+  entkoppeln.
+- **24f** `shared/ports` prüfen: reine Feature-Produkt-Ports müssen weg sein;
+  Rest sind bewusst die dual genutzten Contracts.
 
 **Akzeptanzkriterien:**
 
-- `grep -rn "@cogno/features" src/packages/core` leer.
-- `shared/ports/` enthält nur noch, was zwei Features brauchen — nach
-  diesem Schritt voraussichtlich nichts; dann löschen.
+- `grep -rn "@cogno/features" src/packages/core` leer (nur die 2 Specs
+  entkoppeln — produktiver Core ist schon frei).
+- `shared/ports/` enthält **keine reinen Feature-Produkt-Ports** mehr; die
+  dual (workbench+features) genutzten Contracts bleiben und sind so
+  dokumentiert. Kein Feature importiert `shared/ports` für Terminal-/Session-
+  oder Panel-Zugriff — das läuft über `core/api`.
 - Specs je Feature gegen gestubbte API.
 - Manuell je Feature: Panel öffnet, folgt Fokus, `off` in der Config
   nimmt es weg.
