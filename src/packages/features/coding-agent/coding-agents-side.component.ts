@@ -1,20 +1,16 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import {
-  ActiveAgent,
-  AgentStatus,
-  CodingAgentNotificationPreferencesService,
-  CodingAgentStartupService,
-  CodingAgentStatusService,
-} from "@cogno/features/coding-agent";
 import {
   buildNotificationPreferencesMenuItems,
   NotificationPreferencesState,
 } from "@cogno/shared/domain";
-import { TerminalGateway } from "@cogno/shared/ports";
 import { ContextMenuOverlayService, IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { AgentAnimationComponent } from "./agent-animation.component";
+import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
+import { CodingAgentStartupService } from "./coding-agent-startup.service";
+import { ActiveAgent, AgentStatus, CodingAgentStatusService } from "./coding-agent-status.service";
 
 @Component({
   selector: "app-coding-agents-side",
@@ -376,15 +372,15 @@ export class CodingAgentsSideComponent {
     private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
     private readonly navigator: TerminalNavigator,
     private readonly contextMenu: ContextMenuOverlayService,
-    terminalGateway: TerminalGateway,
+    sessionApi: SessionApi,
     destroyRef: DestroyRef,
   ) {
-    this.focusedTerminalIdSignal.set(terminalGateway.getFocusedTerminalId());
-    terminalGateway.focusedTerminalId$
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((terminalId) => {
-        this.focusedTerminalIdSignal.set(terminalId);
-      });
+    // Highlight the agent whose terminal is the bound (focused) session.
+    sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
+      this.focusedTerminalIdSignal.set(
+        boundSession.status === "active" ? boundSession.session.identity.terminalId : undefined,
+      );
+    });
   }
 
   showDetected(): void {

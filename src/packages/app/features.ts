@@ -2,11 +2,11 @@ import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { sideMenuUiStateFeature } from "@cogno/core/workbench/side-menu/ui-state/ui-state.feature";
 import { workspaceFeature } from "@cogno/core/workbench/workspace/workspace.feature-definition";
 import { autocompleteFeature } from "@cogno/features/autocomplete/autocomplete.feature";
+import { codingAgentsFeature } from "@cogno/features/coding-agent";
 import { commandPaletteFeature } from "@cogno/features/command-palette";
 import { featureSettingsFeature } from "@cogno/features/feature-settings-extension";
 import { gitFeature } from "@cogno/features/git";
 import { notificationFeature } from "@cogno/features/notification-overview";
-import { codingAgentsFeature } from "@cogno/features/side-menu/coding-agents/coding-agents.feature-definition";
 import { terminalSearchFeature } from "@cogno/features/terminal-search";
 import { FeatureDefinition } from "@cogno/shared/contributions";
 
