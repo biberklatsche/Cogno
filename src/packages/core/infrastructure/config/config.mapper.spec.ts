@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-import { defaultFeatureSettingsExtension } from "@cogno/features/feature-settings-extension";
 import { beforeAll, describe, expect, it } from "vitest";
 import { ConfigMapper } from "./config.mapper";
+import { featureSettingsExtensionFixture } from "./feature-settings.extension.fixture";
 
-const extensions = [defaultFeatureSettingsExtension];
+const extensions = [featureSettingsExtensionFixture];
 let defaultText = "";
 let DEFAULTS: any;
 

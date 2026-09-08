@@ -1,12 +1,4 @@
-import {
-  ApplicationSettingsSectionDefinitionContract,
-  FeatureCodingAgentsSchema,
-  FeatureCommandPaletteSchema,
-  FeatureGitSchema,
-  FeatureNotificationOverviewSchema,
-  FeatureSearchSchema,
-  FeatureWorkspaceSchema,
-} from "@cogno/shared/contributions";
+import { ApplicationSettingsSectionDefinitionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
 import { AutocompleteSettingsSchema } from "./autocomplete-settings";
 import { ClipboardConfig, ClipboardConfigSchema } from "./clipboard-config";
@@ -80,29 +72,9 @@ export const baseSettingsSections: ReadonlyArray<ApplicationSettingsSectionDefin
   { id: "autocomplete", title: "Autocomplete", order: 600 },
 ];
 
-// All toggleable features live under the `feature` namespace (e.g. `feature.git.*`,
-// `feature.git.*`) so the key itself signals "optional feature" vs. everything else
-// being core. Mirrors features/feature-settings-extension.ts's runtime shape — kept
-// here too only so the static `Config` type reflects it (see config.mapper.ts for why
-// this duplication exists: createApplicationSettingsDefinition() is the real runtime
-// validator, seeded from baseConfigSchemaShape and merged with registered extensions).
-export const featureConfigSchemaShape = {
-  feature: z
-    .object({
-      workspace: FeatureWorkspaceSchema.optional(),
-      notification_overview: FeatureNotificationOverviewSchema.optional(),
-      command_palette: FeatureCommandPaletteSchema.optional(),
-      search: FeatureSearchSchema.optional(),
-      git: FeatureGitSchema.optional(),
-      coding_agents: FeatureCodingAgentsSchema.optional(),
-    })
-    .optional(),
-} satisfies z.ZodRawShape;
-
 export const ConfigSchema = z
   .object({
     ...baseConfigSchemaShape,
-    ...featureConfigSchemaShape,
   })
   .strict();
 

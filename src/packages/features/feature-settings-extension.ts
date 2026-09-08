@@ -1,16 +1,14 @@
 import {
   ApplicationSettingsExtensionContract,
-  FeatureDefinition,
-} from "@cogno/shared/contributions";
-import { z } from "zod";
-import {
   FeatureCodingAgentsSchema,
   FeatureCommandPaletteSchema,
+  FeatureDefinition,
   FeatureGitSchema,
   FeatureNotificationOverviewSchema,
   FeatureSearchSchema,
   FeatureWorkspaceSchema,
-} from "./feature-settings.schemas";
+} from "@cogno/shared/contributions";
+import { z } from "zod";
 
 const featureSettingsSchemaShape = {
   feature: z

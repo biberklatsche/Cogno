@@ -26,7 +26,10 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
   }
 
   getOverviewMaxItems(): number {
-    return this.configService.config.feature?.notification_overview?.overview?.max_items ?? 30;
+    const config = this.configService.config as {
+      feature?: { notification_overview?: { overview?: { max_items?: number } } };
+    };
+    return config.feature?.notification_overview?.overview?.max_items ?? 30;
   }
 
   openTarget(target: NotificationTargetContract): void {
