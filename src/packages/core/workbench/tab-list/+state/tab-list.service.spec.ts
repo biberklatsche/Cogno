@@ -1,3 +1,4 @@
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ActionFired, type ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { ChangeTabTitleEvent } from "@cogno/core/workbench/bus/grid-list/events";
@@ -48,6 +49,7 @@ describe("TabListService", () => {
       bus,
       configService,
       getActionKeybindingPortMock(),
+      new ActionHandlers(bus, getDestroyRef()),
       getDestroyRef(),
     );
   });

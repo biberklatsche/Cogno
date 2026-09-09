@@ -5,6 +5,7 @@ import type { SessionHost } from "@cogno/core/session/host/session-host";
 import type { SessionFact } from "@cogno/core/session/session-facts";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { MachineState } from "@cogno/core/terminal/machine-state";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
@@ -138,6 +139,7 @@ export function getTabListService(): TabListService {
       getAppBus(),
       getConfigService(),
       getActionKeybindingPortMock(),
+      new ActionHandlers(getAppBus(), getDestroyRef()),
       getDestroyRef(),
     );
   }

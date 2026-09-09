@@ -1,7 +1,9 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { ActionFired, ActionFiredEvent, ActionName } from "@cogno/core/workbench/bus/action.models";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
+import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ChangeTabTitleEvent } from "@cogno/core/workbench/bus/grid-list/events";
 import {
@@ -73,6 +75,7 @@ export class TabListService {
     private bus: AppBus,
     private readonly configService: ConfigService,
     private readonly keybindings: ActionKeybindingPort,
+    actions: ActionHandlers,
     destroyRef: DestroyRef,
   ) {
     this.bus
@@ -119,69 +122,28 @@ export class TabListService {
         this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
         event.propagationStopped = true;
       });
-    this.bus
-      .on$(ActionFired.listener())
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: ActionFiredEvent) => {
-        if (!event.payload) {
-          return;
-        }
-
-        const shellIndex = this.resolveShortcutIndex(event.payload, "open_shell_");
-        if (shellIndex !== undefined) {
-          this.openShell(this.configService.getShellProfileByShortcutIndex(shellIndex)?.name);
-          event.performed = !event.trigger?.broadcast;
-          event.defaultPrevented = true;
-          return;
-        }
-
-        const tabIndex = this.resolveShortcutIndex(event.payload, "select_tab_");
-        if (tabIndex !== undefined) {
-          this.selectTabByShortcutIndex(tabIndex);
-          event.performed = !event.trigger?.broadcast;
-          event.defaultPrevented = true;
-          return;
-        }
-
-        switch (event.payload) {
-          case "new_tab":
-            this.openShell(
-              event.args?.[0] ?? this.configService.getShellProfileByShortcutIndex(1)?.name,
-            );
-            event.performed = !event.trigger?.broadcast;
-            event.defaultPrevented = true;
-            break;
-          case "close_tab": {
-            const activeTabId = this._tabList.value.find((s) => s.isActive)?.id;
-            this.removeTab(activeTabId);
-            event.performed = !event.trigger?.broadcast;
-            event.defaultPrevented = true;
-            break;
-          }
-          case "select_next_tab":
-            this.selectAdjacentTab(1);
-            event.performed = !event.trigger?.broadcast;
-            event.defaultPrevented = true;
-            break;
-          case "select_previous_tab":
-            this.selectAdjacentTab(-1);
-            event.performed = !event.trigger?.broadcast;
-            event.defaultPrevented = true;
-            break;
-          case "close_other_tabs": {
-            const activeTab = this._tabList.value.find((s) => s.isActive);
-            this.removeAllTabs(activeTab?.id);
-            event.performed = !event.trigger?.broadcast;
-            event.defaultPrevented = true;
-            break;
-          }
-          case "close_all_tabs":
-            this.removeAllTabs();
-            event.performed = !event.trigger?.broadcast;
-            event.defaultPrevented = true;
-            break;
-        }
-      });
+    actions.handle("new_tab", (context) =>
+      this.openShell(
+        context.args?.[0] ?? this.configService.getShellProfileByShortcutIndex(1)?.name,
+      ),
+    );
+    actions.handle("close_tab", () => {
+      this.removeTab(this._tabList.value.find((tab) => tab.isActive)?.id);
+    });
+    actions.handle("select_next_tab", () => this.selectAdjacentTab(1));
+    actions.handle("select_previous_tab", () => this.selectAdjacentTab(-1));
+    actions.handle("close_other_tabs", () => {
+      this.removeAllTabs(this._tabList.value.find((tab) => tab.isActive)?.id);
+    });
+    actions.handle("close_all_tabs", () => this.removeAllTabs());
+    for (let index = 1; index <= TabListService.indexedShortcutLimit; index++) {
+      actions.handle(`open_shell_${index}` as CoreActionName, () =>
+        this.openShell(this.configService.getShellProfileByShortcutIndex(index)?.name),
+      );
+      actions.handle(`select_tab_${index}` as CoreActionName, () =>
+        this.selectTabByShortcutIndex(index),
+      );
+    }
   }
 
   buildContextMenu(tabId: TabId): ContextMenuItem[] {
@@ -413,17 +375,6 @@ export class TabListService {
       return;
     }
     this.selectTab(tab.id);
-  }
-
-  private resolveShortcutIndex(actionName: string, prefix: string): number | undefined {
-    if (!actionName.startsWith(prefix)) {
-      return undefined;
-    }
-    const index = Number.parseInt(actionName.slice(prefix.length), 10);
-    if (Number.isNaN(index) || index < 1 || index > TabListService.indexedShortcutLimit) {
-      return undefined;
-    }
-    return index;
   }
 
   private getRequiredActiveWorkspaceIdentifier(): string {

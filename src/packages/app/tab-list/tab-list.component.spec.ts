@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import type { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
@@ -69,6 +70,7 @@ describe("TabListComponent", () => {
       getAppBus(),
       getConfigService(),
       getActionKeybindingPortMock(),
+      new ActionHandlers(getAppBus(), getDestroyRef()),
       getDestroyRef(),
     );
     tabListService.activateWorkspace("ws-1");
