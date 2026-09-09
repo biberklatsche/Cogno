@@ -4,14 +4,12 @@ import type { SuggestorRegistry } from "@cogno/core/session/autocomplete/suggest
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
-import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
 import { TerminalMockFactory } from "../../../../__test__/mocks/terminal-mock.factory";
-import { getAppBus } from "../../../../__test__/test-factory";
 import { SessionKeybindings } from "./session-keybindings";
 
 vi.mock("@cogno/core/terminal/renderer", () => {
@@ -53,7 +51,6 @@ const bashProfile: ShellProfile = {
 };
 
 describe("SessionKeybindings", () => {
-  let bus: AppBus;
   let host: SessionHost;
   let keybindings: SessionKeybindings;
   let configService: ConfigServiceMock;
@@ -61,7 +58,6 @@ describe("SessionKeybindings", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    bus = getAppBus();
     configService = new ConfigServiceMock();
     configService.setConfig({ font: { enable_ligatures: false } } as never);
 
@@ -83,7 +79,6 @@ describe("SessionKeybindings", () => {
 
     preloadForShellIntegration = vi.fn();
     keybindings = new SessionKeybindings(
-      bus,
       host,
       { preloadForShellIntegration } as unknown as SuggestorRegistry,
       { triggerAutocomplete: vi.fn(async () => false), cycleTab: vi.fn(() => false) } as never,

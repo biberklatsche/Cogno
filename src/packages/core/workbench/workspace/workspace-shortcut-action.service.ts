@@ -1,7 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
+import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { WorkspaceEntryContract } from "@cogno/shared/domain";
-import { ActionDispatcher } from "@cogno/shared/ports";
 import { WorkspaceHostService } from "./workspace-host.service";
 
 @Injectable({ providedIn: "root" })
@@ -10,7 +11,7 @@ export class WorkspaceShortcutActionService {
   private workspaceEntries: ReadonlyArray<WorkspaceEntryContract> = [];
 
   constructor(
-    private readonly actionDispatcher: ActionDispatcher,
+    actions: ActionHandlers,
     private readonly workspaceHostPort: WorkspaceHostService,
     destroyRef: DestroyRef,
   ) {
@@ -20,27 +21,18 @@ export class WorkspaceShortcutActionService {
         this.workspaceEntries = workspaceEntries;
       });
 
-    this.actionDispatcher
-      .onAction$("select_workspace_default")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(() => {
-        const defaultWorkspaceEntry = this.workspaceEntries[0];
-        if (defaultWorkspaceEntry) {
-          void this.workspaceHostPort.restoreWorkspace(defaultWorkspaceEntry.id);
-        }
-      });
-
+    // The default workspace is the first entry; the numbered shortcuts index the
+    // rest by position.
+    actions.handle("select_workspace_default", () => this.restore(0));
     for (let index = 1; index <= WorkspaceShortcutActionService.indexedShortcutLimit; index++) {
-      const capturedIndex = index;
-      this.actionDispatcher
-        .onAction$(`select_workspace_${capturedIndex}`)
-        .pipe(takeUntilDestroyed(destroyRef))
-        .subscribe(() => {
-          const workspaceEntry = this.workspaceEntries[capturedIndex];
-          if (workspaceEntry) {
-            void this.workspaceHostPort.restoreWorkspace(workspaceEntry.id);
-          }
-        });
+      actions.handle(`select_workspace_${index}` as CoreActionName, () => this.restore(index));
+    }
+  }
+
+  private restore(entryIndex: number): void {
+    const workspaceEntry = this.workspaceEntries[entryIndex];
+    if (workspaceEntry) {
+      void this.workspaceHostPort.restoreWorkspace(workspaceEntry.id);
     }
   }
 }

@@ -141,6 +141,11 @@ export class SessionHostFactory {
   }
 
   /** Puts the pane's view into `hostElement`, creating it the first time. */
+  /** The keybindings of the session `terminalId`, for central action dispatch. */
+  getSessionKeybindings(terminalId: TerminalId): SessionKeybindings | undefined {
+    return this.sessions.get(terminalId)?.keybindings;
+  }
+
   attach(pane: Pane, hostElement: HTMLElement): void {
     const entry = this.ensureSession(pane);
     if (!entry) return;

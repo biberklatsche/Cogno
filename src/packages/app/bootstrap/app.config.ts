@@ -29,11 +29,13 @@ import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
 import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
 import { TerminalSearchApiService } from "@cogno/core/api/terminal-search-api.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
@@ -45,7 +47,9 @@ import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/no
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
+import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalActionHandlers } from "@cogno/core/workbench/terminal/+state/keybind/terminal-action-handlers";
+import { SessionActionHandlers } from "@cogno/core/workbench/terminal/+state/session-action-handlers";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
@@ -104,6 +108,9 @@ export const appConfig: ApplicationConfig = {
       // The central terminal-action handlers (step 26): construct so they
       // register on ActionHandlers and the ActionFired subscription is live.
       inject(TerminalActionHandlers);
+      // The session-scoped keybinding actions (autocomplete/history/cycle),
+      // dispatched to the focused session.
+      inject(SessionActionHandlers);
       // Routes bus messages addressed to a session onto its host.
       inject(TerminalInputDispatcher);
       inject(ErrorReportingRuntimeService).initialize();
@@ -127,6 +134,18 @@ export const appConfig: ApplicationConfig = {
         injector.get(CodingAgentStatusService);
         injector.get(CodingAgentStartupService);
         injector.get(AboutDialogAdapterService);
+        // Construct the tab-list so its actions register, then verify every core
+        // action has a handler (a catalog action nothing handles is a bug).
+        injector.get(TabListService);
+        const unhandledActions = injector.get(ActionHandlers).unhandledCoreActions();
+        if (unhandledActions.length > 0) {
+          ErrorReporter.reportException({
+            error: new Error(`Core actions without a handler: ${unhandledActions.join(", ")}`),
+            handled: true,
+            source: "app.config",
+            context: { operation: "action-handler-coverage" },
+          });
+        }
       }, 0);
     }),
   ],

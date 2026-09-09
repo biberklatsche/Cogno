@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ActionContextContract, ActionTriggerContract } from "@cogno/shared/domain";
-import { CoreActionName } from "./catalog";
+import { CoreActionName, coreActionCatalog } from "./catalog";
 
 /** What a handler receives: the fired action's args, target terminal and trigger. */
 export interface ActionHandlerContext extends ActionContextContract {
@@ -80,5 +80,15 @@ export class ActionHandlers {
   /** The core actions that currently have a handler. */
   handledActions(): ReadonlySet<CoreActionName> {
     return new Set(this.handlers.keys());
+  }
+
+  /**
+   * Core actions declared in the catalog but with no registered handler. Run
+   * once every handler-owning service is constructed; a non-empty result is a
+   * programming error (a catalog action nothing handles). Core actions are not
+   * features, so there is nothing to exempt here.
+   */
+  unhandledCoreActions(): ReadonlyArray<CoreActionName> {
+    return coreActionCatalog.map((entry) => entry.name).filter((name) => !this.handlers.has(name));
   }
 }
