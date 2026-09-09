@@ -20,6 +20,8 @@ export type Icon =
   | "mdiFolder"
   | "mdiGit"
   | "mdiInformation"
+  | "mdiLock"
+  | "mdiLockOpen"
   | "mdiLoading"
   | "mdiMinus"
   | "mdiOpenInNew"

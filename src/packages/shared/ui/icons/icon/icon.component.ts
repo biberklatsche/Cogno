@@ -24,6 +24,8 @@ import {
   mdiGit,
   mdiInformation,
   mdiLoading,
+  mdiLock,
+  mdiLockOpen,
   mdiMinus,
   mdiOpenInNew,
   mdiPaletteSwatch,
@@ -134,6 +136,12 @@ export class IconComponent {
         break;
       case "mdiInformation":
         this.icon = mdiInformation;
+        break;
+      case "mdiLock":
+        this.icon = mdiLock;
+        break;
+      case "mdiLockOpen":
+        this.icon = mdiLockOpen;
         break;
       case "mdiLoading":
         this.icon = mdiLoading;

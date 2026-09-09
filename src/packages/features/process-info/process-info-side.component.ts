@@ -22,10 +22,10 @@ type ProcessTreeNode = {
           type="button"
           class="button icon-button"
           [class.is-active]="held()"
-          [appTooltip]="held() ? 'Following the focused session (click to unpin)' : 'Pin to the current session'"
+          [appTooltip]="held() ? 'Locked to this session (click to follow focus again)' : 'Lock to this session'"
           (click)="toggleHold()"
         >
-          <app-icon [name]="held() ? 'mdiPin' : 'mdiPinOff'"></app-icon>
+          <app-icon [name]="held() ? 'mdiLock' : 'mdiLockOpen'"></app-icon>
         </button>
       </header>
 
