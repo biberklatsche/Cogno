@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use clap::Parser;
-use cogno_tauri_core::cli::{ActionCommand, Cli, CliCommand, ConfigCommand, COGNO_ACTION_NAMES};
+use cogno_tauri_core::cli::{
+    try_run_action_over_http, ActionCommand, Cli, CliCommand, ConfigCommand, COGNO_ACTION_NAMES,
+};
 use cogno_tauri_core::commands::config::read_default_config;
 use cogno_tauri_core::commands::environment::get_cogno_config_file_path;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
@@ -19,6 +21,12 @@ fn main() {
     if let Err(error_message) = apply_cli_environment(&cli) {
         eprintln!("{}", error_message);
         std::process::exit(1);
+    }
+
+    // Inside a running Cogno terminal, `action run` goes over HTTP and gets a
+    // real reply; otherwise fall back to validation + the single-instance path.
+    if let Some(exit_code) = try_run_action_over_http(&cli) {
+        std::process::exit(exit_code);
     }
 
     validate_action_run_command(&cli);

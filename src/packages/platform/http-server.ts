@@ -20,4 +20,15 @@ export class HttpServer {
   getPort(): Promise<number> {
     return invoke<number>("get_http_server_port");
   }
+
+  /** Tell the backend which actions currently dispatch vs are inactive (step 26g). */
+  setRunnableActions(
+    dispatched: ReadonlyArray<string>,
+    inactive: ReadonlyArray<string>,
+  ): Promise<void> {
+    return invoke<void>("set_runnable_actions", {
+      dispatched: [...dispatched],
+      inactive: [...inactive],
+    });
+  }
 }

@@ -162,3 +162,50 @@ impl Cli {
             .join("\n"))
     }
 }
+
+/// When invoked inside a running Cogno terminal (COGNO_PORT set), run an
+/// `action run` over HTTP and return the process exit code; otherwise `None` so
+/// the caller falls back to the single-instance path (step 26g).
+pub fn try_run_action_over_http(cli: &Cli) -> Option<i32> {
+    let (name, args) = match &cli.command {
+        Some(CliCommand::Action {
+            command: ActionCommand::Run { name, args },
+        }) => (name, args),
+        _ => return None,
+    };
+
+    let port = std::env::var("COGNO_PORT").ok()?;
+    let url = format!("http://127.0.0.1:{}/action/run", port);
+    let body = serde_json::json!({ "name": name, "args": args });
+
+    let response = match reqwest::blocking::Client::new().post(&url).json(&body).send() {
+        Ok(response) => response,
+        Err(error) => {
+            // The running instance is unreachable; fall back to the normal path.
+            eprintln!("Could not reach Cogno on port {} ({}); falling back.", port, error);
+            return None;
+        }
+    };
+
+    let payload: serde_json::Value = response.json().unwrap_or_default();
+    let status = payload.get("status").and_then(|value| value.as_str());
+    match status {
+        Some("dispatched") => {
+            println!("dispatched: {}", name);
+            Some(0)
+        }
+        Some("inactive") => {
+            eprintln!("Action '{}' is not active (its feature is off).", name);
+            Some(2)
+        }
+        Some("unknown") => {
+            eprintln!("Unknown action: {}", name);
+            eprintln!("Use `cogno action list` to see all supported actions.");
+            Some(1)
+        }
+        _ => {
+            eprintln!("Unexpected response for action '{}'.", name);
+            Some(1)
+        }
+    }
+}

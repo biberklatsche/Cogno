@@ -2,7 +2,7 @@ use cogno_tauri_core::cli::Cli;
 use cogno_tauri_core::commands::pty::PtyState;
 use cogno_tauri_core::commands::window_registry::{route, WindowRegistry};
 use cogno_tauri_core::db::Db;
-use cogno_tauri_core::http_server::HttpServerState;
+use cogno_tauri_core::http_server::{HttpServerState, RunnableActionsState};
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
@@ -50,6 +50,7 @@ pub fn run(cli: Cli) {
         }))
         .manage(PtyState::new())
         .manage(HttpServerState::new())
+        .manage(RunnableActionsState::new())
         .manage(Db::new())
         .manage(WindowRegistry::new())
         .on_window_event(|window, event| match event {
@@ -106,7 +107,8 @@ pub fn run(cli: Cli) {
             cogno_tauri_core::commands::notification::send_os_notification,
             cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file,
             cogno_tauri_core::http_server::start_http_server,
-            cogno_tauri_core::http_server::get_http_server_port
+            cogno_tauri_core::http_server::get_http_server_port,
+            cogno_tauri_core::http_server::set_runnable_actions
         ])
         .setup(move |app| {
             let webview_window_builder =

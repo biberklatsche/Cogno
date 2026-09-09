@@ -1,8 +1,55 @@
 use crate::commands::window_registry::route;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::net::TcpListener;
 use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
+use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
+
+/// The action names the webview currently accepts, split by whether they would
+/// dispatch or are declared-but-inactive (a feature that is off). The webview
+/// pushes these via `set_runnable_actions`; the HTTP `/action/run` endpoint
+/// classifies against them synchronously (step 26g). Anything in neither set is
+/// unknown.
+#[derive(Default)]
+pub struct RunnableActionsState {
+    dispatched: Mutex<HashSet<String>>,
+    inactive: Mutex<HashSet<String>>,
+}
+
+impl RunnableActionsState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    fn classify(&self, name: &str) -> &'static str {
+        if self.dispatched.lock().unwrap().contains(name) {
+            "dispatched"
+        } else if self.inactive.lock().unwrap().contains(name) {
+            "inactive"
+        } else {
+            "unknown"
+        }
+    }
+}
+
+/// The webview reports which actions are dispatchable vs inactive right now.
+#[tauri::command]
+pub fn set_runnable_actions(
+    state: State<'_, RunnableActionsState>,
+    dispatched: Vec<String>,
+    inactive: Vec<String>,
+) {
+    *state.dispatched.lock().unwrap() = dispatched.into_iter().collect();
+    *state.inactive.lock().unwrap() = inactive.into_iter().collect();
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActionRunPayload {
+    pub name: String,
+    pub args: Option<Vec<String>>,
+}
 
 pub struct HttpServerState {
     port: AtomicU16,
@@ -119,26 +166,60 @@ pub fn start_http_server(
         log::info!(target: "http_server", "HTTP server listening on 127.0.0.1:{}", actual_port);
 
         let app_emit = app.clone();
-        let router = Router::new().route(
-            "/action",
-            post(move |result: Result<Json<CognoMessagePayload>, JsonRejection>| {
-                let app = app_emit.clone();
-                async move {
-                    match result {
-                        Ok(Json(payload)) => {
-                            log::info!(target: "http_server", "POST /action: command={} terminal_id={:?}", payload.command, payload.terminal_id);
-                            let terminal_id = payload.terminal_id.clone();
-                            route(&app, "cogno-message", payload, terminal_id.as_deref());
-                            StatusCode::NO_CONTENT
-                        }
-                        Err(e) => {
-                            log::error!(target: "http_server", "POST /action parse error: {}", e);
-                            StatusCode::BAD_REQUEST
+        let app_run = app.clone();
+        let router = Router::new()
+            .route(
+                "/action",
+                post(move |result: Result<Json<CognoMessagePayload>, JsonRejection>| {
+                    let app = app_emit.clone();
+                    async move {
+                        match result {
+                            Ok(Json(payload)) => {
+                                log::info!(target: "http_server", "POST /action: command={} terminal_id={:?}", payload.command, payload.terminal_id);
+                                let terminal_id = payload.terminal_id.clone();
+                                route(&app, "cogno-message", payload, terminal_id.as_deref());
+                                StatusCode::NO_CONTENT
+                            }
+                            Err(e) => {
+                                log::error!(target: "http_server", "POST /action parse error: {}", e);
+                                StatusCode::BAD_REQUEST
+                            }
                         }
                     }
-                }
-            }),
-        );
+                }),
+            )
+            .route(
+                "/action/run",
+                post(move |result: Result<Json<ActionRunPayload>, JsonRejection>| {
+                    let app = app_run.clone();
+                    async move {
+                        match result {
+                            Ok(Json(payload)) => {
+                                let status = app.state::<RunnableActionsState>().classify(&payload.name);
+                                log::info!(target: "http_server", "POST /action/run: name={} -> {}", payload.name, status);
+                                if status == "dispatched" {
+                                    // Reuse the cli-action path: name[:arg...] the webview parses.
+                                    let mut parts = vec![payload.name.clone()];
+                                    if let Some(args) = &payload.args {
+                                        parts.extend(args.clone());
+                                    }
+                                    route(&app, "cli-action", parts.join(":"), None);
+                                }
+                                let code = match status {
+                                    "dispatched" => StatusCode::OK,
+                                    "inactive" => StatusCode::CONFLICT,
+                                    _ => StatusCode::NOT_FOUND,
+                                };
+                                (code, Json(serde_json::json!({ "status": status })))
+                            }
+                            Err(e) => (
+                                StatusCode::BAD_REQUEST,
+                                Json(serde_json::json!({ "error": e.to_string() })),
+                            ),
+                        }
+                    }
+                }),
+            );
 
         if let Err(e) = axum::serve(listener, router).await {
             log::error!(target: "http_server", "HTTP server error: {}", e);

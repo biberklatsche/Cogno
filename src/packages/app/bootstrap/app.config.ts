@@ -39,6 +39,7 @@ import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
+import { RunnableActionsPublisher } from "@cogno/core/workbench/external/runnable-actions-publisher.service";
 import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-definitions.token";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
@@ -123,6 +124,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(KeybindService);
         injector.get(CliActionService);
         injector.get(HttpMessageAdapterService);
+        injector.get(RunnableActionsPublisher);
         injector.get(NativeMenuService);
         injector.get(WindowService);
         injector.get(SideMenuStatePersistenceService);
