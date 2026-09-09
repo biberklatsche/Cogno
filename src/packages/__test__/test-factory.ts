@@ -1,5 +1,4 @@
 import type { DestroyRef } from "@angular/core";
-import { signal } from "@angular/core";
 import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import type { SessionHost } from "@cogno/core/session/host/session-host";
@@ -87,7 +86,6 @@ export function getAppWiringService(): AppWiringService {
 export function getActionKeybindingPortMock(): ActionKeybindingPort {
   return {
     getKeybindingLabel: vi.fn().mockReturnValue(""),
-    lastFiredKeybinding: signal<string | undefined>(undefined),
   };
 }
 

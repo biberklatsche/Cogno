@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
+import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ActionDefinition } from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
@@ -26,7 +26,6 @@ export class KeybindService {
   private _keybindMatcher: KeybindingMatcher = new KeybindingMatcher();
   // simple registry for component-specific key listeners
   private readonly listeners = new Map<Key, ListenerStack>();
-  private readonly _lastFiredKeybinding = signal<string | undefined>(undefined);
 
   constructor(
     private readonly os: OsPlatform,
@@ -63,7 +62,6 @@ export class KeybindService {
         if (!ActionFiredEvent) return;
         if (suppressed && !ActionFiredEvent.event.trigger?.always) return;
 
-        this._lastFiredKeybinding.set(ActionFiredEvent.eventKey);
         Logger.info(`Action fired${ActionFiredEvent.event.payload}`);
         const result = bus.publish(ActionFiredEvent.event);
         if (ActionFiredEvent.event.trigger?.unconsumed) return;
@@ -73,10 +71,6 @@ export class KeybindService {
       },
       { capture: true },
     );
-  }
-
-  get lastFiredKeybinding(): Signal<string | undefined> {
-    return this._lastFiredKeybinding.asReadonly();
   }
 
   private getStack(key: Key): ListenerStack {

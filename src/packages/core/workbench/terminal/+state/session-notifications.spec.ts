@@ -9,7 +9,6 @@ import type { NotificationTargetResolverService } from "@cogno/core/workbench/gr
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import type { NotificationChannelsPort } from "@cogno/shared/ports";
-import { DialogRef, type DialogService } from "@cogno/shared/ui";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
@@ -67,8 +66,6 @@ describe("SessionNotifications", () => {
   let notifications: SessionNotifications;
   let menus: SessionMenus;
   let configService: ConfigServiceMock;
-  let openDialog: ReturnType<typeof vi.fn>;
-  let processInfoDialogRef: DialogRef<void>;
 
   function configure(config: Record<string, unknown>): void {
     configService.setConfig({
@@ -142,11 +139,7 @@ describe("SessionNotifications", () => {
       notificationChannelsPort,
     );
 
-    processInfoDialogRef = new DialogRef<void>(1, vi.fn());
-    openDialog = vi.fn().mockReturnValue(processInfoDialogRef);
-    menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock(), osStub, {
-      open: openDialog,
-    } as unknown as DialogService);
+    menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock());
 
     host.start();
   });
@@ -215,7 +208,6 @@ describe("SessionNotifications", () => {
 
       expect(items.find((i) => i.label === "Paste")).toBeDefined();
       expect(items.find((i) => i.label === "Maximize")).toBeDefined();
-      expect(items.find((i) => i.label === "Process Info")).toBeDefined();
       expect(items.find((i) => i.label?.includes("Notifications"))).toBeUndefined();
     });
 
@@ -282,19 +274,6 @@ describe("SessionNotifications", () => {
       );
       items.find((i) => i.label === "Scroll to Top")?.action?.();
       expect(lastRenderer().terminal.scrollToLine).toHaveBeenCalledWith(0);
-    });
-
-    it("closes the process info dialog when the menus are disposed", () => {
-      const closeSpy = vi.spyOn(processInfoDialogRef, "close");
-      menus
-        .buildContextMenu()
-        .find((i) => i.label === "Process Info")
-        ?.action?.();
-      expect(openDialog).toHaveBeenCalledTimes(1);
-
-      menus.dispose();
-
-      expect(closeSpy).toHaveBeenCalledTimes(1);
     });
   });
 });
