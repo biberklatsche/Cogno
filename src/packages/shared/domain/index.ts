@@ -12,6 +12,7 @@ export * from "./path-adapter";
 export * from "./selection";
 export * from "./shell";
 export * from "./shell-context";
+export * from "./terminal-id";
 export * from "./terminal-ipc-message";
 export * from "./terminal-search";
 export * from "./tree/binary-tree";

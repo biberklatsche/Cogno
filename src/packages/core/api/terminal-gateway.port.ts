@@ -1,7 +1,5 @@
-import { ShellContextContract } from "@cogno/shared/domain";
+import { ShellContextContract, TerminalId } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
-
-export type TerminalId = string;
 
 export interface TerminalSnapshotCommandContract {
   readonly id: string;

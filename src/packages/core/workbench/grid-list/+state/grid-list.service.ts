@@ -22,8 +22,8 @@ import {
   GridConfig,
   PaneConfig,
   TabId,
+  TerminalId,
 } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
 import { IdCreator } from "@cogno/shared/support";
 import { BehaviorSubject, combineLatest, map, Observable } from "rxjs";
 import { Grid, GridList, Pane, SplitDirection } from "../+model/model";

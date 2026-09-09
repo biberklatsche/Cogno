@@ -10,7 +10,7 @@ import {
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { Pane } from "../+model/model";
 import { GridListService } from "../+state/grid-list.service";
 import { PaneHeaderComponent } from "./pane-header.component";

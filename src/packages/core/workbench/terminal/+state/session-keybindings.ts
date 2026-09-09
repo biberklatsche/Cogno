@@ -7,7 +7,7 @@ import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
 import { ActionFired, ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { Subscription } from "rxjs";
 import { KeybindExecutor } from "./keybind/keybind.executor";
 

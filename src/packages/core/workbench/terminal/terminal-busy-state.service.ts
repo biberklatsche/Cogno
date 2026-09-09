@@ -2,7 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import { GridListService } from "../grid-list/+state/grid-list.service";
 

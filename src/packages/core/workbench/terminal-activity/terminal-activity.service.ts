@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { Observable, Subject } from "rxjs";
 import { throttleTime } from "rxjs/operators";
 

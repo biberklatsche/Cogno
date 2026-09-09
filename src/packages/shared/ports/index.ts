@@ -4,4 +4,3 @@ export * from "./application-configuration.port";
 export * from "./command-runner.port";
 export * from "./filesystem.port";
 export * from "./notification-channels.port";
-export * from "./terminal-gateway.port";

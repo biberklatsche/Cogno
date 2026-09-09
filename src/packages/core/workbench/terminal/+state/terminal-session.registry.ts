@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { Observable, Subject, Subscription } from "rxjs";
 
 type TerminalSessionRegistryEntry = {

@@ -18,6 +18,7 @@ import { NotificationCenterPortAdapterService } from "@cogno/core/api/notificati
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalAnimationAdapterService } from "@cogno/core/api/terminal-animation.adapter.service";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
+import { TerminalGateway } from "@cogno/core/api/terminal-gateway.port";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { TerminalIpcAdapterService } from "@cogno/core/api/terminal-ipc.adapter.service";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -59,7 +60,6 @@ import {
   CommandRunner,
   Filesystem,
   NotificationChannelsPort,
-  TerminalGateway,
 } from "@cogno/shared/ports";
 
 export const appConfig: ApplicationConfig = {

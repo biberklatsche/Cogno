@@ -3,8 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { BusyIndicatorTarget } from "@cogno/core/workbench/bus/busy-indicator/events";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { TabId } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
+import { TabId, TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
 
 export type BusyIndicatorRegistration = {

@@ -3,8 +3,8 @@ import {
   NotificationChannelsContract,
   NotificationTargetContract,
   NotificationTypeContract,
+  TerminalId,
 } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
 
 export type NotificationSource = string;
 export type NotificationChannels = NotificationChannelsContract;

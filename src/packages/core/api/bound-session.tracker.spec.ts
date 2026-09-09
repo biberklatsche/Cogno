@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { describe, expect, it } from "vitest";
 import { BoundSession } from "./bound-session";

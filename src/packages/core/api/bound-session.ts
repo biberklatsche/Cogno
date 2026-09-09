@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 
 /**
  * What a feature captured about the session it is acting on. injectInput/run

@@ -1,5 +1,4 @@
-import { TabId, WorkspaceId } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
+import { TabId, TerminalId, WorkspaceId } from "@cogno/shared/domain";
 
 export const IdCreator = {
   newId(prefix = "ID"): string {

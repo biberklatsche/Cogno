@@ -10,8 +10,9 @@ import {
   NotificationDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
+  TerminalId,
 } from "@cogno/shared/domain";
-import { NotificationChannelsPort, TerminalId } from "@cogno/shared/ports";
+import { NotificationChannelsPort } from "@cogno/shared/ports";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import {

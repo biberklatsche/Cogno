@@ -1,5 +1,5 @@
 import { PtyShellProfileContract } from "@cogno/platform";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { IPty, PtyChunk } from "../pty";

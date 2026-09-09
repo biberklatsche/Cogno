@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject, Observable, Subscription } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
 import { BoundSessionIdentity, BoundSessionMode, SessionBinding } from "./bound-session";

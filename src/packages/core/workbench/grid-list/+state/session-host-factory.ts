@@ -20,7 +20,7 @@ import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { SessionKeybindings } from "../../terminal/+state/session-keybindings";
 import { SessionMenus } from "../../terminal/+state/session-menus";

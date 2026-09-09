@@ -5,8 +5,8 @@ import {
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
   NotificationTargetContract,
+  TerminalId,
 } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
 import { timespan } from "@cogno/shared/support";
 
 export const LONG_RUNNING_COMMAND_NOTIFICATION_ID = "long_running_command";

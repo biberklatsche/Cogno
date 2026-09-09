@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 
 @Injectable({
   providedIn: "root",

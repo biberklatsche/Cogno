@@ -1,9 +1,9 @@
 import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
 import {
+  TerminalId,
   TerminalSearchRequestContract,
   TerminalSearchRevealRequestContract,
 } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
 
 export type TerminalSearchRequestedEvent = MessageBase<
   "TerminalSearchRequested",

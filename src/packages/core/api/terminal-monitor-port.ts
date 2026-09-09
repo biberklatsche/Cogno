@@ -1,4 +1,4 @@
-import { TerminalId } from "@cogno/shared/ports";
+import { TerminalId } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 
 export type TerminalActivityEvent = { terminalId: TerminalId; isBusy: boolean };

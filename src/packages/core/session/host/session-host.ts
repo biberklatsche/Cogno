@@ -20,10 +20,10 @@ import {
   ShellSessionCapabilitiesContract,
 } from "@cogno/shared/contributions";
 import {
+  TerminalId,
   TerminalSearchRequestContract,
   TerminalSearchRevealRequestContract,
 } from "@cogno/shared/domain";
-import { TerminalId } from "@cogno/shared/ports";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
 import {

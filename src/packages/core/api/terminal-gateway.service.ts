@@ -4,23 +4,21 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";
-import { isWslShellContext } from "@cogno/shared/domain";
-import {
-  CommandRunner,
-  Filesystem,
-  TerminalBusyStateChangeContract,
-  TerminalGateway,
-  TerminalId,
-  TerminalInputRequestContract,
-  TerminalSnapshotCommandContract,
-  TerminalSnapshotContract,
-  TerminalSnapshotOptionsContract,
-} from "@cogno/shared/ports";
+import { isWslShellContext, TerminalId } from "@cogno/shared/domain";
+import { CommandRunner, Filesystem } from "@cogno/shared/ports";
 import { distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
 import { BoundSessionIdentity, BoundSessionMode, SessionBinding } from "./bound-session";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 import { BoundSession, BoundSessionHandle, SessionApi } from "./session-api";
 import { SessionRunRequest, SessionRunResult } from "./session-run";
+import {
+  TerminalBusyStateChangeContract,
+  TerminalGateway,
+  TerminalInputRequestContract,
+  TerminalSnapshotCommandContract,
+  TerminalSnapshotContract,
+  TerminalSnapshotOptionsContract,
+} from "./terminal-gateway.port";
 
 @Injectable({ providedIn: "root" })
 export class TerminalGatewayService extends TerminalGateway implements SessionApi {
