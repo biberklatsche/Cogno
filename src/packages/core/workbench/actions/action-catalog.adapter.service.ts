@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
-import { coreActionNames } from "@cogno/core/workbench/actions/core-action-names";
+import { coreActionNames } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
