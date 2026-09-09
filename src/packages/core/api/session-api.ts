@@ -1,3 +1,4 @@
+import { ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { ShellContextContract } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 import { BoundSessionIdentity, BoundSessionMode } from "./bound-session";
@@ -30,6 +31,13 @@ export interface BoundSessionHandle {
   readonly contextRevision: number;
   run(request: SessionRunRequest): Promise<SessionRunResult>;
   readonly fs: BoundSessionFs;
+  /**
+   * A fresh, live process tree of the bound session on every call. Rejected
+   * only when the identity is no longer the live bound session; unlike `run`
+   * and `fs` it needs no known shell context, so it works for remote/ssh
+   * sessions too.
+   */
+  processTree(): Promise<ProcessTreeSnapshot>;
 }
 
 /**
@@ -50,4 +58,8 @@ export type BoundSession =
 export abstract class SessionApi {
   abstract readonly boundSession$: Observable<BoundSession>;
   abstract readonly cwdChanges$: Observable<void>;
+  /** Pin the binding to the current session so it stops following focus. */
+  abstract hold(): void;
+  /** Return to following focus. */
+  abstract release(): void;
 }

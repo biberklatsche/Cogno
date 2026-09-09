@@ -3,6 +3,7 @@ import { Command } from "@cogno/core/session/model/command.model";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import { ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { isWslShellContext } from "@cogno/shared/domain";
 import {
   CommandRunner,
@@ -105,7 +106,23 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
         readTextFile: (path) => this.readBoundTextFile(path, identity),
         normalizePath: (path) => this.normalizeBoundPath(path, identity),
       },
+      processTree: () => this.boundProcessTree(identity),
     };
+  }
+
+  /**
+   * The bound session's live process tree. Needs no shell context (works for
+   * remote/ssh sessions), only that the identity is still the live binding.
+   */
+  private async boundProcessTree(identity: BoundSessionIdentity): Promise<ProcessTreeSnapshot> {
+    if (!this.boundSessionMatches(identity)) {
+      throw new Error("The bound session is no longer active.");
+    }
+    const entry = this.terminalSessionRegistry.get(identity.terminalId);
+    if (!entry) {
+      throw new Error("The bound session is no longer active.");
+    }
+    return entry.host.getProcessTree();
   }
 
   /** Read a file in the bound session's live context; rejects like `run`. */

@@ -356,6 +356,11 @@ describe("TerminalGatewayService", () => {
         host: {
           runtime$: new BehaviorSubject({ status: "running" }),
           model: { sessionToken: "token-1" },
+          getProcessTree: vi.fn().mockResolvedValue({
+            rootProcessId: 100,
+            rootProcess: { processId: 100, name: "bash" },
+            descendants: [],
+          }),
           state: {
             shellContext: { shellType: "Bash", backendOs: "linux" },
             cwd: "/workspace",
@@ -398,6 +403,28 @@ describe("TerminalGatewayService", () => {
         shellType: "Bash",
         backendOs: "linux",
       });
+    });
+
+    it("returns the bound session's live process tree", async () => {
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      const snapshot = await boundSession.session.processTree();
+      expect(snapshot.rootProcess.name).toBe("bash");
+    });
+
+    it("rejects processTree once the identity is no longer the bound session", async () => {
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      // The session was replaced under the same terminal (new token).
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue({
+        host: { model: { sessionToken: "token-2" } },
+      } as unknown as ReturnType<TerminalSessionRegistry["get"]>);
+
+      await expect(boundSession.session.processTree()).rejects.toThrow(
+        "The bound session is no longer active.",
+      );
     });
   });
 });
