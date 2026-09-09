@@ -3,17 +3,16 @@ import {
   type ActionDefinition,
   KeybindActionInterpreter,
 } from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
+import type { ActionRunner } from "@cogno/core/workbench/actions/action-runner";
 import { CliActionListener } from "@cogno/platform/cli-action";
-import type { ActionDispatcher } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CliActionService } from "./cli-action.service";
 
-type DispatcherPort = Pick<ActionDispatcher, "dispatchAction">;
 type DestroyRefPort = Pick<DestroyRef, "onDestroy">;
 
 describe("CliActionService", () => {
   let _service: CliActionService;
-  let dispatcherMock: DispatcherPort;
+  let actionRunnerMock: Pick<ActionRunner, "run">;
   let destroyRefMock: DestroyRefPort;
   let registerSpy: ReturnType<typeof vi.fn>;
   let unlistenMock: ReturnType<typeof vi.fn>;
@@ -24,8 +23,8 @@ describe("CliActionService", () => {
     registerSpy = vi.fn().mockResolvedValue(unlistenMock as unknown as () => void);
     cliActionsStub = { register: registerSpy } as unknown as CliActionListener;
 
-    dispatcherMock = {
-      dispatchAction: vi.fn(),
+    actionRunnerMock = {
+      run: vi.fn().mockReturnValue("dispatched"),
     };
 
     destroyRefMock = {
@@ -36,7 +35,7 @@ describe("CliActionService", () => {
   it("should register a listener on initialization", () => {
     _service = new CliActionService(
       cliActionsStub,
-      dispatcherMock as ActionDispatcher,
+      actionRunnerMock as ActionRunner,
       destroyRefMock as unknown as DestroyRef,
     );
     expect(registerSpy).toHaveBeenCalled();
@@ -45,7 +44,7 @@ describe("CliActionService", () => {
   it("should parse and dispatch action when listener is triggered", async () => {
     _service = new CliActionService(
       cliActionsStub,
-      dispatcherMock as ActionDispatcher,
+      actionRunnerMock as ActionRunner,
       destroyRefMock as unknown as DestroyRef,
     );
 
@@ -62,18 +61,13 @@ describe("CliActionService", () => {
     callback(testAction);
 
     expect(parseSpy).toHaveBeenCalledWith(testAction);
-    expect(dispatcherMock.dispatchAction).toHaveBeenCalledWith(
-      expect.objectContaining({
-        actionName: "test-action",
-        args: [],
-      }),
-    );
+    expect(actionRunnerMock.run).toHaveBeenCalledWith("test-action", []);
   });
 
   it("should call unlisten when DestroyRef.onDestroy is triggered", async () => {
     _service = new CliActionService(
       cliActionsStub,
-      dispatcherMock as ActionDispatcher,
+      actionRunnerMock as ActionRunner,
       destroyRefMock as unknown as DestroyRef,
     );
 

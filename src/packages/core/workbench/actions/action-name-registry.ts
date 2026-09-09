@@ -20,4 +20,9 @@ export class ActionNameRegistry {
   getActionNames(): ReadonlyArray<string> {
     return [...this.names];
   }
+
+  /** True when a feature declared this action name (known, regardless of mode). */
+  has(actionName: string): boolean {
+    return this.names.has(actionName);
+  }
 }

@@ -40,6 +40,7 @@ export class FeatureHost {
   private readonly declarationConflicts: ReadonlyArray<string>;
   private reconciler?: FeatureReconciler;
   private pendingReconcile = Promise.resolve();
+  private featureActionOwners?: ReadonlyMap<ActionName, string>;
 
   constructor(
     @Inject(FEATURE_DEFINITIONS)
@@ -96,6 +97,36 @@ export class FeatureHost {
   /** Each feature's runtime status, for the sidebar and the API (step 22d). */
   featureStates(): ReadonlyArray<FeatureRuntimeState> {
     return this.reconciler?.states() ?? [];
+  }
+
+  /**
+   * True when the feature that declared `actionName` is currently active - for
+   * classifying a CLI/HTTP action as dispatched vs "not active" (step 26g). A
+   * core action (not declared by any feature) is not covered here.
+   */
+  isActionActive(actionName: ActionName): boolean {
+    const featureId = this.featureIdByActionName().get(actionName);
+    if (!featureId) {
+      return false;
+    }
+    const status = this.reconciler?.states().find((state) => state.id === featureId)?.status;
+    return status === "active" || status === "degraded";
+  }
+
+  private featureIdByActionName(): ReadonlyMap<ActionName, string> {
+    if (!this.featureActionOwners) {
+      const owners = new Map<ActionName, string>();
+      for (const feature of this.features) {
+        for (const definition of feature.sideMenu ?? []) {
+          owners.set(definition.actionName, feature.id);
+        }
+        for (const action of feature.actions ?? []) {
+          owners.set(action.actionName, feature.id);
+        }
+      }
+      this.featureActionOwners = owners;
+    }
+    return this.featureActionOwners;
   }
 
   /** Resolves once the latest reconciliation has settled (for tests and startup). */
