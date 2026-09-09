@@ -9,18 +9,15 @@ import { ActionFired, ActionFiredEvent } from "@cogno/core/workbench/bus/action.
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalId } from "@cogno/shared/domain";
 import { Subscription } from "rxjs";
-import { KeybindExecutor } from "./keybind/keybind.executor";
 
 /**
  * The session's answer to keybinding actions: the trigger actions that need
- * this session's autocomplete and history, the shell-integration command
- * history request, and the keybind executor that turns focused keybindings
- * into workbench commands. The last tie to the old bus; goes away with it.
+ * this session's autocomplete and history, and the shell-integration command
+ * history request. The last tie to the old bus; goes away with it.
  */
 @Injectable()
 export class SessionKeybindings {
   private readonly subscription = new Subscription();
-  private keybindExecutor?: KeybindExecutor;
   private disposed = false;
 
   constructor(
@@ -46,13 +43,11 @@ export class SessionKeybindings {
         event.propagationStopped = true;
       }),
     );
-    this.keybindExecutor = new KeybindExecutor(this.bus, this.host);
   }
 
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    this.keybindExecutor?.dispose();
     this.subscription.unsubscribe();
   }
 

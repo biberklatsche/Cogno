@@ -2,15 +2,20 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { ActionContextContract } from "@cogno/shared/domain";
+import { ActionContextContract, ActionTriggerContract } from "@cogno/shared/domain";
 import { CoreActionName } from "./catalog";
+
+/** What a handler receives: the fired action's args, target terminal and trigger. */
+export interface ActionHandlerContext extends ActionContextContract {
+  readonly trigger?: ActionTriggerContract;
+}
 
 /**
  * One core action's handler. Returning `false` means it did not perform (e.g.
  * `copy` with nothing selected), so a `performable` keybinding falls through to
  * the terminal; any other return keeps the existing "consumed" behaviour.
  */
-export type ActionHandler = (context: ActionContextContract) => boolean | void;
+export type ActionHandler = (context: ActionHandlerContext) => boolean | void;
 
 /**
  * The one place core actions are handled (ARCHITECTURE.md 5). Services register
@@ -35,6 +40,7 @@ export class ActionHandlers {
         const performed = handler({
           args: event.args ? [...event.args] : undefined,
           terminalId: event.terminalId,
+          trigger: event.trigger,
         });
         event.performed = performed === false ? false : !event.trigger?.broadcast;
         if (event.performed) {

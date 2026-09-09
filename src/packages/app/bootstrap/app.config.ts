@@ -45,6 +45,7 @@ import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/no
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
+import { TerminalActionHandlers } from "@cogno/core/workbench/terminal/+state/keybind/terminal-action-handlers";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
@@ -100,6 +101,9 @@ export const appConfig: ApplicationConfig = {
       // The config actions now live in the workbench; instantiate the handler
       // so it listens.
       inject(ConfigActionsHandler);
+      // The central terminal-action handlers (step 26): construct so they
+      // register on ActionHandlers and the ActionFired subscription is live.
+      inject(TerminalActionHandlers);
       // Routes bus messages addressed to a session onto its host.
       inject(TerminalInputDispatcher);
       inject(ErrorReportingRuntimeService).initialize();
