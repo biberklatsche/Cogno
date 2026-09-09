@@ -178,6 +178,7 @@ export function getWindowService(
       osProcess,
       getAppBus(),
       getTerminalBusyStateService(),
+      new ActionHandlers(getAppBus(), getDestroyRef()),
       getDestroyRef(),
     );
   }

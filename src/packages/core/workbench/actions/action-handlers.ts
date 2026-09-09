@@ -12,10 +12,14 @@ export interface ActionHandlerContext extends ActionContextContract {
 
 /**
  * One core action's handler. Returning `false` means it did not perform (e.g.
- * `copy` with nothing selected), so a `performable` keybinding falls through to
- * the terminal; any other return keeps the existing "consumed" behaviour.
+ * `copy` with nothing selected, or a `quit` the user cancelled), so a
+ * `performable` keybinding falls through to the terminal; any other return keeps
+ * the existing "consumed" behaviour. Async handlers settle `performed` once they
+ * resolve (after the synchronous publish, exactly as the old handlers did).
  */
-export type ActionHandler = (context: ActionHandlerContext) => boolean | void;
+export type ActionHandler = (
+  context: ActionHandlerContext,
+) => boolean | void | Promise<boolean | void>;
 
 /**
  * The one place core actions are handled (ARCHITECTURE.md 5). Services register
@@ -37,16 +41,27 @@ export class ActionHandlers {
         if (!handler) {
           return;
         }
-        const performed = handler({
+        const result = handler({
           args: event.args ? [...event.args] : undefined,
           terminalId: event.terminalId,
           trigger: event.trigger,
         });
-        event.performed = performed === false ? false : !event.trigger?.broadcast;
-        if (event.performed) {
-          event.defaultPrevented = true;
+        if (result instanceof Promise) {
+          void result.then((resolved) => this.applyPerformed(event, resolved));
+          return;
         }
+        this.applyPerformed(event, result);
       });
+  }
+
+  private applyPerformed(
+    event: { performed?: boolean; defaultPrevented?: boolean; trigger?: { broadcast: boolean } },
+    result: boolean | void,
+  ): void {
+    event.performed = result === false ? false : !event.trigger?.broadcast;
+    if (event.performed) {
+      event.defaultPrevented = true;
+    }
   }
 
   /** Register the one handler for a core action. */

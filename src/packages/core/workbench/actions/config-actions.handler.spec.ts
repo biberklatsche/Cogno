@@ -5,6 +5,7 @@ import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { Opener } from "@cogno/platform/opener";
 import { describe, expect, it, vi } from "vitest";
+import { ActionHandlers } from "./action-handlers";
 import { ConfigActionsHandler } from "./config-actions.handler";
 
 function setup() {
@@ -16,7 +17,7 @@ function setup() {
   } as unknown as Environment;
   const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
 
-  new ConfigActionsHandler(bus, config, opener, environment, destroyRef);
+  new ConfigActionsHandler(new ActionHandlers(bus, destroyRef), config, opener, environment);
   return { bus, config, opener };
 }
 

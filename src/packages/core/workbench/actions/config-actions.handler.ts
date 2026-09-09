@@ -1,9 +1,7 @@
-import { DestroyRef, Injectable } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
-import { ActionFired } from "@cogno/core/workbench/bus/action.models";
-import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { Opener } from "@cogno/platform/opener";
 
 /**
@@ -14,25 +12,19 @@ import { Opener } from "@cogno/platform/opener";
 @Injectable({ providedIn: "root" })
 export class ConfigActionsHandler {
   constructor(
-    appBus: AppBus,
+    actions: ActionHandlers,
     config: ConfigService,
     opener: Opener,
     environment: Environment,
-    destroyRef: DestroyRef,
   ) {
-    appBus
-      .on$(ActionFired.listener())
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(async (event) => {
-        if (event.payload === "open_config") {
-          await opener.openPath(environment.configFilePath());
-        }
-        if (event.payload === "open_documentation") {
-          await opener.openUrl("https://cogno.rocks/docs/getting-started/");
-        }
-        if (event.payload === "load_config") {
-          await config.reload();
-        }
-      });
+    actions.handle("open_config", () => {
+      void opener.openPath(environment.configFilePath());
+    });
+    actions.handle("open_documentation", () => {
+      void opener.openUrl("https://cogno.rocks/docs/getting-started/");
+    });
+    actions.handle("load_config", () => {
+      void config.reload();
+    });
   }
 }
