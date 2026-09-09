@@ -55,6 +55,11 @@ export const FeatureGitSchema = z.object({
   order: featureOrderSchema,
 });
 
+export const FeatureProcessInfoSchema = z.object({
+  mode: featureModeSchema.optional(),
+  order: featureOrderSchema,
+});
+
 export const FeatureCodingAgentsSchema = z.object({
   mode: featureModeSchema.optional(),
   order: featureOrderSchema,

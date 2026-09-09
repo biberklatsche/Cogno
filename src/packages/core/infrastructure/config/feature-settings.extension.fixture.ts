@@ -4,6 +4,7 @@ import {
   FeatureCommandPaletteSchema,
   FeatureGitSchema,
   FeatureNotificationOverviewSchema,
+  FeatureProcessInfoSchema,
   FeatureSearchSchema,
   FeatureWorkspaceSchema,
 } from "@cogno/shared/contributions";
@@ -20,6 +21,7 @@ export const featureSettingsExtensionFixture = {
   defaults: {
     feature: {
       git: { mode: "on" },
+      process_info: { mode: "on" },
       coding_agents: { mode: "on" },
     },
   },
@@ -31,6 +33,7 @@ export const featureSettingsExtensionFixture = {
         command_palette: FeatureCommandPaletteSchema.optional(),
         search: FeatureSearchSchema.optional(),
         git: FeatureGitSchema.optional(),
+        process_info: FeatureProcessInfoSchema.optional(),
         coding_agents: FeatureCodingAgentsSchema.optional(),
       })
       .optional(),
@@ -41,6 +44,7 @@ export const featureSettingsExtensionFixture = {
     { id: "feature.command_palette", title: "Command Palette", order: 400 },
     { id: "feature.search", title: "Search", order: 700 },
     { id: "feature.git", title: "Git", order: 900 },
+    { id: "feature.process_info", title: "Process Info", order: 950 },
     { id: "feature.coding_agents", title: "Coding Agents", order: 1000 },
   ],
 } as const satisfies ApplicationSettingsExtensionContract;
