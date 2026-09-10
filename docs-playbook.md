@@ -1,11 +1,13 @@
 # Cogno Docs Playbook
 
-> **Outdated during the architecture migration.** File paths and some
-> config keys in this playbook no longer match the code; pages for Git and
-> Coding Agents are missing. It is corrected in migration step 26
-> (`.claude/plans/umsetzungsplan.md`), when the action catalogue and the
-> settings schema become the generated source of the docs. Until then,
-> verify every path against the code before using it.
+> **Partly outdated during the architecture migration.** The Actions section is
+> now generated from the core action catalogue (`pnpm generate:actions` →
+> `docs/actions.md`, step 26). Other pages still carry pre-migration paths - the
+> config models moved to `src/packages/core/infrastructure/config/models/`,
+> feature schemas to `src/packages/shared/contributions/`, features out of
+> `features/side-menu/` into `features/<name>/`, the AI feature was removed, and
+> pages for Git and Coding Agents are missing. Verify every path against the code
+> before using it.
 
 This file contains precise instructions for an AI agent to generate the Cogno documentation.
 The agent reads this file, reads all listed source files, and writes the output markdown files.
@@ -86,8 +88,8 @@ its type, default value, and a brief description. Also covers the config CLI.
 | `src/packages/app/config/+models/keybind-config.ts` | Keybinding schema |
 | `src/packages/features/ai/ai.models.ts` | AI provider capability types |
 | `src/packages/products/ai-detectable-provider-definitions.ts` | Auto-detected provider definitions (Ollama, LM Studio URLs) |
-| `src/packages/app/action/core-action-names.ts` | Core action names (terminal/window actions; does NOT include side-menu feature actions) |
-| `src/packages/features/side-menu/*/feature-definition.ts` | Each side-menu feature defines its own `actionName` — read all of them |
+| `src/packages/core/workbench/actions/catalog.ts` | Core action catalog: name, label, description and per-OS default keybindings (does NOT include side-menu feature actions) |
+| `src/packages/features/*/*.feature-definition.ts` | Each feature defines its own `actionName` — read all of them |
 
 **Required sections (generate in this order):**
 
@@ -119,61 +121,21 @@ Action commands:
 
 Full table of every callable action name and what it does.
 
-**Important — two sources, not one:**
-The action catalog is built from `core-action-names.ts` PLUS the `actionName` of every
-registered side-menu feature definition. Side-menu features manage their own action name;
-it must NOT be added to `core-action-names.ts`. When generating this section, read both:
-- `src/packages/app/action/core-action-names.ts` — core/terminal actions
-- All `*.feature-definition.ts` files under `src/packages/features/side-menu/` — one `actionName` each
+**Generated — do not hand-write:** `scripts/generate-actions.ts` (run `pnpm generate:actions`)
+emits `docs/actions.md` from the single source of truth, the core action catalog, plus the
+feature actions. Base this website section on that generated `docs/actions.md`. The two
+sources it reads:
+- `src/packages/core/workbench/actions/catalog.ts` — the core action catalog (name, label,
+  description, per-OS default keybindings); feature actions must NOT be added here
+- Each feature's `*.feature-definition.ts` under `src/packages/features/` — one `actionName`
+  each, self-contained
 
-Group by category: Clipboard, Buffer, Cursor movement, Text selection, Tabs, Panes,
-Shell profiles, Window, Workspaces, Autocomplete, Features (side-menu).
+The catalog also generates the Rust action list (`src-tauri/src/actions.generated.rs`) the CLI
+uses, and `pnpm generate:actions:check` (part of `pnpm lint`) fails if either generated file
+is stale or if the catalog's default keybindings drift from the `default_*.config` files.
 
-Descriptions for each action (derive from name, match these):
-- `copy` — Copy the selected text to the clipboard
-- `cut` — Cut the selected text to the clipboard
-- `paste` — Paste from the clipboard
-- `clear_buffer` — Clear the terminal scrollback buffer
-- `clear_line` — Clear the current input line
-- `clear_line_to_end` — Delete from the cursor to the end of the line
-- `clear_line_to_start` — Delete from the cursor to the start of the line
-- `delete_previous_word` — Delete the word before the cursor
-- `delete_next_word` — Delete the word after the cursor
-- `go_to_start_of_line` — Move the cursor to the start of the line
-- `go_to_end_of_line` — Move the cursor to the end of the line
-- `go_to_next_word` — Move the cursor forward by one word
-- `go_to_previous_word` — Move the cursor backward by one word
-- `select_all` — Select all text in the terminal
-- `select_text_right` / `select_text_left` — Extend the selection one character right/left
-- `select_word_right` / `select_word_left` — Extend the selection one word right/left
-- `select_text_to_end_of_line` / `select_text_to_start_of_line` — Extend selection to line boundary
-- `new_tab` — Open a new terminal tab
-- `close_tab` — Close the current tab
-- `close_terminal` — Close the active terminal pane
-- `close_other_tabs` — Close all tabs except the current one
-- `close_all_tabs` — Close all tabs
-- `select_next_tab` / `select_previous_tab` — Switch to the next/previous tab
-- `select_tab_1` … `select_tab_9` — Jump to a tab by position
-- `split_right` / `split_left` / `split_down` / `split_up` — Split the current pane
-- `maximize_pane` — Maximize the active pane
-- `minimize_pane` — Restore a maximized pane
-- `select_next_pane` / `select_previous_pane` — Switch focus between panes
-- `open_shell_1` … `open_shell_9` — Open a new tab with shell profile by slot number
-- `new_window` — Open a new Cogno window
-- `close_window` — Close the current window
-- `minimize_window` — Minimize the current window
-- `quit` — Quit Cogno
-- `open_config` — Open the config file in the default editor
-- `load_config` — Reload the config file without restarting
-- `open_workspace` — Toggle the workspace panel
-- `open_command_palette` — Toggle the command palette
-- `open_notification` — Toggle the notification panel
-- `open_ai_chat` — Toggle the AI chat panel
-- `open_terminal_search` — Toggle the in-terminal search bar
-- `trigger_autocomplete` — Manually trigger autocomplete suggestions
-- `cycle_tab` — Cycle through available autocomplete modes (or history scope, while that dropdown is open)
-- `select_workspace_default` — Switch to the default workspace
-- `select_workspace_1` … `select_workspace_9` — Switch to a workspace by slot number
+The action names, descriptions and default keybindings come from the generated
+`docs/actions.md` (see above) - do not maintain a copy here.
 
 #### Font
 
@@ -394,15 +356,16 @@ Include a full working example for:
 **Purpose:** Complete table of every callable action with a description. Also explains the
 two-source architecture (core list + side-menu features).
 
-**Source files:**
-- `src/packages/app/action/core-action-names.ts` — core actions
-- All `src/packages/features/side-menu/*/feature-definition.ts` — side-menu actions (one `actionName` each)
+**Source:** the in-repo generated `docs/actions.md` (produced by `pnpm generate:actions`). Base
+the website page on it rather than re-deriving from source. Underlying sources:
+- `src/packages/core/workbench/actions/catalog.ts` — core action catalog
+- Each feature's `*.feature-definition.ts` under `src/packages/features/` — one `actionName` each
 
-**Important:** Side-menu feature actions must NOT be in `core-action-names.ts` — each feature
-defines its own action and is fully self-contained. Do not add new feature actions to the core list.
+**Important:** feature actions must NOT be added to the core catalog — each feature defines its
+own action and is fully self-contained. Do not add new feature actions to the core list.
 
 **Required sections:**
-- Short explanation of the two-source catalog
+- Short explanation of the catalog + feature actions
 - Full grouped table: Clipboard, Buffer, Cursor movement, Text selection, Tabs, Panes,
   Shell profiles, Window, Workspaces, Autocomplete, Features (side-menu)
 - CLI usage: `cogno action list` and `cogno action run <name>`
