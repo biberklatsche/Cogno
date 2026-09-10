@@ -1166,6 +1166,41 @@ Handler hat (Startprüfung).
 
 ---
 
+### Schritt K: Config als Single Source of Truth in TS (nach 26 eingeschoben)
+
+**Voraussetzungen:** 26. **Auslöser:** Nutzerentscheidung — die zweigleisige
+Pflege (Katalog-`defaultKeys` *und* `keybind`-Zeilen in den Configs) und
+hand-gepflegte Settings-Dateien stören; gewünscht ist eine TS-Quelle.
+
+**Entscheidung (mit Nutzer abgestimmt):** Alle Defaults leben in TS; die drei
+`default_*.config` werden daraus **generiert** (Build-Artefakt, eingecheckt), die
+Rust-CLI liest sie unverändert (`get_default_config`). Kein Voll-Zod-Config
+(Schema hat kaum `.default()`, prompt.\* sind `z.record`); stattdessen rohe
+Config-Werte als Daten.
+
+**Was (umgesetzt):**
+- `core/infrastructure/config/models/default-config-values.ts` = Quelle:
+  `defaultSettings` (rohe Werte, windows als Basis), `platformSettingOverrides`
+  (linux `terminal.webgl=false`; macOS = Basis), `featureKeybinds` (Feature-
+  Actions; Core-Keybinds kommen aus dem Katalog).
+- `scripts/generate-actions.ts` generiert zusätzlich die drei `default_*.config`
+  (Settings + Core-Keybinds aus Katalog + Feature-Keybinds); `--check` (in
+  `pnpm lint`) ist der byte-`generiert == eingecheckt`-Vergleich und ersetzt den
+  26h-Keybind-Differ; `--parity` war der einmalige Äquivalenz-Nachweis.
+- Runtime unverändert (ConfigMapper typisiert/transformiert beim Laden).
+- Einzige beabsichtigte Verhaltensänderung: der tote `open_ai_chat`-Keybind
+  entfällt (AI wurde entfernt).
+
+**Offene Verfeinerung (nicht gebaut):** Feature-eigene Keybinds über einen
+node-sicheren `*.feature-manifest.ts` (statt `featureKeybinds`-Daten +
+actionName/title-Regex) — spätere Option.
+
+**Akzeptanz:** `pnpm generate:actions:check` grün; `--parity` nur der ai_chat-
+Delta; config-mapper-Specs re-parsen die generierten Dateien grün; App bootet
+mit identischer effektiver Config.
+
+---
+
 ## Phase G — Wiederherstellung und Abschluss
 
 ### Schritt 27: Sitzungs-Wiederherstellung (ZA 2.5)
