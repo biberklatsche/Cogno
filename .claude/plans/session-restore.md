@@ -1,129 +1,126 @@
-# Schritt 27 — Sitzungs-Wiederherstellung (Design)
+# Schritt 27 — Sitzungs-Wiederherstellung (Design, revidiert)
 
-Ziel: nach App-Neustart sind Workspaces, Tabs, Panes **und** der Terminal-Scrollback
-wieder da; ein Kommando, das beim Beenden lief, steht im Command-Log als
-abgebrochen. Layout-Persistenz existiert bereits (Workspace-Modul); dieser Schritt
-ergänzt **pro Terminal einen Snapshot** (Scrollback + Start-Kontext) und den
-Serialisierungs-/Restore-Fluss.
+Ziel: Cogno kommt **so zurück, wie man es verlassen hat** — Workspaces, Tabs,
+Panes **und** Terminal-Scrollback; ein beim Beenden laufendes Kommando steht im
+Command-Log als abgebrochen. Kein Verlauf/keine Historie. Speichern ist für den
+Nutzer **unmerklich** und **abschaltbar**.
 
-> Status: **Design, noch nicht implementiert.** Erst abstimmen (v. a. die
-> „Zu entscheiden"-Punkte), dann in grünen Teilcommits umsetzen.
+> Status: **Design, abgestimmt, noch nicht implementiert.**
+> Dieser Schritt verfeinert/weicht bewusst vom ursprünglichen Plantext (Schritt 27)
+> ab (mit Nutzer abgestimmt): Modell „zuletzt gelebt" mit Auto-Save, **keine
+> `windowId`-Spalten**, Auto- **und** Manuell-Speichern koexistieren.
 
 ---
 
-## Ausgangslage (aus dem Code verifiziert)
+## Modell (abgestimmte Entscheidungen)
 
-- **`terminal_session`-Tabelle existiert schon** (`workspace/migrations/001_init_workspace.sql`):
-  `(workspace_id, terminal_id, session_data TEXT, updated_at)`. `WorkspaceRepository`
-  hat `create/update/get/deleteTerminalSession` — **produktiv aber nirgends genutzt**
-  (nur Spec). Genau der Slot für den Snapshot; `session_data` = JSON(SessionSnapshot).
-- **`SessionHost`** hält das xterm-`Terminal` nur über `this.renderer.terminal`.
-  Präzedenzfall fürs Buffer-Lesen: `getRecentOutputSnapshot()`. Kein snapshot/restore.
-  `start()` spawnt immer eine frische PTY; Restore muss den Scrollback **nach** dem
-  Spawn in `renderer.terminal` schreiben. `close()` ist der letzte sichere Lesepunkt.
-- **SerializeAddon fehlt** (`@xterm/addon-serialize` nicht installiert). Wird in
-  `core/terminal/renderer.ts` geladen (wie fit/search-Addon) + über `IRenderer`
-  freigegeben.
-- **DB-Transaktion**: einzige Atomarität ist `DatabaseAccess.batch(statements)` (ein
-  Tauri-`db_batch` = eine Transaktion). Der Serializer sammelt **erst** alle Snapshots,
-  baut dann **ein** `DatabaseStatement[]` und ruft `batch()` **einmal** — kein `await`
-  in der „Transaktion".
-- **Save/Restore-Fluss**: `WorkspaceHostApplicationService` lädt bei `DBInitialized` →
-  `activateWorkspace` → `tabListService.restoreTabs` + `gridListService.restoreGridsForWorkspace`.
-  Der Session-Serializer lebt daneben.
-- **Quit**: `WindowService.quit()/closeWindow()` (async) — Hook zwischen Busy-Confirm
-  und `process.exit()`; `onCloseRequested$` als frühester OS-Close-Abfangpunkt.
-- **Start-Kontext**: Start-cwd = `pane.workingDir` + Basis-Kontext (Kontext-Stack
-  Eintrag 0). WSL/SSH sind transiente Inner-Kontexte (nicht persistiert) → Restore
-  nutzt bewusst den Basis-Kontext, auch wenn zuletzt WSL/SSH aktiv war.
-- **`aborted` existiert nicht** im Command-Log — neues Konzept (siehe Entscheidung 2).
-- **Fenster-Identität = Tauri-Window-Label** (Rust `WindowRegistry`), kein numerischer
-  `windowId`. Ein Workspace gehört via `claim_workspace` genau einem Fenster (siehe
-  Entscheidung 1).
+- **„Zuletzt gelebt".** Restore stellt den letzten *gelebten* Zustand her, nicht ein
+  kuratiertes Template. Keine Historie (in-place überschrieben).
+- **Ein Speicher-Pfad, konfigurierbarer Auslöser.** „Speichern" = Layout
+  (`workspace`/`workspace_tab`/`workspace_grid`) **und** Scrollback-Snapshot
+  (`terminal_session`) **atomar zusammen** (ein `batch()`), für einen Workspace.
+- **Setting `terminal.restore.enabled`** (Default `true`):
+  - **AN (Autosave):** persistiert automatisch bei **(1) Idle-Debounce des aktiven
+    Workspace**, **(2) Workspace-Wechsel** (verlassener WS), **(3) Beenden**
+    (Zeitbudget). Save-Button + Dirty-Indikator werden durch einen **Auto-Save-
+    Status** ersetzt („speichert…" / „✓ automatisch gespeichert vor X s").
+  - **AUS:** kein Auto-Speichern; klassischer **Save-Button + Dirty-Indikator**;
+    Restore = zuletzt **explizit** Gespeichertes.
+- **Idle-Auto-Save** (nur bei AN): feuert erst nach ~2–3 s **Ausgabe-Ruhe**, nur
+  aktiver Workspace, gecappt, **async** geschrieben → unmerklich; Bonus:
+  Absturz-Resilienz (Verlust nur wenige Sekunden) und macht den „✓ gespeichert"-
+  Indikator ehrlich.
+- **Scrollback = reiner Text** (SerializeAddon), beim Restore oberhalb einer
+  **Trennzeile** in den Buffer geschrieben; darunter startet der frische Prompt.
+  **Zurückscrollen im wiederhergestellten Terminal geht.** **Kein PTY-Replay.**
+- **Zeitbudget beim Beenden** ist nur ein **Sicherheitsventil** gegen Hänger (lässt
+  im pathologischen Langsamfall den Scrollback aus, speichert Layout) — greift
+  praktisch nie, weil Idle/Wechsel schon persistiert haben.
+- **Start-cwd = Basis-Kontext** (Kontext-Stack Eintrag 0) + `pane.workingDir`;
+  transiente WSL/SSH-Inner-Kontexte werden ignoriert.
+- **Kein `windowId`.** Ein Workspace gehört via Rust `claim_workspace` genau einem
+  Fenster; `terminal_session` hängt an `workspace_id` → implizit fenster-scoped.
+
+---
+
+## Speicher & Performance (abgeschätzt)
+
+- Kosten nur durch Scrollback; Layout = KB. Pro Terminal ≈ `max_lines` ×
+  ~200–400 B/Zeile. Default-Cap **1000 Zeilen** ≈ ~0,3 MB/Terminal.
+- Typisch 5–15 Terminals → ~1,5–4,5 MB; 30 → ~9 MB. Keine Historie → wächst nicht.
+- Serialisieren läuft nur bei Idle/Wechsel/Beenden, gecappt, Write async → keine
+  spürbare Last; Beenden zeitbudgetiert.
 
 ---
 
 ## Datenmodell
 
-`SessionSnapshot` (in `core/session/`, versioniert):
+`SessionSnapshot` (in `core/session/`, versioniert), abgelegt als JSON in
+`terminal_session.session_data`, Key `(workspace_id, terminal_id)`:
 
 ```
-{
-  version: 1,
-  start: { shellName: string; workingDir: string; shellContext: <Basis-Kontext> },
-  scrollback: string | null,   // serialisierter Buffer (ohne Alt-Screen), gekappt
-  history?: string[],          // optional (terminal.history)
-  abortedCommand?: { text: string; startedAt: number } // lief beim Snapshot
-}
+{ version: 1,
+  start: { shellName, workingDir, shellContext /* Basis-Kontext */ },
+  scrollback: string | null,        // SerializeAddon, ohne Alt-Screen, gecappt
+  abortedCommand?: { text, startedAt } }
 ```
 
-Ablage: `terminal_session.session_data = JSON(SessionSnapshot)`, Key
-`(workspace_id, terminal_id)`.
+Bereits vorhanden (ungenutzt): Tabelle `terminal_session` +
+`WorkspaceRepository.create/update/get/deleteTerminalSession`.
 
 ---
 
 ## Slices
 
-- **27a — SerializeAddon**: `@xterm/addon-serialize` als dep; in `renderer.ts` laden;
-  `IRenderer.serialize(maxLines): string` (ohne Alt-Screen). Klein, isoliert.
-- **27b — Host snapshot/restore**: `SessionHost.snapshot(): SessionSnapshot` (nutzt
-  `renderer.serialize`, kappt auf `terminal.restore.max_lines`, Start = Basis-Kontext,
-  `abortedCommand` wenn `isCommandRunning`); `SessionHost.restore(snapshot)` schreibt
-  nach dem Spawn den Scrollback + **Trennzeile** in `renderer.terminal`, dann läuft der
-  frische Prompt an. Start-cwd = `snapshot.start.workingDir`. Bei laufендem Kommando:
-  Eintrag `aborted` ins Command-Log. Roundtrip-/Unlesbar-Tests.
-- **27c — Settings + Action**: `terminal.restore.scrollback` (on/off) +
-  `terminal.restore.max_lines` in `TerminalSettingsSchema` **und**
-  `default-config-values.ts` (→ `pnpm generate:actions` schreibt die Configs, Schritt K);
-  Katalog-Action `exclude_from_restore` (+ Handler: markiert das fokussierte Terminal).
-- **27d — Serializer (Transaktion)**: neuer Service im Workspace-Modul: sammelt Snapshots
-  aller lebenden `SessionHost`s (über `SessionHostFactory`/Registry), baut **ein**
-  `batch()` (Upsert `terminal_session`), **kein `await` innerhalb**. Auslöser:
-  Dirty/Debounce + Workspace-Wechsel. Test: verzögertes `snapshot()` darf die Transaktion
-  nicht aufreißen.
-- **27e — Quit + Zeitbudget**: Hook in `quit()`/`closeWindow()`:
-  `await serializer.serializeAll({ budgetMs })`; bei Überschreitung Layout speichern,
-  Scrollback weglassen, kein Hänger. Test mit langsamer Serialisierung.
-- **27f — Restore beim Start + Lifecycle**: bei `activateWorkspace` `terminal_session`
-  lesen → beim `ensureSession` den Snapshot an `restore()` reichen. Löschung bei Terminal-
-  Close; Verwaisten-Prune beim Start. `scrollback=off` → Spalte leer.
-- **27g — Fenster-Scoping**: siehe Entscheidung 1 (vermutlich **kein** `windowId`-Spalten-
-  Umbau nötig, da Workspaces via `claim_workspace` schon fenster-exklusiv sind).
+- **27a — SerializeAddon**: `@xterm/addon-serialize` dep; in `renderer.ts` laden;
+  `IRenderer.serialize(maxLines): string`.
+- **27b — Host snapshot/restore**: `SessionSnapshot`; `SessionHost.snapshot()`
+  (serialize + Cap + Basis-Kontext + abortedCommand wenn `isCommandRunning`);
+  `SessionHost.restore(snapshot)` (nach Spawn Scrollback + Trennzeile schreiben,
+  Start-cwd = Basis-Kontext; abortedCommand → Command-Log-Eintrag `aborted`).
+  Tests: Roundtrip, unlesbarer Snapshot.
+- **27c — Settings**: `terminal.restore.enabled` / `.scrollback` / `.max_lines` in
+  `TerminalSettingsSchema` **und** `default-config-values.ts` (Schritt-K-Generator
+  schreibt die Configs). (`.idle_debounce_ms` / Zeitbudget: intern, ggf. Setting.)
+- **27d — Save-Pfad (Transaktion)**: `SessionPersistenceService` (Workspace-Modul):
+  `persistWorkspace(workspaceId)` = Layout + Scrollback-Snapshots aller Terminals
+  des WS **einsammeln, dann ein `batch()`** (kein `await` in der Transaktion). Test:
+  verzögertes `snapshot()` reißt die Transaktion nicht auf.
+- **27e — Auslöser + Modus**: gated by `terminal.restore.enabled`. AN: Idle-Debounce
+  (aktiver WS), Workspace-Wechsel (verlassener WS), Beenden (Zeitbudget in
+  `quit()`/`closeWindow()`). AUS: nur expliziter Save-Button. Test: Zeitbudget bei
+  langsamer Serialisierung greift (Layout gespeichert, Scrollback fehlt, kein Hänger).
+- **27f — Restore beim Start + Lifecycle**: bestehendes Layout-Restore
+  (`activateWorkspace`) um Scrollback erweitern (`terminal_session` lesen →
+  `SessionHost.restore` beim `ensureSession`). Löschung bei Terminal-Close;
+  Verwaisten-Prune beim Start. `scrollback=off` → Scrollback leer, Layout da.
+- **27g — UI**: Auto-Save-Status-Indikator (ersetzt Dirty/Save bei Autosave AN:
+  „speichert…" / „✓ vor X s"); Dirty-Indikator + Save-Button bleiben bei Autosave
+  AUS. Save/Dirty-Logik **bleibt** (nicht entfernt), nur modusabhängig sichtbar.
 
-Jeder Slice ein grüner Commit (biome, depcruise, guard, tsc, vitest, ng build; wo Rust
-berührt: `cargo check`).
+Jeder Slice ein grüner Commit (biome, depcruise, guard, tsc, vitest, ng build; bei
+Rust `cargo check`).
 
 ---
 
-## Zu entscheiden (vor der Umsetzung)
+## Offen / beim Bau festzulegen
 
-1. **`windowId` — brauchen wir die Spalten überhaupt?** Der Plan (Schritt 27) nennt
-   „`windowId` in `terminal_session` und `side_menu_state`". Real ist Fenster-Identität
-   ein Tauri-Label, und ein Workspace gehört via `claim_workspace` schon genau einem
-   Fenster. `terminal_session` hängt an `workspace_id` → ist damit **implizit fenster-
-   scoped**. **Empfehlung:** keine `windowId`-Spalten; Scoping über die bestehende
-   Workspace↔Fenster-Bindung. (Abweichung vom Plantext — bitte bestätigen.)
-2. **`aborted`-Kommando — wie darstellen?** Es gibt kein `aborted`-Konzept. **Empfehlung:**
-   beim Snapshot eines laufenden Kommandos einen Command-Log-Eintrag mit einem neuen
-   Status/Flag `aborted` schreiben (kein `returnCode`), das die UI als „abgebrochen"
-   zeigt. Minimal-invasiv: neues optionales Feld im Command-Log-Writer, kein Schema-
-   Umbau der bestehenden Felder.
-3. **Scrollback-Replay = reiner Text.** SerializeAddon liefert Text mit ANSI-Farben, aber
-   kein Interaktions-Zustand. Der replayte Scrollback ist „totes" Terminal-Output oberhalb
-   einer Trennzeile; darunter startet der echte Prompt. Das ist gewollt (kein PTY-Replay).
-4. **Auslöser-Debounce-Fenster** (z. B. 2 s nach Ausgabe-Ruhe) + ob bei jedem Workspace-
-   Wechsel voll serialisiert wird — Feinwerte beim Bau festlegen.
+- Idle-Debounce-Fenster (Start ~2–3 s Ruhe) und Beenden-Zeitbudget (großzügig,
+  sodass normale Beenden den Scrollback immer mitnehmen).
+- Genaue Optik/Position des Auto-Save-Status-Indikators.
+- Verhalten von `.scrollback=off` bei `enabled=true` (Layout ja, Scrollback nein).
 
 ---
 
 ## Akzeptanz (Tests im Schritt)
 
-- Roundtrip: Snapshot → Restore → Buffer hat Scrollback bis Limit, Trennzeile, dann
+- Roundtrip: Snapshot → Restore → Buffer hat Scrollback bis Limit, Trennzeile,
   neuer Prompt; Start-cwd = Basis-Kontext, auch wenn zuletzt WSL/SSH.
 - Unlesbarer Snapshot → Shell startet ohne Scrollback, Meldung.
-- Serializer: kein `await` in der Transaktion (Test mit verzögertem `snapshot()`).
-- Beenden mit langsamer Serialisierung → Zeitbudget greift, Layout gespeichert,
-  Scrollback fehlt, kein Hänger.
-- `scrollback = off` → Spalte leer.
-- Manuell: App beenden/starten → Workspaces, Tabs, Panes, Scrollback da; laufendes
-  Kommando steht im Command-Log als abgebrochen.
+- Serializer: kein `await` in der Transaktion (verzögertes `snapshot()`).
+- Beenden mit langsamer Serialisierung → Zeitbudget greift, Layout da, kein Hänger.
+- `terminal.restore.enabled=false` → keine Persistenz, frischer Start; Save-Button +
+  Dirty sichtbar; expliziter Save funktioniert.
+- `scrollback=off` → Scrollback leer, Layout da.
+- Manuell: App beenden/starten → alles wie verlassen; laufendes Kommando im
+  Command-Log als abgebrochen; Idle-Auto-Save-Indikator zeigt „gespeichert".
