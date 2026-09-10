@@ -1,23 +1,31 @@
 /**
- * Generates the action artifacts from the core action catalog (step 26i), so the
- * catalog is the single source of truth:
- *   - src-tauri/src/actions.generated.rs  (the Rust action list the CLI uses)
- *   - docs/actions.md                     (the human catalogue)
+ * Generates every action/config artifact from the TypeScript source of truth
+ * (the action catalog + default-config-values.ts), so there is no second place
+ * to maintain (steps 26 + K):
+ *   - src-tauri/src/actions.generated.rs   (the Rust action list the CLI uses)
+ *   - docs/actions.md                      (the human catalogue)
+ *   - src-tauri/src/default_{windows,linux,macos}.config
  *
- * It also verifies (--check) that the catalog's per-OS default keybindings still
- * match the keybind lines in the three default_*.config files (step 26h), so the
- * hand-maintained configs cannot drift from the catalog. Run with --check in CI.
+ * `--check` fails if any generated file on disk differs from a fresh render (CI,
+ * via `pnpm lint`). `--parity` is the one-time migration aid: it compares a fresh
+ * render against the current config files semantically (settings + keybinds).
  *
- * Run: `npx tsx scripts/generate-actions.ts [--check]`.
+ * Run: `npx tsx scripts/generate-actions.ts [--check|--parity]`.
  */
-import { readFileSync, writeFileSync, globSync } from "node:fs";
+import { globSync, readFileSync, writeFileSync } from "node:fs";
 import { coreActionCatalog } from "../src/packages/core/workbench/actions/catalog";
+import {
+  defaultSettings,
+  featureKeybinds,
+  platformSettingOverrides,
+} from "../src/packages/core/infrastructure/config/models/default-config-values";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const GENERATED_RS = `${REPO_ROOT}/src-tauri/src/actions.generated.rs`;
 const DOCS_MD = `${REPO_ROOT}/docs/actions.md`;
 const OS_CONFIGS = ["windows", "linux", "macos"] as const;
 type Os = (typeof OS_CONFIGS)[number];
+const configPath = (os: Os) => `${REPO_ROOT}/src-tauri/src/default_${os}.config`;
 
 type ActionRow = { readonly name: string; readonly description: string };
 
@@ -94,77 +102,147 @@ function renderDocs(): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** Parse the keybind lines of a default_*.config into action -> combos (with flags). */
-function parseConfigKeybinds(os: Os): Map<string, string[]> {
-  const text = readFileSync(`${REPO_ROOT}/src-tauri/src/default_${os}.config`, "utf8");
-  const byAction = new Map<string, string[]>();
-  for (const line of text.split(/\r?\n/)) {
-    const match = line.match(/^keybind\s*=\s*(.+)$/);
-    if (!match) continue;
-    const [lhs, action] = match[1].split("=");
-    if (!action) continue;
-    const combo = lhs.split(":").map((token) => token.trim()).filter(Boolean).pop() ?? "";
-    const list = byAction.get(action.trim()) ?? [];
-    list.push(combo);
-    byAction.set(action.trim(), list);
+
+
+type Nested = { [key: string]: string | Nested };
+
+function deepMerge(base: Nested, override: Nested): Nested {
+  const out: Nested = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const current = out[key];
+    out[key] =
+      typeof value === "object" && typeof current === "object"
+        ? deepMerge(current, value)
+        : value;
   }
-  return byAction;
+  return out;
 }
 
-/** Catalog defaultKeys vs the config keybind lines; returns human-readable drifts. */
-function keybindDrifts(): string[] {
-  const drifts: string[] = [];
-  for (const os of OS_CONFIGS) {
-    const config = parseConfigKeybinds(os);
-    for (const action of coreActionCatalog) {
-      if (!action.defaultKeys) continue;
-      const expected = (os === "macos" && action.defaultKeys.macos
-        ? action.defaultKeys.macos
-        : action.defaultKeys.default
-      ).map((key) => key.combo);
-      const actual = config.get(action.name) ?? [];
-      if (JSON.stringify(expected) !== JSON.stringify(actual)) {
-        drifts.push(
-          `${os}: ${action.name} catalog=[${expected.join(", ")}] config=[${actual.join(", ")}]`,
-        );
-      }
+function flatten(node: Nested, prefix = ""): Array<[string, string]> {
+  const rows: Array<[string, string]> = [];
+  for (const [key, value] of Object.entries(node)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === "string") {
+      rows.push([path, value]);
+    } else {
+      rows.push(...flatten(value, path));
     }
   }
-  return drifts;
+  return rows;
+}
+
+function keyFlags(entry: { always?: boolean; performable?: boolean }): string {
+  return `${entry.always ? "always:" : ""}${entry.performable ? "performable:" : ""}`;
+}
+
+/** Render a full default_<os>.config from the TS source of truth (step K). */
+function renderConfig(os: Os): string {
+  const merged = deepMerge(
+    defaultSettings as unknown as Nested,
+    (platformSettingOverrides as Record<string, Nested>)[os] ?? {},
+  );
+  const lines: string[] = ["# @generated by scripts/generate-actions.ts - do not edit.", ""];
+  for (const [key, value] of flatten(merged)) {
+    lines.push(value === "" ? `${key} =` : `${key} = ${value}`);
+  }
+  lines.push("", "# Keybindings");
+  for (const action of coreActionCatalog) {
+    if (!action.defaultKeys) continue;
+    const keys = os === "macos" && action.defaultKeys.macos ? action.defaultKeys.macos : action.defaultKeys.default;
+    for (const key of keys) {
+      lines.push(`keybind = ${keyFlags(key)}${key.combo}=${action.name}`);
+    }
+  }
+  for (const entry of featureKeybinds) {
+    const combo = os === "macos" && entry.macos ? entry.macos : entry.combo;
+    lines.push(`keybind = ${keyFlags(entry)}${combo}=${entry.action}`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+/** Parse a config into a comparable shape: settings key/value map + keybind set. */
+function parseConfigSemantic(text: string): { settings: Map<string, string>; keybinds: Set<string> } {
+  const settings = new Map<string, string>();
+  const keybinds = new Set<string>();
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith(";")) continue;
+    const eq = line.indexOf("=");
+    if (eq === -1) continue;
+    const key = line.slice(0, eq).trim();
+    const value = line.slice(eq + 1).trim();
+    if (key === "keybind") {
+      const [lhs, action] = value.split("=");
+      if (!action) continue;
+      const tokens = lhs.split(":").map((token) => token.trim()).filter(Boolean);
+      const combo = tokens.pop();
+      const flags = [...tokens].sort().join(":");
+      keybinds.add(`${flags}|${combo}|${action.trim()}`);
+    } else {
+      settings.set(key, value);
+    }
+  }
+  return { settings, keybinds };
+}
+
+/** One-time (--parity): generated configs vs the current files, semantically. */
+function configParity(): string[] {
+  const problems: string[] = [];
+  for (const os of OS_CONFIGS) {
+    const current = parseConfigSemantic(readFileSync(configPath(os), "utf8"));
+    const generated = parseConfigSemantic(renderConfig(os));
+    for (const [key, value] of current.settings) {
+      if (generated.settings.get(key) !== value) {
+        problems.push(`${os} setting ${key}: current="${value}" generated="${generated.settings.get(key)}"`);
+      }
+    }
+    for (const key of generated.settings.keys()) {
+      if (!current.settings.has(key)) problems.push(`${os} setting ${key}: only in generated`);
+    }
+    for (const keybind of current.keybinds) {
+      if (!generated.keybinds.has(keybind)) problems.push(`${os} keybind only in current: ${keybind}`);
+    }
+    for (const keybind of generated.keybinds) {
+      if (!current.keybinds.has(keybind)) problems.push(`${os} keybind only in generated: ${keybind}`);
+    }
+  }
+  return problems;
 }
 
 function main(): void {
-  const check = process.argv.includes("--check");
-  const rust = renderRust();
-  const docs = renderDocs();
-  const drifts = keybindDrifts();
-
-  if (check) {
-    const problems: string[] = [];
-    if (readFileSync(GENERATED_RS, "utf8") !== rust) {
-      problems.push("actions.generated.rs is stale - run `npx tsx scripts/generate-actions.ts`.");
-    }
-    if (readFileSync(DOCS_MD, "utf8") !== docs) {
-      problems.push("docs/actions.md is stale - run `npx tsx scripts/generate-actions.ts`.");
-    }
-    for (const drift of drifts) {
-      problems.push(`keybind drift - ${drift}`);
-    }
+  if (process.argv.includes("--parity")) {
+    const problems = configParity();
     if (problems.length > 0) {
-      console.error(problems.join("\n"));
+      console.error(`Config parity problems (${problems.length}):\n${problems.join("\n")}`);
       process.exit(1);
     }
-    console.log("actions: generated files current, keybinds consistent.");
+    console.log("Config parity: generated configs match the current files (settings + keybinds).");
+    return;
+  }
+  const outputs: Array<[string, string]> = [
+    [GENERATED_RS, renderRust()],
+    [DOCS_MD, renderDocs()],
+    ...OS_CONFIGS.map((os): [string, string] => [configPath(os), renderConfig(os)]),
+  ];
+
+  if (process.argv.includes("--check")) {
+    const stale = outputs
+      .filter(([path, content]) => readFileSync(path, "utf8") !== content)
+      .map(([path]) => path.replace(`${REPO_ROOT}/`, ""));
+    if (stale.length > 0) {
+      console.error(
+        `Stale generated files - run \`pnpm generate:actions\`:\n${stale.join("\n")}`,
+      );
+      process.exit(1);
+    }
+    console.log("actions: all generated files current (Rust list, docs, configs).");
     return;
   }
 
-  writeFileSync(GENERATED_RS, rust);
-  writeFileSync(DOCS_MD, docs);
-  if (drifts.length > 0) {
-    console.warn(`Wrote generated files, but the config keybinds drift from the catalog:\n${drifts.join("\n")}`);
-  } else {
-    console.log("Wrote actions.generated.rs and docs/actions.md; keybinds consistent.");
+  for (const [path, content] of outputs) {
+    writeFileSync(path, content);
   }
+  console.log("Wrote actions.generated.rs, docs/actions.md and the three default_*.config files.");
 }
 
 main();
