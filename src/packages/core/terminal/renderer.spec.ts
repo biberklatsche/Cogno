@@ -79,7 +79,7 @@ describe("Renderer", () => {
 
   it("should load default addons", () => {
     const terminalInstance = vi.mocked(Terminal).mock.results[0].value;
-    expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(3); // Fit, Search, Unicode
+    expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(4); // Fit, Search, Serialize, Unicode
   });
 
   it("should register terminal handler", () => {
@@ -128,7 +128,7 @@ describe("Renderer", () => {
     webglContextLossListener?.();
     vi.runOnlyPendingTimers();
 
-    expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(5);
+    expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(6);
   });
 
   it("should expose WebGL context loss state during restore", () => {
