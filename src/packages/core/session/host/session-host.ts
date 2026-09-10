@@ -56,9 +56,10 @@ import { SessionModel, SessionModelSnapshot, TerminalInput } from "../model/sess
 import { CommandRecorder } from "../recorder/command-recorder";
 import { SessionFact } from "../session-facts";
 import { shellDefinitions } from "../shells/shell-definitions";
+/** Both halves of a session's state as one read-only view. */
+import { SESSION_SNAPSHOT_VERSION, SessionSnapshot } from "./session-snapshot";
 import { toTerminalMachineOptions } from "./terminal-machine-options.mapper";
 
-/** Both halves of a session's state as one read-only view. */
 export type SessionState = MachineStateSnapshot & SessionModelSnapshot;
 
 /**
@@ -526,6 +527,33 @@ export class SessionHost {
   }
 
   // ---- reading the buffer ---------------------------------------------
+
+  /**
+   * A restorable snapshot of the buffer: the scrollback serialized to text
+   * (capped, alt-screen excluded) for session restore (step 27). `maxLines <= 0`
+   * captures no scrollback.
+   */
+  snapshot(maxLines: number): SessionSnapshot {
+    const scrollback = maxLines > 0 ? this.renderer?.serialize(maxLines) : null;
+    return { version: SESSION_SNAPSHOT_VERSION, scrollback: scrollback || null };
+  }
+
+  /**
+   * Replay a snapshot's scrollback into the buffer, above a separator line, so a
+   * restored terminal can be scrolled back. Dead text - the live prompt runs
+   * below it. A snapshot of a different version or without scrollback is ignored.
+   */
+  restore(snapshot: SessionSnapshot): void {
+    if (snapshot.version !== SESSION_SNAPSHOT_VERSION || !snapshot.scrollback) {
+      return;
+    }
+    const terminal = this.renderer?.terminal;
+    if (!terminal) {
+      return;
+    }
+    terminal.write(snapshot.scrollback);
+    terminal.write("\r\n\x1b[2m---- restored session ----\x1b[0m\r\n");
+  }
 
   getRecentOutputSnapshot(maxLines = 60, maxChars = 4000): string {
     const terminal = this.renderer?.terminal;
