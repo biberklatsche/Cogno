@@ -1,8 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use clap::Parser;
 use cogno_tauri_core::cli::{
-    try_run_action_over_http, ActionCommand, Cli, CliCommand, ConfigCommand, COGNO_ACTION_NAMES,
+    try_run_action_over_http, ActionCommand, Cli, CliCommand, ConfigCommand,
 };
+use cogno_tauri_core::actions_generated::COGNO_ACTIONS;
 use cogno_tauri_core::commands::config::read_default_config;
 use cogno_tauri_core::commands::environment::get_cogno_config_file_path;
 use cogno_tauri_core::{initialize_app_identity, AppIdentity};
@@ -61,8 +62,8 @@ fn execute_cli_only_command(cli: &Cli) -> bool {
         Some(CliCommand::Action {
             command: ActionCommand::List,
         }) => {
-            for action_name in COGNO_ACTION_NAMES {
-                println!("{}", action_name);
+            for (action_name, description) in COGNO_ACTIONS {
+                println!("{}	{}", action_name, description);
             }
             true
         }
@@ -185,7 +186,7 @@ fn validate_action_run_command(cli: &Cli) {
         return;
     };
 
-    if COGNO_ACTION_NAMES.contains(&name.as_str()) {
+    if COGNO_ACTIONS.iter().any(|(action_name, _)| *action_name == name.as_str()) {
         return;
     }
 

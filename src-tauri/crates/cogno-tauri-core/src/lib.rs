@@ -1,3 +1,5 @@
+#[path = "../../../src/actions.generated.rs"]
+pub mod actions_generated;
 #[path = "../../../src/app_identity.rs"]
 pub mod app_identity;
 #[path = "../../../src/cli.rs"]
