@@ -24,7 +24,12 @@ type ActionRow = { readonly name: string; readonly description: string };
 /** Feature action names and titles, read textually so no Angular is loaded. */
 function featureActions(): ActionRow[] {
   const rows: ActionRow[] = [];
-  const files = globSync(`${REPO_ROOT}/src/packages/features/**/*.feature-definition.ts`);
+  // Feature definitions live under features/, plus a few workbench-owned ones in
+  // core/ (e.g. workspace -> open_workspace).
+  const files = [
+    ...globSync(`${REPO_ROOT}/src/packages/features/**/*.feature-definition.ts`),
+    ...globSync(`${REPO_ROOT}/src/packages/core/**/*.feature-definition.ts`),
+  ];
   for (const file of files.sort()) {
     const text = readFileSync(file, "utf8");
     const name = text.match(/actionName:\s*"([a-z0-9_]+)"/)?.[1];

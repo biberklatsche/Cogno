@@ -77,6 +77,7 @@ pub const COGNO_ACTIONS: &[(&str, &str)] = &[
     ("select_workspace_default", "Switch to the default workspace"),
     ("open_documentation", "Open the Cogno documentation"),
     ("open_about", "Show the About dialog"),
+    ("open_workspace", "Open the Workspace panel"),
     ("open_coding_agents", "Open the Coding Agents panel"),
     ("open_command_palette", "Open the Command Palette panel"),
     ("open_git", "Open the Git panel"),
