@@ -98,6 +98,39 @@ export class WorkspaceRepository {
     ]);
   }
 
+  /**
+   * Create the workspace row if missing, else update it (name/colour), and
+   * replace its layout - one transaction. Used by the autosave path, which must
+   * also persist the default workspace (no row on first launch). Position is set
+   * only on insert.
+   */
+  async upsertWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
+    const now = Date.now();
+    await this.databaseAccess.batch([
+      {
+        sql: `INSERT INTO workspace (id, name, color, position, created_at, updated_at)
+              VALUES (?, ?, ?, ${NEXT_POSITION_SQL}, ?, ?)
+              ON CONFLICT (id) DO UPDATE SET
+                  name = excluded.name,
+                  color = excluded.color,
+                  updated_at = excluded.updated_at`,
+        params: [
+          workspaceConfiguration.id,
+          workspaceConfiguration.name,
+          workspaceConfiguration.color ?? null,
+          workspaceConfiguration.position ?? null,
+          now,
+          now,
+        ],
+      },
+      {
+        sql: "DELETE FROM workspace_tab WHERE workspace_id = ?",
+        params: [workspaceConfiguration.id],
+      },
+      ...this.layoutStatements(workspaceConfiguration),
+    ]);
+  }
+
   /** Replaces name, colour, position, tabs and grids. Sessions are untouched. */
   async updateWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
     await this.databaseAccess.batch([

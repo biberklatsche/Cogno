@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
@@ -15,6 +16,7 @@ import {
 } from "@cogno/shared/domain/workspace";
 import { Color, IdCreator } from "@cogno/shared/support";
 import { merge } from "rxjs";
+import { SessionPersistenceService } from "./session-persistence.service";
 import { WorkspaceRepository } from "./workspace.repository";
 
 export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
@@ -58,6 +60,8 @@ export class WorkspaceHostApplicationService {
     private readonly workspaceRepository: WorkspaceRepository,
     private readonly gridListService: GridListService,
     private readonly tabListService: TabListService,
+    private readonly configService: ConfigService,
+    private readonly sessionPersistence: SessionPersistenceService,
     destroyRef: DestroyRef,
   ) {
     this.bus.onceType$("DBInitialized").subscribe(async () => {
@@ -176,6 +180,32 @@ export class WorkspaceHostApplicationService {
     });
 
     return workspaceId;
+  }
+
+  /**
+   * Auto-persist a workspace's live layout + terminal snapshots for session
+   * restore (step 27). Unlike the explicit `saveWorkspace`, this includes the
+   * default workspace. No-op when restore is off. Layout and snapshots are two
+   * atomic batches; each collects its data before writing.
+   */
+  async autoPersistWorkspace(workspaceId: string): Promise<void> {
+    if (this.configService.config.terminal?.restore?.enabled === false) {
+      return;
+    }
+    const workspace = this.getWorkspaceById(workspaceId);
+    if (!workspace) {
+      return;
+    }
+    await this.workspaceRepository.upsertWorkspace({
+      id: workspace.id,
+      name: workspace.name,
+      color: workspace.color,
+      position: workspace.position,
+      isActive: workspace.isActive,
+      grids: this.gridListService.getGridConfigs(workspaceId),
+      tabs: this.tabListService.getTabConfigs(workspaceId),
+    });
+    await this.sessionPersistence.persistWorkspace(workspaceId);
   }
 
   public async saveWorkspace(workspaceId: string): Promise<void> {

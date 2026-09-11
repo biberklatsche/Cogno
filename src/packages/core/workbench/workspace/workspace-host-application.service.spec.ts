@@ -1,3 +1,4 @@
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
@@ -14,6 +15,7 @@ import {
   getSideMenuService,
   getTabListService,
 } from "../../../__test__/test-factory";
+import type { SessionPersistenceService } from "./session-persistence.service";
 import type { WorkspaceRepository } from "./workspace.repository";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
@@ -63,6 +65,10 @@ describe("WorkspaceHostApplicationService", () => {
       workspaceRepository,
       gridListService,
       tabListService,
+      { config: { terminal: { restore: { enabled: true } } } } as unknown as ConfigService,
+      {
+        persistWorkspace: vi.fn().mockResolvedValue(undefined),
+      } as unknown as SessionPersistenceService,
       getDestroyRef(),
     );
   });
