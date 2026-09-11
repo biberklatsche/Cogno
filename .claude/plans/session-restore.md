@@ -16,9 +16,19 @@ Nutzer **unmerklich** und **abschaltbar**.
 
 - **„Zuletzt gelebt".** Restore stellt den letzten *gelebten* Zustand her, nicht ein
   kuratiertes Template. Keine Historie (in-place überschrieben).
-- **Ein Speicher-Pfad, konfigurierbarer Auslöser.** „Speichern" = Layout
+- **Ein Speicher-Pfad, konfigurierbarer Auslöser.** „Speichern" = **Layout**
   (`workspace`/`workspace_tab`/`workspace_grid`) **und** Scrollback-Snapshot
-  (`terminal_session`) **atomar zusammen** (ein `batch()`), für einen Workspace.
+  (`terminal_session`) zusammen, für einen Workspace. Autosave persistiert also
+  **Layout *und* Snapshots** (nicht nur Scrollback) — sonst driftet das
+  wiederhergestellte Layout vom zuletzt gelebten Zustand.
+- **Der Default-Workspace wird mitpersistiert.** Er ist ein besonderer, immer
+  existierender Workspace, aber in „zuletzt gelebt" wird auch sein Layout +
+  Scrollback gespeichert und wiederhergestellt. **Modelländerung:** heute
+  überspringt `saveWorkspace()` `DEFAULT_WORKSPACE_ID` und der Default wird beim
+  Start frisch erzeugt; der Autosave-Pfad umgeht diesen Skip und persistiert/
+  restauriert den Default wie jeden Workspace (eigene `workspace`-Zeile mit
+  `DEFAULT_WORKSPACE_ID`). Der **explizite** Save (Autosave AUS) lässt den Default
+  weiterhin aus (unverändert).
 - **Setting `terminal.restore.enabled`** (Default `true`):
   - **AN (Autosave):** persistiert automatisch bei **(1) Idle-Debounce des aktiven
     Workspace**, **(2) Workspace-Wechsel** (verlassener WS), **(3) Beenden**
@@ -82,17 +92,24 @@ Bereits vorhanden (ungenutzt): Tabelle `terminal_session` +
 - **27c — Settings**: `terminal.restore.enabled` / `.scrollback` / `.max_lines` in
   `TerminalSettingsSchema` **und** `default-config-values.ts` (Schritt-K-Generator
   schreibt die Configs). (`.idle_debounce_ms` / Zeitbudget: intern, ggf. Setting.)
-- **27d — Save-Pfad (Transaktion)**: `SessionPersistenceService` (Workspace-Modul):
-  `persistWorkspace(workspaceId)` = Layout + Scrollback-Snapshots aller Terminals
-  des WS **einsammeln, dann ein `batch()`** (kein `await` in der Transaktion). Test:
-  verzögertes `snapshot()` reißt die Transaktion nicht auf.
-- **27e — Auslöser + Modus**: gated by `terminal.restore.enabled`. AN: Idle-Debounce
-  (aktiver WS), Workspace-Wechsel (verlassener WS), Beenden (Zeitbudget in
-  `quit()`/`closeWindow()`). AUS: nur expliziter Save-Button. Test: Zeitbudget bei
-  langsamer Serialisierung greift (Layout gespeichert, Scrollback fehlt, kein Hänger).
-- **27f — Restore beim Start + Lifecycle**: bestehendes Layout-Restore
-  (`activateWorkspace`) um Scrollback erweitern (`terminal_session` lesen →
-  `SessionHost.restore` beim `ensureSession`). Löschung bei Terminal-Close;
+- **27d — Snapshot-Serializer (fertig, `c9aa241a`)**: `SessionPersistenceService`
+  `persistWorkspace(workspaceId)` = Scrollback-Snapshots aller Terminals des WS
+  **einsammeln (sync), dann ein `batch()`** (`WorkspaceRepository.saveTerminalSessions`,
+  delete+insert = prunt entfernte). Gated by `terminal.restore.enabled`/`.scrollback`.
+  Accessors `SessionHostFactory.getSessionHost`, `GridListService.terminalIdsForWorkspace`.
+- **27e — Layout-Autosave + Auslöser + Modus**: `persistWorkspace` um den
+  **Layout-Autosave** erweitern (Layout + Snapshots zusammen), **inkl. Default-
+  Workspace** (Autosave-Pfad umgeht den `saveWorkspace`-Default-Skip; explizite
+  Save-UI bleibt default-frei). Auslöser gated by `enabled`: **Idle-Debounce**
+  (Aktivität via `sessionRegistry.facts$ outputReceived`, ~2–3 s, aktiver WS),
+  **Workspace-Wechsel** (verlassenen WS vor dem Umschalten in `activateWorkspace`),
+  **Beenden** (Zeitbudget in `quit()`/`closeWindow()`). AUS: nur expliziter Save.
+  Test: Zeitbudget greift bei langsamer Serialisierung (Layout da, Scrollback fehlt,
+  kein Hänger); Default-WS wird persistiert.
+- **27f — Restore beim Start + Lifecycle**: Startup restauriert **alle** persistierten
+  Workspaces **inkl. Default** (Default-`workspace`-Zeile lesen statt frisch erzeugen);
+  Layout-Restore (`activateWorkspace`) um Scrollback erweitern (`terminal_session`
+  lesen → `SessionHost.restore` beim `ensureSession`). Löschung bei Terminal-Close;
   Verwaisten-Prune beim Start. `scrollback=off` → Scrollback leer, Layout da.
 - **27g — UI**: Auto-Save-Status-Indikator (ersetzt Dirty/Save bei Autosave AN:
   „speichert…" / „✓ vor X s"); Dirty-Indikator + Save-Button bleiben bei Autosave
