@@ -98,4 +98,28 @@ export const TerminalSettingsSchema = z.object({
         ),
     })
     .optional(),
+  restore: z
+    .object({
+      enabled: z
+        .boolean()
+        .optional()
+        .describe(
+          "Restore workspaces, tabs, panes and terminal scrollback on the next launch, auto-saved on idle, workspace switch and exit. When off, nothing is persisted and each launch starts fresh; the explicit workspace save controls apply instead.",
+        ),
+      scrollback: z
+        .boolean()
+        .optional()
+        .describe(
+          "Include the terminal scrollback in the restored session, above a separator line. When off, the layout is restored but terminals start empty.",
+        ),
+      max_lines: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe(
+          "Maximum scrollback lines captured per terminal for restore. Caps the stored size; 0 means no scrollback.",
+        ),
+    })
+    .optional(),
 });

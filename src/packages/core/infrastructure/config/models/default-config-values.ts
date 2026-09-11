@@ -175,6 +175,11 @@ export const defaultSettings = {
       import_shell_history: "false",
       auto_execute: "false",
     },
+    restore: {
+      enabled: "true",
+      scrollback: "true",
+      max_lines: "1000",
+    },
     decoration: {
       color: {
         background: "2f8fda55",
