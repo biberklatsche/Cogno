@@ -3,7 +3,6 @@ import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import type { LigaturesAddon } from "@xterm/addon-ligatures";
 import { SearchAddon } from "@xterm/addon-search";
-import { SerializeAddon } from "@xterm/addon-serialize";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
@@ -22,8 +21,6 @@ export interface IRenderer {
   open(terminalContainer: HTMLDivElement, enableLigatures: boolean): void;
   setOptions(options: TerminalMachineOptions): void;
   restoreCursorColor(): void;
-  /** The buffer serialized to text (scrollback capped, alt-screen excluded). */
-  serialize(maxLines: number): string;
   readonly terminal: Terminal;
   readonly isWebglContextLost$: Observable<boolean>;
 
@@ -102,7 +99,6 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
 
   private _fitAddon = new FitAddon();
   private _searchAddon = new SearchAddon();
-  private _serializeAddon = new SerializeAddon();
   private _unicodeAddon = new Unicode11Addon();
   private _ligaturesAddon: LigaturesAddon | undefined = undefined;
   private _webglAddon: WebglAddon | undefined = undefined;
@@ -155,7 +151,6 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
 
     this._terminal.loadAddon(this._fitAddon);
     this._terminal.loadAddon(this._searchAddon);
-    this._terminal.loadAddon(this._serializeAddon);
     this._terminal.loadAddon(this._unicodeAddon);
     this._terminal.unicode.activeVersion = "11";
     if (this._webglEnabled) {
@@ -240,10 +235,6 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     this.disposeWebGlAddon();
     this._terminal?.dispose();
     this._isWebglContextLostSubject.complete();
-  }
-
-  serialize(maxLines: number): string {
-    return this._serializeAddon.serialize({ scrollback: maxLines, excludeAltBuffer: true });
   }
 
   public get terminal(): Terminal {
