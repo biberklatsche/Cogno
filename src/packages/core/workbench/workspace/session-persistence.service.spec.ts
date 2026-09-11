@@ -21,7 +21,10 @@ describe("SessionPersistenceService", () => {
     saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
     const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
     const config = { config: { terminal: { restore } } } as unknown as ConfigService;
-    return new SessionPersistenceService(factory, gridList, repo, config);
+    return new SessionPersistenceService(factory, gridList, repo, config, {
+      set: vi.fn(),
+      take: vi.fn(),
+    } as never);
   }
 
   beforeEach(() => {
@@ -54,7 +57,10 @@ describe("SessionPersistenceService", () => {
     saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
     const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
     const config = { config: { terminal: { restore } } } as unknown as ConfigService;
-    await new SessionPersistenceService(factory, gridList, repo, config).persistWorkspace("ws-1");
+    await new SessionPersistenceService(factory, gridList, repo, config, {
+      set: vi.fn(),
+      take: vi.fn(),
+    } as never).persistWorkspace("ws-1");
 
     const saved = saveTerminalSessions.mock.calls[0][1][0];
     expect(JSON.parse(saved.sessionData).maxLines).toBe(0);

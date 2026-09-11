@@ -14,6 +14,7 @@ import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/te
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { TerminalComposerService } from "@cogno/core/session/composer/terminal-composer.service";
 import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
+import { PendingSessionSnapshots } from "@cogno/core/session/host/pending-session-snapshots";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
@@ -81,6 +82,7 @@ export class SessionHostFactory {
     private readonly configService: ConfigService,
     private readonly bus: AppBus,
     private readonly sessionRegistry: TerminalSessionRegistry,
+    private readonly pendingSnapshots: PendingSessionSnapshots,
   ) {}
 
   /** Makes sure the pane's session exists and runs; a no-op once it does. */
@@ -134,6 +136,12 @@ export class SessionHostFactory {
     const notifications = injector.get(SessionNotifications);
     injector.get(SessionMenus);
     host.start();
+
+    // Session restore (step 27): replay this terminal's saved scrollback, if any.
+    const snapshot = this.pendingSnapshots.take(terminalId);
+    if (snapshot) {
+      host.restore(snapshot);
+    }
 
     const entry: SessionEntry = { injector, host, keybindings, notifications };
     this.sessions.set(terminalId, entry);

@@ -42,7 +42,14 @@ export class WorkspaceStateUseCase {
     persistedWorkspaces: ReadonlyArray<WorkspaceConfiguration>,
     defaultWorkspace: WorkspaceConfiguration,
   ): WorkspaceState[] {
-    const workspaceList = [defaultWorkspace, ...persistedWorkspaces].map(
+    // The default workspace always exists and is first. If it was persisted
+    // (session restore), use the persisted one (with its layout); otherwise the
+    // fresh in-memory default. Either way it never appears twice.
+    const persistedDefault = persistedWorkspaces.find(
+      (workspace) => workspace.id === defaultWorkspace.id,
+    );
+    const others = persistedWorkspaces.filter((workspace) => workspace.id !== defaultWorkspace.id);
+    const workspaceList = [persistedDefault ?? defaultWorkspace, ...others].map(
       (workspaceConfiguration) => ({
         ...workspaceConfiguration,
         isSelected: workspaceConfiguration.isActive ?? false,

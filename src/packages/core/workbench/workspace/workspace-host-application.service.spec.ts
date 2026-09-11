@@ -70,6 +70,7 @@ describe("WorkspaceHostApplicationService", () => {
       { config: { terminal: { restore: { enabled: true } } } } as unknown as ConfigService,
       {
         persistWorkspace: vi.fn().mockResolvedValue(undefined),
+        loadPendingSnapshots: vi.fn().mockResolvedValue(undefined),
       } as unknown as SessionPersistenceService,
       { facts$: new Subject() } as unknown as TerminalSessionRegistry,
       getDestroyRef(),
