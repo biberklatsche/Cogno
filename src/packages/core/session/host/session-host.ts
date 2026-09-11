@@ -534,8 +534,41 @@ export class SessionHost {
    * captures no scrollback.
    */
   snapshot(maxLines: number): SessionSnapshot {
-    const scrollback = maxLines > 0 ? this.renderer?.serialize(maxLines) : null;
-    return { version: SESSION_SNAPSHOT_VERSION, scrollback: scrollback || null };
+    return {
+      version: SESSION_SNAPSHOT_VERSION,
+      scrollback: maxLines > 0 ? this.captureScrollback(maxLines) : null,
+    };
+  }
+
+  /**
+   * The recent buffer as inert plain text (no escape sequences, shell-integration
+   * marker lines skipped, trailing blank lines trimmed) - deliberately not the
+   * SerializeAddon output, whose cursor/viewport/marker sequences corrupt the
+   * live session on replay (step 27). Colours are not preserved.
+   */
+  private captureScrollback(maxLines: number): string | null {
+    const terminal = this.renderer?.terminal;
+    if (!terminal) {
+      return null;
+    }
+    const buffer = terminal.buffer.active;
+    const beginLineIndex = Math.max(0, buffer.length - maxLines);
+    const lineTexts: string[] = [];
+    for (let lineIndex = beginLineIndex; lineIndex < buffer.length; lineIndex++) {
+      const line = buffer.getLine(lineIndex);
+      if (!line) {
+        continue;
+      }
+      const lineText = line.translateToString(true);
+      if (lineText.startsWith("^^#")) {
+        continue;
+      }
+      lineTexts.push(lineText);
+    }
+    while (lineTexts.length > 0 && lineTexts[lineTexts.length - 1].trim() === "") {
+      lineTexts.pop();
+    }
+    return lineTexts.length > 0 ? lineTexts.join("\r\n") : null;
   }
 
   /**

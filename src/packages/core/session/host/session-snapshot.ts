@@ -5,4 +5,6 @@ export interface SessionSnapshot {
   readonly scrollback: string | null;
 }
 
-export const SESSION_SNAPSHOT_VERSION = 1;
+// v2: plain-text scrollback (v1 was SerializeAddon ANSI, which corrupted the
+// live session on replay). v1 snapshots are ignored on load.
+export const SESSION_SNAPSHOT_VERSION = 2;

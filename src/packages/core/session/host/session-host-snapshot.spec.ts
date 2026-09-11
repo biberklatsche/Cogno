@@ -5,14 +5,24 @@ import { OsPlatform } from "@cogno/platform/os";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
-import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { TerminalCommandHistoryStore } from "../model/command-history.store";
 import type { CommandRecorder } from "../recorder/command-recorder";
 import { SessionHost } from "./session-host";
 import { SESSION_SNAPSHOT_VERSION } from "./session-snapshot";
 
-const terminalMock = TerminalMockFactory.createTerminal();
-const serializeMock = vi.fn().mockReturnValue("SERIALIZED-SCROLLBACK");
+let bufferLines: string[] = [];
+const writeMock = vi.fn();
+const terminalMock = {
+  write: writeMock,
+  buffer: {
+    active: {
+      get length() {
+        return bufferLines.length;
+      },
+      getLine: (index: number) => ({ translateToString: () => bufferLines[index] ?? "" }),
+    },
+  },
+};
 
 vi.mock("@cogno/core/terminal/renderer", () => {
   class RendererMock {
@@ -22,7 +32,6 @@ vi.mock("@cogno/core/terminal/renderer", () => {
     setVisible = vi.fn();
     setOptions = vi.fn();
     restoreCursorColor = vi.fn();
-    serialize = serializeMock;
     terminal = terminalMock;
     isWebglContextLost$ = new BehaviorSubject(false);
   }
@@ -54,6 +63,7 @@ describe("SessionHost snapshot/restore", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    bufferLines = [];
     const configService = new ConfigServiceMock();
     configService.setConfig({ font: { enable_ligatures: false } } as never);
     host = new SessionHost(
@@ -74,34 +84,38 @@ describe("SessionHost snapshot/restore", () => {
     host.initialize("t1", bashProfile);
   });
 
-  it("captures the serialized scrollback up to maxLines", () => {
+  it("captures plain-text scrollback, skipping markers and trailing blanks", () => {
+    bufferLines = ["first line", "^^#42", "second line", "", "   "];
+
     const snapshot = host.snapshot(500);
 
-    expect(serializeMock).toHaveBeenCalledWith(500);
     expect(snapshot).toEqual({
       version: SESSION_SNAPSHOT_VERSION,
-      scrollback: "SERIALIZED-SCROLLBACK",
+      scrollback: "first line\r\nsecond line",
     });
   });
 
   it("captures no scrollback when maxLines is zero", () => {
-    const snapshot = host.snapshot(0);
+    bufferLines = ["something"];
+    expect(host.snapshot(0).scrollback).toBeNull();
+  });
 
-    expect(serializeMock).not.toHaveBeenCalled();
-    expect(snapshot.scrollback).toBeNull();
+  it("returns null scrollback for an empty buffer", () => {
+    bufferLines = ["", "  "];
+    expect(host.snapshot(500).scrollback).toBeNull();
   });
 
   it("replays the scrollback and a separator into the terminal", () => {
     host.restore({ version: SESSION_SNAPSHOT_VERSION, scrollback: "PREVIOUS-OUTPUT" });
 
-    expect(terminalMock.write).toHaveBeenCalledWith("PREVIOUS-OUTPUT");
-    expect(terminalMock.write).toHaveBeenCalledWith(expect.stringContaining("restored session"));
+    expect(writeMock).toHaveBeenCalledWith("PREVIOUS-OUTPUT");
+    expect(writeMock).toHaveBeenCalledWith(expect.stringContaining("restored session"));
   });
 
   it("ignores a snapshot of a different version or without scrollback", () => {
-    host.restore({ version: 999, scrollback: "X" });
+    host.restore({ version: 1, scrollback: "old ANSI" });
     host.restore({ version: SESSION_SNAPSHOT_VERSION, scrollback: null });
 
-    expect(terminalMock.write).not.toHaveBeenCalled();
+    expect(writeMock).not.toHaveBeenCalled();
   });
 });
