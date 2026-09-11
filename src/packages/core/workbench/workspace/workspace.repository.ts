@@ -160,6 +160,27 @@ export class WorkspaceRepository {
     );
   }
 
+  /**
+   * Replace all of a workspace's terminal snapshots in one transaction (session
+   * restore, step 27): the current set is deleted and the given sessions
+   * inserted, so terminals that went away are pruned. Statements are built up
+   * front - no await inside the batch.
+   */
+  async saveTerminalSessions(
+    workspaceId: WorkspaceIdentifierContract,
+    sessions: ReadonlyArray<WorkspaceTerminalSession>,
+  ): Promise<void> {
+    const now = Date.now();
+    await this.databaseAccess.batch([
+      { sql: "DELETE FROM terminal_session WHERE workspace_id = ?", params: [workspaceId] },
+      ...sessions.map((session) => ({
+        sql: `INSERT INTO terminal_session (workspace_id, terminal_id, session_data, updated_at)
+              VALUES (?, ?, ?, ?)`,
+        params: [workspaceId, session.terminalId, session.sessionData, now],
+      })),
+    ]);
+  }
+
   async getTerminalSessions(
     workspaceId: WorkspaceIdentifierContract,
   ): Promise<WorkspaceTerminalSession[]> {

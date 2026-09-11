@@ -146,6 +146,11 @@ export class SessionHostFactory {
     return this.sessions.get(terminalId)?.keybindings;
   }
 
+  /** The live host of the session `terminalId`, for snapshotting (step 27). */
+  getSessionHost(terminalId: TerminalId): SessionHost | undefined {
+    return this.sessions.get(terminalId)?.host;
+  }
+
   attach(pane: Pane, hostElement: HTMLElement): void {
     const entry = this.ensureSession(pane);
     if (!entry) return;

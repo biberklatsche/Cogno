@@ -64,6 +64,24 @@ export class GridListService {
     this.syncActiveWorkspaceState();
   }
 
+  /** Every terminal id laid out in a workspace's grids (session restore, step 27). */
+  terminalIdsForWorkspace(workspaceIdentifier: string): TerminalId[] {
+    const gridList = this.gridListByWorkspaceIdentifier.get(workspaceIdentifier);
+    if (!gridList) {
+      return [];
+    }
+    const terminalIds: TerminalId[] = [];
+    for (const grid of Object.values(gridList)) {
+      for (const node of grid.tree.find((candidate) => candidate.isLeaf)) {
+        const terminalId = node.data?.terminalId;
+        if (terminalId !== undefined) {
+          terminalIds.push(terminalId);
+        }
+      }
+    }
+    return terminalIds;
+  }
+
   findWorkspaceIdentifierByTerminalId(terminalId: TerminalId): string | undefined {
     for (const [workspaceIdentifier, gridList] of this.gridListByWorkspaceIdentifier.entries()) {
       const terminalExistsInWorkspace = Object.values(gridList).some((grid) =>
