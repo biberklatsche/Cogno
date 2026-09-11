@@ -539,7 +539,9 @@ export class GridListService {
         shellName: nodeConfig.shellName,
         workingDir: nodeConfig.workingDir,
         title: nodeConfig.title,
-        terminalId: IdCreator.newTerminalId(),
+        // Reuse the persisted terminal id so restored scrollback (keyed by it)
+        // matches; only generate one for a fresh pane (step 27).
+        terminalId: nodeConfig.terminalId ?? IdCreator.newTerminalId(),
       };
     }
   }
@@ -551,6 +553,9 @@ export class GridListService {
         shellName: node.data?.shellName,
         workingDir: node.data?.workingDir,
         title: node.data?.title,
+        // Persisted so a restored pane keeps its terminal id and its scrollback
+        // snapshot (keyed by it) can be replayed (step 27).
+        terminalId: node.data?.terminalId,
       };
     }
     // Split node
