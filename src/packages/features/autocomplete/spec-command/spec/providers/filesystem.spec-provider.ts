@@ -36,6 +36,12 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
   constructor(private readonly filesystem: FilesystemContract) {}
 
   async suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
+    // A fresh terminal has no cwd until the first prompt handshake reports it;
+    // typing before then would make normalizePath throw "Empty path". Nothing
+    // to resolve against yet - offer no path suggestions rather than fail.
+    if (!context.queryContext.cwd?.trim()) {
+      return [];
+    }
     const cwdNorm = this.filesystem.normalizePath(
       context.queryContext.cwd,
       context.queryContext.shellContext,

@@ -325,4 +325,18 @@ describe("FilesystemSpecProvider", () => {
     expect(result[0].label).toBe("\\Users\\My Folder\\");
     expect(result[0].insertText).toBe("\\Users\\My` Folder\\");
   });
+
+  it("returns nothing when the cwd is empty, without touching the filesystem", async () => {
+    const provider = new FilesystemSpecProvider(filesystem);
+
+    const result = await provider.suggest({
+      queryContext: { ...commandContext("cat "), cwd: "" },
+      command: "cat",
+      args: [],
+      binding: { providerId: "filesystem" },
+    });
+
+    expect(result).toEqual([]);
+    expect(filesystem.normalizePath).not.toHaveBeenCalled();
+  });
 });
