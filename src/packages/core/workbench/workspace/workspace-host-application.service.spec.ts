@@ -4,6 +4,8 @@ import type { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
+import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
@@ -69,6 +71,7 @@ describe("WorkspaceHostApplicationService", () => {
       {
         persistWorkspace: vi.fn().mockResolvedValue(undefined),
       } as unknown as SessionPersistenceService,
+      { facts$: new Subject() } as unknown as TerminalSessionRegistry,
       getDestroyRef(),
     );
   });

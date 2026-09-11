@@ -5,6 +5,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import {
   defaultWorkspaceIdContract,
   PersistedPaneConfigurationContract,
@@ -15,11 +16,14 @@ import {
   WorkspaceStateUseCase,
 } from "@cogno/shared/domain/workspace";
 import { Color, IdCreator } from "@cogno/shared/support";
-import { merge } from "rxjs";
+import { debounceTime, filter, merge } from "rxjs";
 import { SessionPersistenceService } from "./session-persistence.service";
 import { WorkspaceRepository } from "./workspace.repository";
 
 export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
+
+/** Idle time after terminal output before an auto-save of the active workspace. */
+const IDLE_AUTOSAVE_MS = 2500;
 
 interface DirtyTrackingPaneSignature {
   readonly splitDirection?: PersistedPaneConfigurationContract["splitDirection"];
@@ -62,6 +66,7 @@ export class WorkspaceHostApplicationService {
     private readonly tabListService: TabListService,
     private readonly configService: ConfigService,
     private readonly sessionPersistence: SessionPersistenceService,
+    sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
     this.bus.onceType$("DBInitialized").subscribe(async () => {
@@ -95,10 +100,38 @@ export class WorkspaceHostApplicationService {
         }
         this.refreshDirtyStateForActiveWorkspace();
       });
+
+    // Idle auto-save: a few seconds after terminal output settles, persist the
+    // active workspace so a crash loses at most that window (step 27e).
+    sessionRegistry.facts$
+      .pipe(
+        filter(({ fact }) => fact.type === "outputReceived"),
+        debounceTime(IDLE_AUTOSAVE_MS),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe(() => {
+        const active = this.getActiveWorkspace();
+        if (active) {
+          void this.autoPersistWorkspace(active.id);
+        }
+      });
   }
 
   public async restoreWorkspace(workspace: WorkspaceState): Promise<void> {
+    // Switching workspaces: persist the one we are leaving first (autosave).
+    const outgoing = this.getActiveWorkspace();
+    if (outgoing && outgoing.id !== workspace.id) {
+      await this.autoPersistWorkspace(outgoing.id);
+    }
     await this.activateWorkspace(workspace);
+  }
+
+  /** Persist the currently active workspace (for the quit hook, step 27e). */
+  async persistActiveWorkspace(): Promise<void> {
+    const active = this.getActiveWorkspace();
+    if (active) {
+      await this.autoPersistWorkspace(active.id);
+    }
   }
 
   public async activateWorkspace(workspace: WorkspaceState): Promise<void> {

@@ -15,6 +15,7 @@ import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.s
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
+import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
@@ -178,6 +179,9 @@ export function getWindowService(
       osProcess,
       getAppBus(),
       getTerminalBusyStateService(),
+      {
+        persistActiveWorkspace: vi.fn().mockResolvedValue(undefined),
+      } as unknown as WorkspaceHostApplicationService,
       new ActionHandlers(getAppBus(), getDestroyRef()),
       getDestroyRef(),
     );
