@@ -5,7 +5,10 @@ Panes **und** Terminal-Scrollback; ein beim Beenden laufendes Kommando steht im
 Command-Log als abgebrochen. Kein Verlauf/keine Historie. Speichern ist für den
 Nutzer **unmerklich** und **abschaltbar**.
 
-> Status: **Design, abgestimmt, noch nicht implementiert.**
+> Status: **Implementiert (Kern).** Siehe „Implementierungsstand (final)" am Ende —
+> der Scrollback-Ansatz weicht bewusst vom ursprünglichen Design ab (Farb-Restore
+> + ConPTY-Handhabung). Offen/aufgeschoben: Auto-Save-Status-UI (27g),
+> abgebrochenes Kommando (27b-2).
 > Dieser Schritt verfeinert/weicht bewusst vom ursprünglichen Plantext (Schritt 27)
 > ab (mit Nutzer abgestimmt): Modell „zuletzt gelebt" mit Auto-Save, **keine
 > `windowId`-Spalten**, Auto- **und** Manuell-Speichern koexistieren.
@@ -141,3 +144,44 @@ Rust `cargo check`).
 - `scrollback=off` → Scrollback leer, Layout da.
 - Manuell: App beenden/starten → alles wie verlassen; laufendes Kommando im
   Command-Log als abgebrochen; Idle-Auto-Save-Indikator zeigt „gespeichert".
+
+---
+
+## Implementierungsstand (final)
+
+Der Scrollback-Restore weicht vom ursprünglichen „Klartext/SerializeAddon"-Design
+ab — bewusst, nach Nutzer-Feedback (Farben + Marker gewünscht, ConPTY-Problem):
+
+- **Snapshot v3** (`session-snapshot.ts`, `SESSION_SNAPSHOT_VERSION = 3`; v1/v2
+  ignoriert). Enthält `scrollback` (Text **mit SGR-Farben/Attributen**, inkl. der
+  conceal-`^^#`-Markerzeilen) **und** `commands` (Metadaten pro Marker, sonst
+  rendert `PromptMarkerRenderer` nichts).
+- **Eigener Zell-Serializer** (`scrollback-serializer.ts`): nur Text + SGR, **keine**
+  Cursor/Mode/OSC-Sequenzen (SerializeAddons Cursor-Tail hatte v1 zerlegt).
+- **Marker-id-Offset** (`RESTORED_MARKER_ID_OFFSET = 1e15`): restaurierte `^^#`-ids
+  numerisch über den Live-Bereich schieben (bash/zsh zählen pro Session ab 1 →
+  sonst Kollision → Registry verwirft Live-Marker).
+- **Restore erst beim ersten `attach()`** (offenes, final gefittetes Terminal),
+  **PTY-Spawn danach** (`SessionHost`: `restore()` stasht nur, `start()` hält den
+  PTY-Handler zurück, `attach()`→`completeRestore()` schreibt + spawnt). Grund:
+  **ConPTY (Windows) repaintet beim Shell-Start den ganzen Screen** und würde den
+  sichtbaren restaurierten Inhalt überschreiben. Auf Windows wird der Inhalt mit
+  `rows` Leerzeilen über den Viewport geschoben (`fitTerminalWithoutPty()` liefert
+  die finalen `rows`); unix hängt einfach an.
+- **Seiteneffekt-Guard** `model.beginRestore()/endRestore()`: der Observer spiegelt
+  den Replay nicht als Eingabe (sonst Autocomplete-Fehlöffnung). Der Serializer
+  schreibt keine OSC/CSI → Title/Notification/Clipboard/Recorder feuern nicht neu,
+  Kommandos werden **nicht** erneut ausgeführt.
+- **Grenz-Marker** = dezente Decoration-Trennlinie auf einer **concealed Sentinel-
+  Zeile** (`COGNO:RESTORE-BOUNDARY`), beim Capture gestrippt (kein Text, kein
+  Doppeln/Akkumulieren). Alter `---- restored session ----`-Text wird ebenfalls
+  gestrippt (Bestands-Snapshots).
+- **Bootstrap-Command versteckt** (`Command.isIntegrationBootstrap`): Cognos eigener
+  `. '…/shell-integration/…bootstrap.*'`-Dot-Source erscheint weder als Marker
+  (`PromptMarkerRenderer` + `MarkerManager`) noch im Header (`updateViewportVisibility`)
+  noch im Snapshot (`captureCommands`).
+- **Persist-Fallback** (`SessionPersistenceService` + `PendingSessionSnapshots.peek`):
+  nicht geöffnete Tabs (kein Host, jetzt Normalfall wegen Lazy-Attach) behalten ihren
+  Snapshot beim delete-then-insert-Save.
+- **Nebenbei-Fix:** `FilesystemSpecProvider` gibt bei leerem cwd `[]` zurück statt zu
+  werfen („Autocomplete provider failed / Empty path").
