@@ -70,6 +70,9 @@ export type SessionState = MachineStateSnapshot & SessionModelSnapshot;
 
 /** The concealed prompt marker line the shell integration prints (`^^#<id>`). */
 const MARKER_ID_PATTERN = /\^\^#(\d+)/g;
+/** The label of the boundary line written above a restored session's replay. */
+const RESTORE_SEPARATOR_LABEL = "---- restored session ----";
+const SGR_PATTERN = /\x1b\[[0-9;]*m/g;
 /**
  * Shift restored marker ids past any the live session will mint. bash/zsh count
  * from 1 each session, so without this a restored `^^#1` would collide with the
@@ -596,7 +599,17 @@ export class SessionHost {
     if (serialized === "") {
       return null;
     }
-    return serialized.replace(
+    // Drop any boundary lines from earlier restores so they don't accumulate:
+    // each restore writes its own, and re-capturing the previous one would stack
+    // them (step 27).
+    const withoutBoundaries = serialized
+      .split("\r\n")
+      .filter((line) => line.replace(SGR_PATTERN, "").trim() !== RESTORE_SEPARATOR_LABEL)
+      .join("\r\n");
+    if (withoutBoundaries.replace(SGR_PATTERN, "").trim() === "") {
+      return null;
+    }
+    return withoutBoundaries.replace(
       MARKER_ID_PATTERN,
       (_match, digits: string) => `^^#${offsetMarkerId(digits)}`,
     );
@@ -669,7 +682,7 @@ export class SessionHost {
 
     this.model.beginRestore();
     terminal.write(snapshot.scrollback);
-    terminal.write("\r\n\x1b[2m---- restored session ----\x1b[0m");
+    terminal.write(`\r\n\x1b[2m${RESTORE_SEPARATOR_LABEL}\x1b[0m`);
     const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
       this.model.updateCommands(

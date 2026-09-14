@@ -142,6 +142,16 @@ describe("SessionHost snapshot/restore", () => {
     expect(snapshot.commands).toEqual([]);
   });
 
+  it("drops an earlier restore boundary line so they don't accumulate", () => {
+    bufferLines = [makeLine("first"), makeLine("---- restored session ----"), makeLine("second")];
+
+    const scrollback = host.snapshot(500).scrollback ?? "";
+
+    expect(scrollback).not.toContain("restored session");
+    expect(scrollback).toContain("first");
+    expect(scrollback).toContain("second");
+  });
+
   it("captures no scrollback and no commands when maxLines is zero", () => {
     bufferLines = [makeLine("something")];
 
