@@ -153,6 +153,9 @@ export class SessionHost {
   private searchHandler?: TerminalSearchHandler;
   private editor?: CommandLineEditor;
   private promptMarkerRegistry?: PromptMarkerRegistry;
+  /** A snapshot waiting to be replayed on the first attach (step 27). */
+  private _pendingRestore?: SessionSnapshot;
+  private _restoreScheduled = false;
 
   constructor(
     private readonly os: OsPlatform,
@@ -318,7 +321,13 @@ export class SessionHost {
       },
       onOutput: () => this.hostFacts.next({ type: "outputReceived" }),
     });
-    this.disposables.push(this.renderer.register(this.ptyHandler));
+    // A restored session defers the shell spawn to its first attach: the saved
+    // scrollback must be written into an open, final-sized terminal before the
+    // shell (ConPTY on Windows especially) paints, so it paints below the
+    // scrollback, not over it. Everything else is wired now (step 27).
+    if (!this._pendingRestore) {
+      this.disposables.push(this.renderer.register(this.ptyHandler));
+    }
 
     this.focusHandler = new FocusHandler((focused) => this.onFocusChanged(focused));
     this.disposables.push(this.renderer.register(new TerminalTitleHandler(this.model)));
@@ -452,6 +461,7 @@ export class SessionHost {
     this.display$$.next("attached");
     this.renderer.setVisible(true);
     this.resizeHandler?.resize();
+    this.scheduleRestoreIfPending();
   }
 
   /** Takes the terminal off screen; the shell and the model carry on. */
@@ -615,13 +625,44 @@ export class SessionHost {
     if (snapshot.version !== SESSION_SNAPSHOT_VERSION || !snapshot.scrollback) {
       return;
     }
-    const terminal = this.renderer?.terminal;
-    if (!terminal) {
+    // Stash it; the replay waits for the first attach, when the terminal is open
+    // and at its final size. Called before start() so start() defers the pty.
+    this._pendingRestore = snapshot;
+  }
+
+  private scheduleRestoreIfPending(): void {
+    if (!this._pendingRestore || this._restoreScheduled) {
       return;
     }
+    this._restoreScheduled = true;
+    // A frame after the first attach the container has laid out, so the fit
+    // yields the real row count the fill and the pty spawn depend on.
+    requestAnimationFrame(() => this.completeRestore());
+  }
+
+  /**
+   * Replay the stashed snapshot into the now-open, final-sized terminal, then
+   * spawn the shell. On Windows the restored scrollback is pushed above the
+   * viewport with a screenful of blank lines first, so ConPTY - which repaints
+   * its whole screen on start - paints into the fresh area below it, not over
+   * it. The observer must not read the replay as input: `beginRestore` gates it
+   * until the writes are parsed (step 27).
+   */
+  private completeRestore(): void {
+    const snapshot = this._pendingRestore;
+    this._pendingRestore = undefined;
+    const terminal = this.renderer?.terminal;
+    if (!snapshot?.scrollback || !terminal) {
+      this.startDeferredPty();
+      return;
+    }
+    this.resizeHandler?.resize();
+
     this.model.beginRestore();
     terminal.write(snapshot.scrollback);
-    terminal.write("\r\n\x1b[2m---- restored session ----\x1b[0m\r\n", () => {
+    terminal.write("\r\n\x1b[2m---- restored session ----\x1b[0m");
+    const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
+    terminal.write(trailer, () => {
       this.model.updateCommands(
         snapshot.commands.map((command) => {
           const restored = new Command(
@@ -636,7 +677,16 @@ export class SessionHost {
       );
       this.promptMarkerRegistry?.anchorRestoredMarkers();
       this.model.endRestore();
+      this.startDeferredPty();
     });
+  }
+
+  /** Register the pty handler that `start()` held back for a restored session. */
+  private startDeferredPty(): void {
+    if (!this.ptyHandler || this.runtime.status === "closing" || this.runtime.status === "closed") {
+      return;
+    }
+    this.disposables.push(this.renderer.register(this.ptyHandler));
   }
 
   getRecentOutputSnapshot(maxLines = 60, maxChars = 4000): string {

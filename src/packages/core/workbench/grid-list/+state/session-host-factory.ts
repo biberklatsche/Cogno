@@ -135,13 +135,14 @@ export class SessionHostFactory {
     injector.get(TerminalComposerService);
     const notifications = injector.get(SessionNotifications);
     injector.get(SessionMenus);
-    host.start();
-
-    // Session restore (step 27): replay this terminal's saved scrollback, if any.
+    // Session restore (step 27): stash the saved scrollback before start() so
+    // the host defers the shell spawn; the replay happens on the first attach,
+    // into an open, final-sized terminal.
     const snapshot = this.pendingSnapshots.take(terminalId);
     if (snapshot) {
       host.restore(snapshot);
     }
+    host.start();
 
     const entry: SessionEntry = { injector, host, keybindings, notifications };
     this.sessions.set(terminalId, entry);
