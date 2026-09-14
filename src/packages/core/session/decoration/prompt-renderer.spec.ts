@@ -53,6 +53,22 @@ describe("PromptMarkerRenderer", () => {
     expect(marker?.textContent).toBe("COGNO");
   });
 
+  it("renders nothing for the integration bootstrap command", () => {
+    // The first prompt creates the command; the next prompt fills its data,
+    // so the bootstrap dot-source lands on commands[0].
+    stateManager.updateCommand({ id: "1" });
+    stateManager.updateCommand({
+      id: "2",
+      command: ". '/home/x/.cogno/shell-integration/bash/bootstrap.bash'",
+    });
+
+    const renderer = new PromptMarkerRenderer(stateManager, [{ text: "X" }], clipboardStub);
+    renderer.render(hostElement, 0);
+
+    expect(hostElement.querySelector(".cogno-marker")).toBeNull();
+    expect(hostElement.childElementCount).toBe(0);
+  });
+
   it("should render text segments", () => {
     stateManager.updateCommand({ id: "cmd-1" });
 

@@ -52,7 +52,9 @@ export class PromptMarkerRenderer {
     const commands = this.model.commands;
     const command = commands[renderContext.commandIndex ?? 0];
 
-    if (!command) {
+    // No backing command, or Cogno's own injected bootstrap dot-source (not a
+    // user command) - render nothing so its marker leaves no visible bar.
+    if (!command || command.isIntegrationBootstrap) {
       hostElement.replaceChildren();
       this._renderedSignatures.delete(hostElement);
       return;
