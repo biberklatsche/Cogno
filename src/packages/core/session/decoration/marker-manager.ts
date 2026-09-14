@@ -83,6 +83,9 @@ export class MarkerManager implements IDisposable {
     const markersInWindow = new Set<IMarker>();
     for (const { marker, commandId } of this.markerRegistry.markers) {
       if (marker.line < startScan || marker.line > endScan) continue;
+      // The shell integration's bootstrap dot-source is not a user command;
+      // don't decorate its marker (it sits at the top of every session).
+      if (this.model.commands.find((c) => c.id === commandId)?.isIntegrationBootstrap) continue;
       markersInWindow.add(marker);
       if (!this._decorations.has(marker)) {
         this.addDecoration(marker, commandId);

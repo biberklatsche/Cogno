@@ -44,6 +44,16 @@ export class Command {
     return rc !== undefined ? Number.parseInt(rc, 10) : undefined;
   }
 
+  /**
+   * Cogno's own injected startup command - the dot-source of the shell
+   * integration bootstrap (`. '<cognoHome>/shell-integration/.../bootstrap.*'`).
+   * The user did not run it, so it should not surface as a command marker
+   * (live or restored, step 27).
+   */
+  get isIntegrationBootstrap(): boolean {
+    return this.command?.includes("shell-integration") ?? false;
+  }
+
   get commandExists(): boolean {
     const rc = this.data["commandExists"];
     return rc !== undefined ? rc === "true" : false;

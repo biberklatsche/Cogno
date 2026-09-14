@@ -602,15 +602,22 @@ export class SessionHost {
     );
   }
 
-  /** The reported metadata of every command, with marker ids shifted to match. */
+  /**
+   * The reported metadata of every command, with marker ids shifted to match.
+   * The shell integration's own bootstrap dot-source is dropped: the user did not
+   * run it, and without metadata its (concealed) restored marker renders nothing
+   * (step 27).
+   */
   private captureCommands(): CommandSnapshot[] {
-    return this.model.commands.map((command) => ({
-      id: offsetMarkerId(command.id),
-      directory: command.directory ?? "",
-      machine: command.machine ?? "",
-      user: command.user ?? "",
-      data: command.rawData,
-    }));
+    return this.model.commands
+      .filter((command) => !command.isIntegrationBootstrap)
+      .map((command) => ({
+        id: offsetMarkerId(command.id),
+        directory: command.directory ?? "",
+        machine: command.machine ?? "",
+        user: command.user ?? "",
+        data: command.rawData,
+      }));
   }
 
   /**

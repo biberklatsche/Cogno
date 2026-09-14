@@ -6,6 +6,7 @@ import type { IBufferCell } from "@xterm/xterm";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
+import { Command } from "../model/command.model";
 import { TerminalCommandHistoryStore } from "../model/command-history.store";
 import type { CommandRecorder } from "../recorder/command-recorder";
 import { SessionHost } from "./session-host";
@@ -98,10 +99,12 @@ const bashProfile: ShellProfile = {
 
 describe("SessionHost snapshot/restore", () => {
   let host: SessionHost;
+  let historyStore: TerminalCommandHistoryStore;
 
   beforeEach(() => {
     vi.clearAllMocks();
     bufferLines = [];
+    historyStore = new TerminalCommandHistoryStore();
     const configService = new ConfigServiceMock();
     configService.setConfig({ font: { enable_ligatures: false } } as never);
     host = new SessionHost(
@@ -112,7 +115,7 @@ describe("SessionHost snapshot/restore", () => {
       {} as never,
       { openAtElement: vi.fn() },
       {} as never,
-      new TerminalCommandHistoryStore(),
+      historyStore,
       {
         initialize: vi.fn(),
         onCwdChanged: vi.fn(),
@@ -152,6 +155,21 @@ describe("SessionHost snapshot/restore", () => {
     bufferLines = [makeLine(""), makeLine("  ")];
 
     expect(host.snapshot(500).scrollback).toBeNull();
+  });
+
+  it("drops the shell-integration bootstrap command from the captured commands", () => {
+    bufferLines = [makeLine("out")];
+    const ls = new Command("1", "/dir", "m", "u");
+    ls.setData({ command: "ls" });
+    const bootstrap = new Command("3", "/dir", "m", "u");
+    bootstrap.setData({
+      command: ". 'C:/Users/x/.cogno-dev/shell-integration/pwsh/bootstrap.ps1'",
+    });
+    historyStore.updateCommands([ls, bootstrap]);
+
+    const commands = host.snapshot(500).commands;
+
+    expect(commands.map((c) => c.data["command"])).toEqual(["ls"]);
   });
 
   it("stashes the snapshot instead of writing it immediately", () => {
