@@ -11,6 +11,7 @@ import {
   PersistedPaneConfigurationContract,
 } from "@cogno/shared/domain";
 import {
+  WorkspaceAutoSaveStatus,
   WorkspaceConfiguration,
   WorkspaceState,
   WorkspaceStateUseCase,
@@ -235,16 +236,23 @@ export class WorkspaceHostApplicationService {
     if (!workspace) {
       return;
     }
-    await this.workspaceRepository.upsertWorkspace({
-      id: workspace.id,
-      name: workspace.name,
-      color: workspace.color,
-      position: workspace.position,
-      isActive: workspace.isActive,
-      grids: this.gridListService.getGridConfigs(workspaceId),
-      tabs: this.tabListService.getTabConfigs(workspaceId),
-    });
-    await this.sessionPersistence.persistWorkspace(workspaceId);
+    this.setWorkspaceAutoSaveStatus(workspaceId, "saving");
+    try {
+      await this.workspaceRepository.upsertWorkspace({
+        id: workspace.id,
+        name: workspace.name,
+        color: workspace.color,
+        position: workspace.position,
+        isActive: workspace.isActive,
+        grids: this.gridListService.getGridConfigs(workspaceId),
+        tabs: this.tabListService.getTabConfigs(workspaceId),
+      });
+      await this.sessionPersistence.persistWorkspace(workspaceId);
+    } catch (error) {
+      this.setWorkspaceAutoSaveStatus(workspaceId, undefined);
+      throw error;
+    }
+    this.setWorkspaceAutoSaveStatus(workspaceId, "saved", Date.now());
   }
 
   public async saveWorkspace(workspaceId: string): Promise<void> {
@@ -436,6 +444,28 @@ export class WorkspaceHostApplicationService {
     );
 
     this.setWorkspaceDirtyState(workspaceId, persistedSignature !== currentSignature);
+  }
+
+  private setWorkspaceAutoSaveStatus(
+    workspaceId: string,
+    status: WorkspaceAutoSaveStatus | undefined,
+    at?: number,
+  ): void {
+    const currentWorkspaceList = this._workspaceList();
+    const workspaceIndex = currentWorkspaceList.findIndex(
+      (workspaceEntry) => workspaceEntry.id === workspaceId,
+    );
+    if (workspaceIndex === -1) {
+      return;
+    }
+    const nextWorkspaceList = [...currentWorkspaceList];
+    nextWorkspaceList[workspaceIndex] = {
+      ...nextWorkspaceList[workspaceIndex],
+      autoSaveStatus: status,
+      // Keep the last saved time while a new save is in flight or on failure.
+      autoSavedAt: status === "saved" ? at : nextWorkspaceList[workspaceIndex].autoSavedAt,
+    };
+    this._workspaceList.set(nextWorkspaceList);
   }
 
   private setWorkspaceDirtyState(workspaceId: string, isDirty: boolean): void {

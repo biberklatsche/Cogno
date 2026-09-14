@@ -7,6 +7,8 @@ import {
   signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { relativeSavedTime } from "@cogno/core/workbench/workspace/auto-save-status";
 import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
@@ -26,13 +28,23 @@ import {
           class="selected-workspace-header selected-workspace-header--interactive"
           type="button"
           [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
-          [appTooltip]="workspaceTooltip(activeWorkspaceEntry)"
+          [appTooltip]="workspaceStatusTooltip(activeWorkspaceEntry)"
           appTooltipSecondary="Open workspaces"
           aria-haspopup="menu"
           aria-label="Select open workspace"
           (click)="openWorkspaceMenu($event)"
         >
-          @if (activeWorkspaceEntry.isDirty) {
+          @if (restoreEnabled()) {
+            @if (activeWorkspaceEntry.autoSaveStatus === "saving") {
+              <span class="selected-workspace-header__status" aria-hidden="true">
+                <app-icon class="spin" name="mdiLoading"></app-icon>
+              </span>
+            } @else if (activeWorkspaceEntry.autoSaveStatus === "saved") {
+              <span class="selected-workspace-header__status" aria-hidden="true">
+                <app-icon name="mdiCheck"></app-icon>
+              </span>
+            }
+          } @else if (activeWorkspaceEntry.isDirty) {
             <span class="selected-workspace-header__dirty" aria-hidden="true">
               <app-icon name="mdiViewDashboardEdit"></app-icon>
             </span>
@@ -46,9 +58,19 @@ import {
         <div
           class="selected-workspace-header"
           [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
-          [appTooltip]="workspaceTooltip(activeWorkspaceEntry)"
+          [appTooltip]="workspaceStatusTooltip(activeWorkspaceEntry)"
         >
-          @if (activeWorkspaceEntry.isDirty) {
+          @if (restoreEnabled()) {
+            @if (activeWorkspaceEntry.autoSaveStatus === "saving") {
+              <span class="selected-workspace-header__status" aria-hidden="true">
+                <app-icon class="spin" name="mdiLoading"></app-icon>
+              </span>
+            } @else if (activeWorkspaceEntry.autoSaveStatus === "saved") {
+              <span class="selected-workspace-header__status" aria-hidden="true">
+                <app-icon name="mdiCheck"></app-icon>
+              </span>
+            }
+          } @else if (activeWorkspaceEntry.isDirty) {
             <span class="selected-workspace-header__dirty" aria-hidden="true">
               <app-icon name="mdiViewDashboardEdit"></app-icon>
             </span>
@@ -119,6 +141,25 @@ import {
         opacity: 0.9;
       }
 
+      .selected-workspace-header__status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 0.85rem;
+        height: 0.85rem;
+        opacity: 0.55;
+      }
+
+      .selected-workspace-header__status .spin {
+        animation: selected-workspace-header-spin 0.9s linear infinite;
+      }
+
+      @keyframes selected-workspace-header-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
       .selected-workspace-header__chevron {
         flex: 0 0 auto;
         width: 0.45rem;
@@ -138,12 +179,21 @@ export class SelectedWorkspaceHeaderComponent {
   protected readonly activeWorkspace: Signal<WorkspaceEntryContract | undefined>;
   protected readonly openWorkspaceEntries: Signal<WorkspaceEntryContract[]>;
   protected readonly hasWorkspaceMenu: Signal<boolean>;
+  /** When session restore is on, the workspace auto-saves (step 27g). */
+  private readonly restoreEnabledSignal = signal(true);
+  protected readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
 
   constructor(
     private readonly workspaceHostPort: WorkspaceHostService,
     private readonly contextMenuOverlayService: ContextMenuOverlayService,
+    configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
+    configService.config$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((config) =>
+        this.restoreEnabledSignal.set(config.terminal?.restore?.enabled ?? true),
+      );
     this.workspaceHostPort.workspaceEntries$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((workspaceEntries) => {
@@ -182,7 +232,16 @@ export class SelectedWorkspaceHeaderComponent {
     });
   }
 
-  protected workspaceTooltip(workspaceEntry: WorkspaceEntryContract): string {
+  protected workspaceStatusTooltip(workspaceEntry: WorkspaceEntryContract): string {
+    if (this.restoreEnabled()) {
+      if (workspaceEntry.autoSaveStatus === "saving") {
+        return `${workspaceEntry.name} · speichert…`;
+      }
+      if (workspaceEntry.autoSaveStatus === "saved" && workspaceEntry.autoSavedAt !== undefined) {
+        return `${workspaceEntry.name} · automatisch gespeichert ${relativeSavedTime(workspaceEntry.autoSavedAt)}`;
+      }
+      return workspaceEntry.name;
+    }
     return workspaceEntry.isDirty
       ? `${workspaceEntry.name} has unsaved workspace edits`
       : workspaceEntry.name;

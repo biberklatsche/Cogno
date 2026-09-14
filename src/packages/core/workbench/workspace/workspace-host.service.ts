@@ -23,6 +23,8 @@ export class WorkspaceHostService {
           isDirty: workspaceConfigUi.isDirty,
           isActive: workspaceConfigUi.isActive,
           isOpen: workspaceConfigUi.isOpen,
+          autoSaveStatus: workspaceConfigUi.autoSaveStatus,
+          autoSavedAt: workspaceConfigUi.autoSavedAt,
         })),
       ),
     );

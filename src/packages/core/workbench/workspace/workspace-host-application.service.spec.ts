@@ -59,6 +59,7 @@ describe("WorkspaceHostApplicationService", () => {
         },
       ]),
       updateWorkspace: vi.fn(),
+      upsertWorkspace: vi.fn().mockResolvedValue(undefined),
     } as unknown as WorkspaceRepository;
 
     service = new WorkspaceHostApplicationService(
@@ -94,6 +95,19 @@ describe("WorkspaceHostApplicationService", () => {
     emitSessionFact(terminalId, { type: "titleChanged", oscCode: 2, title: "pwsh" });
 
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
+  });
+
+  it("marks a workspace saved after an autosave (step 27g)", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getWorkspaceById("WS-1")).toBeTruthy();
+    });
+
+    await service.autoPersistWorkspace("WS-1");
+
+    const workspace = service.getWorkspaceById("WS-1");
+    expect(workspace?.autoSaveStatus).toBe("saved");
+    expect(typeof workspace?.autoSavedAt).toBe("number");
   });
 
   it("marks a workspace dirty when the working directory changes", async () => {

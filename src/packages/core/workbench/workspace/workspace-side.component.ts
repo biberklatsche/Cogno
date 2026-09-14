@@ -1,4 +1,14 @@
-import { Component, DestroyRef, ElementRef, OnDestroy, Signal, viewChildren } from "@angular/core";
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  OnDestroy,
+  Signal,
+  signal,
+  viewChildren,
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { defaultWorkspaceIdContract } from "@cogno/shared/domain";
 import { ActionKeybindingPort } from "@cogno/shared/ports";
 import {
@@ -8,6 +18,7 @@ import {
   TooltipDirective,
 } from "@cogno/shared/ui";
 import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
+import { relativeSavedTime } from "./auto-save-status";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({
@@ -42,7 +53,25 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                 [style.background-color]="workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : 'var(--color-green)'"
               >
                 {{ (workspaceEntry.name || "")[0] || "?" }}
-                @if (workspaceEntry.isDirty) {
+                @if (restoreEnabled()) {
+                  @if (workspaceEntry.autoSaveStatus === "saving") {
+                    <span
+                      class="workspace-autosave-indicator"
+                      aria-hidden="true"
+                      [appTooltip]="workspaceEntry.name + ' · speichert…'"
+                    >
+                      <app-icon class="spin" name="mdiLoading"></app-icon>
+                    </span>
+                  } @else if (workspaceEntry.autoSaveStatus === "saved" && workspaceEntry.autoSavedAt !== undefined) {
+                    <span
+                      class="workspace-autosave-indicator"
+                      aria-hidden="true"
+                      [appTooltip]="'automatisch gespeichert ' + relativeSavedTime(workspaceEntry.autoSavedAt)"
+                    >
+                      <app-icon name="mdiCheck"></app-icon>
+                    </span>
+                  }
+                } @else if (workspaceEntry.isDirty) {
                   <span class="workspace-dirty-indicator" aria-hidden="true">
                     <app-icon name="mdiViewDashboardEdit"></app-icon>
                   </span>
@@ -66,7 +95,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                 }
                 <div class="space"></div>
                 <div class="workspace-actions">
-                  @if (workspaceEntry.isDirty) {
+                  @if (!restoreEnabled() && workspaceEntry.isDirty) {
                     <button
                       class="button icon-button workspace-save-button visible"
                       type="button"
@@ -210,7 +239,8 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         min-width: 0;
       }
 
-      .workspace-dirty-indicator {
+      .workspace-dirty-indicator,
+      .workspace-autosave-indicator {
         position: absolute;
         right: -0.28rem;
         bottom: -0.28rem;
@@ -225,6 +255,20 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         color: var(--foreground-color);
         box-shadow: 0 0 0 1px color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
         opacity: 0.95;
+      }
+
+      .workspace-autosave-indicator {
+        opacity: 0.7;
+      }
+
+      .workspace-autosave-indicator .spin {
+        animation: workspace-autosave-spin 0.9s linear infinite;
+      }
+
+      @keyframes workspace-autosave-spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       .workspace-name {
@@ -284,6 +328,10 @@ export class WorkspaceSideComponent implements OnDestroy {
 
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]>;
   readonly defaultWorkspaceId = defaultWorkspaceIdContract;
+  /** When session restore is on, workspaces auto-save (step 27g). */
+  private readonly restoreEnabledSignal = signal(true);
+  readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
+  protected readonly relativeSavedTime = relativeSavedTime;
   isDraggingWorkspace = false;
   draggedWorkspaceIdentifier: string | undefined;
 
@@ -304,8 +352,14 @@ export class WorkspaceSideComponent implements OnDestroy {
     private readonly workspaceService: WorkspaceService,
     private readonly dragPreviewService: DragPreviewService,
     private readonly actionKeybinding: ActionKeybindingPort,
+    configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
+    configService.config$
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((config) =>
+        this.restoreEnabledSignal.set(config.terminal?.restore?.enabled ?? true),
+      );
     this.workspaceEntries = this.workspaceService.workspaceEntries;
     this.workspaceService.registerNavigationItemsProvider(this.navigationItemsProvider);
     destroyRef.onDestroy(() => {

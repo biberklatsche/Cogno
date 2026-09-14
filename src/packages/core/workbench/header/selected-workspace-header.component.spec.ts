@@ -1,8 +1,10 @@
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { getDestroyRef } from "../../../__test__/test-factory";
 import { SelectedWorkspaceHeaderComponent } from "./selected-workspace-header.component";
 
@@ -38,9 +40,13 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       openAtElement: openAtElementMock,
     };
 
+    const configService = new ConfigServiceMock();
+    configService.setConfig({ terminal: { restore: { enabled: true } } } as never);
+
     component = new SelectedWorkspaceHeaderComponent(
       workspaceHostPort,
       contextMenuOverlayService as ContextMenuOverlayService,
+      configService as unknown as ConfigService,
       getDestroyRef(),
     );
   });
