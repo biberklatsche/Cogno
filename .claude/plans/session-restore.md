@@ -5,10 +5,10 @@ Panes **und** Terminal-Scrollback; ein beim Beenden laufendes Kommando steht im
 Command-Log als abgebrochen. Kein Verlauf/keine Historie. Speichern ist für den
 Nutzer **unmerklich** und **abschaltbar**.
 
-> Status: **Implementiert (Kern).** Siehe „Implementierungsstand (final)" am Ende —
+> Status: **KOMPLETT** (alle Slices inkl. 27g Auto-Save-Status-UI + 27b-2
+> abgebrochenes Kommando). Siehe „Implementierungsstand (final)" am Ende —
 > der Scrollback-Ansatz weicht bewusst vom ursprünglichen Design ab (Farb-Restore
-> + ConPTY-Handhabung). Offen/aufgeschoben: Auto-Save-Status-UI (27g),
-> abgebrochenes Kommando (27b-2).
+> + ConPTY-Handhabung).
 > Dieser Schritt verfeinert/weicht bewusst vom ursprünglichen Plantext (Schritt 27)
 > ab (mit Nutzer abgestimmt): Modell „zuletzt gelebt" mit Auto-Save, **keine
 > `windowId`-Spalten**, Auto- **und** Manuell-Speichern koexistieren.
@@ -185,3 +185,21 @@ ab — bewusst, nach Nutzer-Feedback (Farben + Marker gewünscht, ConPTY-Problem
   Snapshot beim delete-then-insert-Save.
 - **Nebenbei-Fix:** `FilesystemSpecProvider` gibt bei leerem cwd `[]` zurück statt zu
   werfen („Autocomplete provider failed / Empty path").
+
+### 27g + 27b-2 (final)
+
+- **27g — Auto-Save-Status-UI:** Bei Autosave AN (`terminal.restore.enabled`) ersetzt
+  ein dezenter Status Dirty-Icon + Save-Button: Spinner beim Speichern, sonst ✓,
+  Zeit im Tooltip („automatisch gespeichert vor X s"). Bei AUS bleiben Dirty +
+  Save-Button. Status entsteht in `WorkspaceHostApplicationService.autoPersistWorkspace`
+  (saving→saved+Zeitstempel), fließt über `WorkspaceEntryContract` in Header
+  (`SelectedWorkspaceHeaderComponent`) + Side-Kacheln (`WorkspaceSideComponent`);
+  beide lesen `restore.enabled` reaktiv. Helper `auto-save-status.ts`.
+- **27b-2 — Abgebrochenes Kommando:** Ein beim Beenden laufendes Kommando wird in
+  die Command-History geschrieben (Dauer, ohne returnCode), damit es nicht verloren
+  geht — **kein** sichtbarer „abgebrochen"-Marker (Log zeigt keinen Status),
+  **unabhängig** vom Restore-Setting. `CommandRecorder.recordAbortedCommand` umgeht
+  das returnCode-Gate (Text-Filter bleiben) + schreibt await-bar via
+  `SessionCommandLog.writeAndAwait`; `SessionModel.recordAbortedCommand` baut es aus
+  dem laufenden Kommando (nur Base-Kontext); `WindowService` nimmt beim Quit alle
+  Live-Sessions im Zeitbudget mit (`SessionHostFactory.getAllSessionHosts`).
