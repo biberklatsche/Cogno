@@ -113,6 +113,9 @@ export class MarkerManager implements IDisposable {
     for (const { marker, commandId } of this.markerRegistry.markers) {
       const line = marker.line;
       const idx = commandIndexById.get(commandId) ?? -1;
+      // The integration bootstrap is not a user command: it must not show in the
+      // header as the command that scrolled out, nor count as in-viewport.
+      if (idx >= 0 && commands[idx].isIntegrationBootstrap) continue;
       if (line < viewportStart) {
         if (idx >= 0) lastCommandAboveViewportIdx = idx;
         continue;

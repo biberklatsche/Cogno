@@ -86,6 +86,21 @@ describe("MarkerManager", () => {
     );
   });
 
+  it("should not decorate the integration bootstrap command's marker", () => {
+    // First prompt creates command "1"; the next fills its data with the
+    // bootstrap dot-source, so command "1" is the bootstrap.
+    stateManager.updateCommand({ id: "1" });
+    stateManager.updateCommand({
+      id: "2",
+      command: ". '/home/x/.cogno/shell-integration/bash/bootstrap.bash'",
+    });
+    registryMarkers.push(createRegistryMarker("1", 0));
+
+    markerManager.refreshMarkers();
+
+    expect(mockTerminal.registerDecoration).not.toHaveBeenCalled();
+  });
+
   it("should not recreate existing decorations", () => {
     registryMarkers.push(createRegistryMarker("1", 0));
 
