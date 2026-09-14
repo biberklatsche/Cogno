@@ -656,7 +656,9 @@ export class SessionHost {
       this.startDeferredPty();
       return;
     }
-    this.resizeHandler?.resize();
+    // Fit the terminal (not the pty - it isn't spawned yet) so the fill and the
+    // pty's spawn size use the real row count.
+    this.resizeHandler?.fitTerminalWithoutPty();
 
     this.model.beginRestore();
     terminal.write(snapshot.scrollback);
