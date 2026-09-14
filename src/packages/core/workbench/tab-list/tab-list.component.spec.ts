@@ -14,7 +14,7 @@ import {
   getAppBus,
   getConfigService,
   getDestroyRef,
-} from "../../__test__/test-factory";
+} from "../../../__test__/test-factory";
 import { TabListComponent } from "./tab-list.component";
 
 function tab(overrides: Partial<Tab> = {}): Tab {

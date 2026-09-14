@@ -9,10 +9,10 @@ import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-
 import { GridListComponent } from "@cogno/core/workbench/grid-list/grid-list.component";
 import { SelectedWorkspaceHeaderComponent } from "@cogno/core/workbench/header/selected-workspace-header.component";
 import { AppNotificationToastStackComponent } from "@cogno/core/workbench/notification/app-notification-toast-stack.component";
+import { TabListComponent } from "@cogno/core/workbench/tab-list/tab-list.component";
 import { TerminalBusyIndicatorAdapterService } from "@cogno/core/workbench/terminal/terminal-busy-indicator-adapter.service";
 import { DatabaseOpenReport, DatabaseRecoveryReport } from "@cogno/platform/database";
 import { OsPlatform, OsType } from "@cogno/platform/os";
-import { TabListComponent } from "./tab-list/tab-list.component";
 
 @Component({
   selector: "app-root",

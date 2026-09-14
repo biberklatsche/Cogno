@@ -1,6 +1,6 @@
 import { bootstrapApplication } from "@angular/platform-browser";
-import { AppComponent } from "@cogno/app/app.component";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
+import { AppComponent } from "@cogno/core/workbench/shell/app.component";
 import { Paths } from "@cogno/platform/path";
 import { appConfig } from "./app.config";
 

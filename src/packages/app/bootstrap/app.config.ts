@@ -6,13 +6,11 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
-import { AboutDialogAdapterService } from "@cogno/app/app-host/about-dialog.adapter.service";
 import { featuresToken } from "@cogno/app/app-host/app-host.tokens";
-import { ApplicationConfigurationPortAdapterService } from "@cogno/app/app-host/application-configuration-port.adapter.service";
-import { ErrorReportingRuntimeService } from "@cogno/app/common/error/error-reporting-runtime.service";
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
+import { ApplicationConfigurationPortAdapterService } from "@cogno/core/api/application-configuration-port.adapter.service";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { NotificationCenterPortAdapterService } from "@cogno/core/api/notification-center-port.adapter.service";
 import { SessionApi } from "@cogno/core/api/session-api";
@@ -34,9 +32,11 @@ import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-erro
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
+import { AboutDialogAdapterService } from "@cogno/core/workbench/about/about-dialog.adapter.service";
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
+import { ErrorReportingRuntimeService } from "@cogno/core/workbench/error/error-reporting-runtime.service";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
 import { RunnableActionsPublisher } from "@cogno/core/workbench/external/runnable-actions-publisher.service";
