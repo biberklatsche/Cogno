@@ -88,6 +88,7 @@ export class SessionModel {
   private _nextRevision = 1;
   private _sessionToken?: string;
   private _untrustedSequenceCount = 0;
+  private _isRestoring = false;
 
   constructor(
     backendOs: OsType,
@@ -120,6 +121,24 @@ export class SessionModel {
 
   get sessionToken(): string | undefined {
     return this._sessionToken;
+  }
+
+  /**
+   * While a session snapshot is being replayed into the buffer, the observer
+   * must not mirror the replayed text as the current input line: it is dead
+   * scrollback, not something the user typed (step 27). The replay writes no
+   * OSC/CSI, so nothing else on the write path reacts.
+   */
+  beginRestore(): void {
+    this._isRestoring = true;
+  }
+
+  endRestore(): void {
+    this._isRestoring = false;
+  }
+
+  get isRestoring(): boolean {
+    return this._isRestoring;
   }
 
   /** A Cogno sequence without this session's token was dropped. */

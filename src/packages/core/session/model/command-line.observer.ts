@@ -57,6 +57,7 @@ export class CommandLineObserver implements ITerminalHandler {
     this._disposables.push(
       terminal.onCursorMove(() => {
         if (!terminal?.buffer?.active) return;
+        if (this.model.isRestoring) return;
         if (this.model.isCommandRunning) return;
         try {
           const cursorIndex = this._commandLineBuffer.cursorInputIndex();
@@ -104,6 +105,7 @@ export class CommandLineObserver implements ITerminalHandler {
     this._disposables.push(
       this._terminal.onWriteParsed(() => {
         this._markerRegistry.onWriteParsed();
+        if (this.model.isRestoring) return;
         if (this.model.isCommandRunning) return;
         const input = this.model.input;
         const text = this._commandLineBuffer.readInputText(input.maxCursorIndex);

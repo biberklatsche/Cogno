@@ -17,6 +17,11 @@ export class Command {
     this.data = data;
   }
 
+  /** A copy of the raw reported keys, for serializing a session snapshot (step 27). */
+  get rawData(): CommandData {
+    return { ...this.data };
+  }
+
   get directory(): string | undefined {
     return this._directory;
   }

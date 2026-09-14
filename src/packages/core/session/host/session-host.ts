@@ -49,6 +49,7 @@ import { TerminalNotificationHandler } from "../handlers/terminal-notification.h
 import { TerminalPaddingHandler } from "../handlers/terminal-padding.handler";
 import { TerminalSearchHandler } from "../handlers/terminal-search.handler";
 import { TerminalTitleHandler } from "../handlers/terminal-title.handler";
+import { Command } from "../model/command.model";
 import { TerminalCommandHistoryStore } from "../model/command-history.store";
 import { CommandLineBuffer } from "../model/command-line.buffer";
 import { CommandLineObserver } from "../model/command-line.observer";
@@ -56,11 +57,31 @@ import { SessionModel, SessionModelSnapshot, TerminalInput } from "../model/sess
 import { CommandRecorder } from "../recorder/command-recorder";
 import { SessionFact } from "../session-facts";
 import { shellDefinitions } from "../shells/shell-definitions";
+import { serializeScrollback } from "./scrollback-serializer";
 /** Both halves of a session's state as one read-only view. */
-import { SESSION_SNAPSHOT_VERSION, SessionSnapshot } from "./session-snapshot";
+import {
+  type CommandSnapshot,
+  SESSION_SNAPSHOT_VERSION,
+  type SessionSnapshot,
+} from "./session-snapshot";
 import { toTerminalMachineOptions } from "./terminal-machine-options.mapper";
 
 export type SessionState = MachineStateSnapshot & SessionModelSnapshot;
+
+/** The concealed prompt marker line the shell integration prints (`^^#<id>`). */
+const MARKER_ID_PATTERN = /\^\^#(\d+)/g;
+/**
+ * Shift restored marker ids past any the live session will mint. bash/zsh count
+ * from 1 each session, so without this a restored `^^#1` would collide with the
+ * new `^^#1` and the registry would drop the live marker; PowerShell uses epoch
+ * timestamps, which stay well below this bound for millennia (step 27).
+ */
+const RESTORED_MARKER_ID_OFFSET = 1_000_000_000_000_000;
+
+function offsetMarkerId(id: string): string {
+  const numeric = Number(id);
+  return Number.isFinite(numeric) ? String(numeric + RESTORED_MARKER_ID_OFFSET) : id;
+}
 
 /**
  * Axis A - runtime (ARCHITECTURE.md 2.3). `allocated` until started;
@@ -131,6 +152,7 @@ export class SessionHost {
   private clipboardHandler?: ClipboardHandler;
   private searchHandler?: TerminalSearchHandler;
   private editor?: CommandLineEditor;
+  private promptMarkerRegistry?: PromptMarkerRegistry;
 
   constructor(
     private readonly os: OsPlatform,
@@ -332,6 +354,7 @@ export class SessionHost {
     // single instance per session keeps them consistent after a `clear` or
     // reflow.
     const promptMarkerRegistry = new PromptMarkerRegistry();
+    this.promptMarkerRegistry = promptMarkerRegistry;
     const commandLineBuffer = new CommandLineBuffer(promptMarkerRegistry);
     const inputWriter = new TerminalInputWriter(
       this.pty,
@@ -529,22 +552,28 @@ export class SessionHost {
   // ---- reading the buffer ---------------------------------------------
 
   /**
-   * A restorable snapshot of the buffer: the scrollback serialized to text
-   * (capped, alt-screen excluded) for session restore (step 27). `maxLines <= 0`
-   * captures no scrollback.
+   * A restorable snapshot of the buffer: the scrollback serialized to text with
+   * SGR colours and the concealed `^^#` marker lines, plus per-command metadata,
+   * so a restored session looks and behaves like it did at close (step 27).
+   * `maxLines <= 0` captures nothing.
    */
   snapshot(maxLines: number): SessionSnapshot {
+    if (maxLines <= 0) {
+      return { version: SESSION_SNAPSHOT_VERSION, scrollback: null, commands: [] };
+    }
+    const scrollback = this.captureScrollback(maxLines);
     return {
       version: SESSION_SNAPSHOT_VERSION,
-      scrollback: maxLines > 0 ? this.captureScrollback(maxLines) : null,
+      scrollback,
+      commands: scrollback ? this.captureCommands() : [],
     };
   }
 
   /**
-   * The recent buffer as inert plain text (no escape sequences, shell-integration
-   * marker lines skipped, trailing blank lines trimmed) - deliberately not the
-   * SerializeAddon output, whose cursor/viewport/marker sequences corrupt the
-   * live session on replay (step 27). Colours are not preserved.
+   * The recent buffer serialized with colours and attributes (incl. the conceal
+   * that hides `^^#` marker lines). Restored marker ids are shifted into a range
+   * the live session's ids never reach, so restored markers can't collide with
+   * new ones - bash/zsh restart their counter at 1 (step 27).
    */
   private captureScrollback(maxLines: number): string | null {
     const terminal = this.renderer?.terminal;
@@ -553,28 +582,34 @@ export class SessionHost {
     }
     const buffer = terminal.buffer.active;
     const beginLineIndex = Math.max(0, buffer.length - maxLines);
-    const lineTexts: string[] = [];
-    for (let lineIndex = beginLineIndex; lineIndex < buffer.length; lineIndex++) {
-      const line = buffer.getLine(lineIndex);
-      if (!line) {
-        continue;
-      }
-      const lineText = line.translateToString(true);
-      if (lineText.startsWith("^^#")) {
-        continue;
-      }
-      lineTexts.push(lineText);
+    const serialized = serializeScrollback(buffer, beginLineIndex, buffer.length);
+    if (serialized === "") {
+      return null;
     }
-    while (lineTexts.length > 0 && lineTexts[lineTexts.length - 1].trim() === "") {
-      lineTexts.pop();
-    }
-    return lineTexts.length > 0 ? lineTexts.join("\r\n") : null;
+    return serialized.replace(
+      MARKER_ID_PATTERN,
+      (_match, digits: string) => `^^#${offsetMarkerId(digits)}`,
+    );
+  }
+
+  /** The reported metadata of every command, with marker ids shifted to match. */
+  private captureCommands(): CommandSnapshot[] {
+    return this.model.commands.map((command) => ({
+      id: offsetMarkerId(command.id),
+      directory: command.directory ?? "",
+      machine: command.machine ?? "",
+      user: command.user ?? "",
+      data: command.rawData,
+    }));
   }
 
   /**
-   * Replay a snapshot's scrollback into the buffer, above a separator line, so a
-   * restored terminal can be scrolled back. Dead text - the live prompt runs
-   * below it. A snapshot of a different version or without scrollback is ignored.
+   * Replay a snapshot's scrollback into the buffer, above a separator line, then
+   * re-anchor its markers and seed their command metadata so the decorations
+   * render. The replay is dead scrollback - the live prompt runs below it - so
+   * the model must not read it as input: `beginRestore` gates the observer's
+   * input mirror until the writes are parsed. A snapshot of a different version
+   * or without scrollback is ignored.
    */
   restore(snapshot: SessionSnapshot): void {
     if (snapshot.version !== SESSION_SNAPSHOT_VERSION || !snapshot.scrollback) {
@@ -584,8 +619,24 @@ export class SessionHost {
     if (!terminal) {
       return;
     }
+    this.model.beginRestore();
     terminal.write(snapshot.scrollback);
-    terminal.write("\r\n\x1b[2m---- restored session ----\x1b[0m\r\n");
+    terminal.write("\r\n\x1b[2m---- restored session ----\x1b[0m\r\n", () => {
+      this.model.updateCommands(
+        snapshot.commands.map((command) => {
+          const restored = new Command(
+            command.id,
+            command.directory,
+            command.machine,
+            command.user,
+          );
+          restored.setData(command.data);
+          return restored;
+        }),
+      );
+      this.promptMarkerRegistry?.anchorRestoredMarkers();
+      this.model.endRestore();
+    });
   }
 
   getRecentOutputSnapshot(maxLines = 60, maxChars = 4000): string {

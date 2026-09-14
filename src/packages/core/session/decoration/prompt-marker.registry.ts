@@ -149,6 +149,26 @@ export class PromptMarkerRegistry implements IDisposable {
     this._terminal = undefined;
   }
 
+  /**
+   * Anchor every `^^#<id>` marker in the whole buffer at once. Live anchoring is
+   * armed by OSC 733 and only scans near the cursor; a restored snapshot writes
+   * its marker lines far up in the scrollback with no OSC, so it needs an
+   * explicit full scan (step 27). Bounded by the scrollback cap, run once.
+   */
+  anchorRestoredMarkers(): void {
+    const buffer = this._terminal?.buffer?.active;
+    if (!buffer || buffer.type === "alternate") return;
+    this.pruneDisposedMarkers();
+
+    for (let lineIndex = 0; lineIndex < buffer.length; lineIndex++) {
+      const lineText = buffer.getLine(lineIndex)?.translateToString();
+      const commandId = lineText?.match(PROMPT_MARKER_ID_REGEX)?.[1];
+      if (!commandId || this._registeredCommandIds.has(commandId)) continue;
+      this.registerMarkerAtLine(lineIndex, commandId);
+    }
+    this._markers.sort((a, b) => a.marker.line - b.marker.line);
+  }
+
   /** Scan the lines just written for new `^^#<id>` markers and anchor them. */
   private anchorNewMarkers(): boolean {
     const terminal = this._terminal;
