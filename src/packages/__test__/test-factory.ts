@@ -1,5 +1,4 @@
 import type { DestroyRef } from "@angular/core";
-import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import type { SessionHost } from "@cogno/core/session/host/session-host";
 import type { SessionFact } from "@cogno/core/session/session-facts";
@@ -38,7 +37,6 @@ let terminalComponentFactory: SessionHostFactory | undefined;
 let windowService: WindowService | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let machineState: MachineState | undefined;
-let appWiringService: AppWiringService | undefined;
 let terminalBusyStateService: TerminalBusyStateService | undefined;
 let contextMenuOverlayService: ContextMenuOverlayService | undefined;
 let notificationTargetResolverService: NotificationTargetResolverService | undefined;
@@ -75,15 +73,6 @@ export function getNotificationTargetResolverService(): NotificationTargetResolv
 export function getConfigService(): ConfigServiceMock {
   if (!configService) configService = new ConfigServiceMock();
   return configService;
-}
-
-export function getAppWiringService(): AppWiringService {
-  if (!appWiringService) {
-    appWiringService = {
-      getShellDefinitions: vi.fn().mockReturnValue([]),
-    } as unknown as AppWiringService;
-  }
-  return appWiringService;
 }
 
 export function getActionKeybindingPortMock(): ActionKeybindingPort {
@@ -235,7 +224,6 @@ export function clear() {
   windowService = undefined;
   selectionHandler = undefined;
   machineState = undefined;
-  appWiringService = undefined;
   terminalBusyStateService = undefined;
   contextMenuOverlayService = undefined;
   notificationTargetResolverService = undefined;

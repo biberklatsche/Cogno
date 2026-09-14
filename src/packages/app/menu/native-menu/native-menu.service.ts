@@ -1,10 +1,10 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
@@ -23,7 +23,7 @@ export class NativeMenuService {
     private readonly os: OsPlatform,
     private bus: AppBus,
     private keybindService: KeybindService,
-    private readonly wiringService: AppWiringService,
+    private readonly featureHost: FeatureHost,
     configService: ConfigService,
     ref: DestroyRef,
   ) {
@@ -71,7 +71,7 @@ export class NativeMenuService {
       ],
     });
 
-    const sideMenuFeatureDefinitions = this.wiringService.getSideMenuFeatureDefinitions();
+    const sideMenuFeatureDefinitions = this.featureHost.getSideMenuFeatureDefinitions();
     const sortedSideMenuFeatureDefinitions = [...sideMenuFeatureDefinitions].sort(
       (firstFeatureDefinition, secondFeatureDefinition) =>
         firstFeatureDefinition.order - secondFeatureDefinition.order,

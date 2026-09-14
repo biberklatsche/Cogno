@@ -6,7 +6,6 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
-import { featuresToken } from "@cogno/app/app-host/app-host.tokens";
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
 import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
@@ -81,7 +80,6 @@ export const appConfig: ApplicationConfig = {
       provide: ApplicationConfigurationPort,
       useExisting: ApplicationConfigurationPortAdapterService,
     },
-    { provide: featuresToken, useValue: features },
     { provide: FEATURE_DEFINITIONS, useValue: features },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },

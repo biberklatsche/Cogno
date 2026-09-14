@@ -1,5 +1,4 @@
 import type { DestroyRef } from "@angular/core";
-import type { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import type { ConfigDiagnostic } from "@cogno/core/infrastructure/config/config.mapper";
 import type {
   ConfigLoadOptions,
@@ -8,6 +7,7 @@ import type {
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import type { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigBootstrapAdapter } from "./config-bootstrap.adapter";
@@ -39,7 +39,7 @@ function setup() {
   const wiring = {
     getSettingsExtensions: vi.fn().mockReturnValue([]),
     getShellSupportDefinitions: vi.fn().mockReturnValue([]),
-  } as unknown as AppWiringService;
+  } as unknown as FeatureHost;
   const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
 
   const notifications: unknown[] = [];

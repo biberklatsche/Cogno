@@ -1,11 +1,11 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { AppWiringService } from "@cogno/app/app-host/app-wiring.service";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
 import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integration.writer";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { Hash } from "@cogno/shared/support";
 
 /**
@@ -35,7 +35,7 @@ export class ConfigBootstrapAdapter {
     private readonly appBus: AppBus,
     private readonly config: ConfigService,
     private readonly shells: ShellConfigurator,
-    private readonly wiringService: AppWiringService,
+    private readonly featureHost: FeatureHost,
     private readonly shellIntegration: ShellIntegrationWriter,
     destroyRef: DestroyRef,
   ) {
@@ -63,9 +63,9 @@ export class ConfigBootstrapAdapter {
   }
 
   private async load(): Promise<void> {
-    const shellSupportDefinitions = this.wiringService.getShellSupportDefinitions();
+    const shellSupportDefinitions = this.featureHost.getShellSupportDefinitions();
     await this.config.load({
-      settingsExtensions: this.wiringService.getSettingsExtensions(),
+      settingsExtensions: this.featureHost.getSettingsExtensions(),
       completeDefaults: async (config: Config) => {
         if (Object.keys(config.shell?.profiles ?? {}).length > 0) {
           return false;

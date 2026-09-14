@@ -6,7 +6,12 @@ import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
-import { FeatureDefinition } from "@cogno/shared/contributions";
+import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
+import {
+  ApplicationSettingsExtensionContract,
+  FeatureDefinition,
+  ShellSupportDefinitionContract,
+} from "@cogno/shared/contributions";
 import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
@@ -97,6 +102,24 @@ export class FeatureHost {
   /** Each feature's runtime status, for the sidebar and the API (step 22d). */
   featureStates(): ReadonlyArray<FeatureRuntimeState> {
     return this.reconciler?.states() ?? [];
+  }
+
+  /** The features' side-menu contributions, ordered - for the native menu (step 28). */
+  getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
+    return this.features
+      .flatMap((feature) => feature.sideMenu ?? [])
+      .slice()
+      .sort((left, right) => left.order - right.order);
+  }
+
+  /** The features' settings extensions - for config bootstrap (step 28). */
+  getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
+    return this.features.flatMap((feature) => (feature.settings ? [feature.settings] : []));
+  }
+
+  /** The available shells' support descriptors - for config bootstrap (step 28). */
+  getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
+    return shellDefinitions.map((shell) => shell.support);
   }
 
   /**
