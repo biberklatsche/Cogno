@@ -141,6 +141,15 @@ export class WorkspaceHostApplicationService {
     }
   }
 
+  /**
+   * Record every live session's running command as aborted before exit (step
+   * 27b-2). Separate from persistActiveWorkspace: the command log persists
+   * regardless of the session-restore setting.
+   */
+  async recordAbortedCommands(): Promise<void> {
+    await this.sessionPersistence.recordAbortedCommands();
+  }
+
   public async activateWorkspace(workspace: WorkspaceState): Promise<void> {
     await this.runWithoutDirtyTracking(async () => {
       const activationPlan = WorkspaceStateUseCase.activateWorkspace(

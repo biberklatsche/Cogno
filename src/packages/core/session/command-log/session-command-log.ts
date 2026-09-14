@@ -111,6 +111,26 @@ export class SessionCommandLog {
     void this.drain();
   }
 
+  /**
+   * Writes once and awaits it - for shutdown-time records (an aborted command on
+   * quit) that must reach the database before the process exits, unlike the
+   * fire-and-forget queue. A missing repository or a failure is swallowed.
+   */
+  async writeAndAwait(action: WriteAction): Promise<void> {
+    const repository = this.repository$.value;
+    if (this.disabled || !repository) return;
+    try {
+      await action(repository);
+    } catch (error) {
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "SessionCommandLog",
+        context: { operation: "writeAndAwait" },
+      });
+    }
+  }
+
   private async drain(): Promise<void> {
     if (this.draining) return;
     this.draining = true;

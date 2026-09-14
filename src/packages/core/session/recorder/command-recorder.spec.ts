@@ -306,4 +306,35 @@ describe("CommandRecorder", () => {
     expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
     await expect(commandLog.getRecentCommands({ scope: "global" })).resolves.toEqual([]);
   });
+
+  it("records an aborted command despite it having no return code (step 27b-2)", async () => {
+    const repositoryDouble = createRepositoryDouble();
+    const { recorder: service } = await createService(repositoryDouble);
+
+    await service.recordAbortedCommand({
+      command: "sleep 100",
+      directory: "/tmp",
+      duration: 4200,
+      returnCode: undefined,
+    });
+
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledTimes(1);
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith(
+      "sleep 100",
+      "/tmp",
+      undefined,
+      undefined,
+      { durationMs: 4200, returnCode: undefined },
+    );
+  });
+
+  it("still applies the text filters when recording an aborted command", async () => {
+    const repositoryDouble = createRepositoryDouble();
+    const { recorder: service } = await createService(repositoryDouble);
+
+    await service.recordAbortedCommand({ command: "cd /tmp", directory: "/tmp" });
+    await service.recordAbortedCommand({ command: "   ", directory: "/tmp" });
+
+    expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
+  });
 });

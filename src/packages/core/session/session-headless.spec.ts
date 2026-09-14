@@ -80,6 +80,7 @@ function createHeadlessSession(
     initialize: vi.fn(),
     onCwdChanged: vi.fn(),
     onCommandExecuted: vi.fn(),
+    recordAbortedCommand: vi.fn().mockResolvedValue(undefined),
   } as unknown as CommandRecorder;
   const model = new SessionModel(backendOs, new TerminalCommandHistoryStore(), recorder);
   model.initialize("headless-1", shellType, undefined, backendOs);
@@ -387,3 +388,27 @@ describe("headless session (size and reflow)", () => {
 });
 
 // M2
+
+describe("headless session (aborted command on quit)", () => {
+  it("records the running command as aborted (step 27b-2)", async () => {
+    const session = createHeadlessSession("Bash", "linux");
+    session.model.updateCommand({ id: "1" });
+    session.model.startCommand("sleep 100");
+    expect(session.model.isCommandRunning).toBe(true);
+
+    await session.model.recordAbortedCommand();
+
+    expect(session.recorder.recordAbortedCommand).toHaveBeenCalledWith(
+      expect.objectContaining({ command: "sleep 100", returnCode: undefined }),
+    );
+  });
+
+  it("records nothing when no command is running", async () => {
+    const session = createHeadlessSession("Bash", "linux");
+    session.model.updateCommand({ id: "1" });
+
+    await session.model.recordAbortedCommand();
+
+    expect(session.recorder.recordAbortedCommand).not.toHaveBeenCalled();
+  });
+});

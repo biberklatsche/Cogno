@@ -49,6 +49,17 @@ export class SessionPersistenceService {
     }
   }
 
+  /**
+   * Record every live session's running command as aborted before the app exits,
+   * so a command running at quit isn't lost from history (step 27b-2). Independent
+   * of session restore - the command log persists regardless of that setting.
+   */
+  async recordAbortedCommands(): Promise<void> {
+    await Promise.all(
+      this.sessionHostFactory.getAllSessionHosts().map((host) => host.recordAbortedCommand()),
+    );
+  }
+
   async persistWorkspace(workspaceId: string): Promise<void> {
     const restore = this.configService.config.terminal?.restore;
     if (restore?.enabled === false) {

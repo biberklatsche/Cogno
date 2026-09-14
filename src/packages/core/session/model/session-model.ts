@@ -408,6 +408,28 @@ export class SessionModel {
     return executedCommand;
   }
 
+  /**
+   * A command still running when the app quits is recorded as an aborted entry so
+   * it isn't lost from history - it never reported a return code (step 27b-2).
+   * Only base-context commands are logged, mirroring `updateCommand`. Awaited so
+   * it reaches the log before the process exits.
+   */
+  async recordAbortedCommand(): Promise<void> {
+    if (!this.isCommandRunning || !this.isBaseContext) {
+      return;
+    }
+    const runningCommand = this.commands.at(-1);
+    if (!runningCommand?.command) {
+      return;
+    }
+    await this._recorder.recordAbortedCommand({
+      command: runningCommand.command,
+      directory: runningCommand.directory ?? "",
+      duration: this.getCommandDuration(),
+      returnCode: undefined,
+    });
+  }
+
   updateCommands(commands: Command[]): void {
     this._historyStore.updateCommands(commands);
   }

@@ -157,7 +157,35 @@ export class CommandRecorder {
     }
   }
 
-  private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {
+  /**
+   * Record a command that was still running when the app quit as an aborted
+   * entry: it never reported a return code, so `shouldPersistCommand` would drop
+   * it, but it must not vanish from history (step 27b-2). Same text filters, no
+   * return-code gate; awaited so it reaches the log before the process exits.
+   */
+  async recordAbortedCommand(executedCommand: ExecutedCommand): Promise<void> {
+    if (!this.isRecordableCommandText(executedCommand)) return;
+
+    const persistedCommand = executedCommand.command.trim();
+    const groupId = this.commandLog.sessionGroupId;
+    const maxEntries = this.configService?.config.terminal?.history?.max_entries;
+
+    await this.commandLog.writeAndAwait((writer) =>
+      writer.upsertCommandExecution(
+        persistedCommand,
+        executedCommand.directory,
+        groupId,
+        maxEntries,
+        {
+          durationMs: executedCommand.duration,
+          returnCode: executedCommand.returnCode,
+        },
+      ),
+    );
+  }
+
+  /** The command-text filters shared by normal and aborted recording. */
+  private isRecordableCommandText(executedCommand: ExecutedCommand | undefined): boolean {
     if (executedCommand === undefined) return false;
     if (executedCommand.command === undefined) return false;
     if (
@@ -174,6 +202,15 @@ export class CommandRecorder {
     const token = firstToken(command);
     if (!token) return false;
     if (token === "cd") return false;
+    return true;
+  }
+
+  private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {
+    if (!this.isRecordableCommandText(executedCommand) || executedCommand === undefined) {
+      return false;
+    }
+    const command = executedCommand.command.trim();
+    const token = firstToken(command);
     if (executedCommand.commandExists === true) return true;
     if (executedCommand.commandExists === false) return false;
     if (executedCommand.returnCode === undefined || !Number.isFinite(executedCommand.returnCode))

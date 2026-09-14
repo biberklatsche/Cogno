@@ -578,6 +578,14 @@ export class SessionHost {
    * so a restored session looks and behaves like it did at close (step 27).
    * `maxLines <= 0` captures nothing.
    */
+  /**
+   * Record this session's running command (if any) as aborted, before the shell
+   * is killed on quit, so it isn't lost from history (step 27b-2). Awaited.
+   */
+  recordAbortedCommand(): Promise<void> {
+    return this.model.recordAbortedCommand();
+  }
+
   snapshot(maxLines: number): SessionSnapshot {
     if (maxLines <= 0) {
       return { version: SESSION_SNAPSHOT_VERSION, scrollback: null, commands: [] };

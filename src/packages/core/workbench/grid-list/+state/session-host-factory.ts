@@ -160,6 +160,11 @@ export class SessionHostFactory {
     return this.sessions.get(terminalId)?.host;
   }
 
+  /** Every live session host, for recording aborted commands on quit (step 27b-2). */
+  getAllSessionHosts(): SessionHost[] {
+    return [...this.sessions.values()].map((session) => session.host);
+  }
+
   attach(pane: Pane, hostElement: HTMLElement): void {
     const entry = this.ensureSession(pane);
     if (!entry) return;
