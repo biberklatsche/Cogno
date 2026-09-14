@@ -8,7 +8,6 @@ import {
 } from "@angular/core";
 import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
-import { NativeMenuService } from "@cogno/app/menu/native-menu/native-menu.service";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/core/api/application-configuration-port.adapter.service";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { NotificationCenterPortAdapterService } from "@cogno/core/api/notification-center-port.adapter.service";
@@ -43,6 +42,7 @@ import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
+import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu.service";
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
