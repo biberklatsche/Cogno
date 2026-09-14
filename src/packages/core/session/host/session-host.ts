@@ -26,6 +26,7 @@ import {
 } from "@cogno/shared/domain";
 import { IDisposable } from "@cogno/shared/support";
 import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
+import type { Terminal } from "@xterm/xterm";
 import {
   BehaviorSubject,
   combineLatest,
@@ -70,9 +71,16 @@ export type SessionState = MachineStateSnapshot & SessionModelSnapshot;
 
 /** The concealed prompt marker line the shell integration prints (`^^#<id>`). */
 const MARKER_ID_PATTERN = /\^\^#(\d+)/g;
-/** The label of the boundary line written above a restored session's replay. */
-const RESTORE_SEPARATOR_LABEL = "---- restored session ----";
-const SGR_PATTERN = /\x1b\[[0-9;]*m/g;
+/**
+ * A concealed anchor line written above a restored session's replay; a decoration
+ * draws the visible divider on it. Concealed so no text shows, and stripped on
+ * capture so boundaries never accumulate (step 27).
+ */
+const RESTORE_BOUNDARY_SENTINEL = "COGNO:RESTORE-BOUNDARY";
+/** The old visible boundary label; still stripped so pre-existing snapshots clean up. */
+const LEGACY_RESTORE_SEPARATOR_LABEL = "---- restored session ----";
+// Built from a char code so the ESC control char isn't a literal in a regex.
+const SGR_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 /**
  * Shift restored marker ids past any the live session will mint. bash/zsh count
  * from 1 each session, so without this a restored `^^#1` would collide with the
@@ -604,7 +612,10 @@ export class SessionHost {
     // them (step 27).
     const withoutBoundaries = serialized
       .split("\r\n")
-      .filter((line) => line.replace(SGR_PATTERN, "").trim() !== RESTORE_SEPARATOR_LABEL)
+      .filter((line) => {
+        const text = line.replace(SGR_PATTERN, "").trim();
+        return text !== RESTORE_BOUNDARY_SENTINEL && text !== LEGACY_RESTORE_SEPARATOR_LABEL;
+      })
       .join("\r\n");
     if (withoutBoundaries.replace(SGR_PATTERN, "").trim() === "") {
       return null;
@@ -682,7 +693,12 @@ export class SessionHost {
 
     this.model.beginRestore();
     terminal.write(snapshot.scrollback);
-    terminal.write(`\r\n\x1b[2m${RESTORE_SEPARATOR_LABEL}\x1b[0m`);
+    // A concealed anchor line for the boundary; a decoration draws the visible
+    // divider on it once it is parsed. Concealed + stripped on capture, so no
+    // text is written and boundaries never stack.
+    terminal.write(`\r\n\x1b[8m${RESTORE_BOUNDARY_SENTINEL}\x1b[0m`, () =>
+      this.renderRestoreBoundary(terminal),
+    );
     const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
       this.model.updateCommands(
@@ -700,6 +716,35 @@ export class SessionHost {
       this.promptMarkerRegistry?.anchorRestoredMarkers();
       this.model.endRestore();
       this.startDeferredPty();
+    });
+  }
+
+  /**
+   * Draw the subtle full-width divider marking where the restored scrollback
+   * ends. It is a decoration on the concealed sentinel line - no buffer text, so
+   * it neither shows as characters nor gets re-captured (step 27).
+   */
+  private renderRestoreBoundary(terminal: Terminal): void {
+    const marker = terminal.registerMarker(0);
+    if (!marker) {
+      return;
+    }
+    const decoration = terminal.registerDecoration({ marker, x: 0, width: terminal.cols });
+    decoration?.onRender((element) => {
+      if (element.dataset["restoreBoundary"]) {
+        return;
+      }
+      element.dataset["restoreBoundary"] = "1";
+      element.style.display = "flex";
+      element.style.alignItems = "center";
+      element.style.pointerEvents = "none";
+      element.style.width = "100%";
+      const line = document.createElement("div");
+      line.style.flex = "1";
+      line.style.height = "1px";
+      line.style.background = "currentColor";
+      line.style.opacity = "0.25";
+      element.appendChild(line);
     });
   }
 

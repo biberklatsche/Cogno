@@ -53,6 +53,9 @@ const writeMock = vi.fn((_data: string, callback?: () => void) => callback?.());
 const terminalMock = {
   write: writeMock,
   rows: 24,
+  cols: 80,
+  registerMarker: vi.fn(() => ({ line: 0, dispose: vi.fn(), onDispose: vi.fn() })),
+  registerDecoration: vi.fn(() => ({ onRender: vi.fn() })),
   buffer: {
     active: {
       get length() {
@@ -193,7 +196,7 @@ describe("SessionHost snapshot/restore", () => {
     expect(writeMock).not.toHaveBeenCalled();
   });
 
-  it("replays scrollback and separator, then a single trailing line off Windows", () => {
+  it("replays scrollback and a concealed boundary, then a single trailing line off Windows", () => {
     host.restore({
       version: SESSION_SNAPSHOT_VERSION,
       scrollback: "PREVIOUS-OUTPUT",
@@ -202,9 +205,15 @@ describe("SessionHost snapshot/restore", () => {
     (host as unknown as { completeRestore(): void }).completeRestore();
 
     expect(writeMock).toHaveBeenCalledWith("PREVIOUS-OUTPUT");
-    expect(writeMock).toHaveBeenCalledWith(expect.stringContaining("restored session"));
+    // The boundary is a concealed sentinel line (a decoration draws the divider).
+    expect(writeMock).toHaveBeenCalledWith(
+      expect.stringContaining("COGNO:RESTORE-BOUNDARY"),
+      expect.any(Function),
+    );
     // Unix ptys append, so no viewport fill - just one newline carrying the callback.
     expect(writeMock).toHaveBeenCalledWith("\r\n", expect.any(Function));
+    // The divider is drawn as a decoration, not written as text.
+    expect(terminalMock.registerDecoration).toHaveBeenCalled();
   });
 
   it("fills the viewport with blank lines on Windows so ConPTY paints below", () => {
