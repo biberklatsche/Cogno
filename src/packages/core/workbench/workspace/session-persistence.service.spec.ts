@@ -24,6 +24,7 @@ describe("SessionPersistenceService", () => {
     return new SessionPersistenceService(factory, gridList, repo, config, {
       set: vi.fn(),
       take: vi.fn(),
+      peek: vi.fn(),
     } as never);
   }
 
@@ -39,6 +40,28 @@ describe("SessionPersistenceService", () => {
     expect(saveTerminalSessions).toHaveBeenCalledWith("ws-1", [
       { terminalId: "t1", sessionData: JSON.stringify(snapshotOf("t1")) },
       { terminalId: "t2", sessionData: JSON.stringify(snapshotOf("t2")) },
+    ]);
+  });
+
+  it("carries forward the pending snapshot for a tab with no live host", async () => {
+    const pendingSnap = { version: 3, scrollback: "PENDING", commands: [] };
+    const factory = {
+      getSessionHost: (id: string) =>
+        id === "t1" ? { snapshot: vi.fn(() => snapshotOf("t1")) } : undefined,
+    } as unknown as SessionHostFactory;
+    const gridList = { terminalIdsForWorkspace: () => ["t1", "t2"] } as unknown as GridListService;
+    saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
+    const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
+    const config = { config: { terminal: { restore } } } as unknown as ConfigService;
+    await new SessionPersistenceService(factory, gridList, repo, config, {
+      set: vi.fn(),
+      take: vi.fn(),
+      peek: vi.fn((id: string) => (id === "t2" ? pendingSnap : undefined)),
+    } as never).persistWorkspace("ws-1");
+
+    expect(saveTerminalSessions).toHaveBeenCalledWith("ws-1", [
+      { terminalId: "t1", sessionData: JSON.stringify(snapshotOf("t1")) },
+      { terminalId: "t2", sessionData: JSON.stringify(pendingSnap) },
     ]);
   });
 

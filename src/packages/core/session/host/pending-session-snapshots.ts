@@ -21,4 +21,14 @@ export class PendingSessionSnapshots {
     this.byTerminalId.delete(terminalId);
     return snapshot;
   }
+
+  /**
+   * The snapshot still waiting for its terminal, without consuming it. Persisting
+   * a workspace uses this to carry forward the snapshot of a tab that has not been
+   * opened yet - it has no live host to snapshot, and the save would otherwise
+   * drop its row (step 27).
+   */
+  peek(terminalId: TerminalId): SessionSnapshot | undefined {
+    return this.byTerminalId.get(terminalId);
+  }
 }

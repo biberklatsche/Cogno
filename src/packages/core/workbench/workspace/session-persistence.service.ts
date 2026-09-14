@@ -59,10 +59,14 @@ export class SessionPersistenceService {
       .terminalIdsForWorkspace(workspaceId)
       .flatMap((terminalId) => {
         const host = this.sessionHostFactory.getSessionHost(terminalId);
-        if (!host) {
-          return [];
+        if (host) {
+          return [{ terminalId, sessionData: JSON.stringify(host.snapshot(maxLines)) }];
         }
-        return [{ terminalId, sessionData: JSON.stringify(host.snapshot(maxLines)) }];
+        // A tab not opened this run has no live host to snapshot; carry its
+        // still-pending snapshot forward so the delete-then-insert save does not
+        // drop it (step 27).
+        const pending = this.pendingSnapshots.peek(terminalId);
+        return pending ? [{ terminalId, sessionData: JSON.stringify(pending) }] : [];
       });
     await this.workspaceRepository.saveTerminalSessions(workspaceId, sessions);
   }
