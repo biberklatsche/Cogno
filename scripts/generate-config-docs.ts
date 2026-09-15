@@ -13,14 +13,14 @@
  * Run: `npx tsx scripts/generate-config-docs.ts [--check]`.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { baseConfigSchemaShape } from "../src/packages/core/infrastructure/config/models/config";
+import { baseConfigSchemaShape } from "../src/core/infrastructure/config/models/config";
 import {
   defaultSettings,
   platformSettingOverrides,
-} from "../src/packages/core/infrastructure/config/models/default-config-values";
-import { HexColorSchema } from "../src/packages/core/infrastructure/config/models/shared";
-import { defaultFeatureSettingsExtension } from "../src/packages/features/feature-settings-extension";
-import { hexColorSchema } from "../src/packages/shared/contributions/feature-settings";
+} from "../src/core/infrastructure/config/models/default-config-values";
+import { HexColorSchema } from "../src/core/infrastructure/config/models/shared";
+import { defaultFeatureSettingsExtension } from "../src/features/feature-settings-extension";
+import { hexColorSchema } from "../src/shared/contributions/feature-settings";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const DOCS_MD = `${REPO_ROOT}/docs/config.md`;

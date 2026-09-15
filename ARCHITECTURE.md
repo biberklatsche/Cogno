@@ -328,7 +328,7 @@ importieren):
 (`pnpm lint:architecture`: 581 Module, 1 938 Abhängigkeiten, keine
 Verstöße) und bleibt es in jedem Migrationsschritt — das ist die
 Zusicherung, die den Umbau trägt. Die Regeln, die die Matrix eins zu eins
-abbilden (Pfade unter `src/packages/`):
+abbilden (Pfade unter `src/`):
 
 ```js
 // Fundament

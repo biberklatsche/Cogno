@@ -71,7 +71,7 @@ prerequisites are installed as well.
 ## License
 
 The project source code in this repository is licensed under `MPL-2.0`,
-except for `src/packages/features`, which is licensed under `MIT`, unless a
+except for `src/features`, which is licensed under `MIT`, unless a
 file or directory contains a different third-party license notice.
 
 ## Configuration
@@ -161,7 +161,7 @@ pnpm build:desktop # build the desktop application bundle
 
 ### Repository Layout
 
-The TypeScript code lives in layers under `src/packages/`, each importing only
+The TypeScript code lives in layers under `src/`, each importing only
 from the ones below it (enforced by `pnpm lint:architecture`):
 
 - `shared/`

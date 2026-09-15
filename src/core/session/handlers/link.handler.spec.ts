@@ -131,9 +131,7 @@ describe("LinkHandler", () => {
 
   it("resolves bare relative paths against cwd for PowerShell on Windows", () => {
     createScenario("PowerShell", "windows", "C:\\work");
-    const line = TerminalMockFactory.createLine(
-      "Open src/packages/app/app-host/path.factory.spec.ts",
-    );
+    const line = TerminalMockFactory.createLine("Open src/core/session/exec/path.factory.spec.ts");
     vi.mocked(terminal.buffer.active.getLine).mockReturnValue(line);
 
     let links: any[] | undefined;
@@ -145,7 +143,7 @@ describe("LinkHandler", () => {
     links?.[0].activate(new MouseEvent("click", { ctrlKey: true }), links?.[0].text);
 
     expect(openPathSpy).toHaveBeenCalledWith(
-      "C:\\work\\src\\packages\\app\\app-host\\path.factory.spec.ts",
+      "C:\\work\\src\\core\\session\\exec\\path.factory.spec.ts",
     );
   });
 

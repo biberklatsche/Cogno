@@ -13,12 +13,12 @@
  * Run: `npx tsx scripts/generate-actions.ts [--check|--parity]`.
  */
 import { globSync, readFileSync, writeFileSync } from "node:fs";
-import { coreActionCatalog } from "../src/packages/core/workbench/actions/catalog";
+import { coreActionCatalog } from "../src/core/workbench/actions/catalog";
 import {
   defaultSettings,
   featureKeybinds,
   platformSettingOverrides,
-} from "../src/packages/core/infrastructure/config/models/default-config-values";
+} from "../src/core/infrastructure/config/models/default-config-values";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const GENERATED_RS = `${REPO_ROOT}/src-tauri/src/actions.generated.rs`;
@@ -35,8 +35,8 @@ function featureActions(): ActionRow[] {
   // Feature definitions live under features/, plus a few workbench-owned ones in
   // core/ (e.g. workspace -> open_workspace).
   const files = [
-    ...globSync(`${REPO_ROOT}/src/packages/features/**/*.feature-definition.ts`),
-    ...globSync(`${REPO_ROOT}/src/packages/core/**/*.feature-definition.ts`),
+    ...globSync(`${REPO_ROOT}/src/features/**/*.feature-definition.ts`),
+    ...globSync(`${REPO_ROOT}/src/core/**/*.feature-definition.ts`),
   ];
   for (const file of files.sort()) {
     const text = readFileSync(file, "utf8");

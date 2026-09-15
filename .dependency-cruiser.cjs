@@ -1,20 +1,20 @@
 // Rules of ARCHITECTURE.md. `pnpm lint:architecture` fails on a violation.
 //
 // The target architecture (ARCHITECTURE.md 2.1, import matrix).
-const pkg = "^src/packages/";
-const featuresPattern = "^src/packages/features/";
-const platformPattern = "^src/packages/platform/";
-const sharedPattern = "^src/packages/shared/";
-const sharedFrameworkFreePattern = "^src/packages/shared/(domain|support)/";
-const corePattern = "^src/packages/core/";
-const bootstrapPattern = "^src/packages/bootstrap/";
-const testSupportPattern = "^src/packages/__test__/";
+const pkg = "^src/";
+const featuresPattern = "^src/features/";
+const platformPattern = "^src/platform/";
+const sharedPattern = "^src/shared/";
+const sharedFrameworkFreePattern = "^src/shared/(domain|support)/";
+const corePattern = "^src/core/";
+const bootstrapPattern = "^src/bootstrap/";
+const testSupportPattern = "^src/__test__/";
 const knownCognoAliasPattern =
   "^@cogno/(?!bootstrap(?:$|/)|core(?:$|/)|features(?:$|/)|platform(?:$|/)|shared(?:$|/)).+";
 
 /** Everything in core/ except the named layer itself. */
 const coreExcept = (...layers) =>
-  `^src/packages/core/(?!(${layers.join("|")})/)`;
+  `^src/core/(?!(${layers.join("|")})/)`;
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
@@ -111,10 +111,10 @@ module.exports = {
       name: "t12-features-import-each-other-through-index",
       severity: "error",
       comment: "A feature imports another feature only through that feature's index.ts.",
-      from: { path: "^src/packages/features/([^/]+)/" },
+      from: { path: "^src/features/([^/]+)/" },
       to: {
-        path: "^src/packages/features/([^/]+)/.+",
-        pathNot: "^src/packages/features/([^/]+)/index\\.ts$|^src/packages/features/$1/",
+        path: "^src/features/([^/]+)/.+",
+        pathNot: "^src/features/([^/]+)/index\\.ts$|^src/features/$1/",
       },
     },
     {
@@ -140,7 +140,7 @@ module.exports = {
     },
     tsPreCompilationDeps: true,
     exclude: {
-      path: ["^dist/", "^coverage/", "^\\.angular/", "^src/packages/assets/src/assets/", "\\.spec\\.ts$", "\\.test\\.ts$"],
+      path: ["^dist/", "^coverage/", "^\\.angular/", "^src/assets/src/assets/", "\\.spec\\.ts$", "\\.test\\.ts$"],
     },
   },
 };

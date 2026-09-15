@@ -5,14 +5,14 @@
     "outDir": "./dist/out-tsc",
     "baseUrl": ".",
     "paths": {
-      "@cogno/shared": ["src/packages/shared/index.ts"],
-      "@cogno/shared/*": ["src/packages/shared/*"],
-      "@cogno/platform": ["src/packages/platform/index.ts"],
-      "@cogno/platform/*": ["src/packages/platform/*"],
-      "@cogno/core/*": ["src/packages/core/*"],
-      "@cogno/bootstrap/*": ["src/packages/bootstrap/*"],
-      "@cogno/features": ["src/packages/features/index.ts"],
-      "@cogno/features/*": ["src/packages/features/*"]
+      "@cogno/shared": ["src/shared/index.ts"],
+      "@cogno/shared/*": ["src/shared/*"],
+      "@cogno/platform": ["src/platform/index.ts"],
+      "@cogno/platform/*": ["src/platform/*"],
+      "@cogno/core/*": ["src/core/*"],
+      "@cogno/bootstrap/*": ["src/bootstrap/*"],
+      "@cogno/features": ["src/features/index.ts"],
+      "@cogno/features/*": ["src/features/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "strict": true,

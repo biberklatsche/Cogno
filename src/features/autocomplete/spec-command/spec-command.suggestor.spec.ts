@@ -52,7 +52,6 @@ function loadCommandSpec(name: string): CommandSpec {
       join(
         process.cwd(),
         "src",
-        "packages",
         "features",
         "autocomplete",
         "spec-command",

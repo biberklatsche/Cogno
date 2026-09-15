@@ -107,11 +107,11 @@ file; CLI usage (`cogno action list`, `cogno action run <name>`).
 **Write to:** `../meetcogno/src/content/docs/docs/autocomplete.md`
 
 **Sources:**
-- `src/packages/core/session/autocomplete/terminal-autocomplete.service.ts` — constants (max suggestions, visible items, debounce, filter modes)
-- `src/packages/core/session/autocomplete/suggestors/history-command.suggestor.ts`
-- `src/packages/core/session/autocomplete/suggestors/command-pattern.suggestor.ts`
-- `src/packages/core/session/autocomplete/suggestors/history-directory.suggestor.ts`
-- `src/packages/features/autocomplete/` — the spec-command suggestor (1000+ CLI tools)
+- `src/core/session/autocomplete/terminal-autocomplete.service.ts` — constants (max suggestions, visible items, debounce, filter modes)
+- `src/core/session/autocomplete/suggestors/history-command.suggestor.ts`
+- `src/core/session/autocomplete/suggestors/command-pattern.suggestor.ts`
+- `src/core/session/autocomplete/suggestors/history-directory.suggestor.ts`
+- `src/features/autocomplete/` — the spec-command suggestor (1000+ CLI tools)
 
 **Required sections:** how suggestions appear; the suggestion sources (history
 commands, history patterns, history directories, spec commands); filter modes and
@@ -123,9 +123,9 @@ how `cycle_tab` cycles them; keyboard handling. Settings: link to the generated
 **Write to:** `../meetcogno/src/content/docs/docs/notifications.md`
 
 **Sources:**
-- `src/packages/features/notification-overview/notification-center-state.service.ts`
-- `src/packages/features/notification-overview/notification-side-menu.lifecycle.ts`
-- `src/packages/features/notification-overview/notification.feature-definition.ts`
+- `src/features/notification-overview/notification-center-state.service.ts`
+- `src/features/notification-overview/notification-side-menu.lifecycle.ts`
+- `src/features/notification-overview/notification.feature-definition.ts`
 
 **Required sections:** event types (long-running commands, handled and unhandled
 exceptions, OSC 9 messages); the unread badge; delivery channels (in-app toast,
@@ -138,8 +138,8 @@ Action: `open_notification`.
 **Write to:** `../meetcogno/src/content/docs/docs/command-palette.md`
 
 **Sources:**
-- `src/packages/features/command-palette/command-palette.service.ts`
-- `src/packages/features/command-palette/command-palette.feature-definition.ts`
+- `src/features/command-palette/command-palette.service.ts`
+- `src/features/command-palette/command-palette.feature-definition.ts`
 
 **Required sections:** what it shows (all registered actions with keybindings,
 filterable, keyboard-navigable, rebuilt when the config changes); keyboard
@@ -150,8 +150,8 @@ handling. Setting: `feature.command_palette.mode`. Action: `open_command_palette
 **Write to:** `../meetcogno/src/content/docs/docs/search.md`
 
 **Sources:**
-- `src/packages/features/terminal-search/terminal-search.service.ts`
-- `src/packages/features/terminal-search/terminal-search.feature-definition.ts`
+- `src/features/terminal-search/terminal-search.service.ts`
+- `src/features/terminal-search/terminal-search.feature-definition.ts`
 
 **Required sections:** searches the active terminal's scrollback; debounce;
 results with line numbers, selecting one scrolls the terminal; pagination;
@@ -164,9 +164,9 @@ Action: `open_terminal_search`.
 **Write to:** `../meetcogno/src/content/docs/docs/git.md`
 
 **Sources:**
-- `src/packages/features/git/git-status.service.ts`
-- `src/packages/features/git/git-diff.service.ts`
-- `src/packages/features/git/git.feature-definition.ts`
+- `src/features/git/git-status.service.ts`
+- `src/features/git/git-diff.service.ts`
+- `src/features/git/git.feature-definition.ts`
 
 **Required sections:** the panel follows the focused terminal's working directory
 and shows the repository status; the diff view; that it runs `git` in that
@@ -178,8 +178,8 @@ directory, so it is unavailable in remote (SSH) sessions. Setting:
 **Write to:** `../meetcogno/src/content/docs/docs/process-info.md`
 
 **Sources:**
-- `src/packages/features/process-info/process-info.service.ts`
-- `src/packages/features/process-info/process-info.feature-definition.ts`
+- `src/features/process-info/process-info.service.ts`
+- `src/features/process-info/process-info.feature-definition.ts`
 
 **Required sections:** shows the process tree of the focused session and polls
 while the panel is open; the lock toggle that freezes the panel on one session
@@ -191,10 +191,10 @@ instead of following focus; the unbound/closing/closed states. Setting:
 **Write to:** `../meetcogno/src/content/docs/docs/coding-agents.md`
 
 **Sources:**
-- `src/packages/features/coding-agent/coding-agent-status.service.ts`
-- `src/packages/features/coding-agent/coding-agent-provider-registry.service.ts`
-- `src/packages/features/coding-agent/providers/` — one directory per supported agent
-- `src/packages/features/coding-agent/coding-agents.feature-definition.ts`
+- `src/features/coding-agent/coding-agent-status.service.ts`
+- `src/features/coding-agent/coding-agent-provider-registry.service.ts`
+- `src/features/coding-agent/providers/` — one directory per supported agent
+- `src/features/coding-agent/coding-agents.feature-definition.ts`
 
 **Required sections:** Cogno detects coding agents running in a terminal and
 shows their state (working, question, ready, error) in the tab and the side
