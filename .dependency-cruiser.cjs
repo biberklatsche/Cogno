@@ -1,10 +1,7 @@
 // Rules of ARCHITECTURE.md. `pnpm lint:architecture` fails on a violation.
 //
-// Block 1: the target architecture (ARCHITECTURE.md 2.1, import matrix).
-// Block 2: the legacy four-package rules - valid while src/packages/app/ exists.
-// Block 3: the transition rules - deleted in migration step 29.
+// The target architecture (ARCHITECTURE.md 2.1, import matrix).
 const pkg = "^src/packages/";
-const appPattern = "^src/packages/app/";
 const featuresPattern = "^src/packages/features/";
 const platformPattern = "^src/packages/platform/";
 const sharedPattern = "^src/packages/shared/";
@@ -13,7 +10,7 @@ const corePattern = "^src/packages/core/";
 const bootstrapPattern = "^src/packages/bootstrap/";
 const testSupportPattern = "^src/packages/__test__/";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|bootstrap(?:$|/)|core(?:$|/)|features(?:$|/)|platform(?:$|/)|shared(?:$|/)).+";
+  "^@cogno/(?!bootstrap(?:$|/)|core(?:$|/)|features(?:$|/)|platform(?:$|/)|shared(?:$|/)).+";
 
 /** Everything in core/ except the named layer itself. */
 const coreExcept = (...layers) =>
@@ -130,51 +127,9 @@ module.exports = {
     {
       name: "t14-known-aliases-only",
       severity: "error",
-      comment: "Only the five @cogno/* aliases exist (@cogno/app is frozen legacy).",
+      comment: "Only the five @cogno/* aliases exist.",
       from: { path: "^src/" },
       to: { dependencyTypes: ["unknown"], path: knownCognoAliasPattern },
-    },
-
-    // ---- Block 2: legacy four-package rules - deleted in migration step 29 ----
-    {
-      name: "l1-shared-knows-nothing-about-the-app",
-      severity: "error",
-      comment: "shared imports no other internal package.",
-      from: { path: sharedPattern },
-      to: { path: `${appPattern}|${featuresPattern}|${platformPattern}` },
-    },
-    {
-      name: "l2-platform-does-not-import-app",
-      severity: "error",
-      comment: "platform is the Tauri binding layer and must not reach into app or features.",
-      from: { path: platformPattern },
-      to: { path: `${appPattern}|${featuresPattern}` },
-    },
-    {
-      name: "l3-features-never-import-app",
-      severity: "error",
-      comment: "A feature that needs something from the app declares a port; it never imports app.",
-      from: { path: featuresPattern },
-      to: { path: appPattern },
-    },
-    {
-      name: "l4-nothing-imports-app",
-      severity: "error",
-      comment: "app is the root of the dependency line; nothing depends on it.",
-      from: { path: "^src/", pathNot: `${appPattern}|${testSupportPattern}` },
-      to: { path: appPattern },
-    },
-
-    // ---- Block 3: transition rules - deleted in migration step 29 ----
-    // The frozen @cogno/app alias is guarded by scripts/architecture-guard.mjs:
-    // depcruise matches resolved paths, so an alias cannot be forbidden by name.
-    {
-      name: "x1-target-never-imports-legacy",
-      severity: "error",
-      comment:
-        "Nothing in the target layout imports app/. bootstrap/ is exempt until step 28: it is the composition root and wires the old world while it exists.",
-      from: { path: corePattern },
-      to: { path: appPattern },
     },
   ],
   options: {

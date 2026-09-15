@@ -43,11 +43,7 @@
   `platform` and `core/api` — nothing else. The full import matrix is in
   `ARCHITECTURE.md` section 2.1 and enforced by `pnpm lint:architecture`.
 - Aliases: `@cogno/shared`, `@cogno/platform`, `@cogno/core`, `@cogno/features`,
-  `@cogno/bootstrap`. `@cogno/app` is frozen legacy and must not gain new consumers.
-- Migration is in progress (`.claude/plans/umsetzungsplan.md`, steps 0-29). While
-  `src/packages/app/` still exists: nothing under `core/` or `bootstrap/` may import
-  `app/`, `app/` only shrinks, and every moved slice satisfies its final rules
-  immediately. Write new code in the target layout; do not extend `app/`.
+  `@cogno/bootstrap`.
 - Do not change the architecture on your own. If implementation reveals a
   contradiction or a gap, stop and ask; never decide by assumption.
 - Build nothing on spec: no field, state, hook or abstraction without a consumer

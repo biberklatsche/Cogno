@@ -8,11 +8,10 @@
   "scripts": {
     "dev": "pnpm exec tauri dev --config src-tauri/tauri.dev.conf.json",
     "dev:web": "ng serve --configuration development",
-    "lint": "pnpm lint:code && pnpm lint:architecture && pnpm lint:migration && pnpm generate:actions:check",
+    "lint": "pnpm lint:code && pnpm lint:architecture && pnpm generate:actions:check",
     "lint:code": "pnpm exec biome check .",
     "lint:fix": "pnpm exec biome check --write . && pnpm exec biome format --write .",
     "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/packages/platform/**/*.ts\" \"src/packages/shared/**/*.ts\" \"src/packages/features/**/*.ts\" \"src/packages/core/**/*.ts\" \"src/packages/bootstrap/**/*.ts\"",
-    "lint:migration": "node ./scripts/architecture-guard.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

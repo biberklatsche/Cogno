@@ -5,11 +5,10 @@ der Wahrheit; wo Code ihr widerspricht, ist der Code falsch oder die Datei
 wird geändert — nicht stillschweigend beides nebeneinander gelassen.
 Grundlage ist die Bestandsaufnahme in `.claude/plans/capability-inventory.md`.
 
-**Umbaustand:** Die Architektur wird in Schritten umgesetzt; der
-Umsetzungsplan liegt unter `.claude/plans/umsetzungsplan.md` (Schritte 0–29).
-**Aktueller Schritt: 15 (Handshake-Token + Kontext-Zeitachse).** Bis Schritt 28 liegt Code zusätzlich
-unter `src/packages/app/` nach dem alten Vier-Paket-Layout; dafür gelten die
-Übergangsregeln in 2.1.
+Die Migration in das Ziel-Layout (Umsetzungsplan
+`.claude/plans/umsetzungsplan.md`, Schritte 0–29) ist **abgeschlossen**; der Code
+liegt vollständig unter `shared/`, `platform/`, `core/`, `features/` und
+`bootstrap/`.
 
 ---
 
@@ -386,44 +385,6 @@ eigenen Test:
 - **Ein Fenster kennt kein anderes:** kein Modul außer `platform/` ruft
   `emit_to`/Fenster-Labels — als `to: { path: "^@tauri-apps/api/event" }`
   ohnehin durch Regel 1 abgedeckt.
-
-Während der Migration gilt: jeder Schritt lässt den Check grün. Ein Schritt,
-der eine Regel vorübergehend verletzen müsste, ist falsch geschnitten — er
-wird geteilt, nicht die Regel gelockert. Die Regeln kommen im ersten
-Schritt (Gerüst, Abschnitt 8) vollständig in die Konfiguration; solange
-ein Ordner leer ist, ist seine Regel trivial erfüllt.
-
-**Übergangsregeln.** Während des Umbaus liegt Code an zwei Orten — der
-alte unter `app/` und `features/` nach dem Vier-Paket-Layout, der neue
-unter `core/` und `bootstrap/`. Damit dabei kein unkontrollierter Bereich
-entsteht, gelten beide Regelsätze gleichzeitig, und dazu fünf
-Übergangsregeln, die nur so lange existieren, wie `app/` existiert:
-
-1. **Die alten Regeln bleiben.** Die heutigen sechs Regeln für `app/`,
-   `features/`, `platform/`, `shared/` werden nicht gelöscht, sondern
-   ergänzt. Sie fallen erst mit dem letzten Umzug aus `app/`.
-2. **Kein Weg zurück.** Nichts unter `core/` oder `bootstrap/` importiert
-   `app/` — Regel `target-never-imports-legacy`. Was eine umgezogene
-   Scheibe aus `app/` braucht, zieht mit ihr um oder bekommt vorher
-   seinen Zielort. Ausnahme: `bootstrap/` darf `app/` importieren, solange
-   `app/bootstrap` nicht selbst umgezogen ist — Bootstrap kennt alle.
-3. **`@cogno/app` ist eingefroren.** Der Alias bleibt für Altcode, bekommt
-   aber keine neuen Verbraucher: eine Regel verbietet Importe von
-   `@cogno/app` aus `core/`, `bootstrap/` und `features/` (Features
-   durften es auch bisher nicht), und ein Zähler im CI stellt sicher, dass
-   die Menge der `@cogno/app`-Importe insgesamt nur sinkt.
-4. **`app/` schrumpft monoton.** Der CI-Check protokolliert Dateien und
-   Abhängigkeiten unter `app/` (heute 354 Dateien) und schlägt fehl, wenn
-   eine der Zahlen gegenüber dem Basis-Commit steigt. Neue Dateien
-   entstehen nur noch im Zielbaum.
-5. **Jede umgezogene Scheibe erfüllt sofort ihre endgültigen Regeln.** Es
-   gibt keinen Zustand „liegt schon in `core/session/`, importiert aber
-   noch `workbench/`". Ein Umzug, der das nicht kann, ist zu groß und wird
-   geteilt — erst die Abhängigkeit an ihren Zielort, dann die Scheibe.
-
-Die Übergangsregeln stehen als eigener Block in `.dependency-cruiser.cjs`
-mit dem Kommentar „entfällt mit dem letzten Umzug aus `app/`"; der letzte
-Schritt des Umsetzungsplans löscht diesen Block und den Alias.
 
 Daraus folgen die Regeln, die man sich merken muss:
 
@@ -1292,22 +1253,7 @@ sind im aktuellen Arbeitsstand durch die sichtbare Escape-Schreibweise
 
 ---
 
-## 8. Bei Übernahme mitzuändern
-
-Diese Dateien schreiben das heutige Vier-Paket-Layout fest und blockieren die
-Migration, sobald der erste neue Ordner entsteht. Sie werden im selben Schritt
-umgestellt wie die Importmatrix, nicht danach.
-
-| Stelle | Heute | Wird |
-|---|---|---|
-| `ARCHITECTURE.md` | vier Pakete, Migrationstabelle Schritte 1–6, Schritt 5 „open" | vollständig durch dieses Dokument ersetzt. Schritt 5 (History/Autocomplete/Composer nach `features/`) ist durch Entscheidung erledigt: sie bleiben Core in `core/session/`. |
-| `AGENTS.md`, „Architecture rule" | „vier Pakete, `app → features → platform → shared`, nothing imports `app`, `ARCHITECTURE.md` ist Single Source of Truth" | die Schichten aus 2.1 und deren Pfadregeln; dieses Dokument als Source of Truth |
-| `AGENTS.md`, „Angular DI rule" | `inject()` nur in `app/bootstrap/app.config.ts` | Pfad `bootstrap/app.config.ts` |
-| `.dependency-cruiser.cjs` | Regeln 4/5 „nichts importiert `app`", Regel 6 „nur vier `@cogno/*`-Aliase" | der Regelsatz aus 2.1 kommt im ersten Schritt vollständig **dazu**, die alten sechs Regeln bleiben bis zum letzten Umzug; zusätzlich der Übergangsblock (kein Import `core/bootstrap → app`, `@cogno/app` eingefroren, `app/` schrumpft monoton); `lint:architecture` cruist auch `core/**` und `bootstrap/**`; der Check bleibt in jedem Schritt grün |
-| `tsconfig.json`, `vite.config.ts`, `vitest.config.ts` | Aliase `@cogno/app`, `@cogno/features`, `@cogno/platform`, `@cogno/shared` | `@cogno/core` und `@cogno/bootstrap` kommen dazu; `@cogno/app` bleibt eingefroren für Altcode und fällt mit dem letzten Umzug |
-| `docs-playbook.md` | veraltet (Inventar) | nicht Teil der Architektur, wird im selben Aufwasch korrigiert |
-
-## 9. Nicht geplant
+## 8. Nicht geplant
 
 - Build-Zeit-Feature-Flags, mehrere Bundles
 - Web-Worker- oder iframe-Isolation

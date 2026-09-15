@@ -1,5 +1,11 @@
 # Umsetzungsplan Zielarchitektur
 
+> **Status: ABGESCHLOSSEN (Schritt 29, 2026-09-15).** Alle Schritte 0–29 umgesetzt;
+> `src/packages/` liegt vollständig im Ziel-Layout, die Übergangs-/Legacy-Regeln
+> und der architecture-guard sind entfernt. Dieses Dokument ist archiviert
+> (historische Referenz). Schritt-29-Teil (b) `api_key`-Verschlüsselung entfiel:
+> die `feature.ai`/`api_key`-Einstellung existiert nicht mehr.
+
 Stand 2026-08-27. Setzt `ARCHITECTURE.md` um; Abschnittsnummern darin
 werden mit „ZA x.y" zitiert (`target-architecture.md` ist nur noch das
 Protokoll der Abstimmung). Konzeptfragen werden hier nicht neu
