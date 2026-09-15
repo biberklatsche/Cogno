@@ -140,7 +140,7 @@ module.exports = {
     },
     tsPreCompilationDeps: true,
     exclude: {
-      path: ["^dist/", "^coverage/", "^\\.angular/", "^src/assets/src/assets/", "\\.spec\\.ts$", "\\.test\\.ts$"],
+      path: ["^dist/", "^coverage/", "^\\.angular/", "^src/assets/", "\\.spec\\.ts$", "\\.test\\.ts$"],
     },
   },
 };
