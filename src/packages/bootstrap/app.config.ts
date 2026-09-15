@@ -6,7 +6,6 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
-import { features } from "@cogno/app/features";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/core/api/application-configuration-port.adapter.service";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { NotificationCenterPortAdapterService } from "@cogno/core/api/notification-center-port.adapter.service";
@@ -66,6 +65,7 @@ import {
   Filesystem,
   NotificationChannelsPort,
 } from "@cogno/shared/ports";
+import { features } from "./features";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -97,8 +97,8 @@ export const appConfig: ApplicationConfig = {
       // The feature-host's declaration phase: whole-set validation, then the
       // migrations and path adapters that must exist before the config is read.
       inject(FeatureHost);
-      // MIGRATION-TEMP(step 28): keeps the config's notifications and shell
-      // bootstrap alive until they reach their own layer. Must exist before
+      // The config-load orchestrator: applies shell defaults, writes the shell
+      // integration and turns diagnostics into notifications. Must exist before
       // WindowService publishes InitConfigCommand.
       inject(ConfigBootstrapAdapter);
       // The config actions now live in the workbench; instantiate the handler

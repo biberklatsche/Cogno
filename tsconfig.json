@@ -11,8 +11,6 @@
       "@cogno/platform/*": ["src/packages/platform/*"],
       "@cogno/core/*": ["src/packages/core/*"],
       "@cogno/bootstrap/*": ["src/packages/bootstrap/*"],
-      "@cogno/app": ["src/packages/app/app.component.ts"],
-      "@cogno/app/*": ["src/packages/app/*"],
       "@cogno/features": ["src/packages/features/index.ts"],
       "@cogno/features/*": ["src/packages/features/*"]
     },

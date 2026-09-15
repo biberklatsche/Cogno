@@ -8,7 +8,7 @@
   "projects": {
     "cogno": {
       "projectType": "application",
-      "root": "src/packages/app",
+      "root": "src/packages/bootstrap",
       "sourceRoot": "src",
       "prefix": "app",
       "architect": {
@@ -16,8 +16,8 @@
           "builder": "@angular/build:application",
           "options": {
             "outputPath": "dist/cogno",
-            "index": "src/packages/app/bootstrap/index.html",
-            "browser": "src/packages/app/bootstrap/main.ts",
+            "index": "src/packages/bootstrap/index.html",
+            "browser": "src/packages/bootstrap/main.ts",
             "polyfills": [],
             "tsConfig": "tsconfig.app.json",
             "loader": {
