@@ -17,6 +17,10 @@ export const featureModeSchema = z.preprocess(
   z.enum(["off", "on"] satisfies ReadonlyArray<FeatureModeContract>),
 );
 
+/** Shared description for every feature's on/off switch. */
+const featureModeDescription =
+  "Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.";
+
 const featureOrderSchema = z
   .number()
   .int()
@@ -26,42 +30,48 @@ const featureOrderSchema = z
   );
 
 export const FeatureCommandPaletteSchema = z.object({
-  mode: featureModeSchema.optional(),
+  mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
 export const FeatureWorkspaceSchema = z.object({
-  mode: featureModeSchema.optional(),
+  mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
 export const FeatureNotificationOverviewSchema = z.object({
-  mode: featureModeSchema.optional(),
+  mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
   overview: z
     .object({
-      max_items: z.number().int().min(0).optional(),
+      max_items: z
+        .number()
+        .int()
+        .min(0)
+        .optional()
+        .describe("How many notifications the overview keeps; 0 means unlimited."),
     })
-    .optional(),
+    .optional()
+    .describe("The notification overview panel."),
 });
 
 export const FeatureSearchSchema = z.object({
-  mode: featureModeSchema.optional(),
+  mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
 export const FeatureGitSchema = z.object({
-  mode: featureModeSchema.optional(),
+  mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
 export const FeatureProcessInfoSchema = z.object({
-  mode: featureModeSchema.optional(),
+  mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
 export const FeatureCodingAgentsSchema = z.object({
-  mode: featureModeSchema.optional(),
+  mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
   notifications: z
     .object({
@@ -89,5 +99,6 @@ export const FeatureCodingAgentsSchema = z.object({
         })
         .optional(),
     })
-    .optional(),
+    .optional()
+    .describe("Which coding-agent state changes raise a notification."),
 });

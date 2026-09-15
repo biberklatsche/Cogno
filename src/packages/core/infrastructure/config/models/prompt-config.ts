@@ -50,37 +50,48 @@ export const WhenExpressionSchema = z.string().min(1);
 
 const SegmentCommonSchema = z
   .object({
-    foreground: PromptColorSchema.optional(),
-    background: PromptColorSchema.optional(),
+    foreground: PromptColorSchema.optional().describe(
+      "Text colour: a terminal colour name or hex.",
+    ),
+    background: PromptColorSchema.optional().describe(
+      "Background colour: a terminal colour name or hex.",
+    ),
 
-    bold: z.boolean().optional(),
-    italic: z.boolean().optional(),
-    underline: z.boolean().optional(),
-    size: z.number().int().min(1).optional(),
+    bold: z.boolean().optional().describe("Render the segment bold."),
+    italic: z.boolean().optional().describe("Render the segment italic."),
+    underline: z.boolean().optional().describe("Underline the segment."),
+    size: z.number().int().min(1).optional().describe("Font size override for this segment."),
 
-    when: WhenExpressionSchema.optional(),
+    when: WhenExpressionSchema.optional().describe(
+      "Only show the segment when the condition holds, e.g. `returnCode!=0`.",
+    ),
 
-    padding_left: z.number().int().optional(),
-    padding_right: z.number().int().optional(),
-    margin_left: z.number().int().optional(),
-    margin_right: z.number().int().optional(),
-    radius_left: z.number().int().min(0).optional(),
-    radius_right: z.number().int().min(0).optional(),
+    padding_left: z.number().int().optional().describe("Inner padding left of the content."),
+    padding_right: z.number().int().optional().describe("Inner padding right of the content."),
+    margin_left: z.number().int().optional().describe("Outer margin left of the segment."),
+    margin_right: z.number().int().optional().describe("Outer margin right of the segment."),
+    radius_left: z.number().int().min(0).optional().describe("Corner radius on the left side."),
+    radius_right: z.number().int().min(0).optional().describe("Corner radius on the right side."),
 
-    title: z.string().optional(),
-    className: z.string().optional(),
+    title: z.string().optional().describe("Tooltip shown when hovering the segment."),
+    className: z.string().optional().describe("Extra CSS class for custom styling."),
 
-    format: PromptFormatSchema.optional(),
-    fallback: z.string().optional(),
+    format: PromptFormatSchema.optional().describe(
+      "How the value is rendered, e.g. `timespan` for a duration.",
+    ),
+    fallback: z.string().optional().describe("Shown when the field has no value."),
   })
   .strict();
 
 export const FieldSegmentSchema = SegmentCommonSchema.extend({
-  field: z.string().min(1),
+  field: z
+    .string()
+    .min(1)
+    .describe("Data field to display, e.g. `directory`, `user`, `machine`, `duration`."),
 }).strict();
 
 export const TextSegmentSchema = SegmentCommonSchema.extend({
-  text: z.string(),
+  text: z.string().describe("Static text to display, instead of a `field`."),
 }).strict();
 
 /**
@@ -111,8 +122,11 @@ export const PromptSegmentSchema = z
 
 export const PromptProfileSchema = z
   .object({
-    order: z.array(z.string().min(1)).min(1),
-    default_separator: z.string().optional(),
+    order: z
+      .array(z.string().min(1))
+      .min(1)
+      .describe("Segment names to render, in order; each must exist under `prompt.segment`."),
+    default_separator: z.string().optional().describe("Text inserted between segments."),
   })
   .strict();
 
@@ -120,9 +134,13 @@ export const PromptProfileSchema = z
 
 export const PromptConfigSchema = z
   .object({
-    active: z.string().min(1),
-    profile: z.record(z.string().min(1), PromptProfileSchema),
-    segment: z.record(z.string().min(1), PromptSegmentSchema),
+    active: z.string().min(1).describe("Name of the prompt profile in use."),
+    profile: z
+      .record(z.string().min(1), PromptProfileSchema)
+      .describe("Named prompt profiles; each lists the segments it renders."),
+    segment: z
+      .record(z.string().min(1), PromptSegmentSchema)
+      .describe("Named segments a profile can reference."),
   })
   .strict()
   .superRefine((value, context) => {

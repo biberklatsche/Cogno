@@ -6,24 +6,41 @@ export type ShellType = z.infer<typeof ShellTypeEnum>;
 
 export const ShellProfileSchema = z
   .object({
-    shell_type: ShellTypeEnum,
-    path: z.string().optional(),
-    args: z.array(z.string()).optional(),
-    env: z.record(z.string(), z.string()).optional(),
-    use_conpty: z.boolean().optional(),
-    working_dir: z.string().optional(),
-    inject_cogno_cli: z.boolean().default(true),
-    enable_shell_integration: z.boolean().default(true),
-    load_user_rc: z.boolean().default(true),
+    shell_type: ShellTypeEnum.describe("Which shell this profile launches."),
+    path: z.string().optional().describe("Custom executable path; found on PATH when unset."),
+    args: z.array(z.string()).optional().describe("Extra launch arguments for the shell."),
+    env: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe("Environment variables added to the shell process."),
+    use_conpty: z.boolean().optional().describe("Windows only: use the ConPTY backend."),
+    working_dir: z.string().optional().describe("Directory the shell starts in."),
+    inject_cogno_cli: z
+      .boolean()
+      .default(true)
+      .describe("Put the `cogno` CLI on the shell's PATH."),
+    enable_shell_integration: z
+      .boolean()
+      .default(true)
+      .describe("Load Cogno's shell integration (prompt markers, command status, cwd tracking)."),
+    load_user_rc: z.boolean().default(true).describe("Also load your own shell rc/profile files."),
   })
-  .describe("The shell configuration");
+  .describe("One shell profile: which shell to start and how.");
 
-export const ShellProfilesSchema = z.record(z.string().min(1), ShellProfileSchema);
+export const ShellProfilesSchema = z
+  .record(z.string().min(1), ShellProfileSchema)
+  .describe("Named shell profiles, at most 9.");
 
 export const ShellConfigSchema = z
   .object({
-    default: z.string().min(1),
-    order: z.array(z.string().min(1)).optional(),
+    default: z
+      .string()
+      .min(1)
+      .describe("Name of the profile new terminals start with; must exist in `shell.profiles`."),
+    order: z
+      .array(z.string().min(1))
+      .optional()
+      .describe("Order the profiles appear in menus and on the shell-profile shortcuts."),
     profiles: ShellProfilesSchema,
   })
   .superRefine((s, ctx) => {

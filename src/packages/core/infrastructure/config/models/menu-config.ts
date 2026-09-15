@@ -6,7 +6,8 @@ export const MenuSchema = z.object({
     .int()
     .min(0, "Opacity must be at least 0")
     .max(100, "Opacity must be at most 100")
-    .optional(),
+    .optional()
+    .describe("Opacity of menus and panels, 0-100."),
 });
 
 export type Menu = z.infer<typeof MenuSchema>;

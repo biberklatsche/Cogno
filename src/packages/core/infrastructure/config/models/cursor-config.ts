@@ -7,13 +7,25 @@ export const CursorSchema = z.object({
     .int()
     .min(0, "Cursor-With must be at least 0")
     .max(10, "Cursor-With must be at most 10")
-    .optional(),
-  blink: z.boolean().optional(),
-  style: z.enum(["bar", "underline", "block"]).optional(),
-  inactive_style: z.enum(["outline", "block", "bar", "underline", "none"]).optional(),
-  color: HexColorSchema.optional(),
-  accent_color: HexColorSchema.optional(),
-  alt_click_moves_cursor: z.boolean().optional(),
+    .optional()
+    .describe("Cursor width in pixels; applies to the bar style."),
+  blink: z.boolean().optional().describe("Let the cursor blink."),
+  style: z
+    .enum(["bar", "underline", "block"])
+    .optional()
+    .describe("Cursor shape while the terminal has focus."),
+  inactive_style: z
+    .enum(["outline", "block", "bar", "underline", "none"])
+    .optional()
+    .describe("Cursor shape while the terminal does not have focus."),
+  color: HexColorSchema.optional().describe("Cursor colour."),
+  accent_color: HexColorSchema.optional().describe(
+    "Colour of the character underneath a block cursor.",
+  ),
+  alt_click_moves_cursor: z
+    .boolean()
+    .optional()
+    .describe("Alt+click moves the shell cursor to the clicked position."),
 });
 
 export type Cursor = z.infer<typeof CursorSchema>;
