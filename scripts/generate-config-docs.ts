@@ -86,7 +86,10 @@ function recordPlaceholder(path: string): string {
   return lastKey === "env" ? "<var>" : "<name>";
 }
 
-function unwrap(schema: ZodLike | undefined): { schema: ZodLike | undefined; description?: string } {
+function unwrap(schema: ZodLike | undefined): {
+  schema: ZodLike | undefined;
+  description?: string;
+} {
   let current = schema;
   let description = schema?.description;
   for (let guard = 0; guard < 10 && current; guard++) {
@@ -206,7 +209,10 @@ function walk(schema: ZodLike | undefined, path: string, rows: Row[]): void {
   }
 
   // A union of objects (prompt segments) documents the union of their fields.
-  if (def.type === "union" && (def.options ?? []).some((o) => defOf(unwrap(o).schema)?.type === "object")) {
+  if (
+    def.type === "union" &&
+    (def.options ?? []).some((o) => defOf(unwrap(o).schema)?.type === "object")
+  ) {
     if (description && path) {
       rows.push({ key: path, type: "group", def: "", description });
     }

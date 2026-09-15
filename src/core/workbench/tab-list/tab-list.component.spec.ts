@@ -5,7 +5,6 @@ import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import type { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
-import { OsPlatform } from "@cogno/platform/os";
 import { ContextMenuOverlayService, DragPreviewService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -28,8 +27,6 @@ function tab(overrides: Partial<Tab> = {}): Tab {
 }
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
-
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("TabListComponent", () => {
   let tabListService: TabListService;
@@ -66,7 +63,6 @@ describe("TabListComponent", () => {
 
   beforeEach(() => {
     tabListService = new TabListService(
-      osStub,
       getAppBus(),
       getConfigService(),
       getActionKeybindingPortMock(),

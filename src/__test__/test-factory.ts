@@ -125,7 +125,6 @@ export function emitSessionFact(terminalId: TerminalId, fact: SessionFact): void
 export function getTabListService(): TabListService {
   if (!tabListService) {
     tabListService = new TabListService(
-      getOsPlatform(),
       getAppBus(),
       getConfigService(),
       getActionKeybindingPortMock(),

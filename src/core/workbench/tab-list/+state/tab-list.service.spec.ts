@@ -8,7 +8,6 @@ import type {
   RemoveTabAction,
   SelectTabAction,
 } from "@cogno/core/workbench/bus/tab-list/actions";
-import { OsPlatform } from "@cogno/platform/os";
 import { IdCreator } from "@cogno/shared/support";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
@@ -21,8 +20,6 @@ import {
 } from "../../../../__test__/test-factory";
 import type { Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
-
-const osStub = { platform: () => "linux" } as unknown as OsPlatform;
 
 describe("TabListService", () => {
   let service: TabListService;
@@ -47,7 +44,6 @@ describe("TabListService", () => {
     });
 
     service = new TabListService(
-      osStub,
       bus,
       configService,
       getActionKeybindingPortMock(),

@@ -1,6 +1,5 @@
 import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
 import {
-  TerminalId,
   TerminalSearchRequestContract,
   TerminalSearchRevealRequestContract,
 } from "@cogno/shared/domain";

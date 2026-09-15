@@ -11,7 +11,6 @@ import {
   RemoveTabAction,
   SelectTabAction,
 } from "@cogno/core/workbench/bus/tab-list/actions";
-import { OsPlatform } from "@cogno/platform/os";
 import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/shared/domain";
 import { ActionKeybindingPort } from "@cogno/shared/ports";
 import { ColorName, IdCreator } from "@cogno/shared/support";
@@ -71,7 +70,6 @@ export class TabListService {
   }
 
   constructor(
-    private readonly os: OsPlatform,
     private bus: AppBus,
     private readonly configService: ConfigService,
     private readonly keybindings: ActionKeybindingPort,

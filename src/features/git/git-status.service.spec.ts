@@ -3,7 +3,7 @@ import type { NotificationCenterPort } from "@cogno/core/api/notification-center
 import type { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import type { SessionRunRequest, SessionRunResult } from "@cogno/core/api/session-run";
 import { BehaviorSubject } from "rxjs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { GitFile, GitFileStatus, GitStatusService, parseGitStatus } from "./git-status.service";
 
 function expectedGitFile(path: string, status: GitFileStatus, isDirectory = false): GitFile {
