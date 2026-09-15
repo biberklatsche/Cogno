@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   effect,
-  inject,
   input,
   signal,
 } from "@angular/core";
@@ -72,10 +71,10 @@ export class AgentAnimationComponent {
   private readonly _grid = signal<number[][]>(makeIdleGrid());
   protected readonly grid = this._grid.asReadonly();
 
-  private readonly animation = inject(TerminalAnimationPort);
-  private readonly destroyRef = inject(DestroyRef);
-
-  constructor() {
+  constructor(
+    private readonly animation: TerminalAnimationPort,
+    private readonly destroyRef: DestroyRef,
+  ) {
     effect((onCleanup) => {
       const id = this.terminalId();
       const sub = this.animation.observe$(id).subscribe((specs) => {
