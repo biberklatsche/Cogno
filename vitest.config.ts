@@ -14,7 +14,6 @@ export default defineConfig({
       },
     ],
     include: [
-      "src/app/**/*.spec.ts",
       "src/platform/**/*.spec.ts",
       "src/shared/**/*.spec.ts",
       "src/features/**/*.spec.ts",
@@ -29,19 +28,12 @@ export default defineConfig({
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
       include: [
-        "src/app/**/*.ts",
         "src/shared/**/*.ts",
         "src/features/**/*.ts",
         "src/core/**/*.ts",
         "src/bootstrap/**/*.ts",
       ],
-      exclude: [
-        "src/app/_tauri/**",
-        "**/*.spec.ts",
-        "**/*.test.ts",
-        "**/__test__/tauri_mocks/**",
-        "**/*.d.ts",
-      ],
+      exclude: ["**/*.spec.ts", "**/*.test.ts", "**/__test__/tauri_mocks/**", "**/*.d.ts"],
     },
   },
 });
