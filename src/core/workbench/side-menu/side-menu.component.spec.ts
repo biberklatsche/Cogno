@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SideMenuItem } from "../+state/side-menu.service";
+import type { SideMenuItem } from "./+state/side-menu.service";
 import { isSelectedSideMenuItem } from "./side-menu.component";
 
 class DummyComponent {}

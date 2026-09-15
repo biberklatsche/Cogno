@@ -11,7 +11,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { ActionKeybindingPipe, IconComponent, TooltipDirective } from "@cogno/shared/ui";
-import { SideMenuItem, SideMenuService } from "../+state/side-menu.service";
+import { SideMenuItem, SideMenuService } from "./+state/side-menu.service";
 
 export function isSelectedSideMenuItem(
   selectedItem: SideMenuItem | undefined,
