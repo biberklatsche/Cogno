@@ -20,5 +20,3 @@ export const ImageSchema = z.object({
     .optional()
     .describe("Blur radius applied to the background image, 0-10."),
 });
-
-export type Image = z.infer<typeof ImageSchema>;

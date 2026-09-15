@@ -18,10 +18,6 @@ export type AutocompleteViewState = {
   suggestions: AutocompleteSuggestion[];
 };
 
-export type BaseQueryContext = Extract<
-  AutocompleteQueryContextContract,
-  { shellContext: ShellContextContract }
->;
 export type CdQueryContext = Extract<AutocompleteQueryContextContract, { mode: "cd" }>;
 export type CommandQueryContext = Extract<AutocompleteQueryContextContract, { mode: "command" }>;
 export type QueryContext = AutocompleteQueryContextContract;

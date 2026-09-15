@@ -9,8 +9,6 @@ export const shellDefinitions = [
   powerShellShellDefinition,
 ] as const;
 
-export const shellSupportDefinitions = shellDefinitions.map((definition) => definition.support);
-
 export const shellPathAdapterDefinitions = shellDefinitions.map(
   (definition) => definition.pathAdapter,
 );

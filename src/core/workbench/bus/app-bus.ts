@@ -25,17 +25,11 @@ export type MessageBase<T extends string = string, P = unknown> = {
 };
 
 export const validTriggers = ["broadcast", "unconsumed", "performable", "always"] as const;
-export type ActionTrigger = (typeof validTriggers)[number];
 
 export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
   trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
   args?: string[];
 };
-
-export type MessageHandler<M extends MessageBase = MessageBase> = (
-  msg: M,
-  ctx: { path: BusPath },
-) => "handled" | true | undefined;
 
 @Injectable({ providedIn: "root" })
 export class AppBus {

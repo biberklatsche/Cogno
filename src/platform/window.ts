@@ -180,5 +180,3 @@ export class AppWindow {
     };
   });
 }
-
-export type WindowSize = { width: number; height: number };

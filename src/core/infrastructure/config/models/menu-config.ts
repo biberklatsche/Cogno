@@ -9,5 +9,3 @@ export const MenuSchema = z.object({
     .optional()
     .describe("Opacity of menus and panels, 0-100."),
 });
-
-export type Menu = z.infer<typeof MenuSchema>;

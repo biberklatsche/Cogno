@@ -50,8 +50,6 @@ export const HttpServerSchema = z.object({
     .describe("If the port is taken, try the next free one instead of failing."),
 });
 
-export type HttpServerConfig = z.infer<typeof HttpServerSchema>;
-
 export const baseConfigSchemaShape = {
   keybind: KeybindsSchema.optional().describe("Keybinding lines; see the keybinding syntax."),
   enable_watch_config: z

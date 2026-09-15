@@ -33,9 +33,3 @@ export type WorkspaceId = WorkspaceIdentifierContract;
 export type TabConfig = PersistedTabConfigurationContract;
 export type GridConfig = PersistedGridConfigurationContract;
 export type PaneConfig = PersistedPaneConfigurationContract;
-
-export interface TerminalSession {
-  terminalId: string;
-  sessionData: string;
-  updatedAt?: string;
-}

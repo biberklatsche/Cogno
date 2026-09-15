@@ -171,5 +171,4 @@ export const PromptConfigSchema = z
 /* ------------------------------ types ----------------------------- */
 
 export type PromptSegment = z.infer<typeof PromptSegmentSchema>;
-export type PromptProfile = z.infer<typeof PromptProfileSchema>;
 export type PromptConfig = z.infer<typeof PromptConfigSchema>;

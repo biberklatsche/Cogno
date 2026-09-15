@@ -75,7 +75,6 @@ export const Database = {
 };
 
 export type DatabaseStatementContract = DatabaseStatement;
-export type DatabaseExecuteResultContract = DatabaseExecuteResult;
 
 /**
  * SQL access to the application database. Statements passed to `batch` run

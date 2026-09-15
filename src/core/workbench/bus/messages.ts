@@ -74,8 +74,6 @@ import {
   TerminalSearchRevealRequestedEvent,
 } from "@cogno/core/workbench/bus/terminal/events";
 
-export type TerminalCommandType = AppMessage["type"];
-
 export type AppMessage =
   | BusyIndicatorRegisterEvent
   | BusyIndicatorUnregisterEvent

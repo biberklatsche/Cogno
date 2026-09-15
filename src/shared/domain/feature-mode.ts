@@ -6,7 +6,6 @@
 export type FeatureModeContract = "off" | "on";
 
 /** Values older configs may still carry; both mean "on". */
-export const LEGACY_FEATURE_MODES = ["hidden", "visible"] as const;
 
 /** Reads a configured mode, accepting the legacy spellings. */
 export function normalizeFeatureMode(value: unknown): FeatureModeContract | undefined {

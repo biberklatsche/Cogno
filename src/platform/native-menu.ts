@@ -23,5 +23,4 @@ export class TauriMenu {
   }
 }
 
-export type TauriMenuHandle = Awaited<ReturnType<typeof Menu.new>>;
 export type TauriMenuItemHandle = Awaited<ReturnType<typeof MenuItem.new>>;
