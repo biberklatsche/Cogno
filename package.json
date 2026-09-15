@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "pnpm exec tauri dev --config src-tauri/tauri.dev.conf.json",
     "dev:web": "ng serve --configuration development",
-    "lint": "pnpm lint:code && pnpm lint:architecture && pnpm generate:actions:check",
+    "lint": "pnpm lint:code && pnpm lint:architecture && pnpm generate:actions:check && pnpm generate:config-docs:check",
     "lint:code": "pnpm exec biome check .",
     "lint:fix": "pnpm exec biome check --write . && pnpm exec biome format --write .",
     "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/packages/platform/**/*.ts\" \"src/packages/shared/**/*.ts\" \"src/packages/features/**/*.ts\" \"src/packages/core/**/*.ts\" \"src/packages/bootstrap/**/*.ts\"",
@@ -24,7 +24,9 @@
     "release:build:test": "node ./scripts/release-build.mjs --test --allow-dirty",
     "release:test": "node ./scripts/release-build.mjs --test",
     "generate:actions": "tsx scripts/generate-actions.ts",
-    "generate:actions:check": "tsx scripts/generate-actions.ts --check"
+    "generate:actions:check": "tsx scripts/generate-actions.ts --check",
+    "generate:config-docs": "tsx scripts/generate-config-docs.ts",
+    "generate:config-docs:check": "tsx scripts/generate-config-docs.ts --check"
   },
   "private": false,
   "dependencies": {
