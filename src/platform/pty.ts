@@ -27,7 +27,7 @@ export type PtySpawnOptionsContract = {
   devMode: boolean;
 };
 
-export type PtySpawnResultContract = {
+type PtySpawnResultContract = {
   shellProcessId: number | null;
 };
 

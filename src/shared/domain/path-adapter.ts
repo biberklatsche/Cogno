@@ -1,4 +1,4 @@
-export type RenderPurpose = "display" | "insert_arg" | "backend_fs";
+type RenderPurpose = "display" | "insert_arg" | "backend_fs";
 
 export type RenderContext = {
   purpose: RenderPurpose;

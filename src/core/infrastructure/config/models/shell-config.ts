@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-export const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash"]);
+const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash"]);
 
 export type ShellType = z.infer<typeof ShellTypeEnum>;
 
-export const ShellProfileSchema = z
+const ShellProfileSchema = z
   .object({
     shell_type: ShellTypeEnum.describe("Which shell this profile launches."),
     path: z.string().optional().describe("Custom executable path; found on PATH when unset."),
@@ -27,7 +27,7 @@ export const ShellProfileSchema = z
   })
   .describe("One shell profile: which shell to start and how.");
 
-export const ShellProfilesSchema = z
+const ShellProfilesSchema = z
   .record(z.string().min(1), ShellProfileSchema)
   .describe("Named shell profiles, at most 9.");
 

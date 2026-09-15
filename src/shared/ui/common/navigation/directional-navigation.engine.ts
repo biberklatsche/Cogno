@@ -1,6 +1,6 @@
 import { SelectionDirection } from "@cogno/shared/domain";
 
-export interface NavigationRect {
+interface NavigationRect {
   readonly top: number;
   readonly right: number;
   readonly bottom: number;

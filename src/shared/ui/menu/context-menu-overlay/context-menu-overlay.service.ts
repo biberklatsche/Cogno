@@ -9,7 +9,7 @@ import { ContextMenuOverlayComponent } from "../../context-menu-item";
 import { ContextMenuComponent } from "./context-menu.component";
 
 export type Point = { x: number; y: number };
-export type ContextMenuHorizontalAlign = "left" | "right";
+type ContextMenuHorizontalAlign = "left" | "right";
 export type ContextMenuOpenOptions = {
   horizontalAlign?: ContextMenuHorizontalAlign;
 };

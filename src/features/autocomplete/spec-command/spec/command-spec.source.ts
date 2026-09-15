@@ -1,6 +1,6 @@
 import { CommandSpec, ShellConstraint } from "./spec.types";
 
-export type MaybePromise<T> = T | Promise<T>;
+type MaybePromise<T> = T | Promise<T>;
 
 export type CommandShellConstraints = {
   shells?: ShellConstraint[];

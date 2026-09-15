@@ -2,9 +2,9 @@ import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/sha
 import { workspaceDatabaseMigrations } from "./workspace.migrations";
 import { WorkspaceSideMenuLifecycle } from "./workspace-side-menu.lifecycle";
 
-export const workspaceFeatureId = "workspace";
+const workspaceFeatureId = "workspace";
 
-export const workspaceSideMenuFeatureDefinition = {
+const workspaceSideMenuFeatureDefinition = {
   id: workspaceFeatureId,
   title: "Workspace",
   icon: "mdiViewDashboard",

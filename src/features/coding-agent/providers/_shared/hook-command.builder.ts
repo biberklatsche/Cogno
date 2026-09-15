@@ -3,7 +3,7 @@ import { AgentStatus } from "@cogno/shared/domain";
 export const CODING_AGENT_STATUS_ACTION = "coding_agent_status";
 
 /** Payloads larger than this are replaced with an "omitted:too-large:<bytes>" marker. */
-export const HOOK_PAYLOAD_MAX_BYTES = 65536;
+const HOOK_PAYLOAD_MAX_BYTES = 65536;
 
 export type HookCommands = {
   command: string; // Unix/macOS: bash + curl

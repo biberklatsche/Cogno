@@ -4,7 +4,7 @@ export type CommandToken = {
   wasQuoted: boolean;
 };
 
-export type CommandTokenKind = "stable" | "variable";
+type CommandTokenKind = "stable" | "variable";
 
 export type ClassifiedCommandToken = CommandToken & {
   kind: CommandTokenKind;

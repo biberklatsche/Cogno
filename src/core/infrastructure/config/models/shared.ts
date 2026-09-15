@@ -12,7 +12,7 @@ export const HexColorSchema = z.preprocess(
 
 export type HexColor = z.infer<typeof HexColorSchema>;
 
-export const FeatureModeEnum = z.preprocess(
+const FeatureModeEnum = z.preprocess(
   (value) => (value === "hidden" || value === "visible" ? "on" : value),
   z.enum(["off", "on"]),
 );

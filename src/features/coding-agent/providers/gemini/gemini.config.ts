@@ -2,7 +2,7 @@ import { AgentStatus } from "@cogno/shared/domain";
 
 export type GeminiHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 
-export type GeminiHookCommand = {
+type GeminiHookCommand = {
   type: "command";
   command: string;
   name?: string;

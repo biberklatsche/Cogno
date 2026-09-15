@@ -1,12 +1,12 @@
 import { AgentStatus } from "@cogno/shared/domain";
 
-export type AntigravityHookHandler = {
+type AntigravityHookHandler = {
   type?: "command";
   command: string;
   timeout?: number;
 };
 
-export type AntigravityHookGroup = {
+type AntigravityHookGroup = {
   matcher?: string;
   hooks: AntigravityHookHandler[];
 };
@@ -23,7 +23,7 @@ export type AntigravityHookDefinition = {
 export type AntigravityHooksFile = Record<string, AntigravityHookDefinition>;
 
 /** PreToolUse/PostToolUse entries are matcher+hooks groups; the other lifecycle events are plain handler lists. */
-export type AntigravityToolHookEntry = {
+type AntigravityToolHookEntry = {
   readonly kind: "tool";
   readonly eventName: "PreToolUse" | "PostToolUse";
   readonly status: AgentStatus;
@@ -32,7 +32,7 @@ export type AntigravityToolHookEntry = {
   readonly stdout: string;
 };
 
-export type AntigravityLifecycleHookEntry = {
+type AntigravityLifecycleHookEntry = {
   readonly kind: "lifecycle";
   readonly eventName: "PreInvocation" | "PostInvocation" | "Stop";
   readonly status: AgentStatus;

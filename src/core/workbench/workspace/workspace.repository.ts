@@ -8,14 +8,14 @@ import {
 } from "@cogno/shared/domain";
 import { WorkspaceConfiguration, WorkspaceTerminalSession } from "@cogno/shared/domain/workspace";
 
-export interface WorkspaceEntity {
+interface WorkspaceEntity {
   id: string;
   name: string;
   color: string | null;
   position: number;
 }
 
-export interface WorkspaceTabEntity {
+interface WorkspaceTabEntity {
   workspace_id: string;
   tab_id: string;
   is_active: number;
@@ -24,13 +24,13 @@ export interface WorkspaceTabEntity {
   user_title: string | null;
 }
 
-export interface WorkspaceGridEntity {
+interface WorkspaceGridEntity {
   workspace_id: string;
   tab_id: string;
   pane_json: string;
 }
 
-export interface WorkspaceTerminalSessionEntity {
+interface WorkspaceTerminalSessionEntity {
   terminal_id: string;
   session_data: string;
   updated_at: number;

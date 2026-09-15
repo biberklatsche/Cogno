@@ -1,7 +1,7 @@
 import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
 import { TabId, TerminalId } from "@cogno/shared/domain";
 
-export type ChangeTabTitlePayload = {
+type ChangeTabTitlePayload = {
   tabId: TabId;
   title: string;
 };

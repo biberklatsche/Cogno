@@ -8,7 +8,7 @@ import {
 
 export type TerminalProgressState = "hidden" | "default" | "error" | "indeterminate" | "warning";
 
-export type TerminalProgress = {
+type TerminalProgress = {
   state: TerminalProgressState;
   value: number;
 };
@@ -25,7 +25,7 @@ export type MachineStateSnapshot = {
   progress: TerminalProgress;
 };
 
-export const createInitialMachineState = (): MachineStateSnapshot => ({
+const createInitialMachineState = (): MachineStateSnapshot => ({
   cursorPosition: { viewport: { col: 1, row: 1 }, col: 1, row: 1, char: "" },
   mousePosition: { viewport: { col: 1, row: 1 }, col: 1, row: 1, char: "" },
   dimensions: {

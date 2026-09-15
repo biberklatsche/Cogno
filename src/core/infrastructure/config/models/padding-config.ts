@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const PaddingValueSchema = z.number().min(0);
+const PaddingValueSchema = z.number().min(0);
 
 export const PaddingSchema = z.object({
   left: PaddingValueSchema.optional().describe("Padding between terminal content and left edge."),

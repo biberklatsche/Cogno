@@ -1,9 +1,9 @@
 import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
 
-export const terminalSearchFeatureId = "terminal-search";
+const terminalSearchFeatureId = "terminal-search";
 
-export const terminalSearchSideMenuFeatureDefinition = {
+const terminalSearchSideMenuFeatureDefinition = {
   id: terminalSearchFeatureId,
   title: "Terminal Search",
   icon: "mdiFilter",

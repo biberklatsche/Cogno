@@ -1,7 +1,7 @@
-export type TabIdentifierContract = string;
+type TabIdentifierContract = string;
 export type WorkspaceIdentifierContract = string;
 
-export type SplitDirection = "horizontal" | "vertical";
+type SplitDirection = "horizontal" | "vertical";
 
 export interface PersistedPaneConfigurationContract {
   splitDirection?: SplitDirection;

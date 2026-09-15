@@ -21,7 +21,7 @@ export type CommandLogHealth = {
 export const HEALTHY: CommandLogHealth = { state: "ok", dropped: 0, pending: 0 };
 
 /** Failures in a row before the log counts as unavailable rather than shaky. */
-export const UNAVAILABLE_AFTER_FAILURES = 3;
+const UNAVAILABLE_AFTER_FAILURES = 3;
 
 const BASE_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30_000;

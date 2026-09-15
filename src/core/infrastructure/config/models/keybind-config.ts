@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const KeybindSchema = z
+const KeybindSchema = z
   .string()
   .regex(
     /^(?:(?:broadcast|unconsumed|performable|always):)*[^\s=>:]+(?:\+[^\s=>:]+)*(?:>(?:[^\s=>:]+(?:\+[^\s=>:]+)*))*=[A-Za-z0-9_]+(?::[A-Za-z0-9_]+)*$/,

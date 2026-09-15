@@ -44,7 +44,7 @@ export type SessionModelSnapshot = {
   isPaneMaximized: boolean;
 };
 
-export const createInitialSessionState = (backendOs: OsType): SessionModelSnapshot => ({
+const createInitialSessionState = (backendOs: OsType): SessionModelSnapshot => ({
   terminalId: "",
   shellContext: { shellType: "Bash", backendOs },
   cwd: "",
@@ -78,7 +78,7 @@ type ContextEntry = {
  * with the session; maximization is workbench business and moves there.
  */
 /** Dropped impostor sequences before the session says so once. */
-export const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
+const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
 
 export class SessionModel {
   private readonly _state: BehaviorSubject<SessionModelSnapshot>;

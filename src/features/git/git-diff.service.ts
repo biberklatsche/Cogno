@@ -82,7 +82,7 @@ export class GitDiffService {
   }
 }
 
-export function detectGitDiffLanguage(filePath: string): string {
+function detectGitDiffLanguage(filePath: string): string {
   const filename = (filePath.split("/").pop() ?? filePath).toLowerCase();
 
   const filenameMap: Record<string, string> = {

@@ -2,7 +2,7 @@
 export type ICursorStyle = "block" | "underline" | "bar";
 
 /** Where the cursor or the mouse is, in cells. */
-export type Position = { col: number; row: number };
+type Position = { col: number; row: number };
 
 export type TerminalCursorPosition = Position & {
   viewport: Position;

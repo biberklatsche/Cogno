@@ -1,6 +1,6 @@
 import { Logger } from "@cogno/platform/logger";
 
-export type ErrorReportContext = Readonly<Record<string, unknown>>;
+type ErrorReportContext = Readonly<Record<string, unknown>>;
 
 export type ExceptionReport = {
   readonly context?: ErrorReportContext;

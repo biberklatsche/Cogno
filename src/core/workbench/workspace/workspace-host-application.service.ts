@@ -21,7 +21,7 @@ import { debounceTime, filter, merge } from "rxjs";
 import { SessionPersistenceService } from "./session-persistence.service";
 import { WorkspaceRepository } from "./workspace.repository";
 
-export const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
+const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
 /** Idle time after terminal output before an auto-save of the active workspace. */
 const IDLE_AUTOSAVE_MS = 2500;

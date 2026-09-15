@@ -8,7 +8,7 @@ export type ShellContextContract = {
   readonly wslDistroName?: string;
 };
 
-export type FilesystemEntryKindContract = "file" | "directory";
+type FilesystemEntryKindContract = "file" | "directory";
 
 export interface FilesystemEntryContract {
   readonly name: string;

@@ -1,7 +1,7 @@
 import { KeyboardLayoutInfo } from "./keyboard.models";
 
-export type KeyCode = string;
-export type KeyName = string;
+type KeyCode = string;
+type KeyName = string;
 export type KeyboardMapping = Record<KeyCode, KeyName>;
 
 export type KeymapInfo = {

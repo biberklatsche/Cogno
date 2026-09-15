@@ -6,7 +6,7 @@ import { ActionContextContract, ActionTriggerContract } from "@cogno/shared/doma
 import { CoreActionName, coreActionCatalog } from "./catalog";
 
 /** What a handler receives: the fired action's args, target terminal and trigger. */
-export interface ActionHandlerContext extends ActionContextContract {
+interface ActionHandlerContext extends ActionContextContract {
   readonly trigger?: ActionTriggerContract;
 }
 

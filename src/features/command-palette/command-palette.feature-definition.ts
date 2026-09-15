@@ -1,9 +1,9 @@
 import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";
 
-export const commandPaletteFeatureId = "command-palette";
+const commandPaletteFeatureId = "command-palette";
 
-export const commandPaletteSideMenuFeatureDefinition = {
+const commandPaletteSideMenuFeatureDefinition = {
   id: commandPaletteFeatureId,
   title: "Command Palette",
   icon: "mdiPaletteSwatch",

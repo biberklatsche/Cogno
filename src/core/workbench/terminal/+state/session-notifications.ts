@@ -21,7 +21,7 @@ import {
   LONG_RUNNING_COMMAND_NOTIFICATION_ID,
 } from "./handler/completed-command-notification.handler";
 
-export const OSC9_NOTIFICATION_ID = "osc9";
+const OSC9_NOTIFICATION_ID = "osc9";
 
 /**
  * Everything the app tells the user about one session: the OSC 9 badge, the

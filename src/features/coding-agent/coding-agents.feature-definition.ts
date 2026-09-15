@@ -1,9 +1,9 @@
 import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { CodingAgentsSideMenuLifecycle } from "./coding-agents-side-menu.lifecycle";
 
-export const codingAgentsFeatureId = "coding-agents";
+const codingAgentsFeatureId = "coding-agents";
 
-export const codingAgentsSideMenuFeatureDefinition = {
+const codingAgentsSideMenuFeatureDefinition = {
   id: codingAgentsFeatureId,
   title: "Coding Agents",
   icon: "mdiRobot",

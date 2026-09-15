@@ -3,7 +3,7 @@ import { NotificationDefinitionContract } from "../notification";
 import { NotificationPreferencesUseCase } from "./notification-preferences.use-case";
 import { NotificationPreferencesState } from "./notification-preferences-state";
 
-export interface NotificationPreferencesMenuChannel {
+interface NotificationPreferencesMenuChannel {
   readonly id: string;
   readonly displayName: string;
 }

@@ -100,7 +100,7 @@ function offsetMarkerId(id: string): string {
  * a reason when it does not. A running shell either `exited` on its own or
  * is `closing` because the workbench said so; both end in `closed`.
  */
-export type SessionRuntimeStatus =
+type SessionRuntimeStatus =
   | "allocated"
   | "starting"
   | "running"

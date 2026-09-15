@@ -32,7 +32,7 @@ import { TerminalFileDropService } from "../../terminal/terminal-file-drop.servi
 import { Pane } from "../+model/model";
 
 /** The host is a plain class; Angular only wires its sources. */
-export function createSessionHost(
+function createSessionHost(
   os: OsPlatform,
   environment: Environment,
   clipboard: ClipboardAccess,

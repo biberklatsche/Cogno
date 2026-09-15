@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-export const FontWeightSchema = z.union([
+const FontWeightSchema = z.union([
   z.enum(["normal", "bold", "100", "200", "300", "400", "500", "600", "700", "800", "900"]),
   z.number(),
 ]);
 
-export const AppFontSchema = z.object({
+const AppFontSchema = z.object({
   family: z
     .string()
     .optional()

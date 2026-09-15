@@ -5,7 +5,7 @@ export type CodexHookEntry = {
   readonly status: AgentStatus;
 };
 
-export type CodexHookCommand = {
+type CodexHookCommand = {
   type: "command";
   command: string;
   commandWindows?: string;

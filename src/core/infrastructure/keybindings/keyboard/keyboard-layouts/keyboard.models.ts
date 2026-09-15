@@ -1,10 +1,10 @@
-export type WindowsKeyboardLayoutInfo = {
+type WindowsKeyboardLayoutInfo = {
   name: string;
   id: string;
   text: string;
 };
 
-export type LinuxKeyboardLayoutInfo = {
+type LinuxKeyboardLayoutInfo = {
   model: string;
   group: number;
   layout: string;
@@ -13,7 +13,7 @@ export type LinuxKeyboardLayoutInfo = {
   rules: string;
 };
 
-export type MacKeyboardLayoutInfo = {
+type MacKeyboardLayoutInfo = {
   id: string;
   localizedName: string;
   lang: string;

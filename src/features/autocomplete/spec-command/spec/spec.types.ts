@@ -3,7 +3,7 @@ import { BackendOsContract, ShellTypeContract } from "@cogno/shared/domain";
 
 export type ShellConstraint = ShellTypeContract;
 
-export type ArgSpec = {
+type ArgSpec = {
   name: string;
   description?: string;
 };
@@ -36,7 +36,7 @@ export type CommandSpec = {
   excludeShells?: ShellConstraint[];
 };
 
-export type SpecProviderWhen = {
+type SpecProviderWhen = {
   firstArgIn?: string[];
   argsRegex?: string;
   minArgs?: number;
@@ -67,23 +67,23 @@ type SpecProviderBindingBase<TProviderId extends string, TParams> = {
   params?: TParams;
 };
 
-export type CommandListSpecProviderBinding = SpecProviderBindingBase<
+type CommandListSpecProviderBinding = SpecProviderBindingBase<
   "command-list",
   CommandListSpecProviderParams
 >;
 
-export type FilesystemSpecProviderBinding = SpecProviderBindingBase<
+type FilesystemSpecProviderBinding = SpecProviderBindingBase<
   "filesystem",
   FilesystemSpecProviderParams
 >;
 
-export type GitBranchesSpecProviderBinding = SpecProviderBindingBase<"git-branches", undefined>;
+type GitBranchesSpecProviderBinding = SpecProviderBindingBase<"git-branches", undefined>;
 
-export type NpmScriptsSpecProviderBinding = SpecProviderBindingBase<"npm-scripts", undefined>;
+type NpmScriptsSpecProviderBinding = SpecProviderBindingBase<"npm-scripts", undefined>;
 
-export type ProcessListSpecProviderBinding = SpecProviderBindingBase<"process-list", undefined>;
+type ProcessListSpecProviderBinding = SpecProviderBindingBase<"process-list", undefined>;
 
-export type SshHostsSpecProviderBinding = SpecProviderBindingBase<"ssh-hosts", undefined>;
+type SshHostsSpecProviderBinding = SpecProviderBindingBase<"ssh-hosts", undefined>;
 
 export type SpecProviderBinding =
   | CommandListSpecProviderBinding

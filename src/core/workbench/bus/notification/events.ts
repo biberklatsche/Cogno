@@ -6,8 +6,8 @@ import {
   TerminalId,
 } from "@cogno/shared/domain";
 
-export type NotificationSource = string;
-export type NotificationChannels = NotificationChannelsContract;
+type NotificationSource = string;
+type NotificationChannels = NotificationChannelsContract;
 
 export type NotificationEvent = MessageBase<
   "Notification",

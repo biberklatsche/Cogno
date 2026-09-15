@@ -6,14 +6,14 @@ export type ClaudeHookEntry = {
   readonly matcher?: string;
 };
 
-export type ClaudeHookItem = {
+type ClaudeHookItem = {
   type: "command";
   command: string;
   shell?: "bash" | "powershell";
   timeout?: number;
 };
 
-export type ClaudeHookGroup = {
+type ClaudeHookGroup = {
   matcher?: string;
   hooks: ClaudeHookItem[];
 };

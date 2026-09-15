@@ -27,11 +27,11 @@ import { HexColorSchema, TerminalNamedColorSchema } from "./shared";
  */
 
 /* ----------------------------- colors ----------------------------- */
-export const PromptColorSchema = z.union([TerminalNamedColorSchema, HexColorSchema]);
+const PromptColorSchema = z.union([TerminalNamedColorSchema, HexColorSchema]);
 
 /* ---------------------------- segments ---------------------------- */
 
-export const PromptFormatSchema = z.union([
+const PromptFormatSchema = z.union([
   z.literal("string"),
   z.literal("number"),
   z.literal("json"),
@@ -46,7 +46,7 @@ export const PromptFormatSchema = z.union([
  *
  * You can later replace this with a parsed ConditionExpression schema.
  */
-export const WhenExpressionSchema = z.string().min(1);
+const WhenExpressionSchema = z.string().min(1);
 
 const SegmentCommonSchema = z
   .object({
@@ -83,21 +83,21 @@ const SegmentCommonSchema = z
   })
   .strict();
 
-export const FieldSegmentSchema = SegmentCommonSchema.extend({
+const FieldSegmentSchema = SegmentCommonSchema.extend({
   field: z
     .string()
     .min(1)
     .describe("Data field to display, e.g. `directory`, `user`, `machine`, `duration`."),
 }).strict();
 
-export const TextSegmentSchema = SegmentCommonSchema.extend({
+const TextSegmentSchema = SegmentCommonSchema.extend({
   text: z.string().describe("Static text to display, instead of a `field`."),
 }).strict();
 
 /**
  * Exactly one of field or text.
  */
-export const PromptSegmentSchema = z
+const PromptSegmentSchema = z
   .union([FieldSegmentSchema, TextSegmentSchema])
   .superRefine((value, context) => {
     const hasField = "field" in value;
@@ -120,7 +120,7 @@ export const PromptSegmentSchema = z
 
 /* ---------------------------- profiles ---------------------------- */
 
-export const PromptProfileSchema = z
+const PromptProfileSchema = z
   .object({
     order: z
       .array(z.string().min(1))

@@ -1,9 +1,9 @@
 import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { ProcessInfoSideMenuLifecycle } from "./process-info-side-menu.lifecycle";
 
-export const processInfoFeatureId = "process-info";
+const processInfoFeatureId = "process-info";
 
-export const processInfoSideMenuFeatureDefinition = {
+const processInfoSideMenuFeatureDefinition = {
   id: processInfoFeatureId,
   title: "Process Info",
   icon: "mdiInformation",

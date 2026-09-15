@@ -2,7 +2,7 @@ const PANEL_ITEM_HEIGHT_PX = 25;
 const PANEL_MAX_VISIBLE_ITEMS = 6;
 const PANEL_OUTER_PADDING_AND_BORDER = 10;
 
-export type DropdownPlacement = "below" | "above";
+type DropdownPlacement = "below" | "above";
 
 export type DropdownPosition = {
   x: number;

@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { SimpleFileAccess } from "@cogno/platform";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 
-export class ConfigFileError extends Error {
+class ConfigFileError extends Error {
   constructor(
     message: string,
     public readonly path: string,

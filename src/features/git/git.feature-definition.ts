@@ -1,9 +1,9 @@
 import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { GitSideMenuLifecycle } from "./git-side-menu.lifecycle";
 
-export const gitFeatureId = "git";
+const gitFeatureId = "git";
 
-export const gitSideMenuFeatureDefinition = {
+const gitSideMenuFeatureDefinition = {
   id: gitFeatureId,
   title: "Git",
   icon: "mdiGit",

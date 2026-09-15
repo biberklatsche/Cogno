@@ -18,7 +18,7 @@ export interface DatabaseExecuteResult {
   lastInsertId: number;
 }
 
-export interface DatabaseTableRecovery {
+interface DatabaseTableRecovery {
   name: string;
   rowsRestored: number;
   error: string | null;
@@ -30,7 +30,7 @@ export interface DatabaseRecoveryReport {
   tables: DatabaseTableRecovery[];
 }
 
-export interface DatabaseLegacyError {
+interface DatabaseLegacyError {
   id: string;
   error: string;
 }

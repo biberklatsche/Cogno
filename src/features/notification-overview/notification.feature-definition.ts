@@ -1,9 +1,9 @@
 import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
 import { NotificationSideMenuLifecycle } from "./notification-side-menu.lifecycle";
 
-export const notificationFeatureId = "notification";
+const notificationFeatureId = "notification";
 
-export const notificationSideMenuFeatureDefinition = {
+const notificationSideMenuFeatureDefinition = {
   id: notificationFeatureId,
   title: "Notification",
   icon: "mdiBell",

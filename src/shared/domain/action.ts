@@ -22,7 +22,7 @@ export type ActionContextContract = {
 };
 
 /** One default keybinding for an action: the combo plus its scope flags. */
-export interface ActionKeybindingDefaultContract {
+interface ActionKeybindingDefaultContract {
   readonly combo: string;
   /** Fires even while the terminal has focus (the `always:` scope). */
   readonly always?: boolean;
@@ -34,7 +34,7 @@ export interface ActionKeybindingDefaultContract {
  * The default keybindings of an action per platform. `default` covers windows
  * and linux (which share bindings); `macos` overrides only where it differs.
  */
-export interface ActionDefaultKeysContract {
+interface ActionDefaultKeysContract {
   readonly default: ReadonlyArray<ActionKeybindingDefaultContract>;
   readonly macos?: ReadonlyArray<ActionKeybindingDefaultContract>;
 }

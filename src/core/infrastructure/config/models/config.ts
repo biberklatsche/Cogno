@@ -1,36 +1,23 @@
 import { ApplicationSettingsSectionDefinitionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
 import { AutocompleteSettingsSchema } from "./autocomplete-settings";
-import { ClipboardConfig, ClipboardConfigSchema } from "./clipboard-config";
+import { ClipboardConfigSchema } from "./clipboard-config";
 import { Color, ColorSchema } from "./color-config";
-import { Cursor, CursorSchema } from "./cursor-config";
-import { Font, FontSchema } from "./font-config";
+import { CursorSchema } from "./cursor-config";
+import { FontSchema } from "./font-config";
 import { ImageSchema } from "./image-config";
-import { Keybinding, KeybindsSchema } from "./keybind-config";
+import { KeybindsSchema } from "./keybind-config";
 import { MenuSchema } from "./menu-config";
 import { NotificationSettingsSchema } from "./notification-settings";
-import { Padding, PaddingSchema } from "./padding-config";
+import { PaddingSchema } from "./padding-config";
 import { PromptConfigSchema } from "./prompt-config";
-import { Scrollbar, ScrollbarSchema } from "./scrollbar-config";
-import { Selection, SelectionSchema } from "./selection-config";
-import { FeatureMode, HexColor } from "./shared";
-import { ShellConfig, ShellConfigSchema, ShellType } from "./shell-config";
+import { ScrollbarSchema } from "./scrollbar-config";
+import { SelectionSchema } from "./selection-config";
+import { FeatureMode } from "./shared";
+import { ShellConfigSchema, ShellType } from "./shell-config";
 import { TerminalSettingsSchema } from "./terminal-settings";
 
-export {
-  ClipboardConfig,
-  Color,
-  Cursor,
-  FeatureMode,
-  Font,
-  HexColor,
-  Keybinding,
-  Padding,
-  Scrollbar,
-  Selection,
-  ShellConfig,
-  ShellType,
-};
+export { Color, FeatureMode, ShellType };
 
 export const HTTP_SERVER_DEFAULTS = {
   enabled: true,
@@ -38,7 +25,7 @@ export const HTTP_SERVER_DEFAULTS = {
   auto_next_port: true,
 } as const;
 
-export const HttpServerSchema = z.object({
+const HttpServerSchema = z.object({
   enabled: z
     .boolean()
     .optional()

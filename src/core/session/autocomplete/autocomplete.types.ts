@@ -3,7 +3,6 @@ import {
   AutocompleteQueryContextContract,
   AutocompleteSuggestionContract,
 } from "@cogno/shared/contributions";
-import { ShellContextContract } from "@cogno/shared/domain";
 
 export type AutocompleteMatchRange = AutocompleteMatchRangeContract;
 export type AutocompleteSuggestion = AutocompleteSuggestionContract;

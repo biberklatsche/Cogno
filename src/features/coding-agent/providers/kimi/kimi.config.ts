@@ -2,7 +2,7 @@ import { AgentStatus } from "@cogno/shared/domain";
 
 export type KimiHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 
-export type KimiHook = {
+type KimiHook = {
   event: string;
   command: string;
   matcher?: string;
