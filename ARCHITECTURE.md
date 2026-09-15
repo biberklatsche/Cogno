@@ -3,12 +3,9 @@
 Diese Datei beschreibt die Architektur von Cogno. Sie ist die einzige Quelle
 der Wahrheit; wo Code ihr widerspricht, ist der Code falsch oder die Datei
 wird geändert — nicht stillschweigend beides nebeneinander gelassen.
-Grundlage ist die Bestandsaufnahme in `.claude/plans/capability-inventory.md`.
 
-Die Migration in das Ziel-Layout (Umsetzungsplan
-`.claude/plans/umsetzungsplan.md`, Schritte 0–29) ist **abgeschlossen**; der Code
-liegt vollständig unter `shared/`, `platform/`, `core/`, `features/` und
-`bootstrap/`.
+Der Code liegt vollständig im Ziel-Layout unter `shared/`, `platform/`, `core/`,
+`features/` und `bootstrap/`, erzwungen durch `pnpm lint:architecture`.
 
 ---
 
