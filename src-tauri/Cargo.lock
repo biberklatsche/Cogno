@@ -9,18 +9,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
-name = "aes"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e8b47f52ea9bae42228d07ec09eb676433d7c4ed1ebdf0f1d1c29ed446f1ab8"
-dependencies = [
- "cfg-if",
- "cipher",
- "cpufeatures",
- "opaque-debug",
-]
-
-[[package]]
 name = "ahash"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -434,16 +422,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "block-modes"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cb03d1bed155d89dce0f845b7899b18a9a163e148fd004e1c28421a783e2d8e"
-dependencies = [
- "block-padding",
- "cipher",
-]
-
-[[package]]
 name = "block-padding"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -711,15 +689,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cipher"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ee52072ec15386f770805afd189a01c8841be8696bed250fa2f13c4c0d6dfb7"
-dependencies = [
- "generic-array",
-]
-
-[[package]]
 name = "clap"
 version = "4.5.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -772,17 +741,13 @@ dependencies = [
 name = "cogno"
 version = "0.4.0"
 dependencies = [
- "aes",
- "block-modes",
  "block-padding",
- "cipher",
  "clap",
  "cogno_tauri_core",
  "dirs",
  "font-kit",
  "hex",
  "portable-pty",
- "rand 0.8.5",
  "ring 0.16.20",
  "serde",
  "serde_json",
@@ -807,12 +772,9 @@ dependencies = [
 name = "cogno_tauri_core"
 version = "0.1.0"
 dependencies = [
- "aes",
  "axum",
  "base64 0.22.1",
- "block-modes",
  "block-padding",
- "cipher",
  "clap",
  "dirs",
  "font-kit",
@@ -822,7 +784,6 @@ dependencies = [
  "log",
  "notify-rust",
  "portable-pty",
- "rand 0.8.5",
  "reqwest 0.12.28",
  "ring 0.16.20",
  "rusqlite",
@@ -3386,12 +3347,6 @@ name = "once_cell_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
-
-[[package]]
-name = "opaque-debug"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "open"
