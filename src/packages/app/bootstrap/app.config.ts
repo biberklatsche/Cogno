@@ -6,7 +6,6 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
-import { ConfigBootstrapAdapter } from "@cogno/app/config/config-bootstrap.adapter";
 import { features } from "@cogno/app/features";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/core/api/application-configuration-port.adapter.service";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
@@ -34,6 +33,7 @@ import { AboutDialogAdapterService } from "@cogno/core/workbench/about/about-dia
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
+import { ConfigBootstrapAdapter } from "@cogno/core/workbench/config-bootstrap/config-bootstrap.adapter";
 import { ErrorReportingRuntimeService } from "@cogno/core/workbench/error/error-reporting-runtime.service";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
