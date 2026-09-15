@@ -20,9 +20,13 @@ type NotificationChannelRegistryPort = Pick<NotificationChannelRegistry, "getCha
 describe("NotificationDispatchService", () => {
   let appBus: AppBus;
   let configService: ConfigServiceMock;
-  let dispatchNotificationMock: ReturnType<typeof vi.fn>;
-  let startReceivingRepliesMock: ReturnType<typeof vi.fn>;
-  let stopReceivingRepliesMock: ReturnType<typeof vi.fn>;
+  let dispatchNotificationMock: ReturnType<typeof vi.fn<NotificationChannelContract["dispatch"]>>;
+  let startReceivingRepliesMock: ReturnType<
+    typeof vi.fn<NonNullable<NotificationReplyChannelContract["startReceivingReplies"]>>
+  >;
+  let stopReceivingRepliesMock: ReturnType<
+    typeof vi.fn<NonNullable<NotificationReplyChannelContract["stopReceivingReplies"]>>
+  >;
 
   beforeEach(() => {
     appBus = new AppBus();
@@ -46,9 +50,11 @@ describe("NotificationDispatchService", () => {
         },
       },
     } as Config);
-    dispatchNotificationMock = vi.fn();
-    startReceivingRepliesMock = vi.fn();
-    stopReceivingRepliesMock = vi.fn();
+    dispatchNotificationMock = vi.fn<NotificationChannelContract["dispatch"]>();
+    startReceivingRepliesMock =
+      vi.fn<NonNullable<NotificationReplyChannelContract["startReceivingReplies"]>>();
+    stopReceivingRepliesMock =
+      vi.fn<NonNullable<NotificationReplyChannelContract["stopReceivingReplies"]>>();
   });
 
   it("dispatches notifications only to enabled channels", () => {
@@ -189,8 +195,12 @@ function createReplyNotificationChannel({
     notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract,
   ) => void;
   readonly id: string;
-  readonly startReceivingReplies: () => void;
-  readonly stopReceivingReplies: () => void;
+  readonly startReceivingReplies: NonNullable<
+    NotificationReplyChannelContract["startReceivingReplies"]
+  >;
+  readonly stopReceivingReplies: NonNullable<
+    NotificationReplyChannelContract["stopReceivingReplies"]
+  >;
 }): NotificationReplyChannelContract {
   return {
     ...createNotificationChannel({ id, dispatch }),

@@ -20,10 +20,7 @@ export default defineConfig({
       "src/core/**/*.spec.ts",
       "src/bootstrap/**/*.spec.ts",
     ],
-    exclude: [
-      "src/core/session/autocomplete/spec/imported/commands/**/*.spec.ts",
-      "src/shared/ui/icons/icon/icon.component.spec.ts",
-    ],
+    exclude: ["src/core/session/autocomplete/spec/imported/commands/**/*.spec.ts"],
     coverage: {
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",

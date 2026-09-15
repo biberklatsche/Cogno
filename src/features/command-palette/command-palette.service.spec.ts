@@ -2,13 +2,13 @@ import type { ActionEntryContract } from "@cogno/shared/domain";
 import type { ActionCatalogContract, ActionDispatcherContract } from "@cogno/shared/ports";
 import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { BehaviorSubject } from "rxjs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
 import { CommandPaletteService } from "./command-palette.service";
 
 describe("CommandPaletteService", () => {
   let service: CommandPaletteService;
-  let dispatchActionMock: ReturnType<typeof vi.fn>;
+  let dispatchActionMock: Mock<ActionDispatcherContract["dispatchAction"]>;
   let actionEntriesSubject: BehaviorSubject<ReadonlyArray<ActionEntryContract>>;
 
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe("CommandPaletteService", () => {
     const actionCatalog: ActionCatalogContract = {
       actionEntries$: actionEntriesSubject.asObservable(),
     };
-    const actionDispatcher: ActionDispatcherContract = {
+    const actionDispatcher: Pick<ActionDispatcherContract, "dispatchAction"> = {
       dispatchAction: dispatchActionMock,
     };
 

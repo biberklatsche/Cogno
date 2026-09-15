@@ -1,6 +1,9 @@
+import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceService } from "./workspace.service";
 import { WorkspaceSideMenuLifecycle } from "./workspace-side-menu.lifecycle";
+
+type SideMenuFeatureHandle = SideMenuFeatureHandleContract<string>;
 
 describe("WorkspaceSideMenuLifecycle", () => {
   let workspaceService: Pick<
@@ -8,9 +11,14 @@ describe("WorkspaceSideMenuLifecycle", () => {
     "initializeSelection" | "restoreSelectedWorkspace" | "selectNext"
   >;
   let handle: {
-    close: ReturnType<typeof vi.fn>;
-    registerKeybindListener: ReturnType<typeof vi.fn>;
-    unregisterKeybindListener: ReturnType<typeof vi.fn>;
+    close: ReturnType<typeof vi.fn<SideMenuFeatureHandle["close"]>>;
+    registerKeybindListener: ReturnType<
+      typeof vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>
+    >;
+    unregisterKeybindListener: ReturnType<
+      typeof vi.fn<SideMenuFeatureHandle["unregisterKeybindListener"]>
+    >;
+    updateIcon: ReturnType<typeof vi.fn<SideMenuFeatureHandle["updateIcon"]>>;
   };
   let lifecycle: ReturnType<WorkspaceSideMenuLifecycle["create"]>;
 
@@ -21,26 +29,27 @@ describe("WorkspaceSideMenuLifecycle", () => {
       selectNext: vi.fn(),
     };
     handle = {
-      close: vi.fn(),
-      registerKeybindListener: vi.fn(),
-      unregisterKeybindListener: vi.fn(),
+      close: vi.fn<SideMenuFeatureHandle["close"]>(),
+      registerKeybindListener: vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>(),
+      unregisterKeybindListener: vi.fn<SideMenuFeatureHandle["unregisterKeybindListener"]>(),
+      updateIcon: vi.fn<SideMenuFeatureHandle["updateIcon"]>(),
     };
 
     lifecycle = new WorkspaceSideMenuLifecycle(workspaceService as WorkspaceService).create(handle);
   });
 
   it("initializes selection on open and unregisters on off, blur and close", () => {
-    lifecycle.onOpen();
-    lifecycle.onModeChange("off");
-    lifecycle.onBlur();
-    lifecycle.onClose();
+    lifecycle.onOpen?.();
+    lifecycle.onModeChange?.("off");
+    lifecycle.onBlur?.();
+    lifecycle.onClose?.();
 
     expect(workspaceService.initializeSelection).toHaveBeenCalled();
     expect(handle.unregisterKeybindListener).toHaveBeenCalledTimes(3);
   });
 
   it("registers keyboard handling for navigation, closing and restore", async () => {
-    lifecycle.onFocus();
+    lifecycle.onFocus?.();
 
     const listener = vi.mocked(handle.registerKeybindListener).mock.calls[0]?.[1];
     expect(listener).toBeTypeOf("function");

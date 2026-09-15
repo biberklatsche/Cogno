@@ -1,15 +1,31 @@
 import type { DestroyRef } from "@angular/core";
+import { CliConfigOverrides } from "@cogno/platform/cli-config-overrides";
+import { DefaultConfig } from "@cogno/platform/default-config";
+import { Fs } from "@cogno/platform/fs";
+import { OsPlatform } from "@cogno/platform/os";
+import { Paths } from "@cogno/platform/path";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Environment } from "../environment/environment";
 import { RealConfigService } from "./config.service";
 import { Config } from "./models/config";
+import { PromptConfig } from "./models/prompt-config";
+import { ShellConfig } from "./models/shell-config";
 
 function createService(config?: Partial<Config>): RealConfigService {
   const destroyRef = {
     onDestroy: vi.fn(),
   } as unknown as DestroyRef;
 
-  const service = new RealConfigService(destroyRef);
+  const service = new RealConfigService(
+    {} as unknown as DefaultConfig,
+    {} as unknown as CliConfigOverrides,
+    destroyRef,
+    {} as unknown as OsPlatform,
+    {} as unknown as Paths,
+    {} as unknown as Environment,
+    {} as unknown as Fs,
+  );
   if (config) {
     (service as unknown as { _config: BehaviorSubject<Config | undefined> })._config.next(
       config as Config,
@@ -37,7 +53,7 @@ describe("RealConfigService", () => {
             path: "/bin/zsh",
           },
         },
-      },
+      } as unknown as ShellConfig,
     });
 
     expect(service.getShellProfileOrDefault("bash")).toEqual({
@@ -57,7 +73,7 @@ describe("RealConfigService", () => {
             path: "/usr/bin/fish",
           },
         },
-      },
+      } as unknown as ShellConfig,
     });
 
     expect(fallbackService.getShellProfileOrDefault()).toEqual({
@@ -85,7 +101,7 @@ describe("RealConfigService", () => {
             path: "/bin/zsh",
           },
         },
-      },
+      } as unknown as ShellConfig,
     });
 
     expect(service.getOrderedShellProfiles()).toEqual([
@@ -134,7 +150,7 @@ describe("RealConfigService", () => {
             type: "git_branch",
           },
         },
-      },
+      } as unknown as PromptConfig,
     });
 
     expect(service.getPromptSegments()).toEqual([
@@ -166,7 +182,7 @@ describe("RealConfigService", () => {
     const profilelessService = createService({
       shell: {
         profiles: {},
-      },
+      } as unknown as ShellConfig,
     });
     expect(() => profilelessService.getShellProfileOrDefault()).toThrow(
       "No shell profiles defined!",

@@ -1,5 +1,5 @@
 import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { TerminalSearchService } from "./terminal-search.service";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
 
@@ -17,9 +17,13 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     | "revealSelectedSearchResult"
   >;
   let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
-  let registerKeybindListenerMock: ReturnType<typeof vi.fn>;
-  let closeMock: ReturnType<typeof vi.fn>;
-  let unregisterKeybindListenerMock: ReturnType<typeof vi.fn>;
+  let registerKeybindListenerMock: Mock<
+    SideMenuFeatureHandleContract<string>["registerKeybindListener"]
+  >;
+  let closeMock: Mock<SideMenuFeatureHandleContract<string>["close"]>;
+  let unregisterKeybindListenerMock: Mock<
+    SideMenuFeatureHandleContract<string>["unregisterKeybindListener"]
+  >;
 
   beforeEach(() => {
     registerKeybindListenerMock = vi.fn();

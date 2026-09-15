@@ -15,7 +15,7 @@ describe("NotificationSideComponent", () => {
   });
 
   it("delegates remove, clear and open target actions to the state service", () => {
-    const target: NotificationTargetContract = { workspaceId: "workspace-1" };
+    const target: NotificationTargetContract = { workspaceId: "workspace-1", tabId: "tab-1" };
     const notificationCenterStateService: Pick<
       NotificationCenterStateService,
       "notifications" | "remove" | "clear" | "openTarget"
@@ -29,10 +29,10 @@ describe("NotificationSideComponent", () => {
       notificationCenterStateService as NotificationCenterStateService,
     );
 
-    component.remove("notification-1");
+    component.remove(1);
     component.clearAll();
     component.openTarget({
-      id: "notification-1",
+      id: 1,
       header: "Open target",
       type: "info",
       timestamp: new Date(),
@@ -40,14 +40,14 @@ describe("NotificationSideComponent", () => {
       target,
     });
     component.openTarget({
-      id: "notification-2",
+      id: 2,
       header: "Ignore target",
       type: "info",
       timestamp: new Date(),
       count: 1,
     });
 
-    expect(notificationCenterStateService.remove).toHaveBeenCalledWith("notification-1");
+    expect(notificationCenterStateService.remove).toHaveBeenCalledWith(1);
     expect(notificationCenterStateService.clear).toHaveBeenCalledTimes(1);
     expect(notificationCenterStateService.openTarget).toHaveBeenCalledTimes(1);
     expect(notificationCenterStateService.openTarget).toHaveBeenCalledWith(target);
@@ -61,7 +61,7 @@ describe("NotificationSideComponent", () => {
       remove: vi.fn(),
       clear: vi.fn(),
       openTarget: vi.fn(),
-    } as NotificationCenterStateService);
+    } as unknown as NotificationCenterStateService);
 
     expect(component.toRelativeTime(new Date("2026-05-07T11:59:45.000Z"))).toBe("just now");
     expect(component.toRelativeTime(new Date("2026-05-07T11:55:00.000Z"))).toBe("5m ago");

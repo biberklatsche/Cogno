@@ -65,9 +65,9 @@ describe("TerminalSearchHandler", () => {
       if (lineIndex === 1) return TerminalMockFactory.createLine("needle one");
       if (lineIndex === 2) return TerminalMockFactory.createLine("needle two");
       if (lineIndex === 3) return TerminalMockFactory.createLine("needle three");
-      return null;
+      return undefined;
     });
-    terminalMock.buffer.active.length = 4;
+    (terminalMock.buffer.active as { length: number }).length = 4;
 
     terminalSearchHandler.search({
       terminalId: "terminal-1",
@@ -100,9 +100,9 @@ describe("TerminalSearchHandler", () => {
     vi.mocked(terminalMock.buffer.active.getLine).mockImplementation((lineIndex: number) => {
       if (lineIndex === 0) return TerminalMockFactory.createLine("needle one");
       if (lineIndex === 1) return TerminalMockFactory.createLine("needle two");
-      return null;
+      return undefined;
     });
-    terminalMock.buffer.active.length = 2;
+    (terminalMock.buffer.active as { length: number }).length = 2;
 
     terminalSearchHandler.search({
       terminalId: "terminal-1",
@@ -122,9 +122,9 @@ describe("TerminalSearchHandler", () => {
     vi.mocked(terminalMock.buffer.active.getLine).mockImplementation((lineIndex: number) => {
       if (lineIndex === 0) return firstLine;
       if (lineIndex === 1) return secondLine;
-      return null;
+      return undefined;
     });
-    terminalMock.buffer.active.length = 2;
+    (terminalMock.buffer.active as { length: number }).length = 2;
 
     terminalSearchHandler.search({
       terminalId: "terminal-1",
@@ -153,9 +153,9 @@ describe("TerminalSearchHandler", () => {
       if (lineIndex === 0) return TerminalMockFactory.createLine("needle one");
       if (lineIndex === 1) return TerminalMockFactory.createLine("needle two");
       if (lineIndex === 2) return TerminalMockFactory.createLine("needle three");
-      return null;
+      return undefined;
     });
-    terminalMock.buffer.active.length = 3;
+    (terminalMock.buffer.active as { length: number }).length = 3;
 
     terminalSearchHandler.search({
       terminalId: "terminal-1",
@@ -185,9 +185,9 @@ describe("TerminalSearchHandler", () => {
       if (lineIndex === 0) return TerminalMockFactory.createLine("needle one");
       if (lineIndex === 1) return TerminalMockFactory.createLine("needle two");
       if (lineIndex === 2) return TerminalMockFactory.createLine("needle three");
-      return null;
+      return undefined;
     });
-    terminalMock.buffer.active.length = 3;
+    (terminalMock.buffer.active as { length: number }).length = 3;
 
     terminalSearchHandler.search({
       terminalId: "terminal-1",

@@ -3,7 +3,11 @@ import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown
 import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
+import type {
+  AutocompleteSuggestion,
+  CommandQueryContext,
+  QueryContext,
+} from "./autocomplete.types";
 import type { SuggestorRegistry } from "./suggestor-registry";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
@@ -30,6 +34,10 @@ class FakeStateManager {
     isCommandRunning: false,
     isInFullScreenMode: false,
     isPaneMaximized: false,
+    scrolledLinesFromBottom: 0,
+    sessionCapabilities: undefined,
+    contextRevision: 0,
+    isContextKnown: true,
     commandStartTime: undefined,
     input: { text: "git s", cursorIndex: 5, maxCursorIndex: 5 },
     cwd: "/Users/larswolfram/projects",
@@ -548,7 +556,7 @@ describe("TerminalAutocompleteService", () => {
     service.registerSuggestor(
       new DummySuggestor(async (context) => {
         expect(context.mode).toBe("command");
-        expect(context.query).toBe("");
+        expect((context as CommandQueryContext).query).toBe("");
         return [makeSuggestion("git"), makeSuggestion("npm test")];
       }),
     );

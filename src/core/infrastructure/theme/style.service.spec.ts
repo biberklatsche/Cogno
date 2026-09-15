@@ -34,7 +34,7 @@ describe("StyleService", () => {
   let configService: ConfigServiceMock;
   const destroyRef = getDestroyRef();
 
-  const baseConfig: Config = {
+  const baseConfig = {
     color: {
       background: "1e1e1e",
       foreground: "cccccc",
@@ -73,7 +73,7 @@ describe("StyleService", () => {
     menu: {
       opacity: 100,
     },
-  };
+  } satisfies Config;
 
   beforeEach(() => {
     vi.clearAllMocks();

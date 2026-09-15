@@ -19,7 +19,7 @@ describe("ColorSelectComponent", () => {
         white: "ffffff",
         grey: "999999",
       },
-    });
+    } as unknown as Config);
 
     const component = runInInjectionContext(Injector.create({ providers: [] }), () => {
       return new ColorSelectComponent({

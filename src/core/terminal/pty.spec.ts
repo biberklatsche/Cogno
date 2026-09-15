@@ -39,7 +39,10 @@ describe("Pty", () => {
 
   /** The output listener `Pty` passed to the n-th `transport.spawn`. */
   function outputListener(index = 0): PtyOutputListenerContract {
-    return vi.mocked(transport.spawn).mock.calls[index][1];
+    const calls = vi.mocked(transport.spawn).mock.calls as unknown as Parameters<
+      PtyTransport["spawn"]
+    >[];
+    return calls[index][1];
   }
 
   /** Makes the next `transport.spawn` stay pending until the returned resolver is called. */

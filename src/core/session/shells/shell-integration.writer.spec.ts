@@ -2,6 +2,7 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Shells } from "@cogno/platform/shells";
+import { ShellSupportDefinitionContract } from "@cogno/shared/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ShellIntegrationWriter } from "./shell-integration.writer";
 
@@ -79,7 +80,7 @@ describe("ShellIntegrationWriter", () => {
           { relativePath: "shared/env.sh", content: "zsh shared" },
         ],
       },
-    ]);
+    ] as unknown as ReadonlyArray<ShellSupportDefinitionContract>);
 
     expect(mkdirSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration", { recursive: true });
     expect(mkdirSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/logs", { recursive: true });

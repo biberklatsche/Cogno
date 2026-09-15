@@ -1,3 +1,4 @@
+import type { WritableSignal } from "@angular/core";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ActionFired, type ActionFiredEvent } from "@cogno/core/workbench/bus/action.models";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
@@ -39,6 +40,7 @@ describe("TabListService", () => {
             shell_type: "PowerShell",
             inject_cogno_cli: true,
             enable_shell_integration: true,
+            load_user_rc: true,
           },
         },
       },
@@ -414,7 +416,9 @@ describe("TabListService", () => {
   describe("Rename Logic", () => {
     it("should commit rename", () => {
       service.addTab({ id: "t1", systemTitle: "Old", isActive: true, activeShellType: "unknown" });
-      service._showRename.set("t1");
+      (service as unknown as { _showRename: WritableSignal<string | undefined> })._showRename.set(
+        "t1",
+      );
 
       service.commitRename("New Name");
 
@@ -428,7 +432,9 @@ describe("TabListService", () => {
     it("should close rename and focus terminal", () => {
       const publishSpy = vi.spyOn(bus, "publish");
       service.addTab({ id: "t1", systemTitle: "T1", isActive: true, activeShellType: "unknown" });
-      service._showRename.set("t1");
+      (service as unknown as { _showRename: WritableSignal<string | undefined> })._showRename.set(
+        "t1",
+      );
 
       service.closeRename();
 

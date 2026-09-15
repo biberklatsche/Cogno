@@ -9,6 +9,13 @@ function createContext(backendOs: "linux" | "windows"): SpecProviderContext {
     command: "ssh",
     args: [],
     queryContext: {
+      mode: "command",
+      beforeCursor: "ssh ",
+      inputText: "ssh ",
+      cursorIndex: 4,
+      replaceStart: 4,
+      replaceEnd: 4,
+      query: "ssh",
       cwd: "/workspace",
       shellContext: {
         backendOs,
@@ -29,6 +36,11 @@ describe("SshHostsSpecProvider", () => {
       exists: vi.fn(),
       readTextFile: vi.fn(),
       resolvePath: vi.fn((basePath: string, relativePath: string) => `${basePath}/${relativePath}`),
+      normalizePath: vi.fn((path: string) => path),
+      list: vi.fn(),
+      toDisplayPath: vi.fn((path: string) => path),
+      appendPathSeparator: vi.fn((path: string) => `${path}/`),
+      toRelativePath: vi.fn((path: string) => path),
     };
     commandRunner = {
       run: vi.fn(),

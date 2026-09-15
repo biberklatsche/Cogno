@@ -9,6 +9,13 @@ function createContext(backendOs: "linux" | "windows"): SpecProviderContext {
     command: "kill",
     args: [],
     queryContext: {
+      mode: "command",
+      beforeCursor: "kill ",
+      inputText: "kill ",
+      cursorIndex: 5,
+      replaceStart: 5,
+      replaceEnd: 5,
+      query: "kill",
       cwd: "/workspace",
       shellContext: {
         backendOs,

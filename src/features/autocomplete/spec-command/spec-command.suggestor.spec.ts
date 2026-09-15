@@ -7,7 +7,12 @@ import { CommandSpecRegistry } from "./spec/command-spec.registry";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
-import type { CommandSpec, SpecSuggestionProvider } from "./spec/spec.types";
+import type {
+  CommandSpec,
+  SpecProvidedSuggestion,
+  SpecProviderBinding,
+  SpecSuggestionProvider,
+} from "./spec/spec.types";
 import { createCommandSpecsFixture } from "./spec/testing/command-specs.fixture";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
 
@@ -89,8 +94,6 @@ describe("SpecCommandSuggestor", () => {
   it("includes top-level command description from spec metadata", async () => {
     const railsSpec: CommandSpec = {
       name: "rails",
-      source: "fig",
-      sourceUrl: "https://github.com/withfig/autocomplete/tree/master/src/rails.ts",
       description: "Ruby on Rails CLI",
     };
     const suggestor = new SpecCommandSuggestor(
@@ -376,7 +379,7 @@ describe("SpecCommandSuggestor", () => {
       const reportAutocompleteProviderIssue = vi.fn();
       const slowProvider: SpecSuggestionProvider = {
         id: "slow-provider",
-        suggest: vi.fn(() => new Promise(() => undefined)),
+        suggest: vi.fn(() => new Promise<readonly SpecProvidedSuggestion[]>(() => undefined)),
       };
       const spec: CommandSpec = {
         name: "tool",
@@ -384,7 +387,7 @@ describe("SpecCommandSuggestor", () => {
           {
             name: "select",
             args: { name: "item" },
-            providers: [{ providerId: "slow-provider" }],
+            providers: [{ providerId: "slow-provider" } as unknown as SpecProviderBinding],
           },
         ],
       };

@@ -1,3 +1,4 @@
+import type { Signal } from "@angular/core";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
@@ -10,10 +11,15 @@ import { SelectedWorkspaceHeaderComponent } from "./selected-workspace-header.co
 
 type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
+type SelectedWorkspaceHeaderInternals = {
+  activeWorkspace: Signal<WorkspaceEntryContract | undefined>;
+  openWorkspaceMenu: (event: Event) => void;
+};
+
 describe("SelectedWorkspaceHeaderComponent", () => {
   let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
-  let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
-  let openAtElementMock: ReturnType<typeof vi.fn>;
+  let restoreWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["restoreWorkspace"]>>;
+  let openAtElementMock: ReturnType<typeof vi.fn<ContextMenuOverlayService["openAtElement"]>>;
   let component: SelectedWorkspaceHeaderComponent;
 
   beforeEach(() => {
@@ -22,10 +28,12 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       { id: "WS-2", name: "Workspace Two", color: "red", isActive: false, isOpen: true },
       { id: "WS-3", name: "Workspace Three", isActive: false, isOpen: false },
     ]);
-    restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
-    openAtElementMock = vi.fn();
+    restoreWorkspaceMock = vi
+      .fn<WorkspaceHostService["restoreWorkspace"]>()
+      .mockResolvedValue(undefined);
+    openAtElementMock = vi.fn<ContextMenuOverlayService["openAtElement"]>();
 
-    const workspaceHostPort: WorkspaceHostService = {
+    const workspaceHostPort = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
       saveWorkspace: vi.fn().mockResolvedValue(undefined),
@@ -35,7 +43,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
-    };
+    } as unknown as WorkspaceHostService;
     const contextMenuOverlayService: ContextMenuOverlayPort = {
       openAtElement: openAtElementMock,
     };
@@ -91,7 +99,9 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true, isOpen: true },
     ]);
 
-    expect(component.activeWorkspace()).toBeUndefined();
+    expect(
+      (component as unknown as SelectedWorkspaceHeaderInternals).activeWorkspace(),
+    ).toBeUndefined();
   });
 
   it("shows the default workspace when another workspace is open", () => {
@@ -100,7 +110,9 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       { id: "WS-1", name: "Workspace One", isActive: false, isOpen: true },
     ]);
 
-    expect(component.activeWorkspace()?.name).toBe("Default Workspace");
+    expect((component as unknown as SelectedWorkspaceHeaderInternals).activeWorkspace()?.name).toBe(
+      "Default Workspace",
+    );
     expect((component as any).hasWorkspaceMenu()).toBe(true);
   });
 
@@ -109,7 +121,9 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       { id: "WS-1", name: "Workspace One", isActive: true, isOpen: true, isDirty: true },
     ]);
 
-    expect(component.activeWorkspace()?.isDirty).toBe(true);
+    expect(
+      (component as unknown as SelectedWorkspaceHeaderInternals).activeWorkspace()?.isDirty,
+    ).toBe(true);
   });
 
   it("includes the default workspace in the header menu when multiple workspaces are open", () => {
@@ -120,11 +134,11 @@ describe("SelectedWorkspaceHeaderComponent", () => {
     ]);
 
     const button = document.createElement("button");
-    component.openWorkspaceMenu({
+    (component as unknown as SelectedWorkspaceHeaderInternals).openWorkspaceMenu({
       currentTarget: button,
       preventDefault: vi.fn(),
       stopPropagation: vi.fn(),
-    } as Event);
+    } as unknown as Event);
 
     const menuConfig = openAtElementMock.mock.calls.at(-1)?.[1] as {
       items: Array<{ label: string }>;

@@ -1,4 +1,4 @@
-import { mdiAbTesting, mdiClose, mdiGithub, mdiKeyboardOff, mdiSpiderThread } from "@mdi/js";
+import { mdiAbTesting, mdiClose, mdiGit, mdiLock, mdiRobot } from "@mdi/js";
 import { describe, expect, it } from "vitest";
 import { IconComponent } from "./icon.component";
 
@@ -14,14 +14,14 @@ describe("IconComponent", () => {
     cmp.name = "mdiClose";
     expect(cmp.icon).toBe(mdiClose);
 
-    cmp.name = "mdiGithub";
-    expect(cmp.icon).toBe(mdiGithub);
+    cmp.name = "mdiGit";
+    expect(cmp.icon).toBe(mdiGit);
 
-    cmp.name = "mdiKeyboardOff";
-    expect(cmp.icon).toBe(mdiKeyboardOff);
+    cmp.name = "mdiLock";
+    expect(cmp.icon).toBe(mdiLock);
 
-    cmp.name = "mdiSpiderThread";
-    expect(cmp.icon).toBe(mdiSpiderThread);
+    cmp.name = "mdiRobot";
+    expect(cmp.icon).toBe(mdiRobot);
   });
 
   it("should fall back to mdiAbTesting when given an unknown name", () => {

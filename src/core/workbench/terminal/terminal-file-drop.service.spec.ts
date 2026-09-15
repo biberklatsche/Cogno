@@ -1,13 +1,13 @@
 import type { DestroyRef } from "@angular/core";
+import type { SessionHost } from "@cogno/core/session/host/session-host";
 import { AppWindow } from "@cogno/platform/window";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { TerminalSession } from "./+state/terminal.session";
 import { TerminalFileDropService } from "./terminal-file-drop.service";
 
 describe("TerminalFileDropService", () => {
   let service: TerminalFileDropService;
-  let terminalSession: Pick<TerminalSession, "focus" | "insertPaths">;
+  let terminalSession: Pick<SessionHost, "focus" | "insertPaths">;
   let destroyRef: DestroyRef;
   let appWindowStub: AppWindow;
   let dragDropStream: Subject<unknown>;
@@ -32,7 +32,7 @@ describe("TerminalFileDropService", () => {
     service = new TerminalFileDropService(
       appWindowStub,
       destroyRef,
-      terminalSession as TerminalSession,
+      terminalSession as SessionHost,
     );
   });
 

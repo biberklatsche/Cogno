@@ -10,15 +10,23 @@ import type { WorkspaceHostService } from "./workspace-host.service";
 describe("WorkspaceService", () => {
   let workspaceService: WorkspaceService;
   let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
-  let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
-  let saveWorkspaceMock: ReturnType<typeof vi.fn>;
-  let closeWorkspaceMock: ReturnType<typeof vi.fn>;
-  let reorderWorkspacesMock: ReturnType<typeof vi.fn>;
-  let persistWorkspaceOrderMock: ReturnType<typeof vi.fn>;
-  let openCreateWorkspaceDialogMock: ReturnType<typeof vi.fn>;
-  let openEditWorkspaceDialogMock: ReturnType<typeof vi.fn>;
-  let deleteWorkspaceMock: ReturnType<typeof vi.fn>;
-  let confirmCloseWorkspaceMock: ReturnType<typeof vi.fn>;
+  let restoreWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["restoreWorkspace"]>>;
+  let saveWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["saveWorkspace"]>>;
+  let closeWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["closeWorkspace"]>>;
+  let reorderWorkspacesMock: ReturnType<typeof vi.fn<WorkspaceHostService["reorderWorkspaces"]>>;
+  let persistWorkspaceOrderMock: ReturnType<
+    typeof vi.fn<WorkspaceHostService["persistWorkspaceOrder"]>
+  >;
+  let openCreateWorkspaceDialogMock: ReturnType<
+    typeof vi.fn<WorkspaceHostService["openCreateWorkspaceDialog"]>
+  >;
+  let openEditWorkspaceDialogMock: ReturnType<
+    typeof vi.fn<WorkspaceHostService["openEditWorkspaceDialog"]>
+  >;
+  let deleteWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["deleteWorkspace"]>>;
+  let confirmCloseWorkspaceMock: ReturnType<
+    typeof vi.fn<WorkspaceCloseGuardService["confirmCloseWorkspace"]>
+  >;
 
   beforeEach(() => {
     workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
@@ -27,17 +35,29 @@ describe("WorkspaceService", () => {
       { id: "WS-2", name: "Project Two", color: "red", isActive: false },
     ]);
 
-    restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
-    saveWorkspaceMock = vi.fn().mockResolvedValue(undefined);
-    closeWorkspaceMock = vi.fn().mockResolvedValue(undefined);
-    reorderWorkspacesMock = vi.fn().mockResolvedValue(undefined);
-    persistWorkspaceOrderMock = vi.fn().mockResolvedValue(undefined);
-    openCreateWorkspaceDialogMock = vi.fn();
-    openEditWorkspaceDialogMock = vi.fn();
-    deleteWorkspaceMock = vi.fn().mockResolvedValue(undefined);
-    confirmCloseWorkspaceMock = vi.fn().mockResolvedValue(true);
+    restoreWorkspaceMock = vi
+      .fn<WorkspaceHostService["restoreWorkspace"]>()
+      .mockResolvedValue(undefined);
+    saveWorkspaceMock = vi.fn<WorkspaceHostService["saveWorkspace"]>().mockResolvedValue(undefined);
+    closeWorkspaceMock = vi
+      .fn<WorkspaceHostService["closeWorkspace"]>()
+      .mockResolvedValue(undefined);
+    reorderWorkspacesMock = vi
+      .fn<WorkspaceHostService["reorderWorkspaces"]>()
+      .mockResolvedValue(undefined);
+    persistWorkspaceOrderMock = vi
+      .fn<WorkspaceHostService["persistWorkspaceOrder"]>()
+      .mockResolvedValue(undefined);
+    openCreateWorkspaceDialogMock = vi.fn<WorkspaceHostService["openCreateWorkspaceDialog"]>();
+    openEditWorkspaceDialogMock = vi.fn<WorkspaceHostService["openEditWorkspaceDialog"]>();
+    deleteWorkspaceMock = vi
+      .fn<WorkspaceHostService["deleteWorkspace"]>()
+      .mockResolvedValue(undefined);
+    confirmCloseWorkspaceMock = vi
+      .fn<WorkspaceCloseGuardService["confirmCloseWorkspace"]>()
+      .mockResolvedValue(true);
 
-    const workspaceHostPort: WorkspaceHostService = {
+    const workspaceHostPort = {
       workspaceEntries$: workspaceEntriesSubject.asObservable(),
       restoreWorkspace: restoreWorkspaceMock,
       saveWorkspace: saveWorkspaceMock,
@@ -47,7 +67,7 @@ describe("WorkspaceService", () => {
       openCreateWorkspaceDialog: openCreateWorkspaceDialogMock,
       openEditWorkspaceDialog: openEditWorkspaceDialogMock,
       deleteWorkspace: deleteWorkspaceMock,
-    };
+    } as unknown as WorkspaceHostService;
 
     const workspaceCloseGuard = {
       confirmCloseWorkspace: confirmCloseWorkspaceMock,

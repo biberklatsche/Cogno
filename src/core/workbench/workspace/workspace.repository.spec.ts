@@ -5,22 +5,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("WorkspaceRepository", () => {
   let workspaceRepository: WorkspaceRepository;
-  let executeMock: ReturnType<typeof vi.fn>;
-  let selectMock: ReturnType<typeof vi.fn>;
-  let batchMock: ReturnType<typeof vi.fn>;
+  let executeMock: ReturnType<typeof vi.fn<DatabaseAccessContract["execute"]>>;
+  let selectMock: ReturnType<
+    typeof vi.fn<(query: string, parameters?: ReadonlyArray<unknown>) => Promise<unknown>>
+  >;
+  let batchMock: ReturnType<typeof vi.fn<DatabaseAccessContract["batch"]>>;
 
   function batchedStatements(): DatabaseStatementContract[] {
     return batchMock.mock.calls[0][0] as DatabaseStatementContract[];
   }
 
   beforeEach(() => {
-    executeMock = vi.fn().mockResolvedValue({ rowsAffected: 1, lastInsertId: 0 });
-    selectMock = vi.fn().mockResolvedValue([]);
-    batchMock = vi.fn().mockResolvedValue([]);
+    executeMock = vi
+      .fn<DatabaseAccessContract["execute"]>()
+      .mockResolvedValue({ rowsAffected: 1, lastInsertId: 0 });
+    selectMock = vi
+      .fn<(query: string, parameters?: ReadonlyArray<unknown>) => Promise<unknown>>()
+      .mockResolvedValue([]);
+    batchMock = vi.fn<DatabaseAccessContract["batch"]>().mockResolvedValue([]);
 
     const databaseAccess: DatabaseAccessContract = {
       execute: executeMock,
-      select: selectMock,
+      select: selectMock as DatabaseAccessContract["select"],
       batch: batchMock,
     };
 

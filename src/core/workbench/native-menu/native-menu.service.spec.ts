@@ -3,7 +3,9 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
+import type { TauriMenu } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
+import type { AppWindow } from "@cogno/platform/window";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NativeMenuService } from "./native-menu.service";
 
@@ -23,7 +25,7 @@ const tauriMenuStub = {
     menuItemActionCallbacks.set(config.id, config.action);
     return { kind: "item", ...config };
   }),
-  newSubmenu: vi.fn(async (config: unknown) => ({ kind: "submenu", ...config })),
+  newSubmenu: vi.fn(async (config: Record<string, unknown>) => ({ kind: "submenu", ...config })),
   new: vi.fn(async ({ items }: { items: unknown[] }) => ({
     items,
     setAsAppMenu: vi.fn(async () => undefined),
@@ -63,6 +65,14 @@ describe("NativeMenuService", () => {
           subscribe: vi.fn(),
         } as never;
       },
+      get diagnostics$(): never {
+        throw new Error("not implemented");
+      },
+      get loaded$(): never {
+        throw new Error("not implemented");
+      },
+      load: () => Promise.resolve(),
+      reload: () => Promise.resolve(),
       getShellProfileOrDefault: vi.fn(),
       getOrderedShellProfiles: vi.fn(),
       getShellProfileByShortcutIndex: vi.fn(),
@@ -135,6 +145,7 @@ describe("NativeMenuService", () => {
     const publishedEvents: unknown[] = [];
     vi.spyOn(appBus, "publish").mockImplementation((event) => {
       publishedEvents.push(event);
+      return { propagationStopped: false, defaultPrevented: false };
     });
 
     await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();
@@ -168,6 +179,7 @@ describe("NativeMenuService", () => {
     const publishedEvents: unknown[] = [];
     vi.spyOn(appBus, "publish").mockImplementation((event) => {
       publishedEvents.push(event);
+      return { propagationStopped: false, defaultPrevented: false };
     });
 
     await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();

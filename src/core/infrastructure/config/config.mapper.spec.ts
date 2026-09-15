@@ -4,6 +4,13 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { ConfigMapper } from "./config.mapper";
 import { featureSettingsExtensionFixture } from "./feature-settings.extension.fixture";
 
+type FeatureSettings = {
+  git?: { mode?: string };
+  coding_agents?: { mode?: string };
+  workspace?: { mode?: string };
+  notification_overview?: { overview?: { max_items?: number } };
+};
+
 const extensions = [featureSettingsExtensionFixture];
 let defaultText = "";
 let DEFAULTS: any;
@@ -37,7 +44,7 @@ describe("ConfigMapper", () => {
     expect(parsed.cursor?.blink).toBe(false);
 
     // Array parsing (non-keybind arrays are replaced)
-    expect(parsed.shell?.profiles.default?.args).toEqual(["--login", "-i"]);
+    expect(parsed.shell?.profiles["default"]?.args).toEqual(["--login", "-i"]);
 
     // Keybind array concatenates: defaults first, then user values
     const defaultKeybindCount = DEFAULTS.keybind.length;
@@ -126,8 +133,8 @@ describe("ConfigMapper", () => {
     const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Shell args should be replaced, not concatenated with defaults
-    expect(config.shell?.profiles.default?.args).toEqual(["--custom", "--args"]);
-    expect(config.shell?.profiles.default?.args?.length).toBe(2);
+    expect(config.shell?.profiles["default"]?.args).toEqual(["--custom", "--args"]);
+    expect(config.shell?.profiles["default"]?.args?.length).toBe(2);
   });
 
   it("empty array [] is parsed correctly, not as [undefined]", () => {
@@ -140,8 +147,8 @@ describe("ConfigMapper", () => {
     const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
 
     // Empty array should be [], not [undefined]
-    expect(config.shell?.profiles.default?.args).toEqual([]);
-    expect(config.shell?.profiles.default?.args?.length).toBe(0);
+    expect(config.shell?.profiles["default"]?.args).toEqual([]);
+    expect(config.shell?.profiles["default"]?.args?.length).toBe(0);
   });
 
   it("adds platform-specific font fallbacks to font.family", () => {
@@ -197,7 +204,10 @@ describe("ConfigMapper", () => {
     expect(
       result.config.terminal?.notifications?.long_running_command?.minimum_duration_seconds,
     ).toBe(15);
-    expect(result.config.feature?.notification_overview?.overview?.max_items).toBe(42);
+    expect(
+      (result.config["feature"] as FeatureSettings | undefined)?.notification_overview?.overview
+        ?.max_items,
+    ).toBe(42);
   });
 
   it("parses terminal decoration color settings", () => {
@@ -239,7 +249,7 @@ describe("ConfigMapper", () => {
     expect(result.config.scrollbar?.slider_hover_color).toBe("123456");
     expect(result.config.selection?.background_color).toBe("12345678");
     expect(result.config.terminal?.decoration?.color?.border).toBe("123");
-    expect(result.config.prompt?.segment.user?.background).toBe("050505");
+    expect(result.config.prompt?.segment["user"]?.background).toBe("050505");
   });
 
   it("parses terminal progress bar visibility setting", () => {
@@ -286,7 +296,7 @@ describe("ConfigMapper", () => {
 
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
     // Stale keys are stripped, not applied — the bundled feature.*/notification.* defaults win instead.
-    expect(result.config.feature?.git?.mode).toBe("off");
+    expect((result.config["feature"] as FeatureSettings | undefined)?.git?.mode).toBe("off");
     expect(result.config.notification?.exception?.handled?.enabled).toBe(false);
     expect(result.config.notification?.channel?.app?.enabled).toBe(true);
   });
@@ -304,9 +314,11 @@ describe("ConfigMapper", () => {
       extensions,
     );
 
-    expect(result.config.feature?.git?.mode).toBe("on");
-    expect(result.config.feature?.coding_agents?.mode).toBe("on");
-    expect(result.config.feature?.workspace?.mode).toBe("off");
+    expect((result.config["feature"] as FeatureSettings | undefined)?.git?.mode).toBe("on");
+    expect((result.config["feature"] as FeatureSettings | undefined)?.coding_agents?.mode).toBe(
+      "on",
+    );
+    expect((result.config["feature"] as FeatureSettings | undefined)?.workspace?.mode).toBe("off");
     expect(result.diagnostics.filter((d) => d.level === "error")).toHaveLength(0);
   });
 });

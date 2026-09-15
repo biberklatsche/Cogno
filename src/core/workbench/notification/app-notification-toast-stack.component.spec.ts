@@ -29,7 +29,7 @@ describe("AppNotificationToastStackComponent", () => {
   });
 
   it("publishes notification targets and resolves icons by type", () => {
-    const target: NotificationTargetContract = { workspaceId: "workspace-1" };
+    const target: NotificationTargetContract = { workspaceId: "workspace-1", tabId: "tab-1" };
     const appNotificationChannelService: Pick<
       AppNotificationChannelService,
       "appNotificationToasts" | "dismissAppNotificationToast"

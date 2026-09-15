@@ -38,7 +38,7 @@ describe("ErrorReportingRuntimeService", () => {
       getOrderedShellProfiles: vi.fn(),
       getShellProfileByShortcutIndex: vi.fn(),
       getPromptSegments: vi.fn(),
-    };
+    } as unknown as ConfigService;
     service = new ErrorReportingRuntimeService(appBus as AppBus, configService);
   });
 
@@ -109,7 +109,7 @@ describe("ErrorReportingRuntimeService", () => {
       getOrderedShellProfiles: vi.fn(),
       getShellProfileByShortcutIndex: vi.fn(),
       getPromptSegments: vi.fn(),
-    };
+    } as unknown as ConfigService;
     service = new ErrorReportingRuntimeService(appBus as AppBus, configService);
 
     service.reportException({
@@ -154,7 +154,7 @@ describe("ErrorReportingRuntimeService", () => {
           errorListener = listener as (event: ErrorEvent) => void;
         }
         if (type === "unhandledrejection") {
-          unhandledRejectionListener = listener as (event: { reason: unknown }) => void;
+          unhandledRejectionListener = listener as unknown as (event: { reason: unknown }) => void;
         }
       },
     );

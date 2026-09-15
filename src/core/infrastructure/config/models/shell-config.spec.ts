@@ -22,7 +22,7 @@ describe("ShellConfigSchema", () => {
 
     expect(result.success).toBe(false);
     expect(
-      result.error.issues.some(
+      result.error!.issues.some(
         (issue) => issue.message === "At most 9 shell profiles may be defined.",
       ),
     ).toBe(true);

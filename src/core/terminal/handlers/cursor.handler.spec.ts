@@ -1,3 +1,4 @@
+import type { IBufferCell } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import type {
@@ -143,7 +144,7 @@ describe("CursorHandler", () => {
 
       cursorMoveCallback?.();
 
-      expect(stateManager.cursorPosition.row).toBe(106); // 5 + 100 + 1
+      expect(stateManager.cursorPosition!.row).toBe(106); // 5 + 100 + 1
     });
 
     it("should handle multi-character cells", async () => {
@@ -163,7 +164,7 @@ describe("CursorHandler", () => {
 
       cursorMoveCallback?.();
 
-      expect(stateManager.cursorPosition.char).toBe("€");
+      expect(stateManager.cursorPosition!.char).toBe("€");
     });
 
     it("should handle empty cells", async () => {
@@ -183,7 +184,7 @@ describe("CursorHandler", () => {
 
       cursorMoveCallback?.();
 
-      expect(stateManager.cursorPosition.char).toBe("");
+      expect(stateManager.cursorPosition!.char).toBe("");
     });
   });
 
@@ -276,7 +277,7 @@ describe("CursorHandler", () => {
 
       cursorMoveCallback?.();
 
-      expect(stateManager.cursorPosition.char).toBe("");
+      expect(stateManager.cursorPosition!.char).toBe("");
     });
 
     it("should handle getCell returning null", async () => {
@@ -292,12 +293,12 @@ describe("CursorHandler", () => {
       handler.registerTerminal(terminal);
 
       const mockLine = TerminalMockFactory.createLine("ABC");
-      vi.mocked(mockLine.getCell).mockReturnValue(null);
+      vi.mocked(mockLine.getCell).mockReturnValue(null as unknown as IBufferCell);
       vi.mocked(terminal.buffer.active.getLine).mockReturnValue(mockLine);
 
       cursorMoveCallback?.();
 
-      expect(stateManager.cursorPosition.char).toBe("");
+      expect(stateManager.cursorPosition!.char).toBe("");
     });
   });
 

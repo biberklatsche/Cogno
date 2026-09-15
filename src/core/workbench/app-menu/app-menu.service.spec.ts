@@ -26,9 +26,17 @@ describe("AppMenuService", () => {
       get config() {
         return {} as never;
       },
-      get config$() {
+      get config$(): never {
         throw new Error("not implemented");
       },
+      get diagnostics$(): never {
+        throw new Error("not implemented");
+      },
+      get loaded$(): never {
+        throw new Error("not implemented");
+      },
+      load: () => Promise.resolve(),
+      reload: () => Promise.resolve(),
       getShellProfileOrDefault: vi.fn(),
       getOrderedShellProfiles: vi.fn().mockReturnValue([
         {

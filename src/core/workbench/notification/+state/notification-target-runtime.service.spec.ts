@@ -10,7 +10,7 @@ describe("NotificationTargetRuntimeService", () => {
   let appBus: AppBus;
   let gridListService: GridListService;
   let workspaceHostPort: WorkspaceHostService;
-  let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
+  let restoreWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["restoreWorkspace"]>>;
 
   beforeEach(() => {
     appBus = new AppBus();
@@ -26,7 +26,9 @@ describe("NotificationTargetRuntimeService", () => {
         terminalId === "terminal-1" ? "tab-1" : undefined,
       ),
     } as unknown as GridListService;
-    restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    restoreWorkspaceMock = vi
+      .fn<WorkspaceHostService["restoreWorkspace"]>()
+      .mockResolvedValue(undefined);
     workspaceHostPort = {
       workspaceEntries$: of([{ id: "workspace-1", name: "Workspace 1" }]),
       restoreWorkspace: restoreWorkspaceMock,
@@ -37,7 +39,7 @@ describe("NotificationTargetRuntimeService", () => {
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn(),
-    };
+    } as unknown as WorkspaceHostService;
   });
 
   it("restores the workspace and then selects and focuses the notification target", async () => {
@@ -80,7 +82,7 @@ describe("NotificationTargetRuntimeService", () => {
       {
         ...workspaceHostPort,
         workspaceEntries$: of([]),
-      },
+      } as unknown as WorkspaceHostService,
       getDestroyRef(),
     );
 

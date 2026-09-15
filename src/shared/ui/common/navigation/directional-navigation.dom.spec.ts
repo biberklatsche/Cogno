@@ -26,7 +26,7 @@ describe("directional-navigation.dom", () => {
     const items = collectDirectionalNavigationItems([
       { nativeElement: firstElement },
       { nativeElement: secondElement },
-    ] as ReadonlyArray<ElementRef<HTMLElement>>);
+    ] as unknown as ReadonlyArray<ElementRef<HTMLElement>>);
 
     expect(items).toEqual([
       {

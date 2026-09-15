@@ -120,8 +120,8 @@ describe("ResizeHandler", () => {
 
       handler.resize();
 
-      expect(stateManager.dimensions.cols).toBe(100);
-      expect(stateManager.dimensions.rows).toBe(30);
+      expect(stateManager.dimensions!.cols).toBe(100);
+      expect(stateManager.dimensions!.rows).toBe(30);
     });
 
     it("should ignore invalid proposed dimensions", () => {
@@ -134,8 +134,8 @@ describe("ResizeHandler", () => {
 
       expect(mockPty.resize).not.toHaveBeenCalled();
       expect(mockFitAddon.fit).not.toHaveBeenCalled();
-      expect(stateManager.dimensions.cols).toBe(80);
-      expect(stateManager.dimensions.rows).toBe(24);
+      expect(stateManager.dimensions!.cols).toBe(80);
+      expect(stateManager.dimensions!.rows).toBe(24);
     });
 
     it("should throw error if terminal does not match proposed dimensions after fit", () => {

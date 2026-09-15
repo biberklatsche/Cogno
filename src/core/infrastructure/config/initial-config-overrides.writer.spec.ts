@@ -2,10 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
-import type { Config } from "../+models/config";
 import { ConfigMapper } from "./config.mapper";
 import { featureSettingsExtensionFixture } from "./feature-settings.extension.fixture";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
+import type { Config } from "./models/config";
 
 const extensions = [featureSettingsExtensionFixture];
 let defaultText = "";

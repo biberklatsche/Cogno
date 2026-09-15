@@ -1,7 +1,7 @@
 import { TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { describe, expect, it } from "vitest";
-import { BoundSession } from "./bound-session";
+import { SessionBinding } from "./bound-session";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 
 function setup() {
@@ -20,7 +20,7 @@ function setup() {
     (terminalId) => ({ terminalId, sessionToken: `token-${terminalId}` }),
     runtimeOf,
   );
-  const emissions: BoundSession[] = [];
+  const emissions: SessionBinding[] = [];
   tracker.binding$.subscribe((boundSession) => emissions.push(boundSession));
   return { focus$, runtimeOf, tracker, emissions };
 }

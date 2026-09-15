@@ -38,10 +38,10 @@ describe("FilesystemHostService", () => {
 
   it("lists entries with query prioritization and filtering", async () => {
     vi.mocked(fs.readDir).mockResolvedValue([
-      { name: "apple", isDirectory: true, isFile: false },
-      { name: "application.log", isDirectory: false, isFile: true },
-      { name: "grape", isDirectory: false, isFile: true },
-      { name: "unknown", isDirectory: false, isFile: false },
+      { name: "apple", isDirectory: true, isFile: false, isSymlink: false },
+      { name: "application.log", isDirectory: false, isFile: true, isSymlink: false },
+      { name: "grape", isDirectory: false, isFile: true, isSymlink: false },
+      { name: "unknown", isDirectory: false, isFile: false, isSymlink: false },
     ]);
 
     await expect(
