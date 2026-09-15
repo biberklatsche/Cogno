@@ -11,7 +11,7 @@
     "lint": "pnpm lint:code && pnpm lint:architecture && pnpm generate:actions:check && pnpm generate:config-docs:check",
     "lint:code": "pnpm exec biome check .",
     "lint:fix": "pnpm exec biome check --write . && pnpm exec biome format --write .",
-    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"src/__test__/**/*.ts\" \"src/platform/**/*.ts\" \"src/shared/**/*.ts\" \"src/features/**/*.ts\" \"src/core/**/*.ts\" \"src/bootstrap/**/*.ts\"",
+    "lint:architecture": "depcruise --config .dependency-cruiser.cjs \"scripts/**/*.ts\" \"src/__test__/**/*.ts\" \"src/platform/**/*.ts\" \"src/shared/**/*.ts\" \"src/features/**/*.ts\" \"src/core/**/*.ts\" \"src/bootstrap/**/*.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "typecheck:app": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",

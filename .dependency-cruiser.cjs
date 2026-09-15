@@ -125,6 +125,14 @@ module.exports = {
       to: { path: bootstrapPattern },
     },
     {
+      name: "t15-no-orphan-modules",
+      severity: "error",
+      comment:
+        "Every module is reachable from something. An orphan is dead code - delete it, or wire it up. Ambient .d.ts files declare types for the compiler and are imported by nobody.",
+      from: { orphan: true, pathNot: ["\.d\.ts$"] },
+      to: {},
+    },
+    {
       name: "t14-known-aliases-only",
       severity: "error",
       comment: "Only the five @cogno/* aliases exist.",
