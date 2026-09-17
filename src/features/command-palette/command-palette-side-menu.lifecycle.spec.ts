@@ -10,11 +10,7 @@ vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", (
 describe("CommandPaletteSideMenuLifecycle", () => {
   let commandPaletteService: Pick<
     CommandPaletteService,
-    | "getSelectedEntry"
-    | "fireSelectedAction"
-    | "handleSideMenuOpen"
-    | "handleSideMenuClose"
-    | "handleNavigationKey"
+    "selectedEntry" | "fireSelectedAction" | "handleSideMenuOpen" | "handleSideMenuClose" | "move"
   >;
   let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
   let registerKeybindListenerMock: Mock<
@@ -31,11 +27,11 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     unregisterKeybindListenerMock = vi.fn();
 
     commandPaletteService = {
-      getSelectedEntry: vi.fn(),
+      selectedEntry: vi.fn() as unknown as CommandPaletteService["selectedEntry"],
       fireSelectedAction: vi.fn(),
       handleSideMenuOpen: vi.fn(),
       handleSideMenuClose: vi.fn(),
-      handleNavigationKey: vi.fn(),
+      move: vi.fn(),
     };
 
     sideMenuFeatureHandle = {
@@ -64,12 +60,11 @@ describe("CommandPaletteSideMenuLifecycle", () => {
   it("fires the selected entry captured before close", async () => {
     const selectedEntry: CommandEntry = {
       id: "split_right",
-      isSelected: true,
       label: "split right",
       keybinding: "",
       actionDefinition: { actionName: "split_right" },
     };
-    vi.mocked(commandPaletteService.getSelectedEntry).mockReturnValue(selectedEntry);
+    vi.mocked(commandPaletteService.selectedEntry).mockReturnValue(selectedEntry);
 
     const lifecycle = new CommandPaletteSideMenuLifecycle(
       commandPaletteService as CommandPaletteService,
@@ -99,8 +94,10 @@ describe("CommandPaletteSideMenuLifecycle", () => {
 
     keybindHandler({ key: "Escape" } as KeyboardEvent);
     keybindHandler({ key: "ArrowDown" } as KeyboardEvent);
+    keybindHandler({ key: "ArrowUp" } as KeyboardEvent);
 
     expect(closeMock).toHaveBeenCalledTimes(1);
-    expect(commandPaletteService.handleNavigationKey).toHaveBeenCalledWith("ArrowDown");
+    expect(commandPaletteService.move).toHaveBeenNthCalledWith(1, 1);
+    expect(commandPaletteService.move).toHaveBeenNthCalledWith(2, -1);
   });
 });

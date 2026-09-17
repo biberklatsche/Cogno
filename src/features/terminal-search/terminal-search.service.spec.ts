@@ -4,7 +4,6 @@ import type {
   TerminalSearchPanelRequestContract,
   TerminalSearchResultContract,
 } from "@cogno/shared/domain";
-import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
@@ -199,17 +198,12 @@ describe("TerminalSearchService", () => {
       ],
     });
 
-    terminalSearchService.registerNavigationItemsProvider(() => [
-      createNavigationItem("21:needle two", 0, 40, 280, 32),
-      createNavigationItem("14:needle one", 0, 74, 280, 32),
-    ]);
-
     expect(terminalSearchService.selectedSearchResultId()).toBe("21:needle two");
 
-    terminalSearchService.handleNavigationKey("ArrowDown");
+    terminalSearchService.move(1);
     expect(terminalSearchService.selectedSearchResultId()).toBe("14:needle one");
 
-    terminalSearchService.handleNavigationKey("ArrowUp");
+    terminalSearchService.move(-1);
     expect(terminalSearchService.selectedSearchResultId()).toBe("21:needle two");
   });
 
@@ -244,23 +238,3 @@ describe("TerminalSearchService", () => {
     });
   });
 });
-
-function createNavigationItem(
-  id: string,
-  left: number,
-  top: number,
-  width: number,
-  height: number,
-): DirectionalNavigationItem<string> {
-  return {
-    id,
-    rect: {
-      left,
-      top,
-      width,
-      height,
-      right: left + width,
-      bottom: top + height,
-    },
-  };
-}

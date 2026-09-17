@@ -38,7 +38,7 @@ export class TerminalSearchSideMenuLifecycle {
               }
               return;
             }
-            this.terminalSearchService.handleNavigationKey(keyboardEvent.key);
+            this.terminalSearchService.move(keyboardEvent.key === "ArrowDown" ? 1 : -1);
           },
         );
         focusSideMenuAutofocusElement();

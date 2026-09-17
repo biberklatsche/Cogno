@@ -1,17 +1,5 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  effect,
-  Signal,
-  viewChild,
-  viewChildren,
-} from "@angular/core";
-import {
-  collectDirectionalNavigationItems,
-  scrollSelectedListItemIntoView,
-} from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
-import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
+import { Component, ElementRef, effect, Signal, viewChild } from "@angular/core";
+import { scrollSelectedListItemIntoView } from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
 import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 
 @Component({
@@ -35,11 +23,9 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
       <ul #commandListElement class="command-list">
         @for (command of commandList(); track command.id) {
           <li
-            #commandElement
-            [attr.data-navigation-id]="command.id"
             (click)="fireAction(command)"
             class="command"
-            [class.selected]="command.isSelected"
+            [class.selected]="$index === selectedIndex()"
           >
             <span class="label">{{ command.label }}</span>
             <span class="keybinding">{{ command.keybinding }}</span>
@@ -117,38 +103,24 @@ import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 })
 export class CommandPaletteComponent {
   readonly commandList: Signal<CommandEntry[]>;
+  readonly selectedIndex: Signal<number>;
   private readonly commandListElement =
     viewChild<ElementRef<HTMLUListElement>>("commandListElement");
-  private readonly commandElements = viewChildren<ElementRef<HTMLElement>>("commandElement");
-  private readonly navigationItemsProvider = () => this.collectNavigationItems();
 
-  constructor(
-    private readonly commandPaletteService: CommandPaletteService,
-    destroyRef: DestroyRef,
-  ) {
+  constructor(private readonly commandPaletteService: CommandPaletteService) {
     this.commandList = this.commandPaletteService.filteredCommandList;
-    this.commandPaletteService.registerNavigationItemsProvider(this.navigationItemsProvider);
-    destroyRef.onDestroy(() => {
-      this.commandPaletteService.unregisterNavigationItemsProvider(this.navigationItemsProvider);
-    });
+    this.selectedIndex = this.commandPaletteService.selectedIndex;
 
     effect(() => {
-      const commandList = this.commandList();
-      if (commandList.length === 0) {
+      // A new list scrolls back to its selected row, even if the index stays the same.
+      if (this.commandList().length === 0) {
         return;
       }
 
-      const commandListElement = this.commandListElement()?.nativeElement;
-      if (!commandListElement) {
-        return;
-      }
-
-      const selectedIndex = commandList.findIndex((commandEntry) => commandEntry.isSelected);
-      if (selectedIndex < 0) {
-        return;
-      }
-
-      scrollSelectedListItemIntoView(commandListElement, selectedIndex);
+      scrollSelectedListItemIntoView(
+        this.commandListElement()?.nativeElement,
+        this.selectedIndex(),
+      );
     });
   }
 
@@ -159,9 +131,5 @@ export class CommandPaletteComponent {
 
   fireAction(commandEntry?: CommandEntry): void {
     this.commandPaletteService.fireSelectedAction(commandEntry);
-  }
-
-  private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {
-    return collectDirectionalNavigationItems(this.commandElements());
   }
 }

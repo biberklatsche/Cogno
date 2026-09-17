@@ -1,7 +1,6 @@
 export * from "./action";
 export * from "./agent-status";
 export * from "./base-path.adapter";
-export * from "./discovery";
 export * from "./feature-mode";
 export * from "./grid-layout";
 export * from "./inbox";

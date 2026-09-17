@@ -12,7 +12,7 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     TerminalSearchService,
     | "handleSideMenuOpen"
     | "handleSideMenuClose"
-    | "handleNavigationKey"
+    | "move"
     | "repeatSearch"
     | "revealSelectedSearchResult"
   >;
@@ -33,7 +33,7 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     terminalSearchService = {
       handleSideMenuOpen: vi.fn(),
       handleSideMenuClose: vi.fn(),
-      handleNavigationKey: vi.fn(),
+      move: vi.fn(),
       repeatSearch: vi.fn(),
       revealSelectedSearchResult: vi.fn().mockReturnValue(false),
     };
@@ -78,7 +78,7 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     expect(terminalSearchService.repeatSearch).not.toHaveBeenCalled();
   });
 
-  it("routes arrow keys to navigation handling", () => {
+  it("routes arrow keys to the selection", () => {
     const lifecycle = new TerminalSearchSideMenuLifecycle(
       terminalSearchService as TerminalSearchService,
     );
@@ -90,8 +90,8 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     keybindHandler({ key: "ArrowDown" } as KeyboardEvent);
     keybindHandler({ key: "ArrowUp" } as KeyboardEvent);
 
-    expect(terminalSearchService.handleNavigationKey).toHaveBeenNthCalledWith(1, "ArrowDown");
-    expect(terminalSearchService.handleNavigationKey).toHaveBeenNthCalledWith(2, "ArrowUp");
+    expect(terminalSearchService.move).toHaveBeenNthCalledWith(1, 1);
+    expect(terminalSearchService.move).toHaveBeenNthCalledWith(2, -1);
   });
 
   it("closes on Escape and repeats the search when nothing is selected", () => {

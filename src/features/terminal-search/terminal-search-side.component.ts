@@ -2,24 +2,19 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   ElementRef,
   effect,
   Signal,
   viewChild,
-  viewChildren,
 } from "@angular/core";
 import {
   TerminalSearchLineMatchContract,
   TerminalSearchLineResultContract,
 } from "@cogno/shared/domain";
 import { TooltipDirective } from "@cogno/shared/ui";
-import {
-  collectDirectionalNavigationItems,
-  scrollSelectedListItemIntoView,
-} from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
-import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
+import { scrollSelectedListItemIntoView } from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
 import { TerminalSearchService } from "./terminal-search.service";
+import { createSearchResultId } from "./terminal-search-state";
 
 type SearchTextSegment = {
   text: string;
@@ -91,8 +86,6 @@ type SearchTextSegment = {
                 <ul #resultListElement class="result-list">
                     @for (searchLine of reversedSearchResults(); track trackSearchLine(searchLine)) {
                         <li
-                            #resultElement
-                            [attr.data-navigation-id]="trackSearchLine(searchLine)"
                             class="result-line"
                             [class.selected]="isSelectedSearchResult(searchLine)"
                             (click)="revealSearchResult(searchLine)"
@@ -246,13 +239,8 @@ export class TerminalSearchSideComponent {
   readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
   readonly selectedSearchResultId: Signal<string | undefined>;
   private readonly resultListElement = viewChild<ElementRef<HTMLUListElement>>("resultListElement");
-  private readonly resultElements = viewChildren<ElementRef<HTMLElement>>("resultElement");
-  private readonly navigationItemsProvider = () => this.collectNavigationItems();
 
-  constructor(
-    private readonly terminalSearchService: TerminalSearchService,
-    destroyRef: DestroyRef,
-  ) {
+  constructor(private readonly terminalSearchService: TerminalSearchService) {
     this.searchQuery = this.terminalSearchService.searchQuery;
     this.searchResults = this.terminalSearchService.searchResults;
     this.caseSensitive = this.terminalSearchService.caseSensitive;
@@ -264,10 +252,6 @@ export class TerminalSearchSideComponent {
     this.selectedSearchResultId = this.terminalSearchService.selectedSearchResultId;
     this.reversedSearchResults = computed(() => {
       return [...this.searchResults()].reverse();
-    });
-    this.terminalSearchService.registerNavigationItemsProvider(this.navigationItemsProvider);
-    destroyRef.onDestroy(() => {
-      this.terminalSearchService.unregisterNavigationItemsProvider(this.navigationItemsProvider);
     });
 
     effect(() => {
@@ -315,7 +299,7 @@ export class TerminalSearchSideComponent {
   }
 
   trackSearchLine(searchLine: TerminalSearchLineResultContract): string {
-    return `${searchLine.lineNumber}:${searchLine.lineText}`;
+    return createSearchResultId(searchLine);
   }
 
   trackSegment(segment: SearchTextSegment, index: number): string {
@@ -371,9 +355,5 @@ export class TerminalSearchSideComponent {
       text: lineText.slice(match.startIndex, match.endIndex),
       isMatch: true,
     });
-  }
-
-  private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {
-    return collectDirectionalNavigationItems(this.resultElements());
   }
 }

@@ -2,15 +2,16 @@ import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core"
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
 import {
-  SelectionDirection,
   TerminalSearchLineResultContract,
-  TextSearchState,
-  TextSearchUseCase,
+  TerminalSearchResultContract,
 } from "@cogno/shared/domain";
 import {
-  DirectionalNavigationItem,
-  resolveNextNavigationTarget,
-} from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
+  buildRevealRequest,
+  createSearchResultId,
+  initialTerminalSearchState,
+  isAnswerToCurrentSearch,
+  TerminalSearchState,
+} from "./terminal-search-state";
 
 @Injectable({ providedIn: "root" })
 export class TerminalSearchService {
@@ -19,21 +20,25 @@ export class TerminalSearchService {
   private readonly defaultMatchBackgroundColor =
     "color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent)";
   private readonly defaultMatchBorderColor = "var(--highlight-color)";
-  private readonly searchStateSignal = signal<TextSearchState>(
-    TextSearchUseCase.createInitialState(),
-  );
-  private readonly selectedSearchResultIdSignal = signal<string | undefined>(undefined);
+  private readonly searchStateSignal = signal<TerminalSearchState>(initialTerminalSearchState);
+  private readonly explicitlySelectedSearchResultIdSignal = signal<string | undefined>(undefined);
   private readonly matchBackgroundColorSignal = signal<string>(this.defaultMatchBackgroundColor);
   private readonly matchBorderColorSignal = signal<string>(this.defaultMatchBorderColor);
   private pendingSearchTimeoutHandle?: ReturnType<typeof setTimeout>;
-  private navigationItemsProvider?: () => ReadonlyArray<DirectionalNavigationItem<string>>;
 
   readonly searchQuery: Signal<string> = computed(() => this.searchStateSignal().query);
   readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = computed(
     () => this.searchStateSignal().results,
   );
-  readonly selectedSearchResultId: Signal<string | undefined> =
-    this.selectedSearchResultIdSignal.asReadonly();
+  /** The explicitly selected result while the list still has it, else the last one. */
+  readonly selectedSearchResultId: Signal<string | undefined> = computed(() => {
+    const searchResultIds = this.searchResults().map(createSearchResultId);
+    const explicitlySelectedSearchResultId = this.explicitlySelectedSearchResultIdSignal();
+    return explicitlySelectedSearchResultId !== undefined &&
+      searchResultIds.includes(explicitlySelectedSearchResultId)
+      ? explicitlySelectedSearchResultId
+      : searchResultIds.at(-1);
+  });
   readonly caseSensitive: Signal<boolean> = computed(() => this.searchStateSignal().caseSensitive);
   readonly regularExpression: Signal<boolean> = computed(
     () => this.searchStateSignal().regularExpression,
@@ -60,11 +65,7 @@ export class TerminalSearchService {
   ) {
     this.terminalSearchApi.terminalSearchResult$
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((terminalSearchResult) => {
-        this.applySearchState(
-          TextSearchUseCase.applySearchResult(this.searchStateSignal(), terminalSearchResult),
-        );
-      });
+      .subscribe((terminalSearchResult) => this.applySearchResult(terminalSearchResult));
 
     this.terminalSearchApi.terminalSearchColorConfig$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -78,15 +79,18 @@ export class TerminalSearchService {
     this.terminalSearchApi.terminalSearchPanelRequest$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((terminalSearchPanelPayload) => {
-        this.applySearchState(
-          TextSearchUseCase.applyScopeRequest(this.searchStateSignal(), terminalSearchPanelPayload),
-        );
+        this.patchSearchState({
+          activeTerminalId: terminalSearchPanelPayload.terminalId,
+          beginBufferLine: terminalSearchPanelPayload.beginBufferLine,
+          endBufferLine: terminalSearchPanelPayload.endBufferLine,
+        });
+        this.showSearchResults([], false, undefined);
       });
   }
 
   submitSearchQuery(query: string): void {
-    this.applySearchState(TextSearchUseCase.setQuery(this.searchStateSignal(), query));
-    this.scheduleSearch(query);
+    this.patchSearchState({ query });
+    this.scheduleSearch();
   }
 
   repeatSearch(): void {
@@ -105,12 +109,12 @@ export class TerminalSearchService {
   }
 
   toggleCaseSensitive(): void {
-    this.applySearchState(TextSearchUseCase.toggleCaseSensitive(this.searchStateSignal()));
+    this.patchSearchState({ caseSensitive: !this.caseSensitive() });
     this.repeatSearch();
   }
 
   toggleRegularExpression(): void {
-    this.applySearchState(TextSearchUseCase.toggleRegularExpression(this.searchStateSignal()));
+    this.patchSearchState({ regularExpression: !this.regularExpression() });
     this.repeatSearch();
   }
 
@@ -119,16 +123,13 @@ export class TerminalSearchService {
       return;
     }
 
-    this.applySearchState(TextSearchUseCase.clearSearchScope(this.searchStateSignal()));
+    this.patchSearchState({ beginBufferLine: undefined, endBufferLine: undefined });
     this.repeatSearch();
   }
 
   revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
-    this.selectSearchResult(searchLine);
-    const revealPayload = TextSearchUseCase.buildRevealRequest(
-      this.searchStateSignal(),
-      searchLine,
-    );
+    this.explicitlySelectedSearchResultIdSignal.set(createSearchResultId(searchLine));
+    const revealPayload = buildRevealRequest(this.searchStateSignal(), searchLine);
     if (!revealPayload) {
       return;
     }
@@ -137,7 +138,10 @@ export class TerminalSearchService {
   }
 
   revealSelectedSearchResult(): boolean {
-    const selectedSearchResult = this.getSelectedSearchResult();
+    const selectedSearchResultId = this.selectedSearchResultId();
+    const selectedSearchResult = this.searchResults().find(
+      (searchLine) => createSearchResultId(searchLine) === selectedSearchResultId,
+    );
     if (!selectedSearchResult) {
       return false;
     }
@@ -146,28 +150,20 @@ export class TerminalSearchService {
     return true;
   }
 
-  handleNavigationKey(key: string): void {
-    if (key === "ArrowDown") {
-      this.selectNextSearchResult("down");
+  /**
+   * Moves the selection one row down (1) or up (-1), wrapping around at both
+   * ends. The panel lists the results last-first, so a row down is a result back.
+   */
+  move(delta: 1 | -1): void {
+    const searchResultIds = this.searchResults().map(createSearchResultId);
+    const selectedSearchResultId = this.selectedSearchResultId();
+    if (selectedSearchResultId === undefined) {
       return;
     }
-    if (key === "ArrowUp") {
-      this.selectNextSearchResult("up");
-    }
-  }
 
-  registerNavigationItemsProvider(
-    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
-  ): void {
-    this.navigationItemsProvider = provider;
-  }
-
-  unregisterNavigationItemsProvider(
-    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
-  ): void {
-    if (this.navigationItemsProvider === provider) {
-      this.navigationItemsProvider = undefined;
-    }
+    const selectedIndex = searchResultIds.indexOf(selectedSearchResultId);
+    const nextIndex = (selectedIndex - delta + searchResultIds.length) % searchResultIds.length;
+    this.explicitlySelectedSearchResultIdSignal.set(searchResultIds[nextIndex]);
   }
 
   handleSideMenuOpen(): void {
@@ -180,10 +176,11 @@ export class TerminalSearchService {
   handleSideMenuClose(): void {
     this.cancelPendingSearch();
     this.clearDecorationsInAllTerminals();
-    this.applySearchState(TextSearchUseCase.clearForCollectionClose());
+    this.searchStateSignal.set(initialTerminalSearchState);
+    this.explicitlySelectedSearchResultIdSignal.set(undefined);
   }
 
-  private scheduleSearch(_query: string): void {
+  private scheduleSearch(): void {
     this.cancelPendingSearch();
     this.pendingSearchTimeoutHandle = setTimeout(() => {
       this.pendingSearchTimeoutHandle = undefined;
@@ -203,24 +200,39 @@ export class TerminalSearchService {
   private searchInActiveTerminal(cursorBufferLine: number | undefined): void {
     const activeTerminalId =
       this.searchStateSignal().activeTerminalId ?? this.terminalSearchApi.getFocusedTerminalId();
-    this.applySearchState(
-      TextSearchUseCase.setActiveCollectionId(this.searchStateSignal(), activeTerminalId),
-    );
-
-    const terminalSearchRequest = TextSearchUseCase.createSearchRequest(
-      this.searchStateSignal(),
-      activeTerminalId,
-      cursorBufferLine,
-      this.resultPageLineLimit,
-    );
-    if (!terminalSearchRequest) {
-      this.applySearchState(
-        TextSearchUseCase.applyMissingCollectionResult(this.searchStateSignal()),
-      );
+    this.patchSearchState({ activeTerminalId });
+    if (!activeTerminalId) {
+      this.showSearchResults([], false, undefined);
       return;
     }
 
-    this.terminalSearchApi.requestSearch(terminalSearchRequest);
+    const searchState = this.searchStateSignal();
+    this.terminalSearchApi.requestSearch({
+      terminalId: activeTerminalId,
+      query: searchState.query,
+      caseSensitive: searchState.caseSensitive,
+      regularExpression: searchState.regularExpression,
+      beginBufferLine: searchState.beginBufferLine,
+      endBufferLine: searchState.endBufferLine,
+      cursorBufferLine,
+      resultLineLimit: this.resultPageLineLimit,
+    });
+  }
+
+  private applySearchResult(terminalSearchResult: TerminalSearchResultContract): void {
+    if (!isAnswerToCurrentSearch(this.searchStateSignal(), terminalSearchResult)) {
+      return;
+    }
+
+    // An answer to a cursor request is the next page; any other one is a new list.
+    const isNextPage = terminalSearchResult.cursorBufferLine !== undefined;
+    this.showSearchResults(
+      isNextPage
+        ? [...this.searchResults(), ...terminalSearchResult.lines]
+        : terminalSearchResult.lines,
+      terminalSearchResult.hasMore,
+      terminalSearchResult.nextCursorBufferLine,
+    );
   }
 
   private clearDecorationsInAllTerminals(): void {
@@ -237,69 +249,20 @@ export class TerminalSearchService {
     this.matchBorderColorSignal.set(normalizedMatchBorderColor ?? this.defaultMatchBorderColor);
   }
 
-  private getSelectedSearchResult(): TerminalSearchLineResultContract | undefined {
-    const selectedSearchResultId = this.selectedSearchResultIdSignal();
-    const searchResults = this.searchStateSignal().results;
-    if (selectedSearchResultId) {
-      return searchResults.find(
-        (searchLine) => this.createSearchResultId(searchLine) === selectedSearchResultId,
-      );
-    }
-
-    return searchResults.at(-1);
+  private showSearchResults(
+    results: ReadonlyArray<TerminalSearchLineResultContract>,
+    hasMoreResults: boolean,
+    nextCursorBufferLine: number | undefined,
+  ): void {
+    // Pin the current selection first: it stays while the new list still has it. That
+    // includes the default selection, which would otherwise jump to the end of an
+    // appended page.
+    this.explicitlySelectedSearchResultIdSignal.set(this.selectedSearchResultId());
+    this.patchSearchState({ results, hasMoreResults, nextCursorBufferLine });
   }
 
-  private selectSearchResult(searchLine: TerminalSearchLineResultContract): void {
-    this.selectedSearchResultIdSignal.set(this.createSearchResultId(searchLine));
-  }
-
-  private selectNextSearchResult(direction: SelectionDirection): void {
-    const nextSearchResultId = resolveNextNavigationTarget({
-      items: this.navigationItemsProvider?.() ?? [],
-      activeId: this.selectedSearchResultIdSignal() ?? null,
-      direction,
-      wrap: true,
-    });
-    if (!nextSearchResultId) {
-      return;
-    }
-
-    this.selectedSearchResultIdSignal.set(nextSearchResultId);
-  }
-
-  private applySearchState(state: TextSearchState): void {
-    this.searchStateSignal.set(state);
-    this.syncSelectedSearchResult();
-  }
-
-  private syncSelectedSearchResult(): void {
-    const searchResults = this.searchStateSignal().results;
-    if (searchResults.length === 0) {
-      this.selectedSearchResultIdSignal.set(undefined);
-      return;
-    }
-
-    const selectedSearchResultId = this.selectedSearchResultIdSignal();
-    if (
-      selectedSearchResultId &&
-      searchResults.some(
-        (searchLine) => this.createSearchResultId(searchLine) === selectedSearchResultId,
-      )
-    ) {
-      return;
-    }
-
-    const lastSearchResult = searchResults.at(-1);
-    if (!lastSearchResult) {
-      this.selectedSearchResultIdSignal.set(undefined);
-      return;
-    }
-
-    this.selectedSearchResultIdSignal.set(this.createSearchResultId(lastSearchResult));
-  }
-
-  private createSearchResultId(searchLine: TerminalSearchLineResultContract): string {
-    return `${searchLine.lineNumber}:${searchLine.lineText}`;
+  private patchSearchState(change: Partial<TerminalSearchState>): void {
+    this.searchStateSignal.update((searchState) => ({ ...searchState, ...change }));
   }
 
   private normalizeHexColor(colorValue?: string): string | undefined {

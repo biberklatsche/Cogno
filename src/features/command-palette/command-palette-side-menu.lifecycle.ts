@@ -33,14 +33,14 @@ export class CommandPaletteSideMenuLifecycle {
               return;
             }
             if (keyboardEvent.key === "Enter") {
-              const selectedCommandEntry = this.commandPaletteService.getSelectedEntry();
+              const selectedCommandEntry = this.commandPaletteService.selectedEntry();
               sideMenuFeatureHandle.close();
               queueMicrotask(() => {
                 this.commandPaletteService.fireSelectedAction(selectedCommandEntry);
               });
               return;
             }
-            this.commandPaletteService.handleNavigationKey(keyboardEvent.key);
+            this.commandPaletteService.move(keyboardEvent.key === "ArrowDown" ? 1 : -1);
           },
         );
         focusSideMenuAutofocusElement();
