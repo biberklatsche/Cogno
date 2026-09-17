@@ -113,9 +113,16 @@ export class PromptMarkerRegistry implements IDisposable {
   /**
    * Validate every marker against its buffer line and re-anchor markers that a
    * reflow has shifted away from their `^^#<id>` text. Only called on resize.
+   *
+   * A resize also makes the shell redraw its prompt: zsh moves up, erases to the
+   * end of the screen and prints the prompt again. xterm disposes the marker of
+   * an erased line, and no precmd runs, so no OSC 733 announces the reprinted
+   * marker line - anchoring is armed here instead, or the current prompt would
+   * stay undecorated until the next one.
    */
   resync(): void {
     this.validateRange(0, Number.MAX_SAFE_INTEGER);
+    this.expectMarker();
   }
 
   /**
