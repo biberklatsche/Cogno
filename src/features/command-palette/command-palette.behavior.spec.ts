@@ -233,17 +233,14 @@ describe("command palette behaviour", () => {
       expect(dispatchActionMock).toHaveBeenCalledWith({ actionName: "open_command_palette" });
     });
 
-    // Odd, but what happens today: nothing is captured on Enter, closing resets the
-    // palette, and the deferred dispatch then falls back to the new selection.
-    it("closes on Enter when nothing matches and dispatches the first entry of the reset list", async () => {
+    it("closes on Enter when nothing matches and runs nothing", async () => {
       service.filterCommands("no such command");
 
       press("Enter");
       await Promise.resolve();
 
       expect(closeMock).toHaveBeenCalledTimes(1);
-      expect(dispatchActionMock).toHaveBeenCalledTimes(1);
-      expect(dispatchActionMock).toHaveBeenCalledWith({ actionName: "copy" });
+      expect(dispatchActionMock).not.toHaveBeenCalled();
     });
 
     it("dispatches a clicked entry, whatever is selected, and stays open", () => {

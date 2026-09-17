@@ -35,9 +35,13 @@ export class CommandPaletteSideMenuLifecycle {
             if (keyboardEvent.key === "Enter") {
               const selectedCommandEntry = this.commandPaletteService.selectedEntry();
               sideMenuFeatureHandle.close();
-              queueMicrotask(() => {
-                this.commandPaletteService.fireSelectedAction(selectedCommandEntry);
-              });
+              // Closing resets the filter; without an entry captured here the
+              // dispatch would fall back to the first entry of the full list.
+              if (selectedCommandEntry) {
+                queueMicrotask(() => {
+                  this.commandPaletteService.fireSelectedAction(selectedCommandEntry);
+                });
+              }
               return;
             }
             this.commandPaletteService.move(keyboardEvent.key === "ArrowDown" ? 1 : -1);
