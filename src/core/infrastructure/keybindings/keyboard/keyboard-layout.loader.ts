@@ -1,12 +1,20 @@
 import { Injectable } from "@angular/core";
-import {
-  KeyboardLayout,
-  LinuxKeyboardLayoutInfo,
-  MacKeyboardLayoutInfo,
-  WindowsKeyboardLayoutInfo,
-} from "@cogno/platform/keyboard-layout";
-import { OsPlatform } from "@cogno/platform/os";
+import { KeyboardLayout } from "@cogno/platform/keyboard-layout";
+import { OsPlatform, OsType } from "@cogno/platform/os";
 import { KeymapInfo } from "./keyboard-layouts/_.contribution";
+
+/** The keymaps of one OS; imported on demand so only that OS's set is loaded. */
+const keymapsByPlatform: Record<OsType, () => Promise<readonly KeymapInfo[]>> = {
+  windows: async () =>
+    (await import("./keyboard-layouts/layout.contribution.win")).KeyboardLayoutContribution.INSTANCE
+      .layoutInfos,
+  macos: async () =>
+    (await import("./keyboard-layouts/layout.contribution.darwin")).KeyboardLayoutContribution
+      .INSTANCE.layoutInfos,
+  linux: async () =>
+    (await import("./keyboard-layouts/layout.contribution.linux")).KeyboardLayoutContribution
+      .INSTANCE.layoutInfos,
+};
 
 @Injectable({
   providedIn: "root",
@@ -14,57 +22,19 @@ import { KeymapInfo } from "./keyboard-layouts/_.contribution";
 export class KeyboardMappingService {
   constructor(private readonly os: OsPlatform) {}
 
-  async loadLayout(): Promise<{ keymapInfo: KeymapInfo; isFallback: boolean }> {
-    const layoutFromOS = await KeyboardLayout.load();
-    let keymapInfo: KeymapInfo | undefined;
-    switch (this.os.platform()) {
-      case "windows": {
-        const winKeyboardMappings = (await import("./keyboard-layouts/layout.contribution.win"))
-          .KeyboardLayoutContribution.INSTANCE.layoutInfos;
-        const currentWinLayout = layoutFromOS as WindowsKeyboardLayoutInfo;
-        keymapInfo = winKeyboardMappings.find((s) =>
-          s.layouts.some((i) => i.id === currentWinLayout.name),
-        );
-        if (keymapInfo) {
-          return { keymapInfo: keymapInfo, isFallback: false };
-        }
-        return {
-          keymapInfo: this.getDefaultKeymapInfo(winKeyboardMappings),
-          isFallback: true,
-        };
-      }
-      case "macos": {
-        const darwinKeyboardMappings = (
-          await import("./keyboard-layouts/layout.contribution.darwin")
-        ).KeyboardLayoutContribution.INSTANCE.layoutInfos;
-        const osDarwinLayout = layoutFromOS as MacKeyboardLayoutInfo;
-        keymapInfo = darwinKeyboardMappings.find((s) =>
-          s.layouts.some((i) => i.id === osDarwinLayout.id),
-        );
-        if (keymapInfo) {
-          return { keymapInfo: keymapInfo, isFallback: false };
-        }
-        return {
-          keymapInfo: this.getDefaultKeymapInfo(darwinKeyboardMappings),
-          isFallback: true,
-        };
-      }
-      case "linux": {
-        const linuxKeyboardMappings = (await import("./keyboard-layouts/layout.contribution.linux"))
-          .KeyboardLayoutContribution.INSTANCE.layoutInfos;
-        const currentLinuxLayout = layoutFromOS as LinuxKeyboardLayoutInfo;
-        keymapInfo = linuxKeyboardMappings.find((s) =>
-          s.layouts.some((i) => i.id === currentLinuxLayout.layout),
-        );
-        if (keymapInfo) {
-          return { keymapInfo: keymapInfo, isFallback: false };
-        }
-        return {
-          keymapInfo: this.getDefaultKeymapInfo(linuxKeyboardMappings),
-          isFallback: true,
-        };
-      }
-    }
+  /**
+   * The keymap of the active keyboard layout, or the default one when the
+   * layout is unknown or could not be read - keybindings must work either way.
+   */
+  async loadLayout(): Promise<{ keymapInfo: KeymapInfo }> {
+    const [keymaps, layoutId] = await Promise.all([
+      keymapsByPlatform[this.os.platform()](),
+      KeyboardLayout.load().catch(() => null),
+    ]);
+    const keymapInfo =
+      keymaps.find((keymap) => keymap.layouts.some((layout) => layout.id === layoutId)) ??
+      this.getDefaultKeymapInfo(keymaps);
+    return { keymapInfo };
   }
 
   private getDefaultKeymapInfo(keymapInfos: readonly KeymapInfo[]): KeymapInfo {
