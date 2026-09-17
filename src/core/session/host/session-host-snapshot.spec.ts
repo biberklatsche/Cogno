@@ -155,6 +155,84 @@ describe("SessionHost snapshot/restore", () => {
     expect(scrollback).toContain("second");
   });
 
+  describe("the idle prompt the session closed on", () => {
+    // A prompt is a blank line, the concealed `^^#<id>` marker line and the
+    // (empty) input line. The restored session prints its own prompt below the
+    // boundary, so the old one would show up as a second, dead prompt.
+
+    it("is left out of the scrollback, together with the blank line above it", () => {
+      bufferLines = [
+        makeLine("^^#4", { invisible: true }),
+        makeLine("ls"),
+        makeLine("file.txt"),
+        makeLine(""),
+        makeLine("^^#5", { invisible: true }),
+        makeLine(""),
+      ];
+
+      const scrollback = host.snapshot(500).scrollback ?? "";
+
+      expect(scrollback).toContain("^^#1000000000000004");
+      expect(scrollback).not.toContain("^^#1000000000000005");
+      expect(scrollback.endsWith("file.txt\x1b[0m")).toBe(true);
+    });
+
+    it("takes its command metadata with it", () => {
+      bufferLines = [
+        makeLine("^^#4", { invisible: true }),
+        makeLine("ls"),
+        makeLine(""),
+        makeLine("^^#5", { invisible: true }),
+      ];
+      const executed = new Command("4", "/dir", "m", "u");
+      executed.setData({ command: "ls" });
+      const idlePrompt = new Command("5", "/dir", "m", "u");
+      historyStore.updateCommands([executed, idlePrompt]);
+
+      const commands = host.snapshot(500).commands;
+
+      expect(commands.map((command) => command.id)).toEqual(["1000000000000004"]);
+    });
+
+    it("stays when something follows its marker (typed input or a running command)", () => {
+      bufferLines = [
+        makeLine("out"),
+        makeLine(""),
+        makeLine("^^#5", { invisible: true }),
+        makeLine("git sta"),
+      ];
+
+      const scrollback = host.snapshot(500).scrollback ?? "";
+
+      expect(scrollback).toContain("^^#1000000000000005");
+      expect(scrollback).toContain("git sta");
+    });
+
+    it("leaves nothing to restore when it is all there is", () => {
+      bufferLines = [makeLine(""), makeLine("^^#1", { invisible: true }), makeLine("")];
+
+      const snapshot = host.snapshot(500);
+
+      expect(snapshot.scrollback).toBeNull();
+      expect(snapshot.commands).toEqual([]);
+    });
+  });
+
+  it("also cuts the idle prompt from a snapshot that was saved with it", () => {
+    host.restore({
+      version: SESSION_SNAPSHOT_VERSION,
+      scrollback: "out\r\n\r\n\x1b[0;8m^^#1000000000000005\x1b[0m",
+      commands: [
+        { id: "1000000000000004", directory: "/d", machine: "m", user: "u", data: {} },
+        { id: "1000000000000005", directory: "/d", machine: "m", user: "u", data: {} },
+      ],
+    });
+    (host as unknown as { completeRestore(): void }).completeRestore();
+
+    expect(writeMock).toHaveBeenCalledWith("out\x1b[0m");
+    expect(historyStore.commands.map((command) => command.id)).toEqual(["1000000000000004"]);
+  });
+
   it("captures no scrollback and no commands when maxLines is zero", () => {
     bufferLines = [makeLine("something")];
 

@@ -38,7 +38,7 @@ import {
 } from "rxjs";
 import { CommandBlockResolver } from "../decoration/command-block-resolver";
 import { buildCommandMenuItems, CommandMenuBlockRange } from "../decoration/command-menu-items";
-import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
+import { PromptMarkerRegistry, promptMarkerIdOf } from "../decoration/prompt-marker.registry";
 import { CommandLineEditor } from "../editor/command-line.editor";
 import { TerminalInputWriter } from "../editor/input-writer";
 import { ClipboardHandler } from "../handlers/clipboard.handler";
@@ -81,6 +81,34 @@ const RESTORE_BOUNDARY_SENTINEL = "COGNO:RESTORE-BOUNDARY";
 const LEGACY_RESTORE_SEPARATOR_LABEL = "---- restored session ----";
 // Built from a char code so the ESC control char isn't a literal in a regex.
 const SGR_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
+const SGR_RESET = `${String.fromCharCode(27)}[0m`;
+
+function plainText(serialized: string): string {
+  return serialized.replace(SGR_PATTERN, "").trim();
+}
+
+/**
+ * Cut the idle prompt a session closed on off the end of its serialized
+ * scrollback: the marker line and the blank line the prompt starts with. The
+ * restored session prints its own prompt below the boundary, so the old one
+ * would show as a second, dead prompt. A marker with anything after it (typed
+ * input, a running command's output) is history and stays.
+ */
+function cutIdlePrompt(serialized: string): { scrollback: string; idlePromptId?: string } {
+  const lines = serialized.split("\r\n");
+  const dropTrailingBlankLines = () => {
+    while (lines.length > 0 && plainText(lines[lines.length - 1]) === "") lines.pop();
+  };
+  dropTrailingBlankLines();
+  const idlePromptId = promptMarkerIdOf(plainText(lines[lines.length - 1] ?? ""));
+  if (idlePromptId === undefined) {
+    return { scrollback: serialized };
+  }
+  lines.pop();
+  dropTrailingBlankLines();
+  // The cut took the serializer's closing reset along.
+  return { scrollback: lines.length > 0 ? `${lines.join("\r\n")}${SGR_RESET}` : "", idlePromptId };
+}
 /**
  * Shift restored marker ids past any the live session will mint. bash/zsh count
  * from 1 each session, so without this a restored `^^#1` would collide with the
@@ -568,12 +596,6 @@ export class SessionHost {
   // ---- reading the buffer ---------------------------------------------
 
   /**
-   * A restorable snapshot of the buffer: the scrollback serialized to text with
-   * SGR colours and the concealed `^^#` marker lines, plus per-command metadata,
-   * so a restored session looks and behaves like it did at close (step 27).
-   * `maxLines <= 0` captures nothing.
-   */
-  /**
    * Record this session's running command (if any) as aborted, before the shell
    * is killed on quit, so it isn't lost from history (step 27b-2). Awaited.
    */
@@ -581,15 +603,22 @@ export class SessionHost {
     return this.model.recordAbortedCommand();
   }
 
+  /**
+   * A restorable snapshot of the buffer: the scrollback serialized to text with
+   * SGR colours and the concealed `^^#` marker lines, plus per-command metadata,
+   * so a restored session looks and behaves like it did at close (step 27).
+   * The idle prompt it closed on is left out - the restored session has its own.
+   * `maxLines <= 0` captures nothing.
+   */
   snapshot(maxLines: number): SessionSnapshot {
     if (maxLines <= 0) {
       return { version: SESSION_SNAPSHOT_VERSION, scrollback: null, commands: [] };
     }
-    const scrollback = this.captureScrollback(maxLines);
+    const captured = this.captureScrollback(maxLines);
     return {
       version: SESSION_SNAPSHOT_VERSION,
-      scrollback,
-      commands: scrollback ? this.captureCommands() : [],
+      scrollback: captured?.scrollback ?? null,
+      commands: captured ? this.captureCommands(captured.idlePromptId) : [],
     };
   }
 
@@ -599,7 +628,9 @@ export class SessionHost {
    * the live session's ids never reach, so restored markers can't collide with
    * new ones - bash/zsh restart their counter at 1 (step 27).
    */
-  private captureScrollback(maxLines: number): string | null {
+  private captureScrollback(
+    maxLines: number,
+  ): { scrollback: string; idlePromptId: string | undefined } | null {
     const terminal = this.renderer?.terminal;
     if (!terminal) {
       return null;
@@ -616,17 +647,21 @@ export class SessionHost {
     const withoutBoundaries = serialized
       .split("\r\n")
       .filter((line) => {
-        const text = line.replace(SGR_PATTERN, "").trim();
+        const text = plainText(line);
         return text !== RESTORE_BOUNDARY_SENTINEL && text !== LEGACY_RESTORE_SEPARATOR_LABEL;
       })
       .join("\r\n");
-    if (withoutBoundaries.replace(SGR_PATTERN, "").trim() === "") {
+    const { scrollback, idlePromptId } = cutIdlePrompt(withoutBoundaries);
+    if (plainText(scrollback) === "") {
       return null;
     }
-    return withoutBoundaries.replace(
-      MARKER_ID_PATTERN,
-      (_match, digits: string) => `^^#${offsetMarkerId(digits)}`,
-    );
+    return {
+      scrollback: scrollback.replace(
+        MARKER_ID_PATTERN,
+        (_match, digits: string) => `^^#${offsetMarkerId(digits)}`,
+      ),
+      idlePromptId,
+    };
   }
 
   /**
@@ -635,9 +670,9 @@ export class SessionHost {
    * run it, and without metadata its (concealed) restored marker renders nothing
    * (step 27).
    */
-  private captureCommands(): CommandSnapshot[] {
+  private captureCommands(idlePromptId: string | undefined): CommandSnapshot[] {
     return this.model.commands
-      .filter((command) => !command.isIntegrationBootstrap)
+      .filter((command) => !command.isIntegrationBootstrap && command.id !== idlePromptId)
       .map((command) => ({
         id: offsetMarkerId(command.id),
         directory: command.directory ?? "",
@@ -686,7 +721,9 @@ export class SessionHost {
     const snapshot = this._pendingRestore;
     this._pendingRestore = undefined;
     const terminal = this.renderer?.terminal;
-    if (!snapshot?.scrollback || !terminal) {
+    // Snapshots saved before the capture cut the idle prompt still carry it.
+    const { scrollback, idlePromptId } = cutIdlePrompt(snapshot?.scrollback ?? "");
+    if (!snapshot || !scrollback || !terminal) {
       this.startDeferredPty();
       return;
     }
@@ -695,7 +732,7 @@ export class SessionHost {
     this.resizeHandler?.fitTerminalWithoutPty();
 
     this.model.beginRestore();
-    terminal.write(snapshot.scrollback);
+    terminal.write(scrollback);
     // A concealed anchor line for the boundary; a decoration draws the visible
     // divider on it once it is parsed. Concealed + stripped on capture, so no
     // text is written and boundaries never stack.
@@ -705,16 +742,18 @@ export class SessionHost {
     const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
       this.model.updateCommands(
-        snapshot.commands.map((command) => {
-          const restored = new Command(
-            command.id,
-            command.directory,
-            command.machine,
-            command.user,
-          );
-          restored.setData(command.data);
-          return restored;
-        }),
+        snapshot.commands
+          .filter((command) => command.id !== idlePromptId)
+          .map((command) => {
+            const restored = new Command(
+              command.id,
+              command.directory,
+              command.machine,
+              command.user,
+            );
+            restored.setData(command.data);
+            return restored;
+          }),
       );
       this.promptMarkerRegistry?.anchorRestoredMarkers();
       this.model.endRestore();
