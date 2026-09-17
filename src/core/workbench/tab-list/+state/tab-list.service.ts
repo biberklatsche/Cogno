@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
-import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
+import { SLOTS } from "@cogno/core/workbench/actions/catalog";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ChangeTabTitleEvent } from "@cogno/core/workbench/bus/grid-list/events";
@@ -20,8 +20,6 @@ import { Tab, TabList } from "../+model/tab";
 
 @Injectable({ providedIn: "root" })
 export class TabListService {
-  private static readonly indexedShortcutLimit = 9;
-
   private _tabList: BehaviorSubject<TabList> = new BehaviorSubject<TabList>([]);
   private _showRename: WritableSignal<TabId | undefined> = signal(undefined);
   private readonly tabListByWorkspaceIdentifier = new Map<string, TabList>();
@@ -134,13 +132,11 @@ export class TabListService {
       this.removeAllTabs(this._tabList.value.find((tab) => tab.isActive)?.id);
     });
     actions.handle("close_all_tabs", () => this.removeAllTabs());
-    for (let index = 1; index <= TabListService.indexedShortcutLimit; index++) {
-      actions.handle(`open_shell_${index}` as CoreActionName, () =>
-        this.openShell(this.configService.getShellProfileByShortcutIndex(index)?.name),
+    for (const slot of SLOTS) {
+      actions.handle(`open_shell_${slot}`, () =>
+        this.openShell(this.configService.getShellProfileByShortcutIndex(slot)?.name),
       );
-      actions.handle(`select_tab_${index}` as CoreActionName, () =>
-        this.selectTabByShortcutIndex(index),
-      );
+      actions.handle(`select_tab_${slot}`, () => this.selectTabByShortcutIndex(slot));
     }
   }
 

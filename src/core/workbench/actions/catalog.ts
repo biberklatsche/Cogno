@@ -1,5 +1,8 @@
 import { defineAction } from "@cogno/shared/domain";
 
+/** The numbered shortcuts: shell profiles, tabs and workspaces 1 to 9. */
+export const SLOTS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
 /**
  * The catalog of every core action: its name, human label, description and the
  * default keybindings per platform (linux shares the windows defaults; macos
@@ -348,249 +351,39 @@ export const coreActionCatalog = [
     description: "Extend selection to line boundary",
     defaultKeys: { default: [{ combo: "Ctrl+Shift+N" }], macos: [{ combo: "Command+Shift+N" }] },
   }),
-  defineAction({
-    name: "open_shell_1",
-    label: "Open Shell 1",
-    description: "Open a new tab with shell profile 1",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+1", always: true }],
-      macos: [{ combo: "Command+Shift+1", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_2",
-    label: "Open Shell 2",
-    description: "Open a new tab with shell profile 2",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+2", always: true }],
-      macos: [{ combo: "Command+Shift+2", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_3",
-    label: "Open Shell 3",
-    description: "Open a new tab with shell profile 3",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+3", always: true }],
-      macos: [{ combo: "Command+Shift+3", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_4",
-    label: "Open Shell 4",
-    description: "Open a new tab with shell profile 4",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+4", always: true }],
-      macos: [{ combo: "Command+Shift+4", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_5",
-    label: "Open Shell 5",
-    description: "Open a new tab with shell profile 5",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+5", always: true }],
-      macos: [{ combo: "Command+Shift+5", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_6",
-    label: "Open Shell 6",
-    description: "Open a new tab with shell profile 6",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+6", always: true }],
-      macos: [{ combo: "Command+Shift+6", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_7",
-    label: "Open Shell 7",
-    description: "Open a new tab with shell profile 7",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+7", always: true }],
-      macos: [{ combo: "Command+Shift+7", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_8",
-    label: "Open Shell 8",
-    description: "Open a new tab with shell profile 8",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+8", always: true }],
-      macos: [{ combo: "Command+Shift+8", always: true }],
-    },
-  }),
-  defineAction({
-    name: "open_shell_9",
-    label: "Open Shell 9",
-    description: "Open a new tab with shell profile 9",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Shift+9", always: true }],
-      macos: [{ combo: "Command+Shift+9", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_1",
-    label: "Select Tab 1",
-    description: "Jump to tab 1",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+1", always: true }],
-      macos: [{ combo: "Command+1", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_2",
-    label: "Select Tab 2",
-    description: "Jump to tab 2",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+2", always: true }],
-      macos: [{ combo: "Command+2", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_3",
-    label: "Select Tab 3",
-    description: "Jump to tab 3",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+3", always: true }],
-      macos: [{ combo: "Command+3", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_4",
-    label: "Select Tab 4",
-    description: "Jump to tab 4",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+4", always: true }],
-      macos: [{ combo: "Command+4", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_5",
-    label: "Select Tab 5",
-    description: "Jump to tab 5",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+5", always: true }],
-      macos: [{ combo: "Command+5", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_6",
-    label: "Select Tab 6",
-    description: "Jump to tab 6",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+6", always: true }],
-      macos: [{ combo: "Command+6", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_7",
-    label: "Select Tab 7",
-    description: "Jump to tab 7",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+7", always: true }],
-      macos: [{ combo: "Command+7", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_8",
-    label: "Select Tab 8",
-    description: "Jump to tab 8",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+8", always: true }],
-      macos: [{ combo: "Command+8", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_tab_9",
-    label: "Select Tab 9",
-    description: "Jump to tab 9",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+9", always: true }],
-      macos: [{ combo: "Command+9", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_1",
-    label: "Select Workspace 1",
-    description: "Switch to workspace 1",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+1", always: true }],
-      macos: [{ combo: "Command+Alt+1", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_2",
-    label: "Select Workspace 2",
-    description: "Switch to workspace 2",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+2", always: true }],
-      macos: [{ combo: "Command+Alt+2", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_3",
-    label: "Select Workspace 3",
-    description: "Switch to workspace 3",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+3", always: true }],
-      macos: [{ combo: "Command+Alt+3", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_4",
-    label: "Select Workspace 4",
-    description: "Switch to workspace 4",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+4", always: true }],
-      macos: [{ combo: "Command+Alt+4", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_5",
-    label: "Select Workspace 5",
-    description: "Switch to workspace 5",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+5", always: true }],
-      macos: [{ combo: "Command+Alt+5", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_6",
-    label: "Select Workspace 6",
-    description: "Switch to workspace 6",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+6", always: true }],
-      macos: [{ combo: "Command+Alt+6", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_7",
-    label: "Select Workspace 7",
-    description: "Switch to workspace 7",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+7", always: true }],
-      macos: [{ combo: "Command+Alt+7", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_8",
-    label: "Select Workspace 8",
-    description: "Switch to workspace 8",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+8", always: true }],
-      macos: [{ combo: "Command+Alt+8", always: true }],
-    },
-  }),
-  defineAction({
-    name: "select_workspace_9",
-    label: "Select Workspace 9",
-    description: "Switch to workspace 9",
-    defaultKeys: {
-      default: [{ combo: "Ctrl+Alt+9", always: true }],
-      macos: [{ combo: "Command+Alt+9", always: true }],
-    },
-  }),
+  ...SLOTS.map((slot) =>
+    defineAction({
+      name: `open_shell_${slot}`,
+      label: `Open Shell ${slot}`,
+      description: `Open a new tab with shell profile ${slot}`,
+      defaultKeys: {
+        default: [{ combo: `Ctrl+Shift+${slot}`, always: true }],
+        macos: [{ combo: `Command+Shift+${slot}`, always: true }],
+      },
+    }),
+  ),
+  ...SLOTS.map((slot) =>
+    defineAction({
+      name: `select_tab_${slot}`,
+      label: `Select Tab ${slot}`,
+      description: `Jump to tab ${slot}`,
+      defaultKeys: {
+        default: [{ combo: `Ctrl+${slot}`, always: true }],
+        macos: [{ combo: `Command+${slot}`, always: true }],
+      },
+    }),
+  ),
+  ...SLOTS.map((slot) =>
+    defineAction({
+      name: `select_workspace_${slot}`,
+      label: `Select Workspace ${slot}`,
+      description: `Switch to workspace ${slot}`,
+      defaultKeys: {
+        default: [{ combo: `Ctrl+Alt+${slot}`, always: true }],
+        macos: [{ combo: `Command+Alt+${slot}`, always: true }],
+      },
+    }),
+  ),
   defineAction({
     name: "select_workspace_default",
     label: "Select Workspace Default",
