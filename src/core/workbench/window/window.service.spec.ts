@@ -49,7 +49,6 @@ const windowCoreStub = {
 } as unknown as WindowCore;
 const processStub = {
   exit: vi.fn(() => Promise.resolve()),
-  relaunch: vi.fn(() => Promise.resolve()),
 } as unknown as Process;
 
 describe("WindowService", () => {

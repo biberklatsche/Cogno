@@ -24,10 +24,6 @@ export class Fs {
     return tauriWriteTextFile(path, data);
   }
 
-  appendTextFile(path: string, data: string): Promise<void> {
-    return tauriWriteTextFile(path, data, { append: true });
-  }
-
   mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
     return tauriMkdir(path, options);
   }

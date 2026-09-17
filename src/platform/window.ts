@@ -22,10 +22,6 @@ export class AppWindow {
     return currentWindow().isMaximized();
   }
 
-  isMinimized(): Promise<boolean> {
-    return currentWindow().isMinimized();
-  }
-
   setFocus(): Promise<void> {
     return currentWindow().setFocus();
   }
@@ -36,10 +32,6 @@ export class AppWindow {
 
   minimize(): Promise<void> {
     return currentWindow().minimize();
-  }
-
-  unminimize(): Promise<void> {
-    return currentWindow().unminimize();
   }
 
   maximize(): Promise<void> {
