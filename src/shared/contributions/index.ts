@@ -1,6 +1,5 @@
 export * from "./application-settings-extension";
 export * from "./application-settings-section-definition";
-export * from "./configuration-transformer";
 export * from "./database-migration";
 export * from "./feature-definition";
 export * from "./feature-settings";
