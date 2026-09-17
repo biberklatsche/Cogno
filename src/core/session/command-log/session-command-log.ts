@@ -39,7 +39,7 @@ export const DEFAULT_MAX_PENDING_WRITES = 256;
  */
 @Injectable()
 export class SessionCommandLog {
-  private readonly repository$ = new BehaviorSubject<CommandLogRepository | null>(null);
+  private repository: CommandLogRepository | null = null;
   private readonly health = new CommandLogHealthTracker();
   private readonly health$$ = new BehaviorSubject<CommandLogHealth>(HEALTHY);
   private readonly queue: WriteAction[] = [];
@@ -78,7 +78,7 @@ export class SessionCommandLog {
 
     return CommandLogRepository.createForContext(this.databaseAccess, shellContext, adapter)
       .then((repository) => {
-        this.repository$.next(repository);
+        this.repository = repository;
         void this.drain();
         return repository;
       })
@@ -117,7 +117,7 @@ export class SessionCommandLog {
    * fire-and-forget queue. A missing repository or a failure is swallowed.
    */
   async writeAndAwait(action: WriteAction): Promise<void> {
-    const repository = this.repository$.value;
+    const repository = this.repository;
     if (this.disabled || !repository) return;
     try {
       await action(repository);
@@ -136,7 +136,7 @@ export class SessionCommandLog {
     this.draining = true;
     try {
       while (this.queue.length > 0) {
-        const repository = this.repository$.value;
+        const repository = this.repository;
         if (!repository) return; // opens later; the queue waits, bounded.
 
         const backoffMs = this.health.backoffMs;
@@ -268,7 +268,7 @@ export class SessionCommandLog {
   }
 
   private async read<T>(query: (reader: CommandLogReader) => Promise<T>, empty: T): Promise<T> {
-    const repository = this.repository$.value;
+    const repository = this.repository;
     if (!repository) return empty;
     return query(repository);
   }

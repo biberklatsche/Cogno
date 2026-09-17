@@ -300,10 +300,6 @@ export class SessionModel {
     return this._state.value.isCommandRunning;
   }
 
-  get isCommandRunning$(): Observable<boolean> {
-    return this._state.pipe(map((s) => s.isCommandRunning));
-  }
-
   /**
    * `overrideInputText` lets programmatic submitters (history auto-execute,
    * composer, autocomplete) pass the text they are about to submit: unlike a
@@ -345,20 +341,12 @@ export class SessionModel {
     return this._state.value.input;
   }
 
-  get input$(): Observable<TerminalInput> {
-    return this._state.pipe(map((s) => s.input));
-  }
-
   updateInput(input: TerminalInput): void {
     this.update({ input });
   }
 
   get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {
     return this._state.value.sessionCapabilities;
-  }
-
-  get sessionCapabilities$(): Observable<ShellSessionCapabilitiesContract | undefined> {
-    return this._state.pipe(map((s) => s.sessionCapabilities));
   }
 
   /** Ends the current command's context if it opened one; then the prompt is the outer shell's. */
@@ -459,10 +447,6 @@ export class SessionModel {
 
   get isPaneMaximized(): boolean {
     return this._state.value.isPaneMaximized;
-  }
-
-  get isPaneMaximized$(): Observable<boolean> {
-    return this._state.pipe(map((s) => s.isPaneMaximized));
   }
 
   setPaneMaximized(isPaneMaximized: boolean): void {

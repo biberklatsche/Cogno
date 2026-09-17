@@ -146,7 +146,7 @@ export class SessionHost {
   private readonly pty: IPty;
   private readonly hostFacts = new Subject<SessionFact>();
   private readonly runtime$$ = new BehaviorSubject<SessionRuntime>({ status: "allocated" });
-  private readonly display$$ = new BehaviorSubject<SessionDisplay>("detached");
+  private _display: SessionDisplay = "detached";
   private readonly subscription = new Subscription();
   private readonly disposables: IDisposable[] = [];
   private readonly commandBlockResolver: CommandBlockResolver;
@@ -218,11 +218,7 @@ export class SessionHost {
   }
 
   get display(): SessionDisplay {
-    return this.display$$.value;
-  }
-
-  get display$(): Observable<SessionDisplay> {
-    return this.display$$.asObservable();
+    return this._display;
   }
 
   get terminalId(): TerminalId | undefined {
@@ -448,7 +444,6 @@ export class SessionHost {
     this.subscription.unsubscribe();
     this.setRuntime({ status: "closed" });
     this.runtime$$.complete();
-    this.display$$.complete();
   }
 
   // ---- axis B: display -----------------------------------------------------
@@ -469,7 +464,7 @@ export class SessionHost {
     if (this.hostElement.parentElement !== parent) {
       parent.appendChild(this.hostElement);
     }
-    this.display$$.next("attached");
+    this._display = "attached";
     this.renderer.setVisible(true);
     this.resizeHandler?.resize();
     this.scheduleRestoreIfPending();
@@ -480,7 +475,7 @@ export class SessionHost {
     if (this.display === "detached") return;
     this.hostElement?.remove();
     this.renderer.setVisible(false);
-    this.display$$.next("detached");
+    this._display = "detached";
   }
 
   private openInto(element: HTMLDivElement): HTMLDivElement {
