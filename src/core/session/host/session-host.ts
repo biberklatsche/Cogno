@@ -764,39 +764,6 @@ export class SessionHost {
     this.disposables.push(this.renderer.register(this.ptyHandler));
   }
 
-  getRecentOutputSnapshot(maxLines = 60, maxChars = 4000): string {
-    const terminal = this.renderer?.terminal;
-    if (!terminal) {
-      return "";
-    }
-
-    const lineTexts: string[] = [];
-    const beginLineIndex = Math.max(0, terminal.buffer.active.length - maxLines);
-    for (
-      let currentLineIndex = beginLineIndex;
-      currentLineIndex < terminal.buffer.active.length;
-      currentLineIndex++
-    ) {
-      const line = terminal.buffer.active.getLine(currentLineIndex);
-      if (!line) {
-        continue;
-      }
-
-      const lineText = line.translateToString(false);
-      if (lineText.startsWith("^^#")) {
-        continue;
-      }
-      lineTexts.push(lineText);
-    }
-
-    const snapshot = lineTexts.join("\n").trim();
-    if (snapshot.length <= maxChars) {
-      return snapshot;
-    }
-
-    return snapshot.slice(snapshot.length - maxChars);
-  }
-
   /**
    * The session's process tree, queried fresh on every call - it is a live
    * view of what the shell is running now, never cached or reported as a fact.
@@ -807,21 +774,6 @@ export class SessionHost {
       return Promise.reject(new Error("Session has no terminal id yet."));
     }
     return TauriPty.getProcessTreeByTerminalId(terminalId);
-  }
-
-  getLatestCommandOutputSnapshot(maxChars = 3000): string {
-    const latestCommand = this.model.commands.at(-1);
-    if (!latestCommand) {
-      return "";
-    }
-
-    const outputText =
-      this.commandBlockResolver.resolveByCommandId(latestCommand.id)?.outputText ?? "";
-    if (outputText.length <= maxChars) {
-      return outputText;
-    }
-
-    return outputText.slice(outputText.length - maxChars);
   }
 
   /** The marker menu for the first command scrolled out of view; empty when there is none. */

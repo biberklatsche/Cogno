@@ -1,7 +1,6 @@
 import type { BoundSession } from "@cogno/core/api/session-api";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import {
   type IdentifiedSessionFact,
   TerminalSessionRegistry,
@@ -12,10 +11,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("TerminalGatewayService", () => {
   let appBus: AppBus;
-  let gridListService: Pick<
-    GridListService,
-    "getFocusedTerminalId" | "findTabIdByTerminalId" | "findWorkspaceIdentifierByTerminalId"
-  >;
   let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has" | "facts$">;
   let commandRunner: Pick<CommandRunner, "run">;
   let filesystem: Pick<Filesystem, "readTextFile" | "normalizePath">;
@@ -28,19 +23,12 @@ describe("TerminalGatewayService", () => {
     commandRunner = {
       run: vi.fn().mockResolvedValue({ stdout: "ok", stderr: "", exitCode: 0 }),
     };
-    gridListService = {
-      getFocusedTerminalId: vi.fn().mockReturnValue("terminal-1"),
-      findTabIdByTerminalId: vi.fn().mockReturnValue("tab-1"),
-      findWorkspaceIdentifierByTerminalId: vi.fn().mockReturnValue("workspace-1"),
-    };
     terminalSessionRegistry = {
       facts$: sessionFacts,
       has: vi.fn().mockReturnValue(true),
       get: vi.fn().mockReturnValue({
         host: {
           runtime$: new BehaviorSubject({ status: "running" }),
-          getRecentOutputSnapshot: vi.fn().mockReturnValue("recent output"),
-          getLatestCommandOutputSnapshot: vi.fn().mockReturnValue("latest output"),
           getProcessTree: vi.fn().mockResolvedValue({
             rootProcess: {
               processId: 42,
@@ -77,58 +65,10 @@ describe("TerminalGatewayService", () => {
     };
     service = new TerminalGatewayService(
       appBus,
-      gridListService as GridListService,
       terminalSessionRegistry as TerminalSessionRegistry,
       commandRunner as CommandRunner,
       filesystem as Filesystem,
     );
-  });
-
-  it("publishes terminal focus and input events", () => {
-    const publishSpy = vi.spyOn(appBus, "publish");
-
-    service.focusTerminal("terminal-2");
-    service.injectInput({ terminalId: "terminal-2", text: "ls\n" });
-
-    expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: ["app", "terminal"],
-        type: "FocusTerminal",
-        payload: "terminal-2",
-      }),
-    );
-    expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: ["app", "terminal"],
-        type: "WriteRawToPty",
-        payload: { terminalId: "terminal-2", text: "ls\n" },
-      }),
-    );
-  });
-
-  it("exposes busy and focus streams from the app bus", async () => {
-    const focusedTerminalIdPromise = firstValueFrom(service.focusedTerminalId$);
-    const busyStatePromise = firstValueFrom(service.busyStateChanges$);
-
-    appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-3" });
-    sessionFacts.next({ terminalId: "terminal-3", fact: { type: "busyChanged", isBusy: true } });
-
-    await expect(focusedTerminalIdPromise).resolves.toBe("terminal-3");
-    await expect(busyStatePromise).resolves.toEqual({
-      terminalId: "terminal-3",
-      isBusy: true,
-    });
-  });
-
-  it("follows focus reported as a session fact (a plain terminal click)", async () => {
-    const focusedTerminalIdPromise = firstValueFrom(service.focusedTerminalId$);
-
-    sessionFacts.next({
-      terminalId: "clicked-terminal",
-      fact: { type: "focusChanged", focused: true },
-    });
-
-    await expect(focusedTerminalIdPromise).resolves.toBe("clicked-terminal");
   });
 
   it("binds to a session focused by a click (fact), not just FocusTerminal", async () => {
@@ -139,55 +79,6 @@ describe("TerminalGatewayService", () => {
     if (boundSession.status === "active") {
       expect(boundSession.session.identity.terminalId).toBe("t1");
     }
-  });
-
-  it("captures focused terminal snapshots with optional process info", async () => {
-    await expect(
-      service.captureFocusedSnapshot({
-        includeProcessSummary: true,
-        maxCommands: 1,
-        maxOutputChars: 500,
-      }),
-    ).resolves.toEqual({
-      terminalId: "terminal-1",
-      tabId: "tab-1",
-      workspaceId: "workspace-1",
-      shellType: "Bash",
-      shellContext: { shellType: "Bash", backendOs: "linux" },
-      cwd: "/workspace",
-      input: "pwd",
-      isCommandRunning: true,
-      commands: [
-        {
-          id: "command-1",
-          text: "pwd",
-          cwd: "/workspace",
-          durationMs: 10,
-          returnCode: 0,
-        },
-      ],
-      lastOutput: "recent output",
-      latestCommandOutput: "latest output",
-      process: {
-        processId: 42,
-        name: "bash",
-        cwd: "/workspace",
-      },
-    });
-  });
-
-  it("returns undefined when no focused terminal or session exists", async () => {
-    vi.mocked(gridListService.getFocusedTerminalId).mockReturnValue(undefined);
-    await expect(service.captureFocusedSnapshot()).resolves.toBeUndefined();
-
-    vi.mocked(gridListService.getFocusedTerminalId).mockReturnValue("missing");
-    vi.mocked(terminalSessionRegistry.get).mockReturnValue(undefined);
-    await expect(service.captureSnapshot("missing")).resolves.toBeUndefined();
-  });
-
-  it("reports terminal presence from the registry", () => {
-    expect(service.getFocusedTerminalId()).toBe("terminal-1");
-    expect(service.hasTerminal("terminal-1")).toBe(true);
   });
 
   describe("write protection", () => {

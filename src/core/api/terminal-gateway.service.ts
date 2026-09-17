@@ -1,7 +1,5 @@
 import { Injectable } from "@angular/core";
-import { Command } from "@cogno/core/session/model/command.model";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { isWslShellContext, TerminalId } from "@cogno/shared/domain";
@@ -11,19 +9,15 @@ import { BoundSessionIdentity, BoundSessionMode, SessionBinding } from "./bound-
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 import { BoundSession, BoundSessionHandle, SessionApi } from "./session-api";
 import { SessionRunRequest, SessionRunResult } from "./session-run";
-import {
-  TerminalBusyStateChangeContract,
-  TerminalGateway,
-  TerminalInputRequestContract,
-  TerminalSnapshotCommandContract,
-  TerminalSnapshotContract,
-  TerminalSnapshotOptionsContract,
-} from "./terminal-gateway.port";
+
+export interface TerminalInputRequestContract {
+  readonly terminalId: TerminalId;
+  readonly text: string;
+  readonly autoExecute?: boolean;
+}
 
 @Injectable({ providedIn: "root" })
-export class TerminalGatewayService extends TerminalGateway implements SessionApi {
-  readonly focusedTerminalId$: Observable<TerminalId | undefined>;
-  readonly busyStateChanges$: Observable<TerminalBusyStateChangeContract>;
+export class TerminalGatewayService implements SessionApi {
   readonly cwdChanges$: Observable<void>;
 
   /** The session the API is bound to; follows focus unless held. */
@@ -32,12 +26,10 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
 
   constructor(
     private readonly appBus: AppBus,
-    private readonly gridListService: GridListService,
     private readonly terminalSessionRegistry: TerminalSessionRegistry,
     private readonly commandRunner: CommandRunner,
     private readonly filesystem: Filesystem,
   ) {
-    super();
     // Focus reaches the binding two ways: an explicit FocusTerminal command
     // (keybind, palette, reveal) and the focusChanged fact a terminal reports
     // when it actually takes focus - a plain click only does the latter, so the
@@ -50,12 +42,8 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
         filter(({ fact }) => fact.type === "focusChanged" && fact.focused),
         map(({ terminalId }) => terminalId),
       );
-    this.focusedTerminalId$ = merge(focusFromCommand$, focusFromFact$).pipe(distinctUntilChanged());
-    this.busyStateChanges$ = this.terminalSessionRegistry.facts$.pipe(
-      map(({ terminalId, fact }) =>
-        fact.type === "busyChanged" ? { terminalId, isBusy: fact.isBusy } : undefined,
-      ),
-      filter((change): change is TerminalBusyStateChangeContract => change !== undefined),
+    const focusedTerminalId$ = merge(focusFromCommand$, focusFromFact$).pipe(
+      distinctUntilChanged(),
     );
     this.cwdChanges$ = this.terminalSessionRegistry.facts$.pipe(
       filter(({ fact }) => fact.type === "cwdReported"),
@@ -63,7 +51,7 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
     );
 
     this.boundSessionTracker = new BoundSessionTracker(
-      this.focusedTerminalId$,
+      focusedTerminalId$,
       (terminalId) => this.identityOf(terminalId),
       (terminalId) => this.runtimeOf(terminalId),
     );
@@ -160,7 +148,11 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
 
   /** Bring a session into view (workspace + tab + focus). */
   revealSession(terminalId: TerminalId): void {
-    this.revealTerminal(terminalId);
+    this.appBus.publish({
+      path: ["app", "terminal"],
+      type: "RevealTerminal",
+      payload: terminalId,
+    });
   }
 
   private identityOf(terminalId: TerminalId): BoundSessionIdentity | undefined {
@@ -191,30 +183,6 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
         return "active";
       }),
     );
-  }
-
-  getFocusedTerminalId(): TerminalId | undefined {
-    return this.gridListService.getFocusedTerminalId();
-  }
-
-  hasTerminal(terminalId: TerminalId | undefined): boolean {
-    return this.terminalSessionRegistry.has(terminalId);
-  }
-
-  focusTerminal(terminalId: TerminalId): void {
-    this.appBus.publish({
-      path: ["app", "terminal"],
-      type: "FocusTerminal",
-      payload: terminalId,
-    });
-  }
-
-  revealTerminal(terminalId: TerminalId): void {
-    this.appBus.publish({
-      path: ["app", "terminal"],
-      type: "RevealTerminal",
-      payload: terminalId,
-    });
   }
 
   /**
@@ -296,74 +264,5 @@ export class TerminalGatewayService extends TerminalGateway implements SessionAp
       timeoutMs: request.timeoutMs,
     });
     return { status: "ran", result };
-  }
-
-  async captureFocusedSnapshot(
-    options?: TerminalSnapshotOptionsContract,
-  ): Promise<TerminalSnapshotContract | undefined> {
-    const focusedTerminalId = this.getFocusedTerminalId();
-    if (!focusedTerminalId) {
-      return undefined;
-    }
-
-    return this.captureSnapshot(focusedTerminalId, options);
-  }
-
-  async captureSnapshot(
-    terminalId: TerminalId,
-    options?: TerminalSnapshotOptionsContract,
-  ): Promise<TerminalSnapshotContract | undefined> {
-    const terminalSessionEntry = this.terminalSessionRegistry.get(terminalId);
-    if (!terminalSessionEntry) {
-      return undefined;
-    }
-
-    const maxCommands = options?.maxCommands ?? 8;
-    const maxOutputChars = options?.maxOutputChars ?? 4000;
-    const terminalState = terminalSessionEntry.host.state;
-    const commandSummaries = terminalSessionEntry.host.model.commands
-      .slice(-maxCommands)
-      .map((command) => this.toCommandSummary(command));
-
-    let process: TerminalSnapshotContract["process"];
-    if (options?.includeProcessSummary) {
-      try {
-        const processTreeSnapshot = await terminalSessionEntry.host.getProcessTree();
-        process = {
-          processId: processTreeSnapshot.rootProcess.processId,
-          name: processTreeSnapshot.rootProcess.name,
-          cwd: processTreeSnapshot.rootProcess.currentWorkingDirectory ?? undefined,
-        };
-      } catch {
-        process = undefined;
-      }
-    }
-
-    return {
-      terminalId,
-      tabId: this.gridListService.findTabIdByTerminalId(terminalId),
-      workspaceId: this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId),
-      shellType: terminalState.shellContext.shellType,
-      shellContext: terminalState.shellContext,
-      cwd: terminalState.cwd,
-      input: terminalState.input.text,
-      isCommandRunning: terminalState.isCommandRunning,
-      commands: commandSummaries,
-      lastOutput: terminalSessionEntry.host.getRecentOutputSnapshot(60, maxOutputChars),
-      latestCommandOutput: terminalSessionEntry.host.getLatestCommandOutputSnapshot(
-        Math.min(maxOutputChars, 3000),
-      ),
-      process,
-    };
-  }
-
-  private toCommandSummary(command: Command): TerminalSnapshotCommandContract {
-    return {
-      id: command.id,
-      text: command.command,
-      cwd: command.directory,
-      durationMs: command.duration,
-      returnCode: command.returnCode,
-    };
   }
 }

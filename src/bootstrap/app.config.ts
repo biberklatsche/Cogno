@@ -12,7 +12,6 @@ import { NotificationCenterPortAdapterService } from "@cogno/core/api/notificati
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalAnimationAdapterService } from "@cogno/core/api/terminal-animation.adapter.service";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
-import { TerminalGateway } from "@cogno/core/api/terminal-gateway.port";
 import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
 import { TerminalIpcAdapterService } from "@cogno/core/api/terminal-ipc.adapter.service";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -83,7 +82,6 @@ export const appConfig: ApplicationConfig = {
     { provide: FEATURE_DEFINITIONS, useValue: features },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
-    { provide: TerminalGateway, useExisting: TerminalGatewayService },
     { provide: SessionApi, useExisting: TerminalGatewayService },
     { provide: TerminalSearchApi, useExisting: TerminalSearchApiService },
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
