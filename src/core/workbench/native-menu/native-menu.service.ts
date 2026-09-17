@@ -137,9 +137,11 @@ export class NativeMenuService {
   }
 
   private getFeatureMode(configPath: string): FeatureMode | undefined {
-    const featureConfigValue = (
-      this.latestConfig as unknown as Record<string, unknown> | undefined
-    )?.[configPath];
+    // `configPath` is dotted ("feature.git") and the config is nested.
+    const featureConfigValue = configPath.split(".").reduce<unknown>((value, segment) => {
+      if (typeof value !== "object" || value === null) return undefined;
+      return (value as Record<string, unknown>)[segment];
+    }, this.latestConfig);
     if (typeof featureConfigValue !== "object" || featureConfigValue === null) {
       return undefined;
     }

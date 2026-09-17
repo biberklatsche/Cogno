@@ -89,7 +89,7 @@ describe("NativeMenuService", () => {
           order: 2,
           icon: "mdiRobot",
           actionName: "open_ai",
-          configPath: "ai",
+          configPath: "feature.ai",
         },
         {
           id: "workspace",
@@ -97,7 +97,7 @@ describe("NativeMenuService", () => {
           order: 1,
           icon: "mdiFolder",
           actionName: "open_workspace",
-          configPath: "workspace",
+          configPath: "feature.workspace",
         },
       ]),
     };
@@ -113,8 +113,10 @@ describe("NativeMenuService", () => {
       destroyRef,
     );
     (nativeMenuService as unknown as { latestConfig?: Record<string, unknown> }).latestConfig = {
-      workspace: { mode: "on" },
-      ai: { mode: "off" },
+      feature: {
+        workspace: { mode: "on" },
+        ai: { mode: "off" },
+      },
     };
   });
 
@@ -163,17 +165,17 @@ describe("NativeMenuService", () => {
     expect(
       (
         nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }
-      ).getFeatureMode("workspace"),
+      ).getFeatureMode("feature.workspace"),
     ).toBe("on");
     expect(
       (
         nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }
-      ).getFeatureMode("ai"),
+      ).getFeatureMode("feature.ai"),
     ).toBe("off");
     expect(
       (
         nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }
-      ).getFeatureMode("missing"),
+      ).getFeatureMode("feature.missing"),
     ).toBeUndefined();
 
     const publishedEvents: unknown[] = [];
