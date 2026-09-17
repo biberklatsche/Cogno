@@ -87,7 +87,11 @@ describe("TerminalComponent (failed start)", () => {
     component.closeAfterFailure();
 
     expect(bus.publish).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "RemovePane", payload: "terminal-1" }),
+      expect.objectContaining({
+        type: "ActionFired",
+        payload: "close_terminal",
+        terminalId: "terminal-1",
+      }),
     );
   });
 

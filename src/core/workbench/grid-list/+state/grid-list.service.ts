@@ -1,13 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import {
-  FocusActiveTerminalAction,
-  MaximizePaneAction,
-  MinimizePaneAction,
-  SelectNextPaneAction,
-  SelectPreviousPaneAction,
-} from "@cogno/core/workbench/bus/grid-list/actions";
+import { FocusActiveTerminalAction } from "@cogno/core/workbench/bus/grid-list/actions";
 import {
   TabAddedEvent,
   TabRemovedEvent,
@@ -248,88 +242,6 @@ export class GridListService {
           this.applyPaneFocus(terminalId);
         }
       });
-
-    this.bus
-      .onType$("RemovePane")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        event.propagationStopped = true;
-        const terminalId = event.payload;
-        if (!terminalId) return;
-        this.removePane(terminalId);
-      });
-
-    this.bus
-      .onType$("SplitPaneRight")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.split(event.payload, "vertical", "r");
-        event.propagationStopped = true;
-      });
-
-    this.bus
-      .onType$("SplitPaneLeft")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.split(event.payload, "vertical", "l");
-        event.propagationStopped = true;
-      });
-
-    this.bus
-      .onType$("SplitPaneDown")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.split(event.payload, "horizontal", "r");
-        event.propagationStopped = true;
-      });
-
-    this.bus
-      .onType$("SplitPaneUp")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event) => {
-        if (!event.payload) return;
-        this.split(event.payload, "horizontal", "l");
-        event.propagationStopped = true;
-      });
-
-    this.bus
-      .onType$("SelectNextPane")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: SelectNextPaneAction) => {
-        if (!event.payload) return;
-        this.focusAdjacentPane(event.payload, 1);
-        event.propagationStopped = true;
-      });
-
-    this.bus
-      .onType$("SelectPreviousPane")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: SelectPreviousPaneAction) => {
-        if (!event.payload) return;
-        this.focusAdjacentPane(event.payload, -1);
-        event.propagationStopped = true;
-      });
-
-    this.bus
-      .onType$("MaximizePane")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: MaximizePaneAction) => {
-        if (!event.payload) return;
-        this.togglePaneMaximize(event.payload);
-        event.propagationStopped = true;
-      });
-
-    this.bus
-      .onType$("MinimizePane")
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((event: MinimizePaneAction) => {
-        if (event.payload && this._maximizedTerminalId.value !== event.payload) return;
-        this.minimizePane();
-        event.propagationStopped = true;
-      });
   }
 
   removePane(terminalId: TerminalId) {
@@ -441,7 +353,7 @@ export class GridListService {
     this.setActiveWorkspaceGridList(gridList);
   }
 
-  private split(terminalId: TerminalId, splitDirection: SplitDirection, side: "l" | "r") {
+  split(terminalId: TerminalId, splitDirection: SplitDirection, side: "l" | "r") {
     if (!this._activeTabId.value) throw new Error("No active tab id found.");
     const gridList = this.getActiveWorkspaceGridList();
     const tree = gridList[this._activeTabId.value].tree;
@@ -655,6 +567,13 @@ export class GridListService {
     }
   }
 
+  /** True when the pane of `terminalId` belongs to the tab that is showing. */
+  isPaneInActiveTab(terminalId: TerminalId): boolean {
+    return !!this.getActiveGrid()?.tree.first(
+      (node) => node.isLeaf && node.data?.terminalId === terminalId,
+    );
+  }
+
   getFocusedTerminalId(): TerminalId | undefined {
     const activeGrid = this.getActiveGrid();
     if (!activeGrid) return;
@@ -667,7 +586,7 @@ export class GridListService {
     this.bus.publish({ type: "FocusActiveTerminal" });
   }
 
-  private focusAdjacentPane(terminalId: TerminalId, direction: 1 | -1): void {
+  focusAdjacentPane(terminalId: TerminalId, direction: 1 | -1): void {
     const activeGrid = this.getActiveGrid();
     if (!activeGrid) return;
     const currentLeaf = activeGrid.tree.first(
@@ -694,7 +613,7 @@ export class GridListService {
     this.bus.publish({ type: "PaneMaximizedChanged", payload: { terminalId } });
   }
 
-  private togglePaneMaximize(terminalId: TerminalId): void {
+  togglePaneMaximize(terminalId: TerminalId): void {
     if (this._maximizedTerminalId.value === terminalId) {
       this.minimizePane();
       return;

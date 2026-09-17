@@ -16,6 +16,7 @@ import { TerminalComposerService } from "@cogno/core/session/composer/terminal-c
 import { TerminalHistoryComponent } from "@cogno/core/session/history/terminal-history.component";
 import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
+import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
@@ -117,6 +118,6 @@ export class TerminalComponent implements AfterViewInit {
   closeAfterFailure(): void {
     const terminalId = this.host.terminalId;
     if (!terminalId) return;
-    this.bus.publish({ path: ["app", "terminal"], type: "RemovePane", payload: terminalId });
+    this.bus.publish(ActionFired.create("close_terminal", undefined, undefined, terminalId));
   }
 }

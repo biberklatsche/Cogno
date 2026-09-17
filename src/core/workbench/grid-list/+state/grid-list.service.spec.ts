@@ -1,14 +1,5 @@
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import type {
-  FocusActiveTerminalAction,
-  MaximizePaneAction,
-  MinimizePaneAction,
-  RemovePaneAction,
-  SelectNextPaneAction,
-  SelectPreviousPaneAction,
-  SplitPaneDownAction,
-  SplitPaneRightAction,
-} from "@cogno/core/workbench/bus/grid-list/actions";
+import type { FocusActiveTerminalAction } from "@cogno/core/workbench/bus/grid-list/actions";
 import type {
   TabAddedEvent,
   TabRemovedEvent,
@@ -140,7 +131,7 @@ describe("GridListService", () => {
       service.grids$.subscribe((g) => (grids = g));
       const initialTerminalId = grids[0].tree.root.data?.terminalId as string;
 
-      bus.publish({ type: "SplitPaneRight", payload: initialTerminalId } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       expect(new Set(visibleTerminalIds)).toEqual(new Set([initialTerminalId, "term-2"]));
     });
@@ -166,10 +157,7 @@ describe("GridListService", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       const publishSpy = vi.spyOn(bus, "publish");
 
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -191,14 +179,11 @@ describe("GridListService", () => {
     it("should remove a pane", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       // Split first so we have something to remove that isn't root
-      bus.publish({ type: "SplitPaneRight", payload: initialTerminalId } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       const destroySpy = vi.spyOn(componentFactory, "destroy");
 
-      bus.publish({
-        type: "RemovePane",
-        payload: "term-2",
-      } as RemovePaneAction);
+      service.removePane("term-2");
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -211,10 +196,7 @@ describe("GridListService", () => {
     it("should publish RemoveTab if root pane is removed", () => {
       const publishSpy = vi.spyOn(bus, "publish");
 
-      bus.publish({
-        type: "RemovePane",
-        payload: initialTerminalId,
-      } as RemovePaneAction);
+      service.removePane(initialTerminalId);
 
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -226,7 +208,7 @@ describe("GridListService", () => {
 
     it("removes only the exited pane when the session exits and others remain", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({ type: "SplitPaneRight", payload: initialTerminalId } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
       const destroySpy = vi.spyOn(componentFactory, "destroy");
 
       emitSessionFact("term-2", { type: "exited", exitCode: 0 });
@@ -250,10 +232,7 @@ describe("GridListService", () => {
 
     it("should split pane down", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({
-        type: "SplitPaneDown",
-        payload: initialTerminalId,
-      } as SplitPaneDownAction);
+      service.split(initialTerminalId, "horizontal", "r");
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -267,16 +246,10 @@ describe("GridListService", () => {
 
     it("should focus next pane on SelectNextPane", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       const publishSpy = vi.spyOn(bus, "publish");
-      bus.publish({
-        type: "SelectNextPane",
-        payload: initialTerminalId,
-      } as SelectNextPaneAction);
+      service.focusAdjacentPane(initialTerminalId, 1);
 
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -288,16 +261,10 @@ describe("GridListService", () => {
 
     it("should focus previous pane on SelectPreviousPane", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       const publishSpy = vi.spyOn(bus, "publish");
-      bus.publish({
-        type: "SelectPreviousPane",
-        payload: "term-2",
-      } as SelectPreviousPaneAction);
+      service.focusAdjacentPane("term-2", -1);
 
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -312,26 +279,17 @@ describe("GridListService", () => {
         .mockReturnValueOnce("term-2")
         .mockReturnValueOnce("term-3");
 
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
+      service.split(initialTerminalId, "vertical", "r");
 
       const publishSpy = vi.spyOn(bus, "publish");
 
-      bus.publish({ type: "SelectNextPane", payload: initialTerminalId } as SelectNextPaneAction);
-      bus.publish({ type: "SelectNextPane", payload: "term-3" } as SelectNextPaneAction);
-      bus.publish({ type: "SelectNextPane", payload: "term-2" } as SelectNextPaneAction);
-      bus.publish({
-        type: "SelectPreviousPane",
-        payload: initialTerminalId,
-      } as SelectPreviousPaneAction);
-      bus.publish({ type: "SelectPreviousPane", payload: "term-2" } as SelectPreviousPaneAction);
-      bus.publish({ type: "SelectPreviousPane", payload: "term-3" } as SelectPreviousPaneAction);
+      service.focusAdjacentPane(initialTerminalId, 1);
+      service.focusAdjacentPane("term-3", 1);
+      service.focusAdjacentPane("term-2", 1);
+      service.focusAdjacentPane(initialTerminalId, -1);
+      service.focusAdjacentPane("term-2", -1);
+      service.focusAdjacentPane("term-3", -1);
 
       const focusedTerminals = publishSpy.mock.calls
         .map((call) => call[0])
@@ -350,10 +308,7 @@ describe("GridListService", () => {
 
     it("should swap panes", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       service.swapPanes(initialTerminalId, "term-2");
 
@@ -366,10 +321,7 @@ describe("GridListService", () => {
 
     it("should swap panes when pane swap drag is finished", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       service.startPaneSwapDrag(initialTerminalId);
       service.updatePaneSwapTarget("term-2");
@@ -385,10 +337,7 @@ describe("GridListService", () => {
     it("should move pane swap source into a new tab", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       vi.spyOn(IdCreator, "newTabId").mockReturnValue("tab-moved");
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       service.startPaneSwapDrag("term-2");
       service.movePaneSwapSourceToNewTab();
@@ -422,10 +371,7 @@ describe("GridListService", () => {
 
     it("should update pane title without changing tab title when pane is not focused", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
       emitSessionFact(initialTerminalId, { type: "focusChanged", focused: true });
 
       const publishSpy = vi.spyOn(bus, "publish");
@@ -444,10 +390,7 @@ describe("GridListService", () => {
 
     it("should publish focused pane title on pane focus change", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({
-        type: "SplitPaneRight",
-        payload: initialTerminalId,
-      } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
       emitSessionFact(initialTerminalId, { type: "titleChanged", oscCode: 2, title: "First Pane" });
       emitSessionFact("term-2", { type: "titleChanged", oscCode: 2, title: "Second Pane" });
 
@@ -464,17 +407,14 @@ describe("GridListService", () => {
 
     it("should publish FocusTerminal after pane removal if focused", async () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
-      bus.publish({ type: "SplitPaneRight", payload: initialTerminalId } as SplitPaneRightAction);
+      service.split(initialTerminalId, "vertical", "r");
 
       // Focus term-2
       emitSessionFact("term-2", { type: "focusChanged", focused: true });
 
       const publishSpy = vi.spyOn(bus, "publish");
 
-      bus.publish({
-        type: "RemovePane",
-        payload: "term-2",
-      } as RemovePaneAction);
+      service.removePane("term-2");
 
       await vi.waitFor(() => {
         expect(publishSpy).toHaveBeenCalledWith(
@@ -533,7 +473,7 @@ describe("GridListService", () => {
   });
 
   describe("Focus Management", () => {
-    it("should toggle maximize state when MaximizePane is fired repeatedly", () => {
+    it("should toggle the maximize state", () => {
       const tabId = "tab-1";
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-1");
       bus.publish({
@@ -543,22 +483,10 @@ describe("GridListService", () => {
 
       let maximizedTerminalId: string | undefined;
       service.maximizedTerminalId$.subscribe((value) => (maximizedTerminalId = value));
-      bus.publish({
-        type: "MaximizePane",
-        payload: "term-1",
-      } as MaximizePaneAction);
+      service.togglePaneMaximize("term-1");
       expect(maximizedTerminalId).toBe("term-1");
 
-      bus.publish({
-        type: "MaximizePane",
-        payload: "term-1",
-      } as MaximizePaneAction);
-      expect(maximizedTerminalId).toBeUndefined();
-
-      bus.publish({
-        type: "MinimizePane",
-        payload: "term-1",
-      } as MinimizePaneAction);
+      service.togglePaneMaximize("term-1");
       expect(maximizedTerminalId).toBeUndefined();
     });
 

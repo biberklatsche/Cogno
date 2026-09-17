@@ -1,29 +1,8 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { ShellLineEditorActionContract } from "@cogno/shared/contributions";
 import { Observable } from "rxjs";
 import { TerminalSessionRegistry } from "./terminal-session.registry";
-
-/** The editor actions the bus carries, and the host method each maps to. */
-const EDITOR_ACTION_BY_MESSAGE = {
-  ClearLine: "clearLine",
-  ClearLineToEnd: "clearLineToEnd",
-  ClearLineToStart: "clearLineToStart",
-  DeletePreviousWord: "deletePreviousWord",
-  DeleteNextWord: "deleteNextWord",
-  GoToNextWord: "goToNextWord",
-  GoToPreviousWord: "goToPreviousWord",
-  GoToStartOfLine: "goToStartOfLine",
-  GoToEndOfLine: "goToEndOfLine",
-  SelectAll: "selectAll",
-  SelectTextRight: "selectTextRight",
-  SelectTextLeft: "selectTextLeft",
-  SelectWordRight: "selectWordRight",
-  SelectWordLeft: "selectWordLeft",
-  SelectTextToEndOfLine: "selectTextToEndOfLine",
-  SelectTextToStartOfLine: "selectTextToStartOfLine",
-} as const satisfies Record<string, ShellLineEditorActionContract>;
 
 /**
  * Routes the terminal bus messages addressed to a session onto its host,
@@ -61,33 +40,11 @@ export class TerminalInputDispatcher {
         entry.host.setVisible(event.payload?.terminalIds.includes(entry.terminalId) ?? true);
       }
     });
-    until(this.bus.on$({ path: ["app", "terminal"], type: "ClearBuffer" })).subscribe((event) => {
-      this.registry.get(event.payload)?.host.clearBuffer();
-    });
     until(this.bus.on$({ path: ["app", "terminal"], type: "WriteRawToPty" })).subscribe((event) => {
       const payload = event.payload;
       if (!payload) return;
       this.registry.get(payload.terminalId)?.host.writeRaw(payload.text, payload.autoExecute);
     });
-    until(this.bus.on$({ path: ["app", "terminal"], type: "Paste" })).subscribe((event) => {
-      void this.registry.get(event.payload)?.host.paste();
-    });
-    until(this.bus.on$({ path: ["app", "terminal"], type: "Copy" })).subscribe((event) => {
-      void this.registry.get(event.payload)?.host.copy();
-    });
-    until(this.bus.on$({ path: ["app", "terminal"], type: "Cut" })).subscribe((event) => {
-      this.registry.get(event.payload)?.host.cut();
-    });
-    for (const [type, actionId] of Object.entries(EDITOR_ACTION_BY_MESSAGE)) {
-      until(
-        this.bus.on$({
-          path: ["app", "terminal"],
-          type: type as keyof typeof EDITOR_ACTION_BY_MESSAGE,
-        }),
-      ).subscribe((event) => {
-        this.registry.get(event.payload)?.host.runEditorAction(actionId);
-      });
-    }
     until(this.bus.on$({ path: ["app", "terminal"], type: "TerminalSearchRequested" })).subscribe(
       (event) => {
         const payload = event.payload;

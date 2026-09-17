@@ -11,20 +11,20 @@ describe("AppBus", () => {
   });
 
   it('should publish and receive a message on the default path ["app"]', async () => {
-    const message: AppMessage = { type: "Cut", payload: "term1" };
+    const message: AppMessage = { type: "FocusTerminal", payload: "term1" };
 
-    const promise = firstValueFrom(bus.onType$("Cut"));
+    const promise = firstValueFrom(bus.onType$("FocusTerminal"));
     bus.publish(message);
 
     const received = await promise;
-    expect(received.type).toBe("Cut");
+    expect(received.type).toBe("FocusTerminal");
     expect(received.phase).toBe("target");
   });
 
   it("should go through Capture, Target and Bubble phases", async () => {
     const path = ["app", "workspace", "terminal"];
     const message: AppMessage = {
-      type: "Cut",
+      type: "FocusTerminal",
       path,
       payload: "term1",
     };
@@ -54,7 +54,7 @@ describe("AppBus", () => {
   it("should stop propagation when propagationStopped is set", async () => {
     const path = ["app", "child"];
     const message: AppMessage = {
-      type: "Cut",
+      type: "FocusTerminal",
       path,
       payload: "term1",
     };

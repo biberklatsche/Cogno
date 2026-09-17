@@ -7,18 +7,7 @@ import {
 import { TerminalIpcMessageEvent } from "@cogno/core/workbench/bus/cogno-message/events";
 import { InitConfigAction } from "@cogno/core/workbench/bus/config/actions";
 import { ConfigLoadedEvent, DBInitializedEvent } from "@cogno/core/workbench/bus/config/events";
-import {
-  FocusActiveTerminalAction,
-  MaximizePaneAction,
-  MinimizePaneAction,
-  RemovePaneAction,
-  SelectNextPaneAction,
-  SelectPreviousPaneAction,
-  SplitPaneDownAction,
-  SplitPaneLeftAction,
-  SplitPaneRightAction,
-  SplitPaneUpAction,
-} from "@cogno/core/workbench/bus/grid-list/actions";
+import { FocusActiveTerminalAction } from "@cogno/core/workbench/bus/grid-list/actions";
 import {
   ChangeTabTitleEvent,
   PaneMaximizedChangedEvent,
@@ -39,27 +28,7 @@ import {
 } from "@cogno/core/workbench/bus/tab-list/events";
 import {
   BlurTerminalAction,
-  ClearBufferAction,
-  ClearLineAction,
-  ClearLineToEndAction,
-  ClearLineToStartAction,
-  CopyAction,
-  CutAction,
-  DeleteNextWordAction,
-  DeletePreviousWordAction,
   FocusTerminalAction,
-  GoToEndOfLineAction,
-  GoToNextWordAction,
-  GoToPreviousWordAction,
-  GoToStartOfLineAction,
-  PasteAction,
-  SelectAllAction,
-  SelectTextLeftAction,
-  SelectTextRightAction,
-  SelectTextToEndOfLineAction,
-  SelectTextToStartOfLineAction,
-  SelectWordLeftAction,
-  SelectWordRightAction,
   TerminalRemovedAction,
   WriteRawToPtyAction,
 } from "@cogno/core/workbench/bus/terminal/actions";
@@ -85,38 +54,9 @@ export type AppMessage =
   | TerminalSearchRevealRequestedEvent
   | FocusTerminalAction
   | BlurTerminalAction
-  | PasteAction
-  | CopyAction
-  | CutAction
-  | ClearLineAction
-  | ClearLineToEndAction
-  | ClearLineToStartAction
-  | DeletePreviousWordAction
-  | DeleteNextWordAction
-  | GoToNextWordAction
-  | GoToPreviousWordAction
-  | GoToStartOfLineAction
-  | GoToEndOfLineAction
-  | SelectAllAction
-  | SelectTextRightAction
-  | SelectTextLeftAction
-  | SelectWordRightAction
-  | SelectWordLeftAction
-  | SelectTextToEndOfLineAction
-  | SelectTextToStartOfLineAction
   | WriteRawToPtyAction
   | ActionFiredEvent
-  | RemovePaneAction
   | TerminalRemovedAction
-  | SplitPaneRightAction
-  | SplitPaneLeftAction
-  | SplitPaneUpAction
-  | SplitPaneDownAction
-  | SelectNextPaneAction
-  | SelectPreviousPaneAction
-  | MaximizePaneAction
-  | MinimizePaneAction
-  | ClearBufferAction
   | FocusActiveTerminalAction
   | NotificationEvent
   | OpenNotificationTargetAction

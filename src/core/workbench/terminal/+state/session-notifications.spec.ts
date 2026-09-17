@@ -211,6 +211,32 @@ describe("SessionNotifications", () => {
       expect(items.find((i) => i.label?.includes("Notifications"))).toBeUndefined();
     });
 
+    it("fires each entry as a catalogue action aimed at its own terminal", () => {
+      const publish = vi.spyOn(bus, "publish");
+      const items = menus.buildContextMenu();
+
+      for (const [label, actionName] of [
+        ["Paste", "paste"],
+        ["Split Right", "split_right"],
+        ["Split Left", "split_left"],
+        ["Split Down", "split_down"],
+        ["Split Up", "split_up"],
+        ["Maximize", "maximize_pane"],
+        ["Clear", "clear_buffer"],
+        ["Close", "close_terminal"],
+      ]) {
+        items.find((item) => item.label === label)?.action?.();
+
+        expect(publish).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            type: "ActionFired",
+            payload: actionName,
+            terminalId: host.terminalId,
+          }),
+        );
+      }
+    });
+
     it("only shows available notification channels in the header menu", () => {
       configure({
         notification: {

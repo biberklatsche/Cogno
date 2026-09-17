@@ -87,11 +87,4 @@ describe("TerminalInputDispatcher", () => {
     expect(host1.setPaneMaximized).toHaveBeenCalledWith(true);
     expect(host2.setPaneMaximized).toHaveBeenCalledWith(false);
   });
-
-  it("runs an editor action on the addressed session", () => {
-    bus.publish({ path: ["app", "terminal"], type: "ClearLine", payload: "t1" });
-
-    expect(host1.runEditorAction).toHaveBeenCalledWith("clearLine");
-    expect(host2.runEditorAction).not.toHaveBeenCalled();
-  });
 });
