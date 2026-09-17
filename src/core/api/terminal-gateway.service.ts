@@ -146,15 +146,6 @@ export class TerminalGatewayService implements SessionApi {
     this.boundSessionTracker.release();
   }
 
-  /** Bring a session into view (workspace + tab + focus). */
-  revealSession(terminalId: TerminalId): void {
-    this.appBus.publish({
-      path: ["app", "terminal"],
-      type: "RevealTerminal",
-      payload: terminalId,
-    });
-  }
-
   private identityOf(terminalId: TerminalId): BoundSessionIdentity | undefined {
     const entry = this.terminalSessionRegistry.get(terminalId);
     if (!entry) {

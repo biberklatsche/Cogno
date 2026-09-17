@@ -53,7 +53,6 @@ import {
   GoToPreviousWordAction,
   GoToStartOfLineAction,
   PasteAction,
-  RevealTerminalAction,
   SelectAllAction,
   SelectTextLeftAction,
   SelectTextRightAction,
@@ -85,7 +84,6 @@ export type AppMessage =
   | TerminalSearchRequestedEvent
   | TerminalSearchRevealRequestedEvent
   | FocusTerminalAction
-  | RevealTerminalAction
   | BlurTerminalAction
   | PasteAction
   | CopyAction
