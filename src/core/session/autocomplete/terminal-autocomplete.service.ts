@@ -756,9 +756,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     reason: unknown,
     context: QueryContext,
   ): void {
-    const kind = reason instanceof AutocompleteSuggestorTimeoutError ? "timeout" : "error";
     const message = reason instanceof Error ? reason.message : String(reason);
-    const key = `${suggestor.id}:${kind}:${message}`;
+    const key = `${suggestor.id}:${message}`;
     const now = Date.now();
     const lastNotificationAt = this._lastSuggestorIssueNotificationAt.get(key) ?? 0;
     if (now - lastNotificationAt < SUGGESTOR_ISSUE_NOTIFICATION_THROTTLE_MS) {
@@ -767,7 +766,6 @@ export class TerminalAutocompleteService implements OnDestroy {
     this._lastSuggestorIssueNotificationAt.set(key, now);
 
     this.suggestorRegistry.reportIssue({
-      kind,
       suggestorId: suggestor.id,
       message,
       input: context.beforeCursor,

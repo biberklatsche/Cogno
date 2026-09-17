@@ -182,7 +182,6 @@ describe("TerminalAutocompleteService", () => {
 
     expect(suggestorRegistry.reportIssue).toHaveBeenCalledWith(
       expect.objectContaining({
-        kind: "error",
         suggestorId: "broken-provider",
         message: expect.stringContaining("git executable not found"),
       }),

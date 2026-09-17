@@ -467,7 +467,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     }
 
     this.issueReporter?.reportAutocompleteProviderIssue({
-      kind: "error",
       providerId,
       suggestorId: this.id,
       command,

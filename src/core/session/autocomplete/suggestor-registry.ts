@@ -5,7 +5,6 @@ import { BehaviorSubject, Observable, Subject } from "rxjs";
 
 /** A suggestor of a session's autocomplete failed while a session used it. */
 export type AutocompleteSuggestorIssue = {
-  readonly kind: "timeout" | "error";
   readonly suggestorId: string;
   readonly message: string;
   readonly input: string;

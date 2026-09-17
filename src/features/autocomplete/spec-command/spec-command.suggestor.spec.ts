@@ -361,7 +361,6 @@ describe("SpecCommandSuggestor", () => {
     expect(result).toEqual([]);
     expect(reportAutocompleteProviderIssue).toHaveBeenCalledWith(
       expect.objectContaining({
-        kind: "error",
         providerId: "command-list",
         suggestorId: "spec-command",
         command: "git",

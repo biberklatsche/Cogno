@@ -82,27 +82,24 @@ export class SuggestorFeatureRegistrar implements FeatureContributionRegistrar {
     return suggestors;
   }
 
-  /** A session's suggestor failed or timed out; the user is told, once per issue. */
+  /** A session's suggestor failed; the user is told, once per issue. Timeouts stay silent. */
   private reportSuggestorIssue(issue: AutocompleteSuggestorIssue): void {
     this.bus.publish({
       type: "Notification",
       path: ["notification"],
       payload: {
-        header:
-          issue.kind === "timeout"
-            ? "Autocomplete provider timed out"
-            : "Autocomplete provider failed",
+        header: "Autocomplete provider failed",
         body: `Provider: ${issue.suggestorId}\nInput: ${issue.input}\n${issue.message}`,
         source: "autocomplete",
         terminalId: issue.terminalId,
         timestamp: new Date(),
-        type: issue.kind === "timeout" ? "warning" : "error",
+        type: "error",
       },
     });
   }
 
   private reportAutocompleteProviderIssue(issue: AutocompleteProviderIssueContract): void {
-    const key = `${issue.suggestorId ?? ""}:${issue.providerId}:${issue.kind}:${issue.message}`;
+    const key = `${issue.suggestorId ?? ""}:${issue.providerId}:${issue.message}`;
     const now = Date.now();
     const lastNotificationAt = this.lastIssueNotificationAt.get(key) ?? 0;
     if (now - lastNotificationAt < AUTOCOMPLETE_PROVIDER_NOTIFICATION_THROTTLE_MS) {
@@ -118,13 +115,10 @@ export class SuggestorFeatureRegistrar implements FeatureContributionRegistrar {
       type: "Notification",
       path: ["notification"],
       payload: {
-        header:
-          issue.kind === "timeout"
-            ? "Autocomplete provider timed out"
-            : "Autocomplete provider failed",
+        header: "Autocomplete provider failed",
         body: `Provider: ${providerLabel}\n${commandLine}${issue.message}`,
         source: "autocomplete",
-        type: issue.kind === "timeout" ? "warning" : "error",
+        type: "error",
         timestamp: new Date(),
       },
     });

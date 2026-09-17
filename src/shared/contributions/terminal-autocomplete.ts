@@ -56,10 +56,7 @@ export interface TerminalAutocompleteSuggestorContract {
   warmUpForShellIntegration?(shellType: ShellTypeContract): Promise<void> | void;
 }
 
-export type AutocompleteProviderIssueKindContract = "error" | "timeout";
-
 export interface AutocompleteProviderIssueContract {
-  readonly kind: AutocompleteProviderIssueKindContract;
   readonly providerId: string;
   readonly suggestorId?: string;
   readonly command?: string;
