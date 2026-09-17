@@ -62,10 +62,6 @@ export class NotificationInboxUseCase {
     );
   }
 
-  static getNotificationCount(state: NotificationInboxState): number {
-    return Object.keys(state.notificationMap).length;
-  }
-
   static handleNotificationEvent(
     state: NotificationInboxState,
     notificationEventPayload: unknown,

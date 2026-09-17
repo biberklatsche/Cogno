@@ -7,10 +7,9 @@
  *   - src-tauri/src/default_{windows,linux,macos}.config
  *
  * `--check` fails if any generated file on disk differs from a fresh render (CI,
- * via `pnpm lint`). `--parity` is the one-time migration aid: it compares a fresh
- * render against the current config files semantically (settings + keybinds).
+ * via `pnpm lint`).
  *
- * Run: `npx tsx scripts/generate-actions.ts [--check|--parity]`.
+ * Run: `npx tsx scripts/generate-actions.ts [--check]`.
  */
 import { globSync, readFileSync, writeFileSync } from "node:fs";
 import {
@@ -166,75 +165,7 @@ function renderConfig(os: Os): string {
   return `${lines.join("\n")}\n`;
 }
 
-/** Parse a config into a comparable shape: settings key/value map + keybind set. */
-function parseConfigSemantic(text: string): {
-  settings: Map<string, string>;
-  keybinds: Set<string>;
-} {
-  const settings = new Map<string, string>();
-  const keybinds = new Set<string>();
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith(";")) continue;
-    const eq = line.indexOf("=");
-    if (eq === -1) continue;
-    const key = line.slice(0, eq).trim();
-    const value = line.slice(eq + 1).trim();
-    if (key === "keybind") {
-      const [lhs, action] = value.split("=");
-      if (!action) continue;
-      const tokens = lhs
-        .split(":")
-        .map((token) => token.trim())
-        .filter(Boolean);
-      const combo = tokens.pop();
-      const flags = [...tokens].sort().join(":");
-      keybinds.add(`${flags}|${combo}|${action.trim()}`);
-    } else {
-      settings.set(key, value);
-    }
-  }
-  return { settings, keybinds };
-}
-
-/** One-time (--parity): generated configs vs the current files, semantically. */
-function configParity(): string[] {
-  const problems: string[] = [];
-  for (const os of OS_CONFIGS) {
-    const current = parseConfigSemantic(readFileSync(configPath(os), "utf8"));
-    const generated = parseConfigSemantic(renderConfig(os));
-    for (const [key, value] of current.settings) {
-      if (generated.settings.get(key) !== value) {
-        problems.push(
-          `${os} setting ${key}: current="${value}" generated="${generated.settings.get(key)}"`,
-        );
-      }
-    }
-    for (const key of generated.settings.keys()) {
-      if (!current.settings.has(key)) problems.push(`${os} setting ${key}: only in generated`);
-    }
-    for (const keybind of current.keybinds) {
-      if (!generated.keybinds.has(keybind))
-        problems.push(`${os} keybind only in current: ${keybind}`);
-    }
-    for (const keybind of generated.keybinds) {
-      if (!current.keybinds.has(keybind))
-        problems.push(`${os} keybind only in generated: ${keybind}`);
-    }
-  }
-  return problems;
-}
-
 function main(): void {
-  if (process.argv.includes("--parity")) {
-    const problems = configParity();
-    if (problems.length > 0) {
-      console.error(`Config parity problems (${problems.length}):\n${problems.join("\n")}`);
-      process.exit(1);
-    }
-    console.log("Config parity: generated configs match the current files (settings + keybinds).");
-    return;
-  }
   const outputs: Array<[string, string]> = [
     [GENERATED_RS, renderRust()],
     [DOCS_MD, renderDocs()],

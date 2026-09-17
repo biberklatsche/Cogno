@@ -76,8 +76,4 @@ export class NotificationCenterStateService {
   openTarget(target: NotificationTargetContract): void {
     this.notificationCenterPort.openTarget(target);
   }
-
-  getNotificationCount(): number {
-    return NotificationInboxUseCase.getNotificationCount(this.notificationCenterStateSignal());
-  }
 }
