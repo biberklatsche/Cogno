@@ -1037,12 +1037,13 @@ sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 |---|---|
 | Typ `CoreActionName` | Union aus dem `as const`-Katalog (`core/workbench/actions/catalog.ts`), nicht aus dem Laufzeit-Katalog (6.1); ein Tippfehler in `actions.handle("…")` ist ein Compile-Fehler. Der allgemeine `ActionName` ist `string`, weil Feature-Namen erst zur Laufzeit dazukommen |
 | Handler | Registrierung gegen den Namen (`actions.handle("new_tab", …)`) statt `switch` auf Strings, genau ein Handler je Aktion; eine Core-Aktion ohne Handler meldet der Start (`unhandledCoreActions`) |
-| Palette | listet `known` unter dem Namen (Unterstriche als Leerzeichen, nicht `label`) mit dem Keybinding-Hint aus der Keybind-Konfiguration |
-| natives Menü, Hamburger, Kontextmenü | feuern Katalog-Aktionen; ihre Beschriftungen sind **noch von Hand gesetzt** statt aus `label` gelesen, und es gibt kein `menu`-Feld — offen |
+| Beschriftung | überall `actionLabel(name)`: das `label` aus dem Katalog, und für eine Aktion ohne Label (Feature-Aktionen sind nur Namen) der Name in Worten. Kein Menü wiederholt einen Text von Hand |
+| Palette | listet `known` unter der Beschriftung, mit dem Keybinding-Hint aus der Keybind-Konfiguration; gefunden wird über Beschriftung **und** Namen („Settings" ist `open_config`) |
+| natives Menü, Hamburger, Kontextmenüs | feuern Katalog-Aktionen. **Wo ein Eintrag steht, bestimmt das Menü**, nicht die Aktion — der Katalog hat bewusst kein `menu`-Feld, weil dieselbe Aktion in mehreren Menüs an verschiedenen Stellen stehen darf |
 | CLI | Codegen zur Build-Zeit → `actions.generated.rs` (Namen + Beschreibungen), damit `cogno action list` offline funktioniert |
 | Default-Keybindings | Teil der generierten Default-Konfiguration, siehe unten |
 | Doku | Codegen → `docs/actions.md`, analog zu Zod `.describe()` bei den Settings |
-| Config-Validierung | **offen:** das Schema nimmt `keybind`-Zeilen als Text; ein unbekannter Aktionsname fällt heute erst auf, weil nichts passiert |
+| Config-Validierung | das Schema prüft die Form einer `keybind`-Zeile; ob ihr Aktionsname deklariert ist, prüft `ConfigBootstrapAdapter` gegen `known` und meldet es als Config-Warnung mit Zeile und Name. Dort und nicht im Config-Reader, weil `infrastructure/` den Katalog nicht kennen darf |
 | HTTP und CLI | Rust kennt die Mengen `dispatched` und `inactive` (`set_runnable_actions`) und antwortet damit dreistufig |
 
 **Vom Auslöser zum Handler, vom Handler zur Wirkung.** Alle Auslöser —
