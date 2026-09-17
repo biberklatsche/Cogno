@@ -11,8 +11,7 @@ import {
   WatchEvent,
 } from "@tauri-apps/plugin-fs";
 import { debounceTime, Observable } from "rxjs";
-
-type UnwatchFn = () => void;
+import { fromTauriListener } from "./tauri-listener";
 
 @Injectable({ providedIn: "root" })
 export class Fs {
@@ -33,10 +32,7 @@ export class Fs {
   }
 
   watchChanges$(path: string, opts?: { recursive?: boolean; delayMs?: number }): Observable<void> {
-    return new Observable<void>((subscriber) => {
-      let unwatch: UnwatchFn | null = null;
-      let unsubscribed = false;
-
+    return fromTauriListener<void>((emit) =>
       tauriWatch(
         path,
         (event: WatchEvent) => {
@@ -45,30 +41,12 @@ export class Fs {
             "modify" in event.type &&
             (event.type.modify.kind === "data" || event.type.modify.kind === "any")
           ) {
-            subscriber.next();
+            emit();
           }
         },
         opts,
-      )
-        .then((fn) => {
-          // Unsubscribed before the watcher was ready: stop it right away.
-          if (unsubscribed) {
-            try {
-              fn();
-            } catch {}
-          } else {
-            unwatch = fn;
-          }
-        })
-        .catch((err) => subscriber.error(err));
-
-      return () => {
-        unsubscribed = true;
-        try {
-          unwatch?.();
-        } catch {}
-      };
-    }).pipe(debounceTime(500));
+      ),
+    ).pipe(debounceTime(500));
   }
 
   exists(path: string): Promise<boolean> {

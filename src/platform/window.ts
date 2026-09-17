@@ -1,8 +1,7 @@
 import { Injectable } from "@angular/core";
-import { UnlistenFn } from "@tauri-apps/api/event";
 import { CloseRequestedEvent, DragDropEvent, getCurrentWindow } from "@tauri-apps/api/window";
-import { Observable } from "rxjs";
 import { distinctUntilChanged } from "rxjs/operators";
+import { fromTauriListener } from "./tauri-listener";
 
 function currentWindow() {
   return getCurrentWindow();
@@ -42,133 +41,27 @@ export class AppWindow {
     return currentWindow().unmaximize();
   }
 
-  readonly onCloseRequested$ = new Observable<CloseRequestedEvent>((subscriber) => {
-    const win = currentWindow();
-    let unlisten: UnlistenFn | null = null;
-    let unsubscribed = false;
+  readonly onCloseRequested$ = fromTauriListener<CloseRequestedEvent>((emit) =>
+    currentWindow().onCloseRequested(emit),
+  );
 
-    win
-      .onCloseRequested((evt) => {
-        subscriber.next(evt);
-      })
-      .then((fn) => {
-        if (unsubscribed) {
-          try {
-            fn();
-          } catch {}
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch((err) => subscriber.error(err));
+  readonly windowSize$ = fromTauriListener<{ width: number; height: number }>(
+    (emit) =>
+      currentWindow().onResized(({ payload }) =>
+        emit({ width: payload.width, height: payload.height }),
+      ),
+    () =>
+      currentWindow()
+        .innerSize()
+        .then(({ width, height }) => ({ width, height })),
+  ).pipe(distinctUntilChanged((a, b) => a.width === b.width && a.height === b.height));
 
-    return () => {
-      unsubscribed = true;
-      if (unlisten) {
-        try {
-          unlisten();
-        } catch {}
-      }
-    };
-  });
+  readonly onFocusChanged$ = fromTauriListener<boolean>(
+    (emit) => currentWindow().onFocusChanged(({ payload }) => emit(!!payload)),
+    () => currentWindow().isFocused(),
+  ).pipe(distinctUntilChanged());
 
-  readonly windowSize$ = new Observable<{ width: number; height: number }>((subscriber) => {
-    const win = currentWindow();
-    let unlisten: UnlistenFn | null = null;
-    let unsubscribed = false;
-
-    win
-      .innerSize()
-      .then(({ width, height }) => subscriber.next({ width, height }))
-      .catch((err) => subscriber.error(err));
-
-    win
-      .onResized(({ payload }) => {
-        subscriber.next({ width: payload.width, height: payload.height });
-      })
-      .then((fn) => {
-        if (unsubscribed) {
-          try {
-            fn();
-          } catch {}
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch((err) => subscriber.error(err));
-
-    return () => {
-      unsubscribed = true;
-      if (unlisten) {
-        try {
-          unlisten();
-        } catch {}
-      }
-    };
-  }).pipe(distinctUntilChanged((a, b) => a.width === b.width && a.height === b.height));
-
-  readonly onFocusChanged$ = new Observable<boolean>((subscriber) => {
-    const win = currentWindow();
-    let unlisten: UnlistenFn | null = null;
-    let unsubscribed = false;
-
-    win
-      .isFocused()
-      .then((focused) => subscriber.next(focused))
-      .catch((err) => subscriber.error(err));
-
-    win
-      .onFocusChanged(({ payload }) => {
-        subscriber.next(!!payload);
-      })
-      .then((fn) => {
-        if (unsubscribed) {
-          try {
-            fn();
-          } catch {}
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch((err) => subscriber.error(err));
-
-    return () => {
-      unsubscribed = true;
-      if (unlisten) {
-        try {
-          unlisten();
-        } catch {}
-      }
-    };
-  }).pipe(distinctUntilChanged());
-
-  readonly onDragDrop$ = new Observable<DragDropEvent>((subscriber) => {
-    const win = currentWindow();
-    let unlisten: UnlistenFn | null = null;
-    let unsubscribed = false;
-
-    win
-      .onDragDropEvent((event) => {
-        subscriber.next(event.payload);
-      })
-      .then((fn) => {
-        if (unsubscribed) {
-          try {
-            fn();
-          } catch {}
-        } else {
-          unlisten = fn;
-        }
-      })
-      .catch((err) => subscriber.error(err));
-
-    return () => {
-      unsubscribed = true;
-      if (unlisten) {
-        try {
-          unlisten();
-        } catch {}
-      }
-    };
-  });
+  readonly onDragDrop$ = fromTauriListener<DragDropEvent>((emit) =>
+    currentWindow().onDragDropEvent((event) => emit(event.payload)),
+  );
 }
