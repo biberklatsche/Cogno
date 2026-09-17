@@ -61,7 +61,7 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
 /** A settings extension whose only relevant part is which top-level paths it owns. */
 function settingsWithPaths(...paths: string[]): FeatureDefinition["settings"] {
   const schemaShape = Object.fromEntries(paths.map((path) => [path, undefined]));
-  return { schemaShape, defaults: {}, settingsSections: [] } as never;
+  return { schemaShape } as never;
 }
 
 describe("FeatureHost declaration phase", () => {

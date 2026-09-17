@@ -1,8 +1,10 @@
 import { ZodRawShape } from "zod";
-import { ApplicationSettingsSectionDefinitionContract } from "./application-settings-section-definition";
 
+/**
+ * The config keys a feature owns. Default values are not part of it: they live
+ * in the generated default config (`default-config-values.ts`), the single
+ * source of defaults.
+ */
 export interface ApplicationSettingsExtensionContract {
-  readonly defaults: Readonly<Record<string, unknown>>;
   readonly schemaShape: ZodRawShape;
-  readonly settingsSections: ReadonlyArray<ApplicationSettingsSectionDefinitionContract>;
 }

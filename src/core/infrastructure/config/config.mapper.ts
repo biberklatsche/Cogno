@@ -1,10 +1,7 @@
 import { OsType } from "@cogno/platform/os";
 import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
-import {
-  ApplicationSettingsDefinition,
-  createApplicationSettingsDefinition,
-} from "./application-settings-definition";
+import { createConfigSchema } from "./config-schema";
 import { Config } from "./models/config";
 
 export type ConfigDiagnostic = {
@@ -41,21 +38,10 @@ export class ConfigMapper {
     const settingsExtensions = resolveSettingsExtensions(
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
-    const applicationSettingsDefinition = createApplicationSettingsDefinition(settingsExtensions);
-    const userConfig = ConfigMapper.parseConfigString(
-      userConfigString || "",
-      applicationSettingsDefinition.schema,
-    );
-    const defaultConfig = ConfigMapper.parseConfigString(
-      defaultConfigString || "",
-      applicationSettingsDefinition.schema,
-    );
-    return ConfigMapper.toConfigWithDiagnostics(
-      defaultConfig,
-      userConfig,
-      applicationSettingsDefinition,
-      platform,
-    ).config;
+    const schema = createConfigSchema(settingsExtensions);
+    const userConfig = ConfigMapper.parseConfigString(userConfigString || "", schema);
+    const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString || "", schema);
+    return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform).config;
   }
 
   static fromStringToConfigWithDiagnostics(
@@ -80,35 +66,20 @@ export class ConfigMapper {
     const settingsExtensions = resolveSettingsExtensions(
       Array.isArray(secondArgument) ? secondArgument : thirdArgument,
     );
-    const applicationSettingsDefinition = createApplicationSettingsDefinition(settingsExtensions);
-    const userConfig = ConfigMapper.parseConfigString(
-      userConfigString || "",
-      applicationSettingsDefinition.schema,
-    );
-    const defaultConfig = ConfigMapper.parseConfigString(
-      defaultConfigString || "",
-      applicationSettingsDefinition.schema,
-    );
-    return ConfigMapper.toConfigWithDiagnostics(
-      defaultConfig,
-      userConfig,
-      applicationSettingsDefinition,
-      platform,
-    );
+    const schema = createConfigSchema(settingsExtensions);
+    const userConfig = ConfigMapper.parseConfigString(userConfigString || "", schema);
+    const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString || "", schema);
+    return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform);
   }
 
   private static toConfigWithDiagnostics(
     defaultConfig: Record<string, unknown>,
     userConfig: Record<string, unknown>,
-    applicationSettingsDefinition: ApplicationSettingsDefinition,
+    schema: z.ZodObject<z.ZodRawShape>,
     platform: OsType,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
-    const defaultConfigWithExtensions = mergeConfigObjects(
-      applicationSettingsDefinition.defaults,
-      defaultConfig ?? {},
-    );
     const mergedConfig = ConfigMapper.mergeConfigValues(
-      defaultConfigWithExtensions,
+      defaultConfig ?? {},
       userConfig ?? {},
     ) as Record<string, unknown>;
     const diagnostics: ConfigDiagnostic[] = [];
@@ -116,7 +87,7 @@ export class ConfigMapper {
     let candidate: Record<string, unknown> = initialCandidate === undefined ? {} : initialCandidate;
 
     for (let attempt = 0; attempt < 10; attempt++) {
-      const result = applicationSettingsDefinition.schema.safeParse(candidate);
+      const result = schema.safeParse(candidate);
       if (result.success) {
         const config = result.data as Config;
         if (config.font?.family) {
@@ -126,7 +97,7 @@ export class ConfigMapper {
       }
       const changed = ConfigMapper.applyDiagnosticsAndStrip(
         candidate,
-        defaultConfigWithExtensions,
+        defaultConfig,
         result.error,
         diagnostics,
       );
@@ -137,12 +108,8 @@ export class ConfigMapper {
       candidate = clonedCandidate === undefined ? {} : clonedCandidate;
     }
 
-    const fallbackResult = applicationSettingsDefinition.schema.safeParse(
-      defaultConfigWithExtensions,
-    );
-    const emptyResult = fallbackResult.success
-      ? fallbackResult
-      : applicationSettingsDefinition.schema.safeParse({});
+    const fallbackResult = schema.safeParse(defaultConfig);
+    const emptyResult = fallbackResult.success ? fallbackResult : schema.safeParse({});
     const fallback = (emptyResult.success ? emptyResult.data : {}) as Config;
     if (fallback.font?.family) {
       fallback.font.family = ConfigMapper.addFontFallbacks(fallback.font.family, platform);
@@ -641,49 +608,6 @@ export class ConfigMapper {
   ): ReturnType<z.ZodType["safeParse"]> {
     return schema.safeParse(value);
   }
-}
-
-function mergeConfigObjects(
-  baseConfig: Readonly<Record<string, unknown>>,
-  overridingConfig: Readonly<Record<string, unknown>>,
-): Record<string, unknown> {
-  const mergedConfig: Record<string, unknown> = { ...baseConfig };
-
-  for (const [configKey, overridingValue] of Object.entries(overridingConfig)) {
-    const baseValue = mergedConfig[configKey];
-    mergedConfig[configKey] = mergeConfigObjectValue(baseValue, overridingValue);
-  }
-
-  return mergedConfig;
-}
-
-function mergeConfigObjectValue(baseValue: unknown, overridingValue: unknown): unknown {
-  if (overridingValue === undefined) {
-    return cloneConfigObjectValue(baseValue);
-  }
-
-  if (
-    typeof baseValue !== "object" ||
-    baseValue === null ||
-    Array.isArray(baseValue) ||
-    typeof overridingValue !== "object" ||
-    overridingValue === null ||
-    Array.isArray(overridingValue)
-  ) {
-    return cloneConfigObjectValue(overridingValue);
-  }
-
-  return mergeConfigObjects(
-    baseValue as Record<string, unknown>,
-    overridingValue as Record<string, unknown>,
-  );
-}
-
-function cloneConfigObjectValue(value: unknown): unknown {
-  if (value === undefined) {
-    return undefined;
-  }
-  return JSON.parse(JSON.stringify(value));
 }
 
 function resolveSettingsExtensions(

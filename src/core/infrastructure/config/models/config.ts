@@ -1,4 +1,3 @@
-import { ApplicationSettingsSectionDefinitionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
 import { AutocompleteSettingsSchema } from "./autocomplete-settings";
 import { ClipboardConfigSchema } from "./clipboard-config";
@@ -59,12 +58,6 @@ export const baseConfigSchemaShape = {
   terminal: TerminalSettingsSchema.optional().describe("Terminal rendering and behaviour."),
   autocomplete: AutocompleteSettingsSchema.optional().describe("Command autocomplete behaviour."),
 } satisfies z.ZodRawShape;
-
-export const baseSettingsSections: ReadonlyArray<ApplicationSettingsSectionDefinitionContract> = [
-  { id: "notification", title: "Notification", order: 300 },
-  { id: "terminal", title: "Terminal", order: 500 },
-  { id: "autocomplete", title: "Autocomplete", order: 600 },
-];
 
 export const ConfigSchema = z
   .object({

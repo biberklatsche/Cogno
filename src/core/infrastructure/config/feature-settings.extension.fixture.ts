@@ -18,13 +18,6 @@ import { z } from "zod";
  * from shared/contributions, so there is a single schema definition.
  */
 export const featureSettingsExtensionFixture = {
-  defaults: {
-    feature: {
-      git: { mode: "on" },
-      process_info: { mode: "on" },
-      coding_agents: { mode: "on" },
-    },
-  },
   schemaShape: {
     feature: z
       .object({
@@ -38,13 +31,4 @@ export const featureSettingsExtensionFixture = {
       })
       .optional(),
   },
-  settingsSections: [
-    { id: "feature.workspace", title: "Workspace", order: 100 },
-    { id: "feature.notification_overview", title: "Notification Overview", order: 200 },
-    { id: "feature.command_palette", title: "Command Palette", order: 400 },
-    { id: "feature.search", title: "Search", order: 700 },
-    { id: "feature.git", title: "Git", order: 900 },
-    { id: "feature.process_info", title: "Process Info", order: 950 },
-    { id: "feature.coding_agents", title: "Coding Agents", order: 1000 },
-  ],
 } as const satisfies ApplicationSettingsExtensionContract;
