@@ -55,18 +55,6 @@ class AutocompleteSuggestorTimeoutError extends Error {
   }
 }
 
-type SuggestorRunResult =
-  | {
-      readonly status: "fulfilled";
-      readonly suggestor: TerminalAutocompleteSuggestorContract;
-      readonly suggestions: AutocompleteSuggestion[];
-    }
-  | {
-      readonly status: "rejected";
-      readonly suggestor: TerminalAutocompleteSuggestorContract;
-      readonly reason: unknown;
-    };
-
 @Injectable()
 export class TerminalAutocompleteService implements OnDestroy {
   private readonly suggestionHighlighter = new SuggestionHighlighter();
@@ -125,10 +113,6 @@ export class TerminalAutocompleteService implements OnDestroy {
   registerSuggestor(suggestor: TerminalAutocompleteSuggestor): void {
     if (this._suggestors.find((s) => s.id === suggestor.id)) return;
     this._suggestors.push(suggestor);
-  }
-
-  selectSuggestion(index: number): void {
-    this.applySelectedSuggestion(index);
   }
 
   setSelectedIndex(index: number): void {
@@ -387,53 +371,43 @@ export class TerminalAutocompleteService implements OnDestroy {
   private async runSuggestors(
     suggestors: TerminalAutocompleteSuggestor[],
     context: QueryContext,
-  ): Promise<SuggestorRunResult[]> {
+  ): Promise<AutocompleteSuggestion[][]> {
     return Promise.all(suggestors.map((suggestor) => this.runSuggestor(suggestor, context)));
   }
 
   private async runSuggestor(
     suggestor: TerminalAutocompleteSuggestor,
     context: QueryContext,
-  ): Promise<SuggestorRunResult> {
+  ): Promise<AutocompleteSuggestion[]> {
     if (this._runningSuggestors.has(suggestor.id)) {
-      return { status: "fulfilled", suggestor, suggestions: [] };
+      return [];
     }
 
     const suggestionsPromise = suggestor.suggest(context);
     this._runningSuggestors.set(suggestor.id, suggestionsPromise);
-    void suggestionsPromise.then(
-      () => {
-        if (this._runningSuggestors.get(suggestor.id) === suggestionsPromise) {
-          this._runningSuggestors.delete(suggestor.id);
-        }
-      },
-      () => {
-        if (this._runningSuggestors.get(suggestor.id) === suggestionsPromise) {
-          this._runningSuggestors.delete(suggestor.id);
-        }
-      },
-    );
+    const release = () => {
+      if (this._runningSuggestors.get(suggestor.id) === suggestionsPromise) {
+        this._runningSuggestors.delete(suggestor.id);
+      }
+    };
+    void suggestionsPromise.then(release, release);
 
     try {
-      const suggestions = await this.withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
-      return { status: "fulfilled", suggestor, suggestions };
+      return await this.withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
     } catch (reason) {
       if (!(reason instanceof AutocompleteSuggestorTimeoutError)) {
         this.notifySuggestorIssue(suggestor, reason, context);
       }
-      return { status: "rejected", suggestor, reason };
+      return [];
     }
   }
 
   private rankSuggestions(
-    settled: SuggestorRunResult[],
+    settled: AutocompleteSuggestion[][],
     state: SessionState,
   ): AutocompleteSuggestion[] {
     return settled
-      .filter(
-        (r): r is Extract<SuggestorRunResult, { status: "fulfilled" }> => r.status === "fulfilled",
-      )
-      .flatMap((r) => r.suggestions)
+      .flat()
       .filter((s) => !this.suggestionEqualsCurrentInput(s, state.input.text))
       .sort((a, b) => b.score - a.score);
   }
