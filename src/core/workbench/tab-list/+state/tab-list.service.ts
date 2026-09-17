@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
-import { SLOTS } from "@cogno/core/workbench/actions/catalog";
+import { actionLabel, SLOTS } from "@cogno/core/workbench/actions/catalog";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ChangeTabTitleEvent } from "@cogno/core/workbench/bus/grid-list/events";
@@ -141,19 +141,19 @@ export class TabListService {
     if (!tab) throw new Error("No tab found for TabList");
     const items: (ContextMenuItem | undefined)[] = [
       {
-        label: "Close tab",
+        label: actionLabel("close_tab"),
         action: () => this.removeTab(tabId),
         keybinding: this.keybindingFor("close_tab"),
       },
       this._tabList.value.length > 1
         ? {
-            label: "Close other tabs",
+            label: actionLabel("close_other_tabs"),
             action: () => this.removeAllTabs(tabId),
             keybinding: this.keybindingFor("close_other_tabs"),
           }
         : undefined,
       {
-        label: "Close all tabs",
+        label: actionLabel("close_all_tabs"),
         action: () => this.removeAllTabs(),
         keybinding: this.keybindingFor("close_all_tabs"),
       },

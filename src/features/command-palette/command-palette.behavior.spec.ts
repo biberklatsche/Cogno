@@ -120,6 +120,31 @@ describe("command palette behaviour", () => {
       expect(labels()).toEqual([]);
     });
 
+    describe("an action with a label", () => {
+      beforeEach(() => {
+        actionEntriesSubject.next([
+          { actionDefinition: { actionName: "open_config" }, label: "Settings", keybinding: "" },
+          { actionDefinition: { actionName: "new_tab" }, label: "New Tab", keybinding: "" },
+          { actionDefinition: { actionName: "open_git" }, keybinding: "" },
+        ]);
+      });
+
+      it("is listed under its label, the others under their name in words", () => {
+        expect(labels()).toEqual(["New Tab", "open git", "Settings"]);
+      });
+
+      it("is found by its label and still by its name", () => {
+        service.filterCommands("sett");
+        expect(labels()).toEqual(["Settings"]);
+
+        service.filterCommands("open config");
+        expect(labels()).toEqual(["Settings"]);
+
+        service.filterCommands("open");
+        expect(labels()).toEqual(["open git", "Settings"]);
+      });
+    });
+
     it("is neither fuzzy nor trimmed, and does not look at the keybinding", () => {
       service.filterCommands("cpy");
       expect(labels()).toEqual([]);

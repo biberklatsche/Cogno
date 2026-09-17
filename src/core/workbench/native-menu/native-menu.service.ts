@@ -2,6 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
+import { actionLabel } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
@@ -45,29 +46,29 @@ export class NativeMenuService {
       id: "cogno",
       text: "Cogno",
       items: [
-        await this.buildMenuItem("open_about", "About Cogno"),
+        await this.buildMenuItem("open_about"),
         await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
-        await this.buildMenuItem("open_config", "Settings"),
-        await this.buildMenuItem("load_config", "Reload Configuration"),
+        await this.buildMenuItem("open_config"),
+        await this.buildMenuItem("load_config"),
         await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
-        await this.buildMenuItem("quit", "Quit"),
+        await this.buildMenuItem("quit"),
       ],
     });
 
     const fileSubmenu = await this.tauriMenu.newSubmenu({
       text: "File",
       items: [
-        await this.buildMenuItem("new_window", "New Window"),
-        await this.buildMenuItem("new_tab", "New Tab"),
+        await this.buildMenuItem("new_window"),
+        await this.buildMenuItem("new_tab"),
         await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
-        await this.buildMenuItem("split_right", "Split Right"),
-        await this.buildMenuItem("split_left", "Split Left"),
-        await this.buildMenuItem("split_down", "Split Down"),
-        await this.buildMenuItem("split_up", "Split Up"),
+        await this.buildMenuItem("split_right"),
+        await this.buildMenuItem("split_left"),
+        await this.buildMenuItem("split_down"),
+        await this.buildMenuItem("split_up"),
         await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
-        await this.buildMenuItem("close_tab", "Close Tab"),
-        await this.buildMenuItem("close_other_tabs", "Close Other Tabs"),
-        await this.buildMenuItem("close_all_tabs", "Close All Tabs"),
+        await this.buildMenuItem("close_tab"),
+        await this.buildMenuItem("close_other_tabs"),
+        await this.buildMenuItem("close_all_tabs"),
       ],
     });
 
@@ -95,16 +96,7 @@ export class NativeMenuService {
 
     const helpSubmenu = await this.tauriMenu.newSubmenu({
       text: "Help",
-      items: [
-        await this.tauriMenu.newItem({
-          id: "open_documentation",
-          text: "Documentation",
-          enabled: true,
-          action: () => {
-            this.bus.publish(ActionFired.create("open_documentation"));
-          },
-        }),
-      ],
+      items: [await this.buildMenuItem("open_documentation")],
     });
 
     const menu = await this.tauriMenu.new({
@@ -113,9 +105,10 @@ export class NativeMenuService {
     await menu.setAsAppMenu();
   }
 
+  /** A menu entry is named after its action; a feature's entry after the feature. */
   private async buildMenuItem(
     actionName: ActionName,
-    text: string,
+    text: string = actionLabel(actionName),
     enabled: boolean = true,
   ): Promise<TauriMenuItemHandle> {
     return await this.tauriMenu.newItem({

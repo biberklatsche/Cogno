@@ -463,8 +463,8 @@ describe("TabListService", () => {
 
       const menu = service.buildContextMenu("t1");
 
-      expect(menu.find((i) => i.label === "Close tab")).toBeTruthy();
-      expect(menu.find((i) => i.label === "Close other tabs")).toBeTruthy();
+      expect(menu.find((i) => i.label === "Close Tab")).toBeTruthy();
+      expect(menu.find((i) => i.label === "Close Other Tabs")).toBeTruthy();
       expect(menu.find((i) => i.label === "Rename tab")).toBeTruthy();
       expect(menu.find((i) => i.custom)).toBeTruthy();
     });

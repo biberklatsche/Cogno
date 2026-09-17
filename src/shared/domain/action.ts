@@ -13,6 +13,8 @@ export interface ActionDefinitionContract {
 
 export interface ActionEntryContract {
   readonly actionDefinition: ActionDefinitionContract;
+  /** The action's display name, when it has one; otherwise show its name in words. */
+  readonly label?: string;
   readonly keybinding: string;
 }
 

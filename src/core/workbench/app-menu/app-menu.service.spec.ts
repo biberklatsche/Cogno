@@ -66,7 +66,7 @@ describe("AppMenuService", () => {
     expect(menu[3]).toEqual(expect.objectContaining({ label: "New Window" }));
     expect(menu[4]).toEqual(expect.objectContaining({ label: "Settings" }));
     expect(menu[5]).toEqual({ separator: true });
-    expect(menu[6]).toEqual(expect.objectContaining({ label: "Documentation" }));
+    expect(menu[6]).toEqual(expect.objectContaining({ label: "Open Documentation" }));
     expect(menu[7]).toEqual(expect.objectContaining({ label: "About Cogno" }));
   });
 
@@ -96,7 +96,7 @@ describe("AppMenuService", () => {
     expect(menu[0]).toEqual(expect.objectContaining({ label: "New Window" }));
     expect(menu[1]).toEqual(expect.objectContaining({ label: "Settings" }));
     expect(menu[2]).toEqual({ separator: true });
-    expect(menu[3]).toEqual(expect.objectContaining({ label: "Documentation" }));
+    expect(menu[3]).toEqual(expect.objectContaining({ label: "Open Documentation" }));
     expect(menu[4]).toEqual(expect.objectContaining({ label: "About Cogno" }));
   });
 

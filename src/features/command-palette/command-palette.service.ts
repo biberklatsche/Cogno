@@ -10,16 +10,23 @@ export interface CommandEntry {
   readonly actionDefinition: ActionDefinitionContract;
 }
 
+function nameInWords(actionName: string): string {
+  return actionName.replaceAll("_", " ");
+}
+
 @Injectable({ providedIn: "root" })
 export class CommandPaletteService {
   private readonly commandEntries = signal<CommandEntry[]>([]);
   private readonly query = signal("");
   private readonly selectedIndexSignal = signal(0);
 
+  /** Found by what is shown, and by the action's name: "Settings" is `open_config`. */
   readonly filteredCommandList = computed(() => {
     const normalizedQuery = this.query().toLowerCase();
-    return this.commandEntries().filter((commandEntry) =>
-      commandEntry.label.toLowerCase().includes(normalizedQuery),
+    return this.commandEntries().filter(
+      (commandEntry) =>
+        commandEntry.label.toLowerCase().includes(normalizedQuery) ||
+        nameInWords(commandEntry.id).toLowerCase().includes(normalizedQuery),
     );
   });
   readonly selectedIndex = this.selectedIndexSignal.asReadonly();
@@ -39,7 +46,7 @@ export class CommandPaletteService {
           actionEntries
             .map((actionEntry) => ({
               id: actionEntry.actionDefinition.actionName,
-              label: actionEntry.actionDefinition.actionName.replaceAll("_", " "),
+              label: actionEntry.label ?? nameInWords(actionEntry.actionDefinition.actionName),
               keybinding: actionEntry.keybinding,
               actionDefinition: actionEntry.actionDefinition,
             }))

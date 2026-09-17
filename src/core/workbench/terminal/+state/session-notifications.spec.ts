@@ -196,8 +196,8 @@ describe("SessionNotifications", () => {
       host.setPaneMaximized(true);
 
       const items = menus.buildContextMenu();
-      expect(items.find((i) => i.label === "Minimize")).toBeDefined();
-      expect(items.find((i) => i.label === "Maximize")).toBeUndefined();
+      expect(items.find((i) => i.label === "Minimize Pane")).toBeDefined();
+      expect(items.find((i) => i.label === "Maximize Pane")).toBeUndefined();
     });
   });
 
@@ -206,7 +206,7 @@ describe("SessionNotifications", () => {
       const items = menus.buildContextMenu();
 
       expect(items.find((i) => i.label === "Paste")).toBeDefined();
-      expect(items.find((i) => i.label === "Maximize")).toBeDefined();
+      expect(items.find((i) => i.label === "Maximize Pane")).toBeDefined();
       expect(items.find((i) => i.label?.includes("Notifications"))).toBeUndefined();
     });
 
@@ -220,9 +220,9 @@ describe("SessionNotifications", () => {
         ["Split Left", "split_left"],
         ["Split Down", "split_down"],
         ["Split Up", "split_up"],
-        ["Maximize", "maximize_pane"],
-        ["Clear", "clear_buffer"],
-        ["Close", "close_terminal"],
+        ["Maximize Pane", "maximize_pane"],
+        ["Clear Buffer", "clear_buffer"],
+        ["Close Terminal", "close_terminal"],
       ]) {
         items.find((item) => item.label === label)?.action?.();
 

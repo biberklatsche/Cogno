@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { SessionHost } from "@cogno/core/session/host/session-host";
-import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
+import { actionLabel, CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ActionKeybindingPort } from "@cogno/shared/ports";
@@ -24,79 +24,32 @@ export class SessionMenus {
 
   buildContextMenu(): ContextMenuItem[] {
     const terminalId = this.host.terminalId;
-    // The menu is one more source of actions, aimed at its own terminal.
-    const action = (actionName: CoreActionName) => () =>
-      this.bus.publish(ActionFired.create(actionName, undefined, undefined, terminalId));
+    // The menu is one more source of actions, aimed at its own terminal. An
+    // entry is named after its action; `focusFirst` hands the keyboard back to
+    // the terminal the entry acts on.
+    const item = (actionName: CoreActionName, focusFirst = false): ContextMenuItem => ({
+      label: actionLabel(actionName),
+      action: () => {
+        if (focusFirst) this.host.focus();
+        this.bus.publish(ActionFired.create(actionName, undefined, undefined, terminalId));
+      },
+      keybinding: this.keybindingFor(actionName),
+    });
 
-    const items: ContextMenuItem[] = [
-      {
-        label: "Paste",
-        action: () => {
-          this.host.focus();
-          action("paste")();
-        },
-        keybinding: this.keybindingFor("paste"),
-      },
+    return [
+      ...(this.host.hasSelection ? [item("copy", true)] : []),
+      item("paste", true),
       { separator: true },
-      {
-        label: "Split Right",
-        action: action("split_right"),
-        keybinding: this.keybindingFor("split_right"),
-      },
-      {
-        label: "Split Left",
-        action: action("split_left"),
-        keybinding: this.keybindingFor("split_left"),
-      },
-      {
-        label: "Split Down",
-        action: action("split_down"),
-        keybinding: this.keybindingFor("split_down"),
-      },
-      {
-        label: "Split Up",
-        action: action("split_up"),
-        keybinding: this.keybindingFor("split_up"),
-      },
+      item("split_right"),
+      item("split_left"),
+      item("split_down"),
+      item("split_up"),
       { separator: true },
-      this.host.model.isPaneMaximized
-        ? {
-            label: "Minimize",
-            action: action("minimize_pane"),
-            keybinding: this.keybindingFor("minimize_pane"),
-          }
-        : {
-            label: "Maximize",
-            action: action("maximize_pane"),
-            keybinding: this.keybindingFor("maximize_pane"),
-          },
+      item(this.host.model.isPaneMaximized ? "minimize_pane" : "maximize_pane"),
       { separator: true },
-      {
-        label: "Clear",
-        action: () => {
-          this.host.focus();
-          action("clear_buffer")();
-        },
-        keybinding: this.keybindingFor("clear_buffer"),
-      },
-      {
-        label: "Close",
-        action: action("close_terminal"),
-        keybinding: this.keybindingFor("close_terminal"),
-      },
+      item("clear_buffer", true),
+      item("close_terminal"),
     ];
-
-    if (this.host.hasSelection) {
-      items.unshift({
-        label: "Copy",
-        action: () => {
-          this.host.focus();
-          action("copy")();
-        },
-        keybinding: this.keybindingFor("copy"),
-      });
-    }
-    return items;
   }
 
   buildHeaderMenu(): ContextMenuItem[] {

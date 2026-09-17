@@ -417,6 +417,23 @@ export const coreActionNames: ReadonlyArray<CoreActionName> = coreActionCatalog.
   (entry) => entry.name,
 );
 
+const coreActionLabels: ReadonlyMap<string, string> = new Map(
+  coreActionCatalog.map((entry) => [entry.name, entry.label]),
+);
+
+/**
+ * What an action is called in a menu or the palette: its catalog label, or -
+ * for an action without one (feature actions are names only) - its name in words.
+ */
+export function actionLabel(actionName: string): string {
+  return coreActionLabels.get(actionName) ?? actionName.replaceAll("_", " ");
+}
+
+/** The catalog label of a core action; undefined for any other action. */
+export function coreActionLabel(actionName: string): string | undefined {
+  return coreActionLabels.get(actionName);
+}
+
 /** Narrow an arbitrary string (config/CLI/HTTP) to a known core action, or undefined. */
 export function toKnownCoreAction(name: string): CoreActionName | undefined {
   return coreActionNameSet.has(name) ? (name as CoreActionName) : undefined;

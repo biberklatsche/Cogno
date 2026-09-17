@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { formatKeybinding } from "@cogno/core/infrastructure/keybindings/pipe/keybinding.pipe";
+import { actionLabel } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
@@ -34,25 +35,22 @@ export class AppMenuService {
       items.push({ separator: true });
     }
 
-    items.push(this.buildMenuItem("new_window", "New Window"));
-    items.push(this.buildMenuItem("open_config", "Settings"));
+    items.push(this.buildMenuItem("new_window"));
+    items.push(this.buildMenuItem("open_config"));
     items.push({ separator: true });
-    items.push({
-      label: "Documentation",
-      action: () => this.bus.publish(ActionFired.create("open_documentation")),
-      keybinding: this.keybindingFor("open_documentation"),
-    });
-    items.push({
-      label: "About Cogno",
-      action: () => this.bus.publish(ActionFired.create("open_about")),
-      keybinding: this.keybindingFor("open_about"),
-    });
+    for (const actionName of ["open_documentation", "open_about"]) {
+      items.push({
+        label: actionLabel(actionName),
+        action: () => this.bus.publish(ActionFired.create(actionName)),
+        keybinding: this.keybindingFor(actionName),
+      });
+    }
     return items;
   }
 
-  private buildMenuItem(actionName: ActionName, text: string): ContextMenuItem {
+  private buildMenuItem(actionName: ActionName): ContextMenuItem {
     return {
-      label: text,
+      label: actionLabel(actionName),
       action: () => {
         const actionDef = this.keybindService.getActionDefinition(actionName);
         if (!actionDef) {
