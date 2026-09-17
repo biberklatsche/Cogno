@@ -973,29 +973,46 @@ Signal-Knoten gesetzt, weil `fixture.setInput` dafür nicht greift.
 ## 5. Der Aktionskatalog
 
 Aktionen sind die gemeinsame Sprache (Inventar 23): ausgelöst per Keybinding,
-Menü, Palette, CLI und HTTP. Heute ist eine Aktion an acht Orten bekannt —
-`core-action-names.ts` (74 Namen), `cli.rs` (47, abgedriftet), `switch`-Blöcke
-in den Handlern (`tab-list.service.ts:143`), Menü-Labels
-(`native-menu.service.ts:57`), Palette, dreimal `default_*.config` (je 76
-`keybind`-Zeilen), `docs-playbook.md` — und `ActionName` ist `string`.
+Menü, Palette, CLI und HTTP. Früher war eine Aktion an acht Orten bekannt —
+eine Namensliste, `cli.rs` (abgedriftet), `switch`-Blöcke in den Handlern,
+Menü-Labels, Palette, dreimal `default_*.config`, `docs-playbook.md` — und
+jeder Ort konnte für sich abdriften.
 
-**Eine Definition, alles andere abgeleitet.**
+**Eine Definition, alles andere abgeleitet.** Eine Core-Aktion steht genau
+einmal, in `core/workbench/actions/catalog.ts`:
 
 ```ts
-export const NewTab = defineAction({
-  id: "new_tab",
-  title: "New Tab",
+defineAction({
+  name: "new_tab",
+  label: "New Tab",
   description: "Open a new terminal tab",
-  target: "workbench",          // "session": braucht ein Zielterminal
-  defaultKeys: { windows: "always:Ctrl+T", macos: "always:Cmd+T", linux: "always:Ctrl+T" },
-  menu: "file",                 // optional: Platz im nativen Menü
-});
+  defaultKeys: {
+    default: [{ combo: "Ctrl+T", always: true }],   // Windows und Linux
+    macos: [{ combo: "Command+T", always: true }],  // nur wo es abweicht
+  },
+}),
 ```
 
-Zwei Quellen, eine Form, ein Katalog:
+`name` ist der Bezeichner überall (Config, CLI, HTTP, Handler), `label` der
+Anzeigename, `description` der Text für `cogno action list` und die Doku.
+`defaultKeys` trägt je Keybinding die Flags `always` (feuert auch bei
+fokussiertem Terminal) und `performable` (verbraucht die Taste nur, wenn die
+Aktion etwas getan hat); `default` gilt für Windows und Linux, `macos`
+überschreibt nur die Abweichung. Eine Aktion ohne `defaultKeys` ist zulässig.
+Ob eine Aktion ein Zielterminal braucht, steht nicht in der Definition,
+sondern im Handler (siehe unten).
 
-- **Core-Aktionen** definiert die Workbench in `core/workbench/actions/`.
-- **Feature-Aktionen** definiert jedes Feature in `FeatureDefinition.actions`.
+Zwei Quellen, ein Katalog:
+
+- **Core-Aktionen** definiert die Workbench mit `defineAction` in
+  `core/workbench/actions/catalog.ts`. `CoreActionName` ist die Union ihrer
+  `name`-Literale.
+- **Feature-Aktionen** deklariert jedes Feature als Namen — in
+  `FeatureDefinition.actions` (`{ actionName }`) oder als `actionName` seiner
+  `sideMenu`-Contribution, der Aktion, die sein Panel öffnet. Ihre Beschreibung leitet der Codegen aus dem
+  Panel-Titel ab, ihre Default-Keybindings stehen in `featureKeybinds`
+  (`default-config-values.ts`), weil ein Feature keine Tasten besitzt, solange
+  es aus ist.
 
 `defineAction` und der Typ liegen in `shared/`, weil Features ihn brauchen.
 Der Katalog in der Workbench hat zwei Mengen, nicht eine:
@@ -1005,8 +1022,10 @@ Der Katalog in der Workbench hat zwei Mengen, nicht eine:
   kommen der Typ `ActionName`, der Codegen, die Config-Validierung der
   `keybind`-Zeilen und die Antwort „unbekannt".
 - **`active`** — die Teilmenge mit registriertem Handler: Core-Aktionen
-  immer, Feature-Aktionen nur, solange das Feature aktiv ist. Palette und
-  Menü zeigen `active`; Keybindings feuern nur für `active`.
+  immer, Feature-Aktionen nur, solange das Feature aktiv ist. Nur `active`
+  bewirkt etwas. Die Palette listet `known` (eine Aktion eines ausgeschalteten
+  Features steht dort und tut nichts); das native Menü zeigt die Einträge
+  ausgeschalteter Features deaktiviert.
 
 Damit antworten CLI und HTTP dreistufig: nicht in `known` → „unbekannte
 Aktion"; in `known`, nicht in `active` → „Feature *x* ist nicht aktiv";
@@ -1016,14 +1035,15 @@ sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 
 | Ableitung | Wie |
 |---|---|
-| Typ `ActionName` | Union aus den `as const`-Manifesten (`bootstrap/features.ts`, `core/workbench/actions/catalog.ts`), nicht aus dem Laufzeit-Katalog (6.1); Tippfehler sind Compile-Fehler |
-| Handler | Registrierung gegen die Definition (`actions.handle(NewTab, …)`) statt `switch` auf Strings; eine Aktion ohne Handler ist zur Laufzeit meldbar |
-| Palette, natives Menü, Hamburger | lesen `title`, `menu` aus dem Katalog; Keybinding-Hints wie heute aus der Keybind-Konfiguration |
+| Typ `CoreActionName` | Union aus dem `as const`-Katalog (`core/workbench/actions/catalog.ts`), nicht aus dem Laufzeit-Katalog (6.1); ein Tippfehler in `actions.handle("…")` ist ein Compile-Fehler. Der allgemeine `ActionName` ist `string`, weil Feature-Namen erst zur Laufzeit dazukommen |
+| Handler | Registrierung gegen den Namen (`actions.handle("new_tab", …)`) statt `switch` auf Strings, genau ein Handler je Aktion; eine Core-Aktion ohne Handler meldet der Start (`unhandledCoreActions`) |
+| Palette | listet `known` unter dem Namen (Unterstriche als Leerzeichen, nicht `label`) mit dem Keybinding-Hint aus der Keybind-Konfiguration |
+| natives Menü, Hamburger, Kontextmenü | feuern Katalog-Aktionen; ihre Beschriftungen sind **noch von Hand gesetzt** statt aus `label` gelesen, und es gibt kein `menu`-Feld — offen |
 | CLI | Codegen zur Build-Zeit → `actions.generated.rs` (Namen + Beschreibungen), damit `cogno action list` offline funktioniert |
 | Default-Keybindings | Teil der generierten Default-Konfiguration, siehe unten |
-| Doku | Codegen → Markdown für die Website, analog zu Zod `.describe()` bei den Settings |
-| Config-Validierung | Zod prüft `keybind = …=<name>` gegen den Katalog, unbekannte Namen als Diagnose-Notification |
-| HTTP `POST /action` | validiert gegen dieselbe Liste |
+| Doku | Codegen → `docs/actions.md`, analog zu Zod `.describe()` bei den Settings |
+| Config-Validierung | **offen:** das Schema nimmt `keybind`-Zeilen als Text; ein unbekannter Aktionsname fällt heute erst auf, weil nichts passiert |
+| HTTP und CLI | Rust kennt die Mengen `dispatched` und `inactive` (`set_runnable_actions`) und antwortet damit dreistufig |
 
 **Vom Auslöser zum Handler, vom Handler zur Wirkung.** Alle Auslöser —
 Keybinding, Palette, natives Menü, Hamburger, Kontextmenü eines Terminals, CLI,
