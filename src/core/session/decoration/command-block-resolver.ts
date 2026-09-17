@@ -1,5 +1,6 @@
 import { Terminal } from "@xterm/xterm";
 import { CommandMenuBlockRange } from "./command-menu-items";
+import { promptMarkerIdOf } from "./prompt-marker.registry";
 
 export type CommandBlockDetails = {
   markerLineIndex: number;
@@ -27,7 +28,7 @@ export class CommandBlockResolver {
         continue;
       }
 
-      if (line.translateToString().startsWith(`^^#${commandId}`)) {
+      if (promptMarkerIdOf(line.translateToString()) === commandId) {
         return this.resolveByMarkerLine(currentLineIndex);
       }
     }

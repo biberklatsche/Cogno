@@ -8,6 +8,14 @@ export type PromptMarker = {
 
 const PROMPT_MARKER_ID_REGEX = /^\^\^#(\d+)/;
 
+/**
+ * The command id a `^^#<id>` marker line carries. Compare ids with this, never
+ * with a bare prefix test: `^^#1` is also a prefix of `^^#10`.
+ */
+export function promptMarkerIdOf(lineText: string): string | undefined {
+  return lineText.match(PROMPT_MARKER_ID_REGEX)?.[1];
+}
+
 function isPromptMarkerLine(lineText: string): boolean {
   return /^\^\^#\d+/.test(lineText);
 }
@@ -125,11 +133,10 @@ export class PromptMarkerRegistry implements IDisposable {
 
     for (const entry of [...this._markers]) {
       if (entry.marker.line < lowestLine || entry.marker.line > highestLine) continue;
-      const expectedPrefix = `^^#${entry.commandId}`;
       const lineText = buffer.getLine(entry.marker.line)?.translateToString() ?? "";
-      if (lineText.startsWith(expectedPrefix)) continue;
+      if (promptMarkerIdOf(lineText) === entry.commandId) continue;
 
-      const relocatedLine = this.findLineNear(buffer, entry.marker.line, expectedPrefix);
+      const relocatedLine = this.findLineNear(buffer, entry.marker.line, entry.commandId);
       this.removeEntry(entry);
       entry.marker.dispose();
       if (relocatedLine >= 0) {
@@ -206,14 +213,14 @@ export class PromptMarkerRegistry implements IDisposable {
     return true;
   }
 
-  private findLineNear(buffer: IBuffer, aroundLine: number, expectedPrefix: string): number {
+  private findLineNear(buffer: IBuffer, aroundLine: number, commandId: string): number {
     const lowestLine = Math.max(0, aroundLine - RESYNC_SCAN_WINDOW_LINES);
     const highestLine = Math.min(buffer.length - 1, aroundLine + RESYNC_SCAN_WINDOW_LINES);
     for (let offset = 0; offset <= highestLine - lowestLine; offset++) {
       for (const lineIndex of [aroundLine - offset, aroundLine + offset]) {
         if (lineIndex < lowestLine || lineIndex > highestLine) continue;
         const lineText = buffer.getLine(lineIndex)?.translateToString();
-        if (lineText?.startsWith(expectedPrefix)) return lineIndex;
+        if (lineText !== undefined && promptMarkerIdOf(lineText) === commandId) return lineIndex;
       }
     }
     return -1;

@@ -202,6 +202,23 @@ describe("PromptMarkerRegistry", () => {
     expect(registry.markers[0].marker.line).toBe(0);
   });
 
+  it("should not mistake a longer id for the marker's own line", () => {
+    mockTerminal.buffer.active.cursorY = 5;
+    setLines({ 4: "^^#4", 5: "" });
+    registry.expectMarker();
+    registry.onWriteParsed();
+    const staleMarker = registry.markers[0].marker as unknown as {
+      dispose: ReturnType<typeof vi.fn>;
+    };
+
+    // The line now carries another command's marker: `^^#4` is a prefix of `^^#42`.
+    setLines({ 4: "^^#42", 5: "" });
+    registry.validateRange(0, 30);
+
+    expect(staleMarker.dispose).toHaveBeenCalled();
+    expect(registry.markers.map((entry) => entry.commandId)).not.toContain("4");
+  });
+
   it("should leave markers outside the validated range untouched", () => {
     mockTerminal.buffer.active.cursorY = 5;
     setLines({ 4: "^^#42", 5: "" });
