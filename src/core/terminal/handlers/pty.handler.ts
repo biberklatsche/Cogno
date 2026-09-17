@@ -35,8 +35,6 @@ export type PtyHandlerListener = {
 
 export class PtyHandler implements ITerminalHandler {
   private _terminal?: Terminal;
-  private _resizeObserver: ResizeObserver | undefined = undefined;
-  private _resizeRaf?: number;
   private _firstWriteEvent: boolean = false;
   private _disposed = false;
   private _unparsedBytes = 0;
@@ -58,9 +56,6 @@ export class PtyHandler implements ITerminalHandler {
     this._disposables.forEach((disposable) => {
       disposable?.dispose();
     });
-    if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
-    this._resizeObserver?.disconnect();
-    this._resizeObserver = undefined;
   }
 
   registerTerminal(terminal: Terminal): IDisposable {

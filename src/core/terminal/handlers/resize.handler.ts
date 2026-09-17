@@ -1,7 +1,6 @@
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import { Subscription } from "rxjs";
 import { IPty } from "../pty";
 import { IFitHandler, ITerminalHandler } from "../terminal-handler";
 import type { TerminalMachineState } from "../terminal-machine.state";
@@ -24,7 +23,6 @@ type TerminalCoreWithCharSize = {
 };
 
 export class ResizeHandler implements ITerminalHandler, IFitHandler {
-  private _subscription?: Subscription;
   private _resizeObserver?: ResizeObserver;
   private _terminal?: Terminal;
   private _fitAddon?: FitAddon;
@@ -48,9 +46,6 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
 
     this._resizeObserver?.disconnect();
     this._resizeObserver = undefined;
-
-    this._subscription?.unsubscribe();
-    this._subscription = undefined;
 
     this._fitAddon = undefined;
     this._terminal = undefined;
