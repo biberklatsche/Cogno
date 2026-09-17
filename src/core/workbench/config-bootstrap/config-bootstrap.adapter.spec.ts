@@ -6,6 +6,7 @@ import type {
 } from "@cogno/core/infrastructure/config/config.service";
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import type { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
+import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { BehaviorSubject, Subject } from "rxjs";
@@ -47,7 +48,18 @@ function setup() {
   const configLoadedEvents: unknown[] = [];
   bus.on$("ConfigLoaded").subscribe((message) => configLoadedEvents.push(message));
 
-  new ConfigBootstrapAdapter(bus, config, shells, wiring, shellIntegrationStub, destroyRef);
+  const featureActionNames = new ActionNameRegistry();
+  featureActionNames.register(["open_git"]);
+
+  new ConfigBootstrapAdapter(
+    bus,
+    config,
+    shells,
+    wiring,
+    shellIntegrationStub,
+    featureActionNames,
+    destroyRef,
+  );
 
   return {
     bus,
@@ -101,6 +113,70 @@ describe("ConfigBootstrapAdapter", () => {
 
     diagnostics.next([diagnostic("another bad key")]);
     expect(notifications).toHaveLength(2);
+  });
+
+  describe("a keybind line naming an action nobody declared", () => {
+    const load = (keybind: string[]) => {
+      const context = setup();
+      context.loaded.next({ keybind } as Config);
+      context.diagnostics.next([]);
+      return context.notifications as Array<{
+        payload: { header: string; body: string; type: string };
+      }>;
+    };
+
+    it("is reported as a config warning with the line and the name", () => {
+      const notifications = load(["always:Ctrl+T=new_tab", "Ctrl+Alt+S=splt_right"]);
+
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0].payload.header).toBe("Config warnings");
+      expect(notifications[0].payload.type).toBe("warning");
+      expect(notifications[0].payload.body).toContain('Unknown action "splt_right"');
+      expect(notifications[0].payload.body).toContain("Ctrl+Alt+S=splt_right");
+    });
+
+    it("is not reported for core actions, feature actions and actions with arguments", () => {
+      const notifications = load([
+        "Ctrl+T=new_tab",
+        "Ctrl+Alt+G=open_git",
+        "Ctrl+Shift+1=open_shell_1",
+        "Ctrl+K=write_text:hello",
+      ]);
+
+      // `write_text` is not a declared action, the other three are.
+      expect(notifications).toHaveLength(1);
+      expect(notifications[0].payload.body).toContain('Unknown action "write_text"');
+      expect(notifications[0].payload.body).not.toContain("new_tab");
+      expect(notifications[0].payload.body).not.toContain("open_git");
+    });
+
+    it("joins the mapper's own diagnostics in one notification", () => {
+      const context = setup();
+      context.loaded.next({ keybind: ["Ctrl+Alt+S=splt_right"] } as Config);
+      context.diagnostics.next([diagnostic("bad key")]);
+
+      const [notification] = context.notifications as Array<{
+        payload: { header: string; body: string };
+      }>;
+      expect(context.notifications).toHaveLength(1);
+      expect(notification.payload.header).toBe("Config errors");
+      expect(notification.payload.body).toContain("bad key");
+      expect(notification.payload.body).toContain('Unknown action "splt_right"');
+    });
+
+    it("is gone once the line is fixed", () => {
+      const context = setup();
+      context.loaded.next({ keybind: ["Ctrl+Alt+S=splt_right"] } as Config);
+      context.diagnostics.next([]);
+      context.loaded.next({ keybind: ["Ctrl+Alt+S=split_right"] } as Config);
+      context.diagnostics.next([]);
+
+      // One warning for the typo, one "Config loaded" toast for the reload, no second warning.
+      const headers = (context.notifications as Array<{ payload: { header: string } }>).map(
+        (notification) => notification.payload.header,
+      );
+      expect(headers).toEqual(["Config warnings", "System"]);
+    });
   });
 
   it("fills in shell profiles only when the config has none", async () => {

@@ -1,9 +1,13 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ConfigDiagnostic } from "@cogno/core/infrastructure/config/config.mapper";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
+import { KeybindInterpreter } from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
 import { ShellConfigurator } from "@cogno/core/session/shells/shell-configurator";
 import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integration.writer";
+import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
+import { toKnownCoreAction } from "@cogno/core/workbench/actions/catalog";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { Hash } from "@cogno/shared/support";
@@ -15,11 +19,16 @@ import { Hash } from "@cogno/shared/support";
  * config's diagnostics into notifications. `ConfigService` itself only reads,
  * validates and watches (ARCHITECTURE.md 2.1); this ties that to the shells,
  * the feature settings and the bus.
+ *
+ * It also adds the one check the config reader cannot make: whether a `keybind`
+ * line names an action anybody declared. The reader sits in infrastructure and
+ * must not know the action catalog; here both are in reach.
  */
 @Injectable({ providedIn: "root" })
 export class ConfigBootstrapAdapter {
   private lastDiagnosticsHash?: number;
   private isFirstLoad = true;
+  private keybindDiagnostics: ReadonlyArray<ConfigDiagnostic> = [];
 
   constructor(
     private readonly appBus: AppBus,
@@ -27,6 +36,7 @@ export class ConfigBootstrapAdapter {
     private readonly shells: ShellConfigurator,
     private readonly featureHost: FeatureHost,
     private readonly shellIntegration: ShellIntegrationWriter,
+    private readonly featureActionNames: ActionNameRegistry,
     destroyRef: DestroyRef,
   ) {
     this.appBus
@@ -38,7 +48,9 @@ export class ConfigBootstrapAdapter {
 
     // Every load announces itself on the bus; every load but the first one -
     // watch or `load_config` - also shows a toast, as it did before the split.
-    this.config.loaded$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+    this.config.loaded$.pipe(takeUntilDestroyed(destroyRef)).subscribe((config) => {
+      // The diagnostics of this load follow right after; they are reported together.
+      this.keybindDiagnostics = this.unknownKeybindActions(config.keybind ?? []);
       this.appBus.publish({ type: "ConfigLoaded" });
       if (this.isFirstLoad) {
         this.isFirstLoad = false;
@@ -48,7 +60,7 @@ export class ConfigBootstrapAdapter {
     });
 
     this.config.diagnostics$.pipe(takeUntilDestroyed(destroyRef)).subscribe((diagnostics) => {
-      this.notifyDiagnostics(diagnostics);
+      this.notifyDiagnostics([...diagnostics, ...this.keybindDiagnostics]);
     });
   }
 
@@ -66,6 +78,17 @@ export class ConfigBootstrapAdapter {
       beforeWatch: async () => {
         await this.shellIntegration.ensure(shellSupportDefinitions);
       },
+    });
+  }
+
+  /** A typo in an action name, or an action that no longer exists: the binding does nothing. */
+  private unknownKeybindActions(keybindLines: ReadonlyArray<string>): ConfigDiagnostic[] {
+    return keybindLines.flatMap((line) => {
+      const actionName = KeybindInterpreter.parse(line)?.actionDefinition.actionName;
+      if (!actionName || toKnownCoreAction(actionName) || this.featureActionNames.has(actionName)) {
+        return [];
+      }
+      return [{ level: "warning", message: `Unknown action "${actionName}" in keybind = ${line}` }];
     });
   }
 
