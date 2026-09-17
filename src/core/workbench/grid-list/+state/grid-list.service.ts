@@ -177,7 +177,6 @@ export class GridListService {
       )
       .subscribe((terminalIds) => {
         this.bus.publish({
-          path: ["app", "grid"],
           type: "VisibleTerminalsChanged",
           payload: { terminalIds },
         });
@@ -665,7 +664,7 @@ export class GridListService {
   }
 
   focusActiveTerminal(): void {
-    this.bus.publish({ type: "FocusActiveTerminal", path: ["app", "grid"] });
+    this.bus.publish({ type: "FocusActiveTerminal" });
   }
 
   private focusAdjacentPane(terminalId: TerminalId, direction: 1 | -1): void {

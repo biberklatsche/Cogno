@@ -69,13 +69,12 @@ describe("TerminalInputDispatcher", () => {
 
   it("fans VisibleTerminalsChanged out to every session", () => {
     bus.publish({
-      path: ["app", "grid"],
       type: "VisibleTerminalsChanged",
       payload: { terminalIds: ["t1"] },
     });
 
-    expect(host1.setVisible).toHaveBeenCalledWith(true);
-    expect(host2.setVisible).toHaveBeenCalledWith(false);
+    expect(host1.setVisible).toHaveBeenCalledExactlyOnceWith(true);
+    expect(host2.setVisible).toHaveBeenCalledExactlyOnceWith(false);
   });
 
   it("fans PaneMaximizedChanged out to every session", () => {

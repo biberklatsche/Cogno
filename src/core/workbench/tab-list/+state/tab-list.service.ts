@@ -337,7 +337,7 @@ export class TabListService {
   focusActiveTerminal() {
     const activeTab = this._tabList.value.find((s) => s.isActive);
     if (activeTab) {
-      this.bus.publish({ type: "FocusActiveTerminal", path: ["app", "terminal"] });
+      this.bus.publish({ type: "FocusActiveTerminal" });
     }
   }
 

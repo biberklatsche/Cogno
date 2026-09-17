@@ -124,7 +124,7 @@ export class SideMenuService {
     if (!current) return;
     if (current.pinned && !force) {
       this.blur();
-      this.bus.publish({ type: "FocusActiveTerminal", path: ["app", "terminal"] });
+      this.bus.publish({ type: "FocusActiveTerminal" });
       return;
     }
 
@@ -148,7 +148,7 @@ export class SideMenuService {
       // keyboard - the focus belongs to the terminal (below).
       this.open(pinnedItemLabel, false);
     }
-    this.bus.publish({ type: "FocusActiveTerminal", path: ["app", "terminal"] });
+    this.bus.publish({ type: "FocusActiveTerminal" });
   }
 
   focus() {
