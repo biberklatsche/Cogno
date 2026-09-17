@@ -39,6 +39,7 @@ export class Fs {
   watchChanges$(path: string, opts?: { recursive?: boolean; delayMs?: number }): Observable<void> {
     return new Observable<void>((subscriber) => {
       let unwatch: UnwatchFn | null = null;
+      let unsubscribed = false;
 
       tauriWatch(
         path,
@@ -53,10 +54,20 @@ export class Fs {
         },
         opts,
       )
-        .then((fn) => (unwatch = fn))
+        .then((fn) => {
+          // Unsubscribed before the watcher was ready: stop it right away.
+          if (unsubscribed) {
+            try {
+              fn();
+            } catch {}
+          } else {
+            unwatch = fn;
+          }
+        })
         .catch((err) => subscriber.error(err));
 
       return () => {
+        unsubscribed = true;
         try {
           unwatch?.();
         } catch {}
