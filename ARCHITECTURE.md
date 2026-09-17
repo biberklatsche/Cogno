@@ -281,6 +281,17 @@ erlaubt, aber Nachrichten aus `session/` sind ausschließlich Ereignisse in
 Vergangenheitsform; Aktionsnamen der Workbench (`RemovePane`, `CloseTab`,
 `FocusPane` …) kommen darin nicht vor — prüfbar per Typregel.
 
+Der Bus selbst ist **ein Strom, abonniert nach Nachrichtentyp**
+(`on$(type)`, `once$(type)`, `publish`): jeder Abonnent eines Typs bekommt
+eine Nachricht genau einmal, synchron, in Abo-Reihenfolge. Pfade und
+Capture-/Target-/Bubble-Phasen gibt es nicht — niemand hat sie genutzt, und
+sie ließen einen Abonnenten oberhalb des Zielpfads dieselbe Nachricht zweimal
+bekommen. Ein Bus ist das richtige Mittel, wo ein Sender seine Empfänger nicht
+kennt (`ActionFired`, `FocusTerminal`, `TerminalRemoved`, `Notification`). Wo
+es genau einen bekannten Empfänger gibt, ruft der Sender ihn direkt auf
+(Abschnitt 5) — eine Nachricht, die nur ein Abonnent zurück in einen
+Methodenaufruf übersetzt, ist ein Umweg und kein Entkoppeln.
+
 Die Grenze bleibt damit per Pfadregel prüfbar: `session/` importiert weder
 `workbench/` noch `api/`.
 
@@ -297,7 +308,7 @@ Maschine weiß nichts von der Session.
 features/            Git, AI, Coding-Agents, Palette, …
     │  importieren nur
     ▼
-core/api/            boundSession$, sessions$, revealSession, Contributions
+core/api/            boundSession$, TerminalMonitor, TerminalNavigator, Contributions
     │  kennt beide
     ├──────────────►  core/workbench/   Fokus, Layout-Identität, Reveal, Feature-Host
     │                       │  besitzt
@@ -455,7 +466,8 @@ Konkret: Prozess-Info wird ein **Panel in der Seitenleiste** — ein
 sitzungsgebundenes Feature wie Git, das `boundSession$` folgt und den
 Prozessbaum daraus liest. Der Dialog aus dem Kontextmenü
 (`terminal.session.ts:545`) und der Menüeintrag „Process Info" entfallen; der
-Baum bleibt Modell, weil auch der AI-Snapshot ihn braucht. Git bleibt eine vollständige
+Baum ist kein Modell-Fakt, sondern wird über `boundSession.processTree()` bei
+jedem Aufruf frisch ermittelt. Git bleibt eine vollständige
 Scheibe — Ermittlung über `boundSession.run({ executable: "git", args: ["status", "--porcelain"], contextRevision })`, Tabellen, UI,
 Settings — und
 `mode: off` heißt: alles weg. Coding-Agents bleiben ein Ganzes, inklusive
@@ -475,8 +487,9 @@ einer Sitzung lebt und stirbt, ist per Definition Core. Ein zweites Feld
 
 Diese Unterscheidung erklärt drei Dinge, die vorher als Probleme aussahen: warum
 History/Autocomplete/Composer Component-Provider sind (korrekt, nicht kaputt),
-warum Git beim Öffnen `captureFocusedSnapshot()` zieht (app-weites Panel über
-eine Sitzung), und warum das Protokoll eine Abfrageseite braucht (ebendafür).
+warum das Git-Panel an eine Sitzung *gebunden* ist statt in ihr zu leben
+(app-weites Panel über eine Sitzung), und warum das Protokoll eine Abfrageseite
+braucht (ebendafür).
 
 ### 2.3 Ownership einer Sitzung
 
@@ -597,7 +610,9 @@ setzt eigene SELECTs ab. Zielbild — drei Rollen, drei Orte:
 Konsequenz: `TerminalHistoryPersistenceService` löst sich in Recorder (der
 sitzungsgebundene Teil mit `initialize`/`onCwdChanged`/`onCommandExecuted`)
 und die Abfrage-API auf; `HistoryRepository` wird der `command-log/`-Kern. Die
-Rückkehrcode-Whitelist (`setAllowedReturnCodes*`) ist Recorder-Konfiguration.
+Rückkehrcode-Whitelist (`setAllowedReturnCodes*`) ist Recorder-Konfiguration —
+als Mechanismus vorhanden, aber noch ohne Config-Schlüssel und Aufrufer
+(geplantes Feature); bis dahin gilt „Rückkehrcode 0".
 Der Degradationspfad „DB fehlt" liegt einmal in `command-log/`; jede Sicht sieht
 dann eine leere, aber gültige Datenquelle.
 
@@ -661,14 +676,26 @@ Workbench gespeichert, nicht interpretiert):
   des letzten. War die Sitzung zuletzt in SSH oder WSL, startet sie lokal im
   letzten lokalen cwd; der frühere Remote-Kontext wird nie „aktueller
   Kontext" — den bestimmt allein der neue Handshake (2.1).
-- **`scrollback`** — Text per SerializeAddon, ohne Alt-Screen-Inhalt, auf
-  `terminal.restore.max_lines` (Default 1000) begrenzt; entfällt bei
-  `terminal.restore.scrollback = off` (Config, global) oder wenn das
-  Terminal per Aktion `exclude_from_restore` ausgenommen ist. Nach dem
-  Restore steht er als **Vergangenheit** im Buffer: durch eine sichtbare
-  Trennzeile („Sitzung wiederhergestellt, <Zeit>") vom neuen Prompt getrennt,
-  ohne Kommando-Blöcke oder Marker — Text, in dem man suchen und kopieren
-  kann, mehr nicht.
+- **`scrollback`** — der Puffer als Text mit SGR-Farben, serialisiert von
+  `scrollback-serializer.ts` (nicht vom SerializeAddon: dessen
+  Cursor-Restore-Schluss hat die Live-Sitzung beim Abspielen beschädigt), ohne
+  Alt-Screen-Inhalt, auf `terminal.restore.max_lines` (Default 1000) begrenzt;
+  entfällt bei `terminal.restore.scrollback = off` (Config, global) oder wenn
+  das Terminal per Aktion `exclude_from_restore` ausgenommen ist. Die
+  verdeckten Marker-Zeilen (`^^#<id>`) bleiben erhalten — ihre ids in einen
+  Bereich verschoben, den die neue Sitzung nie vergibt — und werden samt den
+  Kommando-Metadaten nach dem Abspielen neu verankert, damit die
+  Prompt-Dekoration der alten Kommandos wieder erscheint. Nach dem Restore
+  steht er als **Vergangenheit** im Buffer, durch eine Trennlinie (eine
+  Dekoration auf einer verdeckten Sentinel-Zeile, die beim nächsten Aufnehmen
+  wieder herausfällt) vom neuen Prompt getrennt.
+  **Der wartende Prompt, auf dem die Sitzung geschlossen wurde, gehört nicht
+  dazu:** er ist eine Leerzeile, die Marker-Zeile und eine leere Eingabezeile,
+  und die neue Sitzung druckt ihren eigenen — abgespielt stünde der alte als
+  zweiter, toter Prompt darüber. Er wird beim Aufnehmen abgeschnitten, samt
+  seinen Kommando-Metadaten, und ebenso beim Abspielen (für Snapshots, die ihn
+  noch enthalten). Steht hinter dem letzten Marker etwas — getippte Eingabe,
+  die Ausgabe eines laufenden Kommandos —, ist das Verlauf und bleibt.
 - **`history`** — die frühere Kontext-Zeitachse als Information für das
   Modell („war zuletzt auf host X") und der Titel des Kommandos, das beim
   Beenden lief. Beim Restore markiert der Recorder dieses Kommando im
@@ -722,7 +749,7 @@ Entscheidungen:
 
 1. **Identität ist vierteilig:** `{windowId, workspaceId, tabId, sessionId}`.
    `windowId` ist das Tauri-Label. Alles, was ein Ziel adressiert
-   (Notifications, `revealSession`, CLI/HTTP mit `terminalId`), trägt es.
+   (Notifications, `navigateToTerminal`, CLI/HTTP mit `terminalId`), trägt es.
 2. **Rust ist der Besitzer alles Prozessglobalen** und die einzige Stelle,
    die alle Fenster kennt: PTYs, Datenbank, HTTP-Server, CLI-Empfang,
    Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks. Rust
@@ -773,11 +800,13 @@ in `core/`, den Features importieren. Es muss ein eigener Ort sein, weil
 ist Session-Wissen, und das Protokoll führt beides zusammen — es liegt
 oberhalb von Session und Workbench (Diagramm in 2.1).
 
-Heute existiert es bereits, verkleidet als `TerminalGatewayAdapterService` in
-`app-host/`: er importiert `GridListService` (Fokus), `TerminalSessionRegistry`
-(Sessions) und den Bus und bietet Features `focusedTerminalId$`,
-`cwdChanges$`, `injectInput`, `captureFocusedSnapshot`, `revealTerminal`. Das
-ist die Rolle — ohne Namen, ohne Bindungszustände, ohne Schreibschutz.
+Sein Vorläufer war der `TerminalGateway` (`focusedTerminalId$`,
+`captureFocusedSnapshot`, `revealTerminal`, `busyStateChanges$` …): die Rolle,
+aber ohne Bindungszustände und ohne Schreibschutz. Er ist mit dem AI-Feature
+entfallen, sein letzter Konsument. Was Features heute bekommen, ist
+`SessionApi` (`session-api.ts`): `boundSession$`, `cwdChanges$`, `hold()`,
+`release()` — implementiert von `TerminalGatewayService`, der dafür Fokus
+(Bus und Fakt `focusChanged`) und Session-Registry zusammenführt.
 
 Das Protokoll ist zugleich die Stelle, an der Features klein gehalten werden:
 Was nicht im Protokoll steht, kann ein Feature nicht tun.
@@ -795,7 +824,16 @@ Jede schreibende Operation prüft unmittelbar vor dem Schreiben erneut
 Session-Identität und Capability. Damit kann eine verspätete asynchrone Antwort
 nach einem Fokuswechsel nicht in das falsche Terminal schreiben.
 
-**Übergreifende Features** bekommen `sessions$` und `revealSession(id)`.
+**Übergreifende Features** bekommen `TerminalMonitorPort` (Aktivität, Ende und
+cwd je Terminal) und `TerminalNavigator.navigateToTerminal(id)` (Workspace,
+Tab und Fokus auf ein Terminal bringen). Ein Sitzungs-Verzeichnis `sessions$`
+entsteht erst mit dem ersten Feature, das eines braucht.
+
+`injectInput(request, identity)` — „schreib das in dieses Terminal", mit
+demselben Identitäts-Check wie `run` — ist implementiert, hat aber seit dem
+Wegfall des AI-Features keinen Konsumenten. Es bleibt bewusst als einzige
+Ausnahme von „keine Operationen ohne Konsumenten" (3.1) stehen, weil ein
+schreibendes Feature absehbar ist und der Schreibschutz der heikle Teil ist.
 
 Bindung: Standard „folgt dem Fokus", auf Wunsch **gehalten**. Das Wort *pin*
 ist bereits für „Panel offen halten" belegt (`side-menu.service.ts:166`);
@@ -823,10 +861,9 @@ drei einfachere Regeln ersetzt, weil es die Rolle „App" nicht mehr gibt:
 1. **Features haben keine eigenen Ports mehr.** Was ein Feature vom Produkt
    braucht, steht in `core/api/`. Braucht ein Feature etwas, das dort fehlt,
    wird die API erweitert — mit dem Feature als erstem Konsumenten
-   (Abschnitt 9: keine Operationen ohne Konsumenten). Die heutigen
-   Feature-Ports (`workspace-close-guard.port.ts`, `NotificationCenterPort`,
-   `TerminalGateway` in `shared/ports` …) gehen darin auf oder entfallen,
-   wenn ihr Feature Core wird.
+   (Abschnitt 9: keine Operationen ohne Konsumenten). Die früheren
+   Feature-Ports sind darin aufgegangen (`NotificationCenterPort`) oder
+   entfallen (`workspace-close-guard.port.ts`, `TerminalGateway`).
 2. **Quellen werden injiziert, Senken bleiben statisch.** Eine **Quelle**
    liefert etwas, wovon eine Entscheidung abhängt — `OsPlatform.platform()`,
    `Paths.homeDir()`, `Filesystem.readTextFile()`, `Clipboard.readText()`,
@@ -903,10 +940,10 @@ selbst in `try/catch` rufen.
 | Schicht | Wie |
 |---|---|
 | `shared/` | reine Unit-Tests, kein Framework (Regel: `shared/domain` und `shared/support` importieren weder Angular noch RxJS) |
-| `platform/` | Rust-seitig getestet (Datenbank, PTY, Prozesse); die TypeScript-Seite ist eine dünne `invoke`-Schicht ohne eigene Tests |
+| `platform/` | Rust-seitig getestet (Datenbank, PTY, Prozesse, Command-Runner, Layout-Parser); die TypeScript-Seite ist eine dünne `invoke`-Schicht — getestet ist dort nur, was eigene Logik hat (`fromTauriListener`: Abmelden vor der asynchronen Registrierung) |
 | `core/terminal/` | Unit-Tests gegen xterm im Headless-Modus: Byte-Roundtrip, Resize, Flow-Control-Acks, Alt-Screen-Erkennung. Keine Tauri-Abhängigkeit — PTY als Stub |
 | `core/session/` | der Schwerpunkt: Kommandozeilen-Modell und OSC-Interpretation gegen aufgezeichnete Byteströme (bash, zsh, pwsh, mit und ohne Integration, mit Kontextwechsel). Jeder Degradationspfad aus der Tabelle oben ist ein Test. Regel 4.4: ein Test, der zeigt, dass bei Unsicherheit *nichts* geschrieben wird |
-| `core/workbench/` | Layoutbaum und Serializer als reine Logik; Feature-Host mit Fake-Features (aktivieren, deaktivieren, fehlschlagen, dreimal werfen) |
+| `core/workbench/` | Layoutbaum und Serializer als reine Logik; Feature-Host mit Fake-Features (aktivieren, deaktivieren, fehlschlagen, dreimal werfen); Terminal-Aktionen Ende-zu-Ende (`ActionFired` → Wirkung, durch den echten Bus, `ActionHandlers` und `GridListService`); Drag-Verhalten von Tabs, Workspaces und Panes über echte `window`-Events |
 | `core/api/` | Bindungszustände und Schreibschutz: verspätete Antwort nach Fokuswechsel darf nicht schreiben |
 | `features/` | gegen eine gestubbte API und Stub-Plattformdienste; ein Deaktivierungstest je Feature |
 | `bootstrap/` | ein Start-Test: Deklarationsphase über das Manifest — keine doppelten Feature- oder Aktions-IDs, keine Zyklen in `requires`, keine kollidierenden Settings-Pfade, keine Aktion ohne Handler |
@@ -914,6 +951,22 @@ selbst in `try/catch` rufen.
 Konstruktor-Injektion überall außer `bootstrap/`, damit Tests ohne
 Angular-`TestBed` auskommen, wo es geht. `vi.mock` auf eine Quelle ist ein Geruch — sie gehört injiziert (3.1);
 für Senken (`Logger`, `ErrorReporter`) bleibt er erlaubt.
+
+**Umbauen heißt: erst festhalten, dann ändern.** Vor einem Umbau ohne
+Verhaltensänderung stehen Tests, die das Verhalten von außen festschreiben —
+über die Einstiegspunkte, die der Umbau nicht anfasst (die Methoden, die ein
+Template ruft; `ActionFired`; die öffentliche Oberfläche eines Service), nie
+über den Weg dorthin (welche Nachricht publiziert wird, welcher Reducer läuft).
+Sie laufen grün gegen den alten Code und mit unveränderten Assertions gegen den
+neuen. Ob sie etwas taugen, zeigt eine Mutationsprobe: ein absichtlich
+eingebauter Defekt muss mindestens einen Test rot machen — sonst fehlt genau
+dieser Test. Seltsames, aber bestehendes Verhalten wird mit festgehalten und
+benannt, nicht stillschweigend „mitkorrigiert"; ein echter Fehler wird danach
+als eigener Schritt behoben.
+
+Die Specs laufen JIT ohne den Angular-Compiler: Komponenten werden mit `new`
+in `TestBed.runInInjectionContext` gebaut; ein Signal-Input wird über seinen
+Signal-Knoten gesetzt, weil `fixture.setInput` dafür nicht greift.
 
 ---
 
@@ -971,6 +1024,28 @@ sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 | Doku | Codegen → Markdown für die Website, analog zu Zod `.describe()` bei den Settings |
 | Config-Validierung | Zod prüft `keybind = …=<name>` gegen den Katalog, unbekannte Namen als Diagnose-Notification |
 | HTTP `POST /action` | validiert gegen dieselbe Liste |
+
+**Vom Auslöser zum Handler, vom Handler zur Wirkung.** Alle Auslöser —
+Keybinding, Palette, natives Menü, Hamburger, Kontextmenü eines Terminals, CLI,
+HTTP — feuern dasselbe `ActionFired`; `ActionHandlers` hat darauf das eine Abo
+und ruft den registrierten Handler. Das ist der Bus-Teil, weil die Auslöser
+einander und den Handler nicht kennen. Ab dem Handler gibt es keinen Bus mehr:
+er ruft die Workbench oder die Sitzung direkt auf
+(`grid.split(id, "vertical", "r")`, `host.runEditorAction("clearLine")`) und
+meldet mit `false`, wenn er nichts getan hat, damit ein `performable`-Keybinding
+zum Terminal durchfällt.
+
+Eine Aktion, die ein Terminal braucht, läuft auf dem, das sie **nennt**
+(`ActionFired.terminalId` — das Kontextmenü eines Panes, HTTP), sonst auf dem
+fokussierten. Layout-Aktionen (Split, Pane-Wechsel, Maximieren) werden
+abgelehnt, wenn das Pane nicht im sichtbaren Tab liegt; Sitzungs-Aktionen
+(Paste, Clear, Editor-Aktionen, Copy/Cut) brauchen nur eine lebende Sitzung.
+Das Kontextmenü ist damit ein Auslöser wie jeder andere und kennt keine
+eigenen Nachrichten.
+
+Durchnummerierte Aktionen (`open_shell_1..9`, `select_tab_1..9`,
+`select_workspace_1..9`) entstehen im Katalog aus einer Liste (`SLOTS`); die
+Handler iterieren dieselbe Liste.
 
 Der Codegen (`scripts/generate-actions.ts`) läuft über dieselbe statische
 Feature-Liste aus `bootstrap/`, kennt also auch Feature-Aktionen. CI prüft,
@@ -1050,7 +1125,13 @@ Features und kein weiterer Modus.
 
 Ein Feature besitzt seine Einstellungen (eigenes Zod-Schema — der zentrale
 Sammelpunkt und die Kopie im statischen `Config`-Typ entfallen), seine Tabellen
-und Migrationen, seine Contributions und seine UI.
+und Migrationen, seine Contributions und seine UI. Die `settings`-Contribution
+ist genau dieses Schema (`schemaShape`) und nichts weiter: **Default-Werte
+gehören nicht dazu.** Sie stehen an einer Stelle, `default-config-values.ts`,
+aus der die Default-Konfiguration generiert wird (5.1); ein zweiter Satz
+Defaults am Feature würde von ihr ohnehin überschrieben und kann ihr nur
+widersprechen. Ein Top-Level-Schlüssel hat genau einen Besitzer — deshalb
+teilen sich alle Features eine Extension für `feature.*`.
 
 `requires` bleibt, weil ausdrücklich gewünscht — mit der ehrlichen Anmerkung,
 dass der reale Baum nach dem Zusammenlegen der Panel/Service-Paare null Kanten
@@ -1221,7 +1302,7 @@ erreicht, ohne sie zu importieren.
 | `app` in `core/terminal/`, `core/infrastructure/`, `core/session/`, `core/workbench/`, `bootstrap/` schneiden | ~260 Dateien einsortieren, Pfadregeln ersetzen die Paketregeln |
 | `features/shell/` → `core/session/shells/` | Umzug; `shellFeature` und Contribution-Punkt `shells?` entfallen; `Fish`/`GitBash` aus dem `ShellType`-Enum |
 | `features/side-menu/` auflösen, Panel+Service-Paare zusammenlegen | Rail, Panel, `ui-state` und `workspace/` werden Workbench; 7 Feature-Ordner mit `index.ts`: ai, coding-agent, command-palette, git, notification-overview, terminal-search, process-info |
-| Feature-eigene Zod-Schemas | funktioniert schon (`mergeSettingsSchema`), drei Deklarationsorte werden einer |
+| Feature-eigene Zod-Schemas | `createConfigSchema` legt die Shapes von Core und Features nebeneinander; ein doppelter Schlüssel ist ein Fehler (der Feature-Host meldet ihn vorher als Deklarationskonflikt) |
 | **Feature-Host (Abschnitt 6.1)** | `features.ts`-Verteilung, `AppWiringService` und `side-menu-lifecycle-runtime.service.ts` gehen in `core/workbench/feature-host/` auf; Konsumenten (Side-Menu, Aktionskatalog, Notification-Dispatch, Suggestor-Registry) bekommen `register`/`unregister` statt `readonly`-Arrays; Config-Abo auf `feature.<id>.mode`; Panel-Rendering mit detachter View; Status-Anzeige in der Seitenleiste. Ein Deaktivierungstest je Feature. |
 | `CommandLineObserver` teilen | OSC-733→Modell (Core) von `MarkerManager` (Dekoration) trennen |
 | **Terminal/Session-Grenze ziehen (Abschnitt 2.1)** | `TerminalStateManager` in Maschinenzustand (`core/terminal/`) und Sitzungsmodell (`core/session/`) teilen; `terminal.session.ts` (717 Zeilen) zum Session-Host reduzieren, der Maschine und Handler nur noch komponiert; Config-Zugriffe aus `renderer.ts` und den Maschinen-Handlern in den Host ziehen; `focus.handler` vom App-Bus lösen. 17 Handler nach der Tabelle in 2.1 einsortieren. |
@@ -1231,7 +1312,7 @@ erreicht, ohne sie zu importieren.
 | **Session-Host (Abschnitt 2.3)** — Verhaltensänderung, kein Umzug | Heute ist `TerminalComponent` der Host: Session, History, Autocomplete, Composer sind ihre Provider (`terminal.component.ts:44-53`), `dispose()` hängt an `ngOnDestroy` (`:93`). Reparenting per `TerminalComponentFactory` existiert bereits (`terminal-component.factory.ts:47`) und bleibt. Neu: Session-Erzeugung aus der View-Erzeugung lösen — heute entsteht eine Session erst, wenn ein `PaneComponent` sichtbar wird und `attach()` ruft (`pane.component.ts:96`), Workspace-Restore startet also nur den sichtbaren Tab. Dazu die zwei Zustandsachsen aus 2.3 (Runtime `allocated → starting → running/failed → exited|closing → closed`; Darstellung `detached ↔ attached`), `attach` ruft `open()` lazy, und ein Startfehler-Pfad mit Retry (heute keiner). Spike vorab: Kommandozeilen-Modell aus einem unopened xterm-Core. Betrifft `GridListService`, `PaneComponent`, `TerminalComponentFactory`, `TerminalSession`. |
 | `api_key` verschlüsseln (Entscheidung 8) | Config-Reader akzeptiert `feature.ai.api_key = enc:<…>` und entschlüsselt über das vorhandene Rust-`decrypt`; `cogno config set --secret feature.ai.api_key <wert>` verschlüsselt beim Schreiben; Klartext bleibt lesbar, wird aber mit Diagnose-Notification gemeldet. Die generierte Default-Config dokumentiert das Format. |
 | **Fakt-Zuordnung (Entscheidung 10)** | Prozess-Info: Dialog und Kontextmenü-Eintrag aus `terminal.session.ts:401,545` und `system-info/` → Seitenleisten-Panel als sitzungsgebundenes Feature (`sideMenu`-Contribution, folgt `boundSession$`); Prozessbaum bleibt Sitzungsmodell (AI-Snapshot ist zweiter Konsument). Git, AI, Coding-Agents bleiben vollständige Scheiben und ermitteln ihre Domänenfakten selbst — kontextfrei über `platform/`, im Sitzungskontext über `boundSession.run`/`.fs`; `CommandRunner`/`Filesystem` (`app-host/*-host.service.ts`) → `core/session/`. Depcruise: `features/` importiert `terminal/`, `session/`, `workbench/`, `command-log/` nicht. |
-| **Protokoll als Ordner (Abschnitt 3)** | `TerminalGatewayAdapterService` + `TerminalGateway`-Port (`shared/ports`) → `core/api/`; Feature-Importe von `@cogno/shared/ports`-Terminal-Contracts auf `@cogno/core/api` umstellen; Depcruise-Regel „Features importieren aus `core/` nur `api/`". |
+| **Protokoll als Ordner (Abschnitt 3)** | `TerminalGatewayAdapterService` + `TerminalGateway`-Port (`shared/ports`) → `core/api/` (der Port ist inzwischen entfallen, Features bekommen `SessionApi`); Feature-Importe von `@cogno/shared/ports`-Terminal-Contracts auf `@cogno/core/api` umstellen; Depcruise-Regel „Features importieren aus `core/` nur `api/`". |
 | **Fenster-Routing (Abschnitt 2.6)** | Rust: ein `WindowRegistry`-State (`terminalId → label`, `workspaceId → label`, zuletzt fokussiertes Fenster über `WindowEvent::Focused`, Freigabe bei `Destroyed`) und eine `route(app, payload)`-Funktion; `pty_spawn` bekommt `window: tauri::Window` und schreibt das Label in `Session`; `emit_to` statt `app.emit` in `http_server.rs:129`, `lib.rs:50,115`, `pty.rs:361`; Commands `window_claim_workspace`/`window_release_workspace`; Notification-Klick (`notification.rs:32-40`, macht `emit_to` schon) routet zum Ziel- statt Ursprungsfenster. TS `platform/`: `window.reveal(windowId, target)`; `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand. |
 | **Sitzungs-Wiederherstellung (Abschnitt 2.5)** | `SessionSnapshot` = `start` + `scrollback` + `history`, versioniert; `snapshot()`/`restore()` am Host; Serializer im Workspace-Modul: einsammeln, dann eine Transaktion; Settings `terminal.restore.scrollback`, `terminal.restore.max_lines`, Aktion `exclude_from_restore`; Trennzeile im Buffer; abgebrochenes Kommando im Command-Log; Snapshot-Löschung bei Close und Verwaisten-Prune beim Start. Baut auf dem Session-Host aus 2.3 auf. |
 | **Session-Bindung (Abschnitt 3)** — Verhaltensänderung, kein Umzug | Neuer Bindungsdienst in `core/api/`: `boundSession$` mit Zuständen `unbound/active/closing/closed`, Standard „folgt dem Fokus", haltbar (`hold`/`release`). Regel „vor jedem Schreiben Identität und Capability neu prüfen" gibt es heute nirgends — AI-Chat prüft das Zielterminal nur im Klick-Moment (`ai-chat-side.component.ts:331-332`). Umstellung von Git, AI, Prozess-Info, Coding-Agents auf den Dienst; ihre eigene Fokus-Verdrahtung entfällt. |
