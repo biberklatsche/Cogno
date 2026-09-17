@@ -6,10 +6,7 @@ import { WorkspaceSideMenuLifecycle } from "./workspace-side-menu.lifecycle";
 type SideMenuFeatureHandle = SideMenuFeatureHandleContract<string>;
 
 describe("WorkspaceSideMenuLifecycle", () => {
-  let workspaceService: Pick<
-    WorkspaceService,
-    "initializeSelection" | "restoreSelectedWorkspace" | "selectNext"
-  >;
+  let workspaceService: Pick<WorkspaceService, "restoreSelectedWorkspace" | "selectNext">;
   let handle: {
     close: ReturnType<typeof vi.fn<SideMenuFeatureHandle["close"]>>;
     registerKeybindListener: ReturnType<
@@ -24,7 +21,6 @@ describe("WorkspaceSideMenuLifecycle", () => {
 
   beforeEach(() => {
     workspaceService = {
-      initializeSelection: vi.fn(),
       restoreSelectedWorkspace: vi.fn().mockResolvedValue(undefined),
       selectNext: vi.fn(),
     };
@@ -38,13 +34,11 @@ describe("WorkspaceSideMenuLifecycle", () => {
     lifecycle = new WorkspaceSideMenuLifecycle(workspaceService as WorkspaceService).create(handle);
   });
 
-  it("initializes selection on open and unregisters on off, blur and close", () => {
-    lifecycle.onOpen?.();
+  it("unregisters on off, blur and close", () => {
     lifecycle.onModeChange?.("off");
     lifecycle.onBlur?.();
     lifecycle.onClose?.();
 
-    expect(workspaceService.initializeSelection).toHaveBeenCalled();
     expect(handle.unregisterKeybindListener).toHaveBeenCalledTimes(3);
   });
 

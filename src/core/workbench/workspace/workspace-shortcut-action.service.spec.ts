@@ -1,21 +1,21 @@
+import { signal, type WritableSignal } from "@angular/core";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
-import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
-import type { WorkspaceHostService } from "./workspace-host.service";
+import type { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 
 describe("WorkspaceShortcutActionService", () => {
   let bus: AppBus;
-  let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
+  let workspaceEntries: WritableSignal<ReadonlyArray<WorkspaceEntryContract>>;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     bus = new AppBus();
-    workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
+    workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
       { id: "WS-1", name: "Project One", isActive: false },
       { id: "WS-2", name: "Project Two", isActive: false },
@@ -23,8 +23,8 @@ describe("WorkspaceShortcutActionService", () => {
     restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
 
     const workspaceHostPort = {
-      workspaceEntries$: workspaceEntriesSubject.asObservable(),
-      restoreWorkspace: restoreWorkspaceMock,
+      workspaceEntries,
+      restoreWorkspaceById: restoreWorkspaceMock,
       saveWorkspace: vi.fn().mockResolvedValue(undefined),
       closeWorkspace: vi.fn().mockResolvedValue(undefined),
       reorderWorkspaces: vi.fn().mockResolvedValue(undefined),
@@ -32,13 +32,9 @@ describe("WorkspaceShortcutActionService", () => {
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
-    } as unknown as WorkspaceHostService;
+    } as unknown as WorkspaceHostApplicationService;
 
-    new WorkspaceShortcutActionService(
-      new ActionHandlers(bus, getDestroyRef()),
-      workspaceHostPort,
-      getDestroyRef(),
-    );
+    new WorkspaceShortcutActionService(new ActionHandlers(bus, getDestroyRef()), workspaceHostPort);
   });
 
   it("restores the default workspace for select_workspace_default", () => {

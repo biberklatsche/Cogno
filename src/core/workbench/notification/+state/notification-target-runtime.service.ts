@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
+import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { Subscription } from "rxjs";
 
 export interface NotificationTargetRuntime {
@@ -15,7 +15,7 @@ export class NotificationTargetRuntimeService {
   constructor(
     private readonly appBus: AppBus,
     private readonly gridListService: GridListService,
-    private readonly workspaceHostPort: WorkspaceHostService,
+    private readonly workspaces: WorkspaceHostApplicationService,
     destroyRef: DestroyRef,
   ) {
     const subscription = new Subscription();
@@ -34,7 +34,7 @@ export class NotificationTargetRuntimeService {
       return;
     }
 
-    await this.workspaceHostPort.restoreWorkspace(target.workspaceId);
+    await this.workspaces.restoreWorkspaceById(target.workspaceId);
     const tabExists = this.gridListService
       .getGridConfigs(target.workspaceId)
       .some((gridConfig) => gridConfig.tabId === target.tabId);

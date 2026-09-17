@@ -1,84 +1,67 @@
+import { signal, type WritableSignal } from "@angular/core";
+import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { WorkspaceService } from "@cogno/core/workbench/workspace/workspace.service";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
+import type { DialogService } from "@cogno/shared/ui";
 import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
-import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getDestroyRef } from "../../../__test__/destroy-ref";
-import type { WorkspaceCloseGuardService } from "./workspace-close-guard.service";
-import type { WorkspaceHostService } from "./workspace-host.service";
+import type { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 describe("WorkspaceService", () => {
   let workspaceService: WorkspaceService;
-  let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
-  let restoreWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["restoreWorkspace"]>>;
-  let saveWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["saveWorkspace"]>>;
-  let closeWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["closeWorkspace"]>>;
-  let reorderWorkspacesMock: ReturnType<typeof vi.fn<WorkspaceHostService["reorderWorkspaces"]>>;
-  let persistWorkspaceOrderMock: ReturnType<
-    typeof vi.fn<WorkspaceHostService["persistWorkspaceOrder"]>
-  >;
-  let openCreateWorkspaceDialogMock: ReturnType<
-    typeof vi.fn<WorkspaceHostService["openCreateWorkspaceDialog"]>
-  >;
-  let openEditWorkspaceDialogMock: ReturnType<
-    typeof vi.fn<WorkspaceHostService["openEditWorkspaceDialog"]>
-  >;
-  let deleteWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["deleteWorkspace"]>>;
-  let confirmCloseWorkspaceMock: ReturnType<
-    typeof vi.fn<WorkspaceCloseGuardService["confirmCloseWorkspace"]>
-  >;
+  let workspaceEntries: WritableSignal<ReadonlyArray<WorkspaceEntryContract>>;
+  let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
+  let saveWorkspaceMock: ReturnType<typeof vi.fn>;
+  let closeWorkspaceMock: ReturnType<typeof vi.fn>;
+  let reorderWorkspacesMock: ReturnType<typeof vi.fn>;
+  let persistWorkspaceOrderMock: ReturnType<typeof vi.fn>;
+  let openCreateWorkspaceDialogMock: ReturnType<typeof vi.fn<() => void>>;
+  let openEditWorkspaceDialogMock: ReturnType<typeof vi.fn<(workspaceName: string) => void>>;
+  let deleteWorkspaceMock: ReturnType<typeof vi.fn>;
+  let confirmCloseWorkspaceMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
+    workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
       { id: "WS-1", name: "Project One", color: "blue", isActive: false },
       { id: "WS-2", name: "Project Two", color: "red", isActive: false },
     ]);
 
-    restoreWorkspaceMock = vi
-      .fn<WorkspaceHostService["restoreWorkspace"]>()
-      .mockResolvedValue(undefined);
-    saveWorkspaceMock = vi.fn<WorkspaceHostService["saveWorkspace"]>().mockResolvedValue(undefined);
-    closeWorkspaceMock = vi
-      .fn<WorkspaceHostService["closeWorkspace"]>()
-      .mockResolvedValue(undefined);
-    reorderWorkspacesMock = vi
-      .fn<WorkspaceHostService["reorderWorkspaces"]>()
-      .mockResolvedValue(undefined);
-    persistWorkspaceOrderMock = vi
-      .fn<WorkspaceHostService["persistWorkspaceOrder"]>()
-      .mockResolvedValue(undefined);
-    openCreateWorkspaceDialogMock = vi.fn<WorkspaceHostService["openCreateWorkspaceDialog"]>();
-    openEditWorkspaceDialogMock = vi.fn<WorkspaceHostService["openEditWorkspaceDialog"]>();
-    deleteWorkspaceMock = vi
-      .fn<WorkspaceHostService["deleteWorkspace"]>()
-      .mockResolvedValue(undefined);
-    confirmCloseWorkspaceMock = vi
-      .fn<WorkspaceCloseGuardService["confirmCloseWorkspace"]>()
-      .mockResolvedValue(true);
+    restoreWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    saveWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    closeWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    reorderWorkspacesMock = vi.fn().mockResolvedValue(undefined);
+    persistWorkspaceOrderMock = vi.fn().mockResolvedValue(undefined);
+    deleteWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    confirmCloseWorkspaceMock = vi.fn().mockResolvedValue(true);
+    // The dialogs are what "open create/edit" amounts to now.
+    const openDialogMock = vi.fn();
+    openCreateWorkspaceDialogMock = vi.fn<() => void>();
+    openEditWorkspaceDialogMock = vi.fn<(workspaceName: string) => void>();
+    openDialogMock.mockImplementation((_component: unknown, config: { title: string }) => {
+      if (config.title === "Create workspace") openCreateWorkspaceDialogMock();
+      else openEditWorkspaceDialogMock(config.title.replace("Edit ", ""));
+    });
 
-    const workspaceHostPort = {
-      workspaceEntries$: workspaceEntriesSubject.asObservable(),
-      restoreWorkspace: restoreWorkspaceMock,
+    const workspaces = {
+      workspaceEntries,
+      restoreWorkspaceById: restoreWorkspaceMock,
       saveWorkspace: saveWorkspaceMock,
       closeWorkspace: closeWorkspaceMock,
       reorderWorkspaces: reorderWorkspacesMock,
       persistWorkspaceOrder: persistWorkspaceOrderMock,
-      openCreateWorkspaceDialog: openCreateWorkspaceDialogMock,
-      openEditWorkspaceDialog: openEditWorkspaceDialogMock,
       deleteWorkspace: deleteWorkspaceMock,
-    } as unknown as WorkspaceHostService;
-
-    const workspaceCloseGuard = {
-      confirmCloseWorkspace: confirmCloseWorkspaceMock,
-    } as unknown as WorkspaceCloseGuardService;
+      createWorkspaceDraft: () => ({ id: "draft", name: "" }),
+      getWorkspaceById: (id: string) => ({ id, name: id }),
+    } as unknown as WorkspaceHostApplicationService;
 
     workspaceService = new WorkspaceService(
-      workspaceHostPort,
-      workspaceCloseGuard,
-      getDestroyRef(),
+      workspaces,
+      {
+        confirmProceedIfNoBusyTerminalsInWorkspace: confirmCloseWorkspaceMock,
+      } as unknown as TerminalBusyStateService,
+      { open: openDialogMock } as unknown as DialogService,
     );
-    workspaceService.initializeSelection();
   });
 
   it("initializes workspace entries from host", () => {
@@ -99,7 +82,7 @@ describe("WorkspaceService", () => {
   });
 
   it("moves through a variable grid using registered geometry", () => {
-    workspaceEntriesSubject.next([
+    workspaceEntries.set([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
       { id: "WS-1", name: "Project One", color: "blue", isActive: false },
       { id: "WS-2", name: "Project Two", color: "red", isActive: false },
@@ -112,7 +95,6 @@ describe("WorkspaceService", () => {
       createNavigationItem("WS-2", 0, 90, 180, 60),
       createNavigationItem("WS-3", 200, 90, 120, 60),
     ]);
-    workspaceService.initializeSelection();
     workspaceService.selectNext("right");
     workspaceService.selectNext("down");
 

@@ -50,7 +50,6 @@ import { TerminalActionHandlers } from "@cogno/core/workbench/terminal/+state/ke
 import { SessionActionHandlers } from "@cogno/core/workbench/terminal/+state/session-action-handlers";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
-import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
 import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
@@ -127,7 +126,6 @@ export const appConfig: ApplicationConfig = {
         injector.get(ActionCatalogAdapterService);
         injector.get(ActionKeybindingPortAdapterService);
         injector.get(TerminalSearchApiService);
-        injector.get(WorkspaceHostService);
         injector.get(WorkspaceShortcutActionService);
         injector.get(CodingAgentStatusService);
         injector.get(CodingAgentStartupService);

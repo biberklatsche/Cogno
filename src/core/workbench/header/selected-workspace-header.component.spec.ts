@@ -1,9 +1,8 @@
-import type { Signal } from "@angular/core";
+import { type Signal, signal, type WritableSignal } from "@angular/core";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import type { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
+import type { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
-import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { getDestroyRef } from "../../../__test__/test-factory";
@@ -17,25 +16,27 @@ type SelectedWorkspaceHeaderInternals = {
 };
 
 describe("SelectedWorkspaceHeaderComponent", () => {
-  let workspaceEntriesSubject: BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>;
-  let restoreWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["restoreWorkspace"]>>;
+  let workspaceEntries: WritableSignal<ReadonlyArray<WorkspaceEntryContract>>;
+  let restoreWorkspaceMock: ReturnType<
+    typeof vi.fn<WorkspaceHostApplicationService["restoreWorkspaceById"]>
+  >;
   let openAtElementMock: ReturnType<typeof vi.fn<ContextMenuOverlayService["openAtElement"]>>;
   let component: SelectedWorkspaceHeaderComponent;
 
   beforeEach(() => {
-    workspaceEntriesSubject = new BehaviorSubject<ReadonlyArray<WorkspaceEntryContract>>([
+    workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([
       { id: "WS-1", name: "Workspace One", color: "blue", isActive: true, isOpen: true },
       { id: "WS-2", name: "Workspace Two", color: "red", isActive: false, isOpen: true },
       { id: "WS-3", name: "Workspace Three", isActive: false, isOpen: false },
     ]);
     restoreWorkspaceMock = vi
-      .fn<WorkspaceHostService["restoreWorkspace"]>()
+      .fn<WorkspaceHostApplicationService["restoreWorkspaceById"]>()
       .mockResolvedValue(undefined);
     openAtElementMock = vi.fn<ContextMenuOverlayService["openAtElement"]>();
 
     const workspaceHostPort = {
-      workspaceEntries$: workspaceEntriesSubject.asObservable(),
-      restoreWorkspace: restoreWorkspaceMock,
+      workspaceEntries,
+      restoreWorkspaceById: restoreWorkspaceMock,
       saveWorkspace: vi.fn().mockResolvedValue(undefined),
       closeWorkspace: vi.fn().mockResolvedValue(undefined),
       reorderWorkspaces: vi.fn().mockResolvedValue(undefined),
@@ -43,7 +44,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
-    } as unknown as WorkspaceHostService;
+    } as unknown as WorkspaceHostApplicationService;
     const contextMenuOverlayService: ContextMenuOverlayPort = {
       openAtElement: openAtElementMock,
     };
@@ -62,9 +63,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
   it("enables the dropdown only when multiple workspaces are open", () => {
     expect((component as any).hasWorkspaceMenu()).toBe(true);
 
-    workspaceEntriesSubject.next([
-      { id: "WS-1", name: "Workspace One", isActive: true, isOpen: true },
-    ]);
+    workspaceEntries.set([{ id: "WS-1", name: "Workspace One", isActive: true, isOpen: true }]);
 
     expect((component as any).hasWorkspaceMenu()).toBe(false);
   });
@@ -95,7 +94,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
   });
 
   it("hides the header when only the default workspace is active", () => {
-    workspaceEntriesSubject.next([
+    workspaceEntries.set([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true, isOpen: true },
     ]);
 
@@ -105,7 +104,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
   });
 
   it("shows the default workspace when another workspace is open", () => {
-    workspaceEntriesSubject.next([
+    workspaceEntries.set([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true, isOpen: true },
       { id: "WS-1", name: "Workspace One", isActive: false, isOpen: true },
     ]);
@@ -117,7 +116,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
   });
 
   it("keeps the dirty marker state on the active workspace", () => {
-    workspaceEntriesSubject.next([
+    workspaceEntries.set([
       { id: "WS-1", name: "Workspace One", isActive: true, isOpen: true, isDirty: true },
     ]);
 
@@ -127,7 +126,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
   });
 
   it("includes the default workspace in the header menu when multiple workspaces are open", () => {
-    workspaceEntriesSubject.next([
+    workspaceEntries.set([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: false, isOpen: true },
       { id: "WS-1", name: "Workspace One", isActive: true, isOpen: true },
       { id: "WS-2", name: "Workspace Two", isActive: false, isOpen: true },

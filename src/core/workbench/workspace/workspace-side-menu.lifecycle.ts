@@ -18,9 +18,6 @@ export class WorkspaceSideMenuLifecycle {
           sideMenuFeatureHandle.unregisterKeybindListener();
         }
       },
-      onOpen: () => {
-        this.workspaceService.initializeSelection();
-      },
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
           ["Enter", "Escape", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"],

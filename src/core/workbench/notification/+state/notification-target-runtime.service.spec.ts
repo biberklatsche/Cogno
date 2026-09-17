@@ -1,7 +1,6 @@
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import type { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
-import { of } from "rxjs";
+import type { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../../__test__/destroy-ref";
 import { NotificationTargetRuntimeService } from "./notification-target-runtime.service";
@@ -9,8 +8,10 @@ import { NotificationTargetRuntimeService } from "./notification-target-runtime.
 describe("NotificationTargetRuntimeService", () => {
   let appBus: AppBus;
   let gridListService: GridListService;
-  let workspaceHostPort: WorkspaceHostService;
-  let restoreWorkspaceMock: ReturnType<typeof vi.fn<WorkspaceHostService["restoreWorkspace"]>>;
+  let workspaceHostPort: WorkspaceHostApplicationService;
+  let restoreWorkspaceMock: ReturnType<
+    typeof vi.fn<WorkspaceHostApplicationService["restoreWorkspaceById"]>
+  >;
 
   beforeEach(() => {
     appBus = new AppBus();
@@ -27,11 +28,10 @@ describe("NotificationTargetRuntimeService", () => {
       ),
     } as unknown as GridListService;
     restoreWorkspaceMock = vi
-      .fn<WorkspaceHostService["restoreWorkspace"]>()
+      .fn<WorkspaceHostApplicationService["restoreWorkspaceById"]>()
       .mockResolvedValue(undefined);
     workspaceHostPort = {
-      workspaceEntries$: of([{ id: "workspace-1", name: "Workspace 1" }]),
-      restoreWorkspace: restoreWorkspaceMock,
+      restoreWorkspaceById: restoreWorkspaceMock,
       saveWorkspace: vi.fn(),
       closeWorkspace: vi.fn(),
       reorderWorkspaces: vi.fn(),
@@ -39,7 +39,7 @@ describe("NotificationTargetRuntimeService", () => {
       openCreateWorkspaceDialog: vi.fn(),
       openEditWorkspaceDialog: vi.fn(),
       deleteWorkspace: vi.fn(),
-    } as unknown as WorkspaceHostService;
+    } as unknown as WorkspaceHostApplicationService;
   });
 
   it("restores the workspace and then selects and focuses the notification target", async () => {
@@ -80,8 +80,7 @@ describe("NotificationTargetRuntimeService", () => {
       gridListService,
       {
         ...workspaceHostPort,
-        workspaceEntries$: of([]),
-      } as unknown as WorkspaceHostService,
+      } as unknown as WorkspaceHostApplicationService,
       getDestroyRef(),
     );
 

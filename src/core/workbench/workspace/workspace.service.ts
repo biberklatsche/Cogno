@@ -1,69 +1,60 @@
-import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { computed, Injectable, Signal, signal } from "@angular/core";
+import { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import {
   SelectableItemState,
   SelectableListUseCase,
   SelectionDirection,
   WorkspaceEntryContract,
 } from "@cogno/shared/domain";
+import { DialogService } from "@cogno/shared/ui";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
 } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
-import { WorkspaceCloseGuardService } from "./workspace-close-guard.service";
-import { WorkspaceHostService } from "./workspace-host.service";
+import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
+import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemState<string>;
 
+/**
+ * What the workspace panel talks to. Its own part is the keyboard selection,
+ * the edit dialogs and the "terminals are busy" confirmation before closing;
+ * the rest goes straight to the application service.
+ */
 @Injectable({ providedIn: "root" })
 export class WorkspaceService {
-  private readonly workspaceEntriesSignal = signal<WorkspaceEntryViewModel[]>([]);
+  private readonly selectedWorkspaceId = signal<string | undefined>(undefined);
   private navigationItemsProvider?: () => ReadonlyArray<DirectionalNavigationItem<string>>;
 
-  readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]> =
-    this.workspaceEntriesSignal.asReadonly();
+  /** The entries with the selection: the chosen one, else the active, else the first. */
+  readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]> = computed(() => {
+    const entries = this.workspaces.workspaceEntries();
+    const chosenId = this.selectedWorkspaceId();
+    const selectedId = entries.some((entry) => entry.id === chosenId)
+      ? chosenId
+      : (entries.find((entry) => entry.isActive) ?? entries.at(0))?.id;
+    return entries.map((entry) => ({ ...entry, isSelected: entry.id === selectedId }));
+  });
 
   constructor(
-    private readonly workspaceHostPort: WorkspaceHostService,
-    private readonly workspaceCloseGuard: WorkspaceCloseGuardService,
-    destroyRef: DestroyRef,
-  ) {
-    this.workspaceHostPort.workspaceEntries$
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((workspaceEntries) => {
-        this.workspaceEntriesSignal.set(
-          SelectableListUseCase.syncSelection(
-            this.workspaceEntriesSignal(),
-            workspaceEntries.map((workspaceEntry) => ({
-              ...workspaceEntry,
-              isSelected: false,
-            })),
-            workspaceEntries.find((workspaceEntry) => workspaceEntry.isActive)?.id,
-          ),
-        );
-      });
-  }
-
-  initializeSelection(): void {
-    this.workspaceEntriesSignal.set(
-      SelectableListUseCase.initializeSelection(this.workspaceEntriesSignal()),
-    );
-  }
+    private readonly workspaces: WorkspaceHostApplicationService,
+    private readonly terminalBusyStateService: TerminalBusyStateService,
+    private readonly dialogService: DialogService,
+  ) {}
 
   selectNext(direction: SelectionDirection): void {
-    this.workspaceEntriesSignal.set(
-      SelectableListUseCase.selectNext(
-        this.workspaceEntriesSignal(),
-        direction,
-        (activeWorkspaceId, nextDirection) =>
-          resolveNextNavigationTarget({
-            items: this.navigationItemsProvider?.() ?? [],
-            activeId: activeWorkspaceId,
-            direction: nextDirection,
-            wrap: true,
-          }) ?? undefined,
-      ),
+    const entries = SelectableListUseCase.selectNext(
+      this.workspaceEntries(),
+      direction,
+      (activeWorkspaceId, nextDirection) =>
+        resolveNextNavigationTarget({
+          items: this.navigationItemsProvider?.() ?? [],
+          activeId: activeWorkspaceId,
+          direction: nextDirection,
+          wrap: true,
+        }) ?? undefined,
     );
+    this.selectedWorkspaceId.set(SelectableListUseCase.getSelectedId(entries));
   }
 
   registerNavigationItemsProvider(
@@ -81,50 +72,63 @@ export class WorkspaceService {
   }
 
   async restoreSelectedWorkspace(): Promise<void> {
-    const selectedWorkspaceId = SelectableListUseCase.getSelectedId(this.workspaceEntriesSignal());
-    if (!selectedWorkspaceId) {
-      return;
+    const selectedWorkspaceId = SelectableListUseCase.getSelectedId(this.workspaceEntries());
+    if (selectedWorkspaceId) {
+      await this.workspaces.restoreWorkspaceById(selectedWorkspaceId);
     }
-    await this.workspaceHostPort.restoreWorkspace(selectedWorkspaceId);
   }
 
-  async restoreWorkspace(workspaceId: string): Promise<void> {
-    await this.workspaceHostPort.restoreWorkspace(workspaceId);
+  restoreWorkspace(workspaceId: string): Promise<void> {
+    return this.workspaces.restoreWorkspaceById(workspaceId);
   }
 
-  async saveWorkspace(workspaceId: string): Promise<void> {
-    await this.workspaceHostPort.saveWorkspace(workspaceId);
+  saveWorkspace(workspaceId: string): Promise<void> {
+    return this.workspaces.saveWorkspace(workspaceId);
   }
 
+  deleteWorkspace(workspaceId: string): Promise<void> {
+    return this.workspaces.deleteWorkspace(workspaceId);
+  }
+
+  reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
+    return this.workspaces.reorderWorkspaces(sourceWorkspaceId, targetWorkspaceId);
+  }
+
+  persistWorkspaceOrder(): Promise<void> {
+    return this.workspaces.persistWorkspaceOrder();
+  }
+
+  /** Closes the workspace unless the user keeps it because terminals are busy. */
   async closeWorkspace(workspaceId: string): Promise<void> {
-    const shouldProceed = await this.workspaceCloseGuard.confirmCloseWorkspace(
-      "close this workspace",
-      workspaceId,
-    );
-    if (!shouldProceed) {
-      return;
+    const shouldProceed =
+      await this.terminalBusyStateService.confirmProceedIfNoBusyTerminalsInWorkspace(
+        "close this workspace",
+        workspaceId,
+      );
+    if (shouldProceed) {
+      await this.workspaces.closeWorkspace(workspaceId);
     }
-
-    await this.workspaceHostPort.closeWorkspace(workspaceId);
-  }
-
-  async reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {
-    await this.workspaceHostPort.reorderWorkspaces(sourceWorkspaceId, targetWorkspaceId);
-  }
-
-  async persistWorkspaceOrder(): Promise<void> {
-    await this.workspaceHostPort.persistWorkspaceOrder();
   }
 
   openCreateWorkspaceDialog(): void {
-    this.workspaceHostPort.openCreateWorkspaceDialog();
+    this.dialogService.open(WorkspaceEditDialogComponent, {
+      title: "Create workspace",
+      width: "420px",
+      showCloseButton: true,
+      data: this.workspaces.createWorkspaceDraft(),
+    });
   }
 
   openEditWorkspaceDialog(workspaceId: string): void {
-    this.workspaceHostPort.openEditWorkspaceDialog(workspaceId);
-  }
-
-  async deleteWorkspace(workspaceId: string): Promise<void> {
-    await this.workspaceHostPort.deleteWorkspace(workspaceId);
+    const workspace = this.workspaces.getWorkspaceById(workspaceId);
+    if (!workspace) {
+      return;
+    }
+    this.dialogService.open(WorkspaceEditDialogComponent, {
+      title: `Edit ${workspace.name}`,
+      width: "420px",
+      showCloseButton: true,
+      data: { ...workspace },
+    });
   }
 }

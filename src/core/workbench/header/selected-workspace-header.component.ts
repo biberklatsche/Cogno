@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { relativeSavedTime } from "@cogno/core/workbench/workspace/auto-save-status";
-import { WorkspaceHostService } from "@cogno/core/workbench/workspace/workspace-host.service";
+import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
@@ -175,7 +175,7 @@ import {
   imports: [IconComponent, TooltipDirective],
 })
 export class SelectedWorkspaceHeaderComponent {
-  private readonly workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([]);
+  private readonly workspaceEntries: Signal<ReadonlyArray<WorkspaceEntryContract>>;
   protected readonly activeWorkspace: Signal<WorkspaceEntryContract | undefined>;
   protected readonly openWorkspaceEntries: Signal<WorkspaceEntryContract[]>;
   protected readonly hasWorkspaceMenu: Signal<boolean>;
@@ -184,7 +184,7 @@ export class SelectedWorkspaceHeaderComponent {
   protected readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
 
   constructor(
-    private readonly workspaceHostPort: WorkspaceHostService,
+    private readonly workspaces: WorkspaceHostApplicationService,
     private readonly contextMenuOverlayService: ContextMenuOverlayService,
     configService: ConfigService,
     destroyRef: DestroyRef,
@@ -194,12 +194,7 @@ export class SelectedWorkspaceHeaderComponent {
       .subscribe((config) =>
         this.restoreEnabledSignal.set(config.terminal?.restore?.enabled ?? true),
       );
-    this.workspaceHostPort.workspaceEntries$
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((workspaceEntries) => {
-        this.workspaceEntries.set(workspaceEntries);
-      });
-
+    this.workspaceEntries = this.workspaces.workspaceEntries;
     this.activeWorkspace = computed(() => {
       const activeWorkspaceEntry = this.workspaceEntries().find(
         (workspaceEntry) => workspaceEntry.isActive,
@@ -254,7 +249,7 @@ export class SelectedWorkspaceHeaderComponent {
       checked: workspaceEntry.isActive,
       action: () => {
         if (workspaceEntry.isActive) return;
-        void this.workspaceHostPort.restoreWorkspace(workspaceEntry.id);
+        void this.workspaces.restoreWorkspaceById(workspaceEntry.id);
       },
     }));
   }

@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, signal, WritableSignal } from "@angular/core";
+import { computed, DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
@@ -6,10 +6,7 @@ import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-lis
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import {
-  defaultWorkspaceIdContract,
-  PersistedPaneConfigurationContract,
-} from "@cogno/shared/domain";
+import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   WorkspaceAutoSaveStatus,
   WorkspaceConfiguration,
@@ -26,26 +23,25 @@ const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 /** Idle time after terminal output before an auto-save of the active workspace. */
 const IDLE_AUTOSAVE_MS = 2500;
 
-interface DirtyTrackingPaneSignature {
-  readonly splitDirection?: PersistedPaneConfigurationContract["splitDirection"];
-  readonly ratio?: number;
-  readonly leftChild?: DirtyTrackingPaneSignature;
-  readonly rightChild?: DirtyTrackingPaneSignature;
-  readonly shellName?: string;
-  readonly workingDir?: string;
-}
-
-interface DirtyTrackingWorkspaceSignature {
-  readonly tabs: ReadonlyArray<{
-    readonly tabId: string;
-    readonly color?: string;
-    readonly userTitle?: string;
-  }>;
-  readonly grids: ReadonlyArray<{
-    readonly tabId: string;
-    readonly pane: DirtyTrackingPaneSignature;
-  }>;
-}
+/**
+ * What makes a workspace "dirty" when it changes: the tabs' identity, colour and
+ * user title, and the panes' layout, shell and directory. Everything else (active
+ * flags, system titles, terminal ids) changes without the user having edited it.
+ */
+const DIRTY_TRACKED_KEYS = [
+  "tabs",
+  "grids",
+  "tabId",
+  "color",
+  "userTitle",
+  "pane",
+  "splitDirection",
+  "ratio",
+  "leftChild",
+  "rightChild",
+  "shellName",
+  "workingDir",
+];
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceHostApplicationService {
@@ -58,6 +54,19 @@ export class WorkspaceHostApplicationService {
 
   readonly _workspaceList: WritableSignal<WorkspaceState[]> = signal([]);
   readonly workspaceList = this._workspaceList.asReadonly();
+  /** The workspaces as the panel, the header and the shortcuts list them. */
+  readonly workspaceEntries: Signal<ReadonlyArray<WorkspaceEntryContract>> = computed(() =>
+    this._workspaceList().map((workspace) => ({
+      id: workspace.id,
+      name: workspace.name,
+      color: workspace.color,
+      isDirty: workspace.isDirty,
+      isActive: workspace.isActive,
+      isOpen: workspace.isOpen,
+      autoSaveStatus: workspace.autoSaveStatus,
+      autoSavedAt: workspace.autoSavedAt,
+    })),
+  );
 
   constructor(
     private readonly bus: AppBus,
@@ -317,15 +326,7 @@ export class WorkspaceHostApplicationService {
       }
 
       this._workspaceList.set(deletePlan.workspaceList);
-
-      if (!deletePlan.workspaceToActivateId) {
-        return;
-      }
-
-      const fallbackWorkspace = this.getWorkspaceById(deletePlan.workspaceToActivateId);
-      if (fallbackWorkspace) {
-        await this.activateWorkspace(fallbackWorkspace);
-      }
+      await this.activateWorkspaceById(deletePlan.workspaceToActivateId);
     });
   }
 
@@ -344,16 +345,22 @@ export class WorkspaceHostApplicationService {
       this.tabListService.removeWorkspaceRuntime(id);
       this.gridListService.removeWorkspaceRuntime(id);
       this._workspaceList.set(closePlan.workspaceList);
-
-      if (!closePlan.workspaceToActivateId) {
-        return;
-      }
-
-      const fallbackWorkspace = this.getWorkspaceById(closePlan.workspaceToActivateId);
-      if (fallbackWorkspace) {
-        await this.activateWorkspace(fallbackWorkspace);
-      }
+      await this.activateWorkspaceById(closePlan.workspaceToActivateId);
     });
+  }
+
+  private async activateWorkspaceById(id: string | undefined): Promise<void> {
+    const workspace = id ? this.getWorkspaceById(id) : undefined;
+    if (workspace) {
+      await this.activateWorkspace(workspace);
+    }
+  }
+
+  async restoreWorkspaceById(id: string): Promise<void> {
+    const workspace = this.getWorkspaceById(id);
+    if (workspace) {
+      await this.restoreWorkspace(workspace);
+    }
   }
 
   getWorkspaceById(id: string): WorkspaceState | undefined {
@@ -460,74 +467,34 @@ export class WorkspaceHostApplicationService {
     status: WorkspaceAutoSaveStatus | undefined,
     at?: number,
   ): void {
-    const currentWorkspaceList = this._workspaceList();
-    const workspaceIndex = currentWorkspaceList.findIndex(
-      (workspaceEntry) => workspaceEntry.id === workspaceId,
-    );
-    if (workspaceIndex === -1) {
-      return;
-    }
-    const nextWorkspaceList = [...currentWorkspaceList];
-    nextWorkspaceList[workspaceIndex] = {
-      ...nextWorkspaceList[workspaceIndex],
+    // Keep the last saved time while a new save is in flight or on failure.
+    this.patchWorkspace(workspaceId, {
       autoSaveStatus: status,
-      // Keep the last saved time while a new save is in flight or on failure.
-      autoSavedAt: status === "saved" ? at : nextWorkspaceList[workspaceIndex].autoSavedAt,
-    };
-    this._workspaceList.set(nextWorkspaceList);
+      ...(status === "saved" ? { autoSavedAt: at } : {}),
+    });
   }
 
   private setWorkspaceDirtyState(workspaceId: string, isDirty: boolean): void {
-    const currentWorkspaceList = this._workspaceList();
-    const workspaceIndex = currentWorkspaceList.findIndex(
-      (workspaceEntry) => workspaceEntry.id === workspaceId,
-    );
-    if (workspaceIndex === -1 || currentWorkspaceList[workspaceIndex].isDirty === isDirty) {
+    this.patchWorkspace(workspaceId, { isDirty });
+  }
+
+  /** Writes `patch` into the workspace; a patch that changes nothing emits nothing. */
+  private patchWorkspace(workspaceId: string, patch: Partial<WorkspaceState>): void {
+    const workspace = this.getWorkspaceById(workspaceId);
+    const changes = Object.entries(patch) as [keyof WorkspaceState, unknown][];
+    if (!workspace || changes.every(([key, value]) => workspace[key] === value)) {
       return;
     }
-
-    const nextWorkspaceList = [...currentWorkspaceList];
-    nextWorkspaceList[workspaceIndex] = {
-      ...nextWorkspaceList[workspaceIndex],
-      isDirty,
-    };
-    this._workspaceList.set(nextWorkspaceList);
+    this._workspaceList.update((workspaceList) =>
+      workspaceList.map((entry) => (entry.id === workspaceId ? { ...entry, ...patch } : entry)),
+    );
   }
 
   private createWorkspaceRuntimeSignature(
     tabs: WorkspaceConfiguration["tabs"],
     grids: WorkspaceConfiguration["grids"],
   ): string {
-    const signature: DirtyTrackingWorkspaceSignature = {
-      tabs: tabs.map((tab) => ({ tabId: tab.tabId, color: tab.color, userTitle: tab.userTitle })),
-      grids: grids.map((grid) => ({
-        tabId: grid.tabId,
-        pane: this.createDirtyTrackingPaneSignature(grid.pane),
-      })),
-    };
-    return JSON.stringify(signature);
-  }
-
-  private createDirtyTrackingPaneSignature(
-    pane: PersistedPaneConfigurationContract,
-  ): DirtyTrackingPaneSignature {
-    if (pane.splitDirection) {
-      return {
-        splitDirection: pane.splitDirection,
-        ratio: pane.ratio,
-        leftChild: pane.leftChild
-          ? this.createDirtyTrackingPaneSignature(pane.leftChild)
-          : undefined,
-        rightChild: pane.rightChild
-          ? this.createDirtyTrackingPaneSignature(pane.rightChild)
-          : undefined,
-      };
-    }
-
-    return {
-      shellName: pane.shellName,
-      workingDir: pane.workingDir,
-    };
+    return JSON.stringify({ tabs, grids }, DIRTY_TRACKED_KEYS);
   }
 
   private async runWithoutDirtyTracking<T>(callback: () => Promise<T>): Promise<T> {
