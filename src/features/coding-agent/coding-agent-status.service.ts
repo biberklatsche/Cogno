@@ -97,8 +97,10 @@ export class CodingAgentStatusService {
     private readonly notificationCenterPort: NotificationCenterPort,
     private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
   ) {
-    const config = configPort.getConfiguration() as { coding_agents?: { mode?: string } };
-    if (config?.coding_agents?.mode === "off") return;
+    const config = configPort.getConfiguration() as {
+      feature?: { coding_agents?: { mode?: string } };
+    };
+    if (config?.feature?.coding_agents?.mode === "off") return;
 
     ipc.messages$
       .pipe(

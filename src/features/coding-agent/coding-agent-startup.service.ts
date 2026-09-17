@@ -79,8 +79,10 @@ export class CodingAgentStartupService {
   }
 
   private isEnabled(): boolean {
-    const config = this.configPort.getConfiguration() as { coding_agents?: { mode?: string } };
-    return config?.coding_agents?.mode !== "off";
+    const config = this.configPort.getConfiguration() as {
+      feature?: { coding_agents?: { mode?: string } };
+    };
+    return config?.feature?.coding_agents?.mode !== "off";
   }
 
   private resolveDefaultShellType(): string {
