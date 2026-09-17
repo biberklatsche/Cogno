@@ -86,14 +86,6 @@ describe("DialogService", () => {
     expect(document.body.appendChild).toHaveBeenCalledWith(componentRefMock.location.nativeElement);
   });
 
-  it("should handle TemplateRef content", () => {
-    const templateRefMock = {} as any;
-    const dialogRef = service.open(templateRefMock);
-
-    expect(dialogRef).toBeDefined();
-    expect(createComponent).toHaveBeenCalled();
-  });
-
   it("should merge provided config with defaults", () => {
     service.open(TestContentComponent, { showCloseButton: true });
 

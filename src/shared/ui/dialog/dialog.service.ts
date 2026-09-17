@@ -5,7 +5,6 @@ import {
   EnvironmentInjector,
   Injectable,
   Injector,
-  TemplateRef,
   Type,
 } from "@angular/core";
 import { DialogComponent } from "./dialog.component";
@@ -22,25 +21,23 @@ export class DialogService {
     private readonly injector: Injector,
   ) {}
 
-  open<TData = unknown, TResult = unknown, TContext = unknown>(
-    content: Type<unknown> | TemplateRef<TContext>,
-    config: DialogConfig<TData, TContext> = {},
+  open<TData = unknown, TResult = unknown>(
+    content: Type<unknown>,
+    config: DialogConfig<TData> = {},
   ): DialogRef<TResult> {
     const id = NEXT_ID++;
-    const containerRef = this.createContainer<TResult, TData, TContext>(id, content, config);
+    const containerRef = this.createContainer<TResult, TData>(id, content, config);
     return containerRef.instance.dialogRef();
   }
 
-  private createContainer<TResult, TData, TContext>(
+  private createContainer<TResult, TData>(
     id: number,
-    content: Type<unknown> | TemplateRef<TContext>,
-    config: DialogConfig<TData, TContext>,
+    content: Type<unknown>,
+    config: DialogConfig<TData>,
   ): ComponentRef<DialogComponent<TData, TResult>> {
     // Defaults
-    const merged: DialogConfig<TData, TContext> = {
+    const merged: DialogConfig<TData> = {
       hasBackdrop: true,
-      movable: false,
-      resizable: false,
       closeOnBackdropClick: true,
       closeOnEscape: true,
       ...config,
