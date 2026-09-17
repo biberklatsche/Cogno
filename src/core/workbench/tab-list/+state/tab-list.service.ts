@@ -39,7 +39,7 @@ export class TabListService {
       this.tabListByWorkspaceIdentifier.set(workspaceIdentifier, []);
     }
     this._showRename.set(undefined);
-    this._tabList.next(this.cloneTabList(this.getTabListForWorkspace(workspaceIdentifier)));
+    this.emitActiveTabList();
   }
 
   moveActiveWorkspaceRuntime(targetWorkspaceIdentifier: string): void {
@@ -49,13 +49,13 @@ export class TabListService {
       return;
     }
 
-    const currentTabList = this.cloneTabList(
+    this.tabListByWorkspaceIdentifier.set(
+      targetWorkspaceIdentifier,
       this.getTabListForWorkspace(sourceWorkspaceIdentifier),
     );
-    this.tabListByWorkspaceIdentifier.set(targetWorkspaceIdentifier, currentTabList);
     this.tabListByWorkspaceIdentifier.delete(sourceWorkspaceIdentifier);
     this.activeWorkspaceIdentifier = targetWorkspaceIdentifier;
-    this._tabList.next(this.cloneTabList(currentTabList));
+    this.emitActiveTabList();
   }
 
   removeWorkspaceRuntime(workspaceIdentifier: string): void {
@@ -63,7 +63,7 @@ export class TabListService {
     if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
       this.activeWorkspaceIdentifier = undefined;
       this._showRename.set(undefined);
-      this._tabList.next([]);
+      this.emitActiveTabList();
     }
   }
 
@@ -376,12 +376,23 @@ export class TabListService {
     return this.tabListByWorkspaceIdentifier.get(workspaceIdentifier) ?? [];
   }
 
+  /**
+   * The one place a tab list is cloned on its way in: callers may hand over
+   * tabs they (or their callers) still hold, so the stored list is a copy.
+   */
   private setTabListForWorkspace(workspaceIdentifier: string, tabList: TabList): void {
-    const clonedTabList = this.cloneTabList(tabList);
-    this.tabListByWorkspaceIdentifier.set(workspaceIdentifier, clonedTabList);
+    this.tabListByWorkspaceIdentifier.set(workspaceIdentifier, this.cloneTabList(tabList));
     if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
-      this._tabList.next(this.cloneTabList(clonedTabList));
+      this.emitActiveTabList();
     }
+  }
+
+  private emitActiveTabList(): void {
+    this._tabList.next(
+      this.activeWorkspaceIdentifier
+        ? this.getTabListForWorkspace(this.activeWorkspaceIdentifier)
+        : [],
+    );
   }
 
   private cloneTabList(tabList: TabList): TabList {
