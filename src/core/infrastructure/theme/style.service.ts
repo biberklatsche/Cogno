@@ -2,6 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
+import { defaultSettings } from "@cogno/core/infrastructure/config/models/default-config-values";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Paths } from "@cogno/platform/path";
@@ -28,9 +29,11 @@ export class StyleService {
     const isLightTheme = Color.isLight(`#${config.color?.background}`);
     const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
     const shadowFactor = this.getShadowFactor(isLightTheme);
-    const menuOpacity = config.menu?.opacity ?? 100;
+    const menuOpacity = config.menu?.opacity ?? Number(defaultSettings.menu.opacity);
     const menuOpacity2 = menuOpacity === 100 ? 100 : menuOpacity / 2;
-    const inactiveOpacity = (config.terminal?.inactive_overlay_opacity ?? 50) / 100;
+    const inactiveOpacity =
+      (config.terminal?.inactive_overlay_opacity ??
+        Number(defaultSettings.terminal.inactive_overlay_opacity)) / 100;
 
     document.documentElement.style.setProperty(
       "--theme-lighten-color",
