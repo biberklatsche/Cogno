@@ -67,7 +67,6 @@ describe("NotificationTargetRuntimeService", () => {
     );
     expect(publishSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: ["app", "terminal"],
         type: "FocusTerminal",
         payload: "terminal-1",
       }),
@@ -94,7 +93,6 @@ describe("NotificationTargetRuntimeService", () => {
 
     expect(publishSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: ["notification"],
         type: "Notification",
         payload: expect.objectContaining({
           header: "Notification target unavailable",

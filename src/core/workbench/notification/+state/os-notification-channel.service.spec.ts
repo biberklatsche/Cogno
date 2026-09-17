@@ -58,7 +58,6 @@ describe("OsNotificationChannelService", () => {
 
     expect(publishSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: ["app", "notification"],
         type: "OpenNotificationTarget",
         payload: target,
       }),
@@ -91,7 +90,6 @@ describe("OsNotificationChannelService", () => {
 
     expect(publishSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: ["notification"],
         type: "Notification",
         payload: expect.objectContaining({
           header: "OS notifications disabled",

@@ -15,7 +15,7 @@ export class SideMenuStatePersistenceService {
     private readonly repository: SideMenuStateRepository,
     destroyRef: DestroyRef,
   ) {
-    this.bus.onceType$("DBInitialized").subscribe(() => {
+    this.bus.once$("DBInitialized").subscribe(() => {
       void this.restore();
     });
 

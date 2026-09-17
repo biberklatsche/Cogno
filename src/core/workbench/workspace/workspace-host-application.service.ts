@@ -70,7 +70,7 @@ export class WorkspaceHostApplicationService {
     sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
-    this.bus.onceType$("DBInitialized").subscribe(async () => {
+    this.bus.once$("DBInitialized").subscribe(async () => {
       const workspaces = await this.workspaceRepository.getAllWorkspaces();
       await this.repairDuplicateTabIds(workspaces);
       const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(

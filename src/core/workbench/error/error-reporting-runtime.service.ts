@@ -50,7 +50,6 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
 
       this.appBus.publish({
         type: "Notification",
-        path: ["notification"],
         payload: {
           body: this.buildNotificationBody(report),
           header: report.handled ? "Behandelte Exception" : "Unbehandelte Exception",
@@ -81,7 +80,6 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
 
       this.appBus.publish({
         type: "Notification",
-        path: ["notification"],
         payload: {
           body: this.limitTextLength(report.message),
           header: "Warnung",

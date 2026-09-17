@@ -1,7 +1,6 @@
-import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import type { AppMessage } from "@cogno/core/workbench/bus/messages";
-import { firstValueFrom } from "rxjs";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AppBus } from "./app-bus";
+import { AppMessage } from "./messages";
 
 describe("AppBus", () => {
   let bus: AppBus;
@@ -10,130 +9,77 @@ describe("AppBus", () => {
     bus = new AppBus();
   });
 
-  it('should publish and receive a message on the default path ["app"]', async () => {
-    const message: AppMessage = { type: "FocusTerminal", payload: "term1" };
+  it("delivers a message to the subscribers of its type, and only to them", () => {
+    const focused = vi.fn();
+    const blurred = vi.fn();
+    bus.on$("FocusTerminal").subscribe(focused);
+    bus.on$("BlurTerminal").subscribe(blurred);
 
-    const promise = firstValueFrom(bus.onType$("FocusTerminal"));
+    const message: AppMessage = { type: "FocusTerminal", payload: "term-1" };
     bus.publish(message);
 
-    const received = await promise;
-    expect(received.type).toBe("FocusTerminal");
-    expect(received.phase).toBe("target");
+    expect(focused).toHaveBeenCalledExactlyOnceWith(message);
+    expect(blurred).not.toHaveBeenCalled();
   });
 
-  it("should go through Capture, Target and Bubble phases", async () => {
-    const path = ["app", "workspace", "terminal"];
-    const message: AppMessage = {
-      type: "FocusTerminal",
-      path,
-      payload: "term1",
-    };
+  it("delivers exactly once per subscriber, synchronously and in subscription order", () => {
+    const order: string[] = [];
+    bus.on$("FocusTerminal").subscribe(() => order.push("first"));
+    bus.on$("FocusTerminal").subscribe(() => order.push("second"));
 
-    const events: { path: string; phase: string }[] = [];
+    bus.publish({ type: "FocusTerminal", payload: "term-1" });
 
-    // Listen on different levels
-    bus.on$({ path: ["app"] }).subscribe((m) => events.push({ path: "app", phase: m.phase! }));
-    bus
-      .on$({ path: ["app", "workspace"] })
-      .subscribe((m) => events.push({ path: "workspace", phase: m.phase! }));
-    bus
-      .on$({ path: ["app", "workspace", "terminal"] })
-      .subscribe((m) => events.push({ path: "terminal", phase: m.phase! }));
-
-    bus.publish(message);
-
-    expect(events).toEqual([
-      { path: "app", phase: "capture" },
-      { path: "workspace", phase: "capture" },
-      { path: "terminal", phase: "target" },
-      { path: "workspace", phase: "bubble" },
-      { path: "app", phase: "bubble" },
-    ]);
+    expect(order).toEqual(["first", "second"]);
   });
 
-  it("should stop propagation when propagationStopped is set", async () => {
-    const path = ["app", "child"];
-    const message: AppMessage = {
-      type: "FocusTerminal",
-      path,
-      payload: "term1",
-    };
+  it("subscribes to several types at once", () => {
+    const received: string[] = [];
+    bus.on$(["FocusTerminal", "BlurTerminal"]).subscribe((message) => received.push(message.type));
 
-    const events: string[] = [];
-    bus.on$({ path: ["app"], phase: "capture" }).subscribe((m) => {
-      events.push("app-capture");
-      m.propagationStopped = true;
-    });
-    bus.on$({ path: ["app", "child"] }).subscribe(() => events.push("child-target"));
+    bus.publish({ type: "FocusTerminal", payload: "term-1" });
+    bus.publish({ type: "BlurTerminal", payload: "term-1" });
+    bus.publish({ type: "TerminalRemoved", payload: "term-1" });
 
-    const result = bus.publish(message);
-
-    expect(events).toEqual(["app-capture"]);
-    expect(result.propagationStopped).toBe(true);
+    expect(received).toEqual(["FocusTerminal", "BlurTerminal"]);
   });
 
-  it("onceType$ should only deliver the first matching message", async () => {
-    const type = "ConfigLoaded";
+  it("does not replay earlier messages to a late subscriber", () => {
+    bus.publish({ type: "FocusTerminal", payload: "term-1" });
+    const late = vi.fn();
 
-    const promise = firstValueFrom(bus.onceType$(type));
+    bus.on$("FocusTerminal").subscribe(late);
 
-    bus.publish({ type });
-    bus.publish({ type }); // Second message
-
-    const received = await promise;
-    expect(received.type).toBe(type);
-    // If it had fired more than once, the promise would already be resolved.
-    // We are testing here that it resolves at all.
+    expect(late).not.toHaveBeenCalled();
   });
 
-  it("once$ should fail with a timeout if no message arrives", async () => {
-    const promise = firstValueFrom(
-      bus.once$({
-        path: ["app"],
-        type: "ConfigLoaded",
-        timeoutMs: 10,
-      }),
-    );
+  it("once$ takes the next message of the type and completes", () => {
+    const next = vi.fn();
+    const complete = vi.fn();
+    bus.once$("ConfigLoaded").subscribe({ next, complete });
 
-    await expect(promise).rejects.toThrow();
-  });
-
-  it("should be able to filter by types (Array)", async () => {
-    const events: string[] = [];
-
-    bus
-      .on$({
-        path: ["app"],
-        type: ["TabAdded", "TabRemoved"],
-      })
-      .subscribe((m) => events.push(m.type));
-
-    bus.publish({ type: "TabAdded", payload: { tabId: "t1", isActive: true } });
     bus.publish({ type: "ConfigLoaded" });
-    bus.publish({ type: "TabRemoved", payload: "t1" });
+    bus.publish({ type: "ConfigLoaded" });
 
-    expect(events).toEqual(["TabAdded", "TabRemoved"]);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(complete).toHaveBeenCalledTimes(1);
   });
 
-  it("should return defaultPrevented correctly", () => {
-    const message: AppMessage = { type: "ConfigLoaded" };
+  describe("publish reports what the subscribers made of the message", () => {
+    it("performed and defaultPrevented as a subscriber set them", () => {
+      bus.on$("ActionFired").subscribe((message) => {
+        message.performed = true;
+        message.defaultPrevented = true;
+      });
 
-    bus.onType$("ConfigLoaded").subscribe((m) => {
-      m.defaultPrevented = true;
+      const result = bus.publish({ type: "ActionFired", payload: "copy" });
+
+      expect(result).toEqual({ performed: true, defaultPrevented: true });
     });
 
-    const result = bus.publish(message);
-    expect(result.defaultPrevented).toBe(true);
-  });
+    it("nothing performed and nothing prevented when nobody listens", () => {
+      const result = bus.publish({ type: "ActionFired", payload: "copy" });
 
-  it("should return performed correctly", () => {
-    const message: AppMessage = { type: "ConfigLoaded" };
-
-    bus.onType$("ConfigLoaded").subscribe((m) => {
-      m.performed = true;
+      expect(result).toEqual({ performed: undefined, defaultPrevented: false });
     });
-
-    const result = bus.publish(message);
-    expect(result.performed).toBe(true);
   });
 });

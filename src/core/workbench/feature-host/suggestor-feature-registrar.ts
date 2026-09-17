@@ -86,7 +86,6 @@ export class SuggestorFeatureRegistrar implements FeatureContributionRegistrar {
   private reportSuggestorIssue(issue: AutocompleteSuggestorIssue): void {
     this.bus.publish({
       type: "Notification",
-      path: ["notification"],
       payload: {
         header: "Autocomplete provider failed",
         body: `Provider: ${issue.suggestorId}\nInput: ${issue.input}\n${issue.message}`,
@@ -113,7 +112,6 @@ export class SuggestorFeatureRegistrar implements FeatureContributionRegistrar {
     const commandLine = issue.command ? `Command: ${issue.command}\n` : "";
     this.bus.publish({
       type: "Notification",
-      path: ["notification"],
       payload: {
         header: "Autocomplete provider failed",
         body: `Provider: ${providerLabel}\n${commandLine}${issue.message}`,

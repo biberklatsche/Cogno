@@ -75,22 +75,20 @@ export class TabListService {
     destroyRef: DestroyRef,
   ) {
     this.bus
-      .onType$("SelectTab")
+      .on$("SelectTab")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: SelectTabAction) => {
         if (!event.payload) return;
         this.selectTab(event.payload);
-        event.propagationStopped = true;
       });
     this.bus
-      .onType$("RemoveTab")
+      .on$("RemoveTab")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: RemoveTabAction) => {
         this.removeTab(event.payload);
-        event.propagationStopped = true;
       });
     this.bus
-      .onType$("CreateTab")
+      .on$("CreateTab")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: CreateTabAction) => {
         if (!event.payload?.tabId) return;
@@ -105,10 +103,9 @@ export class TabListService {
           false,
           { shellName, workingDir: event.payload.workingDir },
         );
-        event.propagationStopped = true;
       });
     this.bus
-      .onType$("ChangeTabTitle")
+      .on$("ChangeTabTitle")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: ChangeTabTitleEvent) => {
         const tabList = this.cloneTabList(this._tabList.value);
@@ -116,7 +113,6 @@ export class TabListService {
         if (!tab || !event.payload?.title) return;
         tab.systemTitle = event.payload.title;
         this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
-        event.propagationStopped = true;
       });
     actions.handle("new_tab", (context) =>
       this.openShell(

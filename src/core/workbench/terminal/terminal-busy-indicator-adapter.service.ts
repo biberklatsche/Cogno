@@ -68,7 +68,7 @@ export class TerminalBusyIndicatorAdapterService {
       });
 
     this.bus
-      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
+      .on$("TerminalRemoved")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         if (!event.payload) return;

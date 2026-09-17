@@ -18,7 +18,6 @@ export class OsNotificationChannelService implements NotificationChannelContract
         return;
       }
       this.appBus.publish({
-        path: ["app", "notification"],
         type: "OpenNotificationTarget",
         payload: target,
       });
@@ -42,7 +41,6 @@ export class OsNotificationChannelService implements NotificationChannelContract
     }
 
     this.appBus.publish({
-      path: ["notification"],
       type: "Notification",
       payload: {
         header: "OS notifications disabled",

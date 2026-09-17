@@ -78,7 +78,6 @@ export class TerminalSearchApiService extends TerminalSearchApi {
 
   requestSearch(terminalSearchRequest: TerminalSearchRequestContract): void {
     this.appBus.publish({
-      path: ["app", "terminal"],
       type: "TerminalSearchRequested",
       payload: terminalSearchRequest,
     });
@@ -86,7 +85,6 @@ export class TerminalSearchApiService extends TerminalSearchApi {
 
   requestSearchDecorationClear(): void {
     this.appBus.publish({
-      path: ["app", "terminal"],
       type: "TerminalSearchRequested",
       payload: {
         query: "",
@@ -98,7 +96,6 @@ export class TerminalSearchApiService extends TerminalSearchApi {
 
   requestReveal(terminalSearchRevealRequest: TerminalSearchRevealRequestContract): void {
     this.appBus.publish({
-      path: ["app", "terminal"],
       type: "TerminalSearchRevealRequested",
       payload: terminalSearchRevealRequest,
     });

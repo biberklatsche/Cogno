@@ -43,7 +43,6 @@ describe("TerminalBusyStateService", () => {
     expect(terminalBusyStateService.getBusyTerminalCount()).toBe(1);
 
     appBus.publish({
-      path: ["app", "terminal"],
       type: "TerminalRemoved",
       payload: "terminal-1",
     });

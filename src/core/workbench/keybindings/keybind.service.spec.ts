@@ -112,7 +112,7 @@ describe("KeybindService", () => {
     const handler = vi.fn();
     service.registerListener("test-listener", ["ArrowDown"], handler);
 
-    bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-1" });
+    bus.publish({ type: "FocusTerminal", payload: "terminal-1" });
     emitFact("terminal-1", { type: "focusChanged", focused: true });
     emitFact("terminal-1", { type: "fullScreenChanged", active: true });
 
@@ -130,7 +130,7 @@ describe("KeybindService", () => {
   it("fires always: keybindings while the focused selected terminal is in fullscreen mode", () => {
     config$.next({ keybind: ["always:ctrl+shift+k=test_always_action"] as never[] });
 
-    bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "terminal-1" });
+    bus.publish({ type: "FocusTerminal", payload: "terminal-1" });
     emitFact("terminal-1", { type: "focusChanged", focused: true });
     emitFact("terminal-1", { type: "fullScreenChanged", active: true });
 

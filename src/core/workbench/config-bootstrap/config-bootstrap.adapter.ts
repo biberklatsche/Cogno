@@ -30,7 +30,7 @@ export class ConfigBootstrapAdapter {
     destroyRef: DestroyRef,
   ) {
     this.appBus
-      .onceType$("InitConfigCommand")
+      .once$("InitConfigCommand")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(async () => {
         await this.load();
@@ -39,7 +39,7 @@ export class ConfigBootstrapAdapter {
     // Every load announces itself on the bus; every load but the first one -
     // watch or `load_config` - also shows a toast, as it did before the split.
     this.config.loaded$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
-      this.appBus.publish({ type: "ConfigLoaded", path: ["app", "settings"] });
+      this.appBus.publish({ type: "ConfigLoaded" });
       if (this.isFirstLoad) {
         this.isFirstLoad = false;
         return;
@@ -72,7 +72,6 @@ export class ConfigBootstrapAdapter {
   private notifyLoaded(): void {
     this.appBus.publish({
       type: "Notification",
-      path: ["notification"],
       payload: { header: "System", body: "Config loaded" },
     });
   }
@@ -102,7 +101,6 @@ export class ConfigBootstrapAdapter {
     const body = [...lines, ...detailLines].join("\n");
     this.appBus.publish({
       type: "Notification",
-      path: ["notification"],
       payload: {
         header,
         body,

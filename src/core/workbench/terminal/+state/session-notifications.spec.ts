@@ -155,7 +155,6 @@ describe("SessionNotifications", () => {
 
       expect(bus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
-          path: ["notification"],
           type: "Notification",
           payload: expect.objectContaining({
             header: "Command finished after 12s",

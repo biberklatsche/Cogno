@@ -54,7 +54,6 @@ describe("AppNotificationToastStackComponent", () => {
     });
 
     expect(appBus.publish).toHaveBeenCalledWith({
-      path: ["app", "notification"],
       type: "OpenNotificationTarget",
       payload: target,
     });

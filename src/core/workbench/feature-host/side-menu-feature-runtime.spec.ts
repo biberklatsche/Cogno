@@ -124,7 +124,7 @@ describe("SideMenuFeatureRuntime", () => {
     expect(lifecycle.onBlur).toHaveBeenCalled();
     expect(lifecycle.onClose).toHaveBeenCalled();
 
-    const actionEvent = { type: "ActionFired", path: ["app", "action"], payload: "open_workspace" };
+    const actionEvent = { type: "ActionFired", payload: "open_workspace" };
     appBus.publish(actionEvent as never);
     expect(sideMenuService.open).toHaveBeenCalledWith("Workspace");
     expect((actionEvent as { performed?: boolean }).performed).toBe(true);
@@ -159,7 +159,6 @@ describe("SideMenuFeatureRuntime", () => {
     appBus.publish({ type: "SideMenuViewOpened", payload: { label: "Workspace" } });
     appBus.publish({
       type: "ActionFired",
-      path: ["app", "action"],
       payload: "open_workspace",
     } as never);
     sideMenuService.addMenuItem.mockClear();

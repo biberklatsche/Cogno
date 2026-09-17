@@ -35,7 +35,7 @@ export class TerminalGatewayService implements SessionApi {
     // when it actually takes focus - a plain click only does the latter, so the
     // binding must follow both or it lags behind clicks.
     const focusFromCommand$: Observable<TerminalId | undefined> = this.appBus
-      .onType$("FocusTerminal", { path: ["app", "terminal"] })
+      .on$("FocusTerminal")
       .pipe(map((event) => event.payload));
     const focusFromFact$: Observable<TerminalId | undefined> =
       this.terminalSessionRegistry.facts$.pipe(
@@ -190,7 +190,6 @@ export class TerminalGatewayService implements SessionApi {
       return;
     }
     this.appBus.publish({
-      path: ["app", "terminal"],
       type: "WriteRawToPty",
       payload: request,
     });

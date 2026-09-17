@@ -24,7 +24,7 @@ export class BusyIndicatorService {
     destroyRef: DestroyRef,
   ) {
     this.bus
-      .onType$("BusyIndicatorRegister")
+      .on$("BusyIndicatorRegister")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         const payload = event.payload;
@@ -34,7 +34,7 @@ export class BusyIndicatorService {
       });
 
     this.bus
-      .onType$("BusyIndicatorUnregister")
+      .on$("BusyIndicatorUnregister")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         const registrationId = event.payload?.registrationId;
@@ -44,7 +44,7 @@ export class BusyIndicatorService {
       });
 
     this.bus
-      .onType$("BusyIndicatorClearForTerminal")
+      .on$("BusyIndicatorClearForTerminal")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         const terminalId = event.payload?.terminalId;

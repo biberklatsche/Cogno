@@ -1,6 +1,5 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ActionContextContract, ActionTriggerContract } from "@cogno/shared/domain";
 import { CoreActionName, coreActionCatalog } from "./catalog";
@@ -34,7 +33,7 @@ export class ActionHandlers {
 
   constructor(appBus: AppBus, destroyRef: DestroyRef) {
     appBus
-      .on$(ActionFired.listener())
+      .on$("ActionFired")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         const handler = this.handlers.get(event.payload as CoreActionName);

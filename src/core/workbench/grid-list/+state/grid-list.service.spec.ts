@@ -103,7 +103,7 @@ describe("GridListService", () => {
     it("should publish VisibleTerminalsChanged with an empty list when no tab is active", () => {
       let visibleTerminalIds: string[] | undefined;
       bus
-        .onType$("VisibleTerminalsChanged")
+        .on$("VisibleTerminalsChanged")
         .subscribe((event) => (visibleTerminalIds = event.payload?.terminalIds));
 
       bus.publish({
@@ -117,7 +117,7 @@ describe("GridListService", () => {
     it("should publish VisibleTerminalsChanged for the active tab including split panes", () => {
       let visibleTerminalIds: string[] | undefined;
       bus
-        .onType$("VisibleTerminalsChanged")
+        .on$("VisibleTerminalsChanged")
         .subscribe((event) => (visibleTerminalIds = event.payload?.terminalIds));
 
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");

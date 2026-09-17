@@ -25,7 +25,7 @@ export class NotificationDispatchService {
     });
 
     this.appBus
-      .on$({ path: ["notification"], type: "Notification" })
+      .on$("Notification")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((notificationEvent) => {
         void this.dispatchNotification(notificationEvent.payload);

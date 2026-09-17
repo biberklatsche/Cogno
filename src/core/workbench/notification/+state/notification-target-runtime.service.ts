@@ -20,11 +20,9 @@ export class NotificationTargetRuntimeService {
   ) {
     const subscription = new Subscription();
     subscription.add(
-      this.appBus
-        .on$({ path: ["app", "notification"], type: "OpenNotificationTarget" })
-        .subscribe((event) => {
-          void this.openTarget(event.payload);
-        }),
+      this.appBus.on$("OpenNotificationTarget").subscribe((event) => {
+        void this.openTarget(event.payload);
+      }),
     );
     destroyRef.onDestroy(() => {
       subscription.unsubscribe();
@@ -75,7 +73,6 @@ export class NotificationTargetRuntimeService {
       }
 
       this.appBus.publish({
-        path: ["app", "terminal"],
         type: "FocusTerminal",
         payload: terminalId,
       });
@@ -84,7 +81,6 @@ export class NotificationTargetRuntimeService {
 
   private publishUnavailableTargetNotification(): void {
     this.appBus.publish({
-      path: ["notification"],
       type: "Notification",
       payload: {
         header: "Notification target unavailable",

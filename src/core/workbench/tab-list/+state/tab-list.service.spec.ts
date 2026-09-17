@@ -87,7 +87,6 @@ describe("TabListService", () => {
       expect(currentTabs[0].id).toBe("created-tab");
       expect(currentTabs[0].systemTitle).toBe("Moved Pane");
       expect(currentTabs[0].isActive).toBe(true);
-      expect(event.propagationStopped).toBe(true);
     });
 
     it("should handle SelectTab event", () => {
@@ -99,7 +98,6 @@ describe("TabListService", () => {
       bus.publish(event);
 
       expect(spy).toHaveBeenCalledWith("t1");
-      expect(event.propagationStopped).toBe(true);
     });
 
     it("should handle RemoveTab event", () => {
@@ -111,7 +109,6 @@ describe("TabListService", () => {
       bus.publish(event);
 
       expect(spy).toHaveBeenCalledWith("t1");
-      expect(event.propagationStopped).toBe(true);
     });
 
     it("should handle ChangeTabTitle event", () => {
@@ -132,7 +129,6 @@ describe("TabListService", () => {
       let currentTabs: Tab[] = [];
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
       expect(currentTabs[0].systemTitle).toBe("New Title");
-      expect(event.propagationStopped).toBe(true);
     });
   });
 

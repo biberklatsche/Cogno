@@ -83,7 +83,7 @@ describe("TerminalGatewayService", () => {
 
   describe("write protection", () => {
     function bindTo(terminalId: string): void {
-      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: terminalId });
+      appBus.publish({ type: "FocusTerminal", payload: terminalId });
     }
 
     it("writes when the identity still matches the bound session", () => {
@@ -154,7 +154,7 @@ describe("TerminalGatewayService", () => {
           },
         },
       } as unknown as ReturnType<TerminalSessionRegistry["get"]>);
-      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "t1" });
+      appBus.publish({ type: "FocusTerminal", payload: "t1" });
     }
 
     it("runs a local command in the session cwd", async () => {
@@ -220,7 +220,7 @@ describe("TerminalGatewayService", () => {
 
     it("rejects when the identity is no longer the bound session", async () => {
       bindWith({});
-      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "t2" });
+      appBus.publish({ type: "FocusTerminal", payload: "t2" });
 
       const runResult = await service.run(
         { executable: "git", args: ["status"], contextRevision: 3 },
@@ -262,7 +262,7 @@ describe("TerminalGatewayService", () => {
           },
         },
       } as unknown as ReturnType<TerminalSessionRegistry["get"]>);
-      appBus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "t1" });
+      appBus.publish({ type: "FocusTerminal", payload: "t1" });
     });
 
     it("exposes a live handle on the active binding", () => {

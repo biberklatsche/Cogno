@@ -98,22 +98,22 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
 
   private setupSideMenuListeners(): void {
     this.subscriptions.add(
-      this.bus.onType$("SideMenuViewOpened").subscribe((event) => {
+      this.bus.on$("SideMenuViewOpened").subscribe((event) => {
         if (event.payload?.label === this.config.title) this.lifecycle.onOpen?.();
       }),
     );
     this.subscriptions.add(
-      this.bus.onType$("SideMenuViewClosed").subscribe((event) => {
+      this.bus.on$("SideMenuViewClosed").subscribe((event) => {
         if (event.payload?.label === this.config.title) this.lifecycle.onClose?.();
       }),
     );
     this.subscriptions.add(
-      this.bus.onType$("SideMenuViewFocused").subscribe((event) => {
+      this.bus.on$("SideMenuViewFocused").subscribe((event) => {
         if (event.payload?.label === this.config.title) this.lifecycle.onFocus?.();
       }),
     );
     this.subscriptions.add(
-      this.bus.onType$("SideMenuViewBlurred").subscribe((event) => {
+      this.bus.on$("SideMenuViewBlurred").subscribe((event) => {
         if (event.payload?.label === this.config.title) this.lifecycle.onBlur?.();
       }),
     );
@@ -151,14 +151,12 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
 
   private addKeybindHandler(): void {
     if (this.keybindSubscription) return;
-    this.keybindSubscription = this.bus
-      .on$({ type: "ActionFired", path: ["app", "action"] })
-      .subscribe((event) => {
-        if (event.payload === this.config.actionName) {
-          this.sideMenuService.open(this.config.title);
-          (event as { performed?: boolean }).performed = true;
-        }
-      });
+    this.keybindSubscription = this.bus.on$("ActionFired").subscribe((event) => {
+      if (event.payload === this.config.actionName) {
+        this.sideMenuService.open(this.config.title);
+        (event as { performed?: boolean }).performed = true;
+      }
+    });
   }
 
   private removeKeybindHandler(): void {

@@ -21,45 +21,41 @@ export class TerminalInputDispatcher {
   ) {
     const until = <T>(source: Observable<T>) => source.pipe(takeUntilDestroyed(destroyRef));
 
-    until(this.bus.on$({ path: ["app", "terminal"], type: "FocusTerminal" })).subscribe((event) => {
+    until(this.bus.on$("FocusTerminal")).subscribe((event) => {
       for (const entry of this.registry.entries) {
         if (entry.terminalId === event.payload) entry.host.focus();
         else entry.host.blur();
       }
     });
-    until(this.bus.on$({ path: ["app", "terminal"], type: "BlurTerminal" })).subscribe((event) => {
+    until(this.bus.on$("BlurTerminal")).subscribe((event) => {
       this.registry.get(event.payload)?.host.blur();
     });
-    until(this.bus.onType$("PaneMaximizedChanged")).subscribe((event) => {
+    until(this.bus.on$("PaneMaximizedChanged")).subscribe((event) => {
       for (const entry of this.registry.entries) {
         entry.host.setPaneMaximized(event.payload?.terminalId === entry.terminalId);
       }
     });
-    until(this.bus.onType$("VisibleTerminalsChanged")).subscribe((event) => {
+    until(this.bus.on$("VisibleTerminalsChanged")).subscribe((event) => {
       for (const entry of this.registry.entries) {
         entry.host.setVisible(event.payload?.terminalIds.includes(entry.terminalId) ?? true);
       }
     });
-    until(this.bus.on$({ path: ["app", "terminal"], type: "WriteRawToPty" })).subscribe((event) => {
+    until(this.bus.on$("WriteRawToPty")).subscribe((event) => {
       const payload = event.payload;
       if (!payload) return;
       this.registry.get(payload.terminalId)?.host.writeRaw(payload.text, payload.autoExecute);
     });
-    until(this.bus.on$({ path: ["app", "terminal"], type: "TerminalSearchRequested" })).subscribe(
-      (event) => {
-        const payload = event.payload;
-        if (!payload) return;
-        if (payload.terminalId) {
-          this.registry.get(payload.terminalId)?.host.search(payload);
-          return;
-        }
-        // No terminal id: every session searches, as before.
-        for (const entry of this.registry.entries) entry.host.search(payload);
-      },
-    );
-    until(
-      this.bus.on$({ path: ["app", "terminal"], type: "TerminalSearchRevealRequested" }),
-    ).subscribe((event) => {
+    until(this.bus.on$("TerminalSearchRequested")).subscribe((event) => {
+      const payload = event.payload;
+      if (!payload) return;
+      if (payload.terminalId) {
+        this.registry.get(payload.terminalId)?.host.search(payload);
+        return;
+      }
+      // No terminal id: every session searches, as before.
+      for (const entry of this.registry.entries) entry.host.search(payload);
+    });
+    until(this.bus.on$("TerminalSearchRevealRequested")).subscribe((event) => {
       const payload = event.payload;
       if (!payload) return;
       this.registry.get(payload.terminalId)?.host.reveal(payload);

@@ -48,7 +48,6 @@ export class CompletedCommandNotificationHandler {
 
     this.appBus.publish({
       type: "Notification",
-      path: ["notification"],
       payload: {
         header: `Command finished after ${this.formatDuration(executedCommand.duration)}`,
         body: this.renderLongRunningCommandNotificationBody(executedCommand),

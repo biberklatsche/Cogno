@@ -34,7 +34,7 @@ export class TerminalBusyStateService {
       });
 
     this.appBus
-      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
+      .on$("TerminalRemoved")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((terminalRemovedEvent) => {
         if (!terminalRemovedEvent.payload) {

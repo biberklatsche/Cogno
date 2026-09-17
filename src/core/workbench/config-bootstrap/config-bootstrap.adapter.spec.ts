@@ -43,11 +43,9 @@ function setup() {
   const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
 
   const notifications: unknown[] = [];
-  bus.on$({ path: ["notification"] }).subscribe((message) => notifications.push(message));
+  bus.on$("Notification").subscribe((message) => notifications.push(message));
   const configLoadedEvents: unknown[] = [];
-  bus
-    .on$({ path: ["app", "settings"], type: "ConfigLoaded" })
-    .subscribe((message) => configLoadedEvents.push(message));
+  bus.on$("ConfigLoaded").subscribe((message) => configLoadedEvents.push(message));
 
   new ConfigBootstrapAdapter(bus, config, shells, wiring, shellIntegrationStub, destroyRef);
 
@@ -74,7 +72,7 @@ describe("ConfigBootstrapAdapter", () => {
   it("loads the config once the window asks for it", async () => {
     const { bus, config } = setup();
 
-    bus.publish({ type: "InitConfigCommand", path: ["app"] });
+    bus.publish({ type: "InitConfigCommand" });
     await Promise.resolve();
 
     expect(config.load).toHaveBeenCalledTimes(1);
@@ -108,7 +106,7 @@ describe("ConfigBootstrapAdapter", () => {
   it("fills in shell profiles only when the config has none", async () => {
     const { bus, shells, loadOptions } = setup();
 
-    bus.publish({ type: "InitConfigCommand", path: ["app"] });
+    bus.publish({ type: "InitConfigCommand" });
     await Promise.resolve();
 
     const completeDefaults = loadOptions()?.completeDefaults;

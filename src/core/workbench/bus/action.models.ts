@@ -1,4 +1,4 @@
-import { ActionBase, BusPath } from "@cogno/core/workbench/bus/app-bus";
+import { ActionBase } from "@cogno/core/workbench/bus/app-bus";
 
 export type ActionFiredEvent = ActionBase<"ActionFired", ActionName> & {
   /** Set when the action targets a specific terminal, e.g. via HTTP IPC. Handlers that need terminal-scoped behaviour should check this field. */
@@ -24,14 +24,9 @@ export const ActionFired = {
     terminalId?: string,
   ): ActionFiredEvent => ({
     type: "ActionFired",
-    path: ["app", "action"],
     payload: actionName,
     trigger: trigger,
     args: args,
     terminalId: terminalId,
-  }),
-  listener: (): { path: BusPath; type: "ActionFired" } => ({
-    type: "ActionFired",
-    path: ["app", "action"],
   }),
 };

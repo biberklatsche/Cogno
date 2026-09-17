@@ -147,7 +147,7 @@ describe("NativeMenuService", () => {
     const publishedEvents: unknown[] = [];
     vi.spyOn(appBus, "publish").mockImplementation((event) => {
       publishedEvents.push(event);
-      return { propagationStopped: false, defaultPrevented: false };
+      return { defaultPrevented: false };
     });
 
     await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();
@@ -181,7 +181,7 @@ describe("NativeMenuService", () => {
     const publishedEvents: unknown[] = [];
     vi.spyOn(appBus, "publish").mockImplementation((event) => {
       publishedEvents.push(event);
-      return { propagationStopped: false, defaultPrevented: false };
+      return { defaultPrevented: false };
     });
 
     await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();

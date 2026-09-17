@@ -81,7 +81,7 @@ export class AppComponent {
     window.addEventListener("contextmenu", (event) => {
       event.preventDefault();
     });
-    bus.onceType$("ConfigLoaded").subscribe(async (_e) => {
+    bus.once$("ConfigLoaded").subscribe(async (_e) => {
       await this.openApplicationDatabase(bus);
       bus.publish({ type: "DBInitialized" });
     });
@@ -124,7 +124,6 @@ export class AppComponent {
 function publishDatabaseWarning(bus: AppBus, header: string, body: string): void {
   bus.publish({
     type: "Notification",
-    path: ["notification"],
     payload: {
       body,
       header,

@@ -42,7 +42,7 @@ describe("TerminalInputDispatcher", () => {
   });
 
   it("focuses the addressed session and blurs the rest", () => {
-    bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: "t1" });
+    bus.publish({ type: "FocusTerminal", payload: "t1" });
 
     expect(host1.focus).toHaveBeenCalledTimes(1);
     expect(host2.blur).toHaveBeenCalledTimes(1);
@@ -50,7 +50,7 @@ describe("TerminalInputDispatcher", () => {
   });
 
   it("blurs only the addressed session on BlurTerminal", () => {
-    bus.publish({ path: ["app", "terminal"], type: "BlurTerminal", payload: "t1" });
+    bus.publish({ type: "BlurTerminal", payload: "t1" });
 
     expect(host1.blur).toHaveBeenCalledTimes(1);
     expect(host2.blur).not.toHaveBeenCalled();
@@ -58,7 +58,6 @@ describe("TerminalInputDispatcher", () => {
 
   it("writes raw input to the addressed session", () => {
     bus.publish({
-      path: ["app", "terminal"],
       type: "WriteRawToPty",
       payload: { terminalId: "t2", text: "ls\n", autoExecute: true },
     });
@@ -79,7 +78,6 @@ describe("TerminalInputDispatcher", () => {
 
   it("fans PaneMaximizedChanged out to every session", () => {
     bus.publish({
-      path: ["app", "grid"],
       type: "PaneMaximizedChanged",
       payload: { terminalId: "t1" },
     });

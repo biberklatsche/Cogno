@@ -153,7 +153,6 @@ export class AppNotificationToastStackComponent {
     }
 
     this.appBus.publish({
-      path: ["app", "notification"],
       type: "OpenNotificationTarget",
       payload: toast.target,
     });

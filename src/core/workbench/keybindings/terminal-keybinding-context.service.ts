@@ -16,7 +16,7 @@ export class TerminalKeybindingContextService {
     private readonly terminalFullscreenService: TerminalFullscreenService,
     sessionRegistry: TerminalSessionRegistry,
   ) {
-    this.bus.onType$("FocusTerminal", { path: ["app", "terminal"] }).subscribe((event) => {
+    this.bus.on$("FocusTerminal").subscribe((event) => {
       this.selectedTerminalId = event.payload;
     });
 
@@ -29,7 +29,7 @@ export class TerminalKeybindingContextService {
       }
     });
 
-    this.bus.onType$("TerminalRemoved", { path: ["app", "terminal"] }).subscribe((event) => {
+    this.bus.on$("TerminalRemoved").subscribe((event) => {
       if (this.selectedTerminalId === event.payload) {
         this.selectedTerminalId = undefined;
       }

@@ -33,7 +33,7 @@ export class TerminalMonitorAdapterService extends TerminalMonitorPort {
       });
 
     bus
-      .onType$("TerminalRemoved", { path: ["app", "terminal"] })
+      .on$("TerminalRemoved")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
         if (event.payload) this._terminated$.next(event.payload);

@@ -10,7 +10,7 @@ export class TerminalIpcAdapterService extends TerminalIpcPort {
 
   constructor(bus: AppBus) {
     super();
-    this.messages$ = bus.onType$("TerminalIpcMessage").pipe(
+    this.messages$ = bus.on$("TerminalIpcMessage").pipe(
       filter((e): e is typeof e & { payload: TerminalIpcMessage } => e.payload !== undefined),
       map((e) => e.payload),
     );

@@ -191,7 +191,7 @@ export class SessionHostFactory {
       entry.notifications.dispose();
       // The app hears TerminalRemoved before the machine goes, as it always did.
       this.sessionRegistry.unregister(terminalId);
-      this.bus.publish({ type: "TerminalRemoved", path: ["app", "terminal"], payload: terminalId });
+      this.bus.publish({ type: "TerminalRemoved", payload: terminalId });
       entry.host.close();
       entry.injector.destroy();
     } finally {

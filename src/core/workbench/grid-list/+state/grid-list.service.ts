@@ -177,14 +177,14 @@ export class GridListService {
       });
 
     this.bus
-      .onType$("TabRemoved")
+      .on$("TabRemoved")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: TabRemovedEvent) => {
         this.removeGrid(event.payload);
       });
 
     this.bus
-      .onType$("TabAdded")
+      .on$("TabAdded")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: TabAddedEvent) => {
         const payload = event.payload;
@@ -199,7 +199,7 @@ export class GridListService {
       });
 
     this.bus
-      .onType$("TabSelected")
+      .on$("TabSelected")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: TabSelectedEvent) => {
         this.selectGrid(event.payload);
@@ -221,13 +221,12 @@ export class GridListService {
         }
       });
     this.bus
-      .onType$("FocusActiveTerminal")
+      .on$("FocusActiveTerminal")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((_event: FocusActiveTerminalAction) => {
         const focusedTerminalId = this.getFocusedTerminalId();
         if (!focusedTerminalId) return;
         this.bus.publish({
-          path: ["app", "terminal"],
           type: "FocusTerminal",
           payload: focusedTerminalId,
         });
@@ -253,7 +252,6 @@ export class GridListService {
     }
     if (gridAndNode.node.isRoot) {
       this.bus.publish({
-        path: ["app", "terminal"],
         type: "RemoveTab",
         payload: gridAndNode.grid.tabId,
       });
@@ -366,7 +364,6 @@ export class GridListService {
       ratio: 0.5,
     };
     this.bus.publish({
-      path: ["app", "terminal"],
       type: "BlurTerminal",
       payload: terminalIdToBlur,
     });
@@ -604,7 +601,6 @@ export class GridListService {
     this.bus.publish({
       type: "FocusTerminal",
       payload: adjacentTerminalId,
-      path: ["app", "terminal"],
     });
   }
 
@@ -662,7 +658,6 @@ export class GridListService {
 
   private publishPaneTitleToTab(tabId: TabId, pane: Pane): void {
     this.bus.publish({
-      path: ["app", "terminal"],
       type: "ChangeTabTitle",
       payload: { tabId, title: this.resolvePaneTitle(pane) },
     });
@@ -752,7 +747,7 @@ export class GridListService {
 
     // Focus after the current UI update has committed instead of relying on a fixed delay.
     scheduleFocus(() => {
-      this.bus.publish({ path: ["app", "terminal"], type: "FocusTerminal", payload: terminalId });
+      this.bus.publish({ type: "FocusTerminal", payload: terminalId });
     });
   }
 }

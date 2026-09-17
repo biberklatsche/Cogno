@@ -68,7 +68,6 @@ export class SessionNotifications {
       case "untrustedSequencesIgnored":
         this.bus.publish({
           type: "Notification",
-          path: ["notification"],
           payload: {
             header: "Untrusted Cogno sequences ignored",
             body: `Something in this terminal's output pretends to be the Cogno shell integration; ${fact.count} sequences were ignored.`,
@@ -98,7 +97,6 @@ export class SessionNotifications {
     this.host.model.markUnreadNotification();
     this.bus.publish({
       type: "Notification",
-      path: ["notification"],
       payload: {
         header: "Terminal Notification",
         body: message,

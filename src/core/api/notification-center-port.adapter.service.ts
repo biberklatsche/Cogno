@@ -13,16 +13,14 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
     private readonly appBus: AppBus,
     private readonly configService: ConfigService,
   ) {
-    this.notificationEvents$ = this.appBus
-      .on$({ path: ["notification"], type: "Notification" })
-      .pipe(
-        map((notificationEvent) => {
-          if (!notificationEvent.payload) {
-            throw new Error("Notification payload must be defined.");
-          }
-          return notificationEvent.payload;
-        }),
-      );
+    this.notificationEvents$ = this.appBus.on$("Notification").pipe(
+      map((notificationEvent) => {
+        if (!notificationEvent.payload) {
+          throw new Error("Notification payload must be defined.");
+        }
+        return notificationEvent.payload;
+      }),
+    );
   }
 
   getOverviewMaxItems(): number {
@@ -34,7 +32,6 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
 
   openTarget(target: NotificationTargetContract): void {
     this.appBus.publish({
-      path: ["app", "notification"],
       type: "OpenNotificationTarget",
       payload: target,
     });
@@ -42,7 +39,6 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
 
   dispatch(payload: NotificationEventPayloadContract): void {
     this.appBus.publish({
-      path: ["notification"],
       type: "Notification",
       payload,
     });

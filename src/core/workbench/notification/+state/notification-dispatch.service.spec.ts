@@ -71,7 +71,6 @@ describe("NotificationDispatchService", () => {
 
     createService(notificationChannels);
     appBus.publish({
-      path: ["notification"],
       type: "Notification",
       payload: {
         header: "Build completed",
@@ -98,7 +97,6 @@ describe("NotificationDispatchService", () => {
       createNotificationChannel({ id: "reply-channel", dispatch: workingDispatch }),
     ]);
     appBus.publish({
-      path: ["notification"],
       type: "Notification",
       payload: { header: "Build completed" },
     });

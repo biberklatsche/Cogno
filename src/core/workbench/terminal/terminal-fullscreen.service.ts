@@ -24,7 +24,7 @@ export class TerminalFullscreenService {
       });
     });
 
-    this.bus.onType$("TerminalRemoved", { path: ["app", "terminal"] }).subscribe((event) => {
+    this.bus.on$("TerminalRemoved").subscribe((event) => {
       const terminalId = event.payload;
       if (!terminalId) {
         return;

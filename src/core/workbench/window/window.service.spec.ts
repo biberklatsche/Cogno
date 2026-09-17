@@ -173,7 +173,6 @@ describe("WindowService", () => {
       expect(bus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "ActionFired",
-          path: ["app", "action"],
           payload: "close_window",
         }),
       );
