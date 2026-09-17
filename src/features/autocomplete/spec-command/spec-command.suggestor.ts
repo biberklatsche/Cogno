@@ -6,7 +6,6 @@ import {
 } from "@cogno/shared/contributions";
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { CommandSpecSource } from "./spec/command-spec.source";
-import { SpecProviderRegistry } from "./spec/provider-registry";
 import {
   CommandSpec,
   OptionSpec,
@@ -14,7 +13,6 @@ import {
   SpecProvidedSuggestion,
   SpecProviderBinding,
   SpecSuggestionProvider,
-  SpecSuggestionProviderRegistration,
   SubcommandSpec,
 } from "./spec/spec.types";
 
@@ -94,10 +92,6 @@ function dedupe(values: string[]): string[] {
   return out;
 }
 
-function _primaryName(name: string | string[]): string {
-  return namesOf(name)[0] ?? "";
-}
-
 function toSubcommands(source?: Array<string | SubcommandSpec>): SubcommandSpec[] {
   if (!source?.length) return [];
   return source.map((s) => (typeof s === "string" ? { name: s } : s));
@@ -106,30 +100,6 @@ function toSubcommands(source?: Array<string | SubcommandSpec>): SubcommandSpec[
 function toOptions(source?: Array<string | OptionSpec>): OptionSpec[] {
   if (!source?.length) return [];
   return source.map((s) => (typeof s === "string" ? { name: s } : s));
-}
-
-function mergeLegacySubcommandOptions(spec: CommandSpec): SubcommandSpec[] {
-  const subcommands = toSubcommands(spec.subcommands).map((sub) => ({ ...sub }));
-  const legacyEntries = Object.entries(spec.subcommandOptions ?? {});
-
-  for (const [subcommandName, legacyOptions] of legacyEntries) {
-    const normalizedLegacyOptions = toOptions(legacyOptions);
-    const existing = subcommands.find((sub) =>
-      namesOf(sub.name).some((alias) => alias.toLowerCase() === subcommandName.toLowerCase()),
-    );
-
-    if (existing) {
-      existing.options = [...toOptions(existing.options), ...normalizedLegacyOptions];
-      continue;
-    }
-
-    subcommands.push({
-      name: subcommandName,
-      options: normalizedLegacyOptions,
-    });
-  }
-
-  return subcommands;
 }
 
 function optionArgCount(option: OptionSpec): number {
@@ -150,14 +120,6 @@ function firstOptionArgName(option: OptionSpec): string | undefined {
 function firstSubcommandArgName(subcommand: SubcommandSpec): string | undefined {
   if (!subcommand.args) return undefined;
   return Array.isArray(subcommand.args) ? subcommand.args[0]?.name : subcommand.args.name;
-}
-
-function optionDescription(option: PreparedOption): string | undefined {
-  return option.description;
-}
-
-function subcommandDescription(subcommand: PreparedNode): string | undefined {
-  return subcommand.description;
 }
 
 function normalizeOptionDescription(option: OptionSpec): string | undefined {
@@ -233,17 +195,17 @@ function prepareNode(node: SubcommandSpec): PreparedNode | undefined {
 export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContract {
   readonly id = "spec-command";
   readonly inputPattern = /.+/;
-  private readonly _providerRegistry: SpecProviderRegistry;
+  private readonly _providersById: Map<string, SpecSuggestionProvider>;
   private readonly _commandNamesByShell = new Map<string, Promise<ShellScopedCommand[]>>();
   private readonly _preparedSpecByCommand = new Map<string, PreparedSpec>();
 
   constructor(
     private readonly registry: CommandSpecSource,
-    providers: ReadonlyArray<SpecSuggestionProvider | SpecSuggestionProviderRegistration> = [],
+    providers: ReadonlyArray<SpecSuggestionProvider> = [],
     private readonly issueReporter?: AutocompleteProviderIssueReporterContract,
     private readonly getProviderTimeoutMs?: () => number,
   ) {
-    this._providerRegistry = new SpecProviderRegistry(providers);
+    this._providersById = new Map(providers.map((provider) => [provider.id, provider]));
   }
 
   matches(context: AutocompleteQueryContextContract): boolean {
@@ -317,7 +279,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     argsInput: string,
     replaceBase: number,
     context: AutocompleteQueryContextContract,
-    insertPrefix = "",
   ): Promise<AutocompleteSuggestionContract[]> {
     const spec = await this.registry.get(command);
     if (!spec || !this.isSpecAllowedInShell(spec, context)) return [];
@@ -364,7 +325,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       suggestions.push({
         label,
         description,
-        insertText: `${insertPrefix}${label}`,
+        insertText: label,
         score: baseScore + (starts ? 90 : contains ? 35 : 0),
         source,
         replaceStart,
@@ -388,30 +349,16 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         );
         if (allUsed && !option.isRepeatable) continue;
         const selected = this.pickSuggestionName(aliases, activeToken);
-        add(selected, "spec-opt", 38, optionDescription(option));
+        add(selected, "spec-opt", 38, option.description);
       }
 
       return suggestions;
     }
 
-    if (traverse.pendingArgs > 0) {
-      return this.suggestFromProviders(
-        traverse.pendingProviders,
-        parsed,
-        argsInput,
-        context,
-        command,
-        activeToken,
-        replaceStart,
-        replaceEnd,
-        typedTokenSet,
-      );
-    }
-
     for (const sub of traverse.node.subcommands) {
       if (traverse.usedSubcommands.has(sub.primary.toLowerCase())) continue;
       const selected = this.pickSuggestionName(sub.names, activeToken);
-      add(selected, "spec-sub", 45, subcommandDescription(sub));
+      add(selected, "spec-sub", 45, sub.description);
     }
 
     const optionMap = new Map<string, PreparedOption>();
@@ -427,7 +374,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       const allUsed = aliases.every((alias) => traverse.usedOptionAliases.has(alias.toLowerCase()));
       if (allUsed && !option.isRepeatable) continue;
       const selected = this.pickSuggestionName(aliases, activeToken);
-      add(selected, "spec-opt", 38, optionDescription(option));
+      add(selected, "spec-opt", 38, option.description);
     }
 
     const providerSuggestions = await this.suggestFromProviders(
@@ -440,7 +387,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       replaceStart,
       replaceEnd,
       typedTokenSet,
-      insertPrefix,
     );
     suggestions.push(...providerSuggestions);
 
@@ -457,27 +403,10 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     replaceStart: number,
     replaceEnd: number,
     typedTokenSet: Set<string>,
-    insertPrefix = "",
   ): Promise<AutocompleteSuggestionContract[]> {
     const suggestions: AutocompleteSuggestionContract[] = [];
-    const _add = (label: string, source: string, baseScore: number) => {
-      const labelLower = label.toLowerCase();
-      if (typedTokenSet.has(labelLower)) return;
-      if (activeToken && !labelLower.includes(activeToken)) return;
-      const starts = labelLower.startsWith(activeToken);
-      const contains = labelLower.includes(activeToken);
-      suggestions.push({
-        label,
-        insertText: `${insertPrefix}${label}`,
-        score: baseScore + (starts ? 90 : contains ? 35 : 0),
-        source,
-        replaceStart,
-        replaceEnd,
-      });
-    };
-
     for (const binding of bindings) {
-      const provider = this._providerRegistry.resolve(binding.providerId, context.shellContext);
+      const provider = this._providersById.get(binding.providerId);
       if (!provider || !this.matchesProviderBinding(binding, parsed, argsInput)) continue;
       const provided = await this.suggestFromProvider(provider, binding, parsed, context, command);
       for (const value of provided) {
@@ -493,7 +422,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
         suggestions.push({
           label,
           description: value.description,
-          insertText: `${insertPrefix}${value.insertText ?? label}`,
+          insertText: value.insertText ?? label,
           score: baseScore + (starts ? 90 : contains ? 35 : 0),
           source,
           replaceStart,
@@ -702,7 +631,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       name: ROOT_NAME,
       description: spec.description,
       options: toOptions(spec.options),
-      subcommands: mergeLegacySubcommandOptions(spec),
+      subcommands: toSubcommands(spec.subcommands),
     };
     const root = prepareNode(rootSource) ?? {
       names: [ROOT_NAME],

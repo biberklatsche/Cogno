@@ -13,13 +13,6 @@ describe("CommandSpecRegistry", () => {
     expect(names).toContain("Get-ChildItem");
   });
 
-  it("keeps secondary options from command specs", () => {
-    const git = createCommandSpecsFixture().find((v) => v.name === "git");
-    expect(git).toBeDefined();
-    expect(git?.subcommandOptions?.["commit"]).toContain("-a");
-    expect(git?.subcommandOptions?.["commit"]).toContain("-m");
-  });
-
   it("keeps provider bindings from specs", () => {
     const npm = createCommandSpecsFixture().find((v) => v.name === "npm");
     expect(npm).toBeDefined();

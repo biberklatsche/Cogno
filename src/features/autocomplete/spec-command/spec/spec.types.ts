@@ -1,5 +1,5 @@
 import { AutocompleteQueryContextContract } from "@cogno/shared/contributions";
-import { BackendOsContract, ShellTypeContract } from "@cogno/shared/domain";
+import { ShellTypeContract } from "@cogno/shared/domain";
 
 export type ShellConstraint = ShellTypeContract;
 
@@ -30,7 +30,6 @@ export type CommandSpec = {
   description?: string;
   subcommands?: Array<string | SubcommandSpec>;
   options?: Array<string | OptionSpec>;
-  subcommandOptions?: Record<string, string[]>;
   providers?: SpecProviderBinding[];
   shells?: ShellConstraint[];
   excludeShells?: ShellConstraint[];
@@ -81,17 +80,11 @@ type GitBranchesSpecProviderBinding = SpecProviderBindingBase<"git-branches", un
 
 type NpmScriptsSpecProviderBinding = SpecProviderBindingBase<"npm-scripts", undefined>;
 
-type ProcessListSpecProviderBinding = SpecProviderBindingBase<"process-list", undefined>;
-
-type SshHostsSpecProviderBinding = SpecProviderBindingBase<"ssh-hosts", undefined>;
-
 export type SpecProviderBinding =
   | CommandListSpecProviderBinding
   | FilesystemSpecProviderBinding
   | GitBranchesSpecProviderBinding
-  | NpmScriptsSpecProviderBinding
-  | ProcessListSpecProviderBinding
-  | SshHostsSpecProviderBinding;
+  | NpmScriptsSpecProviderBinding;
 
 export type SpecProviderContext = {
   queryContext: AutocompleteQueryContextContract;
@@ -113,10 +106,3 @@ export interface SpecSuggestionProvider {
   readonly id: string;
   suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>>;
 }
-
-export type SpecSuggestionProviderRegistration = {
-  provider: SpecSuggestionProvider;
-  shells?: ShellConstraint[];
-  backendOs?: BackendOsContract[];
-  priority?: number;
-};

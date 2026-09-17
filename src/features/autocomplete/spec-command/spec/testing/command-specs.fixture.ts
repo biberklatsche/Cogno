@@ -42,9 +42,7 @@ export function createCommandSpecsFixture(): CommandSpec[] {
     },
     {
       name: "git",
-      subcommandOptions: {
-        commit: ["-a", "-m"],
-      },
+      subcommands: [{ name: "commit", options: ["-a", "-m"] }],
     },
     {
       name: "Get-ChildItem",

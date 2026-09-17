@@ -4,7 +4,7 @@ import { CommandListSpecProvider } from "./spec/providers/command-list.spec-prov
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
 import { GitBranchesSpecProvider } from "./spec/providers/git-branches.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
-import { SpecSuggestionProviderRegistration } from "./spec/spec.types";
+import { SpecSuggestionProvider } from "./spec/spec.types";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
 
 function createDefaultProviderRegistrations(
@@ -14,12 +14,12 @@ function createDefaultProviderRegistrations(
   commandRunner: Parameters<
     NonNullable<typeof specCommandSuggestorDefinition.createSuggestor>
   >[0]["commandRunner"],
-): SpecSuggestionProviderRegistration[] {
+): SpecSuggestionProvider[] {
   return [
-    { provider: new NpmScriptsSpecProvider(filesystem) },
-    { provider: new FilesystemSpecProvider(filesystem) },
-    { provider: new GitBranchesSpecProvider(commandRunner) },
-    { provider: new CommandListSpecProvider(commandRunner) },
+    new NpmScriptsSpecProvider(filesystem),
+    new FilesystemSpecProvider(filesystem),
+    new GitBranchesSpecProvider(commandRunner),
+    new CommandListSpecProvider(commandRunner),
   ];
 }
 
