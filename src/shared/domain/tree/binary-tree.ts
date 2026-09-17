@@ -1,6 +1,4 @@
 export class BinaryTree<Data> {
-  public static ROOT_KEY = "";
-
   constructor(data: Data | BinaryNode<Data> | undefined = undefined) {
     if (data instanceof BinaryNode) {
       this._root = data as BinaryNode<Data>;
@@ -23,14 +21,6 @@ export class BinaryTree<Data> {
       return node.left ? BinaryTree.getNode(node.left, key.substring(1, key.length)) : undefined;
     }
     return node.right ? BinaryTree.getNode(node.right, key.substring(1, key.length)) : undefined;
-  }
-
-  get length(): number {
-    return this._root.countLeafs();
-  }
-
-  static isRoot(key: string) {
-    return key === BinaryTree.ROOT_KEY;
   }
 
   get root(): BinaryNode<Data> {
@@ -72,31 +62,12 @@ export class BinaryTree<Data> {
     return this._root.first(find);
   }
 
-  getData(key: string): Data | undefined {
-    const node = BinaryTree.getNode(this._root, key);
-    return node ? node.data : undefined;
-  }
-
-  getDataOfLeafs(): Data[] {
-    return this._root.getDataOfLeafs();
-  }
-
-  setData(key: string, data: Data) {
-    const node = BinaryTree.getNode(this._root, key);
-    if (!node) throw new Error("Node does not exist");
-    node.data = data;
-  }
-
   getNextLeaf(key: string): BinaryNode<Data> | undefined {
     return this.getNextLeafInternal(key, 1);
   }
 
   getPreviousLeaf(key: string): BinaryNode<Data> | undefined {
     return this.getNextLeafInternal(key, -1);
-  }
-
-  flatten(merge: (d1: Data | undefined, d2: Data | undefined) => Data | undefined) {
-    this._root.flatten(merge);
   }
 
   private getNextLeafInternal(key: string, counter: 1 | -1): BinaryNode<Data> | undefined {
@@ -122,15 +93,6 @@ export class BinaryTree<Data> {
       node = counter === 1 ? node?.left : node?.right;
     }
     return node;
-  }
-
-  stringify(ignore: string[] = []): string {
-    return JSON.stringify(this, (key, value) => {
-      if (key === "_parent" || value === null || ignore.indexOf(key) !== -1) {
-        return;
-      }
-      return value;
-    });
   }
 }
 
@@ -163,10 +125,6 @@ export class BinaryNode<Data> {
 
   get right(): BinaryNode<Data> | undefined {
     return this._right;
-  }
-
-  get parent(): BinaryNode<Data> | undefined {
-    return this._parent;
   }
 
   get children(): BinaryNode<Data>[] {
@@ -250,9 +208,6 @@ export class BinaryNode<Data> {
   }
 
   find(find: (node: BinaryNode<Data>) => boolean): BinaryNode<Data>[] {
-    if (find === null) {
-      find = () => true;
-    }
     const results: BinaryNode<Data>[] = [];
     if (this.isRoot && this.isLeaf && find(this)) {
       return [this];
@@ -266,9 +221,6 @@ export class BinaryNode<Data> {
   }
 
   first(find: (node: BinaryNode<Data>) => boolean): BinaryNode<Data> | undefined {
-    if (find === null) {
-      find = () => true;
-    }
     return this.firstRecursive(this, find);
   }
 
@@ -304,74 +256,5 @@ export class BinaryNode<Data> {
       }
     }
     return undefined;
-  }
-
-  public countLeafs(): number {
-    const result = { count: 0 };
-    this.countLeafsRecursive(this, result);
-    return result.count;
-  }
-
-  private countLeafsRecursive(
-    currentNode: BinaryNode<Data> | undefined,
-    result: { count: number },
-  ) {
-    if (currentNode?.isLeaf) {
-      result.count++;
-      return;
-    } else {
-      this.countLeafsRecursive(currentNode?._left, result);
-      this.countLeafsRecursive(currentNode?._right, result);
-      return;
-    }
-  }
-
-  toggle() {
-    if (!this._left || !this._right) {
-      return;
-    }
-    const left = this._left;
-    this._left = this._right;
-    this._right = left;
-  }
-
-  flatten(merge: (d1: Data | undefined, d2: Data | undefined) => Data | undefined) {
-    this.flattenRecursive(this, merge);
-  }
-
-  private flattenRecursive(
-    node: BinaryNode<Data> | undefined,
-    merge: (d1: Data | undefined, d2: Data | undefined) => Data | undefined,
-  ) {
-    if (node?._left !== undefined) {
-      this.flattenRecursive(node._left, merge);
-    }
-    if (node?._right !== undefined) {
-      this.flattenRecursive(node._right, merge);
-    }
-    if (node?.isLeaf && node.parent?._right?.isLeaf) {
-      node.parent._data = merge(node.parent._left?.data, node.parent._right?.data);
-      node.parent._right = undefined;
-      node.parent._left = undefined;
-      return;
-    }
-  }
-
-  getDataOfLeafs(): Data[] {
-    return this.getDataOfLeafsRecursive(this);
-  }
-
-  private getDataOfLeafsRecursive(node: BinaryNode<Data>): Data[] {
-    const data: Data[] = [];
-    if (node._left !== undefined) {
-      data.push(...this.getDataOfLeafsRecursive(node._left));
-    }
-    if (node._right !== undefined) {
-      data.push(...this.getDataOfLeafsRecursive(node._right));
-    }
-    if (node.isLeaf && node.data !== undefined) {
-      data.push(node.data);
-    }
-    return data;
   }
 }
