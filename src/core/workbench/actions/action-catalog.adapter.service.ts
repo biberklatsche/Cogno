@@ -5,19 +5,13 @@ import { coreActionNames } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
-import {
-  ActionContextContract,
-  ActionDefinitionContract,
-  ActionEntryContract,
-} from "@cogno/shared/domain";
+import { ActionDefinitionContract, ActionEntryContract } from "@cogno/shared/domain";
 import { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
-import { filter, map, Observable, share, tap } from "rxjs";
+import { map, Observable } from "rxjs";
 
 @Injectable({ providedIn: "root" })
 export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatcher {
   readonly actionEntries$: Observable<ReadonlyArray<ActionEntryContract>>;
-  private readonly actionStreams = new Map<string, Observable<void>>();
-  private readonly contextStreams = new Map<string, Observable<ActionContextContract>>();
 
   constructor(
     private readonly appBus: AppBus,
@@ -36,39 +30,6 @@ export class ActionCatalogAdapterService implements ActionCatalog, ActionDispatc
         actionDefinition.args ? [...actionDefinition.args] : undefined,
       ),
     );
-  }
-
-  onAction$(actionName: string): Observable<void> {
-    const cached = this.actionStreams.get(actionName);
-    if (cached) return cached;
-
-    const stream = this.appBus.on$(ActionFired.listener()).pipe(
-      filter((event) => event.payload === actionName),
-      tap((event) => {
-        event.performed = !event.trigger?.broadcast;
-        event.defaultPrevented = true;
-      }),
-      map(() => undefined),
-      share(),
-    );
-    this.actionStreams.set(actionName, stream);
-    return stream;
-  }
-
-  onActionWithContext$(actionName: string): Observable<ActionContextContract> {
-    const cached = this.contextStreams.get(actionName);
-    if (cached) return cached;
-
-    const stream = this.appBus.on$(ActionFired.listener()).pipe(
-      filter((event) => event.payload === actionName),
-      map((event) => ({
-        args: event.args ? [...event.args] : undefined,
-        terminalId: event.terminalId,
-      })),
-      share(),
-    );
-    this.contextStreams.set(actionName, stream);
-    return stream;
   }
 
   private buildActionEntries(): ReadonlyArray<ActionEntryContract> {

@@ -72,16 +72,6 @@ export class ActionHandlers {
     this.handlers.set(actionName, handler);
   }
 
-  /** True when a handler is registered for the action. */
-  hasHandler(actionName: CoreActionName): boolean {
-    return this.handlers.has(actionName);
-  }
-
-  /** The core actions that currently have a handler. */
-  handledActions(): ReadonlySet<CoreActionName> {
-    return new Set(this.handlers.keys());
-  }
-
   /**
    * Core actions declared in the catalog but with no registered handler. Run
    * once every handler-owning service is constructed; a non-empty result is a

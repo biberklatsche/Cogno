@@ -7,4 +7,3 @@ export type TabAddedEvent = MessageBase<
 >;
 export type TabRemovedEvent = MessageBase<"TabRemoved", TabId>;
 export type TabSelectedEvent = MessageBase<"TabSelected", TabId>;
-export type TabRenamedEvent = MessageBase<"TabRenamed", { tabId: TabId; userTitle?: string }>;

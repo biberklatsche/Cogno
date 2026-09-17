@@ -1,11 +1,7 @@
 // Stays in shared/: dual-consumed by core/workbench (cli-action,
 // workspace-shortcut) and features (command-palette). A port both the workbench
 // and features need cannot move to core/api (ARCHITECTURE.md 6, step 24f).
-import type {
-  ActionContextContract,
-  ActionDefinitionContract,
-  ActionEntryContract,
-} from "@cogno/shared/domain";
+import type { ActionDefinitionContract, ActionEntryContract } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 
 export interface ActionCatalogContract {
@@ -14,8 +10,6 @@ export interface ActionCatalogContract {
 
 export interface ActionDispatcherContract {
   dispatchAction(actionDefinition: ActionDefinitionContract): void;
-  onAction$(actionName: string): Observable<void>;
-  onActionWithContext$(actionName: string): Observable<ActionContextContract>;
 }
 
 export abstract class ActionCatalog implements ActionCatalogContract {
@@ -24,6 +18,4 @@ export abstract class ActionCatalog implements ActionCatalogContract {
 
 export abstract class ActionDispatcher implements ActionDispatcherContract {
   abstract dispatchAction(actionDefinition: ActionDefinitionContract): void;
-  abstract onAction$(actionName: string): Observable<void>;
-  abstract onActionWithContext$(actionName: string): Observable<ActionContextContract>;
 }

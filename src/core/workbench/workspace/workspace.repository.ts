@@ -169,30 +169,6 @@ export class WorkspaceRepository {
     );
   }
 
-  createTerminalSession(
-    workspaceId: WorkspaceIdentifierContract,
-    workspaceTerminalSession: WorkspaceTerminalSession,
-  ): Promise<void> {
-    return this.upsertTerminalSession(workspaceId, workspaceTerminalSession);
-  }
-
-  updateTerminalSession(
-    workspaceId: WorkspaceIdentifierContract,
-    workspaceTerminalSession: WorkspaceTerminalSession,
-  ): Promise<void> {
-    return this.upsertTerminalSession(workspaceId, workspaceTerminalSession);
-  }
-
-  async deleteTerminalSession(
-    workspaceId: WorkspaceIdentifierContract,
-    terminalId: string,
-  ): Promise<void> {
-    await this.databaseAccess.execute(
-      "DELETE FROM terminal_session WHERE workspace_id = ? AND terminal_id = ?",
-      [workspaceId, terminalId],
-    );
-  }
-
   /**
    * Replace all of a workspace's terminal snapshots in one transaction (session
    * restore, step 27): the current set is deleted and the given sessions
@@ -229,25 +205,6 @@ export class WorkspaceRepository {
       sessionData: terminalSessionEntity.session_data,
       updatedAt: new Date(terminalSessionEntity.updated_at).toISOString(),
     }));
-  }
-
-  private async upsertTerminalSession(
-    workspaceId: WorkspaceIdentifierContract,
-    workspaceTerminalSession: WorkspaceTerminalSession,
-  ): Promise<void> {
-    await this.databaseAccess.execute(
-      `INSERT INTO terminal_session (workspace_id, terminal_id, session_data, updated_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT (workspace_id, terminal_id) DO UPDATE SET
-           session_data = excluded.session_data,
-           updated_at = excluded.updated_at`,
-      [
-        workspaceId,
-        workspaceTerminalSession.terminalId,
-        workspaceTerminalSession.sessionData,
-        Date.now(),
-      ],
-    );
   }
 
   private layoutStatements(

@@ -283,7 +283,6 @@ export class TabListService {
     if (!tab) return;
     tab.userTitle = value;
     this.setTabListForWorkspace(workspaceIdentifier, tabList);
-    this.bus.publish({ type: "TabRenamed", payload: { tabId: tab.id, userTitle: tab.userTitle } });
     this.closeRename();
   }
 
@@ -294,7 +293,6 @@ export class TabListService {
     if (!tab?.userTitle) return;
     tab.userTitle = undefined;
     this.setTabListForWorkspace(workspaceIdentifier, tabList);
-    this.bus.publish({ type: "TabRenamed", payload: { tabId: tab.id, userTitle: tab.userTitle } });
   }
 
   setColor(tabId: TabId, name: ColorName | undefined) {

@@ -6,11 +6,7 @@ import {
 } from "@cogno/core/workbench/bus/busy-indicator/events";
 import { TerminalIpcMessageEvent } from "@cogno/core/workbench/bus/cogno-message/events";
 import { InitConfigAction } from "@cogno/core/workbench/bus/config/actions";
-import {
-  ConfigLoadedEvent,
-  DBInitializedEvent,
-  ThemeChangedEvent,
-} from "@cogno/core/workbench/bus/config/events";
+import { ConfigLoadedEvent, DBInitializedEvent } from "@cogno/core/workbench/bus/config/events";
 import {
   FocusActiveTerminalAction,
   MaximizePaneAction,
@@ -39,7 +35,6 @@ import {
 import {
   TabAddedEvent,
   TabRemovedEvent,
-  TabRenamedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
 import {
@@ -83,11 +78,9 @@ export type AppMessage =
   | CreateTabAction
   | TabAddedEvent
   | TabSelectedEvent
-  | TabRenamedEvent
   | SelectTabAction
   | ConfigLoadedEvent
   | DBInitializedEvent
-  | ThemeChangedEvent
   | InitConfigAction
   | TerminalSearchRequestedEvent
   | TerminalSearchRevealRequestedEvent

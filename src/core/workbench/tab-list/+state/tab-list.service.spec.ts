@@ -443,7 +443,6 @@ describe("TabListService", () => {
     });
 
     it("should reset a renamed tab", () => {
-      const publishSpy = vi.spyOn(bus, "publish");
       service.addTab({
         id: "t1",
         systemTitle: "C:\\repo",
@@ -458,12 +457,6 @@ describe("TabListService", () => {
       service.tabs$.subscribe((tabs) => (currentTabs = tabs));
       expect(currentTabs[0].systemTitle).toBe("C:\\repo");
       expect(currentTabs[0].userTitle).toBeUndefined();
-      expect(publishSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "TabRenamed",
-          payload: { tabId: "t1", userTitle: undefined },
-        }),
-      );
     });
   });
 

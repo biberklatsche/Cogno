@@ -154,21 +154,7 @@ describe("WorkspaceRepository", () => {
     expect(executeMock).toHaveBeenCalledWith("DELETE FROM workspace WHERE id = ?", ["ws1"]);
   });
 
-  it("upserts terminal sessions and reads them back with an ISO timestamp", async () => {
-    await workspaceRepository.createTerminalSession("ws1", {
-      terminalId: "TE-1",
-      sessionData: "state",
-    });
-    await workspaceRepository.updateTerminalSession("ws1", {
-      terminalId: "TE-1",
-      sessionData: "state2",
-    });
-
-    expect(executeMock).toHaveBeenCalledTimes(2);
-    for (const [sql] of executeMock.mock.calls) {
-      expect(sql).toContain("ON CONFLICT (workspace_id, terminal_id) DO UPDATE");
-    }
-
+  it("reads terminal sessions back with an ISO timestamp", async () => {
     selectMock.mockResolvedValueOnce([
       { terminal_id: "TE-1", session_data: "state2", updated_at: Date.UTC(2026, 0, 2) },
     ]);
