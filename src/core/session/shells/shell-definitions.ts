@@ -9,15 +9,11 @@ export const shellDefinitions = [
   powerShellShellDefinition,
 ] as const;
 
-export const shellPathAdapterDefinitions = shellDefinitions.map(
-  (definition) => definition.pathAdapter,
-);
-
 /** The path adapter for a shell context; every shell type Cogno runs has one. */
 export function createPathAdapter(context: ShellContextContract): IPathAdapter {
-  const definition = shellPathAdapterDefinitions.find((d) => d.shellType === context.shellType);
+  const definition = shellDefinitions.find((d) => d.pathAdapter.shellType === context.shellType);
   if (!definition) {
     throw new Error(`Unsupported shell type: ${context.shellType}`);
   }
-  return definition.createPathAdapter(context);
+  return definition.pathAdapter.createPathAdapter(context);
 }

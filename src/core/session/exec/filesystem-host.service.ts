@@ -7,7 +7,7 @@ import {
 } from "@cogno/shared/domain";
 import { Filesystem } from "@cogno/shared/ports";
 import { AutocompletePathSupport } from "@cogno/shared/support";
-import { PathFactory } from "./path.factory";
+import { createPathAdapter } from "../shells/shell-definitions";
 
 @Injectable({ providedIn: "root" })
 export class FilesystemHostService extends Filesystem {
@@ -16,7 +16,7 @@ export class FilesystemHostService extends Filesystem {
   }
 
   normalizePath(path: string, shellContext: ShellContextContract): string {
-    return PathFactory.createAdapter(shellContext).normalize(path);
+    return createPathAdapter(shellContext).normalize(path);
   }
 
   resolvePath(
@@ -24,7 +24,7 @@ export class FilesystemHostService extends Filesystem {
     inputPath: string,
     shellContext: ShellContextContract,
   ): string | undefined {
-    const adapter = PathFactory.createAdapter(shellContext);
+    const adapter = createPathAdapter(shellContext);
     const absoluteLike =
       inputPath.startsWith("/") || /^[a-zA-Z]:/.test(inputPath) || inputPath.startsWith("\\\\");
 
@@ -50,7 +50,7 @@ export class FilesystemHostService extends Filesystem {
     shellContext: ShellContextContract,
     options?: FilesystemListOptionsContract,
   ): Promise<ReadonlyArray<FilesystemEntryContract>> {
-    const adapter = PathFactory.createAdapter(shellContext);
+    const adapter = createPathAdapter(shellContext);
     const backendPath = adapter.render(path, { purpose: "backend_fs" });
     if (!backendPath) return [];
 
@@ -107,14 +107,14 @@ export class FilesystemHostService extends Filesystem {
   }
 
   async exists(path: string, shellContext: ShellContextContract): Promise<boolean> {
-    const backendPath = PathFactory.createAdapter(shellContext).render(path, {
+    const backendPath = createPathAdapter(shellContext).render(path, {
       purpose: "backend_fs",
     });
     return backendPath ? this.fs.exists(backendPath) : false;
   }
 
   async readTextFile(path: string, shellContext: ShellContextContract): Promise<string> {
-    const backendPath = PathFactory.createAdapter(shellContext).render(path, {
+    const backendPath = createPathAdapter(shellContext).render(path, {
       purpose: "backend_fs",
     });
     if (!backendPath) {
@@ -124,11 +124,7 @@ export class FilesystemHostService extends Filesystem {
   }
 
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string {
-    return AutocompletePathSupport.toDisplayPath(
-      path,
-      cwd,
-      PathFactory.createAdapter(shellContext),
-    );
+    return AutocompletePathSupport.toDisplayPath(path, cwd, createPathAdapter(shellContext));
   }
 
   appendPathSeparator(path: string, shellContext: ShellContextContract): string {

@@ -5,7 +5,7 @@ import {
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
 } from "@cogno/shared/ports";
-import { PathFactory } from "./path.factory";
+import { createPathAdapter } from "../shells/shell-definitions";
 
 @Injectable({ providedIn: "root" })
 export class CommandRunnerHostService extends CommandRunnerPort {
@@ -15,7 +15,7 @@ export class CommandRunnerHostService extends CommandRunnerPort {
 
   async run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract> {
     try {
-      const adapter = PathFactory.createAdapter(request.shellContext);
+      const adapter = createPathAdapter(request.shellContext);
       const normalizedCwd = adapter.normalize(request.cwd);
       const backendPath = adapter.render(normalizedCwd, { purpose: "backend_fs" });
       if (!backendPath) {

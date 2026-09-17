@@ -2,7 +2,6 @@ import { DestroyRef, Inject, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
@@ -158,7 +157,6 @@ export class FeatureHost {
   }
 
   private declare(): void {
-    PathFactory.registerDefinitions(shellDefinitions.map((shell) => shell.pathAdapter));
     this.databaseMigrationService.registerFeatureMigrations(
       this.features.flatMap((feature) => feature.migrations ?? []),
     );

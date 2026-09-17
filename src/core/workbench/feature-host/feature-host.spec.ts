@@ -1,12 +1,11 @@
 import type { DestroyRef } from "@angular/core";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
-import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
 import type { FeatureDefinition } from "@cogno/shared/contributions";
 import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
@@ -66,12 +65,6 @@ function settingsWithPaths(...paths: string[]): FeatureDefinition["settings"] {
 }
 
 describe("FeatureHost declaration phase", () => {
-  let registerDefinitions: ReturnType<typeof vi.spyOn>;
-
-  beforeEach(() => {
-    registerDefinitions = vi.spyOn(PathFactory, "registerDefinitions").mockImplementation(() => {});
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -86,7 +79,6 @@ describe("FeatureHost declaration phase", () => {
     expect(host.hasDeclarationConflict).toBe(false);
     expect(host.getDeclarationConflicts()).toEqual([]);
     expect(registerFeatureMigrations).toHaveBeenCalledWith([migration]);
-    expect(registerDefinitions).toHaveBeenCalledTimes(1);
   });
 
   it("registers feature action names for the catalogue", () => {
@@ -106,7 +98,6 @@ describe("FeatureHost declaration phase", () => {
     expect(host.hasDeclarationConflict).toBe(true);
     expect(host.getDeclarationConflicts()).toContain("Feature declared twice: dup");
     expect(registerFeatureMigrations).not.toHaveBeenCalled();
-    expect(registerDefinitions).not.toHaveBeenCalled();
   });
 
   it("aborts on an unknown requires", () => {

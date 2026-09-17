@@ -1,12 +1,11 @@
 import type { DestroyRef } from "@angular/core";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
-import { PathFactory } from "@cogno/core/session/exec/path.factory";
 import type { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
 import type { FeatureDefinition } from "@cogno/shared/contributions";
 import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
@@ -36,10 +35,6 @@ describe("FeatureHost activation", () => {
   let configSubject: BehaviorSubject<Record<string, unknown>>;
   let register: ReturnType<typeof vi.fn>;
   let unregister: ReturnType<typeof vi.fn>;
-
-  beforeEach(() => {
-    vi.spyOn(PathFactory, "registerDefinitions").mockImplementation(() => {});
-  });
 
   afterEach(() => {
     vi.restoreAllMocks();
