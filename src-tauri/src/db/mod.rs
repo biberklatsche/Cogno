@@ -15,7 +15,7 @@ mod values;
 
 pub use error::{DbError, DbResult};
 pub use migrations::{LegacyMigrationError, Migration};
-pub use recovery::{RecoveryReport, TableRecovery};
+pub use recovery::RecoveryReport;
 
 use rusqlite::Connection;
 use serde::Serialize;

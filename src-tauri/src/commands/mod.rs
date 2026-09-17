@@ -1,10 +1,8 @@
 pub mod clipboard_image;
 pub mod command_runner;
-pub mod git_blob;
 pub mod config;
 pub mod environment;
 pub mod environment_builder;
-pub mod fonts;
 pub mod keyboard;
 pub mod login_environment;
 pub mod notification;

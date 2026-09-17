@@ -1,11 +1,5 @@
-use crate::app_identity::get_app_identity;
+use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
 use std::path::PathBuf;
-
-#[tauri::command]
-pub fn get_exe_path() -> Result<String, String> {
-    let p = std::env::current_exe().map_err(|e| e.to_string())?;
-    Ok(p.display().to_string())
-}
 
 #[tauri::command]
 pub fn get_exe_dir() -> Result<String, String> {
@@ -14,39 +8,14 @@ pub fn get_exe_dir() -> Result<String, String> {
     Ok(dir.display().to_string())
 }
 
-// Optionally return the .app bundle root on macOS.
-#[tauri::command]
-pub fn get_macos_app_bundle() -> Result<Option<String>, String> {
-    #[cfg(target_os = "macos")]
-    {
-        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-        // .../MyApp.app/Contents/MacOS/MyApp -> .../MyApp.app
-        if let Some(mac_os) = exe
-            .parent()
-            .and_then(|p| p.parent())
-            .and_then(|p| p.parent())
-        {
-            if mac_os.extension().and_then(|e| e.to_str()) == Some("app") {
-                return Ok(Some(mac_os.display().to_string()));
-            }
-        }
-        Ok(None)
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        Ok(None)
-    }
-}
-
 /// Returns the Cogno home directory path based on the active mode.
 #[tauri::command]
 pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
     let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let app_identity = get_app_identity();
     let dir_name = if dev_mode {
-        app_identity.development_home_directory_name
+        DEVELOPMENT_HOME_DIRECTORY_NAME
     } else {
-        app_identity.home_directory_name
+        HOME_DIRECTORY_NAME
     };
     let cogno_home = home.join(dir_name);
     Ok(cogno_home.display().to_string())
@@ -82,11 +51,6 @@ pub fn get_cogno_log_file_path(app_handle: tauri::AppHandle) -> Result<String, S
     let log_dir = app_handle.path().app_log_dir().map_err(|e| e.to_string())?;
     let log_file = log_dir.join("cogno.log");
     Ok(log_file.display().to_string())
-}
-
-#[tauri::command]
-pub fn get_system_path() -> Result<Option<String>, String> {
-    Ok(std::env::var("PATH").ok())
 }
 
 #[tauri::command]

@@ -1,22 +1,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use clap::Parser;
-use cogno_tauri_core::cli::{
+use cogno_lib::cli::{
     try_run_action_over_http, ActionCommand, Cli, CliCommand, ConfigCommand,
 };
-use cogno_tauri_core::actions_generated::COGNO_ACTIONS;
-use cogno_tauri_core::commands::config::read_default_config;
-use cogno_tauri_core::commands::environment::get_cogno_config_file_path;
-use cogno_tauri_core::{initialize_app_identity, AppIdentity};
+use cogno_lib::actions_generated::COGNO_ACTIONS;
+use cogno_lib::commands::config::read_default_config;
+use cogno_lib::commands::environment::get_cogno_config_file_path;
 use std::collections::HashMap;
 use std::fs;
 
 fn main() {
-    initialize_app_identity(AppIdentity::new(
-        "cogno",
-        ".cogno",
-        ".cogno-dev",
-    ));
-
     let cli = Cli::parse();
 
     if let Err(error_message) = apply_cli_environment(&cli) {

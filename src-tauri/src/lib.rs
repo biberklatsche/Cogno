@@ -1,19 +1,24 @@
-use cogno_tauri_core::cli::Cli;
-use cogno_tauri_core::commands::pty::PtyState;
-use cogno_tauri_core::commands::window_registry::{route, WindowRegistry};
-use cogno_tauri_core::db::Db;
-use cogno_tauri_core::http_server::{HttpServerState, RunnableActionsState};
-use cogno_tauri_core::{initialize_app_identity, AppIdentity};
+#[path = "actions.generated.rs"]
+pub mod actions_generated;
+mod app_identity;
+pub mod cli;
+pub mod commands;
+mod db;
+mod http_server;
+
+use cli::Cli;
+use commands::pty::PtyState;
+use commands::window_registry::{route, WindowRegistry};
+use db::Db;
+use http_server::{HttpServerState, RunnableActionsState};
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
-    initialize_app_identity(AppIdentity::new("cogno", ".cogno", ".cogno-dev"));
-
     // Capture the user's login-shell environment in the background so the
     // first terminal spawn does not pay the login-shell startup cost.
-    cogno_tauri_core::commands::login_environment::prefetch_login_environment();
+    crate::commands::login_environment::prefetch_login_environment();
 
     Builder::default()
         .plugin(tauri_plugin_os::init())
@@ -69,42 +74,35 @@ pub fn run(cli: Cli) {
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
-            cogno_tauri_core::db::commands::db_open,
-            cogno_tauri_core::db::commands::db_execute,
-            cogno_tauri_core::db::commands::db_select,
-            cogno_tauri_core::db::commands::db_batch,
-            cogno_tauri_core::commands::command_runner::command_runner_execute,
-            cogno_tauri_core::commands::git_blob::git_read_blob,
-            cogno_tauri_core::commands::config::get_default_config,
-            cogno_tauri_core::commands::fonts::list_fonts,
-            cogno_tauri_core::commands::shells::list_shells,
-            cogno_tauri_core::commands::keyboard::get_keyboard_layout,
-            cogno_tauri_core::commands::pty::pty_spawn,
-            cogno_tauri_core::commands::pty::pty_write,
-            cogno_tauri_core::commands::pty::pty_execute_line_editor_action,
-            cogno_tauri_core::commands::pty::pty_resize,
-            cogno_tauri_core::commands::pty::pty_kill,
-            cogno_tauri_core::commands::pty::pty_ack,
-            cogno_tauri_core::commands::pty::pty_ack_received,
-            cogno_tauri_core::commands::processes::pty_get_process_tree_by_pid,
-            cogno_tauri_core::commands::processes::pty_get_process_tree_by_terminal_id,
-            cogno_tauri_core::commands::environment::get_exe_path,
-            cogno_tauri_core::commands::environment::get_exe_dir,
-            cogno_tauri_core::commands::environment::get_macos_app_bundle,
-            cogno_tauri_core::commands::environment::get_cogno_home_dir,
-            cogno_tauri_core::commands::environment::get_cogno_config_file_path,
-            cogno_tauri_core::commands::environment::get_cogno_db_file_path,
-            cogno_tauri_core::commands::environment::get_cogno_log_file_path,
-            cogno_tauri_core::commands::environment::get_system_path,
-            cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
-            cogno_tauri_core::commands::window::new_window,
-            cogno_tauri_core::commands::window::window_claim_workspace,
-            cogno_tauri_core::commands::window::window_release_workspace,
-            cogno_tauri_core::commands::notification::send_os_notification,
-            cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file,
-            cogno_tauri_core::http_server::start_http_server,
-            cogno_tauri_core::http_server::get_http_server_port,
-            cogno_tauri_core::http_server::set_runnable_actions
+            crate::db::commands::db_open,
+            crate::db::commands::db_execute,
+            crate::db::commands::db_select,
+            crate::db::commands::db_batch,
+            crate::commands::command_runner::command_runner_execute,
+            crate::commands::config::get_default_config,
+            crate::commands::shells::list_shells,
+            crate::commands::keyboard::get_keyboard_layout,
+            crate::commands::pty::pty_spawn,
+            crate::commands::pty::pty_write,
+            crate::commands::pty::pty_execute_line_editor_action,
+            crate::commands::pty::pty_resize,
+            crate::commands::pty::pty_kill,
+            crate::commands::pty::pty_ack,
+            crate::commands::pty::pty_ack_received,
+            crate::commands::processes::pty_get_process_tree_by_terminal_id,
+            crate::commands::environment::get_exe_dir,
+            crate::commands::environment::get_cogno_home_dir,
+            crate::commands::environment::get_cogno_config_file_path,
+            crate::commands::environment::get_cogno_db_file_path,
+            crate::commands::environment::get_cogno_log_file_path,
+            crate::commands::environment::get_cli_config_set_overrides,
+            crate::commands::window::new_window,
+            crate::commands::window::window_claim_workspace,
+            crate::commands::window::window_release_workspace,
+            crate::commands::notification::send_os_notification,
+            crate::commands::clipboard_image::save_clipboard_image_to_file,
+            crate::http_server::start_http_server,
+            crate::http_server::set_runnable_actions
         ])
         .setup(move |app| {
             let webview_window_builder =

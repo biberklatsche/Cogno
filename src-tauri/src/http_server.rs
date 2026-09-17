@@ -228,8 +228,3 @@ pub fn start_http_server(
 
     Ok(actual_port)
 }
-
-#[tauri::command]
-pub fn get_http_server_port(state: State<'_, HttpServerState>) -> u16 {
-    state.port()
-}
