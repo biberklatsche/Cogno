@@ -337,7 +337,10 @@ fn remove_line_editor_channel(channel: &Option<LineEditorChannel>) {
 /// line-editor channel, drops the master (closes the PTY) and the input sender
 /// (ends the writer thread). Must be called without holding `sessions`:
 /// closing a ConPTY can block until its output pipe is drained.
-fn release_session(mut session: Session) {
+fn release_session(session: Session) {
+    // Only the Windows kill below needs `&mut`.
+    #[cfg(windows)]
+    let mut session = session;
     session.flow.close();
     remove_line_editor_channel(&session.line_editor_channel);
     #[cfg(windows)]
