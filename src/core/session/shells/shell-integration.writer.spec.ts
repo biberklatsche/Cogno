@@ -39,7 +39,7 @@ describe("ShellIntegrationWriter", () => {
     expect(mkdirSpy).not.toHaveBeenCalled();
   });
 
-  it("creates directories, writes merged integration files and updates version logs", async () => {
+  it("creates directories, writes each shell's integration files and updates version logs", async () => {
     const existingPaths = new Set<string>([
       "/tmp/cogno/shell-integration/VERSION",
       "/tmp/cogno/shell-integration/logs/updates.log",
@@ -74,7 +74,6 @@ describe("ShellIntegrationWriter", () => {
       },
       {
         shellType: "Zsh",
-        integrationTemplateShellType: "Bash",
         integrationFiles: [
           { relativePath: "zsh/entry.zsh", content: "entry" },
           { relativePath: "shared/env.sh", content: "zsh shared" },

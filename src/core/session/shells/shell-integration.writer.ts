@@ -116,11 +116,7 @@ export class ShellIntegrationWriter {
         continue;
       }
 
-      const integrationFiles = this.resolveIntegrationFiles(
-        shellDefinition,
-        definitionsByShellType,
-      );
-      for (const integrationFile of integrationFiles) {
+      for (const integrationFile of shellDefinition.integrationFiles) {
         if (writtenRelativePaths.has(integrationFile.relativePath)) {
           continue;
         }
@@ -135,39 +131,6 @@ export class ShellIntegrationWriter {
         await this.fs.writeTextFile(filePath, integrationFile.content);
       }
     }
-  }
-
-  private resolveIntegrationFiles(
-    shellDefinition: ShellSupportDefinitionContract,
-    definitionsByShellType: ReadonlyMap<ShellTypeContract, ShellSupportDefinitionContract>,
-  ): ReadonlyArray<{ relativePath: string; content: string }> {
-    const templateShellType = shellDefinition.integrationTemplateShellType;
-    if (!templateShellType) {
-      return shellDefinition.integrationFiles;
-    }
-
-    const templateDefinition = definitionsByShellType.get(templateShellType);
-    if (!templateDefinition) {
-      return shellDefinition.integrationFiles;
-    }
-
-    const filesByPath = new Map<string, { relativePath: string; content: string }>();
-
-    for (const templateFile of templateDefinition.integrationFiles) {
-      filesByPath.set(templateFile.relativePath, {
-        relativePath: templateFile.relativePath,
-        content: templateFile.content,
-      });
-    }
-
-    for (const integrationFile of shellDefinition.integrationFiles) {
-      filesByPath.set(integrationFile.relativePath, {
-        relativePath: integrationFile.relativePath,
-        content: integrationFile.content,
-      });
-    }
-
-    return [...filesByPath.values()];
   }
 
   private getDirectoryPath(path: string): string {

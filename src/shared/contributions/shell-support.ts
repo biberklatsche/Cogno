@@ -13,5 +13,4 @@ export interface ShellSupportDefinitionContract {
   >;
   readonly sortWeightByOs: Readonly<Record<BackendOsContract, number>>;
   readonly integrationFiles: ReadonlyArray<ShellIntegrationFileContract>;
-  readonly integrationTemplateShellType?: ShellTypeContract;
 }
