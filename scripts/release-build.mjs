@@ -17,7 +17,7 @@ import {
 import { request as createHttpRequest } from "node:http";
 import { request as createHttpsRequest } from "node:https";
 import { homedir, tmpdir } from "node:os";
-import { basename, dirname, extname, join, relative, resolve, sep } from "node:path";
+import { basename, extname, join, relative, resolve, sep } from "node:path";
 import { URL } from "node:url";
 
 const artifactRootDirectoryPath = "release-artifacts";
@@ -244,7 +244,7 @@ function printHelp() {
   console.log("  --tag <tag>         Build or finalize metadata for a specific Git tag.");
   console.log("  --test              Local test build without Git tag and without upload.");
   console.log("  --channel <value>   dev | release (default: release)");
-  console.log("  --notes-file <path> Optional release notes file for latest/updater metadata.");
+  console.log("  --notes-file <path> Optional release notes file for latest metadata.");
   console.log("  --skip-build        Reuse existing bundle output.");
   console.log("  --skip-upload       Build only, do not upload.");
   console.log("  --finalize          Publish latest metadata.");
@@ -372,14 +372,8 @@ function loadReleaseSettings({ releaseChannel }) {
       secretAccessKey: parsedSettings.storage?.secretAccessKey,
     },
     settingsFilePath,
-    updater: {
-      enabled: coerceBooleanValue(parsedSettings.updater?.enabled),
-      notesFilePath: parsedSettings.updater?.notesFilePath ?? releaseChannelSettings.notesFilePath,
-      privateKey: parsedSettings.updater?.privateKey,
-      privateKeyPassword: parsedSettings.updater?.privateKeyPassword,
-      privateKeyPath: expandHomeDirectory(parsedSettings.updater?.privateKeyPath),
-      publicKeyPath: expandHomeDirectory(parsedSettings.updater?.publicKeyPath),
-    },
+    // "updater.notesFilePath" is the legacy location of this setting; it feeds latest.json.
+    notesFilePath: parsedSettings.updater?.notesFilePath ?? releaseChannelSettings.notesFilePath,
     requiredPlatforms: normalizeRequiredPlatforms(
       releaseChannelSettings.requiredPlatforms ?? parsedSettings.requiredPlatforms,
     ),
@@ -452,7 +446,7 @@ function expandHomeDirectory(pathValue) {
 
 function resolveReleaseNotes({ parsedArguments, releaseSettings }) {
   const explicitNotesFilePath = normalizeOptionalString(parsedArguments.notesFilePath);
-  const configuredNotesFilePath = normalizeOptionalString(releaseSettings.updater.notesFilePath);
+  const configuredNotesFilePath = normalizeOptionalString(releaseSettings.notesFilePath);
   const releaseNotesFilePath = explicitNotesFilePath ?? configuredNotesFilePath;
 
   if (releaseNotesFilePath === undefined) {
@@ -717,7 +711,6 @@ function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, rel
   );
   const collectedArtifacts = [];
   const copiedArtifactFileNames = new Set();
-  let macosApplicationArtifact;
 
   for (const currentArtifactPath of discoveredArtifactPaths) {
     const currentArtifactKind = determineArtifactKind(currentArtifactPath);
@@ -737,12 +730,6 @@ function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, rel
 
     if (currentArtifactKind === "app") {
       createMacosApplicationArchive(currentArtifactPath, targetArtifactPath);
-      macosApplicationArtifact = {
-        fileName: targetArtifactFileName,
-        kind: currentArtifactKind,
-        path: targetArtifactPath,
-        sourcePath: currentArtifactPath,
-      };
     } else {
       copyArtifact(currentArtifactPath, targetArtifactPath);
     }
@@ -755,28 +742,6 @@ function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, rel
       path: targetArtifactPath,
       sourcePath: currentArtifactPath,
     });
-  }
-
-  if (currentPlatformName === "macos" && macosApplicationArtifact !== undefined) {
-    const updaterArtifactFileName = createTargetArtifactFileName({
-      currentArtifactExtension: ".tar.gz",
-      currentArtifactKind: "updater",
-      currentPlatformName,
-      releaseVersion,
-    });
-
-    if (!copiedArtifactFileNames.has(updaterArtifactFileName)) {
-      const updaterArtifactPath = join(releaseOutputDirectoryPath, updaterArtifactFileName);
-
-      createMacosUpdaterArchive(macosApplicationArtifact.sourcePath, updaterArtifactPath);
-      copiedArtifactFileNames.add(updaterArtifactFileName);
-      collectedArtifacts.push({
-        fileName: updaterArtifactFileName,
-        kind: "updater",
-        path: updaterArtifactPath,
-        sourcePath: macosApplicationArtifact.sourcePath,
-      });
-    }
   }
 
   assertCollectedArtifactsMatchVersion({
@@ -818,7 +783,6 @@ function findBundleArtifacts({ currentPlatformName, sourceBundleDirectoryPath })
 
       return (
         currentEntryPath.endsWith(".AppImage") ||
-        currentEntryPath.endsWith(".AppImage.sig") ||
         currentEntryPath.endsWith(".deb") ||
         currentEntryPath.endsWith(".rpm") ||
         currentEntryPath.endsWith(".tar.gz")
@@ -826,20 +790,11 @@ function findBundleArtifacts({ currentPlatformName, sourceBundleDirectoryPath })
     }
 
     if (currentPlatformName === "macos") {
-      return (
-        currentEntryPath.endsWith(".dmg") ||
-        currentEntryPath.endsWith(".app.tar.gz") ||
-        currentEntryPath.endsWith(".app.tar.gz.sig")
-      );
+      return currentEntryPath.endsWith(".dmg");
     }
 
     if (currentPlatformName === "windows") {
-      return (
-        currentEntryPath.endsWith(".exe") ||
-        currentEntryPath.endsWith(".exe.sig") ||
-        currentEntryPath.endsWith(".msi") ||
-        currentEntryPath.endsWith(".msi.sig")
-      );
+      return currentEntryPath.endsWith(".exe") || currentEntryPath.endsWith(".msi");
     }
 
     return false;
@@ -866,28 +821,8 @@ function determineArtifactKind(artifactPath) {
     return "app";
   }
 
-  if (artifactPath.endsWith(".app.tar.gz.sig")) {
-    return "updater-signature";
-  }
-
-  if (artifactPath.endsWith(".app.tar.gz")) {
-    return "updater";
-  }
-
-  if (artifactPath.endsWith(".AppImage.sig")) {
-    return "appimage-signature";
-  }
-
   if (artifactPath.endsWith(".AppImage")) {
     return "appimage";
-  }
-
-  if (artifactPath.endsWith(".msi.sig")) {
-    return "msi-signature";
-  }
-
-  if (artifactPath.endsWith(".exe.sig")) {
-    return artifactPath.includes(`${join("bundle", "nsis")}`) ? "nsis-signature" : "exe-signature";
   }
 
   if (artifactPath.endsWith(".tar.gz")) {
@@ -906,18 +841,7 @@ function determineTargetArtifactExtension(artifactPath) {
     return ".zip";
   }
 
-  if (
-    artifactPath.endsWith(".app.tar.gz") ||
-    artifactPath.endsWith(".tar.gz") ||
-    artifactPath.endsWith(".app.tar.gz.sig") ||
-    artifactPath.endsWith(".AppImage.sig") ||
-    artifactPath.endsWith(".exe.sig") ||
-    artifactPath.endsWith(".msi.sig")
-  ) {
-    if (artifactPath.endsWith(".sig")) {
-      return ".sig";
-    }
-
+  if (artifactPath.endsWith(".tar.gz")) {
     return ".tar.gz";
   }
 
@@ -948,16 +872,6 @@ function createMacosApplicationArchive(sourceApplicationPath, targetArchivePath)
     "--sequesterRsrc",
     sourceApplicationPath,
     targetArchivePath,
-  ]);
-}
-
-function createMacosUpdaterArchive(sourceApplicationPath, targetArchivePath) {
-  runCommand("tar", [
-    "-czf",
-    targetArchivePath,
-    "-C",
-    dirname(sourceApplicationPath),
-    basename(sourceApplicationPath),
   ]);
 }
 
@@ -1021,10 +935,6 @@ function createManifest({
     collectedArtifacts,
     currentPlatformName,
   });
-  const updaterArtifact = resolveUpdaterArtifact({
-    collectedArtifacts,
-    currentPlatformName,
-  });
 
   return {
     architecture: process.arch,
@@ -1039,18 +949,6 @@ function createManifest({
     platform: currentPlatformName,
     preferredDownloadArtifactFileName: preferredDownloadArtifact?.fileName,
     tag: releaseTag,
-    updater:
-      updaterArtifact === undefined
-        ? undefined
-        : {
-            artifactFileName: updaterArtifact.fileName,
-            signatureFileName: updaterArtifact.signatureFileName,
-            strategy: updaterArtifact.strategy,
-            tauriPlatformKey: resolveTauriPlatformKey({
-              architecture: process.arch,
-              platformName: currentPlatformName,
-            }),
-          },
     version: releaseVersion,
   };
 }
@@ -1066,77 +964,6 @@ function resolvePreferredDownloadArtifact({ collectedArtifacts, currentPlatformN
     collectedArtifacts,
     preferredArtifactKindsByPlatform[currentPlatformName] ?? [],
   );
-}
-
-function resolveUpdaterArtifact({ collectedArtifacts, currentPlatformName }) {
-  if (currentPlatformName === "linux") {
-    const appImageArtifact = findArtifactByPreferredKinds(collectedArtifacts, ["appimage"]);
-
-    if (appImageArtifact === undefined) {
-      return undefined;
-    }
-
-    return {
-      fileName: appImageArtifact.fileName,
-      signatureFileName: findMatchingSignatureArtifactFileName(collectedArtifacts, [
-        "appimage-signature",
-      ]),
-      strategy: "sign-on-finalize",
-    };
-  }
-
-  if (currentPlatformName === "windows") {
-    const windowsUpdaterArtifact = findArtifactByPreferredKinds(collectedArtifacts, [
-      "nsis",
-      "msi",
-      "exe",
-    ]);
-
-    if (windowsUpdaterArtifact === undefined) {
-      return undefined;
-    }
-
-    return {
-      fileName: windowsUpdaterArtifact.fileName,
-      signatureFileName: findMatchingSignatureArtifactFileName(collectedArtifacts, [
-        `${windowsUpdaterArtifact.kind}-signature`,
-      ]),
-      strategy: "sign-on-finalize",
-    };
-  }
-
-  const preparedMacosUpdaterArtifact = findArtifactByPreferredKinds(collectedArtifacts, [
-    "updater",
-  ]);
-
-  if (preparedMacosUpdaterArtifact !== undefined) {
-    return {
-      fileName: preparedMacosUpdaterArtifact.fileName,
-      signatureFileName: findMatchingSignatureArtifactFileName(collectedArtifacts, [
-        "updater-signature",
-      ]),
-      strategy: "ready",
-    };
-  }
-
-  const macosApplicationArchive = findArtifactByPreferredKinds(collectedArtifacts, ["app"]);
-
-  if (macosApplicationArchive === undefined) {
-    return undefined;
-  }
-
-  return {
-    fileName: macosApplicationArchive.fileName,
-    strategy: "build-and-sign-on-finalize",
-  };
-}
-
-function findMatchingSignatureArtifactFileName(collectedArtifacts, acceptableKinds) {
-  const matchingSignatureArtifact = collectedArtifacts.find((currentArtifact) =>
-    acceptableKinds.includes(currentArtifact.kind),
-  );
-
-  return matchingSignatureArtifact?.fileName;
 }
 
 function findArtifactByPreferredKinds(collectedArtifacts, preferredArtifactKinds) {
@@ -1280,29 +1107,6 @@ async function finalizeRelease({
     }),
   });
 
-  const updaterManifest = await maybeCreateUpdaterManifest({
-    publishedPlatformManifests,
-    releaseNotes,
-    releaseSettings,
-    releaseTag,
-    releaseVersion,
-  });
-
-  if (updaterManifest !== undefined) {
-    const updaterManifestPath = join(finalizedReleaseDirectoryPath, "tauri-updater.json");
-
-    writeFileSync(updaterManifestPath, JSON.stringify(updaterManifest, null, 2));
-
-    await uploadJsonDocument({
-      documentContent: updaterManifest,
-      releaseSettings,
-      targetRelativePath: createUpdaterManifestRelativePath({
-        releaseChannel,
-        remoteStorageSettings,
-      }),
-    });
-  }
-
   return finalizedReleaseDirectoryPath;
 }
 
@@ -1405,15 +1209,6 @@ function createLatestPlatformManifestRelativePath({
 
 function createLatestReleaseRelativePath({ releaseChannel, remoteStorageSettings }) {
   return joinRemotePathSegments([remoteStorageSettings.basePath, releaseChannel, "latest.json"]);
-}
-
-function createUpdaterManifestRelativePath({ releaseChannel, remoteStorageSettings }) {
-  return joinRemotePathSegments([
-    remoteStorageSettings.basePath,
-    releaseChannel,
-    "updater",
-    "latest.json",
-  ]);
 }
 
 function normalizeRemotePathSegment(pathValue) {
@@ -1549,25 +1344,6 @@ function createPublishedPlatformManifest({ releaseSettings, releaseTag, stagedMa
     (currentArtifact) =>
       currentArtifact.fileName === stagedManifest.preferredDownloadArtifactFileName,
   );
-  const publishedUpdater =
-    stagedManifest.updater === undefined
-      ? undefined
-      : {
-          ...stagedManifest.updater,
-          artifactUrl: createPublicArtifactUrl({
-            artifactFileName: stagedManifest.updater.artifactFileName,
-            publishedRelativeDirectoryPath,
-            releaseSettings,
-          }),
-          signatureUrl:
-            stagedManifest.updater.signatureFileName === undefined
-              ? undefined
-              : createPublicArtifactUrl({
-                  artifactFileName: stagedManifest.updater.signatureFileName,
-                  publishedRelativeDirectoryPath,
-                  releaseSettings,
-                }),
-        };
 
   return {
     ...stagedManifest,
@@ -1584,7 +1360,6 @@ function createPublishedPlatformManifest({ releaseSettings, releaseTag, stagedMa
     preferredDownload: preferredDownloadArtifact,
     publishedAt: new Date().toISOString(),
     releasePath: `${stagedManifest.channel}/releases/${releaseTag}/${stagedManifest.platform}`,
-    updater: publishedUpdater,
   };
 }
 
@@ -1596,8 +1371,6 @@ function createLatestManifest({
   releaseTag,
   releaseVersion,
 }) {
-  const remoteStorageSettings = resolveRemoteStorageSettings(releaseSettings);
-
   return {
     channel: releaseChannel,
     notes: releaseNotes,
@@ -1620,338 +1393,8 @@ function createLatestManifest({
     publishedAt: new Date().toISOString(),
     requiredPlatforms: releaseSettings.requiredPlatforms,
     tag: releaseTag,
-    tauriUpdaterUrl: createPublicDocumentUrl({
-      relativePath: createUpdaterManifestRelativePath({
-        releaseChannel,
-        remoteStorageSettings,
-      }),
-      releaseSettings,
-    }),
     version: releaseVersion,
   };
-}
-
-async function maybeCreateUpdaterManifest({
-  publishedPlatformManifests,
-  releaseNotes,
-  releaseSettings,
-  releaseTag,
-  releaseVersion,
-}) {
-  if (!releaseSettings.updater.enabled) {
-    return undefined;
-  }
-
-  const remoteStorageSettings = resolveRemoteStorageSettings(releaseSettings);
-  const updaterWorkingDirectoryPath = mkdtempSync(join(tmpdir(), "cogno-updater-"));
-  const updaterPlatforms = {};
-
-  try {
-    for (const currentPublishedPlatformManifest of publishedPlatformManifests) {
-      const updaterPlatformEntry = await createUpdaterPlatformEntry({
-        publishedPlatformManifest: currentPublishedPlatformManifest,
-        releaseSettings,
-        releaseTag,
-        remoteStorageSettings,
-        updaterWorkingDirectoryPath,
-      });
-
-      if (updaterPlatformEntry === undefined) {
-        throw new Error(
-          `Updater is enabled, but platform "${currentPublishedPlatformManifest.platform}" does not expose an updater artifact.`,
-        );
-      }
-
-      updaterPlatforms[currentPublishedPlatformManifest.updater.tauriPlatformKey] =
-        updaterPlatformEntry;
-    }
-
-    return {
-      notes: releaseNotes,
-      platforms: updaterPlatforms,
-      pub_date: new Date().toISOString(),
-      version: releaseVersion,
-    };
-  } finally {
-    rmSync(updaterWorkingDirectoryPath, { force: true, recursive: true });
-  }
-}
-
-async function createUpdaterPlatformEntry({
-  publishedPlatformManifest,
-  releaseSettings,
-  releaseTag,
-  remoteStorageSettings,
-  updaterWorkingDirectoryPath,
-}) {
-  const updaterConfiguration = publishedPlatformManifest.updater;
-
-  if (updaterConfiguration === undefined) {
-    return undefined;
-  }
-
-  if (
-    updaterConfiguration.strategy === "ready" &&
-    updaterConfiguration.signatureFileName !== undefined
-  ) {
-    const signatureContent = await readPublishedArtifactText({
-      artifactFileName: updaterConfiguration.signatureFileName,
-      platformManifest: publishedPlatformManifest,
-      releaseTag,
-      remoteStorageSettings,
-    });
-
-    return {
-      signature: signatureContent.trim(),
-      url: updaterConfiguration.artifactUrl,
-    };
-  }
-
-  const generatedUpdaterArtifact = await buildOrDownloadUpdaterArtifactForSigning({
-    platformManifest: publishedPlatformManifest,
-    releaseTag,
-    remoteStorageSettings,
-    updaterWorkingDirectoryPath,
-  });
-  const generatedSignature = signUpdaterArtifact({
-    releaseSettings,
-    updaterArtifactPath: generatedUpdaterArtifact.localArtifactPath,
-  });
-  const publishedSignatureFileName = `${generatedUpdaterArtifact.publishedArtifactFileName}.sig`;
-  const publishedRelativeDirectoryPath = createPublishedRelativeDirectoryPath({
-    currentPlatformName: publishedPlatformManifest.platform,
-    releaseChannel: publishedPlatformManifest.channel,
-    releaseTag,
-    remoteStorageSettings,
-  });
-  await uploadFileToS3({
-    localFilePath: generatedUpdaterArtifact.localSignaturePath,
-    objectKey: joinRemotePathSegments([publishedRelativeDirectoryPath, publishedSignatureFileName]),
-    remoteStorageSettings,
-  });
-
-  if (generatedUpdaterArtifact.createdArtifactLocally) {
-    await uploadFileToS3({
-      localFilePath: generatedUpdaterArtifact.localArtifactPath,
-      objectKey: joinRemotePathSegments([
-        publishedRelativeDirectoryPath,
-        generatedUpdaterArtifact.publishedArtifactFileName,
-      ]),
-      remoteStorageSettings,
-    });
-  }
-
-  return {
-    signature: generatedSignature,
-    url: createPublicArtifactUrl({
-      artifactFileName: generatedUpdaterArtifact.publishedArtifactFileName,
-      publishedRelativeDirectoryPath,
-      releaseSettings,
-    }),
-  };
-}
-
-async function buildOrDownloadUpdaterArtifactForSigning({
-  platformManifest,
-  releaseTag,
-  remoteStorageSettings,
-  updaterWorkingDirectoryPath,
-}) {
-  const platformWorkingDirectoryPath = join(updaterWorkingDirectoryPath, platformManifest.platform);
-
-  mkdirSync(platformWorkingDirectoryPath, { recursive: true });
-
-  if (platformManifest.platform !== "macos") {
-    const downloadedArtifactPath = await downloadPublishedArtifact({
-      artifactFileName: platformManifest.updater.artifactFileName,
-      destinationDirectoryPath: platformWorkingDirectoryPath,
-      platformManifest,
-      releaseTag,
-      remoteStorageSettings,
-    });
-
-    return {
-      createdArtifactLocally: false,
-      localArtifactPath: downloadedArtifactPath,
-      localSignaturePath: `${downloadedArtifactPath}.sig`,
-      publishedArtifactFileName: platformManifest.updater.artifactFileName,
-    };
-  }
-
-  if (platformManifest.updater.strategy === "ready") {
-    const downloadedPreparedUpdaterPath = await downloadPublishedArtifact({
-      artifactFileName: platformManifest.updater.artifactFileName,
-      destinationDirectoryPath: platformWorkingDirectoryPath,
-      platformManifest,
-      releaseTag,
-      remoteStorageSettings,
-    });
-
-    return {
-      createdArtifactLocally: false,
-      localArtifactPath: downloadedPreparedUpdaterPath,
-      localSignaturePath: `${downloadedPreparedUpdaterPath}.sig`,
-      publishedArtifactFileName: platformManifest.updater.artifactFileName,
-    };
-  }
-
-  if (process.platform !== "darwin") {
-    throw new Error(
-      'macOS updater artifact is not staged. Run "--finalize" on macOS or build a prepared updater archive on the macOS build machine.',
-    );
-  }
-
-  const downloadedApplicationArchivePath = await downloadPublishedArtifact({
-    artifactFileName: platformManifest.updater.artifactFileName,
-    destinationDirectoryPath: platformWorkingDirectoryPath,
-    platformManifest,
-    releaseTag,
-    remoteStorageSettings,
-  });
-  const extractionDirectoryPath = join(platformWorkingDirectoryPath, "app");
-  const discoveredApplicationName = extractMacosApplicationArchive({
-    applicationArchivePath: downloadedApplicationArchivePath,
-    extractionDirectoryPath,
-  });
-  const generatedUpdaterFileName = `${[
-    "cogno",
-    platformManifest.version,
-    platformManifest.platform,
-    platformManifest.architecture,
-    "updater",
-  ].join("-")}.tar.gz`;
-  const generatedUpdaterArtifactPath = join(platformWorkingDirectoryPath, generatedUpdaterFileName);
-
-  runCommand("tar", [
-    "-czf",
-    generatedUpdaterArtifactPath,
-    "-C",
-    extractionDirectoryPath,
-    discoveredApplicationName,
-  ]);
-
-  return {
-    createdArtifactLocally: true,
-    localArtifactPath: generatedUpdaterArtifactPath,
-    localSignaturePath: `${generatedUpdaterArtifactPath}.sig`,
-    publishedArtifactFileName: generatedUpdaterFileName,
-  };
-}
-
-function extractMacosApplicationArchive({ applicationArchivePath, extractionDirectoryPath }) {
-  recreateDirectory(extractionDirectoryPath);
-
-  runCommand("ditto", [
-    "-x",
-    "-k",
-    "--sequesterRsrc",
-    applicationArchivePath,
-    extractionDirectoryPath,
-  ]);
-
-  const extractedEntryNames = readdirSync(extractionDirectoryPath);
-  const applicationDirectoryName = extractedEntryNames.find((currentEntryName) =>
-    currentEntryName.endsWith(".app"),
-  );
-
-  if (applicationDirectoryName === undefined) {
-    throw new Error(`Could not find extracted .app directory in ${extractionDirectoryPath}.`);
-  }
-
-  return applicationDirectoryName;
-}
-
-function signUpdaterArtifact({ releaseSettings, updaterArtifactPath }) {
-  const signatureContent = runCommandAndCollectOutput(
-    "pnpm",
-    createTauriSignerArguments({
-      releaseSettings,
-      updaterArtifactPath,
-    }),
-  ).trim();
-
-  if (signatureContent.length === 0) {
-    throw new Error(`Could not sign updater artifact: ${updaterArtifactPath}`);
-  }
-
-  writeFileSync(`${updaterArtifactPath}.sig`, `${signatureContent}\n`);
-
-  return signatureContent;
-}
-
-function createTauriSignerArguments({ releaseSettings, updaterArtifactPath }) {
-  const signerArguments = ["exec", "tauri", "signer", "sign"];
-
-  if (releaseSettings.updater.privateKeyPath !== undefined) {
-    signerArguments.push("--private-key-path", releaseSettings.updater.privateKeyPath);
-  } else if (releaseSettings.updater.privateKey !== undefined) {
-    signerArguments.push("--private-key", releaseSettings.updater.privateKey);
-  } else {
-    throw new Error(
-      "Updater signing requires updater.privateKeyPath or updater.privateKey in release.settings.json.",
-    );
-  }
-
-  if (releaseSettings.updater.privateKeyPassword !== undefined) {
-    signerArguments.push("--password", releaseSettings.updater.privateKeyPassword);
-  }
-
-  signerArguments.push(updaterArtifactPath);
-
-  return signerArguments;
-}
-
-async function downloadPublishedArtifact({
-  artifactFileName,
-  destinationDirectoryPath,
-  platformManifest,
-  releaseTag,
-  remoteStorageSettings,
-}) {
-  const localDestinationPath = join(destinationDirectoryPath, artifactFileName);
-  const publishedArtifactRelativePath = joinRemotePathSegments([
-    createPublishedRelativeDirectoryPath({
-      currentPlatformName: platformManifest.platform,
-      releaseChannel: platformManifest.channel,
-      releaseTag,
-      remoteStorageSettings,
-    }),
-    artifactFileName,
-  ]);
-
-  await downloadFileFromS3({
-    localDestinationPath,
-    objectKey: publishedArtifactRelativePath,
-    remoteStorageSettings,
-  });
-
-  if (!existsSync(localDestinationPath)) {
-    throw new Error(`Could not download published artifact: ${artifactFileName}`);
-  }
-
-  return localDestinationPath;
-}
-
-async function readPublishedArtifactText({
-  artifactFileName,
-  platformManifest,
-  releaseTag,
-  remoteStorageSettings,
-}) {
-  const publishedArtifactRelativePath = joinRemotePathSegments([
-    createPublishedRelativeDirectoryPath({
-      currentPlatformName: platformManifest.platform,
-      releaseChannel: platformManifest.channel,
-      releaseTag,
-      remoteStorageSettings,
-    }),
-    artifactFileName,
-  ]);
-
-  return downloadTextFromS3({
-    objectKey: publishedArtifactRelativePath,
-    remoteStorageSettings,
-  });
 }
 
 function createPublicArtifactUrl({
@@ -2012,16 +1455,6 @@ async function uploadFileToS3({ localFilePath, objectKey, remoteStorageSettings 
     objectKey,
     remoteStorageSettings,
   });
-}
-
-async function downloadFileFromS3({ localDestinationPath, objectKey, remoteStorageSettings }) {
-  const fileContent = await sendS3Request({
-    method: "GET",
-    objectKey,
-    remoteStorageSettings,
-  });
-
-  writeFileSync(localDestinationPath, fileContent);
 }
 
 async function downloadTextFromS3({ objectKey, remoteStorageSettings }) {
@@ -2191,10 +1624,6 @@ function resolveContentType(filePath) {
     return "application/json";
   }
 
-  if (filePath.endsWith(".sig")) {
-    return "text/plain; charset=utf-8";
-  }
-
   if (filePath.endsWith(".txt") || filePath.endsWith(".md")) {
     return "text/plain; charset=utf-8";
   }
@@ -2248,29 +1677,6 @@ async function performHttpRequest({ bodyBuffer, headers, method, requestPath, ur
 
     request.end(bodyBuffer);
   });
-}
-
-function resolveTauriPlatformKey({ architecture, platformName }) {
-  return `${resolveTauriPlatformName(platformName)}-${resolveTauriArchitecture(architecture)}`;
-}
-
-function resolveTauriPlatformName(platformName) {
-  if (platformName === "macos") {
-    return "darwin";
-  }
-
-  return platformName;
-}
-
-function resolveTauriArchitecture(architecture) {
-  const tauriArchitectureByNodeArchitecture = {
-    arm64: "aarch64",
-    arm: "armv7",
-    ia32: "i686",
-    x64: "x86_64",
-  };
-
-  return tauriArchitectureByNodeArchitecture[architecture] ?? architecture;
 }
 
 function runCommand(commandName, commandArguments, options = {}) {
