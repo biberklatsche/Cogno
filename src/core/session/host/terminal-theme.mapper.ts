@@ -27,7 +27,7 @@ export function toTerminalTheme(config: Config): ITheme {
     blue: `#${color?.blue}`,
     magenta: `#${color?.magenta}`,
     cyan: `#${color?.cyan}`,
-    white: `#${color?.bright_white}`,
+    white: `#${color?.white}`,
     brightBlack: `#${color?.bright_black}`,
     brightRed: `#${color?.bright_red}`,
     brightGreen: `#${color?.bright_green}`,
