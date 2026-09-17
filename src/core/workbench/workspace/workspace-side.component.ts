@@ -16,6 +16,7 @@ import {
   DragPreviewService,
   IconComponent,
   TooltipDirective,
+  trackPointerDrag,
 } from "@cogno/shared/ui";
 import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { relativeSavedTime } from "./auto-save-status";
@@ -324,8 +325,6 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
   ],
 })
 export class WorkspaceSideComponent implements OnDestroy {
-  private static readonly minimumDragStartDistanceInPixels = 4;
-
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]>;
   readonly defaultWorkspaceId = defaultWorkspaceIdContract;
   /** When session restore is on, workspaces auto-save (step 27g). */
@@ -335,15 +334,9 @@ export class WorkspaceSideComponent implements OnDestroy {
   isDraggingWorkspace = false;
   draggedWorkspaceIdentifier: string | undefined;
 
-  private mouseDownWorkspaceIdentifier: string | undefined;
-  private mouseDownClientX = 0;
-  private mouseDownClientY = 0;
-  private mouseDownWorkspaceRectangle: DOMRect | undefined;
+  private stopPointerDrag: (() => void) | undefined;
   private suppressNextWorkspaceClick = false;
   private suppressNextWorkspaceClickTimeoutId: number | undefined;
-  private readonly handleWindowMouseMove = (event: MouseEvent): void =>
-    this.onWindowMouseMove(event);
-  private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
   private readonly workspaceTileElements =
     viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
   private readonly navigationItemsProvider = () => this.collectNavigationItems();
@@ -368,7 +361,7 @@ export class WorkspaceSideComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.removeWindowPointerListeners();
+    this.stopPointerDrag?.();
     this.clearSuppressedWorkspaceClick();
     this.dragPreviewService.stopDragPreview();
   }
@@ -412,17 +405,27 @@ export class WorkspaceSideComponent implements OnDestroy {
 
     event.preventDefault();
     this.clearSuppressedWorkspaceClick();
+    this.endWorkspaceDrag();
+    this.stopPointerDrag?.();
+    this.stopPointerDrag = trackPointerDrag(event, this.dragPreviewService, {
+      onDragStart: () => {
+        this.isDraggingWorkspace = true;
+        this.draggedWorkspaceIdentifier = workspaceId;
+      },
+      onRelease: (_event, dragged) => {
+        this.endWorkspaceDrag();
+        if (!dragged) return;
+        // The browser still fires a click on the tile the drag ended over.
+        this.suppressWorkspaceClickOnce();
+        void this.workspaceService.persistWorkspaceOrder();
+      },
+      onCancel: () => this.endWorkspaceDrag(),
+    });
+  }
+
+  private endWorkspaceDrag(): void {
     this.isDraggingWorkspace = false;
     this.draggedWorkspaceIdentifier = undefined;
-    this.mouseDownWorkspaceIdentifier = workspaceId;
-    this.mouseDownClientX = event.clientX;
-    this.mouseDownClientY = event.clientY;
-    const currentTargetElement = event.currentTarget;
-    this.mouseDownWorkspaceRectangle =
-      currentTargetElement instanceof HTMLElement
-        ? currentTargetElement.getBoundingClientRect()
-        : undefined;
-    this.addWindowPointerListeners();
   }
 
   openCreateWorkspaceDialog(): void {
@@ -491,68 +494,6 @@ export class WorkspaceSideComponent implements OnDestroy {
       this.draggedWorkspaceIdentifier,
       targetWorkspaceIdentifier,
     );
-  }
-
-  private onWindowMouseMove(event: MouseEvent): void {
-    if (this.isDraggingWorkspace) {
-      this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
-      return;
-    }
-    if (!this.mouseDownWorkspaceIdentifier) {
-      return;
-    }
-
-    const horizontalDistanceInPixels = Math.abs(event.clientX - this.mouseDownClientX);
-    const verticalDistanceInPixels = Math.abs(event.clientY - this.mouseDownClientY);
-    if (
-      horizontalDistanceInPixels < WorkspaceSideComponent.minimumDragStartDistanceInPixels &&
-      verticalDistanceInPixels < WorkspaceSideComponent.minimumDragStartDistanceInPixels
-    ) {
-      return;
-    }
-
-    this.isDraggingWorkspace = true;
-    this.draggedWorkspaceIdentifier = this.mouseDownWorkspaceIdentifier;
-    if (this.mouseDownWorkspaceRectangle) {
-      this.dragPreviewService.startDragPreview(
-        this.mouseDownWorkspaceRectangle,
-        event.clientX,
-        event.clientY,
-      );
-    }
-    this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
-  }
-
-  private onWindowMouseUp(event: MouseEvent): void {
-    if (event.button !== 0) {
-      this.mouseDownWorkspaceIdentifier = undefined;
-      this.mouseDownWorkspaceRectangle = undefined;
-      this.removeWindowPointerListeners();
-      this.dragPreviewService.stopDragPreview();
-      return;
-    }
-
-    if (this.isDraggingWorkspace) {
-      this.isDraggingWorkspace = false;
-      this.draggedWorkspaceIdentifier = undefined;
-      this.suppressWorkspaceClickOnce();
-      void this.workspaceService.persistWorkspaceOrder();
-    }
-
-    this.mouseDownWorkspaceIdentifier = undefined;
-    this.mouseDownWorkspaceRectangle = undefined;
-    this.removeWindowPointerListeners();
-    this.dragPreviewService.stopDragPreview();
-  }
-
-  private addWindowPointerListeners(): void {
-    window.addEventListener("mousemove", this.handleWindowMouseMove, true);
-    window.addEventListener("mouseup", this.handleWindowMouseUp, true);
-  }
-
-  private removeWindowPointerListeners(): void {
-    window.removeEventListener("mousemove", this.handleWindowMouseMove, true);
-    window.removeEventListener("mouseup", this.handleWindowMouseUp, true);
   }
 
   private suppressWorkspaceClickOnce(): void {

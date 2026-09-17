@@ -2,6 +2,7 @@ export * from "./busy-indicator/busy-indicator.constants";
 export * from "./common/autofocus/autofocus.directive";
 export * from "./common/copy-edit-delete/copy-edit-delete.component";
 export * from "./common/drag-preview/drag-preview.service";
+export * from "./common/drag-preview/pointer-drag";
 export * from "./common/keybinding/action-keybinding.pipe";
 export * from "./common/keybinding/action-keybinding.pipe";
 export * from "./common/text/start-ellipsis.directive";

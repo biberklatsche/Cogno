@@ -3,7 +3,7 @@ import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
 import { toObservable, toSignal } from "@angular/core/rxjs-interop";
 import { BusyIndicatorComponent } from "@cogno/core/workbench/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
-import { DragPreviewService, IconComponent } from "@cogno/shared/ui";
+import { DragPreviewService, IconComponent, trackPointerDrag } from "@cogno/shared/ui";
 import { switchMap } from "rxjs";
 import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
 import { GridListService } from "../+state/grid-list.service";
@@ -91,15 +91,7 @@ import { GridListService } from "../+state/grid-list.service";
   `,
 })
 export class PaneHeaderComponent implements OnDestroy {
-  private static readonly minimumDragStartDistanceInPixels = 4;
-
-  private readonly handleWindowMouseUp = (event: MouseEvent): void => this.onWindowMouseUp(event);
-  private readonly handleWindowMouseMove = (event: MouseEvent): void =>
-    this.onWindowMouseMove(event);
-  private dragStartClientX = 0;
-  private dragStartClientY = 0;
-  private dragSourceRectangle: DOMRect | undefined;
-  private hasExceededDragThreshold = false;
+  private stopPointerDrag: (() => void) | undefined;
 
   title = input.required<string>();
   terminalId = input.required<string>();
@@ -129,8 +121,7 @@ export class PaneHeaderComponent implements OnDestroy {
   ) {}
 
   ngOnDestroy(): void {
-    this.removeWindowMouseUpListener();
-    this.removeWindowMouseMoveListener();
+    this.stopPointerDrag?.();
     this.gridListService.cancelPaneSwapDrag();
     this.dragPreviewService.stopDragPreview();
   }
@@ -139,77 +130,32 @@ export class PaneHeaderComponent implements OnDestroy {
     if (event.button !== 0) return;
     event.preventDefault();
     event.stopPropagation();
-    this.dragStartClientX = event.clientX;
-    this.dragStartClientY = event.clientY;
-    this.hasExceededDragThreshold = false;
-    const currentTargetElement = event.currentTarget;
-    this.dragSourceRectangle =
-      currentTargetElement instanceof HTMLElement
-        ? currentTargetElement.getBoundingClientRect()
-        : undefined;
     this.gridListService.startPaneSwapDrag(this.terminalId());
     this.gridListService.focusActiveTerminal();
-    this.addWindowMouseUpListener();
-    this.addWindowMouseMoveListener();
+    this.stopPointerDrag?.();
+    this.stopPointerDrag = trackPointerDrag(event, this.dragPreviewService, {
+      // Another pane closing mid-drag cancels the swap; the pointer is then ignored.
+      isActive: () => this.gridListService.isPaneSwapDragActive(),
+      onRelease: (releaseEvent) => this.dropPane(releaseEvent),
+      onCancel: () => this.gridListService.cancelPaneSwapDrag(),
+    });
   }
 
   closePane() {
     this.gridListService.removePane(this.terminalId());
   }
 
-  private onWindowMouseUp(event: MouseEvent): void {
-    if (event.button === 0 && this.gridListService.isPaneSwapDragActive()) {
-      if (this.isPointerOverTabList(event.clientX, event.clientY)) {
-        this.gridListService.movePaneSwapSourceToNewTab();
-      } else {
-        this.gridListService.finishPaneSwapDrag();
-      }
-      this.gridListService.focusActiveTerminal();
-    } else {
+  private dropPane(event: MouseEvent): void {
+    if (!this.gridListService.isPaneSwapDragActive()) {
       this.gridListService.cancelPaneSwapDrag();
+      return;
     }
-    this.hasExceededDragThreshold = false;
-    this.dragSourceRectangle = undefined;
-    this.removeWindowMouseUpListener();
-    this.removeWindowMouseMoveListener();
-    this.dragPreviewService.stopDragPreview();
-  }
-
-  private onWindowMouseMove(event: MouseEvent): void {
-    if (!this.gridListService.isPaneSwapDragActive()) return;
-    if (!this.hasExceededDragThreshold) {
-      const horizontalDistanceInPixels = Math.abs(event.clientX - this.dragStartClientX);
-      const verticalDistanceInPixels = Math.abs(event.clientY - this.dragStartClientY);
-      this.hasExceededDragThreshold =
-        horizontalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels ||
-        verticalDistanceInPixels >= PaneHeaderComponent.minimumDragStartDistanceInPixels;
-      if (this.hasExceededDragThreshold && this.dragSourceRectangle) {
-        this.dragPreviewService.startDragPreview(
-          this.dragSourceRectangle,
-          event.clientX,
-          event.clientY,
-        );
-      }
+    if (this.isPointerOverTabList(event.clientX, event.clientY)) {
+      this.gridListService.movePaneSwapSourceToNewTab();
+    } else {
+      this.gridListService.finishPaneSwapDrag();
     }
-    if (this.hasExceededDragThreshold) {
-      this.dragPreviewService.updateDragPreviewPosition(event.clientX, event.clientY);
-    }
-  }
-
-  private addWindowMouseUpListener(): void {
-    window.addEventListener("mouseup", this.handleWindowMouseUp, true);
-  }
-
-  private addWindowMouseMoveListener(): void {
-    window.addEventListener("mousemove", this.handleWindowMouseMove, true);
-  }
-
-  private removeWindowMouseUpListener(): void {
-    window.removeEventListener("mouseup", this.handleWindowMouseUp, true);
-  }
-
-  private removeWindowMouseMoveListener(): void {
-    window.removeEventListener("mousemove", this.handleWindowMouseMove, true);
+    this.gridListService.focusActiveTerminal();
   }
 
   private isPointerOverTabList(pointerClientX: number, pointerClientY: number): boolean {
