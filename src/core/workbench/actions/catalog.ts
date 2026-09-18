@@ -226,6 +226,12 @@ export const coreActionCatalog = [
     description: "Reload the config file without restarting",
   }),
   defineAction({
+    name: "clear_restore_data",
+    label: "Delete Restore Data",
+    description:
+      "Delete the saved terminal output and restored layout of session restore; workspaces are kept",
+  }),
+  defineAction({
     name: "trigger_autocomplete",
     label: "Trigger Autocomplete",
     description: "Manually trigger autocomplete suggestions",

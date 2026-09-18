@@ -5,6 +5,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
+import type { WorkspaceService } from "./workspace.service";
 import type { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 
@@ -12,6 +13,7 @@ describe("WorkspaceShortcutActionService", () => {
   let bus: AppBus;
   let workspaceEntries: WritableSignal<ReadonlyArray<WorkspaceEntryContract>>;
   let restoreWorkspaceMock: ReturnType<typeof vi.fn>;
+  let clearRestoreDataMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     bus = new AppBus();
@@ -34,7 +36,17 @@ describe("WorkspaceShortcutActionService", () => {
       deleteWorkspace: vi.fn().mockResolvedValue(undefined),
     } as unknown as WorkspaceHostApplicationService;
 
-    new WorkspaceShortcutActionService(new ActionHandlers(bus, getDestroyRef()), workspaceHostPort);
+    clearRestoreDataMock = vi.fn().mockResolvedValue(undefined);
+    new WorkspaceShortcutActionService(
+      new ActionHandlers(bus, getDestroyRef()),
+      workspaceHostPort,
+      { clearRestoreData: clearRestoreDataMock } as unknown as WorkspaceService,
+    );
+  });
+
+  it("asks the workspace service to clear the restore data", () => {
+    bus.publish(ActionFired.create("clear_restore_data"));
+    expect(clearRestoreDataMock).toHaveBeenCalledTimes(1);
   });
 
   it("restores the default workspace for select_workspace_default", () => {

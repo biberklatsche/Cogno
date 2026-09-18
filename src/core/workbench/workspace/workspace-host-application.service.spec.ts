@@ -30,6 +30,8 @@ describe("WorkspaceHostApplicationService", () => {
   let workspaceRepository: WorkspaceRepository;
   let service: WorkspaceHostApplicationService;
   let restoreSettings: { enabled: boolean };
+  let clearRestoreDataInDb: ReturnType<typeof vi.fn>;
+  let forgetPendingSnapshots: ReturnType<typeof vi.fn>;
   let appWindow: {
     isMain: boolean;
     claimWorkspace: ReturnType<typeof vi.fn>;
@@ -54,6 +56,8 @@ describe("WorkspaceHostApplicationService", () => {
       },
     } as any);
 
+    clearRestoreDataInDb = vi.fn().mockResolvedValue(undefined);
+    forgetPendingSnapshots = vi.fn();
     workspaceRepository = {
       getAllWorkspaces: vi.fn().mockResolvedValue([
         {
@@ -69,6 +73,7 @@ describe("WorkspaceHostApplicationService", () => {
       upsertWorkspace: vi.fn().mockResolvedValue(undefined),
       deleteTerminalSession: vi.fn().mockResolvedValue(undefined),
       saveOpenState: vi.fn().mockResolvedValue(undefined),
+      clearRestoreData: clearRestoreDataInDb,
     } as unknown as WorkspaceRepository;
 
     restoreSettings = { enabled: true };
@@ -87,6 +92,7 @@ describe("WorkspaceHostApplicationService", () => {
       {
         persistWorkspace: vi.fn().mockResolvedValue(undefined),
         loadPendingSnapshots: vi.fn().mockResolvedValue(undefined),
+        forgetPendingSnapshots,
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       { facts$: new Subject() } as unknown as TerminalSessionRegistry,
@@ -461,6 +467,26 @@ describe("WorkspaceHostApplicationService", () => {
 
       expect(persistWorkspace.mock.calls.map((call) => call[0]).sort()).toEqual(["WS-1", "WS-2"]);
     });
+  });
+
+  it("clears the stored restore data and the snapshots waiting in memory", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getActiveWorkspace()?.id).toBe("WS-1");
+    });
+    const terminalsBefore = gridListService.terminalIdsForWorkspace("WS-1");
+
+    await service.clearRestoreData();
+
+    // In memory first: a pending snapshot would be written back by the next save.
+    expect(forgetPendingSnapshots).toHaveBeenCalledTimes(1);
+    expect(clearRestoreDataInDb).toHaveBeenCalledWith("WS-DEFAULT");
+    expect(forgetPendingSnapshots.mock.invocationCallOrder[0]).toBeLessThan(
+      clearRestoreDataInDb.mock.invocationCallOrder[0],
+    );
+    // The running session is left alone.
+    expect(service.getActiveWorkspace()?.id).toBe("WS-1");
+    expect(gridListService.terminalIdsForWorkspace("WS-1")).toEqual(terminalsBefore);
   });
 
   it("ignores saveWorkspace for the default workspace or missing workspaces", async () => {

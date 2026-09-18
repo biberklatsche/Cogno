@@ -242,6 +242,27 @@ export class WorkspaceHostApplicationService {
       .map((workspace) => ({ ...workspace, isOpen: false, isActive: false }));
   }
 
+  /**
+   * Delete everything session restore has stored - in the database and the
+   * snapshots still waiting in memory, which the next save would otherwise write
+   * back. The running terminals and the user's workspaces stay as they are; the
+   * next auto-save stores the current state again.
+   */
+  async clearRestoreData(): Promise<void> {
+    this.sessionPersistence.forgetPendingSnapshots();
+    await this.workspaceRepository.clearRestoreData(DEFAULT_WORKSPACE_ID);
+    this.bus.publish({
+      type: "Notification",
+      payload: {
+        header: "Restore data deleted",
+        body: "Saved terminal output and the restored layout were removed. Your workspaces are kept.",
+        source: "Workspace",
+        timestamp: new Date(),
+        type: "info",
+      },
+    });
+  }
+
   /** Record which workspaces are open and which is active, for the next launch. */
   private async persistOpenState(): Promise<void> {
     if (!this.carriesSession) {
