@@ -64,8 +64,8 @@ The pages live in `src/content/docs/` (configuration pages in `config/`); the
 `slug` sets the URL and must match the sidebar entry (e.g. `config.md` →
 `slug: docs/config`, `config/prompt.md` → `slug: docs/config/prompt`).
 
-`getting-started.md`, `workspaces.md`, `logging.md` and `index.md` are maintained
-by hand and not generated. When a page is added or removed, update the link lists in
+`getting-started.md`, `logging.md` and `index.md` are maintained by hand and not
+generated. When a page is added or removed, update the link lists in
 `index.md` and at the end of `getting-started.md` as well.
 
 - **Language:** English
@@ -78,6 +78,24 @@ by hand and not generated. When a page is added or removed, update the link list
   example early, explain exceptions after it. Verify every claim in the code and
   check that example key combos do not collide with a default keybinding
 - Examples use `Ctrl+…`; mention the macOS `Command+…` variant once per page
+
+---
+
+## Feature page template
+
+Every feature page has the same shape, so a reader finds the same thing in the
+same place:
+
+1. **Two or three sentences:** what the feature does *for the user*.
+2. **How to open it:** the default key for Windows/Linux and macOS, right at the top.
+3. **"Use it":** task-oriented sections. Keys in one table. Describe what the user
+   sees and does — no debounce times, timeouts or class names.
+4. **Examples:** a config snippet for the one or two settings people really change.
+5. **"Settings":** a short list that links to the entries in the generated
+   reference, one anchor per setting (`font.size` → `/docs/config/settings#fontsize`:
+   lower-case, dots removed). Do not repeat `mode` / `order` tables or the
+   reference's descriptions; no separate "Action" table — name the action in the
+   sentence about rebinding.
 
 ---
 
@@ -257,6 +275,25 @@ Cogno offers to install it once per agent, and the "Detected" list in the panel
 lets the user install (plus) or remove (trash, then confirm with the check
 mark) the hook at any time. A removed hook is not offered again. Settings: the
 generated `feature.coding_agents.*` rows. Action: `open_coding_agents`.
+
+### Page 11 — Workspaces
+
+**Write to:** `../meetcogno/src/content/docs/workspaces.md`
+
+**Sources:**
+- `src/core/workbench/workspace/workspace-side.component.ts` — the panel: tiles, buttons, tooltips
+- `src/core/workbench/workspace/workspace-host-application.service.ts` — create, close, delete, auto-save, dirty state
+- `src/core/workbench/workspace/workspace-state.use-case.ts` — the default workspace, activation
+- `src/core/workbench/workspace/workspace-shortcut-action.service.ts` — `select_workspace_*`
+- `src/core/session/host/session-host.ts`, `session-snapshot.ts` — what a restored terminal shows
+- `src/shared/domain/grid-layout.ts` — what a saved layout contains
+
+**Required sections:** what a workspace is; the panel actions in one table; that
+switching keeps the other workspaces' processes running while close/delete ends
+them; keyboard shortcuts and how `1…9` map to the panel order; the default
+workspace; what is and is not restored after a restart (nothing is re-run);
+`terminal.restore.*`; manual saving with `terminal.restore.enabled = false`.
+Do not document multi-window behaviour.
 
 ---
 
