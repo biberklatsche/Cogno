@@ -179,6 +179,37 @@ describe("SessionHost", () => {
   });
 });
 
+describe("SessionHost restore boundary", () => {
+  it("leaves hiding the divider to xterm once its line scrolls out of view", () => {
+    const host = createHost();
+    let render: (element: HTMLElement) => void = () => undefined;
+    const terminal = {
+      cols: 80,
+      registerMarker: () => ({}),
+      registerDecoration: () => ({
+        onRender: (listener: (element: HTMLElement) => void) => {
+          render = listener;
+        },
+      }),
+    };
+    (
+      host as unknown as { renderRestoreBoundary: (terminal: unknown) => void }
+    ).renderRestoreBoundary(terminal);
+    const element = document.createElement("div");
+
+    // In view: xterm shows the element, then fires the render callback.
+    element.style.display = "block";
+    render(element);
+    expect(element.children).toHaveLength(1);
+
+    // Out of view: xterm hides it and fires the same callback again.
+    element.style.display = "none";
+    render(element);
+    expect(element.style.display).toBe("none");
+    expect(element.children).toHaveLength(1);
+  });
+});
+
 /** Lets the mocked spawn promise settle. */
 async function settle(): Promise<void> {
   await Promise.resolve();

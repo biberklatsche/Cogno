@@ -774,22 +774,28 @@ export class SessionHost {
     }
     const decoration = terminal.registerDecoration({ marker, x: 0, width: terminal.cols });
     decoration?.onRender((element) => {
-      // xterm resets `display` to "block" on every render, before this fires:
-      // the layout has to be set each time, only the line is created once.
-      element.style.display = "flex";
-      element.style.flexDirection = "column";
-      element.style.justifyContent = "center";
-      element.style.pointerEvents = "none";
+      // `display` on the decoration element belongs to xterm: it hides the
+      // element with it once the line scrolls out of view (and in the alt
+      // buffer) and fires this callback right after. The layout therefore
+      // lives on an inner element, created once.
+      // xterm recomputes the width in cells on a resize; the divider spans the pane.
       element.style.width = "100%";
       if (element.dataset["restoreBoundary"]) {
         return;
       }
       element.dataset["restoreBoundary"] = "1";
+      element.style.pointerEvents = "none";
+      const centered = document.createElement("div");
+      centered.style.display = "flex";
+      centered.style.flexDirection = "column";
+      centered.style.justifyContent = "center";
+      centered.style.height = "100%";
       const line = document.createElement("div");
       line.style.height = "1px";
       line.style.background = "currentColor";
       line.style.opacity = "0.25";
-      element.appendChild(line);
+      centered.appendChild(line);
+      element.appendChild(centered);
     });
   }
 
