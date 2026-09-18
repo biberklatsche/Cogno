@@ -292,8 +292,9 @@ generated `feature.coding_agents.*` rows. Action: `open_coding_agents`.
 switching keeps the other workspaces' processes running while close/delete ends
 them; keyboard shortcuts and how `1…9` map to the panel order; the default
 workspace; what is and is not restored after a restart (nothing is re-run);
-`terminal.restore.*`; manual saving with `terminal.restore.enabled = false`.
-Do not document multi-window behaviour.
+`terminal.restore.*`; manual saving with `terminal.restore.enabled = false`;
+several windows (a new window starts fresh, a workspace is open in one window at a
+time).
 
 ---
 
