@@ -20,6 +20,26 @@ import { WorkspaceRepository } from "./workspace.repository";
 
 const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
+type PaneConfig = WorkspaceConfiguration["grids"][number]["pane"];
+
+/** The pane tree with `mapLeaf` applied to every leaf (a pane with no children). */
+function mapPaneLeaves(pane: PaneConfig, mapLeaf: (leaf: PaneConfig) => PaneConfig): PaneConfig {
+  const { leftChild, rightChild, ...rest } = pane;
+  if (!leftChild && !rightChild) {
+    return mapLeaf(rest);
+  }
+  return {
+    ...rest,
+    ...(leftChild ? { leftChild: mapPaneLeaves(leftChild, mapLeaf) } : {}),
+    ...(rightChild ? { rightChild: mapPaneLeaves(rightChild, mapLeaf) } : {}),
+  };
+}
+
+/** The pane tree without its terminal ids: every leaf opens a new shell. */
+function withoutTerminalIds(pane: PaneConfig): PaneConfig {
+  return mapPaneLeaves(pane, ({ terminalId: _terminalId, ...leaf }) => leaf);
+}
+
 /** Idle time after terminal output before an auto-save of the active workspace. */
 const IDLE_AUTOSAVE_MS = 2500;
 
@@ -81,7 +101,7 @@ export class WorkspaceHostApplicationService {
   ) {
     this.bus.once$("DBInitialized").subscribe(async () => {
       const workspaces = await this.workspaceRepository.getAllWorkspaces();
-      await this.repairDuplicateTabIds(workspaces);
+      await this.repairDuplicateIds(workspaces);
       const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
         workspaces,
         this.defaultWorkspace,
@@ -211,21 +231,10 @@ export class WorkspaceHostApplicationService {
       workspace.color = Color.fromText(workspace.name);
     }
 
-    const isNewWorkspace = workspace.id === "";
-    const previousActiveWorkspace = this.getActiveWorkspace();
     const workspaceId = await this.persistWorkspaceConfiguration(workspace);
 
     await this.runWithoutDirtyTracking(async () => {
-      if (isNewWorkspace && previousActiveWorkspace) {
-        this.tabListService.moveActiveWorkspaceRuntime(workspaceId);
-        this.gridListService.moveActiveWorkspaceRuntime(workspaceId);
-      }
-
-      const upsertPlan = WorkspaceStateUseCase.upsertWorkspace(
-        this._workspaceList(),
-        workspace,
-        previousActiveWorkspace?.id,
-      );
+      const upsertPlan = WorkspaceStateUseCase.upsertWorkspace(this._workspaceList(), workspace);
 
       this._workspaceList.set(upsertPlan.workspaceList);
       this.setWorkspaceDirtyState(workspaceId, false);
@@ -372,17 +381,21 @@ export class WorkspaceHostApplicationService {
   }
 
   /**
-   * Tab IDs must be globally unique (e.g. `BusyIndicatorService` matches animations to tabs by
-   * ID alone, across all workspaces). Older versions could persist the same tab ID into multiple
-   * workspaces (e.g. via "save as new workspace" while the default workspace's "TB_DEFAULT" tab
-   * was active). Detect and repair such collisions on startup by reassigning fresh IDs to every
-   * but the first occurrence of a tab ID.
+   * Tab and terminal ids are global: a tab id names one tab and a terminal id
+   * one session, across all workspaces (busy animations, sessions and snapshots
+   * are keyed by the bare id). Older versions moved a workspace's runtime into
+   * a new workspace while the old one kept the same layout, so a persisted id
+   * could sit in two workspaces. Repair such data on startup: every but the
+   * first occurrence gets a fresh id, and a reassigned terminal's snapshot is
+   * dropped - it belongs to the workspace that kept the id.
    */
-  private async repairDuplicateTabIds(workspaces: WorkspaceConfiguration[]): Promise<void> {
+  private async repairDuplicateIds(workspaces: WorkspaceConfiguration[]): Promise<void> {
     const seenTabIds = new Set<string>();
+    const seenTerminalIds = new Set<string>();
 
     for (const workspace of workspaces) {
       const remappedTabIds = new Map<string, string>();
+      const orphanedTerminalIds: string[] = [];
 
       for (const tab of workspace.tabs) {
         if (seenTabIds.has(tab.tabId)) {
@@ -391,25 +404,42 @@ export class WorkspaceHostApplicationService {
           seenTabIds.add(tab.tabId);
         }
       }
+      const grids = workspace.grids.map((grid) => ({
+        tabId: remappedTabIds.get(grid.tabId) ?? grid.tabId,
+        pane: mapPaneLeaves(grid.pane, (leaf) => {
+          if (!leaf.terminalId || !seenTerminalIds.has(leaf.terminalId)) {
+            if (leaf.terminalId) seenTerminalIds.add(leaf.terminalId);
+            return leaf;
+          }
+          orphanedTerminalIds.push(leaf.terminalId);
+          return { ...leaf, terminalId: IdCreator.newTerminalId() };
+        }),
+      }));
 
-      if (remappedTabIds.size === 0) continue;
+      if (remappedTabIds.size === 0 && orphanedTerminalIds.length === 0) continue;
 
       workspace.tabs = workspace.tabs.map((tab) => ({
         ...tab,
         tabId: remappedTabIds.get(tab.tabId) ?? tab.tabId,
       }));
-      workspace.grids = workspace.grids.map((grid) => ({
-        ...grid,
-        tabId: remappedTabIds.get(grid.tabId) ?? grid.tabId,
-      }));
+      workspace.grids = grids;
       for (const newTabId of remappedTabIds.values()) {
         seenTabIds.add(newTabId);
       }
 
       await this.workspaceRepository.updateWorkspace(workspace);
+      for (const terminalId of orphanedTerminalIds) {
+        await this.workspaceRepository.deleteTerminalSession(workspace.id, terminalId);
+      }
     }
   }
 
+  /**
+   * A new workspace starts as a copy of the active workspace's layout - the
+   * tabs, splits and directories, under fresh tab ids and without terminal ids,
+   * so activating it opens new shells there. The active workspace keeps its
+   * sessions: a terminal id names one session in one workspace, never two.
+   */
   private async persistWorkspaceConfiguration(workspace: WorkspaceConfiguration): Promise<string> {
     const isNewWorkspace = workspace.id === "";
     const sourceWorkspaceId = isNewWorkspace
@@ -418,19 +448,25 @@ export class WorkspaceHostApplicationService {
         ? workspace.id
         : undefined;
 
-    if (isNewWorkspace) {
-      workspace.id = IdCreator.newWorkspaceId();
-      workspace.position = this._workspaceList().filter(
-        (workspaceEntry) => workspaceEntry.id !== DEFAULT_WORKSPACE_ID,
-      ).length;
-    }
-
     if (sourceWorkspaceId) {
       workspace.grids = this.gridListService.getGridConfigs(sourceWorkspaceId);
       workspace.tabs = this.tabListService.getTabConfigs(sourceWorkspaceId);
     }
 
     if (isNewWorkspace) {
+      workspace.id = IdCreator.newWorkspaceId();
+      workspace.position = this._workspaceList().filter(
+        (workspaceEntry) => workspaceEntry.id !== DEFAULT_WORKSPACE_ID,
+      ).length;
+      const freshTabIds = new Map(workspace.tabs.map((tab) => [tab.tabId, IdCreator.newTabId()]));
+      workspace.tabs = workspace.tabs.map((tab) => ({
+        ...tab,
+        tabId: freshTabIds.get(tab.tabId) ?? tab.tabId,
+      }));
+      workspace.grids = workspace.grids.map((grid) => ({
+        tabId: freshTabIds.get(grid.tabId) ?? grid.tabId,
+        pane: withoutTerminalIds(grid.pane),
+      }));
       await this.workspaceRepository.createWorkspace(workspace);
     } else {
       await this.workspaceRepository.updateWorkspace(workspace);

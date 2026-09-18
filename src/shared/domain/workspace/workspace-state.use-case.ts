@@ -117,10 +117,14 @@ export class WorkspaceStateUseCase {
     };
   }
 
+  /**
+   * Update a workspace in place, or add a new one selected but not open: the
+   * caller activates it, which builds its runtime from the given layout. The
+   * workspace that was active keeps running - its sessions are its own.
+   */
   static upsertWorkspace(
     workspaceList: ReadonlyArray<WorkspaceState>,
     workspace: WorkspaceConfiguration,
-    previousActiveWorkspaceId?: string,
   ): WorkspaceUpsertPlan {
     const existingWorkspaceIndex = workspaceList.findIndex(
       (workspaceEntry) =>
@@ -148,7 +152,6 @@ export class WorkspaceStateUseCase {
       ...workspaceEntry,
       isActive: false,
       isSelected: false,
-      isOpen: workspaceEntry.id === previousActiveWorkspaceId ? false : workspaceEntry.isOpen,
     }));
     const workspacePosition = nextWorkspaceList.filter(
       (workspaceEntry) => workspaceEntry.id !== defaultWorkspaceIdContract,
@@ -158,7 +161,7 @@ export class WorkspaceStateUseCase {
       position: workspace.position ?? workspacePosition,
       isSelected: true,
       isActive: true,
-      isOpen: true,
+      isOpen: false,
       isDirty: false,
     };
 

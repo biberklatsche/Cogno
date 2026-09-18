@@ -72,37 +72,6 @@ describe("TabListService workspace runtime", () => {
     expect(service.showRename$()).toBeUndefined();
   });
 
-  it("moves the tabs of the active workspace to the target", () => {
-    service.addTab(tab("t1"), true);
-    service.addTab(tab("t2"), true);
-
-    service.moveActiveWorkspaceRuntime("ws-saved");
-
-    expect(tabIds()).toEqual(["t1", "t2"]);
-    expect(tabs.find((entry) => entry.isActive)?.id).toBe("t2");
-    expect(service.getTabConfigs("ws-saved").map((c) => c.tabId)).toEqual(["t1", "t2"]);
-    expect(service.getTabConfigs(defaultWorkspaceIdContract)).toEqual([]);
-
-    // The target is the active workspace now: writes land there ...
-    service.addTab(tab("t3"), true);
-    expect(service.getTabConfigs("ws-saved").map((c) => c.tabId)).toEqual(["t1", "t2", "t3"]);
-
-    // ... and the source starts empty when it is activated again.
-    service.activateWorkspace(defaultWorkspaceIdContract);
-    expect(tabs).toEqual([]);
-    service.activateWorkspace("ws-saved");
-    expect(tabIds()).toEqual(["t1", "t2", "t3"]);
-  });
-
-  it("only activates when the move targets the active workspace", () => {
-    service.addTab(tab("t1"), true);
-
-    service.moveActiveWorkspaceRuntime(defaultWorkspaceIdContract);
-
-    expect(tabIds()).toEqual(["t1"]);
-    expect(service.getTabConfigs().map((c) => c.tabId)).toEqual(["t1"]);
-  });
-
   it("removes the active workspace: the stream empties and writes are refused", () => {
     service.addTab(tab("t1"), true);
 

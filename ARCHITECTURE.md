@@ -740,6 +740,26 @@ Inhalt `session/` bestimmt und versioniert; alte Versionen werden gelesen,
 unlesbare als „Darstellung nicht wiederherstellbar" behandelt — die Shell
 startet trotzdem. Die Tabellen-Migration bleibt bei der Workbench.
 
+**Eine Terminal-ID, eine Sitzung, ein Pane.** Sessions, Snapshots,
+Notifications und Aktionen sind über die nackte Terminal-ID gekeyt, nicht
+über `(workspace, terminal)`. Die ID ist deshalb global eindeutig, und drei
+Stellen halten das:
+
+- **Schreiben.** Ein Workspace persistiert nur seine eigene Laufzeit. Ein
+  neuer Workspace entsteht als *Kopie* des Layouts des aktiven (Tabs, Splits,
+  Verzeichnisse) mit frischen Tab-IDs und **ohne** Terminal-IDs — beim
+  Aktivieren öffnet er neue Shells; der aktive behält seine Sitzungen. Eine
+  Laufzeit wird nie verschoben.
+- **Speichern.** `terminal_session` hat `terminal_id` als Primärschlüssel
+  (Migration 003): ein Snapshot unter zwei Workspaces scheitert laut statt
+  still das falsche Terminal wiederherzustellen.
+- **Auslegen.** `GridListService` ist die einzige Stelle, die Terminal-IDs in
+  Panes setzt. Beim Wiederherstellen eines Layouts bekommt ein Pane, dessen
+  persistierte ID in irgendeinem Workspace schon ausgelegt ist, eine neue ID
+  und einen `console.error` — Daten aus älteren Versionen heilt der Start
+  außerdem einmalig (`repairDuplicateIds`: Tab- und Terminal-IDs, der
+  verwaiste Snapshot wird verworfen).
+
 ### 2.6 Fenster
 
 Ein Tauri-Fenster ist eine eigene Webview mit eigener Angular-Instanz. Zwei

@@ -90,22 +90,6 @@ export class GridListService {
     return this.locate(terminalId)?.tabId;
   }
 
-  moveActiveWorkspaceRuntime(targetWorkspaceIdentifier: string): void {
-    const sourceWorkspaceIdentifier = this.activeWorkspaceIdentifier;
-    if (!sourceWorkspaceIdentifier || sourceWorkspaceIdentifier === targetWorkspaceIdentifier) {
-      this.activateWorkspace(targetWorkspaceIdentifier);
-      return;
-    }
-
-    this.stateByWorkspaceIdentifier.set(
-      targetWorkspaceIdentifier,
-      this.stateByWorkspaceIdentifier.get(sourceWorkspaceIdentifier) ?? { grids: {} },
-    );
-    this.stateByWorkspaceIdentifier.delete(sourceWorkspaceIdentifier);
-    this.activeWorkspaceIdentifier = targetWorkspaceIdentifier;
-    this.syncActiveWorkspaceState();
-  }
-
   removeWorkspaceRuntime(workspaceIdentifier: string): void {
     this.destroyWorkspaceGridList(this.stateByWorkspaceIdentifier.get(workspaceIdentifier)?.grids);
     this.stateByWorkspaceIdentifier.delete(workspaceIdentifier);
@@ -347,9 +331,15 @@ export class GridListService {
   restoreGridsForWorkspace(gridConfigList: GridConfig[], workspaceIdentifier: string): void {
     const state = this.stateByWorkspaceIdentifier.get(workspaceIdentifier);
     this.destroyWorkspaceGridList(state?.grids);
+    // The workspace's own panes are gone; only the other workspaces' ids are taken.
+    this.stateByWorkspaceIdentifier.set(workspaceIdentifier, { ...state, grids: {} });
+    const takenTerminalIds = this.laidOutTerminalIds();
     const restoredGridList: GridList = {};
     for (const grid of gridConfigList) {
-      restoredGridList[grid.tabId] = { tabId: grid.tabId, tree: this.createTree(grid) };
+      restoredGridList[grid.tabId] = {
+        tabId: grid.tabId,
+        tree: this.createTree(grid, takenTerminalIds),
+      };
     }
     this.stateByWorkspaceIdentifier.set(workspaceIdentifier, { ...state, grids: restoredGridList });
     this.ensureSessions(restoredGridList);
@@ -388,17 +378,35 @@ export class GridListService {
   restoreGrid(gridConfig: GridConfig) {
     const gridList = this.getActiveWorkspaceGridList();
     if (gridList[gridConfig.tabId]) return;
-    gridList[gridConfig.tabId] = { tabId: gridConfig.tabId, tree: this.createTree(gridConfig) };
+    gridList[gridConfig.tabId] = {
+      tabId: gridConfig.tabId,
+      tree: this.createTree(gridConfig, this.laidOutTerminalIds()),
+    };
     this.setActiveWorkspaceGridList(gridList);
   }
 
-  private createTree(paneConfig: GridConfig): BinaryTree<Pane> {
+  /** Every terminal id laid out in any workspace. */
+  private laidOutTerminalIds(): Set<TerminalId> {
+    const ids = new Set<TerminalId>();
+    for (const { grids } of this.stateByWorkspaceIdentifier.values()) {
+      for (const grid of Object.values(grids)) {
+        for (const terminalId of this.leafTerminalIds(grid)) ids.add(terminalId);
+      }
+    }
+    return ids;
+  }
+
+  private createTree(paneConfig: GridConfig, takenTerminalIds: Set<TerminalId>): BinaryTree<Pane> {
     const rootNode: BinaryNode<Pane> = new BinaryNode();
-    this.addNode(rootNode, paneConfig.pane);
+    this.addNode(rootNode, paneConfig.pane, takenTerminalIds);
     return new BinaryTree(rootNode);
   }
 
-  private addNode(parent: BinaryNode<Pane>, nodeConfig: PaneConfig) {
+  private addNode(
+    parent: BinaryNode<Pane>,
+    nodeConfig: PaneConfig,
+    takenTerminalIds: Set<TerminalId>,
+  ) {
     if (nodeConfig.splitDirection) {
       parent.data = { splitDirection: nodeConfig.splitDirection, ratio: nodeConfig.ratio };
       if (!nodeConfig.leftChild || !nodeConfig.rightChild) {
@@ -408,16 +416,29 @@ export class GridListService {
       const rightChild: BinaryNode<Pane> = new BinaryNode();
       parent.addToNode(leftChild, "l");
       parent.addToNode(rightChild, "r");
-      this.addNode(leftChild, nodeConfig.leftChild);
-      this.addNode(rightChild, nodeConfig.rightChild);
+      this.addNode(leftChild, nodeConfig.leftChild, takenTerminalIds);
+      this.addNode(rightChild, nodeConfig.rightChild, takenTerminalIds);
     } else {
+      // Reuse the persisted terminal id so restored scrollback (keyed by it)
+      // matches; generate one for a fresh pane (step 27). A terminal id names
+      // one session in one pane: a persisted id that is laid out already is a
+      // defect in the data, and the pane gets a new id rather than that session.
+      const persistedTerminalId = nodeConfig.terminalId;
+      if (persistedTerminalId && takenTerminalIds.has(persistedTerminalId)) {
+        console.error(
+          `[grid-list] Terminal ${persistedTerminalId} is laid out twice; the second pane gets a new id.`,
+        );
+      }
+      const terminalId =
+        persistedTerminalId && !takenTerminalIds.has(persistedTerminalId)
+          ? persistedTerminalId
+          : IdCreator.newTerminalId();
+      takenTerminalIds.add(terminalId);
       parent.data = {
         shellName: nodeConfig.shellName,
         workingDir: nodeConfig.workingDir,
         title: nodeConfig.title,
-        // Reuse the persisted terminal id so restored scrollback (keyed by it)
-        // matches; only generate one for a fresh pane (step 27).
-        terminalId: nodeConfig.terminalId ?? IdCreator.newTerminalId(),
+        terminalId,
       };
     }
   }

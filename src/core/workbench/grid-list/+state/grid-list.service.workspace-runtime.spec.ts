@@ -90,50 +90,25 @@ describe("GridListService workspace runtime", () => {
     expect(visibleTerminalIds).toEqual(["term-1"]);
   });
 
-  it("moves grids, active tab and maximized pane of the active workspace to the target", () => {
+  it("never lays out one terminal id twice: a restored duplicate gets a fresh id, loudly", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
     addActiveTab("tab-1", "term-1");
-    service.split("term-1", "vertical", "r");
-    service.togglePaneMaximize("term-1");
+    vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-fresh");
 
-    service.moveActiveWorkspaceRuntime("ws-saved");
+    service.restoreGridsForWorkspace(
+      [gridConfig("tab-2", "term-1"), gridConfig("tab-3", "term-3")],
+      "ws-2",
+    );
 
-    expect(grids.map((grid) => grid.tabId)).toEqual(["tab-1"]);
-    expect(activeTabId).toBe("tab-1");
-    expect(maximizedTerminalId).toBe("term-1");
-    expect(service.terminalIdsForWorkspace("ws-saved")).toHaveLength(2);
-    expect(service.findWorkspaceIdentifierByTerminalId("term-1")).toBe("ws-saved");
-    expect(service.terminalIdsForWorkspace(defaultWorkspaceIdContract)).toEqual([]);
-    expect(service.getGridConfigs(defaultWorkspaceIdContract)).toEqual([]);
-    expect(componentFactory.destroy).not.toHaveBeenCalled();
+    expect(service.terminalIdsForWorkspace(defaultWorkspaceIdContract)).toEqual(["term-1"]);
+    expect(service.terminalIdsForWorkspace("ws-2")).toEqual(["term-fresh", "term-3"]);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error.mock.calls[0][0]).toContain("term-1");
 
-    // The target is the active workspace now: writes land there ...
-    addActiveTab("tab-2", "term-2");
-    expect(service.getGridConfigs("ws-saved").map((config) => config.tabId)).toEqual([
-      "tab-1",
-      "tab-2",
-    ]);
-
-    // ... and the source starts empty when it is activated again, while the
-    // moved state is still there on the way back.
-    service.activateWorkspace(defaultWorkspaceIdContract);
-    expect(grids).toEqual([]);
-    expect(activeTabId).toBeUndefined();
-    expect(maximizedTerminalId).toBeUndefined();
-
-    service.activateWorkspace("ws-saved");
-    expect(activeTabId).toBe("tab-2");
-    service.selectGrid("tab-1");
-    expect(activeTabId).toBe("tab-1");
-  });
-
-  it("only activates when the move targets the active workspace", () => {
-    addActiveTab("tab-1", "term-1");
-
-    service.moveActiveWorkspaceRuntime(defaultWorkspaceIdContract);
-
-    expect(grids.map((grid) => grid.tabId)).toEqual(["tab-1"]);
-    expect(activeTabId).toBe("tab-1");
-    expect(service.findWorkspaceIdentifierByTerminalId("term-1")).toBe(defaultWorkspaceIdContract);
+    // Restoring a workspace over itself is not a duplicate: it keeps its ids.
+    service.restoreGridsForWorkspace([gridConfig("tab-3", "term-3")], "ws-2");
+    expect(service.terminalIdsForWorkspace("ws-2")).toEqual(["term-3"]);
+    expect(error).toHaveBeenCalledTimes(1);
   });
 
   it("removes the active workspace: sessions end, the streams empty, writes are refused", () => {

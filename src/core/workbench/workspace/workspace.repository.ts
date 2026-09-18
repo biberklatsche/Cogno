@@ -190,6 +190,17 @@ export class WorkspaceRepository {
     ]);
   }
 
+  /** Drop one terminal's snapshot, e.g. when the terminal id was reassigned on repair. */
+  async deleteTerminalSession(
+    workspaceId: WorkspaceIdentifierContract,
+    terminalId: string,
+  ): Promise<void> {
+    await this.databaseAccess.execute(
+      "DELETE FROM terminal_session WHERE workspace_id = ? AND terminal_id = ?",
+      [workspaceId, terminalId],
+    );
+  }
+
   async getTerminalSessions(
     workspaceId: WorkspaceIdentifierContract,
   ): Promise<WorkspaceTerminalSession[]> {

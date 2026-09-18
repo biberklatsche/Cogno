@@ -42,22 +42,6 @@ export class TabListService {
     this.emitActiveTabList();
   }
 
-  moveActiveWorkspaceRuntime(targetWorkspaceIdentifier: string): void {
-    const sourceWorkspaceIdentifier = this.activeWorkspaceIdentifier;
-    if (!sourceWorkspaceIdentifier || sourceWorkspaceIdentifier === targetWorkspaceIdentifier) {
-      this.activateWorkspace(targetWorkspaceIdentifier);
-      return;
-    }
-
-    this.tabListByWorkspaceIdentifier.set(
-      targetWorkspaceIdentifier,
-      this.getTabListForWorkspace(sourceWorkspaceIdentifier),
-    );
-    this.tabListByWorkspaceIdentifier.delete(sourceWorkspaceIdentifier);
-    this.activeWorkspaceIdentifier = targetWorkspaceIdentifier;
-    this.emitActiveTabList();
-  }
-
   removeWorkspaceRuntime(workspaceIdentifier: string): void {
     this.tabListByWorkspaceIdentifier.delete(workspaceIdentifier);
     if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
