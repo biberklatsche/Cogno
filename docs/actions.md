@@ -141,6 +141,6 @@ Every action, its description and default keybinding. `-` means no default keybi
 | --- | --- | --- | --- |
 | `open_config` | Open the config file in the default editor | Ctrl+, | Command+, |
 | `load_config` | Reload the config file without restarting | - | - |
-| `clear_restore_data` | Delete the saved terminal output and restored layout of session restore; workspaces are kept | - | - |
+| `clear_restore_data` | Delete the saved terminal output and restored layout of session restore | - | - |
 | `open_documentation` | Open the Cogno documentation | - | - |
 | `open_about` | Show the About dialog | - | - |

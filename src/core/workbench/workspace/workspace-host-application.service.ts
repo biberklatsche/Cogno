@@ -255,7 +255,7 @@ export class WorkspaceHostApplicationService {
       type: "Notification",
       payload: {
         header: "Restore data deleted",
-        body: "Saved terminal output and the restored layout were removed. Your workspaces are kept.",
+        body: "Saved terminal output and the restored layout were removed.",
         source: "Workspace",
         timestamp: new Date(),
         type: "info",
