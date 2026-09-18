@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { Limit, resolveLimit } from "@cogno/shared/contributions";
 import { NotificationEventPayloadContract, NotificationTargetContract } from "@cogno/shared/domain";
 import { map, Observable } from "rxjs";
 import { NotificationCenterPortContract } from "./notification-center-port";
@@ -25,9 +26,9 @@ export class NotificationCenterPortAdapterService implements NotificationCenterP
 
   getOverviewMaxItems(): number {
     const config = this.configService.config as {
-      feature?: { notification_overview?: { overview?: { max_items?: number } } };
+      feature?: { notification_overview?: { overview?: { max_items?: Limit } } };
     };
-    return config.feature?.notification_overview?.overview?.max_items ?? 30;
+    return resolveLimit(config.feature?.notification_overview?.overview?.max_items, 30);
   }
 
   openTarget(target: NotificationTargetContract): void {

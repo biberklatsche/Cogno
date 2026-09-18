@@ -71,7 +71,7 @@ async function createService(
 }
 
 type HistorySettings = {
-  max_entries?: number;
+  max_entries?: number | "unlimited";
   ignore_commands_with_leading_space?: boolean;
   allowed_return_codes?: number[];
   allowed_return_codes_by_command?: Record<string, number[]>;
@@ -342,6 +342,27 @@ describe("CommandRecorder", () => {
       "/tmp",
       undefined,
       500,
+      expect.any(Object),
+    );
+  });
+
+  it.each([
+    ["unlimited", undefined],
+    [undefined, undefined],
+    [0, 0],
+  ] as const)("hands max_entries = %s to the repository as %s", async (configured, expected) => {
+    const repositoryDouble = createRepositoryDouble();
+    const configService = createConfigServiceDouble({ max_entries: configured });
+    const { recorder: service } = await createService(repositoryDouble, configService);
+
+    service.onCommandExecuted({ command: "npm test", directory: "/tmp", returnCode: 0 });
+    await flushActions();
+
+    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith(
+      "npm test",
+      "/tmp",
+      undefined,
+      expected,
       expect.any(Object),
     );
   });

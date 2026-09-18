@@ -144,6 +144,18 @@ describe("CommandLogRepository", () => {
     expect(trim?.params).toEqual([7, 500]);
   });
 
+  it("does not trim without a limit, and trims to nothing for a limit of 0", async () => {
+    const repository = await createRepository(database);
+    const trimOf = (call: number) =>
+      batchedStatements(database, call).find((s) => s.sql.includes("DELETE FROM command_log"));
+
+    await repository.upsertCommandExecution("npm test", "/workspace");
+    expect(trimOf(0)).toBeUndefined();
+
+    await repository.upsertCommandExecution("npm test", "/workspace", undefined, 0);
+    expect(trimOf(1)?.params).toEqual([7, 0]);
+  });
+
   it("ignores blank commands and unnormalisable directories", async () => {
     const repository = await createRepository(database);
 

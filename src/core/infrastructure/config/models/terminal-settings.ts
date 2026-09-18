@@ -1,21 +1,21 @@
-import { hexColorSchema } from "@cogno/shared/contributions";
+import { hexColorSchema, limitSchema } from "@cogno/shared/contributions";
 import { z } from "zod";
 
-const decorationColorSchema = z.object({
-  background: hexColorSchema.optional().describe("Fill colour of the decoration."),
-  border: hexColorSchema.optional().describe("Border colour of the decoration."),
+const decorationColorSchema = z.strictObject({
+  background: hexColorSchema.optional().describe("Fill color of the decoration."),
+  border: hexColorSchema.optional().describe("Border color of the decoration."),
   overview_ruler: hexColorSchema
     .optional()
-    .describe("Marker colour in the overview ruler beside the scrollbar."),
+    .describe("Marker color in the overview ruler beside the scrollbar."),
 });
 
-export const TerminalSettingsSchema = z.object({
+export const TerminalSettingsSchema = z.strictObject({
   webgl: z
     .boolean()
     .optional()
     .describe("Render the terminal with the WebGL renderer instead of the canvas one."),
   decoration: z
-    .object({
+    .strictObject({
       color: decorationColorSchema
         .optional()
         .describe("Highlight colors for decorated terminal content, e.g. search matches."),
@@ -24,7 +24,7 @@ export const TerminalSettingsSchema = z.object({
         .describe("Highlight colors for the currently active decorated item."),
     })
     .optional()
-    .describe("Colours of decorated buffer content such as search matches."),
+    .describe("Colors of decorated buffer content such as search matches."),
   inactive_overlay_opacity: z
     .number()
     .int()
@@ -44,20 +44,20 @@ export const TerminalSettingsSchema = z.object({
   allow_transparency: z
     .boolean()
     .optional()
-    .describe("Allow transparent background colours; costs some rendering performance."),
+    .describe("Allow transparent background colors; costs some rendering performance."),
   tab_stop_width: z.number().optional().describe("Width of a tab character in columns."),
   word_separator: z
     .string()
     .optional()
     .describe("Characters that end a word for double-click selection and word-wise motion."),
   progress_bar: z
-    .object({
+    .strictObject({
       enabled: z.boolean().optional().describe("Show the progress bar in the terminal header."),
     })
     .optional()
     .describe("The OSC 9;4 progress bar in the terminal header."),
   notifications: z
-    .object({
+    .strictObject({
       unread_badge: z
         .boolean()
         .optional()
@@ -65,7 +65,7 @@ export const TerminalSettingsSchema = z.object({
           "Show an unread badge on a terminal's tab when a notification-worthy event occurs while it isn't focused.",
         ),
       osc9: z
-        .object({
+        .strictObject({
           enabled: z
             .boolean()
             .optional()
@@ -74,7 +74,7 @@ export const TerminalSettingsSchema = z.object({
         .optional()
         .describe("Notifications a program sends itself via the OSC 9 escape sequence."),
       long_running_command: z
-        .object({
+        .strictObject({
           enabled: z
             .boolean()
             .optional()
@@ -92,14 +92,11 @@ export const TerminalSettingsSchema = z.object({
     .optional()
     .describe("Which terminal events raise a notification."),
   history: z
-    .object({
-      max_entries: z
-        .number()
-        .int()
-        .min(0)
+    .strictObject({
+      max_entries: limitSchema()
         .optional()
         .describe(
-          "Maximum number of commands to keep per shell context in the command history log. Older entries beyond this count are pruned. 0 or unset means unlimited.",
+          "Maximum number of commands to keep per shell context in the command history log, or `unlimited`. Older entries beyond this count are pruned; 0 keeps none.",
         ),
       ignore_commands_with_leading_space: z
         .boolean()
@@ -135,7 +132,7 @@ export const TerminalSettingsSchema = z.object({
     .optional()
     .describe("The recorded command history behind autocomplete and the history panel."),
   restore: z
-    .object({
+    .strictObject({
       enabled: z
         .boolean()
         .optional()

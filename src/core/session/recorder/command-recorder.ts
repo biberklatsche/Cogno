@@ -4,6 +4,7 @@ import { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Paths } from "@cogno/platform/path";
+import { resolveLimit, UNLIMITED } from "@cogno/shared/contributions";
 import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
 import { SessionCommandLog } from "../command-log/session-command-log";
 import { ExecutedCommand } from "./executed-command";
@@ -82,7 +83,7 @@ export class CommandRecorder {
     const persistedCommand = executedCommand.command.trim();
     const timestamp = Date.now();
     const recentPreviousCommand = this.commandLog.transitionSourceCommand();
-    const maxEntries = this.configService?.config.terminal?.history?.max_entries;
+    const maxEntries = this.historyLimit();
     const groupId = this.commandLog.sessionGroupId;
 
     this.commandLog.write(async (writer) => {
@@ -116,9 +117,12 @@ export class CommandRecorder {
       );
       if (entries.length === 0) return;
 
-      const maxEntries = this.configService?.config.terminal?.history?.max_entries;
+      const maxEntries = this.historyLimit();
       const deduplicated = deduplicateByCommand(entries);
-      const limited = maxEntries && maxEntries > 0 ? deduplicated.slice(-maxEntries) : deduplicated;
+      const limited =
+        maxEntries === undefined
+          ? deduplicated
+          : deduplicated.slice(deduplicated.length - maxEntries);
 
       await writer.bulkImportCommands(limited, homeDir);
     } catch (error) {
@@ -142,7 +146,7 @@ export class CommandRecorder {
 
     const persistedCommand = executedCommand.command.trim();
     const groupId = this.commandLog.sessionGroupId;
-    const maxEntries = this.configService?.config.terminal?.history?.max_entries;
+    const maxEntries = this.historyLimit();
 
     await this.commandLog.writeAndAwait((writer) =>
       writer.upsertCommandExecution(
@@ -196,6 +200,15 @@ export class CommandRecorder {
    * one. An empty list is no filter. With a list set, a command whose result is
    * unknown (no return code) is not kept.
    */
+  /** How many commands the history keeps; `undefined` when it is unlimited. */
+  private historyLimit(): number | undefined {
+    const limit = resolveLimit(
+      this.configService?.config.terminal?.history?.max_entries,
+      UNLIMITED,
+    );
+    return Number.isFinite(limit) ? limit : undefined;
+  }
+
   private isReturnCodeAllowed(token: string, returnCode: number | undefined): boolean {
     const history = this.configService?.config.terminal?.history;
     const allowed =

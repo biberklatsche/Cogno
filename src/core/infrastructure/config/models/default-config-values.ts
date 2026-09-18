@@ -170,7 +170,7 @@ export const defaultSettings = {
       },
     },
     history: {
-      max_entries: "0",
+      max_entries: "unlimited",
       ignore_commands_with_leading_space: "false",
       import_shell_history: "false",
       auto_execute: "false",
