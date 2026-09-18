@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommands } from "../_shared/hook-command.builder";
+import { withoutCognoHooks } from "../_shared/hook-groups";
 import { CODEX_CONFIG, CodexHookGroup, CodexHooksFile } from "./codex.config";
 
 @Injectable({ providedIn: "root" })
@@ -39,17 +40,10 @@ export class CodexProvider implements ICodingAgentProvider {
     for (const entry of CODEX_CONFIG.hookEvents) {
       const { command, commandWindows } = buildHookCommands(entry.status, this.id, entry.eventName);
       const existing: CodexHookGroup[] = file.hooks[entry.eventName] ?? [];
-      const withoutCogno = existing
-        .map((group) => ({
-          ...group,
-          hooks: group.hooks.filter(
-            (h) => !CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
-          ),
-        }))
-        .filter((group) => group.hooks.length > 0);
-
       file.hooks[entry.eventName] = [
-        ...withoutCogno,
+        ...withoutCognoHooks(existing, (h) =>
+          CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
+        ),
         { hooks: [{ type: "command", command, commandWindows }] },
       ];
     }
@@ -66,14 +60,9 @@ export class CodexProvider implements ICodingAgentProvider {
     for (const { eventName } of CODEX_CONFIG.hookEvents) {
       const existing = file.hooks[eventName];
       if (!existing) continue;
-      const cleaned = existing
-        .map((group) => ({
-          ...group,
-          hooks: group.hooks.filter(
-            (h) => !CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
-          ),
-        }))
-        .filter((group) => group.hooks.length > 0);
+      const cleaned = withoutCognoHooks(existing, (h) =>
+        CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
+      );
 
       if (cleaned.length === 0) {
         delete file.hooks[eventName];

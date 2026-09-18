@@ -2,7 +2,8 @@ import { Injectable } from "@angular/core";
 import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
-import { CLAUDE_CODE_CONFIG, ClaudeSettings, CognoManifest } from "./claude-code.config";
+import { withoutCognoHooks } from "../_shared/hook-groups";
+import { CLAUDE_CODE_CONFIG, ClaudeSettings } from "./claude-code.config";
 
 @Injectable({ providedIn: "root" })
 export class ClaudeCodeProvider implements ICodingAgentProvider {
@@ -31,7 +32,6 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
   async installHook(shellType?: string): Promise<void> {
     const configDir = await this.configDir();
     const configPath = await this.configFile.joinPath(configDir, CLAUDE_CODE_CONFIG.configFileName);
-    const manifestPath = await this.manifestPath();
 
     await this.configFile.ensureDir(configDir);
 
@@ -41,15 +41,10 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     const shell = shellType === "PowerShell" ? "powershell" : "bash";
     for (const entry of CLAUDE_CODE_CONFIG.hookEvents) {
       const command = buildHookCommand(entry.status, shellType, this.id, entry.eventName);
-      const existing = settings.hooks[entry.eventName] ?? [];
-      const withoutCogno = existing
-        .map((group) => ({
-          ...group,
-          hooks: group.hooks.filter((h) => !CLAUDE_CODE_CONFIG.isCognoCommand(h.command)),
-        }))
-        .filter((group) => group.hooks.length > 0);
       settings.hooks[entry.eventName] = [
-        ...withoutCogno,
+        ...withoutCognoHooks(settings.hooks[entry.eventName] ?? [], (h) =>
+          CLAUDE_CODE_CONFIG.isCognoCommand(h.command),
+        ),
         {
           ...(entry.matcher ? { matcher: entry.matcher } : {}),
           hooks: [{ type: "command", command, shell }],
@@ -58,37 +53,28 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     }
 
     await this.configFile.writeJson(configPath, settings);
-    await this.configFile.writeJson(manifestPath, {
-      installedAt: new Date().toISOString(),
-    } satisfies CognoManifest);
   }
 
   async removeHook(): Promise<void> {
     const configDir = await this.configDir();
     const configPath = await this.configFile.joinPath(configDir, CLAUDE_CODE_CONFIG.configFileName);
-    const manifestPath = await this.manifestPath();
 
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
-    if (settings.hooks) {
-      for (const entry of CLAUDE_CODE_CONFIG.hookEvents) {
-        const existing = settings.hooks[entry.eventName];
-        if (!existing) continue;
-        const cleaned = existing
-          .map((group) => ({
-            ...group,
-            hooks: group.hooks.filter((h) => !CLAUDE_CODE_CONFIG.isCognoCommand(h.command)),
-          }))
-          .filter((group) => group.hooks.length > 0);
+    if (!settings.hooks) return;
 
-        if (cleaned.length === 0) {
-          delete settings.hooks[entry.eventName];
-        } else {
-          settings.hooks[entry.eventName] = cleaned;
-        }
+    for (const entry of CLAUDE_CODE_CONFIG.hookEvents) {
+      const existing = settings.hooks[entry.eventName];
+      if (!existing) continue;
+      const cleaned = withoutCognoHooks(existing, (h) =>
+        CLAUDE_CODE_CONFIG.isCognoCommand(h.command),
+      );
+      if (cleaned.length === 0) {
+        delete settings.hooks[entry.eventName];
+      } else {
+        settings.hooks[entry.eventName] = cleaned;
       }
-      await this.configFile.writeJson(configPath, settings);
     }
-    await this.configFile.writeJson(manifestPath, { uninstalled: true });
+    await this.configFile.writeJson(configPath, settings);
   }
 
   private async configDir(): Promise<string> {
@@ -96,9 +82,5 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
       await this.configFile.homeDir(),
       CLAUDE_CODE_CONFIG.configSubDir,
     );
-  }
-
-  private async manifestPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), CLAUDE_CODE_CONFIG.manifestFileName);
   }
 }

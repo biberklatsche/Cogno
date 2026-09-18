@@ -1,4 +1,5 @@
 import { Injectable, Signal, signal } from "@angular/core";
+import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { OsPlatform } from "@cogno/platform";
 import { ApplicationConfigurationPort } from "@cogno/shared/ports";
@@ -9,6 +10,13 @@ export type InstalledProviderEntry = {
   readonly provider: ICodingAgentProvider;
   readonly hasHook: boolean;
 };
+
+/**
+ * Where the user said no to a hook, or took one out again. Cogno offers the
+ * hook once per agent; after that the panel is the place to change one's mind.
+ */
+const HOOK_DECISIONS_STORAGE_KEY = "cogno.coding-agents.hook-decisions";
+type HookDecision = "declined" | "removed";
 
 @Injectable({ providedIn: "root" })
 export class CodingAgentStartupService {
@@ -24,6 +32,7 @@ export class CodingAgentStartupService {
     private readonly confirmDialog: CodingAgentConfirmDialogService,
     private readonly configPort: ApplicationConfigurationPort,
     private readonly osPort: OsPlatform,
+    private readonly notificationCenterPort: NotificationCenterPort,
   ) {
     if (!this.isEnabled()) return;
     void this.rescan();
@@ -41,7 +50,7 @@ export class CodingAgentStartupService {
         if (!(await provider.isAgentInstalled())) continue;
         const hasHook = await provider.isHookInstalled();
         installed.push({ provider, hasHook });
-        if (!hasHook) needsHooks.push(provider);
+        if (!hasHook && !this.decisionFor(provider)) needsHooks.push(provider);
       } catch {
         // Provider config inaccessible — skip silently
       }
@@ -55,6 +64,42 @@ export class CodingAgentStartupService {
     }
   }
 
+  /** Installs the hook from the panel; a "no" or a removal from before no longer counts. */
+  async installHook(provider: ICodingAgentProvider): Promise<void> {
+    await this.changeHook(provider, "install", async () => {
+      await provider.installHook(this.resolveDefaultShellType());
+      this.rememberDecision(provider, undefined);
+    });
+  }
+
+  /** Takes the Cogno hook out of the agent's config; Cogno will not offer it again. */
+  async removeHook(provider: ICodingAgentProvider): Promise<void> {
+    await this.changeHook(provider, "remove", async () => {
+      await provider.removeHook();
+      this.rememberDecision(provider, "removed");
+    });
+  }
+
+  /** Runs the change, then rescans; a failing provider becomes a notification. */
+  private async changeHook(
+    provider: ICodingAgentProvider,
+    verb: "install" | "remove",
+    change: () => Promise<void>,
+  ): Promise<void> {
+    try {
+      await change();
+    } catch (error) {
+      this.notificationCenterPort.dispatch({
+        header: `Could not ${verb} the ${provider.name} hook`,
+        body: error instanceof Error ? error.message : String(error),
+        type: "error",
+        timestamp: new Date(),
+      });
+      return;
+    }
+    await this.rescan();
+  }
+
   private async offerHookInstallation(needsHooks: ICodingAgentProvider[]): Promise<void> {
     const names = needsHooks.map((p) => p.name).join(", ");
     const confirmed = await this.confirmDialog
@@ -64,7 +109,10 @@ export class CodingAgentStartupService {
       )
       .catch(() => false);
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      for (const provider of needsHooks) this.rememberDecision(provider, "declined");
+      return;
+    }
 
     const shellType = this.resolveDefaultShellType();
     for (const provider of needsHooks) {
@@ -76,6 +124,39 @@ export class CodingAgentStartupService {
     }
 
     await this.rescan();
+  }
+
+  private decisionFor(provider: ICodingAgentProvider): HookDecision | undefined {
+    return this.readDecisions()[provider.id];
+  }
+
+  private rememberDecision(
+    provider: ICodingAgentProvider,
+    decision: HookDecision | undefined,
+  ): void {
+    const decisions = this.readDecisions();
+    if (decision) {
+      decisions[provider.id] = decision;
+    } else {
+      delete decisions[provider.id];
+    }
+    try {
+      window.localStorage.setItem(HOOK_DECISIONS_STORAGE_KEY, JSON.stringify(decisions));
+    } catch {
+      // No storage (private window, blocked site data): the offer simply repeats.
+    }
+  }
+
+  private readDecisions(): Record<string, HookDecision> {
+    try {
+      const raw = window.localStorage.getItem(HOOK_DECISIONS_STORAGE_KEY);
+      const parsed: unknown = raw ? JSON.parse(raw) : {};
+      return typeof parsed === "object" && parsed !== null
+        ? (parsed as Record<string, HookDecision>)
+        : {};
+    } catch {
+      return {};
+    }
   }
 
   private isEnabled(): boolean {

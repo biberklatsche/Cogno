@@ -199,8 +199,12 @@ instead of following focus; the unbound/closing/closed states. Setting:
 **Required sections:** Cogno detects coding agents running in a terminal and
 shows their state (working, question, ready, error) in the tab and the side
 panel; which agents are supported (read the providers directory — do not
-hard-code the list); notifications per state. Settings: the generated
-`feature.coding_agents.*` rows. Action: `open_coding_agents`.
+hard-code the list); notifications per state. Hooks: Cogno sees an agent's
+state through a hook it writes into the agent's own config; on the first scan
+Cogno offers to install it once per agent, and the "Detected" list in the panel
+lets the user install (plus) or remove (trash, then confirm with the check
+mark) the hook at any time. A removed hook is not offered again. Settings: the
+generated `feature.coding_agents.*` rows. Action: `open_coding_agents`.
 
 ---
 

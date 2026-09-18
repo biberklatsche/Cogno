@@ -6,16 +6,22 @@ import {
   buildNotificationPreferencesMenuItems,
   NotificationPreferencesState,
 } from "@cogno/shared/domain";
-import { ContextMenuOverlayService, IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import {
+  ContextMenuOverlayService,
+  CopyEditDeleteComponent,
+  IconComponent,
+  TooltipDirective,
+} from "@cogno/shared/ui";
 import { AgentAnimationComponent } from "./agent-animation.component";
 import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
 import { ActiveAgent, AgentStatus, CodingAgentStatusService } from "./coding-agent-status.service";
+import type { ICodingAgentProvider } from "./ports";
 
 @Component({
   selector: "app-coding-agents-side",
   standalone: true,
-  imports: [IconComponent, TooltipDirective, AgentAnimationComponent],
+  imports: [IconComponent, TooltipDirective, AgentAnimationComponent, CopyEditDeleteComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="agents-panel">
@@ -108,6 +114,23 @@ import { ActiveAgent, AgentStatus, CodingAgentStatusService } from "./coding-age
                 [name]="entry.hasHook ? 'mdiCheck' : 'mdiAlert'"
                 [appTooltip]="entry.hasHook ? 'Hook installed' : 'Hook not installed'"
               ></app-icon>
+              @if (entry.hasHook) {
+                <app-copy-edit-delete
+                  class="hook-action"
+                  [enableEdit]="false"
+                  [enableDelete]="true"
+                  (onEvent)="$event === 'delete' && removeHook(entry.provider)"
+                ></app-copy-edit-delete>
+              } @else {
+                <button
+                  type="button"
+                  class="button icon-button hook-action"
+                  [appTooltip]="'Install hook'"
+                  (click)="installHook(entry.provider)"
+                >
+                  <app-icon name="mdiPlus"></app-icon>
+                </button>
+              }
             </div>
           }
         </div>
@@ -195,6 +218,18 @@ import { ActiveAgent, AgentStatus, CodingAgentStatusService } from "./coding-age
     .hook-missing {
       color: var(--color-warning, #ff9800);
       opacity: 0.8;
+    }
+
+    .hook-action {
+      flex-shrink: 0;
+    }
+
+    button.hook-action {
+      color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
+
+      &:hover {
+        color: var(--foreground-color);
+      }
     }
 
     .detect-button {
@@ -389,6 +424,14 @@ export class CodingAgentsSideComponent {
 
   showActive(): void {
     this.view.set("active");
+  }
+
+  installHook(provider: ICodingAgentProvider): void {
+    void this.startupService.installHook(provider);
+  }
+
+  removeHook(provider: ICodingAgentProvider): void {
+    void this.startupService.removeHook(provider);
   }
 
   rescan(): void {

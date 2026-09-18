@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
+import { withoutCognoHooks } from "../_shared/hook-groups";
 import { GEMINI_CONFIG, GeminiHookGroup, GeminiSettings } from "./gemini.config";
 
 @Injectable({ providedIn: "root" })
@@ -38,14 +39,8 @@ export class GeminiProvider implements ICodingAgentProvider {
     for (const entry of GEMINI_CONFIG.hookEvents) {
       const command = buildHookCommand(entry.status, shellType, this.id, entry.eventName);
       const existing: GeminiHookGroup[] = settings.hooks[entry.eventName] ?? [];
-      const withoutCogno = existing
-        .map((group) => ({
-          ...group,
-          hooks: group.hooks.filter((h) => !GEMINI_CONFIG.isCognoCommand(h.command)),
-        }))
-        .filter((group) => group.hooks.length > 0);
       settings.hooks[entry.eventName] = [
-        ...withoutCogno,
+        ...withoutCognoHooks(existing, (h) => GEMINI_CONFIG.isCognoCommand(h.command)),
         { hooks: [{ type: "command", command }] },
       ];
     }
@@ -64,12 +59,7 @@ export class GeminiProvider implements ICodingAgentProvider {
     for (const { eventName } of GEMINI_CONFIG.hookEvents) {
       const existing = settings.hooks[eventName];
       if (!existing) continue;
-      const cleaned = existing
-        .map((group) => ({
-          ...group,
-          hooks: group.hooks.filter((h) => !GEMINI_CONFIG.isCognoCommand(h.command)),
-        }))
-        .filter((group) => group.hooks.length > 0);
+      const cleaned = withoutCognoHooks(existing, (h) => GEMINI_CONFIG.isCognoCommand(h.command));
       if (cleaned.length === 0) delete settings.hooks[eventName];
       else settings.hooks[eventName] = cleaned;
     }

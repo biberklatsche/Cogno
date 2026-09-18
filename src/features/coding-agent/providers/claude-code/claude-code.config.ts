@@ -23,16 +23,11 @@ export type ClaudeSettings = {
   [key: string]: unknown;
 };
 
-export type CognoManifest = {
-  installedAt: string;
-};
-
 export const CLAUDE_CODE_CONFIG = {
   id: "claude-code",
   name: "Claude Code",
   configSubDir: ".claude",
   configFileName: "settings.json",
-  manifestFileName: "cogno-hooks.json",
   hookEvents: [
     { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
     { eventName: "SessionStart", status: "ready" as AgentStatus },
