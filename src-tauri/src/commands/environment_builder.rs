@@ -63,6 +63,9 @@ impl EnvironmentBuilder {
     /// merge it as a baseline. When shell integration is disabled there is no
     /// bootstrap script, so the login PATH directly replaces the (minimal)
     /// GUI-process PATH the child would otherwise inherit.
+    ///
+    /// `lang` is the UTF-8 fallback for an app process without a locale; it is
+    /// `None` when the process already has one to inherit.
     pub fn with_login_environment(
         mut self,
         login_path: Option<String>,
@@ -79,12 +82,7 @@ impl EnvironmentBuilder {
         }
 
         if let Some(lang) = lang {
-            let lang_missing = std::env::var("LANG")
-                .map(|value| value.trim().is_empty())
-                .unwrap_or(true);
-            if lang_missing {
-                self.env.insert("LANG".to_string(), lang);
-            }
+            self.env.insert("LANG".to_string(), lang);
         }
 
         self
@@ -186,5 +184,43 @@ impl EnvironmentBuilder {
 
     pub fn session_id(&self) -> &str {
         &self.session_id
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn builder() -> EnvironmentBuilder {
+        EnvironmentBuilder::new(PathBuf::from("/root"), PathBuf::from("/logs"), true, true)
+    }
+
+    #[test]
+    fn fallback_lang_is_set_without_login_path() {
+        let env = builder()
+            .with_login_environment(None, Some("de_DE.UTF-8".to_string()))
+            .build()
+            .env;
+        assert_eq!(env.get("LANG").map(String::as_str), Some("de_DE.UTF-8"));
+    }
+
+    #[test]
+    fn lang_is_left_to_the_process_when_no_fallback_is_needed() {
+        let env = builder()
+            .with_login_environment(Some("/usr/bin".to_string()), None)
+            .build()
+            .env;
+        assert!(!env.contains_key("LANG"));
+    }
+
+    #[test]
+    fn profile_env_overrides_fallback_lang() {
+        let custom = HashMap::from([("LANG".to_string(), "fr_FR.UTF-8".to_string())]);
+        let env = builder()
+            .with_login_environment(None, Some("de_DE.UTF-8".to_string()))
+            .with_custom_env(custom)
+            .build()
+            .env;
+        assert_eq!(env.get("LANG").map(String::as_str), Some("fr_FR.UTF-8"));
     }
 }

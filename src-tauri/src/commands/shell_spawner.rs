@@ -95,7 +95,10 @@ impl ShellSpawner {
             load_user_rc,
             enable_integration,
         )
-        .with_login_environment(login_environment.path, login_environment.lang)
+        .with_login_environment(
+            login_environment.path,
+            super::login_environment::fallback_lang(),
+        )
         .with_path_injection(inject_cogno_cli, cogno_paths, &profile.shell_type)
         .with_shell_specific_env(&profile.shell_type, &working_dir, enable_integration);
 
