@@ -195,7 +195,8 @@ import type { ICodingAgentProvider } from "./ports";
       align-items: center;
       gap: 0.4rem;
       padding: 0.2rem 0;
-      font-size: 0.85rem;
+      /* Same type size as a command palette entry. */
+      font-size: 0.9rem;
     }
 
     .detected-icon {
