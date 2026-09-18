@@ -5,8 +5,9 @@ use std::time::Duration;
 ///
 /// GUI processes on macOS (and some Linux setups) are started by launchd/systemd
 /// with a minimal environment. The values captured here serve as a baseline so
-/// spawned terminals see the same PATH/locale as the user's normal terminal,
-/// even when shell integration or rc replay is unavailable.
+/// spawned terminals see the same PATH as the user's normal terminal, even
+/// when shell integration or rc replay is unavailable. The locale is handled
+/// separately by `fallback_lang`.
 #[derive(Debug, Clone, Default)]
 pub struct LoginEnvironment {
     pub path: Option<String>,
@@ -239,7 +240,7 @@ fn detect_lang() -> Option<String> {
 /// Language and region are independent settings on macOS, so AppleLocale can
 /// be a combination like "en_DE" that has no locale definition. Such a LANG
 /// silently degrades to the C locale, hence the existence check.
-#[cfg(any(target_os = "macos", test))]
+#[cfg(any(target_os = "macos", all(test, unix)))]
 fn lang_from_apple_locale(
     apple_locale: Option<&str>,
     locale_exists: impl Fn(&str) -> bool,
