@@ -70,10 +70,14 @@ async function createService(
   return { recorder, commandLog };
 }
 
-function createConfigServiceDouble(history: {
+type HistorySettings = {
   max_entries?: number;
   ignore_commands_with_leading_space?: boolean;
-}): ConfigService {
+  allowed_return_codes?: number[];
+  allowed_return_codes_by_command?: Record<string, number[]>;
+};
+
+function createConfigServiceDouble(history: HistorySettings): ConfigService {
   return {
     config: { terminal: { history } },
   } as unknown as ConfigService;
@@ -135,30 +139,116 @@ describe("CommandRecorder", () => {
     const repositoryDouble = createRepositoryDouble();
     const { recorder: service } = await createService(repositoryDouble);
 
-    service.setAllowedReturnCodesForCommand("cd", [0, 1, 2]);
     service.onCommandExecuted({ command: "cd ..", directory: "/tmp", returnCode: 0 });
     await flushActions();
 
     expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
   });
 
-  it("supports per-command return code whitelist", async () => {
-    const repositoryDouble = createRepositoryDouble();
-    const { recorder: service } = await createService(repositoryDouble);
+  describe("allowed return codes", () => {
+    const run = (
+      service: CommandRecorder,
+      command: string,
+      returnCode: number | undefined,
+      commandExists = true,
+    ) => service.onCommandExecuted({ command, directory: "/tmp", returnCode, commandExists });
+    const persisted = (repositoryDouble: CommandLogRepositoryDouble) =>
+      repositoryDouble.upsertCommandExecution.mock.calls.map((call) => call[0]);
 
-    service.setAllowedReturnCodesForCommand("grep", [0, 1]);
-    service.onCommandExecuted({ command: "grep foo file.txt", directory: "/tmp", returnCode: 1 });
-    service.onCommandExecuted({ command: "grep foo file.txt", directory: "/tmp", returnCode: 2 });
-    await flushActions();
+    it("keeps every return code while the list is empty (the default)", async () => {
+      const repositoryDouble = createRepositoryDouble();
+      const config = createConfigServiceDouble({ allowed_return_codes: [] });
+      const { recorder } = await createService(repositoryDouble, config);
 
-    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledTimes(1);
-    expect(repositoryDouble.upsertCommandExecution).toHaveBeenCalledWith(
-      "grep foo file.txt",
-      "/tmp",
-      undefined,
-      undefined,
-      expect.any(Object),
-    );
+      run(recorder, "ls /nope", 1);
+      run(recorder, "make", 2);
+      await flushActions();
+
+      expect(persisted(repositoryDouble)).toEqual(["ls /nope", "make"]);
+    });
+
+    it("keeps only the listed return codes once the list is set", async () => {
+      const repositoryDouble = createRepositoryDouble();
+      const config = createConfigServiceDouble({ allowed_return_codes: [0] });
+      const { recorder } = await createService(repositoryDouble, config);
+
+      run(recorder, "ls", 0);
+      run(recorder, "ls /nope", 1);
+      await flushActions();
+
+      expect(persisted(repositoryDouble)).toEqual(["ls"]);
+    });
+
+    it("lets a command's own list win over the global one", async () => {
+      const repositoryDouble = createRepositoryDouble();
+      const config = createConfigServiceDouble({
+        allowed_return_codes: [0],
+        allowed_return_codes_by_command: { grep: [0, 1] },
+      });
+      const { recorder } = await createService(repositoryDouble, config);
+
+      run(recorder, "grep foo file.txt", 1);
+      run(recorder, "grep foo file.txt", 2);
+      run(recorder, "ls /nope", 1);
+      await flushActions();
+
+      expect(persisted(repositoryDouble)).toEqual(["grep foo file.txt"]);
+    });
+
+    it("matches the command's list by its first word, ignoring case", async () => {
+      const repositoryDouble = createRepositoryDouble();
+      const config = createConfigServiceDouble({
+        allowed_return_codes: [0],
+        allowed_return_codes_by_command: { grep: [1] },
+      });
+      const { recorder } = await createService(repositoryDouble, config);
+
+      run(recorder, "GREP -r foo .", 1);
+      run(recorder, "sudo grep foo", 1);
+      await flushActions();
+
+      expect(persisted(repositoryDouble)).toEqual(["GREP -r foo ."]);
+    });
+
+    it("never keeps a command the shell reports as missing, whatever the list says", async () => {
+      const repositoryDouble = createRepositoryDouble();
+      const config = createConfigServiceDouble({ allowed_return_codes: [0, 127] });
+      const { recorder } = await createService(repositoryDouble, config);
+
+      run(recorder, "gti status", 127, false);
+      await flushActions();
+
+      expect(persisted(repositoryDouble)).toEqual([]);
+    });
+
+    it("drops a command without a return code while a list is set, keeps it while the list is empty", async () => {
+      const repositoryDouble = createRepositoryDouble();
+      const config = createConfigServiceDouble({ allowed_return_codes: [0] });
+      const { recorder } = await createService(repositoryDouble, config);
+      run(recorder, "ls", undefined);
+      await flushActions();
+      expect(persisted(repositoryDouble)).toEqual([]);
+
+      const permissive = createRepositoryDouble();
+      const { recorder: lenient } = await createService(permissive, createConfigServiceDouble({}));
+      run(lenient, "ls", undefined);
+      await flushActions();
+      expect(persisted(permissive)).toEqual(["ls"]);
+    });
+
+    it("follows the config as it is at the time of the command", async () => {
+      const repositoryDouble = createRepositoryDouble();
+      const settings: HistorySettings = { allowed_return_codes: [] };
+      const config = { config: { terminal: { history: settings } } } as unknown as ConfigService;
+      const { recorder } = await createService(repositoryDouble, config);
+
+      run(recorder, "make", 2);
+      settings.allowed_return_codes = [0];
+      run(recorder, "make", 2);
+      await flushActions();
+
+      expect(persisted(repositoryDouble)).toEqual(["make"]);
+    });
   });
 
   it("persists transitions for consecutive successful commands", async () => {

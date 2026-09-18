@@ -174,6 +174,7 @@ export const defaultSettings = {
       ignore_commands_with_leading_space: "false",
       import_shell_history: "false",
       auto_execute: "false",
+      allowed_return_codes: "[]",
     },
     restore: {
       enabled: "true",

@@ -119,6 +119,18 @@ export const TerminalSettingsSchema = z.object({
         .describe(
           "When enabled, selecting a history entry immediately executes the command. When disabled (default), the entry is written to the input line and must be confirmed with Enter.",
         ),
+      allowed_return_codes: z
+        .array(z.number().int())
+        .optional()
+        .describe(
+          "Return codes a command may exit with to be added to the history, e.g. `[0]` to keep only successful commands. Empty (default) keeps every command that exists. A command's own list under `allowed_return_codes_by_command` wins.",
+        ),
+      allowed_return_codes_by_command: z
+        .record(z.string(), z.array(z.number().int()))
+        .optional()
+        .describe(
+          'Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.',
+        ),
     })
     .optional()
     .describe("The recorded command history behind autocomplete and the history panel."),

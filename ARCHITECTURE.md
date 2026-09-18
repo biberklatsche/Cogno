@@ -610,9 +610,15 @@ setzt eigene SELECTs ab. Zielbild — drei Rollen, drei Orte:
 Konsequenz: `TerminalHistoryPersistenceService` löst sich in Recorder (der
 sitzungsgebundene Teil mit `initialize`/`onCwdChanged`/`onCommandExecuted`)
 und die Abfrage-API auf; `HistoryRepository` wird der `command-log/`-Kern. Die
-Rückkehrcode-Whitelist (`setAllowedReturnCodes*`) ist Recorder-Konfiguration —
-als Mechanismus vorhanden, aber noch ohne Config-Schlüssel und Aufrufer
-(geplantes Feature); bis dahin gilt „Rückkehrcode 0".
+Rückkehrcode-Regel ist Recorder-Konfiguration und kommt aus der Config:
+`terminal.history.allowed_return_codes` (leer = kein Filter, der
+Auslieferungszustand; `[0]` = nur erfolgreiche Kommandos) und
+`allowed_return_codes_by_command.<kommando>` als Ausnahme je erstem Wort
+(`grep = [0,1]`, weil Exit 1 dort „nichts gefunden" heißt). Sie greift erst
+nach der ersten Hürde: ein Kommando, das die Shell nicht gefunden hat
+(`commandExists`), wird nie gespeichert, ein Tippfehler im Namen also auch bei
+leerer Liste nicht. Der Recorder liest die Config bei jeder Entscheidung, ein
+Reload wirkt sofort.
 Der Degradationspfad „DB fehlt" liegt einmal in `command-log/`; jede Sicht sieht
 dann eine leere, aber gültige Datenquelle.
 

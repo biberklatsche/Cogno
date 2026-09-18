@@ -8,11 +8,6 @@ import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain
 import { SessionCommandLog } from "../command-log/session-command-log";
 import { ExecutedCommand } from "./executed-command";
 
-type ReturnCodePolicy = {
-  defaultAllowedCodes: Set<number>;
-  perCommandAllowedCodes: Map<string, Set<number>>;
-};
-
 function deduplicateByCommand(
   entries: { command: string; timestamp: number }[],
 ): { command: string; timestamp: number }[] {
@@ -46,10 +41,6 @@ function firstToken(commandRaw: string): string {
 export class CommandRecorder {
   private static shellHistoryImportStarted = false;
 
-  private readonly returnCodePolicy: ReturnCodePolicy = {
-    defaultAllowedCodes: new Set([0]),
-    perCommandAllowedCodes: new Map<string, Set<number>>(),
-  };
   private lastCwdRaw = "";
 
   constructor(
@@ -109,23 +100,6 @@ export class CommandRecorder {
     });
 
     this.commandLog.recordExecutionForTransition(persistedCommand, timestamp);
-  }
-
-  setDefaultAllowedReturnCodes(codes: number[]): void {
-    this.returnCodePolicy.defaultAllowedCodes = new Set(codes);
-  }
-
-  setAllowedReturnCodesForCommand(commandToken: string, codes: number[]): void {
-    const token = commandToken.trim().toLowerCase();
-    if (!token) return;
-    this.returnCodePolicy.perCommandAllowedCodes.set(token, new Set(codes));
-  }
-
-  setAllowedReturnCodeWhitelist(whitelist: Record<string, number[]>): void {
-    this.returnCodePolicy.perCommandAllowedCodes.clear();
-    for (const [token, codes] of Object.entries(whitelist)) {
-      this.setAllowedReturnCodesForCommand(token, codes);
-    }
   }
 
   private async importShellHistoryIfEmpty(
@@ -209,16 +183,24 @@ export class CommandRecorder {
     if (!this.isRecordableCommandText(executedCommand) || executedCommand === undefined) {
       return false;
     }
-    const command = executedCommand.command.trim();
-    const token = firstToken(command);
-    if (executedCommand.commandExists === true) return true;
+    // A command the shell could not find is a typo, whatever its return code.
     if (executedCommand.commandExists === false) return false;
-    if (executedCommand.returnCode === undefined || !Number.isFinite(executedCommand.returnCode))
-      return false;
+    return this.isReturnCodeAllowed(
+      firstToken(executedCommand.command),
+      executedCommand.returnCode,
+    );
+  }
 
+  /**
+   * The configured return-code filter: the command's own list, else the global
+   * one. An empty list is no filter. With a list set, a command whose result is
+   * unknown (no return code) is not kept.
+   */
+  private isReturnCodeAllowed(token: string, returnCode: number | undefined): boolean {
+    const history = this.configService?.config.terminal?.history;
     const allowed =
-      this.returnCodePolicy.perCommandAllowedCodes.get(token) ??
-      this.returnCodePolicy.defaultAllowedCodes;
-    return allowed.has(executedCommand.returnCode);
+      history?.allowed_return_codes_by_command?.[token] ?? history?.allowed_return_codes ?? [];
+    if (allowed.length === 0) return true;
+    return returnCode !== undefined && allowed.includes(returnCode);
   }
 }
