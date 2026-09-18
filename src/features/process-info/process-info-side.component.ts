@@ -17,7 +17,7 @@ type ProcessTreeNode = {
   template: `
     <div class="process-panel">
       <header class="panel-header">
-        <span class="panel-title">Process Info</span>
+        <span class="panel-title"></span>
         <button
           type="button"
           class="button icon-button"
@@ -158,9 +158,7 @@ type ProcessTreeNode = {
       padding: 0.25rem 0;
     }
 
-    .panel-title {
-      font-weight: 600;
-    }
+
 
     .icon-button.is-active {
       opacity: 1;

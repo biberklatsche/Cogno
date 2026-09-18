@@ -179,7 +179,7 @@ import type { ICodingAgentProvider } from "./ports";
       display: flex;
       flex-direction: column;
       gap: 0.15rem;
-      padding-bottom: 0.5rem;
+      padding: 0.5rem 0;
     }
 
     .detected-empty {
