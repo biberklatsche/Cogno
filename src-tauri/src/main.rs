@@ -1,9 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use clap::Parser;
-use cogno_lib::cli::{
-    try_run_action_over_http, ActionCommand, Cli, CliCommand, ConfigCommand,
-};
 use cogno_lib::actions_generated::COGNO_ACTIONS;
+use cogno_lib::cli::{try_run_action_over_http, ActionCommand, Cli, CliCommand, ConfigCommand};
 use cogno_lib::commands::config::read_default_config;
 use cogno_lib::commands::environment::get_cogno_config_file_path;
 use std::collections::HashMap;
@@ -179,7 +177,10 @@ fn validate_action_run_command(cli: &Cli) {
         return;
     };
 
-    if COGNO_ACTIONS.iter().any(|(action_name, _)| *action_name == name.as_str()) {
+    if COGNO_ACTIONS
+        .iter()
+        .any(|(action_name, _)| *action_name == name.as_str())
+    {
         return;
     }
 

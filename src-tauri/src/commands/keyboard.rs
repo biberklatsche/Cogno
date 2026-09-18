@@ -90,7 +90,8 @@ mod tests {
 
     #[test]
     fn setxkbmap_with_several_layouts_yields_the_first() {
-        let output = "rules:      evdev\nmodel:      pc105\nlayout:     us,de\nvariant:    ,nodeadkeys\n";
+        let output =
+            "rules:      evdev\nmodel:      pc105\nlayout:     us,de\nvariant:    ,nodeadkeys\n";
 
         assert_eq!(layout_from_setxkbmap(output), Some("us".to_string()));
     }

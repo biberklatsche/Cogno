@@ -85,9 +85,8 @@ impl ShellSpawner {
         // Bounded wait: prefetch usually finished long ago; if the user's rc
         // files are slow or hang, spawn without the login baseline instead of
         // blocking the terminal.
-        let login_environment = super::login_environment::get_login_environment(
-            std::time::Duration::from_secs(2),
-        );
+        let login_environment =
+            super::login_environment::get_login_environment(std::time::Duration::from_secs(2));
 
         let env_builder = EnvironmentBuilder::new(
             self.integration_root.clone(),

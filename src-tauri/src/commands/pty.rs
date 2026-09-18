@@ -10,8 +10,8 @@ use tauri::{AppHandle, Manager, State};
 
 use super::window_registry::{route, WindowRegistry};
 
-use crate::http_server::HttpServerState;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
+use crate::http_server::HttpServerState;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpawnOptions {
@@ -162,7 +162,11 @@ impl FlowControl {
         Self::with_watermarks(HIGH_WATERMARK, LOW_WATERMARK, MAX_IN_FLIGHT_CHUNKS)
     }
 
-    fn with_watermarks(high_watermark: usize, low_watermark: usize, max_in_flight_chunks: usize) -> Self {
+    fn with_watermarks(
+        high_watermark: usize,
+        low_watermark: usize,
+        max_in_flight_chunks: usize,
+    ) -> Self {
         Self {
             state: Mutex::new(FlowState {
                 in_flight_bytes: 0,
@@ -266,7 +270,11 @@ impl FlowControl {
     /// chunk whose `received` ack never arrived, the chunk-count cap too.
     fn ack_through(&self, seq: u32) {
         let mut state = self.state.lock().unwrap();
-        while state.sent.front().is_some_and(|(sent_seq, _)| *sent_seq <= seq) {
+        while state
+            .sent
+            .front()
+            .is_some_and(|(sent_seq, _)| *sent_seq <= seq)
+        {
             let (sent_seq, bytes) = state.sent.pop_front().unwrap();
             state.in_flight_bytes = state.in_flight_bytes.saturating_sub(bytes);
             state.in_flight_chunk_seqs.remove(&sent_seq);
@@ -765,10 +773,7 @@ pub fn pty_resize(
 }
 
 #[tauri::command]
-pub fn pty_kill(
-    state: State<'_, PtyState>,
-    terminal_id: String,
-) -> Result<(), String> {
+pub fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result<(), String> {
     let removed = {
         let mut sessions = state.sessions.lock().unwrap();
         sessions.remove(&terminal_id)
@@ -790,7 +795,9 @@ pub fn pty_kill(
 pub fn pty_ack(state: State<'_, PtyState>, terminal_id: String, seq: u32) -> Result<(), String> {
     let flow = {
         let sessions = state.sessions.lock().unwrap();
-        sessions.get(&terminal_id).map(|session| session.flow.clone())
+        sessions
+            .get(&terminal_id)
+            .map(|session| session.flow.clone())
     };
     if let Some(flow) = flow {
         flow.ack_through(seq);
@@ -816,7 +823,9 @@ pub fn pty_ack_received(
     log::trace!(target: "pty", "pty_ack_received terminal_id={} seqs={:?}", terminal_id, seqs);
     let flow = {
         let sessions = state.sessions.lock().unwrap();
-        sessions.get(&terminal_id).map(|session| session.flow.clone())
+        sessions
+            .get(&terminal_id)
+            .map(|session| session.flow.clone())
     };
     if let Some(flow) = flow {
         for seq in seqs {
@@ -1250,6 +1259,11 @@ fn write_message_to_trigger_file(path: &std::path::Path, message: &str) -> Resul
     let tmp_path = path.with_extension("tmp");
     std::fs::write(&tmp_path, message.as_bytes())
         .map_err(|e| format!("Failed to write line editor file {}: {}", path.display(), e))?;
-    std::fs::rename(&tmp_path, path)
-        .map_err(|e| format!("Failed to publish line editor file {}: {}", path.display(), e))
+    std::fs::rename(&tmp_path, path).map_err(|e| {
+        format!(
+            "Failed to publish line editor file {}: {}",
+            path.display(),
+            e
+        )
+    })
 }

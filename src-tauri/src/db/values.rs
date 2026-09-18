@@ -30,7 +30,10 @@ pub fn to_sqlite_params(values: &[serde_json::Value]) -> Vec<Value> {
 
 /// One result row as `{ column: value }`, in the shape the previous plugin
 /// produced so query code does not need to change.
-pub fn row_to_json(row: &Row<'_>, columns: &[String]) -> rusqlite::Result<Map<String, serde_json::Value>> {
+pub fn row_to_json(
+    row: &Row<'_>,
+    columns: &[String],
+) -> rusqlite::Result<Map<String, serde_json::Value>> {
     let mut object = Map::with_capacity(columns.len());
     for (index, column) in columns.iter().enumerate() {
         object.insert(column.clone(), from_sqlite(row.get_ref(index)?));
@@ -76,7 +79,11 @@ mod tests {
         )
         .unwrap();
         let mut statement = conn.prepare("SELECT i, r, s, n, b FROM t").unwrap();
-        let columns: Vec<String> = statement.column_names().iter().map(|c| c.to_string()).collect();
+        let columns: Vec<String> = statement
+            .column_names()
+            .iter()
+            .map(|c| c.to_string())
+            .collect();
         let row = statement
             .query_row([], |row| row_to_json(row, &columns))
             .unwrap();

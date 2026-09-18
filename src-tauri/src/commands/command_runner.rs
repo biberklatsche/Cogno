@@ -110,7 +110,11 @@ mod tests {
     #[test]
     fn output_larger_than_the_pipe_buffer_does_not_run_into_the_timeout() {
         let started = Instant::now();
-        let result = run(shell("head -c 300000 /dev/zero | tr '\\0' 'x'"), Some(5_000)).unwrap();
+        let result = run(
+            shell("head -c 300000 /dev/zero | tr '\\0' 'x'"),
+            Some(5_000),
+        )
+        .unwrap();
 
         assert_eq!(result.exit_code, 0);
         assert_eq!(result.stdout.len(), 300_000);
