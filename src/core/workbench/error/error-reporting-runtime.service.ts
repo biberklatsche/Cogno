@@ -82,7 +82,7 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
         type: "Notification",
         payload: {
           body: this.limitTextLength(report.message),
-          header: "Warnung",
+          header: "Warning",
           source: report.source ?? "ErrorReporting",
           timestamp: new Date(),
           type: "warning",

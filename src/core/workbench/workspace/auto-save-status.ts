@@ -2,15 +2,15 @@
 export function relativeSavedTime(at: number): string {
   const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
   if (seconds < 5) {
-    return "gerade eben";
+    return "just now";
   }
   if (seconds < 60) {
-    return `vor ${seconds} s`;
+    return `${seconds} s ago`;
   }
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) {
-    return `vor ${minutes} min`;
+    return `${minutes} min ago`;
   }
   const hours = Math.round(minutes / 60);
-  return `vor ${hours} h`;
+  return `${hours} h ago`;
 }
