@@ -53,6 +53,28 @@ describe("KeyboardMappingService", () => {
     expect(keymapInfo.isDefault).toBe(true);
   });
 
+  it.each([
+    // The physical QWERTY "S" key types "O" on US Dvorak and "A" on French Dvorak.
+    ["us(dvorak)", "O"],
+    ["fr(dvorak)", "A"],
+  ] as const)("resolves keys by the %s variant, not by its base layout", async (id, keyOnQwertyS) => {
+    vi.mocked(KeyboardLayout.load).mockResolvedValue(id);
+
+    const { keymapInfo } = await serviceOn("linux").loadLayout();
+
+    expect(keymapInfo.layouts.map((layout) => layout.id)).toEqual([id]);
+    expect(keymapInfo.mapping["KeyS"]).toBe(keyOnQwertyS);
+  });
+
+  it("uses the base layout for a variant without a keymap of its own", async () => {
+    vi.mocked(KeyboardLayout.load).mockResolvedValue("de(nodeadkeys)");
+
+    const { keymapInfo } = await serviceOn("linux").loadLayout();
+
+    expect(keymapInfo.layouts.map((layout) => layout.id)).toContain("de");
+    expect(keymapInfo.isDefault).toBeFalsy();
+  });
+
   it("falls back to the default keymap when asking the backend fails", async () => {
     vi.mocked(KeyboardLayout.load).mockRejectedValue(new Error("ipc down"));
 
