@@ -54,21 +54,36 @@ export class TerminalBusyStateService {
   }
 
   hasBusyTerminalsInWorkspace(workspaceId: string): boolean {
-    for (const terminalId of this.busyTerminalWorkspaceIds.keys()) {
-      if (this.resolveWorkspaceIdentifierForTerminal(terminalId) === workspaceId) {
-        return true;
-      }
-    }
-
-    return false;
+    return this.getBusyTerminalCountInWorkspace(workspaceId) > 0;
   }
 
-  async confirmProceedIfNoBusyTerminals(actionLabel: string): Promise<boolean> {
-    if (!this.hasBusyTerminals()) {
+  getBusyTerminalCountInWorkspace(workspaceId: string): number {
+    let count = 0;
+    for (const terminalId of this.busyTerminalWorkspaceIds.keys()) {
+      if (this.resolveWorkspaceIdentifierForTerminal(terminalId) === workspaceId) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  confirmProceedIfNoBusyTerminals(actionLabel: string): Promise<boolean> {
+    return this.confirmProceed(actionLabel, this.getBusyTerminalCount());
+  }
+
+  /** Asks only about the terminals the action ends: the ones of that workspace. */
+  confirmProceedIfNoBusyTerminalsInWorkspace(
+    actionLabel: string,
+    workspaceId: string,
+  ): Promise<boolean> {
+    return this.confirmProceed(actionLabel, this.getBusyTerminalCountInWorkspace(workspaceId));
+  }
+
+  private async confirmProceed(actionLabel: string, count: number): Promise<boolean> {
+    if (count === 0) {
       return true;
     }
 
-    const count = this.getBusyTerminalCount();
     const countText =
       count === 1 ? "1 terminal is still busy" : `${count} terminals are still busy`;
     const dialogRef = this.dialogService.open<ConfirmDialogData, boolean>(ConfirmDialogComponent, {
@@ -93,17 +108,6 @@ export class TerminalBusyStateService {
         closeDialog(result);
       };
     });
-  }
-
-  async confirmProceedIfNoBusyTerminalsInWorkspace(
-    actionLabel: string,
-    workspaceId: string,
-  ): Promise<boolean> {
-    if (!this.hasBusyTerminalsInWorkspace(workspaceId)) {
-      return true;
-    }
-
-    return this.confirmProceedIfNoBusyTerminals(actionLabel);
   }
 
   private resolveWorkspaceIdentifierForTerminal(terminalId: TerminalId): string | undefined {

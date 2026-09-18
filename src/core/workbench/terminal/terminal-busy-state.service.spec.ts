@@ -108,4 +108,24 @@ describe("TerminalBusyStateService", () => {
 
     expect(dialogService.open).not.toHaveBeenCalled();
   });
+
+  it("counts only the workspace's own busy terminals in the question", async () => {
+    emitSessionFact("terminal-1", { type: "busyChanged", isBusy: true });
+    emitSessionFact("terminal-2", { type: "busyChanged", isBusy: true });
+    vi.mocked(dialogService.open).mockReturnValue({ close: vi.fn() } as never);
+
+    void terminalBusyStateService.confirmProceedIfNoBusyTerminalsInWorkspace(
+      "close this workspace",
+      "workspace-2",
+    );
+
+    expect(dialogService.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          message: "1 terminal is still busy. Do you really want to close this workspace?",
+        }),
+      }),
+    );
+  });
 });

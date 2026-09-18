@@ -86,8 +86,16 @@ export class WorkspaceService {
     return this.workspaces.saveWorkspace(workspaceId);
   }
 
-  deleteWorkspace(workspaceId: string): Promise<void> {
-    return this.workspaces.deleteWorkspace(workspaceId);
+  /** Deletes the workspace unless the user keeps it because terminals are busy. */
+  async deleteWorkspace(workspaceId: string): Promise<void> {
+    const shouldProceed =
+      await this.terminalBusyStateService.confirmProceedIfNoBusyTerminalsInWorkspace(
+        "delete this workspace",
+        workspaceId,
+      );
+    if (shouldProceed) {
+      await this.workspaces.deleteWorkspace(workspaceId);
+    }
   }
 
   reorderWorkspaces(sourceWorkspaceId: string, targetWorkspaceId: string): Promise<void> {

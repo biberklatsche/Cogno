@@ -100,7 +100,9 @@ export class WorkspaceHostApplicationService {
     destroyRef: DestroyRef,
   ) {
     this.bus.once$("DBInitialized").subscribe(async () => {
-      const workspaces = await this.workspaceRepository.getAllWorkspaces();
+      const workspaces = this.workspacesToStartWith(
+        await this.workspaceRepository.getAllWorkspaces(),
+      );
       await this.repairDuplicateIds(workspaces);
       const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
         workspaces,
@@ -192,8 +194,31 @@ export class WorkspaceHostApplicationService {
     );
   }
 
+  private get isRestoreEnabled(): boolean {
+    return this.configService.config.terminal?.restore?.enabled !== false;
+  }
+
+  /**
+   * With session restore off a launch brings nothing back: no workspace is
+   * reopened and the default workspace starts fresh. The saved workspaces stay
+   * in the list, to be opened by hand from their last explicit save.
+   */
+  private workspacesToStartWith(
+    persistedWorkspaces: WorkspaceConfiguration[],
+  ): WorkspaceConfiguration[] {
+    if (this.isRestoreEnabled) {
+      return persistedWorkspaces;
+    }
+    return persistedWorkspaces
+      .filter((workspace) => workspace.id !== this.defaultWorkspace.id)
+      .map((workspace) => ({ ...workspace, isOpen: false, isActive: false }));
+  }
+
   /** Record which workspaces are open and which is active, for the next launch. */
   private async persistOpenState(): Promise<void> {
+    if (!this.isRestoreEnabled) {
+      return;
+    }
     const workspaceList = this._workspaceList();
     await this.workspaceRepository.saveOpenState(
       workspaceList.filter((workspace) => workspace.isOpen).map((workspace) => workspace.id),
@@ -288,7 +313,7 @@ export class WorkspaceHostApplicationService {
    * atomic batches; each collects its data before writing.
    */
   async autoPersistWorkspace(workspaceId: string): Promise<void> {
-    if (this.configService.config.terminal?.restore?.enabled === false) {
+    if (!this.isRestoreEnabled) {
       return;
     }
     const workspace = this.getWorkspaceById(workspaceId);

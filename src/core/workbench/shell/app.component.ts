@@ -100,11 +100,7 @@ export class AppComponent {
         this.environment.legacyDatabaseFilePath(),
       );
       if (report.recovery) {
-        publishDatabaseWarning(
-          bus,
-          "Database recovered",
-          describeRecovery(report.recovery),
-        );
+        publishDatabaseWarning(bus, "Database recovered", describeRecovery(report.recovery));
       }
       if (report.legacyErrors.length > 0) {
         publishDatabaseWarning(bus, "Import incomplete", describeLegacyErrors(report));
@@ -149,7 +145,5 @@ function describeRecovery(recovery: DatabaseRecoveryReport): string {
 
 function describeLegacyErrors(report: DatabaseOpenReport): string {
   const lines = report.legacyErrors.map((entry) => `${entry.id}: ${entry.error}`);
-  return ["Some data from the previous database could not be imported:", ...lines].join(
-    "\n",
-  );
+  return ["Some data from the previous database could not be imported:", ...lines].join("\n");
 }
