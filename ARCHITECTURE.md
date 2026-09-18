@@ -726,11 +726,15 @@ Workbench, dann asynchron je Host `snapshot()` (der Scrollback wird in
 Leerlaufzeit serialisiert, nicht im Eingabepfad) — und erst wenn alle
 Teile im Speicher liegen, **eine kurze Schreibtransaktion**. Keine offene
 Transaktion über einem `await`. Auslöser: Dirty-Tracking mit Debounce,
-Workspace-Wechsel, Beenden (mit Zeitbudget; was nicht rechtzeitig
-serialisiert ist, wird ohne Scrollback gespeichert). Wiederherstellen:
-Layout aufbauen, je Pane einen Host mit `restore(snapshot)` erzeugen —
-Scrollback in den Core schreiben, Trennzeile, dann PTY starten — und alle
-sofort starten, auch unsichtbar (2.3). Die Session ist passiv: sie kann sich
+Workspace-Wechsel (der verlassene), Beenden (alle offenen, mit Zeitbudget;
+was nicht rechtzeitig serialisiert ist, wird ohne Scrollback gespeichert).
+Welche Workspaces offen sind und welcher aktiv, steht an der
+`workspace`-Zeile (`is_open`, `is_active`) und wird bei jedem Aktivieren
+und Schließen in einem Statement nachgeführt. Wiederherstellen: jeder
+Workspace, der offen war, bekommt seine Laufzeit zurück — der aktive
+sichtbar, die anderen im Hintergrund —, je Pane ein Host mit
+`restore(snapshot)`: Scrollback in den Core schreiben, Trennzeile, dann PTY
+starten — und alle sofort starten, auch unsichtbar (2.3). Die Session ist passiv: sie kann sich
 beschreiben und aus einer Beschreibung entstehen, speichert nichts selbst
 und kennt keine Tabelle.
 

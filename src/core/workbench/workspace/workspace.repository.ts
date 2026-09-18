@@ -13,6 +13,8 @@ interface WorkspaceEntity {
   name: string;
   color: string | null;
   position: number;
+  is_open: number;
+  is_active: number;
 }
 
 interface WorkspaceTabEntity {
@@ -46,7 +48,7 @@ export class WorkspaceRepository {
   async getAllWorkspaces(): Promise<WorkspaceConfiguration[]> {
     const [workspaces, tabs, grids] = await Promise.all([
       this.databaseAccess.select<WorkspaceEntity[]>(
-        "SELECT id, name, color, position FROM workspace ORDER BY position, created_at, id",
+        "SELECT id, name, color, position, is_open, is_active FROM workspace ORDER BY position, created_at, id",
       ),
       this.databaseAccess.select<WorkspaceTabEntity[]>(
         "SELECT workspace_id, tab_id, is_active, color, system_title, user_title FROM workspace_tab ORDER BY workspace_id, position",
@@ -61,6 +63,8 @@ export class WorkspaceRepository {
       name: workspaceEntity.name,
       color: workspaceEntity.color ?? undefined,
       position: workspaceEntity.position,
+      isOpen: workspaceEntity.is_open === 1,
+      isActive: workspaceEntity.is_active === 1,
       tabs: tabs
         .filter((tabEntity) => tabEntity.workspace_id === workspaceEntity.id)
         .map((tabEntity) => ({
@@ -151,6 +155,21 @@ export class WorkspaceRepository {
       },
       ...this.layoutStatements(workspaceConfiguration),
     ]);
+  }
+
+  /**
+   * Record which workspaces are open and which one is active, in one
+   * statement so exactly the given ones carry the flags.
+   */
+  async saveOpenState(
+    openWorkspaceIds: ReadonlyArray<WorkspaceIdentifierContract>,
+    activeWorkspaceId: WorkspaceIdentifierContract | undefined,
+  ): Promise<void> {
+    const openPlaceholders = openWorkspaceIds.map(() => "?").join(", ");
+    await this.databaseAccess.execute(
+      `UPDATE workspace SET is_open = (id IN (${openPlaceholders})), is_active = (id = ?)`,
+      [...openWorkspaceIds, activeWorkspaceId ?? ""],
+    );
   }
 
   async deleteWorkspace(workspaceId: WorkspaceIdentifierContract): Promise<void> {

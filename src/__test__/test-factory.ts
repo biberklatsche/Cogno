@@ -168,7 +168,7 @@ export function getWindowService(
       getAppBus(),
       getTerminalBusyStateService(),
       {
-        persistActiveWorkspace: vi.fn().mockResolvedValue(undefined),
+        persistOpenWorkspaces: vi.fn().mockResolvedValue(undefined),
         recordAbortedCommands: vi.fn().mockResolvedValue(undefined),
       } as unknown as WorkspaceHostApplicationService,
       new ActionHandlers(getAppBus(), getDestroyRef()),

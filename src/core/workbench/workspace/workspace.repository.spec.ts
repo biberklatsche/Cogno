@@ -36,8 +36,8 @@ describe("WorkspaceRepository", () => {
   it("loads workspaces with tabs and grids in three queries", async () => {
     selectMock
       .mockResolvedValueOnce([
-        { id: "ws1", name: "Workspace 1", color: "blue", position: 0 },
-        { id: "ws2", name: "Workspace 2", color: null, position: 1 },
+        { id: "ws1", name: "Workspace 1", color: "blue", position: 0, is_open: 1, is_active: 1 },
+        { id: "ws2", name: "Workspace 2", color: null, position: 1, is_open: 0, is_active: 0 },
       ])
       .mockResolvedValueOnce([
         {
@@ -70,10 +70,13 @@ describe("WorkspaceRepository", () => {
       id: "ws1",
       color: "blue",
       position: 0,
+      isOpen: true,
+      isActive: true,
       tabs: [{ tabId: "TB-1", isActive: true, systemTitle: "C:\\repo", userTitle: "Tab 1" }],
       grids: [{ tabId: "TB-1", pane: { terminalId: "TE-1" } }],
     });
     expect(workspaces[1].color).toBeUndefined();
+    expect(workspaces[1]).toMatchObject({ isOpen: false, isActive: false });
     expect(workspaces[1].tabs[0]).toMatchObject({ isActive: false, systemTitle: "Shell" });
     expect(workspaces[1].grids[0].pane).toEqual({});
   });
@@ -137,6 +140,15 @@ describe("WorkspaceRepository", () => {
     });
     expect(statements[2].sql).toContain("INSERT INTO workspace_tab");
     expect(statements[3].sql).toContain("INSERT INTO workspace_grid");
+  });
+
+  it("records the open workspaces and the active one in one statement", async () => {
+    await workspaceRepository.saveOpenState(["ws1", "ws2"], "ws2");
+
+    expect(executeMock).toHaveBeenCalledTimes(1);
+    const [sql, params] = executeMock.mock.calls[0];
+    expect(sql).toMatch(/UPDATE workspace SET is_open = .*is_active = /s);
+    expect(params).toEqual(["ws1", "ws2", "ws2"]);
   });
 
   it("reorders workspaces by list position in one batch", async () => {

@@ -88,7 +88,7 @@ export class WindowService {
   private async persistSessionWithinBudget(): Promise<void> {
     const budget = new Promise<void>((resolve) => setTimeout(resolve, SESSION_PERSIST_BUDGET_MS));
     const shutdownWork = Promise.all([
-      this.workspaceHost.persistActiveWorkspace(),
+      this.workspaceHost.persistOpenWorkspaces(),
       // A command still running now is being killed; record it as aborted (27b-2).
       this.workspaceHost.recordAbortedCommands(),
     ]);

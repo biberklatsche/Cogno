@@ -61,6 +61,7 @@ describe("WorkspaceHostApplicationService", () => {
       updateWorkspace: vi.fn(),
       upsertWorkspace: vi.fn().mockResolvedValue(undefined),
       deleteTerminalSession: vi.fn().mockResolvedValue(undefined),
+      saveOpenState: vi.fn().mockResolvedValue(undefined),
     } as unknown as WorkspaceRepository;
 
     service = new WorkspaceHostApplicationService(
@@ -263,6 +264,96 @@ describe("WorkspaceHostApplicationService", () => {
     expect(newTerminalIds).toHaveLength(2);
     expect(newTerminalIds).not.toContain(keptTerminalIds[0]);
     expect(newTerminalIds).not.toContain(keptTerminalIds[1]);
+  });
+
+  describe("open state across restarts", () => {
+    const threeWorkspaces = () => [
+      {
+        id: "WS-1",
+        name: "Open in the background",
+        color: "blue",
+        isOpen: true,
+        isActive: false,
+        tabs: [{ tabId: "T-1", isActive: true, systemTitle: "Shell" }],
+        grids: [{ tabId: "T-1", pane: { workingDir: "C:\\one" } }],
+      },
+      {
+        id: "WS-2",
+        name: "Was active",
+        color: "red",
+        isOpen: true,
+        isActive: true,
+        tabs: [{ tabId: "T-2", isActive: true, systemTitle: "Shell" }],
+        grids: [{ tabId: "T-2", pane: { workingDir: "C:\\two" } }],
+      },
+      {
+        id: "WS-3",
+        name: "Closed",
+        color: "green",
+        isOpen: false,
+        isActive: false,
+        tabs: [{ tabId: "T-3", isActive: true, systemTitle: "Shell" }],
+        grids: [{ tabId: "T-3", pane: { workingDir: "C:\\three" } }],
+      },
+    ];
+
+    it("reopens every workspace that was open and selects the one that was active", async () => {
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      });
+
+      expect(service.getWorkspaceById("WS-1")?.isOpen).toBe(true);
+      expect(gridListService.terminalIdsForWorkspace("WS-1")).toHaveLength(1);
+      expect(tabListService.getTabConfigs("WS-1").map((tab) => tab.tabId)).toEqual(["T-1"]);
+      expect(service.getWorkspaceById("WS-3")?.isOpen).toBe(false);
+      expect(gridListService.terminalIdsForWorkspace("WS-3")).toEqual([]);
+      expect(getSingleTerminalId(gridListService)).toBe(
+        gridListService.terminalIdsForWorkspace("WS-2")[0],
+      );
+      // The default workspace is still there, just not open.
+      expect(service.getWorkspaceById("WS-DEFAULT")?.isOpen).toBe(false);
+    });
+
+    it("records which workspaces are open and which is active as that changes", async () => {
+      const saveOpenState = workspaceRepository.saveOpenState as ReturnType<typeof vi.fn>;
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      });
+      expect(saveOpenState).toHaveBeenLastCalledWith(["WS-1", "WS-2"], "WS-2");
+
+      await service.restoreWorkspaceById("WS-3");
+      expect(saveOpenState).toHaveBeenLastCalledWith(["WS-1", "WS-2", "WS-3"], "WS-3");
+
+      await service.closeWorkspace("WS-1");
+      expect(saveOpenState).toHaveBeenLastCalledWith(["WS-2", "WS-3"], "WS-3");
+    });
+
+    it("persists every open workspace on quit, not only the active one", async () => {
+      const persistWorkspace = (
+        service as unknown as { sessionPersistence: { persistWorkspace: ReturnType<typeof vi.fn> } }
+      ).sessionPersistence.persistWorkspace;
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      });
+      persistWorkspace.mockClear();
+
+      await service.persistOpenWorkspaces();
+
+      expect(persistWorkspace.mock.calls.map((call) => call[0]).sort()).toEqual(["WS-1", "WS-2"]);
+    });
   });
 
   it("ignores saveWorkspace for the default workspace or missing workspaces", async () => {

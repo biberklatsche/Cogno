@@ -122,7 +122,17 @@ export class WorkspaceHostApplicationService {
         workspaceList.map((workspace) => workspace.id),
       );
 
+      // Put back what the user had: every workspace that was open gets its
+      // runtime again, in the background; the one that was active comes to
+      // the front last.
       const activeWorkspace = WorkspaceStateUseCase.getActiveWorkspace(workspaceList);
+      await this.runWithoutDirtyTracking(async () => {
+        for (const workspace of workspaces) {
+          if (workspace.isOpen && workspace.id !== activeWorkspace?.id) {
+            this.openInBackground(workspace);
+          }
+        }
+      });
       if (activeWorkspace) {
         await this.activateWorkspace(activeWorkspace);
       }
@@ -162,17 +172,38 @@ export class WorkspaceHostApplicationService {
     await this.activateWorkspace(workspace);
   }
 
-  /** Persist the currently active workspace (for the quit hook, step 27e). */
-  async persistActiveWorkspace(): Promise<void> {
-    const active = this.getActiveWorkspace();
-    if (active) {
-      await this.autoPersistWorkspace(active.id);
-    }
+  /** Persist every open workspace, for the quit hook (step 27e). */
+  async persistOpenWorkspaces(): Promise<void> {
+    await Promise.all(
+      this._workspaceList()
+        .filter((workspace) => workspace.isOpen)
+        .map((workspace) => this.autoPersistWorkspace(workspace.id)),
+    );
+  }
+
+  /** Build a workspace's runtime without showing it; its sessions run behind the active one. */
+  private openInBackground(workspace: WorkspaceConfiguration): void {
+    this.tabListService.restoreTabs(workspace.tabs, workspace.id);
+    this.gridListService.restoreGridsForWorkspace(workspace.grids, workspace.id);
+    this._workspaceList.update((workspaceList) =>
+      workspaceList.map((entry) =>
+        entry.id === workspace.id ? { ...entry, isOpen: true } : entry,
+      ),
+    );
+  }
+
+  /** Record which workspaces are open and which is active, for the next launch. */
+  private async persistOpenState(): Promise<void> {
+    const workspaceList = this._workspaceList();
+    await this.workspaceRepository.saveOpenState(
+      workspaceList.filter((workspace) => workspace.isOpen).map((workspace) => workspace.id),
+      workspaceList.find((workspace) => workspace.isActive)?.id,
+    );
   }
 
   /**
    * Record every live session's running command as aborted before exit (step
-   * 27b-2). Separate from persistActiveWorkspace: the command log persists
+   * 27b-2). Separate from persistOpenWorkspaces: the command log persists
    * regardless of the session-restore setting.
    */
   async recordAbortedCommands(): Promise<void> {
@@ -212,6 +243,7 @@ export class WorkspaceHostApplicationService {
 
       this._workspaceList.set(activationPlan.workspaceList);
       this.refreshDirtyStateForWorkspace(workspaceToActivate.id);
+      await this.persistOpenState();
 
       if (workspaceToActivate.id === DEFAULT_WORKSPACE_ID) {
         this.sideMenuService.updateBadgeColor("Workspace", undefined);
@@ -355,6 +387,7 @@ export class WorkspaceHostApplicationService {
       this.gridListService.removeWorkspaceRuntime(id);
       this._workspaceList.set(closePlan.workspaceList);
       await this.activateWorkspaceById(closePlan.workspaceToActivateId);
+      await this.persistOpenState();
     });
   }
 
