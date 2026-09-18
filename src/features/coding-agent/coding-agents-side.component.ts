@@ -88,7 +88,7 @@ import type { ICodingAgentProvider } from "./ports";
         </div>
       } @else {
         <header class="panel-header">
-          <span class="panel-title">Detected Agents</span>
+          <span class="panel-title">Settings</span>
           <button
             type="button"
             class="button icon-button"
@@ -233,7 +233,7 @@ import type { ICodingAgentProvider } from "./ports";
       width: 100%;
       padding: 0.4rem 0.75rem;
       margin: 0.25rem 0 0.5rem;
-      font-size: 0.8rem;
+      font-size: 1rem;
     }
 
     .active-list {
