@@ -28,6 +28,7 @@ pub const COGNO_ACTIONS: &[(&str, &str)] = &[
     ("minimize_window", "Minimize the current window"),
     ("open_config", "Open the config file in the default editor"),
     ("load_config", "Reload the config file without restarting"),
+    ("clear_restore_data", "Delete the saved session so that the next launch starts fresh"),
     ("trigger_autocomplete", "Manually trigger autocomplete suggestions"),
     ("trigger_command_history", "Open the command history dropdown"),
     ("cycle_tab", "Cycle through available autocomplete modes (or history scope, while that dropdown is open)"),

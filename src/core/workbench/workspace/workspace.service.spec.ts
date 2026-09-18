@@ -19,6 +19,8 @@ describe("WorkspaceService", () => {
   let openEditWorkspaceDialogMock: ReturnType<typeof vi.fn<(workspaceName: string) => void>>;
   let deleteWorkspaceMock: ReturnType<typeof vi.fn>;
   let confirmCloseWorkspaceMock: ReturnType<typeof vi.fn>;
+  let clearRestoreDataMock: ReturnType<typeof vi.fn>;
+  let confirmDialogRef: { close: (result?: boolean) => void } | undefined;
 
   beforeEach(() => {
     workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([
@@ -33,12 +35,17 @@ describe("WorkspaceService", () => {
     reorderWorkspacesMock = vi.fn().mockResolvedValue(undefined);
     persistWorkspaceOrderMock = vi.fn().mockResolvedValue(undefined);
     deleteWorkspaceMock = vi.fn().mockResolvedValue(undefined);
+    clearRestoreDataMock = vi.fn().mockResolvedValue(undefined);
     confirmCloseWorkspaceMock = vi.fn().mockResolvedValue(true);
     // The dialogs are what "open create/edit" amounts to now.
     const openDialogMock = vi.fn();
     openCreateWorkspaceDialogMock = vi.fn<() => void>();
     openEditWorkspaceDialogMock = vi.fn<(workspaceName: string) => void>();
     openDialogMock.mockImplementation((_component: unknown, config: { title: string }) => {
+      if (config.title === "Delete restore data") {
+        confirmDialogRef = { close: vi.fn() };
+        return confirmDialogRef;
+      }
       if (config.title === "Create workspace") openCreateWorkspaceDialogMock();
       else openEditWorkspaceDialogMock(config.title.replace("Edit ", ""));
     });
@@ -51,6 +58,7 @@ describe("WorkspaceService", () => {
       reorderWorkspaces: reorderWorkspacesMock,
       persistWorkspaceOrder: persistWorkspaceOrderMock,
       deleteWorkspace: deleteWorkspaceMock,
+      clearRestoreData: clearRestoreDataMock,
       createWorkspaceDraft: () => ({ id: "draft", name: "" }),
       getWorkspaceById: (id: string) => ({ id, name: id }),
     } as unknown as WorkspaceHostApplicationService;
@@ -62,6 +70,18 @@ describe("WorkspaceService", () => {
       } as unknown as TerminalBusyStateService,
       { open: openDialogMock } as unknown as DialogService,
     );
+  });
+
+  it("clears the restore data only after the user confirms", async () => {
+    const cancelled = workspaceService.clearRestoreData();
+    confirmDialogRef?.close(false);
+    await cancelled;
+    expect(clearRestoreDataMock).not.toHaveBeenCalled();
+
+    const confirmed = workspaceService.clearRestoreData();
+    confirmDialogRef?.close(true);
+    await confirmed;
+    expect(clearRestoreDataMock).toHaveBeenCalledTimes(1);
   });
 
   it("initializes workspace entries from host", () => {

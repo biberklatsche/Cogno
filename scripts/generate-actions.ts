@@ -105,7 +105,7 @@ const ACTION_GROUPS: ReadonlyArray<{ title: string; match: RegExp }> = [
   { title: "Clipboard", match: /^(copy|cut|paste)$/ },
   { title: "Text selection", match: /^select_(all|text_|word_)/ },
   { title: "Cursor movement", match: /^go_to_/ },
-  { title: "Input line and buffer", match: /^(clear_|delete_)/ },
+  { title: "Input line and buffer", match: /^(clear_buffer|clear_line|delete_)/ },
   { title: "Autocomplete and history", match: /^(trigger_|cycle_tab$)/ },
   { title: "Tabs", match: /^(new_tab|close_tab|close_other_tabs|close_all_tabs|select_.*tab)/ },
   { title: "Panes", match: /^(split_|maximize_pane|minimize_pane|select_.*pane|close_terminal)/ },

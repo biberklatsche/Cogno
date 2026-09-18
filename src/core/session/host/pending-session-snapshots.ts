@@ -31,4 +31,9 @@ export class PendingSessionSnapshots {
   peek(terminalId: TerminalId): SessionSnapshot | undefined {
     return this.byTerminalId.get(terminalId);
   }
+
+  /** Forget every waiting snapshot, so none is replayed or carried into the next save. */
+  clear(): void {
+    this.byTerminalId.clear();
+  }
 }

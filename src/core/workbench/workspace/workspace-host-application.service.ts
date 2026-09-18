@@ -16,6 +16,7 @@ import {
 } from "@cogno/shared/domain/workspace";
 import { Color, IdCreator } from "@cogno/shared/support";
 import { debounceTime, filter, merge } from "rxjs";
+import { DiscardSessionMarker } from "./discard-session.marker";
 import { SessionPersistenceService } from "./session-persistence.service";
 import { WorkspaceRepository } from "./workspace.repository";
 
@@ -98,10 +99,12 @@ export class WorkspaceHostApplicationService {
     private readonly configService: ConfigService,
     private readonly sessionPersistence: SessionPersistenceService,
     private readonly appWindow: AppWindow,
+    private readonly discardSessionMarker: DiscardSessionMarker,
     sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
     this.bus.once$("DBInitialized").subscribe(async () => {
+      await this.discardSessionIfMarked();
       const workspaces = this.workspacesToStartWith(
         await this.workspaceRepository.getAllWorkspaces(),
       );
@@ -213,6 +216,19 @@ export class WorkspaceHostApplicationService {
     return this.isRestoreEnabled && this.appWindow.isMain;
   }
 
+  /**
+   * The session the user asked to delete goes before anything is loaded. Only
+   * the window that carries the session does it: another window starting while
+   * the app runs would wipe what the main window writes back on quit anyway.
+   */
+  private async discardSessionIfMarked(): Promise<void> {
+    if (!this.appWindow.isMain || !this.discardSessionMarker.isSet) {
+      return;
+    }
+    await this.workspaceRepository.clearRestoreData(DEFAULT_WORKSPACE_ID);
+    this.discardSessionMarker.clear();
+  }
+
   /** A named workspace lives in one window at a time; the default one is per window. */
   private async claimWorkspace(workspaceId: string): Promise<boolean> {
     return (
@@ -240,6 +256,29 @@ export class WorkspaceHostApplicationService {
     return persistedWorkspaces
       .filter((workspace) => workspace.id !== this.defaultWorkspace.id)
       .map((workspace) => ({ ...workspace, isOpen: false, isActive: false }));
+  }
+
+  /**
+   * Delete everything session restore has stored - in the database and the
+   * snapshots still waiting in memory. The open terminals still hold the old
+   * output and keep being saved, so the marker has the next launch delete it
+   * again before anything loads: that launch starts fresh. The running terminals
+   * and the user's workspaces stay as they are.
+   */
+  async clearRestoreData(): Promise<void> {
+    this.discardSessionMarker.set();
+    this.sessionPersistence.forgetPendingSnapshots();
+    await this.workspaceRepository.clearRestoreData(DEFAULT_WORKSPACE_ID);
+    this.bus.publish({
+      type: "Notification",
+      payload: {
+        header: "Restore data deleted",
+        body: "The saved session was removed. The next launch starts fresh.",
+        source: "Workspace",
+        timestamp: new Date(),
+        type: "info",
+      },
+    });
   }
 
   /** Record which workspaces are open and which is active, for the next launch. */

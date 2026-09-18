@@ -151,6 +151,19 @@ describe("WorkspaceRepository", () => {
     expect(params).toEqual(["ws1", "ws2", "ws2"]);
   });
 
+  it("clears what session restore wrote and keeps the user's workspaces", async () => {
+    await workspaceRepository.clearRestoreData("WS-DEFAULT");
+
+    const statements = batchedStatements();
+    expect(statements.map((s) => s.sql)).toEqual([
+      "DELETE FROM terminal_session",
+      "UPDATE workspace SET is_open = 0, is_active = 0",
+      "DELETE FROM workspace WHERE id = ?",
+    ]);
+    // Only the default workspace's row goes; no other workspace is deleted.
+    expect(statements[2].params).toEqual(["WS-DEFAULT"]);
+  });
+
   it("reorders workspaces by list position in one batch", async () => {
     await workspaceRepository.reorderWorkspaces(["ws2", "ws1"]);
 

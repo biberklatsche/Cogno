@@ -172,6 +172,19 @@ export class WorkspaceRepository {
     );
   }
 
+  /**
+   * Delete what only session restore wrote: every terminal snapshot, which
+   * workspaces were open, and the default workspace's row (its tabs and grids go
+   * with it). The workspaces the user created keep their layouts.
+   */
+  async clearRestoreData(defaultWorkspaceId: WorkspaceIdentifierContract): Promise<void> {
+    await this.databaseAccess.batch([
+      { sql: "DELETE FROM terminal_session", params: [] },
+      { sql: "UPDATE workspace SET is_open = 0, is_active = 0", params: [] },
+      { sql: "DELETE FROM workspace WHERE id = ?", params: [defaultWorkspaceId] },
+    ]);
+  }
+
   async deleteWorkspace(workspaceId: WorkspaceIdentifierContract): Promise<void> {
     await this.databaseAccess.execute("DELETE FROM workspace WHERE id = ?", [workspaceId]);
   }

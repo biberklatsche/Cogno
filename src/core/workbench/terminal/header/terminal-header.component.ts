@@ -187,7 +187,9 @@ export class TerminalHeaderComponent {
     this.host.model.commands$.pipe(
       map((commands): HeaderCommandViewModel | undefined => {
         const commandOutOfView = commands.find((command) => command.isFirstCommandOutOfViewport);
-        if (!commandOutOfView) {
+        // A bare Enter leaves an entry without a command: there is nothing to
+        // show and no menu to open for it (see `buildCommandOutOfViewMenu`).
+        if (!commandOutOfView?.command) {
           return undefined;
         }
 

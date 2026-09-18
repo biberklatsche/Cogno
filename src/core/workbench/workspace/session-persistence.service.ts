@@ -60,6 +60,11 @@ export class SessionPersistenceService {
     );
   }
 
+  /** Drop the snapshots still waiting in memory; the stored rows are the repository's. */
+  forgetPendingSnapshots(): void {
+    this.pendingSnapshots.clear();
+  }
+
   async persistWorkspace(workspaceId: string): Promise<void> {
     const restore = this.configService.config.terminal?.restore;
     if (restore?.enabled === false) {

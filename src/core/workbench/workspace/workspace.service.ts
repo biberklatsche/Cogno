@@ -6,7 +6,7 @@ import {
   SelectionDirection,
   WorkspaceEntryContract,
 } from "@cogno/shared/domain";
-import { DialogService } from "@cogno/shared/ui";
+import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
@@ -104,6 +104,32 @@ export class WorkspaceService {
 
   persistWorkspaceOrder(): Promise<void> {
     return this.workspaces.persistWorkspaceOrder();
+  }
+
+  /** Deletes what session restore has stored, after asking. */
+  async clearRestoreData(): Promise<void> {
+    const dialogRef = this.dialogService.open<ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+      title: "Delete restore data",
+      data: {
+        message:
+          "Delete the saved session? The terminals that are open now stay as they are; the next launch starts fresh.",
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+      },
+      hasBackdrop: true,
+      width: "32rem",
+      maxWidth: "calc(100vw - 2rem)",
+    });
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const closeDialog = dialogRef.close.bind(dialogRef);
+      dialogRef.close = (result?: boolean) => {
+        resolve(result ?? false);
+        closeDialog(result);
+      };
+    });
+    if (confirmed) {
+      await this.workspaces.clearRestoreData();
+    }
   }
 
   /** Closes the workspace unless the user keeps it because terminals are busy. */

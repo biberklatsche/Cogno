@@ -18,6 +18,7 @@ import {
   getSideMenuService,
   getTabListService,
 } from "../../../__test__/test-factory";
+import type { DiscardSessionMarker } from "./discard-session.marker";
 import type { SessionPersistenceService } from "./session-persistence.service";
 import type { WorkspaceRepository } from "./workspace.repository";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
@@ -30,6 +31,14 @@ describe("WorkspaceHostApplicationService", () => {
   let workspaceRepository: WorkspaceRepository;
   let service: WorkspaceHostApplicationService;
   let restoreSettings: { enabled: boolean };
+  let clearRestoreDataInDb: ReturnType<typeof vi.fn>;
+  let forgetPendingSnapshots: ReturnType<typeof vi.fn>;
+  let persistWorkspaceSnapshots: ReturnType<typeof vi.fn>;
+  let discardSessionMarker: {
+    isSet: boolean;
+    set: ReturnType<typeof vi.fn>;
+    clear: ReturnType<typeof vi.fn>;
+  };
   let appWindow: {
     isMain: boolean;
     claimWorkspace: ReturnType<typeof vi.fn>;
@@ -54,6 +63,10 @@ describe("WorkspaceHostApplicationService", () => {
       },
     } as any);
 
+    clearRestoreDataInDb = vi.fn().mockResolvedValue(undefined);
+    forgetPendingSnapshots = vi.fn();
+    persistWorkspaceSnapshots = vi.fn().mockResolvedValue(undefined);
+    discardSessionMarker = { isSet: false, set: vi.fn(), clear: vi.fn() };
     workspaceRepository = {
       getAllWorkspaces: vi.fn().mockResolvedValue([
         {
@@ -69,6 +82,7 @@ describe("WorkspaceHostApplicationService", () => {
       upsertWorkspace: vi.fn().mockResolvedValue(undefined),
       deleteTerminalSession: vi.fn().mockResolvedValue(undefined),
       saveOpenState: vi.fn().mockResolvedValue(undefined),
+      clearRestoreData: clearRestoreDataInDb,
     } as unknown as WorkspaceRepository;
 
     restoreSettings = { enabled: true };
@@ -85,10 +99,12 @@ describe("WorkspaceHostApplicationService", () => {
       tabListService,
       { config: { terminal: { restore: restoreSettings } } } as unknown as ConfigService,
       {
-        persistWorkspace: vi.fn().mockResolvedValue(undefined),
+        persistWorkspace: persistWorkspaceSnapshots,
         loadPendingSnapshots: vi.fn().mockResolvedValue(undefined),
+        forgetPendingSnapshots,
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
+      discardSessionMarker as unknown as DiscardSessionMarker,
       { facts$: new Subject() } as unknown as TerminalSessionRegistry,
       getDestroyRef(),
     );
@@ -461,6 +477,70 @@ describe("WorkspaceHostApplicationService", () => {
 
       expect(persistWorkspace.mock.calls.map((call) => call[0]).sort()).toEqual(["WS-1", "WS-2"]);
     });
+  });
+
+  it("clears the stored restore data and the snapshots waiting in memory", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getActiveWorkspace()?.id).toBe("WS-1");
+    });
+    const terminalsBefore = gridListService.terminalIdsForWorkspace("WS-1");
+
+    await service.clearRestoreData();
+
+    // In memory first: a pending snapshot would be written back by the next save.
+    expect(forgetPendingSnapshots).toHaveBeenCalledTimes(1);
+    expect(clearRestoreDataInDb).toHaveBeenCalledWith("WS-DEFAULT");
+    expect(forgetPendingSnapshots.mock.invocationCallOrder[0]).toBeLessThan(
+      clearRestoreDataInDb.mock.invocationCallOrder[0],
+    );
+    // The running session is left alone.
+    expect(service.getActiveWorkspace()?.id).toBe("WS-1");
+    expect(gridListService.terminalIdsForWorkspace("WS-1")).toEqual(terminalsBefore);
+  });
+
+  it("marks the session for deletion and keeps saving as usual in this run", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getActiveWorkspace()?.id).toBe("WS-1");
+    });
+
+    await service.clearRestoreData();
+    expect(discardSessionMarker.set).toHaveBeenCalledTimes(1);
+
+    // No hidden pause: the auto-save still stores layout and snapshots.
+    await service.autoPersistWorkspace("WS-1");
+    expect(workspaceRepository.upsertWorkspace).toHaveBeenCalled();
+    expect(persistWorkspaceSnapshots).toHaveBeenCalledWith("WS-1");
+  });
+
+  it("deletes a marked session at launch, before anything is loaded", async () => {
+    discardSessionMarker.isSet = true;
+
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getActiveWorkspace()).toBeDefined();
+    });
+
+    expect(clearRestoreDataInDb).toHaveBeenCalledWith("WS-DEFAULT");
+    expect(clearRestoreDataInDb.mock.invocationCallOrder[0]).toBeLessThan(
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mock
+        .invocationCallOrder[0],
+    );
+    expect(discardSessionMarker.clear).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a marked session to the main window", async () => {
+    discardSessionMarker.isSet = true;
+    appWindow.isMain = false;
+
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getActiveWorkspace()).toBeDefined();
+    });
+
+    expect(clearRestoreDataInDb).not.toHaveBeenCalled();
+    expect(discardSessionMarker.clear).not.toHaveBeenCalled();
   });
 
   it("ignores saveWorkspace for the default workspace or missing workspaces", async () => {
