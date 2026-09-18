@@ -230,10 +230,10 @@ export class SelectedWorkspaceHeaderComponent {
   protected workspaceStatusTooltip(workspaceEntry: WorkspaceEntryContract): string {
     if (this.restoreEnabled()) {
       if (workspaceEntry.autoSaveStatus === "saving") {
-        return `${workspaceEntry.name} · speichert…`;
+        return `${workspaceEntry.name} · saving…`;
       }
       if (workspaceEntry.autoSaveStatus === "saved" && workspaceEntry.autoSavedAt !== undefined) {
-        return `${workspaceEntry.name} · automatisch gespeichert ${relativeSavedTime(workspaceEntry.autoSavedAt)}`;
+        return `${workspaceEntry.name} · saved automatically ${relativeSavedTime(workspaceEntry.autoSavedAt)}`;
       }
       return workspaceEntry.name;
     }

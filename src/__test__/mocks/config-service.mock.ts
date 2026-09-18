@@ -96,4 +96,8 @@ export class ConfigServiceMock extends ConfigService {
   getPromptSegments(): any[] {
     return [];
   }
+
+  getPromptSeparator(): string | undefined {
+    return undefined;
+  }
 }

@@ -3,6 +3,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { defaultSettings } from "@cogno/core/infrastructure/config/models/default-config-values";
+import {
+  terminalColorConfigKey,
+  terminalColorCssVariable,
+  terminalColorNames,
+} from "@cogno/core/infrastructure/config/models/shared";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Paths } from "@cogno/platform/path";
@@ -63,14 +68,15 @@ export class StyleService {
       `#${config.color?.foreground}`,
     );
     document.documentElement.style.setProperty("--highlight-color", `#${config.color?.highlight}`);
-    document.documentElement.style.setProperty("--color-green", `#${config.color?.green}`);
-    document.documentElement.style.setProperty("--color-red", `#${config.color?.red}`);
-    document.documentElement.style.setProperty("--color-blue", `#${config.color?.blue}`);
-    document.documentElement.style.setProperty("--color-yellow", `#${config.color?.yellow}`);
-    document.documentElement.style.setProperty("--color-magenta", `#${config.color?.magenta}`);
-    document.documentElement.style.setProperty("--color-cyan", `#${config.color?.cyan}`);
-    document.documentElement.style.setProperty("--color-white", `#${config.color?.white}`);
-    document.documentElement.style.setProperty("--color-black", `#${config.color?.black}`);
+    // One variable per ANSI color (`--color-red`, `--color-bright-red`, ...); the
+    // prompt segments reference them by name.
+    const colors: Record<string, string | undefined> = config.color ?? {};
+    for (const name of terminalColorNames) {
+      document.documentElement.style.setProperty(
+        terminalColorCssVariable(name),
+        `#${colors[terminalColorConfigKey(name)]}`,
+      );
+    }
     document.documentElement.style.setProperty("--color-grey", `#555555`);
     document.documentElement.style.setProperty("--cursor-color", `#${config.cursor?.color}`);
     const shadow1 =

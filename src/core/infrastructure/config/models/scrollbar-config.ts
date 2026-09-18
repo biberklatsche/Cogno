@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { HexColorSchema } from "./shared";
 
-export const ScrollbarSchema = z.object({
+export const ScrollbarSchema = z.strictObject({
   width: z
     .number()
     .int()
@@ -9,12 +9,12 @@ export const ScrollbarSchema = z.object({
     .optional()
     .describe("Scrollbar width in pixels; 0 hides it."),
   overview_ruler_border_color: HexColorSchema.optional().describe(
-    "Border colour of the overview ruler next to the scrollbar.",
+    "Border color of the overview ruler next to the scrollbar.",
   ),
-  slider_color: HexColorSchema.optional().describe("Scrollbar slider colour."),
-  slider_hover_color: HexColorSchema.optional().describe("Scrollbar slider colour while hovered."),
+  slider_color: HexColorSchema.optional().describe("Scrollbar slider color."),
+  slider_hover_color: HexColorSchema.optional().describe("Scrollbar slider color while hovered."),
   slider_active_color: HexColorSchema.optional().describe(
-    "Scrollbar slider colour while being dragged.",
+    "Scrollbar slider color while being dragged.",
   ),
   sensitivity: z
     .number()

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export const AutocompleteSettingsSchema = z.object({
+export const AutocompleteSettingsSchema = z.strictObject({
   provider: z
-    .object({
+    .strictObject({
       timeout_ms: z
         .number()
         .int()

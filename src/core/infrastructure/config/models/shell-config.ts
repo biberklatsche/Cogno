@@ -5,15 +5,17 @@ const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash"]);
 export type ShellType = z.infer<typeof ShellTypeEnum>;
 
 const ShellProfileSchema = z
-  .object({
+  .strictObject({
     shell_type: ShellTypeEnum.describe("Which shell this profile launches."),
-    path: z.string().optional().describe("Custom executable path; found on PATH when unset."),
+    path: z
+      .string()
+      .optional()
+      .describe("Path of the shell executable, e.g. `/bin/zsh`. Required."),
     args: z.array(z.string()).optional().describe("Extra launch arguments for the shell."),
     env: z
       .record(z.string(), z.string())
       .optional()
       .describe("Environment variables added to the shell process."),
-    use_conpty: z.boolean().optional().describe("Windows only: use the ConPTY backend."),
     working_dir: z.string().optional().describe("Directory the shell starts in."),
     inject_cogno_cli: z
       .boolean()
@@ -32,7 +34,7 @@ const ShellProfilesSchema = z
   .describe("Named shell profiles, at most 9.");
 
 export const ShellConfigSchema = z
-  .object({
+  .strictObject({
     default: z
       .string()
       .min(1)

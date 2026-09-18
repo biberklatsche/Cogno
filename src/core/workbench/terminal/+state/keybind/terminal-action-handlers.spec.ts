@@ -207,6 +207,38 @@ describe("terminal actions, from ActionFired to their effect", () => {
     });
   });
 
+  describe("a broadcast keybinding", () => {
+    const broadcast = { broadcast: true, unconsumed: false, performable: false, always: false };
+
+    it("reaches every session, not only the focused one", () => {
+      splitIntoTwoPanes();
+
+      fire("clear_line", broadcast);
+
+      expect(hosts["term-1"].runEditorAction).toHaveBeenCalledExactlyOnceWith("clearLine");
+      expect(hosts["term-2"].runEditorAction).toHaveBeenCalledExactlyOnceWith("clearLine");
+    });
+
+    it("still runs only on the terminal an action names", () => {
+      splitIntoTwoPanes();
+
+      fire("clear_line", broadcast, "term-2");
+
+      expect(hosts["term-1"].runEditorAction).not.toHaveBeenCalled();
+      expect(hosts["term-2"].runEditorAction).toHaveBeenCalledTimes(1);
+    });
+
+    it("copies only where a performable trigger finds a selection", () => {
+      splitIntoTwoPanes();
+      hosts["term-2"].hasSelection = true;
+
+      fire("copy", { ...broadcast, performable: true });
+
+      expect(hosts["term-1"].copy).not.toHaveBeenCalled();
+      expect(hosts["term-2"].copy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("an action that names its terminal (context menu, HTTP)", () => {
     it("runs on that session, not on the focused one", () => {
       splitIntoTwoPanes();

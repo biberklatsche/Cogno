@@ -33,6 +33,7 @@ export class CommandLineObserver implements ITerminalHandler {
     clipboard: ClipboardAccess,
     private readonly _markerRegistry: PromptMarkerRegistry = new PromptMarkerRegistry(),
     private readonly _commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(_markerRegistry),
+    promptSeparator?: string,
   ) {
     this._markerManager = new MarkerManager(
       model,
@@ -40,6 +41,7 @@ export class CommandLineObserver implements ITerminalHandler {
       contextMenuOverlayService,
       clipboard,
       this._markerRegistry,
+      promptSeparator,
     );
 
     // Debounce marker refresh to improve performance with long outputs

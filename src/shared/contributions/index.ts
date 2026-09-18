@@ -2,6 +2,7 @@ export * from "./application-settings-extension";
 export * from "./database-migration";
 export * from "./feature-definition";
 export * from "./feature-settings";
+export * from "./limit-setting";
 export * from "./shell-definition";
 export * from "./shell-path-adapter-definition";
 export * from "./shell-support";

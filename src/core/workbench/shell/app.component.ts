@@ -100,14 +100,10 @@ export class AppComponent {
         this.environment.legacyDatabaseFilePath(),
       );
       if (report.recovery) {
-        publishDatabaseWarning(
-          bus,
-          "Datenbank wiederhergestellt",
-          describeRecovery(report.recovery),
-        );
+        publishDatabaseWarning(bus, "Database recovered", describeRecovery(report.recovery));
       }
       if (report.legacyErrors.length > 0) {
-        publishDatabaseWarning(bus, "Import unvollständig", describeLegacyErrors(report));
+        publishDatabaseWarning(bus, "Import incomplete", describeLegacyErrors(report));
       }
     } catch (error) {
       ErrorReporter.reportException({
@@ -138,18 +134,16 @@ function describeRecovery(recovery: DatabaseRecoveryReport): string {
   const restored = recovery.tables.reduce((sum, table) => sum + table.rowsRestored, 0);
   const failed = recovery.tables.filter((table) => table.error !== null).map((table) => table.name);
   const lines = [
-    `Die Datenbank war beschädigt (${recovery.reasons[0] ?? "unbekannt"}).`,
-    `${restored} Zeilen wiederhergestellt. Die beschädigte Datei liegt unter ${recovery.quarantinedPath}.`,
+    `The database was damaged (${recovery.reasons[0] ?? "unknown"}).`,
+    `${restored} rows recovered. The damaged file was kept at ${recovery.quarantinedPath}.`,
   ];
   if (failed.length > 0) {
-    lines.push(`Nicht lesbar: ${failed.join(", ")}.`);
+    lines.push(`Not readable: ${failed.join(", ")}.`);
   }
   return lines.join("\n");
 }
 
 function describeLegacyErrors(report: DatabaseOpenReport): string {
   const lines = report.legacyErrors.map((entry) => `${entry.id}: ${entry.error}`);
-  return ["Daten aus der vorherigen Datenbank konnten nicht übernommen werden:", ...lines].join(
-    "\n",
-  );
+  return ["Some data from the previous database could not be imported:", ...lines].join("\n");
 }

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ClipboardConfigSchema = z.object({
+export const ClipboardConfigSchema = z.strictObject({
   read: z
     .enum(["allow", "deny"])
     .optional()

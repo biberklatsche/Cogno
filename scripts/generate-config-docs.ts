@@ -10,7 +10,9 @@
  * `--check` fails if `docs/config.md` on disk differs from a fresh render (CI,
  * part of `pnpm lint`), the same contract as `generate-actions.ts`.
  *
- * Run: `npx tsx scripts/generate-config-docs.ts [--check]`.
+ * `--site` also writes the website page into the sibling `meetcogno` repo.
+ *
+ * Run: `npx tsx scripts/generate-config-docs.ts [--check] [--site]`.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { baseConfigSchemaShape } from "../src/core/infrastructure/config/models/config";
@@ -24,6 +26,7 @@ import { hexColorSchema } from "../src/shared/contributions/feature-settings";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const DOCS_MD = `${REPO_ROOT}/docs/config.md`;
+const SITE_MD = `${REPO_ROOT}/../meetcogno/src/content/docs/config/settings.md`;
 
 /** Zod 4 keeps the definition under `_zod.def`; typed as unknown on purpose. */
 type ZodLike = { _zod?: { def?: Def }; description?: string };
@@ -48,7 +51,7 @@ const defOf = (schema: ZodLike | undefined): Def | undefined => schema?._zod?.de
 const SECTIONS: ReadonlyArray<{ keys: readonly string[]; title: string; lead?: string }> = [
   { keys: ["enable_watch_config"], title: "General" },
   { keys: ["font"], title: "Font" },
-  { keys: ["color"], title: "Colors", lead: "Colours are hex without `#`; 8 digits add alpha." },
+  { keys: ["color"], title: "Colors", lead: "Colors are hex without `#`; 8 digits add alpha." },
   { keys: ["cursor"], title: "Cursor" },
   { keys: ["padding"], title: "Padding" },
   { keys: ["background_image"], title: "Background image" },
@@ -130,11 +133,22 @@ function numberType(def: Def): string {
   return base;
 }
 
+/** True when the schema is a hex color, however often it is wrapped in optional/default. */
+function isHexColor(schema: ZodLike | undefined): boolean {
+  let current = schema;
+  for (let guard = 0; guard < 10 && current; guard++) {
+    if (current === HexColorSchema || current === hexColorSchema) return true;
+    const def = defOf(current);
+    if (def?.type !== "optional" && def?.type !== "nullable" && def?.type !== "default") break;
+    current = def.innerType;
+  }
+  return false;
+}
+
 function renderType(schema: ZodLike | undefined): string {
-  // Hex colours are a preprocessed regex; name them rather than print the regex.
-  if (schema === HexColorSchema || schema === hexColorSchema) return "hex colour";
+  // Hex colors are a preprocessed regex; name them rather than print the regex.
+  if (isHexColor(schema)) return "hex color";
   const { schema: inner } = unwrap(schema);
-  if (inner === HexColorSchema || inner === hexColorSchema) return "hex colour";
   const def = defOf(inner);
   if (!def) return "—";
   switch (def.type) {
@@ -146,12 +160,12 @@ function renderType(schema: ZodLike | undefined): string {
       return "string";
     case "enum":
       return Object.keys(def.entries ?? {})
-        .map((value) => `\`"${value}"\``)
-        .join(" ");
+        .map((value) => `\`${value}\``)
+        .join(" | ");
     case "literal":
-      return (def.values ?? []).map((value) => `\`"${String(value)}"\``).join(" ");
+      return (def.values ?? []).map((value) => `\`${String(value)}\``).join(" | ");
     case "union":
-      return (def.options ?? []).map((option) => renderType(option)).join(" \\| ");
+      return (def.options ?? []).map((option) => renderType(option)).join(" | ");
     case "array":
       return `${renderType(def.element)}[]`;
     case "record":
@@ -161,6 +175,12 @@ function renderType(schema: ZodLike | undefined): string {
     default:
       return def.type;
   }
+}
+
+/** A value as inline code; a backtick inside needs the double-backtick form. */
+function codeSpan(value: string): string {
+  if (value === "") return "*(empty)*";
+  return value.includes("`") ? `\`\` ${value} \`\`` : `\`${value}\``;
 }
 
 function defaultFor(path: string): string {
@@ -179,21 +199,28 @@ function defaultFor(path: string): string {
     .filter(([, value]) => value !== undefined && value !== base);
 
   if (base === undefined && overrides.length === 0) return "—";
-  const rendered = base === undefined ? "—" : `\`${base}\``;
+  const rendered = base === undefined ? "—" : codeSpan(base);
   if (overrides.length === 0) return rendered;
-  const perOs = overrides.map(([os, value]) => `${os}: \`${value}\``).join(", ");
+  const perOs = overrides.map(([os, value]) => `${os}: ${codeSpan(value ?? "")}`).join(", ");
   return `${rendered} (${perOs})`;
 }
 
-function walk(schema: ZodLike | undefined, path: string, rows: Row[]): void {
+/**
+ * Emits one row per setting a user can actually write. Objects and records are
+ * only containers, so they get no row of their own; a record's description moves
+ * to its `<name>` entry when that entry has none.
+ */
+function walk(
+  schema: ZodLike | undefined,
+  path: string,
+  rows: Row[],
+  inheritedDescription?: string,
+): void {
   const { schema: inner, description } = unwrap(schema);
   const def = defOf(inner);
   if (!def) return;
 
   if (def.type === "object" && def.shape) {
-    if (description && path) {
-      rows.push({ key: path, type: "group", def: "", description });
-    }
     for (const [key, child] of Object.entries(def.shape)) {
       walk(child, path ? `${path}.${key}` : key, rows);
     }
@@ -201,10 +228,7 @@ function walk(schema: ZodLike | undefined, path: string, rows: Row[]): void {
   }
 
   if (def.type === "record" && def.valueType) {
-    if (description && path) {
-      rows.push({ key: path, type: "group", def: "", description });
-    }
-    walk(def.valueType, `${path}.${recordPlaceholder(path)}`, rows);
+    walk(def.valueType, `${path}.${recordPlaceholder(path)}`, rows, description);
     return;
   }
 
@@ -213,9 +237,6 @@ function walk(schema: ZodLike | undefined, path: string, rows: Row[]): void {
     def.type === "union" &&
     (def.options ?? []).some((o) => defOf(unwrap(o).schema)?.type === "object")
   ) {
-    if (description && path) {
-      rows.push({ key: path, type: "group", def: "", description });
-    }
     const seen = new Set<string>();
     for (const option of def.options ?? []) {
       const optionRows: Row[] = [];
@@ -231,9 +252,9 @@ function walk(schema: ZodLike | undefined, path: string, rows: Row[]): void {
 
   rows.push({
     key: path,
-    type: renderType(inner),
+    type: renderType(schema),
     def: defaultFor(path),
-    description: description ?? "",
+    description: description ?? inheritedDescription ?? "",
   });
 }
 
@@ -247,41 +268,63 @@ function rowsFor(key: string): Row[] {
   return rows;
 }
 
-function renderTable(rows: Row[]): string {
-  const lines = ["| Setting | Type | Default | Description |", "|---|---|---|---|"];
-  for (const row of rows) {
-    lines.push(
-      `| \`${row.key}\` | ${row.type || "—"} | ${row.def || "—"} | ${row.description || "—"} |`,
-    );
-  }
+/** One linkable heading per setting: description first, then type and default. */
+function renderSetting(row: Row): string {
+  const facts = [`**Type:** ${row.type || "—"}`];
+  if (row.def && row.def !== "—") facts.push(`**Default:** ${row.def}`);
+  const lines = [`### \`${row.key}\``, ""];
+  if (row.description) lines.push(row.description, "");
+  lines.push(facts.join(" · "), "");
   return lines.join("\n");
 }
 
-function render(): string {
-  const parts = [
-    "<!-- Generated by scripts/generate-config-docs.ts from the Zod schemas. Do not edit. -->",
-    "",
-    "# Settings reference",
-    "",
-    "Every Cogno setting, its type, default and meaning. Written as `key = value` lines in",
-    "`~/.cogno/cogno.config` (`~/.cogno-dev` in development builds); only the values you",
-    "override need to be present.",
-    "",
-    "A `group` row documents a block of related settings rather than a value of its own.",
-    "Where a default differs per operating system, the platform is named in brackets;",
-    "otherwise the value applies everywhere.",
-    "",
-  ];
-
+/** The reference body, shared by `docs/config.md` and the website page. */
+function renderBody(): string {
+  const parts: string[] = [];
   for (const section of SECTIONS) {
     const rows = section.keys.flatMap((key) => rowsFor(key));
     if (rows.length === 0) continue;
     parts.push(`## ${section.title}`, "");
     if (section.lead) parts.push(section.lead, "");
-    parts.push(renderTable(rows), "");
+    for (const row of rows) parts.push(renderSetting(row));
   }
-
   return `${parts.join("\n").trimEnd()}\n`;
+}
+
+const INTRO = [
+  "Every Cogno setting with its type, default and meaning. Settings are written as",
+  "`key = value` lines in `~/.cogno/cogno.config`; only the values you override need to be",
+  "present. Where a default differs per operating system, the platform is named in",
+  "brackets.",
+].join("\n");
+
+function render(): string {
+  return [
+    "<!-- Generated by scripts/generate-config-docs.ts from the Zod schemas. Do not edit. -->",
+    "",
+    "# Settings reference",
+    "",
+    INTRO,
+    "",
+    renderBody(),
+  ].join("\n");
+}
+
+/** The same reference as a Starlight page of the website (sibling `meetcogno` repo). */
+function renderSitePage(): string {
+  return [
+    "---",
+    "title: All settings",
+    "description: Reference of every Cogno setting with its type, default and meaning.",
+    "slug: docs/config/settings",
+    "---",
+    "",
+    "<!-- Generated by Cogno/scripts/generate-config-docs.ts. Do not edit. -->",
+    "",
+    `${INTRO} See the [configuration overview](/docs/config) for the file format.`,
+    "",
+    renderBody(),
+  ].join("\n");
 }
 
 function main(): void {
@@ -299,6 +342,10 @@ function main(): void {
   }
   writeFileSync(DOCS_MD, content);
   console.log(`config docs: wrote ${DOCS_MD}`);
+  if (process.argv.includes("--site")) {
+    writeFileSync(SITE_MD, renderSitePage());
+    console.log(`config docs: wrote ${SITE_MD}`);
+  }
 }
 
 main();

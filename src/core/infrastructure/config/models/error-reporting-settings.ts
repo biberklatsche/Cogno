@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-export const ErrorReportingSettingsSchema = z.object({
+export const ErrorReportingSettingsSchema = z.strictObject({
   handled: z
-    .object({
+    .strictObject({
       enabled: z
         .boolean()
         .optional()
@@ -12,7 +12,7 @@ export const ErrorReportingSettingsSchema = z.object({
     })
     .optional(),
   unhandled: z
-    .object({
+    .strictObject({
       enabled: z
         .boolean()
         .optional()

@@ -59,7 +59,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                     <span
                       class="workspace-autosave-indicator"
                       aria-hidden="true"
-                      [appTooltip]="workspaceEntry.name + ' · speichert…'"
+                      [appTooltip]="workspaceEntry.name + ' · saving…'"
                     >
                       <app-icon class="spin" name="mdiLoading"></app-icon>
                     </span>
@@ -67,7 +67,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                     <span
                       class="workspace-autosave-indicator"
                       aria-hidden="true"
-                      [appTooltip]="'automatisch gespeichert ' + relativeSavedTime(workspaceEntry.autoSavedAt)"
+                      [appTooltip]="'saved automatically ' + relativeSavedTime(workspaceEntry.autoSavedAt)"
                     >
                       <app-icon name="mdiCheck"></app-icon>
                     </span>

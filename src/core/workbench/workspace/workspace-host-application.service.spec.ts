@@ -5,6 +5,7 @@ import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-lis
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import type { AppWindow } from "@cogno/platform/window";
 import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -28,6 +29,12 @@ describe("WorkspaceHostApplicationService", () => {
   let tabListService: TabListService;
   let workspaceRepository: WorkspaceRepository;
   let service: WorkspaceHostApplicationService;
+  let restoreSettings: { enabled: boolean };
+  let appWindow: {
+    isMain: boolean;
+    claimWorkspace: ReturnType<typeof vi.fn>;
+    releaseWorkspace: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     bus = getAppBus();
@@ -64,17 +71,24 @@ describe("WorkspaceHostApplicationService", () => {
       saveOpenState: vi.fn().mockResolvedValue(undefined),
     } as unknown as WorkspaceRepository;
 
+    restoreSettings = { enabled: true };
+    appWindow = {
+      isMain: true,
+      claimWorkspace: vi.fn().mockResolvedValue(true),
+      releaseWorkspace: vi.fn().mockResolvedValue(undefined),
+    };
     service = new WorkspaceHostApplicationService(
       bus,
       sideMenuService,
       workspaceRepository,
       gridListService,
       tabListService,
-      { config: { terminal: { restore: { enabled: true } } } } as unknown as ConfigService,
+      { config: { terminal: { restore: restoreSettings } } } as unknown as ConfigService,
       {
         persistWorkspace: vi.fn().mockResolvedValue(undefined),
         loadPendingSnapshots: vi.fn().mockResolvedValue(undefined),
       } as unknown as SessionPersistenceService,
+      appWindow as unknown as AppWindow,
       { facts$: new Subject() } as unknown as TerminalSessionRegistry,
       getDestroyRef(),
     );
@@ -317,6 +331,99 @@ describe("WorkspaceHostApplicationService", () => {
       );
       // The default workspace is still there, just not open.
       expect(service.getWorkspaceById("WS-DEFAULT")?.isOpen).toBe(false);
+    });
+
+    it("brings nothing back when session restore is off", async () => {
+      restoreSettings.enabled = false;
+      const saveOpenState = workspaceRepository.saveOpenState as ReturnType<typeof vi.fn>;
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ...threeWorkspaces(),
+        {
+          id: "WS-DEFAULT",
+          name: "Default Workspace",
+          color: "grey",
+          isOpen: true,
+          tabs: [{ tabId: "T-OLD", isActive: true, userTitle: "from a restored session" }],
+          grids: [{ tabId: "T-OLD", pane: { workingDir: "C:\\old" } }],
+        },
+      ]);
+
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-DEFAULT");
+      });
+
+      // The launch starts in a fresh default workspace; nothing else is opened.
+      expect(tabListService.getTabConfigs("WS-DEFAULT").map((tab) => tab.tabId)).not.toContain(
+        "T-OLD",
+      );
+      for (const id of ["WS-1", "WS-2", "WS-3"]) {
+        expect(service.getWorkspaceById(id)?.isOpen).toBe(false);
+        expect(gridListService.terminalIdsForWorkspace(id)).toEqual([]);
+      }
+      expect(saveOpenState).not.toHaveBeenCalled();
+
+      // A saved workspace is still there to be opened by hand.
+      await service.restoreWorkspaceById("WS-3");
+      expect(service.getActiveWorkspace()?.id).toBe("WS-3");
+      expect(saveOpenState).not.toHaveBeenCalled();
+    });
+
+    it("starts a further window fresh and never lets it touch the saved session", async () => {
+      appWindow.isMain = false;
+      const saveOpenState = workspaceRepository.saveOpenState as ReturnType<typeof vi.fn>;
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-DEFAULT");
+      });
+
+      for (const id of ["WS-1", "WS-2", "WS-3"]) {
+        expect(service.getWorkspaceById(id)?.isOpen).toBe(false);
+      }
+      expect(appWindow.claimWorkspace).not.toHaveBeenCalled();
+
+      // Its own default workspace is not written over the main window's.
+      await service.autoPersistWorkspace("WS-DEFAULT");
+      expect(workspaceRepository.upsertWorkspace).not.toHaveBeenCalled();
+      expect(saveOpenState).not.toHaveBeenCalled();
+    });
+
+    it("claims the workspaces it opens and releases them when they close", async () => {
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      });
+      expect(appWindow.claimWorkspace.mock.calls.map(([id]) => id).sort()).toEqual([
+        "WS-1",
+        "WS-2",
+      ]);
+
+      await service.closeWorkspace("WS-1");
+      expect(appWindow.releaseWorkspace).toHaveBeenCalledWith("WS-1");
+    });
+
+    it("leaves a workspace alone that another window holds", async () => {
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      });
+
+      appWindow.claimWorkspace.mockResolvedValue(false);
+      await service.restoreWorkspaceById("WS-3");
+
+      expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      expect(service.getWorkspaceById("WS-3")?.isOpen).toBe(false);
+      expect(gridListService.terminalIdsForWorkspace("WS-3")).toEqual([]);
     });
 
     it("records which workspaces are open and which is active as that changes", async () => {

@@ -97,6 +97,49 @@ describe("ConfigMapper", () => {
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
   });
 
+  it("names a misspelled nested setting in a warning and keeps the rest of the config", () => {
+    const text = `
+      font.sizee=20
+      font.size=13
+      feature.ai.mode=on
+      cursor.blink=false
+    `;
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
+      "linux",
+      defaultText,
+      text,
+      extensions,
+    );
+
+    // Only the two unknown keys are dropped; nothing falls back to the defaults.
+    expect(result.config.font?.size).toBe(13);
+    expect(result.config.cursor?.blink).toBe(false);
+    expect(result.diagnostics.every((d) => d.level === "warning")).toBe(true);
+    const messages = result.diagnostics.map((d) => d.message).join("\n");
+    expect(messages).toContain("'sizee'");
+    expect(messages).toContain("'ai'");
+  });
+
+  it("reads `unlimited` and plain numbers for a limit setting", () => {
+    const text = `
+      notification.channel.app.duration_seconds=unlimited
+      feature.notification_overview.overview.max_items=0
+      terminal.history.max_entries=200
+    `;
+    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
+      "linux",
+      defaultText,
+      text,
+      extensions,
+    );
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.config.notification?.channel?.app?.duration_seconds).toBe("unlimited");
+    expect(result.config.feature?.notification_overview?.overview?.max_items).toBe(0);
+    expect(result.config.terminal?.history?.max_entries).toBe(200);
+    expect(DEFAULTS.terminal?.history?.max_entries).toBe("unlimited");
+  });
+
   it("single-arg overload still works (no defaults)", () => {
     const proper = `terminal.webgl=false\nscrollbar.scrollback_lines=9999\n`;
     const settings = ConfigMapper.fromStringToConfig("linux", proper, extensions);

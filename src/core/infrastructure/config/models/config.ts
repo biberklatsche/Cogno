@@ -24,7 +24,7 @@ export const HTTP_SERVER_DEFAULTS = {
   auto_next_port: true,
 } as const;
 
-const HttpServerSchema = z.object({
+const HttpServerSchema = z.strictObject({
   enabled: z
     .boolean()
     .optional()
@@ -37,18 +37,20 @@ const HttpServerSchema = z.object({
 });
 
 export const baseConfigSchemaShape = {
-  keybind: KeybindsSchema.optional().describe("Keybinding lines; see the keybinding syntax."),
+  keybind: KeybindsSchema.optional().describe(
+    "One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.",
+  ),
   enable_watch_config: z
     .boolean()
     .optional()
     .describe("Reload the config automatically when the file changes on disk."),
   font: FontSchema.optional().describe("Terminal and app fonts."),
-  color: ColorSchema.optional().describe("Terminal colour palette."),
-  cursor: CursorSchema.optional().describe("Cursor shape, colour and behaviour."),
+  color: ColorSchema.optional().describe("Terminal color palette."),
+  cursor: CursorSchema.optional().describe("Cursor shape, color and behaviour."),
   padding: PaddingSchema.optional().describe("Padding around the terminal content."),
   background_image: ImageSchema.optional().describe("Optional terminal background image."),
   shell: ShellConfigSchema.optional().describe("Shell profiles and which one starts by default."),
-  selection: SelectionSchema.optional().describe("Text selection colours and behaviour."),
+  selection: SelectionSchema.optional().describe("Text selection colors and behaviour."),
   clipboard: ClipboardConfigSchema.optional().describe("Clipboard access and copy behaviour."),
   menu: MenuSchema.optional().describe("Appearance of menus and panels."),
   scrollbar: ScrollbarSchema.optional().describe("Scrollbar appearance and scrolling behaviour."),

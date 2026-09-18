@@ -1,4 +1,5 @@
 import { Injectable, Signal, signal } from "@angular/core";
+import { resolveLimit } from "@cogno/shared/contributions";
 import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
@@ -22,9 +23,9 @@ export class AppNotificationChannelService implements NotificationChannelContrac
     this.appNotificationToastsSignal.asReadonly();
 
   dispatch(notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract): void {
-    const durationSeconds = readNumberSetting(
-      notificationChannelDispatchRequest.settings,
-      "duration_seconds",
+    // `unlimited` resolves to Infinity: the toast stays until it is dismissed.
+    const durationSeconds = resolveLimit(
+      notificationChannelDispatchRequest.settings["duration_seconds"],
       5,
     );
     if (durationSeconds <= 0) {
@@ -39,6 +40,9 @@ export class AppNotificationChannelService implements NotificationChannelContrac
       type: notificationChannelDispatchRequest.notification.type ?? "info",
     });
 
+    if (!Number.isFinite(durationSeconds)) {
+      return;
+    }
     const timer = setTimeout(() => {
       this.dismissAppNotificationToast(toastId);
     }, durationSeconds * 1000);
@@ -89,16 +93,4 @@ export class AppNotificationChannelService implements NotificationChannelContrac
     clearTimeout(timer);
     this.appNotificationToastTimerById.delete(toastId);
   }
-}
-
-function readNumberSetting(
-  settings: Readonly<Record<string, unknown>>,
-  key: string,
-  fallbackValue: number,
-): number {
-  const value = settings[key];
-  if (typeof value !== "number") {
-    return fallbackValue;
-  }
-  return value;
 }

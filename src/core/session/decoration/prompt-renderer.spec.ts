@@ -120,6 +120,41 @@ describe("PromptMarkerRenderer", () => {
     expect(marker?.textContent).toBe("tester@localhost:~/projects");
   });
 
+  it("resolves bright color names to their theme variable", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const segments: PromptSegment[] = [
+      { text: "Bright", foreground: "brightRed", background: "brightBlack" },
+    ];
+    new PromptMarkerRenderer(stateManager, segments, clipboardStub).render(hostElement, 0);
+
+    const span = hostElement.querySelector(".prompt-segment") as HTMLElement;
+    expect(span.style.color).toBe("var(--color-bright-red)");
+    expect(span.style.backgroundColor).toBe("var(--color-bright-black)");
+  });
+
+  it("draws the separator between the segments that show, not around hidden ones", () => {
+    stateManager.updateCommand({ id: "cmd-1" });
+
+    const segments: PromptSegment[] = [
+      { text: "a" },
+      { text: "hidden", when: "returnCode==42" },
+      { text: "b" },
+    ];
+    const renderer = new PromptMarkerRenderer(
+      stateManager,
+      segments,
+      clipboardStub,
+      undefined,
+      " | ",
+    );
+    renderer.render(hostElement, 0);
+
+    const content = hostElement.querySelector(".prompt-segment")?.parentElement;
+    expect(content?.textContent).toBe("a | b");
+    expect(hostElement.querySelectorAll(".prompt-separator")).toHaveLength(1);
+  });
+
   it("should apply styles correctly", () => {
     stateManager.updateCommand({ id: "cmd-1" });
 
@@ -127,7 +162,8 @@ describe("PromptMarkerRenderer", () => {
       {
         text: "Styled",
         foreground: "red",
-        background: "#00ff00",
+        // As the schema stores it: the config holds hex colors without `#`.
+        background: "00ff00",
         bold: true,
         italic: true,
         underline: true,
@@ -144,7 +180,7 @@ describe("PromptMarkerRenderer", () => {
 
     const span = hostElement.querySelector(".prompt-segment") as HTMLElement;
     expect(span.style.color).toBe("var(--color-red)");
-    expect(span.style.backgroundColor).toBe("#00ff00"); // #00ff00
+    expect(span.style.backgroundColor).toBe("#00ff00");
     expect(span.style.fontWeight).toBe("600");
     expect(span.style.fontStyle).toBe("italic");
     expect(span.style.textDecoration).toBe("underline");

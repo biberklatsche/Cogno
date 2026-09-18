@@ -6,6 +6,7 @@ import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-lis
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import { AppWindow } from "@cogno/platform/window";
 import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   WorkspaceAutoSaveStatus,
@@ -96,11 +97,14 @@ export class WorkspaceHostApplicationService {
     private readonly tabListService: TabListService,
     private readonly configService: ConfigService,
     private readonly sessionPersistence: SessionPersistenceService,
+    private readonly appWindow: AppWindow,
     sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
     this.bus.once$("DBInitialized").subscribe(async () => {
-      const workspaces = await this.workspaceRepository.getAllWorkspaces();
+      const workspaces = this.workspacesToStartWith(
+        await this.workspaceRepository.getAllWorkspaces(),
+      );
       await this.repairDuplicateIds(workspaces);
       const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
         workspaces,
@@ -128,7 +132,11 @@ export class WorkspaceHostApplicationService {
       const activeWorkspace = WorkspaceStateUseCase.getActiveWorkspace(workspaceList);
       await this.runWithoutDirtyTracking(async () => {
         for (const workspace of workspaces) {
-          if (workspace.isOpen && workspace.id !== activeWorkspace?.id) {
+          if (
+            workspace.isOpen &&
+            workspace.id !== activeWorkspace?.id &&
+            (await this.claimWorkspace(workspace.id))
+          ) {
             this.openInBackground(workspace);
           }
         }
@@ -192,8 +200,53 @@ export class WorkspaceHostApplicationService {
     );
   }
 
+  private get isRestoreEnabled(): boolean {
+    return this.configService.config.terminal?.restore?.enabled !== false;
+  }
+
+  /**
+   * Only the window the app started with carries the session from launch to
+   * launch: it reopens what was open, keeps the default workspace and records
+   * the open state. Any further window is a fresh one.
+   */
+  private get carriesSession(): boolean {
+    return this.isRestoreEnabled && this.appWindow.isMain;
+  }
+
+  /** A named workspace lives in one window at a time; the default one is per window. */
+  private async claimWorkspace(workspaceId: string): Promise<boolean> {
+    return (
+      workspaceId === DEFAULT_WORKSPACE_ID || (await this.appWindow.claimWorkspace(workspaceId))
+    );
+  }
+
+  private async releaseWorkspace(workspaceId: string): Promise<void> {
+    if (workspaceId !== DEFAULT_WORKSPACE_ID) {
+      await this.appWindow.releaseWorkspace(workspaceId);
+    }
+  }
+
+  /**
+   * A window that does not carry the session brings nothing back: no workspace
+   * is reopened and the default workspace starts fresh. The saved workspaces
+   * stay in the list, to be opened by hand.
+   */
+  private workspacesToStartWith(
+    persistedWorkspaces: WorkspaceConfiguration[],
+  ): WorkspaceConfiguration[] {
+    if (this.carriesSession) {
+      return persistedWorkspaces;
+    }
+    return persistedWorkspaces
+      .filter((workspace) => workspace.id !== this.defaultWorkspace.id)
+      .map((workspace) => ({ ...workspace, isOpen: false, isActive: false }));
+  }
+
   /** Record which workspaces are open and which is active, for the next launch. */
   private async persistOpenState(): Promise<void> {
+    if (!this.carriesSession) {
+      return;
+    }
     const workspaceList = this._workspaceList();
     await this.workspaceRepository.saveOpenState(
       workspaceList.filter((workspace) => workspace.isOpen).map((workspace) => workspace.id),
@@ -219,6 +272,14 @@ export class WorkspaceHostApplicationService {
       const workspaceToActivate = activationPlan.workspaceToActivate;
 
       if (!workspaceToActivate) {
+        return;
+      }
+
+      // Open in another window: that window came to the front, nothing changes here.
+      if (
+        activationPlan.shouldRestoreRuntime &&
+        !(await this.claimWorkspace(workspaceToActivate.id))
+      ) {
         return;
       }
 
@@ -288,7 +349,10 @@ export class WorkspaceHostApplicationService {
    * atomic batches; each collects its data before writing.
    */
   async autoPersistWorkspace(workspaceId: string): Promise<void> {
-    if (this.configService.config.terminal?.restore?.enabled === false) {
+    if (!this.isRestoreEnabled) {
+      return;
+    }
+    if (workspaceId === DEFAULT_WORKSPACE_ID && !this.carriesSession) {
       return;
     }
     const workspace = this.getWorkspaceById(workspaceId);
@@ -364,6 +428,7 @@ export class WorkspaceHostApplicationService {
       if (deletePlan.deletedWorkspace?.isOpen) {
         this.tabListService.removeWorkspaceRuntime(id);
         this.gridListService.removeWorkspaceRuntime(id);
+        await this.releaseWorkspace(id);
       }
 
       this._workspaceList.set(deletePlan.workspaceList);
@@ -385,6 +450,7 @@ export class WorkspaceHostApplicationService {
     await this.runWithoutDirtyTracking(async () => {
       this.tabListService.removeWorkspaceRuntime(id);
       this.gridListService.removeWorkspaceRuntime(id);
+      await this.releaseWorkspace(id);
       this._workspaceList.set(closePlan.workspaceList);
       await this.activateWorkspaceById(closePlan.workspaceToActivateId);
       await this.persistOpenState();

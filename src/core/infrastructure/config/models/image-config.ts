@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ImageSchema = z.object({
+export const ImageSchema = z.strictObject({
   path: z
     .string()
     .optional()

@@ -37,3 +37,19 @@ export const TerminalNamedColorSchema = z.union([
   z.literal("brightCyan"),
   z.literal("brightWhite"),
 ]);
+
+export type TerminalNamedColor = z.infer<typeof TerminalNamedColorSchema>;
+
+/** The 16 ANSI color names a prompt segment may use, e.g. `red`, `brightRed`. */
+export const terminalColorNames: ReadonlyArray<TerminalNamedColor> =
+  TerminalNamedColorSchema.options.map((option) => option.value);
+
+const splitCamelCase = (name: string, joiner: string) =>
+  name.replace(/[A-Z]/g, (letter) => `${joiner}${letter.toLowerCase()}`);
+
+/** `brightRed` -> `bright_red`, its key under `color.*`. */
+export const terminalColorConfigKey = (name: TerminalNamedColor) => splitCamelCase(name, "_");
+
+/** `brightRed` -> `--color-bright-red`, the CSS variable the theme sets for it. */
+export const terminalColorCssVariable = (name: TerminalNamedColor) =>
+  `--color-${splitCamelCase(name, "-")}`;

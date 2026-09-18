@@ -1,5 +1,6 @@
 import { FeatureModeContract } from "@cogno/shared/domain";
 import { z } from "zod";
+import { limitSchema } from "./limit-setting";
 
 export const hexColorSchema = z.preprocess(
   (val) => (typeof val === "string" && val.startsWith("#") ? val.slice(1) : val),
@@ -29,59 +30,56 @@ const featureOrderSchema = z
     "Override the side-menu display position for this feature. Lower numbers appear first.",
   );
 
-export const FeatureCommandPaletteSchema = z.object({
+export const FeatureCommandPaletteSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
-export const FeatureWorkspaceSchema = z.object({
+export const FeatureWorkspaceSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
-export const FeatureNotificationOverviewSchema = z.object({
+export const FeatureNotificationOverviewSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
   overview: z
-    .object({
-      max_items: z
-        .number()
-        .int()
-        .min(0)
+    .strictObject({
+      max_items: limitSchema()
         .optional()
-        .describe("How many notifications the overview keeps; 0 means unlimited."),
+        .describe("How many notifications the overview keeps, or `unlimited`."),
     })
     .optional()
     .describe("The notification overview panel."),
 });
 
-export const FeatureSearchSchema = z.object({
+export const FeatureSearchSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
-export const FeatureGitSchema = z.object({
+export const FeatureGitSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
-export const FeatureProcessInfoSchema = z.object({
+export const FeatureProcessInfoSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
 });
 
-export const FeatureCodingAgentsSchema = z.object({
+export const FeatureCodingAgentsSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
   notifications: z
-    .object({
+    .strictObject({
       working: z
-        .object({
+        .strictObject({
           enabled: z.boolean().optional().describe("Notify when an agent starts working."),
         })
         .optional(),
       question: z
-        .object({
+        .strictObject({
           enabled: z
             .boolean()
             .optional()
@@ -89,12 +87,12 @@ export const FeatureCodingAgentsSchema = z.object({
         })
         .optional(),
       ready: z
-        .object({
+        .strictObject({
           enabled: z.boolean().optional().describe("Notify when an agent becomes ready/idle."),
         })
         .optional(),
       error: z
-        .object({
+        .strictObject({
           enabled: z.boolean().optional().describe("Notify when an agent reports an error."),
         })
         .optional(),

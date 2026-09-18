@@ -26,11 +26,14 @@ const EDITOR_ACTIONS = [
   ["select_all", "selectAll"],
 ] as const satisfies ReadonlyArray<readonly [CoreActionName, ShellLineEditorActionContract]>;
 
+type TargetContext = Parameters<ActionHandler>[0];
+
 /**
  * Every terminal action, handled centrally (ARCHITECTURE.md 5) - the successor
  * of the per-session KeybindExecutor. An action runs on the terminal it names
- * (the context menu, HTTP) or else on the focused one; with neither it reports
- * unperformed so the keybinding falls through. `copy`/`cut` only fire (and only
+ * (the context menu, HTTP) or else on the focused one - a `broadcast` keybinding
+ * reaches every session instead; with no target it reports unperformed so the
+ * keybinding falls through. `copy`/`cut` only fire (and only
  * consume) when a `performable` trigger has a selection.
  */
 @Injectable({ providedIn: "root" })
@@ -104,17 +107,23 @@ export class TerminalActionHandlers {
     );
   }
 
-  /** Runs on the terminal the action names, else on the focused one. */
+  /**
+   * Runs on the terminal the action names, else on the focused one - or, for a
+   * `broadcast` keybinding, on every live session. Unperformed when no target
+   * accepts it.
+   */
   private onTerminal(
     run: (terminalId: TerminalId) => void,
-    accepts: (terminalId: TerminalId) => boolean = () => true,
+    accepts: (terminalId: TerminalId, context: TargetContext) => boolean = () => true,
   ): ActionHandler {
     return (context) => {
-      const terminalId = this.targetOf(context);
-      if (!terminalId || !accepts(terminalId)) {
+      const targets = this.targetsOf(context).filter((id) => accepts(id, context));
+      if (targets.length === 0) {
         return false;
       }
-      run(terminalId);
+      for (const terminalId of targets) {
+        run(terminalId);
+      }
       return true;
     };
   }
@@ -134,17 +143,23 @@ export class TerminalActionHandlers {
    * selection; otherwise it falls through to the terminal.
    */
   private onSelection(run: (terminalId: TerminalId) => void): ActionHandler {
-    const onSession = this.onSession(run);
-    return (context) => {
-      if (context.trigger?.performable && !this.hostOf(this.targetOf(context))?.hasSelection) {
-        return false;
-      }
-      return onSession(context);
-    };
+    return this.onTerminal(
+      run,
+      (id, context) =>
+        this.terminalSessionRegistry.has(id) &&
+        (!context.trigger?.performable || this.hostOf(id)?.hasSelection === true),
+    );
   }
 
-  private targetOf(context: { terminalId?: TerminalId }): TerminalId | undefined {
-    return context.terminalId ?? this.gridListService.getFocusedTerminalId();
+  private targetsOf(context: TargetContext): TerminalId[] {
+    if (context.terminalId) {
+      return [context.terminalId];
+    }
+    if (context.trigger?.broadcast) {
+      return this.terminalSessionRegistry.entries.map((entry) => entry.terminalId);
+    }
+    const focusedTerminalId = this.gridListService.getFocusedTerminalId();
+    return focusedTerminalId ? [focusedTerminalId] : [];
   }
 
   private hostOf(terminalId: TerminalId | undefined) {

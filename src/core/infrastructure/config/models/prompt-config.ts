@@ -50,11 +50,9 @@ const WhenExpressionSchema = z.string().min(1);
 
 const SegmentCommonSchema = z
   .object({
-    foreground: PromptColorSchema.optional().describe(
-      "Text colour: a terminal colour name or hex.",
-    ),
+    foreground: PromptColorSchema.optional().describe("Text color: a terminal color name or hex."),
     background: PromptColorSchema.optional().describe(
-      "Background colour: a terminal colour name or hex.",
+      "Background color: a terminal color name or hex.",
     ),
 
     bold: z.boolean().optional().describe("Render the segment bold."),

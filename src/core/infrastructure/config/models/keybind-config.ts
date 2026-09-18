@@ -11,8 +11,8 @@ export const KeybindsSchema = z
   .array(KeybindSchema)
   .describe(
     "Keybinding lines, additive: `[trigger:]combo[>combo...]=action[:arg...]`. " +
-      "Triggers: `always` (also while a text input has focus), `performable` (only when the " +
-      "action is currently available), `broadcast`, `unconsumed`.",
+      "Triggers: `always` (also while a full-screen terminal app runs), `performable` (the " +
+      "key is only consumed when the action did something), `broadcast`, `unconsumed`.",
   );
 
 export type Keybinding = z.infer<typeof KeybindsSchema>;

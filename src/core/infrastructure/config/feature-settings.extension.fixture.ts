@@ -20,7 +20,7 @@ import { z } from "zod";
 export const featureSettingsExtensionFixture = {
   schemaShape: {
     feature: z
-      .object({
+      .strictObject({
         workspace: FeatureWorkspaceSchema.optional(),
         notification_overview: FeatureNotificationOverviewSchema.optional(),
         command_palette: FeatureCommandPaletteSchema.optional(),

@@ -46,13 +46,9 @@ impl ShellSpawner {
 
         let enable_integration = profile.enable_shell_integration.unwrap_or(true);
         let inject_cogno_cli = profile.inject_cogno_cli.unwrap_or(true);
-        // With shell integration enabled we rely on user rc files to reconstruct
-        // the same PATH/toolchain environment as a normal interactive shell.
-        let load_user_rc = if enable_integration {
-            true
-        } else {
-            profile.load_user_rc.unwrap_or(false)
-        };
+        // The user's rc files load unless the profile opts out. The PATH baseline
+        // comes from the prefetched login environment either way.
+        let load_user_rc = profile.load_user_rc.unwrap_or(true);
         let working_dir = profile
             .working_dir
             .clone()
@@ -73,8 +69,13 @@ impl ShellSpawner {
             args.extend(self.get_integration_args(&profile.shell_type)?);
             args
         } else {
-            // No integration: use profile args as-is
-            profile.args.clone().unwrap_or_default()
+            // No integration: the profile's args as they are. There is no bootstrap
+            // script to honour `load_user_rc`, so the shell's own flag does it.
+            let mut args = profile.args.clone().unwrap_or_default();
+            if !load_user_rc {
+                prepend_skip_user_rc_args(&profile.shell_type, &mut args);
+            }
+            args
         };
 
         // Build environment
@@ -170,5 +171,87 @@ impl ShellSpawner {
 
     fn get_cogno_executable_path(&self) -> Option<PathBuf> {
         std::env::current_exe().ok()
+    }
+}
+
+/// The flags that make a shell skip the user's startup files. They go first:
+/// Bash only accepts its long options ahead of the single-character ones.
+fn prepend_skip_user_rc_args(shell_type: &str, args: &mut Vec<String>) {
+    let flags: &[&str] = match shell_type {
+        "Bash" => &["--noprofile", "--norc"],
+        "ZSH" => &["-f"],
+        "PowerShell" => &["-NoProfile"],
+        _ => &[],
+    };
+    for flag in flags.iter().rev() {
+        if !args.iter().any(|arg| arg.eq_ignore_ascii_case(flag)) {
+            args.insert(0, flag.to_string());
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn profile(shell_type: &str, integration: bool, load_user_rc: Option<bool>) -> ShellProfile {
+        ShellProfile {
+            shell_type: shell_type.to_string(),
+            path: Some("/bin/sh".to_string()),
+            args: Some(vec!["-l".to_string(), "-i".to_string()]),
+            env: None,
+            working_dir: None,
+            enable_shell_integration: Some(integration),
+            inject_cogno_cli: Some(false),
+            load_user_rc,
+        }
+    }
+
+    fn spawn(profile: &ShellProfile) -> (Vec<String>, HashMap<String, String>) {
+        let spawner = ShellSpawner {
+            integration_root: PathBuf::from("/tmp/cogno-test-integration"),
+        };
+        let (_, argv, env, _) = spawner.prepare_spawn(profile).expect("spawn is prepared");
+        (argv, env)
+    }
+
+    #[test]
+    fn user_rc_loads_by_default() {
+        let (_, env) = spawn(&profile("ZSH", true, None));
+        assert_eq!(
+            env.get("COGNO_ALLOW_USER_RC").map(String::as_str),
+            Some("1")
+        );
+    }
+
+    #[test]
+    fn integration_honours_load_user_rc_false() {
+        let (_, env) = spawn(&profile("ZSH", true, Some(false)));
+        assert_eq!(
+            env.get("COGNO_ALLOW_USER_RC").map(String::as_str),
+            Some("0")
+        );
+    }
+
+    #[test]
+    fn without_integration_the_shell_flag_skips_the_rc_files() {
+        let (bash, _) = spawn(&profile("Bash", false, Some(false)));
+        assert_eq!(bash, ["--noprofile", "--norc", "-l", "-i"]);
+
+        let (zsh, _) = spawn(&profile("ZSH", false, Some(false)));
+        assert_eq!(zsh, ["-f", "-l", "-i"]);
+    }
+
+    #[test]
+    fn without_integration_the_args_stay_untouched_when_rc_loads() {
+        let (argv, _) = spawn(&profile("Bash", false, Some(true)));
+        assert_eq!(argv, ["-l", "-i"]);
+    }
+
+    #[test]
+    fn skip_flags_are_not_duplicated() {
+        let mut args = vec!["-noprofile".to_string(), "-NoLogo".to_string()];
+        prepend_skip_user_rc_args("PowerShell", &mut args);
+        assert_eq!(args, ["-noprofile", "-NoLogo"]);
     }
 }

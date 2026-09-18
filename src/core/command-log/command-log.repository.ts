@@ -206,7 +206,8 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
       },
     ];
 
-    if (maxEntries !== undefined && maxEntries > 0) {
+    // `undefined` is "no limit"; a count is literal, so 0 keeps nothing.
+    if (maxEntries !== undefined) {
       statements.push({
         sql: `DELETE FROM command_log
               WHERE context_id = ?1

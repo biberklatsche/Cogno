@@ -5,7 +5,7 @@ const FontWeightSchema = z.union([
   z.number(),
 ]);
 
-const AppFontSchema = z.object({
+const AppFontSchema = z.strictObject({
   family: z
     .string()
     .optional()
@@ -18,7 +18,7 @@ const AppFontSchema = z.object({
     .describe("Font size of the app UI in pixels."),
 });
 
-export const FontSchema = z.object({
+export const FontSchema = z.strictObject({
   family: z.string().optional().describe("Terminal font family; falls back per OS when unset."),
   size: z
     .number()
@@ -39,7 +39,7 @@ export const FontSchema = z.object({
   draw_bold_text_in_bright_colors: z
     .boolean()
     .optional()
-    .describe("Render bold text in the bright ANSI colour variant."),
+    .describe("Render bold text in the bright ANSI color variant."),
   rescale_overlapping_glyphs: z
     .boolean()
     .optional()
