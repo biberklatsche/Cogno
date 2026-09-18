@@ -66,7 +66,10 @@ pub fn db_select(
 /// Runs every statement in one transaction: either all of them take effect
 /// or none does.
 #[tauri::command]
-pub fn db_batch(db: State<'_, Db>, statements: Vec<Statement>) -> Result<Vec<ExecuteResult>, String> {
+pub fn db_batch(
+    db: State<'_, Db>,
+    statements: Vec<Statement>,
+) -> Result<Vec<ExecuteResult>, String> {
     run(&db, |conn| batch(conn, &statements))
 }
 
@@ -122,8 +125,10 @@ mod tests {
 
     fn open() -> Connection {
         let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch("CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, n REAL)")
-            .unwrap();
+        conn.execute_batch(
+            "CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, n REAL)",
+        )
+        .unwrap();
         conn
     }
 
@@ -132,7 +137,10 @@ mod tests {
         let conn = open();
         let result = execute(
             &conn,
-            &statement("INSERT INTO t (name, n) VALUES (?1, ?2)", vec![json!("a"), json!(1.5)]),
+            &statement(
+                "INSERT INTO t (name, n) VALUES (?1, ?2)",
+                vec![json!("a"), json!(1.5)],
+            ),
         )
         .unwrap();
         assert_eq!(result.rows_affected, 1);
@@ -157,7 +165,11 @@ mod tests {
         assert!(failed.is_err());
 
         let rows = select(&conn, &statement("SELECT COUNT(*) AS c FROM t", vec![])).unwrap();
-        assert_eq!(rows[0]["c"], json!(0), "the first insert must have rolled back");
+        assert_eq!(
+            rows[0]["c"],
+            json!(0),
+            "the first insert must have rolled back"
+        );
 
         let results = batch(
             &mut conn,

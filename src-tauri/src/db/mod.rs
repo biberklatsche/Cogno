@@ -61,7 +61,10 @@ impl Db {
         migrations: &[Migration],
         legacy: Option<&Path>,
     ) -> DbResult<OpenReport> {
-        let mut guard = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut guard = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
 
         if let Some(open) = guard.as_ref() {
             if open.path == path {
@@ -139,14 +142,20 @@ impl Db {
         &self,
         f: impl FnOnce(&mut Connection) -> DbResult<T>,
     ) -> DbResult<T> {
-        let mut guard = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut guard = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let open = guard.as_mut().ok_or(DbError::NotOpen)?;
         f(&mut open.conn)
     }
 
     /// Checkpoints the WAL and closes the connection. Called on shutdown.
     pub fn close(&self) {
-        let mut guard = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut guard = self
+            .inner
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if let Some(open) = guard.take() {
             if let Err(e) = connection::checkpoint(&open.conn) {
                 log::warn!("[db] checkpoint on close failed: {e}");
@@ -224,7 +233,10 @@ mod tests {
     }
 
     fn add_column() -> Migration {
-        migration("test/add-column", "ALTER TABLE small ADD COLUMN extra TEXT;")
+        migration(
+            "test/add-column",
+            "ALTER TABLE small ADD COLUMN extra TEXT;",
+        )
     }
 
     fn count(db: &Db, table: &str) -> i64 {
@@ -244,7 +256,10 @@ mod tests {
             .unwrap();
 
         assert!(report.recovery.is_none());
-        assert_eq!(report.applied_migrations, vec!["test/init", "test/add-column"]);
+        assert_eq!(
+            report.applied_migrations,
+            vec!["test/init", "test/add-column"]
+        );
         db.with_connection(|conn| {
             let journal: String = conn.query_row("PRAGMA journal_mode", [], |r| r.get(0))?;
             let foreign_keys: i64 = conn.query_row("PRAGMA foreign_keys", [], |r| r.get(0))?;
@@ -347,7 +362,11 @@ mod tests {
         );
         let db = Db::new();
         let report = db
-            .open(&dir.path("app.db"), &[init(), import.clone()], Some(&legacy))
+            .open(
+                &dir.path("app.db"),
+                &[init(), import.clone()],
+                Some(&legacy),
+            )
             .unwrap();
 
         assert_eq!(report.applied_migrations, vec!["test/init", "test/import"]);
@@ -384,7 +403,11 @@ mod tests {
 
         let db = Db::new();
         let report = db
-            .open(&dir.path("app.db"), &[init(), import], Some(&dir.path("missing.db")))
+            .open(
+                &dir.path("app.db"),
+                &[init(), import],
+                Some(&dir.path("missing.db")),
+            )
             .unwrap();
 
         assert_eq!(report.applied_migrations, vec!["test/init", "test/import"]);
@@ -403,7 +426,11 @@ mod tests {
         );
         let db = Db::new();
         let report = db
-            .open(&dir.path("app.db"), &[init(), import.clone()], Some(&legacy))
+            .open(
+                &dir.path("app.db"),
+                &[init(), import.clone()],
+                Some(&legacy),
+            )
             .unwrap();
 
         assert_eq!(report.legacy_errors.len(), 1);
@@ -414,7 +441,10 @@ mod tests {
         let report = Db::new()
             .open(&dir.path("app.db"), &[init(), import], Some(&legacy))
             .unwrap();
-        assert!(report.applied_migrations.is_empty(), "a failed import is not retried");
+        assert!(
+            report.applied_migrations.is_empty(),
+            "a failed import is not retried"
+        );
     }
 
     #[test]
@@ -454,8 +484,7 @@ mod tests {
                         tx.execute("INSERT INTO big (payload) VALUES (?1)", [&payload])?;
                     }
                     tx.commit()?;
-                    let page_size: i64 =
-                        conn.query_row("PRAGMA page_size", [], |r| r.get(0))?;
+                    let page_size: i64 = conn.query_row("PRAGMA page_size", [], |r| r.get(0))?;
                     let root: i64 = conn.query_row(
                         "SELECT rootpage FROM sqlite_master WHERE name = 'big'",
                         [],
@@ -472,7 +501,8 @@ mod tests {
         let length = file.metadata().unwrap().len();
         let zero_from = page_size * big_root_page; // first byte of the page after the root
         file.seek(SeekFrom::Start(zero_from)).unwrap();
-        file.write_all(&vec![0u8; (length - zero_from) as usize]).unwrap();
+        file.write_all(&vec![0u8; (length - zero_from) as usize])
+            .unwrap();
         drop(file);
 
         let db = Db::new();
@@ -486,7 +516,11 @@ mod tests {
 
         let big = recovery.tables.iter().find(|t| t.name == "big").unwrap();
         assert!(big.error.is_some(), "big should be reported as unreadable");
-        assert_eq!(count(&db, "big"), 0, "a failed table leaves nothing half-copied");
+        assert_eq!(
+            count(&db, "big"),
+            0,
+            "a failed table leaves nothing half-copied"
+        );
 
         // The quarantined copy and its siblings are still on disk.
         assert!(PathBuf::from(&recovery.quarantined_path).exists());
@@ -537,8 +571,10 @@ mod tests {
             let mut conn = Connection::open(&source).unwrap();
             connection::configure(&conn).unwrap();
             migrations::apply(&mut conn, &[schema.clone()], None).unwrap();
-            conn.execute_batch("INSERT INTO doc (text) VALUES ('pnpm run lint:fix'), ('git status')")
-                .unwrap();
+            conn.execute_batch(
+                "INSERT INTO doc (text) VALUES ('pnpm run lint:fix'), ('git status')",
+            )
+            .unwrap();
         }
 
         let db = Db::new();
@@ -558,7 +594,10 @@ mod tests {
                 [],
                 |r| r.get(0),
             )?;
-            assert_eq!(hits, 1, "full-text index must be rebuilt, without duplicates");
+            assert_eq!(
+                hits, 1,
+                "full-text index must be rebuilt, without duplicates"
+            );
             Ok(())
         })
         .unwrap();

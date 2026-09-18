@@ -81,7 +81,12 @@ impl WindowRegistry {
     /// Release a workspace, but only if `label` currently holds it.
     pub fn release_workspace(&self, workspace_id: &str, label: &str) {
         let mut inner = self.inner.lock().unwrap();
-        if inner.workspace_to_label.get(workspace_id).map(String::as_str) == Some(label) {
+        if inner
+            .workspace_to_label
+            .get(workspace_id)
+            .map(String::as_str)
+            == Some(label)
+        {
             inner.workspace_to_label.remove(workspace_id);
         }
     }
@@ -144,7 +149,10 @@ mod tests {
 
         assert_eq!(registry.label_for_terminal("t1").as_deref(), Some("win-a"));
         assert_eq!(registry.label_for_terminal("nope"), None);
-        assert_eq!(registry.label_for_workspace("ws1").as_deref(), Some("win-a"));
+        assert_eq!(
+            registry.label_for_workspace("ws1").as_deref(),
+            Some("win-a")
+        );
         assert_eq!(registry.last_focused().as_deref(), Some("win-b"));
     }
 
@@ -155,7 +163,10 @@ mod tests {
         registry.set_focus("win-b");
 
         // known terminal -> its window
-        assert_eq!(registry.resolve_target(Some("t1")).as_deref(), Some("win-a"));
+        assert_eq!(
+            registry.resolve_target(Some("t1")).as_deref(),
+            Some("win-a")
+        );
         // unknown terminal -> last focused
         assert_eq!(
             registry.resolve_target(Some("unknown")).as_deref(),
@@ -185,7 +196,10 @@ mod tests {
             Err("win-a".to_string())
         );
         // holder unchanged after a refused claim
-        assert_eq!(registry.label_for_workspace("ws1").as_deref(), Some("win-a"));
+        assert_eq!(
+            registry.label_for_workspace("ws1").as_deref(),
+            Some("win-a")
+        );
     }
 
     #[test]
@@ -194,7 +208,10 @@ mod tests {
         registry.claim_workspace("ws1", "win-a").unwrap();
 
         registry.release_workspace("ws1", "win-b"); // not the holder: no-op
-        assert_eq!(registry.label_for_workspace("ws1").as_deref(), Some("win-a"));
+        assert_eq!(
+            registry.label_for_workspace("ws1").as_deref(),
+            Some("win-a")
+        );
 
         registry.release_workspace("ws1", "win-a");
         assert_eq!(registry.label_for_workspace("ws1"), None);

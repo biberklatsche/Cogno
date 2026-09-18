@@ -5,12 +5,12 @@ use std::time::Duration;
 ///
 /// GUI processes on macOS (and some Linux setups) are started by launchd/systemd
 /// with a minimal environment. The values captured here serve as a baseline so
-/// spawned terminals see the same PATH/locale as the user's normal terminal,
-/// even when shell integration or rc replay is unavailable.
+/// spawned terminals see the same PATH as the user's normal terminal, even
+/// when shell integration or rc replay is unavailable. The locale is handled
+/// separately by `fallback_lang`.
 #[derive(Debug, Clone, Default)]
 pub struct LoginEnvironment {
     pub path: Option<String>,
-    pub lang: Option<String>,
 }
 
 static LOGIN_ENVIRONMENT: Mutex<Option<LoginEnvironment>> = Mutex::new(None);
@@ -22,12 +22,13 @@ static DETECTION_STARTED: Once = Once::new();
 pub fn prefetch_login_environment() {
     DETECTION_STARTED.call_once(|| {
         std::thread::spawn(|| {
+            // Cheap; warmed first so it never waits on the login shell.
+            fallback_lang();
             let environment = detect_login_environment();
             log::info!(
                 target: "login_environment",
-                "login environment detected path_present={} lang={:?}",
-                environment.path.is_some(),
-                environment.lang
+                "login environment detected path_present={}",
+                environment.path.is_some()
             );
             let mut slot = LOGIN_ENVIRONMENT
                 .lock()
@@ -65,7 +66,6 @@ fn detect_login_environment() -> LoginEnvironment {
 fn detect_login_environment() -> LoginEnvironment {
     LoginEnvironment {
         path: detect_login_path(),
-        lang: detect_lang(),
     }
 }
 
@@ -191,49 +191,88 @@ fn parse_marked_path(output: &str) -> Option<String> {
     }
 }
 
-/// macOS GUI processes have no LANG which breaks UTF-8 rendering in many TUI
-/// programs. Derive it from the system locale like Terminal.app does.
+/// UTF-8 locale for spawned shells when the app process has none.
+///
+/// macOS GUI processes start without LANG, and a Linux app launched outside a
+/// desktop session can too. Without a UTF-8 locale TUI programs misrender and
+/// `pbcopy` reads piped UTF-8 as MacRoman ("grün" -> "gr√ºn"). Resolved
+/// independently of the login PATH capture so a slow login shell can never
+/// leave a terminal without it.
+pub fn fallback_lang() -> Option<String> {
+    static FALLBACK_LANG: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    FALLBACK_LANG
+        .get_or_init(|| {
+            let lang = if process_has_locale(|name| std::env::var(name).ok()) {
+                None
+            } else {
+                detect_lang()
+            };
+            log::info!(target: "login_environment", "fallback lang={:?}", lang);
+            lang
+        })
+        .clone()
+}
+
+fn process_has_locale(get_env: impl Fn(&str) -> Option<String>) -> bool {
+    ["LC_ALL", "LC_CTYPE", "LANG"]
+        .iter()
+        .any(|name| get_env(name).is_some_and(|value| !value.trim().is_empty()))
+}
+
+/// Derive LANG from the system locale like Terminal.app does.
 #[cfg(target_os = "macos")]
 fn detect_lang() -> Option<String> {
-    if let Ok(lang) = std::env::var("LANG") {
-        if !lang.trim().is_empty() {
-            return None;
-        }
-    }
-
     use std::process::Command;
-    let locale = Command::new("/usr/bin/defaults")
+    let apple_locale = Command::new("/usr/bin/defaults")
         .args(["read", "-g", "AppleLocale"])
         .output()
         .ok()
         .filter(|output| output.status.success())
-        .and_then(|output| String::from_utf8(output.stdout).ok())
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
+        .and_then(|output| String::from_utf8(output.stdout).ok());
 
-    let locale = match locale {
-        Some(value) => {
-            // "de_DE@currency=EUR" -> "de_DE"
-            let base = value.split('@').next().unwrap_or(&value).to_string();
-            if base
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
-                && !base.is_empty()
-            {
-                base.replace('-', "_")
-            } else {
-                "en_US".to_string()
-            }
-        }
-        None => "en_US".to_string(),
-    };
+    Some(lang_from_apple_locale(apple_locale.as_deref(), |lang| {
+        std::path::Path::new("/usr/share/locale")
+            .join(lang)
+            .is_dir()
+    }))
+}
 
-    Some(format!("{}.UTF-8", locale))
+/// Language and region are independent settings on macOS, so AppleLocale can
+/// be a combination like "en_DE" that has no locale definition. Such a LANG
+/// silently degrades to the C locale, hence the existence check.
+#[cfg(any(target_os = "macos", all(test, unix)))]
+fn lang_from_apple_locale(
+    apple_locale: Option<&str>,
+    locale_exists: impl Fn(&str) -> bool,
+) -> String {
+    const DEFAULT_LANG: &str = "en_US.UTF-8";
+
+    // "de_DE@currency=EUR" -> "de_DE"
+    let base = apple_locale
+        .and_then(|value| value.trim().split('@').next())
+        .unwrap_or_default()
+        .replace('-', "_");
+    if base.is_empty() || !base.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+        return DEFAULT_LANG.to_string();
+    }
+
+    let lang = format!("{}.UTF-8", base);
+    if locale_exists(&lang) {
+        lang
+    } else {
+        DEFAULT_LANG.to_string()
+    }
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn detect_lang() -> Option<String> {
-    // Linux desktop sessions provide LANG themselves.
+    // Desktop sessions provide LANG themselves; this only covers launches
+    // with a bare environment.
+    Some("C.UTF-8".to_string())
+}
+
+#[cfg(windows)]
+fn detect_lang() -> Option<String> {
     None
 }
 
@@ -280,5 +319,52 @@ mod tests {
         if let Some(path) = detect_login_path() {
             assert!(path.contains(':') || path.contains('/'));
         }
+    }
+
+    #[test]
+    fn detects_locale_from_any_locale_variable() {
+        let only = |name: &'static str, value: &'static str| {
+            move |key: &str| (key == name).then(|| value.to_string())
+        };
+        assert!(process_has_locale(only("LANG", "de_DE.UTF-8")));
+        assert!(process_has_locale(only("LC_CTYPE", "UTF-8")));
+        assert!(process_has_locale(only("LC_ALL", "C")));
+        assert!(!process_has_locale(only("LANG", "  ")));
+        assert!(!process_has_locale(|_| None));
+    }
+
+    #[test]
+    fn derives_lang_from_apple_locale() {
+        let exists = |lang: &str| lang == "de_DE.UTF-8";
+        assert_eq!(
+            lang_from_apple_locale(Some("de_DE\n"), exists),
+            "de_DE.UTF-8"
+        );
+        assert_eq!(
+            lang_from_apple_locale(Some("de-DE@currency=EUR"), exists),
+            "de_DE.UTF-8"
+        );
+    }
+
+    #[test]
+    fn falls_back_when_apple_locale_has_no_locale_definition() {
+        let exists = |lang: &str| lang == "de_DE.UTF-8";
+        assert_eq!(lang_from_apple_locale(Some("en_DE"), exists), "en_US.UTF-8");
+        assert_eq!(
+            lang_from_apple_locale(Some("../etc"), exists),
+            "en_US.UTF-8"
+        );
+        assert_eq!(lang_from_apple_locale(Some(""), exists), "en_US.UTF-8");
+        assert_eq!(lang_from_apple_locale(None, exists), "en_US.UTF-8");
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn detected_lang_is_an_installed_utf8_locale() {
+        let lang = detect_lang().expect("macOS always yields a lang");
+        assert!(lang.ends_with(".UTF-8"));
+        assert!(std::path::Path::new("/usr/share/locale")
+            .join(&lang)
+            .is_dir());
     }
 }

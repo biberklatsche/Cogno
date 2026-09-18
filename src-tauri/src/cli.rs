@@ -128,11 +128,18 @@ pub fn try_run_action_over_http(cli: &Cli) -> Option<i32> {
     let url = format!("http://127.0.0.1:{}/action/run", port);
     let body = serde_json::json!({ "name": name, "args": args });
 
-    let response = match reqwest::blocking::Client::new().post(&url).json(&body).send() {
+    let response = match reqwest::blocking::Client::new()
+        .post(&url)
+        .json(&body)
+        .send()
+    {
         Ok(response) => response,
         Err(error) => {
             // The running instance is unreachable; fall back to the normal path.
-            eprintln!("Could not reach Cogno on port {} ({}); falling back.", port, error);
+            eprintln!(
+                "Could not reach Cogno on port {} ({}); falling back.",
+                port, error
+            );
             return None;
         }
     };

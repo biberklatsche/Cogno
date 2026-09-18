@@ -43,7 +43,11 @@ fn focus_window_and_emit_click(app: &tauri::AppHandle, window_label: &str, targe
         let _ = webview_window.unminimize();
         let _ = webview_window.set_focus();
     }
-    let _ = app.emit_to(&effective_label, OS_NOTIFICATION_CLICKED_EVENT, target.clone());
+    let _ = app.emit_to(
+        &effective_label,
+        OS_NOTIFICATION_CLICKED_EVENT,
+        target.clone(),
+    );
 }
 
 /// The window holding the target's `workspaceId`, if the registry knows it.
@@ -52,7 +56,8 @@ fn target_workspace_window(app: &tauri::AppHandle, target: &Option<Value>) -> Op
     use super::window_registry::WindowRegistry;
 
     let workspace_id = target.as_ref()?.get("workspaceId")?.as_str()?;
-    app.state::<WindowRegistry>().label_for_workspace(workspace_id)
+    app.state::<WindowRegistry>()
+        .label_for_workspace(workspace_id)
 }
 
 #[cfg(windows)]

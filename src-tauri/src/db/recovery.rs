@@ -31,10 +31,8 @@ pub fn quarantine(path: &Path) -> DbResult<PathBuf> {
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or_else(|| "database".to_string());
-    let quarantined = path.with_file_name(format!(
-        "{file_name}.corrupt-{}",
-        super::now_ms() / 1000
-    ));
+    let quarantined =
+        path.with_file_name(format!("{file_name}.corrupt-{}", super::now_ms() / 1000));
 
     std::fs::rename(path, &quarantined)?;
     for suffix in ["-wal", "-shm"] {
@@ -201,9 +199,8 @@ fn is_virtual_or_shadow(name: &str, virtual_tables: &[String]) -> bool {
 }
 
 fn columns(conn: &Connection, schema: &str, table: &str) -> DbResult<Vec<String>> {
-    let mut statement = conn.prepare(&format!(
-        "SELECT name FROM {schema}.pragma_table_info(?1)"
-    ))?;
+    let mut statement =
+        conn.prepare(&format!("SELECT name FROM {schema}.pragma_table_info(?1)"))?;
     let names = statement
         .query_map([table], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;
