@@ -2,301 +2,981 @@
 
 # Settings reference
 
-Every Cogno setting, its type, default and meaning. Written as `key = value` lines in
-`~/.cogno/cogno.config` (`~/.cogno-dev` in development builds); only the values you
-override need to be present.
-
-A `group` row documents a block of related settings rather than a value of its own.
-Where a default differs per operating system, the platform is named in brackets;
-otherwise the value applies everywhere.
+Every Cogno setting with its type, default and meaning. Settings are written as
+`key = value` lines in `~/.cogno/cogno.config`; only the values you override need to be
+present. Where a default differs per operating system, the platform is named in
+brackets.
 
 ## General
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `enable_watch_config` | boolean | `true` | Reload the config automatically when the file changes on disk. |
+### `enable_watch_config`
+
+Reload the config automatically when the file changes on disk.
+
+**Type:** boolean · **Default:** `true`
 
 ## Font
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `font` | group | — | Terminal and app fonts. |
-| `font.family` | string | `monospace` | Terminal font family; falls back per OS when unset. |
-| `font.size` | integer ≥ 1 | `14` | Terminal font size in pixels. |
-| `font.enable_ligatures` | boolean | `false` | Render programming ligatures (needs a font that has them). |
-| `font.weight` | `"100"` `"200"` `"300"` `"400"` `"500"` `"600"` `"700"` `"800"` `"900"` `"normal"` `"bold"` \| number | `normal` | Weight of normal terminal text. |
-| `font.weight_bold` | `"100"` `"200"` `"300"` `"400"` `"500"` `"600"` `"700"` `"800"` `"900"` `"normal"` `"bold"` \| number | `bold` | Weight of bold terminal text. |
-| `font.custom_glyphs` | boolean | `true` | Draw box-drawing and block characters instead of taking them from the font. |
-| `font.draw_bold_text_in_bright_colors` | boolean | `false` | Render bold text in the bright ANSI colour variant. |
-| `font.rescale_overlapping_glyphs` | boolean | `false` | Shrink glyphs that are wider than their cell so they stop overlapping. |
-| `font.app` | group | — | Font of the app UI, separate from the terminal font. |
-| `font.app.family` | string | `sans-serif` | Font family of the app UI (tabs, menus, panels) - not the terminal. |
-| `font.app.size` | integer ≥ 1 | `14` | Font size of the app UI in pixels. |
+### `font.family`
+
+Terminal font family; falls back per OS when unset.
+
+**Type:** string · **Default:** `monospace`
+
+### `font.size`
+
+Terminal font size in pixels.
+
+**Type:** integer ≥ 1 · **Default:** `14`
+
+### `font.enable_ligatures`
+
+Render programming ligatures (needs a font that has them).
+
+**Type:** boolean · **Default:** `false`
+
+### `font.weight`
+
+Weight of normal terminal text.
+
+**Type:** `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` | `normal` | `bold` | number · **Default:** `normal`
+
+### `font.weight_bold`
+
+Weight of bold terminal text.
+
+**Type:** `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` | `normal` | `bold` | number · **Default:** `bold`
+
+### `font.custom_glyphs`
+
+Draw box-drawing and block characters instead of taking them from the font.
+
+**Type:** boolean · **Default:** `true`
+
+### `font.draw_bold_text_in_bright_colors`
+
+Render bold text in the bright ANSI color variant.
+
+**Type:** boolean · **Default:** `false`
+
+### `font.rescale_overlapping_glyphs`
+
+Shrink glyphs that are wider than their cell so they stop overlapping.
+
+**Type:** boolean · **Default:** `false`
+
+### `font.app.family`
+
+Font family of the app UI (tabs, menus, panels) - not the terminal.
+
+**Type:** string · **Default:** `sans-serif`
+
+### `font.app.size`
+
+Font size of the app UI in pixels.
+
+**Type:** integer ≥ 1 · **Default:** `14`
 
 ## Colors
 
-Colours are hex without `#`; 8 digits add alpha.
+Colors are hex without `#`; 8 digits add alpha.
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `color` | group | — | Terminal colour palette. |
-| `color.foreground` | string | `ffffff` | Default text colour of the terminal. |
-| `color.background` | string | `0e1925` | Terminal background colour. |
-| `color.highlight` | string | `34bbfe` | Accent colour for highlighted UI elements, e.g. the active tab. |
-| `color.black` | string | `32465c` | ANSI colour 0 (black). |
-| `color.red` | string | `fd1155` | ANSI colour 1 (red). |
-| `color.green` | string | `11d894` | ANSI colour 2 (green). |
-| `color.yellow` | string | `fede55` | ANSI colour 3 (yellow). |
-| `color.blue` | string | `34bbfe` | ANSI colour 4 (blue). |
-| `color.magenta` | string | `e465d9` | ANSI colour 5 (magenta). |
-| `color.cyan` | string | `32d8c1` | ANSI colour 6 (cyan). |
-| `color.white` | string | `eeeeee` | ANSI colour 7 (white). |
-| `color.bright_black` | string | `32465c` | ANSI colour 8 (bright black / grey). |
-| `color.bright_red` | string | `fd1155` | ANSI colour 9 (bright red). |
-| `color.bright_green` | string | `11d894` | ANSI colour 10 (bright green). |
-| `color.bright_yellow` | string | `fede55` | ANSI colour 11 (bright yellow). |
-| `color.bright_blue` | string | `34bbfe` | ANSI colour 12 (bright blue). |
-| `color.bright_magenta` | string | `e465d9` | ANSI colour 13 (bright magenta). |
-| `color.bright_cyan` | string | `32d8c1` | ANSI colour 14 (bright cyan). |
-| `color.bright_white` | string | `eeeeee` | ANSI colour 15 (bright white). |
+### `color.foreground`
+
+Default text color of the terminal.
+
+**Type:** hex color · **Default:** `ffffff`
+
+### `color.background`
+
+Terminal background color.
+
+**Type:** hex color · **Default:** `0e1925`
+
+### `color.highlight`
+
+Accent color for highlighted UI elements, e.g. the active tab.
+
+**Type:** hex color · **Default:** `34bbfe`
+
+### `color.black`
+
+ANSI color 0 (black).
+
+**Type:** hex color · **Default:** `32465c`
+
+### `color.red`
+
+ANSI color 1 (red).
+
+**Type:** hex color · **Default:** `fd1155`
+
+### `color.green`
+
+ANSI color 2 (green).
+
+**Type:** hex color · **Default:** `11d894`
+
+### `color.yellow`
+
+ANSI color 3 (yellow).
+
+**Type:** hex color · **Default:** `fede55`
+
+### `color.blue`
+
+ANSI color 4 (blue).
+
+**Type:** hex color · **Default:** `34bbfe`
+
+### `color.magenta`
+
+ANSI color 5 (magenta).
+
+**Type:** hex color · **Default:** `e465d9`
+
+### `color.cyan`
+
+ANSI color 6 (cyan).
+
+**Type:** hex color · **Default:** `32d8c1`
+
+### `color.white`
+
+ANSI color 7 (white).
+
+**Type:** hex color · **Default:** `eeeeee`
+
+### `color.bright_black`
+
+ANSI color 8 (bright black / grey).
+
+**Type:** hex color · **Default:** `32465c`
+
+### `color.bright_red`
+
+ANSI color 9 (bright red).
+
+**Type:** hex color · **Default:** `fd1155`
+
+### `color.bright_green`
+
+ANSI color 10 (bright green).
+
+**Type:** hex color · **Default:** `11d894`
+
+### `color.bright_yellow`
+
+ANSI color 11 (bright yellow).
+
+**Type:** hex color · **Default:** `fede55`
+
+### `color.bright_blue`
+
+ANSI color 12 (bright blue).
+
+**Type:** hex color · **Default:** `34bbfe`
+
+### `color.bright_magenta`
+
+ANSI color 13 (bright magenta).
+
+**Type:** hex color · **Default:** `e465d9`
+
+### `color.bright_cyan`
+
+ANSI color 14 (bright cyan).
+
+**Type:** hex color · **Default:** `32d8c1`
+
+### `color.bright_white`
+
+ANSI color 15 (bright white).
+
+**Type:** hex color · **Default:** `eeeeee`
 
 ## Cursor
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `cursor` | group | — | Cursor shape, colour and behaviour. |
-| `cursor.width` | integer 0-10 | `4` | Cursor width in pixels; applies to the bar style. |
-| `cursor.blink` | boolean | `true` | Let the cursor blink. |
-| `cursor.style` | `"bar"` `"underline"` `"block"` | `bar` | Cursor shape while the terminal has focus. |
-| `cursor.inactive_style` | `"outline"` `"block"` `"bar"` `"underline"` `"none"` | `outline` | Cursor shape while the terminal does not have focus. |
-| `cursor.color` | string | `34bbfecc` | Cursor colour. |
-| `cursor.accent_color` | string | `34bbfe66` | Colour of the character underneath a block cursor. |
-| `cursor.alt_click_moves_cursor` | boolean | `true` | Alt+click moves the shell cursor to the clicked position. |
+### `cursor.width`
+
+Cursor width in pixels; applies to the bar style.
+
+**Type:** integer 0-10 · **Default:** `4`
+
+### `cursor.blink`
+
+Let the cursor blink.
+
+**Type:** boolean · **Default:** `true`
+
+### `cursor.style`
+
+Cursor shape while the terminal has focus.
+
+**Type:** `bar` | `underline` | `block` · **Default:** `bar`
+
+### `cursor.inactive_style`
+
+Cursor shape while the terminal does not have focus.
+
+**Type:** `outline` | `block` | `bar` | `underline` | `none` · **Default:** `outline`
+
+### `cursor.color`
+
+Cursor color.
+
+**Type:** hex color · **Default:** `34bbfecc`
+
+### `cursor.accent_color`
+
+Color of the character underneath a block cursor.
+
+**Type:** hex color · **Default:** `34bbfe66`
+
+### `cursor.alt_click_moves_cursor`
+
+Alt+click moves the shell cursor to the clicked position.
+
+**Type:** boolean · **Default:** `true`
 
 ## Padding
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `padding` | group | — | Padding around the terminal content. |
-| `padding.left` | number ≥ 0 | `0.5` | Padding between terminal content and left edge. |
-| `padding.right` | number ≥ 0 | `0.5` | Padding between terminal content and right edge. |
-| `padding.top` | number ≥ 0 | `0` | Padding between terminal content and top edge. |
-| `padding.bottom` | number ≥ 0 | `0.5` | Padding between terminal content and bottom edge. |
-| `padding.remove_on_full_screen_app` | boolean | `false` | Drop the padding while a full-screen app (vim, less) owns the screen. |
+### `padding.left`
+
+Padding between terminal content and left edge.
+
+**Type:** number ≥ 0 · **Default:** `0.5`
+
+### `padding.right`
+
+Padding between terminal content and right edge.
+
+**Type:** number ≥ 0 · **Default:** `0.5`
+
+### `padding.top`
+
+Padding between terminal content and top edge.
+
+**Type:** number ≥ 0 · **Default:** `0`
+
+### `padding.bottom`
+
+Padding between terminal content and bottom edge.
+
+**Type:** number ≥ 0 · **Default:** `0.5`
+
+### `padding.remove_on_full_screen_app`
+
+Drop the padding while a full-screen app (vim, less) owns the screen.
+
+**Type:** boolean · **Default:** `false`
 
 ## Background image
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `background_image` | group | — | Optional terminal background image. |
-| `background_image.path` | string | `` | Path to a background image; empty means no background image. |
-| `background_image.opacity` | integer 0-100 | `80` | Opacity of the background image, 0-100. |
-| `background_image.blur` | integer 0-10 | `0` | Blur radius applied to the background image, 0-10. |
+### `background_image.path`
+
+Path to a background image; empty means no background image.
+
+**Type:** string · **Default:** *(empty)*
+
+### `background_image.opacity`
+
+Opacity of the background image, 0-100.
+
+**Type:** integer 0-100 · **Default:** `80`
+
+### `background_image.blur`
+
+Blur radius applied to the background image, 0-10.
+
+**Type:** integer 0-10 · **Default:** `0`
 
 ## Menu
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `menu` | group | — | Appearance of menus and panels. |
-| `menu.opacity` | integer 0-100 | `80` | Opacity of menus and panels, 0-100. |
+### `menu.opacity`
+
+Opacity of menus and panels, 0-100.
+
+**Type:** integer 0-100 · **Default:** `80`
 
 ## Scrollbar
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `scrollbar` | group | — | Scrollbar appearance and scrolling behaviour. |
-| `scrollbar.width` | integer ≥ 0 | `6` | Scrollbar width in pixels; 0 hides it. |
-| `scrollbar.overview_ruler_border_color` | string | `0e192500` | Border colour of the overview ruler next to the scrollbar. |
-| `scrollbar.slider_color` | string | `32465c66` | Scrollbar slider colour. |
-| `scrollbar.slider_hover_color` | string | `32465c` | Scrollbar slider colour while hovered. |
-| `scrollbar.slider_active_color` | string | `32465c` | Scrollbar slider colour while being dragged. |
-| `scrollbar.sensitivity` | integer ≥ 0 | `1` | Lines scrolled per mouse-wheel notch. |
-| `scrollbar.scroll_on_user_input` | boolean | `true` | Jump to the bottom when you start typing. |
-| `scrollbar.smooth_scroll_duration` | integer ≥ 0 | `0` | Duration of smooth scrolling in milliseconds; 0 disables it. |
-| `scrollbar.fast_scroll_sensitivity` | integer ≥ 0 | `2` | Scroll multiplier while the fast-scroll modifier is held. |
-| `scrollbar.scrollback_lines` | integer ≥ 100 | `100000` | How many lines of scrollback the terminal keeps. |
+### `scrollbar.width`
+
+Scrollbar width in pixels; 0 hides it.
+
+**Type:** integer ≥ 0 · **Default:** `6`
+
+### `scrollbar.overview_ruler_border_color`
+
+Border color of the overview ruler next to the scrollbar.
+
+**Type:** hex color · **Default:** `0e192500`
+
+### `scrollbar.slider_color`
+
+Scrollbar slider color.
+
+**Type:** hex color · **Default:** `32465c66`
+
+### `scrollbar.slider_hover_color`
+
+Scrollbar slider color while hovered.
+
+**Type:** hex color · **Default:** `32465c`
+
+### `scrollbar.slider_active_color`
+
+Scrollbar slider color while being dragged.
+
+**Type:** hex color · **Default:** `32465c`
+
+### `scrollbar.sensitivity`
+
+Lines scrolled per mouse-wheel notch.
+
+**Type:** integer ≥ 0 · **Default:** `1`
+
+### `scrollbar.scroll_on_user_input`
+
+Jump to the bottom when you start typing.
+
+**Type:** boolean · **Default:** `true`
+
+### `scrollbar.smooth_scroll_duration`
+
+Duration of smooth scrolling in milliseconds; 0 disables it.
+
+**Type:** integer ≥ 0 · **Default:** `0`
+
+### `scrollbar.fast_scroll_sensitivity`
+
+Scroll multiplier while the fast-scroll modifier is held.
+
+**Type:** integer ≥ 0 · **Default:** `2`
+
+### `scrollbar.scrollback_lines`
+
+How many lines of scrollback the terminal keeps.
+
+**Type:** integer ≥ 100 · **Default:** `100000`
 
 ## Selection
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `selection` | group | — | Text selection colours and behaviour. |
-| `selection.clear_on_copy` | boolean | `false` | Clear the selection right after copying. |
-| `selection.background_color` | string | `34bbfecc` | Background colour of selected text in the focused terminal. |
-| `selection.inactive_background_color` | string | `34bbfe66` | Background colour of selected text in an unfocused terminal. |
-| `selection.right_click_selects_word` | boolean | `false` | Right-click selects the word under the pointer. |
+### `selection.clear_on_copy`
+
+Clear the selection right after copying.
+
+**Type:** boolean · **Default:** `false`
+
+### `selection.background_color`
+
+Background color of selected text in the focused terminal.
+
+**Type:** hex color · **Default:** `34bbfecc`
+
+### `selection.inactive_background_color`
+
+Background color of selected text in an unfocused terminal.
+
+**Type:** hex color · **Default:** `34bbfe66`
+
+### `selection.right_click_selects_word`
+
+Right-click selects the word under the pointer.
+
+**Type:** boolean · **Default:** `false`
 
 ## Clipboard
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `clipboard` | group | — | Clipboard access and copy behaviour. |
-| `clipboard.read` | `"allow"` `"deny"` | `allow` | Whether programs in the terminal may read the clipboard (OSC 52). |
-| `clipboard.write` | `"allow"` `"deny"` | `allow` | Whether programs in the terminal may write the clipboard (OSC 52). |
-| `clipboard.trim_trailing_spaces` | boolean | `true` | Strip trailing spaces from copied lines. |
-| `clipboard.image_paste_ttl_seconds` | integer ≥ 0 | `60` | How long a pasted clipboard image is kept on disk, in seconds. |
+### `clipboard.read`
+
+Whether programs in the terminal may read the clipboard (OSC 52).
+
+**Type:** `allow` | `deny` · **Default:** `allow`
+
+### `clipboard.write`
+
+Whether programs in the terminal may write the clipboard (OSC 52).
+
+**Type:** `allow` | `deny` · **Default:** `allow`
+
+### `clipboard.trim_trailing_spaces`
+
+Strip trailing spaces from copied lines.
+
+**Type:** boolean · **Default:** `true`
+
+### `clipboard.image_paste_ttl_seconds`
+
+How long a pasted clipboard image is kept on disk, in seconds.
+
+**Type:** integer ≥ 0 · **Default:** `60`
 
 ## Shell
 
 `<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `shell` | group | — | Shell profiles and which one starts by default. |
-| `shell.default` | string | — | Name of the profile new terminals start with; must exist in `shell.profiles`. |
-| `shell.order` | string[] | — | Order the profiles appear in menus and on the shell-profile shortcuts. |
-| `shell.profiles` | group | — | Named shell profiles, at most 9. |
-| `shell.profiles.<name>` | group | — | One shell profile: which shell to start and how. |
-| `shell.profiles.<name>.shell_type` | `"PowerShell"` `"ZSH"` `"Bash"` | — | Which shell this profile launches. |
-| `shell.profiles.<name>.path` | string | — | Custom executable path; found on PATH when unset. |
-| `shell.profiles.<name>.args` | string[] | — | Extra launch arguments for the shell. |
-| `shell.profiles.<name>.env` | group | — | Environment variables added to the shell process. |
-| `shell.profiles.<name>.env.<var>` | string | — | — |
-| `shell.profiles.<name>.use_conpty` | boolean | — | Windows only: use the ConPTY backend. |
-| `shell.profiles.<name>.working_dir` | string | — | Directory the shell starts in. |
-| `shell.profiles.<name>.inject_cogno_cli` | boolean | — | Put the `cogno` CLI on the shell's PATH. |
-| `shell.profiles.<name>.enable_shell_integration` | boolean | — | Load Cogno's shell integration (prompt markers, command status, cwd tracking). |
-| `shell.profiles.<name>.load_user_rc` | boolean | — | Also load your own shell rc/profile files. |
+### `shell.default`
+
+Name of the profile new terminals start with; must exist in `shell.profiles`.
+
+**Type:** string
+
+### `shell.order`
+
+Order the profiles appear in menus and on the shell-profile shortcuts.
+
+**Type:** string[]
+
+### `shell.profiles.<name>.shell_type`
+
+Which shell this profile launches.
+
+**Type:** `PowerShell` | `ZSH` | `Bash`
+
+### `shell.profiles.<name>.path`
+
+Path of the shell executable, e.g. `/bin/zsh`. Required.
+
+**Type:** string
+
+### `shell.profiles.<name>.args`
+
+Extra launch arguments for the shell.
+
+**Type:** string[]
+
+### `shell.profiles.<name>.env.<var>`
+
+Environment variables added to the shell process.
+
+**Type:** string
+
+### `shell.profiles.<name>.working_dir`
+
+Directory the shell starts in.
+
+**Type:** string
+
+### `shell.profiles.<name>.inject_cogno_cli`
+
+Put the `cogno` CLI on the shell's PATH.
+
+**Type:** boolean
+
+### `shell.profiles.<name>.enable_shell_integration`
+
+Load Cogno's shell integration (prompt markers, command status, cwd tracking).
+
+**Type:** boolean
+
+### `shell.profiles.<name>.load_user_rc`
+
+Also load your own shell rc/profile files.
+
+**Type:** boolean
 
 ## Prompt
 
 `<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `prompt` | group | — | The configurable prompt rendered by Cogno. |
-| `prompt.active` | string | `default` | Name of the prompt profile in use. |
-| `prompt.profile` | group | — | Named prompt profiles; each lists the segments it renders. |
-| `prompt.profile.<name>.order` | string[] | — | Segment names to render, in order; each must exist under `prompt.segment`. |
-| `prompt.profile.<name>.default_separator` | string | — | Text inserted between segments. |
-| `prompt.segment` | group | — | Named segments a profile can reference. |
-| `prompt.segment.<name>.foreground` | `"black"` \| `"red"` \| `"green"` \| `"yellow"` \| `"blue"` \| `"magenta"` \| `"cyan"` \| `"white"` \| `"brightBlack"` \| `"brightRed"` \| `"brightGreen"` \| `"brightYellow"` \| `"brightBlue"` \| `"brightMagenta"` \| `"brightCyan"` \| `"brightWhite"` \| hex colour | — | Text colour: a terminal colour name or hex. |
-| `prompt.segment.<name>.background` | `"black"` \| `"red"` \| `"green"` \| `"yellow"` \| `"blue"` \| `"magenta"` \| `"cyan"` \| `"white"` \| `"brightBlack"` \| `"brightRed"` \| `"brightGreen"` \| `"brightYellow"` \| `"brightBlue"` \| `"brightMagenta"` \| `"brightCyan"` \| `"brightWhite"` \| hex colour | — | Background colour: a terminal colour name or hex. |
-| `prompt.segment.<name>.bold` | boolean | — | Render the segment bold. |
-| `prompt.segment.<name>.italic` | boolean | — | Render the segment italic. |
-| `prompt.segment.<name>.underline` | boolean | — | Underline the segment. |
-| `prompt.segment.<name>.size` | integer ≥ 1 | — | Font size override for this segment. |
-| `prompt.segment.<name>.when` | string | — | Only show the segment when the condition holds, e.g. `returnCode!=0`. |
-| `prompt.segment.<name>.padding_left` | integer | — | Inner padding left of the content. |
-| `prompt.segment.<name>.padding_right` | integer | — | Inner padding right of the content. |
-| `prompt.segment.<name>.margin_left` | integer | — | Outer margin left of the segment. |
-| `prompt.segment.<name>.margin_right` | integer | — | Outer margin right of the segment. |
-| `prompt.segment.<name>.radius_left` | integer ≥ 0 | — | Corner radius on the left side. |
-| `prompt.segment.<name>.radius_right` | integer ≥ 0 | — | Corner radius on the right side. |
-| `prompt.segment.<name>.title` | string | — | Tooltip shown when hovering the segment. |
-| `prompt.segment.<name>.className` | string | — | Extra CSS class for custom styling. |
-| `prompt.segment.<name>.format` | `"string"` \| `"number"` \| `"json"` \| `"upper"` \| `"lower"` \| `"timespan"` | — | How the value is rendered, e.g. `timespan` for a duration. |
-| `prompt.segment.<name>.fallback` | string | — | Shown when the field has no value. |
-| `prompt.segment.<name>.field` | string | — | Data field to display, e.g. `directory`, `user`, `machine`, `duration`. |
-| `prompt.segment.<name>.text` | string | — | Static text to display, instead of a `field`. |
+### `prompt.active`
+
+Name of the prompt profile in use.
+
+**Type:** string · **Default:** `default`
+
+### `prompt.profile.<name>.order`
+
+Segment names to render, in order; each must exist under `prompt.segment`.
+
+**Type:** string[]
+
+### `prompt.profile.<name>.default_separator`
+
+Text inserted between segments.
+
+**Type:** string
+
+### `prompt.segment.<name>.foreground`
+
+Text color: a terminal color name or hex.
+
+**Type:** `black` | `red` | `green` | `yellow` | `blue` | `magenta` | `cyan` | `white` | `brightBlack` | `brightRed` | `brightGreen` | `brightYellow` | `brightBlue` | `brightMagenta` | `brightCyan` | `brightWhite` | hex color
+
+### `prompt.segment.<name>.background`
+
+Background color: a terminal color name or hex.
+
+**Type:** `black` | `red` | `green` | `yellow` | `blue` | `magenta` | `cyan` | `white` | `brightBlack` | `brightRed` | `brightGreen` | `brightYellow` | `brightBlue` | `brightMagenta` | `brightCyan` | `brightWhite` | hex color
+
+### `prompt.segment.<name>.bold`
+
+Render the segment bold.
+
+**Type:** boolean
+
+### `prompt.segment.<name>.italic`
+
+Render the segment italic.
+
+**Type:** boolean
+
+### `prompt.segment.<name>.underline`
+
+Underline the segment.
+
+**Type:** boolean
+
+### `prompt.segment.<name>.size`
+
+Font size override for this segment.
+
+**Type:** integer ≥ 1
+
+### `prompt.segment.<name>.when`
+
+Only show the segment when the condition holds, e.g. `returnCode!=0`.
+
+**Type:** string
+
+### `prompt.segment.<name>.padding_left`
+
+Inner padding left of the content.
+
+**Type:** integer
+
+### `prompt.segment.<name>.padding_right`
+
+Inner padding right of the content.
+
+**Type:** integer
+
+### `prompt.segment.<name>.margin_left`
+
+Outer margin left of the segment.
+
+**Type:** integer
+
+### `prompt.segment.<name>.margin_right`
+
+Outer margin right of the segment.
+
+**Type:** integer
+
+### `prompt.segment.<name>.radius_left`
+
+Corner radius on the left side.
+
+**Type:** integer ≥ 0
+
+### `prompt.segment.<name>.radius_right`
+
+Corner radius on the right side.
+
+**Type:** integer ≥ 0
+
+### `prompt.segment.<name>.title`
+
+Tooltip shown when hovering the segment.
+
+**Type:** string
+
+### `prompt.segment.<name>.className`
+
+Extra CSS class for custom styling.
+
+**Type:** string
+
+### `prompt.segment.<name>.format`
+
+How the value is rendered, e.g. `timespan` for a duration.
+
+**Type:** `string` | `number` | `json` | `upper` | `lower` | `timespan`
+
+### `prompt.segment.<name>.fallback`
+
+Shown when the field has no value.
+
+**Type:** string
+
+### `prompt.segment.<name>.field`
+
+Data field to display, e.g. `directory`, `user`, `machine`, `duration`.
+
+**Type:** string
+
+### `prompt.segment.<name>.text`
+
+Static text to display, instead of a `field`.
+
+**Type:** string
 
 ## Keybindings
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `keybind` | string[] | — | Keybinding lines; see the keybinding syntax. |
+### `keybind`
+
+One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.
+
+**Type:** string[]
 
 ## Terminal
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `terminal` | group | — | Terminal rendering and behaviour. |
-| `terminal.webgl` | boolean | `true` (linux: `false`) | Render the terminal with the WebGL renderer instead of the canvas one. |
-| `terminal.decoration` | group | — | Colours of decorated buffer content such as search matches. |
-| `terminal.decoration.color` | group | — | Highlight colors for decorated terminal content, e.g. search matches. |
-| `terminal.decoration.color.background` | string | `2f8fda55` | Fill colour of the decoration. |
-| `terminal.decoration.color.border` | string | `2f8fda` | Border colour of the decoration. |
-| `terminal.decoration.color.overview_ruler` | string | `2f8fda` | Marker colour in the overview ruler beside the scrollbar. |
-| `terminal.decoration.active_color` | group | — | Highlight colors for the currently active decorated item. |
-| `terminal.decoration.active_color.background` | string | `f5e66399` | Fill colour of the decoration. |
-| `terminal.decoration.active_color.border` | string | `f5e663` | Border colour of the decoration. |
-| `terminal.decoration.active_color.overview_ruler` | string | `f5e663` | Marker colour in the overview ruler beside the scrollbar. |
-| `terminal.inactive_overlay_opacity` | integer 0-100 | `30` | How strongly panes that are not focused are dimmed, 0-100. |
-| `terminal.ignore_bracketed_paste_mode` | boolean | `false` | Paste as plain keystrokes even when the shell asked for bracketed paste. |
-| `terminal.minimum_contrast_ratio` | number | `4` | Raise text contrast until at least this ratio is met; 1 disables the correction. |
-| `terminal.screen_reader_mode` | boolean | `false` | Expose terminal output to screen readers. |
-| `terminal.allow_transparency` | boolean | `true` | Allow transparent background colours; costs some rendering performance. |
-| `terminal.tab_stop_width` | number | `8` | Width of a tab character in columns. |
-| `terminal.word_separator` | string | `"()[]{}'\"\\,;:/&<>*+=$^!~` "` | Characters that end a word for double-click selection and word-wise motion. |
-| `terminal.progress_bar` | group | — | The OSC 9;4 progress bar in the terminal header. |
-| `terminal.progress_bar.enabled` | boolean | `true` | Show the progress bar in the terminal header. |
-| `terminal.notifications` | group | — | Which terminal events raise a notification. |
-| `terminal.notifications.unread_badge` | boolean | `true` | Show an unread badge on a terminal's tab when a notification-worthy event occurs while it isn't focused. |
-| `terminal.notifications.osc9` | group | — | Notifications a program sends itself via the OSC 9 escape sequence. |
-| `terminal.notifications.osc9.enabled` | boolean | `true` | Allow OSC9 terminal notifications to trigger a notification. |
-| `terminal.notifications.long_running_command` | group | — | Notification when a command that ran for a while finishes. |
-| `terminal.notifications.long_running_command.enabled` | boolean | `false` | Show a notification after a long-running command has finished. |
-| `terminal.notifications.long_running_command.minimum_duration_seconds` | integer ≥ 0 | `10` | Notify only when a command ran for at least this many seconds. |
-| `terminal.history` | group | — | The recorded command history behind autocomplete and the history panel. |
-| `terminal.history.max_entries` | integer ≥ 0 | `0` | Maximum number of commands to keep per shell context in the command history log. Older entries beyond this count are pruned. 0 or unset means unlimited. |
-| `terminal.history.ignore_commands_with_leading_space` | boolean | `false` | Don't add a command to history if it was typed with a leading space, matching the HISTCONTROL=ignorespace convention used by bash/zsh. |
-| `terminal.history.import_shell_history` | boolean | `false` | On first launch with an empty history, import commands from the native shell history file (bash/gitbash: ~/.bash_history, zsh: ~/.zsh_history, powershell: PSReadLine ConsoleHost_history.txt). |
-| `terminal.history.auto_execute` | boolean | `false` | When enabled, selecting a history entry immediately executes the command. When disabled (default), the entry is written to the input line and must be confirmed with Enter. |
-| `terminal.history.allowed_return_codes` | integer[] | `[]` | Return codes a command may exit with to be added to the history, e.g. `[0]` to keep only successful commands. Empty (default) keeps every command that exists. A command's own list under `allowed_return_codes_by_command` wins. |
-| `terminal.history.allowed_return_codes_by_command` | group | — | Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command. |
-| `terminal.history.allowed_return_codes_by_command.<name>` | integer[] | — | — |
-| `terminal.restore` | group | — | Session restore: bring workspaces, tabs and scrollback back on the next launch. |
-| `terminal.restore.enabled` | boolean | `true` | Restore workspaces, tabs, panes and terminal scrollback on the next launch, auto-saved on idle, workspace switch and exit. When off, nothing is persisted and each launch starts fresh; the explicit workspace save controls apply instead. |
-| `terminal.restore.scrollback` | boolean | `true` | Include the terminal scrollback in the restored session, above a separator line. When off, the layout is restored but terminals start empty. |
-| `terminal.restore.max_lines` | integer ≥ 0 | `1000` | Maximum scrollback lines captured per terminal for restore. Caps the stored size; 0 means no scrollback. |
+### `terminal.webgl`
+
+Render the terminal with the WebGL renderer instead of the canvas one.
+
+**Type:** boolean · **Default:** `true` (linux: `false`)
+
+### `terminal.decoration.color.background`
+
+Fill color of the decoration.
+
+**Type:** hex color · **Default:** `2f8fda55`
+
+### `terminal.decoration.color.border`
+
+Border color of the decoration.
+
+**Type:** hex color · **Default:** `2f8fda`
+
+### `terminal.decoration.color.overview_ruler`
+
+Marker color in the overview ruler beside the scrollbar.
+
+**Type:** hex color · **Default:** `2f8fda`
+
+### `terminal.decoration.active_color.background`
+
+Fill color of the decoration.
+
+**Type:** hex color · **Default:** `f5e66399`
+
+### `terminal.decoration.active_color.border`
+
+Border color of the decoration.
+
+**Type:** hex color · **Default:** `f5e663`
+
+### `terminal.decoration.active_color.overview_ruler`
+
+Marker color in the overview ruler beside the scrollbar.
+
+**Type:** hex color · **Default:** `f5e663`
+
+### `terminal.inactive_overlay_opacity`
+
+How strongly panes that are not focused are dimmed, 0-100.
+
+**Type:** integer 0-100 · **Default:** `30`
+
+### `terminal.ignore_bracketed_paste_mode`
+
+Paste as plain keystrokes even when the shell asked for bracketed paste.
+
+**Type:** boolean · **Default:** `false`
+
+### `terminal.minimum_contrast_ratio`
+
+Raise text contrast until at least this ratio is met; 1 disables the correction.
+
+**Type:** number · **Default:** `4`
+
+### `terminal.screen_reader_mode`
+
+Expose terminal output to screen readers.
+
+**Type:** boolean · **Default:** `false`
+
+### `terminal.allow_transparency`
+
+Allow transparent background colors; costs some rendering performance.
+
+**Type:** boolean · **Default:** `true`
+
+### `terminal.tab_stop_width`
+
+Width of a tab character in columns.
+
+**Type:** number · **Default:** `8`
+
+### `terminal.word_separator`
+
+Characters that end a word for double-click selection and word-wise motion.
+
+**Type:** string · **Default:** `` "()[]{}'\"\\,;:/&<>*+=$^!~` " ``
+
+### `terminal.progress_bar.enabled`
+
+Show the progress bar in the terminal header.
+
+**Type:** boolean · **Default:** `true`
+
+### `terminal.notifications.unread_badge`
+
+Show an unread badge on a terminal's tab when a notification-worthy event occurs while it isn't focused.
+
+**Type:** boolean · **Default:** `true`
+
+### `terminal.notifications.osc9.enabled`
+
+Allow OSC9 terminal notifications to trigger a notification.
+
+**Type:** boolean · **Default:** `true`
+
+### `terminal.notifications.long_running_command.enabled`
+
+Show a notification after a long-running command has finished.
+
+**Type:** boolean · **Default:** `false`
+
+### `terminal.notifications.long_running_command.minimum_duration_seconds`
+
+Notify only when a command ran for at least this many seconds.
+
+**Type:** integer ≥ 0 · **Default:** `10`
+
+### `terminal.history.max_entries`
+
+Maximum number of commands to keep per shell context in the command history log, or `unlimited`. Older entries beyond this count are pruned; 0 keeps none.
+
+**Type:** `unlimited` | integer ≥ 0 · **Default:** `unlimited`
+
+### `terminal.history.ignore_commands_with_leading_space`
+
+Don't add a command to history if it was typed with a leading space, matching the HISTCONTROL=ignorespace convention used by bash/zsh.
+
+**Type:** boolean · **Default:** `false`
+
+### `terminal.history.import_shell_history`
+
+On first launch with an empty history, import commands from the native shell history file (bash/gitbash: ~/.bash_history, zsh: ~/.zsh_history, powershell: PSReadLine ConsoleHost_history.txt).
+
+**Type:** boolean · **Default:** `false`
+
+### `terminal.history.auto_execute`
+
+When enabled, selecting a history entry immediately executes the command. When disabled (default), the entry is written to the input line and must be confirmed with Enter.
+
+**Type:** boolean · **Default:** `false`
+
+### `terminal.history.allowed_return_codes`
+
+Return codes a command may exit with to be added to the history, e.g. `[0]` to keep only successful commands. Empty (default) keeps every command that exists. A command's own list under `allowed_return_codes_by_command` wins.
+
+**Type:** integer[] · **Default:** `[]`
+
+### `terminal.history.allowed_return_codes_by_command.<name>`
+
+Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.
+
+**Type:** integer[]
+
+### `terminal.restore.enabled`
+
+Restore workspaces, tabs, panes and terminal scrollback on the next launch, auto-saved on idle, workspace switch and exit. When off, nothing is persisted and each launch starts fresh; the explicit workspace save controls apply instead.
+
+**Type:** boolean · **Default:** `true`
+
+### `terminal.restore.scrollback`
+
+Include the terminal scrollback in the restored session, above a separator line. When off, the layout is restored but terminals start empty.
+
+**Type:** boolean · **Default:** `true`
+
+### `terminal.restore.max_lines`
+
+Maximum scrollback lines captured per terminal for restore. Caps the stored size; 0 means no scrollback.
+
+**Type:** integer ≥ 0 · **Default:** `1000`
 
 ## Autocomplete
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `autocomplete` | group | — | Command autocomplete behaviour. |
-| `autocomplete.provider.timeout_ms` | integer ≥ 1 | `160` | Maximum time in milliseconds for one dynamic autocomplete provider. |
+### `autocomplete.provider.timeout_ms`
+
+Maximum time in milliseconds for one dynamic autocomplete provider.
+
+**Type:** integer ≥ 1 · **Default:** `160`
 
 ## Notifications
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `notification` | group | — | Which events notify you, and how. |
-| `notification.channel` | group | — | Where notifications are delivered. |
-| `notification.channel.app` | group | — | In-app notification toasts. |
-| `notification.channel.app.available` | boolean | `true` | Whether in-app notifications may be used at all. |
-| `notification.channel.app.enabled` | boolean | `true` | Show notifications inside Cogno. |
-| `notification.channel.app.duration_seconds` | integer ≥ 0 | `5` | How long an in-app notification stays before it fades; 0 keeps it. |
-| `notification.channel.os` | group | — | Desktop notifications handed to the operating system. |
-| `notification.channel.os.available` | boolean | `true` | Whether OS notifications may be used at all. |
-| `notification.channel.os.enabled` | boolean | `false` | Send notifications to the operating system. |
-| `notification.exception` | group | — | Whether errors raise a notification. |
-| `notification.exception.handled.enabled` | boolean | `false` | Show a notification for handled exceptions reported through the central error reporter. |
-| `notification.exception.unhandled.enabled` | boolean | `false` | Show a notification for unhandled renderer exceptions caught by the global error reporter. |
+### `notification.channel.app.available`
+
+Whether in-app notifications may be used at all.
+
+**Type:** boolean · **Default:** `true`
+
+### `notification.channel.app.enabled`
+
+Show notifications inside Cogno.
+
+**Type:** boolean · **Default:** `true`
+
+### `notification.channel.app.duration_seconds`
+
+Seconds an in-app notification stays before it fades. `unlimited` keeps it until you dismiss it; 0 shows none.
+
+**Type:** `unlimited` | integer ≥ 0 · **Default:** `5`
+
+### `notification.channel.os.available`
+
+Whether OS notifications may be used at all.
+
+**Type:** boolean · **Default:** `true`
+
+### `notification.channel.os.enabled`
+
+Send notifications to the operating system.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.exception.handled.enabled`
+
+Show a notification for handled exceptions reported through the central error reporter.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.exception.unhandled.enabled`
+
+Show a notification for unhandled renderer exceptions caught by the global error reporter.
+
+**Type:** boolean · **Default:** `false`
 
 ## HTTP server
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `http_server` | group | — | Local HTTP server used by the CLI. |
-| `http_server.enabled` | boolean | `true` | Run the local HTTP server that the `cogno` CLI talks to. |
-| `http_server.port` | integer 1-65535 | `9000` | Port of the local HTTP server. |
-| `http_server.auto_next_port` | boolean | `true` | If the port is taken, try the next free one instead of failing. |
+### `http_server.enabled`
+
+Run the local HTTP server that the `cogno` CLI talks to.
+
+**Type:** boolean · **Default:** `true`
+
+### `http_server.port`
+
+Port of the local HTTP server.
+
+**Type:** integer 1-65535 · **Default:** `9000`
+
+### `http_server.auto_next_port`
+
+If the port is taken, try the next free one instead of failing.
+
+**Type:** boolean · **Default:** `true`
 
 ## Features
 
 Each feature can be switched off entirely and ordered in the side menu.
 
-| Setting | Type | Default | Description |
-|---|---|---|---|
-| `feature.workspace.mode` | `"off"` `"on"` | `on` | Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions. |
-| `feature.workspace.order` | integer | `10` | Override the side-menu display position for this feature. Lower numbers appear first. |
-| `feature.notification_overview.mode` | `"off"` `"on"` | `on` | Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions. |
-| `feature.notification_overview.order` | integer | `20` | Override the side-menu display position for this feature. Lower numbers appear first. |
-| `feature.notification_overview.overview` | group | — | The notification overview panel. |
-| `feature.notification_overview.overview.max_items` | integer ≥ 0 | `30` | How many notifications the overview keeps; 0 means unlimited. |
-| `feature.command_palette.mode` | `"off"` `"on"` | `on` | Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions. |
-| `feature.command_palette.order` | integer | `30` | Override the side-menu display position for this feature. Lower numbers appear first. |
-| `feature.search.mode` | `"off"` `"on"` | `on` | Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions. |
-| `feature.search.order` | integer | `40` | Override the side-menu display position for this feature. Lower numbers appear first. |
-| `feature.git.mode` | `"off"` `"on"` | `off` | Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions. |
-| `feature.git.order` | integer | `50` | Override the side-menu display position for this feature. Lower numbers appear first. |
-| `feature.process_info.mode` | `"off"` `"on"` | `on` | Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions. |
-| `feature.process_info.order` | integer | `80` | Override the side-menu display position for this feature. Lower numbers appear first. |
-| `feature.coding_agents.mode` | `"off"` `"on"` | `on` | Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions. |
-| `feature.coding_agents.order` | integer | `65` | Override the side-menu display position for this feature. Lower numbers appear first. |
-| `feature.coding_agents.notifications` | group | — | Which coding-agent state changes raise a notification. |
-| `feature.coding_agents.notifications.working.enabled` | boolean | `false` | Notify when an agent starts working. |
-| `feature.coding_agents.notifications.question.enabled` | boolean | `false` | Notify when an agent has a question and needs input. |
-| `feature.coding_agents.notifications.ready.enabled` | boolean | `false` | Notify when an agent becomes ready/idle. |
-| `feature.coding_agents.notifications.error.enabled` | boolean | `false` | Notify when an agent reports an error. |
+### `feature.workspace.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.workspace.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `10`
+
+### `feature.notification_overview.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.notification_overview.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `20`
+
+### `feature.notification_overview.overview.max_items`
+
+How many notifications the overview keeps, or `unlimited`.
+
+**Type:** `unlimited` | integer ≥ 0 · **Default:** `30`
+
+### `feature.command_palette.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.command_palette.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `30`
+
+### `feature.search.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.search.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `40`
+
+### `feature.git.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `off`
+
+### `feature.git.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `50`
+
+### `feature.process_info.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.process_info.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `80`
+
+### `feature.coding_agents.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.coding_agents.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `65`
+
+### `feature.coding_agents.notifications.working.enabled`
+
+Notify when an agent starts working.
+
+**Type:** boolean · **Default:** `false`
+
+### `feature.coding_agents.notifications.question.enabled`
+
+Notify when an agent has a question and needs input.
+
+**Type:** boolean · **Default:** `false`
+
+### `feature.coding_agents.notifications.ready.enabled`
+
+Notify when an agent becomes ready/idle.
+
+**Type:** boolean · **Default:** `false`
+
+### `feature.coding_agents.notifications.error.enabled`
+
+Notify when an agent reports an error.
+
+**Type:** boolean · **Default:** `false`

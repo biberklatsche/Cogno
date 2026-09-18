@@ -27,7 +27,8 @@
     "generate:actions": "tsx scripts/generate-actions.ts",
     "generate:actions:check": "tsx scripts/generate-actions.ts --check",
     "generate:config-docs": "tsx scripts/generate-config-docs.ts",
-    "generate:config-docs:check": "tsx scripts/generate-config-docs.ts --check"
+    "generate:config-docs:check": "tsx scripts/generate-config-docs.ts --check",
+    "generate:site-docs": "tsx scripts/generate-config-docs.ts --site && tsx scripts/generate-actions.ts --site"
   },
   "private": false,
   "dependencies": {
