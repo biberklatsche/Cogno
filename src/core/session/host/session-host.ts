@@ -773,16 +773,18 @@ export class SessionHost {
     }
     const decoration = terminal.registerDecoration({ marker, x: 0, width: terminal.cols });
     decoration?.onRender((element) => {
+      // xterm resets `display` to "block" on every render, before this fires:
+      // the layout has to be set each time, only the line is created once.
+      element.style.display = "flex";
+      element.style.flexDirection = "column";
+      element.style.justifyContent = "center";
+      element.style.pointerEvents = "none";
+      element.style.width = "100%";
       if (element.dataset["restoreBoundary"]) {
         return;
       }
       element.dataset["restoreBoundary"] = "1";
-      element.style.display = "flex";
-      element.style.alignItems = "center";
-      element.style.pointerEvents = "none";
-      element.style.width = "100%";
       const line = document.createElement("div");
-      line.style.flex = "1";
       line.style.height = "1px";
       line.style.background = "currentColor";
       line.style.opacity = "0.25";
