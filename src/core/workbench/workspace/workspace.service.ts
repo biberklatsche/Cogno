@@ -112,7 +112,7 @@ export class WorkspaceService {
       title: "Delete restore data",
       data: {
         message:
-          "Delete the saved terminal output and the restored layout? The terminals that are open now stay as they are.",
+          "Delete the saved session? The terminals that are open now stay as they are; the next launch starts fresh.",
         confirmLabel: "Delete",
         cancelLabel: "Cancel",
       },

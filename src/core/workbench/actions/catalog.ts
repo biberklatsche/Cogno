@@ -228,7 +228,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "clear_restore_data",
     label: "Delete Restore Data",
-    description: "Delete the saved terminal output and restored layout of session restore",
+    description: "Delete the saved session so that the next launch starts fresh",
   }),
   defineAction({
     name: "trigger_autocomplete",
