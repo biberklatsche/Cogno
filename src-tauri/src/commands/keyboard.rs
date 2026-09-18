@@ -1,5 +1,6 @@
 /// The id of the active keyboard layout, in the form the OS names it: the KLID
-/// on Windows ("00000407"), the xkb layout on Linux ("de"), the input source id
+/// on Windows ("00000407"), the xkb layout on Linux ("de", or "fr(dvorak)" with a
+/// variant), the input source id
 /// on macOS ("com.apple.keylayout.German"). The frontend looks its keymap up by
 /// this id and falls back to a default keymap on `None`.
 #[tauri::command]
@@ -58,15 +59,25 @@ fn read_hitoolbox(args: &[&str]) -> Option<String> {
     layout_from_defaults(&String::from_utf8_lossy(&output.stdout))
 }
 
-/// The layout from `setxkbmap -query`. Several layouts can be configured
-/// ("layout: us,de"); the first one is the active group at startup.
+/// The layout from `setxkbmap -query`, in xkb notation: "de", or "fr(dvorak)"
+/// when it has a variant - Dvorak, Bépo and the like are variants of a layout,
+/// not layouts of their own. Several layouts can be configured ("layout: us,de",
+/// "variant: ,nodeadkeys"); the first one is the active group at startup.
 #[cfg(any(target_os = "linux", test))]
 fn layout_from_setxkbmap(query_output: &str) -> Option<String> {
-    let layouts = query_output
-        .lines()
-        .find_map(|line| line.trim().strip_prefix("layout:"))?;
-    let first = layouts.split(',').next()?.trim();
-    (!first.is_empty()).then(|| first.to_string())
+    let first_of = |key: &str| {
+        query_output
+            .lines()
+            .find_map(|line| line.trim().strip_prefix(key))
+            .and_then(|values| values.split(',').next())
+            .map(|value| value.trim().to_string())
+            .filter(|value| !value.is_empty())
+    };
+    let layout = first_of("layout:")?;
+    Some(match first_of("variant:") {
+        Some(variant) => format!("{}({})", layout, variant),
+        None => layout,
+    })
 }
 
 /// The value `defaults read <domain> <key>` prints for a string: bare, or quoted
@@ -94,6 +105,26 @@ mod tests {
             "rules:      evdev\nmodel:      pc105\nlayout:     us,de\nvariant:    ,nodeadkeys\n";
 
         assert_eq!(layout_from_setxkbmap(output), Some("us".to_string()));
+    }
+
+    #[test]
+    fn setxkbmap_reports_the_variant_with_the_layout() {
+        let output = "rules:      evdev\nmodel:      pc105\nlayout:     fr\nvariant:    dvorak\n";
+
+        assert_eq!(
+            layout_from_setxkbmap(output),
+            Some("fr(dvorak)".to_string())
+        );
+    }
+
+    #[test]
+    fn setxkbmap_pairs_the_first_layout_with_the_first_variant() {
+        let output = "layout:     de,us\nvariant:    nodeadkeys,dvorak\n";
+
+        assert_eq!(
+            layout_from_setxkbmap(output),
+            Some("de(nodeadkeys)".to_string())
+        );
     }
 
     #[test]

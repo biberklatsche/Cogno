@@ -32,9 +32,22 @@ export class KeyboardMappingService {
       KeyboardLayout.load().catch(() => null),
     ]);
     const keymapInfo =
-      keymaps.find((keymap) => keymap.layouts.some((layout) => layout.id === layoutId)) ??
+      this.findKeymap(keymaps, layoutId) ??
+      // A variant without a keymap of its own ("de(nodeadkeys)") is still closer
+      // to its layout ("de") than to the default.
+      this.findKeymap(keymaps, layoutId?.replace(/\(.*\)$/, "")) ??
       this.getDefaultKeymapInfo(keymaps);
     return { keymapInfo };
+  }
+
+  private findKeymap(
+    keymaps: readonly KeymapInfo[],
+    layoutId: string | null | undefined,
+  ): KeymapInfo | undefined {
+    if (!layoutId) {
+      return undefined;
+    }
+    return keymaps.find((keymap) => keymap.layouts.some((layout) => layout.id === layoutId));
   }
 
   private getDefaultKeymapInfo(keymapInfos: readonly KeymapInfo[]): KeymapInfo {
