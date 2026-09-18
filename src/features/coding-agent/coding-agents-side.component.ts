@@ -188,18 +188,18 @@ import type { ICodingAgentProvider } from "./ports";
       padding: 0.25rem 0;
     }
 
+    /* Sized to the 26px icon-button at the end of the row (18px icon inside). */
     .detected-entry {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.2rem 0;
-      /* Same type size as a command palette entry. */
-      font-size: 0.9rem;
+      gap: 0.5rem;
+      min-height: 26px;
+      font-size: 1rem;
     }
 
     .detected-icon {
-      width: 0.9rem;
-      height: 0.9rem;
+      width: 18px;
+      height: 18px;
       opacity: 0.6;
       flex-shrink: 0;
     }
