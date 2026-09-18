@@ -12,7 +12,6 @@ export type PtyShellProfileContract = {
   path?: string;
   args?: string[];
   env?: Record<string, string>;
-  use_conpty?: boolean;
   working_dir?: string;
   inject_cogno_cli: boolean;
   enable_shell_integration: boolean;

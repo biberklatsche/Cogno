@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { HexColorSchema } from "./shared";
 
-export const CursorSchema = z.object({
+export const CursorSchema = z.strictObject({
   width: z
     .number()
     .int()
@@ -18,9 +18,9 @@ export const CursorSchema = z.object({
     .enum(["outline", "block", "bar", "underline", "none"])
     .optional()
     .describe("Cursor shape while the terminal does not have focus."),
-  color: HexColorSchema.optional().describe("Cursor colour."),
+  color: HexColorSchema.optional().describe("Cursor color."),
   accent_color: HexColorSchema.optional().describe(
-    "Colour of the character underneath a block cursor.",
+    "Color of the character underneath a block cursor.",
   ),
   alt_click_moves_cursor: z
     .boolean()

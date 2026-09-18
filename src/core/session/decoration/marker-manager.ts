@@ -27,12 +27,14 @@ export class MarkerManager implements IDisposable {
     contextMenuOverlayService: MarkerManagerContextMenuOverlayPort,
     clipboard: ClipboardAccess,
     private readonly markerRegistry: PromptMarkerRegistry,
+    promptSeparator?: string,
   ) {
     this._renderer = new PromptMarkerRenderer(
       model,
       promptSegments,
       clipboard,
       contextMenuOverlayService,
+      promptSeparator,
     );
     this.commandBlockResolver = new CommandBlockResolver(() => this._terminal);
   }

@@ -1,4 +1,8 @@
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
+import {
+  terminalColorCssVariable,
+  terminalColorNames,
+} from "@cogno/core/infrastructure/config/models/shared";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { timespan } from "@cogno/shared/support";
 import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
@@ -42,6 +46,7 @@ export class PromptMarkerRenderer {
     private readonly segments: PromptSegment[],
     private readonly clipboard: ClipboardAccess,
     private readonly contextMenuOverlayService?: PromptMarkerContextMenuOverlayPort,
+    private readonly separator?: string,
   ) {}
 
   public render(
@@ -160,6 +165,7 @@ export class PromptMarkerRenderer {
   }
 
   private renderSegments(markerElement: HTMLElement, record: PromptRecord): void {
+    let hasRenderedSegment = false;
     for (let index = 0; index < this.segments.length; index++) {
       const segment = this.segments[index];
       if (!this.shouldRenderSegment(segment, record)) {
@@ -171,8 +177,20 @@ export class PromptMarkerRenderer {
         continue;
       }
 
+      // The separator goes between the segments that actually show.
+      if (hasRenderedSegment && this.separator) {
+        this.appendSeparator(markerElement, this.separator);
+      }
       this.appendSegment(markerElement, segment, text, index);
+      hasRenderedSegment = true;
     }
+  }
+
+  private appendSeparator(markerElement: HTMLElement, separator: string): void {
+    const span = document.createElement("span");
+    span.classList.add("prompt-separator");
+    span.textContent = separator;
+    markerElement.appendChild(span);
   }
 
   private shouldRenderSegment(segment: PromptSegment, record: PromptRecord): boolean {
@@ -464,10 +482,9 @@ export class PromptMarkerRenderer {
     }
   }
 
+  /** A color name follows the theme; anything else is hex, stored without `#`. */
   private resolveColor(color: string): string {
-    if (color.startsWith("#")) {
-      return color;
-    }
-    return `var(--color-${color})`;
+    const name = terminalColorNames.find((candidate) => candidate === color);
+    return name ? `var(${terminalColorCssVariable(name)})` : `#${color}`;
   }
 }

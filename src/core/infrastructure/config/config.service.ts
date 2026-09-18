@@ -65,6 +65,8 @@ export abstract class ConfigService {
   abstract getShellProfileByShortcutIndex(index: number): ShellProfileEntry | undefined;
 
   abstract getPromptSegments(): PromptSegment[];
+  /** The active prompt profile's `default_separator`, drawn between its segments. */
+  abstract getPromptSeparator(): string | undefined;
 }
 
 @Injectable()
@@ -198,6 +200,11 @@ export class RealConfigService extends ConfigService {
       segments.push(prompt.segment[segmentName]);
     }
     return segments;
+  }
+
+  getPromptSeparator(): string | undefined {
+    const prompt = this._config.value?.prompt;
+    return prompt?.profile?.[prompt.active]?.default_separator;
   }
 
   async load(options: ConfigLoadOptions): Promise<void> {

@@ -434,6 +434,7 @@ export class SessionHost {
             this.clipboard,
             promptMarkerRegistry,
             commandLineBuffer,
+            this.configService.getPromptSeparator(),
           ),
         ),
       );

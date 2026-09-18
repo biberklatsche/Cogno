@@ -13,7 +13,7 @@ import { z } from "zod";
 
 const featureSettingsSchemaShape = {
   feature: z
-    .object({
+    .strictObject({
       workspace: FeatureWorkspaceSchema.optional(),
       notification_overview: FeatureNotificationOverviewSchema.optional(),
       command_palette: FeatureCommandPaletteSchema.optional(),

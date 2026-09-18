@@ -49,6 +49,7 @@ function configStub(config: Record<string, unknown>): ConfigService {
     config,
     config$: new BehaviorSubject(config),
     getPromptSegments: () => [],
+    getPromptSeparator: () => undefined,
   } as unknown as ConfigService;
 }
 

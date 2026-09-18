@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const MenuSchema = z.object({
+export const MenuSchema = z.strictObject({
   opacity: z
     .number()
     .int()
