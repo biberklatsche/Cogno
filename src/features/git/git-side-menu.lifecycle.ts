@@ -1,0 +1,32 @@
+import { Injectable } from "@angular/core";
+import {
+  SideMenuFeatureHandleContract,
+  SideMenuFeatureLifecycleContract,
+} from "@cogno/shared/contributions";
+import { GitStatusService } from "./git-status.service";
+
+@Injectable({ providedIn: "root" })
+export class GitSideMenuLifecycle {
+  constructor(private readonly gitStatusService: GitStatusService) {}
+
+  create(
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+  ): SideMenuFeatureLifecycleContract {
+    return {
+      onOpen: () => {
+        this.gitStatusService.start();
+      },
+      onClose: () => {
+        this.gitStatusService.stop();
+      },
+      onFocus: () => {
+        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
+          sideMenuFeatureHandle.close();
+        });
+      },
+      onBlur: () => {
+        sideMenuFeatureHandle.unregisterKeybindListener();
+      },
+    };
+  }
+}

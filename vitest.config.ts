@@ -10,35 +10,26 @@ export default defineConfig({
     alias: [
       {
         find: "@xterm/addon-ligatures",
-        replacement: "/src/packages/__test__/mocks/xterm-addon-ligatures-mock.ts",
+        replacement: "/src/__test__/mocks/xterm-addon-ligatures-mock.ts",
       },
     ],
     include: [
-      "src/packages/app/**/*.spec.ts",
-      "src/packages/core-domain/**/*.spec.ts",
-      "src/packages/core-ui/**/*.spec.ts",
-      "src/packages/features/**/*.spec.ts",
-    ],
-    exclude: [
-      "src/packages/app/terminal/+state/advanced/autocomplete/spec/imported/commands/**/*.spec.ts",
-      "src/packages/core-ui/icons/icon/icon.component.spec.ts",
+      "src/platform/**/*.spec.ts",
+      "src/shared/**/*.spec.ts",
+      "src/features/**/*.spec.ts",
+      "src/core/**/*.spec.ts",
+      "src/bootstrap/**/*.spec.ts",
     ],
     coverage: {
       reporter: ["text", "lcov"],
       reportsDirectory: "coverage",
       include: [
-        "src/packages/app/**/*.ts",
-        "src/packages/core-domain/**/*.ts",
-        "src/packages/core-ui/**/*.ts",
-        "src/packages/features/**/*.ts",
+        "src/shared/**/*.ts",
+        "src/features/**/*.ts",
+        "src/core/**/*.ts",
+        "src/bootstrap/**/*.ts",
       ],
-      exclude: [
-        "src/packages/app/_tauri/**",
-        "**/*.spec.ts",
-        "**/*.test.ts",
-        "**/__test__/tauri_mocks/**",
-        "**/*.d.ts",
-      ],
+      exclude: ["**/*.spec.ts", "**/*.test.ts", "**/__test__/tauri_mocks/**", "**/*.d.ts"],
     },
   },
 });

@@ -1,0 +1,188 @@
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { type SideMenuItem, SideMenuService } from "./side-menu.service";
+
+class DummyComponent {}
+
+describe("SideMenuService", () => {
+  let bus: AppBus;
+  let service: SideMenuService;
+  let menuItem: SideMenuItem;
+
+  beforeEach(() => {
+    bus = new AppBus();
+    service = new SideMenuService(bus);
+    menuItem = {
+      label: "Workspace",
+      icon: "mdiViewDashboard",
+      hidden: false,
+      pinned: false,
+      actionName: "open_workspace",
+      component: DummyComponent,
+    };
+    service.addMenuItem(menuItem);
+  });
+
+  it("should focus when opening a side menu item", () => {
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    service.open("Workspace");
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()?.label).toBe("Workspace");
+    expect(service.isFocused()).toBe(true);
+    expect(publishedTypes).toContain("SideMenuViewOpened");
+    expect(publishedTypes).toContain("SideMenuViewFocused");
+  });
+
+  it("should only blur when pinned item loses outside focus", () => {
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    service.open("Workspace");
+    service.togglePin();
+    service.blur();
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()?.label).toBe("Workspace");
+    expect(service.selectedItem()?.pinned).toBe(true);
+    expect(service.isFocused()).toBe(false);
+    expect(publishedTypes).toContain("SideMenuViewBlurred");
+  });
+
+  it("should close and blur on close()", () => {
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    service.open("Workspace");
+    service.close();
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()).toBeUndefined();
+    expect(service.isFocused()).toBe(false);
+    expect(publishedTypes).toContain("SideMenuViewClosed");
+    expect(publishedTypes).toContain("SideMenuViewBlurred");
+  });
+
+  it("should only blur on close() when selected item is pinned", () => {
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    service.open("Workspace");
+    service.togglePin();
+    publishSpy.mockClear();
+
+    service.close();
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()?.label).toBe("Workspace");
+    expect(service.selectedItem()?.pinned).toBe(true);
+    expect(service.isFocused()).toBe(false);
+    expect(publishedTypes).toContain("SideMenuViewBlurred");
+    expect(publishedTypes).not.toContain("SideMenuViewClosed");
+  });
+
+  it("should close pinned item when close is forced", () => {
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    service.open("Workspace");
+    service.togglePin();
+    publishSpy.mockClear();
+
+    service.close(true);
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()).toBeUndefined();
+    expect(service.isFocused()).toBe(false);
+    expect(publishedTypes).toContain("SideMenuViewClosed");
+  });
+
+  it("should re-focus the same item when open is called again", () => {
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    service.open("Workspace");
+    service.blur();
+    publishSpy.mockClear();
+
+    service.open("Workspace");
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()?.label).toBe("Workspace");
+    expect(service.isFocused()).toBe(true);
+    expect(publishedTypes).toContain("SideMenuViewFocused");
+    expect(publishedTypes).not.toContain("SideMenuViewOpened");
+  });
+
+  it("should blur the currently focused item when switching directly to another item", () => {
+    service.addMenuItem({
+      label: "CommandPalette",
+      icon: "mdiConsole",
+      hidden: false,
+      pinned: false,
+      actionName: "open_command_palette",
+      component: DummyComponent,
+    });
+
+    service.open("Workspace");
+    service.togglePin();
+    expect(service.isFocused()).toBe(true);
+
+    const publishSpy = vi.spyOn(bus, "publish");
+    service.open("CommandPalette");
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    expect(service.selectedItem()?.label).toBe("CommandPalette");
+    expect(service.isFocused()).toBe(true);
+    expect(publishedTypes).toContain("SideMenuViewBlurred");
+    expect(publishedTypes).toContain("SideMenuViewFocused");
+  });
+
+  it("should clamp side menu panel width", () => {
+    service.setPanelWidthInPixels(100);
+    expect(service.panelWidthInPixels()).toBe(280);
+
+    service.setPanelWidthInPixels(999);
+    expect(service.panelWidthInPixels()).toBe(999);
+  });
+
+  it("reopens a pinned panel unfocused and focuses the terminal when a transient panel closes", () => {
+    service.addMenuItem({
+      label: "Search",
+      icon: "mdiConsole",
+      hidden: false,
+      pinned: false,
+      actionName: "open_terminal_search",
+      component: DummyComponent,
+    });
+
+    // Pin Workspace, then open the transient Search over it.
+    service.open("Workspace");
+    service.togglePin();
+    service.open("Search");
+    expect(service.selectedItem()?.label).toBe("Search");
+
+    const publishSpy = vi.spyOn(bus, "publish");
+    service.close();
+    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+
+    // The pinned panel comes back visible...
+    expect(service.selectedItem()?.label).toBe("Workspace");
+    expect(publishedTypes).toContain("SideMenuViewOpened");
+    // ...but does not grab the keyboard...
+    expect(service.isFocused()).toBe(false);
+    expect(publishedTypes).not.toContain("SideMenuViewFocused");
+    // ...so the focus can return to the terminal.
+    expect(publishedTypes).toContain("FocusActiveTerminal");
+  });
+
+  it("preserves runtime pin state when a menu item is re-registered", () => {
+    service.open("Workspace");
+    service.togglePin();
+
+    service.addMenuItem({
+      ...menuItem,
+      icon: "mdiRobot",
+      pinned: false,
+    });
+
+    expect(service.menu().find((item) => item.label === "Workspace")?.pinned).toBe(true);
+    expect(service.selectedItem()?.pinned).toBe(true);
+  });
+});

@@ -1,0 +1,60 @@
+<nav class="tab-list" data-tauri-drag-region>
+    @for (tab of tabs(); track tab.id) {
+        @let tabAnimationCount = (getTabAnimationCount$(tab.id) | async) ?? 0;
+        <button
+                type="button"
+                class="tab"
+                [class.is-active] = tab.isActive
+                [class.is-busy]="tabAnimationCount > 0"
+                [class.is-dragging]="isDraggingTab && draggedTabIdentifier === tab.id"
+                [class.has-color]="!!tab.color"
+                [style.--tab-color]="tabColor(tab)"
+                [appTooltip]="displayTitle(tab)"
+                [appTooltipSecondary]="getTabShortcutActionName($index) | actionkeybinding"
+                [animate.enter]="'animate-tab-enter'"
+                (animate.leave)="animateTabLeave($event)"
+                [attr.data-tab-id]="tab.id"
+                (mousedown)="startTabReorderInteraction($event, tab.id)"
+                (mouseenter)="reorderWhileDragging(tab.id, $event)"
+                (mouseup)="closeTabMiddle($event, tab.id);"
+                (contextmenu)="buildContextMenu($event, tab.id)"
+        >
+            @if (tabAnimationCount > 0) {
+                <span class="busy-indicator">
+                    <app-busy-indicator targetKind="tab" [targetId]="tab.id"></app-busy-indicator>
+                    @if (tabAnimationCount > 1) {
+                        <span class="busy-count">{{ tabAnimationCount }}</span>
+                    }
+                </span>
+            }
+            @if (showRename()===tab.id) {
+                <input class="inline-input"
+                    #renameInput
+                    autocomplete="off"
+                    spellcheck="false"
+                    data-private="off"
+                    autocorrect="off"
+                    [value]="displayTitle(tab)"
+                    (keyup.esc)="$event.stopPropagation(); closeRename()"
+                    (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);"
+                    (blur)="commitRename(renameInput.value);">
+            } @else {
+                <span class="title" [appStartEllipsis]="displayTitle(tab)"></span>
+            }
+            <span class="close" (click)="$event.stopPropagation(); closeTab(tab.id)">
+                <app-icon name="mdiClose"></app-icon>
+            </span>
+        </button>
+    }
+    <div class="tab-list-btns">
+        <button class="button icon-button" (click)="$event.stopPropagation(); addTab()" appTooltip="New Tab" [appTooltipSecondary]="'new_tab' | actionkeybinding"><app-icon name="mdiPlus"></app-icon></button>
+        <app-menu-button></app-menu-button>
+    </div>
+</nav>
+
+<ng-template #colorPickerItem let-item>
+    <app-color-select
+        [selectedColorName]="contextMenuSelectedColor()"
+        (colorSelected)="onTabColorPick($event)">
+    </app-color-select>
+</ng-template>

@@ -71,5 +71,5 @@ proposed interface or implementation.
 
 By contributing, you agree that your contribution will be licensed under the
 same license terms as the files you modify. Most of the repository is licensed
-under `MPL-2.0`; `src/packages/features` is licensed under `MIT` unless a file
+under `MPL-2.0`; `src/features` is licensed under `MIT` unless a file
 or directory contains a different third-party license notice.

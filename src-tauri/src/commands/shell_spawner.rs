@@ -1,4 +1,4 @@
-use crate::app_identity::get_app_identity;
+use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -25,11 +25,10 @@ pub struct ShellSpawner {
 impl ShellSpawner {
     pub fn new(dev_mode: bool) -> Result<Self, String> {
         let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-        let app_identity = get_app_identity();
         let dir_name = if dev_mode {
-            app_identity.development_home_directory_name
+            DEVELOPMENT_HOME_DIRECTORY_NAME
         } else {
-            app_identity.home_directory_name
+            HOME_DIRECTORY_NAME
         };
         let integration_root = home.join(dir_name).join("shell-integration");
 
@@ -64,10 +63,10 @@ impl ShellSpawner {
             // Integration mode: filter incompatible args and add integration-specific args
             let mut args = profile.args.clone().unwrap_or_default();
 
-            // For Bash/GitBash: remove incompatible flags
+            // For Bash: remove incompatible flags
             // -l/--login conflicts with --rcfile
             // -i is redundant as --rcfile implies interactive mode
-            if matches!(profile.shell_type.as_str(), "Bash" | "GitBash") {
+            if profile.shell_type == "Bash" {
                 args.retain(|arg| arg != "-l" && arg != "--login" && arg != "-i");
             }
 
@@ -134,20 +133,8 @@ impl ShellSpawner {
                     rcfile.to_string_lossy().to_string(),
                 ])
             }
-            "GitBash" => {
-                let rcfile = self.integration_root.join("gitbash").join("bootstrap.bash");
-                // Add --rcfile to load our integration
-                Ok(vec![
-                    "--rcfile".to_string(),
-                    rcfile.to_string_lossy().to_string(),
-                ])
-            }
             "ZSH" => {
                 // ZDOTDIR is set in environment, .zshrc loaded automatically
-                Ok(vec![])
-            }
-            "Fish" => {
-                // XDG_CONFIG_HOME is set in environment
                 Ok(vec![])
             }
             "PowerShell" => {

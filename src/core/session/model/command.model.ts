@@ -1,0 +1,73 @@
+/** Keys the shell integration reports per prompt; `command`/`duration` are added by the session. */
+export type CommandData = Record<string, string>;
+
+export class Command {
+  private data: CommandData = {};
+  public isInViewport: boolean = false;
+  public isFirstCommandOutOfViewport: boolean = false;
+
+  constructor(
+    private _id: string,
+    private _directory: string,
+    private _machine: string,
+    private _user: string,
+  ) {}
+
+  setData(data: CommandData) {
+    this.data = data;
+  }
+
+  /** A copy of the raw reported keys, for serializing a session snapshot (step 27). */
+  get rawData(): CommandData {
+    return { ...this.data };
+  }
+
+  get directory(): string | undefined {
+    return this._directory;
+  }
+  get machine(): string | undefined {
+    return this._machine;
+  }
+  get user(): string | undefined {
+    return this._user;
+  }
+
+  get command(): string | undefined {
+    return this.data["command"];
+  }
+  get duration(): number | undefined {
+    const d = this.data["duration"];
+    return d !== undefined ? Number.parseInt(d, 10) : undefined;
+  }
+  get returnCode(): number | undefined {
+    const rc = this.data["returnCode"];
+    return rc !== undefined ? Number.parseInt(rc, 10) : undefined;
+  }
+
+  /**
+   * Cogno's own injected startup command - the dot-source of the shell
+   * integration bootstrap (`. '<cognoHome>/shell-integration/.../bootstrap.*'`).
+   * The user did not run it, so it should not surface as a command marker
+   * (live or restored, step 27).
+   */
+  get isIntegrationBootstrap(): boolean {
+    return this.command?.includes("shell-integration") ?? false;
+  }
+
+  get commandExists(): boolean {
+    const rc = this.data["commandExists"];
+    return rc !== undefined ? rc === "true" : false;
+  }
+
+  get id(): string {
+    return this._id;
+  }
+
+  get(key: string): string | undefined {
+    return this.data[key];
+  }
+
+  set(key: string, value: string): void {
+    this.data[key] = value;
+  }
+}

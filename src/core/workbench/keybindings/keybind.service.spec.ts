@@ -1,0 +1,240 @@
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import type { KeyboardMappingService } from "@cogno/core/infrastructure/keybindings/keyboard/keyboard-layout.loader";
+import type { SessionHost } from "@cogno/core/session/host/session-host";
+import type { SessionFact } from "@cogno/core/session/session-facts";
+import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
+import { OsPlatform, OsType } from "@cogno/platform/os";
+import { BehaviorSubject, Subject } from "rxjs";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { getDestroyRef } from "../../../__test__/destroy-ref";
+import { KeybindService } from "./keybind.service";
+import { TerminalKeybindingContextService } from "./terminal-keybinding-context.service";
+
+let platform: OsType = "linux";
+const osStub = { platform: () => platform } as unknown as OsPlatform;
+
+describe("KeybindService", () => {
+  const config$ = new BehaviorSubject<{ keybind: never[] }>({ keybind: [] });
+  const keyboardMappingService: Pick<KeyboardMappingService, "loadLayout"> = {
+    loadLayout: vi.fn().mockResolvedValue({
+      keymapInfo: {
+        mapping: {},
+      },
+    }),
+  };
+  const configService: Pick<ConfigService, "config$"> = {
+    config$,
+  };
+  const bus = new AppBus();
+  const sessionRegistry = new TerminalSessionRegistry();
+  const sessionFactSubjects = new Map<string, Subject<SessionFact>>();
+  const emitFact = (terminalId: string, fact: SessionFact): void => {
+    let subject = sessionFactSubjects.get(terminalId);
+    if (!subject) {
+      subject = new Subject<SessionFact>();
+      sessionFactSubjects.set(terminalId, subject);
+      sessionRegistry.register(
+        terminalId,
+        {} as ShellProfile,
+        {
+          facts$: subject.asObservable(),
+        } as unknown as SessionHost,
+      );
+    }
+    subject.next(fact);
+  };
+  const terminalFullscreenService = new TerminalFullscreenService(bus, sessionRegistry);
+  const terminalKeybindingContext = new TerminalKeybindingContextService(
+    bus,
+    terminalFullscreenService,
+    sessionRegistry,
+  );
+
+  let service: KeybindService;
+
+  beforeAll(() => {
+    service = new KeybindService(
+      osStub,
+      keyboardMappingService as KeyboardMappingService,
+      configService as ConfigService,
+      bus,
+      terminalKeybindingContext,
+      getDestroyRef(),
+    );
+  });
+
+  afterEach(() => {
+    service.unregisterListener("test-listener");
+    document.body.innerHTML = "";
+    config$.next({ keybind: [] });
+    vi.restoreAllMocks();
+  });
+
+  it("handles registered arrow key listeners outside dialogs", () => {
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["ArrowDown"], handler);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = window.dispatchEvent(event);
+
+    expect(handler).toHaveBeenCalledOnce();
+    expect(dispatchResult).toBe(false);
+  });
+
+  it("does not route registered arrow key listeners when the event target is inside a dialog", () => {
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["ArrowDown"], handler);
+
+    const dialogElement = document.createElement("app-dialog");
+    const inputElement = document.createElement("input");
+    dialogElement.appendChild(inputElement);
+    document.body.appendChild(dialogElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
+
+  it("suppresses Cogno keybindings while the focused selected terminal is in fullscreen mode", () => {
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["ArrowDown"], handler);
+
+    bus.publish({ type: "FocusTerminal", payload: "terminal-1" });
+    emitFact("terminal-1", { type: "focusChanged", focused: true });
+    emitFact("terminal-1", { type: "fullScreenChanged", active: true });
+
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowDown",
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = window.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
+
+  it("fires always: keybindings while the focused selected terminal is in fullscreen mode", () => {
+    config$.next({ keybind: ["always:ctrl+shift+k=test_always_action"] as never[] });
+
+    bus.publish({ type: "FocusTerminal", payload: "terminal-1" });
+    emitFact("terminal-1", { type: "focusChanged", focused: true });
+    emitFact("terminal-1", { type: "fullScreenChanged", active: true });
+
+    const publishSpy = vi.spyOn(bus, "publish");
+
+    const event = new KeyboardEvent("keydown", {
+      key: "k",
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = window.dispatchEvent(event);
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: "test_always_action" }),
+    );
+    expect(dispatchResult).toBe(false);
+  });
+
+  it("does not route registered listeners when the event target is an editable field", () => {
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["v"], handler);
+
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "v",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+  });
+
+  it("keeps native macOS copy/paste shortcuts in editable fields", () => {
+    platform = "macos";
+    const handler = vi.fn();
+    service.registerListener("test-listener", ["c"], handler);
+
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "c",
+      metaKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    const dispatchResult = inputElement.dispatchEvent(event);
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(dispatchResult).toBe(true);
+
+    platform = "linux";
+  });
+
+  it("does not treat the xterm helper textarea as a native editable field", () => {
+    const terminalElement = document.createElement("div");
+    terminalElement.className = "terminal xterm";
+    const helperTextareaElement = document.createElement("textarea");
+    helperTextareaElement.className = "xterm-helper-textarea";
+    terminalElement.appendChild(helperTextareaElement);
+    document.body.appendChild(terminalElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "ArrowLeft",
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    const result = (
+      service as unknown as {
+        shouldUseNativeEditableFieldHandling: (keyboardEvent: KeyboardEvent) => boolean;
+      }
+    ).shouldUseNativeEditableFieldHandling(event);
+
+    expect(result).toBe(false);
+  });
+
+  it("does not treat non-editing shortcuts as native editable field shortcuts", () => {
+    const inputElement = document.createElement("input");
+    document.body.appendChild(inputElement);
+
+    const event = new KeyboardEvent("keydown", {
+      key: "1",
+      code: "Digit1",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    inputElement.dispatchEvent(event);
+
+    const result = (
+      service as unknown as {
+        shouldUseNativeEditableFieldHandling: (keyboardEvent: KeyboardEvent) => boolean;
+      }
+    ).shouldUseNativeEditableFieldHandling(event);
+
+    expect(result).toBe(false);
+  });
+});

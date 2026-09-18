@@ -1,0 +1,109 @@
+html {
+    --button-border-radius:6px;
+}
+
+:root {
+    /* Fixed, global scale used by every inline color-mix() at the usage sites (no more
+       per-color derived variables — adding a new color never requires new variables,
+       it just references its own base color plus this shared scale). */
+    --opacity-subtle: 40%;
+    --opacity-strong: 73%;
+    /* Step multipliers for the lighten/darken scale. A "level" (10/20/30/40) is just
+       `unit * step`; retune the whole app's lighten/darken spacing by editing these 4
+       numbers instead of hunting down literal "* 20"s. */
+    --mix-step-1: 10;
+    --mix-step-2: 20;
+    --mix-step-3: 30;
+    --mix-step-4: 40;
+    /* Per-level lighten/darken unit for colors whose blend amount never depends on
+       brightness (foreground/highlight always shift by exactly `level` raw RGB units
+       out of 255). Background/shadow have their own brightness-dependent unit, set
+       reactively from style.service.ts as --background-mix-unit/--shadow-mix-unit. */
+    --color-mix-unit: 0.392%;
+}
+
+h1, h2, h3, h4, h5, h6, p {
+    margin: 0;
+    padding: 0;
+}
+
+button, a {
+    cursor: default;
+}
+
+.button {
+    padding: 6px 10px;
+    border-radius: var(--button-border-radius, 6px);
+    border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+    color: var(--foreground-color);
+    font: inherit;
+    font-size: 0.9rem;
+
+    &.icon-button {
+        border: none;
+        border-radius: var(--button-border-radius);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        padding: 4px;
+        background: none;
+        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
+        &:hover {
+            color: var(--foreground-color);
+            background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+        }
+    }
+
+    &.primary {
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+    }
+
+    &:hover(not:disabled) {
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+    }
+
+    &:disabled {
+        opacity: 0.3;
+    }
+}
+
+.base-overlay {
+    background-color: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct), transparent);
+    border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+    border-radius: 6px;
+    backdrop-filter: blur(5px);
+    color: var(--foreground-color);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    padding: 6px;
+
+    &.flat {
+        box-shadow: none;
+    }
+}
+
+.keybinding {
+    opacity: 0.5;
+}
+
+
+input {
+    border: none;
+    outline: none;
+    color: var(--foreground-color);
+    font-size: 1rem;
+    padding: 0.5rem;
+    border-radius: var(--button-border-radius);
+    box-sizing: border-box;
+    width: 100%;
+    background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+
+    &.inline-input {
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+        padding: 0;
+    }
+}

@@ -1,0 +1,42 @@
+import { Injectable } from "@angular/core";
+import { invoke } from "@tauri-apps/api/core";
+import {
+  dirname as tauriDirname,
+  homeDir as tauriHomeDir,
+  join as tauriJoin,
+} from "@tauri-apps/api/path";
+
+@Injectable({ providedIn: "root" })
+export class Paths {
+  join(...paths: string[]): Promise<string> {
+    return tauriJoin(...paths);
+  }
+
+  dirname(path: string): Promise<string> {
+    return tauriDirname(path);
+  }
+
+  homeDir(): Promise<string> {
+    return tauriHomeDir();
+  }
+
+  exeDir(): Promise<string> {
+    return invoke<string>("get_exe_dir");
+  }
+
+  cognoHomeDir(devMode: boolean): Promise<string> {
+    return invoke<string>("get_cogno_home_dir", { devMode });
+  }
+
+  cognoConfigFilePath(devMode: boolean): Promise<string> {
+    return invoke<string>("get_cogno_config_file_path", { devMode });
+  }
+
+  cognoDbFilePath(devMode: boolean): Promise<string> {
+    return invoke<string>("get_cogno_db_file_path", { devMode });
+  }
+
+  cognoLogFilePath(): Promise<string> {
+    return invoke<string>("get_cogno_log_file_path");
+  }
+}

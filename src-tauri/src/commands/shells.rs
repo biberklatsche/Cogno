@@ -18,8 +18,6 @@ pub fn list_shells() -> Vec<ShellInfo> {
         use std::collections::HashSet;
         use std::path::Path;
         use which::which;
-        use winreg::enums::*;
-        use winreg::RegKey;
 
         let known_shells = [
             (
@@ -39,7 +37,6 @@ pub fn list_shells() -> Vec<ShellInfo> {
                 .as_slice(),
             ),
             //("WSL", "wsl.exe", "Bash"),
-            //("Fish", "fish.exe", "Fish"),
         ];
 
         let mut seen_paths = HashSet::new();
@@ -66,25 +63,6 @@ pub fn list_shells() -> Vec<ShellInfo> {
                 }
             }
         }
-
-        // Git Bash from Registry
-        let git_paths = [
-            "SOFTWARE\\GitForWindows",
-            "SOFTWARE\\WOW6432Node\\GitForWindows",
-        ];
-
-        for key_path in git_paths {
-            if let Ok(key) = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey(key_path) {
-                let install_path_result: Result<String, std::io::Error> =
-                    key.get_value("InstallPath");
-                if let Ok(install_path) = install_path_result {
-                    let bash_path = format!("{}\\bin\\bash.exe", install_path);
-                    if Path::new(&bash_path).exists() {
-                        add_shell("Git Bash", &bash_path, "GitBash");
-                    }
-                }
-            }
-        }
     }
 
     #[cfg(unix)]
@@ -92,7 +70,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
         use std::fs::read_to_string;
         use std::path::Path;
 
-        // Returns "Bash", "ZSH" or "Fish" (exactly as written), otherwise None
+        // Returns "Bash" or "ZSH" (exactly as written), otherwise None
         fn detect_shell_label(path: &str) -> Option<&'static str> {
             let fname = Path::new(path)
                 .file_name()
@@ -107,19 +85,13 @@ pub fn list_shells() -> Vec<ShellInfo> {
             if fname == "zsh" {
                 return Some("ZSH");
             }
-            if fname == "fish" {
-                return Some("Fish");
-            }
 
-            // optional: more tolerant for variants like bash5, zsh-5.9, fish-3.6
+            // optional: more tolerant for variants like bash5, zsh-5.9
             if fname.contains("bash") {
                 return Some("Bash");
             }
             if fname.contains("zsh") {
                 return Some("ZSH");
-            }
-            if fname.contains("fish") {
-                return Some("Fish");
             }
 
             None
@@ -142,7 +114,7 @@ pub fn list_shells() -> Vec<ShellInfo> {
                     shells.push(ShellInfo {
                         name,
                         path: line.to_string(),
-                        shell_type: label.to_string(), // "Bash", "ZSH" or "Fish"
+                        shell_type: label.to_string(), // "Bash" or "ZSH"
                     });
                 }
             }

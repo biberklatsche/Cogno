@@ -1,241 +1,154 @@
-const packageRootPattern = "^src/packages/";
-const productsPattern = "^(src/products/|src/packages/products/)";
-const bootstrapPattern = "^src/app/";
-const coreDomainPattern = "^src/packages/core-domain/";
-const coreApiPattern = "^src/packages/core-api/";
-const coreUiPattern = "^src/packages/core-ui/";
-const coreSupportPattern = "^src/packages/core-support/";
-const featuresPattern = "^src/packages/features/";
-const appAngularPattern = "^(src/packages/app-angular/|src/packages/app/)";
-const appTauriPattern = "^(src/packages/app-tauri/|src/packages/app/_tauri/)";
-const appPackagePattern = "^src/packages/app/";
-const privateSiblingPattern = "^(\\.\\./[^/]+-pro/|.*/[^/]+-pro/)";
+// Rules of ARCHITECTURE.md. `pnpm lint:architecture` fails on a violation.
+//
+// The target architecture (ARCHITECTURE.md 2.1, import matrix).
+const pkg = "^src/";
+const featuresPattern = "^src/features/";
+const platformPattern = "^src/platform/";
+const sharedPattern = "^src/shared/";
+const sharedFrameworkFreePattern = "^src/shared/(domain|support)/";
+const corePattern = "^src/core/";
+const bootstrapPattern = "^src/bootstrap/";
+const testSupportPattern = "^src/__test__/";
 const knownCognoAliasPattern =
-  "^@cogno/(?!app(?:$|/)|app-setup(?:$|/)|app-angular(?:$|/)|app-tauri(?:$|/)|features(?:$|/)|products(?:$|/)|core-domain(?:$|/)|core-api(?:$|/)|core-ui(?:$|/)|core-support(?:$|/)).+";
+  "^@cogno/(?!bootstrap(?:$|/)|core(?:$|/)|features(?:$|/)|platform(?:$|/)|shared(?:$|/)).+";
+
+/** Everything in core/ except the named layer itself. */
+const coreExcept = (...layers) =>
+  `^src/core/(?!(${layers.join("|")})/)`;
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
+    // ---- Block 1: target architecture (ARCHITECTURE.md 2.1, import matrix) ----
     {
-      name: "core-domain-must-not-import-app-angular",
+      name: "t1-shared-imports-nothing-internal",
       severity: "error",
-      comment: "core-domain must not depend on app-angular.",
-      from: { path: coreDomainPattern },
-      to: { path: appAngularPattern },
+      comment: "shared is the foundation and knows no other package.",
+      from: { path: sharedPattern },
+      to: { path: `${platformPattern}|${corePattern}|${featuresPattern}|${bootstrapPattern}` },
     },
     {
-      name: "core-domain-must-not-import-app-tauri",
+      name: "t2-shared-domain-is-framework-free",
       severity: "error",
-      comment: "core-domain must not depend on app-tauri.",
-      from: { path: coreDomainPattern },
-      to: { path: appTauriPattern },
+      comment: "shared/domain and shared/support import no framework.",
+      from: { path: sharedFrameworkFreePattern },
+      to: { path: "^(@angular/|rxjs)" },
     },
     {
-      name: "core-domain-must-not-import-features",
+      name: "t3-platform-imports-only-shared",
       severity: "error",
-      comment: "core-domain must not depend on features.",
-      from: { path: coreDomainPattern },
-      to: { path: featuresPattern },
+      comment: "platform is the Tauri boundary; it knows no product layer.",
+      from: { path: platformPattern },
+      to: { path: `${corePattern}|${featuresPattern}|${bootstrapPattern}` },
     },
     {
-      name: "core-domain-must-not-import-products",
+      name: "t4-only-platform-talks-to-tauri",
       severity: "error",
-      comment: "core-domain must not depend on products.",
-      from: { path: coreDomainPattern },
-      to: { path: productsPattern },
-    },
-    {
-      name: "core-domain-must-not-import-angular",
-      severity: "error",
-      comment: "core-domain must not depend on Angular.",
-      from: { path: coreDomainPattern },
-      to: { path: "^@angular/" },
-    },
-    {
-      name: "core-domain-must-not-import-tauri",
-      severity: "error",
-      comment: "core-domain must not depend on Tauri.",
-      from: { path: coreDomainPattern },
+      comment: "Only platform imports @tauri-apps/*; everything else goes through its services.",
+      from: { path: "^src/", pathNot: `${platformPattern}|${testSupportPattern}` },
       to: { path: "^@tauri-apps/" },
     },
     {
-      name: "core-api-must-not-import-angular",
+      name: "t5-infrastructure-knows-no-product-layer",
       severity: "error",
-      comment: "core-api must not depend on Angular.",
-      from: { path: coreApiPattern },
-      to: { path: "^@angular/" },
+      comment: "infrastructure knows neither a session nor the layout.",
+      from: { path: `${corePattern}infrastructure/` },
+      to: {
+        path: `${coreExcept("infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+      },
     },
     {
-      name: "core-api-must-not-import-tauri",
+      name: "t6-terminal-is-the-machine",
       severity: "error",
-      comment: "core-api must not depend on Tauri.",
-      from: { path: coreApiPattern },
-      to: { path: "^@tauri-apps/" },
+      comment: "The machine imports nothing else from core - not even infrastructure.",
+      from: { path: `${corePattern}terminal/` },
+      to: { path: `${coreExcept("terminal")}|${featuresPattern}|${bootstrapPattern}` },
     },
     {
-      name: "core-api-must-not-import-app-angular",
+      name: "t7-command-log-uses-only-infrastructure",
       severity: "error",
-      comment: "core-api must not depend on app-angular.",
-      from: { path: coreApiPattern },
-      to: { path: appAngularPattern },
+      comment: "command-log owns the data; it knows no session and no layout.",
+      from: { path: `${corePattern}command-log/` },
+      to: {
+        path: `${coreExcept("command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+      },
     },
     {
-      name: "core-api-must-not-import-app-tauri",
+      name: "t8-session-knows-no-workbench",
       severity: "error",
-      comment: "core-api must not depend on app-tauri.",
-      from: { path: coreApiPattern },
-      to: { path: appTauriPattern },
+      comment: "A session does not know whether it is displayed. It publishes facts.",
+      from: { path: `${corePattern}session/` },
+      to: {
+        path: `${coreExcept("session", "terminal", "command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+      },
     },
     {
-      name: "core-api-must-not-import-features",
+      name: "t9-workbench-knows-no-machine-and-no-api",
       severity: "error",
-      comment: "core-api must not depend on features.",
-      from: { path: coreApiPattern },
-      to: { path: featuresPattern },
+      comment: "The workbench owns sessions as hosts; it never touches the machine or the api.",
+      from: { path: `${corePattern}workbench/` },
+      to: {
+        path: `${coreExcept("workbench", "session", "command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+      },
     },
     {
-      name: "core-api-must-not-import-products",
+      name: "t10-api-knows-no-features-and-no-machine",
       severity: "error",
-      comment: "core-api must not depend on products.",
-      from: { path: coreApiPattern },
-      to: { path: productsPattern },
+      comment: "The api is the view features get; it composes session and workbench.",
+      from: { path: `${corePattern}api/` },
+      to: {
+        path: `${coreExcept("api", "workbench", "session", "command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+      },
     },
     {
-      name: "core-api-must-not-contain-feature-aggregations",
-      severity: "warn",
-      comment: "core-api must not import feature-level aggregation or default-value files. These belong in the features package. Catches files whose names suggest collected/default state rather than contracts.",
-      from: { path: coreApiPattern },
-      to: { path: "(feature-settings-extension|feature-.*-defaults?|.*-aggregation|.*-collection\\.ts$)" },
-    },
-    {
-      name: "core-ui-is-isolated",
+      name: "t11-features-see-only-the-api",
       severity: "error",
-      comment: "core-ui must not import other internal modules.",
-      from: { path: coreUiPattern },
-      to: { path: "^(src/packages/app|src/packages/features)/" },
-    },
-    {
-      name: "core-ui-must-not-import-products",
-      severity: "error",
-      comment: "core-ui must not depend on products.",
-      from: { path: coreUiPattern },
-      to: { path: productsPattern },
-    },
-    {
-      name: "core-support-must-be-frameworkfree",
-      severity: "error",
-      comment: "core-support must remain framework-free and reusable.",
-      from: { path: coreSupportPattern },
-      to: { path: "^(src/packages/app|src/packages/features|src/products/|src/packages/products/|@angular/|@tauri-apps/)" },
-    },
-    {
-      name: "features-must-not-import-app",
-      severity: "error",
-      comment: "features must not depend on app.",
+      comment: "Features import shared, platform and core/api - nothing else from core.",
       from: { path: featuresPattern },
-      to: { path: "^src/packages/app/" },
+      to: { path: `${coreExcept("api")}|${bootstrapPattern}` },
     },
     {
-      name: "features-must-not-import-app-angular",
+      name: "t12-features-import-each-other-through-index",
       severity: "error",
-      comment: "features must not depend on app-angular.",
-      from: { path: featuresPattern },
-      to: { path: appAngularPattern },
+      comment: "A feature imports another feature only through that feature's index.ts.",
+      from: { path: "^src/features/([^/]+)/" },
+      to: {
+        path: "^src/features/([^/]+)/.+",
+        pathNot: "^src/features/([^/]+)/index\\.ts$|^src/features/$1/",
+      },
     },
     {
-      name: "features-must-not-import-app-tauri",
+      name: "t13-nothing-imports-bootstrap",
       severity: "error",
-      comment: "features must not depend on app-tauri.",
-      from: { path: featuresPattern },
-      to: { path: appTauriPattern },
-    },
-    {
-      name: "features-must-not-import-products",
-      severity: "error",
-      comment: "features must not depend on products.",
-      from: { path: featuresPattern },
-      to: { path: productsPattern },
-    },
-    {
-      name: "app-angular-must-not-import-features",
-      severity: "error",
-      comment: "app-angular must not depend on concrete features.",
-      from: { path: appAngularPattern },
-      to: { path: featuresPattern },
-    },
-    {
-      name: "features-must-not-depend-on-feature-orchestration-in-app",
-      severity: "error",
-      comment: "Feature-specific orchestration services (e.g. *-host-application.service) must not be imported by features — they belong in app-host adapters only.",
-      from: { path: featuresPattern },
-      to: { path: "app-host.*-application\\.service\\.ts$" },
-    },
-    {
-      name: "app-angular-must-not-import-products",
-      severity: "error",
-      comment: "app-angular must not depend on products.",
-      from: { path: appAngularPattern },
-      to: { path: productsPattern },
-    },
-    {
-      name: "app-tauri-must-not-import-features",
-      severity: "error",
-      comment: "app-tauri must not depend on concrete features outside explicit compose/bootstrap boundaries.",
-      from: { path: appTauriPattern },
-      to: { path: featuresPattern },
-    },
-    {
-      name: "app-tauri-must-not-import-products",
-      severity: "error",
-      comment: "app-tauri must not depend on products.",
-      from: { path: appTauriPattern },
-      to: { path: productsPattern },
-    },
-    {
-      name: "internal-layers-must-not-import-bootstrap",
-      severity: "error",
-      comment: "Reusable packages and products must not depend on bootstrap entry points.",
-      from: { path: "^(src/packages/|src/products/|src/packages/products/)" },
+      comment: "bootstrap is the composition root; nothing depends on it.",
+      from: { path: pkg, pathNot: `${bootstrapPattern}|${testSupportPattern}` },
       to: { path: bootstrapPattern },
     },
     {
-      name: "public-repo-must-not-import-private-sibling",
+      name: "t15-no-orphan-modules",
       severity: "error",
-      comment: "The public repository must not depend on a private sibling repository.",
-      from: { path: "^(src/|scripts/|package\\.json|angular\\.json|\\.dependency-cruiser\\.cjs)" },
-      to: { path: privateSiblingPattern },
+      comment:
+        "Every module is reachable from something. An orphan is dead code - delete it, or wire it up. Ambient .d.ts files declare types for the compiler and are imported by nobody.",
+      from: { orphan: true, pathNot: ["\.d\.ts$"] },
+      to: {},
     },
     {
-      name: "known-cogno-aliases-only",
+      name: "t14-known-aliases-only",
       severity: "error",
-      comment: "Only defined @cogno/* aliases are allowed.",
-      from: { path: packageRootPattern },
-      to: {
-        dependencyTypes: ["unknown"],
-        path: knownCognoAliasPattern,
-      },
+      comment: "Only the five @cogno/* aliases exist.",
+      from: { path: "^src/" },
+      to: { dependencyTypes: ["unknown"], path: knownCognoAliasPattern },
     },
   ],
   options: {
-    doNotFollow: {
-      path: "node_modules",
-    },
-    tsConfig: {
-      fileName: "tsconfig.json",
-    },
+    doNotFollow: { path: "node_modules" },
+    tsConfig: { fileName: "tsconfig.json" },
     enhancedResolveOptions: {
       extensions: [".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs", ".json"],
     },
     tsPreCompilationDeps: true,
     exclude: {
-      path: [
-        "^dist/",
-        "^coverage/",
-        "^\\.angular/",
-        "^src/packages/assets/src/assets/",
-        "\\.spec\\.ts$",
-        "\\.test\\.ts$",
-      ],
+      path: ["^dist/", "^coverage/", "^\\.angular/", "^src/assets/", "\\.spec\\.ts$", "\\.test\\.ts$"],
     },
   },
 };

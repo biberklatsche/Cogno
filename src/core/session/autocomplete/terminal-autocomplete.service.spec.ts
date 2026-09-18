@@ -1,0 +1,960 @@
+import type { SessionCommandLog as TerminalHistoryPersistenceService } from "@cogno/core/session/command-log/session-command-log";
+import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
+import type { SessionState } from "@cogno/core/session/host/session-host";
+import { BehaviorSubject } from "rxjs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  AutocompleteSuggestion,
+  CommandQueryContext,
+  QueryContext,
+} from "./autocomplete.types";
+import type { SuggestorRegistry } from "./suggestor-registry";
+import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
+import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
+
+class FakeStateManager {
+  readonly replaceInput = vi.fn();
+  private readonly subject = new BehaviorSubject<SessionState>({
+    hasUnreadNotification: false,
+    progress: { state: "hidden", value: 0 },
+    terminalId: "t1",
+    shellContext: { shellType: "Bash", backendOs: "macos" } as any,
+    cursorPosition: { viewport: { col: 1, row: 1 }, col: 1, row: 1, char: "" },
+    mousePosition: { viewport: { col: 1, row: 1 }, col: 1, row: 1, char: "" },
+    dimensions: {
+      rows: 24,
+      cols: 80,
+      cellHeight: 18,
+      cellWidth: 9,
+      viewportWidth: 720,
+      viewportHeight: 432,
+    },
+    isFocused: true,
+    hasSelection: false,
+    isCommandRunning: false,
+    isInFullScreenMode: false,
+    isPaneMaximized: false,
+    scrolledLinesFromBottom: 0,
+    sessionCapabilities: undefined,
+    contextRevision: 0,
+    isContextKnown: true,
+    commandStartTime: undefined,
+    input: { text: "git s", cursorIndex: 5, maxCursorIndex: 5 },
+    cwd: "/Users/larswolfram/projects",
+  });
+
+  get state$() {
+    return this.subject.asObservable();
+  }
+  get isFocused() {
+    return this.subject.value.isFocused;
+  }
+  get state() {
+    return this.subject.value;
+  }
+  get input() {
+    return this.subject.value.input;
+  }
+  get terminalId() {
+    return this.subject.value.terminalId;
+  }
+
+  emit(next: SessionState) {
+    this.subject.next(next);
+  }
+}
+
+function makeSuggestion(label: string): AutocompleteSuggestion {
+  return {
+    label,
+    insertText: label,
+    score: 10,
+    source: "test",
+    replaceStart: 0,
+    replaceEnd: 5,
+  };
+}
+
+function makeSuggestionWithSource(
+  label: string,
+  source: string,
+  score: number,
+): AutocompleteSuggestion {
+  return {
+    label,
+    insertText: label,
+    score,
+    source,
+    replaceStart: 0,
+    replaceEnd: 5,
+  };
+}
+
+class DummySuggestor implements TerminalAutocompleteSuggestor {
+  id: string;
+  inputPattern = /.+/;
+  constructor(
+    private readonly fn: (context: QueryContext) => Promise<AutocompleteSuggestion[]>,
+    id: string = "dummy",
+  ) {
+    this.id = id;
+  }
+  matches(): boolean {
+    return true;
+  }
+  suggest(context: QueryContext): Promise<AutocompleteSuggestion[]> {
+    return this.fn(context);
+  }
+}
+
+describe("TerminalAutocompleteService", () => {
+  let fakeState: FakeStateManager;
+  let suggestorRegistry: SuggestorRegistry;
+  let service: TerminalAutocompleteService;
+  const currentFilterMode = (target: TerminalAutocompleteService) =>
+    (target as any)._filterMode.value;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    window.localStorage.clear();
+    fakeState = new FakeStateManager();
+    suggestorRegistry = {
+      suggestors$: new BehaviorSubject([]),
+      preloadForShellIntegration: vi.fn(),
+      reportIssue: vi.fn(),
+    } as unknown as SuggestorRegistry;
+    const commandLog = {
+      searchDirectories: vi.fn().mockResolvedValue([]),
+      searchCommands: vi.fn().mockResolvedValue([]),
+      searchCommandPatterns: vi.fn().mockResolvedValue([]),
+      markCommandPatternSelected: vi.fn(),
+      markDirectorySelected: vi.fn(),
+      markCommandSelected: vi.fn(),
+    } as unknown as TerminalHistoryPersistenceService;
+    service = new TerminalAutocompleteService(
+      fakeState as unknown as any,
+      commandLog,
+      suggestorRegistry,
+      new TerminalDropdownCoordinatorService(),
+    );
+    (service as any)._suggestors = [];
+  });
+
+  afterEach(() => {
+    service.ngOnDestroy();
+    vi.useRealTimers();
+  });
+
+  it("does not preselect a suggestion and filters suggestion equal to current input", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [makeSuggestion("git s"), makeSuggestion("git status")]),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.selectedIndex).toBeNull();
+    expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
+  });
+
+  it("keeps autocomplete alive and notifies when a suggestor fails", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => {
+        throw new Error("git executable not found");
+      }, "broken-provider"),
+    );
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")], "ok"));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
+
+    expect(suggestorRegistry.reportIssue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        suggestorId: "broken-provider",
+        message: expect.stringContaining("git executable not found"),
+      }),
+    );
+  });
+
+  it("keeps autocomplete alive without notifying when a suggestor times out", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(
+        () => new Promise<AutocompleteSuggestion[]>(() => undefined),
+        "slow-provider",
+      ),
+    );
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")], "ok"));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
+
+    expect(suggestorRegistry.reportIssue).not.toHaveBeenCalled();
+  });
+
+  it("does not start another run for a suggestor that is still unresolved after timeout", async () => {
+    const slowSuggest = vi.fn(() => new Promise<AutocompleteSuggestion[]>(() => undefined));
+    service.registerSuggestor(new DummySuggestor(slowSuggest, "slow-provider"));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git sta", cursorIndex: 7, maxCursorIndex: 7 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(slowSuggest).toHaveBeenCalledTimes(1);
+  });
+
+  it("Enter without selection does not apply a suggestion", async () => {
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+    );
+
+    expect(fakeState.replaceInput).not.toHaveBeenCalled();
+  });
+
+  it("ArrowDown then Enter applies selected suggestion", async () => {
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const viewBefore = (service as any)._viewState.value;
+    expect(viewBefore.visible).toBe(true);
+    expect(viewBefore.selectedIndex).toBeNull();
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+    );
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+    );
+
+    expect(fakeState.replaceInput).toHaveBeenCalled();
+  });
+
+  it("tracks shown and selected feedback for history patterns", async () => {
+    const commandLog = (service as any).commandLog;
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "git commit -am {arg1}",
+            insertText: "git commit -am {arg1}",
+            score: 120,
+            source: "history-pattern",
+            replaceStart: 0,
+            replaceEnd: 6,
+            selectedPatternSignature: "stable:git|stable:commit|stable:-am|slot:0",
+            completionBehavior: "continue",
+          },
+        ],
+        "dummy-pattern",
+      ),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git co", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+    );
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+    );
+
+    expect(commandLog.markCommandPatternSelected).toHaveBeenCalledWith(
+      "stable:git|stable:commit|stable:-am|slot:0",
+    );
+  });
+
+  it("cycles filter mode via action and does not apply suggestion", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [
+        makeSuggestionWithSource("git status", "history-cmd", 90),
+        makeSuggestionWithSource("git stash", "spec-cmd", 80),
+      ]),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual([
+      "history-cmd",
+      "spec-cmd",
+    ]);
+    expect(currentFilterMode(service)).toBe("all");
+
+    service.cycleTab();
+    expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual([
+      "spec-cmd",
+    ]);
+    expect(currentFilterMode(service)).toBe("context-only");
+
+    service.cycleTab();
+    expect((service as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual([
+      "history-cmd",
+    ]);
+    expect(currentFilterMode(service)).toBe("history-only");
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+    );
+    service.cycleTab();
+    expect(fakeState.replaceInput).not.toHaveBeenCalled();
+  });
+
+  it("restores previously selected filter mode from storage", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [
+        makeSuggestionWithSource("git status", "history-cmd", 90),
+        makeSuggestionWithSource("git stash", "spec-cmd", 80),
+      ]),
+    );
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    service.cycleTab(); // context-only
+    expect(currentFilterMode(service)).toBe("context-only");
+
+    service.ngOnDestroy();
+
+    const commandLog = {
+      searchDirectories: vi.fn().mockResolvedValue([]),
+      searchCommands: vi.fn().mockResolvedValue([]),
+      searchCommandPatterns: vi.fn().mockResolvedValue([]),
+      markCommandPatternSelected: vi.fn(),
+      markDirectorySelected: vi.fn(),
+      markCommandSelected: vi.fn(),
+    } as unknown as TerminalHistoryPersistenceService;
+    const second = new TerminalAutocompleteService(
+      fakeState as unknown as any,
+      commandLog,
+      suggestorRegistry,
+      new TerminalDropdownCoordinatorService(),
+    );
+    (second as any)._suggestors = [];
+    second.registerSuggestor(
+      new DummySuggestor(async () => [
+        makeSuggestionWithSource("git status", "history-cmd", 90),
+        makeSuggestionWithSource("git stash", "spec-cmd", 80),
+      ]),
+    );
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git sta", cursorIndex: 7, maxCursorIndex: 7 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect(currentFilterMode(second)).toBe("context-only");
+    expect((second as any)._viewState.value.suggestions.map((s: any) => s.source)).toEqual([
+      "spec-cmd",
+    ]);
+    second.ngOnDestroy();
+  });
+
+  it("does not cycle mode when autocomplete is hidden", () => {
+    expect(currentFilterMode(service)).toBe("all");
+
+    const performed = service.cycleTab();
+
+    expect(currentFilterMode(service)).toBe("all");
+    expect(performed).toBe(false);
+  });
+
+  it("in all mode puts top history first, then top non-history in visible rows", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [
+        makeSuggestionWithSource("h1", "history-cmd", 100),
+        makeSuggestionWithSource("h2", "history-cmd", 99),
+        makeSuggestionWithSource("h3", "history-cmd", 98),
+        makeSuggestionWithSource("h4", "history-cmd", 97),
+        makeSuggestionWithSource("n1", "spec-cmd", 96),
+        makeSuggestionWithSource("n2", "spec-cmd", 95),
+        makeSuggestionWithSource("n3", "spec-cmd", 94),
+      ]),
+    );
+
+    fakeState.emit({ ...fakeState.state, input: { text: "x", cursorIndex: 1, maxCursorIndex: 1 } });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const firstSix = (service as any)._viewState.value.suggestions.slice(0, 6);
+    expect(firstSix.slice(0, 3).map((s: any) => s.label)).toEqual(["h1", "h2", "h3"]);
+    expect(firstSix.slice(3, 6).map((s: any) => s.label)).toEqual(["n1", "n2", "n3"]);
+  });
+
+  it("puts the first three suggestions from history before context suggestions when available", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          makeSuggestionWithSource("recent-1", "history-dir", 82),
+          makeSuggestionWithSource("recent-2", "history-dir", 81),
+          makeSuggestionWithSource("recent-3", "history-dir", 80),
+          makeSuggestionWithSource("recent-4", "history-dir", 79),
+        ],
+        "dummy-history-dir",
+      ),
+    );
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () =>
+          Array.from({ length: 30 }, (_, index) =>
+            makeSuggestionWithSource(`ctx-${index}`, "fs-dir", 200 - index),
+          ),
+        "dummy-fs",
+      ),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "cd p", cursorIndex: 4, maxCursorIndex: 4 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.suggestions.slice(0, 3).map((s: any) => s.label)).toEqual([
+      "recent-1",
+      "recent-2",
+      "recent-3",
+    ]);
+    expect(view.suggestions[3].source).toBe("fs-dir");
+  });
+
+  it("positions panel above cursor near bottom and keeps it in viewport", async () => {
+    const originalWidth = window.innerWidth;
+    const originalHeight = window.innerHeight;
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 360 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 220 });
+
+    service.registerSuggestor(
+      new DummySuggestor(async () =>
+        Array.from({ length: 20 }, (_, i) => makeSuggestion(`git status ${i}`)),
+      ),
+    );
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+      cursorPosition: {
+        ...fakeState.state.cursorPosition,
+        viewport: { col: 80, row: 24 },
+      },
+      dimensions: {
+        ...fakeState.state.dimensions,
+        viewportWidth: 360,
+        viewportHeight: 220,
+      },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.x).toBeGreaterThanOrEqual(0);
+    expect(view.y).toBeGreaterThanOrEqual(0);
+    // Cursor is far right, panel must clamp to right edge and stay fully visible.
+    expect(view.x + view.width).toBeLessThanOrEqual(360);
+    // Must be above the cursor region when there is no room below.
+    expect(view.placement).toBe("above");
+    expect(view.y).toBeLessThan(24 * 18);
+
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: originalWidth });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: originalHeight });
+  });
+
+  it("hides autocomplete when side menu opens", async () => {
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect((service as any)._viewState.value.visible).toBe(true);
+    expect((service as any)._viewState.value.visible).toBe(true);
+  });
+
+  it("stays open while side menu is open", async () => {
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect((service as any)._viewState.value.visible).toBe(true);
+  });
+
+  it("does not open on mouse move without input change", async () => {
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+    fakeState.emit({
+      ...fakeState.state,
+      mousePosition: { viewport: { col: 10, row: 5 }, col: 10, row: 5, char: " " },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect((service as any)._viewState.value.visible).toBe(false);
+  });
+
+  it("does not open automatically on empty input without the explicit trigger", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [makeSuggestion("git"), makeSuggestion("npm test")]),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "", cursorIndex: 0, maxCursorIndex: 0 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect((service as any)._viewState.value.visible).toBe(false);
+  });
+
+  it("opens autocomplete on trigger_autocomplete with empty input using an empty filter", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async (context) => {
+        expect(context.mode).toBe("command");
+        expect((context as CommandQueryContext).query).toBe("");
+        return [makeSuggestion("git"), makeSuggestion("npm test")];
+      }),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "", cursorIndex: 0, maxCursorIndex: 0 },
+    });
+    await vi.advanceTimersByTimeAsync(50);
+
+    void service.triggerAutocomplete();
+    await vi.advanceTimersByTimeAsync(50);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.suggestions.map((suggestion: AutocompleteSuggestion) => suggestion.label)).toEqual([
+      "git",
+      "npm test",
+    ]);
+  });
+
+  it("opens autocomplete on trigger_autocomplete without requiring a new input change", async () => {
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("git status")]));
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+    expect((service as any)._viewState.value.visible).toBe(true);
+
+    (service as any).hide();
+    expect((service as any)._viewState.value.visible).toBe(false);
+
+    void service.triggerAutocomplete();
+    await vi.advanceTimersByTimeAsync(50);
+
+    expect((service as any)._viewState.value.visible).toBe(true);
+    expect((service as any)._viewState.value.suggestions[0].label).toBe("git status");
+  });
+
+  it("marks matching query parts for highlighting", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [
+        {
+          label: "Projects",
+          insertText: "Projects",
+          score: 10,
+          source: "test",
+          replaceStart: 3,
+          replaceEnd: 6,
+        },
+      ]),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "cd pro", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.visible).toBe(true);
+    expect(view.suggestions[0].matchRanges).toEqual([{ start: 0, end: 3 }]);
+  });
+
+  it("keeps missing typed separator when applying cd suggestion", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [
+        {
+          label: "projects",
+          insertText: "projects",
+          score: 10,
+          source: "test",
+          replaceStart: 3,
+          replaceEnd: 3,
+          selectedPath: "/Users/larswolfram/projects",
+        },
+      ]),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "cd", cursorIndex: 3, maxCursorIndex: 3 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+    );
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+    );
+
+    expect(fakeState.replaceInput).toHaveBeenCalledWith("cd projects", expect.any(Number));
+  });
+
+  it("does not suppress the next refresh after selecting a suggestion with continue behavior", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(async () => [
+        {
+          label: "projects/",
+          insertText: "projects/",
+          score: 10,
+          source: "fs-dir",
+          replaceStart: 3,
+          replaceEnd: 6,
+          selectedPath: "/Users/larswolfram/projects",
+          completionBehavior: "continue",
+        },
+      ]),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "cd pro", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }),
+    );
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }),
+    );
+
+    expect((service as any)._suppressNextRefresh).toBe(false);
+  });
+
+  it("does not open from ArrowUp history recall, only after typing", async () => {
+    service.registerSuggestor(new DummySuggestor(async () => [makeSuggestion("npm test")]));
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true, cancelable: true }),
+    );
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "npm test", cursorIndex: 8, maxCursorIndex: 8 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+    expect((service as any)._viewState.value.visible).toBe(false);
+
+    window.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "t", bubbles: true, cancelable: true }),
+    );
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "npm test t", cursorIndex: 10, maxCursorIndex: 10 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+    expect((service as any)._viewState.value.visible).toBe(true);
+  });
+
+  it("merges identical suggestions from different sources", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "git status",
+            insertText: "git status",
+            score: 40,
+            source: "history-cmd",
+            replaceStart: 0,
+            replaceEnd: 6,
+            selectedCommand: "git status",
+          },
+        ],
+        "dummy-history",
+      ),
+    );
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "git status",
+            insertText: "git status",
+            score: 50,
+            source: "spec-cmd",
+            replaceStart: 0,
+            replaceEnd: 6,
+          },
+        ],
+        "dummy-spec",
+      ),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.suggestions).toHaveLength(1);
+    expect(view.suggestions[0].label).toBe("git status");
+    expect(view.suggestions[0].source).toBe("history-cmd + spec-cmd");
+    expect(view.suggestions[0].score).toBe(58);
+  });
+
+  it("keeps context suggestions visible in context-only mode even when identical history suggestions exist", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "git status",
+            insertText: "git status",
+            score: 40,
+            source: "history-cmd",
+            replaceStart: 0,
+            replaceEnd: 6,
+            selectedCommand: "git status",
+          },
+        ],
+        "dummy-history",
+      ),
+    );
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "git status",
+            insertText: "git status",
+            score: 50,
+            source: "spec-cmd",
+            replaceStart: 0,
+            replaceEnd: 6,
+          },
+        ],
+        "dummy-spec",
+      ),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "git st", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    expect((service as any)._viewState.value.suggestions).toHaveLength(1);
+    expect((service as any)._viewState.value.suggestions[0].source).toBe("history-cmd + spec-cmd");
+
+    service.cycleTab();
+
+    const view = (service as any)._viewState.value;
+    expect(currentFilterMode(service)).toBe("context-only");
+    expect(view.suggestions).toHaveLength(1);
+    expect(view.suggestions[0].source).toBe("spec-cmd");
+    expect(view.suggestions[0].label).toBe("git status");
+  });
+
+  it("keeps description when higher-scored duplicate has none", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "rails",
+            insertText: "rails",
+            score: 80,
+            source: "history-cmd",
+            replaceStart: 0,
+            replaceEnd: 2,
+            selectedCommand: "rails",
+          },
+        ],
+        "dummy-history",
+      ),
+    );
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "rails",
+            insertText: "rails",
+            description: "Ruby on Rails CLI",
+            score: 40,
+            source: "spec-cmd",
+            replaceStart: 0,
+            replaceEnd: 2,
+          },
+        ],
+        "dummy-spec",
+      ),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "ra", cursorIndex: 2, maxCursorIndex: 2 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.suggestions).toHaveLength(1);
+    expect(view.suggestions[0].label).toBe("rails");
+    expect(view.suggestions[0].description).toBe("Ruby on Rails CLI");
+  });
+
+  it("merges identical directory labels from history and filesystem into one suggestion", async () => {
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "projects/",
+            insertText: "projects/",
+            score: 70,
+            source: "history-dir",
+            replaceStart: 3,
+            replaceEnd: 6,
+            selectedPath: "/Users/larswolfram/projects",
+            completionBehavior: "continue",
+          },
+        ],
+        "dummy-history-dir",
+      ),
+    );
+    service.registerSuggestor(
+      new DummySuggestor(
+        async () => [
+          {
+            label: "projects/",
+            insertText: "projects/",
+            score: 90,
+            source: "fs-dir",
+            replaceStart: 3,
+            replaceEnd: 6,
+            selectedPath: "/Users/larswolfram/projects",
+            completionBehavior: "continue",
+          },
+        ],
+        "dummy-fs-dir",
+      ),
+    );
+
+    fakeState.emit({
+      ...fakeState.state,
+      input: { text: "cd pro", cursorIndex: 6, maxCursorIndex: 6 },
+    });
+    await vi.advanceTimersByTimeAsync(400);
+
+    const view = (service as any)._viewState.value;
+    expect(view.suggestions).toHaveLength(1);
+    expect(view.suggestions[0].label).toBe("projects/");
+    expect(view.suggestions[0].source).toBe("fs-dir + history-dir");
+  });
+
+  it("keeps one full row free above cursor when panel is rendered above", () => {
+    const originalWindowHeight = window.innerHeight;
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 360 });
+    try {
+      const hostElement = document.createElement("div");
+      Object.defineProperty(hostElement, "getBoundingClientRect", {
+        configurable: true,
+        value: () => ({
+          top: 20,
+          left: 10,
+          right: 730,
+          bottom: 380,
+          width: 720,
+          height: 360,
+          x: 10,
+          y: 20,
+          toJSON: () => ({}),
+        }),
+      });
+      service.setHostElement(hostElement);
+
+      const nearBottomState: SessionState = {
+        ...fakeState.state,
+        cursorPosition: {
+          ...fakeState.state.cursorPosition,
+          viewport: { col: 10, row: 18 },
+        },
+        dimensions: {
+          ...fakeState.state.dimensions,
+          rows: 20,
+          cols: 80,
+          viewportWidth: 720,
+          viewportHeight: 360,
+          cellHeight: 18,
+          cellWidth: 9,
+        },
+      };
+      const sampleSuggestions = Array.from({ length: 5 }, (_, index) =>
+        makeSuggestion(`git status ${index}`),
+      );
+      const panelPosition = (service as any).computePanelPosition(
+        nearBottomState,
+        sampleSuggestions,
+        241,
+      );
+      const topOfCursorLine = 20 + (18 - 1) * 18;
+      const expectedAnchorY = topOfCursorLine - 18;
+
+      expect(panelPosition.placement).toBe("above");
+      expect(panelPosition.y).toBe(expectedAnchorY);
+    } finally {
+      Object.defineProperty(window, "innerHeight", {
+        configurable: true,
+        value: originalWindowHeight,
+      });
+    }
+  });
+});

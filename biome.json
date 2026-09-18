@@ -16,7 +16,8 @@
       "tsconfig.app.json",
       "tsconfig.spec.json",
       "src-tauri/*.json",
-      "scripts/**/*.mjs",
+      "scripts/**/*.ts",
+      "setup-vitest.ts",
       "src/**/*.ts"
     ]
   },

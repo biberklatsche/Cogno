@@ -15,7 +15,10 @@ yarn-error.log
 .idea/
 .project
 .classpath
-.claude
+# Only .claude/plans is tracked: the architecture documents that ARCHITECTURE.md
+# refers to. Everything else under .claude is local.
+.claude/*
+!.claude/plans/
 .codex
 .c9/
 *.launch

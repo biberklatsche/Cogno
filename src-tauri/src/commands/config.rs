@@ -35,7 +35,7 @@ mod tests {
         let content = result.unwrap();
         assert!(!content.is_empty());
         assert!(content.contains("scrollback_lines"));
-        assert!(content.contains("enable_webgl"));
+        assert!(content.contains("terminal.webgl"));
         assert!(content.contains("keybind"));
     }
 }

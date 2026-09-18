@@ -1,0 +1,191 @@
+# Cogno Bootstrap Script for PowerShell
+# Provides shell startup, prompt hooks, and shell integration features
+
+# Guard against double loading within the same session.
+# Compare against COGNO_SESSION_ID so an inherited value from a parent Cogno
+# terminal does not suppress integration in a freshly spawned session.
+if ($env:COGNO_SESSION_ID -and $env:COGNO_PWSH_BOOTSTRAPPED -eq $env:COGNO_SESSION_ID) {
+    return
+}
+$env:COGNO_PWSH_BOOTSTRAPPED = if ($env:COGNO_SESSION_ID) { $env:COGNO_SESSION_ID } else { "1" }
+
+# Logging function
+function Write-CognoLog {
+    param([string]$Message)
+
+    if ($env:COGNO_LOG_DIR -and $env:COGNO_SESSION_ID) {
+        $logFile = Join-Path $env:COGNO_LOG_DIR "shell-bootstrap-$($env:COGNO_SESSION_ID).log"
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        "[$timestamp] $Message" | Out-File -Append -FilePath $logFile -ErrorAction SilentlyContinue
+    }
+}
+
+Write-CognoLog "PowerShell bootstrap started"
+
+# Optionally load user's profile (only if COGNO_ALLOW_USER_RC=1)
+if ($env:COGNO_ALLOW_USER_RC -eq "1") {
+    $profilePaths = @(
+        @{ Label = "AllUsersAllHosts"; Path = $PROFILE.AllUsersAllHosts },
+        @{ Label = "AllUsersCurrentHost"; Path = $PROFILE.AllUsersCurrentHost },
+        @{ Label = "CurrentUserAllHosts"; Path = $PROFILE.CurrentUserAllHosts },
+        @{ Label = "CurrentUserCurrentHost"; Path = $PROFILE.CurrentUserCurrentHost }
+    )
+
+    foreach ($profileEntry in $profilePaths) {
+        $profilePath = $profileEntry.Path
+        if ($profilePath -and (Test-Path $profilePath)) {
+            Write-CognoLog "Loading $($profileEntry.Label): $profilePath"
+            . $profilePath
+        }
+    }
+}
+
+# Note: COGNO_LOGIN_PATH is deliberately not used here. On Windows, GUI
+# processes inherit the user's registry PATH, and the profiles replayed above
+# restore any session-specific additions.
+
+# Apply PATH prefix after user startup files, so Cogno CLI stays available.
+if ($env:COGNO_PATH_PREFIX) {
+    Write-CognoLog "Applying PATH prefix: $($env:COGNO_PATH_PREFIX)"
+    $env:Path = "$($env:COGNO_PATH_PREFIX);$($env:Path)"
+}
+
+# Ensure "cogno" command resolves directly to the current executable path.
+if ($env:COGNO_CLI_PATH -and -not (Get-Command cogno -ErrorAction SilentlyContinue)) {
+    Write-CognoLog "Installing cogno function for $($env:COGNO_CLI_PATH)"
+    function global:cogno {
+        & $env:COGNO_CLI_PATH @args
+    }
+}
+
+if ($env:COGNO_INTEGRATION_ROOT) {
+    $lineEditorScript = Join-Path $env:COGNO_INTEGRATION_ROOT "pwsh/line-editor.ps1"
+    if (Test-Path $lineEditorScript) {
+        . $lineEditorScript
+    }
+}
+
+$esc = [char]27
+$bel = [char]7
+$conceal = "${esc}[8m"
+$sgrReset = "${esc}[0m"
+
+# Capability handshake: report what this session's integration can actually
+# do. The app gates its native line-editor paths on this report and never
+# assumes a capability statically (PSReadLine present, pipe listener up,
+# platform).
+$cognoNativeActions = ""
+if ($global:COGNO_PWSH_LINE_EDITOR_READY -eq $true) {
+    $cognoNativeActions = "clearLine,clearLineToEnd,clearLineToStart,deletePreviousWord,deleteNextWord,deleteSelection,goToNextWord,goToPreviousWord"
+    if ($env:OS -eq "Windows_NT") {
+        # Submitting a replaced line injects a synthetic Enter via
+        # WriteConsoleInput (Windows-only, see line-editor.ps1). Unix pwsh
+        # stays on the raw replace path until an alternative ships.
+        $cognoNativeActions = "$cognoNativeActions,replaceCurrentInput"
+    }
+}
+$cognoOsName = if ($env:OS -eq "Windows_NT") { "windows" } elseif ($IsMacOS) { "macos" } else { "linux" }
+Write-Host -NoNewline "${esc}]733;COGNO:CAPS;token=$($env:COGNO_SESSION_TOKEN);shell=pwsh;os=$cognoOsName;distro=;shellVersion=$($PSVersionTable.PSVersion);nativeActions=$cognoNativeActions;bracketedPaste=false;${bel}"
+
+# State
+$global:COGNO_COUNT = 0
+$global:COGNO_LAST_CMD = ""
+$global:COGNO_CMD_SEEN = $false
+$global:COGNO_LAST_HISTORY_ID = -1
+
+function Sanitize-CognoCommand {
+    param([string]$Command)
+
+    $s = $Command
+    $s = $s -replace "`r", ""
+    $s = $s -replace "`n", "\\n"
+    $s = $s -replace "[$esc]", ""
+    $s = $s -replace "[$bel]", ""
+    $s = $s -replace ";", "\\;"
+    $s = $s -replace "\|", "\|"
+
+    return $s
+}
+
+function Get-CognoCommandName {
+    param([string]$CommandLine)
+
+    $line = [string]$CommandLine
+    $line = $line -replace '^\s+', ''
+    while ($line -match '^[A-Za-z_][A-Za-z0-9_]*=[^\s]+\s+') {
+        $line = $line -replace '^[A-Za-z_][A-Za-z0-9_]*=[^\s]+\s+', ''
+        $line = $line -replace '^\s+', ''
+    }
+
+    if ([string]::IsNullOrWhiteSpace($line)) {
+        return ""
+    }
+
+    return ($line -split '\s+', 2)[0]
+}
+
+# Pre-Execution Hook via PSReadLine
+if ($null -ne (Get-Module -ListAvailable PSReadLine)) {
+    Set-PSReadLineKeyHandler -Key Enter -ScriptBlock {
+        $line = ""
+        $cursor = 0
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+            $global:COGNO_LAST_CMD = $line
+            $global:COGNO_CMD_SEEN = $true
+        }
+        [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+    }
+}
+
+# Prompt function
+function prompt {
+    $lastEc = $LASTEXITCODE
+    if ($null -eq $lastEc) { $lastEc = 0 }
+    if ($lastEc -eq -1073741510 -or $lastEc -eq 3221225786) { $lastEc = 0 }
+
+    $global:COGNO_COUNT++
+
+    $ts = $global:COGNO_COUNT
+    $host_name = $env:COMPUTERNAME
+    $user = $env:USERNAME
+    $cwd = $PWD.Path
+
+    $cmd = ""
+    if (-not $global:COGNO_CMD_SEEN) {
+        $historyEntry = Get-History -Count 1 -ErrorAction SilentlyContinue
+        if ($historyEntry -and $historyEntry.Id -ne $global:COGNO_LAST_HISTORY_ID) {
+            $global:COGNO_LAST_CMD = [string]$historyEntry.CommandLine
+            if (-not [string]::IsNullOrWhiteSpace($global:COGNO_LAST_CMD)) {
+                $global:COGNO_CMD_SEEN = $true
+            }
+            $global:COGNO_LAST_HISTORY_ID = $historyEntry.Id
+        }
+    }
+
+    $commandExists = "false"
+    if ($global:COGNO_LAST_CMD) {
+        $cmd = Sanitize-CognoCommand $global:COGNO_LAST_CMD
+        $commandName = Get-CognoCommandName $global:COGNO_LAST_CMD
+        if (-not [string]::IsNullOrWhiteSpace($commandName)) {
+            if ($null -ne (Get-Command -Name $commandName -ErrorAction SilentlyContinue)) {
+                $commandExists = "true"
+            }
+        }
+    }
+
+    # Compute and insert commandExists into the existing OSC payload
+    # The token proves the sequence comes from this session's integration.
+    $osc = "${esc}]733;COGNO:PROMPT;token=$($env:COGNO_SESSION_TOKEN);returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;commandExists=$commandExists;${bel}"
+    Write-Host -NoNewline $osc
+
+    # Reset for next prompt
+    $global:COGNO_LAST_CMD = ""
+    $global:COGNO_CMD_SEEN = $false
+
+    # Return prompt string
+    return "`n${conceal}^^#$ts${sgrReset}`n"
+}
+
+Write-CognoLog "PowerShell bootstrap completed"

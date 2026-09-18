@@ -1,0 +1,83 @@
+import { Component, Inject, signal } from "@angular/core";
+import { ColorSelectComponent } from "@cogno/core/workbench/color/color-select.component";
+import { WorkspaceState } from "@cogno/shared/domain/workspace";
+import { ColorName } from "@cogno/shared/support";
+import { AutofocusDirective, DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
+import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
+
+@Component({
+  selector: "app-workspace-edit-dialog",
+  standalone: true,
+  imports: [AutofocusDirective, ColorSelectComponent],
+  styles: [
+    `
+          .container {
+              display: flex;
+              flex-direction: column;
+              gap: 1rem;
+          }  
+          .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+          }
+          .workspace-input {
+            width: 100%;
+            box-sizing: border-box;
+          }
+        `,
+  ],
+  template: `
+          <div class="container">
+            <input class="workspace-input"
+                   type="text"
+                   placeholder="Enter a workspace name"
+                   [value]="name()"
+                   (input)="onNameInput($event)"
+                   (keydown.enter)="onSave()"
+                   (keydown.escape)="onCancel()"
+                   [appAutofocus]="true"/>
+             <app-color-select [selectedColorName]="color()" [showDefault]="false" (colorSelected)="selectColor($event)"></app-color-select>
+            <div class="actions">
+              <button type="button" class="button" (click)="onCancel()">Cancel</button>
+              <button type="button" class="button primary" (click)="onSave()">Save</button>
+            </div>
+          </div>
+        `,
+})
+export class WorkspaceEditDialogComponent {
+  constructor(
+    private readonly workspaceHostApplicationService: WorkspaceHostApplicationService,
+    private readonly dialogRef: DialogRef<void>,
+    @Inject(DIALOG_DATA) readonly workspace: WorkspaceState,
+  ) {}
+
+  readonly name = signal<string>(this.workspace?.name ?? "");
+  readonly color = signal<ColorName | undefined>(this.workspace?.color as ColorName | undefined);
+
+  onNameInput(event: Event): void {
+    const value = (event.target as HTMLInputElement).value ?? "";
+    this.name.set(value);
+  }
+
+  onSave(): void {
+    const newName = this.name().trim();
+    if (!this.workspace || newName.length === 0) {
+      this.dialogRef.close();
+      return;
+    }
+    this.workspace.name = newName;
+    this.workspace.color = this.color();
+    void this.workspaceHostApplicationService.save(this.workspace);
+    this.dialogRef.close();
+  }
+
+  onCancel(): void {
+    this.dialogRef.close();
+  }
+
+  selectColor(color: ColorName): void {
+    this.color.set(color);
+  }
+}

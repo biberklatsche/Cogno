@@ -44,11 +44,6 @@ pub struct ProcessTreeSnapshot {
 }
 
 #[tauri::command]
-pub fn pty_get_process_tree_by_pid(process_id: u32) -> Result<ProcessTreeSnapshot, String> {
-    get_process_tree_snapshot(process_id)
-}
-
-#[tauri::command]
 pub fn pty_get_process_tree_by_terminal_id(
     state: State<'_, PtyState>,
     terminal_id: String,

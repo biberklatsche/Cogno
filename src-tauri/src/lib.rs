@@ -1,21 +1,24 @@
-use cogno_tauri_core::cli::Cli;
-use cogno_tauri_core::commands::pty::PtyState;
-use cogno_tauri_core::http_server::HttpServerState;
-use cogno_tauri_core::{initialize_app_identity, AppIdentity};
+#[path = "actions.generated.rs"]
+pub mod actions_generated;
+mod app_identity;
+pub mod cli;
+pub mod commands;
+mod db;
+mod http_server;
+
+use cli::Cli;
+use commands::pty::PtyState;
+use commands::window_registry::{route, WindowRegistry};
+use db::Db;
+use http_server::{HttpServerState, RunnableActionsState};
 use tauri::window::Color;
-use tauri::{Builder, Emitter, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
-    initialize_app_identity(AppIdentity::new(
-        "cogno",
-        ".cogno",
-        ".cogno-dev",
-    ));
-
     // Capture the user's login-shell environment in the background so the
     // first terminal spawn does not pay the login-shell startup cost.
-    cogno_tauri_core::commands::login_environment::prefetch_login_environment();
+    crate::commands::login_environment::prefetch_login_environment();
 
     Builder::default()
         .plugin(tauri_plugin_os::init())
@@ -31,9 +34,9 @@ pub fn run(cli: Cli) {
                 .level_for("tao", tauri_plugin_log::log::LevelFilter::Error)
                 .targets([
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
-                    tauri_plugin_log::Target::new(
-                        tauri_plugin_log::TargetKind::LogDir { file_name: None },
-                    ),
+                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
+                        file_name: None,
+                    }),
                 ])
                 .build()
         })
@@ -42,49 +45,64 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
-        .plugin(tauri_plugin_sql::Builder::default().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             use clap::Parser;
             if let Ok(cli) = Cli::try_parse_from(argv) {
                 if let Some(action_payload) = cli.action_payload() {
-                    let _ = app.emit("cli-action", &action_payload);
+                    route(app, "cli-action", &action_payload, None);
                 }
             }
         }))
         .manage(PtyState::new())
         .manage(HttpServerState::new())
+        .manage(RunnableActionsState::new())
+        .manage(Db::new())
+        .manage(WindowRegistry::new())
+        .on_window_event(|window, event| match event {
+            WindowEvent::Focused(true) => {
+                window
+                    .app_handle()
+                    .state::<WindowRegistry>()
+                    .set_focus(window.label());
+            }
+            WindowEvent::Destroyed => {
+                window
+                    .app_handle()
+                    .state::<WindowRegistry>()
+                    .on_destroyed(window.label());
+            }
+            _ => {}
+        })
         .invoke_handler(tauri::generate_handler![
-            cogno_tauri_core::commands::command_runner::command_runner_execute,
-            cogno_tauri_core::commands::git_blob::git_read_blob,
-            cogno_tauri_core::commands::config::get_default_config,
-            cogno_tauri_core::commands::fonts::list_fonts,
-            cogno_tauri_core::commands::shells::list_shells,
-            cogno_tauri_core::commands::keyboard::get_keyboard_layout,
-            cogno_tauri_core::commands::ai_http::ai_http_request,
-            cogno_tauri_core::commands::ai_http::ai_http_request_stream,
-            cogno_tauri_core::commands::crypto::decrypt,
-            cogno_tauri_core::commands::crypto::encrypt,
-            cogno_tauri_core::commands::pty::pty_spawn,
-            cogno_tauri_core::commands::pty::pty_write,
-            cogno_tauri_core::commands::pty::pty_execute_line_editor_action,
-            cogno_tauri_core::commands::pty::pty_resize,
-            cogno_tauri_core::commands::pty::pty_kill,
-            cogno_tauri_core::commands::processes::pty_get_process_tree_by_pid,
-            cogno_tauri_core::commands::processes::pty_get_process_tree_by_terminal_id,
-            cogno_tauri_core::commands::environment::get_exe_path,
-            cogno_tauri_core::commands::environment::get_exe_dir,
-            cogno_tauri_core::commands::environment::get_macos_app_bundle,
-            cogno_tauri_core::commands::environment::get_cogno_home_dir,
-            cogno_tauri_core::commands::environment::get_cogno_config_file_path,
-            cogno_tauri_core::commands::environment::get_cogno_db_file_path,
-            cogno_tauri_core::commands::environment::get_cogno_log_file_path,
-            cogno_tauri_core::commands::environment::get_system_path,
-            cogno_tauri_core::commands::environment::get_cli_config_set_overrides,
-            cogno_tauri_core::commands::window::new_window,
-            cogno_tauri_core::commands::notification::send_os_notification,
-            cogno_tauri_core::commands::clipboard_image::save_clipboard_image_to_file,
-            cogno_tauri_core::http_server::start_http_server,
-            cogno_tauri_core::http_server::get_http_server_port
+            crate::db::commands::db_open,
+            crate::db::commands::db_execute,
+            crate::db::commands::db_select,
+            crate::db::commands::db_batch,
+            crate::commands::command_runner::command_runner_execute,
+            crate::commands::config::get_default_config,
+            crate::commands::shells::list_shells,
+            crate::commands::keyboard::get_keyboard_layout,
+            crate::commands::pty::pty_spawn,
+            crate::commands::pty::pty_write,
+            crate::commands::pty::pty_execute_line_editor_action,
+            crate::commands::pty::pty_resize,
+            crate::commands::pty::pty_kill,
+            crate::commands::pty::pty_ack,
+            crate::commands::pty::pty_ack_received,
+            crate::commands::processes::pty_get_process_tree_by_terminal_id,
+            crate::commands::environment::get_exe_dir,
+            crate::commands::environment::get_cogno_home_dir,
+            crate::commands::environment::get_cogno_config_file_path,
+            crate::commands::environment::get_cogno_db_file_path,
+            crate::commands::environment::get_cogno_log_file_path,
+            crate::commands::environment::get_cli_config_set_overrides,
+            crate::commands::window::new_window,
+            crate::commands::window::window_claim_workspace,
+            crate::commands::window::window_release_workspace,
+            crate::commands::notification::send_os_notification,
+            crate::commands::clipboard_image::save_clipboard_image_to_file,
+            crate::http_server::start_http_server,
+            crate::http_server::set_runnable_actions
         ])
         .setup(move |app| {
             let webview_window_builder =
@@ -105,7 +123,7 @@ pub fn run(cli: Cli) {
 
             // Run the requested command on first launch when present.
             if let Some(action_payload) = cli.action_payload() {
-                let _ = app.emit("cli-action", &action_payload);
+                route(app.handle(), "cli-action", &action_payload, None);
             }
 
             #[cfg(debug_assertions)] // only include this code on debug builds
@@ -115,6 +133,13 @@ pub fn run(cli: Cli) {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let RunEvent::Exit = event {
+                // Fold the WAL back into the main file so the database is a
+                // single, consistent file once the process is gone.
+                app.state::<Db>().close();
+            }
+        });
 }

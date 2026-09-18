@@ -1,0 +1,136 @@
+import { IDisposable } from "@cogno/shared/support";
+import { FitAddon } from "@xterm/addon-fit";
+import { Terminal } from "@xterm/xterm";
+import { IPty } from "../pty";
+import { IFitHandler, ITerminalHandler } from "../terminal-handler";
+import type { TerminalMachineState } from "../terminal-machine.state";
+
+export type TerminalViewportDimensions = { rows: number; cols: number };
+type NullableTerminalViewportDimensions = {
+  rows: number | null | undefined;
+  cols: number | null | undefined;
+};
+
+type TerminalCoreWithCharSize = {
+  _core?: {
+    _renderService?: {
+      _charSizeService?: {
+        height?: number;
+        width?: number;
+      };
+    };
+  };
+};
+
+export class ResizeHandler implements ITerminalHandler, IFitHandler {
+  private _resizeObserver?: ResizeObserver;
+  private _terminal?: Terminal;
+  private _fitAddon?: FitAddon;
+  private _resizeRaf?: number;
+
+  constructor(
+    private _pty: IPty,
+    private _terminalContainer: HTMLDivElement,
+    private _stateManager: TerminalMachineState,
+  ) {}
+
+  registerFitAddon(fitAddon: FitAddon) {
+    this._fitAddon = fitAddon;
+  }
+
+  dispose(): void {
+    if (this._resizeRaf) {
+      cancelAnimationFrame(this._resizeRaf);
+      this._resizeRaf = undefined;
+    }
+
+    this._resizeObserver?.disconnect();
+    this._resizeObserver = undefined;
+
+    this._fitAddon = undefined;
+    this._terminal = undefined;
+  }
+
+  registerTerminal(terminal: Terminal): IDisposable {
+    this._terminal = terminal;
+    this._resizeObserver = new ResizeObserver(() => {
+      // leichtes Throttling gegen Resize-Spam
+      if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
+      this._resizeRaf = requestAnimationFrame(() => {
+        this.resize();
+      });
+    });
+    this._resizeObserver.observe(this._terminalContainer, { box: "content-box" });
+    return this;
+  }
+
+  public resize() {
+    if (this._terminal === undefined || this._fitAddon === undefined) return;
+    const currentDimensions: TerminalViewportDimensions = {
+      cols: this._terminal.cols,
+      rows: this._terminal.rows,
+    };
+    const newRendererDimensions = this._fitAddon.proposeDimensions();
+    if (!newRendererDimensions) return;
+    const terminalCore = this._terminal as Terminal & TerminalCoreWithCharSize;
+    const coreBeforeFit = terminalCore._core;
+    const cellHeightBeforeFit = coreBeforeFit?._renderService?._charSizeService?.height;
+    const cellWidthBeforeFit = coreBeforeFit?._renderService?._charSizeService?.width;
+    const viewportWidth = this._terminalContainer.clientWidth;
+    const viewportHeight = this._terminalContainer.clientHeight;
+
+    if (
+      this.isValidDimensions(newRendererDimensions) &&
+      !this.areDimensionsEqual(newRendererDimensions, currentDimensions)
+    ) {
+      this._pty.resize(newRendererDimensions);
+      this._fitAddon.fit();
+    }
+    const core = terminalCore._core;
+    const cellHeight = core?._renderService?._charSizeService?.height ?? cellHeightBeforeFit ?? 0;
+    const cellWidth = core?._renderService?._charSizeService?.width ?? cellWidthBeforeFit ?? 0;
+    this._stateManager.updateDimensions({
+      cols: this._terminal.cols,
+      rows: this._terminal.rows,
+      cellHeight,
+      cellWidth,
+      viewportWidth,
+      viewportHeight,
+    });
+  }
+
+  /**
+   * Fit the terminal to its container without touching the pty. A restored
+   * session sizes its terminal before the shell is spawned (so the replayed
+   * scrollback and the ConPTY viewport fill use the real row count); `resize()`
+   * itself calls `pty.resize()`, which throws before the spawn (step 27). The
+   * pty then spawns at this fitted size, so no separate pty resize is needed.
+   */
+  fitTerminalWithoutPty(): void {
+    if (!this._terminal || !this._fitAddon) return;
+    const dimensions = this._fitAddon.proposeDimensions();
+    if (dimensions && this.isValidDimensions(dimensions)) {
+      this._fitAddon.fit();
+    }
+  }
+
+  private areDimensionsEqual(a?: TerminalViewportDimensions, b?: TerminalViewportDimensions) {
+    return a?.rows === b?.rows && a?.cols === b?.cols;
+  }
+
+  private isValidDimensions(
+    dimensions: NullableTerminalViewportDimensions,
+  ): dimensions is TerminalViewportDimensions {
+    const { cols, rows } = dimensions;
+    return (
+      Number.isInteger(cols) &&
+      Number.isInteger(rows) &&
+      cols !== null &&
+      cols !== undefined &&
+      rows !== null &&
+      rows !== undefined &&
+      cols > 0 &&
+      rows > 0
+    );
+  }
+}

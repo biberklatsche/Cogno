@@ -1,0 +1,180 @@
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
+import { Opener } from "@cogno/platform";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
+import { OsPlatform } from "@cogno/platform/os";
+import { IDisposable } from "@cogno/shared/support";
+import { Terminal } from "@xterm/xterm";
+import { SessionModel } from "../model/session-model";
+import { TerminalPathResolver } from "./terminal-path.resolver";
+
+type LinkMatch = {
+  text: string;
+  startIndex: number;
+  endIndexExclusive: number;
+  kind: "url" | "path";
+};
+
+export class LinkHandler implements ITerminalHandler {
+  private static readonly URL_PATTERN = /\bhttps?:\/\/[^\s<>"'`]+/gi;
+  private static readonly PATH_PATTERN =
+    /(?:[A-Za-z]:(?:\\|\/)[^\s<>"'`]+|(?:\\\\|\/\/)[^\s<>"'`]+|\/[A-Za-z]:(?:\/[^\n<>"'`]+)+|\/[^\s<>"'`]+|(?:\.\.?(?:\\|\/))[^\s<>"'`]+|(?:[^/\\\s<>"'`:()[\]{},;=]+(?:[\\/][^\s<>"'`:()[\]{},;=]+)+))/g;
+  private static readonly LEADING_STRIP = new Set(["'", '"', "`", "(", "["]);
+  private static readonly TRAILING_STRIP = new Set([
+    ".",
+    ",",
+    ";",
+    ":",
+    "!",
+    "?",
+    "'",
+    '"',
+    "`",
+    "]",
+    ")",
+  ]);
+
+  private _terminal?: Terminal;
+  private _linkProviderDisposable?: IDisposable;
+
+  constructor(
+    private readonly _clipboard: ClipboardAccess,
+    private readonly _model: SessionModel,
+    private readonly _opener: Opener,
+    private readonly _os: OsPlatform,
+    private readonly _pathResolver: TerminalPathResolver = new TerminalPathResolver(),
+  ) {}
+
+  registerTerminal(terminal: Terminal): IDisposable {
+    this._linkProviderDisposable?.dispose();
+    this._terminal = terminal;
+    this._linkProviderDisposable = terminal.registerLinkProvider({
+      provideLinks: (bufferLineNumber, callback) => {
+        const lineText = this.readBufferLineText(bufferLineNumber);
+        if (!lineText) {
+          callback(undefined);
+          return;
+        }
+        const matches = this.extractMatches(lineText);
+        if (matches.length === 0) {
+          callback(undefined);
+          return;
+        }
+        callback(
+          matches.map((match) => ({
+            range: {
+              start: { x: match.startIndex + 1, y: bufferLineNumber },
+              end: { x: match.endIndexExclusive, y: bufferLineNumber },
+            },
+            text: match.text,
+            decorations: { underline: true, pointerCursor: true },
+            hover: () => {
+              this._terminal?.element?.setAttribute("title", this.hoverHint);
+            },
+            leave: () => {
+              this._terminal?.element?.removeAttribute("title");
+            },
+            activate: (event: MouseEvent, text: string) => {
+              event.preventDefault();
+              if (this.isOpenModifierPressed(event)) {
+                if (match.kind === "url") {
+                  void this._opener.openUrl(text);
+                  return;
+                }
+                const backendPath = this._pathResolver.resolvePathForOpen(
+                  text,
+                  this._model.state.cwd,
+                  this._model.pathAdapter,
+                );
+                if (!backendPath) return;
+                void this._opener.openPath(backendPath);
+              } else {
+                void this._clipboard.writeText(text);
+              }
+            },
+          })),
+        );
+      },
+    });
+    return this;
+  }
+
+  dispose(): void {
+    this._linkProviderDisposable?.dispose();
+    this._linkProviderDisposable = undefined;
+    this._terminal?.element?.removeAttribute("title");
+    this._terminal = undefined;
+  }
+
+  private readBufferLineText(bufferLineNumber: number): string {
+    const line = this._terminal?.buffer.active.getLine(bufferLineNumber - 1);
+    return line?.translateToString(true) ?? "";
+  }
+
+  private extractMatches(lineText: string): LinkMatch[] {
+    const matches: LinkMatch[] = [];
+    for (const candidate of this.collect(LinkHandler.URL_PATTERN, lineText, "url")) {
+      matches.push(candidate);
+    }
+
+    for (const candidate of this.collect(LinkHandler.PATH_PATTERN, lineText, "path")) {
+      if (matches.some((existing) => this.overlaps(existing, candidate))) continue;
+      if (
+        !this._pathResolver.resolvePathForOpen(
+          candidate.text,
+          this._model.state.cwd,
+          this._model.pathAdapter,
+        )
+      )
+        continue;
+      matches.push(candidate);
+    }
+
+    return matches.sort((a, b) => a.startIndex - b.startIndex);
+  }
+
+  private collect(pattern: RegExp, lineText: string, kind: "url" | "path"): LinkMatch[] {
+    const out: LinkMatch[] = [];
+    for (const raw of lineText.matchAll(pattern)) {
+      const token = raw[0];
+      const start = raw.index ?? -1;
+      if (start < 0) continue;
+      const cleaned = this.trimToken(token);
+      if (!cleaned.text) continue;
+      out.push({
+        kind,
+        text: cleaned.text,
+        startIndex: start + cleaned.leadingTrim,
+        endIndexExclusive: start + token.length - cleaned.trailingTrim,
+      });
+    }
+    return out;
+  }
+
+  private trimToken(token: string): { text: string; leadingTrim: number; trailingTrim: number } {
+    let start = 0;
+    let end = token.length;
+    while (start < end && LinkHandler.LEADING_STRIP.has(token[start])) start++;
+    while (end > start && LinkHandler.TRAILING_STRIP.has(token[end - 1])) end--;
+    return {
+      text: token.slice(start, end),
+      leadingTrim: start,
+      trailingTrim: token.length - end,
+    };
+  }
+
+  private overlaps(a: LinkMatch, b: LinkMatch): boolean {
+    return a.startIndex < b.endIndexExclusive && b.startIndex < a.endIndexExclusive;
+  }
+
+  private get hoverHint(): string {
+    return `Click to copy · ${this.openModifierLabel}+Click to open`;
+  }
+
+  private get openModifierLabel(): string {
+    return this._os.platform() === "macos" ? "Cmd" : "Ctrl";
+  }
+
+  private isOpenModifierPressed(event: MouseEvent): boolean {
+    return this._os.platform() === "macos" ? event.metaKey : event.ctrlKey;
+  }
+}

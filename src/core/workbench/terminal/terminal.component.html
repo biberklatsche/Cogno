@@ -1,0 +1,35 @@
+@if (!isInFullScreenMode()) {
+    <app-terminal-header></app-terminal-header>
+}
+<div
+    class="terminal-container"
+    [class.webgl-context-lost]="isWebglContextLost()"
+    #terminalContainer
+    (click)="focus($event)"
+    (contextmenu)="onContextMenu($event)"
+>
+    @if (isWebglContextLost()) {
+        <div class="webgl-restore-overlay">Restoring terminal renderer…</div>
+    }
+    @if (runtime(); as runtime) {
+        @if (runtime.status === 'failed') {
+            <div class="start-failed-overlay">
+                <div class="start-failed-title">The shell could not be started</div>
+                <div class="start-failed-reason">{{ runtime.reason }}</div>
+                <div class="start-failed-actions">
+                    <button type="button" class="button" (click)="retry()">Retry</button>
+                    <button type="button" class="button" (click)="closeAfterFailure()">Close</button>
+                </div>
+            </div>
+        }
+    }
+    <app-terminal-autocomplete></app-terminal-autocomplete>
+    <app-terminal-composer></app-terminal-composer>
+    <app-terminal-history></app-terminal-history>
+    @if (showScrollToBottomButton()) {
+        <button type="button" class="scroll-to-bottom-button" (click)="scrollToBottom($event)">
+            <app-icon name="mdiArrowDown"></app-icon>
+        </button>
+    }
+</div>
+

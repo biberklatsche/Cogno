@@ -1,10 +1,14 @@
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Emitter, State};
+use std::sync::{Arc, Condvar, Mutex};
+use std::time::{Duration, Instant};
+use tauri::ipc::{Channel, InvokeResponseBody};
+use tauri::{AppHandle, Manager, State};
+
+use super::window_registry::{route, WindowRegistry};
 
 use crate::http_server::HttpServerState;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
@@ -43,20 +47,284 @@ impl LineEditorChannel {
 /// private CSI-style sequence no terminal emits and no user can type.
 const LINE_EDITOR_TRIGGER: &[u8] = b"\x1b[5005~";
 
+/// Size of a single PTY read. Under load the pipe hands us whatever is
+/// buffered up to this size, so large reads coalesce output into few
+/// messages without any extra batching thread.
+const READ_BUF_SIZE: usize = 64 * 1024;
+
+/// Largest framed chunk ever handed to the webview channel in one message.
+///
+/// Root cause found by direct correlation (per-send logging of size vs. what
+/// the frontend reported lost): Tauri delivers small raw channel payloads via
+/// a synchronous, reliable `webview.eval()`; payloads whose framed size
+/// crosses roughly 1 KiB instead go through an async fetch against a
+/// `ChannelDataIpcQueue`, which silently drops messages under conditions this
+/// investigation could not further characterize (a known class of issue -
+/// see e.g. tauri-apps/tauri#10546 - not something this codebase controls).
+/// PTY reads land suspiciously often at exactly the OS's PTY buffering
+/// granularity (1024 bytes), which combined with the 4-byte seq header
+/// crossed that boundary on nearly every chunk `top` produced - explaining
+/// losses that persisted no matter how send concurrency/pacing was tuned.
+/// Every chunk is now kept comfortably under the boundary so it always takes
+/// the reliable path; this alone eliminated 100% of observed drops.
+const MAX_CHUNK_SIZE: usize = 900;
+
+/// Bytes handed to the webview but not yet acknowledged before the reader
+/// thread stops reading (and thereby blocks the shell on stdout, like a real
+/// terminal would).
+const HIGH_WATERMARK: usize = 1024 * 1024;
+
+/// Reader resumes once unacknowledged bytes drop below this (hysteresis).
+const LOW_WATERMARK: usize = 256 * 1024;
+
+/// Reader never has more than this many chunks outstanding at the IPC
+/// transport level, released by the frontend's fast "received" ack (fired the
+/// instant a chunk arrives, before xterm parses it) rather than the slow
+/// parse-based ack the byte watermarks above use.
+///
+/// Concurrency was ruled out as the cause of dropped chunks (see
+/// `MAX_CHUNK_SIZE` - it was payload size, not how many were in flight), so
+/// this cap is no longer load-bearing for correctness. Kept as a defensive
+/// bound on how much can pile up unacknowledged at once; harmless now that
+/// chunks are small and reliably delivered, so acks return quickly in
+/// practice and this rarely if ever has to fall back on
+/// `CHUNK_CAP_WAIT_TIMEOUT`.
+const MAX_IN_FLIGHT_CHUNKS: usize = 32;
+
+/// How long `acquire` waits on the chunk-count cap alone before giving up and
+/// sending anyway. The cap is a best-effort pacing signal, not
+/// correctness-critical backpressure (that's the byte watermark, which is
+/// allowed to wait as long as it takes) - and its "received" ack can be lost
+/// just like any other chunk. Waiting on it indefinitely would freeze the
+/// whole reader (no new PTY reads, so nothing renders) until the frontend's
+/// much slower gap-timeout skip eventually unblocks it through
+/// `ack_through`'s fallback.
+///
+/// This has to stay comfortably above how long a *legitimate* received ack
+/// can take under sustained heavy output (a full-screen app repainting
+/// continuously): too short, and the reader bypasses the cap on every
+/// send once acks are merely queued behind real work, silently defeating the
+/// pacing exactly when it matters most (150ms measured too short - acks were
+/// still in flight, not lost, and losses came right back). Logged whenever
+/// this fires so the real distribution of wait times can be measured instead
+/// of re-guessed.
+const CHUNK_CAP_WAIT_TIMEOUT: Duration = Duration::from_millis(1000);
+
+/// Every data message starts with the chunk's sequence number (u32, little
+/// endian). The frontend restores order from it and acknowledges by sequence
+/// number, so a chunk lost in transit costs that chunk, not the session.
+const CHUNK_HEADER_LEN: usize = 4;
+
+fn frame_chunk(seq: u32, data: &[u8]) -> Vec<u8> {
+    let mut frame = Vec::with_capacity(CHUNK_HEADER_LEN + data.len());
+    frame.extend_from_slice(&seq.to_le_bytes());
+    frame.extend_from_slice(data);
+    frame
+}
+
+struct FlowState {
+    in_flight_bytes: usize,
+    /// Sent but unacknowledged (parsed) chunks in sequence order. Ordered
+    /// popping is enough here since parse acks arrive in sequence order.
+    sent: VecDeque<(u32, usize)>,
+    /// Chunks sent but not yet "received" by the frontend (may arrive and
+    /// therefore be removed out of order, so this needs set semantics, not
+    /// the ordered `sent` queue above).
+    in_flight_chunk_seqs: HashSet<u32>,
+}
+
+/// Backpressure between the PTY reader thread and the webview, on two
+/// independent axes acknowledged at different speeds:
+///
+/// - `high_watermark`/`low_watermark` (bytes, released by the slow
+///   parse-based ack): real backpressure to the shell, so a shell that
+///   outpaces rendering genuinely blocks on stdout like a real terminal.
+/// - `max_in_flight_chunks` (count, released by the fast received-based ack):
+///   paces how many IPC channel sends are concurrently outstanding, which is
+///   what actually protects against Tauri's channel dropping messages under
+///   a burst. Gating this on the slow ack too would cap all throughput at
+///   xterm's parse speed instead of the transport's real capacity.
+///
+/// Also the reader's stop signal: `close()` wakes a waiting reader and makes
+/// every later `acquire` fail, so kill/exit never needs an ack to unblock it.
+/// The `Arc<FlowControl>` identifies one spawn (terminal ids can be reused).
+pub(crate) struct FlowControl {
+    state: Mutex<FlowState>,
+    capacity_available: Condvar,
+    closed: AtomicBool,
+    high_watermark: usize,
+    low_watermark: usize,
+    max_in_flight_chunks: usize,
+}
+
+impl FlowControl {
+    fn new() -> Self {
+        Self::with_watermarks(HIGH_WATERMARK, LOW_WATERMARK, MAX_IN_FLIGHT_CHUNKS)
+    }
+
+    fn with_watermarks(high_watermark: usize, low_watermark: usize, max_in_flight_chunks: usize) -> Self {
+        Self {
+            state: Mutex::new(FlowState {
+                in_flight_bytes: 0,
+                sent: VecDeque::new(),
+                in_flight_chunk_seqs: HashSet::new(),
+            }),
+            capacity_available: Condvar::new(),
+            closed: AtomicBool::new(false),
+            high_watermark,
+            low_watermark,
+            max_in_flight_chunks,
+        }
+    }
+
+    fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
+    }
+
+    /// Registers chunk `seq` of `bytes` as in flight. Blocks first while more
+    /// than the high watermark is unparsed (waits as long as it takes - real
+    /// backpressure) or `max_in_flight_chunks` chunks are unreceived (waits
+    /// at most `CHUNK_CAP_WAIT_TIMEOUT` in total - best-effort pacing, see
+    /// there). Returns false once the flow is closed.
+    ///
+    /// These two reasons are kept strictly independent so neither can borrow
+    /// the other's wait semantics: bytes crossing `high_watermark` is the
+    /// only thing that starts the indefinite, low-watermark-hysteresis wait;
+    /// once that clears, `chunk_cap_deadline` resets, so purely being over
+    /// the chunk-count cap can never itself be waited on indefinitely just
+    /// because the byte backlog happens to also sit above `low_watermark`
+    /// (which it routinely does under sustained load, well before it
+    /// crosses `high_watermark`). And the chunk-cap deadline is a fixed
+    /// point in time set once per waiting episode, not a fresh budget
+    /// re-armed on every spurious wakeup - any `notify_all()` from an
+    /// unrelated chunk's ack (received or parsed) wakes every waiter, so
+    /// re-arming per-iteration would let the bound be extended indefinitely
+    /// under heavy, steady ack traffic instead of actually bounding it.
+    fn acquire(&self, seq: u32, bytes: usize) -> bool {
+        let mut state = self.state.lock().unwrap();
+        let mut chunk_cap_deadline: Option<Instant> = None;
+        loop {
+            if self.is_closed() {
+                return false;
+            }
+            let bytes_over_high = state.in_flight_bytes > self.high_watermark;
+            let chunks_over = state.in_flight_chunk_seqs.len() >= self.max_in_flight_chunks;
+            if !bytes_over_high && !chunks_over {
+                break;
+            }
+            if bytes_over_high {
+                // Real backpressure to the shell: wait as long as it takes
+                // for xterm to catch up on parsing, using the low watermark
+                // as the resume threshold (hysteresis) for as long as this
+                // condition keeps re-triggering.
+                chunk_cap_deadline = None;
+                while !self.is_closed() && state.in_flight_bytes >= self.low_watermark {
+                    state = self.capacity_available.wait(state).unwrap();
+                }
+                if self.is_closed() {
+                    return false;
+                }
+                continue;
+            }
+            // Only the chunk-count cap is blocking, and its ack can be lost
+            // just like any chunk: don't let that stall the reader for
+            // seconds, give it a bounded chance in total then send anyway.
+            let deadline =
+                *chunk_cap_deadline.get_or_insert_with(|| Instant::now() + CHUNK_CAP_WAIT_TIMEOUT);
+            let now = Instant::now();
+            if now >= deadline {
+                log::warn!(
+                    target: "pty",
+                    "flow control: chunk-count cap wait timed out after {:?}, sending seq={} anyway (in_flight_chunks={})",
+                    CHUNK_CAP_WAIT_TIMEOUT,
+                    seq,
+                    state.in_flight_chunk_seqs.len(),
+                );
+                break;
+            }
+            let (next_state, _) = self
+                .capacity_available
+                .wait_timeout(state, deadline - now)
+                .unwrap();
+            state = next_state;
+            // Loop back around regardless of whether this particular wait
+            // timed out or was a (possibly spurious) notify: the top checks
+            // both conditions fresh, and the deadline above still bounds the
+            // total time spent here.
+        }
+        if self.is_closed() {
+            return false;
+        }
+        state.in_flight_bytes = state.in_flight_bytes.saturating_add(bytes);
+        state.sent.push_back((seq, bytes));
+        state.in_flight_chunk_seqs.insert(seq);
+        true
+    }
+
+    /// Frontend has parsed every chunk up to and including `seq`: releases
+    /// the byte watermark (real backpressure), and, as a fallback for a
+    /// chunk whose `received` ack never arrived, the chunk-count cap too.
+    fn ack_through(&self, seq: u32) {
+        let mut state = self.state.lock().unwrap();
+        while state.sent.front().is_some_and(|(sent_seq, _)| *sent_seq <= seq) {
+            let (sent_seq, bytes) = state.sent.pop_front().unwrap();
+            state.in_flight_bytes = state.in_flight_bytes.saturating_sub(bytes);
+            state.in_flight_chunk_seqs.remove(&sent_seq);
+        }
+        self.capacity_available.notify_all();
+    }
+
+    /// Frontend has received chunk `seq` over the IPC transport (not
+    /// necessarily parsed yet). Releases only the chunk-count cap; the byte
+    /// watermark still waits for the slower parse-based ack above.
+    fn ack_received(&self, seq: u32) {
+        let mut state = self.state.lock().unwrap();
+        state.in_flight_chunk_seqs.remove(&seq);
+        self.capacity_available.notify_all();
+    }
+
+    /// Stops the reader for good: wakes a waiting reader and makes every later
+    /// `acquire` fail. Idempotent.
+    fn close(&self) {
+        // Set under the lock so a reader that checks `closed` while holding
+        // the state lock can never miss the notification.
+        let _state = self.state.lock().unwrap();
+        self.closed.store(true, Ordering::Release);
+        self.capacity_available.notify_all();
+    }
+
+    #[cfg(test)]
+    fn in_flight(&self) -> usize {
+        self.state.lock().unwrap().in_flight_bytes
+    }
+}
+
 struct Session {
     master: Box<dyn portable_pty::MasterPty + Send>,
-    writer: Box<dyn Write + Send>,
-    should_exit: Arc<AtomicBool>,
-    exit_notified: Arc<AtomicBool>,
+    /// Ordered, non-blocking hand-off to the per-session writer thread. PTY
+    /// writes can block (the child stops reading stdin while it is blocked on
+    /// stdout during flow control), and a Tauri command must never block while
+    /// holding `sessions`. Dropping the session drops the sender, which ends
+    /// the writer thread.
+    input_tx: std::sync::mpsc::Sender<Vec<u8>>,
+    flow: Arc<FlowControl>,
+    /// Ends the shell when the session is released. On Unix closing the
+    /// master already hangs up the shell (and lets it write its history on
+    /// the way out); ConPTY does not terminate its clients when the console
+    /// closes, so on Windows this is the only thing that does.
+    #[cfg_attr(not(windows), allow(dead_code))]
+    child_killer: Box<dyn ChildKiller + Send + Sync>,
     shell_process_id: Option<u32>,
     shell_type: String,
     line_editor_pipe_name: Option<String>,
     line_editor_channel: Option<LineEditorChannel>,
 }
 
+type Sessions = Arc<Mutex<HashMap<String, Session>>>;
+
 /// Removes a session's line-editor channel directory (a private per-session
-/// temp dir holding only the FIFO or payload file). Called from every place
-/// a session is dropped; idempotent, so racing removal paths are harmless.
+/// temp dir holding only the FIFO or payload file). Idempotent, so racing
+/// removal paths are harmless.
 fn remove_line_editor_channel(channel: &Option<LineEditorChannel>) {
     if let Some(channel) = channel {
         if let Some(dir) = channel.path().parent() {
@@ -65,8 +333,58 @@ fn remove_line_editor_channel(channel: &Option<LineEditorChannel>) {
     }
 }
 
+/// Releases everything a session owns: stops the reader, removes the
+/// line-editor channel, drops the master (closes the PTY) and the input sender
+/// (ends the writer thread). Must be called without holding `sessions`:
+/// closing a ConPTY can block until its output pipe is drained.
+fn release_session(session: Session) {
+    // Only the Windows kill below needs `&mut`.
+    #[cfg(windows)]
+    let mut session = session;
+    session.flow.close();
+    remove_line_editor_channel(&session.line_editor_channel);
+    #[cfg(windows)]
+    if let Err(e) = session.child_killer.kill() {
+        // Already gone (the wait thread ends the entry in that case) or not
+        // ours to kill any more; nothing to do about either.
+        log::debug!(target: "pty", "kill of shell failed: {}", e);
+    }
+    drop(session);
+}
+
+/// Ends the spawn identified by `flow`, from whichever thread notices first:
+/// removes its map entry (only if the id still belongs to this spawn), releases
+/// it, and emits `pty-exit` for it. A spawn whose entry is already gone was
+/// killed or replaced on purpose, so it emits nothing. Idempotent.
+fn end_session(
+    sessions: &Sessions,
+    terminal_id: &str,
+    flow: &Arc<FlowControl>,
+    app: &AppHandle,
+    exit_code: i32,
+) {
+    let removed = {
+        let mut sessions = sessions.lock().unwrap();
+        match sessions.get(terminal_id) {
+            Some(session) if Arc::ptr_eq(&session.flow, flow) => sessions.remove(terminal_id),
+            _ => None,
+        }
+    };
+    flow.close();
+    let Some(session) = removed else {
+        return;
+    };
+    release_session(session);
+    route(
+        app,
+        &format!("pty-exit:{}", terminal_id),
+        serde_json::json!({ "exitCode": exit_code }),
+        Some(terminal_id),
+    );
+}
+
 pub struct PtyState {
-    sessions: Arc<Mutex<HashMap<String, Session>>>,
+    sessions: Sessions,
 }
 
 impl PtyState {
@@ -93,11 +411,17 @@ pub struct PtySpawnResult {
 #[tauri::command]
 pub async fn pty_spawn(
     app: AppHandle,
+    window: tauri::WebviewWindow,
     state: State<'_, PtyState>,
     http_server: State<'_, HttpServerState>,
     options: SpawnOptions,
+    on_data: Channel<InvokeResponseBody>,
 ) -> Result<PtySpawnResult, String> {
     let terminal_id = options.name.clone();
+    // Bind the session to the window that spawned it, so its events route back
+    // to that window instead of broadcasting to all of them.
+    app.state::<WindowRegistry>()
+        .bind_terminal(&terminal_id, window.label());
 
     // Prepare shell spawn with integration
     let dev_mode = options.dev_mode.unwrap_or(false);
@@ -170,208 +494,176 @@ pub async fn pty_spawn(
         .take_writer()
         .map_err(|e| format!("Failed to take writer: {}", e))?;
 
-    let should_exit = Arc::new(AtomicBool::new(false));
-    let exit_notified = Arc::new(AtomicBool::new(false));
-    let exit_notified_for_child = exit_notified.clone();
-    let exit_notified_for_reader = exit_notified.clone();
+    let flow = Arc::new(FlowControl::new());
+    let (input_tx, input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
 
     let session = Session {
         master: pair.master,
-        writer,
-        should_exit: should_exit.clone(),
-        exit_notified,
+        input_tx,
+        flow: flow.clone(),
+        child_killer: child.clone_killer(),
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
         line_editor_pipe_name,
         line_editor_channel,
     };
 
-    {
+    let replaced = {
         let mut sessions = state.sessions.lock().unwrap();
-        sessions.insert(terminal_id.clone(), session);
+        sessions.insert(terminal_id.clone(), session)
+    };
+    if let Some(old_session) = replaced {
+        // The id is reused (e.g. webview reload re-spawning a persisted
+        // layout). The old spawn's threads only ever touch their own entry, so
+        // ending it here cannot disturb the new session.
+        log::warn!(
+            target: "pty",
+            "terminal_id={} respawned while a session was still alive; replacing it",
+            terminal_id
+        );
+        release_session(old_session);
     }
 
+    // Thread that writes PTY input. Blocking writes happen here, never inside a
+    // command holding `sessions`. Ends when the session (and its sender) drops.
+    spawn_input_writer_thread(
+        writer,
+        input_rx,
+        terminal_id.clone(),
+        app.clone(),
+        state.sessions.clone(),
+        flow.clone(),
+    );
+
     // Thread that waits for the child process to end
-    let terminal_id_for_child = terminal_id.clone();
-    let app_for_child = app.clone();
-    let sessions_for_child = state.sessions.clone();
-
-    std::thread::spawn(move || {
-        let exit_code = match child.wait() {
-            Ok(status) => status.exit_code() as i32,
-            Err(_) => 1,
-        };
-
-        log::info!(
-            target: "pty",
-            "child process exited terminal_id={} shell_pid={:?} exit_code={}",
-            terminal_id_for_child,
-            shell_process_id,
-            exit_code
-        );
-
-        let mut sessions = sessions_for_child.lock().unwrap();
-        if let Some(session) = sessions.remove(&terminal_id_for_child) {
-            remove_line_editor_channel(&session.line_editor_channel);
-        }
-        drop(sessions);
-
-        if exit_notified_for_child
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
-            .is_ok()
-        {
-            let _ = app_for_child.emit(
-                &format!("pty-exit:{}", terminal_id_for_child),
-                serde_json::json!({
-                    "exitCode": exit_code
-                }),
+    {
+        let terminal_id = terminal_id.clone();
+        let app = app.clone();
+        let sessions = state.sessions.clone();
+        let flow = flow.clone();
+        std::thread::spawn(move || {
+            let exit_code = match child.wait() {
+                Ok(status) => status.exit_code() as i32,
+                Err(_) => 1,
+            };
+            log::info!(
+                target: "pty",
+                "child process exited terminal_id={} shell_pid={:?} exit_code={}",
+                terminal_id,
+                shell_process_id,
+                exit_code
             );
-        }
-    });
+            // The pane goes away with the exit event; this also stops the
+            // reader, even if a grandchild still holds the slave side and
+            // keeps producing output.
+            end_session(&sessions, &terminal_id, &flow, &app, exit_code);
+        });
+    }
 
     // Thread that reads PTY output
-    let terminal_id_clone = terminal_id.clone();
-    let app_clone = app.clone();
-    let should_exit_clone = should_exit.clone();
-    let sessions_for_reader = state.sessions.clone();
+    {
+        let terminal_id = terminal_id.clone();
+        let app = app.clone();
+        let sessions = state.sessions.clone();
+        std::thread::spawn(move || {
+            let mut reader = reader;
+            // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful
+            // across writes; splitting a multi-byte sequence between two reads
+            // is fine.
+            let mut buf = vec![0u8; READ_BUF_SIZE];
+            let mut seq: u32 = 0;
 
-    std::thread::spawn(move || {
-        let mut reader = reader;
-        let mut buf = [0u8; 4096];
-        let mut utf8_buffer = Vec::new();
-
-        loop {
-            if should_exit_clone.load(Ordering::Relaxed) {
-                break;
-            }
-            match std::io::Read::read(&mut reader, &mut buf) {
-                Ok(0) => {
-                    // EOF - flush any remaining valid UTF-8 data
-                    if !utf8_buffer.is_empty() {
-                        let data = String::from_utf8_lossy(&utf8_buffer).to_string();
-                        let _ = app_clone.emit(&format!("pty-data:{}", terminal_id_clone), data);
-                    }
+            'reader: loop {
+                if flow.is_closed() {
                     break;
                 }
-                Ok(n) => {
-                    if should_exit_clone.load(Ordering::Relaxed) {
-                        break;
+                let n = match std::io::Read::read(&mut reader, &mut buf) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => n,
+                };
+                // Split into pieces under MAX_CHUNK_SIZE: a read can be up to
+                // READ_BUF_SIZE, far past the size that keeps every message on
+                // the webview channel's reliable delivery path (see
+                // MAX_CHUNK_SIZE). xterm's parser is stateful across writes,
+                // so splitting mid-sequence is fine, same as splitting across
+                // reads already was.
+                for sub_chunk in buf[..n].chunks(MAX_CHUNK_SIZE) {
+                    if !flow.acquire(seq, sub_chunk.len()) {
+                        break 'reader;
                     }
-
-                    // Append new data to buffer
-                    utf8_buffer.extend_from_slice(&buf[..n]);
-
-                    // Try to convert to UTF-8
-                    match String::from_utf8(utf8_buffer.clone()) {
-                        Ok(text) => {
-                            // All data is valid UTF-8, emit it
-                            let _ =
-                                app_clone.emit(&format!("pty-data:{}", terminal_id_clone), text);
-                            utf8_buffer.clear();
-                        }
-                        Err(e) => {
-                            // Contains invalid UTF-8, but may have valid prefix
-                            let valid_up_to = e.utf8_error().valid_up_to();
-                            if valid_up_to > 0 {
-                                // Emit the valid prefix
-                                let text = String::from_utf8_lossy(&utf8_buffer[..valid_up_to])
-                                    .to_string();
-                                let _ = app_clone
-                                    .emit(&format!("pty-data:{}", terminal_id_clone), text);
-                                // Keep only the invalid suffix (might be incomplete multi-byte char)
-                                utf8_buffer.drain(..valid_up_to);
-                            }
-                            // If buffer gets too large with invalid data, force flush
-                            if utf8_buffer.len() > 16 {
-                                let text = String::from_utf8_lossy(&utf8_buffer).to_string();
-                                let _ = app_clone
-                                    .emit(&format!("pty-data:{}", terminal_id_clone), text);
-                                utf8_buffer.clear();
-                            }
-                        }
+                    if on_data
+                        .send(InvokeResponseBody::Raw(frame_chunk(seq, sub_chunk)))
+                        .is_err()
+                    {
+                        // Webview is gone; nothing left to deliver to.
+                        break 'reader;
                     }
-                }
-                Err(_) => {
-                    break;
+                    seq = seq.wrapping_add(1);
                 }
             }
-        }
 
-        // PTY died unexpectedly (EOF or read error, not an intentional kill).
-        // Emit exit immediately so the tab closes without waiting for child.wait().
-        if !should_exit_clone.load(Ordering::Relaxed)
-            && exit_notified_for_reader
-                .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
-                .is_ok()
-        {
-            let mut sessions = sessions_for_reader.lock().unwrap();
-            if let Some(session) = sessions.remove(&terminal_id_clone) {
-                remove_line_editor_channel(&session.line_editor_channel);
-            }
-            drop(sessions);
-
-            let _ = app_clone.emit(
-                &format!("pty-exit:{}", terminal_id_clone),
-                serde_json::json!({ "exitCode": -1 }),
-            );
-        }
-    });
+            // EOF, read error or a lost webview: the PTY is unusable. If the
+            // session was killed or replaced instead, the entry is already
+            // gone and this is a no-op.
+            end_session(&sessions, &terminal_id, &flow, &app, -1);
+        });
+    }
 
     Ok(PtySpawnResult { shell_process_id })
 }
 
+/// Per-session writer thread: performs the (potentially blocking) PTY writes in
+/// arrival order. Any write error means the PTY is unusable (broken pipe once
+/// conhost/the slave is gone, EIO on Unix, ...): the session ends and the exit
+/// event is emitted from here, so failed input never disappears silently.
+fn spawn_input_writer_thread(
+    mut writer: Box<dyn Write + Send>,
+    input_rx: std::sync::mpsc::Receiver<Vec<u8>>,
+    terminal_id: String,
+    app: AppHandle,
+    sessions: Sessions,
+    flow: Arc<FlowControl>,
+) {
+    std::thread::spawn(move || {
+        while let Ok(data) = input_rx.recv() {
+            let write_result = writer.write_all(&data).and_then(|_| writer.flush());
+            let Err(e) = write_result else {
+                continue;
+            };
+            log::warn!(
+                target: "pty",
+                "write to PTY failed terminal_id={} error={}",
+                terminal_id,
+                e
+            );
+            end_session(&sessions, &terminal_id, &flow, &app, -1);
+            break;
+        }
+    });
+}
+
+/// Hands `data` to the session's writer thread. Never blocks on the PTY.
+fn queue_pty_input(
+    input_tx: &std::sync::mpsc::Sender<Vec<u8>>,
+    terminal_id: &str,
+    data: Vec<u8>,
+) -> Result<(), String> {
+    input_tx
+        .send(data)
+        .map_err(|_| format!("Session is closing: {}", terminal_id))
+}
+
 #[tauri::command]
 pub fn pty_write(
-    app: AppHandle,
     state: State<'_, PtyState>,
     terminal_id: String,
     data: String,
 ) -> Result<(), String> {
-    let write_result = {
-        let mut sessions = state.sessions.lock().unwrap();
-        if let Some(session) = sessions.get_mut(&terminal_id) {
-            session
-                .writer
-                .write_all(data.as_bytes())
-                .and_then(|_| session.writer.flush())
-        } else {
-            return Err(format!("Session not found: {}", terminal_id));
-        }
+    let sessions = state.sessions.lock().unwrap();
+    let Some(session) = sessions.get(&terminal_id) else {
+        return Err(format!("Session not found: {}", terminal_id));
     };
-
-    if let Err(ref e) = write_result {
-        // os error 232 = ERROR_NO_DATA ("The pipe is being closed.") on Windows
-        // os error 109 = ERROR_BROKEN_PIPE
-        let is_broken_pipe = e
-            .raw_os_error()
-            .map(|code| code == 109 || code == 232)
-            .unwrap_or(false);
-
-        if is_broken_pipe {
-            let (emit_exit, _dead_master) = {
-                let mut sessions = state.sessions.lock().unwrap();
-                if let Some(session) = sessions.remove(&terminal_id) {
-                    session.should_exit.store(true, Ordering::Relaxed);
-                    remove_line_editor_channel(&session.line_editor_channel);
-                    let emit = session
-                        .exit_notified
-                        .compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed)
-                        .is_ok();
-                    (emit, Some(session.master))
-                } else {
-                    (false, None)
-                }
-            }; // lock released; _dead_master drops here, after the lock
-            if emit_exit {
-                let _ = app.emit(
-                    &format!("pty-exit:{}", terminal_id),
-                    serde_json::json!({ "exitCode": -1 }),
-                );
-            }
-        }
-    }
-
-    write_result.map_err(|e| format!("Failed to write to PTY: {}", e))
+    queue_pty_input(&session.input_tx, &terminal_id, data.into_bytes())
 }
 
 #[tauri::command]
@@ -381,14 +673,23 @@ pub fn pty_execute_line_editor_action(
     action: String,
     payload_json: Option<String>,
 ) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().unwrap();
-
-    let Some(session) = sessions.get_mut(&terminal_id) else {
-        return Err(format!("Session not found: {}", terminal_id));
+    // Copy what the pipe/FIFO/file writes below need and release the lock
+    // first: they can block, and nothing may block while holding `sessions`.
+    let (shell_type, line_editor_pipe_name, line_editor_channel, input_tx) = {
+        let sessions = state.sessions.lock().unwrap();
+        let Some(session) = sessions.get(&terminal_id) else {
+            return Err(format!("Session not found: {}", terminal_id));
+        };
+        (
+            session.shell_type.clone(),
+            session.line_editor_pipe_name.clone(),
+            session.line_editor_channel.clone(),
+            session.input_tx.clone(),
+        )
     };
 
-    if session.shell_type == "PowerShell" {
-        let Some(pipe_name) = session.line_editor_pipe_name.as_deref() else {
+    if shell_type == "PowerShell" {
+        let Some(pipe_name) = line_editor_pipe_name.as_deref() else {
             return Err(format!(
                 "Shell session {} does not expose a line editor pipe",
                 terminal_id
@@ -397,10 +698,10 @@ pub fn pty_execute_line_editor_action(
         return write_shell_action_to_pipe(pipe_name, &action, payload_json.as_deref());
     }
 
-    let Some(channel) = session.line_editor_channel.clone() else {
+    let Some(channel) = line_editor_channel else {
         return Err(format!(
             "Shell actions are not supported for shell type: {}",
-            session.shell_type
+            shell_type
         ));
     };
 
@@ -430,10 +731,7 @@ pub fn pty_execute_line_editor_action(
         pty_input.push(b'\r');
     }
     if !pty_input.is_empty() {
-        session
-            .writer
-            .write_all(&pty_input)
-            .and_then(|_| session.writer.flush())
+        queue_pty_input(&input_tx, &terminal_id, pty_input)
             .map_err(|e| format!("Failed to write line editor trigger: {}", e))?;
     }
 
@@ -471,16 +769,302 @@ pub fn pty_kill(
     state: State<'_, PtyState>,
     terminal_id: String,
 ) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().unwrap();
+    let removed = {
+        let mut sessions = state.sessions.lock().unwrap();
+        sessions.remove(&terminal_id)
+    };
+    match removed {
+        // Intentional kill: the frontend already dropped the pane, no exit event.
+        Some(session) => {
+            release_session(session);
+            Ok(())
+        }
+        None => Err(format!("Session not found: {}", terminal_id)),
+    }
+}
 
-    if let Some(session) = sessions.remove(&terminal_id) {
-        session.should_exit.store(true, Ordering::Relaxed);
-        remove_line_editor_channel(&session.line_editor_channel);
-        drop(session.master);
-        drop(session.writer);
-        Ok(())
-    } else {
-        Err(format!("Session not found: {}", terminal_id))
+/// Frontend acknowledgement that xterm has parsed every chunk up to and
+/// including `seq`. Acks for sessions that already ended are expected (data
+/// was still in the pipeline) and silently accepted.
+#[tauri::command]
+pub fn pty_ack(state: State<'_, PtyState>, terminal_id: String, seq: u32) -> Result<(), String> {
+    let flow = {
+        let sessions = state.sessions.lock().unwrap();
+        sessions.get(&terminal_id).map(|session| session.flow.clone())
+    };
+    if let Some(flow) = flow {
+        flow.ack_through(seq);
+    }
+    Ok(())
+}
+
+/// Frontend acknowledgement that chunks `seqs` have arrived over the IPC
+/// transport, fired well before `pty_ack` (which waits for xterm to actually
+/// parse them). Paces how many channel sends the reader keeps outstanding, so
+/// throughput isn't capped at xterm's parse speed while still keeping few
+/// enough messages in flight for the IPC channel to reliably deliver them.
+/// Batched (one call per frontend microtask, not per chunk) so this ack path
+/// doesn't itself flood the IPC channel under the same bursts it exists to
+/// protect against. Acks for sessions that already ended are expected and
+/// silently accepted.
+#[tauri::command]
+pub fn pty_ack_received(
+    state: State<'_, PtyState>,
+    terminal_id: String,
+    seqs: Vec<u32>,
+) -> Result<(), String> {
+    log::trace!(target: "pty", "pty_ack_received terminal_id={} seqs={:?}", terminal_id, seqs);
+    let flow = {
+        let sessions = state.sessions.lock().unwrap();
+        sessions.get(&terminal_id).map(|session| session.flow.clone())
+    };
+    if let Some(flow) = flow {
+        for seq in seqs {
+            flow.ack_received(seq);
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod flow_control_tests {
+    use super::*;
+    use std::thread;
+    use std::time::Instant;
+
+    fn short() -> Duration {
+        Duration::from_millis(50)
+    }
+
+    /// For tests exercising only the byte watermarks, in isolation from the
+    /// chunk-count cap.
+    const UNLIMITED_CHUNKS: usize = usize::MAX;
+
+    #[test]
+    fn acquire_does_not_wait_below_high_watermark() {
+        let flow = FlowControl::with_watermarks(100, 50, UNLIMITED_CHUNKS);
+        assert!(flow.acquire(0, 100));
+        let start = Instant::now();
+        assert!(flow.acquire(1, 1));
+        assert!(start.elapsed() < short());
+        assert_eq!(flow.in_flight(), 101);
+    }
+
+    #[test]
+    fn acquire_waits_until_acks_drop_below_low_watermark() {
+        let flow = Arc::new(FlowControl::with_watermarks(100, 50, UNLIMITED_CHUNKS));
+        assert!(flow.acquire(0, 60));
+        assert!(flow.acquire(1, 90)); // 150 in flight: the next acquire waits
+
+        let waiter = {
+            let flow = flow.clone();
+            thread::spawn(move || {
+                let start = Instant::now();
+                let acquired = flow.acquire(2, 10);
+                (acquired, start.elapsed())
+            })
+        };
+
+        thread::sleep(Duration::from_millis(30));
+        flow.ack_through(0); // 90 in flight: still >= low watermark, keep waiting
+        thread::sleep(Duration::from_millis(30));
+        assert!(!waiter.is_finished());
+        flow.ack_through(1); // 0 in flight: below low watermark, wake up
+        let (acquired, waited) = waiter.join().unwrap();
+        assert!(acquired);
+        assert!(waited >= Duration::from_millis(50));
+        assert_eq!(flow.in_flight(), 10);
+    }
+
+    #[test]
+    fn ack_through_releases_every_chunk_up_to_seq_including_lost_ones() {
+        let flow = FlowControl::with_watermarks(1_000, 500, UNLIMITED_CHUNKS);
+        assert!(flow.acquire(0, 10));
+        assert!(flow.acquire(1, 20)); // never parsed by the frontend (lost in transit)
+        assert!(flow.acquire(2, 30));
+        assert!(flow.acquire(3, 40));
+        flow.ack_through(2);
+        assert_eq!(flow.in_flight(), 40);
+        flow.ack_through(2); // duplicate ack: no effect
+        assert_eq!(flow.in_flight(), 40);
+        flow.ack_through(1_000); // ack beyond what was sent
+        assert_eq!(flow.in_flight(), 0);
+    }
+
+    #[test]
+    fn close_unblocks_a_waiting_reader_and_fails_the_acquire() {
+        let flow = Arc::new(FlowControl::with_watermarks(100, 50, UNLIMITED_CHUNKS));
+        assert!(flow.acquire(0, 1_000));
+        let waiter = {
+            let flow = flow.clone();
+            thread::spawn(move || flow.acquire(1, 1))
+        };
+        thread::sleep(Duration::from_millis(20));
+        assert!(!waiter.is_finished());
+        flow.close();
+        assert!(!waiter.join().unwrap());
+        assert!(flow.is_closed());
+    }
+
+    #[test]
+    fn closed_flow_never_acquires_again() {
+        let flow = FlowControl::with_watermarks(100, 50, UNLIMITED_CHUNKS);
+        flow.close();
+        let start = Instant::now();
+        assert!(!flow.acquire(0, 10));
+        assert!(!flow.acquire(1, 10_000));
+        assert!(start.elapsed() < short());
+        assert_eq!(flow.in_flight(), 0);
+        flow.close(); // idempotent
+    }
+
+    #[test]
+    fn acquire_waits_at_the_chunk_count_cap_even_with_bytes_to_spare() {
+        // High byte watermark, so only the chunk-count cap can be the reason
+        // to wait: this is what protects against the IPC channel dropping
+        // messages under a burst of many small/cheap chunks.
+        let flow = Arc::new(FlowControl::with_watermarks(1_000_000, 500_000, 2));
+        assert!(flow.acquire(0, 1));
+        assert!(flow.acquire(1, 1)); // 2 chunks in flight: at the cap
+
+        let waiter = {
+            let flow = flow.clone();
+            thread::spawn(move || {
+                let start = Instant::now();
+                let acquired = flow.acquire(2, 1);
+                (acquired, start.elapsed())
+            })
+        };
+
+        thread::sleep(Duration::from_millis(30));
+        assert!(!waiter.is_finished());
+        flow.ack_received(0); // 1 chunk in flight: below the cap, wake up
+        let (acquired, waited) = waiter.join().unwrap();
+        assert!(acquired);
+        assert!(waited >= Duration::from_millis(20));
+    }
+
+    #[test]
+    fn ack_received_does_not_release_the_byte_watermark() {
+        // The fast received ack only paces send concurrency; real
+        // backpressure to the shell still waits for the slow parse ack.
+        let flow = FlowControl::with_watermarks(10, 5, UNLIMITED_CHUNKS);
+        assert!(flow.acquire(0, 10));
+        flow.ack_received(0);
+        assert_eq!(flow.in_flight(), 10);
+        flow.ack_through(0);
+        assert_eq!(flow.in_flight(), 0);
+    }
+
+    #[test]
+    fn ack_through_also_releases_the_chunk_count_cap_as_a_fallback() {
+        // If a chunk's `received` ack is ever lost, the slower parse ack
+        // still eventually frees its slot instead of deadlocking the cap.
+        let flow = Arc::new(FlowControl::with_watermarks(1_000_000, 500_000, 1));
+        assert!(flow.acquire(0, 1)); // at the cap; its `received` ack "never arrives"
+
+        let waiter = {
+            let flow = flow.clone();
+            thread::spawn(move || flow.acquire(1, 1))
+        };
+
+        thread::sleep(Duration::from_millis(30));
+        assert!(!waiter.is_finished());
+        flow.ack_through(0); // parsed ack releases both the bytes and the slot
+        assert!(waiter.join().unwrap());
+    }
+
+    #[test]
+    fn acquire_gives_up_on_the_chunk_count_cap_after_a_bounded_wait_if_no_ack_ever_comes() {
+        // The chunk-count cap must never freeze the reader indefinitely: if
+        // its `received` ack is truly lost (never arrives, no `ack_received`
+        // or `ack_through` call at all), acquire still returns after roughly
+        // CHUNK_CAP_WAIT_TIMEOUT instead of hanging until something wakes it.
+        let flow = FlowControl::with_watermarks(1_000_000, 500_000, 1);
+        assert!(flow.acquire(0, 1)); // at the cap, and nobody ever acks it
+
+        let start = Instant::now();
+        assert!(flow.acquire(1, 1));
+        let elapsed = start.elapsed();
+        assert!(elapsed >= CHUNK_CAP_WAIT_TIMEOUT);
+        assert!(elapsed < CHUNK_CAP_WAIT_TIMEOUT + short());
+    }
+
+    #[test]
+    fn acquire_keeps_waiting_on_the_byte_watermark_past_the_chunk_cap_timeout() {
+        // The byte watermark is real backpressure and must not inherit the
+        // chunk cap's bounded-wait escape hatch: it should still be blocked
+        // well after CHUNK_CAP_WAIT_TIMEOUT has elapsed with no ack at all.
+        let flow = Arc::new(FlowControl::with_watermarks(10, 5, UNLIMITED_CHUNKS));
+        assert!(flow.acquire(0, 20)); // over the high watermark
+
+        let waiter = {
+            let flow = flow.clone();
+            thread::spawn(move || flow.acquire(1, 1))
+        };
+
+        thread::sleep(CHUNK_CAP_WAIT_TIMEOUT * 2);
+        assert!(!waiter.is_finished());
+        flow.ack_through(0);
+        assert!(waiter.join().unwrap());
+    }
+
+    #[test]
+    fn acquire_bounds_the_chunk_cap_wait_even_with_bytes_between_low_and_high_watermark() {
+        // Regression test: bytes sitting between low and high watermark (a
+        // routine state under sustained load, well before real backpressure
+        // is warranted) must not make the chunk-cap-only wait fall back to
+        // the indefinite byte-watermark wait. Only bytes actually crossing
+        // *high* watermark may do that. With the bug, this hung forever
+        // instead of returning around CHUNK_CAP_WAIT_TIMEOUT.
+        let flow = FlowControl::with_watermarks(1_000_000, 500_000, 1);
+        assert!(flow.acquire(0, 600_000)); // above low(500K), nowhere near high(1M)
+
+        let start = Instant::now();
+        assert!(flow.acquire(1, 1)); // chunk cap only reason to wait; nobody ever acks seq 0
+        let elapsed = start.elapsed();
+        assert!(elapsed >= CHUNK_CAP_WAIT_TIMEOUT);
+        assert!(elapsed < CHUNK_CAP_WAIT_TIMEOUT + short());
+    }
+
+    #[test]
+    fn acquire_does_not_extend_the_chunk_cap_deadline_on_spurious_wakeups() {
+        // Regression test: a notify_all from an unrelated ack (for a chunk
+        // that never even blocked this acquire) must not re-arm a fresh
+        // CHUNK_CAP_WAIT_TIMEOUT budget each time it wakes the waiter. With
+        // the bug, repeated notifications kept resetting the timer, so the
+        // total wait grew far past CHUNK_CAP_WAIT_TIMEOUT instead of being
+        // bounded by it.
+        let flow = Arc::new(FlowControl::with_watermarks(1_000_000, 500_000, 1));
+        assert!(flow.acquire(0, 1)); // at the cap; never actually acked
+
+        let waiter = {
+            let flow = flow.clone();
+            thread::spawn(move || {
+                let start = Instant::now();
+                let acquired = flow.acquire(1, 1);
+                (acquired, start.elapsed())
+            })
+        };
+
+        // Unrelated no-op acks (seq 999 was never sent) that only wake
+        // waiters via notify_all, simulating steady ack traffic for other
+        // in-flight chunks. Spans well past CHUNK_CAP_WAIT_TIMEOUT.
+        for _ in 0..20 {
+            thread::sleep(Duration::from_millis(80));
+            flow.ack_received(999);
+        }
+
+        let (acquired, waited) = waiter.join().unwrap();
+        assert!(acquired);
+        assert!(waited < CHUNK_CAP_WAIT_TIMEOUT + Duration::from_millis(200));
+    }
+
+    #[test]
+    fn frame_chunk_prefixes_the_sequence_number_little_endian() {
+        let frame = frame_chunk(0x0102_0304, b"ab");
+        assert_eq!(frame, vec![0x04, 0x03, 0x02, 0x01, b'a', b'b']);
+        assert_eq!(frame.len(), CHUNK_HEADER_LEN + 2);
     }
 }
 
@@ -541,7 +1125,7 @@ fn create_line_editor_channel(
     let session_id = env.get("COGNO_SESSION_ID")?;
 
     let wants_fifo = shell_type == "ZSH";
-    let wants_trigger_file = shell_type == "Bash" || shell_type == "GitBash";
+    let wants_trigger_file = shell_type == "Bash";
     if !wants_fifo && !wants_trigger_file {
         return None;
     }
