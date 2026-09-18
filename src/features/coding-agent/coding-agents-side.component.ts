@@ -105,15 +105,13 @@ import type { ICodingAgentProvider } from "./ports";
           }
           @for (entry of installedProviders(); track entry.provider.id) {
             <div class="detected-entry">
-              <app-icon class="detected-icon" name="mdiRobot"></app-icon>
-              <span class="detected-name">{{ entry.provider.name }}</span>
               <app-icon
-                class="hook-icon"
-                [class.hook-ok]="entry.hasHook"
+                class="detected-icon"
                 [class.hook-missing]="!entry.hasHook"
-                [name]="entry.hasHook ? 'mdiCheck' : 'mdiAlert'"
+                [name]="entry.hasHook ? 'mdiRobot' : 'mdiRobotOff'"
                 [appTooltip]="entry.hasHook ? 'Hook installed' : 'Hook not installed'"
               ></app-icon>
+              <span class="detected-name">{{ entry.provider.name }}</span>
               @if (entry.hasHook) {
                 <app-copy-edit-delete
                   class="hook-action"
@@ -208,12 +206,6 @@ import type { ICodingAgentProvider } from "./ports";
 
     .detected-name {
       flex: 1;
-    }
-
-    .hook-icon {
-      width: 0.85rem;
-      height: 0.85rem;
-      flex-shrink: 0;
     }
 
     .hook-missing {
