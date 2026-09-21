@@ -266,7 +266,7 @@ describe("CommandLogRepository", () => {
       await repository.getRecentCommands({ scope: "cwd", cwdRaw: "/workspace//project" });
 
       const [sql, params] = database.select.mock.calls.at(-1) as [string, unknown[]];
-      expect(sql).toContain("AND p.path = ?2");
+      expect(sql).toContain("AND cl.cwd_path_id = (SELECT id FROM path WHERE path = ?2)");
       expect(params).toEqual([null, "/workspace/project", 7, 500]);
     });
 

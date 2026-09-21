@@ -232,35 +232,53 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     const sessionId = options.groupId || null;
 
     let scopeSql = "";
+    let newerScopeSql = "";
     if (options.scope === "cwd") {
       if (!cwd) return [];
-      scopeSql = "AND p.path = ?2";
+      scopeSql = "AND cl.cwd_path_id = (SELECT id FROM path WHERE path = ?2)";
+      newerScopeSql = "AND newer.cwd_path_id = cl.cwd_path_id";
     } else if (options.scope === "session") {
       if (!sessionId) return [];
       scopeSql = "AND cl.session_id = ?1";
+      newerScopeSql = "AND newer.session_id = cl.session_id";
     }
 
     // Every row is tagged with whether it belongs to the current session /
     // cwd regardless of scope, so the UI can mark entries that also fall
-    // into a narrower scope. Consecutive repeats of a command collapse.
+    // into a narrower scope. Compare with the adjacent newer execution to
+    // collapse consecutive repeats. Unlike LAG + an outer sort, this can stop
+    // at LIMIT instead of processing the entire (potentially unlimited) log.
+    // Separate equal/later timestamps so SQLite seeks by id inside large
+    // timestamp ties (shell imports), rather than scanning the entire tie.
+    // A single row-value comparison (executed_at, id) > (...) does not do
+    // this: SQLite only uses executed_at for the index range.
     return this.database.select<RecentCommandRow[]>(
-      `WITH ordered AS (
-         SELECT
+      `SELECT
            c.command_text AS command,
            cl.executed_at AS executedAt,
            CASE WHEN cl.session_id = ?1 THEN 1 ELSE 0 END AS isCurrentSession,
-           CASE WHEN p.path = ?2 THEN 1 ELSE 0 END AS isCurrentCwd,
-           LAG(c.command_text) OVER (ORDER BY cl.executed_at DESC, cl.id DESC) AS previous
+           CASE WHEN p.path = ?2 THEN 1 ELSE 0 END AS isCurrentCwd
          FROM command_log cl
          JOIN command c ON c.id = cl.command_id
          JOIN path p ON p.id = cl.cwd_path_id
          WHERE cl.context_id = ?3 ${scopeSql}
-       )
-       SELECT command, executedAt, isCurrentSession, isCurrentCwd
-       FROM ordered
-       WHERE previous IS NULL OR previous != command
-       ORDER BY executedAt DESC
-       LIMIT ?4`,
+           AND cl.command_id IS NOT COALESCE((
+             SELECT newer.command_id
+             FROM command_log newer
+             WHERE newer.context_id = ?3 ${newerScopeSql}
+               AND newer.executed_at = cl.executed_at AND newer.id > cl.id
+             ORDER BY newer.id ASC
+             LIMIT 1
+           ), (
+             SELECT newer.command_id
+             FROM command_log newer
+             WHERE newer.context_id = ?3 ${newerScopeSql}
+               AND newer.executed_at > cl.executed_at
+             ORDER BY newer.executed_at ASC, newer.id ASC
+             LIMIT 1
+           ))
+         ORDER BY cl.executed_at DESC, cl.id DESC
+         LIMIT ?4`,
       [sessionId, cwd, this.contextId, limit],
     );
   }
@@ -391,7 +409,12 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
            CAST(COALESCE(MAX(CASE WHEN p.path = ?1 THEN cs.last_exec_at END), 0) AS INTEGER) AS cwdLastExecAt,
            CAST(COALESCE(MAX(CASE WHEN p.path = ?1 THEN cs.last_select_at END), 0) AS INTEGER) AS cwdLastSelectAt,
            CAST(COALESCE(MAX(t.transition_count), 0) AS INTEGER) AS transitionCount,
-           CAST(COALESCE(MAX(outgoing.total), 0) AS INTEGER) AS outgoingTransitionCount,
+           CAST(COALESCE((
+             SELECT SUM(transition_count)
+             FROM command_transition_stat
+             WHERE context_id = ?3
+               AND previous_command_id = (SELECT id FROM command WHERE command_text = ?2)
+           ), 0) AS INTEGER) AS outgoingTransitionCount,
            CAST(COALESCE(MAX(t.last_transition_at), 0) AS INTEGER) AS lastTransitionAt
        FROM command_stat cs
        JOIN command c ON c.id = cs.command_id
@@ -400,13 +423,6 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
               ON t.context_id = cs.context_id
              AND t.previous_command_id = (SELECT id FROM command WHERE command_text = ?2)
              AND t.next_command_id = c.id
-       LEFT JOIN (
-           SELECT context_id, previous_command_id, SUM(transition_count) AS total
-           FROM command_transition_stat
-           GROUP BY context_id, previous_command_id
-       ) outgoing
-              ON outgoing.context_id = cs.context_id
-             AND outgoing.previous_command_id = (SELECT id FROM command WHERE command_text = ?2)
        WHERE cs.context_id = ?3
          ${filterSql}
        GROUP BY c.id

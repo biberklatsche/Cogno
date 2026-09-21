@@ -22,19 +22,31 @@ export class StartEllipsisDirective implements AfterViewInit, OnDestroy {
   private readonly prefix = "\u2026";
   private lastTruncated?: boolean;
   private resizeObserver?: ResizeObserver;
+  private intersectionObserver?: IntersectionObserver;
+  private visible = false;
   private readonly handleWindowResize = () => this.scheduleApply();
   private animationFrameId?: number;
 
   constructor(private readonly elementRef: ElementRef<HTMLElement>) {
     effect(() => {
-      this.appStartEllipsis();
+      const text = this.appStartEllipsis();
       this.appStartEllipsisMatches();
+      // Rows outside the viewport are measured once scrolled in. Until then
+      // they show the plain text, never a stale label.
+      if (!this.visible) this.elementRef.nativeElement.textContent = text;
       this.scheduleApply();
     });
   }
 
   ngAfterViewInit(): void {
     const element = this.elementRef.nativeElement;
+    // Dropdowns keep hundreds of rows in the DOM. Measuring clipped rows would
+    // force layout repeatedly before the few visible labels can be painted.
+    this.intersectionObserver = new IntersectionObserver((entries) => {
+      this.visible = entries.at(-1)?.isIntersecting ?? false;
+      if (this.visible) this.scheduleApply();
+    });
+    this.intersectionObserver.observe(element);
     this.resizeObserver = new ResizeObserver(() => this.scheduleApply());
     this.resizeObserver.observe(element);
     if (element.parentElement) {
@@ -46,6 +58,7 @@ export class StartEllipsisDirective implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.resizeObserver?.disconnect();
+    this.intersectionObserver?.disconnect();
     window.removeEventListener("resize", this.handleWindowResize, true);
     if (this.animationFrameId !== undefined) {
       cancelAnimationFrame(this.animationFrameId);
@@ -54,12 +67,13 @@ export class StartEllipsisDirective implements AfterViewInit, OnDestroy {
   }
 
   private scheduleApply(): void {
+    if (!this.visible) return;
     if (this.animationFrameId !== undefined) {
       cancelAnimationFrame(this.animationFrameId);
     }
     this.animationFrameId = requestAnimationFrame(() => {
       this.animationFrameId = undefined;
-      this.apply();
+      if (this.visible) this.apply();
     });
   }
 
