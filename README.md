@@ -74,6 +74,14 @@ The project source code in this repository is licensed under `MPL-2.0`,
 except for `src/features`, which is licensed under `MIT`, unless a
 file or directory contains a different third-party license notice.
 
+### Third-party content
+
+- Command specs in `src/features/autocomplete/spec-command/data` are derived
+  from [withfig/autocomplete](https://github.com/withfig/autocomplete)
+  (`MIT`, © Hercules Labs Inc.); see the `LICENSE` file in that directory.
+- Bundled fonts: Roboto (`Apache-2.0`) and Comfortaa (`OFL-1.1`); license
+  files are next to the fonts in `src/assets/fonts`.
+
 ## Configuration
 
 Cogno ships with bundled defaults and keeps user overrides small.
