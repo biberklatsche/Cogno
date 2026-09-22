@@ -8,12 +8,14 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { workspaceBadge } from "@cogno/core/workbench/workspace/workspace-badge";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
   ContextMenuOverlayService,
-  IconComponent,
+  LetterBadge,
+  LetterBadgeComponent,
   TooltipDirective,
 } from "@cogno/shared/ui";
 
@@ -26,18 +28,16 @@ import {
         <button
           class="selected-workspace-header selected-workspace-header--interactive"
           type="button"
-          [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
           [appTooltip]="workspaceStatusTooltip(activeWorkspaceEntry)"
           appTooltipSecondary="Open workspaces"
           aria-haspopup="menu"
           aria-label="Select open workspace"
           (click)="openWorkspaceMenu($event)"
         >
-          @if (!restoreEnabled() && activeWorkspaceEntry.isDirty) {
-            <span class="selected-workspace-header__dirty" aria-hidden="true">
-              <app-icon name="mdiViewDashboardEdit"></app-icon>
-            </span>
-          }
+          <app-letter-badge
+            class="selected-workspace-header__badge"
+            [badge]="activeWorkspaceBadge(activeWorkspaceEntry)"
+          ></app-letter-badge>
           <span class="selected-workspace-header__label">
             {{ activeWorkspaceEntry.name }}
           </span>
@@ -46,14 +46,12 @@ import {
       } @else {
         <div
           class="selected-workspace-header"
-          [style.color]="activeWorkspaceEntry.color ? 'var(--color-' + activeWorkspaceEntry.color + ')' : 'var(--foreground-color)'"
           [appTooltip]="workspaceStatusTooltip(activeWorkspaceEntry)"
         >
-          @if (!restoreEnabled() && activeWorkspaceEntry.isDirty) {
-            <span class="selected-workspace-header__dirty" aria-hidden="true">
-              <app-icon name="mdiViewDashboardEdit"></app-icon>
-            </span>
-          }
+          <app-letter-badge
+            class="selected-workspace-header__badge"
+            [badge]="activeWorkspaceBadge(activeWorkspaceEntry)"
+          ></app-letter-badge>
           <span class="selected-workspace-header__label">
             {{ activeWorkspaceEntry.name }}
           </span>
@@ -77,15 +75,17 @@ import {
 
       .selected-workspace-header {
         display: inline-flex;
-        align-items: center;
+        /* Badge letter and name share one baseline. */
+        align-items: baseline;
         gap: 0.45rem;
         width: fit-content;
         max-width: 100%;
+        color: var(--foreground-color);
         font-size: 0.9rem;
-        font-weight: 600;
         line-height: 1.2;
         min-height: 100%;
-        padding: 0.15rem 0.75rem 0;
+        /* (26px header - 20px badge) / 2: equal space above, below and left of the badge. */
+        padding: 3px 0.75rem 3px 3px;
         box-sizing: border-box;
       }
 
@@ -111,16 +111,16 @@ import {
         min-width: 0;
       }
 
-      .selected-workspace-header__dirty {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 0.95rem;
-        height: 0.95rem;
-        opacity: 0.9;
+      .selected-workspace-header__badge {
+        width: 20px;
+        min-width: 20px;
+        height: 20px;
+        font-size: 14px;
+        line-height: 22px;
       }
 
       .selected-workspace-header__chevron {
+        align-self: center;
         flex: 0 0 auto;
         width: 0.45rem;
         height: 0.45rem;
@@ -132,7 +132,7 @@ import {
     `,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconComponent, TooltipDirective],
+  imports: [LetterBadgeComponent, TooltipDirective],
 })
 export class SelectedWorkspaceHeaderComponent {
   private readonly workspaceEntries: Signal<ReadonlyArray<WorkspaceEntryContract>>;
@@ -187,6 +187,11 @@ export class SelectedWorkspaceHeaderComponent {
     });
   }
 
+  /** The header always shows the active workspace, so its badge leaves out the active check. */
+  protected activeWorkspaceBadge(workspaceEntry: WorkspaceEntryContract): LetterBadge {
+    return workspaceBadge({ ...workspaceEntry, isActive: false }, this.restoreEnabled());
+  }
+
   protected workspaceStatusTooltip(workspaceEntry: WorkspaceEntryContract): string {
     return !this.restoreEnabled() && workspaceEntry.isDirty
       ? `${workspaceEntry.name} has unsaved workspace edits`
@@ -196,8 +201,7 @@ export class SelectedWorkspaceHeaderComponent {
   private buildWorkspaceMenuItems(): ContextMenuItem[] {
     return this.openWorkspaceEntries().map((workspaceEntry) => ({
       label: workspaceEntry.name,
-      color: workspaceEntry.color ? `var(--color-${workspaceEntry.color})` : undefined,
-      checked: workspaceEntry.isActive,
+      badge: workspaceBadge(workspaceEntry, this.restoreEnabled()),
       action: () => {
         if (workspaceEntry.isActive) return;
         void this.workspaces.restoreWorkspaceById(workspaceEntry.id);

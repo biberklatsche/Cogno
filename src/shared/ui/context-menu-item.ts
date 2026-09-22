@@ -1,3 +1,5 @@
+import type { LetterBadge } from "./common/letter-badge/letter-badge.component";
+
 export interface ContextMenuItem {
   label?: string;
   action?: (item?: ContextMenuItem) => void;
@@ -12,6 +14,9 @@ export interface ContextMenuItem {
 
   // Precomputed display string for a keybinding (e.g. "⌘ K")
   keybinding?: string;
+
+  // Letter badge shown before the label
+  badge?: LetterBadge;
 
   // CSS color applied to the label (e.g. "var(--color-red)")
   color?: string;

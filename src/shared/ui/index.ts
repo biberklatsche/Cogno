@@ -5,6 +5,7 @@ export * from "./common/drag-preview/drag-preview.service";
 export * from "./common/drag-preview/pointer-drag";
 export * from "./common/keybinding/action-keybinding.pipe";
 export * from "./common/keybinding/action-keybinding.pipe";
+export * from "./common/letter-badge/letter-badge.component";
 export * from "./common/text/start-ellipsis.directive";
 export * from "./common/time-ago/time-ago.pipe";
 export * from "./common/toggle-switch/toggle-switch.component";

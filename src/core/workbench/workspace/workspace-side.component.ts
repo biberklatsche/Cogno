@@ -15,16 +15,18 @@ import {
   CopyEditDeleteComponent,
   DragPreviewService,
   IconComponent,
+  LetterBadgeComponent,
   TooltipDirective,
   trackPointerDrag,
 } from "@cogno/shared/ui";
 import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
+import { workspaceBadge } from "./workspace-badge";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({
   selector: "app-workspace-side",
   standalone: true,
-  imports: [CopyEditDeleteComponent, IconComponent, TooltipDirective],
+  imports: [CopyEditDeleteComponent, IconComponent, LetterBadgeComponent, TooltipDirective],
   template: `
     <section class="workspace-side">
       <ul class="workspace-grid">
@@ -47,30 +49,10 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
             (mouseenter)="reorderWhileDragging(workspaceEntry.id, $event)"
           >
             <div class="workspace-tile__content">
-              <div
+              <app-letter-badge
                 class="workspace-badge"
-                [style.color]="workspaceEntry.id === defaultWorkspaceId ? 'var(--foreground-color)' : 'var(--background-color)'"
-                [style.background-color]="workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : 'var(--color-green)'"
-              >
-                {{ (workspaceEntry.name || "")[0] || "?" }}
-                @if (restoreEnabled() && workspaceEntry.autoSaveFailed) {
-                  <span
-                    class="workspace-autosave-failed-indicator"
-                    aria-hidden="true"
-                    [appTooltip]="workspaceEntry.name + ' · auto-save failed'"
-                  >
-                    <app-icon name="mdiAlert"></app-icon>
-                  </span>
-                } @else if (!restoreEnabled() && workspaceEntry.isDirty) {
-                  <span class="workspace-dirty-indicator" aria-hidden="true">
-                    <app-icon name="mdiViewDashboardEdit"></app-icon>
-                  </span>
-                } @else if (workspaceEntry.isActive) {
-                  <span class="workspace-active-indicator" aria-hidden="true">
-                    <app-icon name="mdiCheck"></app-icon>
-                  </span>
-                }
-              </div>
+                [badge]="workspaceBadge(workspaceEntry, restoreEnabled())"
+              ></app-letter-badge>
               <div class="workspace-text">
                 <div class="workspace-name">{{ workspaceEntry.name }}</div>
               </div>
@@ -211,17 +193,7 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       }
 
       .workspace-badge {
-        position: relative;
-        width: 24px;
-        min-width: 24px;
-        height: 24px;
-        font-size: 16px;
-        border-radius: 0.3rem;
         margin-right: 0.5rem;
-        display: grid;
-        place-items: center;
-        line-height: 26px;
-        text-transform: capitalize;
       }
 
       .workspace-text {
@@ -231,29 +203,6 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         justify-content: center;
         overflow: hidden;
         min-width: 0;
-      }
-
-      .workspace-dirty-indicator,
-      .workspace-autosave-failed-indicator,
-      .workspace-active-indicator {
-        position: absolute;
-        right: -0.28rem;
-        bottom: -0.28rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 0.8rem;
-        height: 0.8rem;
-        padding: 1px;
-        border-radius: 999px;
-        background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
-        color: var(--foreground-color);
-        box-shadow: 0 0 0 1px color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
-        opacity: 0.95;
-      }
-
-      .workspace-autosave-failed-indicator {
-        color: var(--color-red);
       }
 
       .workspace-name {
@@ -314,6 +263,7 @@ export class WorkspaceSideComponent implements OnDestroy {
   /** When session restore is on, workspaces auto-save (step 27g). */
   private readonly restoreEnabledSignal = signal(true);
   readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
+  protected readonly workspaceBadge = workspaceBadge;
   isDraggingWorkspace = false;
   draggedWorkspaceIdentifier: string | undefined;
 

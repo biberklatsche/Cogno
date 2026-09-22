@@ -2,12 +2,13 @@ import { NgTemplateOutlet } from "@angular/common";
 import { Component, Input, TemplateRef } from "@angular/core";
 import { ToggleSwitchComponent } from "../../common/toggle-switch/toggle-switch.component";
 import { ContextMenuItem, ContextMenuOverlayComponent } from "../../context-menu-item";
+import { LetterBadgeComponent } from "../../common/letter-badge/letter-badge.component";
 import { IconComponent } from "../../icons/icon/icon.component";
 
 @Component({
   selector: "app-context-menu",
   standalone: true,
-  imports: [NgTemplateOutlet, IconComponent, ToggleSwitchComponent],
+  imports: [NgTemplateOutlet, IconComponent, LetterBadgeComponent, ToggleSwitchComponent],
   template: `
         <div class="ctx-menu base-overlay" (contextmenu)="$event.preventDefault()" role="menu" tabindex="0">
             @for (item of items; track item; let i = $index) {
@@ -38,11 +39,15 @@ import { IconComponent } from "../../icons/icon/icon.component";
                 } @else {
                     <button
                             class="item"
+                            [class.with-badge]="item.badge"
                             type="button"
                             [disabled]="item.disabled"
                             (click)="onItemClick(item)"
                             role="menuitem"
                             [attr.aria-checked]="item.checked">
+                        @if (item.badge) {
+                            <app-letter-badge [badge]="item.badge"></app-letter-badge>
+                        }
                         <span class="label" [style.color]="item.color">{{ item.label }}</span>
                         @if (item.keybinding) {
                             <span class="keybinding">{{ item.keybinding }}</span>
@@ -116,6 +121,10 @@ import { IconComponent } from "../../icons/icon/icon.component";
                     height: 1rem;
                     opacity: 0.8;
                 }
+            }
+
+            .item.with-badge {
+                gap: 0.5rem;
             }
 
             .toggle-item .toggle-meta {
