@@ -105,6 +105,8 @@ pub fn run(cli: Cli) {
             crate::http_server::set_runnable_actions
         ])
         .setup(move |app| {
+            std::thread::spawn(crate::commands::clipboard_image::remove_leftover_paste_files);
+
             let webview_window_builder =
                 WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                     .title("")

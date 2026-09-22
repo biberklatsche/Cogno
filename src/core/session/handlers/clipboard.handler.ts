@@ -78,10 +78,10 @@ export class ClipboardHandler implements ITerminalHandler {
   async paste(): Promise<void> {
     if (!this._terminal) return;
 
-    const ttlSeconds = this.configService.config.clipboard?.image_paste_ttl_seconds ?? 60;
-    const filePath = await this._clipboard.readImageFromClipboard(ttlSeconds * 1000);
+    const filePath = await this._clipboard.readImageFromClipboard();
     if (filePath !== null) {
-      this.inputWriter.writeRaw(filePath.includes(" ") ? `"${filePath}"` : filePath);
+      // A real paste (bracketed) lets coding agents attach the image right away.
+      this._terminal.paste(filePath.includes(" ") ? `"${filePath}"` : filePath);
       return;
     }
 
