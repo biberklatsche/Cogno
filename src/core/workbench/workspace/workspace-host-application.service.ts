@@ -9,7 +9,6 @@ import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/t
 import { AppWindow } from "@cogno/platform/window";
 import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
-  WorkspaceAutoSaveStatus,
   WorkspaceConfiguration,
   WorkspaceState,
   WorkspaceStateUseCase,
@@ -85,8 +84,7 @@ export class WorkspaceHostApplicationService {
       isDirty: workspace.isDirty,
       isActive: workspace.isActive,
       isOpen: workspace.isOpen,
-      autoSaveStatus: workspace.autoSaveStatus,
-      autoSavedAt: workspace.autoSavedAt,
+      autoSaveFailed: workspace.autoSaveFailed,
     })),
   );
 
@@ -398,7 +396,6 @@ export class WorkspaceHostApplicationService {
     if (!workspace) {
       return;
     }
-    this.setWorkspaceAutoSaveStatus(workspaceId, "saving");
     try {
       await this.workspaceRepository.upsertWorkspace({
         id: workspace.id,
@@ -411,10 +408,10 @@ export class WorkspaceHostApplicationService {
       });
       await this.sessionPersistence.persistWorkspace(workspaceId);
     } catch (error) {
-      this.setWorkspaceAutoSaveStatus(workspaceId, undefined);
+      this.patchWorkspace(workspaceId, { autoSaveFailed: true });
       throw error;
     }
-    this.setWorkspaceAutoSaveStatus(workspaceId, "saved", Date.now());
+    this.patchWorkspace(workspaceId, { autoSaveFailed: false });
   }
 
   public async saveWorkspace(workspaceId: string): Promise<void> {
@@ -634,18 +631,6 @@ export class WorkspaceHostApplicationService {
     );
 
     this.setWorkspaceDirtyState(workspaceId, persistedSignature !== currentSignature);
-  }
-
-  private setWorkspaceAutoSaveStatus(
-    workspaceId: string,
-    status: WorkspaceAutoSaveStatus | undefined,
-    at?: number,
-  ): void {
-    // Keep the last saved time while a new save is in flight or on failure.
-    this.patchWorkspace(workspaceId, {
-      autoSaveStatus: status,
-      ...(status === "saved" ? { autoSavedAt: at } : {}),
-    });
   }
 
   private setWorkspaceDirtyState(workspaceId: string, isDirty: boolean): void {

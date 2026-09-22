@@ -19,7 +19,6 @@ import {
   trackPointerDrag,
 } from "@cogno/shared/ui";
 import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
-import { relativeSavedTime } from "./auto-save-status";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 
 @Component({
@@ -54,27 +53,21 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
                 [style.background-color]="workspaceEntry.color ? 'var(--color-' + workspaceEntry.color + ')' : 'var(--color-green)'"
               >
                 {{ (workspaceEntry.name || "")[0] || "?" }}
-                @if (restoreEnabled()) {
-                  @if (workspaceEntry.autoSaveStatus === "saving") {
-                    <span
-                      class="workspace-autosave-indicator"
-                      aria-hidden="true"
-                      [appTooltip]="workspaceEntry.name + ' · saving…'"
-                    >
-                      <app-icon class="spin" name="mdiLoading"></app-icon>
-                    </span>
-                  } @else if (workspaceEntry.autoSaveStatus === "saved" && workspaceEntry.autoSavedAt !== undefined) {
-                    <span
-                      class="workspace-autosave-indicator"
-                      aria-hidden="true"
-                      [appTooltip]="'saved automatically ' + relativeSavedTime(workspaceEntry.autoSavedAt)"
-                    >
-                      <app-icon name="mdiCheck"></app-icon>
-                    </span>
-                  }
-                } @else if (workspaceEntry.isDirty) {
+                @if (restoreEnabled() && workspaceEntry.autoSaveFailed) {
+                  <span
+                    class="workspace-autosave-failed-indicator"
+                    aria-hidden="true"
+                    [appTooltip]="workspaceEntry.name + ' · auto-save failed'"
+                  >
+                    <app-icon name="mdiAlert"></app-icon>
+                  </span>
+                } @else if (!restoreEnabled() && workspaceEntry.isDirty) {
                   <span class="workspace-dirty-indicator" aria-hidden="true">
                     <app-icon name="mdiViewDashboardEdit"></app-icon>
+                  </span>
+                } @else if (workspaceEntry.isActive) {
+                  <span class="workspace-active-indicator" aria-hidden="true">
+                    <app-icon name="mdiCheck"></app-icon>
                   </span>
                 }
               </div>
@@ -241,7 +234,8 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
       }
 
       .workspace-dirty-indicator,
-      .workspace-autosave-indicator {
+      .workspace-autosave-failed-indicator,
+      .workspace-active-indicator {
         position: absolute;
         right: -0.28rem;
         bottom: -0.28rem;
@@ -258,18 +252,8 @@ import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
         opacity: 0.95;
       }
 
-      .workspace-autosave-indicator {
-        opacity: 0.7;
-      }
-
-      .workspace-autosave-indicator .spin {
-        animation: workspace-autosave-spin 0.9s linear infinite;
-      }
-
-      @keyframes workspace-autosave-spin {
-        to {
-          transform: rotate(360deg);
-        }
+      .workspace-autosave-failed-indicator {
+        color: var(--color-red);
       }
 
       .workspace-name {
@@ -330,7 +314,6 @@ export class WorkspaceSideComponent implements OnDestroy {
   /** When session restore is on, workspaces auto-save (step 27g). */
   private readonly restoreEnabledSignal = signal(true);
   readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
-  protected readonly relativeSavedTime = relativeSavedTime;
   isDraggingWorkspace = false;
   draggedWorkspaceIdentifier: string | undefined;
 

@@ -129,17 +129,18 @@ describe("WorkspaceHostApplicationService", () => {
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
   });
 
-  it("marks a workspace saved after an autosave (step 27g)", async () => {
+  it("flags a failed autosave until the next one succeeds (step 27g)", async () => {
     bus.publish({ type: "DBInitialized" });
     await vi.waitFor(() => {
       expect(service.getWorkspaceById("WS-1")).toBeTruthy();
     });
+    persistWorkspaceSnapshots.mockRejectedValueOnce(new Error("disk full"));
+
+    await expect(service.autoPersistWorkspace("WS-1")).rejects.toThrow("disk full");
+    expect(service.getWorkspaceById("WS-1")?.autoSaveFailed).toBe(true);
 
     await service.autoPersistWorkspace("WS-1");
-
-    const workspace = service.getWorkspaceById("WS-1");
-    expect(workspace?.autoSaveStatus).toBe("saved");
-    expect(typeof workspace?.autoSavedAt).toBe("number");
+    expect(service.getWorkspaceById("WS-1")?.autoSaveFailed).toBe(false);
   });
 
   it("marks a workspace dirty when the working directory changes", async () => {
