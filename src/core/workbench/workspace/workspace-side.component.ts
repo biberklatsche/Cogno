@@ -20,8 +20,8 @@ import {
   trackPointerDrag,
 } from "@cogno/shared/ui";
 import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
-import { workspaceBadge } from "./workspace-badge";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
+import { workspaceBadge } from "./workspace-badge";
 
 @Component({
   selector: "app-workspace-side",

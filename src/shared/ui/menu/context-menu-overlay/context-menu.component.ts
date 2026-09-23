@@ -1,8 +1,8 @@
 import { NgTemplateOutlet } from "@angular/common";
 import { Component, Input, TemplateRef } from "@angular/core";
+import { LetterBadgeComponent } from "../../common/letter-badge/letter-badge.component";
 import { ToggleSwitchComponent } from "../../common/toggle-switch/toggle-switch.component";
 import { ContextMenuItem, ContextMenuOverlayComponent } from "../../context-menu-item";
-import { LetterBadgeComponent } from "../../common/letter-badge/letter-badge.component";
 import { IconComponent } from "../../icons/icon/icon.component";
 
 @Component({
