@@ -23,12 +23,9 @@ export interface WorkspaceTerminalSession {
   updatedAt?: string;
 }
 
-export type WorkspaceAutoSaveStatus = "saving" | "saved";
-
 export interface WorkspaceState extends WorkspaceConfiguration {
   isSelected: boolean;
   isDirty?: boolean;
-  /** Auto-save feedback for session restore (step 27g); unset until first autosave. */
-  autoSaveStatus?: WorkspaceAutoSaveStatus;
-  autoSavedAt?: number;
+  /** The last session-restore autosave failed (step 27g). */
+  autoSaveFailed?: boolean;
 }

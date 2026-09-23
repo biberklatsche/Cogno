@@ -18,6 +18,7 @@ interface ActionHandlerContext extends ActionContextContract {
  */
 export type ActionHandler = (
   context: ActionHandlerContext,
+  // biome-ignore lint/suspicious/noConfusingVoidType: Existing handlers can return void or false, including after awaiting.
 ) => boolean | void | Promise<boolean | void>;
 
 /**
@@ -55,6 +56,7 @@ export class ActionHandlers {
 
   private applyPerformed(
     event: { performed?: boolean; defaultPrevented?: boolean; trigger?: { broadcast: boolean } },
+    // biome-ignore lint/suspicious/noConfusingVoidType: A handler's void result means the action was performed.
     result: boolean | void,
   ): void {
     event.performed = result === false ? false : !event.trigger?.broadcast;

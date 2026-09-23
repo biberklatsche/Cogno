@@ -101,7 +101,7 @@ describe("ClipboardHandler", () => {
       await vi.waitFor(() => expect(pasteSpy).toHaveBeenCalledWith("pasted content"));
     });
 
-    it("writes image file path instead of pasting text when clipboard contains image", async () => {
+    it("pastes the image file path instead of the text when the clipboard holds an image", async () => {
       const pasteSpy = vi.spyOn(mockTerminal, "paste");
       vi.mocked(clipboardStub.readImageFromClipboard).mockResolvedValueOnce(
         "/tmp/cogno_paste_abc.png",
@@ -109,10 +109,8 @@ describe("ClipboardHandler", () => {
 
       void handler.paste();
 
-      await vi.waitFor(() =>
-        expect(mockPty.write).toHaveBeenCalledWith("/tmp/cogno_paste_abc.png"),
-      );
-      expect(pasteSpy).not.toHaveBeenCalled();
+      await vi.waitFor(() => expect(pasteSpy).toHaveBeenCalledWith("/tmp/cogno_paste_abc.png"));
+      expect(clipboardStub.readText).not.toHaveBeenCalled();
     });
 
     it("opens the composer instead of pasting when multiline text is pasted at the prompt", async () => {

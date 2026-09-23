@@ -160,6 +160,8 @@ const INITIAL_VIEW_STATE = {
       }
 
       .history-item .label {
+        flex: 1 1 0;
+        min-width: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: clip;
@@ -167,6 +169,7 @@ const INITIAL_VIEW_STATE = {
       }
 
       .history-item .entry-meta {
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
         gap: 6px;

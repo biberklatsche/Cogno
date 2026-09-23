@@ -271,7 +271,6 @@ export const defaultSettings = {
     read: "allow",
     write: "allow",
     trim_trailing_spaces: "true",
-    image_paste_ttl_seconds: "60",
   },
   http_server: {
     enabled: "true",

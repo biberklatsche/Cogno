@@ -5,6 +5,7 @@ import {
   computed,
   ElementRef,
   effect,
+  signal,
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
@@ -41,6 +42,8 @@ import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
                                 appStartEllipsis
                                 [appStartEllipsis]="item.label"
                                 [appStartEllipsisMatches]="item.matchRanges"
+                                (appStartEllipsisTruncated)="setTruncated(item.label, $event)"
+                                [appTooltip]="truncatedLabels().has(item.label) ? item.label : ''"
                             ></span>
                             <span class="meta" appTooltip="{{ item.source }} &middot; {{ item.score }}">
                                 <span
@@ -125,6 +128,8 @@ import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
         }
 
         .autocomplete-item .label {
+            flex: 1 1 0;
+            min-width: 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: clip;
@@ -142,6 +147,7 @@ import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
         }
 
         .autocomplete-item .meta {
+            flex: 0 0 auto;
             font-size: 11px;
             white-space: nowrap;
             display: inline-flex;
@@ -258,6 +264,8 @@ export class TerminalAutocompleteComponent {
     if (mode === "history-only") return "Suggestions from your command history";
     return "Suggestions from history and the current context";
   });
+  /** Labels that had to be start-ellipsed. Only those get a full-label tooltip. */
+  protected readonly truncatedLabels = signal<ReadonlySet<string>>(new Set());
 
   constructor(private readonly autocomplete: TerminalAutocompleteService) {
     effect(() => {
@@ -278,6 +286,19 @@ export class TerminalAutocompleteComponent {
     if (view.selectedIndex === null) return "";
     const index = view.selectedIndex;
     return view.suggestions[index]?.description ?? "";
+  }
+
+  protected setTruncated(label: string, truncated: boolean): void {
+    this.truncatedLabels.update((labels) => {
+      if (labels.has(label) === truncated) return labels;
+      const next = new Set(labels);
+      if (truncated) {
+        next.add(label);
+      } else {
+        next.delete(label);
+      }
+      return next;
+    });
   }
 
   protected isHistorySuggestion(item: AutocompleteSuggestion): boolean {

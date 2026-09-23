@@ -407,12 +407,6 @@ Strip trailing spaces from copied lines.
 
 **Type:** boolean · **Default:** `true`
 
-### `clipboard.image_paste_ttl_seconds`
-
-How long a pasted clipboard image is kept on disk, in seconds.
-
-**Type:** integer ≥ 0 · **Default:** `60`
-
 ## Shell
 
 `<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.

@@ -1,9 +1,6 @@
 import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
 import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { remove } from "@tauri-apps/plugin-fs";
-
-const DEFAULT_PASTE_FILE_TTL_MS = 60_000;
 
 export function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -32,20 +29,14 @@ function rgbaToBlob(rgba: Uint8Array, width: number, height: number): Promise<Bl
   });
 }
 
-async function saveImageBlobToFile(blob: Blob, ttlMs: number): Promise<string> {
+async function saveImageBlobToFile(blob: Blob): Promise<string> {
   const arrayBuffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
 
   const base64Data = bytesToBase64(bytes);
   const extension = blob.type === "image/jpeg" ? "jpg" : "png";
 
-  const filePath = await invoke<string>("save_clipboard_image_to_file", { base64Data, extension });
-
-  setTimeout(() => {
-    remove(filePath).catch(() => undefined);
-  }, ttlMs);
-
-  return filePath;
+  return await invoke<string>("save_clipboard_image_to_file", { base64Data, extension });
 }
 
 @Injectable({ providedIn: "root" })
@@ -58,12 +49,12 @@ export class ClipboardAccess {
     return await readText();
   }
 
-  async readImageFromClipboard(ttlMs: number = DEFAULT_PASTE_FILE_TTL_MS): Promise<string | null> {
+  async readImageFromClipboard(): Promise<string | null> {
     try {
       const image = await readImage();
       const [rgba, { width, height }] = await Promise.all([image.rgba(), image.size()]);
       const blob = await rgbaToBlob(new Uint8Array(rgba), width, height);
-      return await saveImageBlobToFile(blob, ttlMs);
+      return await saveImageBlobToFile(blob);
     } catch {
       return null;
     }
