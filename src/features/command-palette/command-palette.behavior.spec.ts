@@ -49,6 +49,7 @@ describe("command palette behaviour", () => {
       registerKeybindListener: registerKeybindListenerMock,
       unregisterKeybindListener: vi.fn(),
       updateIcon: vi.fn(),
+      updateBadgeColor: vi.fn(),
     });
     sideMenuLifecycle.onOpen?.();
     sideMenuLifecycle.onFocus?.();

@@ -96,6 +96,10 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
     this.sideMenuService.updateIcon(this.config.title, icon);
   }
 
+  updateBadgeColor(color?: string): void {
+    this.sideMenuService.updateBadgeColor(this.config.title, color);
+  }
+
   private setupSideMenuListeners(): void {
     this.subscriptions.add(
       this.bus.on$("SideMenuViewOpened").subscribe((event) => {

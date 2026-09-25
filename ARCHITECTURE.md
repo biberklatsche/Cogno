@@ -308,7 +308,7 @@ Maschine weiß nichts von der Session.
 features/            Git, AI, Coding-Agents, Palette, …
     │  importieren nur
     ▼
-core/api/            boundSession$, TerminalMonitor, TerminalNavigator, Contributions
+core/api/            boundSession$, TerminalMonitor, TerminalNavigator, TerminalPlacement, Contributions
     │  kennt beide
     ├──────────────►  core/workbench/   Fokus, Layout-Identität, Reveal, Feature-Host
     │                       │  besitzt
@@ -855,9 +855,12 @@ Session-Identität und Capability. Damit kann eine verspätete asynchrone Antwor
 nach einem Fokuswechsel nicht in das falsche Terminal schreiben.
 
 **Übergreifende Features** bekommen `TerminalMonitorPort` (Aktivität, Ende und
-cwd je Terminal) und `TerminalNavigator.navigateToTerminal(id)` (Workspace,
-Tab und Fokus auf ein Terminal bringen). Ein Sitzungs-Verzeichnis `sessions$`
-entsteht erst mit dem ersten Feature, das eines braucht.
+cwd je Terminal), `TerminalNavigator.navigateToTerminal(id)` (Workspace,
+Tab und Fokus auf ein Terminal bringen) und als dessen lesendes Gegenstück
+`TerminalPlacementPort.getPlacement(id)` (Workspace und Tab eines Terminals
+samt Anzeigereihenfolge, plus `changes$`; Konsument: Coding-Agents-Panel,
+gruppiert nach Workspace in Tab-Reihenfolge). Ein Sitzungs-Verzeichnis
+`sessions$` entsteht erst mit dem ersten Feature, das eines braucht.
 
 `injectInput(request, identity)` — „schreib das in dieses Terminal", mit
 demselben Identitäts-Check wie `run` — ist implementiert, hat aber seit dem

@@ -16,6 +16,7 @@ describe("WorkspaceSideMenuLifecycle", () => {
       typeof vi.fn<SideMenuFeatureHandle["unregisterKeybindListener"]>
     >;
     updateIcon: ReturnType<typeof vi.fn<SideMenuFeatureHandle["updateIcon"]>>;
+    updateBadgeColor: ReturnType<typeof vi.fn<SideMenuFeatureHandle["updateBadgeColor"]>>;
   };
   let lifecycle: ReturnType<WorkspaceSideMenuLifecycle["create"]>;
 
@@ -29,6 +30,7 @@ describe("WorkspaceSideMenuLifecycle", () => {
       registerKeybindListener: vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>(),
       unregisterKeybindListener: vi.fn<SideMenuFeatureHandle["unregisterKeybindListener"]>(),
       updateIcon: vi.fn<SideMenuFeatureHandle["updateIcon"]>(),
+      updateBadgeColor: vi.fn<SideMenuFeatureHandle["updateBadgeColor"]>(),
     };
 
     lifecycle = new WorkspaceSideMenuLifecycle(workspaceService as WorkspaceService).create(handle);

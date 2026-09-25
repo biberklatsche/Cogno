@@ -1,4 +1,6 @@
 import { AgentStatus } from "@cogno/shared/domain";
+import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
+import { CLAUDE_STYLE_HOOK_EVENT } from "../_shared/hook-events";
 
 export type KimiHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 
@@ -17,21 +19,21 @@ export const KIMI_CONFIG = {
   configSubDir: ".kimi",
   configFileName: "config.toml",
   hookEvents: [
-    { eventName: "SessionStart", status: "ready" as AgentStatus },
-    { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
-    { eventName: "SubagentStart", status: "working" as AgentStatus },
-    { eventName: "SubagentStop", status: "working" as AgentStatus },
-    { eventName: "PreToolUse", status: "working" as AgentStatus },
-    { eventName: "PostToolUse", status: "working" as AgentStatus },
-    { eventName: "PostToolUseFailure", status: "error" as AgentStatus },
-    { eventName: "PreCompact", status: "working" as AgentStatus },
-    { eventName: "PostCompact", status: "ready" as AgentStatus },
-    { eventName: "Notification", status: "question" as AgentStatus },
-    { eventName: "Stop", status: "ready" as AgentStatus },
-    { eventName: "StopFailure", status: "error" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.subagentStart, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.subagentStop, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.preToolUse, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postToolUse, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postToolUseFailure, status: "error" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.preCompact, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postCompact, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.notification, status: "question" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.stop, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.stopFailure, status: "error" as AgentStatus },
   ] as ReadonlyArray<KimiHookEntry>,
 
   isCognoCommand(command: string): boolean {
-    return command.includes("coding_agent_status") && command.includes("COGNO_PORT");
+    return command.includes(CODING_AGENT_STATUS_ACTION) && command.includes("COGNO_PORT");
   },
 } as const;

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
@@ -10,23 +10,76 @@ import {
   ContextMenuOverlayService,
   CopyEditDeleteComponent,
   IconComponent,
+  StartEllipsisDirective,
   TooltipDirective,
 } from "@cogno/shared/ui";
+import { interval } from "rxjs";
 import { AgentAnimationComponent } from "./agent-animation.component";
+import { groupAgentsByWorkspace } from "./agent-groups";
 import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
-import { ActiveAgent, AgentStatus, CodingAgentStatusService } from "./coding-agent-status.service";
+import { ActiveAgent, CodingAgentStatusService } from "./coding-agent-status.service";
 import type { ICodingAgentProvider } from "./ports";
+
+/** How often the elapsed time on a working card is refreshed. */
+const ELAPSED_TICK_MS = 1000;
+
+/**
+ * What a card says about its agent. Splits "ready" into done (a task was worked on)
+ * and idle (nothing asked yet), so the summary and the card never disagree.
+ */
+export type CardState = "working" | "question" | "error" | "done" | "idle";
+
+export function cardState(agent: ActiveAgent): CardState {
+  if (agent.status !== "ready") return agent.status;
+  return agent.task ? "done" : "idle";
+}
+
+const CARD_STATE_LABELS: Record<CardState, string> = {
+  working: "Working",
+  question: "Needs you",
+  error: "Error",
+  done: "Done",
+  idle: "Idle",
+};
+
+/** "1 subagent", "2 subagents". */
+export function countOf(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
 @Component({
   selector: "app-coding-agents-side",
   standalone: true,
-  imports: [IconComponent, TooltipDirective, AgentAnimationComponent, CopyEditDeleteComponent],
+  imports: [
+    IconComponent,
+    TooltipDirective,
+    StartEllipsisDirective,
+    AgentAnimationComponent,
+    CopyEditDeleteComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="agents-panel">
       @if (view() === "active") {
         <header class="panel-header">
+          <div class="summary">
+            @if (summary().working > 0) {
+              <span class="summary-chip working"><span class="dot"></span>{{ summary().working }} working</span>
+            }
+            @if (summary().question > 0) {
+              <span class="summary-chip question"><span class="dot"></span>{{ countOf(summary().question, "needs you", "need you") }}</span>
+            }
+            @if (summary().error > 0) {
+              <span class="summary-chip error"><span class="dot"></span>{{ countOf(summary().error, "error") }}</span>
+            }
+            @if (summary().done > 0) {
+              <span class="summary-chip done"><span class="dot"></span>{{ summary().done }} done</span>
+            }
+            @if (summary().idle > 0) {
+              <span class="summary-chip idle"><span class="dot"></span>{{ summary().idle }} idle</span>
+            }
+          </div>
           <div class="header-actions">
             <button
               type="button"
@@ -53,37 +106,54 @@ import type { ICodingAgentProvider } from "./ports";
               <span>No agents currently active</span>
             </div>
           }
-          @for (agent of activeAgents(); track agent.terminalId) {
-            <button
-              type="button"
-              class="agent-card"
-              [class]="agent.status"
-              [class.focused]="agent.terminalId === focusedTerminalId()"
-              (click)="navigateTo(agent)"
-            >
-              <div class="agent-animation">
-                <app-agent-animation [terminalId]="agent.terminalId"></app-agent-animation>
+          @for (group of groups(); track group.workspaceId) {
+            @if (group.workspaceName) {
+              <div class="group-header">
+                <span
+                  class="workspace-dot"
+                  [style.background-color]="'var(--color-' + group.workspaceColor + ')'"
+                ></span>
+                <span class="group-name">{{ group.workspaceName }}</span>
               </div>
-              <div class="agent-info">
-                @if (agent.cwd) {
-                  <span class="agent-cwd" [appTooltip]="agent.cwd">{{ agent.cwd }}</span>
-                }
-                <span class="agent-status">{{ statusLabel(agent.status) }}</span>
-                @if (agent.activity) {
-                  <span class="agent-activity" [appTooltip]="agent.activity">{{ agent.activity }}</span>
+            }
+            @for (agent of group.agents; track agent.terminalId) {
+              <button
+                type="button"
+                class="agent-card"
+                [class]="cardState(agent)"
+                [class.focused]="agent.terminalId === focusedTerminalId()"
+                (click)="navigateTo(agent)"
+              >
+                <div class="agent-state">
+                  <app-agent-animation [terminalId]="agent.terminalId"></app-agent-animation>
+                  <span class="state-label">
+                    {{ statusLabel(agent) }}
+                    @if (agent.status === "working") {
+                      · {{ elapsed(agent) }}
+                    }
+                  </span>
+                  @if (agent.subagentCount > 0) {
+                    <span class="subagent-pill">{{ countOf(agent.subagentCount, "subagent") }}</span>
+                  }
+                  @if (agent.providerName) {
+                    <span class="agent-badge">{{ agent.providerName }}</span>
+                  }
+                </div>
+                @if (agent.task) {
+                  <span class="agent-task" [appTooltip]="agent.task">{{ agent.task }}</span>
                 } @else {
-                  <span class="agent-activity">_</span>
+                  <span class="agent-task placeholder">No prompt yet</span>
                 }
-              </div>
-              <div class="agent-meta">
-                @if (agent.providerName) {
-                  <span class="agent-badge">{{ agent.providerName }}</span>
-                }
-                @if (agent.lastHook) {
-                  <span class="agent-id">{{ agent.lastHook }}</span>
-                }
-              </div>
-            </button>
+                <div class="agent-footer">
+                  <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
+                  <span
+                    class="agent-tab"
+                    [appStartEllipsis]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
+                    [appTooltip]="agent.cwd ?? ''"
+                  ></span>
+                </div>
+              </button>
+            }
           }
         </div>
       } @else {
@@ -164,8 +234,43 @@ import type { ICodingAgentProvider } from "./ports";
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 0.5rem;
       padding: 0.25rem 0;
     }
+
+    .summary {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      min-width: 0;
+    }
+
+    .summary-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+      color: var(--agent-state-color);
+      background: color-mix(in srgb, var(--agent-state-color) 14%, transparent);
+    }
+
+    .summary-chip .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--agent-state-color);
+    }
+
+    .working { --agent-state-color: var(--color-blue); }
+    .question { --agent-state-color: var(--color-yellow); }
+    .error { --agent-state-color: var(--color-red); }
+    .done { --agent-state-color: var(--color-green); }
+    .idle { --agent-state-color: color-mix(in srgb, var(--foreground-color) 65%, transparent); }
 
     .header-actions {
       display: flex;
@@ -246,6 +351,34 @@ import type { ICodingAgentProvider } from "./ports";
       min-height: 0;
     }
 
+    .group-header {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-basis: 100%;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      opacity: 0.75;
+    }
+
+    .group-header:first-child {
+      margin-top: 0.5rem;
+    }
+
+    .workspace-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .group-name {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     .empty-state {
       display: flex;
       align-items: center;
@@ -257,15 +390,14 @@ import type { ICodingAgentProvider } from "./ports";
       text-align: center;
     }
 
+    /* One card = fixed slots: identity, task, state, detail. */
     .agent-card {
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.65rem 0.75rem;
+      flex-direction: column;
+      gap: 0.3rem;
+      padding: 0.65rem 0.8rem;
       border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-      border-left-width: 3px;
-      border-left-color: var(--agent-status-color, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)));
-      border-radius: 8px;
+      border-radius: 10px;
       background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       color: inherit;
       cursor: default;
@@ -280,77 +412,38 @@ import type { ICodingAgentProvider } from "./ports";
     }
 
     .agent-card.focused {
-      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
       border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
-      /* border-color above covers all sides — restore the status stripe. */
-      border-left-color: var(--agent-status-color, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color)));
     }
 
-    .agent-card.working { --agent-status-color: var(--color-blue); }
-    .agent-card.ready { --agent-status-color: var(--color-green); }
-    .agent-card.question { --agent-status-color: var(--color-yellow); }
-    .agent-card.error { --agent-status-color: var(--color-red); }
+    /* A card that needs the user is tinted as a whole, not just marked. */
+    .agent-card.question,
+    .agent-card.error {
+      background: color-mix(in srgb, var(--agent-state-color) 9%, var(--background-color));
+      border-color: color-mix(in srgb, var(--agent-state-color) 55%, transparent);
+    }
 
-    .agent-animation {
+    .agent-card.question:hover,
+    .agent-card.error:hover {
+      background: color-mix(in srgb, var(--agent-state-color) 14%, var(--background-color));
+    }
+
+    .agent-footer {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      /* Fixed height: an empty detail line must not shrink the card. */
+      height: 1.4em;
+    }
+
+    .agent-tab {
       flex-shrink: 0;
-      width: 14px;
-      height: 14px;
-    }
-
-    .agent-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .agent-status {
-      font-size: 0.80rem;
-      font-weight: 100;
+      max-width: 45%;
+      opacity: 0.55;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .agent-cwd {
-      font-size: 0.85rem;
-      font-weight: 400;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      direction: rtl;
-      text-align: left;
-    }
-
-    .agent-activity {
-      font-size: 0.8rem;
-      font-weight: 100;
-      opacity: 0.6;
-      font-family: monospace;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .agent-meta {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 0.2rem;
-      flex-shrink: 0;
-      align-self: flex-start;
-    }
-
-    .agent-id {
-      font-size: 0.7rem;
-      opacity: 0.25;
-      font-weight: 100;
-      white-space: nowrap;
-      font-family: monospace;
     }
 
     .agent-badge {
@@ -363,6 +456,77 @@ import type { ICodingAgentProvider } from "./ports";
       background-color: var(--color-black);
       color: var(--color-white);
       white-space: nowrap;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .agent-task {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.35;
+      /* One line, always: cards stay the same height, the tooltip carries the full prompt. */
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .agent-task.placeholder {
+      font-style: italic;
+      font-weight: 400;
+      opacity: 0.5;
+    }
+
+    .agent-card.done .agent-task {
+      opacity: 0.75;
+    }
+
+    /* The animation stands free, as it does in the tab header; only the label carries the state colour. */
+    .agent-state {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      /* Fixed height: the subagent pill must not push the line below. */
+      height: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--agent-state-color);
+    }
+
+    /* Block, not inline-flex: an inline box would sit on the text baseline instead of centring. */
+    .agent-state app-agent-animation {
+      display: flex;
+    }
+
+    /* The ghost's top two rows are near-empty antenna, so its visible body sits below the
+       box centre; the text moves down to meet it. */
+    .state-label {
+      font-weight: 500;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+
+    .subagent-pill {
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-weight: 500;
+      white-space: nowrap;
+      color: var(--foreground-color);
+      background: color-mix(in srgb, var(--foreground-color) 10%, transparent);
+    }
+
+    .agent-detail {
+      flex: 1;
+      min-width: 0;
+      font-family: monospace;
+      opacity: 0.65;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .agent-card.question .agent-detail,
+    .agent-card.error .agent-detail {
+      color: var(--agent-state-color);
+      opacity: 0.9;
     }
 
     .spinning {
@@ -379,7 +543,25 @@ export class CodingAgentsSideComponent {
   readonly installedProviders = this.startupService.installedProviders;
   readonly isScanning = this.startupService.isScanning;
   readonly activeAgents = this.statusService.activeAgents;
+  readonly groups = computed(() => groupAgentsByWorkspace(this.activeAgents()));
+  readonly summary = computed(() => {
+    const counts: Record<CardState, number> = {
+      working: 0,
+      question: 0,
+      error: 0,
+      done: 0,
+      idle: 0,
+    };
+    for (const agent of this.activeAgents()) counts[cardState(agent)] += 1;
+    return counts;
+  });
   readonly view = signal<"active" | "detected">("active");
+
+  /** Ticks every second while an agent works, so its elapsed time stays current. */
+  private readonly now = signal(Date.now());
+  private readonly hasWorkingAgent = computed(() =>
+    this.activeAgents().some((agent) => agent.status === "working"),
+  );
 
   private readonly focusedTerminalIdSignal = signal<string | undefined>(undefined);
   readonly focusedTerminalId = this.focusedTerminalIdSignal.asReadonly();
@@ -409,6 +591,12 @@ export class CodingAgentsSideComponent {
         boundSession.status === "active" ? boundSession.session.identity.terminalId : undefined,
       );
     });
+
+    interval(ELAPSED_TICK_MS)
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe(() => {
+        if (this.hasWorkingAgent()) this.now.set(Date.now());
+      });
   }
 
   showDetected(): void {
@@ -437,11 +625,25 @@ export class CodingAgentsSideComponent {
     });
   }
 
-  statusLabel(status: AgentStatus): string {
-    if (status === "ready") return "Ready";
-    if (status === "working") return "Working";
-    if (status === "question") return "Waiting for input";
-    return "Error";
+  /** Time spent working: "42s", "3m 05s", "1h 12m". */
+  elapsed(agent: ActiveAgent): string {
+    const seconds = Math.max(0, Math.floor((this.now() - agent.statusSince) / 1000));
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`;
+    return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+  }
+
+  readonly countOf = countOf;
+  readonly cardState = cardState;
+
+  statusLabel(agent: ActiveAgent): string {
+    return CARD_STATE_LABELS[cardState(agent)];
+  }
+
+  /** The detail line follows the state: the closing message once done, else the last activity. */
+  detail(agent: ActiveAgent): string | undefined {
+    return agent.status === "ready" ? agent.result : agent.activity;
   }
 
   openNotificationMenu(event: Event): void {

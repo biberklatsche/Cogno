@@ -1,4 +1,6 @@
 import { AgentStatus } from "@cogno/shared/domain";
+import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
+import { CLAUDE_STYLE_HOOK_EVENT } from "../_shared/hook-events";
 
 export type ClaudeHookEntry = {
   readonly eventName: string;
@@ -29,25 +31,29 @@ export const CLAUDE_CODE_CONFIG = {
   configSubDir: ".claude",
   configFileName: "settings.json",
   hookEvents: [
-    { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
-    { eventName: "SessionStart", status: "ready" as AgentStatus },
-    { eventName: "SessionEnd", status: "ready" as AgentStatus },
-    { eventName: "SubagentStart", status: "working" as AgentStatus },
-    { eventName: "SubagentStop", status: "ready" as AgentStatus },
-    { eventName: "PreToolUse", status: "working" as AgentStatus },
-    { eventName: "PostToolUse", status: "working" as AgentStatus },
-    { eventName: "PostToolUseFailure", status: "error" as AgentStatus },
-    { eventName: "Notification", status: "question" as AgentStatus, matcher: "permission_prompt" },
-    { eventName: "PermissionRequest", status: "question" as AgentStatus },
-    { eventName: "PermissionDenied", status: "error" as AgentStatus },
-    { eventName: "Stop", status: "ready" as AgentStatus },
-    { eventName: "StopFailure", status: "error" as AgentStatus },
-    { eventName: "PreCompact", status: "working" as AgentStatus },
-    { eventName: "PostCompact", status: "ready" as AgentStatus },
-    { eventName: "TaskCompleted", status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionEnd, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.subagentStart, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.subagentStop, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.preToolUse, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postToolUse, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postToolUseFailure, status: "error" as AgentStatus },
+    {
+      eventName: CLAUDE_STYLE_HOOK_EVENT.notification,
+      status: "question" as AgentStatus,
+      matcher: "permission_prompt",
+    },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.permissionRequest, status: "question" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.permissionDenied, status: "error" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.stop, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.stopFailure, status: "error" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.preCompact, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postCompact, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.taskCompleted, status: "working" as AgentStatus },
   ] as ReadonlyArray<ClaudeHookEntry>,
 
   isCognoCommand(command: string): boolean {
-    return command.includes("COGNO_PORT") && command.includes("coding_agent_status");
+    return command.includes("COGNO_PORT") && command.includes(CODING_AGENT_STATUS_ACTION);
   },
 } as const;

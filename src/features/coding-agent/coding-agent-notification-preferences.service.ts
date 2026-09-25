@@ -1,5 +1,6 @@
 import { Injectable, Signal, signal } from "@angular/core";
 import {
+  AgentStatus,
   NotificationDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
@@ -10,7 +11,6 @@ import {
   NotificationChannelsPort,
 } from "@cogno/shared/ports";
 import { take } from "rxjs";
-import { AgentStatus } from "./coding-agent-status.service";
 
 const NOTIFICATION_LABELS: Record<AgentStatus, string> = {
   working: "Agent starts working",

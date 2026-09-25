@@ -1,4 +1,6 @@
 import { AgentStatus } from "@cogno/shared/domain";
+import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
+import { CLAUDE_STYLE_HOOK_EVENT } from "../_shared/hook-events";
 
 export type CodexHookEntry = {
   readonly eventName: string;
@@ -28,21 +30,21 @@ export const CODEX_CONFIG = {
   configFileName: "hooks.json",
   appConfigFileName: "config.toml",
   hookEvents: [
-    { eventName: "SessionStart", status: "ready" as AgentStatus },
-    { eventName: "UserPromptSubmit", status: "working" as AgentStatus },
-    { eventName: "SubagentStart", status: "working" as AgentStatus },
-    { eventName: "SubagentStop", status: "ready" as AgentStatus },
-    { eventName: "PreToolUse", status: "working" as AgentStatus },
-    { eventName: "PostToolUse", status: "working" as AgentStatus },
-    { eventName: "PermissionRequest", status: "question" as AgentStatus },
-    { eventName: "PreCompact", status: "working" as AgentStatus },
-    { eventName: "PostCompact", status: "ready" as AgentStatus },
-    { eventName: "Stop", status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.subagentStart, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.subagentStop, status: "ready" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.preToolUse, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postToolUse, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.permissionRequest, status: "question" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.preCompact, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.postCompact, status: "working" as AgentStatus },
+    { eventName: CLAUDE_STYLE_HOOK_EVENT.stop, status: "ready" as AgentStatus },
   ] as ReadonlyArray<CodexHookEntry>,
 
   isCognoCommand(command?: string, commandWindows?: string): boolean {
     const check = (cmd: string) =>
-      cmd.includes("COGNO_PORT") && cmd.includes("coding_agent_status");
+      cmd.includes("COGNO_PORT") && cmd.includes(CODING_AGENT_STATUS_ACTION);
     return (command ? check(command) : false) || (commandWindows ? check(commandWindows) : false);
   },
 } as const;

@@ -1,4 +1,5 @@
 import { AgentStatus } from "@cogno/shared/domain";
+import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
 
 type AntigravityHookHandler = {
   type?: "command";
@@ -80,6 +81,6 @@ export const ANTIGRAVITY_CONFIG = {
   ] as ReadonlyArray<AntigravityHookEntry>,
 
   isCognoCommand(command: string): boolean {
-    return command.includes("COGNO_PORT") && command.includes("coding_agent_status");
+    return command.includes("COGNO_PORT") && command.includes(CODING_AGENT_STATUS_ACTION);
   },
 } as const;

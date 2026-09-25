@@ -1,5 +1,7 @@
 import { Injectable } from "@angular/core";
-import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import { AgentStatus } from "@cogno/shared/domain";
+import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
@@ -10,6 +12,10 @@ export class KimiProvider implements ICodingAgentProvider {
   readonly name = KIMI_CONFIG.name;
 
   constructor(private readonly configFile: ConfigFileService) {}
+
+  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
+    return interpretClaudeStyleHook(hookEvent, status, payload);
+  }
 
   async isAgentInstalled(): Promise<boolean> {
     return this.configFile.exists(await this.configDir());

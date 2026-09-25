@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
-import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import { AgentStatus } from "@cogno/shared/domain";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand } from "../_shared/hook-command.builder";
 import {
@@ -14,6 +15,11 @@ export class AntigravityProvider implements ICodingAgentProvider {
   readonly name = ANTIGRAVITY_CONFIG.name;
 
   constructor(private readonly configFile: ConfigFileService) {}
+
+  /** Antigravity's hook payloads are not read yet: only the status the hook reports counts. */
+  interpretHook(_hookEvent: string, status: AgentStatus, _payload: unknown): AgentHookEvent {
+    return { kind: "status", status, sessionBoundary: false, details: {} };
+  }
 
   async isAgentInstalled(): Promise<boolean> {
     return this.configFile.exists(await this.configDir());

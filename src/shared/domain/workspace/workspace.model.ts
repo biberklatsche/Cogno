@@ -4,6 +4,9 @@ import {
   WorkspaceIdentifierContract,
 } from "../grid-layout";
 
+/** Colour name a workspace shows while it has none of its own. */
+export const DEFAULT_WORKSPACE_COLOR = "green";
+
 export interface WorkspaceConfiguration {
   id: WorkspaceIdentifierContract;
   name: string;

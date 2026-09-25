@@ -39,6 +39,7 @@ describe("CommandPaletteSideMenuLifecycle", () => {
       registerKeybindListener: registerKeybindListenerMock,
       unregisterKeybindListener: unregisterKeybindListenerMock,
       updateIcon: vi.fn(),
+      updateBadgeColor: vi.fn(),
     };
   });
 

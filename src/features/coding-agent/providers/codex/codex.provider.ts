@@ -1,5 +1,7 @@
 import { Injectable } from "@angular/core";
-import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import { AgentStatus } from "@cogno/shared/domain";
+import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommands } from "../_shared/hook-command.builder";
 import { withoutCognoHooks } from "../_shared/hook-groups";
@@ -11,6 +13,10 @@ export class CodexProvider implements ICodingAgentProvider {
   readonly name = CODEX_CONFIG.name;
 
   constructor(private readonly configFile: ConfigFileService) {}
+
+  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
+    return interpretClaudeStyleHook(hookEvent, status, payload);
+  }
 
   async isAgentInstalled(): Promise<boolean> {
     return this.configFile.exists(await this.configDir());

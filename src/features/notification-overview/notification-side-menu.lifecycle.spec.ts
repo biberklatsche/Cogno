@@ -25,6 +25,7 @@ describe("NotificationSideMenuLifecycle", () => {
       registerKeybindListener: vi.fn(),
       unregisterKeybindListener: vi.fn(),
       updateIcon: vi.fn(),
+      updateBadgeColor: vi.fn(),
     };
   });
 

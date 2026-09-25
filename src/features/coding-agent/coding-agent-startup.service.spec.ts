@@ -21,6 +21,7 @@ function providerDouble(id: string, options: { installed?: boolean; hook?: boole
     removeHook: vi.fn(async () => {
       hook = false;
     }),
+    interpretHook: vi.fn(),
   };
 }
 

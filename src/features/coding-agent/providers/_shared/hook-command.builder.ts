@@ -1,9 +1,27 @@
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus, parseAgentStatus } from "@cogno/shared/domain";
 
 export const CODING_AGENT_STATUS_ACTION = "coding_agent_status";
 
 /** Payloads larger than this are replaced with an "omitted:too-large:<bytes>" marker. */
 const HOOK_PAYLOAD_MAX_BYTES = 65536;
+
+/** The `args` of a status ping, in the order the hook commands below write them. */
+export type StatusPingArgs = {
+  readonly status: AgentStatus;
+  readonly providerId: string;
+  readonly hookEvent: string;
+  /** Unix seconds when the hook ran; 0 when missing. */
+  readonly seq: number;
+};
+
+export function parseStatusPingArgs(args: ReadonlyArray<string> | undefined): StatusPingArgs {
+  return {
+    status: parseAgentStatus(args?.[0]) ?? "ready",
+    providerId: args?.[1] ?? "",
+    hookEvent: args?.[2] ?? "",
+    seq: Number(args?.[3] ?? 0) || 0,
+  };
+}
 
 export type HookCommands = {
   command: string; // Unix/macOS: bash + curl
@@ -75,13 +93,15 @@ function bashPayloadCapture(): string {
 
 /**
  * PowerShell equivalent of {@link bashPayloadCapture}, populating `$payload`.
- * Only reads stdin when it's actually redirected (a real pipe) — `[Console]::In.ReadToEnd()`
- * blocks forever if stdin is the inherited console/PTY and never sends EOF, which would hang
- * the hook until it's killed, so the status POST never fires.
+ * Only reads stdin when it's actually redirected (a real pipe) — reading the inherited
+ * console/PTY blocks forever because it never sends EOF, which would hang the hook until
+ * it's killed, so the status POST never fires. Stdin is decoded as UTF-8 explicitly: the
+ * agent writes UTF-8, while `[Console]::In` would use the console code page and garble
+ * anything beyond ASCII (umlauts in prompts, for one).
  */
 function powershellPayloadCapture(): string {
   return (
-    `if ([Console]::IsInputRedirected) { $payload=[Console]::In.ReadToEnd() } else { $payload='' };` +
+    `if ([Console]::IsInputRedirected) { $payload=(New-Object IO.StreamReader([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)).ReadToEnd() } else { $payload='' };` +
     `if ($payload -notmatch '^\\s*[\\{\\[]') { $payload='"omitted:not-json"' } ` +
     `elseif ($payload.Length -gt ${HOOK_PAYLOAD_MAX_BYTES}) { $payload='"omitted:too-large:'+$payload.Length+'"' }`
   );
@@ -116,7 +136,9 @@ function buildWindowsCommand(
     `$seq=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();` +
     `${powershellPayloadCapture()};` +
     `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","'+$seq+'"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
-  const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
+  // The body goes out as UTF-8 bytes: a string body would be re-encoded by Invoke-WebRequest
+  // with a code page that varies by PowerShell edition.
+  const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($b)) -UseBasicParsing|Out-Null`;
   const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch { Write-Error $_ }`;
 
   // Same guard as the bash variant, expressed for PowerShell. The caught error is written to

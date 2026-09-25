@@ -19,6 +19,8 @@ import { TerminalMonitorAdapterService } from "@cogno/core/api/terminal-monitor.
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { TerminalNavigatorAdapterService } from "@cogno/core/api/terminal-navigator.adapter.service";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
+import { TerminalPlacementAdapterService } from "@cogno/core/api/terminal-placement.adapter.service";
+import { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
 import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
 import { TerminalSearchApiService } from "@cogno/core/api/terminal-search-api.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
@@ -86,6 +88,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
+    { provide: TerminalPlacementPort, useExisting: TerminalPlacementAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {

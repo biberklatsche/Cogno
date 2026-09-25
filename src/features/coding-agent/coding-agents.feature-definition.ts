@@ -13,7 +13,7 @@ const codingAgentsSideMenuFeatureDefinition = {
   targetComponent: () =>
     import("./coding-agents-side.component").then((m) => m.CodingAgentsSideComponent),
   createLifecycle: (injector, sideMenuFeatureHandle) =>
-    injector.get(CodingAgentsSideMenuLifecycle).create(sideMenuFeatureHandle),
+    injector.get(CodingAgentsSideMenuLifecycle).create(injector, sideMenuFeatureHandle),
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const codingAgentsFeature: FeatureDefinition = {
