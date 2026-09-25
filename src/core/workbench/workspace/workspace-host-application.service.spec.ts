@@ -124,7 +124,7 @@ describe("WorkspaceHostApplicationService", () => {
 
     const terminalId = getSingleTerminalId(gridListService);
     emitSessionFact(terminalId, { type: "focusChanged", focused: true });
-    emitSessionFact(terminalId, { type: "titleChanged", oscCode: 2, title: "pwsh" });
+    emitSessionFact(terminalId, { type: "titleChanged", title: "pwsh" });
 
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
   });

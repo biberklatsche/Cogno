@@ -20,8 +20,8 @@ export type SessionFact =
   | { readonly type: "promptReported" }
   /** The user asked, from a command's marker menu, to see only that block. */
   | { readonly type: "filterBlockRequested"; readonly range: CommandMenuBlockRange }
-  /** A program set the terminal title (OSC 2). */
-  | { readonly type: "titleChanged"; readonly oscCode: 2; readonly title: string }
+  /** A program set the terminal title (OSC 0 / OSC 2), or cleared it (`undefined`). */
+  | { readonly type: "titleChanged"; readonly title: string | undefined }
   /** A program asked for the user's attention (OSC 9). */
   | { readonly type: "notificationRequested"; readonly message: string }
   /** A full-screen program took over the terminal, or gave it back. */
