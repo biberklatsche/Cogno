@@ -44,26 +44,51 @@ describe("TerminalTitleHandler", () => {
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
-  it("registers an OSC handler for 2", () => {
+  function oscHandlerFor(code: number) {
+    return handlerOf(
+      vi
+        .mocked(mockTerminal.parser.registerOscHandler)
+        .mock.calls.find((call) => call[0] === code)?.[1],
+    );
+  }
+
+  it("registers OSC handlers for 0 and 2", () => {
     handler.registerTerminal(mockTerminal);
+    expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(0, expect.any(Function));
     expect(mockTerminal.parser.registerOscHandler).toHaveBeenCalledWith(2, expect.any(Function));
   });
 
   it("states the new title when OSC 2 is received", () => {
     handler.registerTerminal(mockTerminal);
-    const oscHandler = handlerOf(
-      vi
-        .mocked(mockTerminal.parser.registerOscHandler)
-        .mock.calls.find((call) => call[0] === 2)?.[1],
-    );
 
-    const result = oscHandler("New Title 2");
+    const result = oscHandlerFor(2)("New Title 2");
 
     expect(result).toBe(true);
-    expect(facts).toEqual([{ type: "titleChanged", oscCode: 2, title: "New Title 2" }]);
+    expect(facts).toEqual([{ type: "titleChanged", title: "New Title 2" }]);
   });
 
-  it("disposes the registered OSC handler and survives dispose before register", () => {
+  it("states the new title when OSC 0 is received", () => {
+    handler.registerTerminal(mockTerminal);
+
+    const result = oscHandlerFor(0)("New Title 0");
+
+    expect(result).toBe(true);
+    expect(facts).toEqual([{ type: "titleChanged", title: "New Title 0" }]);
+  });
+
+  it("states a cleared title when a program hands the title back", () => {
+    handler.registerTerminal(mockTerminal);
+
+    oscHandlerFor(2)("");
+    oscHandlerFor(0)("   ");
+
+    expect(facts).toEqual([
+      { type: "titleChanged", title: undefined },
+      { type: "titleChanged", title: undefined },
+    ]);
+  });
+
+  it("disposes both OSC handlers and survives dispose before register", () => {
     const disposeSpy = vi.fn();
     vi.mocked(mockTerminal.parser.registerOscHandler).mockReturnValue({ dispose: disposeSpy });
     expect(() => handler.dispose()).not.toThrow();
@@ -71,6 +96,6 @@ describe("TerminalTitleHandler", () => {
     handler.registerTerminal(mockTerminal);
     handler.dispose();
 
-    expect(disposeSpy).toHaveBeenCalledTimes(1);
+    expect(disposeSpy).toHaveBeenCalledTimes(2);
   });
 });

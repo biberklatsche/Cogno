@@ -230,7 +230,7 @@ Kontext nicht umstellen — die Session bleibt im *unbekannten Kontext*,
 außer der Nutzer leitet das Token bewusst weiter (`SendEnv
 COGNO_SESSION_TOKEN` plus Integration auf dem Host). Dann ist der Wechsel
 authentisiert und gewollt. Für WSL wird die Umgebung übernommen, der
-Wechsel funktioniert ohne Zutun. Rein informative Sequenzen (OSC 2 Titel,
+Wechsel funktioniert ohne Zutun. Rein informative Sequenzen (OSC 0/2 Titel,
 OSC 9 Nachricht, 9;4 Fortschritt) bleiben ohne Token — sie ändern kein
 Modell, nur Anzeige.
 
@@ -265,7 +265,7 @@ Tab, einem Pane oder gar nicht angezeigt wird.
 
 Informationen fließen trotzdem nach oben — als **Fakten über das Modell**, nie
 als Befehle an die Workbench. Die Session veröffentlicht auf ihrem Modell bzw.
-ihrem Lebenszyklus: cwd geändert, Titel geändert (OSC 2), Kommando
+ihrem Lebenszyklus: cwd geändert, Titel geändert oder gelöscht (OSC 0/2), Kommando
 begonnen/beendet mit Dauer und Exit-Code, Shell-Kontext gewechselt,
 OSC-9-Nachricht empfangen, Fortschritt (OSC 9;4), Prozess beendet. Die
 Workbench abonniert das und entscheidet selbst: Tab-Titel und Busy-Indikator

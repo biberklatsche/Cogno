@@ -356,7 +356,7 @@ describe("GridListService", () => {
       const publishSpy = vi.spyOn(bus, "publish");
       emitSessionFact(initialTerminalId, { type: "focusChanged", focused: true });
 
-      emitSessionFact(initialTerminalId, { type: "titleChanged", oscCode: 2, title: "New Title" });
+      emitSessionFact(initialTerminalId, { type: "titleChanged", title: "New Title" });
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -369,13 +369,32 @@ describe("GridListService", () => {
       );
     });
 
+    it("falls back to the cwd when the program clears its title", () => {
+      emitSessionFact(initialTerminalId, { type: "focusChanged", focused: true });
+      emitSessionFact(initialTerminalId, { type: "cwdReported", cwd: "/home/me/project" });
+      emitSessionFact(initialTerminalId, { type: "titleChanged", title: "vim" });
+      const publishSpy = vi.spyOn(bus, "publish");
+
+      emitSessionFact(initialTerminalId, { type: "titleChanged", title: undefined });
+
+      let grids: Grid[] = [];
+      service.grids$.subscribe((g) => (grids = g));
+      expect(grids[0].tree.root.data?.title).toBeUndefined();
+      expect(publishSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "ChangeTabTitle",
+          payload: { tabId, title: "/home/me/project" },
+        }),
+      );
+    });
+
     it("should update pane title without changing tab title when pane is not focused", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       service.split(initialTerminalId, "vertical", "r");
       emitSessionFact(initialTerminalId, { type: "focusChanged", focused: true });
 
       const publishSpy = vi.spyOn(bus, "publish");
-      emitSessionFact("term-2", { type: "titleChanged", oscCode: 2, title: "Second Pane" });
+      emitSessionFact("term-2", { type: "titleChanged", title: "Second Pane" });
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -391,8 +410,8 @@ describe("GridListService", () => {
     it("should publish focused pane title on pane focus change", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       service.split(initialTerminalId, "vertical", "r");
-      emitSessionFact(initialTerminalId, { type: "titleChanged", oscCode: 2, title: "First Pane" });
-      emitSessionFact("term-2", { type: "titleChanged", oscCode: 2, title: "Second Pane" });
+      emitSessionFact(initialTerminalId, { type: "titleChanged", title: "First Pane" });
+      emitSessionFact("term-2", { type: "titleChanged", title: "Second Pane" });
 
       const publishSpy = vi.spyOn(bus, "publish");
       emitSessionFact("term-2", { type: "focusChanged", focused: true });
@@ -457,7 +476,7 @@ describe("GridListService", () => {
         type: "TabAdded",
         payload: { tabId, isActive: true },
       } as TabAddedEvent);
-      emitSessionFact("term-1", { type: "titleChanged", oscCode: 2, title: "Pane Title" });
+      emitSessionFact("term-1", { type: "titleChanged", title: "Pane Title" });
 
       const configs = service.getGridConfigs();
       expect((configs[0].pane as TerminalConfig).title).toBe("Pane Title");

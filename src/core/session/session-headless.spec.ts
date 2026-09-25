@@ -198,7 +198,7 @@ describe("headless session (handshake token)", () => {
     ]);
   });
 
-  it("still processes OSC 2 and OSC 9, which carry no token", async () => {
+  it("still processes OSC 0, OSC 2 and OSC 9, which carry no token", async () => {
     const facts: SessionFact[] = [];
     session.model.facts$.subscribe((fact) => facts.push(fact));
     new TerminalTitleHandler(session.model).registerTerminal(session.terminal);
@@ -207,9 +207,11 @@ describe("headless session (handshake token)", () => {
     );
 
     await session.write(`${ESC}]2;my title${BEL}`);
+    await session.write(`${ESC}]0;icon and title${BEL}`);
     await session.write(`${ESC}]9;hello${BEL}`);
 
-    expect(facts).toContainEqual({ type: "titleChanged", oscCode: 2, title: "my title" });
+    expect(facts).toContainEqual({ type: "titleChanged", title: "my title" });
+    expect(facts).toContainEqual({ type: "titleChanged", title: "icon and title" });
     expect(facts).toContainEqual({ type: "notificationRequested", message: "hello" });
   });
 });

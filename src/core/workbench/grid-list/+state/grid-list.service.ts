@@ -521,8 +521,8 @@ export class GridListService {
     this.publishPaneTitleToTab(focused.tabId, focused.node.data);
   }
 
-  private applyPaneTitle(terminalId: TerminalId, title: string): void {
-    if (!title) return;
+  /** `undefined` clears the program's title; the pane falls back to its cwd. */
+  private applyPaneTitle(terminalId: TerminalId, title: string | undefined): void {
     const gridList = this.getActiveWorkspaceGridList();
     const gridAndNode = this.locateInActiveWorkspace(terminalId);
     if (!gridAndNode?.node.data) return;
