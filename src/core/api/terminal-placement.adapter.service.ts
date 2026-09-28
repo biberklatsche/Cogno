@@ -48,6 +48,7 @@ export class TerminalPlacementAdapterService extends TerminalPlacementPort {
       workspacePosition,
       // A persisted tab may lack a system title; the card then shows the user title or nothing.
       tabTitle: tab.userTitle || tab.systemTitle || "",
+      tabColor: tab.color,
       tabIndex,
     };
   }

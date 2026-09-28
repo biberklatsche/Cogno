@@ -11,6 +11,8 @@ export type TerminalPlacement = {
   readonly workspacePosition: number;
   /** The tab as its header shows it: the user's name for it, else its system title. */
   readonly tabTitle: string;
+  /** Colour name of the tab, absent when the user gave it none. */
+  readonly tabColor?: string;
   /** Index of the tab in its workspace's tab bar. */
   readonly tabIndex: number;
 };

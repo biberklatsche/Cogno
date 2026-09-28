@@ -38,7 +38,7 @@ describe("TerminalPlacementAdapterService", () => {
       tabs$,
       getTabConfigs: vi.fn(() => [
         { tabId: "tab-1", systemTitle: "first" },
-        { tabId: "tab-2", systemTitle: "zsh", userTitle: "Agent" },
+        { tabId: "tab-2", systemTitle: "zsh", userTitle: "Agent", color: "red" },
       ]),
     };
 
@@ -60,6 +60,7 @@ describe("TerminalPlacementAdapterService", () => {
       workspaceColor: "blue",
       workspacePosition: 1,
       tabTitle: "Agent",
+      tabColor: "red",
       tabIndex: 1,
     });
   });

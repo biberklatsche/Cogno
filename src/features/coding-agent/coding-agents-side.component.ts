@@ -148,6 +148,8 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                   <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
                   <span
                     class="agent-tab"
+                    [class.colored]="!!agent.placement?.tabColor"
+                    [style.--tab-color]="agent.placement?.tabColor ? 'var(--color-' + agent.placement?.tabColor + ')' : null"
                     [appStartEllipsis]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
                     [appTooltip]="agent.cwd ?? ''"
                   ></span>
@@ -444,6 +446,15 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       opacity: 0.55;
       white-space: nowrap;
       overflow: hidden;
+    }
+
+    /* A coloured tab is marked here as in its header: tinted chip with the tab's colour. */
+    .agent-tab.colored {
+      opacity: 1;
+      padding: 0 6px;
+      border: 1px solid color-mix(in srgb, var(--tab-color) 60%, transparent);
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--tab-color) 25%, transparent);
     }
 
     .agent-badge {
