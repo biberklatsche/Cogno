@@ -35,9 +35,12 @@ describe("TerminalTitleHandler", () => {
   let handler: TerminalTitleHandler;
   let mockTerminal: Terminal;
   let facts: SessionFact[];
+  let model: SessionModel;
 
   beforeEach(() => {
-    const model = createModel("test-terminal-id");
+    model = createModel("test-terminal-id");
+    // Only a running command's program may set the title.
+    model.startCommand("vim");
     facts = [];
     model.facts$.subscribe((fact) => facts.push(fact));
     handler = new TerminalTitleHandler(model);
@@ -86,6 +89,29 @@ describe("TerminalTitleHandler", () => {
       { type: "titleChanged", title: undefined },
       { type: "titleChanged", title: undefined },
     ]);
+  });
+
+  it("states no title when ConPTY reports the shell executable path", () => {
+    handler.registerTerminal(mockTerminal);
+
+    oscHandlerFor(0)("C:\\Program Files\\PowerShell\\7\\pwsh.exe");
+    oscHandlerFor(0)("C:\\WINDOWS\\system32\\cmd.exe");
+
+    expect(facts).toEqual([
+      { type: "titleChanged", title: undefined },
+      { type: "titleChanged", title: undefined },
+    ]);
+  });
+
+  it("states nothing for titles set at the prompt", () => {
+    model.endCommand();
+    facts = [];
+    handler.registerTerminal(mockTerminal);
+
+    const result = oscHandlerFor(0)("me@host: ~/project");
+
+    expect(result).toBe(true);
+    expect(facts).toEqual([]);
   });
 
   it("disposes both OSC handlers and survives dispose before register", () => {

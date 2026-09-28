@@ -525,7 +525,8 @@ export class GridListService {
   private applyPaneTitle(terminalId: TerminalId, title: string | undefined): void {
     const gridList = this.getActiveWorkspaceGridList();
     const gridAndNode = this.locateInActiveWorkspace(terminalId);
-    if (!gridAndNode?.node.data) return;
+    // Every command end clears the title; a pane without one stays untouched.
+    if (!gridAndNode?.node.data || gridAndNode.node.data.title === title) return;
     gridAndNode.node.data = { ...gridAndNode.node.data, title };
     this.setActiveWorkspaceGridList(gridList);
     if (gridAndNode.node.data.isFocused) {

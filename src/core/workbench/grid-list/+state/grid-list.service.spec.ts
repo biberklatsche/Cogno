@@ -388,6 +388,17 @@ describe("GridListService", () => {
       );
     });
 
+    it("leaves a pane without a title untouched when the title is cleared", () => {
+      emitSessionFact(initialTerminalId, { type: "focusChanged", focused: true });
+      const publishSpy = vi.spyOn(bus, "publish");
+
+      emitSessionFact(initialTerminalId, { type: "titleChanged", title: undefined });
+
+      expect(publishSpy).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: "ChangeTabTitle" }),
+      );
+    });
+
     it("should update pane title without changing tab title when pane is not focused", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       service.split(initialTerminalId, "vertical", "r");

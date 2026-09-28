@@ -201,6 +201,8 @@ describe("headless session (handshake token)", () => {
   it("still processes OSC 0, OSC 2 and OSC 9, which carry no token", async () => {
     const facts: SessionFact[] = [];
     session.model.facts$.subscribe((fact) => facts.push(fact));
+    // Titles count only while a command runs.
+    session.model.startCommand("vim");
     new TerminalTitleHandler(session.model).registerTerminal(session.terminal);
     new TerminalNotificationHandler(session.model, new MachineState()).registerTerminal(
       session.terminal,

@@ -325,9 +325,11 @@ export class SessionModel {
     }
   }
 
+  /** The command's program title goes with it. */
   endCommand(): void {
     this.update({ isCommandRunning: false });
     this.report({ type: "busyChanged", isBusy: false });
+    this.report({ type: "titleChanged", title: undefined });
   }
 
   getCommandDuration(): number | undefined {
