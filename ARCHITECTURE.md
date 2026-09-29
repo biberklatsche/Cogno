@@ -855,7 +855,9 @@ Session-Identität und Capability. Damit kann eine verspätete asynchrone Antwor
 nach einem Fokuswechsel nicht in das falsche Terminal schreiben.
 
 **Übergreifende Features** bekommen `TerminalMonitorPort` (Aktivität, Ende und
-cwd je Terminal), `TerminalNavigator.navigateToTerminal(id)` (Workspace,
+cwd je Terminal, dazu `resolvePath` — ein Pfad, wie ein Programm im Terminal ihn
+nennt, als Cogno-Pfad im Shell-Kontext dieses Terminals; Konsument: geänderte
+Dateien auf den Coding-Agent-Karten), `TerminalNavigator.navigateToTerminal(id)` (Workspace,
 Tab und Fokus auf ein Terminal bringen) und als dessen lesendes Gegenstück
 `TerminalPlacementPort.getPlacement(id)` (Workspace und Tab eines Terminals
 samt Anzeigereihenfolge, plus `changes$`; Konsument: Coding-Agents-Panel,

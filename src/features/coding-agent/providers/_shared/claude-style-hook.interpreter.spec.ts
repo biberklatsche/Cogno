@@ -1,10 +1,15 @@
+import { AgentStatus } from "@cogno/shared/domain";
 import { describe, expect, it } from "vitest";
 import { interpretClaudeStyleHook } from "./claude-style-hook.interpreter";
+import { editedFilesByTool } from "./hook-payload";
+
+const interpret = (hookEvent: string, status: AgentStatus, payload: unknown) =>
+  interpretClaudeStyleHook(hookEvent, status, payload, editedFilesByTool({ Edit: "file_path" }));
 
 describe("interpretClaudeStyleHook", () => {
   it("takes a submitted prompt as the task, first line only", () => {
     expect(
-      interpretClaudeStyleHook("UserPromptSubmit", "working", {
+      interpret("UserPromptSubmit", "working", {
         prompt: "  Fix the login bug\n\nDetails…",
       }),
     ).toEqual({
@@ -16,10 +21,10 @@ describe("interpretClaudeStyleHook", () => {
   });
 
   it("ignores prompts the harness injects, such as task notifications", () => {
-    const notification = interpretClaudeStyleHook("UserPromptSubmit", "working", {
+    const notification = interpret("UserPromptSubmit", "working", {
       prompt: "<task-notification>\n<task-id>abc</task-id>",
     });
-    const agentMessage = interpretClaudeStyleHook("UserPromptSubmit", "working", {
+    const agentMessage = interpret("UserPromptSubmit", "working", {
       prompt: '<agent-message from="a12e" name="fork">\nDone',
     });
     expect(notification).toMatchObject({ kind: "status", details: {} });
@@ -28,20 +33,20 @@ describe("interpretClaudeStyleHook", () => {
 
   it("keeps a user prompt that merely starts with a tag", () => {
     expect(
-      interpretClaudeStyleHook("UserPromptSubmit", "working", { prompt: "<div> is not centered" }),
+      interpret("UserPromptSubmit", "working", { prompt: "<div> is not centered" }),
     ).toMatchObject({ details: { task: "<div> is not centered" } });
   });
 
   it("prefers a tool's description over its raw command, then command, then file path", () => {
-    const withDescription = interpretClaudeStyleHook("PreToolUse", "working", {
+    const withDescription = interpret("PreToolUse", "working", {
       tool_name: "Bash",
       tool_input: { command: "pnpm i", description: "Install deps" },
     });
-    const withCommand = interpretClaudeStyleHook("PreToolUse", "working", {
+    const withCommand = interpret("PreToolUse", "working", {
       tool_name: "Bash",
       tool_input: { command: "ls" },
     });
-    const withPath = interpretClaudeStyleHook("PreToolUse", "working", {
+    const withPath = interpret("PreToolUse", "working", {
       tool_name: "Edit",
       tool_input: { file_path: "/a/b.ts" },
     });
@@ -52,10 +57,10 @@ describe("interpretClaudeStyleHook", () => {
 
   it("uses a notification message or an error as the activity", () => {
     expect(
-      interpretClaudeStyleHook("Notification", "question", { message: "Claude needs permission" }),
+      interpret("Notification", "question", { message: "Claude needs permission" }),
     ).toMatchObject({ details: { activity: "Claude needs permission" } });
     expect(
-      interpretClaudeStyleHook("PostToolUseFailure", "error", {
+      interpret("PostToolUseFailure", "error", {
         tool_name: "Bash",
         error: "exit 1",
       }),
@@ -63,13 +68,13 @@ describe("interpretClaudeStyleHook", () => {
   });
 
   it("reports the closing message as the result", () => {
-    expect(
-      interpretClaudeStyleHook("Stop", "ready", { last_assistant_message: "Done.\nMore" }),
-    ).toMatchObject({ details: { result: "Done." } });
+    expect(interpret("Stop", "ready", { last_assistant_message: "Done.\nMore" })).toMatchObject({
+      details: { result: "Done." },
+    });
   });
 
   it("truncates long lines", () => {
-    const event = interpretClaudeStyleHook("UserPromptSubmit", "working", {
+    const event = interpret("UserPromptSubmit", "working", {
       prompt: "x".repeat(200),
     });
     const task = event.kind === "status" ? event.details.task : undefined;
@@ -78,12 +83,12 @@ describe("interpretClaudeStyleHook", () => {
   });
 
   it("reads subagent starts and stops with their id", () => {
-    expect(interpretClaudeStyleHook("SubagentStart", "working", { agent_id: "a" })).toEqual({
+    expect(interpret("SubagentStart", "working", { agent_id: "a" })).toEqual({
       kind: "subagent",
       change: "start",
       agentId: "a",
     });
-    expect(interpretClaudeStyleHook("SubagentStop", "ready", {})).toEqual({
+    expect(interpret("SubagentStop", "ready", {})).toEqual({
       kind: "subagent",
       change: "stop",
       agentId: undefined,
@@ -91,24 +96,63 @@ describe("interpretClaudeStyleHook", () => {
   });
 
   it("marks session start and end as boundaries, except a restart after compaction", () => {
-    expect(interpretClaudeStyleHook("SessionStart", "ready", { source: "startup" })).toMatchObject({
+    expect(interpret("SessionStart", "ready", { source: "startup" })).toMatchObject({
       sessionBoundary: true,
     });
-    expect(interpretClaudeStyleHook("SessionStart", "ready", { source: "compact" })).toMatchObject({
+    expect(interpret("SessionStart", "ready", { source: "compact" })).toMatchObject({
       sessionBoundary: false,
     });
-    expect(interpretClaudeStyleHook("SessionEnd", "ready", {})).toMatchObject({
+    expect(interpret("SessionEnd", "ready", {})).toMatchObject({
       sessionBoundary: true,
     });
-    expect(interpretClaudeStyleHook("Stop", "ready", {})).toMatchObject({
+    expect(interpret("Stop", "ready", {})).toMatchObject({
       sessionBoundary: false,
     });
   });
 
   it("returns no details for omitted or non-object payloads", () => {
-    expect(interpretClaudeStyleHook("Stop", "ready", "omitted:not-json")).toMatchObject({
+    expect(interpret("Stop", "ready", "omitted:not-json")).toMatchObject({
       details: {},
     });
-    expect(interpretClaudeStyleHook("Stop", "ready", undefined)).toMatchObject({ details: {} });
+    expect(interpret("Stop", "ready", undefined)).toMatchObject({ details: {} });
+  });
+
+  it("reads the model, but not one reported from inside a subagent", () => {
+    expect(
+      interpret("SessionStart", "ready", { source: "startup", model: "claude-opus-5" }),
+    ).toMatchObject({
+      details: { model: "claude-opus-5" },
+    });
+    expect(interpret("PreToolUse", "working", { model: "gpt-5.5", agent_id: "a" })).toMatchObject({
+      details: {},
+    });
+  });
+
+  it("reads a model switch without a status", () => {
+    expect(interpret("PostModelSwitch", "ready", { to_model: "claude-sonnet-5" })).toEqual({
+      kind: "model",
+      model: "claude-sonnet-5",
+    });
+  });
+
+  it("reports a file as edited only once its tool call finished", () => {
+    const payload = { tool_name: "Edit", tool_input: { file_path: "/a/b.ts" } };
+    expect(interpret("PostToolUse", "working", payload)).toMatchObject({
+      details: { editedFiles: ["/a/b.ts"] },
+    });
+    const pending = interpret("PreToolUse", "working", payload);
+    expect(pending.kind === "status" && pending.details.editedFiles).toBeFalsy();
+  });
+
+  it("describes compaction as the activity", () => {
+    expect(interpret("PreCompact", "working", { trigger: "auto" })).toMatchObject({
+      details: { activity: "Compacting context (auto)…" },
+    });
+    expect(interpret("PreCompact", "working", { trigger: "manual" })).toMatchObject({
+      details: { activity: "Compacting context…" },
+    });
+    expect(interpret("PostCompact", "working", { trigger: "auto" })).toMatchObject({
+      details: { activity: "Context compacted" },
+    });
   });
 });

@@ -25,4 +25,26 @@ describe("interpretGeminiHook", () => {
       sessionBoundary: true,
     });
   });
+
+  it("reads the model, finished file edits and compaction", () => {
+    expect(
+      interpretGeminiHook("BeforeModel", "working", { llm_request: { model: "gemini-3-pro" } }),
+    ).toMatchObject({ details: { model: "gemini-3-pro" } });
+    expect(
+      interpretGeminiHook("AfterTool", "working", {
+        tool_name: "replace",
+        tool_input: { file_path: "/a/b.ts" },
+        tool_response: {},
+      }),
+    ).toMatchObject({ details: { editedFiles: ["/a/b.ts"] } });
+    const failed = interpretGeminiHook("AfterTool", "working", {
+      tool_name: "replace",
+      tool_input: { file_path: "/a/b.ts" },
+      tool_response: { error: "no match" },
+    });
+    expect(failed.kind === "status" && failed.details.editedFiles).toBeFalsy();
+    expect(interpretGeminiHook("PreCompress", "working", { trigger: "auto" })).toMatchObject({
+      details: { activity: "Compacting context (auto)…" },
+    });
+  });
 });

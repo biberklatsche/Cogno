@@ -5,7 +5,10 @@ import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpret
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
 import { withoutCognoHooks } from "../_shared/hook-groups";
+import { editedFilesByTool } from "../_shared/hook-payload";
 import { CLAUDE_CODE_CONFIG, ClaudeSettings } from "./claude-code.config";
+
+const readEditedFiles = editedFilesByTool(CLAUDE_CODE_CONFIG.editTools);
 
 @Injectable({ providedIn: "root" })
 export class ClaudeCodeProvider implements ICodingAgentProvider {
@@ -15,7 +18,7 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
   constructor(private readonly configFile: ConfigFileService) {}
 
   interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretClaudeStyleHook(hookEvent, status, payload);
+    return interpretClaudeStyleHook(hookEvent, status, payload, readEditedFiles);
   }
 
   async isAgentInstalled(): Promise<boolean> {

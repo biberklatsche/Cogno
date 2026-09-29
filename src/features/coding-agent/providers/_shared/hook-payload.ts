@@ -30,14 +30,42 @@ export function stringField(fields: PayloadFields | undefined, key: string): str
   return typeof value === "string" && value ? value : undefined;
 }
 
+/** Reads the files a finished tool call changed; each provider knows its own edit tools. */
+export type EditedFilesReader = (fields: PayloadFields | undefined) => ReadonlyArray<string>;
+
+/**
+ * An EditedFilesReader for tools that name the file they change in one input field,
+ * given as tool name → field.
+ */
+export function editedFilesByTool(
+  pathFieldByTool: Readonly<Record<string, string>>,
+): EditedFilesReader {
+  return (fields) => {
+    const toolName = stringField(fields, "tool_name");
+    const pathField = toolName ? pathFieldByTool[toolName] : undefined;
+    const path = pathField ? stringField(toolInput(fields), pathField) : undefined;
+    return path ? [path] : [];
+  };
+}
+
+/** Activity while the agent compacts its context; `trigger` is "auto" when it did so on its own. */
+export function compactingActivity(trigger: unknown): string {
+  return trigger === "auto" ? "Compacting context (auto)…" : "Compacting context…";
+}
+
+export const COMPACTED_ACTIVITY = "Context compacted";
+
+function toolInput(fields: PayloadFields | undefined): PayloadFields | undefined {
+  const input = fields?.["tool_input"];
+  return input && typeof input === "object" ? (input as PayloadFields) : undefined;
+}
+
 /**
  * A tool call as "Tool: what it does". The tool's own description beats its raw
  * arguments: "Bash: Install dependencies" says more than the command line.
  */
 export function describeToolCall(fields: PayloadFields | undefined): string | undefined {
-  const toolInput = fields?.["tool_input"];
-  const input =
-    toolInput && typeof toolInput === "object" ? (toolInput as PayloadFields) : undefined;
+  const input = toolInput(fields);
   const text = firstLine(
     input?.["description"] ?? input?.["command"] ?? input?.["file_path"] ?? input?.["pattern"],
   );

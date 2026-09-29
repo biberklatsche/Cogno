@@ -8,6 +8,10 @@ export type HookDetails = {
   readonly activity?: string;
   /** The agent's closing message. */
   readonly result?: string;
+  /** The model the agent runs on. */
+  readonly model?: string;
+  /** Files a tool call changed. */
+  readonly editedFiles?: ReadonlyArray<string>;
 };
 
 /**
@@ -29,6 +33,12 @@ export type AgentHookEvent =
       readonly change: "start" | "stop";
       /** The subagent's id when the provider reports one. */
       readonly agentId?: string;
+    }
+  | {
+      /** The session switched models; says nothing about the agent's status. */
+      readonly kind: "model";
+      /** The model switched to, when the payload names it. */
+      readonly model?: string;
     };
 
 export interface ICodingAgentProvider {

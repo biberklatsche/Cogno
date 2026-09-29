@@ -7,7 +7,7 @@ import type {
   TerminalMonitorPort,
 } from "@cogno/core/api/terminal-monitor-port";
 import type { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
-import type { TerminalIpcMessage } from "@cogno/shared/domain";
+import type { AgentStatus, TerminalIpcMessage } from "@cogno/shared/domain";
 import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +16,7 @@ import type { CodingAgentProviderRegistry } from "./coding-agent-provider-regist
 import { CodingAgentStatusService, resolveShownStatus } from "./coding-agent-status.service";
 import { interpretClaudeStyleHook } from "./providers/_shared/claude-style-hook.interpreter";
 import { CODING_AGENT_STATUS_ACTION } from "./providers/_shared/hook-command.builder";
+import { editedFilesByTool } from "./providers/_shared/hook-payload";
 
 const GRACE_MS = 2000;
 
@@ -97,12 +98,24 @@ describe("CodingAgentStatusService", () => {
       { getConfiguration: () => ({}) } as unknown as ApplicationConfigurationPort,
       {
         providers: [
-          { id: "claude-code", name: "Claude Code", interpretHook: interpretClaudeStyleHook },
+          {
+            id: "claude-code",
+            name: "Claude Code",
+            interpretHook: (hookEvent: string, status: AgentStatus, payload: unknown) =>
+              interpretClaudeStyleHook(
+                hookEvent,
+                status,
+                payload,
+                editedFilesByTool({ Edit: "file_path", Write: "file_path" }),
+              ),
+          },
         ],
       } as unknown as CodingAgentProviderRegistry,
       {
         isTerminalActive: () => true,
         getCwd: () => "/repo",
+        resolvePath: (_terminalId: string, path: string) =>
+          path.startsWith("/") ? path : `/repo/${path}`,
         activity$: activity,
         terminated$: terminated,
         cwdChanges$: new Subject(),
@@ -318,6 +331,39 @@ describe("CodingAgentStatusService", () => {
       expect(agent()?.status).toBe("working");
       expect(agent()?.providerName).toBe("unknown-agent");
       expect(agent()?.task).toBeUndefined();
+    });
+  });
+
+  describe("model and edited files", () => {
+    it("collects the files a task changed, once each, and starts over with a new prompt", () => {
+      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
+      ping("working", "PostToolUse", { tool_name: "Write", tool_input: { file_path: "a.md" } });
+      ping("working", "PostToolUse", { tool_name: "Edit", tool_input: { file_path: "b.md" } });
+      ping("working", "PostToolUse", { tool_name: "Edit", tool_input: { file_path: "a.md" } });
+      ping("working", "PostToolUse", {
+        tool_name: "Edit",
+        tool_input: { file_path: "/repo/a.md" },
+      });
+      ping("working", "PostToolUse", { tool_name: "Read", tool_input: { file_path: "c.md" } });
+      expect(agent()?.editedFiles).toEqual(["/repo/a.md", "/repo/b.md"]);
+
+      ping("working", "UserPromptSubmit", { prompt: "Now a haiku" });
+      expect(agent()?.editedFiles).toEqual([]);
+    });
+
+    it("keeps the model across tasks and follows a model switch", () => {
+      ping("ready", "SessionStart", { source: "startup", model: "claude-opus-5" });
+      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
+      expect(agent()?.model).toBe("claude-opus-5");
+
+      ping("ready", "PostModelSwitch", { to_model: "claude-sonnet-5" });
+      expect(agent()?.model).toBe("claude-sonnet-5");
+      expect(agent()?.status).toBe("working");
+    });
+
+    it("does not create an agent from a model switch alone", () => {
+      ping("ready", "PostModelSwitch", { to_model: "claude-sonnet-5" });
+      expect(service.activeAgents()).toHaveLength(0);
     });
   });
 

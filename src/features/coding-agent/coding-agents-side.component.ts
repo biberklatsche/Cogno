@@ -5,6 +5,7 @@ import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
 import {
   buildNotificationPreferencesMenuItems,
   NotificationPreferencesState,
+  relativeCognoPath,
 } from "@cogno/shared/domain";
 import {
   ContextMenuOverlayService,
@@ -135,17 +136,27 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                   @if (agent.subagentCount > 0) {
                     <span class="subagent-pill">{{ countOf(agent.subagentCount, "subagent") }}</span>
                   }
-                  @if (agent.providerName) {
-                    <span class="agent-badge">{{ agent.providerName }}</span>
-                  }
+                  <span class="agent-identity">
+                    @if (agent.model) {
+                      <span class="agent-model" [appTooltip]="agent.model">{{ agent.model }}</span>
+                    }
+                    @if (agent.providerName) {
+                      <span class="agent-badge">{{ agent.providerName }}</span>
+                    }
+                  </span>
                 </div>
                 @if (agent.task) {
                   <span class="agent-task" [appTooltip]="agent.task">{{ agent.task }}</span>
                 } @else {
                   <span class="agent-task placeholder">No prompt yet</span>
                 }
+                <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
                 <div class="agent-footer">
-                  <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
+                  @if (agent.editedFiles.length > 0) {
+                    <span class="agent-files" [appTooltip]="editedFilesTooltip(agent)">
+                      {{ countOf(agent.editedFiles.length, "file") }} changed
+                    </span>
+                  }
                   <span
                     class="agent-tab"
                     [class.colored]="!!agent.placement?.tabColor"
@@ -392,7 +403,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       text-align: center;
     }
 
-    /* One card = fixed slots: identity, task, state, detail. */
+    /* One card = fixed slots: state, task, detail, then changed files and tab. */
     .agent-card {
       display: flex;
       flex-direction: column;
@@ -429,20 +440,21 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       background: color-mix(in srgb, var(--agent-state-color) 14%, var(--background-color));
     }
 
+    /* Changed files on the left, the tab on the right, even when there are no files. */
     .agent-footer {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 0.75rem;
       font-size: 0.75rem;
       line-height: 1.4;
-      /* Fixed height: an empty detail line must not shrink the card. */
+      /* Fixed height: a footer without files must not shrink the card. */
       height: 1.4em;
     }
 
     .agent-tab {
       flex-shrink: 0;
-      max-width: 45%;
+      max-width: 55%;
+      margin-left: auto;
       opacity: 0.55;
       white-space: nowrap;
       overflow: hidden;
@@ -468,7 +480,31 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       color: var(--color-white);
       white-space: nowrap;
       flex-shrink: 0;
+    }
+
+    /* Model and provider sit at the end of the state line; the model gives way first when it is narrow. */
+    .agent-identity {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 0;
       margin-left: auto;
+    }
+
+    .agent-model {
+      min-width: 0;
+      font-size: 0.75rem;
+      color: var(--foreground-color);
+      opacity: 0.55;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .agent-files {
+      flex-shrink: 0;
+      opacity: 0.65;
+      white-space: nowrap;
     }
 
     .agent-task {
@@ -525,8 +561,10 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     }
 
     .agent-detail {
-      flex: 1;
-      min-width: 0;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      /* Fixed height: an empty detail line must not shrink the card. */
+      height: 1.4em;
       font-family: monospace;
       opacity: 0.65;
       white-space: nowrap;
@@ -655,6 +693,13 @@ export class CodingAgentsSideComponent {
   /** The detail line follows the state: the closing message once done, else the last activity. */
   detail(agent: ActiveAgent): string | undefined {
     return agent.status === "ready" ? agent.result : agent.activity;
+  }
+
+  /** One changed file per line, relative to the terminal's cwd where it lies inside. */
+  editedFilesTooltip(agent: ActiveAgent): string {
+    return agent.editedFiles
+      .map((path) => (agent.cwd && relativeCognoPath(agent.cwd, path)) || path)
+      .join("\n");
   }
 
   openNotificationMenu(event: Event): void {

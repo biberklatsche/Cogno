@@ -19,6 +19,7 @@ export const CLAUDE_STYLE_HOOK_EVENT = {
   preCompact: "PreCompact",
   postCompact: "PostCompact",
   taskCompleted: "TaskCompleted",
+  postModelSwitch: "PostModelSwitch",
 } as const;
 
 /** `source` of a SessionStart that only continues the session after compaction. */

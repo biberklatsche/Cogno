@@ -31,6 +31,10 @@ export type ActiveAgent = {
   readonly activity?: string;
   /** The agent's closing message once it stopped. */
   readonly result?: string;
+  /** The model it runs on, once its provider reported one. */
+  readonly model?: string;
+  /** Files it changed while working on the task, in the order first changed. */
+  readonly editedFiles: ReadonlyArray<string>;
   /** Subagents currently running under this agent. */
   readonly subagentCount: number;
   readonly placement?: TerminalPlacement;
@@ -178,7 +182,16 @@ export class CodingAgentStatusService {
       : { kind: "status", status: ping.status, sessionBoundary: false, details: {} };
 
     if (event.kind === "subagent") this.onSubagentEvent(terminalId, identity, event);
+    else if (event.kind === "model") this.onModelSwitch(terminalId, event.model);
     else this.onAgentStatus(terminalId, identity, ping.seq, event);
+  }
+
+  /** A model switch changes only the model; an agent never seen stays unknown. */
+  private onModelSwitch(terminalId: string, model: string | undefined): void {
+    const state = this.states.get(terminalId);
+    if (!state || !model) return;
+    state.agent = { ...state.agent, model };
+    this.publish();
   }
 
   /**
@@ -250,7 +263,7 @@ export class CodingAgentStatusService {
       ...this.mergeDetails(
         state.agent,
         event.status === "ready" || state.readyDeferred,
-        event.details,
+        this.withResolvedFiles(terminalId, event.details),
       ),
       subagentCount: state.subagentIds.size,
       placement: this.placement.getPlacement(terminalId),
@@ -284,23 +297,50 @@ export class CodingAgentStatusService {
   }
 
   /**
-   * A new prompt starts a fresh task: activity and result are cleared. Otherwise a
-   * hook without usable detail keeps what was known. The result is kept only while
-   * the agent is ready, or while its "ready" is merely deferred by running
+   * Agents name changed files absolute or relative to their cwd, in their own
+   * spelling; resolved in the terminal's context, one file counts once. A path the
+   * terminal cannot resolve (remote shell) is kept as the agent named it.
+   */
+  private withResolvedFiles(terminalId: string, details: HookDetails): HookDetails {
+    if (!details.editedFiles) return details;
+    return {
+      ...details,
+      editedFiles: details.editedFiles.map(
+        (path) => this.monitor.resolvePath(terminalId, path) ?? path,
+      ),
+    };
+  }
+
+  /**
+   * A new prompt starts a fresh task: activity, result and edited files are cleared.
+   * Otherwise a hook without usable detail keeps what was known. The result is kept
+   * only while the agent is ready, or while its "ready" is merely deferred by running
    * subagents, whose tool hooks would otherwise wipe it before the card shows it.
+   * The model belongs to the session, not the task: it stays until another is reported.
    */
   private mergeDetails(
     existing: ActiveAgent,
     keepResult: boolean,
     details: HookDetails,
-  ): Pick<ActiveAgent, "task" | "activity" | "result"> {
+  ): Pick<ActiveAgent, "task" | "activity" | "result" | "model" | "editedFiles"> {
+    const model = details.model ?? existing.model;
     if (details.task !== undefined) {
-      return { task: details.task, activity: undefined, result: undefined };
+      return {
+        task: details.task,
+        activity: undefined,
+        result: undefined,
+        model,
+        editedFiles: [...new Set(details.editedFiles)],
+      };
     }
     return {
       task: existing.task,
       activity: details.activity ?? existing.activity,
       result: keepResult ? (details.result ?? existing.result) : undefined,
+      model,
+      editedFiles: details.editedFiles
+        ? [...new Set([...existing.editedFiles, ...details.editedFiles])]
+        : existing.editedFiles,
     };
   }
 
@@ -316,6 +356,7 @@ export class CodingAgentStatusService {
         status,
         statusSince: Date.now(),
         cwd: this.monitor.getCwd(terminalId),
+        editedFiles: [],
         subagentCount: 0,
         placement: this.placement.getPlacement(terminalId),
       },

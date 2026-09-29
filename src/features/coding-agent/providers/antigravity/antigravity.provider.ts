@@ -3,6 +3,7 @@ import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-age
 import { AgentStatus } from "@cogno/shared/domain";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand } from "../_shared/hook-command.builder";
+import { payloadFields, stringField } from "../_shared/hook-payload";
 import {
   ANTIGRAVITY_CONFIG,
   AntigravityHookDefinition,
@@ -16,9 +17,10 @@ export class AntigravityProvider implements ICodingAgentProvider {
 
   constructor(private readonly configFile: ConfigFileService) {}
 
-  /** Antigravity's hook payloads are not read yet: only the status the hook reports counts. */
-  interpretHook(_hookEvent: string, status: AgentStatus, _payload: unknown): AgentHookEvent {
-    return { kind: "status", status, sessionBoundary: false, details: {} };
+  /** Of Antigravity's hook payloads only `modelName`, sent on every hook, is read. */
+  interpretHook(_hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
+    const model = stringField(payloadFields(payload), "modelName");
+    return { kind: "status", status, sessionBoundary: false, details: model ? { model } : {} };
   }
 
   async isAgentInstalled(): Promise<boolean> {

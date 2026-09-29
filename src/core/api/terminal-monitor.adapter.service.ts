@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalId } from "@cogno/shared/domain";
+import { Filesystem } from "@cogno/shared/ports";
 import { filter, map, Observable, Subject } from "rxjs";
 import {
   TerminalActivityEvent,
@@ -23,6 +24,7 @@ export class TerminalMonitorAdapterService extends TerminalMonitorPort {
     bus: AppBus,
     destroyRef: DestroyRef,
     private readonly sessionRegistry: TerminalSessionRegistry,
+    private readonly filesystem: Filesystem,
   ) {
     super();
     this.sessionRegistry.facts$
@@ -53,5 +55,11 @@ export class TerminalMonitorAdapterService extends TerminalMonitorPort {
 
   getCwd(terminalId: TerminalId): string | undefined {
     return this.sessionRegistry.get(terminalId)?.host.state.cwd || undefined;
+  }
+
+  resolvePath(terminalId: TerminalId, path: string): string | undefined {
+    const state = this.sessionRegistry.get(terminalId)?.host.state;
+    if (!state?.isContextKnown || !state.cwd) return undefined;
+    return this.filesystem.resolvePath(state.cwd, path, state.shellContext);
   }
 }
