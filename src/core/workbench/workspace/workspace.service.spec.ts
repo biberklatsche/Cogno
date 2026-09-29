@@ -48,6 +48,7 @@ describe("WorkspaceService", () => {
       }
       if (config.title === "Create workspace") openCreateWorkspaceDialogMock();
       else openEditWorkspaceDialogMock(config.title.replace("Edit ", ""));
+      return undefined;
     });
 
     const workspaces = {

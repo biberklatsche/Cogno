@@ -272,7 +272,7 @@ describe("CodingAgentStatusService", () => {
       expect(agent()?.subagentCount).toBe(0);
     });
 
-    it("a new prompt forgets a deferred ready", () => {
+    it("a new prompt forgets a deferred ready and the subagents counted so far", () => {
       ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
       ping("working", "SubagentStart", { agent_id: "a" });
       ping("ready", "Stop", { last_assistant_message: "Poem done." });
@@ -280,10 +280,22 @@ describe("CodingAgentStatusService", () => {
 
       expect(agent()?.task).toBe("Now a haiku");
       expect(agent()?.result).toBeUndefined();
+      expect(agent()?.subagentCount).toBe(0);
 
       ping("ready", "SubagentStop", { agent_id: "a" });
       vi.advanceTimersByTime(GRACE_MS);
       expect(agent()?.status).toBe("working");
+    });
+
+    it("does not stay working when a subagent's stop never arrives", () => {
+      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
+      ping("working", "SubagentStart", { agent_id: "lost" });
+      // Interrupted: no SubagentStop, no Stop. The user asks again.
+      ping("working", "UserPromptSubmit", { prompt: "Try again" });
+      ping("ready", "Stop", { last_assistant_message: "Done." });
+      vi.advanceTimersByTime(GRACE_MS);
+
+      expect(agent()?.status).toBe("ready");
     });
   });
 

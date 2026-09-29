@@ -241,11 +241,13 @@ export class CodingAgentStatusService {
     if (seq > 0 && seq < state.lastSeq) return;
     if (seq > 0) state.lastSeq = seq;
 
-    if (event.sessionBoundary) {
+    // A user's prompt also starts over: a subagent whose stop never came (the
+    // turn was interrupted, a hook failed) must not keep the card working. A
+    // subagent that still runs then ends uncounted.
+    if (event.sessionBoundary || event.details.task !== undefined) {
       state.subagentIds.clear();
       state.readyDeferred = false;
     }
-    if (event.details.task !== undefined) state.readyDeferred = false;
     const subagentsRunning = state.subagentIds.size > 0;
     if (event.status === "ready" && subagentsRunning) state.readyDeferred = true;
 

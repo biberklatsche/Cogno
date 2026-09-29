@@ -52,6 +52,7 @@ describe("AppMenuService", () => {
       ]),
       getShellProfileByShortcutIndex: vi.fn(),
       getPromptSegments: vi.fn(),
+      getPromptSeparator: vi.fn(),
     };
     service = new AppMenuService(osStub, appBus, keybindService, configService);
   });
