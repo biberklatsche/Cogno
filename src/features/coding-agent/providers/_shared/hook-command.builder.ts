@@ -1,9 +1,13 @@
 import { AgentStatus, parseAgentStatus } from "../../agent-status";
+import type { HookState } from "../../ports";
 
 export const CODING_AGENT_STATUS_ACTION = "coding_agent_status";
 
-/** Payloads larger than this are replaced with an "omitted:too-large:<bytes>" marker. */
-const HOOK_PAYLOAD_MAX_BYTES = 65536;
+/**
+ * Payloads larger than this are replaced with an "omitted:too-large:<bytes>" marker.
+ * Stays below the 2 MB body limit of Cogno's HTTP server.
+ */
+const HOOK_PAYLOAD_MAX_BYTES = 1048576;
 
 /** The `args` of a status ping, in the order the hook commands below write them. */
 export type StatusPingArgs = {
@@ -67,10 +71,19 @@ export function isCurrentHookCommand(
   status: AgentStatus,
   providerId: string,
   hookEvent: string,
+  stdout?: string,
 ): boolean {
   if (!command) return false;
-  const { command: bash, commandWindows } = buildHookCommands(status, providerId, hookEvent);
-  return command === bash || command === commandWindows;
+  return (
+    command === buildCurlCommand(status, providerId, hookEvent, stdout) ||
+    command === buildWindowsCommand(status, providerId, hookEvent, stdout)
+  );
+}
+
+/** Hooks that are not all current are outdated when the config holds any Cogno hook at all. */
+export function hookStateOf(isCurrent: boolean, hasCognoHook: boolean): HookState {
+  if (isCurrent) return "current";
+  return hasCognoHook ? "outdated" : "missing";
 }
 
 /**
@@ -114,10 +127,13 @@ function buildCurlCommand(
   stdout?: string,
 ): string {
   const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","`;
-  // Build the JSON body into _b first so the curl call is a simple "$_b" expansion —
+  // Build the JSON body into _b first so it goes out as one "$_b" expansion —
   // this avoids any ambiguity around single-quote injection from $input.
   const bodyVar = `_b='${prefix}'"$seq"'"],"terminal_id":"'"$COGNO_TERMINAL_ID"'","payload":'"$input"'}'`;
-  const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d "$_b"`;
+  // The body goes through stdin, not as an argument: a command line is limited
+  // (128 KB per argument on Linux, about 32 K characters in all on Windows), and a
+  // payload with a large file's content would make the call fail.
+  const curl = `printf '%s' "$_b" | curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' --data-binary @-`;
   const guardedCurl = `seq=$(date +%s); ${bashPayloadCapture()}; ${bodyVar}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
   // Guard against terminals without Cogno's env vars (e.g. opened outside Cogno) and

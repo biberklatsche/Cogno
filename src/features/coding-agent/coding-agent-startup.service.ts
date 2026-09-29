@@ -48,9 +48,10 @@ export class CodingAgentStartupService {
     for (const provider of this.registry.providers) {
       try {
         if (!(await provider.isAgentInstalled())) continue;
-        const hasHook = await provider.isHookInstalled();
-        installed.push({ provider, hasHook });
-        if (!hasHook && !this.decisionFor(provider)) needsHooks.push(provider);
+        let state = await provider.hookState();
+        if (state === "outdated" && (await this.updateHook(provider))) state = "current";
+        installed.push({ provider, hasHook: state === "current" });
+        if (state === "missing" && !this.decisionFor(provider)) needsHooks.push(provider);
       } catch {
         // Provider config inaccessible — skip silently
       }
@@ -78,6 +79,20 @@ export class CodingAgentStartupService {
       await provider.removeHook();
       this.rememberDecision(provider, "removed");
     });
+  }
+
+  /**
+   * Brings an older Cogno version's hook up to date without asking: the user
+   * agreed to the hook when it was installed. False when the update failed.
+   */
+  private async updateHook(provider: ICodingAgentProvider): Promise<boolean> {
+    try {
+      await provider.installHook(this.resolveDefaultShellType());
+      return true;
+    } catch (err) {
+      console.error(`[coding-agent] Failed to update hook for ${provider.name}:`, err);
+      return false;
+    }
   }
 
   /** Runs the change, then rescans; a failing provider becomes a notification. */

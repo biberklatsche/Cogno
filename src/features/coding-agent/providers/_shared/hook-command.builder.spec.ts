@@ -43,6 +43,13 @@ describe("hook-command.builder", () => {
     expect(windows).toContain('-ContentType "application/json; charset=utf-8"');
   });
 
+  it("sends the bash body through stdin, so a large payload does not hit the command-line limit", () => {
+    const bash = buildHookCommand("working", "Bash", "claude-code", "PostToolUse");
+    expect(bash).toContain(`printf '%s' "$_b" | curl`);
+    expect(bash).toContain("--data-binary @-");
+    expect(bash).not.toContain('-d "$_b"');
+  });
+
   it("recognises both shell variants of the current command and nothing else", () => {
     const { command, commandWindows } = buildHookCommands("working", "codex", "PreToolUse");
     expect(isCurrentHookCommand(command, "working", "codex", "PreToolUse")).toBe(true);

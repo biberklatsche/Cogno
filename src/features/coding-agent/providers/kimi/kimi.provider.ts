@@ -1,9 +1,17 @@
 import { Injectable } from "@angular/core";
-import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import {
+  AgentHookEvent,
+  HookState,
+  ICodingAgentProvider,
+} from "@cogno/features/coding-agent/ports";
 import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
+import {
+  buildHookCommand,
+  hookStateOf,
+  isCurrentHookCommand,
+} from "../_shared/hook-command.builder";
 import { editedFilesByTool } from "../_shared/hook-payload";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
 
@@ -24,17 +32,21 @@ export class KimiProvider implements ICodingAgentProvider {
     return this.configFile.exists(await this.configDir());
   }
 
-  async isHookInstalled(): Promise<boolean> {
+  async hookState(): Promise<HookState> {
     const configPath = await this.configFile.joinPath(
       await this.configDir(),
       KIMI_CONFIG.configFileName,
     );
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
-    return KIMI_CONFIG.hookEvents.every(({ eventName, status }) =>
+    const isCurrent = KIMI_CONFIG.hookEvents.every(({ eventName, status }) =>
       hooks.some(
         (h) => h.event === eventName && isCurrentHookCommand(h.command, status, this.id, eventName),
       ),
+    );
+    return hookStateOf(
+      isCurrent,
+      hooks.some((h) => KIMI_CONFIG.isCognoCommand(h.command)),
     );
   }
 

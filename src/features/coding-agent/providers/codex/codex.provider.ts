@@ -1,9 +1,13 @@
 import { Injectable } from "@angular/core";
-import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import {
+  AgentHookEvent,
+  HookState,
+  ICodingAgentProvider,
+} from "@cogno/features/coding-agent/ports";
 import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommands } from "../_shared/hook-command.builder";
+import { buildHookCommands, hookStateOf } from "../_shared/hook-command.builder";
 import { withoutCognoHooks } from "../_shared/hook-groups";
 import { PayloadFields, stringField } from "../_shared/hook-payload";
 import { CODEX_CONFIG, CodexHookGroup, CodexHooksFile } from "./codex.config";
@@ -38,10 +42,10 @@ export class CodexProvider implements ICodingAgentProvider {
     return this.configFile.exists(await this.configDir());
   }
 
-  async isHookInstalled(): Promise<boolean> {
+  async hookState(): Promise<HookState> {
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
-    return CODEX_CONFIG.hookEvents.every(({ eventName, status }) => {
+    const isCurrent = CODEX_CONFIG.hookEvents.every(({ eventName, status }) => {
       const expected = buildHookCommands(status, this.id, eventName);
       return (file.hooks?.[eventName] ?? []).some((group) =>
         group.hooks.some(
@@ -49,6 +53,12 @@ export class CodexProvider implements ICodingAgentProvider {
         ),
       );
     });
+    const hasCognoHook = Object.values(file.hooks ?? {}).some((groups) =>
+      groups.some((group) =>
+        group.hooks.some((h) => CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows)),
+      ),
+    );
+    return hookStateOf(isCurrent, hasCognoHook);
   }
 
   async installHook(_shellType?: string): Promise<void> {

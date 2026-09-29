@@ -1,9 +1,17 @@
 import { Injectable } from "@angular/core";
-import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import {
+  AgentHookEvent,
+  HookState,
+  ICodingAgentProvider,
+} from "@cogno/features/coding-agent/ports";
 import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
+import {
+  buildHookCommand,
+  hookStateOf,
+  isCurrentHookCommand,
+} from "../_shared/hook-command.builder";
 import { withoutCognoHooks } from "../_shared/hook-groups";
 import { editedFilesByTool } from "../_shared/hook-payload";
 import { CLAUDE_CODE_CONFIG, ClaudeSettings } from "./claude-code.config";
@@ -25,17 +33,21 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     return this.configFile.exists(await this.configDir());
   }
 
-  async isHookInstalled(): Promise<boolean> {
+  async hookState(): Promise<HookState> {
     const configPath = await this.configFile.joinPath(
       await this.configDir(),
       CLAUDE_CODE_CONFIG.configFileName,
     );
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
-    return CLAUDE_CODE_CONFIG.hookEvents.every(({ eventName, status }) =>
+    const isCurrent = CLAUDE_CODE_CONFIG.hookEvents.every(({ eventName, status }) =>
       (settings.hooks?.[eventName] ?? []).some((group) =>
         group.hooks.some((h) => isCurrentHookCommand(h.command, status, this.id, eventName)),
       ),
     );
+    const hasCognoHook = Object.values(settings.hooks ?? {}).some((groups) =>
+      groups.some((group) => group.hooks.some((h) => CLAUDE_CODE_CONFIG.isCognoCommand(h.command))),
+    );
+    return hookStateOf(isCurrent, hasCognoHook);
   }
 
   async installHook(shellType?: string): Promise<void> {

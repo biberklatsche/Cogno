@@ -1,8 +1,16 @@
 import { Injectable } from "@angular/core";
-import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import {
+  AgentHookEvent,
+  HookState,
+  ICodingAgentProvider,
+} from "@cogno/features/coding-agent/ports";
 import { AgentStatus } from "../../agent-status";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand } from "../_shared/hook-command.builder";
+import {
+  buildHookCommand,
+  hookStateOf,
+  isCurrentHookCommand,
+} from "../_shared/hook-command.builder";
 import { payloadFields, stringField } from "../_shared/hook-payload";
 import {
   ANTIGRAVITY_CONFIG,
@@ -27,17 +35,21 @@ export class AntigravityProvider implements ICodingAgentProvider {
     return this.configFile.exists(await this.configDir());
   }
 
-  async isHookInstalled(): Promise<boolean> {
+  /** Cogno's hook is its own named entry: when it is there but not current, it is outdated. */
+  async hookState(): Promise<HookState> {
     const hook = (await this.readHooksFile())[ANTIGRAVITY_CONFIG.hookName];
-    if (!hook) return false;
+    if (!hook) return "missing";
 
-    return ANTIGRAVITY_CONFIG.hookEvents.every((entry) => {
+    const isCurrent = ANTIGRAVITY_CONFIG.hookEvents.every((entry) => {
       const handlers =
         entry.kind === "tool"
           ? (hook[entry.eventName] ?? []).flatMap((group) => group.hooks)
           : (hook[entry.eventName] ?? []);
-      return handlers.some((h) => ANTIGRAVITY_CONFIG.isCognoCommand(h.command));
+      return handlers.some((h) =>
+        isCurrentHookCommand(h.command, entry.status, this.id, entry.eventName, entry.stdout),
+      );
     });
+    return hookStateOf(isCurrent, true);
   }
 
   async installHook(shellType?: string): Promise<void> {

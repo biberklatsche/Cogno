@@ -41,12 +41,19 @@ export type AgentHookEvent =
       readonly model?: string;
     };
 
+/**
+ * Whether Cogno's hook sits in the agent's config: `current` as this version
+ * writes it, `outdated` when an older version's Cogno hook is there, `missing`
+ * when there is none.
+ */
+export type HookState = "current" | "outdated" | "missing";
+
 export interface ICodingAgentProvider {
   readonly id: string;
   readonly name: string;
 
   isAgentInstalled(): Promise<boolean>;
-  isHookInstalled(): Promise<boolean>;
+  hookState(): Promise<HookState>;
   /** @param shellType The Cogno shell profile type (e.g. "PowerShell", "Bash"). Determines which hook command syntax to write. */
   installHook(shellType?: string): Promise<void>;
   removeHook(): Promise<void>;

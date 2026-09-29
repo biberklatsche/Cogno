@@ -1,8 +1,16 @@
 import { Injectable } from "@angular/core";
-import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import {
+  AgentHookEvent,
+  HookState,
+  ICodingAgentProvider,
+} from "@cogno/features/coding-agent/ports";
 import { AgentStatus } from "../../agent-status";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
+import {
+  buildHookCommand,
+  hookStateOf,
+  isCurrentHookCommand,
+} from "../_shared/hook-command.builder";
 import { withoutCognoHooks } from "../_shared/hook-groups";
 import { GEMINI_CONFIG, GeminiHookGroup, GeminiSettings } from "./gemini.config";
 import { interpretGeminiHook } from "./gemini-hook.interpreter";
@@ -22,17 +30,21 @@ export class GeminiProvider implements ICodingAgentProvider {
     return this.configFile.exists(await this.configDir());
   }
 
-  async isHookInstalled(): Promise<boolean> {
+  async hookState(): Promise<HookState> {
     const configPath = await this.configFile.joinPath(
       await this.configDir(),
       GEMINI_CONFIG.configFileName,
     );
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
-    return GEMINI_CONFIG.hookEvents.every(({ eventName, status }) =>
+    const isCurrent = GEMINI_CONFIG.hookEvents.every(({ eventName, status }) =>
       (settings.hooks?.[eventName] ?? []).some((group) =>
         group.hooks.some((h) => isCurrentHookCommand(h.command, status, this.id, eventName)),
       ),
     );
+    const hasCognoHook = Object.values(settings.hooks ?? {}).some((groups) =>
+      groups.some((group) => group.hooks.some((h) => GEMINI_CONFIG.isCognoCommand(h.command))),
+    );
+    return hookStateOf(isCurrent, hasCognoHook);
   }
 
   async installHook(shellType?: string): Promise<void> {
