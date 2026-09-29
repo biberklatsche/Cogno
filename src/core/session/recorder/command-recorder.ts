@@ -56,15 +56,18 @@ export class CommandRecorder {
     adapter: IPathAdapter,
     groupId?: string,
   ): void {
-    void this.commandLog.open(shellContext, adapter, groupId).then((repository) => {
+    void this.commandLog.open(shellContext, adapter, groupId).then(async (repository) => {
       if (!repository) return;
       if (
-        this.configService?.config.terminal?.history?.import_shell_history &&
-        !CommandRecorder.shellHistoryImportStarted
+        !this.configService?.config.terminal?.history?.import_shell_history ||
+        CommandRecorder.shellHistoryImportStarted
       ) {
-        CommandRecorder.shellHistoryImportStarted = true;
-        this.commandLog.write((writer) => this.importShellHistoryIfEmpty(writer, shellContext));
+        return;
       }
+      CommandRecorder.shellHistoryImportStarted = true;
+      // Only into an empty history: the import is a first-launch seed, not a sync.
+      if (await this.commandLog.hasAnyCommands()) return;
+      this.commandLog.write((writer) => this.importShellHistory(writer, shellContext));
     });
   }
 
@@ -103,7 +106,7 @@ export class CommandRecorder {
     this.commandLog.recordExecutionForTransition(persistedCommand, timestamp);
   }
 
-  private async importShellHistoryIfEmpty(
+  private async importShellHistory(
     writer: CommandLogWriter,
     shellContext: ResolvedShellContextContract,
   ): Promise<void> {

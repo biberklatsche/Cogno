@@ -1,6 +1,8 @@
 import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
+import type { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history-reader";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { DatabaseAccess } from "@cogno/platform";
+import type { Paths } from "@cogno/platform/path";
 import type { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
 
@@ -447,5 +449,49 @@ describe("CommandRecorder", () => {
     await service.recordAbortedCommand({ command: "   ", directory: "/tmp" });
 
     expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
+  });
+});
+
+describe("CommandRecorder shell-history import", () => {
+  const importConfig = {
+    config: { terminal: { history: { import_shell_history: true } } },
+  } as unknown as ConfigService;
+
+  async function startWith(hasAnyCommands: boolean) {
+    (
+      CommandRecorder as unknown as { shellHistoryImportStarted: boolean }
+    ).shellHistoryImportStarted = false;
+    const repository = {
+      ...createRepositoryDouble(),
+      hasAnyCommands: vi.fn().mockResolvedValue(hasAnyCommands),
+      bulkImportCommands: vi.fn().mockResolvedValue(undefined),
+    };
+    vi.spyOn(CommandLogRepository, "createForContext").mockResolvedValue(
+      repository as unknown as CommandLogRepository,
+    );
+    const historyReader = {
+      read: vi.fn().mockResolvedValue([{ command: "git status", timestamp: 1 }]),
+    } as unknown as ShellHistoryReader;
+    const paths = { homeDir: async () => "/home/me" } as unknown as Paths;
+    const recorder = new CommandRecorder(
+      new SessionCommandLog(databaseAccess),
+      paths,
+      historyReader,
+      importConfig,
+    );
+    recorder.initialize(shellContext, pathAdapter);
+    await flushActions();
+    await flushActions();
+    return repository;
+  }
+
+  it("seeds an empty history from the shell's history file", async () => {
+    const repository = await startWith(false);
+    expect(repository.bulkImportCommands).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not import again once the history has commands", async () => {
+    const repository = await startWith(true);
+    expect(repository.bulkImportCommands).not.toHaveBeenCalled();
   });
 });

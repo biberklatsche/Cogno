@@ -218,6 +218,11 @@ export class SessionCommandLog {
     return this.read((reader) => reader.searchCommandPatterns(fragment, limit), []);
   }
 
+  /** Whether any command is recorded. Without an open log: yes, so nothing is imported. */
+  async hasAnyCommands(): Promise<boolean> {
+    return this.read((reader) => reader.hasAnyCommands(), true);
+  }
+
   // --- feedback (a write with a different sender) ------------------------
 
   markDirectorySelected(pathRaw: string): void {
