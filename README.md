@@ -76,7 +76,7 @@ file or directory contains a different third-party license notice.
 
 ### Third-party content
 
-- Command specs in `src/features/autocomplete/spec-command/data` are derived
+- Command specs in `src/core/session/autocomplete/spec-command/data` are derived
   from [withfig/autocomplete](https://github.com/withfig/autocomplete)
   (`MIT`, © Hercules Labs Inc.); see the `LICENSE` file in that directory.
 - Bundled fonts: Roboto (`Apache-2.0`) and Comfortaa (`OFL-1.1`); license
@@ -187,7 +187,7 @@ from the ones below it (enforced by `pnpm lint:architecture`):
   `workbench/` (tabs, workspaces, grid, side menu, notifications, and the
   adapters implementing the api)
 - `features/`
-  switchable features: autocomplete, command palette, git, terminal search,
+  switchable features: command palette, git, terminal search,
   process info, notification overview, and coding-agent detection
 - `bootstrap/`
   the composition root: Angular DI wiring, the feature manifest, and `main.ts`

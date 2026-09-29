@@ -2,7 +2,6 @@ import { FeatureModeContract, NotificationChannelContract } from "@cogno/shared/
 import { ApplicationSettingsExtensionContract } from "./application-settings-extension";
 import { DatabaseMigrationContract } from "./database-migration";
 import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition";
-import { TerminalAutocompleteSuggestorDefinitionContract } from "./terminal-autocomplete";
 
 /**
  * An action a feature declares. The name is known from the declaration phase
@@ -49,8 +48,6 @@ export interface FeatureDefinition<TActionName = string> {
   readonly sideMenu?: ReadonlyArray<SideMenuFeatureDefinitionContract<TActionName>>;
   /** Zod schema extension and defaults for the configuration reader. */
   readonly settings?: ApplicationSettingsExtensionContract;
-  /** Suggestors for the terminal autocomplete. */
-  readonly autocompleteSuggestors?: ReadonlyArray<TerminalAutocompleteSuggestorDefinitionContract>;
   /** Additional notification channels. */
   readonly notificationChannels?: ReadonlyArray<NotificationChannelContract>;
 }

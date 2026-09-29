@@ -548,9 +548,9 @@ export class SessionHost {
     this.inputHandler?.clearBuffer();
   }
 
-  /** Writes text as if typed; with `autoExecute` an Enter follows. */
-  writeRaw(text: string, autoExecute?: boolean): void {
-    this.inputHandler?.writeRaw(text, autoExecute);
+  /** Writes text as if typed. */
+  writeRaw(text: string): void {
+    this.inputHandler?.writeRaw(text);
   }
 
   /** Types dropped or picked paths, rendered for this session's shell. */

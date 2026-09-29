@@ -1,4 +1,4 @@
-import { AutocompleteQueryContextContract } from "@cogno/core/api/contributions";
+import { AutocompleteQueryContextContract } from "@cogno/core/session/autocomplete/suggestor.contracts";
 import { ShellTypeContract } from "@cogno/shared/domain";
 
 export type ShellConstraint = ShellTypeContract;

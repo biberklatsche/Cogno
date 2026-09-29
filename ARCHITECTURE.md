@@ -69,7 +69,7 @@ shared/              allgemeine, frameworkfreie Bausteine und Domänenmodelle; k
 platform/            Tauri-Grenze; kein Produktwissen
 core/                das Produkt, immer an
   api/               das Protokoll zwischen Core und Features, in beide Richtungen — nur Verträge (Abschnitt 3)
-    contributions/   was Features beitragen (FeatureDefinition, Side-Menu, Shells, Migrationen, Autocomplete)
+    contributions/   was Features beitragen (FeatureDefinition, Side-Menu, Settings, Migrationen, Notification-Kanäle)
   infrastructure/    Config, Theming, DB-Bridge, Migrations-Runner, Fehler, Logging, Pfade, Bus, Keybind-Parser
   terminal/          die Maschine: pty, renderer, byte-I/O, resize
   command-log/       Kommandodaten: Schema, Migrationen, Schreib- und Abfrage-API
@@ -139,9 +139,9 @@ Marker, Search-Addon. **Das Basis-Terminal ohne Zauber.** Dateien in
 das Löschen des Ungelesen-Abzeichens nicht), und `machine-state.ts`, der
 Maschinenzustand (Cursor, Maße, Fokus, Selektion, Scroll, Progress).
 
-`input.handler` gehört **nicht** hierher: er ist die Empfangsseite für
-„schreib das in dieses Terminal" (hinter der `injectInput`-Operation der
-API) — Sitzungsarbeit. Vom Theme kennt die Maschine nur, was `setOptions`
+`input.handler` gehört **nicht** hierher: er schreibt Text in das Terminal,
+als wäre er getippt, und leert es — Sitzungsarbeit. Vom Theme kennt die
+Maschine nur, was `setOptions`
 anwendet; die Werte liefert der Session-Host.
 
 `input-writer.ts` gehört ebenfalls nicht hierher, obwohl sein Name danach klingt:
@@ -291,11 +291,12 @@ nach Nachrichtentyp**
 eine Nachricht genau einmal, synchron, in Abo-Reihenfolge. Pfade und
 Capture-/Target-/Bubble-Phasen gibt es nicht — niemand hat sie genutzt, und
 sie ließen einen Abonnenten oberhalb des Zielpfads dieselbe Nachricht zweimal
-bekommen. Ein Bus ist das richtige Mittel, wo ein Sender seine Empfänger nicht
-kennt (`ActionFired`, `FocusTerminal`, `TerminalRemoved`, `Notification`). Wo
-es genau einen bekannten Empfänger gibt, ruft der Sender ihn direkt auf
-(Abschnitt 5) — eine Nachricht, die nur ein Abonnent zurück in einen
-Methodenaufruf übersetzt, ist ein Umweg und kein Entkoppeln.
+bekommen. Der Bus verbindet Teile, die **weit voneinander entfernt** liegen:
+Sender und Empfänger kennen sich nicht und importieren sich nicht
+(`ActionFired`, `FocusTerminal`, `TerminalRemoved`, `Notification`). Das
+verhindert, dass jeder jeden importiert. Liegen zwei Teile nah beieinander —
+im selben Bereich, einer besitzt den anderen —, ruft der eine den anderen
+direkt auf; der Bus wäre dort ein Umweg.
 
 Die Grenze bleibt damit per Pfadregel prüfbar: `session/` importiert
 `workbench/` nicht.
@@ -467,8 +468,7 @@ Fakt ermittelt, sondern *worüber* er ist:
   Kontexteintrags, mit dem das Feature geplant hat; ist sie nicht mehr
   aktuell, lehnt `run` ab statt im falschen Kontext zu laufen. `run` startet einen
   **eigenen, unsichtbaren Prozess** im Kontext der Sitzung (cwd, Env; in
-  einer WSL-Distro über `wsl.exe -d`), nie eine Eingabe in die PTY — das
-  ist `injectInput`, und die beiden dürfen nicht verwechselbar heißen. In
+  einer WSL-Distro über `wsl.exe -d`), nie eine Eingabe in die PTY. In
   einem Remote- oder unbekannten Kontext gibt es keinen solchen Prozess:
   `run` lehnt ab, das Feature degradiert sichtbar („nicht verfügbar in
   Remote-Sitzung"), statt lokal in einem Pfad zu laufen, der auf dem Host
@@ -847,8 +847,8 @@ Features importieren, und besteht **nur aus Verträgen**:
   `ActionCatalog`/`ActionDispatcher`, `ActionKeybindingPort`,
   `CommandRunner`, `Filesystem`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
-  `FeatureDefinition`, Side-Menu-Features, Feature-Settings, Shells,
-  Datenbank-Migrationen, Autocomplete-Suggestoren.
+  `FeatureDefinition`, Side-Menu-Features, Feature-Settings,
+  Datenbank-Migrationen, Notification-Kanäle.
 
 Weil `core/api/` nichts aus `core/` importiert, liegt es unter den übrigen
 Core-Schichten (Diagramm in 2.1): Core-intern darf jede Schicht außer der
@@ -889,11 +889,10 @@ samt Anzeigereihenfolge, plus `changes$`; Konsument: Coding-Agents-Panel,
 gruppiert nach Workspace in Tab-Reihenfolge). Ein Sitzungs-Verzeichnis
 `sessions$` entsteht erst mit dem ersten Feature, das eines braucht.
 
-`injectInput(request, identity)` — „schreib das in dieses Terminal", mit
-demselben Identitäts-Check wie `run` — ist implementiert, hat aber keinen
-Konsumenten. Es bleibt bewusst als einzige
-Ausnahme von „keine Operationen ohne Konsumenten" (3.1) stehen, weil ein
-schreibendes Feature absehbar ist und der Schreibschutz der heikle Teil ist.
+Features schreiben nicht in die PTY; die API hat dafür keine Operation. Was
+in die Eingabezeile schreibt — Autocomplete, History, Composer — ist Core
+und nutzt den `InputWriter` der Session direkt. Braucht ein Feature das
+einmal, kommt eine Operation mit Identitäts-Check wie bei `run` dazu.
 
 Bindung: Standard „folgt dem Fokus", auf Wunsch **gehalten**. Das Wort *pin*
 ist bereits für „Panel offen halten" belegt (`side-menu.service.ts`);
@@ -907,7 +906,7 @@ und ein `decorate(range, style)`, das die Prompt-Dekoration ohnehin nie hätte
 tragen können.
 
 Die **Gegenrichtung** sind die Contributions: Features tragen Panels,
-Settings, Notification-Kanäle, Migrationen und Suggestoren bei, indem sie
+Settings, Notification-Kanäle und Migrationen bei, indem sie
 Verträge aus `core/api/contributions/` erfüllen; der Feature-Host in
 `core/workbench/feature-host/` liest sie. Was dem Protokoll noch fehlt:
 Block-Adressierung über `commandId` statt Puffer-Zeilennummern und
@@ -1004,7 +1003,7 @@ selbst in `try/catch` rufen.
 | `platform/` | Rust-seitig getestet (Datenbank, PTY, Prozesse, Command-Runner, Layout-Parser); die TypeScript-Seite ist eine dünne `invoke`-Schicht — getestet ist dort nur, was eigene Logik hat (`fromTauriListener`: Abmelden vor der asynchronen Registrierung) |
 | `core/terminal/` | Unit-Tests gegen xterm im Headless-Modus: Byte-Roundtrip, Resize, Flow-Control-Acks, Alt-Screen-Erkennung. Keine Tauri-Abhängigkeit — PTY als Stub |
 | `core/session/` | der Schwerpunkt: Kommandozeilen-Modell und OSC-Interpretation gegen aufgezeichnete Byteströme (bash, zsh, pwsh, mit und ohne Integration, mit Kontextwechsel). Jeder Degradationspfad aus der Tabelle oben ist ein Test. Regel 4.4: ein Test, der zeigt, dass bei Unsicherheit *nichts* geschrieben wird |
-| `core/workbench/` | Layoutbaum und Serializer als reine Logik; Feature-Host mit Fake-Features (aktivieren, deaktivieren, fehlschlagen, dreimal werfen); Terminal-Aktionen Ende-zu-Ende (`ActionFired` → Wirkung, durch den echten Bus, `ActionHandlers` und `GridListService`); Drag-Verhalten von Tabs, Workspaces und Panes über echte `window`-Events |
+| `core/workbench/` | Layoutbaum und Serializer als reine Logik; Feature-Host mit Fake-Features (aktivieren, deaktivieren, fehlschlagen); Terminal-Aktionen Ende-zu-Ende (`ActionFired` → Wirkung, durch den echten Bus, `ActionHandlers` und `GridListService`); Drag-Verhalten von Tabs, Workspaces und Panes über echte `window`-Events |
 | `core/api/` | Bindungszustände und Schreibschutz: verspätete Antwort nach Fokuswechsel darf nicht schreiben |
 | `features/` | gegen eine gestubbte API und Stub-Plattformdienste; ein Deaktivierungstest je Feature |
 | `bootstrap/` | ein Start-Test: Deklarationsphase über das Manifest — keine doppelten Feature- oder Aktions-IDs, keine Zyklen in `requires`, keine kollidierenden Settings-Pfade, keine Aktion ohne Handler |
@@ -1239,7 +1238,7 @@ Drei Aufgaben:
 2. **Aktivierung (dynamisch, nur bei `mode: on`).** Löst `requires`
    transitiv auf, aktiviert in Abhängigkeitsreihenfolge, deaktiviert
    umgekehrt. Aktivieren = die *aktiven* Contributions anmelden —
-   Side-Menu-Panel, **Aktions-Handler**, Notification-Kanäle, Suggestoren,
+   Side-Menu-Panel, **Aktions-Handler**, Notification-Kanäle,
    Hintergrunddienste — und `activate()` rufen; Deaktivieren = abmelden,
    `deactivate()`, Subscriptions freigeben. Beides idempotent. Was in Phase
    1 registriert wurde, bleibt.
@@ -1324,16 +1323,11 @@ gibt es bewusst nicht. Der Autocomplete-Pfad schützt sich selbst: Timeout
 und `rejected` je Suggestor, `matches()` geschützt
 (`terminal-autocomplete.service.ts`).
 
-**Sitzungsgebundene Contributions und die Sessions.** Suggestoren, Shell-
-Hooks und ähnliche Contributions gelten *je Session*. Der Host meldet sie
-nicht bei Sessions an, sondern bei einer **Registry in `session/`**
-(`SuggestorRegistry`), die als Observable ihre aktuelle Menge führt. Jeder
-Session-Host abonniert diese Registry beim Start und baut seine
-Autocomplete-Quellen daraus; ändert sich die Menge (Feature an/aus), zieht
-jede laufende Session nach — bestehende Sessions bekommen den Suggestor
-sofort, später erzeugte Sessions beim Start. Kein Feature kennt Sessions,
-keine Session kennt Features; beide kennen die Registry. Dasselbe Muster
-für jede weitere sitzungsgebundene Contribution.
+**Autocomplete ist kein Feature.** Es gehört fest zu jeder Sitzung und liegt
+vollständig in `core/session/autocomplete/`, samt den Befehls-Specs
+(`spec-command/`). Suggestoren, die alle Sitzungen teilen, baut
+`SharedSuggestors` einmal; ihre Fehler meldet die Session als Ereignis, die
+Workbench macht daraus Benachrichtigungen (`AutocompleteIssueNotifier`).
 
 Was er nicht ist: kein Ort für Feature-Wissen (er kennt Definitionen, keine
 IDs), nicht der Ort der Contributions-Konsumenten (Aktionskatalog, Side-Menu,
@@ -1355,7 +1349,7 @@ erreicht, ohne sie zu importieren.
 
 | Was | Umfang |
 |---|---|
-| Deaktivierungstest je Feature (4.2) | fehlt für `git`, `process-info` und `autocomplete` |
+| Deaktivierungstest je Feature (4.2) | fehlt für `git` und `process-info` |
 | **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
 | Command-Log-Lese-Timeout (Abschnitt 2.4) | Das Lese-Timeout mit `timedOut`-Kennzeichen fehlt. |
 | `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |

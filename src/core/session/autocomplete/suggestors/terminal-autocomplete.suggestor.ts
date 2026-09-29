@@ -1,1 +1,1 @@
-export type { TerminalAutocompleteSuggestorContract as TerminalAutocompleteSuggestor } from "@cogno/core/api/contributions";
+export type { TerminalAutocompleteSuggestorContract as TerminalAutocompleteSuggestor } from "@cogno/core/session/autocomplete/suggestor.contracts";

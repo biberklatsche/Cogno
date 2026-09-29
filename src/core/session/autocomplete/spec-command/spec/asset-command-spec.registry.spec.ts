@@ -11,13 +11,13 @@ describe("AssetCommandSpecRegistry", () => {
   it("loads command names and command specs from feature data endpoints", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.endsWith("/feature-data/base/spec-command/manifest.json")) {
+      if (url.endsWith("/command-specs/manifest.json")) {
         return {
           ok: true,
           json: async () => [{ name: "git", file: "git.json" }],
         } as Response;
       }
-      if (url.endsWith("/feature-data/base/spec-command/commands/git.json")) {
+      if (url.endsWith("/command-specs/commands/git.json")) {
         return {
           ok: true,
           json: async () => ({

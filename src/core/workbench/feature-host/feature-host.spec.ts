@@ -9,7 +9,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
-import type { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 type FakeFeature = Partial<FeatureDefinition<ActionName>> & { id: string };
 
@@ -32,10 +31,6 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     register: vi.fn(),
     unregister: vi.fn(),
   } as unknown as SideMenuFeatureRegistrar;
-  const suggestorRegistrar = {
-    register: vi.fn(),
-    unregister: vi.fn(),
-  } as unknown as SuggestorFeatureRegistrar;
   const notificationChannelRegistrar = {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -50,7 +45,6 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     databaseMigrationService,
     actionNameRegistry,
     sideMenuRegistrar,
-    suggestorRegistrar,
     notificationChannelRegistrar,
     applicationConfigurationPort,
     destroyRef,

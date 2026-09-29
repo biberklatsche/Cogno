@@ -34,11 +34,6 @@ export class TerminalInputDispatcher {
         entry.host.setVisible(event.payload?.terminalIds.includes(entry.terminalId) ?? true);
       }
     });
-    until(this.bus.on$("WriteRawToPty")).subscribe((event) => {
-      const payload = event.payload;
-      if (!payload) return;
-      this.registry.get(payload.terminalId)?.host.writeRaw(payload.text, payload.autoExecute);
-    });
     until(this.bus.on$("TerminalSearchRequested")).subscribe((event) => {
       const payload = event.payload;
       if (!payload) return;

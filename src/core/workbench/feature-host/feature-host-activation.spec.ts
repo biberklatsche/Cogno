@@ -9,7 +9,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
-import type { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 /** A feature with a side-menu entry at `configPath`; only its id and path matter here. */
 function sideMenuFeature(id: string, configPath: string): FeatureDefinition<ActionName> {
@@ -52,10 +51,6 @@ describe("FeatureHost activation", () => {
       getActionNames: () => [],
     } as unknown as ActionNameRegistry;
     const sideMenuRegistrar = { register, unregister } as unknown as SideMenuFeatureRegistrar;
-    const suggestorRegistrar = {
-      register: vi.fn(),
-      unregister: vi.fn(),
-    } as unknown as SuggestorFeatureRegistrar;
     const notificationChannelRegistrar = {
       register: vi.fn(),
       unregister: vi.fn(),
@@ -73,7 +68,6 @@ describe("FeatureHost activation", () => {
       databaseMigrationService,
       actionNameRegistry,
       sideMenuRegistrar,
-      suggestorRegistrar,
       notificationChannelRegistrar,
       applicationConfigurationPort,
       destroyRef,

@@ -2,7 +2,6 @@ import { FeatureDefinition } from "@cogno/core/api/contributions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { sideMenuUiStateFeature } from "@cogno/core/workbench/side-menu/ui-state/ui-state.feature";
 import { workspaceFeature } from "@cogno/core/workbench/workspace/workspace.feature-definition";
-import { autocompleteFeature } from "@cogno/features/autocomplete";
 import { codingAgentsFeature } from "@cogno/features/coding-agent";
 import { commandPaletteFeature } from "@cogno/features/command-palette";
 import { featureSettingsFeature } from "@cogno/features/feature-settings-extension";
@@ -17,7 +16,6 @@ import { terminalSearchFeature } from "@cogno/features/terminal-search";
  * 26) can read them; `satisfies` still checks every entry is a feature.
  */
 export const features = [
-  autocompleteFeature,
   featureSettingsFeature,
   workspaceFeature,
   sideMenuUiStateFeature,

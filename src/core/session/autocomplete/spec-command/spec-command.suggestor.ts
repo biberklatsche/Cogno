@@ -3,7 +3,7 @@ import {
   AutocompleteQueryContextContract,
   AutocompleteSuggestionContract,
   TerminalAutocompleteSuggestorContract,
-} from "@cogno/core/api/contributions";
+} from "@cogno/core/session/autocomplete/suggestor.contracts";
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { CommandSpecSource } from "./spec/command-spec.source";
 import {

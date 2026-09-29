@@ -1,5 +1,3 @@
-import { CommandRunnerContract } from "@cogno/core/api/command-runner-port";
-import { FilesystemContract } from "@cogno/core/api/filesystem-port";
 import { ShellContextContract, ShellTypeContract } from "@cogno/shared/domain";
 
 export type AutocompleteMatchRangeContract = {
@@ -66,18 +64,4 @@ export interface AutocompleteProviderIssueContract {
 
 export interface AutocompleteProviderIssueReporterContract {
   reportAutocompleteProviderIssue(issue: AutocompleteProviderIssueContract): void;
-}
-
-export interface TerminalAutocompleteSuggestorDependenciesContract {
-  readonly filesystem: FilesystemContract;
-  readonly commandRunner: CommandRunnerContract;
-  readonly issueReporter?: AutocompleteProviderIssueReporterContract;
-  readonly getProviderTimeoutMs?: () => number;
-}
-
-export interface TerminalAutocompleteSuggestorDefinitionContract {
-  readonly id: string;
-  createSuggestor(
-    dependencies: TerminalAutocompleteSuggestorDependenciesContract,
-  ): TerminalAutocompleteSuggestorContract;
 }

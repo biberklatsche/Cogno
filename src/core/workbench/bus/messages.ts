@@ -29,7 +29,6 @@ import {
   BlurTerminalAction,
   FocusTerminalAction,
   TerminalRemovedAction,
-  WriteRawToPtyAction,
 } from "@cogno/core/workbench/bus/terminal/actions";
 import {
   TerminalSearchRequestedEvent,
@@ -53,7 +52,6 @@ export type AppMessage =
   | TerminalSearchRevealRequestedEvent
   | FocusTerminalAction
   | BlurTerminalAction
-  | WriteRawToPtyAction
   | ActionFiredEvent
   | TerminalRemovedAction
   | FocusActiveTerminalAction

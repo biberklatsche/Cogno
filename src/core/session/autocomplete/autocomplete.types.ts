@@ -2,7 +2,7 @@ import {
   AutocompleteMatchRangeContract,
   AutocompleteQueryContextContract,
   AutocompleteSuggestionContract,
-} from "@cogno/core/api/contributions";
+} from "@cogno/core/session/autocomplete/suggestor.contracts";
 
 export type AutocompleteMatchRange = AutocompleteMatchRangeContract;
 export type AutocompleteSuggestion = AutocompleteSuggestionContract;

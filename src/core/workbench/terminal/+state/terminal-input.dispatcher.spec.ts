@@ -55,16 +55,6 @@ describe("TerminalInputDispatcher", () => {
     expect(host2.blur).not.toHaveBeenCalled();
   });
 
-  it("writes raw input to the addressed session", () => {
-    bus.publish({
-      type: "WriteRawToPty",
-      payload: { terminalId: "t2", text: "ls\n", autoExecute: true },
-    });
-
-    expect(host2.writeRaw).toHaveBeenCalledWith("ls\n", true);
-    expect(host1.writeRaw).not.toHaveBeenCalled();
-  });
-
   it("fans VisibleTerminalsChanged out to every session", () => {
     bus.publish({
       type: "VisibleTerminalsChanged",

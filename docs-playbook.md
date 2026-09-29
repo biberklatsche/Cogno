@@ -178,7 +178,7 @@ in `renderSitePage()` in `scripts/generate-actions.ts`.
 - `src/core/session/autocomplete/suggestors/history-command.suggestor.ts`
 - `src/core/session/autocomplete/suggestors/command-pattern.suggestor.ts`
 - `src/core/session/autocomplete/suggestors/history-directory.suggestor.ts`
-- `src/features/autocomplete/` — the spec-command suggestor (1000+ CLI tools)
+- `src/core/session/autocomplete/spec-command/` — the spec-command suggestor (1000+ CLI tools)
 - `src/core/session/recorder/command-recorder.ts` — which commands are recorded into the history (return-code whitelist)
 
 **Required sections:** how suggestions appear; the suggestion sources (history

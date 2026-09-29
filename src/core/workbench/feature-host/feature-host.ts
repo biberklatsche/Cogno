@@ -17,7 +17,6 @@ import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
 import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";
 import { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
-import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 /**
  * The one service that handles features (ARCHITECTURE.md 6.1). Its declaration
@@ -47,7 +46,6 @@ export class FeatureHost {
     private readonly databaseMigrationService: DatabaseMigrationService,
     private readonly actionNameRegistry: ActionNameRegistry,
     private readonly sideMenuRegistrar: SideMenuFeatureRegistrar,
-    private readonly suggestorRegistrar: SuggestorFeatureRegistrar,
     private readonly notificationChannelRegistrar: NotificationChannelFeatureRegistrar,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
     private readonly destroyRef: DestroyRef,
@@ -68,11 +66,7 @@ export class FeatureHost {
 
   /** Fans a feature's activation out to every contribution consumer. */
   private contributionRegistrar(): FeatureContributionRegistrar {
-    const registrars = [
-      this.sideMenuRegistrar,
-      this.suggestorRegistrar,
-      this.notificationChannelRegistrar,
-    ];
+    const registrars = [this.sideMenuRegistrar, this.notificationChannelRegistrar];
     return {
       register: (feature) => {
         for (const registrar of registrars) registrar.register(feature);

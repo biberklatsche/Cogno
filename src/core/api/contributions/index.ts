@@ -9,4 +9,3 @@ export * from "./shell-support";
 export * from "./side-menu-feature-definition";
 export * from "./side-menu-feature-handle";
 export * from "./side-menu-feature-lifecycle";
-export * from "./terminal-autocomplete";

@@ -56,6 +56,7 @@ import { NotificationDispatchService } from "@cogno/core/workbench/notification/
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
+import { AutocompleteIssueNotifier } from "@cogno/core/workbench/terminal/+state/autocomplete-issue-notifier";
 import { TerminalActionHandlers } from "@cogno/core/workbench/terminal/+state/keybind/terminal-action-handlers";
 import { SessionActionHandlers } from "@cogno/core/workbench/terminal/+state/session-action-handlers";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
@@ -111,6 +112,8 @@ export const appConfig: ApplicationConfig = {
       inject(SessionActionHandlers);
       // Routes bus messages addressed to a session onto its host.
       inject(TerminalInputDispatcher);
+      // Autocomplete failures become notifications from the first session on.
+      inject(AutocompleteIssueNotifier);
       inject(ErrorReportingRuntimeService).initialize();
 
       const injector = inject(Injector);

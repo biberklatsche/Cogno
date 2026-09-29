@@ -1,12 +1,12 @@
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
-import { Char, IDisposable } from "@cogno/shared/support";
+import { IDisposable } from "@cogno/shared/support";
 import { IDisposable as IXtermDisposable, Terminal } from "@xterm/xterm";
 import { SessionModel } from "../model/session-model";
 
 /**
- * The receiving side of "write this into the terminal" and "clear it": the
- * later injectInput operation of the API. Who asks is not its business.
+ * Writes into the terminal as if typed, and clears it. Who asks is not its
+ * business.
  */
 export class InputHandler implements ITerminalHandler {
   private _terminal?: Terminal;
@@ -37,12 +37,9 @@ export class InputHandler implements ITerminalHandler {
     this._terminal?.clear();
   }
 
-  /** Writes text as if typed; with `autoExecute` an Enter follows once the text is out. */
-  writeRaw(text: string, autoExecute?: boolean): void {
+  /** Writes text as if typed. */
+  writeRaw(text: string): void {
     this.pty.write(text);
     this.onUserInput?.();
-    if (autoExecute) {
-      queueMicrotask(() => this.pty.write(Char.Enter));
-    }
   }
 }

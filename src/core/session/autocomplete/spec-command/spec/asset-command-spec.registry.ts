@@ -9,8 +9,8 @@ type ManifestEntry = {
   excludeShells?: CommandShellConstraints["excludeShells"];
 };
 
-const MANIFEST_URL = "/feature-data/base/spec-command/manifest.json";
-const COMMANDS_BASE_URL = "/feature-data/base/spec-command/commands/";
+const MANIFEST_URL = "/command-specs/manifest.json";
+const COMMANDS_BASE_URL = "/command-specs/commands/";
 
 export class AssetCommandSpecRegistry implements CommandSpecSource {
   private readonly _cache = new Map<string, CommandSpec>();
