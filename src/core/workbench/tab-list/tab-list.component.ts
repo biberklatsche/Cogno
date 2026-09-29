@@ -13,16 +13,17 @@ import {
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
+import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
 import { AppMenuButtonComponent } from "@cogno/core/workbench/app-menu/app-menu-button.component";
 import { BusyIndicatorComponent } from "@cogno/core/workbench/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import { ColorSelectComponent } from "@cogno/core/workbench/color/color-select.component";
+import { TabId } from "@cogno/core/workbench/grid-layout";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
-import { TabId } from "@cogno/shared/domain";
-import { ColorName, IdCreator } from "@cogno/shared/support";
+import { ColorName } from "@cogno/shared/support";
 import {
-  ActionKeybindingPipe,
   ContextMenuItem,
   ContextMenuOverlayService,
   DragPreviewService,

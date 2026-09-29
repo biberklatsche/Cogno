@@ -1,4 +1,4 @@
-import { ShellInsertSanitizerContract } from "@cogno/shared/contributions";
+import { ShellInsertSanitizerContract } from "@cogno/core/api/contributions";
 
 const WHITESPACE = new Set([" ", "\t"]);
 

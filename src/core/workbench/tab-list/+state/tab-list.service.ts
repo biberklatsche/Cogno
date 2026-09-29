@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { actionLabel, SLOTS } from "@cogno/core/workbench/actions/catalog";
@@ -11,9 +12,10 @@ import {
   RemoveTabAction,
   SelectTabAction,
 } from "@cogno/core/workbench/bus/tab-list/actions";
-import { defaultWorkspaceIdContract, TabConfig, TabId } from "@cogno/shared/domain";
-import { ActionKeybindingPort } from "@cogno/shared/ports";
-import { ColorName, IdCreator } from "@cogno/shared/support";
+import { TabConfig, TabId } from "@cogno/core/workbench/grid-layout";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
+import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
+import { ColorName } from "@cogno/shared/support";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { BehaviorSubject, Observable } from "rxjs";
 import { Tab, TabList } from "../+model/tab";

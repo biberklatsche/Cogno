@@ -14,12 +14,8 @@ import {
   HistoryEntryOrigin,
   HistoryScope,
 } from "@cogno/core/command-log/recent-history.types";
-import {
-  ActionKeybindingPipe,
-  StartEllipsisDirective,
-  TimeAgoPipe,
-  TooltipDirective,
-} from "@cogno/shared/ui";
+import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
+import { StartEllipsisDirective, TimeAgoPipe, TooltipDirective } from "@cogno/shared/ui";
 import { TerminalHistoryService } from "./terminal-history.service";
 
 const INITIAL_VIEW_STATE = {

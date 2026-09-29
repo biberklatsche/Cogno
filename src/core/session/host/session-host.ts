@@ -1,3 +1,7 @@
+import {
+  ShellLineEditorActionContract,
+  ShellSessionCapabilitiesContract,
+} from "@cogno/core/api/contributions";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
@@ -15,10 +19,6 @@ import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
-import {
-  ShellLineEditorActionContract,
-  ShellSessionCapabilitiesContract,
-} from "@cogno/shared/contributions";
 import {
   TerminalId,
   TerminalSearchRequestContract,

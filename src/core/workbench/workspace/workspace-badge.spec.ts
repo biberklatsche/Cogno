@@ -1,6 +1,6 @@
-import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import { describe, expect, it } from "vitest";
 import { workspaceBadge } from "./workspace-badge";
+import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "./workspace-entry";
 
 const entry = (overrides: Partial<WorkspaceEntryContract> = {}): WorkspaceEntryContract => ({
   id: "WS-1",

@@ -1,4 +1,4 @@
-import { FilesystemContract } from "@cogno/shared/ports";
+import { FilesystemContract } from "@cogno/core/api/filesystem-port";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 
 type CacheEntry = {

@@ -1,5 +1,5 @@
+import { ApplicationSettingsExtensionContract } from "@cogno/core/api/contributions";
 import { OsType } from "@cogno/platform/os";
-import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
 import { createConfigSchema } from "./config-schema";
 import { Config } from "./models/config";

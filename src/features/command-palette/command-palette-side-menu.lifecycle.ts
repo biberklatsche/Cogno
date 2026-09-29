@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/api/contributions";
 import { focusSideMenuAutofocusElement } from "@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element";
 import { CommandPaletteService } from "./command-palette.service";
 

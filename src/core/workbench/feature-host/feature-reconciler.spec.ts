@@ -1,5 +1,5 @@
+import type { FeatureDefinition } from "@cogno/core/api/contributions";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
-import type { FeatureDefinition } from "@cogno/shared/contributions";
 import type { FeatureModeContract } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
 import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";

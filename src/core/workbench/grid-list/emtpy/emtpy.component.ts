@@ -1,5 +1,5 @@
 import { Component } from "@angular/core";
-import { ActionKeybindingPipe } from "@cogno/shared/ui";
+import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
 
 @Component({
   selector: "app-empty",

@@ -1,5 +1,5 @@
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
-import { TabId } from "@cogno/shared/domain";
+import { TabId } from "@cogno/core/workbench/grid-layout";
 import { ColorName } from "@cogno/shared/support";
 
 export type TabList = Tab[];

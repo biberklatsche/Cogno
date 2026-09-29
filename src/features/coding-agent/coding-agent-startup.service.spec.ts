@@ -1,6 +1,6 @@
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { OsPlatform } from "@cogno/platform";
-import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CodingAgentConfirmDialogService } from "./coding-agent-confirm-dialog.service";
 import type { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";

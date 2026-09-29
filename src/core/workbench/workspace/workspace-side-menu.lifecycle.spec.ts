@@ -1,4 +1,4 @@
-import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
+import type { SideMenuFeatureHandleContract } from "@cogno/core/api/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceService } from "./workspace.service";
 import { WorkspaceSideMenuLifecycle } from "./workspace-side-menu.lifecycle";

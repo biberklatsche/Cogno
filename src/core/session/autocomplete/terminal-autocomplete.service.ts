@@ -1,4 +1,5 @@
 import { Injectable, OnDestroy } from "@angular/core";
+import { TerminalAutocompleteSuggestorContract } from "@cogno/core/api/contributions";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import {
   computeDropdownPanelPosition,
@@ -8,7 +9,6 @@ import {
 } from "@cogno/core/session/dropdown/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
-import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";

@@ -1,4 +1,6 @@
-import { BinaryTree, TabId, TerminalId } from "@cogno/shared/domain";
+import { TabId } from "@cogno/core/workbench/grid-layout";
+import { BinaryTree } from "@cogno/core/workbench/grid-list/binary-tree";
+import { TerminalId } from "@cogno/shared/domain";
 
 export type GridList = Record<TabId, Grid>;
 

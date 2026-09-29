@@ -1,4 +1,4 @@
-import { hexColorSchema, limitSchema } from "@cogno/shared/contributions";
+import { hexColorSchema, limitSchema } from "@cogno/core/api/contributions";
 import { z } from "zod";
 
 const decorationColorSchema = z.strictObject({

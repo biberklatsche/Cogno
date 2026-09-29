@@ -1,9 +1,6 @@
-import {
-  DEFAULT_WORKSPACE_COLOR,
-  defaultWorkspaceIdContract,
-  WorkspaceEntryContract,
-} from "@cogno/shared/domain";
 import { LetterBadge, LetterBadgeMarker } from "@cogno/shared/ui";
+import { DEFAULT_WORKSPACE_COLOR } from "./workspace.model";
+import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "./workspace-entry";
 
 /** The letter badge of a workspace, shared by the side panel and the header's quick select. */
 export function workspaceBadge(

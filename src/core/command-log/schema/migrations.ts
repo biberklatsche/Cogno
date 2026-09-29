@@ -1,4 +1,4 @@
-import { registerDatabaseMigrations } from "@cogno/shared/contributions";
+import { registerDatabaseMigrations } from "@cogno/core/api/contributions";
 import initHistoryMigration from "./001_init_history.sql?raw";
 import importLegacyHistoryMigration from "./002_import_legacy_history.sql?raw";
 import recentHistoryIndexesMigration from "./003_recent_history_indexes.sql?raw";

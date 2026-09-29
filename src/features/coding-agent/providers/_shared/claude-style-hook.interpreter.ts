@@ -1,5 +1,5 @@
 import { AgentHookEvent, HookDetails } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus } from "../../agent-status";
 import { CLAUDE_STYLE_HOOK_EVENT, SESSION_START_SOURCE_COMPACT } from "./hook-events";
 import {
   COMPACTED_ACTIVITY,

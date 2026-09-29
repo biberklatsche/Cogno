@@ -1,9 +1,9 @@
 import type { Injector } from "@angular/core";
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import type { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import type { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
-import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SideMenuFeatureRuntime } from "./side-menu-feature-runtime";

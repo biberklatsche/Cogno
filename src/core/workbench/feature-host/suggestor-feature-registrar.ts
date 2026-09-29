@@ -1,5 +1,13 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { CommandRunner } from "@cogno/core/api/command-runner-port";
+import {
+  AutocompleteProviderIssueContract,
+  AutocompleteProviderIssueReporterContract,
+  FeatureDefinition,
+  TerminalAutocompleteSuggestorContract,
+} from "@cogno/core/api/contributions";
+import { Filesystem } from "@cogno/core/api/filesystem-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   AutocompleteSuggestorIssue,
@@ -7,13 +15,6 @@ import {
 } from "@cogno/core/session/autocomplete/suggestor-registry";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import {
-  AutocompleteProviderIssueContract,
-  AutocompleteProviderIssueReporterContract,
-  FeatureDefinition,
-  TerminalAutocompleteSuggestorContract,
-} from "@cogno/shared/contributions";
-import { CommandRunner, Filesystem } from "@cogno/shared/ports";
 import { FeatureContributionRegistrar } from "./feature-reconciler";
 
 const AUTOCOMPLETE_PROVIDER_NOTIFICATION_THROTTLE_MS = 10_000;

@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
@@ -12,7 +13,6 @@ import {
   NotificationPreferencesUseCase,
   TerminalId,
 } from "@cogno/shared/domain";
-import { NotificationChannelsPort } from "@cogno/shared/ports";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import {

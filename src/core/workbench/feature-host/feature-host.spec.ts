@@ -1,9 +1,9 @@
 import type { DestroyRef } from "@angular/core";
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import type { FeatureDefinition } from "@cogno/core/api/contributions";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
-import type { FeatureDefinition } from "@cogno/shared/contributions";
-import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";

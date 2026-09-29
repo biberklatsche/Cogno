@@ -1,7 +1,7 @@
 import { Injector, provideZonelessChangeDetection, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
-import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
+import type { SideMenuFeatureHandleContract } from "@cogno/core/api/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CodingAgentStartupService } from "./coding-agent-startup.service";
 import type { AgentAttention, CodingAgentStatusService } from "./coding-agent-status.service";

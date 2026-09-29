@@ -1,18 +1,18 @@
 import { DestroyRef, Inject, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import {
+  ApplicationSettingsExtensionContract,
+  FeatureDefinition,
+  ShellSupportDefinitionContract,
+} from "@cogno/core/api/contributions";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
-import {
-  ApplicationSettingsExtensionContract,
-  FeatureDefinition,
-  ShellSupportDefinitionContract,
-} from "@cogno/shared/contributions";
 import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
-import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
 import {
   FeatureContributionRegistrar,

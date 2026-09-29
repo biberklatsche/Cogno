@@ -1,3 +1,4 @@
+import { FeatureDefinition } from "@cogno/core/api/contributions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { sideMenuUiStateFeature } from "@cogno/core/workbench/side-menu/ui-state/ui-state.feature";
 import { workspaceFeature } from "@cogno/core/workbench/workspace/workspace.feature-definition";
@@ -9,7 +10,6 @@ import { gitFeature } from "@cogno/features/git";
 import { notificationFeature } from "@cogno/features/notification-overview";
 import { processInfoFeature } from "@cogno/features/process-info";
 import { terminalSearchFeature } from "@cogno/features/terminal-search";
-import { FeatureDefinition } from "@cogno/shared/contributions";
 
 /**
  * Every feature of the application. Adding one means adding it here. `as

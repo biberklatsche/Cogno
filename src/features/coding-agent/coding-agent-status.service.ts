@@ -1,13 +1,14 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { TerminalPlacement, TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
-import { AgentStatus, NotificationTypeContract, TerminalIpcMessage } from "@cogno/shared/domain";
-import { ApplicationConfigurationPort } from "@cogno/shared/ports";
+import { NotificationTypeContract, TerminalIpcMessage } from "@cogno/shared/domain";
 import { filter, map, merge } from "rxjs";
+import { AgentStatus } from "./agent-status";
 import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agent-animation";
 import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";

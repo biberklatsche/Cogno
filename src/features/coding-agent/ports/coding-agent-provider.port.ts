@@ -1,4 +1,4 @@
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus } from "../agent-status";
 
 /** What a hook payload tells about the agent's work, each field only when present. */
 export type HookDetails = {

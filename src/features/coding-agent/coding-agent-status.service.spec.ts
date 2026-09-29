@@ -1,4 +1,5 @@
 import type { DestroyRef } from "@angular/core";
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -7,10 +8,10 @@ import type {
   TerminalMonitorPort,
 } from "@cogno/core/api/terminal-monitor-port";
 import type { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
-import type { AgentStatus, TerminalIpcMessage } from "@cogno/shared/domain";
-import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
+import type { TerminalIpcMessage } from "@cogno/shared/domain";
 import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { AgentStatus } from "./agent-status";
 import type { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import type { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CodingAgentStatusService, resolveShownStatus } from "./coding-agent-status.service";

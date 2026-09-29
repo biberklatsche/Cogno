@@ -2,7 +2,7 @@ import { EffectRef, effect, Injectable, Injector } from "@angular/core";
 import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/api/contributions";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
 import { CodingAgentStatusService } from "./coding-agent-status.service";
 

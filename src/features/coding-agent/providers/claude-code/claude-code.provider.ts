@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";

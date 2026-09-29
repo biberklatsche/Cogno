@@ -7,18 +7,13 @@ import {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
+import { GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { BinaryNode, BinaryTree } from "@cogno/core/workbench/grid-list/binary-tree";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import {
-  BinaryNode,
-  BinaryTree,
-  defaultWorkspaceIdContract,
-  GridConfig,
-  PaneConfig,
-  TabId,
-  TerminalId,
-} from "@cogno/shared/domain";
-import { IdCreator } from "@cogno/shared/support";
+import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
+import { TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
 import { Grid, GridList, Pane, SplitDirection } from "../+model/model";
 

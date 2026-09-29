@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
+import { TerminalAutocompleteSuggestorContract } from "@cogno/core/api/contributions";
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { BehaviorSubject, Observable, Subject } from "rxjs";
 

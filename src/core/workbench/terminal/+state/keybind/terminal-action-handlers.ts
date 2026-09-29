@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
+import { ShellLineEditorActionContract } from "@cogno/core/api/contributions";
 import { ActionHandler, ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { ShellLineEditorActionContract } from "@cogno/shared/contributions";
 import { TerminalId } from "@cogno/shared/domain";
 
 /** The line-editor action each of these terminal actions runs. */

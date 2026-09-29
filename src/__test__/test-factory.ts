@@ -1,4 +1,5 @@
 import type { DestroyRef } from "@angular/core";
+import type { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import type { SessionHost } from "@cogno/core/session/host/session-host";
 import type { SessionFact } from "@cogno/core/session/session-facts";
@@ -20,7 +21,6 @@ import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 import { TerminalId } from "@cogno/shared/domain";
-import type { ActionKeybindingPort } from "@cogno/shared/ports";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Subject } from "rxjs";
 import { vi } from "vitest";

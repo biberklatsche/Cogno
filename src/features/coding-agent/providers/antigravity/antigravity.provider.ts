@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { AgentHookEvent, ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus } from "../../agent-status";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommand } from "../_shared/hook-command.builder";
 import { payloadFields, stringField } from "../_shared/hook-payload";

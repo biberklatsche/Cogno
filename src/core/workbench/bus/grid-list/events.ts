@@ -1,5 +1,6 @@
 import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
-import { TabId, TerminalId } from "@cogno/shared/domain";
+import { TabId } from "@cogno/core/workbench/grid-layout";
+import { TerminalId } from "@cogno/shared/domain";
 
 type ChangeTabTitlePayload = {
   tabId: TabId;

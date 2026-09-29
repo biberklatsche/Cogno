@@ -1,5 +1,5 @@
+import type { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import type { ActionEntryContract } from "@cogno/shared/domain";
-import type { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";

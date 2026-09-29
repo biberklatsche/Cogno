@@ -1,5 +1,5 @@
+import { FeatureDefinition } from "@cogno/core/api/contributions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
-import { FeatureDefinition } from "@cogno/shared/contributions";
 import { FeatureModeContract } from "@cogno/shared/domain";
 
 /**

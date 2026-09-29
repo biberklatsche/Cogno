@@ -8,7 +8,7 @@ import type {
   RemoveTabAction,
   SelectTabAction,
 } from "@cogno/core/workbench/bus/tab-list/actions";
-import { IdCreator } from "@cogno/shared/support";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
 import {

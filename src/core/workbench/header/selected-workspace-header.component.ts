@@ -9,8 +9,11 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { workspaceBadge } from "@cogno/core/workbench/workspace/workspace-badge";
+import {
+  defaultWorkspaceIdContract,
+  WorkspaceEntryContract,
+} from "@cogno/core/workbench/workspace/workspace-entry";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
-import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
   ContextMenuOverlayService,

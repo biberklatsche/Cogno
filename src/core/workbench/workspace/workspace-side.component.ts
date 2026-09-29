@@ -8,9 +8,8 @@ import {
   viewChildren,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { defaultWorkspaceIdContract } from "@cogno/shared/domain";
-import { ActionKeybindingPort } from "@cogno/shared/ports";
 import {
   CopyEditDeleteComponent,
   DragPreviewService,
@@ -22,6 +21,7 @@ import {
 import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 import { workspaceBadge } from "./workspace-badge";
+import { defaultWorkspaceIdContract } from "./workspace-entry";
 
 @Component({
   selector: "app-workspace-side",

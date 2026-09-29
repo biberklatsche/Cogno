@@ -4,7 +4,6 @@ import {
   SelectableItemState,
   SelectableListUseCase,
   SelectionDirection,
-  WorkspaceEntryContract,
 } from "@cogno/shared/domain";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import {
@@ -12,6 +11,7 @@ import {
   resolveNextNavigationTarget,
 } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
+import { WorkspaceEntryContract } from "./workspace-entry";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemState<string>;

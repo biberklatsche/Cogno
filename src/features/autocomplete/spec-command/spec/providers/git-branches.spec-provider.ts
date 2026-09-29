@@ -1,4 +1,4 @@
-import { CommandRunnerContract } from "@cogno/shared/ports";
+import { CommandRunnerContract } from "@cogno/core/api/command-runner-port";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 import { CommandListSpecProvider } from "./command-list.spec-provider";
 

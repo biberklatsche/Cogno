@@ -1,4 +1,7 @@
-import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+import {
+  FeatureDefinition,
+  SideMenuFeatureDefinitionContract,
+} from "@cogno/core/api/contributions";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";
 
 const commandPaletteFeatureId = "command-palette";

@@ -1,6 +1,6 @@
 import { InjectionToken } from "@angular/core";
+import { FeatureDefinition } from "@cogno/core/api/contributions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
-import { FeatureDefinition } from "@cogno/shared/contributions";
 
 /**
  * The application's feature list, handed to the feature-host at startup.

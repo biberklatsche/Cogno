@@ -1,4 +1,9 @@
 import { Injector, Type } from "@angular/core";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import {
+  SideMenuFeatureHandleContract,
+  SideMenuFeatureLifecycleContract,
+} from "@cogno/core/api/contributions";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import {
@@ -6,11 +11,6 @@ import {
   SideMenuService,
 } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
-import {
-  SideMenuFeatureHandleContract,
-  SideMenuFeatureLifecycleContract,
-} from "@cogno/shared/contributions";
-import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 

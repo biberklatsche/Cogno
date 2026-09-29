@@ -7,9 +7,9 @@ import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { TabAddedEvent } from "@cogno/core/workbench/bus/tab-list/events";
 import type { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
 import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { IdCreator } from "@cogno/shared/support";
 import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {

@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
+import { resolveLimit, UNLIMITED } from "@cogno/core/api/contributions";
 import type { CommandLogWriter } from "@cogno/core/command-log/command-log.api";
 import { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history-reader";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Paths } from "@cogno/platform/path";
-import { resolveLimit, UNLIMITED } from "@cogno/shared/contributions";
 import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
 import { SessionCommandLog } from "../command-log/session-command-log";
 import { ExecutedCommand } from "./executed-command";

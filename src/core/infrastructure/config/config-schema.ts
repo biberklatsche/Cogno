@@ -1,4 +1,4 @@
-import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
+import { ApplicationSettingsExtensionContract } from "@cogno/core/api/contributions";
 import { ZodRawShape, z } from "zod";
 import { baseConfigSchemaShape } from "./models/config";
 

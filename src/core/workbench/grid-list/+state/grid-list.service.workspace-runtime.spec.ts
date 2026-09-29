@@ -1,8 +1,9 @@
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { TabAddedEvent } from "@cogno/core/workbench/bus/tab-list/events";
+import { type GridConfig } from "@cogno/core/workbench/grid-layout";
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
-import { defaultWorkspaceIdContract, type GridConfig } from "@cogno/shared/domain";
-import { IdCreator } from "@cogno/shared/support";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
+import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,

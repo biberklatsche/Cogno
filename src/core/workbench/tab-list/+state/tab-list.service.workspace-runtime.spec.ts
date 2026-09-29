@@ -1,6 +1,6 @@
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { defaultWorkspaceIdContract } from "@cogno/shared/domain";
+import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   clear,

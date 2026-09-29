@@ -4,7 +4,7 @@ import { PendingSessionSnapshots } from "@cogno/core/session/host/pending-sessio
 import { SessionSnapshot } from "@cogno/core/session/host/session-snapshot";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
-import { WorkspaceTerminalSession } from "@cogno/shared/domain/workspace";
+import { WorkspaceTerminalSession } from "./workspace.model";
 import { WorkspaceRepository } from "./workspace.repository";
 
 const DEFAULT_MAX_LINES = 1000;

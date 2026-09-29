@@ -2,10 +2,10 @@ import { signal, type WritableSignal } from "@angular/core";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
 import type { WorkspaceService } from "./workspace.service";
+import type { WorkspaceEntryContract } from "./workspace-entry";
 import type { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "./workspace-shortcut-action.service";
 

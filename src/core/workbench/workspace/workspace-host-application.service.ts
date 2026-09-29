@@ -3,21 +3,19 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { AppWindow } from "@cogno/platform/window";
-import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
-import {
-  WorkspaceConfiguration,
-  WorkspaceState,
-  WorkspaceStateUseCase,
-} from "@cogno/shared/domain/workspace";
-import { Color, IdCreator } from "@cogno/shared/support";
+import { Color } from "@cogno/shared/support";
 import { debounceTime, filter, merge } from "rxjs";
 import { DiscardSessionMarker } from "./discard-session.marker";
 import { SessionPersistenceService } from "./session-persistence.service";
+import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
 import { WorkspaceRepository } from "./workspace.repository";
+import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "./workspace-entry";
+import { WorkspaceStateUseCase } from "./workspace-state.use-case";
 
 const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 

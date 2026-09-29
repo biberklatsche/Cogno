@@ -6,23 +6,21 @@ import {
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
-import { ApplicationConfigurationPortAdapterService } from "@cogno/core/api/application-configuration-port.adapter.service";
+import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-port";
+import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import { CommandRunner } from "@cogno/core/api/command-runner-port";
+import { Filesystem } from "@cogno/core/api/filesystem-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
-import { NotificationCenterPortAdapterService } from "@cogno/core/api/notification-center-port.adapter.service";
+import { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import { SessionApi } from "@cogno/core/api/session-api";
-import { TerminalAnimationAdapterService } from "@cogno/core/api/terminal-animation.adapter.service";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
-import { TerminalGatewayService } from "@cogno/core/api/terminal-gateway.service";
-import { TerminalIpcAdapterService } from "@cogno/core/api/terminal-ipc.adapter.service";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
-import { TerminalMonitorAdapterService } from "@cogno/core/api/terminal-monitor.adapter.service";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
-import { TerminalNavigatorAdapterService } from "@cogno/core/api/terminal-navigator.adapter.service";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { TerminalPlacementAdapterService } from "@cogno/core/api/terminal-placement.adapter.service";
 import { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
 import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
-import { TerminalSearchApiService } from "@cogno/core/api/terminal-search-api.service";
+import { ApplicationConfigurationPortAdapterService } from "@cogno/core/infrastructure/config/application-configuration-port.adapter.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
@@ -33,6 +31,14 @@ import { AboutDialogAdapterService } from "@cogno/core/workbench/about/about-dia
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
+import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/api-adapters/notification-center-port.adapter.service";
+import { TerminalAnimationAdapterService } from "@cogno/core/workbench/api-adapters/terminal-animation.adapter.service";
+import { TerminalGatewayService } from "@cogno/core/workbench/api-adapters/terminal-gateway.service";
+import { TerminalIpcAdapterService } from "@cogno/core/workbench/api-adapters/terminal-ipc.adapter.service";
+import { TerminalMonitorAdapterService } from "@cogno/core/workbench/api-adapters/terminal-monitor.adapter.service";
+import { TerminalNavigatorAdapterService } from "@cogno/core/workbench/api-adapters/terminal-navigator.adapter.service";
+import { TerminalPlacementAdapterService } from "@cogno/core/workbench/api-adapters/terminal-placement.adapter.service";
+import { TerminalSearchApiService } from "@cogno/core/workbench/api-adapters/terminal-search-api.service";
 import { ConfigBootstrapAdapter } from "@cogno/core/workbench/config-bootstrap/config-bootstrap.adapter";
 import { ErrorReportingRuntimeService } from "@cogno/core/workbench/error/error-reporting-runtime.service";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
@@ -56,15 +62,6 @@ import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace
 import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
 import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
 import { Logger } from "@cogno/platform/logger";
-import {
-  ActionCatalog,
-  ActionDispatcher,
-  ActionKeybindingPort,
-  ApplicationConfigurationPort,
-  CommandRunner,
-  Filesystem,
-  NotificationChannelsPort,
-} from "@cogno/shared/ports";
 import { features } from "./features";
 
 export const appConfig: ApplicationConfig = {

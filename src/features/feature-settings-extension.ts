@@ -8,7 +8,7 @@ import {
   FeatureProcessInfoSchema,
   FeatureSearchSchema,
   FeatureWorkspaceSchema,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/api/contributions";
 import { z } from "zod";
 
 const featureSettingsSchemaShape = {

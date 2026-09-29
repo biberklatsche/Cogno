@@ -1,3 +1,4 @@
+import type { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { SessionHost } from "@cogno/core/session/host/session-host";
@@ -8,7 +9,6 @@ import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
-import type { NotificationChannelsPort } from "@cogno/shared/ports";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";

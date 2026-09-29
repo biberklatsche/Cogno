@@ -1,5 +1,5 @@
 import { AgentHookEvent } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus } from "../../agent-status";
 import {
   compactingActivity,
   describeToolCall,

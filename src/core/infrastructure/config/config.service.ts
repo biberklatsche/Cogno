@@ -1,12 +1,12 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ApplicationSettingsExtensionContract } from "@cogno/core/api/contributions";
 import { CliConfigOverrides } from "@cogno/platform/cli-config-overrides";
 import { DefaultConfig } from "@cogno/platform/default-config";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { OsPlatform } from "@cogno/platform/os";
 import { Paths } from "@cogno/platform/path";
-import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
 import { Environment } from "../environment/environment";
 import { ConfigDiagnostic, ConfigMapper } from "./config.mapper";

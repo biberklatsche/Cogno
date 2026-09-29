@@ -1,14 +1,12 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import { FeatureModeContract, NotificationTargetContract } from "@cogno/shared/domain";
+import { NotificationInboxState, NotificationInboxUseCase } from "./inbox";
 import {
-  FeatureModeContract,
   NotificationCenterItemContract,
   NotificationCenterItemIdContract,
-  NotificationInboxState,
-  NotificationInboxUseCase,
-  NotificationTargetContract,
-} from "@cogno/shared/domain";
+} from "./notification-center-item";
 
 @Injectable({ providedIn: "root" })
 export class NotificationCenterStateService {

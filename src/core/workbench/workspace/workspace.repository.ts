@@ -1,12 +1,12 @@
 import { Injectable } from "@angular/core";
-import { DatabaseAccess, DatabaseStatementContract } from "@cogno/platform";
 import {
   PersistedGridConfigurationContract,
   PersistedPaneConfigurationContract,
   PersistedTabConfigurationContract,
   WorkspaceIdentifierContract,
-} from "@cogno/shared/domain";
-import { WorkspaceConfiguration, WorkspaceTerminalSession } from "@cogno/shared/domain/workspace";
+} from "@cogno/core/workbench/grid-layout";
+import { DatabaseAccess, DatabaseStatementContract } from "@cogno/platform";
+import { WorkspaceConfiguration, WorkspaceTerminalSession } from "./workspace.model";
 
 interface WorkspaceEntity {
   id: string;

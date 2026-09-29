@@ -15,6 +15,7 @@
  * Run: `npx tsx scripts/generate-config-docs.ts [--check] [--site]`.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { hexColorSchema } from "../src/core/api/contributions/feature-settings";
 import { baseConfigSchemaShape } from "../src/core/infrastructure/config/models/config";
 import {
   defaultSettings,
@@ -22,7 +23,6 @@ import {
 } from "../src/core/infrastructure/config/models/default-config-values";
 import { HexColorSchema } from "../src/core/infrastructure/config/models/shared";
 import { defaultFeatureSettingsExtension } from "../src/features/feature-settings-extension";
-import { hexColorSchema } from "../src/shared/contributions/feature-settings";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const DOCS_MD = `${REPO_ROOT}/docs/config.md`;

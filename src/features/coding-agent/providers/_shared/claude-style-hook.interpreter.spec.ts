@@ -1,5 +1,5 @@
-import { AgentStatus } from "@cogno/shared/domain";
 import { describe, expect, it } from "vitest";
+import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "./claude-style-hook.interpreter";
 import { editedFilesByTool } from "./hook-payload";
 
