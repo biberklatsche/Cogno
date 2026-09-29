@@ -7,10 +7,6 @@ type ChangeTabTitlePayload = {
   title: string;
 };
 export type ChangeTabTitleEvent = MessageBase<"ChangeTabTitle", ChangeTabTitlePayload>;
-export type PaneMaximizedChangedEvent = MessageBase<
-  "PaneMaximizedChanged",
-  { terminalId?: TerminalId }
->;
 export type VisibleTerminalsChangedEvent = MessageBase<
   "VisibleTerminalsChanged",
   { terminalIds: TerminalId[] }

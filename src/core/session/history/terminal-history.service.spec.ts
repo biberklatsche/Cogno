@@ -28,7 +28,6 @@ class FakeStateManager {
     hasSelection: false,
     isCommandRunning: false,
     isInFullScreenMode: false,
-    isPaneMaximized: false,
     scrolledLinesFromBottom: 0,
     sessionCapabilities: undefined,
     contextRevision: 0,

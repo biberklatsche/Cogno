@@ -159,10 +159,10 @@ describe("SessionHost", () => {
     const host = createHost();
     host.initialize("terminal-1", bashProfile);
     host.machine.setHasSelection(true);
-    host.model.setPaneMaximized(true);
+    host.model.markUnreadNotification();
 
     expect(host.state.hasSelection).toBe(true);
-    expect(host.state.isPaneMaximized).toBe(true);
+    expect(host.state.hasUnreadNotification).toBe(true);
     expect(host.state.terminalId).toBe("terminal-1");
   });
 

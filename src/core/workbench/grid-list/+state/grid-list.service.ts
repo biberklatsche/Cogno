@@ -583,7 +583,11 @@ export class GridListService {
 
   private maximizePane(terminalId: TerminalId): void {
     this.setActiveWorkspaceMaximizedTerminalIdentifier(terminalId);
-    this.bus.publish({ type: "PaneMaximizedChanged", payload: { terminalId } });
+  }
+
+  /** Whether `terminalId` is the maximized pane of the active workspace. */
+  isMaximized(terminalId: TerminalId): boolean {
+    return this.maximizedTerminalId === terminalId;
   }
 
   togglePaneMaximize(terminalId: TerminalId): void {
@@ -597,7 +601,6 @@ export class GridListService {
   private minimizePane(): void {
     if (!this.maximizedTerminalId) return;
     this.setActiveWorkspaceMaximizedTerminalIdentifier(undefined);
-    this.bus.publish({ type: "PaneMaximizedChanged", payload: { terminalId: undefined } });
   }
 
   private get activeTabId(): TabId | undefined {

@@ -114,9 +114,9 @@ Hot-Reload, Zod-Validierung mit Diagnosen, CLI-Overrides, Zusammenführen der
 Feature-Schemas), Theming als Werte (angewendet in Terminal und Workbench),
 Datenbank-Bridge und Migrations-Runner mit Checksummen, Recovery,
 WAL-Checkpoint, Fehlerbehandlung und Logging, Pfade (exe, home, config, db,
-log), der App-Bus als Mechanismus (nicht die Nachrichtentypen — die gehören
-dem Sender), Keybind-Parser und Tastaturlayouts (die Ausführung ist
-Workbench). Nicht drin: `command-log/` (Produktdaten mit eigenem Schema; es
+log), Keybind-Parser und Tastaturlayouts (die Ausführung ist Workbench).
+Der App-Bus gehört nicht dazu: ihn benutzt nur die Workbench, deshalb liegt
+er in `core/workbench/bus/`. Nicht drin: `command-log/` (Produktdaten mit eigenem Schema; es
 *benutzt* die DB-Bridge) und Feature-Tabellen/-Migrationen (gehören dem
 Feature; Infrastructure stellt nur den Runner). `terminal/` importiert
 Infrastructure nicht.
@@ -276,14 +276,19 @@ entfernen. Auch Benachrichtigungen entstehen so: die Session meldet „Kommando
 endete nach 90 s" oder „OSC 9 kam", der Notification-Dispatch der Workbench
 entscheidet Schwelle, Kanal und Unread-Badge (für lange Kommandos
 `completed-command-notification.handler` in `core/workbench/terminal/`).
-„Ungelesen" ist abgeleiteter Workbench-Zustand, weil er den Fokus braucht.
+Das Ungelesen-Abzeichen setzt die Workbench; es liegt aber im
+Sitzungsmodell, weil die Session es selbst löscht — bei Eingabe und bei
+Fokus — und es mit ihr stirbt. Welches Pane maximiert ist, ist dagegen
+reiner Workbench-Zustand und liegt im `GridListService`.
 PTY-Exit meldet die Session als Fakt `exited` (siehe 2.3), nicht als Befehl
-`RemovePane` an das Layout. Der App-Bus bleibt als Mechanismus
-erlaubt, aber Nachrichten aus `session/` sind ausschließlich Ereignisse in
-Vergangenheitsform; Aktionsnamen der Workbench (`RemovePane`, `CloseTab`,
-`FocusPane` …) kommen darin nicht vor — prüfbar per Typregel.
+`RemovePane` an das Layout. Die Session kennt keinen Bus: sie veröffentlicht
+ihre Fakten auf `facts$` (`SessionHost`, `SessionModel`), ausschließlich als
+Ereignisse in Vergangenheitsform; Aktionsnamen der Workbench (`RemovePane`,
+`CloseTab`, `FocusPane` …) kommen darin nicht vor — prüfbar per Typregel.
+Die Workbench liest sie über die Session-Registry.
 
-Der Bus selbst ist **ein Strom, abonniert nach Nachrichtentyp**
+Der App-Bus der Workbench (`core/workbench/bus/`) ist **ein Strom, abonniert
+nach Nachrichtentyp**
 (`on$(type)`, `once$(type)`, `publish`): jeder Abonnent eines Typs bekommt
 eine Nachricht genau einmal, synchron, in Abo-Reihenfolge. Pfade und
 Capture-/Target-/Bubble-Phasen gibt es nicht — niemand hat sie genutzt, und
@@ -590,12 +595,13 @@ Orte:
    `command*`, `command_log`, `command_stat`, `command_transition_stat`,
    `command_pattern*`, `path`, `dir_stat`, `shell_context`, `command_fts` und
    ihre Migrationen. Zwei API-Seiten:
-   - **Schreiben:** `recordExecution`, `recordCwd`, `recordTransition`,
-     Import (nativ/Legacy), Prune, Löschen — plus die **Feedback-Schreiber**
+   - **Schreiben** (`CommandLogWriter`): `upsertCommandExecution`,
+     `upsertWorkingDirectory`, `upsertCommandTransition`, Import
+     (`bulkImportCommands`), Löschen — plus die **Feedback-Schreiber**
      `markCommandSelected`, `markDirectorySelected`, `confirmLivePattern`,
      `markCommandPatternSelected`. Feedback ist auch Erfassung (Nutzerverhalten
      statt Shell-Ereignis), nur ein anderer Absender.
-   - **Lesen:** `searchCommands`, `getRecentCommands`, `searchDirectories`,
+   - **Lesen** (`CommandLogReader`): `searchCommands`, `getRecentCommands`, `searchDirectories`,
      `searchCommandPatterns`, Übergangs-Statistik, FTS. Kein Konsument setzt
      eigenes SQL ab.
    Abgeleitete Daten (Statistik, Übergänge, Pattern-Mining) werden hier
@@ -674,16 +680,15 @@ laufendes Kommando **nicht mehr**. Drei Dinge sind zu unterscheiden:
 |---|---|---|
 | **Neue Shell-Runtime** | Profil, Start-cwd, Titel-Override | neu gestartet — ein frischer Prozess mit frischer Umgebung, frischem Token, neuem Handshake |
 | **Wiederhergestellte Darstellung** | Scrollback als Text | eingespielt, sichtbar als Vergangenheit |
-| **Nicht wiederherstellbarer alter Prozess** | Kontext-Zeitachse, Capabilities, unterbrochenes Kommando, Umgebung | **nicht** wiederhergestellt — nur dokumentiert |
+| **Nicht wiederherstellbarer alter Prozess** | Kontext-Zeitachse, Capabilities, unterbrochenes Kommando, Umgebung | **nicht** wiederhergestellt; das unterbrochene Kommando steht als abgebrochen im Command-Log |
 
-Daraus die Form des `SessionSnapshot` (Typ in `session/`, von der
-Workbench gespeichert, nicht interpretiert):
+Die neue Shell-Runtime startet aus dem Pane-Layout der Workbench (Profil,
+Start-cwd, Titel-Override). Einen früheren Remote-Kontext stellt sie nie
+wieder her — den aktuellen Kontext bestimmt allein der neue Handshake (2.1).
 
-- **`start`** — Shell-Profil, Start-cwd, Titel-Override. Das Start-cwd ist
-  das cwd des **Basis-Kontexts** (der lokalen, äußersten Shell), nicht das
-  des letzten. War die Sitzung zuletzt in SSH oder WSL, startet sie lokal im
-  letzten lokalen cwd; der frühere Remote-Kontext wird nie „aktueller
-  Kontext" — den bestimmt allein der neue Handshake (2.1).
+Der `SessionSnapshot` (`session/host/session-snapshot.ts`, von der
+Workbench gespeichert, nicht interpretiert) trägt nur die Darstellung:
+
 - **`scrollback`** — der Puffer als Text mit SGR-Farben, serialisiert von
   `scrollback-serializer.ts` (nicht vom SerializeAddon: dessen
   Cursor-Restore-Schluss hat die Live-Sitzung beim Abspielen beschädigt), ohne
@@ -704,12 +709,12 @@ Workbench gespeichert, nicht interpretiert):
   seinen Kommando-Metadaten, und ebenso beim Abspielen (für Snapshots, die ihn
   noch enthalten). Steht hinter dem letzten Marker etwas — getippte Eingabe,
   die Ausgabe eines laufenden Kommandos —, ist das Verlauf und bleibt.
-- **`history`** — die frühere Kontext-Zeitachse als Information für das
-  Modell („war zuletzt auf host X") und der Titel des Kommandos, das beim
-  Beenden lief. Beim Restore markiert der Recorder dieses Kommando im
-  Command-Log als **abgebrochen** (`exit: aborted`, Ende = Snapshot-Zeit);
-  nichts wird erneut gestartet.
-- **Nicht enthalten:** die Umgebung (Rust baut sie beim Spawn neu, inklusive
+- **`commands`** — die Metadaten jedes Prompts (Verzeichnis, Rechner,
+  Nutzer), damit die Prompt-Dekoration der alten Kommandos wieder erscheint.
+- **Nicht enthalten:** die frühere Kontext-Zeitachse — bewusst, es gibt
+  keinen Leser dafür. Ein Kommando, das beim Beenden noch lief, trägt die
+  Session schon beim Beenden als **abgebrochen** ins Command-Log ein; nichts
+  wird erneut gestartet. Ebenso nicht: die Umgebung (Rust baut sie beim Spawn neu, inklusive
   neuem `COGNO_SESSION_TOKEN`), Capabilities (kommen vom neuen Handshake),
   laufende Bindungen, Cursorposition, Eingabezeile.
 
@@ -1140,11 +1145,12 @@ Quelle der Werte, Zod die Quelle der Doku, der Code die Quelle der Aktionen.
 Regel: **Quelle ist Code, Sicht ist eine vollständige generierte Datei pro
 OS.**
 
-- Settings: Wert *und* Beschreibung in Zod (`.default(…).describe(…)`); wo ein
-  Wert vom OS abhängt, steht das im Schema. Das ist dieselbe Entscheidung wie
-  für die Website-Doku (`SettingsDocsPort`), nur konsequent zu Ende geführt.
-- Keybindings: in der Aktionsdefinition, pro OS (`defaultKeys`). Eine Aktion
-  ohne Default-Keybinding ist zulässig.
+- Settings: die Beschreibung in Zod (`.describe(…)`), der Wert an einer
+  Stelle, `default-config-values.ts`, auch wo er vom OS abhängt (Abschnitt 6).
+- Keybindings: Core-Aktionen in ihrer Katalogdefinition, pro OS
+  (`defaultKeys`); Feature-Aktionen in `featureKeybinds`
+  (`default-config-values.ts`). Eine Aktion ohne Default-Keybinding ist
+  zulässig.
 - Der Build generiert daraus `default_windows.config`, `default_macos.config`,
   `default_linux.config` — alle Settings mit ihrem Kommentar, alle Keybinds,
   nichts handgeschrieben. Der Rust-Teil lädt sie wie heute als
@@ -1364,7 +1370,6 @@ Einzeltransaktion. Offen ist nur noch:
 |---|---|
 | Deaktivierungstest je Feature (4.2) | fehlt für `git`, `process-info` und `autocomplete` |
 | **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
-| Sitzungs-Wiederherstellung (Abschnitt 2.5) | `SessionSnapshot` trägt `scrollback` und `commands`; der `history`-Teil (frühere Kontext-Zeitachse) fehlt. |
 | Command-Log-Lese-Timeout (Abschnitt 2.4) | Das Lese-Timeout mit `timedOut`-Kennzeichen fehlt. |
 | `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |
 

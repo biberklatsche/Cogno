@@ -31,7 +31,6 @@ function hostStub() {
     focus: vi.fn(),
     blur: vi.fn(),
     setVisible: vi.fn(),
-    setPaneMaximized: vi.fn(),
     clearBuffer: vi.fn(),
     paste: vi.fn(async () => undefined),
     copy: vi.fn(async () => undefined),

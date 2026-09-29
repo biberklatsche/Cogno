@@ -13,7 +13,6 @@ function hostStub() {
     focus: vi.fn(),
     blur: vi.fn(),
     setVisible: vi.fn(),
-    setPaneMaximized: vi.fn(),
     clearBuffer: vi.fn(),
     writeRaw: vi.fn(),
     paste: vi.fn(async () => undefined),
@@ -74,15 +73,5 @@ describe("TerminalInputDispatcher", () => {
 
     expect(host1.setVisible).toHaveBeenCalledExactlyOnceWith(true);
     expect(host2.setVisible).toHaveBeenCalledExactlyOnceWith(false);
-  });
-
-  it("fans PaneMaximizedChanged out to every session", () => {
-    bus.publish({
-      type: "PaneMaximizedChanged",
-      payload: { terminalId: "t1" },
-    });
-
-    expect(host1.setPaneMaximized).toHaveBeenCalledWith(true);
-    expect(host2.setPaneMaximized).toHaveBeenCalledWith(false);
   });
 });

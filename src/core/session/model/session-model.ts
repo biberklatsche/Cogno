@@ -41,7 +41,6 @@ export type SessionModelSnapshot = {
   contextRevision: number;
   isContextKnown: boolean;
   hasUnreadNotification: boolean;
-  isPaneMaximized: boolean;
 };
 
 const createInitialSessionState = (backendOs: OsType): SessionModelSnapshot => ({
@@ -55,7 +54,6 @@ const createInitialSessionState = (backendOs: OsType): SessionModelSnapshot => (
   contextRevision: 0,
   isContextKnown: true,
   hasUnreadNotification: false,
-  isPaneMaximized: false,
 });
 
 /** One entry of the context timeline: what the shell is, and what it can do. */
@@ -74,8 +72,8 @@ type ContextEntry = {
  * states what happened as facts on `facts$`, without knowing who listens
  * (ARCHITECTURE.md 2.1).
  *
- * The unread badge and pane maximization sit here for now because they die
- * with the session; maximization is workbench business and moves there.
+ * The unread badge sits here because the session clears it - on input and on
+ * focus - and it dies with the session; the workbench only sets it.
  */
 /** Dropped impostor sequences before the session says so once. */
 const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
@@ -170,7 +168,6 @@ export class SessionModel {
       shellContext,
       contextRevision: 0,
       isContextKnown: true,
-      isPaneMaximized: false,
     });
   }
 
@@ -445,14 +442,6 @@ export class SessionModel {
     // when nothing changes, otherwise every subscriber runs per keypress.
     if (!this._state.value.hasUnreadNotification) return;
     this.update({ hasUnreadNotification: false });
-  }
-
-  get isPaneMaximized(): boolean {
-    return this._state.value.isPaneMaximized;
-  }
-
-  setPaneMaximized(isPaneMaximized: boolean): void {
-    this.update({ isPaneMaximized });
   }
 
   private update(updates: Partial<SessionModelSnapshot>): void {

@@ -6,6 +6,7 @@ import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-h
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { Renderer } from "@cogno/core/terminal/renderer";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
@@ -65,6 +66,7 @@ describe("SessionNotifications", () => {
   let host: SessionHost;
   let notifications: SessionNotifications;
   let menus: SessionMenus;
+  let maximizedTerminalId: string | undefined;
   let configService: ConfigServiceMock;
 
   function configure(config: Record<string, unknown>): void {
@@ -139,7 +141,10 @@ describe("SessionNotifications", () => {
       notificationChannelsPort,
     );
 
-    menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock());
+    maximizedTerminalId = undefined;
+    menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock(), {
+      isMaximized: (id: string) => id === maximizedTerminalId,
+    } as unknown as GridListService);
 
     host.start();
   });
@@ -191,9 +196,9 @@ describe("SessionNotifications", () => {
     });
   });
 
-  describe("menu reads host state", () => {
+  describe("menu reads the workbench's maximized pane", () => {
     it("shows Minimize when the pane is maximized", () => {
-      host.setPaneMaximized(true);
+      maximizedTerminalId = terminalId;
 
       const items = menus.buildContextMenu();
       expect(items.find((i) => i.label === "Minimize Pane")).toBeDefined();

@@ -10,7 +10,6 @@ import { ConfigLoadedEvent, DBInitializedEvent } from "@cogno/core/workbench/bus
 import { FocusActiveTerminalAction } from "@cogno/core/workbench/bus/grid-list/actions";
 import {
   ChangeTabTitleEvent,
-  PaneMaximizedChangedEvent,
   VisibleTerminalsChangedEvent,
 } from "@cogno/core/workbench/bus/grid-list/events";
 import { OpenNotificationTargetAction } from "@cogno/core/workbench/bus/notification/actions";
@@ -62,6 +61,5 @@ export type AppMessage =
   | OpenNotificationTargetAction
   | SideMenuEvent
   | ChangeTabTitleEvent
-  | PaneMaximizedChangedEvent
   | VisibleTerminalsChangedEvent
   | TerminalIpcMessageEvent;

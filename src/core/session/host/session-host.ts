@@ -538,10 +538,6 @@ export class SessionHost {
     this.renderer.setVisible(visible);
   }
 
-  setPaneMaximized(maximized: boolean): void {
-    this.model.setPaneMaximized(maximized);
-  }
-
   scrollToBottom(): void {
     this.renderer.terminal.scrollToBottom();
   }

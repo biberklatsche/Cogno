@@ -30,11 +30,6 @@ export class TerminalInputDispatcher {
     until(this.bus.on$("BlurTerminal")).subscribe((event) => {
       this.registry.get(event.payload)?.host.blur();
     });
-    until(this.bus.on$("PaneMaximizedChanged")).subscribe((event) => {
-      for (const entry of this.registry.entries) {
-        entry.host.setPaneMaximized(event.payload?.terminalId === entry.terminalId);
-      }
-    });
     until(this.bus.on$("VisibleTerminalsChanged")).subscribe((event) => {
       for (const entry of this.registry.entries) {
         entry.host.setVisible(event.payload?.terminalIds.includes(entry.terminalId) ?? true);
