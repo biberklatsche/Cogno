@@ -12,7 +12,7 @@ import {
   hookStateOf,
   isCurrentHookCommand,
 } from "../_shared/hook-command.builder";
-import { withoutCognoHooks } from "../_shared/hook-groups";
+import { withoutCognoHooksOnEveryEvent } from "../_shared/hook-groups";
 import { editedFilesByTool } from "../_shared/hook-payload";
 import { CLAUDE_CODE_CONFIG, ClaudeSettings } from "./claude-code.config";
 
@@ -57,15 +57,15 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     await this.configFile.ensureDir(configDir);
 
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
-    settings.hooks = settings.hooks ?? {};
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks ?? {}, (h) =>
+      CLAUDE_CODE_CONFIG.isCognoCommand(h.command),
+    );
 
     const shell = shellType === "PowerShell" ? "powershell" : "bash";
     for (const entry of CLAUDE_CODE_CONFIG.hookEvents) {
       const command = buildHookCommand(entry.status, shellType, this.id, entry.eventName);
       settings.hooks[entry.eventName] = [
-        ...withoutCognoHooks(settings.hooks[entry.eventName] ?? [], (h) =>
-          CLAUDE_CODE_CONFIG.isCognoCommand(h.command),
-        ),
+        ...(settings.hooks[entry.eventName] ?? []),
         {
           ...(entry.matcher ? { matcher: entry.matcher } : {}),
           hooks: [{ type: "command", command, shell }],
@@ -83,18 +83,9 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
     if (!settings.hooks) return;
 
-    for (const entry of CLAUDE_CODE_CONFIG.hookEvents) {
-      const existing = settings.hooks[entry.eventName];
-      if (!existing) continue;
-      const cleaned = withoutCognoHooks(existing, (h) =>
-        CLAUDE_CODE_CONFIG.isCognoCommand(h.command),
-      );
-      if (cleaned.length === 0) {
-        delete settings.hooks[entry.eventName];
-      } else {
-        settings.hooks[entry.eventName] = cleaned;
-      }
-    }
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, (h) =>
+      CLAUDE_CODE_CONFIG.isCognoCommand(h.command),
+    );
     await this.configFile.writeJson(configPath, settings);
   }
 

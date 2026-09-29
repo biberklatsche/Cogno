@@ -91,6 +91,23 @@ describe("ClaudeCodeProvider", () => {
     );
   });
 
+  it("clears a Cogno hook left on an event this version no longer hooks, on install and remove", async () => {
+    const stale = { type: "command" as const, command: "curl $COGNO_PORT coding_agent_status old" };
+    const settings = files.get(SETTINGS) as ClaudeSettings;
+    settings.hooks = { ...settings.hooks, OldEvent: [{ hooks: [stale, foreignHook] }] };
+
+    await provider.installHook("Bash");
+    const installed = files.get(SETTINGS) as ClaudeSettings;
+    expect(installed.hooks?.["OldEvent"]).toEqual([{ hooks: [foreignHook] }]);
+    expect(await provider.hookState()).toBe("current");
+
+    installed.hooks = { ...installed.hooks, Gone: [{ hooks: [stale] }] };
+    await provider.removeHook();
+    const removed = files.get(SETTINGS) as ClaudeSettings;
+    expect(cognoHooksIn(removed)).toEqual([]);
+    expect(removed.hooks?.["Gone"]).toBeUndefined();
+  });
+
   it("leaves a settings file without hooks alone on remove", async () => {
     files.set(SETTINGS, { theme: "dark" });
 

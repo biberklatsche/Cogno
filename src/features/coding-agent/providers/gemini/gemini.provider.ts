@@ -11,7 +11,7 @@ import {
   hookStateOf,
   isCurrentHookCommand,
 } from "../_shared/hook-command.builder";
-import { withoutCognoHooks } from "../_shared/hook-groups";
+import { withoutCognoHooksOnEveryEvent } from "../_shared/hook-groups";
 import { GEMINI_CONFIG, GeminiHookGroup, GeminiSettings } from "./gemini.config";
 import { interpretGeminiHook } from "./gemini-hook.interpreter";
 
@@ -52,15 +52,14 @@ export class GeminiProvider implements ICodingAgentProvider {
     await this.configFile.ensureDir(configDir);
     const configPath = await this.configFile.joinPath(configDir, GEMINI_CONFIG.configFileName);
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
-    settings.hooks = settings.hooks ?? {};
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks ?? {}, (h) =>
+      GEMINI_CONFIG.isCognoCommand(h.command),
+    );
 
     for (const entry of GEMINI_CONFIG.hookEvents) {
       const command = buildHookCommand(entry.status, shellType, this.id, entry.eventName);
       const existing: GeminiHookGroup[] = settings.hooks[entry.eventName] ?? [];
-      settings.hooks[entry.eventName] = [
-        ...withoutCognoHooks(existing, (h) => GEMINI_CONFIG.isCognoCommand(h.command)),
-        { hooks: [{ type: "command", command }] },
-      ];
+      settings.hooks[entry.eventName] = [...existing, { hooks: [{ type: "command", command }] }];
     }
 
     await this.configFile.writeJson(configPath, settings);
@@ -74,13 +73,9 @@ export class GeminiProvider implements ICodingAgentProvider {
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     if (!settings.hooks) return;
 
-    for (const { eventName } of GEMINI_CONFIG.hookEvents) {
-      const existing = settings.hooks[eventName];
-      if (!existing) continue;
-      const cleaned = withoutCognoHooks(existing, (h) => GEMINI_CONFIG.isCognoCommand(h.command));
-      if (cleaned.length === 0) delete settings.hooks[eventName];
-      else settings.hooks[eventName] = cleaned;
-    }
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, (h) =>
+      GEMINI_CONFIG.isCognoCommand(h.command),
+    );
 
     await this.configFile.writeJson(configPath, settings);
   }

@@ -49,7 +49,11 @@ export class CodingAgentStartupService {
       try {
         if (!(await provider.isAgentInstalled())) continue;
         let state = await provider.hookState();
-        if (state === "outdated" && (await this.updateHook(provider))) state = "current";
+        // A hook the user took out stays out, even if an older one is left over.
+        const removed = this.decisionFor(provider) === "removed";
+        if (state === "outdated" && !removed && (await this.updateHook(provider))) {
+          state = "current";
+        }
         installed.push({ provider, hasHook: state === "current" });
         if (state === "missing" && !this.decisionFor(provider)) needsHooks.push(provider);
       } catch {

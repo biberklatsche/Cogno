@@ -8,7 +8,7 @@ import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { buildHookCommands, hookStateOf } from "../_shared/hook-command.builder";
-import { withoutCognoHooks } from "../_shared/hook-groups";
+import { withoutCognoHooksOnEveryEvent } from "../_shared/hook-groups";
 import { PayloadFields, stringField } from "../_shared/hook-payload";
 import { CODEX_CONFIG, CodexHookGroup, CodexHooksFile } from "./codex.config";
 
@@ -67,15 +67,15 @@ export class CodexProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
 
-    file.hooks = file.hooks ?? {};
+    file.hooks = withoutCognoHooksOnEveryEvent(file.hooks ?? {}, (h) =>
+      CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
+    );
 
     for (const entry of CODEX_CONFIG.hookEvents) {
       const { command, commandWindows } = buildHookCommands(entry.status, this.id, entry.eventName);
       const existing: CodexHookGroup[] = file.hooks[entry.eventName] ?? [];
       file.hooks[entry.eventName] = [
-        ...withoutCognoHooks(existing, (h) =>
-          CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
-        ),
+        ...existing,
         { hooks: [{ type: "command", command, commandWindows }] },
       ];
     }
@@ -89,19 +89,9 @@ export class CodexProvider implements ICodingAgentProvider {
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
     if (!file.hooks) return;
 
-    for (const { eventName } of CODEX_CONFIG.hookEvents) {
-      const existing = file.hooks[eventName];
-      if (!existing) continue;
-      const cleaned = withoutCognoHooks(existing, (h) =>
-        CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
-      );
-
-      if (cleaned.length === 0) {
-        delete file.hooks[eventName];
-      } else {
-        file.hooks[eventName] = cleaned;
-      }
-    }
+    file.hooks = withoutCognoHooksOnEveryEvent(file.hooks, (h) =>
+      CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
+    );
 
     await this.configFile.writeJson(configPath, file);
   }

@@ -126,6 +126,19 @@ describe("CodingAgentStartupService", () => {
       expect(hookOf(service, "claude")).toBe(true);
     });
 
+    it("leaves an outdated hook alone once the user removed the hook", async () => {
+      window.localStorage.setItem(
+        "cogno.coding-agents.hook-decisions",
+        JSON.stringify({ claude: "removed" }),
+      );
+      const claude = providerDouble("claude", { hook: "outdated" });
+      start([claude]);
+      await settle();
+
+      expect(claude.installHook).not.toHaveBeenCalled();
+      expect(confirm).not.toHaveBeenCalled();
+    });
+
     it("lists an outdated hook it could not update as missing, without asking", async () => {
       const claude = providerDouble("claude", { hook: "outdated" });
       claude.installHook.mockRejectedValue(new Error("settings.json is read-only"));
