@@ -33,6 +33,30 @@ describe("FocusHandler", () => {
     expect(addEventListenerSpy).toHaveBeenCalledWith("blur", expect.any(Function));
   });
 
+  it("hears native focus and blur once the terminal opens after registration", () => {
+    // xterm creates its textarea only in open(), after the handler is registered.
+    const terminal = { textarea: undefined } as { textarea: HTMLTextAreaElement | undefined };
+    handler.registerTerminal(terminal as unknown as Terminal);
+
+    const textarea = document.createElement("textarea");
+    terminal.textarea = textarea;
+    handler.watchTextarea();
+    textarea.dispatchEvent(new FocusEvent("focus"));
+    textarea.dispatchEvent(new FocusEvent("blur"));
+
+    expect(focusChanges).toEqual([true, false]);
+  });
+
+  it("stops listening when disposed", () => {
+    const textarea = document.createElement("textarea");
+    handler.registerTerminal({ textarea } as unknown as Terminal);
+
+    handler.dispose();
+    textarea.dispatchEvent(new FocusEvent("focus"));
+
+    expect(focusChanges).toEqual([]);
+  });
+
   it("reports and remembers focus when the user clicks in", () => {
     handler.registerTerminal(mockTerminal);
 

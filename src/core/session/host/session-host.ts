@@ -512,6 +512,8 @@ export class SessionHost {
     element.style.width = "100%";
     element.style.height = "100%";
     this.renderer.open(element, this.configService.config.font?.enable_ligatures ?? false);
+    // xterm has a textarea only now; native focus and blur are reported from here on.
+    this.focusHandler?.watchTextarea();
     this.resizeHandler = new ResizeHandler(this.pty, element, this.machine);
     this.disposables.push(this.renderer.register(this.resizeHandler));
     this.disposables.push(this.renderer.register(new MouseHandler(element, this.machine)));
