@@ -88,12 +88,15 @@ impl Db {
 
         let (mut conn, mut recovery) = match open_verified(path) {
             Ok(conn) => (conn, None),
-            Err(reasons) => {
+            // Locked by another process, no permission: the file may well be
+            // healthy, so it is left alone and the open fails.
+            Err(OpenFailure::Unavailable(e)) => return Err(e),
+            Err(OpenFailure::Damaged(reasons)) => {
                 let quarantined = recovery::quarantine(path)?;
-                let conn = open_verified(path).map_err(|reasons| {
+                let conn = open_verified(path).map_err(|failure| {
                     DbError::Migration(format!(
                         "could not create a fresh database after quarantine: {}",
-                        reasons.join("; ")
+                        failure.describe()
                     ))
                 })?;
                 (
@@ -165,14 +168,49 @@ impl Db {
     }
 }
 
-/// Opens the file and runs the integrity check. On failure the connection
-/// is dropped and the reasons are returned so the caller can quarantine.
-fn open_verified(path: &Path) -> Result<Connection, Vec<String>> {
-    let conn = connection::open(path).map_err(|e| vec![e.to_string()])?;
+/// Why a database could not be opened.
+enum OpenFailure {
+    /// The file is damaged: quarantine it and rebuild. Carries the reasons.
+    Damaged(Vec<String>),
+    /// Anything else - a lock held by another process, a permission problem.
+    /// The file may be healthy and must not be touched.
+    Unavailable(DbError),
+}
+
+impl OpenFailure {
+    fn describe(&self) -> String {
+        match self {
+            OpenFailure::Damaged(reasons) => reasons.join("; "),
+            OpenFailure::Unavailable(e) => e.to_string(),
+        }
+    }
+}
+
+/// Opens the file and runs the integrity check. On failure the connection is
+/// dropped and the caller learns whether the file is damaged.
+fn open_verified(path: &Path) -> Result<Connection, OpenFailure> {
+    let conn = connection::open(path).map_err(classify_open_error)?;
     match connection::quick_check(&conn) {
         Ok(problems) if problems.is_empty() => Ok(conn),
-        Ok(problems) => Err(problems),
-        Err(e) => Err(vec![e.to_string()]),
+        Ok(problems) => Err(OpenFailure::Damaged(problems)),
+        Err(e) => Err(classify_open_error(e)),
+    }
+}
+
+/// Only SQLite's own verdict that the file is corrupt or no database at all
+/// counts as damage; every other error leaves the file alone.
+fn classify_open_error(e: DbError) -> OpenFailure {
+    let damaged = matches!(
+        &e,
+        DbError::Sqlite(error) if matches!(
+            error.sqlite_error_code(),
+            Some(rusqlite::ErrorCode::DatabaseCorrupt | rusqlite::ErrorCode::NotADatabase)
+        )
+    );
+    if damaged {
+        OpenFailure::Damaged(vec![e.to_string()])
+    } else {
+        OpenFailure::Unavailable(e)
     }
 }
 
@@ -445,6 +483,33 @@ mod tests {
             report.applied_migrations.is_empty(),
             "a failed import is not retried"
         );
+    }
+
+    fn sqlite_error(code: std::os::raw::c_int) -> DbError {
+        DbError::Sqlite(rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(code),
+            None,
+        ))
+    }
+
+    #[test]
+    fn only_corruption_counts_as_damage() {
+        for code in [rusqlite::ffi::SQLITE_CORRUPT, rusqlite::ffi::SQLITE_NOTADB] {
+            assert!(matches!(classify_open_error(sqlite_error(code)), OpenFailure::Damaged(_)));
+        }
+        for code in [
+            rusqlite::ffi::SQLITE_BUSY,
+            rusqlite::ffi::SQLITE_LOCKED,
+            rusqlite::ffi::SQLITE_CANTOPEN,
+            rusqlite::ffi::SQLITE_PERM,
+        ] {
+            assert!(matches!(
+                classify_open_error(sqlite_error(code)),
+                OpenFailure::Unavailable(_)
+            ));
+        }
+        let io = DbError::Io(std::io::Error::other("denied"));
+        assert!(matches!(classify_open_error(io), OpenFailure::Unavailable(_)));
     }
 
     #[test]
