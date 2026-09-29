@@ -77,7 +77,7 @@ export class GitStatusService {
     if (!session || !this.currentGitRoot) return [];
     const result = await this.runGit(
       session,
-      ["status", "--porcelain=v1", "-uall", "--", dirPath],
+      ["status", "--porcelain=v1", "-z", "-uall", "--", dirPath],
       GIT_TIMEOUT_MS,
     );
     if (!result || result.exitCode !== 0) return [];
@@ -182,7 +182,7 @@ export class GitStatusService {
     this.loadingSignal.set(true);
     try {
       const [statusResult, branchResult] = await Promise.all([
-        this.runGit(session, ["-C", gitRoot, "status", "--porcelain=v1"], GIT_TIMEOUT_MS),
+        this.runGit(session, ["-C", gitRoot, "status", "--porcelain=v1", "-z"], GIT_TIMEOUT_MS),
         this.runGit(session, ["-C", gitRoot, "rev-parse", "--abbrev-ref", "HEAD"], GIT_TIMEOUT_MS),
       ]);
 
@@ -271,17 +271,24 @@ export class GitStatusService {
   }
 }
 
+/**
+ * Reads `git status --porcelain=v1 -z`: entries end in NUL and paths come
+ * verbatim - no quoting, spaces and umlauts as they are. A rename or copy is
+ * followed by its source path as an entry of its own, which is skipped.
+ */
 export function parseGitStatus(raw: string): Pick<GitStatus, "staged" | "unstaged" | "untracked"> {
   const staged: GitFile[] = [];
   const unstaged: GitFile[] = [];
   const untracked: GitFile[] = [];
 
-  for (const line of raw.split("\n")) {
-    if (line.length < 3) continue;
-    const x = line[0];
-    const y = line[1];
-    // porcelain v1 rename lines are "R new\told" — take only the new path
-    const path = line.slice(3).split("\t")[0];
+  const entries = raw.split("\0");
+  for (let index = 0; index < entries.length; index++) {
+    const entry = entries[index] ?? "";
+    if (entry.length < 4) continue;
+    const x = entry[0];
+    const y = entry[1];
+    const path = entry.slice(3);
+    if (x === "R" || x === "C" || y === "R" || y === "C") index++;
 
     if (x === "?" && y === "?") {
       const isDirectory = path.endsWith("/");
