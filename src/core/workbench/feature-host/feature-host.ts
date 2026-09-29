@@ -14,11 +14,7 @@ import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
-import {
-  FeatureContributionRegistrar,
-  FeatureReconciler,
-  FeatureRuntimeState,
-} from "./feature-reconciler";
+import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";
 import { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
 import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
@@ -98,11 +94,6 @@ export class FeatureHost {
     return this.declarationConflicts;
   }
 
-  /** Each feature's runtime status, for the sidebar and the API (step 22d). */
-  featureStates(): ReadonlyArray<FeatureRuntimeState> {
-    return this.reconciler?.states() ?? [];
-  }
-
   /** The features' side-menu contributions, ordered - for the native menu (step 28). */
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
     return this.features
@@ -131,8 +122,7 @@ export class FeatureHost {
     if (!featureId) {
       return false;
     }
-    const status = this.reconciler?.states().find((state) => state.id === featureId)?.status;
-    return status === "active" || status === "degraded";
+    return this.reconciler?.statusOf(featureId) === "active";
   }
 
   private featureIdByActionName(): ReadonlyMap<ActionName, string> {

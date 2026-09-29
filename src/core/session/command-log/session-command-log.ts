@@ -1,10 +1,6 @@
 import { Injectable } from "@angular/core";
 import type { CommandLogReader, CommandLogWriter } from "@cogno/core/command-log/command-log.api";
-import {
-  CommandLogHealth,
-  CommandLogHealthTracker,
-  HEALTHY,
-} from "@cogno/core/command-log/command-log.health";
+import { CommandLogHealthTracker } from "@cogno/core/command-log/command-log.health";
 import {
   CommandHistoryRow,
   CommandLogRepository,
@@ -15,7 +11,6 @@ import { CommandPattern } from "@cogno/core/command-log/command-pattern.models";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseAccess } from "@cogno/platform";
 import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
-import { BehaviorSubject, Observable } from "rxjs";
 
 type WriteAction = (writer: CommandLogWriter) => Promise<void>;
 
@@ -41,7 +36,6 @@ export const DEFAULT_MAX_PENDING_WRITES = 256;
 export class SessionCommandLog {
   private repository: CommandLogRepository | null = null;
   private readonly health = new CommandLogHealthTracker();
-  private readonly health$$ = new BehaviorSubject<CommandLogHealth>(HEALTHY);
   private readonly queue: WriteAction[] = [];
   private draining = false;
   private disabled = false;
@@ -50,11 +44,6 @@ export class SessionCommandLog {
   private recentExecution?: { command: string; timestamp: number };
 
   constructor(private readonly databaseAccess?: DatabaseAccess) {}
-
-  /** How well the log is keeping up; `ok` until something is dropped. */
-  get health$(): Observable<CommandLogHealth> {
-    return this.health$$.asObservable();
-  }
 
   get sessionGroupId(): string | undefined {
     return this.groupId;
@@ -103,11 +92,9 @@ export class SessionCommandLog {
     if (this.queue.length >= DEFAULT_MAX_PENDING_WRITES) {
       // The newest command is the most valuable one to keep.
       this.queue.shift();
-      this.health.recordOverflow(this.queue.length + 1);
-      this.publishHealth();
+      this.health.recordOverflow();
     }
     this.queue.push(action);
-    this.health.setPending(this.queue.length);
     void this.drain();
   }
 
@@ -147,8 +134,6 @@ export class SessionCommandLog {
         const action = this.queue.shift();
         if (!action) return;
         await this.runOnce(action, repository);
-        this.health.setPending(this.queue.length);
-        this.publishHealth();
       }
     } finally {
       this.draining = false;
@@ -157,10 +142,9 @@ export class SessionCommandLog {
 
   /** Runs a write, retries it once, and gives up loudly rather than silently. */
   private async runOnce(action: WriteAction, repository: CommandLogRepository): Promise<void> {
-    const startedAt = Date.now();
     try {
       await action(repository);
-      this.health.recordSuccess(Date.now() - startedAt, this.queue.length);
+      this.health.recordSuccess();
       this.reportedUnhealthy = false;
       return;
     } catch {
@@ -168,25 +152,18 @@ export class SessionCommandLog {
     }
     try {
       await action(repository);
-      this.health.recordSuccess(Date.now() - startedAt, this.queue.length);
+      this.health.recordSuccess();
       this.reportedUnhealthy = false;
     } catch (error) {
-      this.health.recordFailure(this.queue.length);
+      this.health.recordFailure();
       ErrorReporter.reportException({
         error,
         handled: true,
         notify: !this.reportedUnhealthy,
         source: "SessionCommandLog",
-        context: { operation: "write", dropped: String(this.health.current.dropped) },
+        context: { operation: "write", dropped: String(this.health.dropped) },
       });
       this.reportedUnhealthy = true;
-    }
-  }
-
-  private publishHealth(): void {
-    const current = this.health.current;
-    if (current !== this.health$$.value) {
-      this.health$$.next(current);
     }
   }
 

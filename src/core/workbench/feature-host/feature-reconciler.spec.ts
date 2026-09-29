@@ -20,8 +20,6 @@ function deferred<T = void>(): {
   return { promise, resolve, reject };
 }
 
-const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
-
 function harness(fakes: ReadonlyArray<FakeFeature>) {
   const features = fakes.map(
     (fake): FeatureDefinition<ActionName> => ({ mode: "on", target: "workbench", ...fake }),
@@ -51,7 +49,7 @@ describe("FeatureReconciler", () => {
 
     expect(calls).toEqual(["register:a"]);
     expect(activate).toHaveBeenCalledTimes(1);
-    expect(reconciler.stateOf("a").status).toBe("active");
+    expect(reconciler.statusOf("a")).toBe("active");
   });
 
   it("rolls back the contributions and fails when activate throws (rule 2)", async () => {
@@ -67,8 +65,7 @@ describe("FeatureReconciler", () => {
     await reconciler.reconcile();
 
     expect(calls).toEqual(["register:a", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("failed");
-    expect(reconciler.stateOf("a").reason).toBe("boom");
+    expect(reconciler.statusOf("a")).toBe("failed");
   });
 
   it("finishes activation before honouring an off requested mid-activation (rule 1)", async () => {
@@ -82,7 +79,7 @@ describe("FeatureReconciler", () => {
     await reconciled;
 
     expect(calls).toEqual(["register:a", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("inactive");
+    expect(reconciler.statusOf("a")).toBe("inactive");
   });
 
   it("ends inactive even when deactivate throws (rule 3)", async () => {
@@ -100,10 +97,10 @@ describe("FeatureReconciler", () => {
     await reconciler.reconcile();
 
     expect(calls).toEqual(["register:a", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("inactive");
+    expect(reconciler.statusOf("a")).toBe("inactive");
   });
 
-  it("keeps a dependent inactive with a reason when its requirement is off (rule 4)", async () => {
+  it("keeps a dependent inactive when its requirement is off (rule 4)", async () => {
     const { reconciler } = harness([
       { id: "a", mode: "off" },
       { id: "b", requires: ["a"] },
@@ -111,9 +108,8 @@ describe("FeatureReconciler", () => {
 
     await reconciler.reconcile();
 
-    expect(reconciler.stateOf("a").status).toBe("inactive");
-    expect(reconciler.stateOf("b").status).toBe("inactive");
-    expect(reconciler.stateOf("b").reason).toBe("needs a");
+    expect(reconciler.statusOf("a")).toBe("inactive");
+    expect(reconciler.statusOf("b")).toBe("inactive");
   });
 
   it("activates in dependency order and deactivates dependents first (rule 4)", async () => {
@@ -121,18 +117,18 @@ describe("FeatureReconciler", () => {
 
     await reconciler.reconcile();
     expect(calls).toEqual(["register:a", "register:b"]);
-    expect(reconciler.stateOf("b").status).toBe("active");
+    expect(reconciler.statusOf("b")).toBe("active");
 
     calls.length = 0;
     desired.set("a", "off");
     await reconciler.reconcile();
 
     expect(calls).toEqual(["unregister:b", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("inactive");
-    expect(reconciler.stateOf("b").status).toBe("inactive");
+    expect(reconciler.statusOf("a")).toBe("inactive");
+    expect(reconciler.statusOf("b")).toBe("inactive");
   });
 
-  it("leaves failed only on retry (rule 6)", async () => {
+  it("stays failed: a later reconcile does not retry it", async () => {
     let attempts = 0;
     const { reconciler } = harness([
       {
@@ -147,71 +143,9 @@ describe("FeatureReconciler", () => {
     ]);
 
     await reconciler.reconcile();
-    expect(reconciler.stateOf("a").status).toBe("failed");
+    expect(reconciler.statusOf("a")).toBe("failed");
 
-    // A plain reconcile does not retry a failed feature.
     await reconciler.reconcile();
-    expect(reconciler.stateOf("a").status).toBe("failed");
-
-    await reconciler.retry("a");
-    expect(reconciler.stateOf("a").status).toBe("active");
-  });
-
-  describe("circuit breaker (rule 5)", () => {
-    it("degrades on a contribution failure and opens after three in a row", async () => {
-      const { reconciler } = harness([{ id: "a" }]);
-      await reconciler.reconcile();
-      expect(reconciler.stateOf("a").status).toBe("active");
-
-      reconciler.reportContributionFailure("a");
-      expect(reconciler.stateOf("a").status).toBe("degraded");
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-      expect(reconciler.stateOf("a").status).toBe("failed");
-    });
-
-    it("resets the count on a success", async () => {
-      const { reconciler } = harness([{ id: "a" }]);
-      await reconciler.reconcile();
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionSuccess("a");
-      expect(reconciler.stateOf("a").status).toBe("active");
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-      expect(reconciler.stateOf("a").status).toBe("degraded");
-    });
-
-    it("trips only the failing feature (others keep running)", async () => {
-      const { reconciler } = harness([{ id: "a" }, { id: "b" }]);
-      await reconciler.reconcile();
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-
-      expect(reconciler.stateOf("a").status).toBe("failed");
-      expect(reconciler.stateOf("b").status).toBe("active");
-    });
-
-    it("comes back on retry after the breaker opened", async () => {
-      const { reconciler } = harness([{ id: "a" }]);
-      await reconciler.reconcile();
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-      expect(reconciler.stateOf("a").status).toBe("failed");
-
-      await reconciler.retry("a");
-      expect(reconciler.stateOf("a").status).toBe("active");
-    });
+    expect(reconciler.statusOf("a")).toBe("failed");
   });
 });

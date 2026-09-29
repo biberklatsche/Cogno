@@ -1,7 +1,7 @@
 import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import type { DatabaseAccess } from "@cogno/platform";
 import type { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
-import { firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_MAX_PENDING_WRITES, SessionCommandLog } from "./session-command-log";
 
@@ -39,29 +39,33 @@ describe("SessionCommandLog", () => {
     vi.restoreAllMocks();
   });
 
-  it("drops the oldest write when the queue is full and says so", async () => {
-    // No repository yet, so nothing drains and the queue really fills up.
-    vi.spyOn(CommandLogRepository, "createForContext").mockReturnValue(new Promise(() => {}));
+  it("drops the oldest write when the queue is full", async () => {
+    // The repository opens late, so the queue really fills up first.
+    let openRepository!: (repository: CommandLogRepository) => void;
+    vi.spyOn(CommandLogRepository, "createForContext").mockReturnValue(
+      new Promise((resolve) => {
+        openRepository = resolve;
+      }),
+    );
     const log = new SessionCommandLog(databaseAccess);
     void log.open(shellContext, pathAdapter);
 
-    const ran: string[] = [];
+    const ran: number[] = [];
     for (let i = 0; i <= DEFAULT_MAX_PENDING_WRITES; i++) {
       log.write(async () => {
-        ran.push(String(i));
+        ran.push(i);
       });
     }
+    openRepository({} as CommandLogRepository);
 
-    const health = await firstValueFrom(log.health$);
-    expect(health.state).toBe("degraded");
-    expect(health.reason).toBe("backpressure");
-    expect(health.dropped).toBe(1);
-    expect(health.pending).toBe(DEFAULT_MAX_PENDING_WRITES);
-    expect(ran).toEqual([]);
+    await vi.waitFor(() => expect(ran).toHaveLength(DEFAULT_MAX_PENDING_WRITES));
+    expect(ran[0]).toBe(1);
+    expect(ran.at(-1)).toBe(DEFAULT_MAX_PENDING_WRITES);
   });
 
   it("retries a failing write once before giving up on it", async () => {
     const { log } = await openLog();
+    const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
     const action = vi
       .fn()
       .mockRejectedValueOnce(new Error("busy"))
@@ -71,39 +75,46 @@ describe("SessionCommandLog", () => {
     await settle();
 
     expect(action).toHaveBeenCalledTimes(2);
-    expect((await firstValueFrom(log.health$)).state).toBe("ok");
+    expect(report).not.toHaveBeenCalled();
   });
 
-  it("counts a write that fails twice as lost", async () => {
+  it("reports a write that fails twice as lost", async () => {
     const { log } = await openLog();
+    const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
 
     log.write(vi.fn().mockRejectedValue(new Error("disk full")));
     await settle();
 
-    const health = await firstValueFrom(log.health$);
-    expect(health.state).toBe("degraded");
-    expect(health.reason).toBe("write-error");
-    expect(health.dropped).toBe(1);
+    expect(report).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ notify: true, context: { operation: "write", dropped: "1" } }),
+    );
   });
 
-  it("calls itself unavailable after three failed writes and recovers on the next success", async () => {
+  it("notifies once while writes keep failing, backs off, and again after a recovery", async () => {
     const { log } = await openLog();
+    const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
 
     for (let i = 0; i < 3; i++) {
       log.write(vi.fn().mockRejectedValue(new Error("gone")));
       await settle();
     }
-    expect((await firstValueFrom(log.health$)).state).toBe("unavailable");
+    expect(report.mock.calls.map(([event]) => event.notify)).toEqual([true, false, false]);
 
+    // Three failures in a row: the next write waits before it runs.
     vi.useFakeTimers();
-    log.write(vi.fn().mockResolvedValue(undefined));
+    const recovered = vi.fn().mockResolvedValue(undefined);
+    log.write(recovered);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(recovered).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(5000);
     vi.useRealTimers();
-    await settle();
+    expect(recovered).toHaveBeenCalledTimes(1);
 
-    const health = await firstValueFrom(log.health$);
-    expect(health.state).toBe("ok");
-    expect(health.dropped).toBe(3);
+    log.write(vi.fn().mockRejectedValue(new Error("gone again")));
+    await settle();
+    expect(report.mock.calls.at(-1)?.[0]).toEqual(
+      expect.objectContaining({ notify: true, context: { operation: "write", dropped: "4" } }),
+    );
   });
 
   it("answers queries empty while no repository is open", async () => {

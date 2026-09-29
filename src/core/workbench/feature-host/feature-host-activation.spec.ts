@@ -88,9 +88,7 @@ describe("FeatureHost activation", () => {
 
     expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
     expect(register).not.toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
-    expect(host.featureStates().find((state) => state.id === "coding-agents")?.status).toBe(
-      "active",
-    );
+    expect(host.isActionActive("open_coding-agents" as ActionName)).toBe(true);
   });
 
   it("activates and deactivates on config changes (hot-reload)", async () => {
@@ -105,9 +103,7 @@ describe("FeatureHost activation", () => {
 
     expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
     expect(unregister).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
-    expect(host.featureStates().find((state) => state.id === "git")?.status).toBe("active");
-    expect(host.featureStates().find((state) => state.id === "coding-agents")?.status).toBe(
-      "inactive",
-    );
+    expect(host.isActionActive("open_git" as ActionName)).toBe(true);
+    expect(host.isActionActive("open_coding-agents" as ActionName)).toBe(false);
   });
 });
