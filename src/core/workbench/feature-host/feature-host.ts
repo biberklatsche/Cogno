@@ -32,8 +32,7 @@ import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
  * Its activation phase then reconciles each feature's status against the mode
  * the config wants and re-reconciles on every config change (hot-reload). The
  * mode is read through the feature's existing `configPath`, whose key is not
- * always the feature id (coding-agents -> feature.coding_agents, and so on) - the transition
- * state keeps the old contribution form (step 22b).
+ * always the feature id (coding-agents -> feature.coding_agents, and so on).
  */
 @Injectable({ providedIn: "root" })
 export class FeatureHost {
@@ -94,7 +93,7 @@ export class FeatureHost {
     return this.declarationConflicts;
   }
 
-  /** The features' side-menu contributions, ordered - for the native menu (step 28). */
+  /** The features' side-menu contributions, ordered - for the native menu. */
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
     return this.features
       .flatMap((feature) => feature.sideMenu ?? [])
@@ -102,19 +101,19 @@ export class FeatureHost {
       .sort((left, right) => left.order - right.order);
   }
 
-  /** The features' settings extensions - for config bootstrap (step 28). */
+  /** The features' settings extensions - for config bootstrap. */
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
     return this.features.flatMap((feature) => (feature.settings ? [feature.settings] : []));
   }
 
-  /** The available shells' support descriptors - for config bootstrap (step 28). */
+  /** The available shells' support descriptors - for config bootstrap. */
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
     return shellDefinitions.map((shell) => shell.support);
   }
 
   /**
    * True when the feature that declared `actionName` is currently active - for
-   * classifying a CLI/HTTP action as dispatched vs "not active" (step 26g). A
+   * classifying a CLI/HTTP action as dispatched vs "not active". A
    * core action (not declared by any feature) is not covered here.
    */
   isActionActive(actionName: ActionName): boolean {

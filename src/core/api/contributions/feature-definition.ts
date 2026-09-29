@@ -7,7 +7,7 @@ import { TerminalAutocompleteSuggestorDefinitionContract } from "./terminal-auto
 /**
  * An action a feature declares. The name is known from the declaration phase
  * on (so CLI, HTTP and the palette can offer it); the handler is registered
- * when the feature is activated (step 22b).
+ * when the feature is activated.
  */
 export interface FeatureActionContract<TActionName = string> {
   readonly actionName: TActionName;
@@ -34,7 +34,7 @@ export interface FeatureDefinition<TActionName = string> {
   readonly target: "session" | "workbench";
   /**
    * Other features this one needs; resolved transitively by the feature-host
-   * before activation. Unknown or cyclic requires abort the start (step 22a).
+   * before activation. Unknown or cyclic requires abort the start.
    */
   readonly requires?: ReadonlyArray<string>;
   /** Runs when the feature is activated, after its contributions are registered. */

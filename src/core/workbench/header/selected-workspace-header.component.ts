@@ -142,7 +142,7 @@ export class SelectedWorkspaceHeaderComponent {
   protected readonly activeWorkspace: Signal<WorkspaceEntryContract | undefined>;
   protected readonly openWorkspaceEntries: Signal<WorkspaceEntryContract[]>;
   protected readonly hasWorkspaceMenu: Signal<boolean>;
-  /** When session restore is on, the workspace auto-saves (step 27g). */
+  /** When session restore is on, the workspace auto-saves. */
   private readonly restoreEnabledSignal = signal(true);
   protected readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
 

@@ -18,8 +18,7 @@ import { filter, map, Observable } from "rxjs";
 /**
  * The API's terminal-search wiring: it turns the session's search facts into
  * streams and the feature's requests into the terminal bus messages the input
- * dispatcher acts on. This is the workbench-facing half that used to live in
- * app-host; the feature now sees only `core/api`.
+ * dispatcher acts on. The feature sees only the `core/api` contract.
  */
 @Injectable({ providedIn: "root" })
 export class TerminalSearchApiService extends TerminalSearchApi {

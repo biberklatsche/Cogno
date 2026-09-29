@@ -418,7 +418,7 @@ describe("CommandRecorder", () => {
     await expect(commandLog.getRecentCommands({ scope: "global" })).resolves.toEqual([]);
   });
 
-  it("records an aborted command despite it having no return code (step 27b-2)", async () => {
+  it("records an aborted command despite it having no return code", async () => {
     const repositoryDouble = createRepositoryDouble();
     const { recorder: service } = await createService(repositoryDouble);
 

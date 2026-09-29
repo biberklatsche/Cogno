@@ -120,7 +120,7 @@ export class WorkspaceHostApplicationService {
       this._workspaceList.set(workspaceList);
 
       // Load saved scrollback into the pending store before any session spawns,
-      // so the factory can replay it as terminals are (re)created (step 27f).
+      // so the factory can replay it as terminals are (re)created.
       await this.sessionPersistence.loadPendingSnapshots(
         workspaceList.map((workspace) => workspace.id),
       );
@@ -155,7 +155,7 @@ export class WorkspaceHostApplicationService {
       });
 
     // Idle auto-save: a few seconds after terminal output settles, persist the
-    // active workspace so a crash loses at most that window (step 27e).
+    // active workspace so a crash loses at most that window.
     sessionRegistry.facts$
       .pipe(
         filter(({ fact }) => fact.type === "outputReceived"),
@@ -179,7 +179,7 @@ export class WorkspaceHostApplicationService {
     await this.activateWorkspace(workspace);
   }
 
-  /** Persist every open workspace, for the quit hook (step 27e). */
+  /** Persist every open workspace, for the quit hook. */
   async persistOpenWorkspaces(): Promise<void> {
     await Promise.all(
       this._workspaceList()
@@ -379,7 +379,7 @@ export class WorkspaceHostApplicationService {
 
   /**
    * Auto-persist a workspace's live layout + terminal snapshots for session
-   * restore (step 27). Unlike the explicit `saveWorkspace`, this includes the
+   * restore. Unlike the explicit `saveWorkspace`, this includes the
    * default workspace. No-op when restore is off. Layout and snapshots are two
    * atomic batches; each collects its data before writing.
    */

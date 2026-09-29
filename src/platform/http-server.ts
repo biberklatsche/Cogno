@@ -17,7 +17,7 @@ export class HttpServer {
     });
   }
 
-  /** Tell the backend which actions currently dispatch vs are inactive (step 26g). */
+  /** Tell the backend which actions currently dispatch vs are inactive. */
   setRunnableActions(
     dispatched: ReadonlyArray<string>,
     inactive: ReadonlyArray<string>,

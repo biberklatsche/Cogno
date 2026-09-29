@@ -9,7 +9,7 @@ use tauri::{AppHandle, Manager, State};
 /// The action names the webview currently accepts, split by whether they would
 /// dispatch or are declared-but-inactive (a feature that is off). The webview
 /// pushes these via `set_runnable_actions`; the HTTP `/action/run` endpoint
-/// classifies against them synchronously (step 26g). Anything in neither set is
+/// classifies against them synchronously. Anything in neither set is
 /// unknown.
 #[derive(Default)]
 pub struct RunnableActionsState {

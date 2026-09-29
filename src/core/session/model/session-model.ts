@@ -66,7 +66,7 @@ type ContextEntry = {
 };
 
 /**
- * The session's half of what used to be one state manager: which shell runs
+ * The session's side of a terminal's state: which shell runs
  * in which context, where it is, what is typed, whether a command runs, what
  * the integration can do, and the commands so far. It feeds the recorder and
  * states what happened as facts on `facts$`, without knowing who listens
@@ -124,7 +124,7 @@ export class SessionModel {
   /**
    * While a session snapshot is being replayed into the buffer, the observer
    * must not mirror the replayed text as the current input line: it is dead
-   * scrollback, not something the user typed (step 27). The replay writes no
+   * scrollback, not something the user typed. The replay writes no
    * OSC/CSI, so nothing else on the write path reacts.
    */
   beginRestore(): void {
@@ -397,7 +397,7 @@ export class SessionModel {
 
   /**
    * A command still running when the app quits is recorded as an aborted entry so
-   * it isn't lost from history - it never reported a return code (step 27b-2).
+   * it isn't lost from history - it never reported a return code.
    * Only base-context commands are logged, mirroring `updateCommand`. Awaited so
    * it reaches the log before the process exits.
    */

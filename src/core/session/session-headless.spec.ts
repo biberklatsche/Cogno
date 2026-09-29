@@ -1,7 +1,7 @@
-// Spike for step 13 (Umsetzungsplan): can the command-line model run on a
-// Terminal that was never open()ed? Step 14's display axis (detached ↔
-// attached) depends on the answer: a session must parse output, anchor
-// prompt markers and mirror the input line while no DOM is attached.
+// Can the command-line model run on a Terminal that was never open()ed? The
+// session's display axis (detached ↔ attached) depends on it: a session must
+// parse output, anchor prompt markers and mirror the input line while no DOM
+// is attached.
 //
 // The byte streams below are synthesized from the real integration scripts
 // (integration.bash.txt, integration.zsh.txt, bootstrap.ps1.txt): OSC 733
@@ -332,7 +332,7 @@ describe("headless session (size and reflow)", () => {
   //   not a headless quirk. In the running app it does not matter: the host
   //   sends the new size to the pty and the shell redraws the prompt line
   //   after SIGWINCH. `readInputText` may read short between a detached
-  //   resize and that redraw, so step 14 sizes the machine at attach time
+  //   resize and that redraw, so the host sizes the machine at attach time
   //   (fit after open) and otherwise leaves a detached terminal's size alone.
   it("reflows completed output lines on resize without open()", async () => {
     const session = createHeadlessSession("Bash", "linux", 20);
@@ -394,7 +394,7 @@ describe("headless session (size and reflow)", () => {
 // M2
 
 describe("headless session (aborted command on quit)", () => {
-  it("records the running command as aborted (step 27b-2)", async () => {
+  it("records the running command as aborted", async () => {
     const session = createHeadlessSession("Bash", "linux");
     session.model.updateCommand({ id: "1" });
     session.model.startCommand("sleep 100");

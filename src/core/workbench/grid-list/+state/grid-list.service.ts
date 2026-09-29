@@ -72,7 +72,7 @@ export class GridListService implements PaneLayoutLookup {
     this.syncActiveWorkspaceState();
   }
 
-  /** Every terminal id laid out in a workspace's grids (session restore, step 27). */
+  /** Every terminal id laid out in a workspace's grids (session restore). */
   terminalIdsForWorkspace(workspaceIdentifier: string): TerminalId[] {
     const grids = this.stateByWorkspaceIdentifier.get(workspaceIdentifier)?.grids ?? {};
     return Object.values(grids).flatMap((grid) => this.leafTerminalIds(grid));
@@ -416,7 +416,7 @@ export class GridListService implements PaneLayoutLookup {
       this.addNode(rightChild, nodeConfig.rightChild, takenTerminalIds);
     } else {
       // Reuse the persisted terminal id so restored scrollback (keyed by it)
-      // matches; generate one for a fresh pane (step 27). A terminal id names
+      // matches; generate one for a fresh pane. A terminal id names
       // one session in one pane: a persisted id that is laid out already is a
       // defect in the data, and the pane gets a new id rather than that session.
       const persistedTerminalId = nodeConfig.terminalId;
@@ -447,7 +447,7 @@ export class GridListService implements PaneLayoutLookup {
         workingDir: node.data?.workingDir,
         title: node.data?.title,
         // Persisted so a restored pane keeps its terminal id and its scrollback
-        // snapshot (keyed by it) can be replayed (step 27).
+        // snapshot (keyed by it) can be replayed.
         terminalId: node.data?.terminalId,
       };
     }

@@ -29,6 +29,6 @@ export interface WorkspaceTerminalSession {
 export interface WorkspaceState extends WorkspaceConfiguration {
   isSelected: boolean;
   isDirty?: boolean;
-  /** The last session-restore autosave failed (step 27g). */
+  /** The last session-restore autosave failed. */
   autoSaveFailed?: boolean;
 }

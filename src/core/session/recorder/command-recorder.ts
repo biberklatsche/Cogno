@@ -138,7 +138,7 @@ export class CommandRecorder {
   /**
    * Record a command that was still running when the app quit as an aborted
    * entry: it never reported a return code, so `shouldPersistCommand` would drop
-   * it, but it must not vanish from history (step 27b-2). Same text filters, no
+   * it, but it must not vanish from history. Same text filters, no
    * return-code gate; awaited so it reaches the log before the process exits.
    */
   async recordAbortedCommand(executedCommand: ExecutedCommand): Promise<void> {

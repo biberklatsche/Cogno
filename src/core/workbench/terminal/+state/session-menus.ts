@@ -12,7 +12,6 @@ import { SessionNotifications } from "./session-notifications";
  * The context and header menus of one terminal. They fire catalogue actions
  * (split, maximize, close) aimed at this terminal; an app concern, so this
  * sits with the session's other app-facing collaborators, not in the session.
- * Process info is now the process-info feature panel (step 25).
  */
 @Injectable()
 export class SessionMenus {

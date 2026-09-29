@@ -17,7 +17,7 @@ export class Command {
     this.data = data;
   }
 
-  /** A copy of the raw reported keys, for serializing a session snapshot (step 27). */
+  /** A copy of the raw reported keys, for serializing a session snapshot. */
   get rawData(): CommandData {
     return { ...this.data };
   }
@@ -48,7 +48,7 @@ export class Command {
    * Cogno's own injected startup command - the dot-source of the shell
    * integration bootstrap (`. '<cognoHome>/shell-integration/.../bootstrap.*'`).
    * The user did not run it, so it should not surface as a command marker
-   * (live or restored, step 27).
+   * (live or restored).
    */
   get isIntegrationBootstrap(): boolean {
     return this.command?.includes("shell-integration") ?? false;

@@ -11,7 +11,7 @@ import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 
-/** Max time the quit/close path waits for the session auto-save (step 27e). */
+/** Max time the quit/close path waits for the session auto-save. */
 const SESSION_PERSIST_BUDGET_MS = 3000;
 
 @Injectable({
@@ -83,7 +83,7 @@ export class WindowService {
   /**
    * Auto-save the active workspace before quitting/closing, but never hang the
    * exit: a time budget wins the race, so a pathologically slow serialization
-   * loses at most the scrollback rather than blocking (step 27e).
+   * loses at most the scrollback rather than blocking.
    */
   private async persistSessionWithinBudget(): Promise<void> {
     const budget = new Promise<void>((resolve) => setTimeout(resolve, SESSION_PERSIST_BUDGET_MS));

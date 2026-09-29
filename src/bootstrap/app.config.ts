@@ -101,10 +101,9 @@ export const appConfig: ApplicationConfig = {
       // integration and turns diagnostics into notifications. Must exist before
       // WindowService publishes InitConfigCommand.
       inject(ConfigBootstrapAdapter);
-      // The config actions now live in the workbench; instantiate the handler
-      // so it listens.
+      // Instantiate the config actions handler so it listens.
       inject(ConfigActionsHandler);
-      // The central terminal-action handlers (step 26): construct so they
+      // The central terminal-action handlers: construct so they
       // register on ActionHandlers and the ActionFired subscription is live.
       inject(TerminalActionHandlers);
       // The session-scoped keybinding actions (autocomplete/history/cycle),

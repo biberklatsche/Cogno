@@ -74,7 +74,7 @@ const MARKER_ID_PATTERN = /\^\^#(\d+)/g;
 /**
  * A concealed anchor line written above a restored session's replay; a decoration
  * draws the visible divider on it. Concealed so no text shows, and stripped on
- * capture so boundaries never accumulate (step 27).
+ * capture so boundaries never accumulate.
  */
 const RESTORE_BOUNDARY_SENTINEL = "COGNO:RESTORE-BOUNDARY";
 /** The old visible boundary label; still stripped so pre-existing snapshots clean up. */
@@ -113,7 +113,7 @@ function cutIdlePrompt(serialized: string): { scrollback: string; idlePromptId?:
  * Shift restored marker ids past any the live session will mint. bash/zsh count
  * from 1 each session, so without this a restored `^^#1` would collide with the
  * new `^^#1` and the registry would drop the live marker; PowerShell uses epoch
- * timestamps, which stay well below this bound for millennia (step 27).
+ * timestamps, which stay well below this bound for millennia.
  */
 const RESTORED_MARKER_ID_OFFSET = 1_000_000_000_000_000;
 
@@ -192,7 +192,7 @@ export class SessionHost {
   private searchHandler?: TerminalSearchHandler;
   private editor?: CommandLineEditor;
   private promptMarkerRegistry?: PromptMarkerRegistry;
-  /** A snapshot waiting to be replayed on the first attach (step 27). */
+  /** A snapshot waiting to be replayed on the first attach. */
   private _pendingRestore?: SessionSnapshot;
   private _restoreScheduled = false;
 
@@ -359,7 +359,7 @@ export class SessionHost {
     // A restored session defers the shell spawn to its first attach: the saved
     // scrollback must be written into an open, final-sized terminal before the
     // shell (ConPTY on Windows especially) paints, so it paints below the
-    // scrollback, not over it. Everything else is wired now (step 27).
+    // scrollback, not over it.
     if (!this._pendingRestore) {
       this.disposables.push(this.renderer.register(this.ptyHandler));
     }
@@ -480,8 +480,8 @@ export class SessionHost {
   /**
    * Puts the terminal on screen inside `parent`. The first time it opens the
    * machine and hooks up what needs a DOM; afterwards it only moves the
-   * element. Sizing happens here, never while detached (the spike in step 13:
-   * a detached resize reflows nothing the cursor sits on).
+   * element. Sizing happens here, never while detached: a detached resize
+   * reflows nothing the cursor sits on (session-headless.spec.ts).
    */
   attach(parent: HTMLElement): void {
     if (!this._terminalId) {
@@ -594,7 +594,7 @@ export class SessionHost {
 
   /**
    * Record this session's running command (if any) as aborted, before the shell
-   * is killed on quit, so it isn't lost from history (step 27b-2). Awaited.
+   * is killed on quit, so it isn't lost from history. Awaited.
    */
   recordAbortedCommand(): Promise<void> {
     return this.model.recordAbortedCommand();
@@ -603,7 +603,7 @@ export class SessionHost {
   /**
    * A restorable snapshot of the buffer: the scrollback serialized to text with
    * SGR colours and the concealed `^^#` marker lines, plus per-command metadata,
-   * so a restored session looks and behaves like it did at close (step 27).
+   * so a restored session looks and behaves like it did at close.
    * The idle prompt it closed on is left out - the restored session has its own.
    * `maxLines <= 0` captures nothing.
    */
@@ -623,7 +623,7 @@ export class SessionHost {
    * The recent buffer serialized with colours and attributes (incl. the conceal
    * that hides `^^#` marker lines). Restored marker ids are shifted into a range
    * the live session's ids never reach, so restored markers can't collide with
-   * new ones - bash/zsh restart their counter at 1 (step 27).
+   * new ones - bash/zsh restart their counter at 1.
    */
   private captureScrollback(
     maxLines: number,
@@ -640,7 +640,7 @@ export class SessionHost {
     }
     // Drop any boundary lines from earlier restores so they don't accumulate:
     // each restore writes its own, and re-capturing the previous one would stack
-    // them (step 27).
+    // them.
     const withoutBoundaries = serialized
       .split("\r\n")
       .filter((line) => {
@@ -665,7 +665,7 @@ export class SessionHost {
    * The reported metadata of every command, with marker ids shifted to match.
    * The shell integration's own bootstrap dot-source is dropped: the user did not
    * run it, and without metadata its (concealed) restored marker renders nothing
-   * (step 27).
+   *.
    */
   private captureCommands(idlePromptId: string | undefined): CommandSnapshot[] {
     return this.model.commands
@@ -712,7 +712,7 @@ export class SessionHost {
    * viewport with a screenful of blank lines first, so ConPTY - which repaints
    * its whole screen on start - paints into the fresh area below it, not over
    * it. The observer must not read the replay as input: `beginRestore` gates it
-   * until the writes are parsed (step 27).
+   * until the writes are parsed.
    */
   private completeRestore(): void {
     const snapshot = this._pendingRestore;
@@ -761,7 +761,7 @@ export class SessionHost {
   /**
    * Draw the subtle full-width divider marking where the restored scrollback
    * ends. It is a decoration on the concealed sentinel line - no buffer text, so
-   * it neither shows as characters nor gets re-captured (step 27).
+   * it neither shows as characters nor gets re-captured.
    */
   private renderRestoreBoundary(terminal: Terminal): void {
     const marker = terminal.registerMarker(0);

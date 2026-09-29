@@ -18,7 +18,7 @@ export class CliActionService {
         const actionDef = KeybindActionInterpreter.parse(action);
         const status = actionRunner.run(actionDef.actionName, actionDef.args);
         // The single-instance CLI path is fire-and-forget; the outcome is only
-        // logged here. `cogno action run` gets a real reply over HTTP (step 26g).
+        // logged here. `cogno action run` gets a real reply over HTTP.
         if (status !== "dispatched") {
           Logger.warn(
             `CLI action "${actionDef.actionName}" ${status === "unknown" ? "is unknown" : "is not active"}.`,

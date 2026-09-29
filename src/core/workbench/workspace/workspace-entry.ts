@@ -7,6 +7,6 @@ export interface WorkspaceEntryContract {
   readonly isDirty?: boolean;
   readonly isActive?: boolean;
   readonly isOpen?: boolean;
-  /** The last session-restore autosave failed (step 27g). */
+  /** The last session-restore autosave failed. */
   readonly autoSaveFailed?: boolean;
 }

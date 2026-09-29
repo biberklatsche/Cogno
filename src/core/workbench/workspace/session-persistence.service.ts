@@ -10,7 +10,7 @@ import { WorkspaceRepository } from "./workspace.repository";
 const DEFAULT_MAX_LINES = 1000;
 
 /**
- * Persists a workspace's terminal snapshots for session restore (step 27):
+ * Persists a workspace's terminal snapshots for session restore:
  * collects every terminal's scrollback snapshot synchronously, then writes them
  * in one transaction (no await inside). Gated by terminal.restore.
  */
@@ -51,7 +51,7 @@ export class SessionPersistenceService {
 
   /**
    * Record every live session's running command as aborted before the app exits,
-   * so a command running at quit isn't lost from history (step 27b-2). Independent
+   * so a command running at quit isn't lost from history. Independent
    * of session restore - the command log persists regardless of that setting.
    */
   async recordAbortedCommands(): Promise<void> {
@@ -80,7 +80,7 @@ export class SessionPersistenceService {
         }
         // A tab not opened this run has no live host to snapshot; carry its
         // still-pending snapshot forward so the delete-then-insert save does not
-        // drop it (step 27).
+        // drop it.
         const pending = this.pendingSnapshots.peek(terminalId);
         return pending ? [{ terminalId, sessionData: JSON.stringify(pending) }] : [];
       });

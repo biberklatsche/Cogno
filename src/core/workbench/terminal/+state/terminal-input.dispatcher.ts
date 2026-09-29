@@ -6,10 +6,9 @@ import { TerminalSessionRegistry } from "./terminal-session.registry";
 
 /**
  * Routes the terminal bus messages addressed to a session onto its host,
- * resolving `terminalId -> host` through the registry. One root service in
- * place of the per-session subscriptions that used to hold them: most
- * messages carry a terminal id and hit one host; a couple are broadcasts that
- * fan out to all of them. (The keybind action triggers stay per-session - they
+ * resolving `terminalId -> host` through the registry. One root service for
+ * all sessions: most messages carry a terminal id and hit one host; a couple
+ * are broadcasts that fan out to all of them. (The keybind action triggers stay per-session - they
  * need the session's autocomplete/history and depend on focus.)
  */
 @Injectable({ providedIn: "root" })

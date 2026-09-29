@@ -129,7 +129,7 @@ describe("WorkspaceHostApplicationService", () => {
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
   });
 
-  it("flags a failed autosave until the next one succeeds (step 27g)", async () => {
+  it("flags a failed autosave until the next one succeeds", async () => {
     bus.publish({ type: "DBInitialized" });
     await vi.waitFor(() => {
       expect(service.getWorkspaceById("WS-1")).toBeTruthy();

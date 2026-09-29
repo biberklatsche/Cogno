@@ -115,7 +115,7 @@ impl Cli {
 
 /// When invoked inside a running Cogno terminal (COGNO_PORT set), run an
 /// `action run` over HTTP and return the process exit code; otherwise `None` so
-/// the caller falls back to the single-instance path (step 26g).
+/// the caller falls back to the single-instance path.
 pub fn try_run_action_over_http(cli: &Cli) -> Option<i32> {
     let (name, args) = match &cli.command {
         Some(CliCommand::Action {

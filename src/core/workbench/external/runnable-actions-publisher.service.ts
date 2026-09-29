@@ -7,7 +7,7 @@ import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { HttpServer } from "@cogno/platform/http-server";
 
 /**
- * Keeps the backend's runnable-action classification (step 26g) in sync with the
+ * Keeps the backend's runnable-action classification in sync with the
  * live feature state, so `POST /action/run` can answer unknown/inactive/
  * dispatched synchronously. Core actions always dispatch; a feature action
  * dispatches only while its feature is active, else it is inactive. Re-pushed

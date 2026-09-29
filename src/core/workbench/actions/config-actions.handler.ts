@@ -6,8 +6,7 @@ import { Opener } from "@cogno/platform/opener";
 
 /**
  * Handles the config-related catalogue actions: open the config file, open the
- * documentation, reload the config. These used to live on ConfigBootstrapAdapter
- * in app/; with the action catalogue they belong to the workbench.
+ * documentation, reload the config. Actions are workbench business.
  */
 @Injectable({ providedIn: "root" })
 export class ConfigActionsHandler {

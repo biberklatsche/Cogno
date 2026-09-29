@@ -260,7 +260,7 @@ import { defaultWorkspaceIdContract } from "./workspace-entry";
 export class WorkspaceSideComponent implements OnDestroy {
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]>;
   readonly defaultWorkspaceId = defaultWorkspaceIdContract;
-  /** When session restore is on, workspaces auto-save (step 27g). */
+  /** When session restore is on, workspaces auto-save. */
   private readonly restoreEnabledSignal = signal(true);
   readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
   protected readonly workspaceBadge = workspaceBadge;
