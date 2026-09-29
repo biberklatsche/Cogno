@@ -8,6 +8,7 @@ import {
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
 import { GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
+import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import { BinaryNode, BinaryTree } from "@cogno/core/workbench/grid-list/binary-tree";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
@@ -33,7 +34,7 @@ type PaneLocation = {
 };
 
 @Injectable({ providedIn: "root" })
-export class GridListService {
+export class GridListService implements PaneLayoutLookup {
   private readonly stateByWorkspaceIdentifier = new Map<string, WorkspaceGrids>();
   /**
    * The active workspace's state. `grids` is a fresh copy on every grid write
@@ -585,7 +586,6 @@ export class GridListService {
     this.setActiveWorkspaceMaximizedTerminalIdentifier(terminalId);
   }
 
-  /** Whether `terminalId` is the maximized pane of the active workspace. */
   isMaximized(terminalId: TerminalId): boolean {
     return this.maximizedTerminalId === terminalId;
   }

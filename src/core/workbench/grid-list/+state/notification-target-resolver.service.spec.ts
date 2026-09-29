@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { GridListService } from "../../grid-list/+state/grid-list.service";
 import { NotificationTargetResolverService } from "./notification-target-resolver.service";
+import type { PaneLayoutLookup } from "./pane-layout-lookup";
 
 describe("NotificationTargetResolverService", () => {
-  let gridListService: GridListService;
+  let layout: PaneLayoutLookup;
   let notificationTargetResolverService: NotificationTargetResolverService;
 
   beforeEach(() => {
-    gridListService = {
+    layout = {
       findWorkspaceIdentifierByTerminalId: vi.fn((terminalId: string) =>
         terminalId === "terminal-1" ? "workspace-1" : undefined,
       ),
       findTabIdByTerminalId: vi.fn((terminalId: string) =>
         terminalId === "terminal-1" ? "tab-1" : undefined,
       ),
-    } as unknown as GridListService;
-    notificationTargetResolverService = new NotificationTargetResolverService(gridListService);
+    } as unknown as PaneLayoutLookup;
+    notificationTargetResolverService = new NotificationTargetResolverService(layout);
   });
 
   it("resolves workspace, tab and terminal for known terminals", () => {

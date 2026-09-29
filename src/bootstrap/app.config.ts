@@ -46,6 +46,8 @@ import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-m
 import { RunnableActionsPublisher } from "@cogno/core/workbench/external/runnable-actions-publisher.service";
 import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-definitions.token";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
+import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu.service";
@@ -82,6 +84,7 @@ export const appConfig: ApplicationConfig = {
     { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     { provide: SessionApi, useExisting: TerminalGatewayService },
     { provide: TerminalSearchApi, useExisting: TerminalSearchApiService },
+    { provide: PaneLayoutLookup, useExisting: GridListService },
     { provide: TerminalMonitorPort, useExisting: TerminalMonitorAdapterService },
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },

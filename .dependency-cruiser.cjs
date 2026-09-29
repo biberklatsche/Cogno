@@ -146,20 +146,7 @@ module.exports = {
       severity: "error",
       comment:
         "No module reaches itself through its imports - type-only imports included, since specs emit decorator metadata.",
-      from: {
-        path: pkg,
-        // TEMPORARY: the grid-list/session cycle (GridListService creates the
-        // sessions whose services read its layout state) is resolved separately.
-        pathNot: [
-          "^src/core/workbench/grid-list/[+]state/grid-list[.]service[.]ts$",
-          "^src/core/workbench/grid-list/[+]state/session-host-factory[.]ts$",
-          "^src/core/workbench/grid-list/[+]state/notification-target-resolver[.]service[.]ts$",
-          "^src/core/workbench/terminal/terminal[.]component[.]ts$",
-          "^src/core/workbench/terminal/header/terminal-header[.]component[.]ts$",
-          "^src/core/workbench/terminal/[+]state/session-menus[.]ts$",
-          "^src/core/workbench/terminal/[+]state/session-notifications[.]ts$",
-        ],
-      },
+      from: { path: pkg },
       to: { circular: true },
     },
     {

@@ -4,7 +4,7 @@ import { SessionHost } from "@cogno/core/session/host/session-host";
 import { actionLabel, CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { SessionNotifications } from "./session-notifications";
 
@@ -21,7 +21,7 @@ export class SessionMenus {
     private readonly host: SessionHost,
     private readonly notifications: SessionNotifications,
     private readonly keybindings: ActionKeybindingPort,
-    private readonly gridList: GridListService,
+    private readonly layout: PaneLayoutLookup,
   ) {}
 
   buildContextMenu(): ContextMenuItem[] {
@@ -47,7 +47,7 @@ export class SessionMenus {
       item("split_down"),
       item("split_up"),
       { separator: true },
-      item(terminalId && this.gridList.isMaximized(terminalId) ? "minimize_pane" : "maximize_pane"),
+      item(terminalId && this.layout.isMaximized(terminalId) ? "minimize_pane" : "maximize_pane"),
       { separator: true },
       item("clear_buffer", true),
       item("close_terminal"),

@@ -6,8 +6,8 @@ import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-h
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { Renderer } from "@cogno/core/terminal/renderer";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
+import type { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import { BehaviorSubject, Subject } from "rxjs";
@@ -144,7 +144,7 @@ describe("SessionNotifications", () => {
     maximizedTerminalId = undefined;
     menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock(), {
       isMaximized: (id: string) => id === maximizedTerminalId,
-    } as unknown as GridListService);
+    } as unknown as PaneLayoutLookup);
 
     host.start();
   });
