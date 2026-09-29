@@ -1,4 +1,4 @@
-import { ActionBase } from "@cogno/core/workbench/bus/app-bus";
+import { ActionBase } from "@cogno/core/workbench/bus/message-base";
 import { TabId } from "@cogno/core/workbench/grid-layout";
 
 export type SelectTabAction = ActionBase<"SelectTab", TabId>;

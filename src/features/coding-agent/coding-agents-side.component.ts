@@ -2,12 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
+import { NotificationPreferencesState, relativeCognoPath } from "@cogno/shared/domain";
 import {
   buildNotificationPreferencesMenuItems,
-  NotificationPreferencesState,
-  relativeCognoPath,
-} from "@cogno/shared/domain";
-import {
   ContextMenuOverlayService,
   CopyEditDeleteComponent,
   IconComponent,

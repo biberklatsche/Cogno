@@ -1,10 +1,38 @@
-import type {
-  CommandExecutionDetails,
-  CommandHistoryRow,
-  DirectoryHistoryRow,
-  RecentCommandRow,
-} from "./command-log.repository";
 import { CommandPattern } from "./command-pattern.models";
+
+/** The rows the command log hands out and takes in; part of its contract. */
+export type DirectoryHistoryRow = {
+  path: string;
+  basename: string;
+  visitCount: number;
+  selectCount: number;
+  lastVisitAt: number;
+  lastSelectAt: number;
+};
+export type RecentCommandRow = {
+  command: string;
+  executedAt: number;
+  isCurrentSession?: number;
+  isCurrentCwd?: number;
+};
+export type CommandHistoryRow = {
+  command: string;
+  execCount: number;
+  selectCount: number;
+  lastExecAt: number;
+  lastSelectAt: number;
+  cwdExecCount: number;
+  cwdSelectCount: number;
+  cwdLastExecAt: number;
+  cwdLastSelectAt: number;
+  transitionCount: number;
+  outgoingTransitionCount: number;
+  lastTransitionAt: number;
+};
+export type CommandExecutionDetails = {
+  durationMs?: number;
+  returnCode?: number;
+};
 
 /**
  * The two sides of the command log (ARCHITECTURE.md 2.4).

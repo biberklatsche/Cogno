@@ -1,4 +1,4 @@
-import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
+import { MessageBase } from "@cogno/core/workbench/bus/message-base";
 
 export type TerminalIpcMessageEvent = MessageBase<
   "TerminalIpcMessage",

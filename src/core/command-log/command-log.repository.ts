@@ -4,7 +4,14 @@ import {
   isWslShellContext,
   ResolvedShellContextContract,
 } from "@cogno/shared/domain";
-import type { CommandLogReader, CommandLogWriter } from "./command-log.api";
+import type {
+  CommandExecutionDetails,
+  CommandHistoryRow,
+  CommandLogReader,
+  CommandLogWriter,
+  DirectoryHistoryRow,
+  RecentCommandRow,
+} from "./command-log.api";
 
 import {
   CommandPattern,
@@ -19,38 +26,6 @@ import { CommandTokenizer } from "./derive/command-tokenizer";
 type IdRow = { id: number };
 type PathSegment = { path: string; basename: string; depth: number };
 
-export type DirectoryHistoryRow = {
-  path: string;
-  basename: string;
-  visitCount: number;
-  selectCount: number;
-  lastVisitAt: number;
-  lastSelectAt: number;
-};
-export type RecentCommandRow = {
-  command: string;
-  executedAt: number;
-  isCurrentSession?: number;
-  isCurrentCwd?: number;
-};
-export type CommandHistoryRow = {
-  command: string;
-  execCount: number;
-  selectCount: number;
-  lastExecAt: number;
-  lastSelectAt: number;
-  cwdExecCount: number;
-  cwdSelectCount: number;
-  cwdLastExecAt: number;
-  cwdLastSelectAt: number;
-  transitionCount: number;
-  outgoingTransitionCount: number;
-  lastTransitionAt: number;
-};
-export type CommandExecutionDetails = {
-  durationMs?: number;
-  returnCode?: number;
-};
 type CommandPatternStatRow = {
   signatureKey: string;
   signaturePartsJson: string;

@@ -1,12 +1,13 @@
 import { Injectable } from "@angular/core";
-import type { CommandLogReader, CommandLogWriter } from "@cogno/core/command-log/command-log.api";
-import { CommandLogHealthTracker } from "@cogno/core/command-log/command-log.health";
-import {
+import type {
   CommandHistoryRow,
-  CommandLogRepository,
+  CommandLogReader,
+  CommandLogWriter,
   DirectoryHistoryRow,
   RecentCommandRow,
-} from "@cogno/core/command-log/command-log.repository";
+} from "@cogno/core/command-log/command-log.api";
+import { CommandLogHealthTracker } from "@cogno/core/command-log/command-log.health";
+import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
 import { CommandPattern } from "@cogno/core/command-log/command-pattern.models";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseAccess } from "@cogno/platform";

@@ -6,14 +6,13 @@ import { SessionFact } from "@cogno/core/session/session-facts";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
 import {
-  buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
   NotificationDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
   TerminalId,
 } from "@cogno/shared/domain";
-import { ContextMenuItem } from "@cogno/shared/ui";
+import { buildNotificationPreferencesMenuItems, ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import {
   CompletedCommandNotificationHandler,

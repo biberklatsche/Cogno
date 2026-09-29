@@ -35,6 +35,13 @@ module.exports = {
       to: { path: "^(@angular/|rxjs)" },
     },
     {
+      name: "t2b-shared-domain-knows-no-ui",
+      comment: "shared/domain and shared/support are below shared/ui; they never import it.",
+      severity: "error",
+      from: { path: sharedFrameworkFreePattern },
+      to: { path: "^src/shared/ui/" },
+    },
+    {
       name: "t3-platform-imports-only-shared",
       severity: "error",
       comment: "platform is the Tauri boundary; it knows no product layer.",
@@ -133,6 +140,27 @@ module.exports = {
         "Every module is reachable from something. An orphan is dead code - delete it, or wire it up. Ambient .d.ts files declare types for the compiler and are imported by nobody.",
       from: { orphan: true, pathNot: ["\.d\.ts$"] },
       to: {},
+    },
+    {
+      name: "t16-no-circular",
+      severity: "error",
+      comment:
+        "No module reaches itself through its imports - type-only imports included, since specs emit decorator metadata.",
+      from: {
+        path: pkg,
+        // TEMPORARY: the grid-list/session cycle (GridListService creates the
+        // sessions whose services read its layout state) is resolved separately.
+        pathNot: [
+          "^src/core/workbench/grid-list/[+]state/grid-list[.]service[.]ts$",
+          "^src/core/workbench/grid-list/[+]state/session-host-factory[.]ts$",
+          "^src/core/workbench/grid-list/[+]state/notification-target-resolver[.]service[.]ts$",
+          "^src/core/workbench/terminal/terminal[.]component[.]ts$",
+          "^src/core/workbench/terminal/header/terminal-header[.]component[.]ts$",
+          "^src/core/workbench/terminal/[+]state/session-menus[.]ts$",
+          "^src/core/workbench/terminal/[+]state/session-notifications[.]ts$",
+        ],
+      },
+      to: { circular: true },
     },
     {
       name: "t14-known-aliases-only",

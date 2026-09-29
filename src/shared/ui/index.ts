@@ -19,3 +19,4 @@ export * from "./icons/+model/icon";
 export * from "./icons/icon/icon.component";
 export * from "./menu/context-menu-overlay/context-menu.component";
 export * from "./menu/context-menu-overlay/context-menu-overlay.service";
+export * from "./menu/notification-preferences-menu-items";

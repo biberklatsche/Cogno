@@ -1,5 +1,5 @@
 import { Injectable, OnDestroy } from "@angular/core";
-import { RecentCommandRow } from "@cogno/core/command-log/command-log.repository";
+import { RecentCommandRow } from "@cogno/core/command-log/command-log.api";
 import {
   HistoryEntry,
   HistoryScope,

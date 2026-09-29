@@ -3,20 +3,6 @@ import { AppMessage } from "@cogno/core/workbench/bus/messages";
 import { Observable, Subject } from "rxjs";
 import { filter, take } from "rxjs/operators";
 
-export type MessageBase<T extends string = string, P = unknown> = {
-  type: T;
-  payload?: P;
-
-  /** Set by a subscriber that carried the message out (an action that ran). */
-  performed?: boolean;
-  defaultPrevented?: boolean;
-};
-
-export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
-  trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
-  args?: string[];
-};
-
 /**
  * The workbench's message bus: one stream, subscribed by message type. Every
  * subscriber of a type gets a published message exactly once, synchronously,

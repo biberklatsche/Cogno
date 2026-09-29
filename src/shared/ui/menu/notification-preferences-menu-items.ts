@@ -1,7 +1,9 @@
-import { ContextMenuItem } from "@cogno/shared/ui";
-import { NotificationDefinitionContract } from "../notification";
-import { NotificationPreferencesUseCase } from "./notification-preferences.use-case";
-import { NotificationPreferencesState } from "./notification-preferences-state";
+import {
+  NotificationDefinitionContract,
+  NotificationPreferencesState,
+  NotificationPreferencesUseCase,
+} from "@cogno/shared/domain";
+import { ContextMenuItem } from "../context-menu-item";
 
 interface NotificationPreferencesMenuChannel {
   readonly id: string;

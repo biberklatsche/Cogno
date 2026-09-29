@@ -361,6 +361,8 @@ importieren):
   to: { path: "^(platform|core|features|bootstrap)/" } },
 { name: "shared-domain-framework-free",
   from: { path: "^shared/(domain|support)/" }, to: { path: "^(@angular/|rxjs)" } },
+{ name: "shared-domain-knows-no-ui",
+  from: { path: "^shared/(domain|support)/" }, to: { path: "^shared/ui/" } },
 { name: "platform-imports-only-shared", from: { path: "^platform/" },
   to: { path: "^(core|features|bootstrap)/" } },
 
@@ -393,7 +395,14 @@ importieren):
 { name: "known-aliases-only", from: { path: "^src/" },
   to: { dependencyTypes: ["unknown"],
         path: "^@cogno/(?!shared|platform|core|features|bootstrap)(/|$)" } },
+
+// Überall
+{ name: "no-circular", from: { path: "^src/" }, to: { circular: true } },
 ```
+
+`no-circular` zählt auch reine Typ-Importe: Specs laufen mit
+`emitDecoratorMetadata`, dort werden Konstruktor-Typen beim Laden einer
+Klasse ausgewertet, und ein Kreis kann eine Injektion `undefined` machen.
 
 Zwei Regeln lassen sich nicht als Import ausdrücken und bekommen einen
 eigenen Test:
@@ -1372,6 +1381,7 @@ Einzeltransaktion. Offen ist nur noch:
 | **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
 | Command-Log-Lese-Timeout (Abschnitt 2.4) | Das Lese-Timeout mit `timedOut`-Kennzeichen fehlt. |
 | `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |
+| Kreis Grid-Liste ↔ Session-Dienste (2.1, `no-circular`) | `GridListService` erzeugt über die `SessionHostFactory` die Sessions, deren Dienste (Kontextmenü, Benachrichtigungen, Terminal-Komponente) wieder den `GridListService` lesen. Diese sieben Dateien sind in `.dependency-cruiser.cjs` vorübergehend von `no-circular` ausgenommen. |
 
 ---
 

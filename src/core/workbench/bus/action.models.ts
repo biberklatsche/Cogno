@@ -1,4 +1,4 @@
-import { ActionBase } from "@cogno/core/workbench/bus/app-bus";
+import { ActionBase } from "@cogno/core/workbench/bus/message-base";
 
 export type ActionFiredEvent = ActionBase<"ActionFired", ActionName> & {
   /** Set when the action targets a specific terminal, e.g. via HTTP IPC. Handlers that need terminal-scoped behaviour should check this field. */

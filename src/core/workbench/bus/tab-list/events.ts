@@ -1,4 +1,4 @@
-import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
+import { MessageBase } from "@cogno/core/workbench/bus/message-base";
 import { TabId } from "@cogno/core/workbench/grid-layout";
 
 export type TabAddedEvent = MessageBase<
