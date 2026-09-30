@@ -125,11 +125,13 @@ pub fn try_run_action_over_http(cli: &Cli) -> Option<i32> {
     };
 
     let port = std::env::var("COGNO_PORT").ok()?;
+    let token = std::env::var("COGNO_TOKEN").unwrap_or_default();
     let url = format!("http://127.0.0.1:{}/action/run", port);
     let body = serde_json::json!({ "name": name, "args": args });
 
     let response = match reqwest::blocking::Client::new()
         .post(&url)
+        .header(crate::http_server::TOKEN_HEADER, token)
         .json(&body)
         .send()
     {

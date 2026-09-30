@@ -235,6 +235,15 @@ Wechsel funktioniert ohne Zutun. Rein informative Sequenzen (OSC 0/2 Titel,
 OSC 9 Nachricht, 9;4 Fortschritt) bleiben ohne Token — sie ändern kein
 Modell, nur Anzeige.
 
+**Der lokale HTTP-Server ist ebenso geschützt.** Über ihn melden
+Coding-Agent-Hooks ihren Status und löst `cogno action run` Aktionen aus.
+Rust erzeugt je Start ein Geheimnis `COGNO_TOKEN` und gibt es jeder Shell mit
+(neben `COGNO_PORT`); jede Anfrage muss es im Header `X-Cogno-Token` tragen
+und die Loopback-Adresse (`127.0.0.1:<port>`, `localhost:<port>`) als Host
+nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
+wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
+DNS-Rebinding auf 127.0.0.1 umbiegt.
+
 Jeder Kontexteintrag der Zeitachse hat eine **Revision**; `run` und jede
 schreibende API-Operation nennen die Revision, mit der sie geplant wurden,
 und werden abgelehnt, wenn sie nicht mehr aktuell ist.

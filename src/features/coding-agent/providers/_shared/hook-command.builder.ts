@@ -133,7 +133,7 @@ function buildCurlCommand(
   // The body goes through stdin, not as an argument: a command line is limited
   // (128 KB per argument on Linux, about 32 K characters in all on Windows), and a
   // payload with a large file's content would make the call fail.
-  const curl = `printf '%s' "$_b" | curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' --data-binary @-`;
+  const curl = `printf '%s' "$_b" | curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -H "X-Cogno-Token: $COGNO_TOKEN" --data-binary @-`;
   const guardedCurl = `seq=$(date +%s); ${bashPayloadCapture()}; ${bodyVar}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
   // Guard against terminals without Cogno's env vars (e.g. opened outside Cogno) and
@@ -154,7 +154,7 @@ function buildWindowsCommand(
     `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","'+$seq+'"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
   // The body goes out as UTF-8 bytes: a string body would be re-encoded by Invoke-WebRequest
   // with a code page that varies by PowerShell edition.
-  const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json; charset=utf-8" -Body ([Text.Encoding]::UTF8.GetBytes($b)) -UseBasicParsing|Out-Null`;
+  const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json; charset=utf-8" -Headers @{'X-Cogno-Token'=$env:COGNO_TOKEN} -Body ([Text.Encoding]::UTF8.GetBytes($b)) -UseBasicParsing|Out-Null`;
   const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch { Write-Error $_ }`;
 
   // Same guard as the bash variant, expressed for PowerShell. The caught error is written to

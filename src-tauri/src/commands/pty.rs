@@ -471,6 +471,7 @@ pub async fn pty_spawn(
     let http_port = http_server.port();
     if http_port != 0 {
         cmd.env("COGNO_PORT", http_port.to_string());
+        cmd.env("COGNO_TOKEN", http_server.token());
     }
     cmd.env("COGNO_TERMINAL_ID", &terminal_id);
 

@@ -50,6 +50,12 @@ describe("hook-command.builder", () => {
     expect(bash).not.toContain('-d "$_b"');
   });
 
+  it("sends the launch token Cogno's HTTP server requires, in both shells", () => {
+    const { command, commandWindows } = buildHookCommands("working", "claude-code", "Stop");
+    expect(command).toContain(`-H "X-Cogno-Token: $COGNO_TOKEN"`);
+    expect(commandWindows).toContain("-Headers @{'X-Cogno-Token'=$env:COGNO_TOKEN}");
+  });
+
   it("recognises both shell variants of the current command and nothing else", () => {
     const { command, commandWindows } = buildHookCommands("working", "codex", "PreToolUse");
     expect(isCurrentHookCommand(command, "working", "codex", "PreToolUse")).toBe(true);

@@ -54,6 +54,9 @@ pub struct ActionRunPayload {
 pub struct HttpServerState {
     port: AtomicU16,
     started: AtomicBool,
+    /// A secret for this launch. Only processes started in a Cogno terminal
+    /// get it (`COGNO_TOKEN`); every request must carry it.
+    token: String,
 }
 
 impl Default for HttpServerState {
@@ -61,6 +64,7 @@ impl Default for HttpServerState {
         Self {
             port: AtomicU16::new(0),
             started: AtomicBool::new(false),
+            token: uuid::Uuid::new_v4().simple().to_string(),
         }
     }
 }
@@ -72,6 +76,10 @@ impl HttpServerState {
 
     pub fn port(&self) -> u16 {
         self.port.load(Ordering::Relaxed)
+    }
+
+    pub fn token(&self) -> &str {
+        &self.token
     }
 
     fn try_claim_start(&self) -> bool {
@@ -102,6 +110,24 @@ pub struct CognoMessagePayload {
     // Arbitrary JSON forwarded as-is (e.g. an agent hook's stdin payload). Consumers
     // parse this themselves; the server never inspects its shape.
     pub payload: Option<serde_json::Value>,
+}
+
+/// The header every request carries the launch token in.
+pub const TOKEN_HEADER: &str = "x-cogno-token";
+
+/// Only a caller that knows this launch's token - a process started in a Cogno
+/// terminal - may talk to the server, and only by the loopback name: a web
+/// page that rebinds its own host name to 127.0.0.1 sends that name as Host.
+fn is_authorized(headers: &axum::http::HeaderMap, token: &str, port: u16) -> bool {
+    let token_matches = headers
+        .get(TOKEN_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value == token);
+    let host_is_loopback = headers
+        .get(axum::http::header::HOST)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|host| host == format!("127.0.0.1:{port}") || host == format!("localhost:{port}"));
+    token_matches && host_is_loopback
 }
 
 fn find_port(start: u16, auto_next: bool) -> Option<u16> {
@@ -167,12 +193,19 @@ pub fn start_http_server(
 
         let app_emit = app.clone();
         let app_run = app.clone();
+        let token = app.state::<HttpServerState>().token().to_string();
+        let token_for_run = token.clone();
         let router = Router::new()
             .route(
                 "/action",
-                post(move |result: Result<Json<CognoMessagePayload>, JsonRejection>| {
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<CognoMessagePayload>, JsonRejection>| {
                     let app = app_emit.clone();
+                    let authorized = is_authorized(&headers, &token, actual_port);
                     async move {
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /action rejected: missing or wrong token");
+                            return StatusCode::FORBIDDEN;
+                        }
                         match result {
                             Ok(Json(payload)) => {
                                 log::info!(target: "http_server", "POST /action: command={} terminal_id={:?}", payload.command, payload.terminal_id);
@@ -190,9 +223,17 @@ pub fn start_http_server(
             )
             .route(
                 "/action/run",
-                post(move |result: Result<Json<ActionRunPayload>, JsonRejection>| {
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<ActionRunPayload>, JsonRejection>| {
                     let app = app_run.clone();
+                    let authorized = is_authorized(&headers, &token_for_run, actual_port);
                     async move {
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /action/run rejected: missing or wrong token");
+                            return (
+                                StatusCode::FORBIDDEN,
+                                Json(serde_json::json!({ "error": "forbidden" })),
+                            );
+                        }
                         match result {
                             Ok(Json(payload)) => {
                                 let status = app.state::<RunnableActionsState>().classify(&payload.name);
@@ -227,4 +268,43 @@ pub fn start_http_server(
     });
 
     Ok(actual_port)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::{header::HOST, HeaderMap, HeaderValue};
+
+    fn headers(token: Option<&str>, host: &str) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(HOST, HeaderValue::from_str(host).unwrap());
+        if let Some(token) = token {
+            headers.insert(TOKEN_HEADER, HeaderValue::from_str(token).unwrap());
+        }
+        headers
+    }
+
+    #[test]
+    fn accepts_the_launch_token_on_the_loopback_name() {
+        assert!(is_authorized(&headers(Some("secret"), "127.0.0.1:9000"), "secret", 9000));
+        assert!(is_authorized(&headers(Some("secret"), "localhost:9000"), "secret", 9000));
+    }
+
+    #[test]
+    fn rejects_a_missing_or_wrong_token() {
+        assert!(!is_authorized(&headers(None, "127.0.0.1:9000"), "secret", 9000));
+        assert!(!is_authorized(&headers(Some("guess"), "127.0.0.1:9000"), "secret", 9000));
+    }
+
+    #[test]
+    fn rejects_a_rebound_host_name_even_with_the_token() {
+        assert!(!is_authorized(&headers(Some("secret"), "evil.example:9000"), "secret", 9000));
+        assert!(!is_authorized(&headers(Some("secret"), "127.0.0.1:9001"), "secret", 9000));
+    }
+
+    #[test]
+    fn every_launch_gets_its_own_token() {
+        assert_ne!(HttpServerState::new().token(), HttpServerState::new().token());
+        assert!(HttpServerState::new().token().len() >= 32);
+    }
 }
