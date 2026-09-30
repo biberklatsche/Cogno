@@ -682,6 +682,9 @@ pub fn pty_execute_line_editor_action(
     action: String,
     payload_json: Option<String>,
 ) -> Result<(), String> {
+    if !is_line_editor_action_name(&action) {
+        return Err(format!("Invalid line editor action: {:?}", action));
+    }
     // Copy what the pipe/FIFO/file writes below need and release the lock
     // first: they can block, and nothing may block while holding `sessions`.
     let (shell_type, line_editor_pipe_name, line_editor_channel, input_tx) = {
@@ -844,6 +847,16 @@ mod flow_control_tests {
     use super::*;
     use std::thread;
     use std::time::Instant;
+
+    #[test]
+    fn line_editor_action_names_are_plain_words() {
+        assert!(is_line_editor_action_name("replaceCurrentInput"));
+        assert!(is_line_editor_action_name("clear-line_2"));
+        for bad in ["", "replace;rm -rf ~", "a
+b", "a b", "ä"] {
+            assert!(!is_line_editor_action_name(bad), "{bad:?}");
+        }
+    }
 
     fn short() -> Duration {
         Duration::from_millis(50)
@@ -1184,6 +1197,15 @@ fn create_line_editor_channel(
     }
     #[cfg(not(unix))]
     None
+}
+
+/// The action is the first field of a `;`-separated line the shell reads;
+/// a name with `;`, a line break or anything but a plain word would split it.
+fn is_line_editor_action_name(action: &str) -> bool {
+    !action.is_empty()
+        && action
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
 /// Builds the line-format message the shell handlers consume with
