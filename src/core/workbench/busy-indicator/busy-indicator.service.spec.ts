@@ -1,6 +1,7 @@
 import type { DestroyRef } from "@angular/core";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import { BusyIndicatorRegistration, BusyIndicatorService } from "./busy-indicator.service";
 
@@ -33,15 +34,35 @@ describe("BusyIndicatorService", () => {
   let bus: AppBus;
   let service: BusyIndicatorService;
   let terminalTabIds: Map<string, string>;
+  let grids$: BehaviorSubject<unknown[]>;
 
   beforeEach(() => {
     bus = new AppBus();
     terminalTabIds = new Map();
+    grids$ = new BehaviorSubject<unknown[]>([]);
     service = new BusyIndicatorService(
       bus,
-      createGridListServiceStub(terminalTabIds),
+      createGridListServiceStub(terminalTabIds, grids$),
       createDestroyRefStub(),
     );
+  });
+
+  /** Lays the terminal's pane out in another tab, as dragging it to a new tab does. */
+  function movePane(terminalId: string, tabId: string): void {
+    terminalTabIds.set(terminalId, tabId);
+    grids$.next([]);
+  }
+
+  it("moves a terminal's animation along when its pane moves to another tab", () => {
+    terminalTabIds.set("terminal-1", "tab-1");
+    const oldTab = observeRegistrations(service.forTab$("tab-1"));
+    const newTab = observeRegistrations(service.forTab$("tab-2"));
+    registerTerminalAnimation("terminal-busy-terminal-1", "terminal-1", defaultKeyframes, 1);
+
+    movePane("terminal-1", "tab-2");
+
+    expect(oldTab.current).toEqual([]);
+    expect(newTab.current.map((r) => r.registrationId)).toEqual(["terminal-busy-terminal-1"]);
   });
 
   it("stores all registrations for the same terminal concurrently", () => {
@@ -207,8 +228,12 @@ function observeRegistrations(registrations$: {
   };
 }
 
-function createGridListServiceStub(terminalTabIds: ReadonlyMap<string, string>): GridListService {
+function createGridListServiceStub(
+  terminalTabIds: ReadonlyMap<string, string>,
+  grids$: BehaviorSubject<unknown[]>,
+): GridListService {
   return {
+    grids$,
     findTabIdByTerminalId: (terminalId: string): string | undefined =>
       terminalTabIds.get(terminalId),
   } as unknown as GridListService;

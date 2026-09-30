@@ -5,7 +5,7 @@ import { BusyIndicatorTarget } from "@cogno/core/workbench/bus/busy-indicator/ev
 import { TabId } from "@cogno/core/workbench/grid-layout";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalId } from "@cogno/shared/domain";
-import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
+import { BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable } from "rxjs";
 
 export type BusyIndicatorRegistration = {
   registrationId: string;
@@ -72,9 +72,10 @@ export class BusyIndicatorService {
     );
   }
 
+  /** Re-evaluated on every layout change too: a pane can move to another tab. */
   forTab$(tabId: TabId): Observable<BusyIndicatorRegistration[]> {
-    return this._registrations$.pipe(
-      map((regs) =>
+    return combineLatest([this._registrations$, this.gridListService.grids$]).pipe(
+      map(([regs]) =>
         regs.filter((r) => {
           if (r.target.kind === "tab") return r.target.id === tabId;
           return this.gridListService.findTabIdByTerminalId(r.target.id) === tabId;
