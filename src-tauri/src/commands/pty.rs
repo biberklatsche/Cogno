@@ -1,4 +1,6 @@
-use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, PtySize};
+#[cfg(windows)]
+use portable_pty::ChildKiller;
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Write;
@@ -320,7 +322,7 @@ struct Session {
     /// master already hangs up the shell (and lets it write its history on
     /// the way out); ConPTY does not terminate its clients when the console
     /// closes, so on Windows this is the only thing that does.
-    #[cfg_attr(not(windows), allow(dead_code))]
+    #[cfg(windows)]
     child_killer: Box<dyn ChildKiller + Send + Sync>,
     shell_process_id: Option<u32>,
     shell_type: String,
@@ -510,6 +512,7 @@ pub async fn pty_spawn(
         master: pair.master,
         input_tx,
         flow: flow.clone(),
+        #[cfg(windows)]
         child_killer: child.clone_killer(),
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
