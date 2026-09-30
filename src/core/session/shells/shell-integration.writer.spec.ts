@@ -1,5 +1,5 @@
-import { ShellSupportDefinitionContract } from "@cogno/core/api/contributions";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { ShellSupportDefinitionContract } from "@cogno/core/session/shells/shell-support";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Shells } from "@cogno/platform/shells";

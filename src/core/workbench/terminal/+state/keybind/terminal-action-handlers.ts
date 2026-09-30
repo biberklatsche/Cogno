@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ShellLineEditorActionContract } from "@cogno/core/api/contributions";
+import { ShellLineEditorActionContract } from "@cogno/core/session/shells/shell-definition";
 import { ActionHandler, ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";

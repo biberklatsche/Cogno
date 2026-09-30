@@ -4,11 +4,11 @@ import { ApplicationConfigurationPort } from "@cogno/core/api/application-config
 import {
   ApplicationSettingsExtensionContract,
   FeatureDefinition,
-  ShellSupportDefinitionContract,
 } from "@cogno/core/api/contributions";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { ShellSupportDefinitionContract } from "@cogno/core/session/shells/shell-support";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";

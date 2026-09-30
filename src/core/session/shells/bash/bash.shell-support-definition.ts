@@ -1,4 +1,4 @@
-import { ShellSupportDefinitionContract } from "@cogno/core/api/contributions";
+import { ShellSupportDefinitionContract } from "@cogno/core/session/shells/shell-support";
 import bashBootstrapScript from "./bootstrap.bash.txt?raw";
 import bashIntegrationScript from "./integration.bash.txt?raw";
 

@@ -1,6 +1,6 @@
-import { ShellSessionCapabilitiesContract } from "@cogno/core/api/contributions";
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { ShellSessionCapabilitiesContract } from "@cogno/core/session/shells/shell-definition";
 import { OsType } from "@cogno/platform/os";
 import { IPathAdapter, ResolvedShellContextContract, TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject, map, Observable, Subject } from "rxjs";

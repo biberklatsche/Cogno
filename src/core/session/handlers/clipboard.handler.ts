@@ -1,5 +1,5 @@
-import { ShellLineEditorDefinitionContract } from "@cogno/core/api/contributions";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ShellLineEditorDefinitionContract } from "@cogno/core/session/shells/shell-definition";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";

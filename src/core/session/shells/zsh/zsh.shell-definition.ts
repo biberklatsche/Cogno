@@ -1,4 +1,4 @@
-import { ShellDefinitionContract } from "@cogno/core/api/contributions";
+import { ShellDefinitionContract } from "@cogno/core/session/shells/shell-definition";
 import { posixInsertSanitizer } from "../common/posix-insert-sanitizer";
 import { zshShellPathAdapterDefinition } from "./zsh.path-adapter";
 import { zshShellSupportDefinition } from "./zsh.shell-support-definition";

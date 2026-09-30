@@ -1,9 +1,9 @@
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
 import type {
   ShellLineEditorDefinitionContract,
   ShellSessionCapabilitiesContract,
-} from "@cogno/core/api/contributions";
-import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
+} from "@cogno/core/session/shells/shell-definition";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import type { IPty } from "@cogno/core/terminal/pty";
 import { ClipboardAccess } from "@cogno/platform/clipboard";

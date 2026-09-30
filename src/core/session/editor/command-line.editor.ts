@@ -1,7 +1,7 @@
 import {
   ShellLineEditorActionContract,
   ShellLineEditorDefinitionContract,
-} from "@cogno/core/api/contributions";
+} from "@cogno/core/session/shells/shell-definition";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";

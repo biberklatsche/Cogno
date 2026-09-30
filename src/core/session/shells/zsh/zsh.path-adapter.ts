@@ -1,4 +1,4 @@
-import { ShellPathAdapterDefinitionContract } from "@cogno/core/api/contributions";
+import { ShellPathAdapterDefinitionContract } from "@cogno/core/session/shells/shell-path-adapter-definition";
 import { BasePathAdapter, ShellContextContract } from "@cogno/shared/domain";
 
 type ShellAdapterContext = {

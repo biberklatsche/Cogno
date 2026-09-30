@@ -1,8 +1,8 @@
-import { ShellLineEditorActionContract } from "@cogno/core/api/contributions";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { ShellLineEditorActionContract } from "@cogno/core/session/shells/shell-definition";
 import { CursorHandler } from "@cogno/core/terminal/handlers/cursor.handler";
 import { FocusHandler } from "@cogno/core/terminal/handlers/focus.handler";
 import { MouseHandler } from "@cogno/core/terminal/handlers/mouse.handler";
