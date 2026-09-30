@@ -36,10 +36,6 @@ export interface FeatureDefinition<TActionName = string> {
    * before activation. Unknown or cyclic requires abort the start.
    */
   readonly requires?: ReadonlyArray<string>;
-  /** Runs when the feature is activated, after its contributions are registered. */
-  readonly activate?: () => void | Promise<void>;
-  /** Runs when the feature is deactivated, before its contributions are removed. */
-  readonly deactivate?: () => void | Promise<void>;
   /** Schema steps, applied on startup in list order. */
   readonly migrations?: ReadonlyArray<DatabaseMigrationContract>;
   /** Action names the feature owns; known from declaration, handled on activation. */

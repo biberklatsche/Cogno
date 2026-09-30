@@ -3,16 +3,16 @@ import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { FeatureModeContract } from "@cogno/shared/domain";
 
 /**
- * A feature's runtime status (ARCHITECTURE.md 6.1). `failed` means its
- * activation threw; it stays failed until the app restarts.
+ * A feature's runtime status (ARCHITECTURE.md 6.1). `failed` means registering
+ * its contributions threw; it stays failed until the app restarts.
  */
 export type FeatureRuntimeStatus = "inactive" | "activating" | "active" | "deactivating" | "failed";
 
 /**
- * Where a feature's contributions are announced and withdrawn. Registration
- * cannot fail by construction (it only adds list entries); the consumers
- * (side-menu, action catalog, notification dispatch, suggestor registry) live
- * behind this so the reconciler stays pure.
+ * Where a feature's contributions are announced and withdrawn. The consumers
+ * (side-menu, notification channels) live behind this so the reconciler stays
+ * pure. Registering can throw: a side-menu lifecycle runs the feature's own
+ * code when it is told the feature is on.
  */
 export interface FeatureContributionRegistrar {
   register(feature: FeatureDefinition<ActionName>): void;
@@ -94,13 +94,12 @@ export class FeatureReconciler {
     }
   }
 
-  /** Rule 2: register (cannot fail), then activate(); on throw, roll back and fail. */
+  /** Rule 2: register the contributions; on throw, roll back and fail. */
   private async activate(feature: FeatureDefinition<ActionName>): Promise<void> {
     this.inFlight.add(feature.id);
     this.status.set(feature.id, "activating");
     try {
       this.registrar.register(feature);
-      await feature.activate?.();
       this.status.set(feature.id, "active");
     } catch (error) {
       this.registrar.unregister(feature);
@@ -111,16 +110,13 @@ export class FeatureReconciler {
     }
   }
 
-  /** Rule 3: deactivate() first (contributions still there), then unregister. Ends `inactive`. */
+  /** Rule 3: unregister the contributions. Ends `inactive`. */
   private async deactivate(feature: FeatureDefinition<ActionName>): Promise<void> {
     this.inFlight.add(feature.id);
     this.status.set(feature.id, "deactivating");
     try {
-      await feature.deactivate?.();
-    } catch (error) {
-      this.reportError(feature.id, error);
-    } finally {
       this.registrar.unregister(feature);
+    } finally {
       this.status.set(feature.id, "inactive");
       this.inFlight.delete(feature.id);
     }

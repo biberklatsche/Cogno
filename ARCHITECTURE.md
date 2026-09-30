@@ -1204,7 +1204,6 @@ Feature = {
   settings?, migrations?                 // Deklaration: immer registriert (6.1)
   sideMenu?, notificationChannels?, suggestors? // Aktivierung: nur bei mode: on
   mode: "on" | "off"                      // jedes Feature; Default "on"
-  activate?/deactivate?                  // optional: nur wenn es beim Aktivieren etwas zu tun gibt
 }
 ```
 
@@ -1258,10 +1257,11 @@ Drei Aufgaben:
 2. **Aktivierung (dynamisch, nur bei `mode: on`).** Löst `requires`
    transitiv auf, aktiviert in Abhängigkeitsreihenfolge, deaktiviert
    umgekehrt. Aktivieren = die *aktiven* Contributions anmelden —
-   Side-Menu-Panel, **Aktions-Handler**, Notification-Kanäle,
-   Hintergrunddienste — und `activate()` rufen; Deaktivieren = abmelden,
-   `deactivate()`, Subscriptions freigeben. Beides idempotent. Was in Phase
-   1 registriert wurde, bleibt.
+   Side-Menu-Panel, **Aktions-Handler**, Notification-Kanäle;
+   Deaktivieren = abmelden, Subscriptions freigeben. Beides idempotent. Was
+   ein Feature im Hintergrund tut, startet und stoppt es im `onModeChange`
+   seines Side-Menu-Lifecycles, das beim Anmelden `on` und beim Abmelden
+   `off` meldet. Was in Phase 1 registriert wurde, bleibt.
 
    Die Trennlinie: Phase 1 ist, was das Produkt über ein Feature *weiß*;
    Phase 2 ist, was das Feature *tut*. Eine Deklaration hat keine
@@ -1279,18 +1279,17 @@ und gleicht an. Dafür gelten sechs Regeln:
 1. **Eine Operation je Feature zur Zeit.** Läuft `activating` oder
    `deactivating`, wird ein neuer Wunsch nur gemerkt. Nach Abschluss —
    Erfolg oder Fehler — gleicht der Host erneut ab. `on → off` während
-   `activate()` heißt also: Aktivierung zu Ende bringen, dann deaktivieren.
-2. **Aktivierung ist ganz oder gar nicht.** Reihenfolge: Contributions
-   anmelden (Listeneinträge, können per Konstruktion nicht fehlschlagen),
-   dann `activate()`. Wirft `activate()`, meldet der Host alle Contributions
-   in umgekehrter Reihenfolge ab, Status `failed` mit Grund. Es gibt keinen
-   halb aktiven Zustand; ein Panel, das schon sichtbar war, verschwindet.
-3. **Deaktivierung endet immer in `inactive`.** Reihenfolge: `deactivate()`
-   *zuerst*, solange die Contributions noch angemeldet sind (das Feature darf
-   sie zum Aufräumen benutzen — Panel schließen, offene Schreibvorgänge
-   beenden), dann Contributions abmelden, dann Subscriptions freigeben. Wirft
-   `deactivate()`, wird trotzdem alles abgemeldet und der Fehler gemeldet;
-   der Status ist danach `inactive`, nie `failed`.
+   der Aktivierung heißt also: Aktivierung zu Ende bringen, dann
+   deaktivieren.
+2. **Aktivierung ist ganz oder gar nicht.** Der Host meldet die
+   Contributions an. Das kann werfen, weil ein Side-Menu-Lifecycle dabei den
+   Code des Features ausführt (`onModeChange("on")`). Dann meldet der Host
+   alle Contributions in umgekehrter Reihenfolge ab, Status `failed` mit
+   Grund. Es gibt keinen halb aktiven Zustand; ein Panel, das schon sichtbar
+   war, verschwindet.
+3. **Deaktivierung endet immer in `inactive`.** Der Host meldet die
+   Contributions ab und gibt die Subscriptions frei; der Status ist danach
+   `inactive`, nie `failed`.
 4. **`requires` ist eine Bedingung, keine Kaskade in die Config.** Ist ein
    benötigtes Feature `off` oder `failed`, bleibt das abhängige Feature
    `inactive`; der Host schreibt nie in die Config. Wird *x* aktiv, aktiviert der nächste
@@ -1308,8 +1307,8 @@ Damit ist jeder Übergang bestimmt:
 
 ```
 inactive     --on, requires erfüllt-->  activating
-activating   --activate() ok------->  active
-activating   --activate() wirft---->  failed       (Contributions zurückgerollt)
+activating   --angemeldet---------->  active
+activating   --Anmelden wirft------>  failed       (Contributions zurückgerollt)
 active       --off oder requires--->  deactivating
 deactivating --immer---------------->  inactive
 failed       --Neustart------------->  inactive     (Status wird nicht persistiert)
