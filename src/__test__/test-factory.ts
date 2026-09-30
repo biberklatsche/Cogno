@@ -8,7 +8,6 @@ import { MachineState } from "@cogno/core/terminal/machine-state";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
@@ -16,12 +15,10 @@ import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/t
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
-import { OsPlatform, OsType } from "@cogno/platform/os";
 import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 import { TerminalId } from "@cogno/shared/domain";
-import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Subject } from "rxjs";
 import { vi } from "vitest";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
@@ -38,13 +35,6 @@ let windowService: WindowService | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let machineState: MachineState | undefined;
 let terminalBusyStateService: TerminalBusyStateService | undefined;
-let contextMenuOverlayService: ContextMenuOverlayService | undefined;
-let notificationTargetResolverService: NotificationTargetResolverService | undefined;
-
-/** A fixed platform so specs behave the same on every developer's machine. */
-export function getOsPlatform(platform: OsType = "linux"): OsPlatform {
-  return { platform: () => platform } as OsPlatform;
-}
 
 export function getAppBus(): AppBus {
   if (!appBus) appBus = new AppBus();
@@ -59,15 +49,6 @@ export function getMachineState(): MachineState {
 export function getSideMenuService(): SideMenuService {
   if (!sideMenuService) sideMenuService = new SideMenuService(getAppBus());
   return sideMenuService;
-}
-
-export function getNotificationTargetResolverService(): NotificationTargetResolverService {
-  if (!notificationTargetResolverService) {
-    notificationTargetResolverService = {
-      resolveForTerminal: vi.fn().mockReturnValue(undefined),
-    } as unknown as NotificationTargetResolverService;
-  }
-  return notificationTargetResolverService;
 }
 
 export function getConfigService(): ConfigServiceMock {
@@ -192,18 +173,6 @@ export function getTerminalBusyStateService(): TerminalBusyStateService {
   return terminalBusyStateService;
 }
 
-export function getContextMenuOverlayService(): ContextMenuOverlayService {
-  if (!contextMenuOverlayService) {
-    contextMenuOverlayService = {
-      openAtElement: vi.fn(),
-      openAtPoint: vi.fn(),
-      close: vi.fn(),
-    } as unknown as ContextMenuOverlayService;
-  }
-
-  return contextMenuOverlayService;
-}
-
 export function getSelectionHandler(_terminalId: TerminalId): SelectionHandler {
   if (!selectionHandler) {
     selectionHandler = new SelectionHandler(getMachineState());
@@ -224,6 +193,4 @@ export function clear() {
   selectionHandler = undefined;
   machineState = undefined;
   terminalBusyStateService = undefined;
-  contextMenuOverlayService = undefined;
-  notificationTargetResolverService = undefined;
 }

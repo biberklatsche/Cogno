@@ -197,17 +197,17 @@ export class CommandRecorder {
     );
   }
 
-  /**
-   * The configured return-code filter: the command's own list, else the global
-   * one. An empty list is no filter. With a list set, a command whose result is
-   * unknown (no return code) is not kept.
-   */
   /** How many commands the history keeps; `undefined` when it is unlimited. */
   private historyLimit(): number | undefined {
     const limit = resolveLimit(this.configService.config.terminal?.history?.max_entries, UNLIMITED);
     return Number.isFinite(limit) ? limit : undefined;
   }
 
+  /**
+   * The configured return-code filter: the command's own list, else the global
+   * one. An empty list is no filter. With a list set, a command whose result is
+   * unknown (no return code) is not kept.
+   */
   private isReturnCodeAllowed(token: string, returnCode: number | undefined): boolean {
     const history = this.configService.config.terminal?.history;
     const allowed =

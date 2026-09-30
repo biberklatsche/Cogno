@@ -8,6 +8,9 @@ import {
   SimpleChanges,
 } from "@angular/core";
 
+const HOVER_DELAY_MS = 800;
+const MANUAL_DELAY_MS = 150;
+
 @Directive({
   selector: "[appTooltip]",
   standalone: true,
@@ -15,14 +18,12 @@ import {
 export class TooltipDirective implements OnChanges, OnDestroy {
   @Input("appTooltip") text = "";
   @Input("appTooltipSecondary") secondaryText: string | undefined = undefined;
-  @Input() tooltipDelay = 800;
   /**
    * Programmatic visibility, independent of hover: true shows the tooltip (after
-   * tooltipManualDelay, so rapid keyboard navigation doesn't flicker), false hides it
+   * MANUAL_DELAY_MS, so rapid keyboard navigation doesn't flicker), false hides it
    * again. Leave undefined for pure hover behavior.
    */
   @Input() tooltipVisible: boolean | undefined = undefined;
-  @Input() tooltipManualDelay = 150;
 
   private tooltipElement?: HTMLElement;
   private showTimeout?: ReturnType<typeof setTimeout>;
@@ -35,7 +36,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
     if (this.tooltipVisible) {
       this.showTimeout = setTimeout(() => {
         this.showTooltip();
-      }, this.tooltipManualDelay);
+      }, MANUAL_DELAY_MS);
     } else {
       this.removeTooltip();
     }
@@ -51,7 +52,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
     clearTimeout(this.showTimeout);
     this.showTimeout = setTimeout(() => {
       this.showTooltip();
-    }, this.tooltipDelay);
+    }, HOVER_DELAY_MS);
   }
 
   @HostListener("mouseleave")

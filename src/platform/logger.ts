@@ -4,7 +4,6 @@ import {
   debug as tauriDebug,
   error as tauriError,
   info as tauriInfo,
-  trace as tauriTrace,
   warn as tauriWarn,
 } from "@tauri-apps/plugin-log";
 
@@ -36,10 +35,6 @@ export const Logger = {
   debug(message: string, options?: LogOptions): void {
     ignoreRejection(initializeLogger());
     ignoreRejection(tauriDebug(message, options));
-  },
-  trace(message: string, options?: LogOptions): void {
-    ignoreRejection(initializeLogger());
-    ignoreRejection(tauriTrace(message, options));
   },
   info(message: string, options?: LogOptions): void {
     ignoreRejection(initializeLogger());

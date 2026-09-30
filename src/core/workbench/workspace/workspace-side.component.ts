@@ -18,7 +18,7 @@ import {
   TooltipDirective,
   trackPointerDrag,
 } from "@cogno/shared/ui";
-import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
+import { collectDirectionalNavigationItems } from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 import { workspaceBadge } from "./workspace-badge";
 import { defaultWorkspaceIdContract } from "./workspace-entry";
@@ -272,7 +272,8 @@ export class WorkspaceSideComponent implements OnDestroy {
   private suppressNextWorkspaceClickTimeoutId: number | undefined;
   private readonly workspaceTileElements =
     viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
-  private readonly navigationItemsProvider = () => this.collectNavigationItems();
+  private readonly navigationItemsProvider = () =>
+    collectDirectionalNavigationItems(this.workspaceTileElements());
 
   constructor(
     private readonly workspaceService: WorkspaceService,
@@ -385,31 +386,6 @@ export class WorkspaceSideComponent implements OnDestroy {
     }
 
     return `select_workspace_${index}`;
-  }
-
-  private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {
-    return this.workspaceTileElements()
-      .map((elementRef) => elementRef.nativeElement)
-      .map((element) => {
-        const navigationId = element.dataset["navigationId"];
-        if (!navigationId) {
-          return null;
-        }
-
-        const rect = element.getBoundingClientRect();
-        return {
-          id: navigationId,
-          rect: {
-            top: rect.top,
-            right: rect.right,
-            bottom: rect.bottom,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-          },
-        } satisfies DirectionalNavigationItem<string>;
-      })
-      .filter((item): item is DirectionalNavigationItem<string> => item !== null);
   }
 
   reorderWhileDragging(targetWorkspaceIdentifier: string, event: MouseEvent): void {

@@ -56,7 +56,6 @@ import { CommandRecorder } from "../recorder/command-recorder";
 import { SessionFact } from "../session-facts";
 import { shellDefinitions } from "../shells/shell-definitions";
 import { serializeScrollback } from "./scrollback-serializer";
-/** Both halves of a session's state as one read-only view. */
 import {
   type CommandSnapshot,
   SESSION_SNAPSHOT_VERSION,
@@ -64,6 +63,7 @@ import {
 } from "./session-snapshot";
 import { toTerminalMachineOptions } from "./terminal-machine-options.mapper";
 
+/** Both halves of a session's state as one read-only view. */
 export type SessionState = MachineStateSnapshot & SessionModelSnapshot;
 
 /** The concealed prompt marker line the shell integration prints (`^^#<id>`). */

@@ -65,6 +65,9 @@ type ContextEntry = {
   readonly revision: number;
 };
 
+/** Dropped impostor sequences before the session says so once. */
+const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
+
 /**
  * The session's side of a terminal's state: which shell runs
  * in which context, where it is, what is typed, whether a command runs, what
@@ -75,9 +78,6 @@ type ContextEntry = {
  * The unread badge sits here because the session clears it - on input and on
  * focus - and it dies with the session; the workbench only sets it.
  */
-/** Dropped impostor sequences before the session says so once. */
-const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
-
 export class SessionModel {
   private readonly _state: BehaviorSubject<SessionModelSnapshot>;
   private readonly _facts = new Subject<SessionFact>();
