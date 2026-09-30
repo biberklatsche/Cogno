@@ -34,12 +34,8 @@ export type SessionFact =
   | { readonly type: "commandHistoryRequested" }
   /** A search over the scrollback finished. */
   | { readonly type: "searchResult"; readonly result: TerminalSearchResultContract }
-  /** The shell answered for the first time; the session is running. */
-  | { readonly type: "started"; readonly shellType: string }
   /** The shell process ended. */
   | { readonly type: "exited"; readonly exitCode: number }
-  /** The shell could not be started; the session is `failed` until a retry. */
-  | { readonly type: "startFailed"; readonly reason: string }
   /** Output arrived from the shell. */
   | { readonly type: "outputReceived" }
   /** The terminal gained or lost the keyboard. */

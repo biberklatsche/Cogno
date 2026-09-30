@@ -1,7 +1,4 @@
-import {
-  ShellLineEditorActionContract,
-  ShellSessionCapabilitiesContract,
-} from "@cogno/core/api/contributions";
+import { ShellLineEditorActionContract } from "@cogno/core/api/contributions";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
@@ -253,10 +250,6 @@ export class SessionHost {
     return this._terminalId;
   }
 
-  get shellProfile(): ShellProfile | undefined {
-    return this._shellProfile;
-  }
-
   get state(): SessionState {
     return { ...this.machine.state, ...this.model.state };
   }
@@ -281,10 +274,6 @@ export class SessionHost {
 
   get input(): TerminalInput {
     return this.model.input;
-  }
-
-  get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {
-    return this.model.sessionCapabilities;
   }
 
   get isWebglContextLost$(): Observable<boolean> {
@@ -346,10 +335,7 @@ export class SessionHost {
     this.ptyHandler = new PtyHandler(terminalId, this.pty, spawnProfile, {
       onSpawned: () => this.setRuntime({ status: "running" }),
       onFailed: (error) => this.onStartFailed(error),
-      onStarted: (shellType) => {
-        this.hostFacts.next({ type: "started", shellType });
-        setTimeout(() => this.focus(), FOCUS_AFTER_START_MS);
-      },
+      onStarted: () => setTimeout(() => this.focus(), FOCUS_AFTER_START_MS),
       onExited: (exitCode) => {
         this.setRuntime({ status: "exited", exitCode });
         this.hostFacts.next({ type: "exited", exitCode });
@@ -863,7 +849,6 @@ export class SessionHost {
   private onStartFailed(error: unknown): void {
     const reason = error instanceof Error ? error.message : String(error);
     this.setRuntime({ status: "failed", reason });
-    this.hostFacts.next({ type: "startFailed", reason });
     ErrorReporter.reportException({
       error,
       handled: true,

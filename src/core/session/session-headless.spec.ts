@@ -171,7 +171,6 @@ describe("headless session (handshake token)", () => {
 
     expect(session.model.commands).toHaveLength(1);
     expect(session.model.state.cwd).not.toBe("/somewhere/else");
-    expect(session.model.untrustedSequenceCount).toBe(1);
     expect(facts).toEqual([]);
   });
 
@@ -181,7 +180,6 @@ describe("headless session (handshake token)", () => {
     );
 
     expect(session.model.sessionCapabilities?.nativeActions).not.toContain("clearLine");
-    expect(session.model.untrustedSequenceCount).toBe(1);
   });
 
   it("says so once when the third untrusted sequence is dropped", async () => {
@@ -192,7 +190,6 @@ describe("headless session (handshake token)", () => {
       await session.write(`${ESC}]733;COGNO:PROMPT;returnCode=0;id=9${i};${ST}`);
     }
 
-    expect(session.model.untrustedSequenceCount).toBe(4);
     expect(facts.filter((fact) => fact.type === "untrustedSequencesIgnored")).toEqual([
       { type: "untrustedSequencesIgnored", count: 3 },
     ]);

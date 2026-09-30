@@ -147,10 +147,6 @@ export class SessionModel {
     }
   }
 
-  get untrustedSequenceCount(): number {
-    return this._untrustedSequenceCount;
-  }
-
   initialize(
     terminalId: string,
     shellType: ShellType,

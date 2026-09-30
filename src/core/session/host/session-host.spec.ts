@@ -246,14 +246,11 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     const host = createHost();
     host.initialize("terminal-1", bashProfile);
     ptyOf(host).spawn.mockRejectedValueOnce(new Error("no such shell"));
-    const facts: SessionFact[] = [];
-    host.facts$.subscribe((fact) => facts.push(fact));
 
     host.start();
     await settle();
 
     expect(host.runtime).toEqual({ status: "failed", reason: "no such shell" });
-    expect(facts).toContainEqual({ type: "startFailed", reason: "no such shell" });
 
     host.retry();
     await settle();
