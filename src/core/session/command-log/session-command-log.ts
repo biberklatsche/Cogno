@@ -41,6 +41,7 @@ export class SessionCommandLog {
   private draining = false;
   private disabled = false;
   private reportedUnhealthy = false;
+  private reportedReadFailure = false;
   private groupId?: string;
   private recentExecution?: { command: string; timestamp: number };
 
@@ -250,9 +251,28 @@ export class SessionCommandLog {
     this.write((writer) => writer.deleteCommandExecution(commandRaw, cwdRaw));
   }
 
+  /**
+   * A failed read answers empty, like a missing log. Autocomplete reads on every
+   * keystroke, so a failing database is reported once, not once per key.
+   */
   private async read<T>(query: (reader: CommandLogReader) => Promise<T>, empty: T): Promise<T> {
     const repository = this.repository;
     if (!repository) return empty;
-    return query(repository);
+    try {
+      const result = await query(repository);
+      this.reportedReadFailure = false;
+      return result;
+    } catch (error) {
+      if (!this.reportedReadFailure) {
+        this.reportedReadFailure = true;
+        ErrorReporter.reportException({
+          error,
+          handled: true,
+          source: "SessionCommandLog",
+          context: { operation: "read" },
+        });
+      }
+      return empty;
+    }
   }
 }

@@ -117,6 +117,26 @@ describe("SessionCommandLog", () => {
     );
   });
 
+  it("answers a failed read empty and reports it once while reads keep failing", async () => {
+    const { log, repository } = await openLog();
+    const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
+    const searchCommands = vi.fn().mockRejectedValue(new Error("database is locked"));
+    Object.assign(repository, { searchCommands });
+
+    await expect(log.searchCommands("g", "/tmp")).resolves.toEqual([]);
+    await expect(log.searchCommands("gi", "/tmp")).resolves.toEqual([]);
+    expect(report).toHaveBeenCalledOnce();
+    expect(report.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ handled: true, context: { operation: "read" } }),
+    );
+
+    searchCommands.mockResolvedValueOnce([]);
+    await log.searchCommands("git", "/tmp");
+    searchCommands.mockRejectedValueOnce(new Error("database is locked"));
+    await log.searchCommands("git ", "/tmp");
+    expect(report).toHaveBeenCalledTimes(2);
+  });
+
   it("answers queries empty while no repository is open", async () => {
     const log = new SessionCommandLog(undefined);
     await log.open(shellContext, pathAdapter);
