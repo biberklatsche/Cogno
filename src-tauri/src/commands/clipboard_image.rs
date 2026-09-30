@@ -38,7 +38,11 @@ fn remove_paste_files_in(dir: &Path) {
         return;
     };
     for entry in entries.flatten() {
-        if entry.file_name().to_string_lossy().starts_with(PASTE_FILE_PREFIX) {
+        if entry
+            .file_name()
+            .to_string_lossy()
+            .starts_with(PASTE_FILE_PREFIX)
+        {
             let _ = std::fs::remove_file(entry.path());
         }
     }

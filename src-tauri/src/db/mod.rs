@@ -495,7 +495,10 @@ mod tests {
     #[test]
     fn only_corruption_counts_as_damage() {
         for code in [rusqlite::ffi::SQLITE_CORRUPT, rusqlite::ffi::SQLITE_NOTADB] {
-            assert!(matches!(classify_open_error(sqlite_error(code)), OpenFailure::Damaged(_)));
+            assert!(matches!(
+                classify_open_error(sqlite_error(code)),
+                OpenFailure::Damaged(_)
+            ));
         }
         for code in [
             rusqlite::ffi::SQLITE_BUSY,
@@ -509,7 +512,10 @@ mod tests {
             ));
         }
         let io = DbError::Io(std::io::Error::other("denied"));
-        assert!(matches!(classify_open_error(io), OpenFailure::Unavailable(_)));
+        assert!(matches!(
+            classify_open_error(io),
+            OpenFailure::Unavailable(_)
+        ));
     }
 
     #[test]

@@ -126,7 +126,9 @@ fn is_authorized(headers: &axum::http::HeaderMap, token: &str, port: u16) -> boo
     let host_is_loopback = headers
         .get(axum::http::header::HOST)
         .and_then(|value| value.to_str().ok())
-        .is_some_and(|host| host == format!("127.0.0.1:{port}") || host == format!("localhost:{port}"));
+        .is_some_and(|host| {
+            host == format!("127.0.0.1:{port}") || host == format!("localhost:{port}")
+        });
     token_matches && host_is_loopback
 }
 
@@ -286,25 +288,52 @@ mod tests {
 
     #[test]
     fn accepts_the_launch_token_on_the_loopback_name() {
-        assert!(is_authorized(&headers(Some("secret"), "127.0.0.1:9000"), "secret", 9000));
-        assert!(is_authorized(&headers(Some("secret"), "localhost:9000"), "secret", 9000));
+        assert!(is_authorized(
+            &headers(Some("secret"), "127.0.0.1:9000"),
+            "secret",
+            9000
+        ));
+        assert!(is_authorized(
+            &headers(Some("secret"), "localhost:9000"),
+            "secret",
+            9000
+        ));
     }
 
     #[test]
     fn rejects_a_missing_or_wrong_token() {
-        assert!(!is_authorized(&headers(None, "127.0.0.1:9000"), "secret", 9000));
-        assert!(!is_authorized(&headers(Some("guess"), "127.0.0.1:9000"), "secret", 9000));
+        assert!(!is_authorized(
+            &headers(None, "127.0.0.1:9000"),
+            "secret",
+            9000
+        ));
+        assert!(!is_authorized(
+            &headers(Some("guess"), "127.0.0.1:9000"),
+            "secret",
+            9000
+        ));
     }
 
     #[test]
     fn rejects_a_rebound_host_name_even_with_the_token() {
-        assert!(!is_authorized(&headers(Some("secret"), "evil.example:9000"), "secret", 9000));
-        assert!(!is_authorized(&headers(Some("secret"), "127.0.0.1:9001"), "secret", 9000));
+        assert!(!is_authorized(
+            &headers(Some("secret"), "evil.example:9000"),
+            "secret",
+            9000
+        ));
+        assert!(!is_authorized(
+            &headers(Some("secret"), "127.0.0.1:9001"),
+            "secret",
+            9000
+        ));
     }
 
     #[test]
     fn every_launch_gets_its_own_token() {
-        assert_ne!(HttpServerState::new().token(), HttpServerState::new().token());
+        assert_ne!(
+            HttpServerState::new().token(),
+            HttpServerState::new().token()
+        );
         assert!(HttpServerState::new().token().len() >= 32);
     }
 }

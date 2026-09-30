@@ -98,9 +98,7 @@ fn map_process_to_details(process: &Process) -> ProcessDetails {
         process_id: process.pid().as_u32(),
         parent_process_id: process.parent().map(|parent| parent.as_u32()),
         name: process.name().to_string_lossy().to_string(),
-        current_working_directory: process
-            .cwd()
-            .map(|path| path.to_string_lossy().to_string()),
+        current_working_directory: process.cwd().map(|path| path.to_string_lossy().to_string()),
         status: format!("{:?}", process.status()),
         run_time_seconds: process.run_time(),
         memory_bytes: process.memory(),

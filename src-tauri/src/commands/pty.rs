@@ -786,11 +786,9 @@ pub async fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result
     };
     match removed {
         // Intentional kill: the frontend already dropped the pane, no exit event.
-        Some(session) => {
-            tauri::async_runtime::spawn_blocking(move || release_session(session))
-                .await
-                .map_err(|error| error.to_string())
-        }
+        Some(session) => tauri::async_runtime::spawn_blocking(move || release_session(session))
+            .await
+            .map_err(|error| error.to_string()),
         None => Err(format!("Session not found: {}", terminal_id)),
     }
 }
@@ -852,8 +850,14 @@ mod flow_control_tests {
     fn line_editor_action_names_are_plain_words() {
         assert!(is_line_editor_action_name("replaceCurrentInput"));
         assert!(is_line_editor_action_name("clear-line_2"));
-        for bad in ["", "replace;rm -rf ~", "a
-b", "a b", "ä"] {
+        for bad in [
+            "",
+            "replace;rm -rf ~",
+            "a
+b",
+            "a b",
+            "ä",
+        ] {
             assert!(!is_line_editor_action_name(bad), "{bad:?}");
         }
     }

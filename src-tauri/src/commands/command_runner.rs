@@ -111,7 +111,12 @@ impl Drain {
     /// first. The reading thread ends by itself when the pipe finally closes.
     fn collect(self, grace: Duration) -> Vec<u8> {
         let _ = self.finished.recv_timeout(grace);
-        std::mem::take(&mut *self.buffer.lock().unwrap_or_else(|poisoned| poisoned.into_inner()))
+        std::mem::take(
+            &mut *self
+                .buffer
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()),
+        )
     }
 }
 
@@ -175,8 +180,11 @@ mod tests {
         let result = run(shell("sleep 5 & echo done"), Some(5_000)).unwrap();
 
         assert_eq!(result.exit_code, 0);
-        assert_eq!(result.stdout, "done
-");
+        assert_eq!(
+            result.stdout,
+            "done
+"
+        );
         assert!(started.elapsed() < Duration::from_secs(3));
     }
 
