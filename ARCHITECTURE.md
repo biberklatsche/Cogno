@@ -439,9 +439,8 @@ Daraus folgen die Regeln, die man sich merken muss:
   `session/` sind Fakten (Vergangenheitsform), nie Workbench-Aktionen.
 - Adapter, die `session/` und `workbench/` zusammensetzen, liegen in
   `core/workbench/api-adapters/`. Ein Port, dessen Implementierung einer
-  tieferen Schicht gehört, wird dort implementiert (`CommandRunner` und
-  `Filesystem` in `session/`, `ApplicationConfigurationPort` in
-  `infrastructure/`).
+  tieferen Schicht gehört, wird dort implementiert (`CommandRunner` in
+  `session/`, `ApplicationConfigurationPort` in `infrastructure/`).
 - `core/api/` ist der einzige Ort in `core/`, den Features importieren.
   Features kennen `shared/`, `platform/` und `core/api/` — sonst nichts
   (Entscheidung 10). Logging, Fehler-Reporter und Settings erreichen ein
@@ -864,7 +863,7 @@ Features importieren, und besteht **nur aus Verträgen**:
   `TerminalNavigator`, `TerminalPlacementPort`, `TerminalIpcPort`,
   `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
   `NotificationChannelsPort`, `ApplicationConfigurationPort`,
-  `ActionCatalog`/`ActionDispatcher`, `CommandRunner`, `Filesystem`.
+  `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
   `FeatureDefinition`, Side-Menu-Features, Feature-Settings,
   Datenbank-Migrationen, Notification-Kanäle.
@@ -960,8 +959,10 @@ Für Ports und Schnittstellen gelten drei Regeln:
 
    Ein Dienst, der Plattformaufruf und Sitzungskontext kombiniert
    (`CommandRunner`, `Filesystem` mit Pfadübersetzung nach aktuellem
-   Shell-Kontext), ist ein Vertrag in `core/api/`, implementiert in
-   `core/session/`, und erreicht Features als `boundSession.run`/`.fs`.
+   Shell-Kontext), ist in `core/session/` implementiert und erreicht
+   Features als `boundSession.run`/`.fs`. Einen Vertrag in `core/api/` hat
+   nur, was Features selbst benennen: `CommandRunner`; `Filesystem` liegt
+   in `core/session/exec/`.
 3. **Innerhalb von `core/` gibt es Schnittstellen nur an Besitzgrenzen:**
    die Maschine nach oben (`TerminalMachine`), der Session-Host nach oben
    (`SessionHost`, `SessionModel`, `SessionSnapshot`), die API nach außen.

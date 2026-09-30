@@ -1,11 +1,11 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { Filesystem } from "@cogno/core/api/filesystem-port";
 import {
   TerminalActivityEvent,
   TerminalCwdChangeEvent,
   TerminalMonitorPort,
 } from "@cogno/core/api/terminal-monitor-port";
+import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalId } from "@cogno/shared/domain";

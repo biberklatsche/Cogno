@@ -9,7 +9,6 @@ import {
 import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
-import { Filesystem } from "@cogno/core/api/filesystem-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import { SessionApi } from "@cogno/core/api/session-api";
@@ -26,6 +25,7 @@ import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-erro
 import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
+import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
 import { AboutDialogAdapterService } from "@cogno/core/workbench/about/about-dialog.adapter.service";
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";

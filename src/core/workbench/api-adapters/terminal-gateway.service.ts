@@ -5,9 +5,9 @@ import {
   SessionBinding,
 } from "@cogno/core/api/bound-session";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
-import { Filesystem } from "@cogno/core/api/filesystem-port";
 import { BoundSession, BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { SessionRunRequest, SessionRunResult } from "@cogno/core/api/session-run";
+import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";

@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CommandRunnerContract } from "@cogno/core/api/command-runner-port";
-import type { FilesystemContract } from "@cogno/core/api/filesystem-port";
 import type { QueryContext } from "@cogno/core/session/autocomplete/suggestor.contracts";
+import type { FilesystemContract } from "@cogno/core/session/exec/filesystem";
 import { describe, expect, it, vi } from "vitest";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";

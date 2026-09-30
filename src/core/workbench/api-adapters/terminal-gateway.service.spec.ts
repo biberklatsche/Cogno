@@ -1,6 +1,6 @@
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
-import { Filesystem } from "@cogno/core/api/filesystem-port";
 import type { BoundSession } from "@cogno/core/api/session-api";
+import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { TerminalGatewayService } from "@cogno/core/workbench/api-adapters/terminal-gateway.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {

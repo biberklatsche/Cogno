@@ -1,8 +1,19 @@
-import type {
-  FilesystemEntryContract,
-  FilesystemListOptionsContract,
-  ShellContextContract,
-} from "@cogno/shared/domain";
+import type { ShellContextContract } from "@cogno/shared/domain";
+
+type FilesystemEntryKindContract = "file" | "directory";
+
+export interface FilesystemEntryContract {
+  readonly name: string;
+  readonly path: string;
+  readonly kind: FilesystemEntryKindContract;
+}
+
+export interface FilesystemListOptionsContract {
+  readonly directoriesOnly?: boolean;
+  readonly filesOnly?: boolean;
+  readonly query?: string;
+  readonly limit?: number;
+}
 
 export interface FilesystemContract {
   normalizePath(path: string, shellContext: ShellContextContract): string;

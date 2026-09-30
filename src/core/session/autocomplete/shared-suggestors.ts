@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
-import { Filesystem } from "@cogno/core/api/filesystem-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { Observable, Subject } from "rxjs";
 import { AssetCommandSpecRegistry } from "./spec-command/spec/asset-command-spec.registry";
