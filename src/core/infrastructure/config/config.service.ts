@@ -9,6 +9,7 @@ import { OsPlatform } from "@cogno/platform/os";
 import { Paths } from "@cogno/platform/path";
 import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
 import { Environment } from "../environment/environment";
+import { ErrorReporter } from "../error/error-reporter";
 import { ConfigDiagnostic, ConfigMapper } from "./config.mapper";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 import { Config } from "./models/config";
@@ -226,13 +227,21 @@ export class RealConfigService extends ConfigService {
     this._unwatch = this.fs
       .watchChanges$(path, { delayMs: 1000 })
       .pipe(takeUntilDestroyed(this.destroy))
-      .subscribe(async () => {
-        await this.read();
+      .subscribe(() => {
+        // A reload that fails is reported; the watcher stays, so the next
+        // save of the file is picked up.
+        this.read().catch((error: unknown) =>
+          ErrorReporter.reportException({
+            error,
+            handled: true,
+            source: "ConfigService",
+            context: { operation: "reload" },
+          }),
+        );
       });
   }
 
   private async read() {
-    this._unwatch?.unsubscribe();
     const options = this._options;
     if (!options) {
       throw new Error("Config was never loaded!");
@@ -292,6 +301,9 @@ export class RealConfigService extends ConfigService {
 
     await options.beforeWatch?.(config);
 
+    // Only a read that got this far replaces the watcher; a failing one keeps it.
+    this._unwatch?.unsubscribe();
+    this._unwatch = undefined;
     if (config.enable_watch_config) {
       await this.watch();
     }
