@@ -613,6 +613,12 @@ export class SessionHost {
     if (maxLines <= 0) {
       return { version: SESSION_SNAPSHOT_VERSION, scrollback: null, commands: [] };
     }
+    // Restored but never shown: the buffer is still empty, the session's
+    // content is the snapshot waiting to be replayed. Saving the empty buffer
+    // would lose it.
+    if (this._pendingRestore) {
+      return this._pendingRestore;
+    }
     const captured = this.captureScrollback(maxLines);
     return {
       version: SESSION_SNAPSHOT_VERSION,

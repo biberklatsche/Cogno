@@ -274,6 +274,17 @@ describe("SessionHost snapshot/restore", () => {
     expect(writeMock).not.toHaveBeenCalled();
   });
 
+  it("saves a restored but never shown session as its waiting snapshot, not as an empty buffer", () => {
+    const waiting = {
+      version: SESSION_SNAPSHOT_VERSION,
+      scrollback: "PREVIOUS-OUTPUT",
+      commands: [],
+    };
+    host.restore(waiting);
+
+    expect(host.snapshot(1000)).toEqual(waiting);
+  });
+
   it("replays scrollback and a concealed boundary, then a single trailing line off Windows", () => {
     host.restore({
       version: SESSION_SNAPSHOT_VERSION,

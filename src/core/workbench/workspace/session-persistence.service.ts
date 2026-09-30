@@ -78,9 +78,9 @@ export class SessionPersistenceService {
         if (host) {
           return [{ terminalId, sessionData: JSON.stringify(host.snapshot(maxLines)) }];
         }
-        // A tab not opened this run has no live host to snapshot; carry its
-        // still-pending snapshot forward so the delete-then-insert save does not
-        // drop it.
+        // A terminal whose session was not created this run has no host to
+        // snapshot; carry its still-pending snapshot forward so the
+        // delete-then-insert save does not drop it.
         const pending = this.pendingSnapshots.peek(terminalId);
         return pending ? [{ terminalId, sessionData: JSON.stringify(pending) }] : [];
       });
