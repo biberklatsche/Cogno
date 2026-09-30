@@ -1,5 +1,7 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import { Limit, resolveLimit } from "@cogno/core/api/contributions";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { FeatureModeContract, NotificationTargetContract } from "@cogno/shared/domain";
 import { NotificationInboxState, NotificationInboxUseCase } from "./inbox";
@@ -22,6 +24,7 @@ export class NotificationCenterStateService {
 
   constructor(
     private readonly notificationCenterPort: NotificationCenterPort,
+    private readonly configPort: ApplicationConfigurationPort,
     destroyRef: DestroyRef,
   ) {
     this.notificationCenterPort.notificationEvents$
@@ -30,13 +33,21 @@ export class NotificationCenterStateService {
         const result = NotificationInboxUseCase.handleNotificationEvent(
           this.notificationCenterStateSignal(),
           notificationEvent,
-          this.notificationCenterPort.getOverviewMaxItems(),
+          this.overviewMaxItems(),
         );
         this.notificationCenterStateSignal.set(result.state);
         if (result.shouldShowBadge) {
           this.sideMenuIconUpdater?.("mdiBellBadge");
         }
       });
+  }
+
+  /** How many notifications the overview keeps, from the feature's own settings. */
+  private overviewMaxItems(): number {
+    const config = this.configPort.getConfiguration() as
+      | { feature?: { notification_overview?: { overview?: { max_items?: Limit } } } }
+      | undefined;
+    return resolveLimit(config?.feature?.notification_overview?.overview?.max_items, 30);
   }
 
   setSideMenuIconUpdater(sideMenuIconUpdater: (iconName: string) => void): void {
@@ -55,8 +66,6 @@ export class NotificationCenterStateService {
   handleSideMenuOpen(): void {
     this.sideMenuIconUpdater?.("mdiBell");
   }
-
-  handleSideMenuClose(): void {}
 
   remove(notificationId: NotificationCenterItemIdContract): void {
     this.notificationCenterStateSignal.set(

@@ -23,9 +23,6 @@ export class NotificationSideMenuLifecycle {
       onOpen: () => {
         this.notificationCenterStateService.handleSideMenuOpen();
       },
-      onClose: () => {
-        this.notificationCenterStateService.handleSideMenuClose();
-      },
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(["Escape"], () =>
           sideMenuFeatureHandle.close(),

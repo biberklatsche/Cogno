@@ -6,16 +6,12 @@ import { NotificationSideMenuLifecycle } from "./notification-side-menu.lifecycl
 describe("NotificationSideMenuLifecycle", () => {
   let notificationCenterStateService: Pick<
     NotificationCenterStateService,
-    | "handleSideMenuClose"
-    | "handleSideMenuModeChange"
-    | "handleSideMenuOpen"
-    | "setSideMenuIconUpdater"
+    "handleSideMenuModeChange" | "handleSideMenuOpen" | "setSideMenuIconUpdater"
   >;
   let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
 
   beforeEach(() => {
     notificationCenterStateService = {
-      handleSideMenuClose: vi.fn(),
       handleSideMenuModeChange: vi.fn(),
       handleSideMenuOpen: vi.fn(),
       setSideMenuIconUpdater: vi.fn(),
@@ -41,12 +37,10 @@ describe("NotificationSideMenuLifecycle", () => {
     iconUpdater?.("bell");
     lifecycle.onModeChange?.("off");
     lifecycle.onOpen?.();
-    lifecycle.onClose?.();
 
     expect(sideMenuFeatureHandle.updateIcon).toHaveBeenCalledWith("bell");
     expect(notificationCenterStateService.handleSideMenuModeChange).toHaveBeenCalledWith("off");
     expect(notificationCenterStateService.handleSideMenuOpen).toHaveBeenCalledTimes(1);
-    expect(notificationCenterStateService.handleSideMenuClose).toHaveBeenCalledTimes(1);
   });
 
   it("registers Escape handling on focus and unregisters on blur", () => {

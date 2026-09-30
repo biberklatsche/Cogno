@@ -1,3 +1,4 @@
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPortContract } from "@cogno/core/api/notification-center-port";
 import type { NotificationEventPayloadContract } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
@@ -19,11 +20,16 @@ describe("NotificationCenterStateService", () => {
 
     const notificationCenterPort = {
       notificationEvents$: notificationEventSubject.asObservable(),
-      getOverviewMaxItems: () => overviewMaxItems,
     } as NotificationCenterPortContract;
+    const configPort = {
+      getConfiguration: () => ({
+        feature: { notification_overview: { overview: { max_items: overviewMaxItems } } },
+      }),
+    } as unknown as ApplicationConfigurationPort;
 
     notificationCenterStateService = new NotificationCenterStateService(
       notificationCenterPort,
+      configPort,
       getDestroyRef(),
     );
     notificationCenterStateService.setSideMenuIconUpdater((iconName) => {
