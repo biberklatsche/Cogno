@@ -144,6 +144,22 @@ describe("CodingAgentStartupService", () => {
       expect(hookOf(service, "claude")).toBe(false);
     });
 
+    it("says once that it could not update a hook, not on every scan", async () => {
+      const claude = providerDouble("claude", { hook: "outdated" });
+      claude.installHook.mockRejectedValue(new Error("settings.json is read-only"));
+      const service = start([claude]);
+      await settle();
+      await service.rescan();
+
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(dispatch.mock.calls[0][0]).toEqual(
+        expect.objectContaining({
+          header: "Could not update the CLAUDE hook",
+          body: "settings.json is read-only",
+        }),
+      );
+    });
+
     it("still asks for an agent that appears later", async () => {
       confirm.mockResolvedValue(false);
       const service = start([providerDouble("claude", { hook: false })]);
@@ -158,6 +174,38 @@ describe("CodingAgentStartupService", () => {
       expect(confirm.mock.calls[1][1]).toContain("CODEX");
       expect(confirm.mock.calls[1][1]).not.toContain("CLAUDE");
     });
+  });
+
+  it("says once why an agent whose configuration it cannot read is missing", async () => {
+    const claude = providerDouble("claude");
+    claude.hookState.mockRejectedValue(new Error("settings.json: unexpected token"));
+    const service = start([claude]);
+    await settle();
+    await service.rescan();
+
+    expect(service.installedProviders()).toEqual([]);
+    expect(dispatch).toHaveBeenCalledOnce();
+    expect(dispatch.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ header: "Could not read the CLAUDE configuration" }),
+    );
+  });
+
+  it("scans again when asked while a scan runs, so a hook installed meanwhile shows", async () => {
+    let answerFirstScan!: () => void;
+    const claude = providerDouble("claude", { hook: true });
+    claude.isAgentInstalled.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answerFirstScan = () => resolve(true);
+        }),
+    );
+    const service = start([claude]);
+
+    void service.rescan();
+    answerFirstScan();
+    await settle();
+
+    expect(claude.isAgentInstalled).toHaveBeenCalledTimes(2);
   });
 
   describe("from the panel", () => {
