@@ -14,7 +14,7 @@ export type StatusPingArgs = {
   readonly status: AgentStatus;
   readonly providerId: string;
   readonly hookEvent: string;
-  /** Unix seconds when the hook ran; 0 when missing. */
+  /** Unix milliseconds when the hook ran; 0 when missing. */
   readonly seq: number;
 };
 
@@ -96,6 +96,20 @@ export function hookStateOf(isCurrent: boolean, hasCognoHook: boolean): HookStat
  * console and never sends EOF, which would hang the hook until it's killed, so the status
  * POST never fires.
  */
+/**
+ * Sets `$seq` to the time the hook ran, in Unix milliseconds - the order Cogno
+ * applies pings in. Seconds are too coarse: a tool hook and the stop that follows
+ * it often start in the same second, and whichever arrives last would win. GNU
+ * date knows `%N`; macOS's does not, but ships perl. Anything else gets seconds.
+ */
+function bashMillisecondsCapture(): string {
+  return (
+    `seq=$(date +%s%3N 2>/dev/null); ` +
+    `case "$seq" in ''|*[!0-9]*) seq=$(perl -MTime::HiRes=time -e 'printf "%d", time*1000' 2>/dev/null);; esac; ` +
+    `case "$seq" in ''|*[!0-9]*) seq=$(date +%s)000;; esac`
+  );
+}
+
 function bashPayloadCapture(): string {
   return (
     `if [ -t 0 ]; then input=""; else input=$(cat); fi; ` +
@@ -134,7 +148,7 @@ function buildCurlCommand(
   // (128 KB per argument on Linux, about 32 K characters in all on Windows), and a
   // payload with a large file's content would make the call fail.
   const curl = `printf '%s' "$_b" | curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -H "X-Cogno-Token: $COGNO_TOKEN" --data-binary @-`;
-  const guardedCurl = `seq=$(date +%s); ${bashPayloadCapture()}; ${bodyVar}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
+  const guardedCurl = `${bashMillisecondsCapture()}; ${bashPayloadCapture()}; ${bodyVar}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
   // Guard against terminals without Cogno's env vars (e.g. opened outside Cogno) and
   // force a zero exit status — this is a fire-and-forget status ping, never the agent's
@@ -149,7 +163,7 @@ function buildWindowsCommand(
   stdout?: string,
 ): string {
   const body =
-    `$seq=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();` +
+    `$seq=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds();` +
     `${powershellPayloadCapture()};` +
     `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","'+$seq+'"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
   // The body goes out as UTF-8 bytes: a string body would be re-encoded by Invoke-WebRequest

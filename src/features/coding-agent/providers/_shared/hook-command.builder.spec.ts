@@ -16,11 +16,13 @@ describe("hook-command.builder", () => {
     for (const built of [command, commandWindows]) {
       expect(built).toContain('"args":["question","claude-code","Notification","');
     }
-    expect(parseStatusPingArgs(["question", "claude-code", "Notification", "1700000000"])).toEqual({
+    expect(
+      parseStatusPingArgs(["question", "claude-code", "Notification", "1700000000123"]),
+    ).toEqual({
       status: "question",
       providerId: "claude-code",
       hookEvent: "Notification",
-      seq: 1700000000,
+      seq: 1700000000123,
     });
   });
 
@@ -32,6 +34,13 @@ describe("hook-command.builder", () => {
       seq: 0,
     });
     expect(parseStatusPingArgs(["nonsense"]).status).toBe("ready");
+  });
+
+  it("stamps a ping to the millisecond in both shells, so a tool hook and the stop after it keep their order", () => {
+    const { command, commandWindows } = buildHookCommands("working", "claude-code", "PostToolUse");
+    expect(command).toContain("seq=$(date +%s%3N 2>/dev/null)");
+    expect(command).toContain("seq=$(date +%s)000");
+    expect(commandWindows).toContain("$seq=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()");
   });
 
   it("reads and sends the PowerShell payload as UTF-8", () => {
