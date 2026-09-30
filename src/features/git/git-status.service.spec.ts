@@ -92,11 +92,10 @@ describe("parseGitStatus", () => {
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 describe("GitStatusService", () => {
-  function makeService(run: (request: SessionRunRequest) => Promise<SessionRunResult>): {
-    service: GitStatusService;
-    dispatch: ReturnType<typeof vi.fn>;
-  } {
-    const handle = {
+  type Run = (request: SessionRunRequest) => Promise<SessionRunResult>;
+
+  function sessionHandle(run: Run): BoundSessionHandle {
+    return {
       identity: { terminalId: "t1", sessionToken: "token" },
       mode: "following",
       cwd: "/c/repo/src",
@@ -105,8 +104,17 @@ describe("GitStatusService", () => {
       run: vi.fn(run),
       fs: { readTextFile: vi.fn(), normalizePath: (path: string) => path },
     } as unknown as BoundSessionHandle;
+  }
+
+  function makeService(run: Run): {
+    service: GitStatusService;
+    dispatch: ReturnType<typeof vi.fn>;
+    /** Focuses another terminal, whose session runs git with `run`. */
+    bind: (run: Run) => void;
+  } {
+    const boundSession$ = new BehaviorSubject({ status: "active", session: sessionHandle(run) });
     const sessionApi: SessionApi = {
-      boundSession$: new BehaviorSubject({ status: "active", session: handle }),
+      boundSession$,
       cwdChanges$: new BehaviorSubject<void>(undefined),
     } as unknown as SessionApi;
     const dispatch = vi.fn();
@@ -115,6 +123,18 @@ describe("GitStatusService", () => {
     return {
       service: new GitStatusService(sessionApi, notificationCenterPort, destroyRef),
       dispatch,
+      bind: (next) => boundSession$.next({ status: "active", session: sessionHandle(next) }),
+    };
+  }
+
+  /** A repo at `root` on branch main with one staged file. */
+  function repo(root: string): Run {
+    return (request) => {
+      const args = request.args ?? [];
+      if (args.includes("--show-toplevel")) return Promise.resolve(ran(`${root}\n`));
+      if (args.includes("status")) return Promise.resolve(ran(z("M  a.ts")));
+      if (args.includes("--abbrev-ref")) return Promise.resolve(ran("main\n"));
+      return Promise.resolve(ran(""));
     };
   }
 
@@ -141,6 +161,24 @@ describe("GitStatusService", () => {
       staged: [{ path: "a.ts", status: "M", isDirectory: false }],
       untracked: [{ path: "b.ts", status: "?", isDirectory: false }],
     });
+  });
+
+  it("follows a focus switch that happens while the previous repo is still being resolved", async () => {
+    let answerFirstRepo!: () => void;
+    const firstRepo = repo("/c/first");
+    const { service, bind } = makeService(
+      (request) =>
+        new Promise((resolve) => {
+          answerFirstRepo = () => resolve(firstRepo(request));
+        }),
+    );
+
+    service.start();
+    bind(repo("/c/second"));
+    answerFirstRepo();
+    await flush();
+
+    expect(service.status()?.gitRoot).toBe("/c/second");
   });
 
   it("reports 'unavailable' when the session refuses to run git (remote)", async () => {

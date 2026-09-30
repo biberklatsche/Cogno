@@ -39,6 +39,7 @@ export class GitStatusService {
   private currentGitRoot: string | null = null;
   private active = false;
   private refreshContextInFlight = false;
+  private refreshContextPending = false;
   private refreshStatusInFlight = false;
   private refreshStatusPending = false;
 
@@ -109,53 +110,70 @@ export class GitStatusService {
     });
   }
 
+  /**
+   * A request that comes in while one runs - a focus switch, a cd - is not
+   * dropped: it runs once the current one is done.
+   */
   private async refreshContext(): Promise<void> {
-    if (this.refreshContextInFlight) return;
+    if (this.refreshContextInFlight) {
+      this.refreshContextPending = true;
+      return;
+    }
     this.refreshContextInFlight = true;
     try {
-      const session = this.boundSession;
-      if (!session) {
-        this.clear();
-        return;
-      }
-      // `rev-parse --show-toplevel` runs in the session's own cwd to find the root.
-      const outcome = await session.run({
-        executable: "git",
-        args: ["rev-parse", "--show-toplevel"],
-        contextRevision: session.contextRevision,
-        timeoutMs: GIT_TIMEOUT_MS,
-      });
-      if (outcome.status === "rejected") {
-        this.currentGitRoot = null;
-        this.gitStatusSignal.set(null);
-        // A remote/unknown session has no local git; a stale binding just retries.
-        this.gitErrorSignal.set(outcome.reason === "unknown-context" ? "unavailable" : null);
-        return;
-      }
-
-      const result = outcome.result;
-      if (result.exitCode !== 0) {
-        this.currentGitRoot = null;
-        this.gitStatusSignal.set(null);
-        // exit 128 = "not a git repository"; anything else means git isn't usable.
-        this.gitErrorSignal.set(result.exitCode === 128 ? "no_repo" : "not_installed");
-        return;
-      }
-
-      const root = result.stdout.trim();
-      if (!root) {
-        this.currentGitRoot = null;
-        this.gitStatusSignal.set(null);
-        this.gitErrorSignal.set("no_repo");
-        return;
-      }
-
-      this.currentGitRoot = root;
-      this.gitErrorSignal.set(null);
-      await this.refreshStatus();
+      await this.resolveContext();
     } finally {
       this.refreshContextInFlight = false;
+      if (this.refreshContextPending) {
+        this.refreshContextPending = false;
+        void this.refreshContext();
+      }
     }
+  }
+
+  private async resolveContext(): Promise<void> {
+    const session = this.boundSession;
+    if (!session) {
+      this.clear();
+      return;
+    }
+    // `rev-parse --show-toplevel` runs in the session's own cwd to find the root.
+    const outcome = await session.run({
+      executable: "git",
+      args: ["rev-parse", "--show-toplevel"],
+      contextRevision: session.contextRevision,
+      timeoutMs: GIT_TIMEOUT_MS,
+    });
+    // Another terminal took focus meanwhile; the rerun resolves its repo.
+    if (session !== this.boundSession) return;
+    if (outcome.status === "rejected") {
+      this.currentGitRoot = null;
+      this.gitStatusSignal.set(null);
+      // A remote/unknown session has no local git; a stale binding just retries.
+      this.gitErrorSignal.set(outcome.reason === "unknown-context" ? "unavailable" : null);
+      return;
+    }
+
+    const result = outcome.result;
+    if (result.exitCode !== 0) {
+      this.currentGitRoot = null;
+      this.gitStatusSignal.set(null);
+      // exit 128 = "not a git repository"; anything else means git isn't usable.
+      this.gitErrorSignal.set(result.exitCode === 128 ? "no_repo" : "not_installed");
+      return;
+    }
+
+    const root = result.stdout.trim();
+    if (!root) {
+      this.currentGitRoot = null;
+      this.gitStatusSignal.set(null);
+      this.gitErrorSignal.set("no_repo");
+      return;
+    }
+
+    this.currentGitRoot = root;
+    this.gitErrorSignal.set(null);
+    await this.refreshStatus();
   }
 
   async refreshStatus(): Promise<void> {
