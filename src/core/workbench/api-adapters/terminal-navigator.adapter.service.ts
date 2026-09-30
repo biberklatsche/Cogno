@@ -22,7 +22,8 @@ export class TerminalNavigatorAdapterService extends TerminalNavigator {
     ) {
       const workspace = this.workspaceHostApplicationService.getWorkspaceById(workspaceId);
       if (workspace) {
-        await this.workspaceHostApplicationService.activateWorkspace(workspace);
+        // Like switching by hand: the workspace left behind is saved first.
+        await this.workspaceHostApplicationService.restoreWorkspace(workspace);
       }
     }
 
