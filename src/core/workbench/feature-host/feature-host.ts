@@ -52,6 +52,7 @@ export class FeatureHost {
   ) {
     this.declarationConflicts = findDeclarationConflicts(this.features);
     if (this.declarationConflicts.length > 0) {
+      reportDeclarationConflicts(this.declarationConflicts);
       return;
     }
     this.declare();
@@ -77,18 +78,12 @@ export class FeatureHost {
     };
   }
 
-  /** True when the feature set is inconsistent and the app started empty. */
-  get hasDeclarationConflict(): boolean {
-    return this.declarationConflicts.length > 0;
-  }
-
-  /** The conflicts that aborted the declaration, empty when there were none. */
-  getDeclarationConflicts(): ReadonlyArray<string> {
-    return this.declarationConflicts;
-  }
-
-  /** The features' side-menu contributions, ordered - for the native menu. */
+  /**
+   * The features' side-menu contributions, ordered - for the native menu. None
+   * when the feature set did not start: the menu must not offer its panels.
+   */
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
+    if (this.declarationConflicts.length > 0) return [];
     return this.features
       .flatMap((feature) => feature.sideMenu ?? [])
       .slice()
@@ -185,6 +180,17 @@ function resolveConfigPath(source: Record<string, unknown>, path: string): unkno
     if (typeof value !== "object" || value === null) return undefined;
     return (value as Record<string, unknown>)[segment];
   }, source);
+}
+
+/** A conflict is a programming error: Cogno starts without features and says why. */
+function reportDeclarationConflicts(conflicts: ReadonlyArray<string>): void {
+  ErrorReporter.reportWarning({
+    message: ["The features could not be started; Cogno runs without them.", ...conflicts].join(
+      "\n",
+    ),
+    notify: true,
+    source: "FeatureHost",
+  });
 }
 
 function reportActivationError(featureId: string, error: unknown): void {

@@ -1309,8 +1309,9 @@ für die einzelne Deklaration, nicht für die Menge: doppelte Feature-IDs,
 zyklische oder unbekannte `requires`, kollidierende Settings-Pfade
 (`feature.git.*` zweimal), doppelte Aktions-IDs. Der Host prüft das in
 Phase 1 vollständig, *bevor* er `mode` liest, und bricht bei einem Befund
-den Start kontrolliert ab: die App startet mit leerem Feature-Satz und
-einer nicht wegklickbaren Meldung, die jeden Konflikt benennt. Das ist
+den Start kontrolliert ab: die App startet mit leerem Feature-Satz, ohne
+Feature-Panels im Menü, und meldet über den Error-Reporter jeden Konflikt
+einzeln. Das ist
 ein Programmierfehler, kein Laufzeitzustand — deshalb kein `failed` eines
 einzelnen Features, sondern der Start-Test aus 4.2 in Produktionsform.
 
