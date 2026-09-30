@@ -1,5 +1,5 @@
 import { Pipe, PipeTransform } from "@angular/core";
-import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
+import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 
 /** The keybinding of an action, as the user should read it - or nothing. */
 @Pipe({ name: "actionkeybinding" })

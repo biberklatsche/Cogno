@@ -113,7 +113,9 @@ Hot-Reload, Zod-Validierung mit Diagnosen, CLI-Overrides, Zusammenführen der
 Feature-Schemas), Theming als Werte (angewendet in Terminal und Workbench),
 Datenbank-Bridge und Migrations-Runner mit Checksummen, Recovery,
 WAL-Checkpoint, Fehlerbehandlung und Logging, Pfade (exe, home, config, db,
-log), Keybind-Parser und Tastaturlayouts (die Ausführung ist Workbench).
+log), Keybind-Parser und Tastaturlayouts (die Ausführung ist Workbench),
+dazu `ActionKeybindingPort`: Session und Workbench zeigen Tastenkürzel an,
+kennen tut sie nur die Workbench, die ihn implementiert.
 Der App-Bus gehört nicht dazu: ihn benutzt nur die Workbench, deshalb liegt
 er in `core/workbench/bus/`. Nicht drin: `command-log/` (Produktdaten mit eigenem Schema; es
 *benutzt* die DB-Bridge) und Feature-Tabellen/-Migrationen (gehören dem
@@ -862,8 +864,7 @@ Features importieren, und besteht **nur aus Verträgen**:
   `TerminalNavigator`, `TerminalPlacementPort`, `TerminalIpcPort`,
   `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
   `NotificationChannelsPort`, `ApplicationConfigurationPort`,
-  `ActionCatalog`/`ActionDispatcher`, `ActionKeybindingPort`,
-  `CommandRunner`, `Filesystem`.
+  `ActionCatalog`/`ActionDispatcher`, `CommandRunner`, `Filesystem`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
   `FeatureDefinition`, Side-Menu-Features, Feature-Settings,
   Datenbank-Migrationen, Notification-Kanäle.

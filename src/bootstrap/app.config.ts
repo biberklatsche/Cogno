@@ -7,7 +7,6 @@ import {
   provideZonelessChangeDetection,
 } from "@angular/core";
 import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-port";
-import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import { Filesystem } from "@cogno/core/api/filesystem-port";
@@ -24,6 +23,7 @@ import { ApplicationConfigurationPortAdapterService } from "@cogno/core/infrastr
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { GlobalErrorHandler } from "@cogno/core/infrastructure/error/global-error.handler";
+import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";

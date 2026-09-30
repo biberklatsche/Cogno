@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { actionLabel, SLOTS } from "@cogno/core/workbench/actions/catalog";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";

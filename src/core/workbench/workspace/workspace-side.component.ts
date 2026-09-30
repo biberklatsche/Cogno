@@ -8,8 +8,8 @@ import {
   viewChildren,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import { trackPointerDrag } from "@cogno/core/workbench/drag-preview/pointer-drag";
 import { collectDirectionalNavigationItems } from "@cogno/core/workbench/workspace/navigation/directional-navigation.dom";

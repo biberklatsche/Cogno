@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
+import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { actionLabel, CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";

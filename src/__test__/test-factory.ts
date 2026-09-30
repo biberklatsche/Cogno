@@ -1,6 +1,6 @@
 import type { DestroyRef } from "@angular/core";
-import type { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import type { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import type { SessionHost } from "@cogno/core/session/host/session-host";
 import type { SessionFact } from "@cogno/core/session/session-facts";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
