@@ -1,4 +1,5 @@
 export * from "./busy-indicator/busy-indicator.constants";
+export * from "./busy-indicator/keyframe-bars.component";
 export * from "./common/copy-edit-delete/copy-edit-delete.component";
 export * from "./common/letter-badge/letter-badge.component";
 export * from "./common/text/start-ellipsis.directive";

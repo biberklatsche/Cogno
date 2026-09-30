@@ -1,29 +1,39 @@
+import { DOCUMENT } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   effect,
+  Inject,
   input,
+  OnDestroy,
   signal,
 } from "@angular/core";
-import { AnimationSpec, TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
-import { BAR_COUNT, MAX_HEIGHT } from "@cogno/shared/ui";
+import { BAR_COUNT, MAX_HEIGHT } from "./busy-indicator.constants";
 
 const FRAME_INTERVAL_MS = 50;
 const KEYFRAME_DURATION_MS = 300;
 const LERP_FACTOR = 0.18;
 const IDLE_CONVERGE_THRESHOLD = 0.04;
 
+// Column indices for template iteration (left → right).
 const COL_INDICES = Array.from({ length: BAR_COUNT }, (_, i) => i);
+// Row indices iterated bottom-first: column uses flex-direction:column-reverse,
+// so the first DOM child renders at the bottom.
 const ROW_INDICES_FROM_BOTTOM = Array.from({ length: MAX_HEIGHT }, (_, i) => MAX_HEIGHT - 1 - i);
+
 const IDLE_GRID: number[][] = Array.from({ length: MAX_HEIGHT }, () => Array(BAR_COUNT).fill(0));
 
 function makeIdleGrid(): number[][] {
   return IDLE_GRID.map((row) => [...row]);
 }
 
+/**
+ * The small bar grid of the busy indicators: plays the given keyframes in a
+ * loop, fading between them, and fades out to empty when there are none.
+ * Each keyframe is a MAX_HEIGHT×BAR_COUNT grid, row 0 on top, values 0 to 1.
+ */
 @Component({
-  selector: "app-agent-animation",
+  selector: "app-keyframe-bars",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -55,57 +65,67 @@ function makeIdleGrid(): number[][] {
     }
   `,
 })
-export class AgentAnimationComponent {
-  terminalId = input.required<string>();
+export class KeyframeBarsComponent implements OnDestroy {
+  /** The frames to play; none fades the bars out. */
+  keyframes = input<ReadonlyArray<number[][]> | undefined>(undefined);
+  /** Stops animating while the window is hidden. */
+  pauseInBackground = input(false);
 
   protected readonly colIndices = COL_INDICES;
   protected readonly rowIndicesFromBottom = ROW_INDICES_FROM_BOTTOM;
 
   private currentGrid: number[][] = makeIdleGrid();
-  private activeKeyframes: number[][][] = [];
+  private activeKeyframes: ReadonlyArray<number[][]> = [];
   private currentKeyframeIndex = 0;
   private keyframeElapsed = 0;
   private isIdle = true;
   private animationInterval: ReturnType<typeof setInterval> | undefined;
+  private isPausedForBackground = false;
 
   private readonly _grid = signal<number[][]>(makeIdleGrid());
   protected readonly grid = this._grid.asReadonly();
 
-  constructor(
-    private readonly animation: TerminalAnimationPort,
-    private readonly destroyRef: DestroyRef,
-  ) {
+  constructor(@Inject(DOCUMENT) private readonly doc: Document) {
+    effect(() => this.play(this.keyframes()));
+
     effect((onCleanup) => {
-      const id = this.terminalId();
-      const sub = this.animation.observe$(id).subscribe((specs) => {
-        this.onSpecsChanged([...specs]);
-      });
+      if (!this.pauseInBackground()) return;
+      const onVisibilityChange = () => {
+        if (this.doc.hidden) {
+          this.stopInterval();
+          this.isPausedForBackground = true;
+        } else {
+          this.isPausedForBackground = false;
+          if (!this.animationInterval && this.activeKeyframes.length > 0) {
+            this.startInterval();
+          }
+        }
+      };
+      this.doc.addEventListener("visibilitychange", onVisibilityChange);
       onCleanup(() => {
-        sub.unsubscribe();
-        this.stopInterval();
+        this.doc.removeEventListener("visibilitychange", onVisibilityChange);
+        this.isPausedForBackground = false;
       });
     });
-
-    this.destroyRef.onDestroy(() => this.stopInterval());
   }
 
-  private onSpecsChanged(specs: AnimationSpec[]): void {
-    if (specs.length === 0) {
-      if (!this.isIdle) {
-        this.activeKeyframes = [IDLE_GRID];
-        this.currentKeyframeIndex = 0;
-        this.keyframeElapsed = 0;
-        this.isIdle = true;
-      }
+  ngOnDestroy(): void {
+    this.stopInterval();
+  }
+
+  private play(keyframes: ReadonlyArray<number[][]> | undefined): void {
+    if (!keyframes || keyframes.length === 0) {
+      if (this.isIdle) return;
+      this.activeKeyframes = [IDLE_GRID];
+      this.isIdle = true;
     } else {
-      const top = specs.reduce((a, b) => (b.priority > a.priority ? b : a));
-      this.activeKeyframes = [...top.keyframes];
-      this.currentKeyframeIndex = 0;
-      this.keyframeElapsed = 0;
+      this.activeKeyframes = keyframes;
       this.isIdle = false;
     }
+    this.currentKeyframeIndex = 0;
+    this.keyframeElapsed = 0;
 
-    if (!this.animationInterval) {
+    if (!this.animationInterval && !this.isPausedForBackground) {
       this.startInterval();
     }
   }
@@ -136,14 +156,12 @@ export class AgentAnimationComponent {
         this.currentKeyframeIndex = (this.currentKeyframeIndex + 1) % this.activeKeyframes.length;
         this.keyframeElapsed = 0;
       }
-    } else {
-      if (
-        this.currentGrid.every((row) => row.every((v) => Math.abs(v) < IDLE_CONVERGE_THRESHOLD))
-      ) {
-        this.currentGrid = makeIdleGrid();
-        this._grid.set(makeIdleGrid());
-        this.stopInterval();
-      }
+    } else if (
+      this.currentGrid.every((row) => row.every((v) => Math.abs(v) < IDLE_CONVERGE_THRESHOLD))
+    ) {
+      this.currentGrid = makeIdleGrid();
+      this._grid.set(makeIdleGrid());
+      this.stopInterval();
     }
   }
 }

@@ -3,15 +3,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AnimationSpec, TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
-import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
 
 @Injectable({ providedIn: "root" })
 export class TerminalAnimationAdapterService extends TerminalAnimationPort {
   constructor(
     private readonly bus: AppBus,
-    private readonly busyIndicatorService: BusyIndicatorService,
     monitor: TerminalMonitorPort,
     destroyRef: DestroyRef,
   ) {
@@ -43,12 +39,6 @@ export class TerminalAnimationAdapterService extends TerminalAnimationPort {
       type: "BusyIndicatorUnregister",
       payload: { registrationId: `${registrationKey}-${terminalId}` },
     });
-  }
-
-  observe$(terminalId: string): Observable<ReadonlyArray<AnimationSpec>> {
-    return this.busyIndicatorService
-      .forTerminal$(terminalId)
-      .pipe(map((regs) => regs.map((r) => ({ keyframes: r.keyframes, priority: r.priority }))));
   }
 
   private clearForTerminal(terminalId: string): void {

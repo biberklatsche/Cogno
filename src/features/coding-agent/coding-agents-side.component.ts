@@ -8,12 +8,13 @@ import {
   ContextMenuOverlayService,
   CopyEditDeleteComponent,
   IconComponent,
+  KeyframeBarsComponent,
   StartEllipsisDirective,
   TooltipDirective,
 } from "@cogno/shared/ui";
 import { interval } from "rxjs";
-import { AgentAnimationComponent } from "./agent-animation.component";
 import { groupAgentsByWorkspace } from "./agent-groups";
+import { AGENT_STATUS_SPECS } from "./coding-agent-animation";
 import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
 import { ActiveAgent, CodingAgentStatusService } from "./coding-agent-status.service";
@@ -53,7 +54,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     IconComponent,
     TooltipDirective,
     StartEllipsisDirective,
-    AgentAnimationComponent,
+    KeyframeBarsComponent,
     CopyEditDeleteComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -123,7 +124,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 (click)="navigateTo(agent)"
               >
                 <div class="agent-state">
-                  <app-agent-animation [terminalId]="agent.terminalId"></app-agent-animation>
+                  <app-keyframe-bars [keyframes]="statusKeyframes(agent)" />
                   <span class="state-label">
                     {{ statusLabel(agent) }}
                     @if (agent.status === "working") {
@@ -536,7 +537,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     }
 
     /* Block, not inline-flex: an inline box would sit on the text baseline instead of centring. */
-    .agent-state app-agent-animation {
+    .agent-state app-keyframe-bars {
       display: flex;
     }
 
@@ -682,6 +683,11 @@ export class CodingAgentsSideComponent {
 
   readonly countOf = countOf;
   readonly cardState = cardState;
+
+  /** The card shows the same animation as the agent's tab. */
+  statusKeyframes(agent: ActiveAgent): ReadonlyArray<number[][]> {
+    return AGENT_STATUS_SPECS[agent.status].keyframes;
+  }
 
   statusLabel(agent: ActiveAgent): string {
     return CARD_STATE_LABELS[cardState(agent)];
