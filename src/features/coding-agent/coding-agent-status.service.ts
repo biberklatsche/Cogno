@@ -227,6 +227,11 @@ export class CodingAgentStatusService {
       // this agent (Cogno started while it was already running): it is working.
       if (event.change === "stop") return;
       state = this.createState(terminalId, identity, "working");
+      this.animation.register(
+        terminalId,
+        AGENT_STATUS_REGISTRATION_KEY,
+        AGENT_STATUS_SPECS.working,
+      );
     }
 
     if (event.change === "start") {

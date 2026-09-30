@@ -11,7 +11,7 @@ import type { TerminalIpcMessage } from "@cogno/shared/domain";
 import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentStatus } from "./agent-status";
-import { AGENT_STATUS_REGISTRATION_KEY } from "./coding-agent-animation";
+import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agent-animation";
 import type { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import type { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CodingAgentStatusService, resolveShownStatus } from "./coding-agent-status.service";
@@ -206,6 +206,17 @@ describe("CodingAgentStatusService", () => {
   });
 
   describe("subagents", () => {
+    it("shows the working icon on the tab when a subagent start is the first sign of the agent", () => {
+      ping("working", "SubagentStart", { agent_id: "a" });
+
+      expect(agent()?.status).toBe("working");
+      expect(animation.register).toHaveBeenCalledWith(
+        "t-1",
+        AGENT_STATUS_REGISTRATION_KEY,
+        AGENT_STATUS_SPECS.working,
+      );
+    });
+
     it("stays working while subagents run and after the last one stops, until the agent itself stops", () => {
       ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
       ping("working", "SubagentStart", { agent_id: "a" });
