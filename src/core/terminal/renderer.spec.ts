@@ -261,7 +261,6 @@ describe("Renderer", () => {
   describe("setOptions", () => {
     it("applies fonts, cursor and colours to the running terminal", () => {
       renderer = new Renderer(mockOptions, "linux", new WebglContextPool());
-    renderer.setVisible(true);
       const terminal = vi.mocked(Terminal).mock.results.at(-1)?.value;
 
       renderer.setOptions({
@@ -286,7 +285,6 @@ describe("Renderer", () => {
 
     it("keeps the current colours when none are given", () => {
       renderer = new Renderer(mockOptions, "linux", new WebglContextPool());
-    renderer.setVisible(true);
       const terminal = vi.mocked(Terminal).mock.results.at(-1)?.value;
       terminal.options.theme = { background: "#000000" };
 
