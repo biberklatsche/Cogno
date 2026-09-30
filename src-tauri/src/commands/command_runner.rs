@@ -1,8 +1,15 @@
 use serde::Serialize;
 use std::io::Read;
 use std::process::{Command, Stdio};
+use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+
+/// How long output may still arrive after the process ended. A grandchild that
+/// inherited the pipes (ssh or a credential helper started by git) keeps them
+/// open; the result must not wait for it.
+const PIPE_GRACE: Duration = Duration::from_millis(500);
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -18,8 +25,10 @@ pub struct CommandRunnerResult {
     pub exit_code: i32,
 }
 
+/// Runs on a blocking worker: a slow `git status` must never hold up the
+/// thread that drives the UI.
 #[tauri::command]
-pub fn command_runner_execute(
+pub async fn command_runner_execute(
     program: String,
     args: Vec<String>,
     cwd: String,
@@ -31,7 +40,10 @@ pub fn command_runner_execute(
     #[cfg(windows)]
     command.creation_flags(CREATE_NO_WINDOW);
 
-    run(command, timeout_ms).map_err(|error| error.to_string())
+    tauri::async_runtime::spawn_blocking(move || run(command, timeout_ms))
+        .await
+        .map_err(|error| error.to_string())?
+        .map_err(|error| error.to_string())
 }
 
 fn run(mut command: Command, timeout_ms: Option<u64>) -> std::io::Result<CommandRunnerResult> {
@@ -63,8 +75,8 @@ fn run(mut command: Command, timeout_ms: Option<u64>) -> std::io::Result<Command
         }
     };
 
-    let stdout = String::from_utf8_lossy(&stdout.join().unwrap_or_default()).to_string();
-    let stderr = String::from_utf8_lossy(&stderr.join().unwrap_or_default()).to_string();
+    let stdout = String::from_utf8_lossy(&stdout.collect(PIPE_GRACE)).to_string();
+    let stderr = String::from_utf8_lossy(&stderr.collect(PIPE_GRACE)).to_string();
 
     Ok(match status {
         Some(status) => CommandRunnerResult {
@@ -87,14 +99,42 @@ fn run(mut command: Command, timeout_ms: Option<u64>) -> std::io::Result<Command
     })
 }
 
-fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> thread::JoinHandle<Vec<u8>> {
+/// A pipe being read on its own thread, so a chatty child never blocks on a
+/// full pipe buffer.
+struct Drain {
+    buffer: Arc<Mutex<Vec<u8>>>,
+    finished: mpsc::Receiver<()>,
+}
+
+impl Drain {
+    /// What was read, once the pipe closed or `grace` passed - whichever comes
+    /// first. The reading thread ends by itself when the pipe finally closes.
+    fn collect(self, grace: Duration) -> Vec<u8> {
+        let _ = self.finished.recv_timeout(grace);
+        std::mem::take(&mut *self.buffer.lock().unwrap_or_else(|poisoned| poisoned.into_inner()))
+    }
+}
+
+fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> Drain {
+    let buffer = Arc::new(Mutex::new(Vec::new()));
+    let (finished_sender, finished) = mpsc::channel();
+    let shared = Arc::clone(&buffer);
     thread::spawn(move || {
-        let mut buffer = Vec::new();
         if let Some(mut pipe) = pipe {
-            let _ = pipe.read_to_end(&mut buffer);
+            let mut chunk = [0u8; 8192];
+            loop {
+                match pipe.read(&mut chunk) {
+                    Ok(0) | Err(_) => break,
+                    Ok(read) => shared
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .extend_from_slice(&chunk[..read]),
+                }
+            }
         }
-        buffer
-    })
+        let _ = finished_sender.send(());
+    });
+    Drain { buffer, finished }
 }
 
 #[cfg(all(test, unix))]
@@ -130,10 +170,40 @@ mod tests {
     }
 
     #[test]
+    fn a_grandchild_holding_the_pipes_does_not_hold_up_the_result() {
+        let started = Instant::now();
+        let result = run(shell("sleep 5 & echo done"), Some(5_000)).unwrap();
+
+        assert_eq!(result.exit_code, 0);
+        assert_eq!(result.stdout, "done
+");
+        assert!(started.elapsed() < Duration::from_secs(3));
+    }
+
+    #[test]
     fn exit_code_and_stderr_are_reported() {
         let result = run(shell("echo oops >&2; exit 3"), None).unwrap();
 
         assert_eq!(result.exit_code, 3);
         assert_eq!(result.stderr, "oops\n");
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+
+    #[test]
+    fn a_grandchild_holding_the_pipes_does_not_hold_up_the_result() {
+        // `start /B` leaves ping running in the background with the inherited
+        // pipes after cmd exits.
+        let mut command = Command::new("cmd");
+        command.args(["/C", "start /B ping -n 6 127.0.0.1 & echo done"]);
+        let started = Instant::now();
+        let result = run(command, Some(10_000)).unwrap();
+
+        assert_eq!(result.exit_code, 0);
+        assert!(result.stdout.contains("done"));
+        assert!(started.elapsed() < Duration::from_secs(4));
     }
 }
