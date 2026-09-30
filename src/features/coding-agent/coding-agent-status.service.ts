@@ -1,13 +1,11 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { TerminalPlacement, TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
 import { NotificationTypeContract, TerminalIpcMessage } from "@cogno/shared/domain";
-import { filter, map, merge } from "rxjs";
+import { filter, map, merge, Subscription } from "rxjs";
 import { AgentStatus } from "./agent-status";
 import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agent-animation";
 import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
@@ -97,6 +95,7 @@ export function resolveShownStatus(
 export class CodingAgentStatusService {
   private readonly states = new Map<string, TerminalAgentState>();
   private anonymousSubagents = 0;
+  private running?: Subscription;
   private readonly _activeAgents = signal<ReadonlyArray<ActiveAgent>>([]);
 
   readonly activeAgents: Signal<ReadonlyArray<ActiveAgent>> = this._activeAgents.asReadonly();
@@ -108,9 +107,8 @@ export class CodingAgentStatusService {
   });
 
   constructor(
-    ipc: TerminalIpcPort,
+    private readonly ipc: TerminalIpcPort,
     private readonly animation: TerminalAnimationPort,
-    configPort: ApplicationConfigurationPort,
     private readonly registry: CodingAgentProviderRegistry,
     private readonly monitor: TerminalMonitorPort,
     private readonly placement: TerminalPlacementPort,
@@ -118,51 +116,68 @@ export class CodingAgentStatusService {
     private readonly notificationCenterPort: NotificationCenterPort,
     private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
   ) {
-    const config = configPort.getConfiguration() as {
-      feature?: { coding_agents?: { mode?: string } };
-    };
-    if (config?.feature?.coding_agents?.mode === "off") return;
+    destroyRef.onDestroy(() => this.stop());
+  }
 
-    ipc.messages$
-      .pipe(
-        filter(
-          (m): m is TerminalIpcMessage & { terminalId: string } =>
-            m.command === CODING_AGENT_STATUS_ACTION &&
-            !!m.terminalId &&
-            monitor.isTerminalActive(m.terminalId),
+  /** Follows the agents from now on - the feature was switched on. */
+  start(): void {
+    if (this.running) return;
+    const running = new Subscription();
+    this.running = running;
+
+    running.add(
+      this.ipc.messages$
+        .pipe(
+          filter(
+            (m): m is TerminalIpcMessage & { terminalId: string } =>
+              m.command === CODING_AGENT_STATUS_ACTION &&
+              !!m.terminalId &&
+              this.monitor.isTerminalActive(m.terminalId),
+          ),
+        )
+        .subscribe((message) => this.onStatusPing(message)),
+    );
+
+    running.add(
+      this.monitor.cwdChanges$.subscribe(({ terminalId, cwd }) => {
+        const state = this.states.get(terminalId);
+        if (!state || state.agent.cwd === cwd) return;
+        state.agent = { ...state.agent, cwd };
+        this.publish();
+      }),
+    );
+
+    running.add(
+      this.placement.changes$.subscribe(() => {
+        if (this.states.size === 0) return;
+        for (const [terminalId, state] of this.states) {
+          state.agent = { ...state.agent, placement: this.placement.getPlacement(terminalId) };
+        }
+        this.publish();
+      }),
+    );
+
+    running.add(
+      merge(
+        this.monitor.activity$.pipe(
+          filter(({ isBusy }) => !isBusy),
+          map(({ terminalId }) => terminalId),
         ),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe((message) => this.onStatusPing(message));
+        this.monitor.terminated$,
+      ).subscribe((terminalId) => this.forget(terminalId)),
+    );
+  }
 
-    monitor.cwdChanges$.pipe(takeUntilDestroyed(destroyRef)).subscribe(({ terminalId, cwd }) => {
-      const state = this.states.get(terminalId);
-      if (!state || state.agent.cwd === cwd) return;
-      state.agent = { ...state.agent, cwd };
-      this.publish();
-    });
-
-    placement.changes$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
-      if (this.states.size === 0) return;
-      for (const [terminalId, state] of this.states) {
-        state.agent = { ...state.agent, placement: placement.getPlacement(terminalId) };
-      }
-      this.publish();
-    });
-
-    merge(
-      monitor.activity$.pipe(
-        filter(({ isBusy }) => !isBusy),
-        map(({ terminalId }) => terminalId),
-      ),
-      monitor.terminated$,
-    )
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((terminalId) => this.forget(terminalId));
-
-    destroyRef.onDestroy(() => {
-      for (const state of this.states.values()) this.clearReadyTimer(state);
-    });
+  /** Stops following the agents and takes their cards and tab icons away - the feature was switched off. */
+  stop(): void {
+    this.running?.unsubscribe();
+    this.running = undefined;
+    for (const [terminalId, state] of this.states) {
+      this.clearReadyTimer(state);
+      this.animation.unregister(terminalId, AGENT_STATUS_REGISTRATION_KEY);
+    }
+    this.states.clear();
+    this.publish();
   }
 
   private onStatusPing({

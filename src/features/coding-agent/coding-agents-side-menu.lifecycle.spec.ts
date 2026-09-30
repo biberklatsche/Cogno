@@ -12,6 +12,11 @@ TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 describe("CodingAgentsSideMenuLifecycle", () => {
   let attention: ReturnType<typeof signal<AgentAttention>>;
   let rescan: ReturnType<typeof vi.fn>;
+  let statusService: {
+    attention: typeof attention;
+    start: ReturnType<typeof vi.fn>;
+    stop: ReturnType<typeof vi.fn>;
+  };
   let handle: SideMenuFeatureHandleContract<string>;
   let lifecycle: ReturnType<CodingAgentsSideMenuLifecycle["create"]>;
 
@@ -19,6 +24,7 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
     attention = signal<AgentAttention>(undefined);
     rescan = vi.fn().mockResolvedValue(undefined);
+    statusService = { attention, start: vi.fn(), stop: vi.fn() };
     handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
@@ -28,8 +34,17 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     };
     lifecycle = new CodingAgentsSideMenuLifecycle(
       { rescan } as unknown as CodingAgentStartupService,
-      { attention } as unknown as CodingAgentStatusService,
+      statusService as unknown as CodingAgentStatusService,
     ).create(TestBed.inject(Injector), handle);
+  });
+
+  it("follows the agents and scans for them while the feature is on, and stops when it is off", () => {
+    lifecycle.onModeChange?.("on");
+    expect(statusService.start).toHaveBeenCalledOnce();
+    expect(rescan).toHaveBeenCalledOnce();
+
+    lifecycle.onModeChange?.("off");
+    expect(statusService.stop).toHaveBeenCalledOnce();
   });
 
   it("colours the menu badge by attention while the feature is on", () => {

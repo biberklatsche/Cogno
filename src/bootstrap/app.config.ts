@@ -63,7 +63,7 @@ import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/t
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
-import { CodingAgentStartupService, CodingAgentStatusService } from "@cogno/features/coding-agent";
+
 import { Logger } from "@cogno/platform/logger";
 import { features } from "./features";
 
@@ -132,8 +132,7 @@ export const appConfig: ApplicationConfig = {
         injector.get(ActionKeybindingPortAdapterService);
         injector.get(TerminalSearchApiService);
         injector.get(WorkspaceShortcutActionService);
-        injector.get(CodingAgentStatusService);
-        injector.get(CodingAgentStartupService);
+
         injector.get(AboutDialogAdapterService);
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).

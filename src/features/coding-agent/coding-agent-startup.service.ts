@@ -33,10 +33,7 @@ export class CodingAgentStartupService {
     private readonly configPort: ApplicationConfigurationPort,
     private readonly osPort: OsPlatform,
     private readonly notificationCenterPort: NotificationCenterPort,
-  ) {
-    if (!this.isEnabled()) return;
-    void this.rescan();
-  }
+  ) {}
 
   async rescan(): Promise<void> {
     if (this._isScanning()) return;
@@ -176,13 +173,6 @@ export class CodingAgentStartupService {
     } catch {
       return {};
     }
-  }
-
-  private isEnabled(): boolean {
-    const config = this.configPort.getConfiguration() as {
-      feature?: { coding_agents?: { mode?: string } };
-    };
-    return config?.feature?.coding_agents?.mode !== "off";
   }
 
   private resolveDefaultShellType(): string {

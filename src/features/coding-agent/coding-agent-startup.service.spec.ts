@@ -40,16 +40,19 @@ describe("CodingAgentStartupService", () => {
     dispatch = vi.fn();
   });
 
-  function start(providers: ReadonlyArray<ReturnType<typeof providerDouble>>, mode = "on") {
-    return new CodingAgentStartupService(
+  /** The service as the feature turning on leaves it: constructed, first scan running. */
+  function start(providers: ReadonlyArray<ReturnType<typeof providerDouble>>) {
+    const service = new CodingAgentStartupService(
       { providers } as unknown as CodingAgentProviderRegistry,
       { confirm } as unknown as CodingAgentConfirmDialogService,
       {
-        getConfiguration: () => ({ feature: { coding_agents: { mode } } }),
+        getConfiguration: () => ({}),
       } as unknown as ApplicationConfigurationPort,
       { platform: () => "macos" } as unknown as OsPlatform,
       { dispatch } as unknown as NotificationCenterPort,
     );
+    void service.rescan();
+    return service;
   }
 
   const hookOf = (service: CodingAgentStartupService, id: string) =>
@@ -70,14 +73,6 @@ describe("CodingAgentStartupService", () => {
       ]);
       expect(hookOf(service, "claude")).toBe(true);
       expect(hookOf(service, "codex")).toBe(false);
-    });
-
-    it("does nothing while the feature is off", async () => {
-      const provider = providerDouble("claude");
-      start([provider], "off");
-      await settle();
-
-      expect(provider.isAgentInstalled).not.toHaveBeenCalled();
     });
   });
 

@@ -28,7 +28,12 @@ export class CodingAgentsSideMenuLifecycle {
       onModeChange: (mode) => {
         badgeEffect?.destroy();
         badgeEffect = undefined;
-        if (mode !== "on") return;
+        if (mode !== "on") {
+          this.statusService.stop();
+          return;
+        }
+        this.statusService.start();
+        void this.startupService.rescan();
         // The dot on the menu entry says an agent needs the user, even while the panel is closed.
         badgeEffect = effect(
           () => {

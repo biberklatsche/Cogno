@@ -1,5 +1,4 @@
 import type { DestroyRef } from "@angular/core";
-import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -12,6 +11,7 @@ import type { TerminalIpcMessage } from "@cogno/shared/domain";
 import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentStatus } from "./agent-status";
+import { AGENT_STATUS_REGISTRATION_KEY } from "./coding-agent-animation";
 import type { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import type { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CodingAgentStatusService, resolveShownStatus } from "./coding-agent-status.service";
@@ -60,7 +60,7 @@ describe("CodingAgentStatusService", () => {
   let messages: Subject<TerminalIpcMessage>;
   let activity: Subject<TerminalActivityEvent>;
   let terminated: Subject<string>;
-  let animation: { register: ReturnType<typeof vi.fn> };
+  let animation: { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
   let notificationCenter: { dispatch: ReturnType<typeof vi.fn> };
   let destroyCallbacks: Array<() => void>;
   let service: CodingAgentStatusService;
@@ -83,7 +83,7 @@ describe("CodingAgentStatusService", () => {
     messages = new Subject<TerminalIpcMessage>();
     activity = new Subject<TerminalActivityEvent>();
     terminated = new Subject<string>();
-    animation = { register: vi.fn() };
+    animation = { register: vi.fn(), unregister: vi.fn() };
     notificationCenter = { dispatch: vi.fn() };
     destroyCallbacks = [];
     const destroyRef = {
@@ -96,7 +96,6 @@ describe("CodingAgentStatusService", () => {
     service = new CodingAgentStatusService(
       { messages$: messages } as unknown as TerminalIpcPort,
       animation as unknown as TerminalAnimationPort,
-      { getConfiguration: () => ({}) } as unknown as ApplicationConfigurationPort,
       {
         providers: [
           {
@@ -132,10 +131,32 @@ describe("CodingAgentStatusService", () => {
         getActiveChannels: () => [],
       } as unknown as CodingAgentNotificationPreferencesService,
     );
+    service.start();
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  describe("switching the feature off and on", () => {
+    it("takes the cards and tab icons away and ignores the agents while off", () => {
+      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
+
+      service.stop();
+      expect(service.activeAgents()).toEqual([]);
+      expect(animation.unregister).toHaveBeenCalledWith("t-1", AGENT_STATUS_REGISTRATION_KEY);
+
+      ping("working", "UserPromptSubmit", { prompt: "Write another" });
+      expect(service.activeAgents()).toEqual([]);
+    });
+
+    it("follows the agents again once switched back on", () => {
+      service.stop();
+      service.start();
+
+      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
+      expect(agent()?.status).toBe("working");
+    });
   });
 
   describe("ready and the grace period", () => {
@@ -401,7 +422,6 @@ describe("CodingAgentStatusService", () => {
       for (const callback of destroyCallbacks) callback();
       vi.advanceTimersByTime(GRACE_MS);
 
-      expect(agent()?.status).toBe("working");
       expect(notificationCenter.dispatch).not.toHaveBeenCalled();
     });
   });
