@@ -7,6 +7,7 @@ import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/work
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
+  emitSessionFact,
   getAppBus,
   getDestroyRef,
   getSessionHostFactory,
@@ -130,6 +131,50 @@ describe("GridListService workspace runtime", () => {
     service.activateWorkspace(defaultWorkspaceIdContract);
     expect(grids).toEqual([]);
     expect(activeTabId).toBeUndefined();
+  });
+
+  describe("a session ending or moving in a workspace that is not shown", () => {
+    const splitGrid: GridConfig = {
+      tabId: "tab-2",
+      pane: {
+        splitDirection: "horizontal",
+        leftChild: { terminalId: "term-2" },
+        rightChild: { terminalId: "term-3" },
+      },
+    };
+
+    beforeEach(() => {
+      addActiveTab("tab-1", "term-1");
+      service.restoreGridsForWorkspace([splitGrid], "ws-2");
+    });
+
+    it("drops the exited pane there and ends its session, leaving the shown one alone", () => {
+      emitSessionFact("term-2", { type: "exited", exitCode: 0 });
+
+      expect(componentFactory.destroy).toHaveBeenCalledWith("term-2");
+      expect(service.terminalIdsForWorkspace("ws-2")).toEqual(["term-3"]);
+      expect(grids.map((grid) => grid.tabId)).toEqual(["tab-1"]);
+    });
+
+    it("closes the tab there when its last pane exits", () => {
+      let removedTab: string | undefined;
+      bus.on$("RemoveTab").subscribe((event) => (removedTab = event.payload));
+      emitSessionFact("term-2", { type: "exited", exitCode: 0 });
+      emitSessionFact("term-3", { type: "exited", exitCode: 0 });
+      expect(removedTab).toBe("tab-2");
+
+      bus.publish({ type: "TabRemoved", payload: "tab-2" });
+      expect(service.terminalIdsForWorkspace("ws-2")).toEqual([]);
+      expect(grids.map((grid) => grid.tabId)).toEqual(["tab-1"]);
+    });
+
+    it("keeps its working directory current, so a save writes the right one", () => {
+      emitSessionFact("term-3", { type: "cwdReported", cwd: "/home/me/elsewhere" });
+
+      expect(service.getGridConfigs("ws-2")[0]?.pane.rightChild?.workingDir).toBe(
+        "/home/me/elsewhere",
+      );
+    });
   });
 
   it("removes an inactive workspace without touching the active one", () => {

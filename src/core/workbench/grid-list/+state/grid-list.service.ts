@@ -190,27 +190,29 @@ export class GridListService implements PaneLayoutLookup {
       });
   }
 
+  /** Removes the pane of `terminalId` - in whichever workspace it sits, shown or not. */
   removePane(terminalId: TerminalId) {
-    const gridList = this.getActiveWorkspaceGridList();
-    const gridAndNode = this.locateInActiveWorkspace(terminalId);
-    if (!gridAndNode) return;
-    if (this.maximizedTerminalId === terminalId) {
-      this.minimizePane();
+    const location = this.locate(terminalId);
+    if (!location) return;
+    const { workspaceIdentifier, grid, node } = location;
+    const isShown = workspaceIdentifier === this.activeWorkspaceIdentifier;
+    const state = this.stateByWorkspaceIdentifier.get(workspaceIdentifier);
+    if (!state) return;
+    if (state.maximizedTerminalId === terminalId) {
+      if (isShown) this.minimizePane();
+      else state.maximizedTerminalId = undefined;
     }
-    if (gridAndNode.node.isRoot) {
-      this.bus.publish({
-        type: "RemoveTab",
-        payload: gridAndNode.grid.tabId,
-      });
+    if (node.isRoot) {
+      this.bus.publish({ type: "RemoveTab", payload: grid.tabId });
     } else {
-      const wasFocusedNode = gridAndNode.node.data?.isFocused;
-      const newChild = gridAndNode.grid.tree.remove(gridAndNode.node.key);
-      if (wasFocusedNode) {
+      const wasFocusedNode = node.data?.isFocused;
+      const newChild = grid.tree.remove(node.key);
+      if (wasFocusedNode && isShown) {
         this.deferFocusTo(newChild?.data?.terminalId);
       }
     }
     this.componentFactory.destroy(terminalId);
-    this.setActiveWorkspaceGridList(gridList);
+    this.storeWorkspaceGridList(workspaceIdentifier, state.grids);
   }
 
   startPaneSwapDrag(sourceTerminalId: TerminalId): void {
@@ -466,19 +468,27 @@ export class GridListService implements PaneLayoutLookup {
     };
   }
 
+  /** Removes the grid of `tab` - in whichever workspace it sits, shown or not. */
   removeGrid(tab?: TabId) {
     if (tab === undefined) return;
-    const gridList = this.getActiveWorkspaceGridList();
-    const grid = gridList[tab];
-    if (!grid) return;
+    const workspaceIdentifier = this.workspaceOfTab(tab);
+    const state = workspaceIdentifier
+      ? this.stateByWorkspaceIdentifier.get(workspaceIdentifier)
+      : undefined;
+    const grid = state?.grids[tab];
+    if (!workspaceIdentifier || !state || !grid) return;
     const terminalIds = this.leafTerminalIds(grid);
-    delete gridList[tab];
+    delete state.grids[tab];
     for (const terminalId of terminalIds) {
       this.componentFactory.destroy(terminalId);
     }
-    this.setActiveWorkspaceGridList(gridList);
-    if (this.activeTabId === tab) {
-      this.setActiveWorkspaceTabIdentifier(undefined);
+    this.storeWorkspaceGridList(workspaceIdentifier, state.grids);
+    if (state.activeTabId === tab) {
+      if (workspaceIdentifier === this.activeWorkspaceIdentifier) {
+        this.setActiveWorkspaceTabIdentifier(undefined);
+      } else {
+        state.activeTabId = undefined;
+      }
     }
   }
 
@@ -519,27 +529,48 @@ export class GridListService implements PaneLayoutLookup {
 
   /** `undefined` clears the program's title; the pane falls back to its cwd. */
   private applyPaneTitle(terminalId: TerminalId, title: string | undefined): void {
-    const gridList = this.getActiveWorkspaceGridList();
-    const gridAndNode = this.locateInActiveWorkspace(terminalId);
+    const location = this.locate(terminalId);
     // Every command end clears the title; a pane without one stays untouched.
-    if (!gridAndNode?.node.data || gridAndNode.node.data.title === title) return;
-    gridAndNode.node.data = { ...gridAndNode.node.data, title };
-    this.setActiveWorkspaceGridList(gridList);
-    if (gridAndNode.node.data.isFocused) {
-      this.publishPaneTitleToTab(gridAndNode.tabId, gridAndNode.node.data);
+    if (!location?.node.data || location.node.data.title === title) return;
+    location.node.data = { ...location.node.data, title };
+    this.storeWorkspaceGridListOf(location.workspaceIdentifier);
+    if (location.node.data.isFocused) {
+      this.publishPaneTitleToTab(location.tabId, location.node.data);
     }
   }
 
   private applyPaneCwd(terminalId: TerminalId, cwd: string): void {
     if (!cwd) return;
-    const gridList = this.getActiveWorkspaceGridList();
-    const gridAndNode = this.locateInActiveWorkspace(terminalId);
-    if (!gridAndNode?.node.data) return;
-    gridAndNode.node.data = { ...gridAndNode.node.data, workingDir: cwd };
-    this.setActiveWorkspaceGridList(gridList);
-    if (gridAndNode.node.data.isFocused && !gridAndNode.node.data.title) {
-      this.publishPaneTitleToTab(gridAndNode.tabId, gridAndNode.node.data);
+    const location = this.locate(terminalId);
+    if (!location?.node.data) return;
+    location.node.data = { ...location.node.data, workingDir: cwd };
+    this.storeWorkspaceGridListOf(location.workspaceIdentifier);
+    if (location.node.data.isFocused && !location.node.data.title) {
+      this.publishPaneTitleToTab(location.tabId, location.node.data);
     }
+  }
+
+  /** The workspace holding `tabId`, shown or not; tab ids are unique across workspaces. */
+  private workspaceOfTab(tabId: TabId): string | undefined {
+    for (const [workspaceIdentifier, { grids }] of this.stateByWorkspaceIdentifier) {
+      if (grids[tabId]) return workspaceIdentifier;
+    }
+    return undefined;
+  }
+
+  /** Stores a workspace's grids after a change; only the shown workspace is republished. */
+  private storeWorkspaceGridList(workspaceIdentifier: string, gridList: GridList): void {
+    if (workspaceIdentifier === this.activeWorkspaceIdentifier) {
+      this.setActiveWorkspaceGridList(gridList);
+      return;
+    }
+    const state = this.stateByWorkspaceIdentifier.get(workspaceIdentifier);
+    if (state) state.grids = gridList;
+  }
+
+  private storeWorkspaceGridListOf(workspaceIdentifier: string): void {
+    const grids = this.stateByWorkspaceIdentifier.get(workspaceIdentifier)?.grids;
+    if (grids) this.storeWorkspaceGridList(workspaceIdentifier, grids);
   }
 
   /** True when the pane of `terminalId` belongs to the tab that is showing. */

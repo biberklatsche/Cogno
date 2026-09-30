@@ -94,11 +94,13 @@ export class TabListService {
       .on$("ChangeTabTitle")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event: ChangeTabTitleEvent) => {
-        const tabList = this.cloneTabList(this._tabList.value);
+        const workspaceIdentifier = event.payload && this.workspaceOfTab(event.payload.tabId);
+        if (!workspaceIdentifier || !event.payload?.title) return;
+        const tabList = this.cloneTabList(this.getTabListForWorkspace(workspaceIdentifier));
         const tab = tabList.find((s) => s.id === event.payload?.tabId);
-        if (!tab || !event.payload?.title) return;
+        if (!tab) return;
         tab.systemTitle = event.payload.title;
-        this.setTabListForWorkspace(this.getRequiredActiveWorkspaceIdentifier(), tabList);
+        this.setTabListForWorkspace(workspaceIdentifier, tabList);
       });
     actions.handle("new_tab", (context) =>
       this.openShell(
@@ -200,21 +202,26 @@ export class TabListService {
     });
   }
 
+  /** Removes `tabId` - from whichever workspace holds it, shown or not. */
   removeTab(tabId?: TabId) {
     if (!tabId) return;
-    const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
-    const tabList = this.cloneTabList(this._tabList.value);
+    const workspaceIdentifier = this.workspaceOfTab(tabId);
+    if (!workspaceIdentifier) return;
+    const tabList = this.cloneTabList(this.getTabListForWorkspace(workspaceIdentifier));
     const tabIndex = tabList.findIndex((tab) => tab.id === tabId);
-    if (tabIndex === -1) return;
     const isActiveTab = tabList[tabIndex].isActive;
     tabList.splice(tabIndex, 1);
     let nextActiveTab: Tab | undefined;
     if (isActiveTab && tabList.length > 0) {
       nextActiveTab = tabList[Math.max(tabIndex - 1, 0)];
     }
+    const isShown = workspaceIdentifier === this.activeWorkspaceIdentifier;
+    // A workspace in the background only notes its next active tab; selecting
+    // it for real happens when the workspace is shown.
+    if (nextActiveTab && !isShown) nextActiveTab.isActive = true;
     this.setTabListForWorkspace(workspaceIdentifier, tabList);
     this.bus.publish({ type: "TabRemoved", payload: tabId });
-    if (nextActiveTab) {
+    if (nextActiveTab && isShown) {
       this.selectTab(nextActiveTab.id);
     }
   }
@@ -356,6 +363,14 @@ export class TabListService {
       throw new Error("No active workspace found for tab list.");
     }
     return this.activeWorkspaceIdentifier;
+  }
+
+  /** The workspace holding `tabId`, shown or not; tab ids are unique across workspaces. */
+  private workspaceOfTab(tabId: TabId): string | undefined {
+    for (const [workspaceIdentifier, tabList] of this.tabListByWorkspaceIdentifier) {
+      if (tabList.some((tab) => tab.id === tabId)) return workspaceIdentifier;
+    }
+    return undefined;
   }
 
   private getTabListForWorkspace(workspaceIdentifier: string): TabList {
