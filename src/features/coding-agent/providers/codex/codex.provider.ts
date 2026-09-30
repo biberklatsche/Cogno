@@ -7,10 +7,15 @@ import {
 import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommands, hookStateOf } from "../_shared/hook-command.builder";
-import { withoutCognoHooksOnEveryEvent } from "../_shared/hook-groups";
+import { buildHookCommands } from "../_shared/hook-command.builder";
+import {
+  HookMapFormat,
+  hookMapState,
+  withCurrentCognoHooks,
+  withoutCognoHooksOnEveryEvent,
+} from "../_shared/hook-groups";
 import { PayloadFields, stringField } from "../_shared/hook-payload";
-import { CODEX_CONFIG, CodexHookGroup, CodexHooksFile } from "./codex.config";
+import { CODEX_CONFIG, CodexHookEntry, CodexHookGroup, CodexHooksFile } from "./codex.config";
 
 /** Lines of an apply_patch patch that name a file it adds, updates, deletes or moves to. */
 const PATCH_FILE_LINE = /^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+)$/gm;
@@ -43,43 +48,15 @@ export class CodexProvider implements ICodingAgentProvider {
   }
 
   async hookState(): Promise<HookState> {
-    const configPath = await this.configPath();
-    const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
-    const isCurrent = CODEX_CONFIG.hookEvents.every(({ eventName, status }) => {
-      const expected = buildHookCommands(status, this.id, eventName);
-      return (file.hooks?.[eventName] ?? []).some((group) =>
-        group.hooks.some(
-          (h) => h.command === expected.command && h.commandWindows === expected.commandWindows,
-        ),
-      );
-    });
-    const hasCognoHook = Object.values(file.hooks ?? {}).some((groups) =>
-      groups.some((group) =>
-        group.hooks.some((h) => CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows)),
-      ),
-    );
-    return hookStateOf(isCurrent, hasCognoHook);
+    const file = await this.configFile.readJson<CodexHooksFile>(await this.configPath(), {});
+    return hookMapState(file.hooks, CODEX_CONFIG.hookEvents, this.hookFormat());
   }
 
   async installHook(_shellType?: string): Promise<void> {
-    const configDir = await this.configDir();
-    await this.configFile.ensureDir(configDir);
+    await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
-
-    file.hooks = withoutCognoHooksOnEveryEvent(file.hooks ?? {}, (h) =>
-      CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
-    );
-
-    for (const entry of CODEX_CONFIG.hookEvents) {
-      const { command, commandWindows } = buildHookCommands(entry.status, this.id, entry.eventName);
-      const existing: CodexHookGroup[] = file.hooks[entry.eventName] ?? [];
-      file.hooks[entry.eventName] = [
-        ...existing,
-        { hooks: [{ type: "command", command, commandWindows }] },
-      ];
-    }
-
+    file.hooks = withCurrentCognoHooks(file.hooks, CODEX_CONFIG.hookEvents, this.hookFormat());
     await this.configFile.writeJson(configPath, file);
     await this.enableHooksInAppConfig();
   }
@@ -88,12 +65,22 @@ export class CodexProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
     if (!file.hooks) return;
-
-    file.hooks = withoutCognoHooksOnEveryEvent(file.hooks, (h) =>
-      CODEX_CONFIG.isCognoCommand(h.command, h.commandWindows),
-    );
-
+    file.hooks = withoutCognoHooksOnEveryEvent(file.hooks, this.hookFormat().isCogno);
     await this.configFile.writeJson(configPath, file);
+  }
+
+  /** Codex runs one hook entry on every OS, so it carries both shell variants. */
+  private hookFormat(): HookMapFormat<CodexHookEntry, CodexHookGroup> {
+    return {
+      groupFor: (entry) => ({
+        hooks: [{ type: "command", ...buildHookCommands(entry.status, this.id, entry.eventName) }],
+      }),
+      isCurrent: (hook, entry) => {
+        const expected = buildHookCommands(entry.status, this.id, entry.eventName);
+        return hook.command === expected.command && hook.commandWindows === expected.commandWindows;
+      },
+      isCogno: (hook) => CODEX_CONFIG.isCognoCommand(hook.command, hook.commandWindows),
+    };
   }
 
   private async enableHooksInAppConfig(): Promise<void> {

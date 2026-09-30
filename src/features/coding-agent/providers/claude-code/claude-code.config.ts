@@ -15,7 +15,7 @@ type ClaudeHookItem = {
   timeout?: number;
 };
 
-type ClaudeHookGroup = {
+export type ClaudeHookGroup = {
   matcher?: string;
   hooks: ClaudeHookItem[];
 };
