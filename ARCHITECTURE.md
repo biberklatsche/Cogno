@@ -589,12 +589,20 @@ bestehen. Reparenting, Tab-Wechsel und Workspace-Wechsel verändern nur die
 Darstellung beziehungsweise Layout-Identität; eine laufende Session wird dabei
 nicht neu gestartet.
 
-Beim Laden oder Wiederherstellen eines Workspaces werden **alle** zugehörigen
+Beim Laden oder Wiederherstellen eines Workspaces werden die zugehörigen
 Sessions sofort gestartet (`running`), auch in nicht sichtbaren Tabs und
 Panes — sie sind `detached`, nicht Platzhalter: die Shell läuft, Kommandos
 werden erfasst, der Tab-Titel aktualisiert sich. Sichtbar werden nur die
 Panes des aktiven Tabs `attached`. Das begrenzt zugleich die
 WebGL-Kontexte auf die sichtbaren Panes.
+
+Eine Ausnahme: Eine wiederhergestellte Session **mit gespeichertem
+Scrollback** startet ihre Shell erst, wenn ihr Pane zum ersten Mal
+angezeigt wird. Der Scrollback muss in ein geöffnetes Terminal in seiner
+endgültigen Größe geschrieben werden, bevor die Shell zeichnet — sonst malt
+sie (ConPTY besonders) über ihn, statt unter ihm zu beginnen. Bis dahin
+bleibt der Snapshot die Beschreibung der Session: Speichern liefert ihn
+unverändert zurück, nicht den noch leeren Puffer.
 
 ### 2.4 Kommandodaten (`core/command-log/`): Recorder, Abfrage, Sichten
 
@@ -675,10 +683,11 @@ brauchen Regeln, die aus Abschnitt 4 folgen:
   Batch ist eine Transaktion, SQLite serialisiert Schreiber im WAL-Modus.
   Pattern-Mining, das nicht als Einzelanweisung geht, läuft als
   Hintergrundjob über das Log, nicht im Schreibpfad.
-- **Lesen unter Last:** Abfragen von History und Autocomplete haben ein
-  eigenes Timeout (< 100 ms für Autocomplete); läuft es ab,
-  liefert die Lese-API leer mit Kennzeichen `timedOut`, und der Suggestor
-  ist für diesen Durchlauf `rejected` — nie ein blockiertes Panel.
+- **Lesefehler:** Schlägt eine Abfrage fehl, liefert die Lese-API leer —
+  wie ohne Log — und meldet den Fehler einmal je Fehlerserie, nicht bei
+  jedem Tastendruck. Ein langsamer Suggestor blockiert das Panel nicht: das
+  Timeout je Suggestor im Autocomplete macht ihn für diesen Durchlauf
+  `rejected`.
 
 
 
@@ -756,7 +765,7 @@ und Schließen in einem Statement nachgeführt. Wiederherstellen: jeder
 Workspace, der offen war, bekommt seine Laufzeit zurück — der aktive
 sichtbar, die anderen im Hintergrund —, je Pane ein Host mit
 `restore(snapshot)`: Scrollback in den Core schreiben, Trennzeile, dann PTY
-starten — und alle sofort starten, auch unsichtbar (2.3). Die Session ist passiv: sie kann sich
+starten — beim ersten Anzeigen des Panes (2.3). Die Session ist passiv: sie kann sich
 beschreiben und aus einer Beschreibung entstehen, speichert nichts selbst
 und kennt keine Tabelle.
 
@@ -1361,7 +1370,6 @@ erreicht, ohne sie zu importieren.
 |---|---|
 | Deaktivierungstest je Feature (4.2) | fehlt für `git` und `process-info` |
 | **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
-| Command-Log-Lese-Timeout (Abschnitt 2.4) | Das Lese-Timeout mit `timedOut`-Kennzeichen fehlt. |
 | `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |
 
 ---
