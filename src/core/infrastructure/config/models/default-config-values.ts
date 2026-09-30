@@ -333,4 +333,11 @@ export const featureKeybinds = [
     performable: false,
     macos: "Command+Control+R",
   },
+  {
+    action: "open_process_info",
+    combo: "Ctrl+Alt+P",
+    always: true,
+    performable: false,
+    macos: "Command+Control+P",
+  },
 ] as const;
