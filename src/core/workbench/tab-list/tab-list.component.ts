@@ -18,6 +18,8 @@ import { AppMenuButtonComponent } from "@cogno/core/workbench/app-menu/app-menu-
 import { BusyIndicatorComponent } from "@cogno/core/workbench/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import { ColorSelectComponent } from "@cogno/core/workbench/color/color-select.component";
+import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
+import { trackPointerDrag } from "@cogno/core/workbench/drag-preview/pointer-drag";
 import { TabId } from "@cogno/core/workbench/grid-layout";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
@@ -26,12 +28,10 @@ import { ColorName } from "@cogno/shared/support";
 import {
   ContextMenuItem,
   ContextMenuOverlayService,
-  DragPreviewService,
   Icon,
   IconComponent,
   StartEllipsisDirective,
   TooltipDirective,
-  trackPointerDrag,
 } from "@cogno/shared/ui";
 import { map, Observable } from "rxjs";
 

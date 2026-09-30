@@ -10,15 +10,15 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ActionKeybindingPort } from "@cogno/core/api/action-keybinding-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
+import { trackPointerDrag } from "@cogno/core/workbench/drag-preview/pointer-drag";
+import { collectDirectionalNavigationItems } from "@cogno/core/workbench/workspace/navigation/directional-navigation.dom";
 import {
   CopyEditDeleteComponent,
-  DragPreviewService,
   IconComponent,
   LetterBadgeComponent,
   TooltipDirective,
-  trackPointerDrag,
 } from "@cogno/shared/ui";
-import { collectDirectionalNavigationItems } from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 import { workspaceBadge } from "./workspace-badge";
 import { defaultWorkspaceIdContract } from "./workspace-entry";

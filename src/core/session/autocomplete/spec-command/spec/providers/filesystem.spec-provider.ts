@@ -1,6 +1,6 @@
 import { FilesystemContract } from "@cogno/core/api/filesystem-port";
+import { AutocompletePathSupport } from "@cogno/core/session/autocomplete/autocomplete-path.support";
 import { ShellContextContract } from "@cogno/shared/domain";
-import { AutocompletePathSupport } from "@cogno/shared/support";
 import {
   FilesystemSpecProviderParams,
   SpecProvidedSuggestion,

@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
-import { DragPreviewService } from "@cogno/shared/ui";
+import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import {
   getActionKeybindingPortMock,

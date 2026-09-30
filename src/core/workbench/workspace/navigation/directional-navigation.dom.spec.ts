@@ -1,11 +1,8 @@
 import type { ElementRef } from "@angular/core";
 import { describe, expect, it, vi } from "vitest";
-import {
-  collectDirectionalNavigationItems,
-  scrollSelectedListItemIntoView,
-} from "./directional-navigation.dom";
+import { collectDirectionalNavigationItems } from "./directional-navigation.dom";
 
-describe("directional-navigation.dom", () => {
+describe("collectDirectionalNavigationItems", () => {
   it("collects navigation ids and element rectangles from element refs", () => {
     const firstElement = {
       dataset: { navigationId: "first" },
@@ -42,31 +39,5 @@ describe("directional-navigation.dom", () => {
       },
     ]);
     expect(secondElement.getBoundingClientRect).not.toHaveBeenCalled();
-  });
-
-  it("scrolls the selected list item into view when the index is valid", () => {
-    const scrollIntoView = vi.fn();
-    const listElement = {
-      children: {
-        item: vi.fn().mockReturnValue({ scrollIntoView }),
-      },
-    } as unknown as HTMLUListElement;
-
-    scrollSelectedListItemIntoView(listElement, 1);
-
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest" });
-  });
-
-  it("returns early when the list is missing or the index is negative", () => {
-    const listElement = {
-      children: {
-        item: vi.fn(),
-      },
-    } as unknown as HTMLUListElement;
-
-    scrollSelectedListItemIntoView(undefined, 1);
-    scrollSelectedListItemIntoView(listElement, -1);
-
-    expect(listElement.children.item).not.toHaveBeenCalled();
   });
 });

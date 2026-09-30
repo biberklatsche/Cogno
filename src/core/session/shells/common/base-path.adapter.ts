@@ -1,5 +1,9 @@
-import { IPathAdapter, RenderContext } from "./path-adapter";
-import { isWslShellContext, ResolvedShellContextContract } from "./shell-context";
+import {
+  IPathAdapter,
+  isWslShellContext,
+  RenderContext,
+  ResolvedShellContextContract,
+} from "@cogno/shared/domain";
 
 export abstract class BasePathAdapter implements IPathAdapter {
   constructor(protected readonly ctx: ResolvedShellContextContract) {}

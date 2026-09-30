@@ -9,8 +9,8 @@ import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integra
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { toKnownCoreAction } from "@cogno/core/workbench/actions/catalog";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { Hash } from "@cogno/core/workbench/config-bootstrap/hash";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
-import { Hash } from "@cogno/shared/support";
 
 /**
  * Orchestrates config bootstrap: on `InitConfigCommand` it loads the config -

@@ -1,4 +1,4 @@
-import { SelectionDirection } from "@cogno/shared/domain";
+import { SelectionDirection } from "@cogno/core/workbench/workspace/navigation/selectable-list.use-case";
 
 interface NavigationRect {
   readonly top: number;

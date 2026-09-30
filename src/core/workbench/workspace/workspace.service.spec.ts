@@ -1,8 +1,8 @@
 import { signal, type WritableSignal } from "@angular/core";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
+import type { DirectionalNavigationItem } from "@cogno/core/workbench/workspace/navigation/directional-navigation.engine";
 import { WorkspaceService } from "@cogno/core/workbench/workspace/workspace.service";
 import type { DialogService } from "@cogno/shared/ui";
-import type { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceEntryContract } from "./workspace-entry";
 import type { WorkspaceHostApplicationService } from "./workspace-host-application.service";

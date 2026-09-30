@@ -1,6 +1,6 @@
+import { AutocompletePathSupport } from "@cogno/core/session/autocomplete/autocomplete-path.support";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import { createPathAdapter } from "@cogno/core/session/shells/shell-definitions";
-import { AutocompletePathSupport } from "@cogno/shared/support";
 import { AutocompleteSuggestion, CdQueryContext, QueryContext } from "../autocomplete.types";
 import { HistoryDirectoryScorer } from "./scoring/history-directory.scorer";
 import { TerminalAutocompleteSuggestor } from "./terminal-autocomplete.suggestor";
