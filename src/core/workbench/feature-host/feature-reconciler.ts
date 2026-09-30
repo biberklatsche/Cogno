@@ -6,7 +6,7 @@ import { FeatureModeContract } from "@cogno/shared/domain";
  * A feature's runtime status (ARCHITECTURE.md 6.1). `failed` means registering
  * its contributions threw; it stays failed until the app restarts.
  */
-export type FeatureRuntimeStatus = "inactive" | "activating" | "active" | "deactivating" | "failed";
+export type FeatureRuntimeStatus = "inactive" | "active" | "failed";
 
 /**
  * Where a feature's contributions are announced and withdrawn. The consumers
@@ -21,18 +21,15 @@ export interface FeatureContributionRegistrar {
 
 /**
  * Reconciles each feature's actual status against the mode the config wants,
- * following the transition rules of ARCHITECTURE.md 6.1: one operation per
- * feature at a time, all-or-nothing activation with rollback, deactivation that
- * always ends in `inactive`, `requires` as a condition (dependents down before
- * their dependency), `failed` as an end-state, and a status that is never
- * persisted.
+ * following the transition rules of ARCHITECTURE.md 6.1: all-or-nothing
+ * activation with rollback, deactivation that always ends in `inactive`,
+ * `requires` as a condition (dependents down before their dependency), `failed`
+ * as an end-state, and a status that is never persisted. It runs synchronously:
+ * registering is synchronous, so no change can come in between.
  */
 export class FeatureReconciler {
   private readonly byId: Map<string, FeatureDefinition<ActionName>>;
   private readonly status = new Map<string, FeatureRuntimeStatus>();
-  private readonly inFlight = new Set<string>();
-  private running?: Promise<void>;
-  private rerunRequested = false;
 
   constructor(
     private readonly features: ReadonlyArray<FeatureDefinition<ActionName>>,
@@ -50,54 +47,27 @@ export class FeatureReconciler {
     return this.status.get(featureId) ?? "inactive";
   }
 
-  /**
-   * Bring every feature in line with the wanted modes. Serialised: a call made
-   * while one is running requests a rerun instead of overlapping (rule 1).
-   */
-  reconcile(): Promise<void> {
-    if (this.running) {
-      this.rerunRequested = true;
-      return this.running;
-    }
-    this.running = this.runReconcile().finally(() => {
-      this.running = undefined;
-      if (this.rerunRequested) {
-        this.rerunRequested = false;
-        void this.reconcile();
-      }
-    });
-    return this.running;
-  }
-
-  private async runReconcile(): Promise<void> {
+  /** Brings every feature in line with the wanted modes. */
+  reconcile(): void {
     let progressed = true;
     while (progressed) {
       progressed = false;
-      const operations: Promise<void>[] = [];
       for (const feature of this.features) {
-        if (this.inFlight.has(feature.id)) {
-          continue;
-        }
-        const status = this.status.get(feature.id) ?? "inactive";
+        const status = this.statusOf(feature.id);
         const wanted = this.effectiveDesired(feature.id, new Set());
         if (wanted === "on" && status === "inactive" && this.requiresActive(feature)) {
-          operations.push(this.activate(feature));
+          this.activate(feature);
           progressed = true;
         } else if (status === "active" && wanted === "off" && this.dependentsInactive(feature)) {
-          operations.push(this.deactivate(feature));
+          this.deactivate(feature);
           progressed = true;
         }
-      }
-      if (operations.length > 0) {
-        await Promise.all(operations);
       }
     }
   }
 
-  /** Rule 2: register the contributions; on throw, roll back and fail. */
-  private async activate(feature: FeatureDefinition<ActionName>): Promise<void> {
-    this.inFlight.add(feature.id);
-    this.status.set(feature.id, "activating");
+  /** Rule 1: register the contributions; on throw, roll back and fail. */
+  private activate(feature: FeatureDefinition<ActionName>): void {
     try {
       this.registrar.register(feature);
       this.status.set(feature.id, "active");
@@ -105,26 +75,25 @@ export class FeatureReconciler {
       this.registrar.unregister(feature);
       this.status.set(feature.id, "failed");
       this.reportError(feature.id, error);
-    } finally {
-      this.inFlight.delete(feature.id);
-    }
-  }
-
-  /** Rule 3: unregister the contributions. Ends `inactive`. */
-  private async deactivate(feature: FeatureDefinition<ActionName>): Promise<void> {
-    this.inFlight.add(feature.id);
-    this.status.set(feature.id, "deactivating");
-    try {
-      this.registrar.unregister(feature);
-    } finally {
-      this.status.set(feature.id, "inactive");
-      this.inFlight.delete(feature.id);
     }
   }
 
   /**
+   * Rule 2: unregister the contributions. Ends `inactive` even when the
+   * feature's own code throws on the way out (its lifecycle is told `off`).
+   */
+  private deactivate(feature: FeatureDefinition<ActionName>): void {
+    try {
+      this.registrar.unregister(feature);
+    } catch (error) {
+      this.reportError(feature.id, error);
+    }
+    this.status.set(feature.id, "inactive");
+  }
+
+  /**
    * The mode a feature effectively wants: off if its own mode is off, or if any
-   * feature it requires (transitively) is off or failed (rule 4).
+   * feature it requires (transitively) is off or failed (rule 3).
    */
   private effectiveDesired(featureId: string, seen: Set<string>): FeatureModeContract {
     const feature = this.byId.get(featureId);

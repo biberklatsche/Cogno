@@ -1211,7 +1211,7 @@ Feature = {
 getrennt hat die Runtime einen nicht persistierten Status:
 
 ```
-inactive | activating | active | deactivating | failed
+inactive | active | failed
 ```
 
 Aktivierung und Deaktivierung sind idempotent. Deaktivierung meldet alle
@@ -1251,9 +1251,8 @@ Drei Aufgaben:
    validiert werden — das wäre ein Zirkel), **Migrationen** (laufen einmal,
    Daten werden nicht abgeschaltet) und **Aktionsdefinitionen** (damit CLI,
    HTTP und Palette den Namen kennen). Erst danach liest er `mode` und führt
-   je Feature den Runtime-Status:
-   `inactive → activating → active → deactivating → inactive`, dazu
-   `activating → failed`.
+   je Feature den Runtime-Status: `inactive ⇄ active`, dazu
+   `inactive → failed`.
 2. **Aktivierung (dynamisch, nur bei `mode: on`).** Löst `requires`
    transitiv auf, aktiviert in Abhängigkeitsreihenfolge, deaktiviert
    umgekehrt. Aktivieren = die *aktiven* Contributions anmelden —
@@ -1274,44 +1273,40 @@ Drei Aufgaben:
 
 **Übergänge.** Der Host arbeitet als Abgleich: die Config liefert je
 Feature den *gewünschten* Modus, der Host führt den *tatsächlichen* Status
-und gleicht an. Dafür gelten sechs Regeln:
+und gleicht an. Der Abgleich ist synchron: Anmelden und Abmelden sind
+synchron, also kann keine neue Config dazwischenkommen, und es gibt keine
+Zwischenzustände. Dafür gelten fünf Regeln:
 
-1. **Eine Operation je Feature zur Zeit.** Läuft `activating` oder
-   `deactivating`, wird ein neuer Wunsch nur gemerkt. Nach Abschluss —
-   Erfolg oder Fehler — gleicht der Host erneut ab. `on → off` während
-   der Aktivierung heißt also: Aktivierung zu Ende bringen, dann
-   deaktivieren.
-2. **Aktivierung ist ganz oder gar nicht.** Der Host meldet die
+1. **Aktivierung ist ganz oder gar nicht.** Der Host meldet die
    Contributions an. Das kann werfen, weil ein Side-Menu-Lifecycle dabei den
    Code des Features ausführt (`onModeChange("on")`). Dann meldet der Host
    alle Contributions in umgekehrter Reihenfolge ab, Status `failed` mit
    Grund. Es gibt keinen halb aktiven Zustand; ein Panel, das schon sichtbar
    war, verschwindet.
-3. **Deaktivierung endet immer in `inactive`.** Der Host meldet die
-   Contributions ab und gibt die Subscriptions frei; der Status ist danach
-   `inactive`, nie `failed`.
-4. **`requires` ist eine Bedingung, keine Kaskade in die Config.** Ist ein
+2. **Deaktivierung endet immer in `inactive`.** Der Host meldet die
+   Contributions ab und gibt die Subscriptions frei. Wirft dabei der Code
+   des Features (`onModeChange("off")`), meldet er den Fehler; der Status
+   ist danach trotzdem `inactive`, nie `failed`.
+3. **`requires` ist eine Bedingung, keine Kaskade in die Config.** Ist ein
    benötigtes Feature `off` oder `failed`, bleibt das abhängige Feature
    `inactive`; der Host schreibt nie in die Config. Wird *x* aktiv, aktiviert der nächste
    Abgleich die Abhängigen; wird *x* deaktiviert, deaktiviert der Host
    vorher die Abhängigen in umgekehrter Reihenfolge.
-5. **`failed` ist ein Endzustand bis zum Neustart.** Kein automatischer
+4. **`failed` ist ein Endzustand bis zum Neustart.** Kein automatischer
    Wiederholungsversuch, kein Retry; `mode` bleibt `on`, die Config wird
    nicht angefasst. Bewusst einfach: ein Feature, dessen Aktivierung wirft,
    ist ein Fehler, den man behebt, nicht einer, den die App verwaltet.
-6. **Der Status wird nicht persistiert.** Nach einem Neustart beginnt jedes
+5. **Der Status wird nicht persistiert.** Nach einem Neustart beginnt jedes
    Feature bei `inactive` und der Abgleich läuft neu. Persistiert ist nur
    `mode`, und der gehört dem Nutzer.
 
 Damit ist jeder Übergang bestimmt:
 
 ```
-inactive     --on, requires erfüllt-->  activating
-activating   --angemeldet---------->  active
-activating   --Anmelden wirft------>  failed       (Contributions zurückgerollt)
-active       --off oder requires--->  deactivating
-deactivating --immer---------------->  inactive
-failed       --Neustart------------->  inactive     (Status wird nicht persistiert)
+inactive  --on, requires erfüllt, angemeldet-->  active
+inactive  --on, Anmelden wirft--------------->  failed    (Contributions zurückgerollt)
+active    --off oder requires---------------->  inactive  (immer, auch wenn Abmelden wirft)
+failed    --Neustart------------------------->  inactive  (Status wird nicht persistiert)
 ```
 
 **Deklarationsfehler sind Startfehler.** „Kann nicht fehlschlagen" gilt

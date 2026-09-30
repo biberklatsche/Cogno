@@ -13,6 +13,7 @@ import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-re
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
+import { BehaviorSubject, Observable } from "rxjs";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
 import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";
 import { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
@@ -37,7 +38,7 @@ import { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
 export class FeatureHost {
   private readonly declarationConflicts: ReadonlyArray<string>;
   private reconciler?: FeatureReconciler;
-  private pendingReconcile = Promise.resolve();
+  private readonly reconciled$$ = new BehaviorSubject<void>(undefined);
   private featureActionOwners?: ReadonlyMap<ActionName, string>;
 
   constructor(
@@ -129,9 +130,12 @@ export class FeatureHost {
     return this.featureActionOwners;
   }
 
-  /** Resolves once the latest reconciliation has settled (for tests and startup). */
-  whenSettled(): Promise<void> {
-    return this.pendingReconcile;
+  /**
+   * Emits after every reconciliation, and at once with the current state - for
+   * whoever reports which feature actions are active.
+   */
+  get reconciled$(): Observable<void> {
+    return this.reconciled$$.asObservable();
   }
 
   private declare(): void {
@@ -150,7 +154,8 @@ export class FeatureHost {
     this.applicationConfigurationPort.configuration$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        this.pendingReconcile = this.reconciler?.reconcile() ?? Promise.resolve();
+        this.reconciler?.reconcile();
+        this.reconciled$$.next();
       });
   }
 

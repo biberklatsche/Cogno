@@ -1,7 +1,7 @@
 import type { FeatureDefinition } from "@cogno/core/api/contributions";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
 import type { FeatureModeContract } from "@cogno/shared/domain";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";
 
 type FakeFeature = Partial<FeatureDefinition<ActionName>> & { id: string };
@@ -34,74 +34,97 @@ function harness(
 }
 
 describe("FeatureReconciler", () => {
-  it("registers a feature's contributions", async () => {
+  it("registers a feature's contributions", () => {
     const { reconciler, calls } = harness([{ id: "a" }]);
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(calls).toEqual(["register:a"]);
     expect(reconciler.statusOf("a")).toBe("active");
   });
 
-  it("rolls back the contributions and fails when registering throws (rule 2)", async () => {
+  it("rolls back the contributions and fails when registering throws (rule 1)", () => {
     const { reconciler, calls } = harness([{ id: "a" }], (id) => id === "a");
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(calls).toEqual(["register:a", "unregister:a"]);
     expect(reconciler.statusOf("a")).toBe("failed");
   });
 
-  it("unregisters a feature switched off and ends inactive (rule 3)", async () => {
+  it("unregisters a feature switched off and ends inactive (rule 2)", () => {
     const { reconciler, desired, calls } = harness([{ id: "a" }]);
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
     desired.set("a", "off");
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(calls).toEqual(["register:a", "unregister:a"]);
     expect(reconciler.statusOf("a")).toBe("inactive");
   });
 
-  it("keeps a dependent inactive when its requirement is off (rule 4)", async () => {
+  it("ends inactive and reports it when the feature's code throws on the way out (rule 2)", () => {
+    let desiredMode: FeatureModeContract = "on";
+    const reportError = vi.fn();
+    const reconciler = new FeatureReconciler(
+      [{ id: "a", mode: "on", target: "workbench" }],
+      {
+        register: () => {},
+        unregister: () => {
+          throw new Error("cleanup failed");
+        },
+      },
+      () => desiredMode,
+      reportError,
+    );
+
+    reconciler.reconcile();
+    desiredMode = "off";
+    reconciler.reconcile();
+
+    expect(reconciler.statusOf("a")).toBe("inactive");
+    expect(reportError).toHaveBeenCalledWith("a", expect.any(Error));
+  });
+
+  it("keeps a dependent inactive when its requirement is off (rule 3)", () => {
     const { reconciler } = harness([
       { id: "a", mode: "off" },
       { id: "b", requires: ["a"] },
     ]);
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(reconciler.statusOf("a")).toBe("inactive");
     expect(reconciler.statusOf("b")).toBe("inactive");
   });
 
-  it("activates in dependency order and deactivates dependents first (rule 4)", async () => {
+  it("activates in dependency order and deactivates dependents first (rule 3)", () => {
     const { reconciler, desired, calls } = harness([{ id: "a" }, { id: "b", requires: ["a"] }]);
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
     expect(calls).toEqual(["register:a", "register:b"]);
     expect(reconciler.statusOf("b")).toBe("active");
 
     calls.length = 0;
     desired.set("a", "off");
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(calls).toEqual(["unregister:b", "unregister:a"]);
     expect(reconciler.statusOf("a")).toBe("inactive");
     expect(reconciler.statusOf("b")).toBe("inactive");
   });
 
-  it("stays failed: a later reconcile does not retry it", async () => {
+  it("stays failed: a later reconcile does not retry it", () => {
     let attempts = 0;
     const { reconciler } = harness([{ id: "a" }], () => {
       attempts += 1;
       return attempts === 1;
     });
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
     expect(reconciler.statusOf("a")).toBe("failed");
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
     expect(reconciler.statusOf("a")).toBe("failed");
     expect(attempts).toBe(1);
   });

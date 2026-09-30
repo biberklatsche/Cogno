@@ -74,30 +74,41 @@ describe("FeatureHost activation", () => {
     );
   }
 
-  it("reads the mode from the feature's configPath, not its id", async () => {
+  it("reads the mode from the feature's configPath, not its id", () => {
     const host = makeHost({
       feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
     });
-    await host.whenSettled();
 
     expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
     expect(register).not.toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
     expect(host.isActionActive("open_coding-agents" as ActionName)).toBe(true);
   });
 
-  it("activates and deactivates on config changes (hot-reload)", async () => {
+  it("activates and deactivates on config changes (hot-reload)", () => {
     const host = makeHost({
       feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
     });
-    await host.whenSettled();
     register.mockClear();
 
     configSubject.next({ feature: { coding_agents: { mode: "off" }, git: { mode: "on" } } });
-    await host.whenSettled();
 
     expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
     expect(unregister).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
     expect(host.isActionActive("open_git" as ActionName)).toBe(true);
     expect(host.isActionActive("open_coding-agents" as ActionName)).toBe(false);
+  });
+
+  it("announces a reconciliation only once the feature states are current", () => {
+    const host = makeHost({
+      feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
+    });
+    const gitActiveWhenAnnounced: boolean[] = [];
+    host.reconciled$.subscribe(() =>
+      gitActiveWhenAnnounced.push(host.isActionActive("open_git" as ActionName)),
+    );
+
+    configSubject.next({ feature: { coding_agents: { mode: "on" }, git: { mode: "on" } } });
+
+    expect(gitActiveWhenAnnounced).toEqual([false, true]);
   });
 });
