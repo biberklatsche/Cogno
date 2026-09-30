@@ -5,7 +5,6 @@ import {
   COMPACTED_ACTIVITY,
   compactingActivity,
   describeToolCall,
-  EditedFilesReader,
   firstLine,
   PayloadFields,
   payloadFields,
@@ -19,13 +18,11 @@ import {
  * failure, `tool_name`/`tool_input` on a tool call (permission requests included),
  * `trigger` on compaction and `model` where the provider reports it (Claude Code on
  * SessionStart and as `to_model` on PostModelSwitch, Codex on nearly every hook).
- * Which tools edit files differs per provider, so it reads them with `readEditedFiles`.
  */
 export function interpretClaudeStyleHook(
   hookEvent: string,
   status: AgentStatus,
   payload: unknown,
-  readEditedFiles: EditedFilesReader,
 ): AgentHookEvent {
   const fields = payloadFields(payload);
 
@@ -49,7 +46,6 @@ export function interpretClaudeStyleHook(
     details: {
       ...readDetails(hookEvent, fields),
       ...readModel(fields),
-      ...readEditedFilesOf(hookEvent, fields, readEditedFiles),
     },
   };
 }
@@ -81,17 +77,6 @@ function compactionActivity(
 function readModel(fields: PayloadFields | undefined): Pick<HookDetails, "model"> {
   const model = stringField(fields, "model");
   return model && !stringField(fields, "agent_id") ? { model } : {};
-}
-
-/** Only a finished tool call has changed a file; a failed or pending one has not. */
-function readEditedFilesOf(
-  hookEvent: string,
-  fields: PayloadFields | undefined,
-  readEditedFiles: EditedFilesReader,
-): Pick<HookDetails, "editedFiles"> {
-  if (hookEvent !== CLAUDE_STYLE_HOOK_EVENT.postToolUse) return {};
-  const editedFiles = readEditedFiles(fields);
-  return editedFiles.length > 0 ? { editedFiles } : {};
 }
 
 /**

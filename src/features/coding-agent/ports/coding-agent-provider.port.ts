@@ -10,8 +10,6 @@ export type HookDetails = {
   readonly result?: string;
   /** The model the agent runs on. */
   readonly model?: string;
-  /** Files a tool call changed. */
-  readonly editedFiles?: ReadonlyArray<string>;
 };
 
 /**

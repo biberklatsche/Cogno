@@ -9,7 +9,6 @@ function agent(terminalId: string, placement?: ActiveAgent["placement"]): Active
     providerName: "Claude Code",
     status: "working",
     statusSince: 0,
-    editedFiles: [],
     subagentCount: 0,
     placement,
   };

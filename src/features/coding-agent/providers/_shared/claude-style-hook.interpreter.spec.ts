@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "./claude-style-hook.interpreter";
-import { editedFilesByTool } from "./hook-payload";
 
 const interpret = (hookEvent: string, status: AgentStatus, payload: unknown) =>
-  interpretClaudeStyleHook(hookEvent, status, payload, editedFilesByTool({ Edit: "file_path" }));
+  interpretClaudeStyleHook(hookEvent, status, payload);
 
 describe("interpretClaudeStyleHook", () => {
   it("takes a submitted prompt as the task, first line only", () => {
@@ -133,15 +132,6 @@ describe("interpretClaudeStyleHook", () => {
       kind: "model",
       model: "claude-sonnet-5",
     });
-  });
-
-  it("reports a file as edited only once its tool call finished", () => {
-    const payload = { tool_name: "Edit", tool_input: { file_path: "/a/b.ts" } };
-    expect(interpret("PostToolUse", "working", payload)).toMatchObject({
-      details: { editedFiles: ["/a/b.ts"] },
-    });
-    const pending = interpret("PreToolUse", "working", payload);
-    expect(pending.kind === "status" && pending.details.editedFiles).toBeFalsy();
   });
 
   it("describes compaction as the activity", () => {

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { NotificationPreferencesState, relativeCognoPath } from "@cogno/shared/domain";
+import { NotificationPreferencesState } from "@cogno/shared/domain";
 import {
   buildNotificationPreferencesMenuItems,
   ContextMenuOverlayService,
@@ -150,11 +150,6 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 }
                 <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
                 <div class="agent-footer">
-                  @if (agent.editedFiles.length > 0) {
-                    <span class="agent-files" [appTooltip]="editedFilesTooltip(agent)">
-                      {{ countOf(agent.editedFiles.length, "file") }} changed
-                    </span>
-                  }
                   <span
                     class="agent-tab"
                     [class.colored]="!!agent.placement?.tabColor"
@@ -445,7 +440,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       gap: 0.75rem;
       font-size: 0.75rem;
       line-height: 1.4;
-      /* Fixed height: a footer without files must not shrink the card. */
+      /* Fixed height: every card is the same height. */
       height: 1.4em;
     }
 
@@ -497,12 +492,6 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    .agent-files {
-      flex-shrink: 0;
-      opacity: 0.65;
-      white-space: nowrap;
     }
 
     .agent-task {
@@ -696,13 +685,6 @@ export class CodingAgentsSideComponent {
   /** The detail line follows the state: the closing message once done, else the last activity. */
   detail(agent: ActiveAgent): string | undefined {
     return agent.status === "ready" ? agent.result : agent.activity;
-  }
-
-  /** One changed file per line, relative to the terminal's cwd where it lies inside. */
-  editedFilesTooltip(agent: ActiveAgent): string {
-    return agent.editedFiles
-      .map((path) => (agent.cwd && relativeCognoPath(agent.cwd, path)) || path)
-      .join("\n");
   }
 
   openNotificationMenu(event: Event): void {

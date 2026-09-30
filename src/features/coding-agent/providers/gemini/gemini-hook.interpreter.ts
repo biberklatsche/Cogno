@@ -3,15 +3,12 @@ import { AgentStatus } from "../../agent-status";
 import {
   compactingActivity,
   describeToolCall,
-  editedFilesByTool,
   firstLine,
   PayloadFields,
   payloadFields,
   stringField,
 } from "../_shared/hook-payload";
-import { GEMINI_CONFIG, GEMINI_HOOK_EVENT } from "./gemini.config";
-
-const readEditedFiles = editedFilesByTool(GEMINI_CONFIG.editTools);
+import { GEMINI_HOOK_EVENT } from "./gemini.config";
 
 /**
  * Reads a Gemini CLI hook: `prompt` on BeforeAgent, `tool_name`/`tool_input` on the
@@ -34,10 +31,6 @@ export function interpretGeminiHook(
       : undefined);
   const result = firstLine(fields?.["prompt_response"]);
   const model = stringField(objectField(fields, "llm_request"), "model");
-  const editedFiles =
-    hookEvent === GEMINI_HOOK_EVENT.afterTool && !objectField(fields, "tool_response")?.["error"]
-      ? readEditedFiles(fields)
-      : [];
   return {
     kind: "status",
     status,
@@ -47,7 +40,6 @@ export function interpretGeminiHook(
       ...(activity ? { activity } : {}),
       ...(result ? { result } : {}),
       ...(model ? { model } : {}),
-      ...(editedFiles.length > 0 ? { editedFiles } : {}),
     },
   };
 }

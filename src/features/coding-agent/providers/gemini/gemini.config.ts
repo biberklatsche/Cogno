@@ -48,9 +48,6 @@ export const GEMINI_CONFIG = {
     { eventName: GEMINI_HOOK_EVENT.notification, status: "question" as AgentStatus },
   ] as ReadonlyArray<GeminiHookEntry>,
 
-  /** Gemini CLI's file-editing tools and the input field naming the file. */
-  editTools: { write_file: "file_path", replace: "file_path" } as Readonly<Record<string, string>>,
-
   isCognoCommand(command: string): boolean {
     return command.includes(CODING_AGENT_STATUS_ACTION) && command.includes("COGNO_PORT");
   },

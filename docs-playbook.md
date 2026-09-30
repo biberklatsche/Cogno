@@ -272,8 +272,8 @@ shows their state (working, question, ready, error) in the tab and the side
 panel; which agents are supported (read the providers directory — do not
 hard-code the list); notifications per state. What a card shows: state and
 elapsed time, running subagents, the model and the agent, the task, the
-current tool call or closing message (compaction included), the number of
-changed files (list in the tooltip) and the tab; not every agent reports
+current tool call or closing message (compaction included) and the tab; not
+every agent reports
 everything — each provider's interpreter shows what it reads, and what an
 agent does not report is simply not shown. Hooks: Cogno sees an agent's
 state through a hook it writes into the agent's own config; on the first scan

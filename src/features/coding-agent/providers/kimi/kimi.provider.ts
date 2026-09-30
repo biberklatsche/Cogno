@@ -12,10 +12,7 @@ import {
   hookStateOf,
   isCurrentHookCommand,
 } from "../_shared/hook-command.builder";
-import { editedFilesByTool } from "../_shared/hook-payload";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
-
-const readEditedFiles = editedFilesByTool(KIMI_CONFIG.editTools);
 
 @Injectable({ providedIn: "root" })
 export class KimiProvider implements ICodingAgentProvider {
@@ -25,7 +22,7 @@ export class KimiProvider implements ICodingAgentProvider {
   constructor(private readonly configFile: ConfigFileService) {}
 
   interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretClaudeStyleHook(hookEvent, status, payload, readEditedFiles);
+    return interpretClaudeStyleHook(hookEvent, status, payload);
   }
 
   async isAgentInstalled(): Promise<boolean> {

@@ -55,14 +55,6 @@ export const CLAUDE_CODE_CONFIG = {
     { eventName: CLAUDE_STYLE_HOOK_EVENT.postModelSwitch, status: "ready" as AgentStatus },
   ] as ReadonlyArray<ClaudeHookEntry>,
 
-  /** Claude Code's file-editing tools and the input field naming the file. */
-  editTools: {
-    Write: "file_path",
-    Edit: "file_path",
-    MultiEdit: "file_path",
-    NotebookEdit: "notebook_path",
-  } as Readonly<Record<string, string>>,
-
   isCognoCommand(command: string): boolean {
     return command.includes("COGNO_PORT") && command.includes(CODING_AGENT_STATUS_ACTION);
   },

@@ -33,9 +33,6 @@ export const KIMI_CONFIG = {
     { eventName: CLAUDE_STYLE_HOOK_EVENT.stopFailure, status: "error" as AgentStatus },
   ] as ReadonlyArray<KimiHookEntry>,
 
-  /** Kimi CLI's file-editing tools and the input field naming the file. */
-  editTools: { WriteFile: "path", StrReplaceFile: "path" } as Readonly<Record<string, string>>,
-
   isCognoCommand(command: string): boolean {
     return command.includes(CODING_AGENT_STATUS_ACTION) && command.includes("COGNO_PORT");
   },

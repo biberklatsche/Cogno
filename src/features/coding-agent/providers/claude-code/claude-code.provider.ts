@@ -14,15 +14,12 @@ import {
   withCurrentCognoHooks,
   withoutCognoHooksOnEveryEvent,
 } from "../_shared/hook-groups";
-import { editedFilesByTool } from "../_shared/hook-payload";
 import {
   CLAUDE_CODE_CONFIG,
   ClaudeHookEntry,
   ClaudeHookGroup,
   ClaudeSettings,
 } from "./claude-code.config";
-
-const readEditedFiles = editedFilesByTool(CLAUDE_CODE_CONFIG.editTools);
 
 @Injectable({ providedIn: "root" })
 export class ClaudeCodeProvider implements ICodingAgentProvider {
@@ -32,7 +29,7 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
   constructor(private readonly configFile: ConfigFileService) {}
 
   interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretClaudeStyleHook(hookEvent, status, payload, readEditedFiles);
+    return interpretClaudeStyleHook(hookEvent, status, payload);
   }
 
   async isAgentInstalled(): Promise<boolean> {

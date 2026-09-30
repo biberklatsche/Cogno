@@ -17,7 +17,6 @@ function agent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
     providerName: "Claude Code",
     status: "working",
     statusSince: Date.now(),
-    editedFiles: [],
     subagentCount: 0,
     ...overrides,
   };

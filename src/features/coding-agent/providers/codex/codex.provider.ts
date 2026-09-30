@@ -14,23 +14,7 @@ import {
   withCurrentCognoHooks,
   withoutCognoHooksOnEveryEvent,
 } from "../_shared/hook-groups";
-import { PayloadFields, stringField } from "../_shared/hook-payload";
 import { CODEX_CONFIG, CodexHookEntry, CodexHookGroup, CodexHooksFile } from "./codex.config";
-
-/** Lines of an apply_patch patch that name a file it adds, updates, deletes or moves to. */
-const PATCH_FILE_LINE = /^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+)$/gm;
-
-/** Codex edits files only through apply_patch, whose `command` is the patch itself. */
-export function patchedFiles(fields: PayloadFields | undefined): ReadonlyArray<string> {
-  if (stringField(fields, "tool_name") !== "apply_patch") return [];
-  const input = fields?.["tool_input"];
-  const patch =
-    input && typeof input === "object" ? (input as PayloadFields)["command"] : undefined;
-  if (typeof patch !== "string") return [];
-  return [...patch.matchAll(PATCH_FILE_LINE)].flatMap((match) =>
-    match[1] ? [match[1].trim()] : [],
-  );
-}
 
 @Injectable({ providedIn: "root" })
 export class CodexProvider implements ICodingAgentProvider {
@@ -40,7 +24,7 @@ export class CodexProvider implements ICodingAgentProvider {
   constructor(private readonly configFile: ConfigFileService) {}
 
   interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretClaudeStyleHook(hookEvent, status, payload, patchedFiles);
+    return interpretClaudeStyleHook(hookEvent, status, payload);
   }
 
   async isAgentInstalled(): Promise<boolean> {

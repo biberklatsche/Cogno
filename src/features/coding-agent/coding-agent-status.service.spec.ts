@@ -17,7 +17,6 @@ import type { CodingAgentProviderRegistry } from "./coding-agent-provider-regist
 import { CodingAgentStatusService, resolveShownStatus } from "./coding-agent-status.service";
 import { interpretClaudeStyleHook } from "./providers/_shared/claude-style-hook.interpreter";
 import { CODING_AGENT_STATUS_ACTION } from "./providers/_shared/hook-command.builder";
-import { editedFilesByTool } from "./providers/_shared/hook-payload";
 
 const GRACE_MS = 2000;
 
@@ -102,20 +101,13 @@ describe("CodingAgentStatusService", () => {
             id: "claude-code",
             name: "Claude Code",
             interpretHook: (hookEvent: string, status: AgentStatus, payload: unknown) =>
-              interpretClaudeStyleHook(
-                hookEvent,
-                status,
-                payload,
-                editedFilesByTool({ Edit: "file_path", Write: "file_path" }),
-              ),
+              interpretClaudeStyleHook(hookEvent, status, payload),
           },
         ],
       } as unknown as CodingAgentProviderRegistry,
       {
         isTerminalActive: () => true,
         getCwd: () => "/repo",
-        resolvePath: (_terminalId: string, path: string) =>
-          path.startsWith("/") ? path : `/repo/${path}`,
         activity$: activity,
         terminated$: terminated,
         cwdChanges$: new Subject(),
@@ -379,23 +371,7 @@ describe("CodingAgentStatusService", () => {
     });
   });
 
-  describe("model and edited files", () => {
-    it("collects the files a task changed, once each, and starts over with a new prompt", () => {
-      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
-      ping("working", "PostToolUse", { tool_name: "Write", tool_input: { file_path: "a.md" } });
-      ping("working", "PostToolUse", { tool_name: "Edit", tool_input: { file_path: "b.md" } });
-      ping("working", "PostToolUse", { tool_name: "Edit", tool_input: { file_path: "a.md" } });
-      ping("working", "PostToolUse", {
-        tool_name: "Edit",
-        tool_input: { file_path: "/repo/a.md" },
-      });
-      ping("working", "PostToolUse", { tool_name: "Read", tool_input: { file_path: "c.md" } });
-      expect(agent()?.editedFiles).toEqual(["/repo/a.md", "/repo/b.md"]);
-
-      ping("working", "UserPromptSubmit", { prompt: "Now a haiku" });
-      expect(agent()?.editedFiles).toEqual([]);
-    });
-
+  describe("model", () => {
     it("keeps the model across tasks and follows a model switch", () => {
       ping("ready", "SessionStart", { source: "startup", model: "claude-opus-5" });
       ping("working", "UserPromptSubmit", { prompt: "Write a poem" });

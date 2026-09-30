@@ -30,24 +30,6 @@ export function stringField(fields: PayloadFields | undefined, key: string): str
   return typeof value === "string" && value ? value : undefined;
 }
 
-/** Reads the files a finished tool call changed; each provider knows its own edit tools. */
-export type EditedFilesReader = (fields: PayloadFields | undefined) => ReadonlyArray<string>;
-
-/**
- * An EditedFilesReader for tools that name the file they change in one input field,
- * given as tool name → field.
- */
-export function editedFilesByTool(
-  pathFieldByTool: Readonly<Record<string, string>>,
-): EditedFilesReader {
-  return (fields) => {
-    const toolName = stringField(fields, "tool_name");
-    const pathField = toolName ? pathFieldByTool[toolName] : undefined;
-    const path = pathField ? stringField(toolInput(fields), pathField) : undefined;
-    return path ? [path] : [];
-  };
-}
-
 /** Activity while the agent compacts its context; `trigger` is "auto" when it did so on its own. */
 export function compactingActivity(trigger: unknown): string {
   return trigger === "auto" ? "Compacting context (auto)…" : "Compacting context…";
