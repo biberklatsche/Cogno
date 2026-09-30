@@ -448,6 +448,28 @@ describe("WorkspaceHostApplicationService", () => {
       expect(gridListService.terminalIdsForWorkspace("WS-3")).toEqual([]);
     });
 
+    it("reports a claim that fails instead of taking it for another window's", async () => {
+      const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      });
+
+      appWindow.claimWorkspace.mockRejectedValue(new Error("command not found"));
+      await service.restoreWorkspaceById("WS-3");
+
+      expect(service.getWorkspaceById("WS-3")?.isOpen).toBe(false);
+      expect(report).toHaveBeenCalledWith(
+        expect.objectContaining({
+          notify: true,
+          context: { operation: "claimWorkspace", workspaceId: "WS-3" },
+        }),
+      );
+    });
+
     it("records which workspaces are open and which is active as that changes", async () => {
       const saveOpenState = workspaceRepository.saveOpenState as ReturnType<typeof vi.fn>;
       (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(

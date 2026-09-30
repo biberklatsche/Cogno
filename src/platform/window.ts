@@ -20,15 +20,12 @@ export class AppWindow {
 
   /**
    * Claims a workspace for this window. False when another window holds it; the
-   * backend brings that window to the front instead.
+   * backend brings that window to the front instead. Anything else that goes
+   * wrong is thrown, not taken for "open elsewhere".
    */
   async claimWorkspace(workspaceId: string): Promise<boolean> {
-    try {
-      await invoke("window_claim_workspace", { workspaceId });
-      return true;
-    } catch {
-      return false;
-    }
+    const holder = await invoke<string | null>("window_claim_workspace", { workspaceId });
+    return holder === null;
   }
 
   releaseWorkspace(workspaceId: string): Promise<void> {

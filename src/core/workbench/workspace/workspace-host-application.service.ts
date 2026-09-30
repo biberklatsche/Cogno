@@ -226,11 +226,25 @@ export class WorkspaceHostApplicationService {
     this.discardSessionMarker.clear();
   }
 
-  /** A named workspace lives in one window at a time; the default one is per window. */
+  /**
+   * A named workspace lives in one window at a time; the default one is per
+   * window. A claim that fails stays closed and is reported - it is not taken
+   * for "open in another window".
+   */
   private async claimWorkspace(workspaceId: string): Promise<boolean> {
-    return (
-      workspaceId === DEFAULT_WORKSPACE_ID || (await this.appWindow.claimWorkspace(workspaceId))
-    );
+    if (workspaceId === DEFAULT_WORKSPACE_ID) return true;
+    try {
+      return await this.appWindow.claimWorkspace(workspaceId);
+    } catch (error) {
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        notify: true,
+        source: "WorkspaceHost",
+        context: { operation: "claimWorkspace", workspaceId },
+      });
+      return false;
+    }
   }
 
   private async releaseWorkspace(workspaceId: string): Promise<void> {
