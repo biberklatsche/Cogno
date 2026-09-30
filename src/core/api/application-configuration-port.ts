@@ -2,12 +2,7 @@ import { Observable } from "rxjs";
 
 export type ApplicationConfigurationContract = Readonly<Record<string, unknown>>;
 
-export interface ApplicationConfigurationPortContract {
-  readonly configuration$: Observable<ApplicationConfigurationContract>;
-  getConfiguration(): ApplicationConfigurationContract | undefined;
-}
-
-export abstract class ApplicationConfigurationPort implements ApplicationConfigurationPortContract {
+export abstract class ApplicationConfigurationPort {
   abstract readonly configuration$: Observable<ApplicationConfigurationContract>;
   abstract getConfiguration(): ApplicationConfigurationContract | undefined;
 }

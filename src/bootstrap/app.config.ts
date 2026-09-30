@@ -128,8 +128,6 @@ export const appConfig: ApplicationConfig = {
         injector.get(NativeMenuService);
         injector.get(WindowService);
         injector.get(SideMenuStatePersistenceService);
-        injector.get(ActionCatalogAdapterService);
-        injector.get(ActionKeybindingPortAdapterService);
         injector.get(TerminalSearchApiService);
         injector.get(WorkspaceShortcutActionService);
 

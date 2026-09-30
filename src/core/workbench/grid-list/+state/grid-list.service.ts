@@ -322,10 +322,6 @@ export class GridListService implements PaneLayoutLookup {
     this.setActiveWorkspaceGridList(gridList);
   }
 
-  restoreGrids(gridConfigList: GridConfig[]) {
-    this.restoreGridsForWorkspace(gridConfigList, this.getRequiredActiveWorkspaceIdentifier());
-  }
-
   restoreGridsForWorkspace(gridConfigList: GridConfig[], workspaceIdentifier: string): void {
     const state = this.stateByWorkspaceIdentifier.get(workspaceIdentifier);
     this.destroyWorkspaceGridList(state?.grids);

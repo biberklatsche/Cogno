@@ -154,13 +154,7 @@ export class TabListComponent implements OnDestroy {
     if (!obs) {
       obs = this.busyIndicatorService
         .forTab$(tabId)
-        .pipe(
-          map(
-            (regs) =>
-              new Set(regs.filter((r) => r.target.kind === "terminal").map((r) => r.target.id))
-                .size,
-          ),
-        );
+        .pipe(map((regs) => new Set(regs.map((r) => r.terminalId)).size));
       this.tabAnimationCountCache.set(tabId, obs);
     }
     return obs;

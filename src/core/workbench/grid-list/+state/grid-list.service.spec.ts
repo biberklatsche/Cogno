@@ -8,6 +8,7 @@ import type {
 import type { TerminalConfig } from "@cogno/core/workbench/grid-layout";
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
+import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
@@ -472,7 +473,7 @@ describe("GridListService", () => {
       expect((configs[0].pane as TerminalConfig).title).toBeUndefined();
 
       service.removeGrid(tabId);
-      service.restoreGrids(configs);
+      service.restoreGridsForWorkspace(configs, defaultWorkspaceIdContract);
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -494,7 +495,7 @@ describe("GridListService", () => {
 
       service.removeGrid(tabId);
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-restored");
-      service.restoreGrids(configs);
+      service.restoreGridsForWorkspace(configs, defaultWorkspaceIdContract);
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));

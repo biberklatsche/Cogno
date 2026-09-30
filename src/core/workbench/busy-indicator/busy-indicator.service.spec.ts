@@ -190,7 +190,7 @@ describe("BusyIndicatorService", () => {
       type: "BusyIndicatorRegister",
       payload: {
         registrationId,
-        target: { kind: "terminal", id: terminalId },
+        terminalId,
         keyframes,
         priority,
       },

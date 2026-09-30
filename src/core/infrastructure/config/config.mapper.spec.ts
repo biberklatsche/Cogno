@@ -143,13 +143,6 @@ describe("ConfigMapper", () => {
     expect(DEFAULTS.terminal?.history?.max_entries).toBe("unlimited");
   });
 
-  it("single-arg overload still works (no defaults)", () => {
-    const proper = `terminal.webgl=false\nscrollbar.scrollback_lines=9999\n`;
-    const settings = ConfigMapper.fromStringToConfig("linux", proper, extensions);
-    expect(settings.terminal?.webgl).toBe(false);
-    expect(settings.scrollbar?.scrollback_lines).toBe(9999);
-  });
-
   it("keybind array is concatenated with defaults (defaults first, then user values)", () => {
     const text = `
       keybind=Ctrl+5=custom1

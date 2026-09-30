@@ -1,7 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { BusyIndicatorTarget } from "@cogno/core/workbench/bus/busy-indicator/events";
 import { TabId } from "@cogno/core/workbench/grid-layout";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalId } from "@cogno/shared/domain";
@@ -9,7 +8,7 @@ import { BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable }
 
 export type BusyIndicatorRegistration = {
   registrationId: string;
-  target: BusyIndicatorTarget;
+  terminalId: string;
   keyframes: number[][][];
   priority: number;
 };
@@ -52,7 +51,7 @@ export class BusyIndicatorService {
         if (!terminalId) return;
         let changed = false;
         for (const [id, reg] of this._map) {
-          if (reg.target.kind === "terminal" && reg.target.id === terminalId) {
+          if (reg.terminalId === terminalId) {
             this._map.delete(id);
             changed = true;
           }
@@ -67,7 +66,7 @@ export class BusyIndicatorService {
 
   forTerminal$(terminalId: TerminalId): Observable<BusyIndicatorRegistration[]> {
     return this._registrations$.pipe(
-      map((regs) => regs.filter((r) => r.target.kind === "terminal" && r.target.id === terminalId)),
+      map((regs) => regs.filter((r) => r.terminalId === terminalId)),
       distinctUntilChanged(sameRegistrations),
     );
   }
@@ -76,19 +75,9 @@ export class BusyIndicatorService {
   forTab$(tabId: TabId): Observable<BusyIndicatorRegistration[]> {
     return combineLatest([this._registrations$, this.gridListService.grids$]).pipe(
       map(([regs]) =>
-        regs.filter((r) => {
-          if (r.target.kind === "tab") return r.target.id === tabId;
-          return this.gridListService.findTabIdByTerminalId(r.target.id) === tabId;
-        }),
+        regs.filter((r) => this.gridListService.findTabIdByTerminalId(r.terminalId) === tabId),
       ),
       distinctUntilChanged(sameRegistrations),
-    );
-  }
-
-  hasAnimation$(tabId: TabId): Observable<boolean> {
-    return this.forTab$(tabId).pipe(
-      map((regs) => regs.length > 0),
-      distinctUntilChanged(),
     );
   }
 }
@@ -101,8 +90,7 @@ function sameRegistrations(
   return a.every(
     (r, i) =>
       r.registrationId === b[i].registrationId &&
-      r.target.kind === b[i].target.kind &&
-      r.target.id === b[i].target.id &&
+      r.terminalId === b[i].terminalId &&
       r.priority === b[i].priority &&
       r.keyframes === b[i].keyframes,
   );
