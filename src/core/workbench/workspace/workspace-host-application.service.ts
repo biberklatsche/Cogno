@@ -1,6 +1,7 @@
 import { computed, DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
@@ -290,8 +291,8 @@ export class WorkspaceHostApplicationService {
   }
 
   /**
-   * Record every live session's running command as aborted before exit (step
-   * 27b-2). Separate from persistOpenWorkspaces: the command log persists
+   * Record every live session's running command as aborted before exit.
+   * Separate from persistOpenWorkspaces: the command log persists
    * regardless of the session-restore setting.
    */
   async recordAbortedCommands(): Promise<void> {
@@ -383,6 +384,11 @@ export class WorkspaceHostApplicationService {
    * default workspace. No-op when restore is off. Layout and snapshots are two
    * atomic batches; each collects its data before writing.
    */
+  /**
+   * Saves a workspace for session restore. A failure never propagates: the
+   * workspace is marked (`autoSaveFailed`, shown on its tile) and the error is
+   * reported, so switching workspaces or quitting is never held up by it.
+   */
   async autoPersistWorkspace(workspaceId: string): Promise<void> {
     if (!this.isRestoreEnabled) {
       return;
@@ -407,7 +413,13 @@ export class WorkspaceHostApplicationService {
       await this.sessionPersistence.persistWorkspace(workspaceId);
     } catch (error) {
       this.patchWorkspace(workspaceId, { autoSaveFailed: true });
-      throw error;
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "WorkspaceAutosave",
+        context: { workspaceId },
+      });
+      return;
     }
     this.patchWorkspace(workspaceId, { autoSaveFailed: false });
   }

@@ -12,8 +12,8 @@ import { terminalSearchFeature } from "@cogno/features/terminal-search";
 
 /**
  * Every feature of the application. Adding one means adding it here. `as
- * const` keeps each entry's literal types so the action-name manifest (step
- * 26) can read them; `satisfies` still checks every entry is a feature.
+ * const` keeps each entry's literal types so the action-name manifest can
+ * read them; `satisfies` still checks every entry is a feature.
  */
 export const features = [
   featureSettingsFeature,

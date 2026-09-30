@@ -1,5 +1,5 @@
-// @generated seed by scripts (step K1); hand-edit going forward. The single
-// source of truth for default settings + non-core (feature) default keybinds.
+// Hand-edited. The single source of truth for default settings + non-core
+// (feature) default keybinds.
 // Values are raw config strings (ConfigMapper types/transforms them at load).
 
 export const defaultSettings = {

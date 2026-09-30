@@ -26,8 +26,8 @@ export class SessionPersistenceService {
 
   /**
    * Read the stored snapshots for these workspaces into the pending store so the
-   * session-host factory can replay each when it (re)creates the terminal (step
-   * 27f). An unreadable snapshot is skipped - that terminal starts without
+   * session-host factory can replay each when it (re)creates the terminal. An
+   * unreadable snapshot is skipped - that terminal starts without
    * scrollback. No-op when restore is off.
    */
   async loadPendingSnapshots(workspaceIds: ReadonlyArray<string>): Promise<void> {

@@ -89,7 +89,7 @@ export class WindowService {
     const budget = new Promise<void>((resolve) => setTimeout(resolve, SESSION_PERSIST_BUDGET_MS));
     const shutdownWork = Promise.all([
       this.workspaceHost.persistOpenWorkspaces(),
-      // A command still running now is being killed; record it as aborted (27b-2).
+      // A command still running now is being killed; record it as aborted.
       this.workspaceHost.recordAbortedCommands(),
     ]);
     await Promise.race([shutdownWork, budget]);
