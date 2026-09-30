@@ -772,8 +772,10 @@ pub fn pty_resize(
     }
 }
 
+/// Releasing a session can block (closing a ConPTY waits for its output pipe),
+/// so it runs on a blocking worker, never on the thread that drives the UI.
 #[tauri::command]
-pub fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result<(), String> {
+pub async fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result<(), String> {
     let removed = {
         let mut sessions = state.sessions.lock().unwrap();
         sessions.remove(&terminal_id)
@@ -781,8 +783,9 @@ pub fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result<(), S
     match removed {
         // Intentional kill: the frontend already dropped the pane, no exit event.
         Some(session) => {
-            release_session(session);
-            Ok(())
+            tauri::async_runtime::spawn_blocking(move || release_session(session))
+                .await
+                .map_err(|error| error.to_string())
         }
         None => Err(format!("Session not found: {}", terminal_id)),
     }
