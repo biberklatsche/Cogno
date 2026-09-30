@@ -57,6 +57,13 @@ describe("Pty", () => {
     return () => resolveSpawn();
   }
 
+  /** Starts a spawn and resolves once the transport has been asked for the shell. */
+  async function spawnInFlight(onData = noopListener): Promise<{ settled: Promise<void> }> {
+    const settled = pty.spawn(terminalId, shellConfig, dimensions, onData);
+    await vi.waitFor(() => expect(transport.spawn).toHaveBeenCalled());
+    return { settled };
+  }
+
   function chunk(seq: number, text: string) {
     return { seq, data: new TextEncoder().encode(text) };
   }
@@ -91,7 +98,7 @@ describe("Pty", () => {
   it("should buffer resize until spawn is finished", async () => {
     const resolveSpawn = holdNextSpawn();
 
-    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    const { settled: spawnPromise } = await spawnInFlight();
     pty.resize({ cols: 120, rows: 40 });
     expect(transport.resize).not.toHaveBeenCalled();
 
@@ -104,7 +111,7 @@ describe("Pty", () => {
   it("should discard invalid buffered resize dimensions", async () => {
     const resolveSpawn = holdNextSpawn();
 
-    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    const { settled: spawnPromise } = await spawnInFlight();
     pty.resize({ cols: null, rows: null } as any);
 
     resolveSpawn();
@@ -145,7 +152,7 @@ describe("Pty", () => {
     const listener = vi.fn();
     const resolveSpawn = holdNextSpawn();
 
-    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, listener);
+    const { settled: spawnPromise } = await spawnInFlight(listener);
     // Output arriving while the spawn is still pending reaches the listener.
     outputListener().onChunk(chunk(0, "hello"));
     expect(listener).toHaveBeenCalledWith(chunk(0, "hello"));
@@ -184,7 +191,7 @@ describe("Pty", () => {
   it("should kill the session that a spawn in flight produces after dispose", async () => {
     const resolveSpawn = holdNextSpawn();
 
-    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    const { settled: spawnPromise } = await spawnInFlight();
     pty.dispose();
     // No session exists yet, so nothing to kill at this point.
     expect(transport.kill).not.toHaveBeenCalled();
@@ -203,13 +210,70 @@ describe("Pty", () => {
     expect(spawnHandle().closeOutput).toHaveBeenCalled();
   });
 
-  it("should listen to exit", async () => {
+  /** The exit listener `Pty` passed to the n-th `transport.onExit`. */
+  function backendExit(index = 0): (exit: { exitCode: number }) => void {
+    return vi.mocked(transport.onExit).mock.calls[index][1];
+  }
+
+  it("listens for the exit before the shell is spawned", async () => {
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+
+    expect(transport.onExit).toHaveBeenCalledWith(terminalId, expect.any(Function));
+    expect(vi.mocked(transport.onExit).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(transport.spawn).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("tells a listener about an exit that happened before it subscribed", async () => {
+    const resolveSpawn = holdNextSpawn();
+    const { settled: spawnPromise } = await spawnInFlight();
+
+    backendExit()({ exitCode: 3 });
+    resolveSpawn();
+    await spawnPromise;
+    const listener = vi.fn();
+    pty.onExit(listener);
+
+    expect(listener).toHaveBeenCalledWith({ exitCode: 3 });
+  });
+
+  it("stops telling a listener once it is disposed", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     const listener = vi.fn();
-    const disposable = pty.onExit(listener);
+    pty.onExit(listener).dispose();
 
-    expect(transport.onExit).toHaveBeenCalledWith(terminalId, listener);
-    disposable.dispose();
+    backendExit()({ exitCode: 0 });
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it("drops the exit listener and spawns nothing when disposed while it registers", async () => {
+    const unlisten = vi.fn();
+    let registerListener!: () => void;
+    vi.mocked(transport.onExit).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          registerListener = () => resolve(unlisten);
+        }),
+    );
+    const spawnPromise = pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+
+    pty.dispose();
+    registerListener();
+    await spawnPromise;
+
+    expect(unlisten).toHaveBeenCalled();
+    expect(transport.spawn).not.toHaveBeenCalled();
+  });
+
+  it("releases the exit listener on dispose", async () => {
+    const unlisten = vi.fn();
+    vi.mocked(transport.onExit).mockResolvedValueOnce(unlisten);
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+
+    pty.dispose();
+
+    expect(unlisten).toHaveBeenCalled();
   });
 
   it("should kill pty on dispose", async () => {
