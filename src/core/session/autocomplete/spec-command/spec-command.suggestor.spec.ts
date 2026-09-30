@@ -4,7 +4,6 @@ import type { CommandRunnerContract } from "@cogno/core/api/command-runner-port"
 import type { FilesystemContract } from "@cogno/core/api/filesystem-port";
 import type { QueryContext } from "@cogno/core/session/autocomplete/suggestor.contracts";
 import { describe, expect, it, vi } from "vitest";
-import { CommandSpecRegistry } from "./spec/command-spec.registry";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
 import { NpmScriptsSpecProvider } from "./spec/providers/npm-scripts.spec-provider";
@@ -14,6 +13,7 @@ import type {
   SpecProviderBinding,
   SpecSuggestionProvider,
 } from "./spec/spec.types";
+import { CommandSpecRegistry } from "./spec/testing/command-spec.registry";
 import { createCommandSpecsFixture } from "./spec/testing/command-specs.fixture";
 import { SpecCommandSuggestor } from "./spec-command.suggestor";
 

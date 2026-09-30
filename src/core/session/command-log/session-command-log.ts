@@ -39,13 +39,12 @@ export class SessionCommandLog {
   private readonly health = new CommandLogHealthTracker();
   private readonly queue: WriteAction[] = [];
   private draining = false;
-  private disabled = false;
   private reportedUnhealthy = false;
   private reportedReadFailure = false;
   private groupId?: string;
   private recentExecution?: { command: string; timestamp: number };
 
-  constructor(private readonly databaseAccess?: DatabaseAccess) {}
+  constructor(private readonly databaseAccess: DatabaseAccess) {}
 
   get sessionGroupId(): string | undefined {
     return this.groupId;
@@ -58,15 +57,6 @@ export class SessionCommandLog {
     groupId?: string,
   ): Promise<CommandLogRepository | null> {
     this.groupId = groupId;
-    if (!this.databaseAccess) {
-      this.disabled = true;
-      ErrorReporter.reportWarning({
-        message: "No database access available; command history is disabled for this terminal.",
-        source: "SessionCommandLog",
-      });
-      return Promise.resolve(null);
-    }
-
     return CommandLogRepository.createForContext(this.databaseAccess, shellContext, adapter)
       .then((repository) => {
         this.repository = repository;
@@ -89,8 +79,6 @@ export class SessionCommandLog {
    * and a full queue loses its oldest entry rather than the session's speed.
    */
   write(action: WriteAction): void {
-    if (this.disabled) return;
-
     if (this.queue.length >= DEFAULT_MAX_PENDING_WRITES) {
       // The newest command is the most valuable one to keep.
       this.queue.shift();
@@ -107,7 +95,7 @@ export class SessionCommandLog {
    */
   async writeAndAwait(action: WriteAction): Promise<void> {
     const repository = this.repository;
-    if (this.disabled || !repository) return;
+    if (!repository) return;
     try {
       await action(repository);
     } catch (error) {

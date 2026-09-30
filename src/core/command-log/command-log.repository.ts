@@ -133,15 +133,6 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     ]);
   }
 
-  async deleteWorkingDirectory(cwdRaw: string): Promise<void> {
-    const cwd = safeNormalize(this.adapter, cwdRaw);
-    if (!cwd) return;
-    await this.database.execute(
-      `DELETE FROM dir_stat WHERE context_id = ? AND path_id = ${PATH_ID}`,
-      [this.contextId, cwd],
-    );
-  }
-
   async upsertCommandExecution(
     commandRaw: string,
     cwdRaw: string,

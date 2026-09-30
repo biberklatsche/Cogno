@@ -1,6 +1,7 @@
 import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
 import type { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history-reader";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import type { DatabaseAccess } from "@cogno/platform";
 import type { Paths } from "@cogno/platform/path";
 import type { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
@@ -57,6 +58,11 @@ function createRepositoryDouble(): CommandLogRepositoryDouble {
 
 type Subject = { recorder: CommandRecorder; commandLog: SessionCommandLog };
 
+/** Only the history import reads these, and it is off unless a test turns it on. */
+const unusedPaths = {} as Paths;
+const unusedHistoryReader = {} as ShellHistoryReader;
+const defaultConfig = { config: {} } as ConfigService;
+
 async function createService(
   repositoryDouble: CommandLogRepositoryDouble,
   configService?: ConfigService,
@@ -66,7 +72,12 @@ async function createService(
   );
 
   const commandLog = new SessionCommandLog(databaseAccess);
-  const recorder = new CommandRecorder(commandLog, undefined, undefined, configService);
+  const recorder = new CommandRecorder(
+    commandLog,
+    unusedPaths,
+    unusedHistoryReader,
+    configService ?? defaultConfig,
+  );
   recorder.initialize(shellContext, pathAdapter);
   await flushActions();
   return { recorder, commandLog };
@@ -399,14 +410,17 @@ describe("CommandRecorder", () => {
     );
   });
 
-  it("stays silent and keeps the session going when there is no database", async () => {
-    const repositoryDouble = createRepositoryDouble();
-    const createForContext = vi
-      .spyOn(CommandLogRepository, "createForContext")
-      .mockResolvedValue(repositoryDouble as unknown as CommandLogRepository);
+  it("keeps the session going when the database cannot be opened", async () => {
+    vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
+    vi.spyOn(CommandLogRepository, "createForContext").mockRejectedValue(new Error("no database"));
 
-    const commandLog = new SessionCommandLog(undefined);
-    const recorder = new CommandRecorder(commandLog);
+    const commandLog = new SessionCommandLog(databaseAccess);
+    const recorder = new CommandRecorder(
+      commandLog,
+      unusedPaths,
+      unusedHistoryReader,
+      defaultConfig,
+    );
     recorder.initialize(shellContext, pathAdapter);
     await flushActions();
 
@@ -414,9 +428,6 @@ describe("CommandRecorder", () => {
     recorder.onCommandExecuted({ command: "ls", directory: "/tmp", returnCode: 0 });
     await flushActions();
 
-    expect(createForContext).not.toHaveBeenCalled();
-    expect(repositoryDouble.upsertWorkingDirectory).not.toHaveBeenCalled();
-    expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
     await expect(commandLog.getRecentCommands({ scope: "global" })).resolves.toEqual([]);
   });
 

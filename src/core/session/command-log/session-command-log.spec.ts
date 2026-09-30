@@ -137,8 +137,10 @@ describe("SessionCommandLog", () => {
     expect(report).toHaveBeenCalledTimes(2);
   });
 
-  it("answers queries empty while no repository is open", async () => {
-    const log = new SessionCommandLog(undefined);
+  it("answers queries empty when the database cannot be opened", async () => {
+    vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
+    vi.spyOn(CommandLogRepository, "createForContext").mockRejectedValue(new Error("no database"));
+    const log = new SessionCommandLog(databaseAccess);
     await log.open(shellContext, pathAdapter);
 
     await expect(log.getRecentCommands({ scope: "global" })).resolves.toEqual([]);

@@ -146,11 +146,15 @@ describe("SessionHost snapshot/restore", () => {
   });
 
   it("drops an earlier restore boundary line so they don't accumulate", () => {
-    bufferLines = [makeLine("first"), makeLine("---- restored session ----"), makeLine("second")];
+    bufferLines = [
+      makeLine("first"),
+      makeLine("COGNO:RESTORE-BOUNDARY", { invisible: true }),
+      makeLine("second"),
+    ];
 
     const scrollback = host.snapshot(500).scrollback ?? "";
 
-    expect(scrollback).not.toContain("restored session");
+    expect(scrollback).not.toContain("RESTORE-BOUNDARY");
     expect(scrollback).toContain("first");
     expect(scrollback).toContain("second");
   });

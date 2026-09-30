@@ -46,9 +46,9 @@ export class CommandRecorder {
 
   constructor(
     private readonly commandLog: SessionCommandLog,
-    private readonly paths?: Paths,
-    private readonly historyReader?: ShellHistoryReader,
-    private readonly configService?: ConfigService,
+    private readonly paths: Paths,
+    private readonly historyReader: ShellHistoryReader,
+    private readonly configService: ConfigService,
   ) {}
 
   initialize(
@@ -59,7 +59,7 @@ export class CommandRecorder {
     void this.commandLog.open(shellContext, adapter, groupId).then(async (repository) => {
       if (!repository) return;
       if (
-        !this.configService?.config.terminal?.history?.import_shell_history ||
+        !this.configService.config.terminal?.history?.import_shell_history ||
         CommandRecorder.shellHistoryImportStarted
       ) {
         return;
@@ -111,7 +111,6 @@ export class CommandRecorder {
     shellContext: ResolvedShellContextContract,
   ): Promise<void> {
     try {
-      if (!this.paths || !this.historyReader) return;
       const homeDir = await this.paths.homeDir();
       const entries = await this.historyReader.read(
         shellContext.shellType,
@@ -170,7 +169,7 @@ export class CommandRecorder {
     if (executedCommand === undefined) return false;
     if (executedCommand.command === undefined) return false;
     if (
-      this.configService?.config.terminal?.history?.ignore_commands_with_leading_space &&
+      this.configService.config.terminal?.history?.ignore_commands_with_leading_space &&
       executedCommand.command.startsWith(" ")
     ) {
       return false;
@@ -205,15 +204,12 @@ export class CommandRecorder {
    */
   /** How many commands the history keeps; `undefined` when it is unlimited. */
   private historyLimit(): number | undefined {
-    const limit = resolveLimit(
-      this.configService?.config.terminal?.history?.max_entries,
-      UNLIMITED,
-    );
+    const limit = resolveLimit(this.configService.config.terminal?.history?.max_entries, UNLIMITED);
     return Number.isFinite(limit) ? limit : undefined;
   }
 
   private isReturnCodeAllowed(token: string, returnCode: number | undefined): boolean {
-    const history = this.configService?.config.terminal?.history;
+    const history = this.configService.config.terminal?.history;
     const allowed =
       history?.allowed_return_codes_by_command?.[token] ?? history?.allowed_return_codes ?? [];
     if (allowed.length === 0) return true;

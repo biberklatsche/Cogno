@@ -74,8 +74,6 @@ const MARKER_ID_PATTERN = /\^\^#(\d+)/g;
  * capture so boundaries never accumulate.
  */
 const RESTORE_BOUNDARY_SENTINEL = "COGNO:RESTORE-BOUNDARY";
-/** The old visible boundary label; still stripped so pre-existing snapshots clean up. */
-const LEGACY_RESTORE_SEPARATOR_LABEL = "---- restored session ----";
 // Built from a char code so the ESC control char isn't a literal in a regex.
 const SGR_PATTERN = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g");
 const SGR_RESET = `${String.fromCharCode(27)}[0m`;
@@ -637,10 +635,7 @@ export class SessionHost {
     // them.
     const withoutBoundaries = serialized
       .split("\r\n")
-      .filter((line) => {
-        const text = plainText(line);
-        return text !== RESTORE_BOUNDARY_SENTINEL && text !== LEGACY_RESTORE_SEPARATOR_LABEL;
-      })
+      .filter((line) => plainText(line) !== RESTORE_BOUNDARY_SENTINEL)
       .join("\r\n");
     const { scrollback, idlePromptId } = cutIdlePrompt(withoutBoundaries);
     if (plainText(scrollback) === "") {

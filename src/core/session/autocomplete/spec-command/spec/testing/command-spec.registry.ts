@@ -1,6 +1,7 @@
-import { CommandShellConstraints, CommandSpecSource } from "./command-spec.source";
-import { CommandSpec } from "./spec.types";
+import { CommandShellConstraints, CommandSpecSource } from "../command-spec.source";
+import { CommandSpec } from "../spec.types";
 
+/** An in-memory spec source for tests. */
 export class CommandSpecRegistry implements CommandSpecSource {
   private readonly _specs = new Map<string, CommandSpec>();
 

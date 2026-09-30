@@ -46,7 +46,6 @@ export type CommandExecutionDetails = {
 /** Turns what the shell reported into rows. Never reads. */
 export interface CommandLogWriter {
   upsertWorkingDirectory(cwdRaw: string): Promise<void>;
-  deleteWorkingDirectory(cwdRaw: string): Promise<void>;
   upsertCommandExecution(
     commandRaw: string,
     cwdRaw: string,
