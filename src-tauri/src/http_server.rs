@@ -132,19 +132,16 @@ fn is_authorized(headers: &axum::http::HeaderMap, token: &str, port: u16) -> boo
     token_matches && host_is_loopback
 }
 
-fn find_port(start: u16, auto_next: bool) -> Option<u16> {
-    if TcpListener::bind(("127.0.0.1", start)).is_ok() {
-        return Some(start);
-    }
-    if !auto_next {
-        return None;
-    }
-    for port in (start + 1)..=start.saturating_add(99) {
-        if TcpListener::bind(("127.0.0.1", port)).is_ok() {
-            return Some(port);
-        }
-    }
-    None
+/// Binds the first free port from `start` on - up to 99 above it with
+/// `auto_next`. The listener is kept: the port handed to terminals is the one
+/// that is served, with no gap in which another process could take it.
+fn bind_port(start: u16, auto_next: bool) -> Option<TcpListener> {
+    let last = if auto_next {
+        start.saturating_add(99)
+    } else {
+        start
+    };
+    (start..=last).find_map(|port| TcpListener::bind(("127.0.0.1", port)).ok())
 }
 
 /// Called by Angular after the config has been validated.
@@ -166,8 +163,10 @@ pub fn start_http_server(
         return Ok(state.port());
     }
 
-    let actual_port = find_port(port, auto_next_port)
+    let bound = bind_port(port, auto_next_port)
         .ok_or_else(|| format!("No available port found starting from {}", port))?;
+    let actual_port = bound.local_addr().map_err(|e| e.to_string())?.port();
+    bound.set_nonblocking(true).map_err(|e| e.to_string())?;
 
     state.set_port(actual_port);
 
@@ -178,15 +177,13 @@ pub fn start_http_server(
         use axum::routing::post;
         use axum::Router;
 
-        let addr = std::net::SocketAddr::from(([127, 0, 0, 1], actual_port));
-        let listener = match tokio::net::TcpListener::bind(addr).await {
+        let listener = match tokio::net::TcpListener::from_std(bound) {
             Ok(l) => l,
             Err(e) => {
-                // Port was taken between find_port() check and actual bind (TOCTOU).
                 // Reset state so COGNO_PORT is not set for new terminals and Angular
                 // can retry if needed.
                 app.state::<HttpServerState>().mark_failed();
-                log::error!(target: "http_server", "Failed to bind HTTP server on port {}: {}", actual_port, e);
+                log::error!(target: "http_server", "Failed to serve on port {}: {}", actual_port, e);
                 return;
             }
         };
@@ -276,6 +273,33 @@ pub fn start_http_server(
 mod tests {
     use super::*;
     use axum::http::{header::HOST, HeaderMap, HeaderValue};
+
+    #[test]
+    fn binds_the_next_free_port_and_keeps_it() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let start = taken.local_addr().unwrap().port();
+
+        let bound = bind_port(start, true).expect("a free port above the taken one");
+        let port = bound.local_addr().unwrap().port();
+
+        assert_ne!(port, start);
+        // Still held: nobody else can take it before the server uses it.
+        assert!(TcpListener::bind(("127.0.0.1", port)).is_err());
+    }
+
+    #[test]
+    fn stays_on_the_configured_port_without_auto_next() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let start = taken.local_addr().unwrap().port();
+
+        assert!(bind_port(start, false).is_none());
+    }
+
+    #[test]
+    fn the_last_port_does_not_overflow() {
+        // Whether 65535 is free or not, this must not panic.
+        let _ = bind_port(u16::MAX, true);
+    }
 
     fn headers(token: Option<&str>, host: &str) -> HeaderMap {
         let mut headers = HeaderMap::new();
