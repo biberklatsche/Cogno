@@ -59,6 +59,24 @@ export class ConfigFileService {
     });
   }
 
+  async readText(path: string): Promise<string | undefined> {
+    return this.fs.readText(path).catch((err) => {
+      throw new ConfigFileError(`Cannot read ${path}`, path, err);
+    });
+  }
+
+  async writeText(path: string, content: string): Promise<void> {
+    await this.fs.writeText(path, content).catch((err) => {
+      throw new ConfigFileError(`Cannot write ${path}`, path, err);
+    });
+  }
+
+  async remove(path: string): Promise<void> {
+    await this.fs.remove(path).catch((err) => {
+      throw new ConfigFileError(`Cannot remove ${path}`, path, err);
+    });
+  }
+
   exists(path: string): Promise<boolean> {
     return this.fs.exists(path);
   }

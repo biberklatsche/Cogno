@@ -25,6 +25,11 @@ export class SimpleFileAccess {
     return this.fs.mkdir(path, options);
   }
 
+  /** Removes one file; a missing file is not an error. */
+  async remove(path: string): Promise<void> {
+    if (await this.fs.exists(path)) await this.fs.remove(path);
+  }
+
   homeDir(): Promise<string> {
     return this.paths.homeDir();
   }
