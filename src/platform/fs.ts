@@ -6,6 +6,7 @@ import {
   mkdir as tauriMkdir,
   readDir as tauriReadDir,
   readTextFile as tauriReadTextFile,
+  remove as tauriRemove,
   watch as tauriWatch,
   writeTextFile as tauriWriteTextFile,
   WatchEvent,
@@ -51,6 +52,10 @@ export class Fs {
 
   exists(path: string): Promise<boolean> {
     return tauriExists(path);
+  }
+
+  remove(path: string): Promise<void> {
+    return tauriRemove(path);
   }
 
   convertFileSrc(path: string): string {

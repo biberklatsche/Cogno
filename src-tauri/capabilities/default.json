@@ -16,6 +16,7 @@
     "fs:allow-write-text-file",
     "fs:allow-read-text-file",
     "fs:allow-exists",
+    "fs:allow-remove",
     "log:default",
     {
       "identifier": "fs:scope",
@@ -59,7 +60,9 @@
         { "path": "$HOME/.gemini" },
         { "path": "$HOME/.gemini/**" },
         { "path": "$HOME/.kimi" },
-        { "path": "$HOME/.kimi/**" }
+        { "path": "$HOME/.kimi/**" },
+        { "path": "$HOME/.config/opencode" },
+        { "path": "$HOME/.config/opencode/**" }
       ]
     },
     "os:default",

@@ -3,8 +3,10 @@ import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { AntigravityProvider } from "./providers/antigravity/antigravity.provider";
 import { ClaudeCodeProvider } from "./providers/claude-code/claude-code.provider";
 import { CodexProvider } from "./providers/codex/codex.provider";
+import { CursorProvider } from "./providers/cursor/cursor.provider";
 import { GeminiProvider } from "./providers/gemini/gemini.provider";
 import { KimiProvider } from "./providers/kimi/kimi.provider";
+import { OpenCodeProvider } from "./providers/opencode/opencode.provider";
 
 @Injectable({ providedIn: "root" })
 export class CodingAgentProviderRegistry {
@@ -16,7 +18,9 @@ export class CodingAgentProviderRegistry {
     gemini: GeminiProvider,
     kimi: KimiProvider,
     antigravity: AntigravityProvider,
+    cursor: CursorProvider,
+    opencode: OpenCodeProvider,
   ) {
-    this.providers = [claudeCode, codex, gemini, kimi, antigravity];
+    this.providers = [claudeCode, codex, gemini, kimi, antigravity, cursor, opencode];
   }
 }
