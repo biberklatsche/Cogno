@@ -42,13 +42,34 @@ describe("CursorProvider", () => {
   });
 
   it("installs one Cogno hook per event next to the hooks that were there", async () => {
+    expect(await provider.hookState()).toBe("missing");
+
     await provider.installHook("Bash");
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     expect(file.version).toBe(1);
     expect(cognoHooksIn(file)).toHaveLength(CURSOR_CONFIG.hookEvents.length);
     expect(file.hooks?.["stop"]?.[0]).toEqual(foreignHook);
-    expect(await provider.isHookInstalled()).toBe(true);
+    expect(await provider.hookState()).toBe("current");
+  });
+
+  it("reads a Cogno hook in an older form as outdated", async () => {
+    await provider.installHook("Bash");
+    const hook = (files.get(HOOKS_FILE) as CursorHooksFile).hooks?.["stop"]?.[1];
+    if (hook) hook.command = hook.command.replace('"ready"', '"working"');
+
+    expect(await provider.hookState()).toBe("outdated");
+  });
+
+  it("drops a Cogno hook on an event this version no longer hooks", async () => {
+    await provider.installHook("Bash");
+    const file = files.get(HOOKS_FILE) as CursorHooksFile;
+    const staleCommand = file.hooks?.["stop"]?.[1]?.command ?? "";
+    file.hooks = { ...file.hooks, subagentStop: [{ command: staleCommand }] };
+
+    await provider.installHook("Bash");
+
+    expect((files.get(HOOKS_FILE) as CursorHooksFile).hooks?.["subagentStop"]).toBeUndefined();
   });
 
   it("creates a versioned hooks file when there is none", async () => {
@@ -74,7 +95,12 @@ describe("CursorProvider", () => {
     await provider.installHook("Bash");
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
-    for (const event of ["preToolUse", "beforeShellExecution", "beforeMCPExecution"]) {
+    for (const event of [
+      "preToolUse",
+      "beforeShellExecution",
+      "beforeMCPExecution",
+      "subagentStart",
+    ]) {
       expect(file.hooks?.[event]).toBeUndefined();
     }
   });
@@ -88,7 +114,7 @@ describe("CursorProvider", () => {
     expect(file.version).toBe(1);
     expect(cognoHooksIn(file)).toEqual([]);
     expect(file.hooks).toEqual({ stop: [foreignHook] });
-    expect(await provider.isHookInstalled()).toBe(false);
+    expect(await provider.hookState()).toBe("missing");
   });
 
   it("leaves a hooks file without hooks alone on remove", async () => {

@@ -1,8 +1,20 @@
 import { Injectable } from "@angular/core";
-import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
+import {
+  AgentHookEvent,
+  HookState,
+  ICodingAgentProvider,
+} from "@cogno/features/coding-agent/ports";
+import { AgentStatus } from "../../agent-status";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
+import {
+  buildHookCommand,
+  hookStateOf,
+  isCurrentHookCommand,
+} from "../_shared/hook-command.builder";
 import { CURSOR_CONFIG, CursorHooksFile } from "./cursor.config";
+import { interpretCursorHook } from "./cursor-hook.interpreter";
+
+type CursorHookMap = NonNullable<CursorHooksFile["hooks"]>;
 
 /**
  * Cursor's own hooks in `~/.cursor/hooks.json`. Cursor also runs Claude Code's
@@ -16,53 +28,44 @@ export class CursorProvider implements ICodingAgentProvider {
 
   constructor(private readonly configFile: ConfigFileService) {}
 
+  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
+    return interpretCursorHook(hookEvent, status, payload);
+  }
+
   async isAgentInstalled(): Promise<boolean> {
     return this.configFile.exists(await this.configDir());
   }
 
-  async isHookInstalled(): Promise<boolean> {
-    const file = await this.readHooksFile();
-    return CURSOR_CONFIG.hookEvents.every(({ eventName, status }) =>
-      (file.hooks?.[eventName] ?? []).some((h) =>
+  async hookState(): Promise<HookState> {
+    const hooks = (await this.readHooksFile()).hooks ?? {};
+    const isCurrent = CURSOR_CONFIG.hookEvents.every(({ eventName, status }) =>
+      (hooks[eventName] ?? []).some((h) =>
         isCurrentHookCommand(h.command, status, this.id, eventName),
       ),
     );
+    const hasCognoHook = Object.values(hooks).some((list) =>
+      list.some((h) => CURSOR_CONFIG.isCognoCommand(h.command)),
+    );
+    return hookStateOf(isCurrent, hasCognoHook);
   }
 
   async installHook(shellType?: string): Promise<void> {
-    const configDir = await this.configDir();
-    await this.configFile.ensureDir(configDir);
+    await this.configFile.ensureDir(await this.configDir());
     const file = await this.readHooksFile();
     file.version = file.version ?? CURSOR_CONFIG.fileVersion;
-    file.hooks = file.hooks ?? {};
-
+    const hooks = withoutCognoHooks(file.hooks ?? {});
     for (const entry of CURSOR_CONFIG.hookEvents) {
       const command = buildHookCommand(entry.status, shellType, this.id, entry.eventName);
-      file.hooks[entry.eventName] = [
-        ...(file.hooks[entry.eventName] ?? []).filter(
-          (h) => !CURSOR_CONFIG.isCognoCommand(h.command),
-        ),
-        { command },
-      ];
+      hooks[entry.eventName] = [...(hooks[entry.eventName] ?? []), { command }];
     }
-
+    file.hooks = hooks;
     await this.configFile.writeJson(await this.configPath(), file);
   }
 
   async removeHook(): Promise<void> {
     const file = await this.readHooksFile();
     if (!file.hooks) return;
-
-    for (const entry of CURSOR_CONFIG.hookEvents) {
-      const existing = file.hooks[entry.eventName];
-      if (!existing) continue;
-      const cleaned = existing.filter((h) => !CURSOR_CONFIG.isCognoCommand(h.command));
-      if (cleaned.length === 0) {
-        delete file.hooks[entry.eventName];
-      } else {
-        file.hooks[entry.eventName] = cleaned;
-      }
-    }
+    file.hooks = withoutCognoHooks(file.hooks);
     await this.configFile.writeJson(await this.configPath(), file);
   }
 
@@ -77,4 +80,17 @@ export class CursorProvider implements ICodingAgentProvider {
   private async configPath(): Promise<string> {
     return this.configFile.joinPath(await this.configDir(), CURSOR_CONFIG.configFileName);
   }
+}
+
+/**
+ * The hook map without Cogno's hooks on every event - including events an older
+ * Cogno version hooked and this one no longer does. Events left empty are dropped.
+ */
+function withoutCognoHooks(hooks: Readonly<CursorHookMap>): CursorHookMap {
+  const cleaned: CursorHookMap = {};
+  for (const [eventName, list] of Object.entries(hooks)) {
+    const remaining = list.filter((h) => !CURSOR_CONFIG.isCognoCommand(h.command));
+    if (remaining.length > 0) cleaned[eventName] = remaining;
+  }
+  return cleaned;
 }

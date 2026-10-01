@@ -1,4 +1,5 @@
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus } from "../../agent-status";
+import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
 
 export type CursorHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 
@@ -17,6 +18,17 @@ export type CursorHooksFile = {
   [key: string]: unknown;
 };
 
+/** Cursor's hook event names. */
+export const CURSOR_HOOK_EVENT = {
+  sessionStart: "sessionStart",
+  sessionEnd: "sessionEnd",
+  beforeSubmitPrompt: "beforeSubmitPrompt",
+  postToolUse: "postToolUse",
+  postToolUseFailure: "postToolUseFailure",
+  preCompact: "preCompact",
+  stop: "stop",
+} as const;
+
 export const CURSOR_CONFIG = {
   id: "cursor",
   name: "Cursor",
@@ -26,19 +38,20 @@ export const CURSOR_CONFIG = {
   // Only observing events are hooked. Cursor's permission hooks (preToolUse,
   // beforeShellExecution, beforeMCPExecution, beforeReadFile, subagentStart)
   // read a decision from stdout; a status reporter must not take part in that.
-  // Cursor has no event for "waiting for the user", so `question` never occurs.
+  // Without subagentStart, subagents cannot be told apart, so subagentStop is
+  // not hooked either. Cursor has no event for "waiting for the user", so
+  // `question` never occurs.
   hookEvents: [
-    { eventName: "sessionStart", status: "ready" as AgentStatus },
-    { eventName: "sessionEnd", status: "ready" as AgentStatus },
-    { eventName: "beforeSubmitPrompt", status: "working" as AgentStatus },
-    { eventName: "postToolUse", status: "working" as AgentStatus },
-    { eventName: "postToolUseFailure", status: "error" as AgentStatus },
-    { eventName: "subagentStop", status: "ready" as AgentStatus },
-    { eventName: "preCompact", status: "working" as AgentStatus },
-    { eventName: "stop", status: "ready" as AgentStatus },
+    { eventName: CURSOR_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
+    { eventName: CURSOR_HOOK_EVENT.sessionEnd, status: "ready" as AgentStatus },
+    { eventName: CURSOR_HOOK_EVENT.beforeSubmitPrompt, status: "working" as AgentStatus },
+    { eventName: CURSOR_HOOK_EVENT.postToolUse, status: "working" as AgentStatus },
+    { eventName: CURSOR_HOOK_EVENT.postToolUseFailure, status: "error" as AgentStatus },
+    { eventName: CURSOR_HOOK_EVENT.preCompact, status: "working" as AgentStatus },
+    { eventName: CURSOR_HOOK_EVENT.stop, status: "ready" as AgentStatus },
   ] as ReadonlyArray<CursorHookEntry>,
 
   isCognoCommand(command: string): boolean {
-    return command.includes("COGNO_PORT") && command.includes("coding_agent_status");
+    return command.includes(CODING_AGENT_STATUS_ACTION) && command.includes("COGNO_PORT");
   },
 } as const;
