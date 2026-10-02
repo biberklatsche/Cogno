@@ -1,8 +1,7 @@
 import { provideZonelessChangeDetection, signal } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
-import { defaultWorkspaceIdContract } from "@cogno/shared/domain";
-import { DragPreviewService } from "@cogno/shared/ui";
+import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import {
   getActionKeybindingPortMock,
@@ -10,6 +9,7 @@ import {
   getDestroyRef,
 } from "../../../__test__/test-factory";
 import { WorkspaceService } from "./workspace.service";
+import { defaultWorkspaceIdContract } from "./workspace-entry";
 import { WorkspaceSideComponent } from "./workspace-side.component";
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());

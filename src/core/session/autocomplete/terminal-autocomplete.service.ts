@@ -8,14 +8,14 @@ import {
 } from "@cogno/core/session/dropdown/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
-import { TerminalAutocompleteSuggestorContract } from "@cogno/shared/contributions";
 import { BehaviorSubject, Subscription } from "rxjs";
 import { debounceTime } from "rxjs/operators";
 import { AutocompleteSuggestion, AutocompleteViewState, QueryContext } from "./autocomplete.types";
 import { AutocompleteContextParser } from "./autocomplete-context.parser";
+import { SharedSuggestors } from "./shared-suggestors";
 import { SuggestionCollapser } from "./suggestion-collapser";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
-import { SuggestorRegistry } from "./suggestor-registry";
+import { TerminalAutocompleteSuggestorContract } from "./suggestor.contracts";
 import { CommandPatternSuggestor } from "./suggestors/command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
@@ -63,7 +63,6 @@ export class TerminalAutocompleteService implements OnDestroy {
   private readonly _viewState = new BehaviorSubject<AutocompleteViewState>(INITIAL_VIEW_STATE);
   private readonly _subscription = new Subscription();
   private _suggestors: TerminalAutocompleteSuggestorContract[] = [];
-  private _sharedSuggestorIds = new Set<string>();
   private _activeRequestId = 0;
   private _suppressNextRefresh = false;
   private _suppressUntilTyping = false;
@@ -88,7 +87,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   constructor(
     private readonly host: SessionHost,
     private readonly commandLog: SessionCommandLog,
-    private readonly suggestorRegistry: SuggestorRegistry,
+    private readonly sharedSuggestors: SharedSuggestors,
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
     this._filterMode.next(this.loadFilterMode());
@@ -125,23 +124,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     this.registerSuggestor(new HistoryDirectorySuggestor(this.commandLog));
     this.registerSuggestor(new CommandPatternSuggestor(this.commandLog));
     this.registerSuggestor(new HistoryCommandSuggestor(this.commandLog));
-    // The feature-contributed suggestors are a live set: follow it so a
-    // suggestor turned on reaches this running session at once.
-    this._subscription.add(
-      this.suggestorRegistry.suggestors$.subscribe((shared) => this.syncSharedSuggestors(shared)),
-    );
-  }
-
-  private syncSharedSuggestors(shared: ReadonlyArray<TerminalAutocompleteSuggestorContract>): void {
-    this._suggestors = this._suggestors.filter(
-      (suggestor) => !this._sharedSuggestorIds.has(suggestor.id),
-    );
-    this._sharedSuggestorIds = new Set(shared.map((suggestor) => suggestor.id));
-    for (const suggestor of shared) {
-      if (!this._suggestors.some((existing) => existing.id === suggestor.id)) {
-        this._suggestors.push(suggestor);
-      }
-    }
+    this.registerSuggestor(this.sharedSuggestors.specCommand);
   }
 
   private subscribeStateChanges(): void {
@@ -765,7 +748,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
     this._lastSuggestorIssueNotificationAt.set(key, now);
 
-    this.suggestorRegistry.reportIssue({
+    this.sharedSuggestors.reportIssue({
       suggestorId: suggestor.id,
       message,
       input: context.beforeCursor,

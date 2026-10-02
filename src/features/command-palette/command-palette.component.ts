@@ -1,5 +1,5 @@
 import { Component, ElementRef, effect, Signal, viewChild } from "@angular/core";
-import { scrollSelectedListItemIntoView } from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
+import { scrollSelectedListItemIntoView } from "@cogno/shared/ui/common/navigation/scroll-selected-list-item";
 import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 
 @Component({

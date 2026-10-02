@@ -1,4 +1,4 @@
-/** One restored prompt marker's metadata, so its decoration renders (step 27). */
+/** One restored prompt marker's metadata, so its decoration renders. */
 export interface CommandSnapshot {
   readonly id: string;
   readonly directory: string;
@@ -7,7 +7,7 @@ export interface CommandSnapshot {
   readonly data: Record<string, string>;
 }
 
-/** A restorable snapshot of one terminal session's buffer (step 27). */
+/** A restorable snapshot of one terminal session's buffer. */
 export interface SessionSnapshot {
   readonly version: number;
   /** The serialized scrollback (text with SGR colours + attributes), or null. */

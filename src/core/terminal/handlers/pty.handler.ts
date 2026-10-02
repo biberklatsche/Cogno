@@ -26,7 +26,7 @@ export type PtyHandlerListener = {
   /** The shell could not be started. */
   readonly onFailed?: (error: unknown) => void;
   /** The shell answered for the first time and xterm has parsed it. */
-  readonly onStarted?: (shellType: string) => void;
+  readonly onStarted?: () => void;
   /** The shell process ended. */
   readonly onExited?: (exitCode: number) => void;
   /** Output arrived - before it is parsed. */
@@ -107,12 +107,8 @@ export class PtyHandler implements ITerminalHandler {
   }
 
   private reportStartedAfterFirstParse(terminal: Terminal): void {
-    const shellType = this._shellProfile.shell_type;
-    if (!shellType) {
-      throw new Error("Shell profile must define a shell type.");
-    }
     const disposable = terminal.onWriteParsed(() => {
-      this._listener.onStarted?.(shellType);
+      this._listener.onStarted?.();
       disposable.dispose();
     });
   }

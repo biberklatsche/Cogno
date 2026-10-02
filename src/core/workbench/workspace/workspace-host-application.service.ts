@@ -1,23 +1,22 @@
 import { computed, DestroyRef, Injectable, Signal, signal, WritableSignal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { AppWindow } from "@cogno/platform/window";
-import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
-import {
-  WorkspaceConfiguration,
-  WorkspaceState,
-  WorkspaceStateUseCase,
-} from "@cogno/shared/domain/workspace";
-import { Color, IdCreator } from "@cogno/shared/support";
+import { Color } from "@cogno/shared/support";
 import { debounceTime, filter, merge } from "rxjs";
 import { DiscardSessionMarker } from "./discard-session.marker";
 import { SessionPersistenceService } from "./session-persistence.service";
+import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
 import { WorkspaceRepository } from "./workspace.repository";
+import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "./workspace-entry";
+import { WorkspaceStateUseCase } from "./workspace-state.use-case";
 
 const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
@@ -122,7 +121,7 @@ export class WorkspaceHostApplicationService {
       this._workspaceList.set(workspaceList);
 
       // Load saved scrollback into the pending store before any session spawns,
-      // so the factory can replay it as terminals are (re)created (step 27f).
+      // so the factory can replay it as terminals are (re)created.
       await this.sessionPersistence.loadPendingSnapshots(
         workspaceList.map((workspace) => workspace.id),
       );
@@ -157,7 +156,7 @@ export class WorkspaceHostApplicationService {
       });
 
     // Idle auto-save: a few seconds after terminal output settles, persist the
-    // active workspace so a crash loses at most that window (step 27e).
+    // active workspace so a crash loses at most that window.
     sessionRegistry.facts$
       .pipe(
         filter(({ fact }) => fact.type === "outputReceived"),
@@ -181,7 +180,7 @@ export class WorkspaceHostApplicationService {
     await this.activateWorkspace(workspace);
   }
 
-  /** Persist every open workspace, for the quit hook (step 27e). */
+  /** Persist every open workspace, for the quit hook. */
   async persistOpenWorkspaces(): Promise<void> {
     await Promise.all(
       this._workspaceList()
@@ -227,11 +226,25 @@ export class WorkspaceHostApplicationService {
     this.discardSessionMarker.clear();
   }
 
-  /** A named workspace lives in one window at a time; the default one is per window. */
+  /**
+   * A named workspace lives in one window at a time; the default one is per
+   * window. A claim that fails stays closed and is reported - it is not taken
+   * for "open in another window".
+   */
   private async claimWorkspace(workspaceId: string): Promise<boolean> {
-    return (
-      workspaceId === DEFAULT_WORKSPACE_ID || (await this.appWindow.claimWorkspace(workspaceId))
-    );
+    if (workspaceId === DEFAULT_WORKSPACE_ID) return true;
+    try {
+      return await this.appWindow.claimWorkspace(workspaceId);
+    } catch (error) {
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        notify: true,
+        source: "WorkspaceHost",
+        context: { operation: "claimWorkspace", workspaceId },
+      });
+      return false;
+    }
   }
 
   private async releaseWorkspace(workspaceId: string): Promise<void> {
@@ -292,8 +305,8 @@ export class WorkspaceHostApplicationService {
   }
 
   /**
-   * Record every live session's running command as aborted before exit (step
-   * 27b-2). Separate from persistOpenWorkspaces: the command log persists
+   * Record every live session's running command as aborted before exit.
+   * Separate from persistOpenWorkspaces: the command log persists
    * regardless of the session-restore setting.
    */
   async recordAbortedCommands(): Promise<void> {
@@ -381,9 +394,14 @@ export class WorkspaceHostApplicationService {
 
   /**
    * Auto-persist a workspace's live layout + terminal snapshots for session
-   * restore (step 27). Unlike the explicit `saveWorkspace`, this includes the
+   * restore. Unlike the explicit `saveWorkspace`, this includes the
    * default workspace. No-op when restore is off. Layout and snapshots are two
    * atomic batches; each collects its data before writing.
+   */
+  /**
+   * Saves a workspace for session restore. A failure never propagates: the
+   * workspace is marked (`autoSaveFailed`, shown on its tile) and the error is
+   * reported, so switching workspaces or quitting is never held up by it.
    */
   async autoPersistWorkspace(workspaceId: string): Promise<void> {
     if (!this.isRestoreEnabled) {
@@ -409,7 +427,13 @@ export class WorkspaceHostApplicationService {
       await this.sessionPersistence.persistWorkspace(workspaceId);
     } catch (error) {
       this.patchWorkspace(workspaceId, { autoSaveFailed: true });
-      throw error;
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "WorkspaceAutosave",
+        context: { workspaceId },
+      });
+      return;
     }
     this.patchWorkspace(workspaceId, { autoSaveFailed: false });
   }

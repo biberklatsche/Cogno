@@ -1,9 +1,7 @@
 import { signal } from "@angular/core";
-import type {
-  NotificationCenterItemContract,
-  NotificationTargetContract,
-} from "@cogno/shared/domain";
+import type { NotificationTargetContract } from "@cogno/shared/domain";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { NotificationCenterItemContract } from "./notification-center-item";
 import type { NotificationCenterStateService } from "./notification-center-state.service";
 import { NotificationSideComponent } from "./notification-side.component";
 

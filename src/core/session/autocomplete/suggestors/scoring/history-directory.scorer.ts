@@ -1,4 +1,4 @@
-import { DirectoryHistoryRow } from "@cogno/core/command-log/command-log.repository";
+import { DirectoryHistoryRow } from "@cogno/core/command-log/command-log.api";
 import { tokenMatchQuality } from "../../token-match";
 
 const DIR_SCORING = {

@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
+import { ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
-import { ActionDispatcher } from "@cogno/shared/ports";
 import { ActionNameRegistry } from "./action-name-registry";
 import { toKnownCoreAction } from "./catalog";
 
-/** The three-stage outcome of running an action by name (CLI/HTTP, step 26g). */
+/** The three-stage outcome of running an action by name (CLI/HTTP). */
 export type ActionRunStatus = "unknown" | "inactive" | "dispatched";
 
 /**

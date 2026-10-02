@@ -1,4 +1,7 @@
-import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+import {
+  FeatureDefinition,
+  SideMenuFeatureDefinitionContract,
+} from "@cogno/core/api/contributions";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
 
 const terminalSearchFeatureId = "terminal-search";

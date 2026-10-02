@@ -1,4 +1,4 @@
-import { FeatureDefinition } from "@cogno/shared/contributions";
+import { FeatureDefinition } from "@cogno/core/api/contributions";
 import { sideMenuUiStateMigrations } from "./ui-state.migrations";
 
 export const sideMenuUiStateFeature: FeatureDefinition = {

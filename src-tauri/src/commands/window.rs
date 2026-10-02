@@ -32,25 +32,24 @@ pub async fn new_window(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 /// Claim a workspace for this window. If another window already holds it, that
-/// window is focused instead and the claim fails with its label, so a
-/// workspace is only ever open in one window.
+/// window is focused instead and its label comes back, so a workspace is only
+/// ever open in one window. `None` means the claim succeeded; a held workspace
+/// is an answer, not an error.
 #[tauri::command]
 pub fn window_claim_workspace(
     window: tauri::WebviewWindow,
     registry: State<'_, WindowRegistry>,
     workspace_id: String,
-) -> Result<(), String> {
-    match registry.claim_workspace(&workspace_id, window.label()) {
-        Ok(()) => Ok(()),
-        Err(holder) => {
-            if let Some(other) = window.app_handle().get_webview_window(&holder) {
-                let _ = other.show();
-                let _ = other.unminimize();
-                let _ = other.set_focus();
-            }
-            Err(holder)
-        }
+) -> Option<String> {
+    let holder = registry
+        .claim_workspace(&workspace_id, window.label())
+        .err()?;
+    if let Some(other) = window.app_handle().get_webview_window(&holder) {
+        let _ = other.show();
+        let _ = other.unminimize();
+        let _ = other.set_focus();
     }
+    Some(holder)
 }
 
 /// Release a workspace this window holds.

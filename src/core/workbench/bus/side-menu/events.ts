@@ -1,4 +1,4 @@
-import { MessageBase } from "@cogno/core/workbench/bus/app-bus";
+import { MessageBase } from "@cogno/core/workbench/bus/message-base";
 
 type SideMenuViewOpenedEvent = MessageBase<"SideMenuViewOpened", { label: string }>;
 type SideMenuViewClosedEvent = MessageBase<"SideMenuViewClosed", { label: string }>;

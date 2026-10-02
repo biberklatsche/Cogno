@@ -120,8 +120,9 @@ pub fn run(cli: Cli) {
             #[cfg(not(target_os = "macos"))]
             let win_builder = webview_window_builder.decorations(false);
 
-            let window = win_builder.build().unwrap();
-            window.show().unwrap();
+            // A failure here ends the start with Tauri's setup error, not a panic.
+            let window = win_builder.build()?;
+            window.show()?;
 
             // Run the requested command on first launch when present.
             if let Some(action_payload) = cli.action_payload() {

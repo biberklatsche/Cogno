@@ -1,15 +1,15 @@
 import type { DestroyRef } from "@angular/core";
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import type { FeatureDefinition } from "@cogno/core/api/contributions";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
-import type { FeatureDefinition } from "@cogno/shared/contributions";
-import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
-import type { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 type FakeFeature = Partial<FeatureDefinition<ActionName>> & { id: string };
 
@@ -32,10 +32,6 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     register: vi.fn(),
     unregister: vi.fn(),
   } as unknown as SideMenuFeatureRegistrar;
-  const suggestorRegistrar = {
-    register: vi.fn(),
-    unregister: vi.fn(),
-  } as unknown as SuggestorFeatureRegistrar;
   const notificationChannelRegistrar = {
     register: vi.fn(),
     unregister: vi.fn(),
@@ -50,7 +46,6 @@ function makeHost(features: ReadonlyArray<FakeFeature>): {
     databaseMigrationService,
     actionNameRegistry,
     sideMenuRegistrar,
-    suggestorRegistrar,
     notificationChannelRegistrar,
     applicationConfigurationPort,
     destroyRef,
@@ -65,19 +60,29 @@ function settingsWithPaths(...paths: string[]): FeatureDefinition["settings"] {
 }
 
 describe("FeatureHost declaration phase", () => {
+  beforeEach(() => {
+    vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => {});
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
+  const warn = () => vi.mocked(ErrorReporter.reportWarning);
+
+  /** The conflicts the start-up message named, one per line after its heading. */
+  function reportedConflicts(): string[] {
+    return warn().mock.calls.flatMap(([report]) => report.message.split("\n").slice(1));
+  }
+
   it("registers migrations and path adapters when the set is valid", () => {
     const migration = { id: "m1" } as never;
-    const { host, registerFeatureMigrations } = makeHost([
+    const { registerFeatureMigrations } = makeHost([
       { id: "a", migrations: [migration] },
       { id: "b", requires: ["a"] },
     ]);
 
-    expect(host.hasDeclarationConflict).toBe(false);
-    expect(host.getDeclarationConflicts()).toEqual([]);
+    expect(warn()).not.toHaveBeenCalled();
     expect(registerFeatureMigrations).toHaveBeenCalledWith([migration]);
   });
 
@@ -93,49 +98,51 @@ describe("FeatureHost declaration phase", () => {
   });
 
   it("aborts on a duplicate feature id and registers nothing", () => {
-    const { host, registerFeatureMigrations } = makeHost([{ id: "dup" }, { id: "dup" }]);
+    const { registerFeatureMigrations } = makeHost([{ id: "dup" }, { id: "dup" }]);
 
-    expect(host.hasDeclarationConflict).toBe(true);
-    expect(host.getDeclarationConflicts()).toContain("Feature declared twice: dup");
+    expect(reportedConflicts()).toContain("Feature declared twice: dup");
     expect(registerFeatureMigrations).not.toHaveBeenCalled();
   });
 
   it("aborts on an unknown requires", () => {
-    const { host } = makeHost([{ id: "a", requires: ["ghost"] }]);
+    makeHost([{ id: "a", requires: ["ghost"] }]);
 
-    expect(host.hasDeclarationConflict).toBe(true);
-    expect(host.getDeclarationConflicts()).toContain('Feature "a" requires unknown feature: ghost');
+    expect(reportedConflicts()).toContain('Feature "a" requires unknown feature: ghost');
   });
 
   it("aborts on a requires cycle", () => {
-    const { host } = makeHost([
+    makeHost([
       { id: "a", requires: ["b"] },
       { id: "b", requires: ["a"] },
     ]);
 
-    expect(host.hasDeclarationConflict).toBe(true);
-    expect(host.getDeclarationConflicts().some((c) => c.startsWith("Cyclic requires:"))).toBe(true);
+    expect(reportedConflicts().some((c) => c.startsWith("Cyclic requires:"))).toBe(true);
   });
 
   it("aborts on a settings path collision", () => {
-    const { host } = makeHost([
+    makeHost([
       { id: "a", settings: settingsWithPaths("feature") },
       { id: "b", settings: settingsWithPaths("feature") },
     ]);
 
-    expect(host.hasDeclarationConflict).toBe(true);
-    expect(host.getDeclarationConflicts()).toContain(
-      "Settings path declared by two features: feature",
-    );
+    expect(reportedConflicts()).toContain("Settings path declared by two features: feature");
   });
 
   it("aborts on a duplicate action", () => {
-    const { host } = makeHost([
+    makeHost([
       { id: "a", actions: [{ actionName: "open_x" }] },
       { id: "b", actions: [{ actionName: "open_x" }] },
     ]);
 
-    expect(host.hasDeclarationConflict).toBe(true);
-    expect(host.getDeclarationConflicts()).toContain("Action declared by two features: open_x");
+    expect(reportedConflicts()).toContain("Action declared by two features: open_x");
+  });
+
+  it("offers no feature panels in the menu when the set did not start", () => {
+    const { host } = makeHost([
+      { id: "a", sideMenu: [{ actionName: "open_a", order: 1 }] as never },
+      { id: "a" },
+    ]);
+
+    expect(host.getSideMenuFeatureDefinitions()).toEqual([]);
   });
 });

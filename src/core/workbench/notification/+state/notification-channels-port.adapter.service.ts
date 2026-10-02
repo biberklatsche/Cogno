@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
-import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
 import {
   NotificationChannelOptionContract,
   NotificationChannelsPortContract,
-} from "@cogno/shared/ports";
+} from "@cogno/core/api/notification-channels-port";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
 
 @Injectable({ providedIn: "root" })
 export class NotificationChannelsPortAdapterService implements NotificationChannelsPortContract {

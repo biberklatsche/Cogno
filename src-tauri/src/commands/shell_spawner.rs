@@ -148,7 +148,10 @@ impl ShellSpawner {
                     "-ExecutionPolicy".to_string(),
                     "Bypass".to_string(),
                     "-Command".to_string(),
-                    format!(". '{}'", integration_script.to_string_lossy()),
+                    format!(
+                        ". {}",
+                        powershell_single_quoted(&integration_script.to_string_lossy())
+                    ),
                 ])
             }
             _ => Err(format!("Unsupported shell type: {}", shell_type)),
@@ -172,6 +175,25 @@ impl ShellSpawner {
     fn get_cogno_executable_path(&self) -> Option<PathBuf> {
         std::env::current_exe().ok()
     }
+}
+
+/// `value` as a PowerShell literal string. Inside one, a quote is escaped by
+/// doubling it - and PowerShell takes the typographic single quotes for quotes
+/// too, so a home folder like `C:\Users\O'Brien` still dot-sources the script.
+fn powershell_single_quoted(value: &str) -> String {
+    let mut quoted = String::with_capacity(value.len() + 2);
+    quoted.push('\'');
+    for character in value.chars() {
+        if matches!(
+            character,
+            '\'' | '\u{2018}' | '\u{2019}' | '\u{201A}' | '\u{201B}'
+        ) {
+            quoted.push(character);
+        }
+        quoted.push(character);
+    }
+    quoted.push('\'');
+    quoted
 }
 
 /// The flags that make a shell skip the user's startup files. They go first:
@@ -246,6 +268,24 @@ mod tests {
     fn without_integration_the_args_stay_untouched_when_rc_loads() {
         let (argv, _) = spawn(&profile("Bash", false, Some(true)));
         assert_eq!(argv, ["-l", "-i"]);
+    }
+
+    #[test]
+    fn a_quote_in_the_integration_path_stays_inside_the_powershell_literal() {
+        let spawner = ShellSpawner {
+            integration_root: PathBuf::from("/home/O'Brien/cogno"),
+        };
+        let args = spawner
+            .get_integration_args("PowerShell")
+            .expect("PowerShell is supported");
+        assert!(args
+            .last()
+            .expect("the -Command argument")
+            .contains("O''Brien"));
+        assert_eq!(
+            powershell_single_quoted("a\u{2019}b"),
+            "'a\u{2019}\u{2019}b'"
+        );
     }
 
     #[test]

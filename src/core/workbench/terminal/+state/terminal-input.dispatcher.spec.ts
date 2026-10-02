@@ -13,7 +13,6 @@ function hostStub() {
     focus: vi.fn(),
     blur: vi.fn(),
     setVisible: vi.fn(),
-    setPaneMaximized: vi.fn(),
     clearBuffer: vi.fn(),
     writeRaw: vi.fn(),
     paste: vi.fn(async () => undefined),
@@ -56,16 +55,6 @@ describe("TerminalInputDispatcher", () => {
     expect(host2.blur).not.toHaveBeenCalled();
   });
 
-  it("writes raw input to the addressed session", () => {
-    bus.publish({
-      type: "WriteRawToPty",
-      payload: { terminalId: "t2", text: "ls\n", autoExecute: true },
-    });
-
-    expect(host2.writeRaw).toHaveBeenCalledWith("ls\n", true);
-    expect(host1.writeRaw).not.toHaveBeenCalled();
-  });
-
   it("fans VisibleTerminalsChanged out to every session", () => {
     bus.publish({
       type: "VisibleTerminalsChanged",
@@ -74,15 +63,5 @@ describe("TerminalInputDispatcher", () => {
 
     expect(host1.setVisible).toHaveBeenCalledExactlyOnceWith(true);
     expect(host2.setVisible).toHaveBeenCalledExactlyOnceWith(false);
-  });
-
-  it("fans PaneMaximizedChanged out to every session", () => {
-    bus.publish({
-      type: "PaneMaximizedChanged",
-      payload: { terminalId: "t1" },
-    });
-
-    expect(host1.setPaneMaximized).toHaveBeenCalledWith(true);
-    expect(host2.setPaneMaximized).toHaveBeenCalledWith(false);
   });
 });

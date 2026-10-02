@@ -1,8 +1,8 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
-import { CommandRunnerResultContract } from "@cogno/shared/ports";
 
 export type GitFileStatus = "M" | "A" | "D" | "R" | "?";
 
@@ -39,6 +39,7 @@ export class GitStatusService {
   private currentGitRoot: string | null = null;
   private active = false;
   private refreshContextInFlight = false;
+  private refreshContextPending = false;
   private refreshStatusInFlight = false;
   private refreshStatusPending = false;
 
@@ -77,7 +78,7 @@ export class GitStatusService {
     if (!session || !this.currentGitRoot) return [];
     const result = await this.runGit(
       session,
-      ["status", "--porcelain=v1", "-uall", "--", dirPath],
+      ["status", "--porcelain=v1", "-z", "-uall", "--", dirPath],
       GIT_TIMEOUT_MS,
     );
     if (!result || result.exitCode !== 0) return [];
@@ -109,53 +110,70 @@ export class GitStatusService {
     });
   }
 
+  /**
+   * A request that comes in while one runs - a focus switch, a cd - is not
+   * dropped: it runs once the current one is done.
+   */
   private async refreshContext(): Promise<void> {
-    if (this.refreshContextInFlight) return;
+    if (this.refreshContextInFlight) {
+      this.refreshContextPending = true;
+      return;
+    }
     this.refreshContextInFlight = true;
     try {
-      const session = this.boundSession;
-      if (!session) {
-        this.clear();
-        return;
-      }
-      // `rev-parse --show-toplevel` runs in the session's own cwd to find the root.
-      const outcome = await session.run({
-        executable: "git",
-        args: ["rev-parse", "--show-toplevel"],
-        contextRevision: session.contextRevision,
-        timeoutMs: GIT_TIMEOUT_MS,
-      });
-      if (outcome.status === "rejected") {
-        this.currentGitRoot = null;
-        this.gitStatusSignal.set(null);
-        // A remote/unknown session has no local git; a stale binding just retries.
-        this.gitErrorSignal.set(outcome.reason === "unknown-context" ? "unavailable" : null);
-        return;
-      }
-
-      const result = outcome.result;
-      if (result.exitCode !== 0) {
-        this.currentGitRoot = null;
-        this.gitStatusSignal.set(null);
-        // exit 128 = "not a git repository"; anything else means git isn't usable.
-        this.gitErrorSignal.set(result.exitCode === 128 ? "no_repo" : "not_installed");
-        return;
-      }
-
-      const root = result.stdout.trim();
-      if (!root) {
-        this.currentGitRoot = null;
-        this.gitStatusSignal.set(null);
-        this.gitErrorSignal.set("no_repo");
-        return;
-      }
-
-      this.currentGitRoot = root;
-      this.gitErrorSignal.set(null);
-      await this.refreshStatus();
+      await this.resolveContext();
     } finally {
       this.refreshContextInFlight = false;
+      if (this.refreshContextPending) {
+        this.refreshContextPending = false;
+        void this.refreshContext();
+      }
     }
+  }
+
+  private async resolveContext(): Promise<void> {
+    const session = this.boundSession;
+    if (!session) {
+      this.clear();
+      return;
+    }
+    // `rev-parse --show-toplevel` runs in the session's own cwd to find the root.
+    const outcome = await session.run({
+      executable: "git",
+      args: ["rev-parse", "--show-toplevel"],
+      contextRevision: session.contextRevision,
+      timeoutMs: GIT_TIMEOUT_MS,
+    });
+    // Another terminal took focus meanwhile; the rerun resolves its repo.
+    if (session !== this.boundSession) return;
+    if (outcome.status === "rejected") {
+      this.currentGitRoot = null;
+      this.gitStatusSignal.set(null);
+      // A remote/unknown session has no local git; a stale binding just retries.
+      this.gitErrorSignal.set(outcome.reason === "unknown-context" ? "unavailable" : null);
+      return;
+    }
+
+    const result = outcome.result;
+    if (result.exitCode !== 0) {
+      this.currentGitRoot = null;
+      this.gitStatusSignal.set(null);
+      // exit 128 = "not a git repository"; anything else means git isn't usable.
+      this.gitErrorSignal.set(result.exitCode === 128 ? "no_repo" : "not_installed");
+      return;
+    }
+
+    const root = result.stdout.trim();
+    if (!root) {
+      this.currentGitRoot = null;
+      this.gitStatusSignal.set(null);
+      this.gitErrorSignal.set("no_repo");
+      return;
+    }
+
+    this.currentGitRoot = root;
+    this.gitErrorSignal.set(null);
+    await this.refreshStatus();
   }
 
   async refreshStatus(): Promise<void> {
@@ -182,7 +200,7 @@ export class GitStatusService {
     this.loadingSignal.set(true);
     try {
       const [statusResult, branchResult] = await Promise.all([
-        this.runGit(session, ["-C", gitRoot, "status", "--porcelain=v1"], GIT_TIMEOUT_MS),
+        this.runGit(session, ["-C", gitRoot, "status", "--porcelain=v1", "-z"], GIT_TIMEOUT_MS),
         this.runGit(session, ["-C", gitRoot, "rev-parse", "--abbrev-ref", "HEAD"], GIT_TIMEOUT_MS),
       ]);
 
@@ -271,17 +289,24 @@ export class GitStatusService {
   }
 }
 
+/**
+ * Reads `git status --porcelain=v1 -z`: entries end in NUL and paths come
+ * verbatim - no quoting, spaces and umlauts as they are. A rename or copy is
+ * followed by its source path as an entry of its own, which is skipped.
+ */
 export function parseGitStatus(raw: string): Pick<GitStatus, "staged" | "unstaged" | "untracked"> {
   const staged: GitFile[] = [];
   const unstaged: GitFile[] = [];
   const untracked: GitFile[] = [];
 
-  for (const line of raw.split("\n")) {
-    if (line.length < 3) continue;
-    const x = line[0];
-    const y = line[1];
-    // porcelain v1 rename lines are "R new\told" — take only the new path
-    const path = line.slice(3).split("\t")[0];
+  const entries = raw.split("\0");
+  for (let index = 0; index < entries.length; index++) {
+    const entry = entries[index] ?? "";
+    if (entry.length < 4) continue;
+    const x = entry[0];
+    const y = entry[1];
+    const path = entry.slice(3);
+    if (x === "R" || x === "C" || y === "R" || y === "C") index++;
 
     if (x === "?" && y === "?") {
       const isDirectory = path.endsWith("/");

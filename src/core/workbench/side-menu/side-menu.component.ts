@@ -10,7 +10,8 @@ import {
   Signal,
   ViewChild,
 } from "@angular/core";
-import { ActionKeybindingPipe, IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
+import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { SideMenuItem, SideMenuService } from "./+state/side-menu.service";
 
 export function isSelectedSideMenuItem(

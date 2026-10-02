@@ -74,6 +74,18 @@ describe("SessionModel", () => {
     expect(busy).toEqual([true, false, false]);
   });
 
+  it("clears the program's title when the command ends", () => {
+    const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorderStub());
+    model.initialize("terminal-1", "Bash", undefined, "linux");
+    const facts: SessionFact[] = [];
+    model.startCommand("vim");
+    model.facts$.subscribe((fact) => facts.push(fact));
+
+    model.endCommand();
+
+    expect(facts).toContainEqual({ type: "titleChanged", title: undefined });
+  });
+
   it("hands an executed command to the recorder and states it as a fact", () => {
     const recorder = recorderStub();
     const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorder);

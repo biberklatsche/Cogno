@@ -9,7 +9,7 @@ use tauri::{AppHandle, Manager, State};
 /// The action names the webview currently accepts, split by whether they would
 /// dispatch or are declared-but-inactive (a feature that is off). The webview
 /// pushes these via `set_runnable_actions`; the HTTP `/action/run` endpoint
-/// classifies against them synchronously (step 26g). Anything in neither set is
+/// classifies against them synchronously. Anything in neither set is
 /// unknown.
 #[derive(Default)]
 pub struct RunnableActionsState {
@@ -54,6 +54,9 @@ pub struct ActionRunPayload {
 pub struct HttpServerState {
     port: AtomicU16,
     started: AtomicBool,
+    /// A secret for this launch. Only processes started in a Cogno terminal
+    /// get it (`COGNO_TOKEN`); every request must carry it.
+    token: String,
 }
 
 impl Default for HttpServerState {
@@ -61,6 +64,7 @@ impl Default for HttpServerState {
         Self {
             port: AtomicU16::new(0),
             started: AtomicBool::new(false),
+            token: uuid::Uuid::new_v4().simple().to_string(),
         }
     }
 }
@@ -72,6 +76,10 @@ impl HttpServerState {
 
     pub fn port(&self) -> u16 {
         self.port.load(Ordering::Relaxed)
+    }
+
+    pub fn token(&self) -> &str {
+        &self.token
     }
 
     fn try_claim_start(&self) -> bool {
@@ -104,19 +112,36 @@ pub struct CognoMessagePayload {
     pub payload: Option<serde_json::Value>,
 }
 
-fn find_port(start: u16, auto_next: bool) -> Option<u16> {
-    if TcpListener::bind(("127.0.0.1", start)).is_ok() {
-        return Some(start);
-    }
-    if !auto_next {
-        return None;
-    }
-    for port in (start + 1)..=start.saturating_add(99) {
-        if TcpListener::bind(("127.0.0.1", port)).is_ok() {
-            return Some(port);
-        }
-    }
-    None
+/// The header every request carries the launch token in.
+pub const TOKEN_HEADER: &str = "x-cogno-token";
+
+/// Only a caller that knows this launch's token - a process started in a Cogno
+/// terminal - may talk to the server, and only by the loopback name: a web
+/// page that rebinds its own host name to 127.0.0.1 sends that name as Host.
+fn is_authorized(headers: &axum::http::HeaderMap, token: &str, port: u16) -> bool {
+    let token_matches = headers
+        .get(TOKEN_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value == token);
+    let host_is_loopback = headers
+        .get(axum::http::header::HOST)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|host| {
+            host == format!("127.0.0.1:{port}") || host == format!("localhost:{port}")
+        });
+    token_matches && host_is_loopback
+}
+
+/// Binds the first free port from `start` on - up to 99 above it with
+/// `auto_next`. The listener is kept: the port handed to terminals is the one
+/// that is served, with no gap in which another process could take it.
+fn bind_port(start: u16, auto_next: bool) -> Option<TcpListener> {
+    let last = if auto_next {
+        start.saturating_add(99)
+    } else {
+        start
+    };
+    (start..=last).find_map(|port| TcpListener::bind(("127.0.0.1", port)).ok())
 }
 
 /// Called by Angular after the config has been validated.
@@ -138,8 +163,10 @@ pub fn start_http_server(
         return Ok(state.port());
     }
 
-    let actual_port = find_port(port, auto_next_port)
+    let bound = bind_port(port, auto_next_port)
         .ok_or_else(|| format!("No available port found starting from {}", port))?;
+    let actual_port = bound.local_addr().map_err(|e| e.to_string())?.port();
+    bound.set_nonblocking(true).map_err(|e| e.to_string())?;
 
     state.set_port(actual_port);
 
@@ -150,15 +177,13 @@ pub fn start_http_server(
         use axum::routing::post;
         use axum::Router;
 
-        let addr = std::net::SocketAddr::from(([127, 0, 0, 1], actual_port));
-        let listener = match tokio::net::TcpListener::bind(addr).await {
+        let listener = match tokio::net::TcpListener::from_std(bound) {
             Ok(l) => l,
             Err(e) => {
-                // Port was taken between find_port() check and actual bind (TOCTOU).
                 // Reset state so COGNO_PORT is not set for new terminals and Angular
                 // can retry if needed.
                 app.state::<HttpServerState>().mark_failed();
-                log::error!(target: "http_server", "Failed to bind HTTP server on port {}: {}", actual_port, e);
+                log::error!(target: "http_server", "Failed to serve on port {}: {}", actual_port, e);
                 return;
             }
         };
@@ -167,12 +192,19 @@ pub fn start_http_server(
 
         let app_emit = app.clone();
         let app_run = app.clone();
+        let token = app.state::<HttpServerState>().token().to_string();
+        let token_for_run = token.clone();
         let router = Router::new()
             .route(
                 "/action",
-                post(move |result: Result<Json<CognoMessagePayload>, JsonRejection>| {
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<CognoMessagePayload>, JsonRejection>| {
                     let app = app_emit.clone();
+                    let authorized = is_authorized(&headers, &token, actual_port);
                     async move {
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /action rejected: missing or wrong token");
+                            return StatusCode::FORBIDDEN;
+                        }
                         match result {
                             Ok(Json(payload)) => {
                                 log::info!(target: "http_server", "POST /action: command={} terminal_id={:?}", payload.command, payload.terminal_id);
@@ -190,9 +222,17 @@ pub fn start_http_server(
             )
             .route(
                 "/action/run",
-                post(move |result: Result<Json<ActionRunPayload>, JsonRejection>| {
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<ActionRunPayload>, JsonRejection>| {
                     let app = app_run.clone();
+                    let authorized = is_authorized(&headers, &token_for_run, actual_port);
                     async move {
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /action/run rejected: missing or wrong token");
+                            return (
+                                StatusCode::FORBIDDEN,
+                                Json(serde_json::json!({ "error": "forbidden" })),
+                            );
+                        }
                         match result {
                             Ok(Json(payload)) => {
                                 let status = app.state::<RunnableActionsState>().classify(&payload.name);
@@ -227,4 +267,97 @@ pub fn start_http_server(
     });
 
     Ok(actual_port)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::{header::HOST, HeaderMap, HeaderValue};
+
+    #[test]
+    fn binds_the_next_free_port_and_keeps_it() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let start = taken.local_addr().unwrap().port();
+
+        let bound = bind_port(start, true).expect("a free port above the taken one");
+        let port = bound.local_addr().unwrap().port();
+
+        assert_ne!(port, start);
+        // Still held: nobody else can take it before the server uses it.
+        assert!(TcpListener::bind(("127.0.0.1", port)).is_err());
+    }
+
+    #[test]
+    fn stays_on_the_configured_port_without_auto_next() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let start = taken.local_addr().unwrap().port();
+
+        assert!(bind_port(start, false).is_none());
+    }
+
+    #[test]
+    fn the_last_port_does_not_overflow() {
+        // Whether 65535 is free or not, this must not panic.
+        let _ = bind_port(u16::MAX, true);
+    }
+
+    fn headers(token: Option<&str>, host: &str) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(HOST, HeaderValue::from_str(host).unwrap());
+        if let Some(token) = token {
+            headers.insert(TOKEN_HEADER, HeaderValue::from_str(token).unwrap());
+        }
+        headers
+    }
+
+    #[test]
+    fn accepts_the_launch_token_on_the_loopback_name() {
+        assert!(is_authorized(
+            &headers(Some("secret"), "127.0.0.1:9000"),
+            "secret",
+            9000
+        ));
+        assert!(is_authorized(
+            &headers(Some("secret"), "localhost:9000"),
+            "secret",
+            9000
+        ));
+    }
+
+    #[test]
+    fn rejects_a_missing_or_wrong_token() {
+        assert!(!is_authorized(
+            &headers(None, "127.0.0.1:9000"),
+            "secret",
+            9000
+        ));
+        assert!(!is_authorized(
+            &headers(Some("guess"), "127.0.0.1:9000"),
+            "secret",
+            9000
+        ));
+    }
+
+    #[test]
+    fn rejects_a_rebound_host_name_even_with_the_token() {
+        assert!(!is_authorized(
+            &headers(Some("secret"), "evil.example:9000"),
+            "secret",
+            9000
+        ));
+        assert!(!is_authorized(
+            &headers(Some("secret"), "127.0.0.1:9001"),
+            "secret",
+            9000
+        ));
+    }
+
+    #[test]
+    fn every_launch_gets_its_own_token() {
+        assert_ne!(
+            HttpServerState::new().token(),
+            HttpServerState::new().token()
+        );
+        assert!(HttpServerState::new().token().len() >= 32);
+    }
 }

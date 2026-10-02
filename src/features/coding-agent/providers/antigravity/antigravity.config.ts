@@ -1,4 +1,4 @@
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus } from "../../agent-status";
 
 type AntigravityHookHandler = {
   type?: "command";
@@ -12,8 +12,6 @@ type AntigravityHookGroup = {
 };
 
 export type AntigravityHookDefinition = {
-  enabled?: boolean;
-  PreToolUse?: AntigravityHookGroup[];
   PostToolUse?: AntigravityHookGroup[];
   PreInvocation?: AntigravityHookHandler[];
   PostInvocation?: AntigravityHookHandler[];
@@ -22,10 +20,10 @@ export type AntigravityHookDefinition = {
 
 export type AntigravityHooksFile = Record<string, AntigravityHookDefinition>;
 
-/** PreToolUse/PostToolUse entries are matcher+hooks groups; the other lifecycle events are plain handler lists. */
+/** PostToolUse entries are matcher+hooks groups; the lifecycle events are plain handler lists. */
 type AntigravityToolHookEntry = {
   readonly kind: "tool";
-  readonly eventName: "PreToolUse" | "PostToolUse";
+  readonly eventName: "PostToolUse";
   readonly status: AgentStatus;
   readonly matcher: string;
   /** JSON the hook must print to stdout to satisfy Antigravity's hook contract. */
@@ -78,8 +76,4 @@ export const ANTIGRAVITY_CONFIG = {
       stdout: '{"decision":""}',
     },
   ] as ReadonlyArray<AntigravityHookEntry>,
-
-  isCognoCommand(command: string): boolean {
-    return command.includes("COGNO_PORT") && command.includes("coding_agent_status");
-  },
 } as const;

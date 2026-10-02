@@ -1,4 +1,7 @@
-import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+import {
+  FeatureDefinition,
+  SideMenuFeatureDefinitionContract,
+} from "@cogno/core/api/contributions";
 import { CodingAgentsSideMenuLifecycle } from "./coding-agents-side-menu.lifecycle";
 
 const codingAgentsFeatureId = "coding-agents";
@@ -13,7 +16,7 @@ const codingAgentsSideMenuFeatureDefinition = {
   targetComponent: () =>
     import("./coding-agents-side.component").then((m) => m.CodingAgentsSideComponent),
   createLifecycle: (injector, sideMenuFeatureHandle) =>
-    injector.get(CodingAgentsSideMenuLifecycle).create(sideMenuFeatureHandle),
+    injector.get(CodingAgentsSideMenuLifecycle).create(injector, sideMenuFeatureHandle),
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const codingAgentsFeature: FeatureDefinition = {

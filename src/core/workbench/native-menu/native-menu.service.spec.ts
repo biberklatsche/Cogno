@@ -77,6 +77,7 @@ describe("NativeMenuService", () => {
       getOrderedShellProfiles: vi.fn(),
       getShellProfileByShortcutIndex: vi.fn(),
       getPromptSegments: vi.fn(),
+      getPromptSeparator: vi.fn(),
     };
     destroyRef = {
       onDestroy: vi.fn(),

@@ -1,4 +1,6 @@
-use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, PtySize};
+#[cfg(windows)]
+use portable_pty::ChildKiller;
+use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::io::Write;
@@ -320,7 +322,7 @@ struct Session {
     /// master already hangs up the shell (and lets it write its history on
     /// the way out); ConPTY does not terminate its clients when the console
     /// closes, so on Windows this is the only thing that does.
-    #[cfg_attr(not(windows), allow(dead_code))]
+    #[cfg(windows)]
     child_killer: Box<dyn ChildKiller + Send + Sync>,
     shell_process_id: Option<u32>,
     shell_type: String,
@@ -471,6 +473,7 @@ pub async fn pty_spawn(
     let http_port = http_server.port();
     if http_port != 0 {
         cmd.env("COGNO_PORT", http_port.to_string());
+        cmd.env("COGNO_TOKEN", http_server.token());
     }
     cmd.env("COGNO_TERMINAL_ID", &terminal_id);
 
@@ -509,6 +512,7 @@ pub async fn pty_spawn(
         master: pair.master,
         input_tx,
         flow: flow.clone(),
+        #[cfg(windows)]
         child_killer: child.clone_killer(),
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
@@ -681,6 +685,9 @@ pub fn pty_execute_line_editor_action(
     action: String,
     payload_json: Option<String>,
 ) -> Result<(), String> {
+    if !is_line_editor_action_name(&action) {
+        return Err(format!("Invalid line editor action: {:?}", action));
+    }
     // Copy what the pipe/FIFO/file writes below need and release the lock
     // first: they can block, and nothing may block while holding `sessions`.
     let (shell_type, line_editor_pipe_name, line_editor_channel, input_tx) = {
@@ -772,18 +779,19 @@ pub fn pty_resize(
     }
 }
 
+/// Releasing a session can block (closing a ConPTY waits for its output pipe),
+/// so it runs on a blocking worker, never on the thread that drives the UI.
 #[tauri::command]
-pub fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result<(), String> {
+pub async fn pty_kill(state: State<'_, PtyState>, terminal_id: String) -> Result<(), String> {
     let removed = {
         let mut sessions = state.sessions.lock().unwrap();
         sessions.remove(&terminal_id)
     };
     match removed {
         // Intentional kill: the frontend already dropped the pane, no exit event.
-        Some(session) => {
-            release_session(session);
-            Ok(())
-        }
+        Some(session) => tauri::async_runtime::spawn_blocking(move || release_session(session))
+            .await
+            .map_err(|error| error.to_string()),
         None => Err(format!("Session not found: {}", terminal_id)),
     }
 }
@@ -840,6 +848,22 @@ mod flow_control_tests {
     use super::*;
     use std::thread;
     use std::time::Instant;
+
+    #[test]
+    fn line_editor_action_names_are_plain_words() {
+        assert!(is_line_editor_action_name("replaceCurrentInput"));
+        assert!(is_line_editor_action_name("clear-line_2"));
+        for bad in [
+            "",
+            "replace;rm -rf ~",
+            "a
+b",
+            "a b",
+            "ä",
+        ] {
+            assert!(!is_line_editor_action_name(bad), "{bad:?}");
+        }
+    }
 
     fn short() -> Duration {
         Duration::from_millis(50)
@@ -1180,6 +1204,15 @@ fn create_line_editor_channel(
     }
     #[cfg(not(unix))]
     None
+}
+
+/// The action is the first field of a `;`-separated line the shell reads;
+/// a name with `;`, a line break or anything but a plain word would split it.
+fn is_line_editor_action_name(action: &str) -> bool {
+    !action.is_empty()
+        && action
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
 /// Builds the line-format message the shell handlers consume with

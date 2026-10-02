@@ -22,7 +22,7 @@
           "$HOME/.cogno-dev/shell-integration/zsh/.zshrc"
         ]
       },
-      "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline'; img-src 'self' asset: file: data: blob: http://asset.localhost"
+      "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-inline'; script-src 'self'; img-src 'self' asset: file: data: blob: http://asset.localhost"
     }
   },
   "bundle": {

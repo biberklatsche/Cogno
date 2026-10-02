@@ -1,17 +1,17 @@
 import { computed, Injectable, Signal, signal } from "@angular/core";
 import { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import {
-  SelectableItemState,
-  SelectableListUseCase,
-  SelectionDirection,
-  WorkspaceEntryContract,
-} from "@cogno/shared/domain";
-import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
-import {
   DirectionalNavigationItem,
   resolveNextNavigationTarget,
-} from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
+} from "@cogno/core/workbench/workspace/navigation/directional-navigation.engine";
+import { SelectableItemState } from "@cogno/core/workbench/workspace/navigation/selectable-item-state";
+import {
+  SelectableListUseCase,
+  SelectionDirection,
+} from "@cogno/core/workbench/workspace/navigation/selectable-list.use-case";
+import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
+import { WorkspaceEntryContract } from "./workspace-entry";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemState<string>;

@@ -44,7 +44,7 @@ const createInitialMachineState = (): MachineStateSnapshot => ({
 });
 
 /**
- * The machine's half of what used to be one state manager: where the
+ * The machine's side of a terminal's state: where the
  * cursor is, how big the terminal is, whether it has the keyboard, what is
  * selected, how far it is scrolled, whether an alternate screen is up, and
  * the progress a program reported. Facts about the terminal as a device -

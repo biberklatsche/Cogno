@@ -1,3 +1,4 @@
+import type { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { SessionHost } from "@cogno/core/session/host/session-host";
@@ -6,9 +7,9 @@ import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { Renderer } from "@cogno/core/terminal/renderer";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
+import type { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
-import type { NotificationChannelsPort } from "@cogno/shared/ports";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../../__test__/mocks/config-service.mock";
@@ -65,6 +66,7 @@ describe("SessionNotifications", () => {
   let host: SessionHost;
   let notifications: SessionNotifications;
   let menus: SessionMenus;
+  let maximizedTerminalId: string | undefined;
   let configService: ConfigServiceMock;
 
   function configure(config: Record<string, unknown>): void {
@@ -139,7 +141,10 @@ describe("SessionNotifications", () => {
       notificationChannelsPort,
     );
 
-    menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock());
+    maximizedTerminalId = undefined;
+    menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock(), {
+      isMaximized: (id: string) => id === maximizedTerminalId,
+    } as unknown as PaneLayoutLookup);
 
     host.start();
   });
@@ -191,9 +196,9 @@ describe("SessionNotifications", () => {
     });
   });
 
-  describe("menu reads host state", () => {
+  describe("menu reads the workbench's maximized pane", () => {
     it("shows Minimize when the pane is maximized", () => {
-      host.setPaneMaximized(true);
+      maximizedTerminalId = terminalId;
 
       const items = menus.buildContextMenu();
       expect(items.find((i) => i.label === "Minimize Pane")).toBeDefined();

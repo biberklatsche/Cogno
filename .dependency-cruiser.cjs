@@ -35,6 +35,13 @@ module.exports = {
       to: { path: "^(@angular/|rxjs)" },
     },
     {
+      name: "t2b-shared-domain-knows-no-ui",
+      comment: "shared/domain and shared/support are below shared/ui; they never import it.",
+      severity: "error",
+      from: { path: sharedFrameworkFreePattern },
+      to: { path: "^src/shared/ui/" },
+    },
+    {
       name: "t3-platform-imports-only-shared",
       severity: "error",
       comment: "platform is the Tauri boundary; it knows no product layer.",
@@ -51,10 +58,10 @@ module.exports = {
     {
       name: "t5-infrastructure-knows-no-product-layer",
       severity: "error",
-      comment: "infrastructure knows neither a session nor the layout.",
+      comment: "infrastructure knows neither a session nor the layout; it may implement api contracts.",
       from: { path: `${corePattern}infrastructure/` },
       to: {
-        path: `${coreExcept("infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+        path: `${coreExcept("infrastructure", "api")}|${featuresPattern}|${bootstrapPattern}`,
       },
     },
     {
@@ -70,7 +77,7 @@ module.exports = {
       comment: "command-log owns the data; it knows no session and no layout.",
       from: { path: `${corePattern}command-log/` },
       to: {
-        path: `${coreExcept("command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+        path: `${coreExcept("command-log", "infrastructure", "api")}|${featuresPattern}|${bootstrapPattern}`,
       },
     },
     {
@@ -79,25 +86,27 @@ module.exports = {
       comment: "A session does not know whether it is displayed. It publishes facts.",
       from: { path: `${corePattern}session/` },
       to: {
-        path: `${coreExcept("session", "terminal", "command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+        path: `${coreExcept("session", "terminal", "command-log", "infrastructure", "api")}|${featuresPattern}|${bootstrapPattern}`,
       },
     },
     {
-      name: "t9-workbench-knows-no-machine-and-no-api",
+      name: "t9-workbench-knows-no-machine",
       severity: "error",
-      comment: "The workbench owns sessions as hosts; it never touches the machine or the api.",
+      comment:
+        "The workbench owns sessions as hosts; it never touches the machine. It implements most api contracts.",
       from: { path: `${corePattern}workbench/` },
       to: {
-        path: `${coreExcept("workbench", "session", "command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+        path: `${coreExcept("workbench", "session", "command-log", "infrastructure", "api")}|${featuresPattern}|${bootstrapPattern}`,
       },
     },
     {
-      name: "t10-api-knows-no-features-and-no-machine",
+      name: "t10-api-is-contracts-only",
       severity: "error",
-      comment: "The api is the view features get; it composes session and workbench.",
+      comment:
+        "The api is the protocol between core and features in both directions: contracts only. It imports shared and platform, nothing from core; the layers that implement it import it.",
       from: { path: `${corePattern}api/` },
       to: {
-        path: `${coreExcept("api", "workbench", "session", "command-log", "infrastructure")}|${featuresPattern}|${bootstrapPattern}`,
+        path: `${coreExcept("api")}|${featuresPattern}|${bootstrapPattern}`,
       },
     },
     {
@@ -131,6 +140,14 @@ module.exports = {
         "Every module is reachable from something. An orphan is dead code - delete it, or wire it up. Ambient .d.ts files declare types for the compiler and are imported by nobody.",
       from: { orphan: true, pathNot: ["\.d\.ts$"] },
       to: {},
+    },
+    {
+      name: "t16-no-circular",
+      severity: "error",
+      comment:
+        "No module reaches itself through its imports - type-only imports included, since specs emit decorator metadata.",
+      from: { path: pkg },
+      to: { circular: true },
     },
     {
       name: "t14-known-aliases-only",

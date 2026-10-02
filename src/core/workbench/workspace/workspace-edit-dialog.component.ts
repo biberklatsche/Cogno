@@ -1,8 +1,9 @@
 import { Component, Inject, signal } from "@angular/core";
 import { ColorSelectComponent } from "@cogno/core/workbench/color/color-select.component";
-import { WorkspaceState } from "@cogno/shared/domain/workspace";
+import { AutofocusDirective } from "@cogno/core/workbench/workspace/autofocus.directive";
 import { ColorName } from "@cogno/shared/support";
-import { AutofocusDirective, DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
+import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
+import { WorkspaceState } from "./workspace.model";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
 @Component({

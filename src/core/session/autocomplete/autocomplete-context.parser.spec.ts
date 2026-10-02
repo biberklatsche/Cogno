@@ -20,7 +20,6 @@ function baseState(input: string, cursorIndex: number): SessionState {
     hasSelection: false,
     isCommandRunning: false,
     isInFullScreenMode: false,
-    isPaneMaximized: false,
     scrolledLinesFromBottom: 0,
     progress: { state: "hidden", value: 0 },
     hasUnreadNotification: false,

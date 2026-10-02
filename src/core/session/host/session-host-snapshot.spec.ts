@@ -146,11 +146,15 @@ describe("SessionHost snapshot/restore", () => {
   });
 
   it("drops an earlier restore boundary line so they don't accumulate", () => {
-    bufferLines = [makeLine("first"), makeLine("---- restored session ----"), makeLine("second")];
+    bufferLines = [
+      makeLine("first"),
+      makeLine("COGNO:RESTORE-BOUNDARY", { invisible: true }),
+      makeLine("second"),
+    ];
 
     const scrollback = host.snapshot(500).scrollback ?? "";
 
-    expect(scrollback).not.toContain("restored session");
+    expect(scrollback).not.toContain("RESTORE-BOUNDARY");
     expect(scrollback).toContain("first");
     expect(scrollback).toContain("second");
   });
@@ -272,6 +276,17 @@ describe("SessionHost snapshot/restore", () => {
 
     // The replay is deferred to the first attach; restore() only stashes.
     expect(writeMock).not.toHaveBeenCalled();
+  });
+
+  it("saves a restored but never shown session as its waiting snapshot, not as an empty buffer", () => {
+    const waiting = {
+      version: SESSION_SNAPSHOT_VERSION,
+      scrollback: "PREVIOUS-OUTPUT",
+      commands: [],
+    };
+    host.restore(waiting);
+
+    expect(host.snapshot(1000)).toEqual(waiting);
   });
 
   it("replays scrollback and a concealed boundary, then a single trailing line off Windows", () => {

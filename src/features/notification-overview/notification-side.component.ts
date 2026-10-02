@@ -1,9 +1,9 @@
 import { Component, Signal } from "@angular/core";
+import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import {
   NotificationCenterItemContract,
   NotificationCenterItemIdContract,
-} from "@cogno/shared/domain";
-import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+} from "./notification-center-item";
 import { NotificationCenterStateService } from "./notification-center-state.service";
 
 @Component({

@@ -105,7 +105,12 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
   private _webglContextLossDisposable: IDisposable | undefined = undefined;
   private _webglRestoreTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   private _webglRestoreAttempt = 0;
-  private _visible = true;
+  /**
+   * A terminal starts hidden and takes a WebGL context only once shown: sessions
+   * are created for every tab, and a context per hidden session would crowd the
+   * shown ones out of the pool.
+   */
+  private _visible = false;
   private readonly _isWebglContextLostSubject = new BehaviorSubject<boolean>(false);
 
   constructor(
@@ -153,9 +158,6 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     this._terminal.loadAddon(this._searchAddon);
     this._terminal.loadAddon(this._unicodeAddon);
     this._terminal.unicode.activeVersion = "11";
-    if (this._webglEnabled) {
-      this.useWebGl();
-    }
   }
 
   register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable {

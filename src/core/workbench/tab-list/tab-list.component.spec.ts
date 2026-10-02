@@ -3,9 +3,10 @@ import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
+import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import type { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
-import { ContextMenuOverlayService, DragPreviewService } from "@cogno/shared/ui";
+import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,

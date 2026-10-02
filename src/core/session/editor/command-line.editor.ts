@@ -1,10 +1,10 @@
-import { IPty } from "@cogno/core/terminal/pty";
-import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
-import { ClipboardAccess } from "@cogno/platform/clipboard";
 import {
   ShellLineEditorActionContract,
   ShellLineEditorDefinitionContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/session/shells/shell-definition";
+import { IPty } from "@cogno/core/terminal/pty";
+import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";

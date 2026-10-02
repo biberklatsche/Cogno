@@ -1,4 +1,4 @@
-import type { RecentCommandRow } from "@cogno/core/command-log/command-log.repository";
+import type { RecentCommandRow } from "@cogno/core/command-log/command-log.api";
 import type { SessionCommandLog as TerminalHistoryPersistenceService } from "@cogno/core/session/command-log/session-command-log";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import type { SessionState } from "@cogno/core/session/host/session-host";
@@ -28,7 +28,6 @@ class FakeStateManager {
     hasSelection: false,
     isCommandRunning: false,
     isInFullScreenMode: false,
-    isPaneMaximized: false,
     scrolledLinesFromBottom: 0,
     sessionCapabilities: undefined,
     contextRevision: 0,

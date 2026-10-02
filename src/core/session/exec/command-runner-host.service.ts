@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
-import { CommandRunner } from "@cogno/platform/command-runner";
 import {
   CommandRunner as CommandRunnerPort,
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
-} from "@cogno/shared/ports";
+} from "@cogno/core/api/command-runner-port";
+import { CommandRunner } from "@cogno/platform/command-runner";
 import { createPathAdapter } from "../shells/shell-definitions";
 
 @Injectable({ providedIn: "root" })

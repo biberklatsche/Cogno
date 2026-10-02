@@ -31,8 +31,7 @@ pub fn quarantine(path: &Path) -> DbResult<PathBuf> {
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or_else(|| "database".to_string());
-    let quarantined =
-        path.with_file_name(format!("{file_name}.corrupt-{}", super::now_ms() / 1000));
+    let quarantined = path.with_file_name(format!("{file_name}.corrupt-{}", super::now_ms()));
 
     std::fs::rename(path, &quarantined)?;
     for suffix in ["-wal", "-shm"] {

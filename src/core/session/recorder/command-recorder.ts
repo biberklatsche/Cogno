@@ -1,10 +1,10 @@
 import { Injectable } from "@angular/core";
+import { resolveLimit, UNLIMITED } from "@cogno/core/api/contributions";
 import type { CommandLogWriter } from "@cogno/core/command-log/command-log.api";
 import { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history-reader";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Paths } from "@cogno/platform/path";
-import { resolveLimit, UNLIMITED } from "@cogno/shared/contributions";
 import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
 import { SessionCommandLog } from "../command-log/session-command-log";
 import { ExecutedCommand } from "./executed-command";
@@ -46,9 +46,9 @@ export class CommandRecorder {
 
   constructor(
     private readonly commandLog: SessionCommandLog,
-    private readonly paths?: Paths,
-    private readonly historyReader?: ShellHistoryReader,
-    private readonly configService?: ConfigService,
+    private readonly paths: Paths,
+    private readonly historyReader: ShellHistoryReader,
+    private readonly configService: ConfigService,
   ) {}
 
   initialize(
@@ -56,15 +56,18 @@ export class CommandRecorder {
     adapter: IPathAdapter,
     groupId?: string,
   ): void {
-    void this.commandLog.open(shellContext, adapter, groupId).then((repository) => {
+    void this.commandLog.open(shellContext, adapter, groupId).then(async (repository) => {
       if (!repository) return;
       if (
-        this.configService?.config.terminal?.history?.import_shell_history &&
-        !CommandRecorder.shellHistoryImportStarted
+        !this.configService.config.terminal?.history?.import_shell_history ||
+        CommandRecorder.shellHistoryImportStarted
       ) {
-        CommandRecorder.shellHistoryImportStarted = true;
-        this.commandLog.write((writer) => this.importShellHistoryIfEmpty(writer, shellContext));
+        return;
       }
+      CommandRecorder.shellHistoryImportStarted = true;
+      // Only into an empty history: the import is a first-launch seed, not a sync.
+      if (await this.commandLog.hasAnyCommands()) return;
+      this.commandLog.write((writer) => this.importShellHistory(writer, shellContext));
     });
   }
 
@@ -103,12 +106,11 @@ export class CommandRecorder {
     this.commandLog.recordExecutionForTransition(persistedCommand, timestamp);
   }
 
-  private async importShellHistoryIfEmpty(
+  private async importShellHistory(
     writer: CommandLogWriter,
     shellContext: ResolvedShellContextContract,
   ): Promise<void> {
     try {
-      if (!this.paths || !this.historyReader) return;
       const homeDir = await this.paths.homeDir();
       const entries = await this.historyReader.read(
         shellContext.shellType,
@@ -138,7 +140,7 @@ export class CommandRecorder {
   /**
    * Record a command that was still running when the app quit as an aborted
    * entry: it never reported a return code, so `shouldPersistCommand` would drop
-   * it, but it must not vanish from history (step 27b-2). Same text filters, no
+   * it, but it must not vanish from history. Same text filters, no
    * return-code gate; awaited so it reaches the log before the process exits.
    */
   async recordAbortedCommand(executedCommand: ExecutedCommand): Promise<void> {
@@ -167,7 +169,7 @@ export class CommandRecorder {
     if (executedCommand === undefined) return false;
     if (executedCommand.command === undefined) return false;
     if (
-      this.configService?.config.terminal?.history?.ignore_commands_with_leading_space &&
+      this.configService.config.terminal?.history?.ignore_commands_with_leading_space &&
       executedCommand.command.startsWith(" ")
     ) {
       return false;
@@ -195,22 +197,19 @@ export class CommandRecorder {
     );
   }
 
+  /** How many commands the history keeps; `undefined` when it is unlimited. */
+  private historyLimit(): number | undefined {
+    const limit = resolveLimit(this.configService.config.terminal?.history?.max_entries, UNLIMITED);
+    return Number.isFinite(limit) ? limit : undefined;
+  }
+
   /**
    * The configured return-code filter: the command's own list, else the global
    * one. An empty list is no filter. With a list set, a command whose result is
    * unknown (no return code) is not kept.
    */
-  /** How many commands the history keeps; `undefined` when it is unlimited. */
-  private historyLimit(): number | undefined {
-    const limit = resolveLimit(
-      this.configService?.config.terminal?.history?.max_entries,
-      UNLIMITED,
-    );
-    return Number.isFinite(limit) ? limit : undefined;
-  }
-
   private isReturnCodeAllowed(token: string, returnCode: number | undefined): boolean {
-    const history = this.configService?.config.terminal?.history;
+    const history = this.configService.config.terminal?.history;
     const allowed =
       history?.allowed_return_codes_by_command?.[token] ?? history?.allowed_return_codes ?? [];
     if (allowed.length === 0) return true;

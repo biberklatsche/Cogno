@@ -1,4 +1,4 @@
-import { limitSchema } from "@cogno/shared/contributions";
+import { limitSchema } from "@cogno/core/api/contributions";
 import { z } from "zod";
 import { ErrorReportingSettingsSchema } from "./error-reporting-settings";
 

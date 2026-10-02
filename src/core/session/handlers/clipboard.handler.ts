@@ -1,9 +1,9 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ShellLineEditorDefinitionContract } from "@cogno/core/session/shells/shell-definition";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { bytesToBase64, ClipboardAccess } from "@cogno/platform/clipboard";
-import { ShellLineEditorDefinitionContract } from "@cogno/shared/contributions";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
 import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";

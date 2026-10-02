@@ -13,7 +13,7 @@ async function resolveHistoryFilePath(
   shellType: ShellTypeContract,
   backendOs: BackendOsContract,
   homeDir: string,
-): Promise<string | null> {
+): Promise<string> {
   switch (shellType) {
     case "Bash":
       return paths.join(homeDir, ".bash_history");
@@ -89,8 +89,6 @@ export class ShellHistoryReader {
     homeDir: string,
   ): Promise<ShellHistoryEntry[]> {
     const filePath = await resolveHistoryFilePath(this.paths, shellType, backendOs, homeDir);
-    if (!filePath) return [];
-
     const exists = await this.fs.exists(filePath);
     if (!exists) return [];
 

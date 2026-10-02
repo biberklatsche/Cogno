@@ -24,7 +24,7 @@ const RESET = `${ESC}0m`;
  * whose cursor-restore tail corrupted the live session on replay). The output is
  * `\r\n`-separated visual lines, so it replays width-independently, and trailing
  * blank lines are trimmed. Concealed marker lines (`\e[8m^^#<id>`) are kept as
- * such - their invisibility rides along in the SGR (step 27).
+ * such - their invisibility rides along in the SGR.
  */
 export function serializeScrollback(
   buffer: SerializableBuffer,

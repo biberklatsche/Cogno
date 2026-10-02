@@ -1,12 +1,12 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { posixInsertSanitizer } from "@cogno/core/session/shells/common/posix-insert-sanitizer";
-import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
-import type { IPty } from "@cogno/core/terminal/pty";
-import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type {
   ShellLineEditorDefinitionContract,
   ShellSessionCapabilitiesContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/session/shells/shell-definition";
+import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
+import type { IPty } from "@cogno/core/terminal/pty";
+import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";

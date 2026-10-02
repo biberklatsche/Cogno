@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
+import { FeatureDefinition } from "@cogno/core/api/contributions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
-import { FeatureDefinition } from "@cogno/shared/contributions";
 import { FeatureContributionRegistrar } from "./feature-reconciler";
 
 /**

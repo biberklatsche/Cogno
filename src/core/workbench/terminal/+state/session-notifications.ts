@@ -1,19 +1,18 @@
 import { Injectable } from "@angular/core";
+import { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
 import {
-  buildNotificationPreferencesMenuItems,
   ChannelDefinitionContract,
   NotificationDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
   TerminalId,
 } from "@cogno/shared/domain";
-import { NotificationChannelsPort } from "@cogno/shared/ports";
-import { ContextMenuItem } from "@cogno/shared/ui";
+import { buildNotificationPreferencesMenuItems, ContextMenuItem } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import {
   CompletedCommandNotificationHandler,

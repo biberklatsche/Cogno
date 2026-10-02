@@ -1,7 +1,7 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import { ActionDefinitionContract } from "@cogno/shared/domain";
-import { ActionCatalog, ActionDispatcher } from "@cogno/shared/ports";
 
 export interface CommandEntry {
   readonly id: string;

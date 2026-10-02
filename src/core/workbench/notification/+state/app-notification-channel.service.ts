@@ -1,5 +1,5 @@
 import { Injectable, Signal, signal } from "@angular/core";
-import { resolveLimit } from "@cogno/shared/contributions";
+import { resolveLimit } from "@cogno/core/api/contributions";
 import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,

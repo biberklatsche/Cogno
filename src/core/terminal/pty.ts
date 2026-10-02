@@ -10,6 +10,8 @@ import { TerminalDimensions, TerminalMachineFault } from "./terminal-machine.eve
 
 export type PtyChunk = PtyChunkContract;
 export type PtyChunkListener = (chunk: PtyChunk) => void;
+export type PtyExit = { exitCode: number; signal?: number };
+export type PtyExitListener = (exit: PtyExit) => void;
 
 export interface IPty extends IDisposable {
   /** Things the machine could not do; the host decides who is told. */
@@ -30,7 +32,11 @@ export interface IPty extends IDisposable {
   ack(seq: number): void;
   write(data: string): void;
   executeLineEditorAction(action: string, payload?: object): void;
-  onExit(listener: (e: { exitCode: number; signal?: number }) => void): IDisposable;
+  /**
+   * The shell ended. A listener that subscribes after the exit is told
+   * immediately, so an exit racing the spawn is never lost.
+   */
+  onExit(listener: PtyExitListener): IDisposable;
   kill(signal?: string): void;
 }
 
@@ -55,6 +61,8 @@ export class Pty implements IPty {
   private _pendingResize?: TerminalDimensions;
   private _spawn: PtySpawnHandleContract | undefined = undefined;
   private _exitUnlisten: (() => void) | undefined = undefined;
+  private _exit: PtyExit | undefined = undefined;
+  private readonly _exitListeners = new Set<PtyExitListener>();
 
   constructor(
     private readonly _transport: PtyTransport,
@@ -71,6 +79,17 @@ export class Pty implements IPty {
     this._terminalId = terminalId;
     this._spawned = false;
     this._pendingResize = undefined;
+    this._exit = undefined;
+    // Listen before the shell exists: a shell that dies at once emits its exit
+    // before the spawn call even returns.
+    this._exitUnlisten?.();
+    this._exitUnlisten = undefined;
+    const unlisten = await this._transport.onExit(terminalId, (exit) => this.notifyExit(exit));
+    if (this._disposed || this._terminalId !== terminalId) {
+      unlisten();
+      return;
+    }
+    this._exitUnlisten = unlisten;
     const spawn = this._transport.spawn(
       {
         terminalId,
@@ -179,18 +198,15 @@ export class Pty implements IPty {
     );
   }
 
-  onExit(listener: (e: { exitCode: number; signal?: number }) => void): IDisposable {
-    if (!this._terminalId) throw Error("Please spawn Pty before listen on exit.");
-    const terminalId = this._terminalId;
-    this._transport.onExit(terminalId, listener).then((unlisten) => {
-      this._exitUnlisten = unlisten;
-    });
-    return {
-      dispose: () => {
-        this._exitUnlisten?.();
-        this._exitUnlisten = undefined;
-      },
-    };
+  onExit(listener: PtyExitListener): IDisposable {
+    this._exitListeners.add(listener);
+    if (this._exit) listener(this._exit);
+    return { dispose: () => this._exitListeners.delete(listener) };
+  }
+
+  private notifyExit(exit: PtyExit): void {
+    this._exit = exit;
+    for (const listener of this._exitListeners) listener(exit);
   }
 
   dispose(): void {
@@ -204,6 +220,7 @@ export class Pty implements IPty {
     this._spawn = undefined;
     this._exitUnlisten?.();
     this._exitUnlisten = undefined;
+    this._exitListeners.clear();
     this._terminalId = undefined;
   }
 

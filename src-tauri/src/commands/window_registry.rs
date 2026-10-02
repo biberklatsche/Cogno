@@ -101,15 +101,6 @@ impl WindowRegistry {
         }
     }
 
-    pub fn label_for_terminal(&self, terminal_id: &str) -> Option<String> {
-        self.inner
-            .lock()
-            .unwrap()
-            .terminal_to_label
-            .get(terminal_id)
-            .cloned()
-    }
-
     pub fn label_for_workspace(&self, workspace_id: &str) -> Option<String> {
         self.inner
             .lock()
@@ -117,10 +108,6 @@ impl WindowRegistry {
             .workspace_to_label
             .get(workspace_id)
             .cloned()
-    }
-
-    pub fn last_focused(&self) -> Option<String> {
-        self.inner.lock().unwrap().last_focused.clone()
     }
 
     /// The window an event should go to: the session's window when a known
@@ -139,22 +126,6 @@ impl WindowRegistry {
 #[cfg(test)]
 mod tests {
     use super::WindowRegistry;
-
-    #[test]
-    fn maps_terminals_and_workspaces_and_focus() {
-        let registry = WindowRegistry::new();
-        registry.bind_terminal("t1", "win-a");
-        registry.set_focus("win-b");
-        registry.claim_workspace("ws1", "win-a").unwrap();
-
-        assert_eq!(registry.label_for_terminal("t1").as_deref(), Some("win-a"));
-        assert_eq!(registry.label_for_terminal("nope"), None);
-        assert_eq!(
-            registry.label_for_workspace("ws1").as_deref(),
-            Some("win-a")
-        );
-        assert_eq!(registry.last_focused().as_deref(), Some("win-b"));
-    }
 
     #[test]
     fn resolves_target_by_terminal_then_falls_back_to_focus() {
@@ -229,9 +200,12 @@ mod tests {
 
         registry.on_destroyed("win-a");
 
-        assert_eq!(registry.label_for_terminal("t1"), None);
-        assert_eq!(registry.label_for_terminal("t2").as_deref(), Some("win-b"));
+        assert_eq!(registry.resolve_target(Some("t1")), None);
+        assert_eq!(
+            registry.resolve_target(Some("t2")).as_deref(),
+            Some("win-b")
+        );
         assert_eq!(registry.label_for_workspace("ws1"), None);
-        assert_eq!(registry.last_focused(), None);
+        assert_eq!(registry.resolve_target(None), None);
     }
 }

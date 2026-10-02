@@ -1,6 +1,6 @@
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { defaultWorkspaceIdContract } from "@cogno/shared/domain";
+import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   clear,
@@ -57,6 +57,32 @@ describe("TabListService workspace runtime", () => {
 
     service.activateWorkspace(defaultWorkspaceIdContract);
     expect(tabIds()).toEqual(["t1"]);
+  });
+
+  it("removes a tab of a workspace that is not shown, and names its next active tab", () => {
+    service.addTab(tab("t1"), true);
+    service.addTab(tab("t2", false), true);
+    service.activateWorkspace("ws-2");
+    service.addTab(tab("t3"), true);
+    let removed: string | undefined;
+    bus.on$("TabRemoved").subscribe((event) => (removed = event.payload));
+
+    bus.publish({ type: "RemoveTab", payload: "t1" });
+
+    expect(removed).toBe("t1");
+    expect(tabIds()).toEqual(["t3"]);
+    const background = service.getTabConfigs(defaultWorkspaceIdContract);
+    expect(background.map((c) => c.tabId)).toEqual(["t2"]);
+    expect(background[0]?.isActive).toBe(true);
+  });
+
+  it("renames a tab of a workspace that is not shown", () => {
+    service.addTab(tab("t1"), true);
+    service.activateWorkspace("ws-2");
+
+    bus.publish({ type: "ChangeTabTitle", payload: { tabId: "t1", title: "vim" } });
+
+    expect(service.getTabConfigs(defaultWorkspaceIdContract)[0]?.systemTitle).toBe("vim");
   });
 
   it("closes an open rename when a workspace is activated", () => {

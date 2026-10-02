@@ -76,7 +76,7 @@ file or directory contains a different third-party license notice.
 
 ### Third-party content
 
-- Command specs in `src/features/autocomplete/spec-command/data` are derived
+- Command specs in `src/core/session/autocomplete/spec-command/data` are derived
   from [withfig/autocomplete](https://github.com/withfig/autocomplete)
   (`MIT`, © Hercules Labs Inc.); see the `LICENSE` file in that directory.
 - Bundled fonts: Roboto (`Apache-2.0`) and Comfortaa (`OFL-1.1`); license
@@ -173,18 +173,21 @@ The TypeScript code lives in layers under `src/`, each importing only
 from the ones below it (enforced by `pnpm lint:architecture`):
 
 - `shared/`
-  framework-free foundation: domain models, pure utilities (`support`), and
-  generic UI building blocks (`ui`) — no product knowledge
+  framework-free foundation: domain models (`domain`), pure utilities
+  (`support`), and generic UI building blocks (`ui`) — no services, no state, no
+  contracts between core and features
 - `platform/`
   the only layer that talks to Tauri: OS, PTY, database, window, and filesystem
   bindings
 - `core/`
-  the always-on product — `infrastructure/` (config, errors, theme), `terminal/`
-  (the xterm machine), `command-log/`, `session/` (shells, model, autocomplete,
-  recorder), `workbench/` (tabs, workspaces, grid, side menu, notifications), and
-  `api/` (the stable surface features consume)
+  the always-on product — `api/` (the protocol with features: contracts only,
+  ports core implements and `contributions/` features fulfil),
+  `infrastructure/` (config, errors, theme), `terminal/` (the xterm machine),
+  `command-log/`, `session/` (shells, model, autocomplete, recorder), and
+  `workbench/` (tabs, workspaces, grid, side menu, notifications, and the
+  adapters implementing the api)
 - `features/`
-  switchable features: autocomplete, command palette, git, terminal search,
+  switchable features: command palette, git, terminal search,
   process info, notification overview, and coding-agent detection
 - `bootstrap/`
   the composition root: Angular DI wiring, the feature manifest, and `main.ts`

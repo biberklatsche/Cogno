@@ -6,10 +6,9 @@ import { TerminalSessionRegistry } from "./terminal-session.registry";
 
 /**
  * Routes the terminal bus messages addressed to a session onto its host,
- * resolving `terminalId -> host` through the registry. One root service in
- * place of the per-session subscriptions that used to hold them: most
- * messages carry a terminal id and hit one host; a couple are broadcasts that
- * fan out to all of them. (The keybind action triggers stay per-session - they
+ * resolving `terminalId -> host` through the registry. One root service for
+ * all sessions: most messages carry a terminal id and hit one host; a couple
+ * are broadcasts that fan out to all of them. (The keybind action triggers stay per-session - they
  * need the session's autocomplete/history and depend on focus.)
  */
 @Injectable({ providedIn: "root" })
@@ -30,20 +29,10 @@ export class TerminalInputDispatcher {
     until(this.bus.on$("BlurTerminal")).subscribe((event) => {
       this.registry.get(event.payload)?.host.blur();
     });
-    until(this.bus.on$("PaneMaximizedChanged")).subscribe((event) => {
-      for (const entry of this.registry.entries) {
-        entry.host.setPaneMaximized(event.payload?.terminalId === entry.terminalId);
-      }
-    });
     until(this.bus.on$("VisibleTerminalsChanged")).subscribe((event) => {
       for (const entry of this.registry.entries) {
         entry.host.setVisible(event.payload?.terminalIds.includes(entry.terminalId) ?? true);
       }
-    });
-    until(this.bus.on$("WriteRawToPty")).subscribe((event) => {
-      const payload = event.payload;
-      if (!payload) return;
-      this.registry.get(payload.terminalId)?.host.writeRaw(payload.text, payload.autoExecute);
     });
     until(this.bus.on$("TerminalSearchRequested")).subscribe((event) => {
       const payload = event.payload;

@@ -26,6 +26,8 @@ export class ProcessInfoService {
   private active = false;
   private refreshTimer?: number;
   private refreshInFlight = false;
+  /** A refresh for a newly bound session came in while another ran. */
+  private refreshPending = false;
 
   constructor(
     private readonly sessionApi: SessionApi,
@@ -82,13 +84,19 @@ export class ProcessInfoService {
   }
 
   private async refresh(showLoading: boolean): Promise<void> {
-    if (this.refreshInFlight) return;
+    if (this.refreshInFlight) {
+      // A poll can wait for the next tick; a switch to another session cannot.
+      if (showLoading) this.refreshPending = true;
+      return;
+    }
     const session = this.boundSession;
     if (!session) return;
     this.refreshInFlight = true;
     try {
       if (showLoading) this.loadingSignal.set(true);
       const snapshot = await session.processTree();
+      // The tree of a session that lost focus meanwhile is not shown.
+      if (this.boundSession !== session) return;
       this.snapshotSignal.set(snapshot);
       this.errorSignal.set(false);
     } catch {
@@ -100,6 +108,10 @@ export class ProcessInfoService {
     } finally {
       if (showLoading) this.loadingSignal.set(false);
       this.refreshInFlight = false;
+      if (this.refreshPending) {
+        this.refreshPending = false;
+        if (this.active) void this.refresh(true);
+      }
     }
   }
 }

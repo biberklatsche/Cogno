@@ -1,6 +1,9 @@
 import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
+import type { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history-reader";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import type { DatabaseAccess } from "@cogno/platform";
+import type { Paths } from "@cogno/platform/path";
 import type { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
 
@@ -55,6 +58,11 @@ function createRepositoryDouble(): CommandLogRepositoryDouble {
 
 type Subject = { recorder: CommandRecorder; commandLog: SessionCommandLog };
 
+/** Only the history import reads these, and it is off unless a test turns it on. */
+const unusedPaths = {} as Paths;
+const unusedHistoryReader = {} as ShellHistoryReader;
+const defaultConfig = { config: {} } as ConfigService;
+
 async function createService(
   repositoryDouble: CommandLogRepositoryDouble,
   configService?: ConfigService,
@@ -64,7 +72,12 @@ async function createService(
   );
 
   const commandLog = new SessionCommandLog(databaseAccess);
-  const recorder = new CommandRecorder(commandLog, undefined, undefined, configService);
+  const recorder = new CommandRecorder(
+    commandLog,
+    unusedPaths,
+    unusedHistoryReader,
+    configService ?? defaultConfig,
+  );
   recorder.initialize(shellContext, pathAdapter);
   await flushActions();
   return { recorder, commandLog };
@@ -397,14 +410,17 @@ describe("CommandRecorder", () => {
     );
   });
 
-  it("stays silent and keeps the session going when there is no database", async () => {
-    const repositoryDouble = createRepositoryDouble();
-    const createForContext = vi
-      .spyOn(CommandLogRepository, "createForContext")
-      .mockResolvedValue(repositoryDouble as unknown as CommandLogRepository);
+  it("keeps the session going when the database cannot be opened", async () => {
+    vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
+    vi.spyOn(CommandLogRepository, "createForContext").mockRejectedValue(new Error("no database"));
 
-    const commandLog = new SessionCommandLog(undefined);
-    const recorder = new CommandRecorder(commandLog);
+    const commandLog = new SessionCommandLog(databaseAccess);
+    const recorder = new CommandRecorder(
+      commandLog,
+      unusedPaths,
+      unusedHistoryReader,
+      defaultConfig,
+    );
     recorder.initialize(shellContext, pathAdapter);
     await flushActions();
 
@@ -412,13 +428,10 @@ describe("CommandRecorder", () => {
     recorder.onCommandExecuted({ command: "ls", directory: "/tmp", returnCode: 0 });
     await flushActions();
 
-    expect(createForContext).not.toHaveBeenCalled();
-    expect(repositoryDouble.upsertWorkingDirectory).not.toHaveBeenCalled();
-    expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
     await expect(commandLog.getRecentCommands({ scope: "global" })).resolves.toEqual([]);
   });
 
-  it("records an aborted command despite it having no return code (step 27b-2)", async () => {
+  it("records an aborted command despite it having no return code", async () => {
     const repositoryDouble = createRepositoryDouble();
     const { recorder: service } = await createService(repositoryDouble);
 
@@ -447,5 +460,49 @@ describe("CommandRecorder", () => {
     await service.recordAbortedCommand({ command: "   ", directory: "/tmp" });
 
     expect(repositoryDouble.upsertCommandExecution).not.toHaveBeenCalled();
+  });
+});
+
+describe("CommandRecorder shell-history import", () => {
+  const importConfig = {
+    config: { terminal: { history: { import_shell_history: true } } },
+  } as unknown as ConfigService;
+
+  async function startWith(hasAnyCommands: boolean) {
+    (
+      CommandRecorder as unknown as { shellHistoryImportStarted: boolean }
+    ).shellHistoryImportStarted = false;
+    const repository = {
+      ...createRepositoryDouble(),
+      hasAnyCommands: vi.fn().mockResolvedValue(hasAnyCommands),
+      bulkImportCommands: vi.fn().mockResolvedValue(undefined),
+    };
+    vi.spyOn(CommandLogRepository, "createForContext").mockResolvedValue(
+      repository as unknown as CommandLogRepository,
+    );
+    const historyReader = {
+      read: vi.fn().mockResolvedValue([{ command: "git status", timestamp: 1 }]),
+    } as unknown as ShellHistoryReader;
+    const paths = { homeDir: async () => "/home/me" } as unknown as Paths;
+    const recorder = new CommandRecorder(
+      new SessionCommandLog(databaseAccess),
+      paths,
+      historyReader,
+      importConfig,
+    );
+    recorder.initialize(shellContext, pathAdapter);
+    await flushActions();
+    await flushActions();
+    return repository;
+  }
+
+  it("seeds an empty history from the shell's history file", async () => {
+    const repository = await startWith(false);
+    expect(repository.bulkImportCommands).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not import again once the history has commands", async () => {
+    const repository = await startWith(true);
+    expect(repository.bulkImportCommands).not.toHaveBeenCalled();
   });
 });

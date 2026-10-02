@@ -31,8 +31,8 @@
               },
               {
                 "glob": "**/*",
-                "input": "src/features/autocomplete/spec-command/data",
-                "output": "/feature-data/base/spec-command"
+                "input": "src/core/session/autocomplete/spec-command/data",
+                "output": "/command-specs"
               }
             ],
             "styles": ["src/assets/styles/styles.css", "node_modules/@xterm/xterm/css/xterm.css"]

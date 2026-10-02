@@ -1,28 +1,16 @@
+import type { FeatureDefinition } from "@cogno/core/api/contributions";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
-import type { FeatureDefinition } from "@cogno/shared/contributions";
 import type { FeatureModeContract } from "@cogno/shared/domain";
 import { describe, expect, it, vi } from "vitest";
 import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";
 
 type FakeFeature = Partial<FeatureDefinition<ActionName>> & { id: string };
 
-function deferred<T = void>(): {
-  promise: Promise<T>;
-  resolve: (value: T) => void;
-  reject: (reason?: unknown) => void;
-} {
-  let resolve!: (value: T) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}
-
-const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
-
-function harness(fakes: ReadonlyArray<FakeFeature>) {
+/** `failRegister` makes registering that feature throw, as a lifecycle might. */
+function harness(
+  fakes: ReadonlyArray<FakeFeature>,
+  failRegister: (id: string) => boolean = () => false,
+) {
   const features = fakes.map(
     (fake): FeatureDefinition<ActionName> => ({ mode: "on", target: "workbench", ...fake }),
   );
@@ -31,7 +19,10 @@ function harness(fakes: ReadonlyArray<FakeFeature>) {
   );
   const calls: string[] = [];
   const registrar: FeatureContributionRegistrar = {
-    register: (feature) => calls.push(`register:${feature.id}`),
+    register: (feature) => {
+      calls.push(`register:${feature.id}`);
+      if (failRegister(feature.id)) throw new Error("boom");
+    },
     unregister: (feature) => calls.push(`unregister:${feature.id}`),
   };
   const reconciler = new FeatureReconciler(
@@ -43,175 +34,98 @@ function harness(fakes: ReadonlyArray<FakeFeature>) {
 }
 
 describe("FeatureReconciler", () => {
-  it("registers then activates a feature", async () => {
-    const activate = vi.fn();
-    const { reconciler, calls } = harness([{ id: "a", activate }]);
+  it("registers a feature's contributions", () => {
+    const { reconciler, calls } = harness([{ id: "a" }]);
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(calls).toEqual(["register:a"]);
-    expect(activate).toHaveBeenCalledTimes(1);
-    expect(reconciler.stateOf("a").status).toBe("active");
+    expect(reconciler.statusOf("a")).toBe("active");
   });
 
-  it("rolls back the contributions and fails when activate throws (rule 2)", async () => {
-    const { reconciler, calls } = harness([
-      {
-        id: "a",
-        activate: () => {
-          throw new Error("boom");
-        },
-      },
-    ]);
+  it("rolls back the contributions and fails when registering throws (rule 1)", () => {
+    const { reconciler, calls } = harness([{ id: "a" }], (id) => id === "a");
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(calls).toEqual(["register:a", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("failed");
-    expect(reconciler.stateOf("a").reason).toBe("boom");
+    expect(reconciler.statusOf("a")).toBe("failed");
   });
 
-  it("finishes activation before honouring an off requested mid-activation (rule 1)", async () => {
-    const gate = deferred();
-    const { reconciler, desired, calls } = harness([{ id: "a", activate: () => gate.promise }]);
+  it("unregisters a feature switched off and ends inactive (rule 2)", () => {
+    const { reconciler, desired, calls } = harness([{ id: "a" }]);
 
-    const reconciled = reconciler.reconcile();
-    // The activation is now in flight; the user turns the feature off.
+    reconciler.reconcile();
     desired.set("a", "off");
-    gate.resolve();
-    await reconciled;
+    reconciler.reconcile();
 
     expect(calls).toEqual(["register:a", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("inactive");
+    expect(reconciler.statusOf("a")).toBe("inactive");
   });
 
-  it("ends inactive even when deactivate throws (rule 3)", async () => {
-    const { reconciler, desired, calls } = harness([
+  it("ends inactive and reports it when the feature's code throws on the way out (rule 2)", () => {
+    let desiredMode: FeatureModeContract = "on";
+    const reportError = vi.fn();
+    const reconciler = new FeatureReconciler(
+      [{ id: "a", mode: "on", target: "workbench" }],
       {
-        id: "a",
-        deactivate: () => {
+        register: () => {},
+        unregister: () => {
           throw new Error("cleanup failed");
         },
       },
-    ]);
+      () => desiredMode,
+      reportError,
+    );
 
-    await reconciler.reconcile();
-    desired.set("a", "off");
-    await reconciler.reconcile();
+    reconciler.reconcile();
+    desiredMode = "off";
+    reconciler.reconcile();
 
-    expect(calls).toEqual(["register:a", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("inactive");
+    expect(reconciler.statusOf("a")).toBe("inactive");
+    expect(reportError).toHaveBeenCalledWith("a", expect.any(Error));
   });
 
-  it("keeps a dependent inactive with a reason when its requirement is off (rule 4)", async () => {
+  it("keeps a dependent inactive when its requirement is off (rule 3)", () => {
     const { reconciler } = harness([
       { id: "a", mode: "off" },
       { id: "b", requires: ["a"] },
     ]);
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
-    expect(reconciler.stateOf("a").status).toBe("inactive");
-    expect(reconciler.stateOf("b").status).toBe("inactive");
-    expect(reconciler.stateOf("b").reason).toBe("needs a");
+    expect(reconciler.statusOf("a")).toBe("inactive");
+    expect(reconciler.statusOf("b")).toBe("inactive");
   });
 
-  it("activates in dependency order and deactivates dependents first (rule 4)", async () => {
+  it("activates in dependency order and deactivates dependents first (rule 3)", () => {
     const { reconciler, desired, calls } = harness([{ id: "a" }, { id: "b", requires: ["a"] }]);
 
-    await reconciler.reconcile();
+    reconciler.reconcile();
     expect(calls).toEqual(["register:a", "register:b"]);
-    expect(reconciler.stateOf("b").status).toBe("active");
+    expect(reconciler.statusOf("b")).toBe("active");
 
     calls.length = 0;
     desired.set("a", "off");
-    await reconciler.reconcile();
+    reconciler.reconcile();
 
     expect(calls).toEqual(["unregister:b", "unregister:a"]);
-    expect(reconciler.stateOf("a").status).toBe("inactive");
-    expect(reconciler.stateOf("b").status).toBe("inactive");
+    expect(reconciler.statusOf("a")).toBe("inactive");
+    expect(reconciler.statusOf("b")).toBe("inactive");
   });
 
-  it("leaves failed only on retry (rule 6)", async () => {
+  it("stays failed: a later reconcile does not retry it", () => {
     let attempts = 0;
-    const { reconciler } = harness([
-      {
-        id: "a",
-        activate: () => {
-          attempts += 1;
-          if (attempts === 1) {
-            throw new Error("first attempt fails");
-          }
-        },
-      },
-    ]);
-
-    await reconciler.reconcile();
-    expect(reconciler.stateOf("a").status).toBe("failed");
-
-    // A plain reconcile does not retry a failed feature.
-    await reconciler.reconcile();
-    expect(reconciler.stateOf("a").status).toBe("failed");
-
-    await reconciler.retry("a");
-    expect(reconciler.stateOf("a").status).toBe("active");
-  });
-
-  describe("circuit breaker (rule 5)", () => {
-    it("degrades on a contribution failure and opens after three in a row", async () => {
-      const { reconciler } = harness([{ id: "a" }]);
-      await reconciler.reconcile();
-      expect(reconciler.stateOf("a").status).toBe("active");
-
-      reconciler.reportContributionFailure("a");
-      expect(reconciler.stateOf("a").status).toBe("degraded");
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-      expect(reconciler.stateOf("a").status).toBe("failed");
+    const { reconciler } = harness([{ id: "a" }], () => {
+      attempts += 1;
+      return attempts === 1;
     });
 
-    it("resets the count on a success", async () => {
-      const { reconciler } = harness([{ id: "a" }]);
-      await reconciler.reconcile();
+    reconciler.reconcile();
+    expect(reconciler.statusOf("a")).toBe("failed");
 
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionSuccess("a");
-      expect(reconciler.stateOf("a").status).toBe("active");
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-      expect(reconciler.stateOf("a").status).toBe("degraded");
-    });
-
-    it("trips only the failing feature (others keep running)", async () => {
-      const { reconciler } = harness([{ id: "a" }, { id: "b" }]);
-      await reconciler.reconcile();
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-
-      expect(reconciler.stateOf("a").status).toBe("failed");
-      expect(reconciler.stateOf("b").status).toBe("active");
-    });
-
-    it("comes back on retry after the breaker opened", async () => {
-      const { reconciler } = harness([{ id: "a" }]);
-      await reconciler.reconcile();
-
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      reconciler.reportContributionFailure("a");
-      await flush();
-      expect(reconciler.stateOf("a").status).toBe("failed");
-
-      await reconciler.retry("a");
-      expect(reconciler.stateOf("a").status).toBe("active");
-    });
+    reconciler.reconcile();
+    expect(reconciler.statusOf("a")).toBe("failed");
+    expect(attempts).toBe(1);
   });
 });

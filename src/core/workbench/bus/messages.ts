@@ -10,7 +10,6 @@ import { ConfigLoadedEvent, DBInitializedEvent } from "@cogno/core/workbench/bus
 import { FocusActiveTerminalAction } from "@cogno/core/workbench/bus/grid-list/actions";
 import {
   ChangeTabTitleEvent,
-  PaneMaximizedChangedEvent,
   VisibleTerminalsChangedEvent,
 } from "@cogno/core/workbench/bus/grid-list/events";
 import { OpenNotificationTargetAction } from "@cogno/core/workbench/bus/notification/actions";
@@ -30,7 +29,6 @@ import {
   BlurTerminalAction,
   FocusTerminalAction,
   TerminalRemovedAction,
-  WriteRawToPtyAction,
 } from "@cogno/core/workbench/bus/terminal/actions";
 import {
   TerminalSearchRequestedEvent,
@@ -54,7 +52,6 @@ export type AppMessage =
   | TerminalSearchRevealRequestedEvent
   | FocusTerminalAction
   | BlurTerminalAction
-  | WriteRawToPtyAction
   | ActionFiredEvent
   | TerminalRemovedAction
   | FocusActiveTerminalAction
@@ -62,6 +59,5 @@ export type AppMessage =
   | OpenNotificationTargetAction
   | SideMenuEvent
   | ChangeTabTitleEvent
-  | PaneMaximizedChangedEvent
   | VisibleTerminalsChangedEvent
   | TerminalIpcMessageEvent;

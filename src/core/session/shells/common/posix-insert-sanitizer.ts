@@ -1,4 +1,4 @@
-import { ShellInsertSanitizerContract } from "@cogno/shared/contributions";
+import { ShellInsertSanitizerContract } from "@cogno/core/session/shells/shell-definition";
 
 const WHITESPACE = new Set([" ", "\t"]);
 

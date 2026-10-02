@@ -1,4 +1,5 @@
 import { DestroyRef, Injectable } from "@angular/core";
+import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
@@ -16,6 +17,7 @@ export class NotificationTargetRuntimeService {
     private readonly appBus: AppBus,
     private readonly gridListService: GridListService,
     private readonly workspaces: WorkspaceHostApplicationService,
+    private readonly navigator: TerminalNavigator,
     destroyRef: DestroyRef,
   ) {
     const subscription = new Subscription();
@@ -29,8 +31,22 @@ export class NotificationTargetRuntimeService {
     });
   }
 
+  /**
+   * A notification about a terminal goes to that terminal wherever it is now -
+   * it may have moved to another tab since. A target without a terminal opens
+   * its tab.
+   */
   async openTarget(target: NotificationTargetRuntime | undefined): Promise<void> {
     if (!target) {
+      return;
+    }
+
+    if (target.terminalId) {
+      if (!this.gridListService.findTabIdByTerminalId(target.terminalId)) {
+        this.publishUnavailableTargetNotification();
+        return;
+      }
+      await this.navigator.navigateToTerminal(target.terminalId);
       return;
     }
 
@@ -46,36 +62,6 @@ export class NotificationTargetRuntimeService {
     this.appBus.publish({
       type: "SelectTab",
       payload: target.tabId,
-    });
-
-    if (target.terminalId) {
-      this.scheduleTerminalFocus(target);
-    }
-  }
-
-  private scheduleTerminalFocus(target: NotificationTargetRuntime): void {
-    const terminalId = target.terminalId;
-    if (!terminalId) {
-      return;
-    }
-
-    const scheduleFocus =
-      globalThis.requestAnimationFrame ??
-      ((callback: FrameRequestCallback) => queueMicrotask(() => callback(0)));
-
-    scheduleFocus(() => {
-      const terminalWorkspaceId =
-        this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId);
-      const terminalTabId = this.gridListService.findTabIdByTerminalId(terminalId);
-      if (terminalWorkspaceId !== target.workspaceId || terminalTabId !== target.tabId) {
-        this.publishUnavailableTargetNotification();
-        return;
-      }
-
-      this.appBus.publish({
-        type: "FocusTerminal",
-        payload: terminalId,
-      });
     });
   }
 

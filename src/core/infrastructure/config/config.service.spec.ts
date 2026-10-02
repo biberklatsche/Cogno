@@ -1,12 +1,15 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { DestroyRef } from "@angular/core";
 import { CliConfigOverrides } from "@cogno/platform/cli-config-overrides";
 import { DefaultConfig } from "@cogno/platform/default-config";
 import { Fs } from "@cogno/platform/fs";
 import { OsPlatform } from "@cogno/platform/os";
 import { Paths } from "@cogno/platform/path";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Environment } from "../environment/environment";
+import { ErrorReporter } from "../error/error-reporter";
 import { RealConfigService } from "./config.service";
 import { Config } from "./models/config";
 import { PromptConfig } from "./models/prompt-config";
@@ -190,5 +193,46 @@ describe("RealConfigService", () => {
 
     const promptlessService = createService({});
     expect(() => promptlessService.getPromptSegments()).toThrow("No prompt configuration defined!");
+  });
+});
+
+describe("RealConfigService hot reload", () => {
+  it("keeps watching after a reload fails, and picks up the next change", async () => {
+    const defaults = readFileSync(
+      join(process.cwd(), "src-tauri", "src", "default_windows.config"),
+      "utf-8",
+    );
+    const changes = new Subject<void>();
+    let userConfig = "cursor.blink = false\n";
+    const fs = {
+      exists: vi.fn().mockResolvedValue(true),
+      mkdir: vi.fn(),
+      readTextFile: vi.fn(async () => userConfig),
+      writeTextFile: vi.fn(),
+      watchChanges$: vi.fn(() => changes.asObservable()),
+    } as unknown as Fs;
+    const service = new RealConfigService(
+      { read: async () => defaults } as unknown as DefaultConfig,
+      { getSerializedOverrides: async () => "" } as unknown as CliConfigOverrides,
+      { onDestroy: vi.fn() } as unknown as DestroyRef,
+      { platform: () => "linux" } as unknown as OsPlatform,
+      { dirname: async () => "/config" } as unknown as Paths,
+      {
+        configDir: () => "/config",
+        configFilePath: () => "/config/cogno.config",
+      } as unknown as Environment,
+      fs,
+    );
+    const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
+    await service.load({ settingsExtensions: [] });
+    expect(service.config.cursor?.blink).toBe(false);
+
+    vi.mocked(fs.readTextFile).mockRejectedValueOnce(new Error("file is locked"));
+    changes.next();
+    await vi.waitFor(() => expect(report).toHaveBeenCalledTimes(1));
+
+    userConfig = "cursor.blink = true\n";
+    changes.next();
+    await vi.waitFor(() => expect(service.config.cursor?.blink).toBe(true));
   });
 });

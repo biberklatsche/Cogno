@@ -9,8 +9,11 @@ import {
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { workspaceBadge } from "@cogno/core/workbench/workspace/workspace-badge";
+import {
+  defaultWorkspaceIdContract,
+  WorkspaceEntryContract,
+} from "@cogno/core/workbench/workspace/workspace-entry";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
-import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "@cogno/shared/domain";
 import {
   ContextMenuItem,
   ContextMenuOverlayService,
@@ -139,7 +142,7 @@ export class SelectedWorkspaceHeaderComponent {
   protected readonly activeWorkspace: Signal<WorkspaceEntryContract | undefined>;
   protected readonly openWorkspaceEntries: Signal<WorkspaceEntryContract[]>;
   protected readonly hasWorkspaceMenu: Signal<boolean>;
-  /** When session restore is on, the workspace auto-saves (step 27g). */
+  /** When session restore is on, the workspace auto-saves. */
   private readonly restoreEnabledSignal = signal(true);
   protected readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
 

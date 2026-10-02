@@ -1,9 +1,10 @@
 import { Injectable } from "@angular/core";
+import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { actionLabel, CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { ActionKeybindingPort } from "@cogno/shared/ports";
+import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { SessionNotifications } from "./session-notifications";
 
@@ -11,7 +12,6 @@ import { SessionNotifications } from "./session-notifications";
  * The context and header menus of one terminal. They fire catalogue actions
  * (split, maximize, close) aimed at this terminal; an app concern, so this
  * sits with the session's other app-facing collaborators, not in the session.
- * Process info is now the process-info feature panel (step 25).
  */
 @Injectable()
 export class SessionMenus {
@@ -20,6 +20,7 @@ export class SessionMenus {
     private readonly host: SessionHost,
     private readonly notifications: SessionNotifications,
     private readonly keybindings: ActionKeybindingPort,
+    private readonly layout: PaneLayoutLookup,
   ) {}
 
   buildContextMenu(): ContextMenuItem[] {
@@ -45,7 +46,7 @@ export class SessionMenus {
       item("split_down"),
       item("split_up"),
       { separator: true },
-      item(this.host.model.isPaneMaximized ? "minimize_pane" : "maximize_pane"),
+      item(terminalId && this.layout.isMaximized(terminalId) ? "minimize_pane" : "maximize_pane"),
       { separator: true },
       item("clear_buffer", true),
       item("close_terminal"),

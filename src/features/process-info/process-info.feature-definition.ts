@@ -1,4 +1,7 @@
-import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+import {
+  FeatureDefinition,
+  SideMenuFeatureDefinitionContract,
+} from "@cogno/core/api/contributions";
 import { ProcessInfoSideMenuLifecycle } from "./process-info-side-menu.lifecycle";
 
 const processInfoFeatureId = "process-info";

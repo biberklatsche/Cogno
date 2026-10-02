@@ -5,8 +5,10 @@ import { Paths } from "./path";
 /** Plain file access by absolute path, for code that does not go through the shell's path adapter. */
 @Injectable({ providedIn: "root" })
 export class SimpleFileAccess {
-  private readonly paths = new Paths();
-  private readonly fs = new Fs();
+  constructor(
+    private readonly paths: Paths,
+    private readonly fs: Fs,
+  ) {}
 
   async readText(path: string): Promise<string | undefined> {
     if (!(await this.fs.exists(path))) return undefined;

@@ -135,16 +135,12 @@ describe("ConfigMapper", () => {
 
     expect(result.diagnostics).toEqual([]);
     expect(result.config.notification?.channel?.app?.duration_seconds).toBe("unlimited");
-    expect(result.config.feature?.notification_overview?.overview?.max_items).toBe(0);
+    expect(
+      (result.config["feature"] as FeatureSettings | undefined)?.notification_overview?.overview
+        ?.max_items,
+    ).toBe(0);
     expect(result.config.terminal?.history?.max_entries).toBe(200);
     expect(DEFAULTS.terminal?.history?.max_entries).toBe("unlimited");
-  });
-
-  it("single-arg overload still works (no defaults)", () => {
-    const proper = `terminal.webgl=false\nscrollbar.scrollback_lines=9999\n`;
-    const settings = ConfigMapper.fromStringToConfig("linux", proper, extensions);
-    expect(settings.terminal?.webgl).toBe(false);
-    expect(settings.scrollbar?.scrollback_lines).toBe(9999);
   });
 
   it("keybind array is concatenated with defaults (defaults first, then user values)", () => {

@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/api/contributions";
 import { NotificationCenterStateService } from "./notification-center-state.service";
 
 @Injectable({ providedIn: "root" })
@@ -22,9 +22,6 @@ export class NotificationSideMenuLifecycle {
       },
       onOpen: () => {
         this.notificationCenterStateService.handleSideMenuOpen();
-      },
-      onClose: () => {
-        this.notificationCenterStateService.handleSideMenuClose();
       },
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(["Escape"], () =>

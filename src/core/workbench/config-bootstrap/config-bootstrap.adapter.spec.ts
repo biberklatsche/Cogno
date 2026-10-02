@@ -16,10 +16,8 @@ import { ConfigBootstrapAdapter } from "./config-bootstrap.adapter";
 const shellIntegrationStub = { ensure: async () => undefined } as never;
 
 /**
- * The adapter carries what `ConfigService` gave up when it moved to
- * `core/infrastructure` (migration step 1): actions, notifications and the
- * shell bootstrap. These tests pin the behaviour that must not change while
- * those three find their own layer.
+ * The adapter carries the workbench side of the config: actions,
+ * notifications and the shell bootstrap. These tests pin that behaviour.
  */
 function setup() {
   const bus = new AppBus();

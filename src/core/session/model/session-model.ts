@@ -1,7 +1,7 @@
 import { ShellType } from "@cogno/core/infrastructure/config/models/config";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { ShellSessionCapabilitiesContract } from "@cogno/core/session/shells/shell-definition";
 import { OsType } from "@cogno/platform/os";
-import { ShellSessionCapabilitiesContract } from "@cogno/shared/contributions";
 import { IPathAdapter, ResolvedShellContextContract, TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject, map, Observable, Subject } from "rxjs";
 import { CommandRecorder } from "../recorder/command-recorder";
@@ -41,7 +41,6 @@ export type SessionModelSnapshot = {
   contextRevision: number;
   isContextKnown: boolean;
   hasUnreadNotification: boolean;
-  isPaneMaximized: boolean;
 };
 
 const createInitialSessionState = (backendOs: OsType): SessionModelSnapshot => ({
@@ -55,7 +54,6 @@ const createInitialSessionState = (backendOs: OsType): SessionModelSnapshot => (
   contextRevision: 0,
   isContextKnown: true,
   hasUnreadNotification: false,
-  isPaneMaximized: false,
 });
 
 /** One entry of the context timeline: what the shell is, and what it can do. */
@@ -67,19 +65,19 @@ type ContextEntry = {
   readonly revision: number;
 };
 
+/** Dropped impostor sequences before the session says so once. */
+const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
+
 /**
- * The session's half of what used to be one state manager: which shell runs
+ * The session's side of a terminal's state: which shell runs
  * in which context, where it is, what is typed, whether a command runs, what
  * the integration can do, and the commands so far. It feeds the recorder and
  * states what happened as facts on `facts$`, without knowing who listens
  * (ARCHITECTURE.md 2.1).
  *
- * The unread badge and pane maximization sit here for now because they die
- * with the session; maximization is workbench business and moves there.
+ * The unread badge sits here because the session clears it - on input and on
+ * focus - and it dies with the session; the workbench only sets it.
  */
-/** Dropped impostor sequences before the session says so once. */
-const UNTRUSTED_SEQUENCES_THRESHOLD = 3;
-
 export class SessionModel {
   private readonly _state: BehaviorSubject<SessionModelSnapshot>;
   private readonly _facts = new Subject<SessionFact>();
@@ -126,7 +124,7 @@ export class SessionModel {
   /**
    * While a session snapshot is being replayed into the buffer, the observer
    * must not mirror the replayed text as the current input line: it is dead
-   * scrollback, not something the user typed (step 27). The replay writes no
+   * scrollback, not something the user typed. The replay writes no
    * OSC/CSI, so nothing else on the write path reacts.
    */
   beginRestore(): void {
@@ -149,10 +147,6 @@ export class SessionModel {
     }
   }
 
-  get untrustedSequenceCount(): number {
-    return this._untrustedSequenceCount;
-  }
-
   initialize(
     terminalId: string,
     shellType: ShellType,
@@ -170,7 +164,6 @@ export class SessionModel {
       shellContext,
       contextRevision: 0,
       isContextKnown: true,
-      isPaneMaximized: false,
     });
   }
 
@@ -325,9 +318,11 @@ export class SessionModel {
     }
   }
 
+  /** The command's program title goes with it. */
   endCommand(): void {
     this.update({ isCommandRunning: false });
     this.report({ type: "busyChanged", isBusy: false });
+    this.report({ type: "titleChanged", title: undefined });
   }
 
   getCommandDuration(): number | undefined {
@@ -398,7 +393,7 @@ export class SessionModel {
 
   /**
    * A command still running when the app quits is recorded as an aborted entry so
-   * it isn't lost from history - it never reported a return code (step 27b-2).
+   * it isn't lost from history - it never reported a return code.
    * Only base-context commands are logged, mirroring `updateCommand`. Awaited so
    * it reaches the log before the process exits.
    */
@@ -443,14 +438,6 @@ export class SessionModel {
     // when nothing changes, otherwise every subscriber runs per keypress.
     if (!this._state.value.hasUnreadNotification) return;
     this.update({ hasUnreadNotification: false });
-  }
-
-  get isPaneMaximized(): boolean {
-    return this._state.value.isPaneMaximized;
-  }
-
-  setPaneMaximized(isPaneMaximized: boolean): void {
-    this.update({ isPaneMaximized });
   }
 
   private update(updates: Partial<SessionModelSnapshot>): void {

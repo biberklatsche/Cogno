@@ -123,7 +123,7 @@
   align-items: center;
   gap: 3px;
   pointer-events: none;
-  color: color-mix(in srgb, color-mix(in srgb, var(--theme-darken-color) calc(var(--color-mix-unit) * var(--mix-step-4)), var(--foreground-color)) 60%, transparent);
+  // Inherits the tab's text colour, so it is as subtle, active or hovered as the title.
   transform: translateY(-50%);
 }
 

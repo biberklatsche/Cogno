@@ -21,7 +21,7 @@ describe("PtyHandler", () => {
   let handler: PtyHandler;
   let mockTerminal: Terminal;
   let listener: {
-    onStarted: Mock<(shellType: string) => void>;
+    onStarted: Mock<() => void>;
     onExited: Mock<(exitCode: number) => void>;
     onOutput: Mock<() => void>;
   };
@@ -38,7 +38,7 @@ describe("PtyHandler", () => {
 
   beforeEach(() => {
     listener = {
-      onStarted: vi.fn<(shellType: string) => void>(),
+      onStarted: vi.fn<() => void>(),
       onExited: vi.fn<(exitCode: number) => void>(),
       onOutput: vi.fn<() => void>(),
     };
@@ -116,7 +116,7 @@ describe("PtyHandler", () => {
 
       onWriteParsedCallback();
 
-      expect(listener.onStarted).toHaveBeenCalledWith("Bash");
+      expect(listener.onStarted).toHaveBeenCalled();
       expect(onWriteParsedDispose).toHaveBeenCalled();
 
       // Second chunk: written as-is, no second started fact

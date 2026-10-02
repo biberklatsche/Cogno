@@ -1,7 +1,7 @@
 import { type Signal, signal, type WritableSignal } from "@angular/core";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import type { WorkspaceEntryContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import type { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
-import type { WorkspaceEntryContract } from "@cogno/shared/domain";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";

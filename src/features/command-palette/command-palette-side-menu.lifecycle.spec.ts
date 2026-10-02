@@ -1,4 +1,4 @@
-import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
+import type { SideMenuFeatureHandleContract } from "@cogno/core/api/contributions";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { CommandEntry, CommandPaletteService } from "./command-palette.service";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";
@@ -39,6 +39,7 @@ describe("CommandPaletteSideMenuLifecycle", () => {
       registerKeybindListener: registerKeybindListenerMock,
       unregisterKeybindListener: unregisterKeybindListenerMock,
       updateIcon: vi.fn(),
+      updateBadgeColor: vi.fn(),
     };
   });
 

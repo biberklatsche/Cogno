@@ -1,4 +1,4 @@
-import type { ActionDispatcher } from "@cogno/shared/ports";
+import type { ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ActionNameRegistry } from "./action-name-registry";
 import { ActionRunner } from "./action-runner";

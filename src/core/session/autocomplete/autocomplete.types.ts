@@ -2,7 +2,7 @@ import {
   AutocompleteMatchRangeContract,
   AutocompleteQueryContextContract,
   AutocompleteSuggestionContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/session/autocomplete/suggestor.contracts";
 
 export type AutocompleteMatchRange = AutocompleteMatchRangeContract;
 export type AutocompleteSuggestion = AutocompleteSuggestionContract;
@@ -18,5 +18,4 @@ export type AutocompleteViewState = {
 };
 
 export type CdQueryContext = Extract<AutocompleteQueryContextContract, { mode: "cd" }>;
-export type CommandQueryContext = Extract<AutocompleteQueryContextContract, { mode: "command" }>;
 export type QueryContext = AutocompleteQueryContextContract;

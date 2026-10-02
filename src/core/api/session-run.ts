@@ -1,4 +1,4 @@
-import { CommandRunnerResultContract } from "@cogno/shared/ports";
+import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
 
 /** A command a feature asks to run on the session it is bound to. */
 export interface SessionRunRequest {

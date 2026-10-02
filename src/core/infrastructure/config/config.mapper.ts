@@ -1,5 +1,5 @@
+import { ApplicationSettingsExtensionContract } from "@cogno/core/api/contributions";
 import { OsType } from "@cogno/platform/os";
-import { ApplicationSettingsExtensionContract } from "@cogno/shared/contributions";
 import { z } from "zod";
 import { createConfigSchema } from "./config-schema";
 import { Config } from "./models/config";
@@ -20,55 +20,25 @@ export class ConfigMapper {
     platform: OsType,
     defaultConfigString: string,
     userConfigString: string,
-    settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
-  ): Config;
-  static fromStringToConfig(
-    platform: OsType,
-    userConfigStringOnly: string,
-    settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
-  ): Config;
-  static fromStringToConfig(
-    platform: OsType,
-    firstArgument: string,
-    secondArgument?: string | ReadonlyArray<ApplicationSettingsExtensionContract>,
-    thirdArgument: ReadonlyArray<ApplicationSettingsExtensionContract> = [],
+    settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
   ): Config {
-    const defaultConfigString = typeof secondArgument === "string" ? firstArgument : "";
-    const userConfigString = typeof secondArgument === "string" ? secondArgument : firstArgument;
-    const settingsExtensions = resolveSettingsExtensions(
-      Array.isArray(secondArgument) ? secondArgument : thirdArgument,
-    );
-    const schema = createConfigSchema(settingsExtensions);
-    const userConfig = ConfigMapper.parseConfigString(userConfigString || "", schema);
-    const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString || "", schema);
-    return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform).config;
+    return ConfigMapper.fromStringToConfigWithDiagnostics(
+      platform,
+      defaultConfigString,
+      userConfigString,
+      settingsExtensions,
+    ).config;
   }
 
   static fromStringToConfigWithDiagnostics(
     platform: OsType,
     defaultConfigString: string,
     userConfigString: string,
-    settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
-  ): { config: Config; diagnostics: ConfigDiagnostic[] };
-  static fromStringToConfigWithDiagnostics(
-    platform: OsType,
-    userConfigStringOnly: string,
-    settingsExtensions?: ReadonlyArray<ApplicationSettingsExtensionContract>,
-  ): { config: Config; diagnostics: ConfigDiagnostic[] };
-  static fromStringToConfigWithDiagnostics(
-    platform: OsType,
-    firstArgument: string,
-    secondArgument?: string | ReadonlyArray<ApplicationSettingsExtensionContract>,
-    thirdArgument: ReadonlyArray<ApplicationSettingsExtensionContract> = [],
+    settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
-    const defaultConfigString = typeof secondArgument === "string" ? firstArgument : "";
-    const userConfigString = typeof secondArgument === "string" ? secondArgument : firstArgument;
-    const settingsExtensions = resolveSettingsExtensions(
-      Array.isArray(secondArgument) ? secondArgument : thirdArgument,
-    );
     const schema = createConfigSchema(settingsExtensions);
-    const userConfig = ConfigMapper.parseConfigString(userConfigString || "", schema);
-    const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString || "", schema);
+    const userConfig = ConfigMapper.parseConfigString(userConfigString, schema);
+    const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString, schema);
     return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform);
   }
 
@@ -608,10 +578,4 @@ export class ConfigMapper {
   ): ReturnType<z.ZodType["safeParse"]> {
     return schema.safeParse(value);
   }
-}
-
-function resolveSettingsExtensions(
-  settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract> | undefined,
-): ReadonlyArray<ApplicationSettingsExtensionContract> {
-  return settingsExtensions ?? [];
 }

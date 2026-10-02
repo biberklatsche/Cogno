@@ -52,35 +52,20 @@ export interface PtySpawnHandleContract {
   closeOutput(): void;
 }
 
+/** What the process-info panel shows about one process. */
 export type ProcessDetails = {
   processId: number;
   parentProcessId: number | null;
   name: string;
-  command: string[];
-  executablePath: string | null;
   currentWorkingDirectory: string | null;
-  rootDirectory: string | null;
-  environment: string[];
   status: string;
-  startTimeSeconds: number;
   runTimeSeconds: number;
-  cpuUsagePercent: number;
   memoryBytes: number;
-  virtualMemoryBytes: number;
-  diskReadBytes: number;
-  diskWrittenBytes: number;
-  totalDiskReadBytes: number;
-  totalDiskWrittenBytes: number;
-  userId: string | null;
-  groupId: string | null;
 };
 
 export type ProcessTreeSnapshot = {
   rootProcessId: number;
-  directChildProcessIds: number[];
-  descendantProcessIds: number[];
   rootProcess: ProcessDetails;
-  directChildren: ProcessDetails[];
   descendants: ProcessDetails[];
 };
 

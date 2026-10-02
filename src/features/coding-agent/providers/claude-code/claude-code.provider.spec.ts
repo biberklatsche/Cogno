@@ -52,7 +52,7 @@ describe("ClaudeCodeProvider", () => {
     expect(settings["theme"]).toBe("dark");
     expect(cognoHooksIn(settings)).toHaveLength(CLAUDE_CODE_CONFIG.hookEvents.length);
     expect(settings.hooks?.["UserPromptSubmit"]?.[0]?.hooks).toEqual([foreignHook]);
-    expect(await provider.isHookInstalled()).toBe(true);
+    expect(await provider.hookState()).toBe("current");
   });
 
   it("installs idempotently: a second install does not double the hooks", async () => {
@@ -73,7 +73,39 @@ describe("ClaudeCodeProvider", () => {
     expect(settings["theme"]).toBe("dark");
     expect(cognoHooksIn(settings)).toEqual([]);
     expect(settings.hooks).toEqual({ UserPromptSubmit: [{ hooks: [foreignHook] }] });
-    expect(await provider.isHookInstalled()).toBe(false);
+    expect(await provider.hookState()).toBe("missing");
+  });
+
+  it("reads a Cogno hook in an older form as outdated, and installing brings it up to date", async () => {
+    await provider.installHook("Bash");
+    const settings = files.get(SETTINGS) as ClaudeSettings;
+    const postCompact = settings.hooks?.["PostCompact"]?.[0]?.hooks[0];
+    if (postCompact) postCompact.command = postCompact.command.replace('"working"', '"ready"');
+
+    expect(await provider.hookState()).toBe("outdated");
+
+    await provider.installHook("Bash");
+    expect(await provider.hookState()).toBe("current");
+    expect(cognoHooksIn(files.get(SETTINGS) as ClaudeSettings)).toHaveLength(
+      CLAUDE_CODE_CONFIG.hookEvents.length,
+    );
+  });
+
+  it("clears a Cogno hook left on an event this version no longer hooks, on install and remove", async () => {
+    const stale = { type: "command" as const, command: "curl $COGNO_PORT coding_agent_status old" };
+    const settings = files.get(SETTINGS) as ClaudeSettings;
+    settings.hooks = { ...settings.hooks, OldEvent: [{ hooks: [stale, foreignHook] }] };
+
+    await provider.installHook("Bash");
+    const installed = files.get(SETTINGS) as ClaudeSettings;
+    expect(installed.hooks?.["OldEvent"]).toEqual([{ hooks: [foreignHook] }]);
+    expect(await provider.hookState()).toBe("current");
+
+    installed.hooks = { ...installed.hooks, Gone: [{ hooks: [stale] }] };
+    await provider.removeHook();
+    const removed = files.get(SETTINGS) as ClaudeSettings;
+    expect(cognoHooksIn(removed)).toEqual([]);
+    expect(removed.hooks?.["Gone"]).toBeUndefined();
   });
 
   it("leaves a settings file without hooks alone on remove", async () => {

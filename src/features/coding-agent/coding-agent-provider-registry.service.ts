@@ -3,6 +3,7 @@ import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { AntigravityProvider } from "./providers/antigravity/antigravity.provider";
 import { ClaudeCodeProvider } from "./providers/claude-code/claude-code.provider";
 import { CodexProvider } from "./providers/codex/codex.provider";
+import { CursorProvider } from "./providers/cursor/cursor.provider";
 import { GeminiProvider } from "./providers/gemini/gemini.provider";
 import { KimiProvider } from "./providers/kimi/kimi.provider";
 
@@ -16,7 +17,8 @@ export class CodingAgentProviderRegistry {
     gemini: GeminiProvider,
     kimi: KimiProvider,
     antigravity: AntigravityProvider,
+    cursor: CursorProvider,
   ) {
-    this.providers = [claudeCode, codex, gemini, kimi, antigravity];
+    this.providers = [claudeCode, codex, gemini, kimi, antigravity, cursor];
   }
 }

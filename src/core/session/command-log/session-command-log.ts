@@ -1,21 +1,17 @@
 import { Injectable } from "@angular/core";
-import type { CommandLogReader, CommandLogWriter } from "@cogno/core/command-log/command-log.api";
-import {
-  CommandLogHealth,
-  CommandLogHealthTracker,
-  HEALTHY,
-} from "@cogno/core/command-log/command-log.health";
-import {
+import type {
   CommandHistoryRow,
-  CommandLogRepository,
+  CommandLogReader,
+  CommandLogWriter,
   DirectoryHistoryRow,
   RecentCommandRow,
-} from "@cogno/core/command-log/command-log.repository";
+} from "@cogno/core/command-log/command-log.api";
+import { CommandLogHealthTracker } from "@cogno/core/command-log/command-log.health";
+import { CommandLogRepository } from "@cogno/core/command-log/command-log.repository";
 import { CommandPattern } from "@cogno/core/command-log/command-pattern.models";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { DatabaseAccess } from "@cogno/platform";
 import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
-import { BehaviorSubject, Observable } from "rxjs";
 
 type WriteAction = (writer: CommandLogWriter) => Promise<void>;
 
@@ -41,20 +37,14 @@ export const DEFAULT_MAX_PENDING_WRITES = 256;
 export class SessionCommandLog {
   private repository: CommandLogRepository | null = null;
   private readonly health = new CommandLogHealthTracker();
-  private readonly health$$ = new BehaviorSubject<CommandLogHealth>(HEALTHY);
   private readonly queue: WriteAction[] = [];
   private draining = false;
-  private disabled = false;
   private reportedUnhealthy = false;
+  private reportedReadFailure = false;
   private groupId?: string;
   private recentExecution?: { command: string; timestamp: number };
 
-  constructor(private readonly databaseAccess?: DatabaseAccess) {}
-
-  /** How well the log is keeping up; `ok` until something is dropped. */
-  get health$(): Observable<CommandLogHealth> {
-    return this.health$$.asObservable();
-  }
+  constructor(private readonly databaseAccess: DatabaseAccess) {}
 
   get sessionGroupId(): string | undefined {
     return this.groupId;
@@ -67,15 +57,6 @@ export class SessionCommandLog {
     groupId?: string,
   ): Promise<CommandLogRepository | null> {
     this.groupId = groupId;
-    if (!this.databaseAccess) {
-      this.disabled = true;
-      ErrorReporter.reportWarning({
-        message: "No database access available; command history is disabled for this terminal.",
-        source: "SessionCommandLog",
-      });
-      return Promise.resolve(null);
-    }
-
     return CommandLogRepository.createForContext(this.databaseAccess, shellContext, adapter)
       .then((repository) => {
         this.repository = repository;
@@ -98,16 +79,12 @@ export class SessionCommandLog {
    * and a full queue loses its oldest entry rather than the session's speed.
    */
   write(action: WriteAction): void {
-    if (this.disabled) return;
-
     if (this.queue.length >= DEFAULT_MAX_PENDING_WRITES) {
       // The newest command is the most valuable one to keep.
       this.queue.shift();
-      this.health.recordOverflow(this.queue.length + 1);
-      this.publishHealth();
+      this.health.recordOverflow();
     }
     this.queue.push(action);
-    this.health.setPending(this.queue.length);
     void this.drain();
   }
 
@@ -118,7 +95,7 @@ export class SessionCommandLog {
    */
   async writeAndAwait(action: WriteAction): Promise<void> {
     const repository = this.repository;
-    if (this.disabled || !repository) return;
+    if (!repository) return;
     try {
       await action(repository);
     } catch (error) {
@@ -147,8 +124,6 @@ export class SessionCommandLog {
         const action = this.queue.shift();
         if (!action) return;
         await this.runOnce(action, repository);
-        this.health.setPending(this.queue.length);
-        this.publishHealth();
       }
     } finally {
       this.draining = false;
@@ -157,10 +132,9 @@ export class SessionCommandLog {
 
   /** Runs a write, retries it once, and gives up loudly rather than silently. */
   private async runOnce(action: WriteAction, repository: CommandLogRepository): Promise<void> {
-    const startedAt = Date.now();
     try {
       await action(repository);
-      this.health.recordSuccess(Date.now() - startedAt, this.queue.length);
+      this.health.recordSuccess();
       this.reportedUnhealthy = false;
       return;
     } catch {
@@ -168,25 +142,18 @@ export class SessionCommandLog {
     }
     try {
       await action(repository);
-      this.health.recordSuccess(Date.now() - startedAt, this.queue.length);
+      this.health.recordSuccess();
       this.reportedUnhealthy = false;
     } catch (error) {
-      this.health.recordFailure(this.queue.length);
+      this.health.recordFailure();
       ErrorReporter.reportException({
         error,
         handled: true,
         notify: !this.reportedUnhealthy,
         source: "SessionCommandLog",
-        context: { operation: "write", dropped: String(this.health.current.dropped) },
+        context: { operation: "write", dropped: String(this.health.dropped) },
       });
       this.reportedUnhealthy = true;
-    }
-  }
-
-  private publishHealth(): void {
-    const current = this.health.current;
-    if (current !== this.health$$.value) {
-      this.health$$.next(current);
     }
   }
 
@@ -240,6 +207,11 @@ export class SessionCommandLog {
     return this.read((reader) => reader.searchCommandPatterns(fragment, limit), []);
   }
 
+  /** Whether any command is recorded. Without an open log: yes, so nothing is imported. */
+  async hasAnyCommands(): Promise<boolean> {
+    return this.read((reader) => reader.hasAnyCommands(), true);
+  }
+
   // --- feedback (a write with a different sender) ------------------------
 
   markDirectorySelected(pathRaw: string): void {
@@ -267,9 +239,28 @@ export class SessionCommandLog {
     this.write((writer) => writer.deleteCommandExecution(commandRaw, cwdRaw));
   }
 
+  /**
+   * A failed read answers empty, like a missing log. Autocomplete reads on every
+   * keystroke, so a failing database is reported once, not once per key.
+   */
   private async read<T>(query: (reader: CommandLogReader) => Promise<T>, empty: T): Promise<T> {
     const repository = this.repository;
     if (!repository) return empty;
-    return query(repository);
+    try {
+      const result = await query(repository);
+      this.reportedReadFailure = false;
+      return result;
+    } catch (error) {
+      if (!this.reportedReadFailure) {
+        this.reportedReadFailure = true;
+        ErrorReporter.reportException({
+          error,
+          handled: true,
+          source: "SessionCommandLog",
+          context: { operation: "read" },
+        });
+      }
+      return empty;
+    }
   }
 }

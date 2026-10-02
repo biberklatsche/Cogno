@@ -9,19 +9,19 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { defaultWorkspaceIdContract } from "@cogno/shared/domain";
-import { ActionKeybindingPort } from "@cogno/shared/ports";
+import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
+import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
+import { trackPointerDrag } from "@cogno/core/workbench/drag-preview/pointer-drag";
+import { collectDirectionalNavigationItems } from "@cogno/core/workbench/workspace/navigation/directional-navigation.dom";
 import {
   CopyEditDeleteComponent,
-  DragPreviewService,
   IconComponent,
   LetterBadgeComponent,
   TooltipDirective,
-  trackPointerDrag,
 } from "@cogno/shared/ui";
-import { DirectionalNavigationItem } from "@cogno/shared/ui/common/navigation/directional-navigation.engine";
 import { WorkspaceEntryViewModel, WorkspaceService } from "./workspace.service";
 import { workspaceBadge } from "./workspace-badge";
+import { defaultWorkspaceIdContract } from "./workspace-entry";
 
 @Component({
   selector: "app-workspace-side",
@@ -260,7 +260,7 @@ import { workspaceBadge } from "./workspace-badge";
 export class WorkspaceSideComponent implements OnDestroy {
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]>;
   readonly defaultWorkspaceId = defaultWorkspaceIdContract;
-  /** When session restore is on, workspaces auto-save (step 27g). */
+  /** When session restore is on, workspaces auto-save. */
   private readonly restoreEnabledSignal = signal(true);
   readonly restoreEnabled = this.restoreEnabledSignal.asReadonly();
   protected readonly workspaceBadge = workspaceBadge;
@@ -272,7 +272,8 @@ export class WorkspaceSideComponent implements OnDestroy {
   private suppressNextWorkspaceClickTimeoutId: number | undefined;
   private readonly workspaceTileElements =
     viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
-  private readonly navigationItemsProvider = () => this.collectNavigationItems();
+  private readonly navigationItemsProvider = () =>
+    collectDirectionalNavigationItems(this.workspaceTileElements());
 
   constructor(
     private readonly workspaceService: WorkspaceService,
@@ -385,31 +386,6 @@ export class WorkspaceSideComponent implements OnDestroy {
     }
 
     return `select_workspace_${index}`;
-  }
-
-  private collectNavigationItems(): ReadonlyArray<DirectionalNavigationItem<string>> {
-    return this.workspaceTileElements()
-      .map((elementRef) => elementRef.nativeElement)
-      .map((element) => {
-        const navigationId = element.dataset["navigationId"];
-        if (!navigationId) {
-          return null;
-        }
-
-        const rect = element.getBoundingClientRect();
-        return {
-          id: navigationId,
-          rect: {
-            top: rect.top,
-            right: rect.right,
-            bottom: rect.bottom,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-          },
-        } satisfies DirectionalNavigationItem<string>;
-      })
-      .filter((item): item is DirectionalNavigationItem<string> => item !== null);
   }
 
   reorderWhileDragging(targetWorkspaceIdentifier: string, event: MouseEvent): void {

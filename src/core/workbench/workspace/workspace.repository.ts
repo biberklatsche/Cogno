@@ -1,12 +1,12 @@
 import { Injectable } from "@angular/core";
-import { DatabaseAccess, DatabaseStatementContract } from "@cogno/platform";
 import {
   PersistedGridConfigurationContract,
   PersistedPaneConfigurationContract,
   PersistedTabConfigurationContract,
   WorkspaceIdentifierContract,
-} from "@cogno/shared/domain";
-import { WorkspaceConfiguration, WorkspaceTerminalSession } from "@cogno/shared/domain/workspace";
+} from "@cogno/core/workbench/grid-layout";
+import { DatabaseAccess, DatabaseStatementContract } from "@cogno/platform";
+import { WorkspaceConfiguration, WorkspaceTerminalSession } from "./workspace.model";
 
 interface WorkspaceEntity {
   id: string;
@@ -203,7 +203,7 @@ export class WorkspaceRepository {
 
   /**
    * Replace all of a workspace's terminal snapshots in one transaction (session
-   * restore, step 27): the current set is deleted and the given sessions
+   * restore): the current set is deleted and the given sessions
    * inserted, so terminals that went away are pruned. Statements are built up
    * front - no await inside the batch.
    */

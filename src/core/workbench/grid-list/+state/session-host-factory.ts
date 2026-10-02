@@ -135,7 +135,7 @@ export class SessionHostFactory {
     injector.get(TerminalComposerService);
     const notifications = injector.get(SessionNotifications);
     injector.get(SessionMenus);
-    // Session restore (step 27): stash the saved scrollback before start() so
+    // Session restore: stash the saved scrollback before start() so
     // the host defers the shell spawn; the replay happens on the first attach,
     // into an open, final-sized terminal.
     const snapshot = this.pendingSnapshots.take(terminalId);
@@ -155,12 +155,12 @@ export class SessionHostFactory {
     return this.sessions.get(terminalId)?.keybindings;
   }
 
-  /** The live host of the session `terminalId`, for snapshotting (step 27). */
+  /** The live host of the session `terminalId`, for snapshotting. */
   getSessionHost(terminalId: TerminalId): SessionHost | undefined {
     return this.sessions.get(terminalId)?.host;
   }
 
-  /** Every live session host, for recording aborted commands on quit (step 27b-2). */
+  /** Every live session host, for recording aborted commands on quit. */
   getAllSessionHosts(): SessionHost[] {
     return [...this.sessions.values()].map((session) => session.host);
   }

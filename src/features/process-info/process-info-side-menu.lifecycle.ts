@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/api/contributions";
 import { ProcessInfoService } from "./process-info.service";
 
 @Injectable({ providedIn: "root" })

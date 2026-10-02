@@ -1,27 +1,23 @@
 import { DestroyRef, Inject, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
-import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
-import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
-import { ActionName } from "@cogno/core/workbench/bus/action.models";
-import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import {
   ApplicationSettingsExtensionContract,
   FeatureDefinition,
-  ShellSupportDefinitionContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/api/contributions";
+import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { shellDefinitions } from "@cogno/core/session/shells/shell-definitions";
+import { ShellSupportDefinitionContract } from "@cogno/core/session/shells/shell-support";
+import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
+import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
-import { ApplicationConfigurationPort } from "@cogno/shared/ports";
+import { BehaviorSubject, Observable } from "rxjs";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
-import {
-  FeatureContributionRegistrar,
-  FeatureReconciler,
-  FeatureRuntimeState,
-} from "./feature-reconciler";
+import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";
 import { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
-import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 /**
  * The one service that handles features (ARCHITECTURE.md 6.1). Its declaration
@@ -36,14 +32,13 @@ import { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
  * Its activation phase then reconciles each feature's status against the mode
  * the config wants and re-reconciles on every config change (hot-reload). The
  * mode is read through the feature's existing `configPath`, whose key is not
- * always the feature id (coding-agents -> feature.coding_agents, and so on) - the transition
- * state keeps the old contribution form (step 22b).
+ * always the feature id (coding-agents -> feature.coding_agents, and so on).
  */
 @Injectable({ providedIn: "root" })
 export class FeatureHost {
   private readonly declarationConflicts: ReadonlyArray<string>;
   private reconciler?: FeatureReconciler;
-  private pendingReconcile = Promise.resolve();
+  private readonly reconciled$$ = new BehaviorSubject<void>(undefined);
   private featureActionOwners?: ReadonlyMap<ActionName, string>;
 
   constructor(
@@ -52,13 +47,13 @@ export class FeatureHost {
     private readonly databaseMigrationService: DatabaseMigrationService,
     private readonly actionNameRegistry: ActionNameRegistry,
     private readonly sideMenuRegistrar: SideMenuFeatureRegistrar,
-    private readonly suggestorRegistrar: SuggestorFeatureRegistrar,
     private readonly notificationChannelRegistrar: NotificationChannelFeatureRegistrar,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
     private readonly destroyRef: DestroyRef,
   ) {
     this.declarationConflicts = findDeclarationConflicts(this.features);
     if (this.declarationConflicts.length > 0) {
+      reportDeclarationConflicts(this.declarationConflicts);
       return;
     }
     this.declare();
@@ -73,11 +68,7 @@ export class FeatureHost {
 
   /** Fans a feature's activation out to every contribution consumer. */
   private contributionRegistrar(): FeatureContributionRegistrar {
-    const registrars = [
-      this.sideMenuRegistrar,
-      this.suggestorRegistrar,
-      this.notificationChannelRegistrar,
-    ];
+    const registrars = [this.sideMenuRegistrar, this.notificationChannelRegistrar];
     return {
       register: (feature) => {
         for (const registrar of registrars) registrar.register(feature);
@@ -88,42 +79,31 @@ export class FeatureHost {
     };
   }
 
-  /** True when the feature set is inconsistent and the app started empty. */
-  get hasDeclarationConflict(): boolean {
-    return this.declarationConflicts.length > 0;
-  }
-
-  /** The conflicts that aborted the declaration, empty when there were none. */
-  getDeclarationConflicts(): ReadonlyArray<string> {
-    return this.declarationConflicts;
-  }
-
-  /** Each feature's runtime status, for the sidebar and the API (step 22d). */
-  featureStates(): ReadonlyArray<FeatureRuntimeState> {
-    return this.reconciler?.states() ?? [];
-  }
-
-  /** The features' side-menu contributions, ordered - for the native menu (step 28). */
+  /**
+   * The features' side-menu contributions, ordered - for the native menu. None
+   * when the feature set did not start: the menu must not offer its panels.
+   */
   getSideMenuFeatureDefinitions(): ReadonlyArray<SideMenuFeatureDefinition> {
+    if (this.declarationConflicts.length > 0) return [];
     return this.features
       .flatMap((feature) => feature.sideMenu ?? [])
       .slice()
       .sort((left, right) => left.order - right.order);
   }
 
-  /** The features' settings extensions - for config bootstrap (step 28). */
+  /** The features' settings extensions - for config bootstrap. */
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
     return this.features.flatMap((feature) => (feature.settings ? [feature.settings] : []));
   }
 
-  /** The available shells' support descriptors - for config bootstrap (step 28). */
+  /** The available shells' support descriptors - for config bootstrap. */
   getShellSupportDefinitions(): ReadonlyArray<ShellSupportDefinitionContract> {
     return shellDefinitions.map((shell) => shell.support);
   }
 
   /**
    * True when the feature that declared `actionName` is currently active - for
-   * classifying a CLI/HTTP action as dispatched vs "not active" (step 26g). A
+   * classifying a CLI/HTTP action as dispatched vs "not active". A
    * core action (not declared by any feature) is not covered here.
    */
   isActionActive(actionName: ActionName): boolean {
@@ -131,8 +111,7 @@ export class FeatureHost {
     if (!featureId) {
       return false;
     }
-    const status = this.reconciler?.states().find((state) => state.id === featureId)?.status;
-    return status === "active" || status === "degraded";
+    return this.reconciler?.statusOf(featureId) === "active";
   }
 
   private featureIdByActionName(): ReadonlyMap<ActionName, string> {
@@ -151,9 +130,12 @@ export class FeatureHost {
     return this.featureActionOwners;
   }
 
-  /** Resolves once the latest reconciliation has settled (for tests and startup). */
-  whenSettled(): Promise<void> {
-    return this.pendingReconcile;
+  /**
+   * Emits after every reconciliation, and at once with the current state - for
+   * whoever reports which feature actions are active.
+   */
+  get reconciled$(): Observable<void> {
+    return this.reconciled$$.asObservable();
   }
 
   private declare(): void {
@@ -172,7 +154,8 @@ export class FeatureHost {
     this.applicationConfigurationPort.configuration$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        this.pendingReconcile = this.reconciler?.reconcile() ?? Promise.resolve();
+        this.reconciler?.reconcile();
+        this.reconciled$$.next();
       });
   }
 
@@ -202,6 +185,17 @@ function resolveConfigPath(source: Record<string, unknown>, path: string): unkno
     if (typeof value !== "object" || value === null) return undefined;
     return (value as Record<string, unknown>)[segment];
   }, source);
+}
+
+/** A conflict is a programming error: Cogno starts without features and says why. */
+function reportDeclarationConflicts(conflicts: ReadonlyArray<string>): void {
+  ErrorReporter.reportWarning({
+    message: ["The features could not be started; Cogno runs without them.", ...conflicts].join(
+      "\n",
+    ),
+    notify: true,
+    source: "FeatureHost",
+  });
 }
 
 function reportActivationError(featureId: string, error: unknown): void {

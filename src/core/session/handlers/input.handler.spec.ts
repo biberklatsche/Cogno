@@ -1,5 +1,4 @@
 import type { IPty } from "@cogno/core/terminal/pty";
-import { Char } from "@cogno/shared/support";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
@@ -43,23 +42,12 @@ describe("InputHandler", () => {
     expect(clearSpy).toHaveBeenCalled();
   });
 
-  it("writes injected text to the pty", () => {
+  it("writes text to the pty as if typed", () => {
     handler.registerTerminal(mockTerminal);
 
-    handler.writeRaw("hello from ai");
+    handler.writeRaw("hello");
 
-    expect(mockPty.write).toHaveBeenCalledWith("hello from ai");
-  });
-
-  it("appends Enter after injected text when autoExecute is set", async () => {
-    handler.registerTerminal(mockTerminal);
-
-    handler.writeRaw("run this", true);
-
-    expect(mockPty.write).toHaveBeenNthCalledWith(1, "run this");
-    await vi.waitFor(() => {
-      expect(mockPty.write).toHaveBeenNthCalledWith(2, Char.Enter);
-    });
+    expect(mockPty.write).toHaveBeenCalledWith("hello");
   });
 
   it("no longer touches the terminal after dispose", () => {

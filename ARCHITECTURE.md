@@ -4,8 +4,8 @@ Diese Datei beschreibt die Architektur von Cogno. Sie ist die einzige Quelle
 der Wahrheit; wo Code ihr widerspricht, ist der Code falsch oder die Datei
 wird geändert — nicht stillschweigend beides nebeneinander gelassen.
 
-Der Code liegt vollständig im Ziel-Layout unter `shared/`, `platform/`, `core/`,
-`features/` und `bootstrap/`, erzwungen durch `pnpm lint:architecture`.
+Der Code liegt vollständig unter `shared/`, `platform/`, `core/`,
+`features/` und `bootstrap/`; die Schichtregeln erzwingt `pnpm lint:architecture`.
 
 ---
 
@@ -22,9 +22,8 @@ Der Code liegt vollständig im Ziel-Layout unter `shared/`, `platform/`, `core/`
    keinen `mode` braucht, liegt in `core/` und ist immer an. Ein Feature
    ohne `mode` gibt es nicht. Laufzeitfehler und Degradation sind Status,
    keine weiteren Modi.
-   Der heutige Modus `hidden` (und `visible` bei AI) wird zu `on`: das Schema
-   kennt nur noch `on | off`, der Config-Reader liest `hidden`/`visible` aus
-   bestehenden Dateien als `on`.
+   Das Schema kennt nur `on | off`; der Config-Reader liest die Werte
+   `hidden` und `visible` aus bestehenden Dateien als `on`.
 5. **Schichten als Ordner mit Pfadregeln**, keine zusätzlichen Pakete.
 6. **Kommandodaten: Erfassung und Nutzung sind getrennt.** Ein
    **Recorder** schreibt, was die Shell meldet (welches Kommando, wann, wo, in
@@ -35,8 +34,8 @@ Der Code liegt vollständig im Ziel-Layout unter `shared/`, `platform/`, `core/`
 7. **Notification-Dispatch ist Core (Workbench)**, die Übersicht ist ein
    Feature. Der Dispatch braucht Layout-Identität, Fokus und Seitenleiste —
    er ist deshalb Workbench, nicht `core/infrastructure/`.
-8. **Toter Code raus**, außer `encrypt`/`decrypt` (für `api_key`, der heute im
-   Klartext liegt).
+8. **Toter Code raus.** Code ohne Konsumenten wird entfernt, nicht
+   für später aufbewahrt.
 9. Nightly-Kanal: nicht Teil dieser Architektur.
 10. **Wessen Fakt ist es?** Der Core besitzt Fakten über Sitzung und
     Workbench. Ein Feature besitzt Fakten über seine eigene Domäne und
@@ -63,41 +62,48 @@ Konsumenten entstehen lazy und müssen ziehen können.
 ### 2.1 Schichten
 
 ```
-shared/              allgemeine, frameworkfreie Bausteine; auch Domänenwissen
+shared/              allgemeine, frameworkfreie Bausteine und Domänenmodelle; keine Verträge
+  domain/            Domänenmodelle und reine Logik (Shell-Kontext, Pfadadapter, Benachrichtigungen, …)
+  support/           reine Hilfsfunktionen
+  ui/                generische UI-Bausteine
 platform/            Tauri-Grenze; kein Produktwissen
 core/                das Produkt, immer an
+  api/               das Protokoll zwischen Core und Features, in beide Richtungen — nur Verträge (Abschnitt 3)
+    contributions/   was Features beitragen (FeatureDefinition, Side-Menu, Settings, Migrationen, Notification-Kanäle)
   infrastructure/    Config, Theming, DB-Bridge, Migrations-Runner, Fehler, Logging, Pfade, Bus, Keybind-Parser
   terminal/          die Maschine: pty, renderer, byte-I/O, resize
   command-log/       Kommandodaten: Schema, Migrationen, Schreib- und Abfrage-API
   session/           Session-Host, Modell und sitzungsgebundene Konsumenten
-  workbench/         übergreifend; besitzt die Sessions
-  api/               die Sicht der Features auf Session und Workbench (das „Protokoll", Abschnitt 3)
+  workbench/         übergreifend; besitzt die Sessions; implementiert die meisten API-Verträge
+    api-adapters/    Implementierungen der API-Verträge, die Session und Workbench zusammensetzen
 features/            das Produkt, abschaltbar
 bootstrap/           Kompositionswurzel — kennt alle, niemand hängt daran
 ```
 
-Zwei Fragen ordnen die oberste Ebene: *Kennt der Code die Anwendung —
-Sitzungen, Layout, Fenster, Features?* (`shared/` und `platform/`: nein) und
-*Ist er abschaltbar?* (nur `features/`). Alles, was die Anwendung kennt und
-immer an ist, liegt in `core/` — auch die Maschine: xterm-Renderer,
-Ack-Flow-Control und ConPTY-Handling sind Cogno-Code, nur der unterste.
+Zwei Fragen ordnen die oberste Ebene: *Kennt der Code die laufende
+Anwendung — ihre Sitzungen, ihr Layout, ihre Fenster, ihre Features?*
+(`shared/` und `platform/`: nein) und *Ist er abschaltbar?* (nur
+`features/`). Alles, was die Anwendung kennt und immer an ist, liegt in
+`core/` — auch die Maschine: xterm-Renderer, Ack-Flow-Control und
+ConPTY-Handling sind Cogno-Code, nur der unterste.
 
-**Shared** trägt allgemeine, frameworkfreie Bausteine — **auch mit
-Produktwissen**. Domänenmodelle und Logik, die Core *und* Features
-gleichermaßen brauchen (Shell-Kontext, Pfadadapter, Benachrichtigungsmodell,
-Workspace-Modell), gehören dorthin; schwere Logik soll nicht zweimal
-existieren. Drei Grenzen halten das sauber:
+**Shared** trägt allgemeine, frameworkfreie Bausteine **und
+Domänenmodelle**, die mehrere Schichten teilen (Shell-Kontext, Pfadadapter,
+Benachrichtigungsmodell, Aktionen, Terminal-Suche); schwere Logik soll nicht zweimal
+existieren. Domänenwissen ist erlaubt, Wissen über die *laufende* Anwendung
+nicht: keine Services, kein Zustand, keine Verträge zwischen Core und
+Features. Drei Grenzen halten das sauber:
 
 1. **Keine Abhängigkeit nach innen.** `shared/` importiert nichts aus
    `platform/`, `core/`, `features/` oder `bootstrap/`.
 2. **Keine Fremdtechnik.** Kein Tauri, kein xterm; in `shared/domain` und
    `shared/support` auch kein Angular und kein RxJS.
-3. **Kein Adapter zwischen Core und Features.** Was dort liegt, ist für sich
+3. **Kein Vertrag zwischen Core und Features.** Was dort liegt, ist für sich
    allgemein und an keinen Aufrufer gebunden — man muss es verstehen können,
-   ohne zu wissen, wer es benutzt. Die Verbindung zwischen Feature und Core
-   läuft ausschließlich über `core/api/`; ein Typ, der nur existiert, damit
-   ein bestimmtes Feature mit einem bestimmten Core-Teil sprechen kann,
-   gehört in die API, nicht nach `shared/`.
+   ohne zu wissen, wer es benutzt. Ports, die der Core implementiert und
+   Features benutzen, und Contributions, die Features erfüllen und der Core
+   liest, sind das Protokoll und liegen in `core/api/`. Was nur eine Schicht
+   oder ein Feature braucht, liegt dort, nicht in `shared/`.
 
 **Infrastructure** ist alles, was jede Schicht braucht und was selbst weder
 eine Sitzung noch das Layout kennt. Test: braucht der Code eine `sessionId`
@@ -107,16 +113,19 @@ Hot-Reload, Zod-Validierung mit Diagnosen, CLI-Overrides, Zusammenführen der
 Feature-Schemas), Theming als Werte (angewendet in Terminal und Workbench),
 Datenbank-Bridge und Migrations-Runner mit Checksummen, Recovery,
 WAL-Checkpoint, Fehlerbehandlung und Logging, Pfade (exe, home, config, db,
-log), der App-Bus als Mechanismus (nicht die Nachrichtentypen — die gehören
-dem Sender), Keybind-Parser und Tastaturlayouts (die Ausführung ist
-Workbench). Nicht drin: `command-log/` (Produktdaten mit eigenem Schema; es
+log), Keybind-Parser und Tastaturlayouts (die Ausführung ist Workbench),
+dazu `ActionKeybindingPort`: Session und Workbench zeigen Tastenkürzel an,
+kennen tut sie nur die Workbench, die ihn implementiert.
+Der App-Bus gehört nicht dazu: ihn benutzt nur die Workbench, deshalb liegt
+er in `core/workbench/bus/`. Nicht drin: `command-log/` (Produktdaten mit eigenem Schema; es
 *benutzt* die DB-Bridge) und Feature-Tabellen/-Migrationen (gehören dem
 Feature; Infrastructure stellt nur den Runner). `terminal/` importiert
 Infrastructure nicht.
 
-Der heutige Pfeil `app → features` zeigt verkehrt herum, weil `app` zwei Rollen
-hat: Kern **und** Kompositionswurzel. Trennt man sie, zeigt er richtig und die
-Regel „nichts importiert app" wird überflüssig.
+Kern und Kompositionswurzel sind getrennte Ordner, weil sie entgegengesetzte
+Rollen haben: `core/` kennt keine Features, `bootstrap/` kennt alle und wird
+von niemandem importiert. Nur so zeigt der Pfeil zu `features/` in die
+richtige Richtung.
 
 **Terminal** ist die Maschine: PTY, xterm-Renderer, Byte-I/O, Größe, Fokus,
 Theme, Buffer-Zugriff, Marker-/Decoration-API und rohe Sequenz-Hooks. Sie kennt
@@ -126,25 +135,23 @@ ließe sich ein Terminal ohne Cogno bauen. Schnittstelle nach oben — rein:
 `write`, `resize`, `focus`, `attach(element)`/`detach()`, `setOptions`,
 `dispose`; raus: Ausgabe-Bytes, OSC/CSI-Hooks, Cursor-/Größen-/Fokus-/
 Selektions-/Scroll-/Alt-Screen-Änderungen, PTY-Exit; Zugriff: Buffer lesen,
-Marker, Search-Addon. **Das Basis-Terminal ohne Zauber.** Heutige Dateien:
-`pty/pty.ts`, `renderer/renderer.ts`, die Handler `pty`, `resize`, `cursor`,
-`mouse`, `selection`, `scroll-state` und der Maschinen-Anteil von `focus`
-(fokussieren und melden — das Löschen des Ungelesen-Abzeichens nicht), und der
-Maschinen-Anteil von `TerminalStateManager` (Cursor, Maße, Fokus, Selektion,
-Scroll, Progress).
+Marker, Search-Addon. **Das Basis-Terminal ohne Zauber.** Dateien in
+`core/terminal/`: `pty.ts`, `renderer.ts`, die Handler `pty`, `resize`, `cursor`,
+`mouse`, `selection`, `scroll-state` und `focus` (nur fokussieren und melden —
+das Löschen des Ungelesen-Abzeichens nicht), und `machine-state.ts`, der
+Maschinenzustand (Cursor, Maße, Fokus, Selektion, Scroll, Progress).
 
-`input.handler` und `theme.handler` gehören **nicht** hierher: der eine ist
-die Empfangsseite für „schreib das in dieses Terminal" (die spätere
-`injectInput`-Operation der API), der andere reagierte auf den Alt-Screen —
-beides Sitzungsarbeit. Vom Theme-Handler bleibt in der Maschine nur, was
-`setOptions` anwendet.
+`input.handler` gehört **nicht** hierher: er schreibt Text in das Terminal,
+als wäre er getippt, und leert es — Sitzungsarbeit. Vom Theme kennt die
+Maschine nur, was `setOptions`
+anwendet; die Werte liefert der Session-Host.
 
 `input-writer.ts` gehört ebenfalls nicht hierher, obwohl sein Name danach klingt:
 die Maschine schreibt Bytes (`pty.write`), er entscheidet *welche* — um aus
 „git sta" ein „git status" zu machen, muss er wissen, was in der Eingabezeile
 steht, wo der Cursor ist und ob die Shell „Zeile ersetzen" im
-`COGNO:CAPS`-Handshake gemeldet hat. Alle drei sind Sitzungswissen; er zieht
-mit den Editor-Aktionen nach `core/session/`.
+`COGNO:CAPS`-Handshake gemeldet hat. Alle drei sind Sitzungswissen; er liegt
+mit den Editor-Aktionen in `core/session/editor/`.
 
 **Session** ist die Bedeutung einer laufenden Sitzung: der Session-Host, der
 eine Maschine besitzt und konfiguriert, das Sitzungsmodell (siehe unten), die
@@ -152,50 +159,46 @@ Interpretation der Sequenzen und alle sitzungsgebundenen Konsumenten —
 Prompt-Dekoration, Editor-Aktionen, History, Recorder, Autocomplete, Composer,
 Such-Engine, Links, Menüs, Snapshots. Alles darin lebt und stirbt mit der
 Sitzung. Prüfkriterium: der Code braucht genau eine `sessionId` und wäre ohne
-diese Sitzung sinnlos. Heutige Dateien: `terminal.session.ts` (wird der Host),
-der Modell-Anteil von `TerminalStateManager` (`startCommand`/`endCommand`,
-`updateCwd`, `updateSessionCapabilities`, `updateInput`, Shell-Kontext),
-`input-writer.ts`, die
-Handler `input`, `terminal-padding`, `terminal-title`,
-`terminal-notification`, `full-screen-app`¹,
-`link`, `resume-link`, `clipboard`, `completed-command-notification`,
-`terminal-search`, sowie `advanced/*` vollständig, `header/`, und die
-Shell-Integration aus `features/shell/` als `core/session/shells/`
+diese Sitzung sinnlos. Aufbau von `core/session/`: `host/` (der Session-Host,
+`session-host.ts`), `model/` (das Sitzungsmodell mit Kommandos, cwd,
+Capabilities, Eingabezeile und Shell-Kontext), `editor/` (u. a.
+`input-writer.ts`), die Handler in `handlers/` (`input`, `terminal-padding`,
+`terminal-title`, `terminal-notification`, `full-screen-app`¹, `link`,
+`resume-link`, `clipboard`, `terminal-search`), die sitzungsgebundenen
+Konsumenten (`autocomplete/`, `composer/`, `decoration/`, `history/`,
+`recorder/`, `dropdown/`, `exec/`) und die Shell-Integration als `shells/`
 (Shell-Definitionen, Support, Pfadadapter, Line-Editor-Wissen,
 Integrationsskripte, CAPS-Handshake, `COGNO_*`-Env) — sie stellt den Kontext
-einer Sitzung her und ist Core (Entscheidung 2, Inventar 5: „ohne 5 gibt es
-kein 6, 7, 9, 11"). Das heutige `shellFeature` ist ein als Feature
-verkleideter Core-Baustein ohne `mode`, UI oder Settings; der
-Contribution-Punkt `shells?` entfällt. Die Shell-Typen `Fish` und `GitBash`
-ohne Definition werden dabei entfernt.
+einer Sitzung her und ist Core (Entscheidung 2): ohne sie gibt es keinen
+Sitzungskontext, auf dem die übrigen Konsumenten aufbauen. Sie hat weder
+`mode` noch eigene UI oder Settings und ist deshalb kein Feature;
+`FeatureDefinition` hat keinen Contribution-Punkt `shells?`, und es gibt
+keinen Shell-Typ ohne Definition.
 ¹ Alt-Screen-*Erkennung* ist Maschine (Buffer-Typ), die *Reaktion* ist Session.
 
 Drei Entscheidungen an dieser Grenze:
 
-1. `TerminalStateManager` wird in Maschinenzustand und Sitzungsmodell geteilt —
-   neben dem `CommandLineObserver`-Split die zweite unvermeidliche Operation.
-2. Die Maschine importiert keine Config. Heute holen `renderer.ts` und mehrere
-   Handler `ConfigService` direkt; künftig bekommt die Maschine Optionen als
-   Werte, und der Session-Host liest sie aus der Config und schiebt sie bei
-   Hot-Reload nach. Dasselbe in Gegenrichtung: die Maschine loggt und meldet
-   nicht selbst (heute importiert `renderer.ts` den Fehler-Reporter), sondern
-   veröffentlicht Fehler und Diagnosen als Ereignisse; der Host reicht sie an
-   den Reporter weiter.
+1. Terminal-Zustand ist geteilt in Maschinenzustand
+   (`core/terminal/machine-state.ts`) und Sitzungsmodell
+   (`core/session/model/session-model.ts`).
+2. Die Maschine importiert keine Config. Sie bekommt Optionen als Werte, und
+   der Session-Host liest sie aus der Config und schiebt sie bei Hot-Reload
+   nach. Dasselbe in Gegenrichtung: die Maschine loggt und meldet nicht
+   selbst, sondern veröffentlicht Fehler und Diagnosen als Ereignisse; der
+   Host reicht sie an den Reporter weiter.
 3. Fokus meldet die Maschine, die Workbench entscheidet. `focus.handler`
-   publiziert heute direkt auf den App-Bus; künftig meldet die Maschine
-   DOM-Fokus an den Session-Host, der ihn als Fakt veröffentlicht, und die
-   Workbench setzt daraus den aktiven Pane.
+   meldet DOM-Fokus an den Session-Host, der ihn als Fakt veröffentlicht, und
+   die Workbench setzt daraus den aktiven Pane.
 
 **Das Sitzungsmodell ist veränderlich.** Eine Sitzung startet mit einem
 Shell-Kontext (OS × Shell × WSL-Distro), aber der Kontext kann sich während der
 Laufzeit ändern: `ssh` in einen Linux-Host, `wsl` aus der PowerShell, `bash`
 aus `cmd`, `su`, ein Container. Ab da gelten Pfadinterpretation, Shell-
 Definition, Capabilities, verfügbare Editor-Aktionen und die Zuordnung im
-Recorder (Kontext-Spalte der History) nicht mehr. Heute wird der Kontext genau
-einmal beim Start aus dem Profil abgeleitet (`terminal-state.manager.ts:79`)
-und nie wieder angefasst — ein Kontextwechsel ist im Modell nicht vorgesehen.
+Recorder (Kontext-Spalte der History) nicht mehr. Ein einmal beim Start aus
+dem Profil abgeleiteter Kontext reicht deshalb nicht.
 
-Zielbild: das Sitzungsmodell führt eine **Kontext-Zeitachse**. Ein Kontext hat
+Das Sitzungsmodell führt eine **Kontext-Zeitachse**. Ein Kontext hat
 `{ shellType, backendOs, wslDistro?, remoteHost?, capabilities, since }`; der
 aktuelle ist der letzte Eintrag. Kontextwechsel erkennt die Session aus
 denselben Quellen wie alles andere: der neue `COGNO:CAPS`-Handshake, wenn die
@@ -230,9 +233,18 @@ Kontext nicht umstellen — die Session bleibt im *unbekannten Kontext*,
 außer der Nutzer leitet das Token bewusst weiter (`SendEnv
 COGNO_SESSION_TOKEN` plus Integration auf dem Host). Dann ist der Wechsel
 authentisiert und gewollt. Für WSL wird die Umgebung übernommen, der
-Wechsel funktioniert ohne Zutun. Rein informative Sequenzen (OSC 2 Titel,
+Wechsel funktioniert ohne Zutun. Rein informative Sequenzen (OSC 0/2 Titel,
 OSC 9 Nachricht, 9;4 Fortschritt) bleiben ohne Token — sie ändern kein
 Modell, nur Anzeige.
+
+**Der lokale HTTP-Server ist ebenso geschützt.** Über ihn melden
+Coding-Agent-Hooks ihren Status und löst `cogno action run` Aktionen aus.
+Rust erzeugt je Start ein Geheimnis `COGNO_TOKEN` und gibt es jeder Shell mit
+(neben `COGNO_PORT`); jede Anfrage muss es im Header `X-Cogno-Token` tragen
+und die Loopback-Adresse (`127.0.0.1:<port>`, `localhost:<port>`) als Host
+nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
+wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
+DNS-Rebinding auf 127.0.0.1 umbiegt.
 
 Jeder Kontexteintrag der Zeitachse hat eine **Revision**; `run` und jede
 schreibende API-Operation nennen die Revision, mit der sie geplant wurden,
@@ -246,54 +258,59 @@ Feature-Host. Sie kennt Sessions nur als einhängbare Hosts mit Identität —
 niemals deren Inhalt. Prüfkriterium: braucht der Code die *Menge* der
 Sitzungen oder die Layout-Identität `{windowId, workspaceId, tabId, sessionId}`, nicht
 eine einzelne Sitzung samt Bytestrom, Eingabezeile oder cwd? Der Fokus
-(„welches Pane ist aktiv") ist Workbench-Zustand. Heutige Ordner, die dorthin
-gehören: `tab-list/`, `grid-list/` (inkl. `TerminalComponentFactory`),
-`features/side-menu/workspace/` (heute fälschlich Feature), `features/side-menu/`
-(Rail, Panel, `ui-state`), `window/`, `app-buttons/`, `header/`, `menu/`,
-`notification/`, `action/`, `keybinding/`, `cli-command/`, `cogno-message/`,
-sowie der heute über `app-host/`, `features.ts` und `AppWiringService`
-verstreute Feature-Host.
+(„welches Pane ist aktiv") ist Workbench-Zustand. Ordner in `core/workbench/`
+u. a.: `tab-list/`, `grid-list/`, `terminal/` (Einhängen der Session-Hosts,
+`TerminalSessionRegistry`), `workspace/`, `side-menu/` (Rail, Panel,
+`ui-state`), `window/`, `app-buttons/`, `header/`, `app-menu/`,
+`native-menu/`, `notification/`, `actions/`, `keybindings/`, `external/`
+(CLI/HTTP), `bus/`, `feature-host/` und `api-adapters/`.
 
 `command-log/` hängt in `core/` nur von `infrastructure/` ab (DB-Bridge);
 `session/` und `workbench/` dürfen es importieren.
 
 **Zwischen Session und Workbench gibt es genau eine Richtung: `workbench →
-session`.** Die Workbench hält die Session-Hosts (heute schon:
-`TerminalComponentFactory`), hängt sie ein und aus, und liest ihr Modell. Die
+session`.** Die Workbench hält die Session-Hosts
+(`TerminalSessionRegistry`), hängt sie ein und aus, und liest ihr Modell. Die
 Session importiert nichts aus der Workbench und weiß nicht, ob sie in einem
 Tab, einem Pane oder gar nicht angezeigt wird.
 
 Informationen fließen trotzdem nach oben — als **Fakten über das Modell**, nie
 als Befehle an die Workbench. Die Session veröffentlicht auf ihrem Modell bzw.
-ihrem Lebenszyklus: cwd geändert, Titel geändert (OSC 2), Kommando
+ihrem Lebenszyklus: cwd geändert, Titel geändert oder gelöscht (OSC 0/2), Kommando
 begonnen/beendet mit Dauer und Exit-Code, Shell-Kontext gewechselt,
 OSC-9-Nachricht empfangen, Fortschritt (OSC 9;4), Prozess beendet. Die
 Workbench abonniert das und entscheidet selbst: Tab-Titel und Busy-Indikator
 aktualisieren, bei Prozessende Pane und — wenn es das letzte Pane war — Tab
 entfernen. Auch Benachrichtigungen entstehen so: die Session meldet „Kommando
 endete nach 90 s" oder „OSC 9 kam", der Notification-Dispatch der Workbench
-entscheidet Schwelle, Kanal und Unread-Badge (heute erzeugt
-`completed-command-notification.handler` die Notification selbst). „Ungelesen"
-ist abgeleiteter Workbench-Zustand, weil er den Fokus braucht. Heute publiziert `pty.handler.ts:55-60` bei
-PTY-Exit direkt `RemovePane`; das ist ein Befehl aus der Session an das Layout
-und wird zum Fakt `exited` (siehe 2.3). Der App-Bus bleibt als Mechanismus
-erlaubt, aber Nachrichten aus `session/` sind ausschließlich Ereignisse in
-Vergangenheitsform; Aktionsnamen der Workbench (`RemovePane`, `CloseTab`,
-`FocusPane` …) kommen darin nicht vor — prüfbar per Typregel.
+entscheidet Schwelle, Kanal und Unread-Badge (für lange Kommandos
+`completed-command-notification.handler` in `core/workbench/terminal/`).
+Das Ungelesen-Abzeichen setzt die Workbench; es liegt aber im
+Sitzungsmodell, weil die Session es selbst löscht — bei Eingabe und bei
+Fokus — und es mit ihr stirbt. Welches Pane maximiert ist, ist dagegen
+reiner Workbench-Zustand und liegt im `GridListService`.
+PTY-Exit meldet die Session als Fakt `exited` (siehe 2.3), nicht als Befehl
+`RemovePane` an das Layout. Die Session kennt keinen Bus: sie veröffentlicht
+ihre Fakten auf `facts$` (`SessionHost`, `SessionModel`), ausschließlich als
+Ereignisse in Vergangenheitsform; Aktionsnamen der Workbench (`RemovePane`,
+`CloseTab`, `FocusPane` …) kommen darin nicht vor — prüfbar per Typregel.
+Die Workbench liest sie über die Session-Registry.
 
-Der Bus selbst ist **ein Strom, abonniert nach Nachrichtentyp**
+Der App-Bus der Workbench (`core/workbench/bus/`) ist **ein Strom, abonniert
+nach Nachrichtentyp**
 (`on$(type)`, `once$(type)`, `publish`): jeder Abonnent eines Typs bekommt
 eine Nachricht genau einmal, synchron, in Abo-Reihenfolge. Pfade und
 Capture-/Target-/Bubble-Phasen gibt es nicht — niemand hat sie genutzt, und
 sie ließen einen Abonnenten oberhalb des Zielpfads dieselbe Nachricht zweimal
-bekommen. Ein Bus ist das richtige Mittel, wo ein Sender seine Empfänger nicht
-kennt (`ActionFired`, `FocusTerminal`, `TerminalRemoved`, `Notification`). Wo
-es genau einen bekannten Empfänger gibt, ruft der Sender ihn direkt auf
-(Abschnitt 5) — eine Nachricht, die nur ein Abonnent zurück in einen
-Methodenaufruf übersetzt, ist ein Umweg und kein Entkoppeln.
+bekommen. Der Bus verbindet Teile, die **weit voneinander entfernt** liegen:
+Sender und Empfänger kennen sich nicht und importieren sich nicht
+(`ActionFired`, `FocusTerminal`, `TerminalRemoved`, `Notification`). Das
+verhindert, dass jeder jeden importiert. Liegen zwei Teile nah beieinander —
+im selben Bereich, einer besitzt den anderen —, ruft der eine den anderen
+direkt auf; der Bus wäre dort ein Umweg.
 
-Die Grenze bleibt damit per Pfadregel prüfbar: `session/` importiert weder
-`workbench/` noch `api/`.
+Die Grenze bleibt damit per Pfadregel prüfbar: `session/` importiert
+`workbench/` nicht.
 
 Warum die Richtung so herum: **der Besitzer kennt das Besessene, nie
 umgekehrt.** Die Workbench erzeugt Sessions (Tab öffnen, Split), hängt sie
@@ -305,41 +322,46 @@ Ebene tiefer: der Session-Host besitzt die Maschine und importiert sie, die
 Maschine weiß nichts von der Session.
 
 ```
-features/            Git, AI, Coding-Agents, Palette, …
-    │  importieren nur
+features/            Git, Coding-Agents, Palette, …
+    │  benutzen Ports, erfüllen Contributions
     ▼
-core/api/            boundSession$, TerminalMonitor, TerminalNavigator, Contributions
-    │  kennt beide
-    ├──────────────►  core/workbench/   Fokus, Layout-Identität, Reveal, Feature-Host
-    │                       │  besitzt
-    │                       ▼
-    └──────────────►  core/session/     Host, Modell, sitzungsgebundene Konsumenten
-                            │  besitzt
-                            ▼
-                      core/terminal/    die Maschine
+core/api/            nur Verträge: SessionApi, TerminalMonitor, TerminalNavigator,
+    ▲                TerminalPlacement, Ports (Config, Actions, Dateisystem, …), contributions/
+    │  implementieren Ports, lesen Contributions
+    ├────────  core/workbench/   Fokus, Layout-Identität, Reveal, Feature-Host, api-adapters/
+    │                 │  besitzt
+    │                 ▼
+    ├────────  core/session/     Host, Modell, sitzungsgebundene Konsumenten
+    │                 │  besitzt
+    │                 ▼
+    │           core/terminal/    die Maschine (kennt die API nicht)
+    └────────  core/infrastructure/, core/command-log/
 ```
+
+`core/api/` liegt damit **unter** den übrigen Core-Schichten, nicht über
+ihnen: Verträge hängen von nichts ab, die Implementierungen hängen von den
+Verträgen ab. Deshalb kann jede Core-Schicht einen Vertrag benutzen oder
+implementieren, den auch Features brauchen — ohne dass er nach `shared/`
+ausweichen muss. `bootstrap/` bindet jeden Port an seine Implementierung.
 
 Die Importmatrix, mit Dependency Cruiser erzwungen (Zeile darf Spalte
 importieren):
 
-| von ↓ | `shared` | `platform` | `core/infrastructure` | `core/terminal` | `core/command-log` | `core/session` | `core/workbench` | `core/api` | `features` |
+| von ↓ | `shared` | `platform` | `core/api` | `core/infrastructure` | `core/terminal` | `core/command-log` | `core/session` | `core/workbench` | `features` |
 |---|---|---|---|---|---|---|---|---|---|
 | `shared` | – | | | | | | | | |
 | `platform` | ✔ | – | | | | | | | |
-| `core/infrastructure` | ✔ | ✔ | – | | | | | | |
-| `core/terminal` | ✔ | ✔ | | – | | | | | |
-| `core/command-log` | ✔ | ✔ | ✔ | | – | | | | |
-| `core/session` | ✔ | ✔ | ✔ | ✔ | ✔ | – | | | |
-| `core/workbench` | ✔ | ✔ | ✔ | | ✔ | ✔ | – | | |
-| `core/api` | ✔ | ✔ | ✔ | | ✔ | ✔ | ✔ | – | |
-| `features` | ✔ | ✔ | | | | | | ✔ | nur über `index.ts` |
+| `core/api` | ✔ | ✔ | – | | | | | | |
+| `core/infrastructure` | ✔ | ✔ | ✔ | – | | | | | |
+| `core/terminal` | ✔ | ✔ | | | – | | | | |
+| `core/command-log` | ✔ | ✔ | ✔ | ✔ | | – | | | |
+| `core/session` | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ | – | | |
+| `core/workbench` | ✔ | ✔ | ✔ | ✔ | | ✔ | ✔ | – | |
+| `features` | ✔ | ✔ | ✔ | | | | | | nur über `index.ts` |
 | `bootstrap` | alles | | | | | | | | |
 
-**Die Matrix als Dependency-Cruiser-Regeln.** Der Check ist heute grün
-(`pnpm lint:architecture`: 581 Module, 1 938 Abhängigkeiten, keine
-Verstöße) und bleibt es in jedem Migrationsschritt — das ist die
-Zusicherung, die den Umbau trägt. Die Regeln, die die Matrix eins zu eins
-abbilden (Pfade unter `src/`):
+**Die Matrix als Dependency-Cruiser-Regeln** (`.dependency-cruiser.cjs`,
+`pnpm lint:architecture`). Sinngemäß, Pfade unter `src/`:
 
 ```js
 // Fundament
@@ -349,23 +371,25 @@ abbilden (Pfade unter `src/`):
   to: { path: "^(platform|core|features|bootstrap)/" } },
 { name: "shared-domain-framework-free",
   from: { path: "^shared/(domain|support)/" }, to: { path: "^(@angular/|rxjs)" } },
+{ name: "shared-domain-knows-no-ui",
+  from: { path: "^shared/(domain|support)/" }, to: { path: "^shared/ui/" } },
 { name: "platform-imports-only-shared", from: { path: "^platform/" },
   to: { path: "^(core|features|bootstrap)/" } },
 
 // core, von unten nach oben
+{ name: "api-is-contracts-only", from: { path: "^core/api/" },
+  to: { path: "^core/(?!api/)|^features/|^bootstrap/" } },
 { name: "infrastructure-knows-no-product-layer",
   from: { path: "^core/infrastructure/" },
-  to: { path: "^core/(terminal|command-log|session|workbench|api)/|^features/|^bootstrap/" } },
+  to: { path: "^core/(terminal|command-log|session|workbench)/|^features/|^bootstrap/" } },
 { name: "terminal-is-the-machine", from: { path: "^core/terminal/" },
   to: { path: "^core/(?!terminal/)|^features/|^bootstrap/" } },
 { name: "command-log-uses-only-infrastructure",
   from: { path: "^core/command-log/" },
-  to: { path: "^core/(terminal|session|workbench|api)/|^features/|^bootstrap/" } },
+  to: { path: "^core/(terminal|session|workbench)/|^features/|^bootstrap/" } },
 { name: "session-knows-no-workbench", from: { path: "^core/session/" },
-  to: { path: "^core/(workbench|api)/|^features/|^bootstrap/" } },
-{ name: "workbench-knows-no-api", from: { path: "^core/workbench/" },
-  to: { path: "^core/(terminal|api)/|^features/|^bootstrap/" } },
-{ name: "api-knows-no-features", from: { path: "^core/api/" },
+  to: { path: "^core/workbench/|^features/|^bootstrap/" } },
+{ name: "workbench-knows-no-machine", from: { path: "^core/workbench/" },
   to: { path: "^core/terminal/|^features/|^bootstrap/" } },
 
 // Features
@@ -381,7 +405,14 @@ abbilden (Pfade unter `src/`):
 { name: "known-aliases-only", from: { path: "^src/" },
   to: { dependencyTypes: ["unknown"],
         path: "^@cogno/(?!shared|platform|core|features|bootstrap)(/|$)" } },
+
+// Überall
+{ name: "no-circular", from: { path: "^src/" }, to: { circular: true } },
 ```
+
+`no-circular` zählt auch reine Typ-Importe: Specs laufen mit
+`emitDecoratorMetadata`, dort werden Konstruktor-Typen beim Laden einer
+Klasse ausgewertet, und ein Kreis kann eine Injektion `undefined` machen.
 
 Zwei Regeln lassen sich nicht als Import ausdrücken und bekommen einen
 eigenen Test:
@@ -397,15 +428,21 @@ eigenen Test:
 Daraus folgen die Regeln, die man sich merken muss:
 
 - Nur `platform/` importiert Tauri. `shared/` importiert nichts Internes und
-  kennt keine Fremdtechnik; es ist kein Adapter zwischen Core und Features.
+  kennt keine Fremdtechnik; es enthält keine Verträge zwischen Core und
+  Features.
+- `core/api/` enthält nur Verträge und importiert nichts aus `core/`. Jede
+  Core-Schicht außer `terminal/` darf sie benutzen und implementieren.
 - `core/terminal/` importiert nichts anderes aus `core/` — auch nicht
-  `infrastructure/` (Grenz-Entscheidung 2 unten).
-- `core/session/` importiert weder `workbench/` noch `api/`; `workbench/`
-  darf `session/` importieren (Host-Schnittstelle, Modell). Nachrichten aus
+  `infrastructure/` oder `api/` (Grenz-Entscheidung 2 unten).
+- `core/session/` importiert `workbench/` nicht; `workbench/` darf
+  `session/` importieren (Host-Schnittstelle, Modell). Nachrichten aus
   `session/` sind Fakten (Vergangenheitsform), nie Workbench-Aktionen.
-- `core/api/` ist der einzige Ort in `core/`, den Features importieren, und
-  der einzige, der `session/` und `workbench/` zusammen kennt.
-- Features kennen `shared/`, `platform/` und `core/api/` — sonst nichts
+- Adapter, die `session/` und `workbench/` zusammensetzen, liegen in
+  `core/workbench/api-adapters/`. Ein Port, dessen Implementierung einer
+  tieferen Schicht gehört, wird dort implementiert (`CommandRunner` in
+  `session/`, `ApplicationConfigurationPort` in `infrastructure/`).
+- `core/api/` ist der einzige Ort in `core/`, den Features importieren.
+  Features kennen `shared/`, `platform/` und `core/api/` — sonst nichts
   (Entscheidung 10). Logging, Fehler-Reporter und Settings erreichen ein
   Feature über die API bzw. seine Contributions, nie per Import aus
   `infrastructure/`.
@@ -419,7 +456,7 @@ Daraus folgen die Regeln, die man sich merken muss:
 | | sitzungsgebunden | übergreifend |
 |---|---|---|
 | `core` | Modell, Command-Recorder, History, Autocomplete, Composer, Prompt-Dekoration, Editor-Aktionen, Such-Engine | Tabs, Panes, Workspaces, Seitenleiste, Fenster, Notification-Dispatch, Kommandodaten (Schema + Abfrage-API) |
-| Feature | Git, AI, Prozess-Info, Such-Panel | Coding-Agents, Notification-Übersicht, Palette, Statistik (künftig) |
+| Feature | Git, Prozess-Info, Such-Panel | Coding-Agents, Notification-Übersicht, Palette, Statistik (künftig) |
 
 **Wessen Fakt ist es?** (Entscheidung 10) Die Frage ist nicht, *wer* einen
 Fakt ermittelt, sondern *worüber* er ist:
@@ -441,8 +478,7 @@ Fakt ermittelt, sondern *worüber* er ist:
   Kontexteintrags, mit dem das Feature geplant hat; ist sie nicht mehr
   aktuell, lehnt `run` ab statt im falschen Kontext zu laufen. `run` startet einen
   **eigenen, unsichtbaren Prozess** im Kontext der Sitzung (cwd, Env; in
-  einer WSL-Distro über `wsl.exe -d`), nie eine Eingabe in die PTY — das
-  ist `injectInput`, und die beiden dürfen nicht verwechselbar heißen. In
+  einer WSL-Distro über `wsl.exe -d`), nie eine Eingabe in die PTY. In
   einem Remote- oder unbekannten Kontext gibt es keinen solchen Prozess:
   `run` lehnt ab, das Feature degradiert sichtbar („nicht verfügbar in
   Remote-Sitzung"), statt lokal in einem Pfad zu laufen, der auf dem Host
@@ -454,7 +490,7 @@ Fakt ermittelt, sondern *worüber* er ist:
 Der Test: *Wäre der Fakt noch sinnvoll, wenn Cogno kein Terminal wäre?*
 Git-Status in einem Ordner: ja → Feature. Prozessbaum unter der PTY: nein →
 Core. Das Ventil: **ein Fakt mit zweitem Konsumenten wandert ins Modell.**
-Braucht der AI-Chat morgen den Git-Branch, wird der Branch Sitzungsfakt —
+Braucht ein zweites Feature morgen den Git-Branch, wird der Branch Sitzungsfakt —
 nicht ein Import des Git-Features.
 
 `platform/` zu benutzen vermischt nichts: es ist generischer OS-Zugriff ohne
@@ -462,11 +498,10 @@ Produktwissen, keine Core-Schicht. Vermischung entstünde nur, wenn Features
 `terminal/` oder Session-Interna anfassen — und das bleibt verboten. Für
 Tests sind Plattformdienste injectable Klassen mit Stub-Providern.
 
-Konkret: Prozess-Info wird ein **Panel in der Seitenleiste** — ein
+Konkret: Prozess-Info ist ein **Panel in der Seitenleiste** — ein
 sitzungsgebundenes Feature wie Git, das `boundSession$` folgt und den
-Prozessbaum daraus liest. Der Dialog aus dem Kontextmenü
-(`terminal.session.ts:545`) und der Menüeintrag „Process Info" entfallen; der
-Baum ist kein Modell-Fakt, sondern wird über `boundSession.processTree()` bei
+Prozessbaum daraus liest. Einen Dialog im Kontextmenü und einen Menüeintrag
+„Process Info" gibt es nicht; der Baum ist kein Modell-Fakt, sondern wird über `boundSession.processTree()` bei
 jedem Aufruf frisch ermittelt. Git bleibt eine vollständige
 Scheibe — Ermittlung über `boundSession.run({ executable: "git", args: ["status", "--porcelain"], contextRevision })`, Tabellen, UI,
 Settings — und
@@ -476,16 +511,15 @@ Hook-Installation und Statusempfang.
 **Achse 2 — Lebensdauer.** Sitzungsgebundene Teile in `core/session/` leben und
 sterben mit der Session. Ein eigenständiger Session-Host besitzt ihre
 Component-Provider; Pane-, Tab- und Workspace-Views hängen diesen Host nur ein
-oder aus. Die heutigen `TerminalComponent`-Provider (`terminal.component.ts:44-53`)
-zeigen bereits diese Richtung. Sitzungsgebundene *Features* leben dagegen
-app-weit in einem Panel und sind an eine Sitzung **gebunden**. Deshalb
-heißt das Feld `target`, nicht `scope`: es sagt, *worauf* ein Feature zeigt
+oder aus; das ist `core/session/host/session-host.ts`.
+Sitzungsgebundene *Features* leben dagegen app-weit in einem Panel und sind
+an eine Sitzung **gebunden**. Deshalb heißt das Feld `target`, nicht `scope`: es sagt, *worauf* ein Feature zeigt
 (`"session"` oder `"workbench"`), nicht, wie lange es lebt. Die Lebensdauer
 eines Features ist immer die der Anwendung (pro Fenster, 2.6); was mit
 einer Sitzung lebt und stirbt, ist per Definition Core. Ein zweites Feld
-`lifetime` hätte nur einen Wert und entfällt.
+`lifetime` hätte nur einen Wert und gibt es deshalb nicht.
 
-Diese Unterscheidung erklärt drei Dinge, die vorher als Probleme aussahen: warum
+Diese Unterscheidung erklärt drei Dinge, die sonst wie Probleme aussehen: warum
 History/Autocomplete/Composer Component-Provider sind (korrekt, nicht kaputt),
 warum das Git-Panel an eine Sitzung *gebunden* ist statt in ihr zu leben
 (app-weites Panel über eine Sitzung), und warum das Protokoll eine Abfrageseite
@@ -512,9 +546,9 @@ ohne DOM arbeitet: xterm 6 erzeugt `InputHandler` und `WriteBuffer` im
 Konstruktor (`CoreTerminal.ts:125,141`), `write()` parst auch vor `open()`
 in den Buffer; `open(element)` bringt nur Renderer, Viewport, Fit, WebGL und
 Decorations. Buffer, Cursor, OSC-Handler und Marker — alles, worauf das
-Modell beruht — sind headless verfügbar. (Ein Prüfpunkt vor der Umsetzung:
-ein Spike, der einen unopened `Terminal` mit `COGNO:PROMPT`-Sequenzen
-füttert und das Kommandozeilen-Modell daraus liest.)
+Modell beruht — sind headless verfügbar. (Belegt durch
+`core/session/session-headless.spec.ts`, der einen unopened `Terminal` mit
+`COGNO:PROMPT`-Sequenzen füttert und das Kommandozeilen-Modell daraus liest.)
 
 **Achse A — Runtime** (besitzt `session/`):
 
@@ -533,7 +567,7 @@ detached <-> attached                     (attach(element) / detach())
 
 `attach` ruft `open()` beim ersten Mal und hängt danach nur noch um;
 `detach` löst den DOM-Host und gibt den WebGL-Kontext frei (der Pool in
-`renderer.ts:216ff` tut das heute schon nach Sichtbarkeit) — der Core und
+`renderer.ts` tut das nach Sichtbarkeit) — der Core und
 damit Buffer, Modell, Recorder und History laufen weiter. Was DOM braucht,
 lebt nur in `attached`: Prompt-Dekoration als Overlay, Autocomplete-Panel,
 Composer, Search-Highlighting. Diese Konsumenten hängen sich beim `attach`
@@ -556,36 +590,42 @@ bestehen. Reparenting, Tab-Wechsel und Workspace-Wechsel verändern nur die
 Darstellung beziehungsweise Layout-Identität; eine laufende Session wird dabei
 nicht neu gestartet.
 
-Beim Laden oder Wiederherstellen eines Workspaces werden **alle** zugehörigen
+Beim Laden oder Wiederherstellen eines Workspaces werden die zugehörigen
 Sessions sofort gestartet (`running`), auch in nicht sichtbaren Tabs und
 Panes — sie sind `detached`, nicht Platzhalter: die Shell läuft, Kommandos
 werden erfasst, der Tab-Titel aktualisiert sich. Sichtbar werden nur die
 Panes des aktiven Tabs `attached`. Das begrenzt zugleich die
 WebGL-Kontexte auf die sichtbaren Panes.
 
+Eine Ausnahme: Eine wiederhergestellte Session **mit gespeichertem
+Scrollback** startet ihre Shell erst, wenn ihr Pane zum ersten Mal
+angezeigt wird. Der Scrollback muss in ein geöffnetes Terminal in seiner
+endgültigen Größe geschrieben werden, bevor die Shell zeichnet — sonst malt
+sie (ConPTY besonders) über ihn, statt unter ihm zu beginnen. Bis dahin
+bleibt der Snapshot die Beschreibung der Session: Speichern liefert ihn
+unverändert zurück, nicht den noch leeren Puffer.
+
 ### 2.4 Kommandodaten (`core/command-log/`): Recorder, Abfrage, Sichten
 
-Heute liegt alles in einer Klasse pro Terminal: `HistoryRepository` und
-`TerminalHistoryPersistenceService` schreiben (`upsertCommandExecution`,
-`upsertCommandTransition`, cwd) **und** lesen (`searchCommands`,
-`getRecentCommands`, `searchCommandPatterns`); `history-command.suggestor.ts`
-setzt eigene SELECTs ab. Zielbild — drei Rollen, drei Orte:
+Erfassung und Nutzung sind getrennt (Entscheidung 6), und kein Konsument
+setzt eigene SELECTs ab. Drei Rollen, drei Orte:
 
 1. **Recorder** (`core/session/`, sitzungsgebunden). Abonniert das
    Sitzungsmodell (Kommando-Beginn/-Ende, Exit-Code, cwd, Shell-Kontext) und
    ruft die Schreib-API. Er kennt keinen Konsumenten und liest nie. Er ist die
    einzige Stelle, die aus Shell-Ereignissen Datensätze macht. Schreibt
-   asynchron und darf die Sitzung nicht bremsen (Inventar 7).
+   asynchron und darf die Sitzung nicht bremsen.
 2. **Kommandodaten** (`core/command-log/`, übergreifend). Besitzt die Tabellen
    `command*`, `command_log`, `command_stat`, `command_transition_stat`,
    `command_pattern*`, `path`, `dir_stat`, `shell_context`, `command_fts` und
    ihre Migrationen. Zwei API-Seiten:
-   - **Schreiben:** `recordExecution`, `recordCwd`, `recordTransition`,
-     Import (nativ/Legacy), Prune, Löschen — plus die **Feedback-Schreiber**
+   - **Schreiben** (`CommandLogWriter`): `upsertCommandExecution`,
+     `upsertWorkingDirectory`, `upsertCommandTransition`, Import
+     (`bulkImportCommands`), Löschen — plus die **Feedback-Schreiber**
      `markCommandSelected`, `markDirectorySelected`, `confirmLivePattern`,
      `markCommandPatternSelected`. Feedback ist auch Erfassung (Nutzerverhalten
      statt Shell-Ereignis), nur ein anderer Absender.
-   - **Lesen:** `searchCommands`, `getRecentCommands`, `searchDirectories`,
+   - **Lesen** (`CommandLogReader`): `searchCommands`, `getRecentCommands`, `searchDirectories`,
      `searchCommandPatterns`, Übergangs-Statistik, FTS. Kein Konsument setzt
      eigenes SQL ab.
    Abgeleitete Daten (Statistik, Übergänge, Pattern-Mining) werden hier
@@ -602,14 +642,12 @@ setzt eigene SELECTs ab. Zielbild — drei Rollen, drei Orte:
    Der Recorder ist ebenfalls ein eigenes Submodul, `core/session/recorder/`.
    History und Autocomplete importieren sich nicht gegenseitig; beide
    importieren `command-log/` (Lese-API und das **Kommando-Modell**, das
-   dort liegt). Dass sie heute eine Klasse teilen
-   (`TerminalHistoryPersistenceService`), ist der Zustand, den 2.4 auflöst
-   — „gemeinsamer Fachbereich" heißt gemeinsame Daten, nicht gemeinsamer
-   Lebenszyklus.
+   dort liegt) — „gemeinsamer Fachbereich" heißt gemeinsame Daten, nicht
+   gemeinsamer Lebenszyklus.
 
-Konsequenz: `TerminalHistoryPersistenceService` löst sich in Recorder (der
-sitzungsgebundene Teil mit `initialize`/`onCwdChanged`/`onCommandExecuted`)
-und die Abfrage-API auf; `HistoryRepository` wird der `command-log/`-Kern. Die
+Der Recorder liegt in `core/session/recorder/`, die Abfrage-API in
+`core/command-log/command-log.api.ts` (sitzungsgebunden erreichbar über
+`core/session/command-log/`). Die
 Rückkehrcode-Regel ist Recorder-Konfiguration und kommt aus der Config:
 `terminal.history.allowed_return_codes` (leer = kein Filter, der
 Auslieferungszustand; `[0]` = nur erfolgreiche Kommandos) und
@@ -626,24 +664,18 @@ dann eine leere, aber gültige Datenquelle.
 einfache Fall. Die anderen beiden — DB langsam, DB kaputt nach dem Start —
 brauchen Regeln, die aus Abschnitt 4 folgen:
 
-- **`commandLogHealth$`** in `command-log/`: `ok | degraded(reason) |
-  unavailable(reason)` mit Zählern (`dropped`, `pending`, letzte
-  Schreiblatenz). Die API reicht es durch; Seitenleiste und
-  Notification-Übersicht zeigen `degraded`/`unavailable` sichtbar an
-  (4.3), History und Autocomplete markieren ihre Ergebnisse als
-  „unvollständig", solange der Zustand nicht `ok` ist.
-- **Begrenzte Queue im Recorder** je Session: `recorder.max_pending`
-  (Default 256 Einträge). Der Recorder schreibt asynchron und in Batches;
-  ist die Queue voll, gilt die **Überlaufregel „ältestes verwerfen"** — das
-  jüngste Kommando ist für History und Autocomplete das wertvollste, und
-  die Sitzung wird unter keinen Umständen gebremst (Inventar 7). Jeder
-  Verlust erhöht `dropped`; ab dem ersten wird `degraded(backpressure)`
-  gemeldet, mit Zahl. Nichts geht still verloren.
-- **Schreibfehler:** ein fehlgeschlagener Batch wird einmal wiederholt;
-  schlägt er erneut fehl, werden seine Einträge als `dropped` gezählt und
-  der Zustand wird `degraded(write-error)`. Nach drei Batches in Folge
-  `unavailable`; der Recorder versucht es mit wachsendem Abstand erneut
-  und kehrt bei Erfolg zu `ok` zurück — Degradation ist reversibel.
+- **Begrenzte Queue** je Session (`SessionCommandLog`, 256 Einträge). Der
+  Recorder schreibt asynchron; ist die Queue voll, gilt die
+  **Überlaufregel „ältestes verwerfen"** — das jüngste Kommando ist für
+  History und Autocomplete das wertvollste, und die Sitzung wird unter
+  keinen Umständen gebremst. Jeder Verlust wird gezählt
+  (`CommandLogHealthTracker`, `command-log/command-log.health.ts`).
+- **Schreibfehler:** ein fehlgeschlagener Schreibvorgang wird einmal
+  wiederholt; schlägt er erneut fehl, zählt er als verloren und wird mit
+  der Zahl der bisherigen Verluste an den Error-Reporter gemeldet — die
+  Benachrichtigung kommt einmal, bis wieder ein Schreiben gelingt. Nach
+  drei Fehlern in Folge wartet der Log mit wachsendem Abstand; ein Erfolg
+  setzt das zurück — Degradation ist reversibel.
 - **Atomare Statistik:** `command_stat`, `dir_stat`,
   `command_transition_stat` werden ausschließlich mit
   `INSERT … ON CONFLICT DO UPDATE SET count = count + 1`-Anweisungen
@@ -652,10 +684,11 @@ brauchen Regeln, die aus Abschnitt 4 folgen:
   Batch ist eine Transaktion, SQLite serialisiert Schreiber im WAL-Modus.
   Pattern-Mining, das nicht als Einzelanweisung geht, läuft als
   Hintergrundjob über das Log, nicht im Schreibpfad.
-- **Lesen unter Last:** Abfragen von History und Autocomplete haben ein
-  eigenes Timeout (Inventar 7: < 100 ms für Autocomplete); läuft es ab,
-  liefert die Lese-API leer mit Kennzeichen `timedOut`, und der Suggestor
-  ist für diesen Durchlauf `rejected` wie heute — nie ein blockiertes Panel.
+- **Lesefehler:** Schlägt eine Abfrage fehl, liefert die Lese-API leer —
+  wie ohne Log — und meldet den Fehler einmal je Fehlerserie, nicht bei
+  jedem Tastendruck. Ein langsamer Suggestor blockiert das Panel nicht: das
+  Timeout je Suggestor im Autocomplete macht ihn für diesen Durchlauf
+  `rejected`.
 
 
 
@@ -664,7 +697,7 @@ brauchen Regeln, die aus Abschnitt 4 folgen:
 Ziel: nach einem Neustart stehen offene Workspaces, Tabs, Panes und die
 Sitzungen wieder da. Die Matrix legt die Rollen fest: `workbench → session`
 ist erlaubt, also lebt der **Serializer in der Workbench** und fragt jede
-Session nach ihrem Anteil. Vorher aber die Ehrlichkeit, was „wieder da"
+Session nach ihrem Anteil. Zuerst aber die Ehrlichkeit, was „wieder da"
 heißen kann — nach einem Neustart existieren PTY, SSH-Verbindung und
 laufendes Kommando **nicht mehr**. Drei Dinge sind zu unterscheiden:
 
@@ -672,16 +705,15 @@ laufendes Kommando **nicht mehr**. Drei Dinge sind zu unterscheiden:
 |---|---|---|
 | **Neue Shell-Runtime** | Profil, Start-cwd, Titel-Override | neu gestartet — ein frischer Prozess mit frischer Umgebung, frischem Token, neuem Handshake |
 | **Wiederhergestellte Darstellung** | Scrollback als Text | eingespielt, sichtbar als Vergangenheit |
-| **Nicht wiederherstellbarer alter Prozess** | Kontext-Zeitachse, Capabilities, unterbrochenes Kommando, Umgebung | **nicht** wiederhergestellt — nur dokumentiert |
+| **Nicht wiederherstellbarer alter Prozess** | Kontext-Zeitachse, Capabilities, unterbrochenes Kommando, Umgebung | **nicht** wiederhergestellt; das unterbrochene Kommando steht als abgebrochen im Command-Log |
 
-Daraus die Form des `SessionSnapshot` (Typ in `session/`, von der
-Workbench gespeichert, nicht interpretiert):
+Die neue Shell-Runtime startet aus dem Pane-Layout der Workbench (Profil,
+Start-cwd, Titel-Override). Einen Remote-Kontext der beendeten Sitzung stellt sie nie
+wieder her — den aktuellen Kontext bestimmt allein der neue Handshake (2.1).
 
-- **`start`** — Shell-Profil, Start-cwd, Titel-Override. Das Start-cwd ist
-  das cwd des **Basis-Kontexts** (der lokalen, äußersten Shell), nicht das
-  des letzten. War die Sitzung zuletzt in SSH oder WSL, startet sie lokal im
-  letzten lokalen cwd; der frühere Remote-Kontext wird nie „aktueller
-  Kontext" — den bestimmt allein der neue Handshake (2.1).
+Der `SessionSnapshot` (`session/host/session-snapshot.ts`, von der
+Workbench gespeichert, nicht interpretiert) trägt nur die Darstellung:
+
 - **`scrollback`** — der Puffer als Text mit SGR-Farben, serialisiert von
   `scrollback-serializer.ts` (nicht vom SerializeAddon: dessen
   Cursor-Restore-Schluss hat die Live-Sitzung beim Abspielen beschädigt), ohne
@@ -702,17 +734,17 @@ Workbench gespeichert, nicht interpretiert):
   seinen Kommando-Metadaten, und ebenso beim Abspielen (für Snapshots, die ihn
   noch enthalten). Steht hinter dem letzten Marker etwas — getippte Eingabe,
   die Ausgabe eines laufenden Kommandos —, ist das Verlauf und bleibt.
-- **`history`** — die frühere Kontext-Zeitachse als Information für das
-  Modell („war zuletzt auf host X") und der Titel des Kommandos, das beim
-  Beenden lief. Beim Restore markiert der Recorder dieses Kommando im
-  Command-Log als **abgebrochen** (`exit: aborted`, Ende = Snapshot-Zeit);
-  nichts wird erneut gestartet.
-- **Nicht enthalten:** die Umgebung (Rust baut sie beim Spawn neu, inklusive
+- **`commands`** — die Metadaten jedes Prompts (Verzeichnis, Rechner,
+  Nutzer), damit die Prompt-Dekoration der alten Kommandos wieder erscheint.
+- **Nicht enthalten:** die Kontext-Zeitachse der beendeten Sitzung — bewusst, es gibt
+  keinen Leser dafür. Ein Kommando, das beim Beenden noch lief, trägt die
+  Session schon beim Beenden als **abgebrochen** ins Command-Log ein; nichts
+  wird erneut gestartet. Ebenso nicht: die Umgebung (Rust baut sie beim Spawn neu, inklusive
   neuem `COGNO_SESSION_TOKEN`), Capabilities (kommen vom neuen Handshake),
   laufende Bindungen, Cursorposition, Eingabezeile.
 
 **Vertraulichkeit.** Scrollback kann Passwörter, Tokens und vertrauliche
-Ausgaben enthalten. Das Command-Log speichert heute schon Kommandozeilen,
+Ausgaben enthalten. Das Command-Log speichert bereits Kommandozeilen,
 Scrollback vergrößert die Fläche aber deutlich. Deshalb: Alt-Screen wird nie
 persistiert, die Persistenz ist global abschaltbar und je Terminal
 ausschließbar, das Limit ist klein, und der Snapshot wird beim Schließen
@@ -734,11 +766,11 @@ und Schließen in einem Statement nachgeführt. Wiederherstellen: jeder
 Workspace, der offen war, bekommt seine Laufzeit zurück — der aktive
 sichtbar, die anderen im Hintergrund —, je Pane ein Host mit
 `restore(snapshot)`: Scrollback in den Core schreiben, Trennzeile, dann PTY
-starten — und alle sofort starten, auch unsichtbar (2.3). Die Session ist passiv: sie kann sich
+starten — beim ersten Anzeigen des Panes (2.3). Die Session ist passiv: sie kann sich
 beschreiben und aus einer Beschreibung entstehen, speichert nichts selbst
 und kennt keine Tabelle.
 
-`terminal_session` gehört der Workbench (Workspace-Modul, heute
+`terminal_session` gehört der Workbench (Workspace-Modul,
 `workspace.repository.ts`). Der Snapshot ist darin eine Spalte, deren
 Inhalt `session/` bestimmt und versioniert; alte Versionen werden gelesen,
 unlesbare als „Darstellung nicht wiederherstellbar" behandelt — die Shell
@@ -769,11 +801,10 @@ Stellen halten das:
 Ein Tauri-Fenster ist eine eigene Webview mit eigener Angular-Instanz. Zwei
 Fenster teilen keinen JS-Zustand: jedes hat seine eigene Workbench, eigene
 Session-Hosts, einen eigenen Feature-Host. Geteilt ist nur der Rust-Prozess —
-und der ist heute schon fensterunabhängig: alle PTYs in einer Map
-`terminalId → Session` (`pty.rs:315`), eine Datenbank, ein HTTP-Server.
-Was fehlt, ist Routing: `http_server.rs:129` und `lib.rs:50,115` senden per
-`app.emit` an *alle* Fenster; mit zwei Fenstern führt ein globaler
-CLI-Befehl in beiden aus, ein terminalgebundener kommt in beiden an.
+und der ist fensterunabhängig: alle PTYs in einer Map
+`terminalId → Session` (`pty.rs`), eine Datenbank, ein HTTP-Server.
+Nachrichten an die Fenster routet `window_registry.rs` (Entscheidung 2),
+statt sie per `app.emit` an *alle* Fenster zu senden.
 
 Entscheidungen:
 
@@ -795,14 +826,14 @@ Entscheidungen:
    ist im JS-Heap. „Pane in anderes Fenster" ist damit kein Umhängen,
    sondern ein Restore (2.5): Snapshot im Quellfenster, neuer Core im
    Zielfenster, Übernahme derselben PTY über `terminalId`. Die Architektur
-   trägt das; geplant ist es nicht (Abschnitt 9).
+   trägt das; geplant ist es nicht (Abschnitt 8).
 4. **Ein Workspace ist in höchstens einem Fenster offen.** Öffnet man ihn
    aus einem anderen, fokussiert Rust das Fenster, das ihn hält
    (`workspaceId → windowId` in derselben Rust-Tabelle). Das Schließen
-   eines Fensters schließt seine Sessions explizit (Busy-Guard wie heute)
+   eines Fensters schließt seine Sessions explizit (mit Busy-Guard)
    und gibt seine Workspaces frei.
 5. **Feature-Host und Status sind pro Fenster.** `mode` ist global (Config),
-   der Runtime-Status nicht — ein Panel kann in einem Fenster `degraded`
+   der Runtime-Status nicht — ein Feature kann in einem Fenster `failed`
    sein und im anderen laufen. Deklarationen laufen pro Fenster idempotent;
    die DB-Migrationen sind durch Checksumme und Einzeltransaktion mehrfach
    ausführbar.
@@ -822,21 +853,34 @@ Entscheidungen:
 
 ## 3. Das Protokoll (`core/api/`)
 
-Das Protokoll ist **die Schnittstelle, die Features bekommen** — die Antwort
-auf die Frage, was ein Git-Panel, ein AI-Chat oder ein Coding-Agents-Panel von
-Cogno wissen und tun darf. Es lebt in `core/api/`, dem einzigen Ordner
-in `core/`, den Features importieren. Es muss ein eigener Ort sein, weil
-`boundSession$` „dem Fokus folgt": der Fokus ist Workbench-Wissen, das Modell
-ist Session-Wissen, und das Protokoll führt beides zusammen — es liegt
-oberhalb von Session und Workbench (Diagramm in 2.1).
+Das Protokoll ist **die Schnittstelle zwischen Core und Features, in beide
+Richtungen** — die Antwort auf die Frage, was ein Git-Panel oder ein
+Coding-Agents-Panel von Cogno wissen und tun darf, und was ein Feature
+beitragen kann. Es lebt in `core/api/`, dem einzigen Ordner in `core/`, den
+Features importieren, und besteht **nur aus Verträgen**:
 
-Sein Vorläufer war der `TerminalGateway` (`focusedTerminalId$`,
-`captureFocusedSnapshot`, `revealTerminal`, `busyStateChanges$` …): die Rolle,
-aber ohne Bindungszustände und ohne Schreibschutz. Er ist mit dem AI-Feature
-entfallen, sein letzter Konsument. Was Features heute bekommen, ist
+- **Ports** (Core → Feature): `SessionApi`, `TerminalMonitorPort`,
+  `TerminalNavigator`, `TerminalPlacementPort`, `TerminalIpcPort`,
+  `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
+  `NotificationChannelsPort`, `ApplicationConfigurationPort`,
+  `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
+- **Contributions** (Feature → Core, `core/api/contributions/`):
+  `FeatureDefinition`, Side-Menu-Features, Feature-Settings,
+  Datenbank-Migrationen, Notification-Kanäle.
+
+Weil `core/api/` nichts aus `core/` importiert, liegt es unter den übrigen
+Core-Schichten (Diagramm in 2.1): Core-intern darf jede Schicht außer der
+Maschine einen Vertrag benutzen oder implementieren, den auch Features
+brauchen. Wo ein Vertrag Session und Workbench zusammenführt — etwa
+`boundSession$`, das „dem Fokus folgt": der Fokus ist Workbench-Wissen, das
+Modell Session-Wissen —, liegt die Implementierung in
+`core/workbench/api-adapters/`.
+
+Was Features von der Sitzung bekommen, ist
 `SessionApi` (`session-api.ts`): `boundSession$`, `cwdChanges$`, `hold()`,
 `release()` — implementiert von `TerminalGatewayService`, der dafür Fokus
-(Bus und Fakt `focusChanged`) und Session-Registry zusammenführt.
+(Bus und Fakt `focusChanged`) und Session-Registry zusammenführt und in
+`core/workbench/api-adapters/` liegt.
 
 Das Protokoll ist zugleich die Stelle, an der Features klein gehalten werden:
 Was nicht im Protokoll steht, kann ein Feature nicht tun.
@@ -845,9 +889,8 @@ Die Klassifikation formt es, statt Operationen aufzuzählen. Zwei Formen:
 
 **Sitzungsgebundene Features** bekommen `boundSession$` — das Modell der gerade
 gemeinten Sitzung: cwd, Shell-Kontext, Kommandos, Eingabezeile, Capabilities.
-Damit schreiben Git, AI und Prozess-Info **keine** Fokus- und cwd-Verdrahtung
-mehr (heute dupliziert in `git-status.service.ts:49-53` und
-`coding-agents-side.component.ts:382-386`).
+Damit schreiben Git und Prozess-Info **keine** eigene Fokus- und
+cwd-Verdrahtung.
 
 Die Bindung hat benannte Zustände (`unbound`, `active`, `closing`, `closed`).
 Jede schreibende Operation prüft unmittelbar vor dem Schreiben erneut
@@ -855,45 +898,47 @@ Session-Identität und Capability. Damit kann eine verspätete asynchrone Antwor
 nach einem Fokuswechsel nicht in das falsche Terminal schreiben.
 
 **Übergreifende Features** bekommen `TerminalMonitorPort` (Aktivität, Ende und
-cwd je Terminal) und `TerminalNavigator.navigateToTerminal(id)` (Workspace,
-Tab und Fokus auf ein Terminal bringen). Ein Sitzungs-Verzeichnis `sessions$`
-entsteht erst mit dem ersten Feature, das eines braucht.
+cwd je Terminal), `TerminalNavigator.navigateToTerminal(id)` (Workspace,
+Tab und Fokus auf ein Terminal bringen) und als dessen lesendes Gegenstück
+`TerminalPlacementPort.getPlacement(id)` (Workspace und Tab eines Terminals
+samt Anzeigereihenfolge, plus `changes$`; Konsument: Coding-Agents-Panel,
+gruppiert nach Workspace in Tab-Reihenfolge). Ein Sitzungs-Verzeichnis
+`sessions$` entsteht erst mit dem ersten Feature, das eines braucht.
 
-`injectInput(request, identity)` — „schreib das in dieses Terminal", mit
-demselben Identitäts-Check wie `run` — ist implementiert, hat aber seit dem
-Wegfall des AI-Features keinen Konsumenten. Es bleibt bewusst als einzige
-Ausnahme von „keine Operationen ohne Konsumenten" (3.1) stehen, weil ein
-schreibendes Feature absehbar ist und der Schreibschutz der heikle Teil ist.
+Features schreiben nicht in die PTY; die API hat dafür keine Operation. Was
+in die Eingabezeile schreibt — Autocomplete, History, Composer — ist Core
+und nutzt den `InputWriter` der Session direkt. Braucht ein Feature das
+einmal, kommt eine Operation mit Identitäts-Check wie bei `run` dazu.
 
 Bindung: Standard „folgt dem Fokus", auf Wunsch **gehalten**. Das Wort *pin*
-ist bereits für „Panel offen halten" belegt (`side-menu.service.ts:166`);
+ist bereits für „Panel offen halten" belegt (`side-menu.service.ts`);
 die Bindung heißt deshalb `hold`/`release` — „das Git-Panel hält Terminal 3".
 Zustände: `following | held`, orthogonal zu `unbound/active/closing/closed`.
 
-Weil `core/session/` **innen** bleibt, entfallen die teuersten Protokollteile,
-die die Prüfung als schwerste Lücken markiert hatte: Overlay-Geometrie
+Weil `core/session/` **innen** bleibt, braucht das Protokoll seine
+teuersten denkbaren Teile nicht: Overlay-Geometrie
 (Cursorzelle, Zellmaße, Ausweichen vor der Seitenleiste), Dropdown-Arbitrierung
 und ein `decorate(range, style)`, das die Prompt-Dekoration ohnehin nie hätte
 tragen können.
 
-Was das Protokoll zusätzlich braucht und heute fehlt: eine **Gegenrichtung**
-(Features tragen Notification-Kanäle bei — heute importiert der Core dafür aus
-`@cogno/features/coding-agent/ports`, `terminal.session.ts:3`), Block-Adressierung
-über `commandId` statt Puffer-Zeilennummern, und Layout-Identität
-(`{windowId, workspaceId, tabId, sessionId}`, 2.6) für das Zielspringen von Notifications.
+Die **Gegenrichtung** sind die Contributions: Features tragen Panels,
+Settings, Notification-Kanäle und Migrationen bei, indem sie
+Verträge aus `core/api/contributions/` erfüllen; der Feature-Host in
+`core/workbench/feature-host/` liest sie. Was dem Protokoll noch fehlt:
+Block-Adressierung über `commandId` statt Puffer-Zeilennummern und
+Layout-Identität (`{windowId, workspaceId, tabId, sessionId}`, 2.6) für das
+Zielspringen von Notifications.
 
 ### 3.1 Ports und Schnittstellen
 
-Die alte `ARCHITECTURE.md` hatte eine Port-Regel („Feature deklariert eine
-abstrakte Klasse, die App implementiert, Bootstrap bindet"). Sie wird durch
-drei einfachere Regeln ersetzt, weil es die Rolle „App" nicht mehr gibt:
+Für Ports und Schnittstellen gelten drei Regeln:
 
-1. **Features haben keine eigenen Ports mehr.** Was ein Feature vom Produkt
-   braucht, steht in `core/api/`. Braucht ein Feature etwas, das dort fehlt,
+1. **Features haben keine eigenen Ports zum Produkt.** Was ein Feature vom
+   Produkt braucht, steht in `core/api/`. Abstraktionen *innerhalb* eines
+   Features (etwa die Provider-Schnittstelle der Coding-Agents) sind davon
+   unberührt. Braucht ein Feature etwas, das dort fehlt,
    wird die API erweitert — mit dem Feature als erstem Konsumenten
-   (Abschnitt 9: keine Operationen ohne Konsumenten). Die früheren
-   Feature-Ports sind darin aufgegangen (`NotificationCenterPort`) oder
-   entfallen (`workspace-close-guard.port.ts`, `TerminalGateway`).
+   (Abschnitt 8: keine Operationen ohne Konsumenten).
 2. **Quellen werden injiziert, Senken bleiben statisch.** Eine **Quelle**
    liefert etwas, wovon eine Entscheidung abhängt — `OsPlatform.platform()`,
    `Paths.homeDir()`, `Filesystem.readTextFile()`, `Clipboard.readText()`,
@@ -912,14 +957,17 @@ drei einfachere Regeln ersetzt, weil es die Rolle „App" nicht mehr gibt:
 
    Ein Dienst, der Plattformaufruf und Sitzungskontext kombiniert
    (`CommandRunner`, `Filesystem` mit Pfadübersetzung nach aktuellem
-   Shell-Kontext), gehört zu `core/session/` und erreicht Features als
-   `boundSession.run`/`.fs` über die API.
+   Shell-Kontext), ist in `core/session/` implementiert und erreicht
+   Features als `boundSession.run`/`.fs`. Einen Vertrag in `core/api/` hat
+   nur, was Features selbst benennen: `CommandRunner`; `Filesystem` liegt
+   in `core/session/exec/`.
 3. **Innerhalb von `core/` gibt es Schnittstellen nur an Besitzgrenzen:**
    die Maschine nach oben (`TerminalMachine`), der Session-Host nach oben
    (`SessionHost`, `SessionModel`, `SessionSnapshot`), die API nach außen.
-   Alles andere sind konkrete Klassen. `bootstrap/` bindet ausschließlich
-   die Contributions-Liste und Plattform-Provider; es gibt keine
-   `provide: Port, useExisting: Adapter`-Tabelle mehr.
+   Alles andere sind konkrete Klassen. `bootstrap/` bindet die
+   Contributions-Liste, die Plattform-Provider und jeden Port aus
+   `core/api/` an seine Implementierung (`provide: Port, useExisting:
+   Adapter`).
 
 ---
 
@@ -928,7 +976,7 @@ drei einfachere Regeln ersetzt, weil es die Rolle „App" nicht mehr gibt:
 Vier prüfbare Anforderungen:
 
 1. **Jede Naht hat einen benannten Fehlerzustand**, nicht nur ein `try/catch`.
-2. **Jeder Degradationspfad hat einen Test.** Existiert heute praktisch nicht.
+2. **Jeder Degradationspfad hat einen Test.**
 3. **Degradation ist sichtbar.** Still verlorene Fähigkeit ist schlimmer als ein
    Fehler.
 4. **Keine Korruption der Eingabezeile.** Im Zweifel nichts tun statt raten.
@@ -938,9 +986,9 @@ rekonstruiert Text und Cursorposition aus dem xterm-Buffer. Liegt es falsch,
 schreibt Cogno an die falsche Stelle in einer Zeile, die der Nutzer gleich
 ausführt. Ein Absturz wäre harmloser. Dorthin gehört die meiste Testarbeit.
 
-Punkt 3 hat ein Lehrbuch-Gegenbeispiel im Code: `clipboard.handler.ts:104-110`
-publiziert `OpenComposer` und gibt `true` zurück — der Aufruf erreicht das
-`paste()` nie. Hört niemand zu, ist der mehrzeilige Paste **still weg**.
+Punkt 3 hat ein Lehrbuch-Gegenbeispiel im Code: `clipboard.handler.ts`
+meldet bei mehrzeiligem Paste `composerRequested` und kehrt zurück — der
+Aufruf erreicht das `terminal.paste()` nie. Hört niemand zu, ist der mehrzeilige Paste **still weg**.
 
 Fehlerisolation im Rendering geht **nicht** per `try/catch` um `ngComponentOutlet`:
 `refreshView` wirft weiter *und* markiert Vorfahren erneut dirty (Dauerschleife),
@@ -952,18 +1000,18 @@ selbst in `try/catch` rufen.
 
 | Pfad | Zustand |
 |---|---|
-| History-DB fehlt | ✅ `terminal-history-persistence.service.ts:102-107, 225-249` |
-| Suggestor wirft/timeout | ✅ `terminal-autocomplete.service.ts:400-431` |
+| History-DB fehlt | ✅ `session-command-log.ts` |
+| Suggestor wirft/timeout | ✅ `terminal-autocomplete.service.ts` (Timeout, `rejected` je Suggestor) |
 | Marker desynchronisiert | ✅ `validateRange` |
 | Prompt-Dekoration aus | ✅ `disposeMarkers()`/`refreshMarkers()` — der Alt-Screen-Pfad macht das täglich |
-| `suggestor.matches()` wirft | ❌ ungeschützt (`:283`) |
+| `suggestor.matches()` wirft | ✅ `suggestorMatches` in `terminal-autocomplete.service.ts` |
 | Composer fehlt | ❌ Paste still verloren |
 | Prompt-Renderer wirft beim DOM-Bau | ❌ |
 | Kommandozeilen-Modell liegt falsch | ❌ kein Erkennungspfad |
-| Gebundenes Terminal stirbt | ❌ existiert noch nicht |
-| Command-Log langsam oder Schreibfehler | ❌ unbegrenzte Promise-Kette im Recorder, kein Zähler, kein Health-Zustand |
-| Gefälschte `COGNO:*`-Sequenz aus Programmausgabe | ❌ jede Sequenz wird geglaubt; kein Token, kein Zähler |
-| Shell-Kontext wechselt (ssh/wsl/su) ohne Handshake | ❌ kein Erkennungspfad; Pfadübersetzung und Recorder arbeiten mit dem Startkontext weiter |
+| Gebundenes Terminal stirbt | ✅ Bindung meldet `closing`/`closed` (`bound-session.tracker.ts`) |
+| Command-Log langsam oder Schreibfehler | ✅ begrenzte Queue, Verlustzähler, Backoff, einmalige Meldung (`session-command-log.ts`, `command-log.health.ts`) |
+| Gefälschte `COGNO:*`-Sequenz aus Programmausgabe | ✅ `COGNO_SESSION_TOKEN`-Prüfung mit Zähler (`session-model.ts`) |
+| Shell-Kontext wechselt (ssh/wsl/su) ohne Handshake | ✅ unbekannter Kontext in der Kontext-Zeitachse (`session-model.ts`) |
 
 ### 4.2 Testen
 
@@ -973,7 +1021,7 @@ selbst in `try/catch` rufen.
 | `platform/` | Rust-seitig getestet (Datenbank, PTY, Prozesse, Command-Runner, Layout-Parser); die TypeScript-Seite ist eine dünne `invoke`-Schicht — getestet ist dort nur, was eigene Logik hat (`fromTauriListener`: Abmelden vor der asynchronen Registrierung) |
 | `core/terminal/` | Unit-Tests gegen xterm im Headless-Modus: Byte-Roundtrip, Resize, Flow-Control-Acks, Alt-Screen-Erkennung. Keine Tauri-Abhängigkeit — PTY als Stub |
 | `core/session/` | der Schwerpunkt: Kommandozeilen-Modell und OSC-Interpretation gegen aufgezeichnete Byteströme (bash, zsh, pwsh, mit und ohne Integration, mit Kontextwechsel). Jeder Degradationspfad aus der Tabelle oben ist ein Test. Regel 4.4: ein Test, der zeigt, dass bei Unsicherheit *nichts* geschrieben wird |
-| `core/workbench/` | Layoutbaum und Serializer als reine Logik; Feature-Host mit Fake-Features (aktivieren, deaktivieren, fehlschlagen, dreimal werfen); Terminal-Aktionen Ende-zu-Ende (`ActionFired` → Wirkung, durch den echten Bus, `ActionHandlers` und `GridListService`); Drag-Verhalten von Tabs, Workspaces und Panes über echte `window`-Events |
+| `core/workbench/` | Layoutbaum und Serializer als reine Logik; Feature-Host mit Fake-Features (aktivieren, deaktivieren, fehlschlagen); Terminal-Aktionen Ende-zu-Ende (`ActionFired` → Wirkung, durch den echten Bus, `ActionHandlers` und `GridListService`); Drag-Verhalten von Tabs, Workspaces und Panes über echte `window`-Events |
 | `core/api/` | Bindungszustände und Schreibschutz: verspätete Antwort nach Fokuswechsel darf nicht schreiben |
 | `features/` | gegen eine gestubbte API und Stub-Plattformdienste; ein Deaktivierungstest je Feature |
 | `bootstrap/` | ein Start-Test: Deklarationsphase über das Manifest — keine doppelten Feature- oder Aktions-IDs, keine Zyklen in `requires`, keine kollidierenden Settings-Pfade, keine Aktion ohne Handler |
@@ -1002,11 +1050,10 @@ Signal-Knoten gesetzt, weil `fixture.setInput` dafür nicht greift.
 
 ## 5. Der Aktionskatalog
 
-Aktionen sind die gemeinsame Sprache (Inventar 23): ausgelöst per Keybinding,
-Menü, Palette, CLI und HTTP. Früher war eine Aktion an acht Orten bekannt —
-eine Namensliste, `cli.rs` (abgedriftet), `switch`-Blöcke in den Handlern,
-Menü-Labels, Palette, dreimal `default_*.config`, `docs-playbook.md` — und
-jeder Ort konnte für sich abdriften.
+Aktionen sind die gemeinsame Sprache: ausgelöst per Keybinding,
+Menü, Palette, CLI und HTTP. Eine Aktion wird an vielen Orten gebraucht —
+Handler, Menü-Labels, Palette, CLI (`cli.rs`), Default-Konfiguration je OS,
+Doku —, und jeder Ort, der sie selbst aufschreibt, kann für sich abdriften.
 
 **Eine Definition, alles andere abgeleitet.** Eine Core-Aktion steht genau
 einmal, in `core/workbench/actions/catalog.ts`:
@@ -1100,33 +1147,32 @@ Handler iterieren dieselbe Liste.
 
 Der Codegen (`scripts/generate-actions.ts`) läuft über dieselbe statische
 Feature-Liste aus `bootstrap/`, kennt also auch Feature-Aktionen. CI prüft,
-dass die generierten Dateien aktuell sind — sonst driftet es wieder, nur auf
+dass die generierten Dateien aktuell sind — sonst driftet es doch, nur auf
 andere Art.
 
 ### 5.1 Die Default-Konfiguration
 
-Heute sind die Defaults bereits geteilt, nur unsichtbar: die drei
-`default_*.config` tragen je 163 Settings-Zeilen (in allen drei identisch) und
-76 Keybind-Zeilen (zwischen Windows und macOS fast vollständig verschieden);
-die Zod-Schemas tragen die Beschreibungen, aber nur drei `.default()`. Die
-Datei ist die Quelle der Werte, Zod die Quelle der Doku, der Code die Quelle
-der Aktionen.
+Die Defaults haben drei Teile — Werte, Beschreibungen, Keybindings — und
+drei Sichten, eine Datei je OS mit denselben Settings und eigenen
+Keybindings. Von Hand geschrieben, hätte jeder Teil eine eigene Quelle und
+jede Datei könnte für sich abdriften.
 
 Regel: **Quelle ist Code, Sicht ist eine vollständige generierte Datei pro
 OS.**
 
-- Settings: Wert *und* Beschreibung in Zod (`.default(…).describe(…)`); wo ein
-  Wert vom OS abhängt, steht das im Schema. Das ist dieselbe Entscheidung wie
-  für die Website-Doku (`SettingsDocsPort`), nur konsequent zu Ende geführt.
-- Keybindings: in der Aktionsdefinition, pro OS (`defaultKeys`). Eine Aktion
-  ohne Default-Keybinding ist zulässig.
+- Settings: die Beschreibung in Zod (`.describe(…)`), der Wert an einer
+  Stelle, `default-config-values.ts`, auch wo er vom OS abhängt (Abschnitt 6).
+- Keybindings: Core-Aktionen in ihrer Katalogdefinition, pro OS
+  (`defaultKeys`); Feature-Aktionen in `featureKeybinds`
+  (`default-config-values.ts`). Eine Aktion ohne Default-Keybinding ist
+  zulässig.
 - Der Build generiert daraus `default_windows.config`, `default_macos.config`,
   `default_linux.config` — alle Settings mit ihrem Kommentar, alle Keybinds,
-  nichts handgeschrieben. Der Rust-Teil lädt sie wie heute als
+  nichts handgeschrieben. Der Rust-Teil lädt sie als
   Plattform-Defaults unter der Nutzerdatei.
 - Der Nutzer sieht genau diese Datei: `cogno config show --defaults` und ein
   Menüpunkt „Default-Konfiguration öffnen" zeigen sie vollständig, zum
-  Kopieren und Überschreiben. Was er sieht, kann nicht mehr abdriften, weil es
+  Kopieren und Überschreiben. Was er sieht, kann nicht abdriften, weil es
   nichts anderes ist als die Quelle in anderer Form.
 
 Prüfbar: `default_*.config` stehen im Repo als generierte Dateien mit
@@ -1136,7 +1182,7 @@ Weil die Quelle der Code ist, kann die Datei keinen toten Eintrag enthalten —
 und Totes ist dort auffindbar, wo es entsteht:
 
 - Aktion ohne registrierten Handler: `known` minus `active` minus Aktionen ausgeschalteter Features, beim Start
-  gemeldet (hätte `minimize_window` gefunden).
+  gemeldet.
 - Keybind auf unbekannte Aktion: Typfehler.
 - Setting ohne Leser: CI-Prüfung „jeder Schema-Schlüssel wird außerhalb des
   Schemas referenziert". Grob, aber sie findet den nie gelesenen Schlüssel;
@@ -1156,7 +1202,6 @@ Feature = {
   settings?, migrations?                 // Deklaration: immer registriert (6.1)
   sideMenu?, notificationChannels?, suggestors? // Aktivierung: nur bei mode: on
   mode: "on" | "off"                      // jedes Feature; Default "on"
-  activate?/deactivate?                  // optional: nur wenn es beim Aktivieren etwas zu tun gibt
 }
 ```
 
@@ -1164,18 +1209,18 @@ Feature = {
 getrennt hat die Runtime einen nicht persistierten Status:
 
 ```
-inactive | activating | active | degraded | deactivating | failed
+inactive | active | failed
 ```
 
 Aktivierung und Deaktivierung sind idempotent. Deaktivierung meldet alle
 Contributions ab und gibt Subscriptions sowie Ressourcen frei. Schlägt die
-Aktivierung fehl, bleibt `mode: "on"`; der Status wird sichtbar `failed` oder
-`degraded`. Einen Modus `hidden` gibt es nicht. Falls UI unabhängig von der
+Aktivierung fehl, bleibt `mode: "on"`; der Status wird `failed` und der Fehler
+geht an den Error-Reporter. Einen Modus `hidden` gibt es nicht. Falls UI unabhängig von der
 Aktivierung ausgeblendet werden soll, ist das eine Darstellungsoption des
 Features und kein weiterer Modus.
 
-Ein Feature besitzt seine Einstellungen (eigenes Zod-Schema — der zentrale
-Sammelpunkt und die Kopie im statischen `Config`-Typ entfallen), seine Tabellen
+Ein Feature besitzt seine Einstellungen (eigenes Zod-Schema — kein zentraler
+Sammelpunkt, keine Kopie im statischen `Config`-Typ), seine Tabellen
 und Migrationen, seine Contributions und seine UI. Die `settings`-Contribution
 ist genau dieses Schema (`schemaShape`) und nichts weiter: **Default-Werte
 gehören nicht dazu.** Sie stehen an einer Stelle, `default-config-values.ts`,
@@ -1184,21 +1229,18 @@ Defaults am Feature würde von ihr ohnehin überschrieben und kann ihr nur
 widersprechen. Ein Top-Level-Schlüssel hat genau einen Besitzer — deshalb
 teilen sich alle Features eine Extension für `feature.*`.
 
-`requires` bleibt, weil ausdrücklich gewünscht — mit der ehrlichen Anmerkung,
-dass der reale Baum nach dem Zusammenlegen der Panel/Service-Paare null Kanten
-hat. Der Feature-Host löst es trotzdem auf (6.1), damit die erste echte
+`requires` gibt es, weil ausdrücklich gewünscht — mit der ehrlichen Anmerkung,
+dass der reale Baum null Kanten hat. Der Feature-Host löst es trotzdem auf (6.1), damit die erste echte
 Kante keine Sonderbehandlung braucht.
 
 ### 6.1 Der Feature-Host (`core/workbench/feature-host/`)
 
 Abschnitt 6 sagt, was ein Feature *ist*; der Feature-Host ist der eine
-Dienst, der damit *umgeht*. Heute existiert er in drei Bruchstücken:
-`features.ts` (die Liste), `AppWiringService` (sammelt Contributions einmalig
-im Konstruktor in `readonly`-Arrays), `side-menu-lifecycle-runtime.service.ts`
-(Lazy-Laden der Panels). Kein Code liest `mode` nach dem Start; nichts kann
-wieder abgemeldet werden.
+Dienst, der damit *umgeht*: er hält die Feature-Liste, meldet
+Contributions an und wieder ab und liest `mode` auch nach dem Start. Die
+Liste übergibt `bootstrap/features.ts`.
 
-Vier Aufgaben:
+Drei Aufgaben:
 
 1. **Deklaration (statisch, immer).** Bekommt beim Start die Liste aus
    `bootstrap/` und registriert *vor* dem ersten Config-Lesen alles, was
@@ -1207,16 +1249,16 @@ Vier Aufgaben:
    validiert werden — das wäre ein Zirkel), **Migrationen** (laufen einmal,
    Daten werden nicht abgeschaltet) und **Aktionsdefinitionen** (damit CLI,
    HTTP und Palette den Namen kennen). Erst danach liest er `mode` und führt
-   je Feature den Runtime-Status:
-   `inactive → activating → active → deactivating → inactive`, dazu
-   `activating → failed` und `active → degraded`.
+   je Feature den Runtime-Status: `inactive ⇄ active`, dazu
+   `inactive → failed`.
 2. **Aktivierung (dynamisch, nur bei `mode: on`).** Löst `requires`
    transitiv auf, aktiviert in Abhängigkeitsreihenfolge, deaktiviert
    umgekehrt. Aktivieren = die *aktiven* Contributions anmelden —
-   Side-Menu-Panel, **Aktions-Handler**, Notification-Kanäle, Suggestoren,
-   Hintergrunddienste — und `activate()` rufen; Deaktivieren = abmelden,
-   `deactivate()`, Subscriptions freigeben. Beides idempotent. Was in Phase
-   1 registriert wurde, bleibt.
+   Side-Menu-Panel, **Aktions-Handler**, Notification-Kanäle;
+   Deaktivieren = abmelden, Subscriptions freigeben. Beides idempotent. Was
+   ein Feature im Hintergrund tut, startet und stoppt es im `onModeChange`
+   seines Side-Menu-Lifecycles, das beim Anmelden `on` und beim Abmelden
+   `off` meldet. Was in Phase 1 registriert wurde, bleibt.
 
    Die Trennlinie: Phase 1 ist, was das Produkt über ein Feature *weiß*;
    Phase 2 ist, was das Feature *tut*. Eine Deklaration hat keine
@@ -1224,63 +1266,45 @@ Vier Aufgaben:
    zur Laufzeit fehlschlagen kann, ist Aktivierung.
 3. **Hot-Reload.** Abonniert die Config; ändert sich `feature.<id>.mode`,
    aktiviert oder deaktiviert er. Schlägt Aktivierung fehl, bleibt
-   `mode: "on"`, Status `failed`, sichtbar in der Seitenleiste (Icon mit
-   Fehlerzustand, Grund, Retry) und als Notification.
-4. **Fehlerisolation.** Rendert Panels mit detachter View und eigenem
-   `detectChanges()` im `try/catch` (Abschnitt 4). Wirft ein Panel, wird der
-   Status `degraded` und eine Ersatzansicht mit Retry gezeigt; wirft es
-   dreimal in Folge, deaktiviert der Host es und meldet das.
+   `mode: "on"`, Status `failed`, und der Fehler geht an den
+   Error-Reporter.
 
 **Übergänge.** Der Host arbeitet als Abgleich: die Config liefert je
 Feature den *gewünschten* Modus, der Host führt den *tatsächlichen* Status
-und gleicht an. Dafür gelten sieben Regeln:
+und gleicht an. Der Abgleich ist synchron: Anmelden und Abmelden sind
+synchron, also kann keine neue Config dazwischenkommen, und es gibt keine
+Zwischenzustände. Dafür gelten fünf Regeln:
 
-1. **Eine Operation je Feature zur Zeit.** Läuft `activating` oder
-   `deactivating`, wird ein neuer Wunsch nur gemerkt. Nach Abschluss —
-   Erfolg oder Fehler — gleicht der Host erneut ab. `on → off` während
-   `activate()` heißt also: Aktivierung zu Ende bringen, dann deaktivieren.
-2. **Aktivierung ist ganz oder gar nicht.** Reihenfolge: Contributions
-   anmelden (Listeneinträge, können per Konstruktion nicht fehlschlagen),
-   dann `activate()`. Wirft `activate()`, meldet der Host alle Contributions
-   in umgekehrter Reihenfolge ab, Status `failed` mit Grund. Es gibt keinen
-   halb aktiven Zustand; ein Panel, das schon sichtbar war, verschwindet.
-3. **Deaktivierung endet immer in `inactive`.** Reihenfolge: `deactivate()`
-   *zuerst*, solange die Contributions noch angemeldet sind (das Feature darf
-   sie zum Aufräumen benutzen — Panel schließen, offene Schreibvorgänge
-   beenden), dann Contributions abmelden, dann Subscriptions freigeben. Wirft
-   `deactivate()`, wird trotzdem alles abgemeldet und der Fehler gemeldet;
-   der Status ist danach `inactive`, nie `failed`.
-4. **`requires` ist eine Bedingung, keine Kaskade in die Config.** Ist ein
+1. **Aktivierung ist ganz oder gar nicht.** Der Host meldet die
+   Contributions an. Das kann werfen, weil ein Side-Menu-Lifecycle dabei den
+   Code des Features ausführt (`onModeChange("on")`). Dann meldet der Host
+   alle Contributions in umgekehrter Reihenfolge ab, Status `failed` mit
+   Grund. Es gibt keinen halb aktiven Zustand; ein Panel, das schon sichtbar
+   war, verschwindet.
+2. **Deaktivierung endet immer in `inactive`.** Der Host meldet die
+   Contributions ab und gibt die Subscriptions frei. Wirft dabei der Code
+   des Features (`onModeChange("off")`), meldet er den Fehler; der Status
+   ist danach trotzdem `inactive`, nie `failed`.
+3. **`requires` ist eine Bedingung, keine Kaskade in die Config.** Ist ein
    benötigtes Feature `off` oder `failed`, bleibt das abhängige Feature
-   `inactive` mit Grund „braucht *x*", sichtbar in der Seitenleiste; der
-   Host schreibt nie in die Config. Wird *x* aktiv, aktiviert der nächste
+   `inactive`; der Host schreibt nie in die Config. Wird *x* aktiv, aktiviert der nächste
    Abgleich die Abhängigen; wird *x* deaktiviert, deaktiviert der Host
    vorher die Abhängigen in umgekehrter Reihenfolge.
-5. **`degraded` ist ein Laufzeitzustand, `failed` ein Endzustand.** Ein
-   Panel, das beim Rendern wirft, setzt `degraded` und bekommt eine
-   Ersatzansicht mit Retry; die Contributions bleiben angemeldet. Wirft es
-   dreimal in Folge, deaktiviert der Host das Feature nach Regel 3 und setzt
-   danach `failed` mit Grund — ein geöffneter Schutzschalter. `mode` bleibt
-   `on`; die Config wird nicht angefasst.
-6. **Aus `failed` kommt man nur durch Anstoß heraus:** Retry des Nutzers
-   (Seitenleiste, Aktion `retry_feature`) oder eine Config-Änderung des
-   Features. Kein automatischer Wiederholungsversuch.
-7. **Der Status wird nicht persistiert.** Nach einem Neustart beginnt jedes
+4. **`failed` ist ein Endzustand bis zum Neustart.** Kein automatischer
+   Wiederholungsversuch, kein Retry; `mode` bleibt `on`, die Config wird
+   nicht angefasst. Bewusst einfach: ein Feature, dessen Aktivierung wirft,
+   ist ein Fehler, den man behebt, nicht einer, den die App verwaltet.
+5. **Der Status wird nicht persistiert.** Nach einem Neustart beginnt jedes
    Feature bei `inactive` und der Abgleich läuft neu. Persistiert ist nur
    `mode`, und der gehört dem Nutzer.
 
 Damit ist jeder Übergang bestimmt:
 
 ```
-inactive     --on, requires erfüllt-->  activating
-activating   --activate() ok------->  active
-activating   --activate() wirft---->  failed       (Contributions zurückgerollt)
-active       --off oder requires--->  deactivating
-active       --Panel wirft---------->  degraded     (bleibt angemeldet)
-degraded     --Retry ok------------->  active
-degraded     --3. Fehler------------>  deactivating -> failed
-deactivating --immer---------------->  inactive     (dann ggf. -> failed, Regel 5)
-failed       --Retry / Config------->  inactive     (Abgleich läuft neu)
+inactive  --on, requires erfüllt, angemeldet-->  active
+inactive  --on, Anmelden wirft--------------->  failed    (Contributions zurückgerollt)
+active    --off oder requires---------------->  inactive  (immer, auch wenn Abmelden wirft)
+failed    --Neustart------------------------->  inactive  (Status wird nicht persistiert)
 ```
 
 **Deklarationsfehler sind Startfehler.** „Kann nicht fehlschlagen" gilt
@@ -1288,8 +1312,9 @@ für die einzelne Deklaration, nicht für die Menge: doppelte Feature-IDs,
 zyklische oder unbekannte `requires`, kollidierende Settings-Pfade
 (`feature.git.*` zweimal), doppelte Aktions-IDs. Der Host prüft das in
 Phase 1 vollständig, *bevor* er `mode` liest, und bricht bei einem Befund
-den Start kontrolliert ab: die App startet mit leerem Feature-Satz und
-einer nicht wegklickbaren Meldung, die jeden Konflikt benennt. Das ist
+den Start kontrolliert ab: die App startet mit leerem Feature-Satz, ohne
+Feature-Panels im Menü, und meldet über den Error-Reporter jeden Konflikt
+einzeln. Das ist
 ein Programmierfehler, kein Laufzeitzustand — deshalb kein `failed` eines
 einzelnen Features, sondern der Start-Test aus 4.2 in Produktionsform.
 
@@ -1304,31 +1329,18 @@ Laufzeit erzeugt (etwa je Workspace-Slot), deklariert die Form mit
 Platzhalter (`select_workspace_${n}`) — die Instanzen sind `known`, sobald
 das Feature sie anmeldet.
 
-**Fehlerisolation für alle Contributions**, nicht nur Panels. Der Host
-umhüllt jede Contribution beim Anmelden:
+**Fehler einer Contribution** fängt der ab, der sie aufruft, und meldet sie
+an den Error-Reporter; der Status des Features ändert sich dadurch nicht.
+Einen Schutzschalter, der ein Feature nach wiederholten Fehlern abschaltet,
+gibt es bewusst nicht. Der Autocomplete-Pfad schützt sich selbst: Timeout
+und `rejected` je Suggestor, `matches()` geschützt
+(`terminal-autocomplete.service.ts`).
 
-| Contribution | Isolation |
-|---|---|
-| Panel | detachte View, eigenes `detectChanges()` (4) |
-| Aktions-Handler | `try/catch` + Timeout (Default 5 s für `async`); wirft er, wird die Aktion als fehlgeschlagen gemeldet, das Feature `degraded` |
-| Notification-Kanal | Timeout; ein Kanal, der wirft, wird für diese Notification übersprungen, die anderen Kanäle laufen |
-| Suggestor | hat es schon: Timeout und `rejected` je Suggestor (`terminal-autocomplete.service.ts:400-431`); dazu `matches()` in den Schutz (heute ungeschützt, `:283`) |
-| Hintergrund-Subscription | `activate()` bekommt einen `AbortSignal`/`DestroyRef`; unbehandelte Fehler in Subscriptions landen beim Reporter mit Feature-ID und zählen auf den Schutzschalter (Regel 5) |
-
-Drei Fehler *einer* Contribution in Folge öffnen den Schutzschalter des
-Features, nicht drei Fehler irgendwo — sonst deaktiviert ein flackernder
-Suggestor das ganze Git-Panel.
-
-**Sitzungsgebundene Contributions und die Sessions.** Suggestoren, Shell-
-Hooks und ähnliche Contributions gelten *je Session*. Der Host meldet sie
-nicht bei Sessions an, sondern bei einer **Registry in `session/`**
-(`SuggestorRegistry`), die als Observable ihre aktuelle Menge führt. Jeder
-Session-Host abonniert diese Registry beim Start und baut seine
-Autocomplete-Quellen daraus; ändert sich die Menge (Feature an/aus), zieht
-jede laufende Session nach — bestehende Sessions bekommen den Suggestor
-sofort, später erzeugte Sessions beim Start. Kein Feature kennt Sessions,
-keine Session kennt Features; beide kennen die Registry. Dasselbe Muster
-für jede weitere sitzungsgebundene Contribution.
+**Autocomplete ist kein Feature.** Es gehört fest zu jeder Sitzung und liegt
+vollständig in `core/session/autocomplete/`, samt den Befehls-Specs
+(`spec-command/`). Suggestoren, die alle Sitzungen teilen, baut
+`SharedSuggestors` einmal; ihre Fehler meldet die Session als Ereignis, die
+Workbench macht daraus Benachrichtigungen (`AutocompleteIssueNotifier`).
 
 Was er nicht ist: kein Ort für Feature-Wissen (er kennt Definitionen, keine
 IDs), nicht der Ort der Contributions-Konsumenten (Aktionskatalog, Side-Menu,
@@ -1346,39 +1358,13 @@ erreicht, ohne sie zu importieren.
 
 ---
 
-## 7. Delta zu heute
+## 7. Offene Punkte
 
 | Was | Umfang |
 |---|---|
-| `app` in `core/terminal/`, `core/infrastructure/`, `core/session/`, `core/workbench/`, `bootstrap/` schneiden | ~260 Dateien einsortieren, Pfadregeln ersetzen die Paketregeln |
-| `features/shell/` → `core/session/shells/` | Umzug; `shellFeature` und Contribution-Punkt `shells?` entfallen; `Fish`/`GitBash` aus dem `ShellType`-Enum |
-| `features/side-menu/` auflösen, Panel+Service-Paare zusammenlegen | Rail, Panel, `ui-state` und `workspace/` werden Workbench; 7 Feature-Ordner mit `index.ts`: ai, coding-agent, command-palette, git, notification-overview, terminal-search, process-info |
-| Feature-eigene Zod-Schemas | `createConfigSchema` legt die Shapes von Core und Features nebeneinander; ein doppelter Schlüssel ist ein Fehler (der Feature-Host meldet ihn vorher als Deklarationskonflikt) |
-| **Feature-Host (Abschnitt 6.1)** | `features.ts`-Verteilung, `AppWiringService` und `side-menu-lifecycle-runtime.service.ts` gehen in `core/workbench/feature-host/` auf; Konsumenten (Side-Menu, Aktionskatalog, Notification-Dispatch, Suggestor-Registry) bekommen `register`/`unregister` statt `readonly`-Arrays; Config-Abo auf `feature.<id>.mode`; Panel-Rendering mit detachter View; Status-Anzeige in der Seitenleiste. Ein Deaktivierungstest je Feature. |
-| `CommandLineObserver` teilen | OSC-733→Modell (Core) von `MarkerManager` (Dekoration) trennen |
-| **Terminal/Session-Grenze ziehen (Abschnitt 2.1)** | `TerminalStateManager` in Maschinenzustand (`core/terminal/`) und Sitzungsmodell (`core/session/`) teilen; `terminal.session.ts` (717 Zeilen) zum Session-Host reduzieren, der Maschine und Handler nur noch komponiert; Config-Zugriffe aus `renderer.ts` und den Maschinen-Handlern in den Host ziehen; `focus.handler` vom App-Bus lösen. 17 Handler nach der Tabelle in 2.1 einsortieren. |
-| **Session → Workbench nur als Fakten (Abschnitt 2.1/2.3)** | `pty.handler.ts` publiziert bei Exit `RemovePane` → wird Lebenszyklus-Fakt `exited`; `GridListService`/`TabListService` reagieren und schließen Pane/Tab/Host. Bestehende Fakten (`TerminalCwdChanged`, `TerminalTitleChanged`, `TerminalBusyChanged`) bleiben; `completed-command-notification.handler` meldet nur noch „Kommando endete (Dauer, Exit)", der Notification-Dispatch entscheidet; `renderer.ts` meldet Fehler als Ereignis statt per Reporter-Import; Typregel, dass `session/`-Nachrichten keine Workbench-Aktionen sind. |
-| **Handshake-Authentisierung (Abschnitt 2.1)** | Rust `environment_builder.rs`: zufälliges `COGNO_SESSION_TOKEN` je Spawn; Integrationsskripte (bash/zsh/pwsh) senden `token=` in `COGNO:CAPS`/`COGNO:PROMPT`; `cogno-osc.parser.ts` + `command-line.observer.ts` verwerfen ohne Token, zählen, melden; Kontext-Revision in der Zeitachse; `run` mit `{executable, args, contextRevision}` statt String. Doku: `SendEnv COGNO_SESSION_TOKEN` für SSH. |
-| **Veränderlicher Shell-Kontext (Abschnitt 2.1)** — Verhaltensänderung | Kontext-Zeitachse im Sitzungsmodell statt einmaliger Ableitung in `terminal-state.manager.ts:79`; erneuten `COGNO:CAPS`-Handshake als Kontextwechsel verarbeiten; Zustand „unbekannter Kontext" mit sichtbarer Degradation; Rückkehr zum äußeren Kontext bei Kommando-Ende; Pfadadapter, Editor-Aktionen, Recorder, Autocomplete lesen den Kontext aus dem Modell. Shell-Integrationsskripte: `COGNO:CAPS` muss `backendOs`/Host mitmelden. |
-| **Session-Host (Abschnitt 2.3)** — Verhaltensänderung, kein Umzug | Heute ist `TerminalComponent` der Host: Session, History, Autocomplete, Composer sind ihre Provider (`terminal.component.ts:44-53`), `dispose()` hängt an `ngOnDestroy` (`:93`). Reparenting per `TerminalComponentFactory` existiert bereits (`terminal-component.factory.ts:47`) und bleibt. Neu: Session-Erzeugung aus der View-Erzeugung lösen — heute entsteht eine Session erst, wenn ein `PaneComponent` sichtbar wird und `attach()` ruft (`pane.component.ts:96`), Workspace-Restore startet also nur den sichtbaren Tab. Dazu die zwei Zustandsachsen aus 2.3 (Runtime `allocated → starting → running/failed → exited|closing → closed`; Darstellung `detached ↔ attached`), `attach` ruft `open()` lazy, und ein Startfehler-Pfad mit Retry (heute keiner). Spike vorab: Kommandozeilen-Modell aus einem unopened xterm-Core. Betrifft `GridListService`, `PaneComponent`, `TerminalComponentFactory`, `TerminalSession`. |
-| `api_key` verschlüsseln (Entscheidung 8) | Config-Reader akzeptiert `feature.ai.api_key = enc:<…>` und entschlüsselt über das vorhandene Rust-`decrypt`; `cogno config set --secret feature.ai.api_key <wert>` verschlüsselt beim Schreiben; Klartext bleibt lesbar, wird aber mit Diagnose-Notification gemeldet. Die generierte Default-Config dokumentiert das Format. |
-| **Fakt-Zuordnung (Entscheidung 10)** | Prozess-Info: Dialog und Kontextmenü-Eintrag aus `terminal.session.ts:401,545` und `system-info/` → Seitenleisten-Panel als sitzungsgebundenes Feature (`sideMenu`-Contribution, folgt `boundSession$`); Prozessbaum bleibt Sitzungsmodell (AI-Snapshot ist zweiter Konsument). Git, AI, Coding-Agents bleiben vollständige Scheiben und ermitteln ihre Domänenfakten selbst — kontextfrei über `platform/`, im Sitzungskontext über `boundSession.run`/`.fs`; `CommandRunner`/`Filesystem` (`app-host/*-host.service.ts`) → `core/session/`. Depcruise: `features/` importiert `terminal/`, `session/`, `workbench/`, `command-log/` nicht. |
-| **Protokoll als Ordner (Abschnitt 3)** | `TerminalGatewayAdapterService` + `TerminalGateway`-Port (`shared/ports`) → `core/api/` (der Port ist inzwischen entfallen, Features bekommen `SessionApi`); Feature-Importe von `@cogno/shared/ports`-Terminal-Contracts auf `@cogno/core/api` umstellen; Depcruise-Regel „Features importieren aus `core/` nur `api/`". |
-| **Fenster-Routing (Abschnitt 2.6)** | Rust: ein `WindowRegistry`-State (`terminalId → label`, `workspaceId → label`, zuletzt fokussiertes Fenster über `WindowEvent::Focused`, Freigabe bei `Destroyed`) und eine `route(app, payload)`-Funktion; `pty_spawn` bekommt `window: tauri::Window` und schreibt das Label in `Session`; `emit_to` statt `app.emit` in `http_server.rs:129`, `lib.rs:50,115`, `pty.rs:361`; Commands `window_claim_workspace`/`window_release_workspace`; Notification-Klick (`notification.rs:32-40`, macht `emit_to` schon) routet zum Ziel- statt Ursprungsfenster. TS `platform/`: `window.reveal(windowId, target)`; `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand. |
-| **Sitzungs-Wiederherstellung (Abschnitt 2.5)** | `SessionSnapshot` = `start` + `scrollback` + `history`, versioniert; `snapshot()`/`restore()` am Host; Serializer im Workspace-Modul: einsammeln, dann eine Transaktion; Settings `terminal.restore.scrollback`, `terminal.restore.max_lines`, Aktion `exclude_from_restore`; Trennzeile im Buffer; abgebrochenes Kommando im Command-Log; Snapshot-Löschung bei Close und Verwaisten-Prune beim Start. Baut auf dem Session-Host aus 2.3 auf. |
-| **Session-Bindung (Abschnitt 3)** — Verhaltensänderung, kein Umzug | Neuer Bindungsdienst in `core/api/`: `boundSession$` mit Zuständen `unbound/active/closing/closed`, Standard „folgt dem Fokus", haltbar (`hold`/`release`). Regel „vor jedem Schreiben Identität und Capability neu prüfen" gibt es heute nirgends — AI-Chat prüft das Zielterminal nur im Klick-Moment (`ai-chat-side.component.ts:331-332`). Umstellung von Git, AI, Prozess-Info, Coding-Agents auf den Dienst; ihre eigene Fokus-Verdrahtung entfällt. |
-| **Command-Log Health und Backpressure (Abschnitt 2.4)** | `commandLogHealth$` mit Zählern; begrenzte Recorder-Queue (`recorder.max_pending`) mit Überlaufregel „ältestes verwerfen"; Batch-Schreiben mit einem Retry und reversiblem `unavailable`; Statistik nur per `ON CONFLICT DO UPDATE`; Lese-Timeout mit `timedOut`-Kennzeichen; Anzeige in Seitenleiste und Notification-Übersicht. |
-| **Kommandodaten trennen (Abschnitt 2.4)** | `HistoryRepository` → `core/command-log/` mit getrennter Schreib-/Lese-API; `TerminalHistoryPersistenceService` → Recorder in `core/session/`; die drei Suggestoren und `terminal-history.service.ts` auf die Lese-API umstellen; eigenes SQL aus `history-command.suggestor.ts` entfernen; Migrationen `command*`/`path`/`dir_stat`/`shell_context` wandern zu `command-log/`. Überwiegend Umzug plus eine Schnittstellentrennung. |
-| `hidden` → `on` | `featureModeSchema`/`aiFeatureModeSchema` auf `on | off`; Lesetoleranz für `hidden`/`visible` im Config-Reader; ~20 Code-Stellen mit `"hidden"` entfallen. Keine DB-Migration. |
-| **Aktionskatalog (Abschnitt 5)** | `core-action-names.ts` → `defineAction`-Katalog in `core/workbench/actions/`; `ActionName` von `string` auf Union; `switch`-Handler in `tab-list`, `grid-list`, `window`, `menu`, `config` … auf Registrierung; Labels aus `native-menu.service.ts` in die Definitionen; `FeatureDefinition.actions` für Panel-Aktionen; Codegen-Skript für `cli.rs` (`main.rs:56-58, 172-186`), die generierten `default_*.config` und Doku, mit CI-Aktualitätsprüfung. |
-| `platform`-Quellen zu injectable Klassen (3.1) | entfernt `vi.mock` für Quellen aus den Specs; `Environment`, `ConfigReader` und `ShellIntegrationWriter` werden dabei Dienste |
-| ~1.500 Zeilen reine Logik nach `shared/domain` | reiner Datei-Umzug |
-
-Bereits erledigt und nicht mehr Teil des Deltas: Migrationen haben eine
-quellqualifizierte ID (`source/name`), Checksumme und Einzeltransaktion. Die
-literalen NUL-Bytes in `terminal-history.service.ts` und `prompt-renderer.ts`
-sind im aktuellen Arbeitsstand durch die sichtbare Escape-Schreibweise
-`\u0000` ersetzt.
+| Deaktivierungstest je Feature (4.2) | fehlt für `git` und `process-info` |
+| **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
+| `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |
 
 ---
 
@@ -1387,6 +1373,6 @@ sind im aktuellen Arbeitsstand durch die sichtbare Escape-Schreibweise
 - Build-Zeit-Feature-Flags, mehrere Bundles
 - Web-Worker- oder iframe-Isolation
 - Umbenennung bestehender DB-Tabellen
-- Protokoll-Operationen ohne heutigen Konsumenten
+- Protokoll-Operationen ohne Konsumenten
 - Pane in ein anderes Fenster verschieben: von 2.6 getragen (Snapshot + PTY-Übernahme), aber nicht gebaut
 - Feature-Funktionen in Remote-Sitzungen (SSH): `boundSession.run` gibt es dort nicht, also kein Git-Panel, keine Prozess-Info, keine Agent-Erkennung. Manches geht in SSH einfach nicht; ein Cogno-Agent auf dem Host wäre ein eigenes Vorhaben.

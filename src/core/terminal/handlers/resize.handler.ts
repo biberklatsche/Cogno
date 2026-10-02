@@ -103,7 +103,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
    * Fit the terminal to its container without touching the pty. A restored
    * session sizes its terminal before the shell is spawned (so the replayed
    * scrollback and the ConPTY viewport fill use the real row count); `resize()`
-   * itself calls `pty.resize()`, which throws before the spawn (step 27). The
+   * itself calls `pty.resize()`, which throws before the spawn. The
    * pty then spawns at this fitted size, so no separate pty resize is needed.
    */
   fitTerminalWithoutPty(): void {

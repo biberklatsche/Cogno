@@ -1,7 +1,7 @@
 import { TerminalId } from "@cogno/shared/domain";
 
 /**
- * What a feature captured about the session it is acting on. injectInput/run
+ * What a feature captured about the session it is acting on. `run` and `fs`
  * recheck this against the live session immediately before writing, so a write
  * meant for one session can never land in another after the focus moved
  * (ARCHITECTURE.md 2.3, the two axes).

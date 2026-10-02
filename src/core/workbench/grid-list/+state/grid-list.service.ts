@@ -7,18 +7,14 @@ import {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
+import { GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
+import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { BinaryNode, BinaryTree } from "@cogno/core/workbench/grid-list/binary-tree";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import {
-  BinaryNode,
-  BinaryTree,
-  defaultWorkspaceIdContract,
-  GridConfig,
-  PaneConfig,
-  TabId,
-  TerminalId,
-} from "@cogno/shared/domain";
-import { IdCreator } from "@cogno/shared/support";
+import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
+import { TerminalId } from "@cogno/shared/domain";
 import { BehaviorSubject, distinctUntilChanged, map, Observable } from "rxjs";
 import { Grid, GridList, Pane, SplitDirection } from "../+model/model";
 
@@ -38,7 +34,7 @@ type PaneLocation = {
 };
 
 @Injectable({ providedIn: "root" })
-export class GridListService {
+export class GridListService implements PaneLayoutLookup {
   private readonly stateByWorkspaceIdentifier = new Map<string, WorkspaceGrids>();
   /**
    * The active workspace's state. `grids` is a fresh copy on every grid write
@@ -76,7 +72,7 @@ export class GridListService {
     this.syncActiveWorkspaceState();
   }
 
-  /** Every terminal id laid out in a workspace's grids (session restore, step 27). */
+  /** Every terminal id laid out in a workspace's grids (session restore). */
   terminalIdsForWorkspace(workspaceIdentifier: string): TerminalId[] {
     const grids = this.stateByWorkspaceIdentifier.get(workspaceIdentifier)?.grids ?? {};
     return Object.values(grids).flatMap((grid) => this.leafTerminalIds(grid));
@@ -194,27 +190,29 @@ export class GridListService {
       });
   }
 
+  /** Removes the pane of `terminalId` - in whichever workspace it sits, shown or not. */
   removePane(terminalId: TerminalId) {
-    const gridList = this.getActiveWorkspaceGridList();
-    const gridAndNode = this.locateInActiveWorkspace(terminalId);
-    if (!gridAndNode) return;
-    if (this.maximizedTerminalId === terminalId) {
-      this.minimizePane();
+    const location = this.locate(terminalId);
+    if (!location) return;
+    const { workspaceIdentifier, grid, node } = location;
+    const isShown = workspaceIdentifier === this.activeWorkspaceIdentifier;
+    const state = this.stateByWorkspaceIdentifier.get(workspaceIdentifier);
+    if (!state) return;
+    if (state.maximizedTerminalId === terminalId) {
+      if (isShown) this.minimizePane();
+      else state.maximizedTerminalId = undefined;
     }
-    if (gridAndNode.node.isRoot) {
-      this.bus.publish({
-        type: "RemoveTab",
-        payload: gridAndNode.grid.tabId,
-      });
+    if (node.isRoot) {
+      this.bus.publish({ type: "RemoveTab", payload: grid.tabId });
     } else {
-      const wasFocusedNode = gridAndNode.node.data?.isFocused;
-      const newChild = gridAndNode.grid.tree.remove(gridAndNode.node.key);
-      if (wasFocusedNode) {
+      const wasFocusedNode = node.data?.isFocused;
+      const newChild = grid.tree.remove(node.key);
+      if (wasFocusedNode && isShown) {
         this.deferFocusTo(newChild?.data?.terminalId);
       }
     }
     this.componentFactory.destroy(terminalId);
-    this.setActiveWorkspaceGridList(gridList);
+    this.storeWorkspaceGridList(workspaceIdentifier, state.grids);
   }
 
   startPaneSwapDrag(sourceTerminalId: TerminalId): void {
@@ -324,10 +322,6 @@ export class GridListService {
     this.setActiveWorkspaceGridList(gridList);
   }
 
-  restoreGrids(gridConfigList: GridConfig[]) {
-    this.restoreGridsForWorkspace(gridConfigList, this.getRequiredActiveWorkspaceIdentifier());
-  }
-
   restoreGridsForWorkspace(gridConfigList: GridConfig[], workspaceIdentifier: string): void {
     const state = this.stateByWorkspaceIdentifier.get(workspaceIdentifier);
     this.destroyWorkspaceGridList(state?.grids);
@@ -420,7 +414,7 @@ export class GridListService {
       this.addNode(rightChild, nodeConfig.rightChild, takenTerminalIds);
     } else {
       // Reuse the persisted terminal id so restored scrollback (keyed by it)
-      // matches; generate one for a fresh pane (step 27). A terminal id names
+      // matches; generate one for a fresh pane. A terminal id names
       // one session in one pane: a persisted id that is laid out already is a
       // defect in the data, and the pane gets a new id rather than that session.
       const persistedTerminalId = nodeConfig.terminalId;
@@ -451,7 +445,7 @@ export class GridListService {
         workingDir: node.data?.workingDir,
         title: node.data?.title,
         // Persisted so a restored pane keeps its terminal id and its scrollback
-        // snapshot (keyed by it) can be replayed (step 27).
+        // snapshot (keyed by it) can be replayed.
         terminalId: node.data?.terminalId,
       };
     }
@@ -470,19 +464,27 @@ export class GridListService {
     };
   }
 
+  /** Removes the grid of `tab` - in whichever workspace it sits, shown or not. */
   removeGrid(tab?: TabId) {
     if (tab === undefined) return;
-    const gridList = this.getActiveWorkspaceGridList();
-    const grid = gridList[tab];
-    if (!grid) return;
+    const workspaceIdentifier = this.workspaceOfTab(tab);
+    const state = workspaceIdentifier
+      ? this.stateByWorkspaceIdentifier.get(workspaceIdentifier)
+      : undefined;
+    const grid = state?.grids[tab];
+    if (!workspaceIdentifier || !state || !grid) return;
     const terminalIds = this.leafTerminalIds(grid);
-    delete gridList[tab];
+    delete state.grids[tab];
     for (const terminalId of terminalIds) {
       this.componentFactory.destroy(terminalId);
     }
-    this.setActiveWorkspaceGridList(gridList);
-    if (this.activeTabId === tab) {
-      this.setActiveWorkspaceTabIdentifier(undefined);
+    this.storeWorkspaceGridList(workspaceIdentifier, state.grids);
+    if (state.activeTabId === tab) {
+      if (workspaceIdentifier === this.activeWorkspaceIdentifier) {
+        this.setActiveWorkspaceTabIdentifier(undefined);
+      } else {
+        state.activeTabId = undefined;
+      }
     }
   }
 
@@ -521,28 +523,50 @@ export class GridListService {
     this.publishPaneTitleToTab(focused.tabId, focused.node.data);
   }
 
-  private applyPaneTitle(terminalId: TerminalId, title: string): void {
-    if (!title) return;
-    const gridList = this.getActiveWorkspaceGridList();
-    const gridAndNode = this.locateInActiveWorkspace(terminalId);
-    if (!gridAndNode?.node.data) return;
-    gridAndNode.node.data = { ...gridAndNode.node.data, title };
-    this.setActiveWorkspaceGridList(gridList);
-    if (gridAndNode.node.data.isFocused) {
-      this.publishPaneTitleToTab(gridAndNode.tabId, gridAndNode.node.data);
+  /** `undefined` clears the program's title; the pane falls back to its cwd. */
+  private applyPaneTitle(terminalId: TerminalId, title: string | undefined): void {
+    const location = this.locate(terminalId);
+    // Every command end clears the title; a pane without one stays untouched.
+    if (!location?.node.data || location.node.data.title === title) return;
+    location.node.data = { ...location.node.data, title };
+    this.storeWorkspaceGridListOf(location.workspaceIdentifier);
+    if (location.node.data.isFocused) {
+      this.publishPaneTitleToTab(location.tabId, location.node.data);
     }
   }
 
   private applyPaneCwd(terminalId: TerminalId, cwd: string): void {
     if (!cwd) return;
-    const gridList = this.getActiveWorkspaceGridList();
-    const gridAndNode = this.locateInActiveWorkspace(terminalId);
-    if (!gridAndNode?.node.data) return;
-    gridAndNode.node.data = { ...gridAndNode.node.data, workingDir: cwd };
-    this.setActiveWorkspaceGridList(gridList);
-    if (gridAndNode.node.data.isFocused && !gridAndNode.node.data.title) {
-      this.publishPaneTitleToTab(gridAndNode.tabId, gridAndNode.node.data);
+    const location = this.locate(terminalId);
+    if (!location?.node.data) return;
+    location.node.data = { ...location.node.data, workingDir: cwd };
+    this.storeWorkspaceGridListOf(location.workspaceIdentifier);
+    if (location.node.data.isFocused && !location.node.data.title) {
+      this.publishPaneTitleToTab(location.tabId, location.node.data);
     }
+  }
+
+  /** The workspace holding `tabId`, shown or not; tab ids are unique across workspaces. */
+  private workspaceOfTab(tabId: TabId): string | undefined {
+    for (const [workspaceIdentifier, { grids }] of this.stateByWorkspaceIdentifier) {
+      if (grids[tabId]) return workspaceIdentifier;
+    }
+    return undefined;
+  }
+
+  /** Stores a workspace's grids after a change; only the shown workspace is republished. */
+  private storeWorkspaceGridList(workspaceIdentifier: string, gridList: GridList): void {
+    if (workspaceIdentifier === this.activeWorkspaceIdentifier) {
+      this.setActiveWorkspaceGridList(gridList);
+      return;
+    }
+    const state = this.stateByWorkspaceIdentifier.get(workspaceIdentifier);
+    if (state) state.grids = gridList;
+  }
+
+  private storeWorkspaceGridListOf(workspaceIdentifier: string): void {
+    const grids = this.stateByWorkspaceIdentifier.get(workspaceIdentifier)?.grids;
+    if (grids) this.storeWorkspaceGridList(workspaceIdentifier, grids);
   }
 
   /** True when the pane of `terminalId` belongs to the tab that is showing. */
@@ -587,7 +611,10 @@ export class GridListService {
 
   private maximizePane(terminalId: TerminalId): void {
     this.setActiveWorkspaceMaximizedTerminalIdentifier(terminalId);
-    this.bus.publish({ type: "PaneMaximizedChanged", payload: { terminalId } });
+  }
+
+  isMaximized(terminalId: TerminalId): boolean {
+    return this.maximizedTerminalId === terminalId;
   }
 
   togglePaneMaximize(terminalId: TerminalId): void {
@@ -601,7 +628,6 @@ export class GridListService {
   private minimizePane(): void {
     if (!this.maximizedTerminalId) return;
     this.setActiveWorkspaceMaximizedTerminalIdentifier(undefined);
-    this.bus.publish({ type: "PaneMaximizedChanged", payload: { terminalId: undefined } });
   }
 
   private get activeTabId(): TabId | undefined {

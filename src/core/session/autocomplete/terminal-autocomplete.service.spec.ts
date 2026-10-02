@@ -3,12 +3,8 @@ import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown
 import type { SessionState } from "@cogno/core/session/host/session-host";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  AutocompleteSuggestion,
-  CommandQueryContext,
-  QueryContext,
-} from "./autocomplete.types";
-import type { SuggestorRegistry } from "./suggestor-registry";
+import type { AutocompleteSuggestion, QueryContext } from "./autocomplete.types";
+import type { SharedSuggestors } from "./shared-suggestors";
 import type { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
 import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
 
@@ -33,7 +29,6 @@ class FakeStateManager {
     hasSelection: false,
     isCommandRunning: false,
     isInFullScreenMode: false,
-    isPaneMaximized: false,
     scrolledLinesFromBottom: 0,
     sessionCapabilities: undefined,
     contextRevision: 0,
@@ -109,7 +104,7 @@ class DummySuggestor implements TerminalAutocompleteSuggestor {
 
 describe("TerminalAutocompleteService", () => {
   let fakeState: FakeStateManager;
-  let suggestorRegistry: SuggestorRegistry;
+  let sharedSuggestors: SharedSuggestors;
   let service: TerminalAutocompleteService;
   const currentFilterMode = (target: TerminalAutocompleteService) =>
     (target as any)._filterMode.value;
@@ -118,11 +113,16 @@ describe("TerminalAutocompleteService", () => {
     vi.useFakeTimers();
     window.localStorage.clear();
     fakeState = new FakeStateManager();
-    suggestorRegistry = {
-      suggestors$: new BehaviorSubject([]),
+    sharedSuggestors = {
+      specCommand: {
+        id: "spec-command",
+        inputPattern: /.+/,
+        matches: () => false,
+        suggest: async () => [],
+      },
       preloadForShellIntegration: vi.fn(),
       reportIssue: vi.fn(),
-    } as unknown as SuggestorRegistry;
+    } as unknown as SharedSuggestors;
     const commandLog = {
       searchDirectories: vi.fn().mockResolvedValue([]),
       searchCommands: vi.fn().mockResolvedValue([]),
@@ -134,7 +134,7 @@ describe("TerminalAutocompleteService", () => {
     service = new TerminalAutocompleteService(
       fakeState as unknown as any,
       commandLog,
-      suggestorRegistry,
+      sharedSuggestors,
       new TerminalDropdownCoordinatorService(),
     );
     (service as any)._suggestors = [];
@@ -180,7 +180,7 @@ describe("TerminalAutocompleteService", () => {
     expect(view.visible).toBe(true);
     expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
 
-    expect(suggestorRegistry.reportIssue).toHaveBeenCalledWith(
+    expect(sharedSuggestors.reportIssue).toHaveBeenCalledWith(
       expect.objectContaining({
         suggestorId: "broken-provider",
         message: expect.stringContaining("git executable not found"),
@@ -207,7 +207,7 @@ describe("TerminalAutocompleteService", () => {
     expect(view.visible).toBe(true);
     expect(view.suggestions.map((s: any) => s.label)).toEqual(["git status"]);
 
-    expect(suggestorRegistry.reportIssue).not.toHaveBeenCalled();
+    expect(sharedSuggestors.reportIssue).not.toHaveBeenCalled();
   });
 
   it("does not start another run for a suggestor that is still unresolved after timeout", async () => {
@@ -372,7 +372,7 @@ describe("TerminalAutocompleteService", () => {
     const second = new TerminalAutocompleteService(
       fakeState as unknown as any,
       commandLog,
-      suggestorRegistry,
+      sharedSuggestors,
       new TerminalDropdownCoordinatorService(),
     );
     (second as any)._suggestors = [];
@@ -554,8 +554,7 @@ describe("TerminalAutocompleteService", () => {
   it("opens autocomplete on trigger_autocomplete with empty input using an empty filter", async () => {
     service.registerSuggestor(
       new DummySuggestor(async (context) => {
-        expect(context.mode).toBe("command");
-        expect((context as CommandQueryContext).query).toBe("");
+        expect(context).toMatchObject({ mode: "command", query: "" });
         return [makeSuggestion("git"), makeSuggestion("npm test")];
       }),
     );

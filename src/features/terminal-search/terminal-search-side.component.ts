@@ -12,7 +12,7 @@ import {
   TerminalSearchLineResultContract,
 } from "@cogno/shared/domain";
 import { TooltipDirective } from "@cogno/shared/ui";
-import { scrollSelectedListItemIntoView } from "@cogno/shared/ui/common/navigation/directional-navigation.dom";
+import { scrollSelectedListItemIntoView } from "@cogno/shared/ui/common/navigation/scroll-selected-list-item";
 import { TerminalSearchService } from "./terminal-search.service";
 import { createSearchResultId } from "./terminal-search-state";
 

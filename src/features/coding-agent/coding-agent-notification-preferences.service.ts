@@ -1,16 +1,16 @@
-import { Injectable, Signal, signal } from "@angular/core";
+import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import {
+  NotificationChannelOptionContract,
+  NotificationChannelsPort,
+} from "@cogno/core/api/notification-channels-port";
 import {
   NotificationDefinitionContract,
   NotificationPreferencesState,
   NotificationPreferencesUseCase,
 } from "@cogno/shared/domain";
-import {
-  ApplicationConfigurationPort,
-  NotificationChannelOptionContract,
-  NotificationChannelsPort,
-} from "@cogno/shared/ports";
-import { take } from "rxjs";
-import { AgentStatus } from "./coding-agent-status.service";
+import { AgentStatus } from "./agent-status";
 
 const NOTIFICATION_LABELS: Record<AgentStatus, string> = {
   working: "Agent starts working",
@@ -29,17 +29,26 @@ export class CodingAgentNotificationPreferencesService {
 
   readonly state: Signal<NotificationPreferencesState> = this.stateSignal.asReadonly();
 
+  /**
+   * Follows the config: when the configured notifications or the available
+   * channels change, the preferences start over from them. Any other config
+   * change leaves what was toggled in the panel alone.
+   */
   constructor(
     private readonly configPort: ApplicationConfigurationPort,
     private readonly channelsPort: NotificationChannelsPort,
+    destroyRef: DestroyRef,
   ) {
-    this.configPort.configuration$.pipe(take(1)).subscribe(() => {
-      this.channelOptions = this.channelsPort.getAvailableChannels();
+    let appliedDefaults: string | undefined;
+    this.configPort.configuration$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      const definitions = this.getNotificationDefinitions();
+      const channelOptions = this.channelsPort.getAvailableChannels();
+      const defaults = JSON.stringify({ definitions, channelOptions });
+      if (defaults === appliedDefaults) return;
+      appliedDefaults = defaults;
+      this.channelOptions = channelOptions;
       this.stateSignal.set(
-        NotificationPreferencesUseCase.createInitialState(
-          this.getNotificationDefinitions(),
-          this.channelOptions,
-        ),
+        NotificationPreferencesUseCase.createInitialState(definitions, channelOptions),
       );
     });
   }

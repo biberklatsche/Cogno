@@ -1,4 +1,4 @@
-import type { SideMenuFeatureHandleContract } from "@cogno/shared/contributions";
+import type { SideMenuFeatureHandleContract } from "@cogno/core/api/contributions";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { TerminalSearchService } from "./terminal-search.service";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
@@ -43,6 +43,7 @@ describe("TerminalSearchSideMenuLifecycle", () => {
       registerKeybindListener: registerKeybindListenerMock,
       unregisterKeybindListener: unregisterKeybindListenerMock,
       updateIcon: vi.fn(),
+      updateBadgeColor: vi.fn(),
     };
   });
 

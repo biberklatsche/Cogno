@@ -1,9 +1,31 @@
-import { AgentStatus } from "@cogno/shared/domain";
+import { AgentStatus, parseAgentStatus } from "../../agent-status";
+import type { HookState } from "../../ports";
 
 export const CODING_AGENT_STATUS_ACTION = "coding_agent_status";
 
-/** Payloads larger than this are replaced with an "omitted:too-large:<bytes>" marker. */
-const HOOK_PAYLOAD_MAX_BYTES = 65536;
+/**
+ * Payloads larger than this are replaced with an "omitted:too-large:<bytes>" marker.
+ * Stays below the 2 MB body limit of Cogno's HTTP server.
+ */
+const HOOK_PAYLOAD_MAX_BYTES = 1048576;
+
+/** The `args` of a status ping, in the order the hook commands below write them. */
+export type StatusPingArgs = {
+  readonly status: AgentStatus;
+  readonly providerId: string;
+  readonly hookEvent: string;
+  /** Unix milliseconds when the hook ran; 0 when missing. */
+  readonly seq: number;
+};
+
+export function parseStatusPingArgs(args: ReadonlyArray<string> | undefined): StatusPingArgs {
+  return {
+    status: parseAgentStatus(args?.[0]) ?? "ready",
+    providerId: args?.[1] ?? "",
+    hookEvent: args?.[2] ?? "",
+    seq: Number(args?.[3] ?? 0) || 0,
+  };
+}
 
 export type HookCommands = {
   command: string; // Unix/macOS: bash + curl
@@ -49,10 +71,19 @@ export function isCurrentHookCommand(
   status: AgentStatus,
   providerId: string,
   hookEvent: string,
+  stdout?: string,
 ): boolean {
   if (!command) return false;
-  const { command: bash, commandWindows } = buildHookCommands(status, providerId, hookEvent);
-  return command === bash || command === commandWindows;
+  return (
+    command === buildCurlCommand(status, providerId, hookEvent, stdout) ||
+    command === buildWindowsCommand(status, providerId, hookEvent, stdout)
+  );
+}
+
+/** Hooks that are not all current are outdated when the config holds any Cogno hook at all. */
+export function hookStateOf(isCurrent: boolean, hasCognoHook: boolean): HookState {
+  if (isCurrent) return "current";
+  return hasCognoHook ? "outdated" : "missing";
 }
 
 /**
@@ -65,6 +96,20 @@ export function isCurrentHookCommand(
  * console and never sends EOF, which would hang the hook until it's killed, so the status
  * POST never fires.
  */
+/**
+ * Sets `$seq` to the time the hook ran, in Unix milliseconds - the order Cogno
+ * applies pings in. Seconds are too coarse: a tool hook and the stop that follows
+ * it often start in the same second, and whichever arrives last would win. GNU
+ * date knows `%N`; macOS's does not, but ships perl. Anything else gets seconds.
+ */
+function bashMillisecondsCapture(): string {
+  return (
+    `seq=$(date +%s%3N 2>/dev/null); ` +
+    `case "$seq" in ''|*[!0-9]*) seq=$(perl -MTime::HiRes=time -e 'printf "%d", time*1000' 2>/dev/null);; esac; ` +
+    `case "$seq" in ''|*[!0-9]*) seq=$(date +%s)000;; esac`
+  );
+}
+
 function bashPayloadCapture(): string {
   return (
     `if [ -t 0 ]; then input=""; else input=$(cat); fi; ` +
@@ -75,13 +120,15 @@ function bashPayloadCapture(): string {
 
 /**
  * PowerShell equivalent of {@link bashPayloadCapture}, populating `$payload`.
- * Only reads stdin when it's actually redirected (a real pipe) — `[Console]::In.ReadToEnd()`
- * blocks forever if stdin is the inherited console/PTY and never sends EOF, which would hang
- * the hook until it's killed, so the status POST never fires.
+ * Only reads stdin when it's actually redirected (a real pipe) — reading the inherited
+ * console/PTY blocks forever because it never sends EOF, which would hang the hook until
+ * it's killed, so the status POST never fires. Stdin is decoded as UTF-8 explicitly: the
+ * agent writes UTF-8, while `[Console]::In` would use the console code page and garble
+ * anything beyond ASCII (umlauts in prompts, for one).
  */
 function powershellPayloadCapture(): string {
   return (
-    `if ([Console]::IsInputRedirected) { $payload=[Console]::In.ReadToEnd() } else { $payload='' };` +
+    `if ([Console]::IsInputRedirected) { $payload=(New-Object IO.StreamReader([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)).ReadToEnd() } else { $payload='' };` +
     `if ($payload -notmatch '^\\s*[\\{\\[]') { $payload='"omitted:not-json"' } ` +
     `elseif ($payload.Length -gt ${HOOK_PAYLOAD_MAX_BYTES}) { $payload='"omitted:too-large:'+$payload.Length+'"' }`
   );
@@ -94,11 +141,14 @@ function buildCurlCommand(
   stdout?: string,
 ): string {
   const prefix = `{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","`;
-  // Build the JSON body into _b first so the curl call is a simple "$_b" expansion —
+  // Build the JSON body into _b first so it goes out as one "$_b" expansion —
   // this avoids any ambiguity around single-quote injection from $input.
   const bodyVar = `_b='${prefix}'"$seq"'"],"terminal_id":"'"$COGNO_TERMINAL_ID"'","payload":'"$input"'}'`;
-  const curl = `curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -d "$_b"`;
-  const guardedCurl = `seq=$(date +%s); ${bashPayloadCapture()}; ${bodyVar}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
+  // The body goes through stdin, not as an argument: a command line is limited
+  // (128 KB per argument on Linux, about 32 K characters in all on Windows), and a
+  // payload with a large file's content would make the call fail.
+  const curl = `printf '%s' "$_b" | curl -s -X POST "http://127.0.0.1:$COGNO_PORT/action" -H 'Content-Type: application/json' -H "X-Cogno-Token: $COGNO_TOKEN" --data-binary @-`;
+  const guardedCurl = `${bashMillisecondsCapture()}; ${bashPayloadCapture()}; ${bodyVar}; [ -n "$COGNO_PORT" ] && ${curl} >/dev/null 2>&1`;
 
   // Guard against terminals without Cogno's env vars (e.g. opened outside Cogno) and
   // force a zero exit status — this is a fire-and-forget status ping, never the agent's
@@ -113,10 +163,12 @@ function buildWindowsCommand(
   stdout?: string,
 ): string {
   const body =
-    `$seq=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds();` +
+    `$seq=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds();` +
     `${powershellPayloadCapture()};` +
     `$b='{"command":"${CODING_AGENT_STATUS_ACTION}","args":["${status}","${providerId}","${hookEvent}","'+$seq+'"],"terminal_id":"'+$env:COGNO_TERMINAL_ID+'","payload":'+$payload+'}'`;
-  const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json" -Body $b -UseBasicParsing|Out-Null`;
+  // The body goes out as UTF-8 bytes: a string body would be re-encoded by Invoke-WebRequest
+  // with a code page that varies by PowerShell edition.
+  const request = `Invoke-WebRequest -Uri "http://127.0.0.1:$($env:COGNO_PORT)/action" -Method POST -ContentType "application/json; charset=utf-8" -Headers @{'X-Cogno-Token'=$env:COGNO_TOKEN} -Body ([Text.Encoding]::UTF8.GetBytes($b)) -UseBasicParsing|Out-Null`;
   const guardedRequest = `try { if ($env:COGNO_PORT) { ${body};${request} } } catch { Write-Error $_ }`;
 
   // Same guard as the bash variant, expressed for PowerShell. The caught error is written to

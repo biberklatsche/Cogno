@@ -1,15 +1,14 @@
 import type { DestroyRef } from "@angular/core";
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import type { FeatureDefinition } from "@cogno/core/api/contributions";
 import type { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import type { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import type { ActionName } from "@cogno/core/workbench/bus/action.models";
-import type { FeatureDefinition } from "@cogno/shared/contributions";
-import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { BehaviorSubject } from "rxjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureHost } from "./feature-host";
 import type { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
 import type { SideMenuFeatureRegistrar } from "./side-menu-feature-registrar";
-import type { SuggestorFeatureRegistrar } from "./suggestor-feature-registrar";
 
 /** A feature with a side-menu entry at `configPath`; only its id and path matter here. */
 function sideMenuFeature(id: string, configPath: string): FeatureDefinition<ActionName> {
@@ -52,10 +51,6 @@ describe("FeatureHost activation", () => {
       getActionNames: () => [],
     } as unknown as ActionNameRegistry;
     const sideMenuRegistrar = { register, unregister } as unknown as SideMenuFeatureRegistrar;
-    const suggestorRegistrar = {
-      register: vi.fn(),
-      unregister: vi.fn(),
-    } as unknown as SuggestorFeatureRegistrar;
     const notificationChannelRegistrar = {
       register: vi.fn(),
       unregister: vi.fn(),
@@ -73,41 +68,47 @@ describe("FeatureHost activation", () => {
       databaseMigrationService,
       actionNameRegistry,
       sideMenuRegistrar,
-      suggestorRegistrar,
       notificationChannelRegistrar,
       applicationConfigurationPort,
       destroyRef,
     );
   }
 
-  it("reads the mode from the feature's configPath, not its id", async () => {
+  it("reads the mode from the feature's configPath, not its id", () => {
     const host = makeHost({
       feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
     });
-    await host.whenSettled();
 
     expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
     expect(register).not.toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
-    expect(host.featureStates().find((state) => state.id === "coding-agents")?.status).toBe(
-      "active",
-    );
+    expect(host.isActionActive("open_coding-agents" as ActionName)).toBe(true);
   });
 
-  it("activates and deactivates on config changes (hot-reload)", async () => {
+  it("activates and deactivates on config changes (hot-reload)", () => {
     const host = makeHost({
       feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
     });
-    await host.whenSettled();
     register.mockClear();
 
     configSubject.next({ feature: { coding_agents: { mode: "off" }, git: { mode: "on" } } });
-    await host.whenSettled();
 
     expect(register).toHaveBeenCalledWith(expect.objectContaining({ id: "git" }));
     expect(unregister).toHaveBeenCalledWith(expect.objectContaining({ id: "coding-agents" }));
-    expect(host.featureStates().find((state) => state.id === "git")?.status).toBe("active");
-    expect(host.featureStates().find((state) => state.id === "coding-agents")?.status).toBe(
-      "inactive",
+    expect(host.isActionActive("open_git" as ActionName)).toBe(true);
+    expect(host.isActionActive("open_coding-agents" as ActionName)).toBe(false);
+  });
+
+  it("announces a reconciliation only once the feature states are current", () => {
+    const host = makeHost({
+      feature: { coding_agents: { mode: "on" }, git: { mode: "off" } },
+    });
+    const gitActiveWhenAnnounced: boolean[] = [];
+    host.reconciled$.subscribe(() =>
+      gitActiveWhenAnnounced.push(host.isActionActive("open_git" as ActionName)),
     );
+
+    configSubject.next({ feature: { coding_agents: { mode: "on" }, git: { mode: "on" } } });
+
+    expect(gitActiveWhenAnnounced).toEqual([false, true]);
   });
 });

@@ -1,4 +1,7 @@
-import { FeatureDefinition, SideMenuFeatureDefinitionContract } from "@cogno/shared/contributions";
+import {
+  FeatureDefinition,
+  SideMenuFeatureDefinitionContract,
+} from "@cogno/core/api/contributions";
 import { NotificationSideMenuLifecycle } from "./notification-side-menu.lifecycle";
 
 const notificationFeatureId = "notification";

@@ -1,7 +1,7 @@
 import { WorkspaceRepository } from "@cogno/core/workbench/workspace/workspace.repository";
 import type { DatabaseAccessContract, DatabaseStatementContract } from "@cogno/platform";
-import type { WorkspaceConfiguration } from "@cogno/shared/domain/workspace";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { WorkspaceConfiguration } from "./workspace.model";
 
 describe("WorkspaceRepository", () => {
   let workspaceRepository: WorkspaceRepository;

@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
-import { Database, DatabaseOpenReport } from "@cogno/platform/database";
 import {
   buildDatabaseMigrationIdentifier,
   DatabaseMigrationContract,
-} from "@cogno/shared/contributions";
+} from "@cogno/core/api/contributions";
+import { Database, DatabaseOpenReport } from "@cogno/platform/database";
 
 /**
  * Collects the migrations contributed by app and features and hands

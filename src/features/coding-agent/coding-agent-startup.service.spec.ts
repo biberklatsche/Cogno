@@ -1,26 +1,32 @@
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { OsPlatform } from "@cogno/platform";
-import type { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CodingAgentConfirmDialogService } from "./coding-agent-confirm-dialog.service";
 import type { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
+import type { HookState } from "./ports";
 
 const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
-function providerDouble(id: string, options: { installed?: boolean; hook?: boolean } = {}) {
-  let hook = options.hook ?? false;
+function providerDouble(
+  id: string,
+  options: { installed?: boolean; hook?: boolean | "outdated" } = {},
+) {
+  let hook: HookState =
+    options.hook === "outdated" ? "outdated" : options.hook ? "current" : "missing";
   return {
     id,
     name: id.toUpperCase(),
     isAgentInstalled: vi.fn(async () => options.installed ?? true),
-    isHookInstalled: vi.fn(async () => hook),
+    hookState: vi.fn(async () => hook),
     installHook: vi.fn(async () => {
-      hook = true;
+      hook = "current";
     }),
     removeHook: vi.fn(async () => {
-      hook = false;
+      hook = "missing";
     }),
+    interpretHook: vi.fn(),
   };
 }
 
@@ -34,16 +40,19 @@ describe("CodingAgentStartupService", () => {
     dispatch = vi.fn();
   });
 
-  function start(providers: ReadonlyArray<ReturnType<typeof providerDouble>>, mode = "on") {
-    return new CodingAgentStartupService(
+  /** The service as the feature turning on leaves it: constructed, first scan running. */
+  function start(providers: ReadonlyArray<ReturnType<typeof providerDouble>>) {
+    const service = new CodingAgentStartupService(
       { providers } as unknown as CodingAgentProviderRegistry,
       { confirm } as unknown as CodingAgentConfirmDialogService,
       {
-        getConfiguration: () => ({ feature: { coding_agents: { mode } } }),
+        getConfiguration: () => ({}),
       } as unknown as ApplicationConfigurationPort,
       { platform: () => "macos" } as unknown as OsPlatform,
       { dispatch } as unknown as NotificationCenterPort,
     );
+    void service.rescan();
+    return service;
   }
 
   const hookOf = (service: CodingAgentStartupService, id: string) =>
@@ -64,14 +73,6 @@ describe("CodingAgentStartupService", () => {
       ]);
       expect(hookOf(service, "claude")).toBe(true);
       expect(hookOf(service, "codex")).toBe(false);
-    });
-
-    it("does nothing while the feature is off", async () => {
-      const provider = providerDouble("claude");
-      start([provider], "off");
-      await settle();
-
-      expect(provider.isAgentInstalled).not.toHaveBeenCalled();
     });
   });
 
@@ -106,6 +107,59 @@ describe("CodingAgentStartupService", () => {
       expect(hookOf(restarted, "claude")).toBe(false);
     });
 
+    it("updates an older version's hook without asking, even after an earlier no", async () => {
+      window.localStorage.setItem(
+        "cogno.coding-agents.hook-decisions",
+        JSON.stringify({ claude: "declined" }),
+      );
+      const claude = providerDouble("claude", { hook: "outdated" });
+      const service = start([claude]);
+      await settle();
+
+      expect(confirm).not.toHaveBeenCalled();
+      expect(claude.installHook).toHaveBeenCalledExactlyOnceWith("Bash");
+      expect(hookOf(service, "claude")).toBe(true);
+    });
+
+    it("leaves an outdated hook alone once the user removed the hook", async () => {
+      window.localStorage.setItem(
+        "cogno.coding-agents.hook-decisions",
+        JSON.stringify({ claude: "removed" }),
+      );
+      const claude = providerDouble("claude", { hook: "outdated" });
+      start([claude]);
+      await settle();
+
+      expect(claude.installHook).not.toHaveBeenCalled();
+      expect(confirm).not.toHaveBeenCalled();
+    });
+
+    it("lists an outdated hook it could not update as missing, without asking", async () => {
+      const claude = providerDouble("claude", { hook: "outdated" });
+      claude.installHook.mockRejectedValue(new Error("settings.json is read-only"));
+      const service = start([claude]);
+      await settle();
+
+      expect(confirm).not.toHaveBeenCalled();
+      expect(hookOf(service, "claude")).toBe(false);
+    });
+
+    it("says once that it could not update a hook, not on every scan", async () => {
+      const claude = providerDouble("claude", { hook: "outdated" });
+      claude.installHook.mockRejectedValue(new Error("settings.json is read-only"));
+      const service = start([claude]);
+      await settle();
+      await service.rescan();
+
+      expect(dispatch).toHaveBeenCalledOnce();
+      expect(dispatch.mock.calls[0][0]).toEqual(
+        expect.objectContaining({
+          header: "Could not update the CLAUDE hook",
+          body: "settings.json is read-only",
+        }),
+      );
+    });
+
     it("still asks for an agent that appears later", async () => {
       confirm.mockResolvedValue(false);
       const service = start([providerDouble("claude", { hook: false })]);
@@ -120,6 +174,38 @@ describe("CodingAgentStartupService", () => {
       expect(confirm.mock.calls[1][1]).toContain("CODEX");
       expect(confirm.mock.calls[1][1]).not.toContain("CLAUDE");
     });
+  });
+
+  it("says once why an agent whose configuration it cannot read is missing", async () => {
+    const claude = providerDouble("claude");
+    claude.hookState.mockRejectedValue(new Error("settings.json: unexpected token"));
+    const service = start([claude]);
+    await settle();
+    await service.rescan();
+
+    expect(service.installedProviders()).toEqual([]);
+    expect(dispatch).toHaveBeenCalledOnce();
+    expect(dispatch.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ header: "Could not read the CLAUDE configuration" }),
+    );
+  });
+
+  it("scans again when asked while a scan runs, so a hook installed meanwhile shows", async () => {
+    let answerFirstScan!: () => void;
+    const claude = providerDouble("claude", { hook: true });
+    claude.isAgentInstalled.mockImplementationOnce(
+      () =>
+        new Promise<boolean>((resolve) => {
+          answerFirstScan = () => resolve(true);
+        }),
+    );
+    const service = start([claude]);
+
+    void service.rescan();
+    answerFirstScan();
+    await settle();
+
+    expect(claude.isAgentInstalled).toHaveBeenCalledTimes(2);
   });
 
   describe("from the panel", () => {
@@ -153,7 +239,7 @@ describe("CodingAgentStartupService", () => {
       expect(hookOf(service, "claude")).toBe(true);
 
       // The hook vanishes outside Cogno (the user edits settings.json): ask again.
-      claude.isHookInstalled.mockResolvedValue(false);
+      claude.hookState.mockResolvedValue("missing");
       await service.rescan();
       expect(confirm).toHaveBeenCalledTimes(2);
     });

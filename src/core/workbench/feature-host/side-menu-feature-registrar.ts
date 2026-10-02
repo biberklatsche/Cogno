@@ -1,11 +1,11 @@
 import { DestroyRef, Injectable, Injector } from "@angular/core";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import { FeatureDefinition } from "@cogno/core/api/contributions";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
-import { FeatureDefinition } from "@cogno/shared/contributions";
-import { ApplicationConfigurationPort } from "@cogno/shared/ports";
 import { FeatureContributionRegistrar } from "./feature-reconciler";
 import { SideMenuFeatureRuntime } from "./side-menu-feature-runtime";
 

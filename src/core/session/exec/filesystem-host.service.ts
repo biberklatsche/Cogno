@@ -1,12 +1,12 @@
 import { Injectable } from "@angular/core";
-import { Fs } from "@cogno/platform/fs";
+import { AutocompletePathSupport } from "@cogno/core/session/autocomplete/autocomplete-path.support";
 import {
+  Filesystem,
   FilesystemEntryContract,
   FilesystemListOptionsContract,
-  ShellContextContract,
-} from "@cogno/shared/domain";
-import { Filesystem } from "@cogno/shared/ports";
-import { AutocompletePathSupport } from "@cogno/shared/support";
+} from "@cogno/core/session/exec/filesystem";
+import { Fs } from "@cogno/platform/fs";
+import { ShellContextContract } from "@cogno/shared/domain";
 import { createPathAdapter } from "../shells/shell-definitions";
 
 @Injectable({ providedIn: "root" })

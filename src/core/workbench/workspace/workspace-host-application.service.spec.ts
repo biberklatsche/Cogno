@@ -1,4 +1,5 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
@@ -124,20 +125,24 @@ describe("WorkspaceHostApplicationService", () => {
 
     const terminalId = getSingleTerminalId(gridListService);
     emitSessionFact(terminalId, { type: "focusChanged", focused: true });
-    emitSessionFact(terminalId, { type: "titleChanged", oscCode: 2, title: "pwsh" });
+    emitSessionFact(terminalId, { type: "titleChanged", title: "pwsh" });
 
     expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
   });
 
-  it("flags a failed autosave until the next one succeeds (step 27g)", async () => {
+  it("flags and reports a failed autosave, without throwing, until the next one succeeds", async () => {
     bus.publish({ type: "DBInitialized" });
     await vi.waitFor(() => {
       expect(service.getWorkspaceById("WS-1")).toBeTruthy();
     });
+    const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
     persistWorkspaceSnapshots.mockRejectedValueOnce(new Error("disk full"));
 
-    await expect(service.autoPersistWorkspace("WS-1")).rejects.toThrow("disk full");
+    await expect(service.autoPersistWorkspace("WS-1")).resolves.toBeUndefined();
     expect(service.getWorkspaceById("WS-1")?.autoSaveFailed).toBe(true);
+    expect(report).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "WorkspaceAutosave", context: { workspaceId: "WS-1" } }),
+    );
 
     await service.autoPersistWorkspace("WS-1");
     expect(service.getWorkspaceById("WS-1")?.autoSaveFailed).toBe(false);
@@ -441,6 +446,28 @@ describe("WorkspaceHostApplicationService", () => {
       expect(service.getActiveWorkspace()?.id).toBe("WS-2");
       expect(service.getWorkspaceById("WS-3")?.isOpen).toBe(false);
       expect(gridListService.terminalIdsForWorkspace("WS-3")).toEqual([]);
+    });
+
+    it("reports a claim that fails instead of taking it for another window's", async () => {
+      const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue(
+        threeWorkspaces(),
+      );
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getActiveWorkspace()?.id).toBe("WS-2");
+      });
+
+      appWindow.claimWorkspace.mockRejectedValue(new Error("command not found"));
+      await service.restoreWorkspaceById("WS-3");
+
+      expect(service.getWorkspaceById("WS-3")?.isOpen).toBe(false);
+      expect(report).toHaveBeenCalledWith(
+        expect.objectContaining({
+          notify: true,
+          context: { operation: "claimWorkspace", workspaceId: "WS-3" },
+        }),
+      );
     });
 
     it("records which workspaces are open and which is active as that changes", async () => {
