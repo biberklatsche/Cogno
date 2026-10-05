@@ -116,9 +116,6 @@ importers:
       '@tauri-apps/plugin-os':
         specifier: 2.4.0
         version: 2.4.0
-      '@tauri-apps/plugin-process':
-        specifier: 2.4.0
-        version: 2.4.0
       '@xterm/addon-fit':
         specifier: 0.11.0
         version: 0.11.0
@@ -1950,9 +1947,6 @@ packages:
 
   '@tauri-apps/plugin-os@2.4.0':
     resolution: {integrity: sha512-XFQjntNNI3Vlqdy4WUGwiXX8DByzKVvoemAcUVkBm9NJPGmoDtII5i+vfuAzWaJfOE5cUJJLUDqXBnd4reSAIA==}
-
-  '@tauri-apps/plugin-process@2.4.0':
-    resolution: {integrity: sha512-GddrmsSLAYrLa/yTXlXK/YRDzUgYeeOnUXTbiyvJWkmI424RmDPD3FVLeqcon7rv6O6ZfhBilcrHWnSo7o6hIQ==}
 
   '@tufjs/canonical-json@2.0.0':
     resolution: {integrity: sha512-yVtV8zsdo8qFHe+/3kw81dSLyF7D576A5cCFCi4X7B39tWT7SekaEFUnvnWJHz+9qO7qJTah1JbrDjWKqFtdWA==}
@@ -5177,10 +5171,6 @@ snapshots:
       '@tauri-apps/api': 2.12.1
 
   '@tauri-apps/plugin-os@2.4.0':
-    dependencies:
-      '@tauri-apps/api': 2.12.1
-
-  '@tauri-apps/plugin-process@2.4.0':
     dependencies:
       '@tauri-apps/api': 2.12.1
 

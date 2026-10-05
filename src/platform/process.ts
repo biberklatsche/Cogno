@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { exit as tauri_exit } from "@tauri-apps/plugin-process";
+import { exit as tauri_exit } from "@tauri-apps/api/app";
 
 @Injectable({ providedIn: "root" })
 export class Process {
