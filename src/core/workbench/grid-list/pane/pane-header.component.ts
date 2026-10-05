@@ -39,7 +39,8 @@ import { GridListService } from "../+state/grid-list.service";
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2px 8px;
+      /* Room for the absolutely positioned busy indicator and close button. */
+      padding: 2px 26px;
       background: transparent;
       height: 24px;
 
@@ -54,6 +55,11 @@ import { GridListService } from "../+state/grid-list.service";
       color: var(--foreground-color);
       opacity: 0.7;
       text-align: center;
+      /* Programs set the title via OSC; a long one must not wrap over the terminal. */
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .busy-indicator {
