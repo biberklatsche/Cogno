@@ -33,7 +33,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
             <small class="timestamp">{{ toRelativeTime(notification.timestamp) }}</small>
           </div>
           @if (notification.count > 1) {
-            <div class="count" [appTooltip]="'Occurrences'">{{ notification.count }}</div>
+            <div class="count" [appTooltip]="'Occurrences'"><span>{{ notification.count }}</span></div>
           }
           <button class="button icon-button" type="button" (click)="remove(notification.id); $event.stopPropagation()">
             <app-icon name="mdiClose"></app-icon>
@@ -123,14 +123,21 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         position: absolute;
         top: 6px;
         right: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 18px;
         font-size: 0.75rem;
         padding: 0 6px;
-        line-height: 18px;
         min-width: 18px;
-        text-align: center;
         border-radius: 9px;
         background-color: var(--color-black);
         color: var(--color-white);
+      }
+
+      /* Trims the text to cap height and baseline, so capitals and digits sit in the optical centre whatever the font. */
+      .count > span {
+        text-box: trim-both cap alphabetic;
       }
 
       .notification.info {

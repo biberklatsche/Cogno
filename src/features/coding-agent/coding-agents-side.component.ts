@@ -64,19 +64,19 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
         <header class="panel-header">
           <div class="summary">
             @if (summary().working > 0) {
-              <span class="summary-chip working"><span class="dot"></span>{{ summary().working }} working</span>
+              <span class="summary-chip working"><span>{{ summary().working }} working</span></span>
             }
             @if (summary().question > 0) {
-              <span class="summary-chip question"><span class="dot"></span>{{ countOf(summary().question, "needs you", "need you") }}</span>
+              <span class="summary-chip question"><span>{{ countOf(summary().question, "needs you", "need you") }}</span></span>
             }
             @if (summary().error > 0) {
-              <span class="summary-chip error"><span class="dot"></span>{{ countOf(summary().error, "error") }}</span>
+              <span class="summary-chip error"><span>{{ countOf(summary().error, "error") }}</span></span>
             }
             @if (summary().done > 0) {
-              <span class="summary-chip done"><span class="dot"></span>{{ summary().done }} done</span>
+              <span class="summary-chip done"><span>{{ summary().done }} done</span></span>
             }
             @if (summary().idle > 0) {
-              <span class="summary-chip idle"><span class="dot"></span>{{ summary().idle }} idle</span>
+              <span class="summary-chip idle"><span>{{ summary().idle }} idle</span></span>
             }
           </div>
           <div class="header-actions">
@@ -132,14 +132,14 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                     }
                   </span>
                   @if (agent.subagentCount > 0) {
-                    <span class="subagent-pill">{{ countOf(agent.subagentCount, "subagent") }}</span>
+                    <span class="subagent-pill"><span>{{ countOf(agent.subagentCount, "subagent") }}</span></span>
                   }
                   <span class="agent-identity">
                     @if (agent.model) {
                       <span class="agent-model" [appTooltip]="agent.model">{{ agent.model }}</span>
                     }
                     @if (agent.providerName) {
-                      <span class="agent-badge">{{ agent.providerName }}</span>
+                      <span class="agent-badge"><span>{{ agent.providerName }}</span></span>
                     }
                   </span>
                 </div>
@@ -255,8 +255,8 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     .summary-chip {
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
-      padding: 0.15rem 0.55rem;
+      height: 1.4rem;
+      padding: 0 0.55rem;
       border-radius: 999px;
       font-size: 0.75rem;
       font-weight: 500;
@@ -265,11 +265,11 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       background: color-mix(in srgb, var(--agent-state-color) 14%, transparent);
     }
 
-    .summary-chip .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--agent-state-color);
+    /* Trims the text to cap height and baseline, so capitals and digits sit in the optical centre whatever the font. */
+    .summary-chip > span,
+    .subagent-pill > span,
+    .agent-badge > span {
+      text-box: trim-both cap alphabetic;
     }
 
     .working { --agent-state-color: var(--color-blue); }
@@ -463,11 +463,13 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     }
 
     .agent-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 18px;
       font-size: 0.7rem;
       padding: 0 6px;
-      line-height: 18px;
       min-width: 18px;
-      text-align: center;
       border-radius: 9px;
       background-color: var(--color-black);
       color: var(--color-white);
@@ -539,7 +541,10 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     }
 
     .subagent-pill {
-      padding: 0.15rem 0.55rem;
+      display: inline-flex;
+      align-items: center;
+      height: 1.4rem;
+      padding: 0 0.55rem;
       border-radius: 999px;
       font-weight: 500;
       white-space: nowrap;
