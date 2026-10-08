@@ -1,0 +1,18 @@
+# Deploy: see infra/dl-worker/README.md
+name = "cogno-dl"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+routes = [{ pattern = "dl.cogno.rocks", custom_domain = true }]
+
+[vars]
+BASE_PATH = "cogno"
+
+[[r2_buckets]]
+binding = "RELEASES"
+bucket_name = "cogno-releases"
+
+[[analytics_engine_datasets]]
+binding = "EVENTS"
+dataset = "cogno_events"
