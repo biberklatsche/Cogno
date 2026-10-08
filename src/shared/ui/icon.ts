@@ -43,6 +43,7 @@ import {
   mdiTooltipQuestion,
   mdiTrashCanOutline,
   mdiUndoVariant,
+  mdiUpdate,
   mdiViewDashboard,
   mdiViewDashboardEdit,
 } from "@mdi/js";
@@ -93,6 +94,7 @@ export const ICONS = {
   mdiTooltipQuestion,
   mdiTrashCanOutline,
   mdiUndoVariant,
+  mdiUpdate,
   mdiViewDashboard,
   mdiViewDashboardEdit,
 } as const;

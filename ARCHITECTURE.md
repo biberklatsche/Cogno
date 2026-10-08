@@ -813,12 +813,17 @@ Entscheidungen:
    (Notifications, `navigateToTerminal`, CLI/HTTP mit `terminalId`), trägt es.
 2. **Rust ist der Besitzer alles Prozessglobalen** und die einzige Stelle,
    die alle Fenster kennt: PTYs, Datenbank, HTTP-Server, CLI-Empfang,
-   Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks. Rust
+   Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks,
+   Selbst-Update (`updater.rs`: ein Prüf-, Download- und Installationszustand
+   für die ganze App). Rust
    führt eine Tabelle `terminalId → windowId` (gefüllt beim Spawn, der immer
    aus einem Fenster kommt) und routet: Nachricht mit `terminalId` →
    `emit_to(window)`; globale Aktion ohne Ziel → das fokussierte Fenster;
-   Config-Änderung → Broadcast (der eine Fall, in dem Broadcast richtig
-   ist). Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
+   Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
+   Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
+   Das Feature `updater` fragt aus jedem Fenster nach Prüfungen; Rust
+   beantwortet dicht aufeinanderfolgende aus dem letzten Ergebnis und lädt
+   nie doppelt. Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
    `platform/` (`Window`, `Messaging`); keine Schicht darüber weiß, wie
    viele Fenster es gibt — sie sieht nur Nachrichten für sich.
 3. **Eine Session gehört dem Fenster, dessen Webview ihren xterm-Core

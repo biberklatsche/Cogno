@@ -266,6 +266,11 @@ export const defaultSettings = {
         },
       },
     },
+    updater: {
+      mode: "on",
+      order: "90",
+      install: "background",
+    },
   },
   clipboard: {
     read: "allow",

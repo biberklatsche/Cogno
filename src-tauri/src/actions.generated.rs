@@ -85,4 +85,5 @@ pub const COGNO_ACTIONS: &[(&str, &str)] = &[
     ("open_notification", "Open the Notification panel"),
     ("open_process_info", "Open the Process Info panel"),
     ("open_terminal_search", "Open the Terminal Search panel"),
+    ("open_updater", "Open the Updates panel"),
 ];

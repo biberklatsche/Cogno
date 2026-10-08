@@ -974,3 +974,21 @@ Notify when an agent becomes ready/idle.
 Notify when an agent reports an error.
 
 **Type:** boolean · **Default:** `false`
+
+### `feature.updater.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry, and Cogno no longer asks for updates.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.updater.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `90`
+
+### `feature.updater.install`
+
+`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
+
+**Type:** `background` | `ask` · **Default:** `background`

@@ -5,6 +5,7 @@ pub mod cli;
 pub mod commands;
 mod db;
 mod http_server;
+mod updater;
 
 use cli::Cli;
 use commands::pty::PtyState;
@@ -44,6 +45,7 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             use clap::Parser;
             if let Ok(cli) = Cli::try_parse_from(argv) {
@@ -101,9 +103,13 @@ pub fn run(cli: Cli) {
             crate::commands::notification::send_os_notification,
             crate::commands::clipboard_image::save_clipboard_image_to_file,
             crate::http_server::start_http_server,
-            crate::http_server::set_runnable_actions
+            crate::http_server::set_runnable_actions,
+            crate::updater::updater_state,
+            crate::updater::updater_check,
+            crate::updater::updater_install
         ])
         .setup(move |app| {
+            crate::updater::manage(app.handle());
             std::thread::spawn(crate::commands::clipboard_image::remove_leftover_paste_files);
 
             let webview_window_builder =
