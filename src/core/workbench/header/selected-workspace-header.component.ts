@@ -119,7 +119,6 @@ import {
         min-width: 20px;
         height: 20px;
         font-size: 14px;
-        line-height: 22px;
       }
 
       .selected-workspace-header__chevron {

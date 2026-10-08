@@ -31,7 +31,7 @@ export interface LetterBadge {
     "[style.background-color]": "badge.color",
   },
   template: `
-    {{ badge.letter }}
+    <span class="letter">{{ badge.letter }}</span>
     @if (badge.marker; as marker) {
       <span
         class="marker"
@@ -56,8 +56,13 @@ export interface LetterBadge {
         border-radius: 0.3rem;
         display: grid;
         place-items: center;
-        line-height: 26px;
+        line-height: 1;
         text-transform: capitalize;
+      }
+
+      /* Trims the line box to cap height and baseline, so the capital sits in the optical centre whatever the font. */
+      .letter {
+        text-box: trim-both cap alphabetic;
       }
 
       .marker {
