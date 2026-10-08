@@ -105,6 +105,8 @@ async function main() {
   if (!parsedArguments.skipBuild) {
     runBuild({
       currentPlatformName,
+      releaseChannel,
+      releaseSettings,
       releaseTag,
       releaseVersion,
     });
@@ -372,6 +374,10 @@ function loadReleaseSettings({ releaseChannel }) {
       secretAccessKey: parsedSettings.storage?.secretAccessKey,
     },
     settingsFilePath,
+    updater: {
+      privateKeyPassword: parsedSettings.updater?.privateKeyPassword,
+      privateKeyPath: parsedSettings.updater?.privateKeyPath,
+    },
     // "updater.notesFilePath" is the legacy location of this setting; it feeds latest.json.
     notesFilePath: parsedSettings.updater?.notesFilePath ?? releaseChannelSettings.notesFilePath,
     requiredPlatforms: normalizeRequiredPlatforms(
@@ -524,45 +530,121 @@ function recreateDirectory(directoryPath) {
   mkdirSync(directoryPath, { recursive: true });
 }
 
-function runBuild({ currentPlatformName, releaseTag, releaseVersion }) {
+function runBuild({
+  currentPlatformName,
+  releaseChannel,
+  releaseSettings,
+  releaseTag,
+  releaseVersion,
+}) {
   console.log("");
   console.log(`Building ${releaseVersion} for ${currentPlatformName} from tag ${releaseTag}`);
 
   cleanBundleOutputDirectory();
 
+  const buildConfig = createChannelBuildConfig(releaseChannel);
+  const buildEnvironment = {
+    ...process.env,
+    ...createUpdaterSigningEnvironment(releaseSettings),
+  };
+
   if (currentPlatformName === "macos") {
-    buildMacosReleaseArtifacts();
+    buildMacosReleaseArtifacts({ buildConfig, buildEnvironment });
     return;
   }
 
-  runCommand("pnpm", ["build:desktop"], {
-    environmentVariables: process.env,
-    runnerType: "pnpm-run",
-  });
+  runTauriBuild({ buildConfig, buildEnvironment });
 }
 
-function buildMacosReleaseArtifacts() {
-  const dmgDirectoryPath = join(tauriBundleDirectoryPath, "dmg");
-  const tauriMacosBuildConfig = createTauriMacosBuildConfig();
-  const macosBuildEnvironment = createMacosBuildEnvironment();
+/**
+ * The Tauri config for a release: updater artifacts are built and signed (only
+ * here, so a plain `tauri build` needs no key), and the app asks the update
+ * feed of the channel it was built for.
+ */
+function createChannelBuildConfig(releaseChannel) {
+  const tauriConfig = JSON.parse(readFileSync(tauriConfigPath, "utf-8"));
+  const updaterConfig = tauriConfig.plugins?.updater;
+
+  if (!Array.isArray(updaterConfig?.endpoints) || updaterConfig.endpoints.length === 0) {
+    throw new Error(`No updater endpoints in ${tauriConfigPath}.`);
+  }
+
+  return {
+    ...tauriConfig,
+    bundle: {
+      ...tauriConfig.bundle,
+      createUpdaterArtifacts: true,
+    },
+    plugins: {
+      ...tauriConfig.plugins,
+      updater: {
+        ...updaterConfig,
+        endpoints: updaterConfig.endpoints.map((endpoint) =>
+          endpoint.replace("/update/release/", `/update/${releaseChannel}/`),
+        ),
+      },
+    },
+  };
+}
+
+/** Tauri signs every updater artifact with this key; the app checks it with the public key in its config. */
+function createUpdaterSigningEnvironment(releaseSettings) {
+  const { privateKeyPassword, privateKeyPath } = releaseSettings.updater;
+
+  if (typeof privateKeyPath !== "string" || privateKeyPath.length === 0) {
+    throw new Error(
+      `Release builds sign their updates and need "updater.privateKeyPath" in ${releaseSettings.settingsFilePath}.`,
+    );
+  }
+
+  const resolvedPrivateKeyPath = expandHomeDirectory(privateKeyPath);
+
+  if (!existsSync(resolvedPrivateKeyPath)) {
+    throw new Error(`Updater signing key not found: ${resolvedPrivateKeyPath}`);
+  }
+
+  return {
+    TAURI_SIGNING_PRIVATE_KEY: readFileSync(resolvedPrivateKeyPath, "utf-8"),
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD: privateKeyPassword ?? "",
+  };
+}
+
+function runTauriBuild({ buildConfig, buildEnvironment, bundles }) {
   const temporaryConfigDirectoryPath = mkdtempSync(join(tmpdir(), "cogno-tauri-config-"));
-  const temporaryConfigPath = join(temporaryConfigDirectoryPath, "tauri.macos.build.json");
+  const temporaryConfigPath = join(temporaryConfigDirectoryPath, "tauri.build.json");
 
   try {
-    console.log("");
-    console.log("Building macOS app bundle and DMG");
-    writeFileSync(temporaryConfigPath, JSON.stringify(tauriMacosBuildConfig, null, 2));
+    writeFileSync(temporaryConfigPath, JSON.stringify(buildConfig, null, 2));
 
     runCommand(
       "pnpm",
-      ["exec", "tauri", "build", "--bundles", "app,dmg", "--config", temporaryConfigPath],
+      [
+        "exec",
+        "tauri",
+        "build",
+        ...(bundles === undefined ? [] : ["--bundles", bundles]),
+        "--config",
+        temporaryConfigPath,
+      ],
       {
-        environmentVariables: macosBuildEnvironment,
+        environmentVariables: buildEnvironment,
       },
     );
   } finally {
     rmSync(temporaryConfigDirectoryPath, { force: true, recursive: true });
   }
+}
+
+function buildMacosReleaseArtifacts({ buildConfig, buildEnvironment }) {
+  const dmgDirectoryPath = join(tauriBundleDirectoryPath, "dmg");
+
+  console.log("");
+  console.log("Building macOS app bundle and DMG");
+  runTauriBuild({
+    buildConfig: createTauriMacosBuildConfig(buildConfig),
+    buildEnvironment: createMacosBuildEnvironment(buildEnvironment),
+    bundles: "app,dmg",
+  });
 
   const discoveredDmgPath = resolveNewestMatchingFilePath({
     directoryPath: dmgDirectoryPath,
@@ -602,9 +684,8 @@ function buildMacosReleaseArtifacts() {
   runCommand("xcrun", ["stapler", "staple", discoveredDmgPath]);
 }
 
-function createTauriMacosBuildConfig() {
+function createTauriMacosBuildConfig(tauriConfig) {
   const entitlementsPath = resolve("src-tauri", "entitlements.plist");
-  const tauriConfig = JSON.parse(readFileSync(tauriConfigPath, "utf-8"));
   const appleSigningIdentity = resolveAppleSigningIdentity();
   const macosBundleConfig = {
     ...(tauriConfig.bundle?.macOS ?? {}),
@@ -653,11 +734,11 @@ function resolveAppleSigningIdentity() {
   return appleSigningIdentity;
 }
 
-function createMacosBuildEnvironment() {
+function createMacosBuildEnvironment(buildEnvironment) {
   const appleCredentials = resolveAppleCredentials();
   const appleSigningIdentity = resolveAppleSigningIdentity();
   const macosBuildEnvironment = {
-    ...process.env,
+    ...buildEnvironment,
   };
 
   if (appleCredentials !== undefined) {
@@ -736,11 +817,16 @@ function collectArtifacts({ currentPlatformName, releaseOutputDirectoryPath, rel
 
     copiedArtifactFileNames.add(targetArtifactFileName);
 
+    const updaterTargets = resolveUpdaterTargets(currentPlatformName, currentArtifactKind);
+
     collectedArtifacts.push({
       fileName: targetArtifactFileName,
       kind: currentArtifactKind,
       path: targetArtifactPath,
+      signature:
+        updaterTargets.length > 0 ? readUpdaterSignature(currentArtifactPath) : undefined,
       sourcePath: currentArtifactPath,
+      updaterTargets,
     });
   }
 
@@ -790,7 +876,7 @@ function findBundleArtifacts({ currentPlatformName, sourceBundleDirectoryPath })
     }
 
     if (currentPlatformName === "macos") {
-      return currentEntryPath.endsWith(".dmg");
+      return currentEntryPath.endsWith(".dmg") || currentEntryPath.endsWith(".app.tar.gz");
     }
 
     if (currentPlatformName === "windows") {
@@ -823,6 +909,10 @@ function determineArtifactKind(artifactPath) {
 
   if (artifactPath.endsWith(".AppImage")) {
     return "appimage";
+  }
+
+  if (artifactPath.endsWith(".app.tar.gz")) {
+    return "app-update";
   }
 
   if (artifactPath.endsWith(".tar.gz")) {
@@ -862,6 +952,47 @@ function createTargetArtifactFileName({
     ["cogno", releaseVersion, currentPlatformName, process.arch, currentArtifactKind].join("-") +
     currentArtifactExtension
   );
+}
+
+/**
+ * The keys under which the updater finds an artifact in update.json. The
+ * updater looks for `{os}-{arch}-{installer}` first, then `{os}-{arch}`; the
+ * plain key goes to the package an installation of unknown type can still
+ * use. Cogno itself only installs when the type is known (updater.rs).
+ */
+function resolveUpdaterTargets(currentPlatformName, artifactKind) {
+  const tauriArchitecture = { arm64: "aarch64", x64: "x86_64" }[process.arch];
+
+  if (tauriArchitecture === undefined) {
+    throw new Error(`Unsupported architecture "${process.arch}" for updates.`);
+  }
+
+  const updaterInstallersByPlatform = {
+    linux: { appimage: ["appimage", true], deb: ["deb", false], rpm: ["rpm", false] },
+    macos: { "app-update": ["app", true] },
+    windows: { msi: ["msi", false], nsis: ["nsis", true] },
+  };
+  const updaterOs = { linux: "linux", macos: "darwin", windows: "windows" }[currentPlatformName];
+  const updaterInstaller = updaterInstallersByPlatform[currentPlatformName]?.[artifactKind];
+
+  if (updaterInstaller === undefined) {
+    return [];
+  }
+
+  const [installerName, isPlainTarget] = updaterInstaller;
+  const target = `${updaterOs}-${tauriArchitecture}`;
+
+  return isPlainTarget ? [`${target}-${installerName}`, target] : [`${target}-${installerName}`];
+}
+
+function readUpdaterSignature(artifactPath) {
+  const signaturePath = `${artifactPath}.sig`;
+
+  if (!existsSync(signaturePath)) {
+    throw new Error(`Updater signature missing: ${signaturePath}`);
+  }
+
+  return readFileSync(signaturePath, "utf-8").trim();
 }
 
 function createMacosApplicationArchive(sourceApplicationPath, targetArchivePath) {
@@ -942,7 +1073,9 @@ function createManifest({
       fileName: currentArtifact.fileName,
       kind: currentArtifact.kind,
       relativePath: currentArtifact.fileName,
+      signature: currentArtifact.signature,
       sourcePath: relative(process.cwd(), currentArtifact.sourcePath),
+      updaterTargets: currentArtifact.updaterTargets,
     })),
     channel: releaseChannel,
     createdAt: new Date().toISOString(),
@@ -1105,6 +1238,28 @@ async function finalizeRelease({
       releaseChannel,
       remoteStorageSettings,
     }),
+  });
+
+  // Last: from here on, installed apps see the new version.
+  const updateManifest = createUpdateManifest({
+    publishedPlatformManifests,
+    releaseNotes,
+    releaseVersion,
+  });
+
+  writeFileSync(
+    join(finalizedReleaseDirectoryPath, "update.json"),
+    JSON.stringify(updateManifest, null, 2),
+  );
+
+  await uploadJsonDocument({
+    documentContent: updateManifest,
+    releaseSettings,
+    targetRelativePath: joinRemotePathSegments([
+      remoteStorageSettings.basePath,
+      releaseChannel,
+      "update.json",
+    ]),
   });
 
   return finalizedReleaseDirectoryPath;
@@ -1393,6 +1548,43 @@ function createLatestManifest({
     publishedAt: new Date().toISOString(),
     requiredPlatforms: releaseSettings.requiredPlatforms,
     tag: releaseTag,
+    version: releaseVersion,
+  };
+}
+
+/** The update feed in the format of the Tauri updater's static JSON. */
+function createUpdateManifest({ publishedPlatformManifests, releaseNotes, releaseVersion }) {
+  const platforms = {};
+
+  for (const currentManifest of publishedPlatformManifests) {
+    const updaterArtifacts = currentManifest.artifacts.filter(
+      (currentArtifact) => (currentArtifact.updaterTargets ?? []).length > 0,
+    );
+
+    if (updaterArtifacts.length === 0) {
+      throw new Error(`No updater artifact staged for platform "${currentManifest.platform}".`);
+    }
+
+    for (const currentArtifact of updaterArtifacts) {
+      if (currentArtifact.signature === undefined || currentArtifact.downloadUrl === undefined) {
+        throw new Error(
+          `Updater artifact "${currentArtifact.fileName}" needs a signature and a public URL ("storage.publicBaseUrl").`,
+        );
+      }
+
+      for (const currentTarget of currentArtifact.updaterTargets) {
+        platforms[currentTarget] = {
+          signature: currentArtifact.signature,
+          url: currentArtifact.downloadUrl,
+        };
+      }
+    }
+  }
+
+  return {
+    notes: releaseNotes ?? "",
+    platforms,
+    pub_date: new Date().toISOString(),
     version: releaseVersion,
   };
 }
