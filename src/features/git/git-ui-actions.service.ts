@@ -15,7 +15,7 @@ import {
   GitResetMode,
 } from "./git-operations.service";
 import { GitRepositoryService } from "./git-repository.service";
-import { GitViewState } from "./git-view-state.service";
+import { GitGraphColumn, GitViewState } from "./git-view-state.service";
 import {
   GitBranch,
   GitCommit,
@@ -93,18 +93,23 @@ export class GitUiActions {
     await this.pushBranch(branch);
   }
 
-  async createBranchAt(startPoint: string, label: string): Promise<void> {
-    const result = await this.prompt(`Create branch at ${label}`, {
-      fields: [{ key: "name", label: "Branch name", required: true }],
-      checkboxes: [{ key: "checkout", label: "Check out the new branch", value: true }],
-      confirmLabel: "Create branch",
-    });
-    if (!result) return;
-    void this.operations.createBranch(
-      result.values["name"] ?? "",
-      startPoint,
-      result.checks["checkout"] ?? false,
-    );
+  /** Open the name field in the commit's graph row, as GitKraken does. */
+  beginBranch(sha: string | null): void {
+    if (!sha) return;
+    this.view.revealCommit(sha);
+    this.view.newBranchAt.set(sha);
+  }
+
+  /** Create and check out the branch named in the graph row; an empty name just closes it. */
+  finishBranch(name: string): void {
+    const sha = this.view.newBranchAt();
+    this.view.newBranchAt.set(null);
+    if (!sha || !name.trim()) return;
+    void this.operations.createBranch(name.trim(), sha, true);
+  }
+
+  cancelBranch(): void {
+    this.view.newBranchAt.set(null);
   }
 
   stash(): void {
@@ -141,6 +146,39 @@ export class GitUiActions {
     void this.operations.init();
   }
 
+  /** Column settings as GitKraken offers them on the graph header: tick what is shown. */
+  openColumnMenu(event: MouseEvent): void {
+    const columns: ReadonlyArray<readonly [GitGraphColumn, string]> = [
+      ["refs", "Branch / Tag"],
+      ["graph", "Graph"],
+      ["author", "Author"],
+      ["date", "Date / Time"],
+      ["sha", "SHA"],
+    ];
+    const hidden = this.view.hiddenColumns();
+    this.openMenu(event, [
+      { label: "Columns", header: true },
+      ...columns.map(
+        ([column, label]): ContextMenuItem => ({
+          label,
+          toggle: true,
+          toggled: !hidden.has(column),
+          closeOnSelect: false,
+          action: (item) => {
+            this.view.hiddenColumns.update((current) => {
+              const next = new Set(current);
+              if (next.has(column)) next.delete(column);
+              else next.add(column);
+              return next;
+            });
+            // The menu stays open; its switch mirrors the new state.
+            if (item) item.toggled = !item.toggled;
+          },
+        }),
+      ),
+    ]);
+  }
+
   // Context menus
 
   openCommitMenu(event: MouseEvent, commit: GitCommit): void {
@@ -157,7 +195,7 @@ export class GitUiActions {
       ),
       item("Checkout this commit", () => this.operations.checkoutCommit(commit.sha)),
       separator(),
-      item("Create branch here", () => this.createBranchAt(commit.sha, short)),
+      item("Create branch here", () => this.beginBranch(commit.sha)),
       item("Create tag here", () => this.createTagAt(commit.sha, short)),
       separator(),
       item(
@@ -195,11 +233,18 @@ export class GitUiActions {
             ),
           ]),
       separator(),
-      item("Create branch here", () => this.createBranchAt(branch.name, branch.name)),
+      item("Create branch here", () => this.beginBranch(branch.sha)),
       item("Create tag here", () => this.createTagAt(branch.name, branch.name)),
       separator(),
       item(`Rename ${branch.name}`, () => this.renameBranch(branch)),
       item(`Delete ${branch.name}`, () => this.deleteBranch(branch), isHead),
+      // A remote branch of the same name on the same commit shares this label in the graph.
+      ...this.repository
+        .refs()
+        .remoteBranches.filter((r) => r.shortName === branch.name && r.sha === branch.sha)
+        .map((remoteBranch) =>
+          item(`Delete ${remoteBranch.name}`, () => this.deleteRemoteBranch(remoteBranch)),
+        ),
       separator(),
       item("Copy branch name", () => this.clipboard.writeText(branch.name)),
     ]);
@@ -219,7 +264,7 @@ export class GitUiActions {
         this.operations.rebase(remoteBranch.name),
       ),
       separator(),
-      item("Create branch here", () => this.createBranchAt(remoteBranch.name, remoteBranch.name)),
+      item("Create branch here", () => this.beginBranch(remoteBranch.sha)),
       item(`Delete ${remoteBranch.name}`, () => this.deleteRemoteBranch(remoteBranch)),
       separator(),
       item("Copy branch name", () => this.clipboard.writeText(remoteBranch.name)),
@@ -239,7 +284,7 @@ export class GitUiActions {
     const remotes = this.repository.remotes();
     this.openMenu(event, [
       item(`Checkout the commit at ${tag.name}`, () => this.operations.checkoutCommit(tag.name)),
-      item("Create branch here", () => this.createBranchAt(tag.name, tag.name)),
+      item("Create branch here", () => this.beginBranch(tag.sha)),
       separator(),
       ...remotes.map((remote) =>
         item(`Push ${tag.name} to ${remote.name}`, () =>

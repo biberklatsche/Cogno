@@ -192,23 +192,44 @@ describe("parseCommitDetail", () => {
 });
 
 describe("buildRefLabels", () => {
-  it("groups labels by commit and marks the checked-out branch", () => {
+  it("groups labels by commit, marks the checked-out branch and folds its remote in", () => {
     const labels = buildRefLabels(
       {
         branches: [
           { name: "main", sha: "c1", upstream: null, ahead: 0, behind: 0, upstreamGone: false },
         ],
-        remoteBranches: [{ name: "origin/main", remote: "origin", shortName: "main", sha: "c1" }],
+        remoteBranches: [
+          { name: "origin/main", remote: "origin", shortName: "main", sha: "c1" },
+          { name: "origin/dev", remote: "origin", shortName: "dev", sha: "c1" },
+        ],
         tags: [{ name: "v1", sha: "c2" }],
       },
       { sha: "c1", branch: "main" },
     );
 
     expect(labels.get("c1")).toEqual([
-      { kind: "branch", name: "main", isHead: true },
-      { kind: "remote", name: "origin/main", isHead: false },
+      { kind: "branch", name: "main", isHead: true, remotes: ["origin/main"] },
+      { kind: "remote", name: "origin/dev", isHead: false, remotes: [] },
     ]);
-    expect(labels.get("c2")).toEqual([{ kind: "tag", name: "v1", isHead: false }]);
+    expect(labels.get("c2")).toEqual([{ kind: "tag", name: "v1", isHead: false, remotes: [] }]);
+  });
+
+  it("keeps a remote branch apart when it is on another commit than the local one", () => {
+    const labels = buildRefLabels(
+      {
+        branches: [
+          { name: "main", sha: "c2", upstream: null, ahead: 1, behind: 0, upstreamGone: false },
+        ],
+        remoteBranches: [{ name: "origin/main", remote: "origin", shortName: "main", sha: "c1" }],
+        tags: [],
+      },
+      { sha: "c2", branch: "main" },
+    );
+
+    expect(labels.get("c1")).toEqual([
+      { kind: "remote", name: "origin/main", isHead: false, remotes: [] },
+    ]);
+    expect(labels.get("c2")?.[0]?.remotes).toEqual([]);
   });
 });
 

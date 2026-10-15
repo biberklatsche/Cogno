@@ -221,7 +221,11 @@ export function parseCommitDetail(
   };
 }
 
-/** The labels each commit carries in the graph, keyed by commit sha. */
+/**
+ * The labels each commit carries in the graph, keyed by commit sha. A remote
+ * branch of the same name on the same commit folds into the local branch's
+ * label, as GitKraken shows it: one name, both icons.
+ */
 export function buildRefLabels(refs: GitRefs, head: GitHead): Map<string, GitRefLabel[]> {
   const labels = new Map<string, GitRefLabel[]>();
   const add = (sha: string, label: GitRefLabel) => {
@@ -229,14 +233,25 @@ export function buildRefLabels(refs: GitRefs, head: GitHead): Map<string, GitRef
     if (list) list.push(label);
     else labels.set(sha, [label]);
   };
+  const folded = new Set<string>();
   for (const branch of refs.branches) {
-    add(branch.sha, { kind: "branch", name: branch.name, isHead: branch.name === head.branch });
+    const remotes = refs.remoteBranches
+      .filter((remote) => remote.shortName === branch.name && remote.sha === branch.sha)
+      .map((remote) => remote.name);
+    for (const name of remotes) folded.add(name);
+    add(branch.sha, {
+      kind: "branch",
+      name: branch.name,
+      isHead: branch.name === head.branch,
+      remotes,
+    });
   }
   for (const remoteBranch of refs.remoteBranches) {
-    add(remoteBranch.sha, { kind: "remote", name: remoteBranch.name, isHead: false });
+    if (folded.has(remoteBranch.name)) continue;
+    add(remoteBranch.sha, { kind: "remote", name: remoteBranch.name, isHead: false, remotes: [] });
   }
   for (const tag of refs.tags) {
-    add(tag.sha, { kind: "tag", name: tag.name, isHead: false });
+    add(tag.sha, { kind: "tag", name: tag.name, isHead: false, remotes: [] });
   }
   return labels;
 }

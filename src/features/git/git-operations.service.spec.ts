@@ -42,7 +42,7 @@ describe("GitOperationsService", () => {
   const argsOfLastRun = () => run.mock.calls.at(-1)?.[0];
 
   it("commits summary and description as one message and re-reads the repository", async () => {
-    await service.commit("Fix bug ", " Details\nmore ", false);
+    await service.commit("Fix bug ", " Details\nmore ");
 
     expect(argsOfLastRun()).toEqual(["commit", "-m", "Fix bug\n\nDetails\nmore"]);
     expect(refresh).toHaveBeenCalled();

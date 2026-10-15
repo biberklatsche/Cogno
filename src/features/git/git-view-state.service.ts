@@ -31,6 +31,10 @@ export class GitViewState {
   readonly pullMode = signal<GitPullMode>("merge");
   /** Column widths the user dragged, in pixels; a column not listed has its default. */
   readonly columnWidths = signal<Readonly<Partial<Record<GitGraphColumn, number>>>>({});
+  /** Columns the user switched off; the message column cannot be. */
+  readonly hiddenColumns = signal<ReadonlySet<GitGraphColumn>>(new Set());
+  /** The commit a new branch is being named at, inline in its graph row. */
+  readonly newBranchAt = signal<string | null>(null);
   /** A commit the graph should scroll to; cleared by the graph once it did. */
   readonly reveal = signal<string | null>(null);
 

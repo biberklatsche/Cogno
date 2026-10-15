@@ -95,6 +95,8 @@ export type GitRefLabel = {
   readonly name: string;
   /** The branch HEAD points at. */
   readonly isHead: boolean;
+  /** Remote branches of the same name on the same commit, folded into this label. */
+  readonly remotes: ReadonlyArray<string>;
 };
 
 /** A multi-step operation git stopped in, waiting for the user. */

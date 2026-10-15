@@ -123,26 +123,16 @@ export class GitOperationsService {
     return this.git(["add", "--", path], "Mark resolved failed");
   }
 
-  commit(summary: string, description: string, amend: boolean): Promise<GitOperationOutcome> {
+  commit(summary: string, description: string): Promise<GitOperationOutcome> {
     const message = description.trim()
       ? `${summary.trim()}\n\n${description.trim()}`
       : summary.trim();
-    return this.git(
-      ["commit", ...(amend ? ["--amend"] : []), "-m", message],
-      amend ? "Amend failed" : "Commit failed",
-      { success: amend ? "Commit amended" : "Committed" },
-    );
+    return this.git(["commit", "-m", message], "Commit failed", { success: "Committed" });
   }
 
   /** Put a file back the way it is in `ref`, in the working tree and the index. */
   restoreFile(ref: string, path: string): Promise<GitOperationOutcome> {
     return this.git(["checkout", ref, "--", path], "Restore failed");
-  }
-
-  /** The full message of the last commit, to edit when amending. */
-  async lastCommitMessage(): Promise<string> {
-    const result = await this.repository.run(["log", "-1", "--format=%B"]);
-    return result?.exitCode === 0 ? result.stdout.trimEnd() : "";
   }
 
   // Branches and commits

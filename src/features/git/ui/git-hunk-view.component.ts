@@ -39,16 +39,16 @@ export type GitHunkSelection = {
               <span class="small subtle">{{ selectedIn(hunkIndex) }} selected</span>
               <button type="button" class="button small" (click)="clearSelection()">Clear</button>
               @if (actions() === "unstaged") {
-                <button type="button" class="button small" (click)="discard.emit(selection(hunkIndex))">Discard Lines</button>
-                <button type="button" class="button small primary" (click)="stage.emit(selection(hunkIndex))">Stage Lines</button>
+                <button type="button" class="button small discard" (click)="discard.emit(selection(hunkIndex))">Discard Lines</button>
+                <button type="button" class="button small stage" (click)="stage.emit(selection(hunkIndex))">Stage Lines</button>
               } @else {
-                <button type="button" class="button small primary" (click)="unstage.emit(selection(hunkIndex))">Unstage Lines</button>
+                <button type="button" class="button small unstage" (click)="unstage.emit(selection(hunkIndex))">Unstage Lines</button>
               }
             } @else if (actions() === "unstaged") {
-              <button type="button" class="button small" (click)="discard.emit({ hunk, lines: none })">Discard Hunk</button>
-              <button type="button" class="button small primary" (click)="stage.emit({ hunk, lines: none })">Stage Hunk</button>
+              <button type="button" class="button small discard" (click)="discard.emit({ hunk, lines: none })">Discard Hunk</button>
+              <button type="button" class="button small stage" (click)="stage.emit({ hunk, lines: none })">Stage Hunk</button>
             } @else {
-              <button type="button" class="button small primary" (click)="unstage.emit({ hunk, lines: none })">Unstage Hunk</button>
+              <button type="button" class="button small unstage" (click)="unstage.emit({ hunk, lines: none })">Unstage Hunk</button>
             }
           }
         </div>

@@ -92,12 +92,9 @@ describe("GitRepositoryService", () => {
     expect(service.refs().branches.map((b) => b.name)).toEqual(["main"]);
     expect(service.remotes()).toEqual([{ name: "origin", url: "git@x:y.git" }]);
     expect(service.commits().map((c) => c.sha)).toEqual(["c1"]);
-    expect(
-      service
-        .refLabels()
-        .get("c1")
-        ?.map((label) => label.name),
-    ).toEqual(["main", "origin/main"]);
+    expect(service.refLabels().get("c1")).toEqual([
+      { kind: "branch", name: "main", isHead: true, remotes: ["origin/main"] },
+    ]);
   });
 
   it("runs every repository command in the repository root", async () => {

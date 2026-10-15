@@ -54,7 +54,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                 [disabled]="unstaged().length === 0" (click)="actions.discardAllUnstaged()">
           <app-icon name="mdiTrashCanOutline"></app-icon>
         </button>
-        <button type="button" class="button small" [disabled]="unstaged().length === 0" (click)="operations.stageAll()">
+        <button type="button" class="button small stage" [disabled]="unstaged().length === 0" (click)="operations.stageAll()">
           Stage All Changes
         </button>
       </div>
@@ -73,7 +73,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           Staged Files ({{ status().staged.length }})
         </button>
         <span class="grow"></span>
-        <button type="button" class="button small" [disabled]="status().staged.length === 0" (click)="operations.unstageAll()">
+        <button type="button" class="button small unstage" [disabled]="status().staged.length === 0" (click)="operations.unstageAll()">
           Unstage All Changes
         </button>
       </div>
@@ -91,11 +91,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
              [value]="summary()" (input)="summary.set(value($event))" />
       <textarea class="text-input description" placeholder="Description"
                 [value]="description()" (input)="description.set(value($event))"></textarea>
-      <label class="amend">
-        <input type="checkbox" [checked]="amend()" [disabled]="!repository.head().sha" (change)="toggleAmend($event)" />
-        Amend previous commit
-      </label>
-      <button type="submit" class="button primary commit-button" [disabled]="!canCommit()">
+      <button type="submit" class="button commit commit-button" [disabled]="!canCommit()">
         {{ commitLabel() }}
       </button>
     </form>
@@ -128,11 +124,6 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         max-height: 160px;
         resize: vertical;
       }
-      .amend {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-      }
       .commit-button { align-self: stretch; }
     `,
   ],
@@ -143,17 +134,15 @@ export class GitWipPanelComponent {
 
   readonly summary = signal("");
   readonly description = signal("");
-  readonly amend = signal(false);
   private readonly closedSections = signal<ReadonlySet<GitWipFileGroup>>(new Set());
 
   readonly canCommit = computed(
     () =>
       this.summary().trim().length > 0 &&
       this.status().conflicted.length === 0 &&
-      (this.status().staged.length > 0 || this.amend()),
+      this.status().staged.length > 0,
   );
   readonly commitLabel = computed(() => {
-    if (this.amend()) return "Amend Previous Commit";
     const staged = this.status().staged.length;
     return staged === 0
       ? "Stage Changes to Commit"
@@ -197,24 +186,12 @@ export class GitWipPanelComponent {
     for (const path of paths) void this.operations.markResolved(path);
   }
 
-  async toggleAmend(event: Event): Promise<void> {
-    const amend = (event.target as HTMLInputElement).checked;
-    this.amend.set(amend);
-    // Amending starts from the last commit's message, as git commit --amend would.
-    if (amend && !this.summary().trim() && !this.description().trim()) {
-      const [summary = "", ...rest] = (await this.operations.lastCommitMessage()).split("\n");
-      this.summary.set(summary);
-      this.description.set(rest.join("\n").trim());
-    }
-  }
-
   async commit(): Promise<void> {
     if (!this.canCommit()) return;
-    const outcome = await this.operations.commit(this.summary(), this.description(), this.amend());
+    const outcome = await this.operations.commit(this.summary(), this.description());
     if (outcome !== "ok") return;
     this.summary.set("");
     this.description.set("");
-    this.amend.set(false);
     this.view.closeDiff();
   }
 

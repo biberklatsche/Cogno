@@ -36,6 +36,7 @@ export class SideMenuStatePersistenceService {
           is_pinned: selectedItem?.pinned ? 1 : 0,
           displacement: displacement ? 1 : 0,
           panel_width_pixels: panelWidthInPixels,
+          is_expanded: selectedItem?.expanded ? 1 : 0,
         });
       });
   }
@@ -56,6 +57,9 @@ export class SideMenuStatePersistenceService {
       this.sideMenuService.open(state.selected_item_label);
       if (state.is_pinned && !this.sideMenuService.selectedItem()?.pinned) {
         this.sideMenuService.togglePin();
+      }
+      if (state.is_expanded && !this.sideMenuService.selectedItem()?.expanded) {
+        this.sideMenuService.toggleExpanded();
       }
     }
   }

@@ -9,16 +9,9 @@ export type GitPromptField = {
   readonly required?: boolean;
 };
 
-export type GitPromptCheckbox = {
-  readonly key: string;
-  readonly label: string;
-  readonly value: boolean;
-};
-
 export type GitPromptDialogData = {
   readonly message?: string;
   readonly fields: ReadonlyArray<GitPromptField>;
-  readonly checkboxes?: ReadonlyArray<GitPromptCheckbox>;
   readonly confirmLabel: string;
   /** Called on every edit of a field, to derive other fields from it (clone URL -> folder). */
   readonly derive?: (key: string, values: Record<string, string>) => Record<string, string>;
@@ -26,10 +19,9 @@ export type GitPromptDialogData = {
 
 export type GitPromptResult = {
   readonly values: Readonly<Record<string, string>>;
-  readonly checks: Readonly<Record<string, boolean>>;
 };
 
-/** A small form: a few text fields and checkboxes, confirmed or dismissed. */
+/** A small form: a few text fields, confirmed or dismissed. */
 @Component({
   selector: "app-git-prompt-dialog",
   standalone: true,
@@ -51,16 +43,6 @@ export type GitPromptResult = {
             [value]="fieldValue(field.key)"
             (input)="onInput(field.key, $event)"
           />
-        </label>
-      }
-      @for (checkbox of data.checkboxes ?? []; track checkbox.key) {
-        <label class="check">
-          <input
-            type="checkbox"
-            [checked]="checks()[checkbox.key]"
-            (change)="onCheck(checkbox.key, $event)"
-          />
-          <span>{{ checkbox.label }}</span>
         </label>
       }
       <div class="actions">
@@ -101,11 +83,6 @@ export type GitPromptResult = {
         outline: none;
         border-color: var(--highlight-color);
       }
-      .check {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
       .actions {
         display: flex;
         justify-content: flex-end;
@@ -116,16 +93,12 @@ export type GitPromptResult = {
 })
 export class GitPromptDialogComponent {
   readonly values = signal<Record<string, string>>({});
-  readonly checks = signal<Record<string, boolean>>({});
 
   constructor(
     private readonly dialogRef: DialogRef<GitPromptResult>,
     @Inject(DIALOG_DATA) readonly data: GitPromptDialogData,
   ) {
     this.values.set(Object.fromEntries(data.fields.map((field) => [field.key, field.value ?? ""])));
-    this.checks.set(
-      Object.fromEntries((data.checkboxes ?? []).map((checkbox) => [checkbox.key, checkbox.value])),
-    );
     queueMicrotask(() =>
       document.querySelector<HTMLInputElement>("app-git-prompt-dialog [data-autofocus]")?.select(),
     );
@@ -146,19 +119,12 @@ export class GitPromptDialogComponent {
     this.values.set({ ...next, ...(this.data.derive?.(key, next) ?? {}) });
   }
 
-  onCheck(key: string, event: Event): void {
-    this.checks.update((checks) => ({
-      ...checks,
-      [key]: (event.target as HTMLInputElement).checked,
-    }));
-  }
-
   confirm(): void {
     if (!this.valid()) return;
     const values = Object.fromEntries(
       Object.entries(this.values()).map(([key, value]) => [key, value.trim()]),
     );
-    this.dialogRef.close({ values, checks: this.checks() });
+    this.dialogRef.close({ values });
   }
 
   dismiss(): void {

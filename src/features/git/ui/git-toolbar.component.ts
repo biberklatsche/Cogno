@@ -26,52 +26,52 @@ import { GIT_SHARED_STYLES } from "./git-styles";
 
     <div class="actions">
       <div class="split">
-        <button type="button" class="button tool" [disabled]="!onBranch() || !!operations.busy()"
+        <button type="button" class="tool" [disabled]="!onBranch() || !!operations.busy()"
                 [appTooltip]="pullTooltip()" (click)="actions.pull()">
-          <app-icon name="mdiCloudDownloadOutline"></app-icon>
           <span class="label">{{ view.pullMode() === "fetch" ? "Fetch" : "Pull" }}</span>
-          @if (behind() > 0) {
-            <span class="count">{{ behind() }}</span>
-          }
+          <span class="icon-row">
+            <app-icon class="tool-icon pull" [name]="pulling() ? 'mdiLoading' : 'mdiCloudDownloadOutline'" [class.spin]="pulling()"></app-icon>
+            @if (behind() > 0) {
+              <span class="count">{{ behind() }}</span>
+            }
+          </span>
         </button>
-        <button type="button" class="button tool caret" appTooltip="Pull options" [disabled]="!!operations.busy()"
+        <button type="button" class="tool caret" appTooltip="Pull options" [disabled]="!!operations.busy()"
                 (click)="actions.openPullMenu($event)">
           <app-icon name="mdiChevronDown"></app-icon>
         </button>
       </div>
-      <button type="button" class="button tool" [disabled]="!onBranch() || !!operations.busy()"
+      <button type="button" class="tool" [disabled]="!onBranch() || !!operations.busy()"
               [appTooltip]="pushTooltip()" (click)="actions.pushCurrentBranch()">
-        <app-icon name="mdiCloudUploadOutline"></app-icon>
         <span class="label">Push</span>
-        @if (ahead() > 0) {
-          <span class="count">{{ ahead() }}</span>
-        }
+        <span class="icon-row">
+          <app-icon class="tool-icon push" [name]="pushing() ? 'mdiLoading' : 'mdiCloudUploadOutline'" [class.spin]="pushing()"></app-icon>
+          @if (ahead() > 0) {
+            <span class="count">{{ ahead() }}</span>
+          }
+        </span>
       </button>
-      <button type="button" class="button tool" appTooltip="Create a branch at HEAD" [disabled]="!repository.head().sha"
-              (click)="actions.createBranchAt('HEAD', repository.head().branch ?? 'HEAD')">
-        <app-icon name="mdiSourceBranch"></app-icon>
+      <button type="button" class="tool" appTooltip="Create a branch at HEAD" [disabled]="!repository.head().sha"
+              (click)="actions.beginBranch(repository.head().sha)">
         <span class="label">Branch</span>
+        <app-icon class="tool-icon branch" name="mdiSourceBranch"></app-icon>
       </button>
-      <button type="button" class="button tool" appTooltip="Stash all changes" [disabled]="repository.changeCount() === 0"
+      <button type="button" class="tool" appTooltip="Stash all changes" [disabled]="repository.changeCount() === 0"
               (click)="actions.stash()">
-        <app-icon name="mdiArchiveArrowDownOutline"></app-icon>
         <span class="label">Stash</span>
+        <app-icon class="tool-icon stash" name="mdiArchiveArrowDownOutline"></app-icon>
       </button>
-      <button type="button" class="button tool" appTooltip="Pop Stash" [disabled]="repository.stashes().length === 0"
+      <button type="button" class="tool" appTooltip="Pop Stash" [disabled]="repository.stashes().length === 0"
               (click)="actions.popLatestStash()">
-        <app-icon name="mdiArchiveArrowUpOutline"></app-icon>
         <span class="label">Pop</span>
+        <app-icon class="tool-icon pop" name="mdiArchiveArrowUpOutline"></app-icon>
       </button>
     </div>
 
     <div class="end">
-      @if (operations.busy(); as busy) {
-        <span class="busy ellipsis subtle">
-          <app-icon class="small-icon spin" name="mdiLoading"></app-icon>{{ busy }}…
-        </span>
-      }
-      <button type="button" class="button icon-button" appTooltip="Clone a repository" (click)="actions.clone()">
-        <app-icon name="mdiDownload"></app-icon>
+      <button type="button" class="button icon-button" appTooltip="Clone a repository"
+              [disabled]="cloning()" (click)="actions.clone()">
+        <app-icon [name]="cloning() ? 'mdiLoading' : 'mdiDownload'" [class.spin]="cloning()"></app-icon>
       </button>
       <button type="button" class="button icon-button" appTooltip="Refresh" [disabled]="repository.loading()"
               (click)="repository.refresh()">
@@ -86,7 +86,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        min-height: 36px;
+        min-height: 44px;
         padding: 0 0.25rem;
         border-bottom: 1px solid var(--git-border);
         container-type: inline-size;
@@ -95,30 +95,70 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        flex: 0 1 auto;
+        flex: 1 1 auto;
         min-width: 4rem;
         font-weight: 500;
       }
       .branch { font-weight: 600; }
-      .actions { display: flex; align-items: center; gap: 2px; margin: 0 auto; }
-      .split { display: flex; }
+      .actions { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+      /* Flat tools as in GitKraken's toolbar: the name above a coloured icon,
+         lifted on hover the way a tab is. Pull and its caret share one shape. */
       .tool {
         display: inline-flex;
+        flex-direction: column;
         align-items: center;
-        gap: 0.25rem;
-        padding: 0.2rem 0.45rem;
+        justify-content: center;
+        gap: 1px;
+        min-width: 3rem;
+        height: 40px;
+        padding: 0 0.5rem;
+        border: 1px solid transparent;
+        border-radius: var(--button-border-radius);
+        background: none;
+        color: var(--git-subtle);
+        font: inherit;
+        cursor: pointer;
+        transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
       }
-      .tool app-icon { width: 1.05rem; height: 1.05rem; }
-      .caret { padding: 0.2rem 0.1rem; }
-      .caret app-icon { width: 0.9rem; height: 0.9rem; }
+      .tool:hover:not(:disabled) {
+        color: var(--foreground-color);
+        border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+      }
+      .tool:disabled { opacity: 0.3; cursor: not-allowed; }
+      .label { font-size: var(--git-font-small); line-height: 1.1; }
+      .icon-row { display: inline-flex; align-items: center; gap: 0.2rem; }
+      .tool-icon { width: 1.25rem; height: 1.25rem; }
+      .tool-icon.pull { color: var(--color-blue); }
+      .tool-icon.push { color: var(--color-green); }
+      .tool-icon.branch { color: var(--color-magenta); }
+      .tool-icon.stash { color: var(--color-yellow); }
+      .tool-icon.pop { color: var(--color-cyan); }
+      .split { display: flex; }
+      .split .tool:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+      .caret {
+        min-width: 0;
+        padding: 0 0.1rem;
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+      }
+      .caret app-icon { width: 1rem; height: 1rem; }
       .count {
         font-size: var(--git-font-small);
+        line-height: 1.2;
         padding: 0 0.3rem;
         border-radius: 8px;
-        background: var(--git-hover);
+        color: var(--background-color);
+        background: var(--highlight-color);
       }
-      .end { display: flex; align-items: center; gap: 2px; min-width: 0; }
-      .busy { display: inline-flex; align-items: center; gap: 0.3rem; max-width: 14rem; }
+      .end {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin-left: 0.5rem;
+        padding-left: 0.5rem;
+        border-left: 1px solid var(--git-border);
+      }
       @container (max-width: 640px) {
         .label { display: none; }
       }
@@ -149,6 +189,11 @@ export class GitToolbarComponent {
   });
 
   readonly toggle = (visible: boolean) => !visible;
+
+  /** The running network operation shows as a spinner in its own button. */
+  readonly pulling = computed(() => /^(Pull|Fetch)/.test(this.operations.busy() ?? ""));
+  readonly pushing = computed(() => /^Push/.test(this.operations.busy() ?? ""));
+  readonly cloning = computed(() => /^Clon/.test(this.operations.busy() ?? ""));
 
   constructor(
     readonly repository: GitRepositoryService,

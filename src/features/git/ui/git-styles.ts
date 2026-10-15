@@ -79,6 +79,28 @@ export const GIT_SHARED_STYLES = `
     letter-spacing: normal;
   }
 
+  /* Stage is green, unstage and discard red, the commit itself a filled green button. */
+  .button.stage { color: var(--color-green); border-color: color-mix(in srgb, var(--color-green) 60%, transparent); }
+  .button.stage:hover:not(:disabled) {
+    border-color: var(--color-green);
+    background: color-mix(in srgb, var(--color-green) 18%, var(--background-color));
+  }
+  .button.unstage, .button.discard { color: var(--color-red); border-color: color-mix(in srgb, var(--color-red) 60%, transparent); }
+  .button.unstage:hover:not(:disabled), .button.discard:hover:not(:disabled) {
+    border-color: var(--color-red);
+    background: color-mix(in srgb, var(--color-red) 18%, var(--background-color));
+  }
+  .button.commit {
+    color: var(--background-color);
+    font-weight: 600;
+    border-color: transparent;
+    background: var(--color-green);
+  }
+  .button.commit:hover:not(:disabled) {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--color-green) 85%, var(--foreground-color));
+  }
+
   .icon-button app-icon { width: 1rem; height: 1rem; }
   .small-icon { width: 14px; height: 14px; flex: 0 0 auto; }
   .icon-button:disabled { opacity: 0.3; cursor: not-allowed; }

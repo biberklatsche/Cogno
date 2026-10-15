@@ -29,14 +29,15 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           <app-icon [name]="view.fileListMode() === 'tree' ? 'mdiFormatListBulleted' : 'mdiFileTree'"></app-icon>
         </button>
       </header>
-      <div class="scroll">
-        <div class="message">
-          <div class="subject">{{ subject() }}</div>
-          @if (body()) {
-            <pre class="body">{{ body() }}</pre>
-          }
-        </div>
-        <div class="meta">
+      <div class="message">
+        <div class="subject">{{ subject() }}</div>
+        @if (body()) {
+          <pre class="body">{{ body() }}</pre>
+        }
+      </div>
+      <div class="meta">
+        <span class="avatar" [appTooltip]="commit.email">{{ initials(commit.author) }}</span>
+        <div class="who">
           <div>
             <strong>{{ commit.author }}</strong>
             <span class="subtle"> authored {{ time(commit.authorTime) }}</span>
@@ -53,9 +54,11 @@ import { GIT_SHARED_STYLES } from "./git-styles";
             </div>
           }
         </div>
-        <div class="section-header">
-          <span>{{ summary() }}</span>
-        </div>
+      </div>
+      <div class="section-header files-header">
+        <span>{{ summary() }}</span>
+      </div>
+      <div class="files">
         <app-git-file-list kind="commit" [files]="commit.files" [mode]="view.fileListMode()"
                            [selectedPath]="selectedPath()"
                            (open)="openDiff($event, commit)"
@@ -71,8 +74,51 @@ import { GIT_SHARED_STYLES } from "./git-styles";
     GIT_SHARED_STYLES,
     `
       :host { display: flex; flex-direction: column; min-height: 0; height: 100%; }
-      .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
-      .message { padding: var(--git-gutter); }
+      /* Three parts, each its own block: the message as a boxed text that
+         scrolls after a few lines, the author line, and the files taking the rest. */
+      .message {
+        flex: 0 0 auto;
+        max-height: calc(6 * 1.5em + 2 * var(--git-gutter));
+        overflow: auto;
+        margin: var(--git-gutter);
+        padding: var(--git-gutter);
+        line-height: 1.5;
+        background: var(--git-hover);
+        border: 1px solid var(--git-border);
+        border-radius: var(--button-border-radius);
+      }
+      /* Avatar on the left, name and parents beside it, as GitKraken lays it out. */
+      .meta {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--git-gutter);
+        padding: 0.4rem var(--git-gutter);
+        border-bottom: 1px solid var(--git-border);
+      }
+      .who { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+      .avatar {
+        flex: 0 0 auto;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--git-font-small);
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        color: var(--background-color);
+        background: var(--highlight-color);
+      }
+      .files-header {
+        flex: 0 0 auto;
+        background: var(--git-hover);
+        border-bottom: 1px solid var(--git-border);
+      }
+      .files { flex: 1 1 auto; min-height: 0; overflow: auto; }
       .subject { font-weight: 600; white-space: pre-wrap; word-break: break-word; }
       .body {
         margin: 0.5rem 0 0;
@@ -80,13 +126,6 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         word-break: break-word;
         font: inherit;
         color: var(--git-subtle);
-      }
-      .meta {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-        padding: 0 var(--git-gutter) var(--git-gutter);
-        border-bottom: 1px solid var(--git-border);
       }
       .parents { display: flex; gap: 0.4rem; align-items: center; }
       .link {
@@ -153,6 +192,14 @@ export class GitCommitPanelComponent {
 
   toggleFileListMode(): void {
     this.view.fileListMode.update((mode) => (mode === "tree" ? "path" : "tree"));
+  }
+
+  /** Up to two letters of the name, as the avatar GitKraken shows next to the author. */
+  initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? "?";
+    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+    return `${first}${last}`.toUpperCase();
   }
 
   time(seconds: number): string {
