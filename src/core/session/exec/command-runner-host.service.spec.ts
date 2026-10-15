@@ -30,6 +30,7 @@ describe("CommandRunnerHostService", () => {
       ["tag", "--list"],
       "C:\\repo\\project",
       undefined,
+      undefined,
     );
     expect(result.exitCode).toBe(0);
   });

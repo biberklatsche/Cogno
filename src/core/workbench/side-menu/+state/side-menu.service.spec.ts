@@ -185,4 +185,22 @@ describe("SideMenuService", () => {
     expect(service.menu().find((item) => item.label === "Workspace")?.pinned).toBe(true);
     expect(service.selectedItem()?.pinned).toBe(true);
   });
+  it("expands the open panel and keeps that per panel when it is re-registered", () => {
+    service.open("Workspace");
+    service.toggleExpanded();
+
+    expect(service.selectedItem()?.expanded).toBe(true);
+
+    service.addMenuItem({ ...menuItem, icon: "mdiCog" });
+    expect(service.menu().find((item) => item.label === "Workspace")?.expanded).toBe(true);
+
+    service.toggleExpanded();
+    expect(service.selectedItem()?.expanded).toBe(false);
+  });
+
+  it("does nothing when expanding without an open panel", () => {
+    service.toggleExpanded();
+
+    expect(service.menu()[0]?.expanded).toBeUndefined();
+  });
 });

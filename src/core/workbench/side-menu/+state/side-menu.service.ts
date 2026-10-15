@@ -11,6 +11,8 @@ export type SideMenuItem = {
   order?: number;
   hidden: boolean;
   pinned: boolean;
+  /** The panel spans the whole terminal area instead of its own width. */
+  expanded?: boolean;
   actionName: ActionName;
   separator?: boolean;
   // Optional component to render in the side "aside" area when this item is active
@@ -61,7 +63,7 @@ export class SideMenuService {
     this._menuItems.update((s) => {
       const index = s.findIndex((s) => s.label === item.label);
       if (index > -1) {
-        s[index] = { ...s[index], ...item, pinned: s[index].pinned };
+        s[index] = { ...s[index], ...item, pinned: s[index].pinned, expanded: s[index].expanded };
         return [...s];
       }
       return [...s, item];
@@ -190,6 +192,16 @@ export class SideMenuService {
     } else if (!newPinned && index > -1) {
       this._pinnedStack.splice(index, 1);
     }
+  }
+
+  toggleExpanded() {
+    const current = this._selectedItem();
+    if (!current) return;
+    const expanded = !current.expanded;
+    this._menuItems.update((items) =>
+      items.map((item) => (item.label === current.label ? { ...item, expanded } : item)),
+    );
+    this._selectedItem.set({ ...current, expanded });
   }
 
   updateIcon(label: string, icon: Icon) {

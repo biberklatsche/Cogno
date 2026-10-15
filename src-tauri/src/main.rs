@@ -8,6 +8,16 @@ use std::collections::HashMap;
 use std::fs;
 
 fn main() {
+    // Started by git or ssh as the askpass helper (see commands/askpass.rs):
+    // the arguments are the prompt, not a Cogno command line.
+    if let Ok(session_id) = std::env::var(cogno_lib::commands::askpass::SESSION_ENV) {
+        let prompt_args: Vec<String> = std::env::args().skip(1).collect();
+        std::process::exit(cogno_lib::commands::askpass::run_helper(
+            &session_id,
+            &prompt_args,
+        ));
+    }
+
     let cli = Cli::parse();
 
     if let Err(error_message) = apply_cli_environment(&cli) {

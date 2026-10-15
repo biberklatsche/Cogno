@@ -57,6 +57,7 @@ pub fn run(cli: Cli) {
         .manage(RunnableActionsState::new())
         .manage(Db::new())
         .manage(WindowRegistry::new())
+        .manage(crate::commands::askpass::AskpassState::new())
         .on_window_event(|window, event| match event {
             WindowEvent::Focused(true) => {
                 window
@@ -78,6 +79,7 @@ pub fn run(cli: Cli) {
             crate::db::commands::db_select,
             crate::db::commands::db_batch,
             crate::commands::command_runner::command_runner_execute,
+            crate::commands::askpass::askpass_answer,
             crate::commands::config::get_default_config,
             crate::commands::shells::list_shells,
             crate::commands::keyboard::get_keyboard_layout,

@@ -1,4 +1,5 @@
 export * from "./app-info";
+export * from "./askpass";
 export * from "./cli-action";
 export * from "./cli-config-overrides";
 export * from "./clipboard";

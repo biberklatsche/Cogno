@@ -232,6 +232,7 @@ export class TerminalGatewayService implements SessionApi {
       program,
       args,
       timeoutMs: request.timeoutMs,
+      stdin: request.stdin,
     });
     return { status: "ran", result };
   }

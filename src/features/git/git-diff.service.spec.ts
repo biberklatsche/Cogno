@@ -1,71 +1,99 @@
-import type { DestroyRef } from "@angular/core";
-import type { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
-import type { SessionRunRequest, SessionRunResult } from "@cogno/core/api/session-run";
-import { BehaviorSubject } from "rxjs";
+import type { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
+import type { BoundSessionHandle } from "@cogno/core/api/session-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitDiffService } from "./git-diff.service";
+import type { GitRepositoryService } from "./git-repository.service";
+import { GitFile } from "./model/git-model";
+
+const file = (path: string, status: GitFile["status"], oldPath?: string): GitFile => ({
+  path,
+  status,
+  isDirectory: false,
+  ...(oldPath ? { oldPath } : {}),
+});
 
 describe("GitDiffService", () => {
   let run: ReturnType<typeof vi.fn>;
   let readTextFile: ReturnType<typeof vi.fn>;
   let service: GitDiffService;
 
-  function ran(stdout: string): SessionRunResult {
-    return { status: "ran", result: { stdout, stderr: "", exitCode: 0 } };
-  }
-
   beforeEach(() => {
-    run = vi.fn((request: SessionRunRequest) => {
-      const revision = request.args?.at(-1) ?? "";
-      if (revision.startsWith("HEAD:")) return Promise.resolve(ran("head content"));
-      if (revision.startsWith(":0:")) return Promise.resolve(ran("index content"));
-      return Promise.resolve(ran(""));
-    });
-    readTextFile = vi.fn().mockResolvedValue("working tree content");
-    const handle = {
-      identity: { terminalId: "t1", sessionToken: "token" },
-      mode: "following",
-      cwd: "/c/repo",
-      shellContext: { shellType: "Bash", backendOs: "windows" },
-      contextRevision: 1,
-      run,
-      fs: {
-        readTextFile,
-        normalizePath: (path: string) => `/normalized${path}`,
-      },
+    // Every blob read answers with its revision, so the test sees which one was read.
+    run = vi.fn(
+      (args: string[]): Promise<CommandRunnerResultContract> =>
+        Promise.resolve({ stdout: `blob ${args.at(-1)}`, stderr: "", exitCode: 0 }),
+    );
+    readTextFile = vi.fn().mockResolvedValue("working tree");
+    const session = {
+      fs: { readTextFile, normalizePath: (path: string) => `/normalized${path}` },
     } as unknown as BoundSessionHandle;
-    const sessionApi: SessionApi = {
-      boundSession$: new BehaviorSubject({ status: "active", session: handle }),
-      cwdChanges$: new BehaviorSubject<void>(undefined),
-    } as unknown as SessionApi;
-    const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
-    service = new GitDiffService(sessionApi, destroyRef);
+    const repository = {
+      run,
+      root: () => "/c/repo",
+      currentSession: () => session,
+    } as unknown as GitRepositoryService;
+    service = new GitDiffService(repository);
   });
 
-  it("reads HEAD via the session and the working tree via fs for unstaged content", async () => {
-    const diff = await service.loadDiff("src/file.ts", false, false, "/c/repo");
+  it("compares the index with the working tree for an unstaged file", async () => {
+    const diff = await service.loadDiff({ kind: "unstaged", file: file("src/a.ts", "M") });
 
-    expect(run).toHaveBeenCalledWith(
-      expect.objectContaining({
-        executable: "git",
-        args: ["-C", "/c/repo", "cat-file", "-p", "HEAD:src/file.ts"],
-      }),
-    );
-    expect(readTextFile).toHaveBeenCalledWith("/normalized/c/repo/src/file.ts");
     expect(diff).toEqual({
-      original: "head content",
-      modified: "working tree content",
+      original: "blob :0:src/a.ts",
+      modified: "working tree",
       language: "typescript",
     });
+    expect(readTextFile).toHaveBeenCalledWith("/normalized/c/repo/src/a.ts");
   });
 
-  it("reads staged content from the index and never touches the working tree", async () => {
-    const diff = await service.loadDiff("src/file.ts", true, false, "/c/repo");
+  it("compares HEAD with the index for a staged file and never reads the working tree", async () => {
+    const diff = await service.loadDiff({ kind: "staged", file: file("src/a.ts", "M") });
 
+    expect(diff.original).toBe("blob HEAD:src/a.ts");
+    expect(diff.modified).toBe("blob :0:src/a.ts");
     expect(readTextFile).not.toHaveBeenCalled();
-    expect(run).toHaveBeenCalledWith(
-      expect.objectContaining({ args: ["-C", "/c/repo", "cat-file", "-p", ":0:src/file.ts"] }),
-    );
-    expect(diff.modified).toBe("index content");
+  });
+
+  it("has an empty original for an untracked file", async () => {
+    const diff = await service.loadDiff({ kind: "unstaged", file: file("new.ts", "?") });
+
+    expect(diff.original).toBe("");
+    expect(diff.modified).toBe("working tree");
+  });
+
+  it("compares a commit with its first parent and follows a rename", async () => {
+    const diff = await service.loadDiff({
+      kind: "commit",
+      file: file("new.ts", "R", "old.ts"),
+      sha: "c2",
+      parent: "c1",
+    });
+
+    expect(diff.original).toBe("blob c1:old.ts");
+    expect(diff.modified).toBe("blob c2:new.ts");
+  });
+
+  it("has an empty original for a file of the root commit and an empty side for a deletion", async () => {
+    const root = await service.loadDiff({
+      kind: "commit",
+      file: file("a.ts", "M"),
+      sha: "c1",
+      parent: null,
+    });
+    const deleted = await service.loadDiff({
+      kind: "commit",
+      file: file("a.ts", "D"),
+      sha: "c2",
+      parent: "c1",
+    });
+
+    expect(root.original).toBe("");
+    expect(deleted.modified).toBe("");
+  });
+
+  it("compares a conflicted file with HEAD, since the index holds several versions", async () => {
+    const diff = await service.loadDiff({ kind: "unstaged", file: file("a.ts", "U") });
+
+    expect(diff.original).toBe("blob HEAD:a.ts");
   });
 });

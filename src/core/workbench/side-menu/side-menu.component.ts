@@ -34,6 +34,7 @@ export function isSelectedSideMenuItem(
   imports: [IconComponent, NgComponentOutlet, TooltipDirective, ActionKeybindingPipe],
   host: {
     "[class.overlay-host]": "!overlay()",
+    "[class.expanded-host]": "!!selectedItem()?.expanded",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -41,14 +42,21 @@ export function isSelectedSideMenuItem(
                [class.hidden]="!selectedItem()"
                [class.overlay]="!overlay()"
                [class.shift-left]="visibleItems().length > 0"
-               [style.width.px]="panelWidthInPixels()"
+               [class.expanded]="!!selectedItem()?.expanded"
+               [style.width.px]="selectedItem()?.expanded ? null : panelWidthInPixels()"
                tabindex="-1"
                (pointerdown)="focus()"
         >
-            <div class="resize-handle" (pointerdown)="startResize($event)"></div>
+            @if (!selectedItem()?.expanded) {
+                <div class="resize-handle" (pointerdown)="startResize($event)"></div>
+            }
             <header>
                 <h3>{{ selectedItem()?.label }}</h3>
                 <div class="btn-list">
+                    <button class="button icon-button" (click)="toggleExpanded()"
+                            [appTooltip]="selectedItem()?.expanded ? 'Restore panel width' : 'Expand panel over the terminals'">
+                        <app-icon [name]="selectedItem()?.expanded ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
+                    </button>
                     <button class="button icon-button" (click)="togglePin()"
                             [appTooltip]="selectedItem()?.pinned ? 'Unpin panel' : 'Pin panel (keeps it open)'">
                         <app-icon [name]="selectedItem()?.pinned ? 'mdiPin': 'mdiPinOff'"></app-icon>
@@ -88,6 +96,12 @@ export function isSelectedSideMenuItem(
             flex-direction: row;
             position: relative;
             min-height: 0;
+        }
+
+        /* An expanded panel is laid out against the whole workbench area,
+           so the host must not be its containing block. */
+        :host(.expanded-host) {
+            position: static;
         }
 
         h3 {
@@ -170,6 +184,20 @@ export function isSelectedSideMenuItem(
             
             &.shift-left {
                 right: 32px;
+            }
+
+            &.expanded {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 4px;
+                right: 4px;
+                max-height: 100%;
+                overflow: hidden;
+
+                &.shift-left {
+                    right: 32px;
+                }
             }
 
             .resize-handle {
@@ -282,8 +310,9 @@ export class SideMenuComponent implements OnDestroy {
 
     const target = ev.target as Node;
     const targetElement = target instanceof Element ? target : null;
-    const clickedInsideDialog = !!targetElement?.closest("app-dialog");
-    if (clickedInsideDialog) return;
+    // Dialogs and context menus a panel opens live outside the panel's DOM.
+    const clickedInsidePanelOverlay = !!targetElement?.closest("app-dialog, .menu-overlay-host");
+    if (clickedInsidePanelOverlay) return;
 
     const clickedInsideAside = this.overlayAsideRef?.nativeElement.contains(target);
     const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
@@ -319,6 +348,10 @@ export class SideMenuComponent implements OnDestroy {
 
   togglePin() {
     this.menuItemService.togglePin();
+  }
+
+  toggleExpanded() {
+    this.menuItemService.toggleExpanded();
   }
 
   startResize(pointerEvent: PointerEvent): void {

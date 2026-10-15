@@ -1,6 +1,7 @@
-import { DestroyRef, Injectable } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
+import { Injectable } from "@angular/core";
+import { GitRepositoryService } from "./git-repository.service";
+import { GitFile } from "./model/git-model";
+import { GitPatch, parseGitPatch } from "./model/git-patch";
 
 export type GitDiffContent = {
   readonly original: string;
@@ -8,78 +9,94 @@ export type GitDiffContent = {
   readonly language: string;
 };
 
+/** Where a file's two sides come from. */
+export type GitDiffSource =
+  | { readonly kind: "unstaged"; readonly file: GitFile }
+  | { readonly kind: "staged"; readonly file: GitFile }
+  | {
+      readonly kind: "commit";
+      readonly file: GitFile;
+      readonly sha: string;
+      readonly parent: string | null;
+    };
+
 /** Truncate files larger than this to avoid passing huge strings to CodeMirror at all. */
 const TRUNCATE_THRESHOLD_BYTES = 500_000;
 const BLOB_TIMEOUT_MS = 10_000;
 
 @Injectable({ providedIn: "root" })
 export class GitDiffService {
-  private boundSession: BoundSessionHandle | null = null;
+  constructor(private readonly repository: GitRepositoryService) {}
 
-  constructor(sessionApi: SessionApi, destroyRef: DestroyRef) {
-    sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
-      this.boundSession = boundSession.status === "active" ? boundSession.session : null;
-    });
-  }
+  /**
+   * Both sides of a file, as git sees the change: unstaged is index against
+   * working tree, staged is HEAD against index, a commit is its first parent
+   * against the commit. A side the file does not exist on is empty.
+   */
+  async loadDiff(source: GitDiffSource): Promise<GitDiffContent> {
+    const { file } = source;
+    const language = detectGitDiffLanguage(file.path);
+    const before = file.oldPath ?? file.path;
+    const added = file.status === "A" || file.status === "?";
+    const deleted = file.status === "D";
 
-  async loadDiff(
-    filePath: string,
-    isStaged: boolean,
-    isDeletedFile: boolean,
-    gitRoot: string,
-  ): Promise<GitDiffContent> {
-    const language = detectGitDiffLanguage(filePath);
-    const session = this.boundSession;
-    if (!session) {
-      return { original: "", modified: "", language };
-    }
-    const absolutePath = session.fs.normalizePath(this.buildAbsolutePath(gitRoot, filePath));
-
-    // Always read HEAD as original. If the file is genuinely new (missing in
-    // HEAD), `git cat-file` fails and the blob read resolves to "".
-    const original = await this.readBlob(session, gitRoot, `HEAD:${filePath}`);
-
+    let original = "";
     let modified = "";
-    if (!isDeletedFile) {
-      modified = isStaged
-        ? await this.readBlob(session, gitRoot, `:0:${filePath}`)
-        : await session.fs.readTextFile(absolutePath).catch(() => "");
+    if (source.kind === "unstaged") {
+      // A conflicted file has no single index entry; it is compared with HEAD.
+      const base = file.status === "U" ? `HEAD:${before}` : `:0:${before}`;
+      original = added ? "" : await this.readBlob(base);
+      modified = deleted ? "" : await this.readWorkingFile(file.path);
+    } else if (source.kind === "staged") {
+      original = file.status === "A" ? "" : await this.readBlob(`HEAD:${before}`);
+      modified = deleted ? "" : await this.readBlob(`:0:${file.path}`);
+    } else {
+      original = added || !source.parent ? "" : await this.readBlob(`${source.parent}:${before}`);
+      modified = deleted ? "" : await this.readBlob(`${source.sha}:${file.path}`);
     }
 
-    return { original: this.truncate(original), modified: this.truncate(modified), language };
+    return { original: truncate(original), modified: truncate(modified), language };
   }
 
   /**
-   * Read a git object through the bound session, so it is correct in a WSL or
-   * remote context; empty string when the object does not exist or is rejected.
+   * The same change as git's own patch, hunk by hunk. An untracked file has
+   * none: git knows no previous version to diff against.
    */
-  private async readBlob(
-    session: BoundSessionHandle,
-    gitRoot: string,
-    revision: string,
-  ): Promise<string> {
-    const outcome = await session.run({
-      executable: "git",
-      args: ["-C", gitRoot, "cat-file", "-p", revision],
-      contextRevision: session.contextRevision,
-      timeoutMs: BLOB_TIMEOUT_MS,
-    });
-    if (outcome.status !== "ran" || outcome.result.exitCode !== 0) {
-      return "";
-    }
-    return outcome.result.stdout;
+  async loadPatch(source: GitDiffSource): Promise<GitPatch> {
+    const { file } = source;
+    if (file.status === "?") return { header: [], hunks: [], binary: false };
+    const args =
+      source.kind === "commit"
+        ? [...(source.parent ? [source.parent] : ["--root"]), source.sha]
+        : source.kind === "staged"
+          ? ["--cached"]
+          : [];
+    const paths = file.oldPath ? [file.oldPath, file.path] : [file.path];
+    const result = await this.repository.run(
+      ["diff", "--no-color", "--no-ext-diff", "--find-renames", ...args, "--", ...paths],
+      BLOB_TIMEOUT_MS,
+    );
+    return parseGitPatch(result?.exitCode === 0 ? result.stdout : "");
   }
 
-  private truncate(content: string): string {
-    if (content.length <= TRUNCATE_THRESHOLD_BYTES) return content;
-    return `${content.slice(0, TRUNCATE_THRESHOLD_BYTES)}\n\n[... truncated — file too large ...]`;
+  /** A git object read in the bound session; empty when it does not exist. */
+  private async readBlob(revision: string): Promise<string> {
+    const result = await this.repository.run(["cat-file", "-p", revision], BLOB_TIMEOUT_MS);
+    return result?.exitCode === 0 ? result.stdout : "";
   }
 
-  private buildAbsolutePath(gitRoot: string, filePath: string): string {
-    // git always uses forward slashes in its output on all platforms;
-    // BasePathAdapter.normalize() handles both C:/path and /unix/path forms
-    return `${gitRoot}/${filePath}`;
+  private async readWorkingFile(path: string): Promise<string> {
+    const session = this.repository.currentSession();
+    const root = this.repository.root();
+    if (!session || !root) return "";
+    // git prints forward slashes on every platform; normalizePath handles both forms.
+    return session.fs.readTextFile(session.fs.normalizePath(`${root}/${path}`)).catch(() => "");
   }
+}
+
+function truncate(content: string): string {
+  if (content.length <= TRUNCATE_THRESHOLD_BYTES) return content;
+  return `${content.slice(0, TRUNCATE_THRESHOLD_BYTES)}\n\n[... truncated — file too large ...]`;
 }
 
 function detectGitDiffLanguage(filePath: string): string {
