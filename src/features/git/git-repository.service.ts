@@ -3,7 +3,8 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
-import { filter } from "rxjs";
+import { AppWindow } from "@cogno/platform";
+import { catchError, EMPTY, filter, Subscription } from "rxjs";
 import { layoutGraph } from "./model/git-graph";
 import {
   GitCommit,
@@ -53,7 +54,10 @@ const OPERATION_MARKERS: ReadonlyArray<readonly [string, GitOperation]> = [
  * ARCHITECTURE.md 3): its root, HEAD, working tree, refs, stashes and commit
  * graph. Everything is read with git in the bound session, so it is correct in
  * the session's own shell context, and re-read when the binding moves, the
- * session's cwd changes or a command in it finishes.
+ * session's cwd changes, a command in it finishes, the window regains focus or
+ * the git dir changes on disk (a commit, fetch or checkout from another
+ * terminal, an editor or another git client). The working tree is not watched:
+ * that would cost a watch per directory on Linux; the focus change covers it.
  */
 @Injectable({ providedIn: "root" })
 export class GitRepositoryService {
@@ -101,6 +105,7 @@ export class GitRepositoryService {
 
   private boundSession: BoundSessionHandle | null = null;
   private gitDir: string | null = null;
+  private gitDirWatch: Subscription | null = null;
   private active = false;
   private refreshInFlight = false;
   private refreshPending = false;
@@ -109,6 +114,7 @@ export class GitRepositoryService {
   constructor(
     sessionApi: SessionApi,
     terminalMonitor: TerminalMonitorPort,
+    appWindow: AppWindow,
     destroyRef: DestroyRef,
   ) {
     sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
@@ -130,6 +136,14 @@ export class GitRepositoryService {
       .subscribe(() => {
         if (this.active) this.requestRefresh(false);
       });
+    appWindow.onFocusChanged$
+      .pipe(
+        filter((focused) => focused),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe(() => {
+        if (this.active) this.requestRefresh(false);
+      });
     destroyRef.onDestroy(() => this.stop());
   }
 
@@ -141,6 +155,7 @@ export class GitRepositoryService {
 
   stop(): void {
     this.active = false;
+    this.unwatchGitDir();
   }
 
   refresh(): Promise<void> {
@@ -268,7 +283,29 @@ export class GitRepositoryService {
     }
     this.rootSignal.set(root);
     this.gitDir = gitDir;
+    this.watchGitDir(session, gitDir);
     return true;
+  }
+
+  /**
+   * Follow the git dir of the bound session while the panel is open. Rebound
+   * on every context resolution: the dir or the session it is read in may
+   * have changed. A session that refuses to watch (remote) just goes unwatched.
+   */
+  private watchGitDir(session: BoundSessionHandle, gitDir: string): void {
+    this.unwatchGitDir();
+    if (!this.active) return;
+    this.gitDirWatch = session.fs
+      .watch$(gitDir)
+      .pipe(catchError(() => EMPTY))
+      .subscribe(() => {
+        if (this.active) this.requestRefresh(false);
+      });
+  }
+
+  private unwatchGitDir(): void {
+    this.gitDirWatch?.unsubscribe();
+    this.gitDirWatch = null;
   }
 
   private async loadRepository(session: BoundSessionHandle): Promise<void> {
@@ -352,6 +389,7 @@ export class GitRepositoryService {
   }
 
   private clear(error: GitError | null): void {
+    this.unwatchGitDir();
     this.rootSignal.set(null);
     this.gitDir = null;
     this.headSignal.set({ sha: null, branch: null });

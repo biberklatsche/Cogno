@@ -5,6 +5,7 @@ import type {
   TerminalActivityEvent,
   TerminalMonitorPort,
 } from "@cogno/core/api/terminal-monitor-port";
+import type { AppWindow } from "@cogno/platform";
 import { BehaviorSubject, Subject } from "rxjs";
 import { describe, expect, it, vi } from "vitest";
 import { GitRepositoryService } from "./git-repository.service";
@@ -19,7 +20,12 @@ function ran(stdout: string, exitCode = 0): SessionRunResult {
   return { status: "ran", result: { stdout, stderr: "", exitCode } };
 }
 
-function sessionHandle(run: Run, terminalId = "t1", files: string[] = []): BoundSessionHandle {
+function sessionHandle(
+  run: Run,
+  terminalId = "t1",
+  files: string[] = [],
+  gitDirChanges$: Subject<void> = new Subject<void>(),
+): BoundSessionHandle {
   return {
     identity: { terminalId, sessionToken: "token" },
     mode: "following",
@@ -32,6 +38,7 @@ function sessionHandle(run: Run, terminalId = "t1", files: string[] = []): Bound
         files.includes(path) ? Promise.resolve("x") : Promise.reject(new Error("missing")),
       ),
       normalizePath: (path: string) => path,
+      watch$: vi.fn(() => gitDirChanges$),
     },
   } as unknown as BoundSessionHandle;
 }
@@ -70,11 +77,14 @@ function makeService(session: BoundSessionHandle) {
   const activity$ = new Subject<TerminalActivityEvent>();
   const sessionApi = { boundSession$, cwdChanges$: new Subject<void>() } as unknown as SessionApi;
   const monitor = { activity$ } as unknown as TerminalMonitorPort;
+  const focus$ = new Subject<boolean>();
+  const appWindow = { onFocusChanged$: focus$ } as unknown as AppWindow;
   const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
   return {
-    service: new GitRepositoryService(sessionApi, monitor, destroyRef),
+    service: new GitRepositoryService(sessionApi, monitor, appWindow, destroyRef),
     bind: (next: BoundSessionHandle) => boundSession$.next({ status: "active", session: next }),
     activity$,
+    focus$,
   };
 }
 
@@ -199,6 +209,52 @@ describe("GitRepositoryService", () => {
     expect(service.status().staged[0]?.path).toBe("a.ts");
 
     activity$.next({ terminalId: "t1", isBusy: false });
+    await flush();
+    expect(service.status().staged[0]?.path).toBe("b.ts");
+  });
+
+  it("re-reads the repository when the git dir changes on disk, until the panel closes", async () => {
+    let staged = "M  a.ts";
+    const base = repo("/c/repo");
+    const gitDirChanges$ = new Subject<void>();
+    const session = sessionHandle(
+      (request) =>
+        request.args?.includes("status") ? Promise.resolve(ran(z(staged))) : base(request),
+      "t1",
+      [],
+      gitDirChanges$,
+    );
+    const { service } = makeService(session);
+    service.start();
+    await flush();
+    expect(session.fs.watch$).toHaveBeenCalledWith("/c/repo/.git");
+
+    staged = "M  b.ts";
+    gitDirChanges$.next();
+    await flush();
+    expect(service.status().staged[0]?.path).toBe("b.ts");
+
+    service.stop();
+    expect(gitDirChanges$.observed).toBe(false);
+  });
+
+  it("re-reads the repository when the window regains focus", async () => {
+    let staged = "M  a.ts";
+    const base = repo("/c/repo");
+    const { service, focus$ } = makeService(
+      sessionHandle((request) =>
+        request.args?.includes("status") ? Promise.resolve(ran(z(staged))) : base(request),
+      ),
+    );
+    service.start();
+    await flush();
+
+    staged = "M  b.ts";
+    focus$.next(false);
+    await flush();
+    expect(service.status().staged[0]?.path).toBe("a.ts");
+
+    focus$.next(true);
     await flush();
     expect(service.status().staged[0]?.path).toBe("b.ts");
   });

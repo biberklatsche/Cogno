@@ -12,7 +12,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { isWslShellContext, TerminalId } from "@cogno/shared/domain";
-import { distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
+import { defer, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 
 @Injectable({ providedIn: "root" })
@@ -90,6 +90,7 @@ export class TerminalGatewayService implements SessionApi {
       fs: {
         readTextFile: (path) => this.readBoundTextFile(path, identity),
         normalizePath: (path) => this.normalizeBoundPath(path, identity),
+        watch$: (path) => this.watchBoundPath(path, identity),
       },
       processTree: () => this.boundProcessTree(identity),
     };
@@ -114,6 +115,11 @@ export class TerminalGatewayService implements SessionApi {
   private async readBoundTextFile(path: string, identity: BoundSessionIdentity): Promise<string> {
     const shellContext = this.boundShellContextOrThrow(identity);
     return this.filesystem.readTextFile(path, shellContext);
+  }
+
+  /** Watch a path in the bound session's context; errors like `run` rejects. */
+  private watchBoundPath(path: string, identity: BoundSessionIdentity): Observable<void> {
+    return defer(() => this.filesystem.watch$(path, this.boundShellContextOrThrow(identity)));
   }
 
   private normalizeBoundPath(path: string, identity: BoundSessionIdentity): string {

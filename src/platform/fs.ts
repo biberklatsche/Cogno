@@ -31,22 +31,24 @@ export class Fs {
     return tauriReadDir(path);
   }
 
+  /**
+   * Emits once per burst of changes under `path`: files created, written,
+   * renamed or removed. Reads and attribute changes do not count - a watcher
+   * that reacted to its own reads would loop. `*.lock` files are ignored: they
+   * are the transient guards of a write in progress (git), not a change.
+   */
   watchChanges$(path: string, opts?: { recursive?: boolean; delayMs?: number }): Observable<void> {
     return fromTauriListener<void>((emit) =>
       tauriWatch(
         path,
         (event: WatchEvent) => {
-          if (
-            typeof event.type === "object" &&
-            "modify" in event.type &&
-            (event.type.modify.kind === "data" || event.type.modify.kind === "any")
-          ) {
+          if (isContentChange(event) && event.paths.some((changed) => !changed.endsWith(".lock"))) {
             emit();
           }
         },
-        opts,
+        { delayMs: 200, ...opts },
       ),
-    ).pipe(debounceTime(500));
+    ).pipe(debounceTime(300));
   }
 
   exists(path: string): Promise<boolean> {
@@ -56,4 +58,11 @@ export class Fs {
   convertFileSrc(path: string): string {
     return tauriConvertFileSrc(path);
   }
+}
+
+function isContentChange(event: WatchEvent): boolean {
+  const kind = event.type;
+  if (typeof kind !== "object") return false;
+  if ("modify" in kind) return kind.modify.kind !== "metadata";
+  return "create" in kind || "remove" in kind;
 }

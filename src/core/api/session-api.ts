@@ -13,6 +13,8 @@ import { SessionRunRequest, SessionRunResult } from "./session-run";
 export interface BoundSessionFs {
   readTextFile(path: string): Promise<string>;
   normalizePath(path: string): string;
+  /** Emits once per burst of changes under `path` (a directory, recursively). */
+  watch$(path: string): Observable<void>;
 }
 
 /**

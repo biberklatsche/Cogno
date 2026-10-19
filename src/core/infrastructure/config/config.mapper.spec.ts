@@ -337,7 +337,7 @@ describe("ConfigMapper", () => {
     // so the assertions prove the stale override was ignored, not coincidentally matched.
     const text = `
       ai.mode=hidden
-      git.mode=visible
+      git.mode=hidden
       command_palette.mode=off
       coding_agents.mode=off
       search.mode=off
@@ -361,7 +361,7 @@ describe("ConfigMapper", () => {
 
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
     // Stale keys are stripped, not applied — the bundled feature.*/notification.* defaults win instead.
-    expect((result.config["feature"] as FeatureSettings | undefined)?.git?.mode).toBe("off");
+    expect((result.config["feature"] as FeatureSettings | undefined)?.git?.mode).toBe("on");
     expect(result.config.notification?.exception?.handled?.enabled).toBe(false);
     expect(result.config.notification?.channel?.app?.enabled).toBe(true);
   });

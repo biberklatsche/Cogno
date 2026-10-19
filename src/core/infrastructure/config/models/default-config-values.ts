@@ -241,7 +241,7 @@ export const defaultSettings = {
       order: "40",
     },
     git: {
-      mode: "off",
+      mode: "on",
       order: "50",
     },
     process_info: {

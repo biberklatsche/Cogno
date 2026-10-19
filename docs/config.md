@@ -919,7 +919,7 @@ Override the side-menu display position for this feature. Lower numbers appear f
 
 Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
 
-**Type:** `off` | `on` · **Default:** `off`
+**Type:** `off` | `on` · **Default:** `on`
 
 ### `feature.git.order`
 
