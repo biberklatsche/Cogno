@@ -125,6 +125,7 @@ Every action, its description and default keybinding. `-` means no default keybi
 | `open_notification` | Open the Notification panel | Ctrl+Alt+N | Command+Control+N |
 | `open_process_info` | Open the Process Info panel | Ctrl+Alt+P | Command+Control+P |
 | `open_terminal_search` | Open the Terminal Search panel | Ctrl+F | Command+F |
+| `open_updater` | Open the Updates panel | - | - |
 
 ## Window
 

@@ -68,6 +68,21 @@ export const FeatureProcessInfoSchema = z.strictObject({
   order: featureOrderSchema,
 });
 
+export const FeatureUpdaterSchema = z.strictObject({
+  mode: featureModeSchema
+    .optional()
+    .describe(
+      "Turn the feature on or off. Off removes it entirely, including its side-menu entry, and Cogno no longer asks for updates.",
+    ),
+  order: featureOrderSchema,
+  install: z
+    .enum(["background", "ask"])
+    .optional()
+    .describe(
+      "`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.",
+    ),
+});
+
 export const FeatureCodingAgentsSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
