@@ -34,7 +34,7 @@ export function isSelectedSideMenuItem(
   imports: [IconComponent, NgComponentOutlet, TooltipDirective, ActionKeybindingPipe],
   host: {
     "[class.overlay-host]": "!overlay()",
-    "[class.expanded-host]": "!!selectedItem()?.expanded",
+    "[class.expanded-host]": "isExpanded()",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -42,20 +42,20 @@ export function isSelectedSideMenuItem(
                [class.hidden]="!selectedItem()"
                [class.overlay]="!overlay()"
                [class.shift-left]="visibleItems().length > 0"
-               [class.expanded]="!!selectedItem()?.expanded"
-               [style.width.px]="selectedItem()?.expanded ? null : panelWidthInPixels()"
+               [class.expanded]="isExpanded()"
+               [style.width.px]="isExpanded() ? null : panelWidthInPixels()"
                tabindex="-1"
                (pointerdown)="focus()"
         >
-            @if (!selectedItem()?.expanded) {
+            @if (!isExpanded()) {
                 <div class="resize-handle" (pointerdown)="startResize($event)"></div>
             }
             <header>
                 <h3>{{ selectedItem()?.label }}</h3>
                 <div class="btn-list">
                     <button class="button icon-button" (click)="toggleExpanded()"
-                            [appTooltip]="selectedItem()?.expanded ? 'Restore panel width' : 'Expand panel over the terminals'">
-                        <app-icon [name]="selectedItem()?.expanded ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
+                            [appTooltip]="isExpanded() ? 'Restore panel width' : 'Expand panel over the terminals'">
+                        <app-icon [name]="isExpanded() ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
                     </button>
                     <button class="button icon-button" (click)="togglePin()"
                             [appTooltip]="selectedItem()?.pinned ? 'Unpin panel' : 'Pin panel (keeps it open)'">
@@ -267,6 +267,7 @@ export class SideMenuComponent implements OnDestroy {
   overlay = this.menuItemService.displacement;
   focused = this.menuItemService.isFocused;
   panelWidthInPixels = this.menuItemService.panelWidthInPixels;
+  isExpanded = this.menuItemService.isExpanded;
 
   @ViewChild("overlayAside", { static: false }) overlayAsideRef?: ElementRef<HTMLElement>;
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;

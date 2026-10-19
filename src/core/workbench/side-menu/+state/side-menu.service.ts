@@ -1,4 +1,4 @@
-import { Injectable, Signal, signal, Type, WritableSignal } from "@angular/core";
+import { computed, Injectable, Signal, signal, Type, WritableSignal } from "@angular/core";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Icon } from "@cogno/shared/ui";
@@ -11,8 +11,6 @@ export type SideMenuItem = {
   order?: number;
   hidden: boolean;
   pinned: boolean;
-  /** The panel spans the whole terminal area instead of its own width. */
-  expanded?: boolean;
   actionName: ActionName;
   separator?: boolean;
   // Optional component to render in the side "aside" area when this item is active
@@ -36,6 +34,14 @@ export class SideMenuService {
     SideMenuService.defaultPanelWidthInPixels,
   );
   private _pinnedStack: string[] = [];
+  /**
+   * Panels that span the whole terminal area instead of their own width.
+   * Expand belongs to the panel, not to its being open: a closed panel opens
+   * expanded again, which is why this outlives the menu items.
+   */
+  private _expandedLabels: WritableSignal<ReadonlySet<string>> = signal<ReadonlySet<string>>(
+    new Set(),
+  );
 
   get menu(): Signal<SideMenuItem[]> {
     return this._menuItems.asReadonly();
@@ -57,13 +63,23 @@ export class SideMenuService {
     return this._panelWidthInPixels.asReadonly();
   }
 
+  get expandedLabels(): Signal<ReadonlySet<string>> {
+    return this._expandedLabels.asReadonly();
+  }
+
+  /** Whether the open panel is expanded. */
+  readonly isExpanded: Signal<boolean> = computed(() => {
+    const current = this._selectedItem();
+    return !!current && this._expandedLabels().has(current.label);
+  });
+
   constructor(private bus: AppBus) {}
 
   addMenuItem(item: SideMenuItem): void {
     this._menuItems.update((s) => {
       const index = s.findIndex((s) => s.label === item.label);
       if (index > -1) {
-        s[index] = { ...s[index], ...item, pinned: s[index].pinned, expanded: s[index].expanded };
+        s[index] = { ...s[index], ...item, pinned: s[index].pinned };
         return [...s];
       }
       return [...s, item];
@@ -197,11 +213,16 @@ export class SideMenuService {
   toggleExpanded() {
     const current = this._selectedItem();
     if (!current) return;
-    const expanded = !current.expanded;
-    this._menuItems.update((items) =>
-      items.map((item) => (item.label === current.label ? { ...item, expanded } : item)),
-    );
-    this._selectedItem.set({ ...current, expanded });
+    this._expandedLabels.update((labels) => {
+      const next = new Set(labels);
+      if (next.has(current.label)) next.delete(current.label);
+      else next.add(current.label);
+      return next;
+    });
+  }
+
+  setExpandedLabels(labels: ReadonlyArray<string>): void {
+    this._expandedLabels.set(new Set(labels));
   }
 
   updateIcon(label: string, icon: Icon) {

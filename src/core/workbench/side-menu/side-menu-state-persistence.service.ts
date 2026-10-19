@@ -36,13 +36,27 @@ export class SideMenuStatePersistenceService {
           is_pinned: selectedItem?.pinned ? 1 : 0,
           displacement: displacement ? 1 : 0,
           panel_width_pixels: panelWidthInPixels,
-          is_expanded: selectedItem?.expanded ? 1 : 0,
         });
+      });
+
+    toObservable(this.sideMenuService.expandedLabels)
+      .pipe(
+        skip(1),
+        debounceTime(500),
+        filter(() => this.dbInitialized),
+        takeUntilDestroyed(destroyRef),
+      )
+      .subscribe((labels) => {
+        void this.repository.saveExpandedLabels([...labels]);
       });
   }
 
   private async restore(): Promise<void> {
-    const state = await this.repository.load();
+    const [state, expandedLabels] = await Promise.all([
+      this.repository.load(),
+      this.repository.loadExpandedLabels(),
+    ]);
+    this.sideMenuService.setExpandedLabels(expandedLabels);
     this.dbInitialized = true;
 
     if (!state) return;
@@ -57,9 +71,6 @@ export class SideMenuStatePersistenceService {
       this.sideMenuService.open(state.selected_item_label);
       if (state.is_pinned && !this.sideMenuService.selectedItem()?.pinned) {
         this.sideMenuService.togglePin();
-      }
-      if (state.is_expanded && !this.sideMenuService.selectedItem()?.expanded) {
-        this.sideMenuService.toggleExpanded();
       }
     }
   }

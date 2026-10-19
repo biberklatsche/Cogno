@@ -6,7 +6,6 @@ export interface SideMenuStateEntity {
   is_pinned: number;
   displacement: number;
   panel_width_pixels: number;
-  is_expanded: number;
 }
 
 @Injectable({ providedIn: "root" })
@@ -16,28 +15,39 @@ export class SideMenuStateRepository {
   /** `null` until the state has been saved once. */
   async load(): Promise<SideMenuStateEntity | null> {
     const rows = await this.databaseAccess.select<SideMenuStateEntity[]>(
-      "SELECT selected_item_label, is_pinned, displacement, panel_width_pixels, is_expanded FROM side_menu_state WHERE id = 1",
+      "SELECT selected_item_label, is_pinned, displacement, panel_width_pixels FROM side_menu_state WHERE id = 1",
     );
     return rows[0] ?? null;
   }
 
   async save(state: SideMenuStateEntity): Promise<void> {
     await this.databaseAccess.execute(
-      `INSERT INTO side_menu_state (id, selected_item_label, is_pinned, displacement, panel_width_pixels, is_expanded)
-       VALUES (1, ?1, ?2, ?3, ?4, ?5)
+      `INSERT INTO side_menu_state (id, selected_item_label, is_pinned, displacement, panel_width_pixels)
+       VALUES (1, ?1, ?2, ?3, ?4)
        ON CONFLICT (id) DO UPDATE SET
            selected_item_label = excluded.selected_item_label,
            is_pinned = excluded.is_pinned,
            displacement = excluded.displacement,
-           panel_width_pixels = excluded.panel_width_pixels,
-           is_expanded = excluded.is_expanded`,
-      [
-        state.selected_item_label,
-        state.is_pinned,
-        state.displacement,
-        state.panel_width_pixels,
-        state.is_expanded,
-      ],
+           panel_width_pixels = excluded.panel_width_pixels`,
+      [state.selected_item_label, state.is_pinned, state.displacement, state.panel_width_pixels],
     );
+  }
+
+  /** Labels of the panels that open expanded. */
+  async loadExpandedLabels(): Promise<string[]> {
+    const rows = await this.databaseAccess.select<{ label: string }[]>(
+      "SELECT label FROM side_menu_expanded_panel",
+    );
+    return rows.map((row) => row.label);
+  }
+
+  async saveExpandedLabels(labels: ReadonlyArray<string>): Promise<void> {
+    await this.databaseAccess.batch([
+      { sql: "DELETE FROM side_menu_expanded_panel" },
+      ...labels.map((label) => ({
+        sql: "INSERT INTO side_menu_expanded_panel (label) VALUES (?1)",
+        params: [label],
+      })),
+    ]);
   }
 }

@@ -185,22 +185,48 @@ describe("SideMenuService", () => {
     expect(service.menu().find((item) => item.label === "Workspace")?.pinned).toBe(true);
     expect(service.selectedItem()?.pinned).toBe(true);
   });
-  it("expands the open panel and keeps that per panel when it is re-registered", () => {
+  it("expands the open panel and toggles it back", () => {
     service.open("Workspace");
     service.toggleExpanded();
 
-    expect(service.selectedItem()?.expanded).toBe(true);
-
-    service.addMenuItem({ ...menuItem, icon: "mdiCog" });
-    expect(service.menu().find((item) => item.label === "Workspace")?.expanded).toBe(true);
+    expect(service.isExpanded()).toBe(true);
+    expect([...service.expandedLabels()]).toEqual(["Workspace"]);
 
     service.toggleExpanded();
-    expect(service.selectedItem()?.expanded).toBe(false);
+    expect(service.isExpanded()).toBe(false);
+    expect(service.expandedLabels().size).toBe(0);
+  });
+
+  it("keeps a panel expanded while it is closed and re-registered", () => {
+    service.open("Workspace");
+    service.toggleExpanded();
+    service.close(true);
+    service.removeMenuItem("Workspace");
+    service.addMenuItem({ ...menuItem, icon: "mdiCog" });
+
+    expect(service.isExpanded()).toBe(false);
+
+    service.open("Workspace");
+    expect(service.isExpanded()).toBe(true);
+  });
+
+  it("remembers expand per panel", () => {
+    service.addMenuItem({ ...menuItem, label: "Git", actionName: "open_git" });
+    service.open("Workspace");
+    service.toggleExpanded();
+
+    service.open("Git");
+    expect(service.isExpanded()).toBe(false);
+
+    service.setExpandedLabels(["Git"]);
+    expect(service.isExpanded()).toBe(true);
+    service.open("Workspace");
+    expect(service.isExpanded()).toBe(false);
   });
 
   it("does nothing when expanding without an open panel", () => {
     service.toggleExpanded();
 
-    expect(service.menu()[0]?.expanded).toBeUndefined();
+    expect(service.expandedLabels().size).toBe(0);
   });
 });

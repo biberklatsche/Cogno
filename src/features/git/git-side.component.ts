@@ -200,8 +200,9 @@ type PanelResize = {
         bottom: 0;
         left: 3px;
         width: 1px;
+        background: var(--git-border);
       }
-      .splitter:hover::before, .splitter.active::before { width: 2px; left: 2.5px; background: var(--highlight-color); }
+      .splitter.active::before { width: 2px; left: 2.5px; background: var(--highlight-color); }
 
       /* Narrow: graph above, details below; branches slide in over the graph. */
       .body.narrow, .body.narrow.with-refs {

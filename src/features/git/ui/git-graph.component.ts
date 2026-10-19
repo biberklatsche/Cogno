@@ -306,7 +306,7 @@ type GraphItem = {
         width: 1px;
         background: var(--git-border);
       }
-      .resizer:hover::before, .resizer.active::before { width: 2px; left: 2.5px; background: var(--highlight-color); }
+      .resizer.active::before { width: 2px; left: 2.5px; background: var(--highlight-color); }
       .row { height: var(--git-row-height); display: grid; }
       .viewport { flex: 1 1 auto; min-height: 0; }
       .row .col-graph { height: var(--git-row-height); overflow: hidden; }
