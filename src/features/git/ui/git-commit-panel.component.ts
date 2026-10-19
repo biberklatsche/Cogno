@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from "@angular/core";
 import { ClipboardAccess } from "@cogno/platform";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import { GitAvatarService } from "../git-avatar.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState } from "../git-view-state.service";
@@ -36,7 +37,12 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         }
       </div>
       <div class="meta">
-        <span class="avatar" [appTooltip]="commit.email">{{ initials(commit.author) }}</span>
+        @if (avatars.url(commit.email); as avatar) {
+          <img class="avatar" [src]="avatar" alt="" [appTooltip]="commit.email"
+               (error)="avatars.markFailed(commit.email)" />
+        } @else {
+          <span class="avatar" [appTooltip]="commit.email">{{ initials(commit.author) }}</span>
+        }
         <div class="who">
           <div>
             <strong>{{ commit.author }}</strong>
@@ -107,7 +113,6 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         align-items: center;
         justify-content: center;
         font-size: var(--git-font-small);
-        font-weight: 600;
         line-height: 1;
         letter-spacing: 0.02em;
         color: var(--background-color);
@@ -119,7 +124,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         border-bottom: 1px solid var(--git-border);
       }
       .files { flex: 1 1 auto; min-height: 0; overflow: auto; }
-      .subject { font-weight: 600; white-space: pre-wrap; word-break: break-word; }
+      .subject { white-space: pre-wrap; word-break: break-word; }
       .body {
         margin: 0.5rem 0 0;
         white-space: pre-wrap;
@@ -167,6 +172,7 @@ export class GitCommitPanelComponent {
 
   constructor(
     readonly repository: GitRepositoryService,
+    readonly avatars: GitAvatarService,
     readonly actions: GitUiActions,
     readonly view: GitViewState,
     readonly clipboard: ClipboardAccess,
@@ -194,7 +200,7 @@ export class GitCommitPanelComponent {
     this.view.fileListMode.update((mode) => (mode === "tree" ? "path" : "tree"));
   }
 
-  /** Up to two letters of the name, as the avatar GitKraken shows next to the author. */
+  /** Up to two letters of the name, standing in while there is no avatar to show. */
   initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
     const first = parts[0]?.[0] ?? "?";

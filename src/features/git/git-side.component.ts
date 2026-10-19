@@ -10,7 +10,7 @@ import { IconComponent } from "@cogno/shared/ui";
 import { GitOperationsService } from "./git-operations.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitUiActions } from "./git-ui-actions.service";
-import { GitViewState } from "./git-view-state.service";
+import { GitSidePanel, GitViewState } from "./git-view-state.service";
 import { GitCommitPanelComponent } from "./ui/git-commit-panel.component";
 import { GitDiffPanelComponent } from "./ui/git-diff-panel.component";
 import { GitGraphComponent } from "./ui/git-graph.component";
@@ -21,6 +21,18 @@ import { GitWipPanelComponent } from "./ui/git-wip-panel.component";
 
 /** Below this panel width the branches panel becomes a drawer over the graph. */
 const NARROW_WIDTH_PX = 760;
+const MIN_PANEL_WIDTH = 160;
+/** What the graph in the middle keeps at least while a side panel is dragged wider. */
+const MIN_CENTER_WIDTH = 240;
+
+type PanelResize = {
+  panel: GitSidePanel;
+  startX: number;
+  startWidth: number;
+  /** How wide the panel may get before the middle falls below its minimum. */
+  maxWidth: number;
+  handle: HTMLElement;
+};
 
 /**
  * The git panel of the focused terminal's repository, laid out like
@@ -41,6 +53,10 @@ const NARROW_WIDTH_PX = 760;
     GitCommitPanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    "[style.--git-refs-width]": "panelWidth('refs')",
+    "[style.--git-detail-width]": "panelWidth('detail')",
+  },
   template: `
     @if (repository.root()) {
       <app-git-toolbar></app-git-toolbar>
@@ -83,6 +99,18 @@ const NARROW_WIDTH_PX = 760;
             }
           }
         </div>
+        @if (!narrow()) {
+          @if (view.refsVisible()) {
+            <span class="splitter refs-splitter"
+                  (pointerdown)="startResize('refs', $event)" (pointermove)="resize($event)"
+                  (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
+                  (dblclick)="resetWidth('refs')"></span>
+          }
+          <span class="splitter detail-splitter"
+                (pointerdown)="startResize('detail', $event)" (pointermove)="resize($event)"
+                (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
+                (dblclick)="resetWidth('detail')"></span>
+        }
       </div>
     } @else {
       <div class="unavailable">
@@ -135,21 +163,45 @@ const NARROW_WIDTH_PX = 760;
       }
       .banner .grow { flex: 1; }
       .button.small { padding: 0.1rem 0.6rem; font-size: 0.85em; }
+      /* The side panels follow the available width until the user drags them. */
       .body {
+        --refs-width: var(--git-refs-width, clamp(11rem, 18%, 16rem));
+        --detail-width: var(--git-detail-width, clamp(16rem, 30%, 24rem));
         position: relative;
         flex: 1 1 auto;
         min-height: 0;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) clamp(16rem, 30%, 24rem);
+        grid-template-columns: minmax(0, 1fr) var(--detail-width);
         grid-template-areas: "center detail";
       }
       .body.with-refs {
-        grid-template-columns: clamp(11rem, 18%, 16rem) minmax(0, 1fr) clamp(16rem, 30%, 24rem);
+        grid-template-columns: var(--refs-width) minmax(0, 1fr) var(--detail-width);
         grid-template-areas: "refs center detail";
       }
       .refs { grid-area: refs; min-height: 0; border-right: 1px solid var(--git-border); }
       .center { grid-area: center; min-height: 0; min-width: 0; }
       .detail { grid-area: detail; min-height: 0; min-width: 0; border-left: 1px solid var(--git-border); }
+      /* The drag handles sit over the two dividers; the divider itself lights up while dragging. */
+      .splitter {
+        position: absolute;
+        z-index: 3;
+        top: 0;
+        bottom: 0;
+        width: 7px;
+        cursor: col-resize;
+        touch-action: none;
+      }
+      .refs-splitter { left: calc(var(--refs-width) - 4px); }
+      .detail-splitter { right: calc(var(--detail-width) - 4px); }
+      .splitter::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 3px;
+        width: 1px;
+      }
+      .splitter:hover::before, .splitter.active::before { width: 2px; left: 2.5px; background: var(--highlight-color); }
 
       /* Narrow: graph above, details below; branches slide in over the graph. */
       .body.narrow, .body.narrow.with-refs {
@@ -209,13 +261,14 @@ export class GitSideComponent implements OnDestroy {
   });
 
   private readonly resizeObserver: ResizeObserver;
+  private resizing: PanelResize | null = null;
 
   constructor(
     readonly repository: GitRepositoryService,
     readonly operations: GitOperationsService,
     readonly actions: GitUiActions,
     readonly view: GitViewState,
-    host: ElementRef<HTMLElement>,
+    private readonly host: ElementRef<HTMLElement>,
   ) {
     this.resizeObserver = new ResizeObserver(([entry]) => {
       const narrow = (entry?.contentRect.width ?? 0) < NARROW_WIDTH_PX;
@@ -229,5 +282,58 @@ export class GitSideComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.resizeObserver.disconnect();
+  }
+
+  /** The dragged width as a CSS length, or null to leave the panel its default. */
+  panelWidth(panel: GitSidePanel): string | null {
+    const width = this.view.panelWidths()[panel];
+    return width === undefined ? null : `${width}px`;
+  }
+
+  startResize(panel: GitSidePanel, event: PointerEvent): void {
+    event.preventDefault();
+    const handle = event.currentTarget as HTMLElement;
+    const element = this.host.nativeElement.querySelector<HTMLElement>(
+      panel === "refs" ? ".refs" : ".detail",
+    );
+    const body = this.host.nativeElement.querySelector<HTMLElement>(".body");
+    if (!element || !body) return;
+    const other = this.host.nativeElement.querySelector<HTMLElement>(
+      panel === "refs" ? ".detail" : ".refs",
+    );
+    handle.setPointerCapture(event.pointerId);
+    handle.classList.add("active");
+    this.resizing = {
+      panel,
+      startX: event.clientX,
+      startWidth: element.getBoundingClientRect().width,
+      maxWidth: body.clientWidth - (other?.getBoundingClientRect().width ?? 0) - MIN_CENTER_WIDTH,
+      handle,
+    };
+  }
+
+  resize(event: PointerEvent): void {
+    const resizing = this.resizing;
+    if (!resizing) return;
+    // The branches panel grows to the right, the detail panel to the left.
+    const delta = (event.clientX - resizing.startX) * (resizing.panel === "refs" ? 1 : -1);
+    const width = Math.min(
+      resizing.maxWidth,
+      Math.max(MIN_PANEL_WIDTH, resizing.startWidth + delta),
+    );
+    this.view.panelWidths.update((widths) => ({ ...widths, [resizing.panel]: Math.round(width) }));
+  }
+
+  endResize(event: PointerEvent): void {
+    const resizing = this.resizing;
+    if (!resizing) return;
+    resizing.handle.releasePointerCapture(event.pointerId);
+    resizing.handle.classList.remove("active");
+    this.resizing = null;
+  }
+
+  /** Back to following the available width. */
+  resetWidth(panel: GitSidePanel): void {
+    this.view.panelWidths.update(({ [panel]: _dropped, ...rest }) => rest);
   }
 }

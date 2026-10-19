@@ -3,11 +3,9 @@ import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitOperationsService } from "../git-operations.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
-import { GitViewState } from "../git-view-state.service";
+import { GitRefsSection, GitViewState } from "../git-view-state.service";
 import { GitBranch, GitRemoteBranch } from "../model/git-model";
 import { GIT_SHARED_STYLES } from "./git-styles";
-
-type Section = "local" | "remote" | "stashes" | "tags";
 
 /**
  * The left panel: local branches, remotes with their branches, stashes and
@@ -25,7 +23,8 @@ type Section = "local" | "remote" | "stashes" | "tags";
       <input class="text-input" type="text" placeholder="Filter" spellcheck="false"
              [value]="filter()" (input)="filter.set(value($event))" (keydown.escape)="clearFilter($event)" />
     </div>
-    <div class="scroll">
+    <div class="sections">
+      <section class="section" [class.open]="isOpen('local')">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('local')">
           <app-icon class="small-icon" [name]="isOpen('local') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -36,15 +35,15 @@ type Section = "local" | "remote" | "stashes" | "tags";
         <span class="count">{{ branches().length }}</span>
       </div>
       @if (isOpen("local")) {
+        <div class="body">
         @for (branch of branches(); track branch.name) {
-          <div class="row ref" [class.selected]="isSelected(branch.sha)" [class.head]="branch.name === head().branch"
+          <div class="row ref" [class.selected]="isSelected(branch.sha)"
                (click)="view.revealCommit(branch.sha)" (dblclick)="checkout(branch)"
                (contextmenu)="actions.openBranchMenu($event, branch)">
             @if (branch.name === head().branch) {
-              <app-icon class="small-icon head-icon" name="mdiCheck" appTooltip="Checked out"></app-icon>
-            } @else {
-              <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
+              <app-icon class="small-icon head-icon" name="mdiEyeOutline" appTooltip="Checked out"></app-icon>
             }
+            <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
             <span class="ellipsis grow">{{ branch.name }}</span>
             @if (branch.upstreamGone) {
               <span class="subtle track" appTooltip="The upstream branch was deleted">gone</span>
@@ -57,8 +56,11 @@ type Section = "local" | "remote" | "stashes" | "tags";
             }
           </div>
         }
+        </div>
       }
+      </section>
 
+      <section class="section" [class.open]="isOpen('remote')">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('remote')">
           <app-icon class="small-icon" [name]="isOpen('remote') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -71,6 +73,7 @@ type Section = "local" | "remote" | "stashes" | "tags";
         </button>
       </div>
       @if (isOpen("remote")) {
+        <div class="body">
         @for (remote of remotes(); track remote.name) {
           <div class="row" [appTooltip]="remote.url" (click)="toggleRemote(remote.name)"
                (contextmenu)="actions.openRemoteMenu($event, remote)">
@@ -89,8 +92,11 @@ type Section = "local" | "remote" | "stashes" | "tags";
             }
           }
         }
+        </div>
       }
+      </section>
 
+      <section class="section" [class.open]="isOpen('stashes')">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('stashes')">
           <app-icon class="small-icon" [name]="isOpen('stashes') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -101,6 +107,7 @@ type Section = "local" | "remote" | "stashes" | "tags";
         <span class="count">{{ stashes().length }}</span>
       </div>
       @if (isOpen("stashes")) {
+        <div class="body">
         @for (stash of stashes(); track stash.sha) {
           <div class="row ref" [class.selected]="isStashSelected(stash.sha)"
                (click)="view.select({ kind: 'stash', sha: stash.sha, ref: stash.ref })"
@@ -110,8 +117,11 @@ type Section = "local" | "remote" | "stashes" | "tags";
             <span class="ellipsis grow" [appTooltip]="stash.ref">{{ stash.message }}</span>
           </div>
         }
+        </div>
       }
+      </section>
 
+      <section class="section" [class.open]="isOpen('tags')">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('tags')">
           <app-icon class="small-icon" [name]="isOpen('tags') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -122,6 +132,7 @@ type Section = "local" | "remote" | "stashes" | "tags";
         <span class="count">{{ tags().length }}</span>
       </div>
       @if (isOpen("tags")) {
+        <div class="body">
         @for (tag of tags(); track tag.name) {
           <div class="row ref" [class.selected]="isSelected(tag.sha)"
                (click)="view.revealCommit(tag.sha)" (contextmenu)="actions.openTagMenu($event, tag)">
@@ -129,7 +140,9 @@ type Section = "local" | "remote" | "stashes" | "tags";
             <span class="ellipsis grow">{{ tag.name }}</span>
           </div>
         }
+        </div>
       }
+      </section>
     </div>
   `,
   styles: [
@@ -145,14 +158,23 @@ type Section = "local" | "remote" | "stashes" | "tags";
         border-bottom: 1px solid var(--git-border);
       }
       .filter .text-input { padding: 0.15rem 0.4rem; }
-      .scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+      /* An accordion as in GitKraken: the four headers always stay in view, every open section
+         scrolls on its own. The open sections share the height equally, but none takes more
+         than its rows need, so the rest goes to the ones that scroll. */
+      .sections { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+      .section { display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0; }
+      .section.open { flex: 1 1 0; max-height: max-content; }
+      .body { flex: 1 1 auto; min-height: 0; overflow: auto; }
       .grow { flex: 1; }
-      .count { font-weight: normal; padding-right: 0.25rem; }
+      /* Sections read as blocks: a rule and some air between them, the count in the highlight colour. */
+      .section-header { flex: 0 0 auto; border-top: 1px solid var(--git-border); margin-top: 0.35rem; }
+      .section:first-child .section-header { border-top: none; margin-top: 0; }
+      .count { color: var(--highlight-color); padding-right: 0.25rem; }
       .header-action { width: 1.4rem; height: 1.4rem; padding: 0.15rem; }
-      .row.ref { padding-left: 1.4rem; }
-      .row.nested { padding-left: 2.3rem; }
-      .row.head { font-weight: 600; }
-      .head-icon { color: var(--color-green); }
+      .row.ref { position: relative; padding-left: 1.6rem; }
+      .row.nested { padding-left: 2.5rem; }
+      /* The checked-out mark sits in the indent, in front of the branch icon. */
+      .head-icon { position: absolute; left: 0.4rem; color: var(--color-green); }
       .track {
         display: inline-flex;
         align-items: center;
@@ -165,7 +187,6 @@ type Section = "local" | "remote" | "stashes" | "tags";
 })
 export class GitRefsPanelComponent {
   readonly filter = signal("");
-  private readonly closedSections = signal<ReadonlySet<Section>>(new Set());
   readonly collapsedRemotes = signal<ReadonlySet<string>>(new Set());
 
   readonly head = this.repository.head;
@@ -193,12 +214,12 @@ export class GitRefsPanelComponent {
     return this.remoteBranches().filter((branch) => branch.remote === remote);
   }
 
-  isOpen(section: Section): boolean {
-    return !this.closedSections().has(section);
+  isOpen(section: GitRefsSection): boolean {
+    return !this.view.closedSections().has(section);
   }
 
-  toggle(section: Section): void {
-    this.closedSections.update((closed) => toggled(closed, section));
+  toggle(section: GitRefsSection): void {
+    this.view.closedSections.update((closed) => toggled(closed, section));
   }
 
   toggleRemote(remote: string): void {

@@ -21,7 +21,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       <app-icon class="small-icon subtle" name="mdiSourceRepository"></app-icon>
       <span class="ellipsis">{{ repositoryName() }}</span>
       <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
-      <span class="ellipsis branch">{{ repository.head().branch ?? detachedLabel() }}</span>
+      <span class="ellipsis">{{ repository.head().branch ?? detachedLabel() }}</span>
     </div>
 
     <div class="actions">
@@ -29,12 +29,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         <button type="button" class="tool" [disabled]="!onBranch() || !!operations.busy()"
                 [appTooltip]="pullTooltip()" (click)="actions.pull()">
           <span class="label">{{ view.pullMode() === "fetch" ? "Fetch" : "Pull" }}</span>
-          <span class="icon-row">
-            <app-icon class="tool-icon pull" [name]="pulling() ? 'mdiLoading' : 'mdiCloudDownloadOutline'" [class.spin]="pulling()"></app-icon>
-            @if (behind() > 0) {
-              <span class="count">{{ behind() }}</span>
-            }
-          </span>
+          <app-icon class="tool-icon" [name]="pulling() ? 'mdiLoading' : 'mdiCloudDownloadOutline'" [class.spin]="pulling()"></app-icon>
         </button>
         <button type="button" class="tool caret" appTooltip="Pull options" [disabled]="!!operations.busy()"
                 (click)="actions.openPullMenu($event)">
@@ -44,27 +39,22 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       <button type="button" class="tool" [disabled]="!onBranch() || !!operations.busy()"
               [appTooltip]="pushTooltip()" (click)="actions.pushCurrentBranch()">
         <span class="label">Push</span>
-        <span class="icon-row">
-          <app-icon class="tool-icon push" [name]="pushing() ? 'mdiLoading' : 'mdiCloudUploadOutline'" [class.spin]="pushing()"></app-icon>
-          @if (ahead() > 0) {
-            <span class="count">{{ ahead() }}</span>
-          }
-        </span>
+        <app-icon class="tool-icon" [name]="pushing() ? 'mdiLoading' : 'mdiCloudUploadOutline'" [class.spin]="pushing()"></app-icon>
       </button>
       <button type="button" class="tool" appTooltip="Create a branch at HEAD" [disabled]="!repository.head().sha"
               (click)="actions.beginBranch(repository.head().sha)">
         <span class="label">Branch</span>
-        <app-icon class="tool-icon branch" name="mdiSourceBranch"></app-icon>
+        <app-icon class="tool-icon" name="mdiSourceBranch"></app-icon>
       </button>
       <button type="button" class="tool" appTooltip="Stash all changes" [disabled]="repository.changeCount() === 0"
               (click)="actions.stash()">
         <span class="label">Stash</span>
-        <app-icon class="tool-icon stash" name="mdiArchiveArrowDownOutline"></app-icon>
+        <app-icon class="tool-icon" name="mdiArchiveArrowDownOutline"></app-icon>
       </button>
       <button type="button" class="tool" appTooltip="Pop Stash" [disabled]="repository.stashes().length === 0"
               (click)="actions.popLatestStash()">
         <span class="label">Pop</span>
-        <app-icon class="tool-icon pop" name="mdiArchiveArrowUpOutline"></app-icon>
+        <app-icon class="tool-icon" name="mdiArchiveArrowUpOutline"></app-icon>
       </button>
     </div>
 
@@ -97,11 +87,9 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         gap: 0.3rem;
         flex: 1 1 auto;
         min-width: 4rem;
-        font-weight: 500;
       }
-      .branch { font-weight: 600; }
       .actions { display: flex; align-items: center; gap: 2px; margin-left: auto; }
-      /* Flat tools as in GitKraken's toolbar: the name above a coloured icon,
+      /* Flat tools as in GitKraken's toolbar: the name above the icon,
          lifted on hover the way a tab is. Pull and its caret share one shape. */
       .tool {
         display: inline-flex;
@@ -127,13 +115,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       }
       .tool:disabled { opacity: 0.3; cursor: not-allowed; }
       .label { font-size: var(--git-font-small); line-height: 1.1; }
-      .icon-row { display: inline-flex; align-items: center; gap: 0.2rem; }
       .tool-icon { width: 1.25rem; height: 1.25rem; }
-      .tool-icon.pull { color: var(--color-blue); }
-      .tool-icon.push { color: var(--color-green); }
-      .tool-icon.branch { color: var(--color-magenta); }
-      .tool-icon.stash { color: var(--color-yellow); }
-      .tool-icon.pop { color: var(--color-cyan); }
       .split { display: flex; }
       .split .tool:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
       .caret {
@@ -143,14 +125,6 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         border-bottom-left-radius: 0;
       }
       .caret app-icon { width: 1rem; height: 1rem; }
-      .count {
-        font-size: var(--git-font-small);
-        line-height: 1.2;
-        padding: 0 0.3rem;
-        border-radius: 8px;
-        color: var(--background-color);
-        background: var(--highlight-color);
-      }
       .end {
         display: flex;
         align-items: center;
@@ -174,8 +148,6 @@ export class GitToolbarComponent {
     `HEAD ${this.repository.head().sha?.slice(0, 7) ?? ""}`.trim(),
   );
   readonly onBranch = computed(() => this.repository.currentBranch() !== null);
-  readonly ahead = computed(() => this.repository.currentBranch()?.ahead ?? 0);
-  readonly behind = computed(() => this.repository.currentBranch()?.behind ?? 0);
   readonly pullTooltip = computed(() => {
     if (!this.onBranch()) return "Pull is not available in a detached HEAD state";
     return this.repository.currentBranch()?.upstream

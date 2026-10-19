@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/c
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitOperationsService } from "../git-operations.service";
 import { GitRepositoryService } from "../git-repository.service";
-import { GitUiActions, GitWipFileGroup } from "../git-ui-actions.service";
-import { GitViewState } from "../git-view-state.service";
+import { GitUiActions } from "../git-ui-actions.service";
+import { GitViewState, GitWipFileGroup } from "../git-view-state.service";
 import { GitFile } from "../model/git-model";
 import { GitFileListComponent } from "./git-file-list.component";
 import { GIT_SHARED_STYLES } from "./git-styles";
@@ -29,6 +29,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
 
     <div class="lists">
       @if (status().conflicted.length > 0) {
+        <section class="section" [class.open]="isOpen('conflicted')">
         <div class="section-header">
           <button type="button" class="toggle" (click)="toggle('conflicted')">
             <app-icon class="small-icon" [name]="isOpen('conflicted') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -36,14 +37,16 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           </button>
         </div>
         @if (isOpen("conflicted")) {
-          <app-git-file-list kind="conflicted" [files]="status().conflicted" [mode]="view.fileListMode()"
+          <app-git-file-list class="body" kind="conflicted" [files]="status().conflicted" [mode]="view.fileListMode()"
                              [selectedPath]="selectedPath('unstaged')"
                              (open)="openDiff($event, 'unstaged')"
                              (primary)="markResolved($event)"
                              (menu)="actions.openWipFileMenu($event.event, $event.file, 'conflicted')"></app-git-file-list>
         }
+        </section>
       }
 
+      <section class="section" [class.open]="isOpen('unstaged')">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('unstaged')">
           <app-icon class="small-icon" [name]="isOpen('unstaged') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -59,14 +62,16 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         </button>
       </div>
       @if (isOpen("unstaged")) {
-        <app-git-file-list kind="unstaged" [files]="unstaged()" [mode]="view.fileListMode()"
+        <app-git-file-list class="body" kind="unstaged" [files]="unstaged()" [mode]="view.fileListMode()"
                            [selectedPath]="selectedPath('unstaged')"
                            (open)="openDiff($event, 'unstaged')"
                            (primary)="operations.stage($event)"
                            (discard)="actions.discardFile($event)"
                            (menu)="actions.openWipFileMenu($event.event, $event.file, 'unstaged')"></app-git-file-list>
       }
+      </section>
 
+      <section class="section" [class.open]="isOpen('staged')">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('staged')">
           <app-icon class="small-icon" [name]="isOpen('staged') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -78,12 +83,13 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         </button>
       </div>
       @if (isOpen("staged")) {
-        <app-git-file-list kind="staged" [files]="status().staged" [mode]="view.fileListMode()"
+        <app-git-file-list class="body" kind="staged" [files]="status().staged" [mode]="view.fileListMode()"
                            [selectedPath]="selectedPath('staged')"
                            (open)="openDiff($event, 'staged')"
                            (primary)="operations.unstage($event)"
                            (menu)="actions.openWipFileMenu($event.event, $event.file, 'staged')"></app-git-file-list>
       }
+      </section>
     </div>
 
     <form class="commit" (submit)="$event.preventDefault(); commit()">
@@ -105,11 +111,14 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         min-height: 0;
         height: 100%;
       }
-      .lists {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: auto;
-      }
+      /* An accordion as in GitKraken: the headers stay in view, the open lists share the
+         height equally and each scrolls on its own. */
+      .lists { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+      .section { display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0; }
+      .section.open { flex: 1 1 0; }
+      .section-header { flex: 0 0 auto; border-top: 1px solid var(--git-border); }
+      .section:first-child .section-header { border-top: none; }
+      .body { flex: 1 1 auto; min-height: 0; overflow: auto; }
       .grow { flex: 1; }
       .commit {
         flex: 0 0 auto;
@@ -134,8 +143,6 @@ export class GitWipPanelComponent {
 
   readonly summary = signal("");
   readonly description = signal("");
-  private readonly closedSections = signal<ReadonlySet<GitWipFileGroup>>(new Set());
-
   readonly canCommit = computed(
     () =>
       this.summary().trim().length > 0 &&
@@ -157,11 +164,11 @@ export class GitWipPanelComponent {
   ) {}
 
   isOpen(group: GitWipFileGroup): boolean {
-    return !this.closedSections().has(group);
+    return !this.view.closedWipGroups().has(group);
   }
 
   toggle(group: GitWipFileGroup): void {
-    this.closedSections.update((closed) => {
+    this.view.closedWipGroups.update((closed) => {
       const next = new Set(closed);
       if (next.has(group)) next.delete(group);
       else next.add(group);

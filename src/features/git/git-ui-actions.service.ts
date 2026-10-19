@@ -15,11 +15,12 @@ import {
   GitResetMode,
 } from "./git-operations.service";
 import { GitRepositoryService } from "./git-repository.service";
-import { GitGraphColumn, GitViewState } from "./git-view-state.service";
+import { GitGraphColumn, GitViewState, GitWipFileGroup } from "./git-view-state.service";
 import {
   GitBranch,
   GitCommit,
   GitFile,
+  GitRefLabel,
   GitRemote,
   GitRemoteBranch,
   GitStash,
@@ -32,9 +33,6 @@ import {
   GitPromptDialogData,
   GitPromptResult,
 } from "./ui/git-prompt-dialog.component";
-
-/** Which list a working-tree file is in. */
-export type GitWipFileGroup = "unstaged" | "staged" | "conflicted";
 
 const RESET_MODES: ReadonlyArray<readonly [GitResetMode, string]> = [
   ["soft", "Soft - keep all changes"],
@@ -177,6 +175,21 @@ export class GitUiActions {
         }),
       ),
     ]);
+  }
+
+  /**
+   * Check out the branch a graph label stands for, as a double click does in
+   * GitKraken: a remote branch through a local one tracking it. A tag or the
+   * checked-out branch is left alone.
+   */
+  checkoutLabel(label: GitRefLabel): void {
+    const refs = this.repository.refs();
+    if (label.kind === "branch" && !label.isHead) {
+      void this.operations.checkoutBranch(label.name);
+    } else if (label.kind === "remote") {
+      const remoteBranch = refs.remoteBranches.find((b) => b.name === label.name);
+      if (remoteBranch) void this.operations.checkoutRemoteBranch(remoteBranch);
+    }
   }
 
   // Context menus

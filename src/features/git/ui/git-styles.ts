@@ -32,7 +32,8 @@ export const GIT_SHARED_STYLES = `
     box-sizing: border-box;
     color: var(--git-subtle);
     font-size: var(--git-font-small);
-    font-weight: 600;
+    /* A tight line box: the capitals sit on the icons' centre instead of above it. */
+    line-height: 1;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     user-select: none;
@@ -51,6 +52,8 @@ export const GIT_SHARED_STYLES = `
     letter-spacing: inherit;
     text-transform: inherit;
   }
+  /* The icons are as tall as the capitals; flex centres both on the same line. */
+  .section-header .small-icon { width: 13px; height: 13px; }
 
   .ellipsis {
     overflow: hidden;
@@ -72,8 +75,10 @@ export const GIT_SHARED_STYLES = `
   }
   .panel-header .grow { flex: 1; }
 
+  /* Small enough for a section header, with square-ish corners rather than a pill. */
   .button.small {
-    padding: 0.1rem 0.5rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 3px;
     font-size: var(--git-font-small);
     text-transform: none;
     letter-spacing: normal;
@@ -92,7 +97,6 @@ export const GIT_SHARED_STYLES = `
   }
   .button.commit {
     color: var(--background-color);
-    font-weight: 600;
     border-color: transparent;
     background: var(--color-green);
   }
