@@ -66,7 +66,7 @@ export function layoutGraph(commits: ReadonlyArray<GraphCommit>): GraphRow[] {
     }
 
     const color = laneColors[lane] ?? 0;
-    const fromNode = new Set<number>();
+    const opened = new Set<number>();
 
     // Bottom half: the node hands its lane to the first parent and opens lanes for the rest.
     const [firstParent, ...otherParents] = commit.parents;
@@ -76,7 +76,6 @@ export function layoutGraph(commits: ReadonlyArray<GraphCommit>): GraphRow[] {
       // Even when another lane already waits for the first parent, the line
       // stays straight; both lanes meet in the parent's node.
       lanes[lane] = firstParent;
-      fromNode.add(lane);
       segments.push({ half: "bottom", from: lane, to: lane, color });
     }
     for (const parent of otherParents) {
@@ -85,14 +84,15 @@ export function layoutGraph(commits: ReadonlyArray<GraphCommit>): GraphRow[] {
         target = freeLane();
         lanes[target] = parent;
         laneColors[target] = nextColor++;
+        opened.add(target);
       }
-      fromNode.add(target);
       segments.push({ half: "bottom", from: lane, to: target, color: laneColors[target] ?? 0 });
     }
 
-    // Lanes that only pass by continue straight down.
+    // Every other lane continues straight down, including one a merge line
+    // just joined: the branch it waits for runs on below the node.
     for (let index = 0; index < lanes.length; index++) {
-      if (lanes[index] === null || fromNode.has(index) || index === lane) continue;
+      if (lanes[index] === null || opened.has(index) || index === lane) continue;
       segments.push({ half: "bottom", from: index, to: index, color: laneColors[index] ?? 0 });
     }
 

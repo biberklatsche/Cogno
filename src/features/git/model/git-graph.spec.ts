@@ -36,6 +36,19 @@ describe("layoutGraph", () => {
     expect(rows[3]?.width).toBe(2);
   });
 
+  it("keeps a waiting lane running past a merge whose second parent it waits for", () => {
+    // Lane 1 (f) waits for a; m, further down lane 0, merges a in as well.
+    const rows = layoutGraph([
+      commit("f", "a"),
+      commit("m", "b", "a"),
+      commit("b", "a"),
+      commit("a"),
+    ]);
+
+    expect(rows.map((row) => row.lane)).toEqual([0, 1, 1, 0]);
+    expect(segmentsOf(rows[1])).toEqual(["bottom 0>0", "bottom 1>0", "bottom 1>1", "top 0>0"]);
+  });
+
   it("starts a new lane for a second branch tip and reuses it after it ends", () => {
     const rows = layoutGraph([commit("x", "a"), commit("y", "a"), commit("a"), commit("z")]);
 
