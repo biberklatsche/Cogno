@@ -1,4 +1,4 @@
-# Deploy: see infra/dl-worker/README.md
+# Deploy: node infra/dl-worker/deploy.mjs
 name = "cogno-dl"
 main = "src/index.js"
 compatibility_date = "2026-10-01"

@@ -823,7 +823,8 @@ Entscheidungen:
    Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
    Das Feature `updater` fragt aus jedem Fenster nach Prüfungen; Rust
    beantwortet dicht aufeinanderfolgende aus dem letzten Ergebnis und lädt
-   nie doppelt. Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
+   nie doppelt. Die Ankündigung einer neuen Version ist eine globale Aktion
+   ohne Ziel: einmal je App und Version, an das fokussierte Fenster. Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
    `platform/` (`Window`, `Messaging`); keine Schicht darüber weiß, wie
    viele Fenster es gibt — sie sieht nur Nachrichten für sich.
 3. **Eine Session gehört dem Fenster, dessen Webview ihren xterm-Core

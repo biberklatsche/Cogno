@@ -101,7 +101,7 @@ async function serveFile(segments, request, env, url) {
 
   record(env, request, {
     arch: undefined,
-    bundleType: fileName.split("-").at(-1)?.split(".")[0],
+    bundleType: bundleTypeOf(fileName),
     channel,
     event: "download",
     from: url.searchParams.get("from") ?? undefined,
@@ -131,6 +131,17 @@ async function redirectToDownload(segments, env, url) {
   const target = new URL(downloadUrl);
   target.searchParams.set("via", "site");
   return Response.redirect(target.toString(), 302);
+}
+
+/**
+ * The bundle type a release file installs, in the updater's words, so a
+ * download joins the check that led to it. Release files are named
+ * `cogno-{version}-{platform}-{arch}-{kind}{extension}` (release-build.mjs);
+ * the macOS updater archive (`app-update`) updates the `app` bundle.
+ */
+function bundleTypeOf(fileName) {
+  const kind = /-(?:x64|arm64)-([a-z-]+)\./u.exec(fileName)?.[1];
+  return kind === "app-update" ? "app" : kind;
 }
 
 async function readJson(env, key) {

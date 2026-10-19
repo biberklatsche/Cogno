@@ -23,24 +23,28 @@ function state(overrides: Partial<UpdaterState>): UpdaterState {
 
 describe("UpdaterService", () => {
   let state$: Subject<UpdaterState>;
-  let updater: { state$: Subject<UpdaterState>; check: ReturnType<typeof vi.fn> };
+  let announcement$: Subject<UpdaterState>;
+  let updater: {
+    state$: Subject<UpdaterState>;
+    announcement$: Subject<UpdaterState>;
+    check: ReturnType<typeof vi.fn>;
+  };
   let dispatch: ReturnType<typeof vi.fn>;
   let openUrl: ReturnType<typeof vi.fn>;
-  let installMode: "background" | "ask" | undefined;
+  let configuration: { feature?: { updater?: { install?: "background" | "ask" } } } | undefined;
   let service: UpdaterService;
 
   beforeEach(() => {
     vi.useFakeTimers();
     state$ = new Subject<UpdaterState>();
-    updater = { state$, check: vi.fn().mockResolvedValue(undefined) };
+    announcement$ = new Subject<UpdaterState>();
+    updater = { state$, announcement$, check: vi.fn().mockResolvedValue(undefined) };
     dispatch = vi.fn();
     openUrl = vi.fn().mockResolvedValue(undefined);
-    installMode = undefined;
+    configuration = {};
     service = new UpdaterService(
       updater as unknown as Updater,
-      {
-        getConfiguration: () => ({ feature: { updater: { install: installMode } } }),
-      } as unknown as ApplicationConfigurationPort,
+      { getConfiguration: () => configuration } as unknown as ApplicationConfigurationPort,
       { dispatch } as unknown as NotificationCenterPort,
       { openUrl } as unknown as Opener,
       { platform: () => "linux" } as unknown as OsPlatform,
@@ -60,8 +64,14 @@ describe("UpdaterService", () => {
     expect(updater.check).toHaveBeenCalledTimes(2);
   });
 
+  it("downloads in the background while the configuration is not loaded yet", () => {
+    configuration = undefined;
+    service.start();
+    expect(updater.check).toHaveBeenLastCalledWith({ force: false, download: true });
+  });
+
   it("does not download on its own when set to ask", () => {
-    installMode = "ask";
+    configuration = { feature: { updater: { install: "ask" } } };
     service.start();
     expect(updater.check).toHaveBeenLastCalledWith({ force: false, download: false });
   });
@@ -77,32 +87,31 @@ describe("UpdaterService", () => {
 
     vi.advanceTimersByTime(CHECK_INTERVAL_MS);
     state$.next(state({ phase: "ready", version: "0.6.0" }));
+    announcement$.next(state({ phase: "ready", version: "0.6.0" }));
     expect(updater.check).toHaveBeenCalledOnce();
     expect(service.state()).toBeUndefined();
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("announces a downloaded version once, not while it is still only available", () => {
+  it("shows the state without announcing it; announcing is Rust's call", () => {
     service.start();
-    state$.next(state({ phase: "available", version: "0.6.0" }));
-    state$.next(state({ phase: "downloading", version: "0.6.0" }));
+    state$.next(state({ phase: "ready", version: "0.6.0" }));
+    expect(service.state()?.phase).toBe("ready");
     expect(dispatch).not.toHaveBeenCalled();
+  });
 
-    state$.next(state({ phase: "ready", version: "0.6.0" }));
-    state$.next(state({ phase: "ready", version: "0.6.0" }));
+  it("notifies about a version Rust announces as ready", () => {
+    service.start();
+    announcement$.next(state({ phase: "ready", version: "0.6.0" }));
     expect(dispatch).toHaveBeenCalledOnce();
     expect(dispatch.mock.calls[0][0].header).toBe("Cogno 0.6.0 is ready");
+    expect(dispatch.mock.calls[0][0].body).toContain("install");
   });
 
-  it("announces an available version at once when the user installs it", () => {
-    installMode = "ask";
+  it("points to the download when the announced version cannot be installed here", () => {
     service.start();
-    state$.next(state({ phase: "available", version: "0.6.0" }));
+    announcement$.next(state({ phase: "available", version: "0.6.0", installable: false }));
     expect(dispatch.mock.calls[0][0].header).toBe("Cogno 0.6.0 is available");
-  });
-
-  it("announces an available version at once when this installation cannot update itself", () => {
-    service.start();
-    state$.next(state({ phase: "available", version: "0.6.0", installable: false }));
     expect(dispatch.mock.calls[0][0].body).toContain("download");
   });
 

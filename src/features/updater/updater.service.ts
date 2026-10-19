@@ -17,16 +17,16 @@ type InstallMode = "background" | "ask";
 /**
  * Follows the app's update state and asks for checks while the feature is on.
  * The state itself is Rust's (one per app); this window only shows it, and
- * announces each new version once.
+ * turns the announcement Rust sends it - once per app and version - into a
+ * notification.
  */
 @Injectable({ providedIn: "root" })
 export class UpdaterService {
   private readonly stateSignal = signal<UpdaterState | undefined>(undefined);
   readonly state: Signal<UpdaterState | undefined> = this.stateSignal.asReadonly();
 
-  private subscription?: Subscription;
+  private subscriptions?: Subscription;
   private timer?: ReturnType<typeof setInterval>;
-  private announcedVersion?: string;
 
   constructor(
     private readonly updater: Updater,
@@ -37,18 +37,17 @@ export class UpdaterService {
   ) {}
 
   start(): void {
-    if (this.subscription) return;
-    this.subscription = this.updater.state$.subscribe((state) => {
-      this.stateSignal.set(state);
-      this.announce(state);
-    });
+    if (this.subscriptions) return;
+    this.subscriptions = new Subscription();
+    this.subscriptions.add(this.updater.state$.subscribe((state) => this.stateSignal.set(state)));
+    this.subscriptions.add(this.updater.announcement$.subscribe((state) => this.announce(state)));
     void this.check(false);
     this.timer = setInterval(() => void this.check(false), CHECK_INTERVAL_MS);
   }
 
   stop(): void {
-    this.subscription?.unsubscribe();
-    this.subscription = undefined;
+    this.subscriptions?.unsubscribe();
+    this.subscriptions = undefined;
     clearInterval(this.timer);
     this.timer = undefined;
   }
@@ -79,23 +78,13 @@ export class UpdaterService {
   }
 
   private installMode(): InstallMode {
-    const config = this.configPort.getConfiguration() as {
-      feature?: { updater?: { install?: InstallMode } };
-    };
-    return config.feature?.updater?.install ?? "background";
+    const config = this.configPort.getConfiguration() as
+      | { feature?: { updater?: { install?: InstallMode } } }
+      | undefined;
+    return config?.feature?.updater?.install ?? "background";
   }
 
-  /**
-   * One notification per version: when it is ready to install, or - when it
-   * will not be downloaded on its own - as soon as it is available.
-   */
   private announce(state: UpdaterState): void {
-    if (!state.version || state.version === this.announcedVersion) return;
-    const waitsForUser =
-      state.phase === "available" && (!state.installable || this.installMode() === "ask");
-    if (state.phase !== "ready" && !waitsForUser) return;
-
-    this.announcedVersion = state.version;
     this.notificationCenter.dispatch({
       header: `Cogno ${state.version} is ${state.phase === "ready" ? "ready" : "available"}`,
       body: state.installable

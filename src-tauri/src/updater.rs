@@ -1,16 +1,20 @@
 //! Self-update. An update is process-wide - one installation, one download -
 //! so Rust owns its state and every window receives each change as a broadcast
 //! (ARCHITECTURE.md 2.6). Windows ask for checks on their own schedule; checks
-//! that follow each other closely are answered from the last result.
+//! that follow each other closely are answered from the last result. A new
+//! version is announced once per app, to the focused window.
 
+use crate::commands::window_registry::route;
 use crate::db::Db;
 use serde::Serialize;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_updater::{Update, UpdaterExt};
+use tokio::sync::Notify;
 
 const STATE_EVENT: &str = "updater-state";
+const ANNOUNCEMENT_EVENT: &str = "updater-announcement";
 const MIN_CHECK_INTERVAL: Duration = Duration::from_secs(10 * 60);
 
 #[derive(Clone, Copy, Serialize, PartialEq)]
@@ -25,7 +29,7 @@ pub enum UpdaterPhase {
     Failed,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdaterState {
     phase: UpdaterPhase,
@@ -44,41 +48,55 @@ struct Inner {
     update: Option<Update>,
     bytes: Option<Vec<u8>>,
     last_check: Option<Instant>,
+    announced_version: Option<String>,
 }
 
-pub struct Updater(Mutex<Inner>);
+pub struct Updater {
+    inner: Mutex<Inner>,
+    /// Woken after every state change, so a command can wait for one.
+    changed: Notify,
+}
 
 impl Updater {
     pub fn new(current_version: String) -> Self {
-        let installable =
-            tauri::utils::platform::bundle_type().is_some() && !cfg!(debug_assertions);
-        Self(Mutex::new(Inner {
-            state: UpdaterState {
-                phase: UpdaterPhase::Idle,
-                current_version,
-                version: None,
-                notes: None,
-                installable,
-                error: None,
-            },
-            update: None,
-            bytes: None,
-            last_check: None,
-        }))
+        Self {
+            inner: Mutex::new(Inner {
+                state: UpdaterState {
+                    phase: UpdaterPhase::Idle,
+                    current_version,
+                    version: None,
+                    notes: None,
+                    installable: installable(),
+                    error: None,
+                },
+                update: None,
+                bytes: None,
+                last_check: None,
+                announced_version: None,
+            }),
+            changed: Notify::new(),
+        }
     }
 
     fn snapshot(&self) -> UpdaterState {
-        self.0.lock().unwrap().state.clone()
+        self.inner.lock().unwrap().state.clone()
     }
 
-    /// Applies `change` to the state and broadcasts the result.
-    fn set(&self, app: &AppHandle, change: impl FnOnce(&mut Inner)) {
-        let state = {
-            let mut inner = self.0.lock().unwrap();
-            change(&mut inner);
-            inner.state.clone()
+    /// Applies `change` and, when the state differs afterwards, broadcasts it
+    /// with the lock released. The lock is held for nothing else.
+    fn set<T>(&self, app: &AppHandle, change: impl FnOnce(&mut Inner) -> T) -> T {
+        let (result, changed) = {
+            let mut inner = self.inner.lock().unwrap();
+            let before = inner.state.clone();
+            let result = change(&mut inner);
+            let changed = (inner.state != before).then(|| inner.state.clone());
+            (result, changed)
         };
-        let _ = app.emit(STATE_EVENT, state);
+        if let Some(state) = changed {
+            let _ = app.emit(STATE_EVENT, state);
+            self.changed.notify_waiters();
+        }
+        result
     }
 
     fn fail(&self, app: &AppHandle, error: impl ToString) {
@@ -87,6 +105,56 @@ impl Updater {
             inner.state.error = Some(error.to_string());
         });
     }
+
+    /// Waits while a download runs; the state that follows it is settled.
+    async fn wait_for_download(&self) {
+        loop {
+            let changed = self.changed.notified();
+            if self.snapshot().phase != UpdaterPhase::Downloading {
+                return;
+            }
+            changed.await;
+        }
+    }
+
+    /// Tells the user about the version on offer once per app, as soon as
+    /// nothing more happens on its own: it is ready to install, or it waits for
+    /// the user. The announcement goes to the focused window only, like every
+    /// global action without a target (ARCHITECTURE.md 2.6).
+    fn announce(&self, app: &AppHandle) {
+        let state = {
+            let mut inner = self.inner.lock().unwrap();
+            let settled = matches!(
+                inner.state.phase,
+                UpdaterPhase::Ready | UpdaterPhase::Available
+            );
+            let Some(version) = inner.state.version.clone().filter(|_| settled) else {
+                return;
+            };
+            if inner.announced_version.as_ref() == Some(&version) {
+                return;
+            }
+            inner.announced_version = Some(version);
+            inner.state.clone()
+        };
+        route(app, ANNOUNCEMENT_EVENT, state, None);
+    }
+}
+
+/// Whether this installation can replace itself: a release build the bundler
+/// produced. On macOS `bundle_type` is `App` for any binary, so the
+/// executable's place inside a `.app` bundle tells a bundled build apart.
+fn installable() -> bool {
+    if cfg!(debug_assertions) {
+        return false;
+    }
+    if cfg!(target_os = "macos") {
+        return std::env::current_exe().is_ok_and(|exe| {
+            exe.components()
+                .any(|part| part.as_os_str().to_string_lossy().ends_with(".app"))
+        });
+    }
+    tauri::utils::platform::bundle_type().is_some()
 }
 
 #[tauri::command]
@@ -105,8 +173,7 @@ pub async fn updater_check(
     download: bool,
 ) -> Result<(), String> {
     // `Some(fetch)`: skip the check, and fetch the known update when asked to.
-    let skip = {
-        let mut inner = updater.0.lock().unwrap();
+    let skip = updater.set(&app, |inner| {
         let busy = matches!(
             inner.state.phase,
             UpdaterPhase::Checking | UpdaterPhase::Downloading
@@ -125,17 +192,19 @@ pub async fn updater_check(
             inner.state.phase = UpdaterPhase::Checking;
             inner.state.error = None;
             inner.last_check = Some(Instant::now());
-            let _ = app.emit(STATE_EVENT, inner.state.clone());
             None
         }
-    };
-    if let Some(fetch) = skip {
-        if fetch {
-            fetch_update(&app, &updater).await;
-        }
-        return Ok(());
+    });
+    match skip {
+        Some(true) => fetch_update(&app, &updater).await,
+        Some(false) => {}
+        None => run_check(&app, &updater, download).await,
     }
+    updater.announce(&app);
+    Ok(())
+}
 
+async fn run_check(app: &AppHandle, updater: &Updater, download: bool) {
     // On Windows the installer ends the process with `exit(0)`, which skips
     // `RunEvent::Exit`, so the database is closed beforehand.
     let handle = app.clone();
@@ -150,11 +219,9 @@ pub async fn updater_check(
     match checked {
         Ok(Some(update)) => {
             let version = update.version.clone();
-            let already_ready = {
-                let inner = updater.0.lock().unwrap();
-                inner.bytes.is_some() && inner.state.version.as_deref() == Some(version.as_str())
-            };
-            updater.set(&app, |inner| {
+            let already_ready = updater.set(app, |inner| {
+                let already_ready = inner.bytes.is_some()
+                    && inner.state.version.as_deref() == Some(version.as_str());
                 inner.state.phase = if already_ready {
                     UpdaterPhase::Ready
                 } else {
@@ -166,61 +233,89 @@ pub async fn updater_check(
                     inner.bytes = None;
                 }
                 inner.update = Some(update);
+                already_ready
             });
             if download && !already_ready && updater.snapshot().installable {
-                fetch_update(&app, &updater).await;
+                fetch_update(app, updater).await;
             }
         }
-        Ok(None) => updater.set(&app, |inner| {
+        Ok(None) => updater.set(app, |inner| {
             inner.state.phase = UpdaterPhase::UpToDate;
             inner.state.version = None;
             inner.state.notes = None;
             inner.update = None;
             inner.bytes = None;
         }),
-        Err(error) => updater.fail(&app, error),
+        // A version already on offer stays on offer; only the check failed.
+        Err(error) => updater.set(app, |inner| {
+            if inner.update.is_none() {
+                inner.state.phase = UpdaterPhase::Failed;
+                inner.state.error = Some(error.to_string());
+                return;
+            }
+            log::warn!("[updater] Check failed, keeping the known update: {error}");
+            inner.state.phase = if inner.bytes.is_some() {
+                UpdaterPhase::Ready
+            } else {
+                UpdaterPhase::Available
+            };
+        }),
     }
-    Ok(())
 }
 
 /// Installs the update, downloading it first when needed, and restarts the app.
-/// On Windows the installer ends the process itself.
+/// On Windows the installer ends the process itself. A download already
+/// running - from a check - is waited for, not doubled.
 #[tauri::command]
 pub async fn updater_install(app: AppHandle, updater: State<'_, Updater>) -> Result<(), String> {
-    let installable = updater.snapshot().installable;
-    if !installable {
+    if !updater.snapshot().installable {
         return Err("This installation cannot update itself.".into());
     }
-    if updater.0.lock().unwrap().bytes.is_none() {
+    updater.wait_for_download().await;
+    if updater.inner.lock().unwrap().bytes.is_none() {
         fetch_update(&app, &updater).await;
     }
-    let (update, bytes) = {
-        let inner = updater.0.lock().unwrap();
-        match (inner.update.clone(), inner.bytes.clone()) {
-            (Some(update), Some(bytes)) => (update, bytes),
-            _ => return Err("No downloaded update to install.".into()),
+    // The bytes move out: an installer is used once, and a failed install
+    // downloads again next time instead of retrying stale bytes.
+    let downloaded = {
+        let mut inner = updater.inner.lock().unwrap();
+        match (inner.update.clone(), inner.bytes.take()) {
+            (Some(update), Some(bytes)) => Some((update, bytes)),
+            _ => None,
         }
     };
-    if let Err(error) = update.install(&bytes) {
+    let Some((update, bytes)) = downloaded else {
+        let error = "No downloaded update to install.";
+        if updater.snapshot().phase != UpdaterPhase::Failed {
+            updater.fail(&app, error);
+        }
+        return Err(error.into());
+    };
+    let installed = tauri::async_runtime::spawn_blocking(move || update.install(bytes)).await;
+    let error = match installed {
+        Ok(Ok(())) => None,
+        Ok(Err(error)) => Some(error.to_string()),
+        Err(error) => Some(error.to_string()),
+    };
+    if let Some(error) = error {
         updater.fail(&app, &error);
-        return Err(error.to_string());
+        return Err(error);
     }
     app.request_restart();
     Ok(())
 }
 
 async fn fetch_update(app: &AppHandle, updater: &Updater) {
-    let update = {
-        let mut inner = updater.0.lock().unwrap();
+    let update = updater.set(app, |inner| {
         if inner.state.phase == UpdaterPhase::Downloading {
-            return;
+            return None;
         }
-        let Some(update) = inner.update.clone() else {
-            return;
-        };
+        let update = inner.update.clone()?;
         inner.state.phase = UpdaterPhase::Downloading;
-        let _ = app.emit(STATE_EVENT, inner.state.clone());
-        update
+        Some(update)
+    });
+    let Some(update) = update else {
+        return;
     };
     match update.download(|_, _| {}, || {}).await {
         Ok(bytes) => updater.set(app, |inner| {

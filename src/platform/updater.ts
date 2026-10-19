@@ -5,6 +5,7 @@ import { Observable } from "rxjs";
 import { fromTauriListener } from "./tauri-listener";
 
 const UPDATER_STATE_EVENT = "updater-state";
+const UPDATER_ANNOUNCEMENT_EVENT = "updater-announcement";
 
 export type UpdaterPhase =
   | "idle"
@@ -33,6 +34,14 @@ export class Updater {
   readonly state$: Observable<UpdaterState> = fromTauriListener<UpdaterState>(
     (emit) => listen<UpdaterState>(UPDATER_STATE_EVENT, ({ payload }) => emit(payload)),
     () => invoke<UpdaterState>("updater_state"),
+  );
+
+  /**
+   * A new version the user should hear about: once per app and version, and
+   * only in the window Rust picked for it (the focused one).
+   */
+  readonly announcement$: Observable<UpdaterState> = fromTauriListener<UpdaterState>((emit) =>
+    listen<UpdaterState>(UPDATER_ANNOUNCEMENT_EVENT, ({ payload }) => emit(payload)),
   );
 
   /**

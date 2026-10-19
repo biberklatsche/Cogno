@@ -1872,40 +1872,59 @@ async function performHttpRequest({ bodyBuffer, headers, method, requestPath, ur
 }
 
 function runCommand(commandName, commandArguments, options = {}) {
-  const { environmentVariables, runnerType } = options;
-  const resolvedCommandName = resolveCommandName(commandName);
-  const resolvedArguments =
-    runnerType === "pnpm-run" ? ["run", ...commandArguments] : commandArguments;
+  const { environmentVariables } = options;
+  const { resolvedCommandName, resolvedArguments, useShell } = resolveCommand(
+    commandName,
+    commandArguments,
+    options,
+  );
 
   console.log(`> ${[resolvedCommandName, ...resolvedArguments].join(" ")}`);
   execFileSync(resolvedCommandName, resolvedArguments, {
     env: environmentVariables,
-    shell: shouldUseShellExecution(resolvedCommandName),
+    shell: useShell,
     stdio: "inherit",
   });
 }
 
 function runCommandAndCollectOutput(commandName, commandArguments, options = {}) {
-  const { environmentVariables, runnerType } = options;
-  const resolvedCommandName = resolveCommandName(commandName);
-  const resolvedArguments =
-    runnerType === "pnpm-run" ? ["run", ...commandArguments] : commandArguments;
+  const { environmentVariables } = options;
+  const { resolvedCommandName, resolvedArguments, useShell } = resolveCommand(
+    commandName,
+    commandArguments,
+    options,
+  );
 
   return execFileSync(resolvedCommandName, resolvedArguments, {
     encoding: "utf-8",
     env: environmentVariables,
-    shell: shouldUseShellExecution(resolvedCommandName),
+    shell: useShell,
   }).trim();
 }
 
-function resolveCommandName(commandName) {
-  if (process.platform === "win32" && commandName === "pnpm") {
-    return "pnpm.cmd";
-  }
+/**
+ * On Windows `pnpm` is a `.cmd` script that Node only runs through the shell,
+ * which joins the arguments with spaces and quotes nothing; arguments with
+ * spaces, such as a temp path under a user's profile, are quoted here.
+ */
+function resolveCommand(commandName, commandArguments, { runnerType }) {
+  const resolvedCommandName =
+    process.platform === "win32" && commandName === "pnpm" ? "pnpm.cmd" : commandName;
+  const useShell = process.platform === "win32" && resolvedCommandName.endsWith(".cmd");
+  const resolvedArguments =
+    runnerType === "pnpm-run" ? ["run", ...commandArguments] : commandArguments;
 
-  return commandName;
+  return {
+    resolvedArguments: useShell ? resolvedArguments.map(quoteForWindowsShell) : resolvedArguments,
+    resolvedCommandName,
+    useShell,
+  };
 }
 
-function shouldUseShellExecution(commandName) {
-  return process.platform === "win32" && commandName.endsWith(".cmd");
+function quoteForWindowsShell(argument) {
+  if (argument.includes('"')) {
+    throw new Error(`Cannot pass an argument with a double quote through the shell: ${argument}`);
+  }
+
+  return /[\s&|<>^()]/u.test(argument) || argument.length === 0 ? `"${argument}"` : argument;
 }
