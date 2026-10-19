@@ -2,10 +2,14 @@
 # Cogno Integration Script for Zsh
 # Provides OSC markers, prompt hooks, and shell integration features
 
-if [[ -n "${COGNO_ZSH_INTEGRATION_LOADED}" ]]; then
+# Guard against double loading within the same session.
+# Compare against COGNO_SESSION_ID so an inherited value from a parent Cogno
+# terminal (e.g. running Cogno from a Cogno terminal) does not suppress
+# integration in a freshly spawned session.
+if [[ -n "${COGNO_SESSION_ID}" && "${COGNO_ZSH_INTEGRATION_LOADED}" == "${COGNO_SESSION_ID}" ]]; then
   return 0
 fi
-typeset -g COGNO_ZSH_INTEGRATION_LOADED=1
+typeset -g COGNO_ZSH_INTEGRATION_LOADED="${COGNO_SESSION_ID:-1}"
 
 setopt PROMPT_SUBST
 autoload -Uz add-zsh-hook

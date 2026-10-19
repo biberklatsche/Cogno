@@ -7,7 +7,7 @@ import { Logger } from "@cogno/platform/logger";
 import { Shells } from "@cogno/platform/shells";
 import { ShellTypeContract } from "@cogno/shared/domain";
 
-const INTEGRATION_VERSION = "1.3.0";
+const INTEGRATION_VERSION = "1.3.1";
 
 /**
  * Manages shell integration scripts in ~/.cogno/shell-integration
