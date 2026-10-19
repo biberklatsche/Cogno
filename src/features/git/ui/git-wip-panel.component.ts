@@ -97,8 +97,13 @@ import { GIT_SHARED_STYLES } from "./git-styles";
              [value]="summary()" (input)="summary.set(value($event))" />
       <textarea class="text-input description" placeholder="Description"
                 [value]="description()" (input)="description.set(value($event))"></textarea>
-      <button type="submit" class="button commit commit-button" [disabled]="!canCommit()">
-        {{ commitLabel() }}
+      <button type="submit" class="button commit commit-button" [disabled]="!canCommit() || committing()">
+        @if (committing()) {
+          <app-icon name="mdiLoading" class="spin"></app-icon>
+          Committing…
+        } @else {
+          {{ commitLabel() }}
+        }
       </button>
     </form>
   `,
@@ -133,7 +138,14 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         max-height: 160px;
         resize: vertical;
       }
-      .commit-button { align-self: stretch; }
+      .commit-button {
+        align-self: stretch;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+      }
+      .commit-button app-icon { width: 1rem; height: 1rem; }
     `,
   ],
 })
@@ -143,6 +155,8 @@ export class GitWipPanelComponent {
 
   readonly summary = signal("");
   readonly description = signal("");
+  /** The commit and the re-read after it are running; the button waits for both. */
+  readonly committing = signal(false);
   readonly canCommit = computed(
     () =>
       this.summary().trim().length > 0 &&
@@ -194,12 +208,17 @@ export class GitWipPanelComponent {
   }
 
   async commit(): Promise<void> {
-    if (!this.canCommit()) return;
-    const outcome = await this.operations.commit(this.summary(), this.description());
-    if (outcome !== "ok") return;
-    this.summary.set("");
-    this.description.set("");
-    this.view.closeDiff();
+    if (!this.canCommit() || this.committing()) return;
+    this.committing.set(true);
+    try {
+      const outcome = await this.operations.commit(this.summary(), this.description());
+      if (outcome !== "ok") return;
+      this.summary.set("");
+      this.description.set("");
+      this.view.closeDiff();
+    } finally {
+      this.committing.set(false);
+    }
   }
 
   value(event: Event): string {
