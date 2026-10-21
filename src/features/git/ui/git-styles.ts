@@ -54,6 +54,8 @@ export const GIT_SHARED_STYLES = `
   }
   /* The icons are as tall as the capitals; flex centres both on the same line. */
   .section-header .small-icon { width: 13px; height: 13px; }
+  /* The header is already small; a small button in it keeps that size instead of shrinking again. */
+  .section-header .button.small { font-size: inherit; }
 
   .ellipsis {
     overflow: hidden;
@@ -84,14 +86,10 @@ export const GIT_SHARED_STYLES = `
     letter-spacing: normal;
   }
 
-  /* Stage is green, unstage and discard red, the commit itself a filled green button. */
-  .button.stage { color: var(--color-green); border-color: color-mix(in srgb, var(--color-green) 60%, transparent); }
-  .button.stage:hover:not(:disabled) {
-    border-color: var(--color-green);
-    background: color-mix(in srgb, var(--color-green) 18%, var(--background-color));
-  }
-  .button.unstage, .button.discard { color: var(--color-red); border-color: color-mix(in srgb, var(--color-red) 60%, transparent); }
-  .button.unstage:hover:not(:disabled), .button.discard:hover:not(:disabled) {
+  /* Stage and unstage are plain buttons; only discard is red, as it cannot be undone.
+     The commit itself is a filled green button. */
+  .button.discard { color: var(--color-red); border-color: color-mix(in srgb, var(--color-red) 60%, transparent); }
+  .button.discard:hover:not(:disabled) {
     border-color: var(--color-red);
     background: color-mix(in srgb, var(--color-red) 18%, var(--background-color));
   }
@@ -107,7 +105,7 @@ export const GIT_SHARED_STYLES = `
 
   .icon-button app-icon { width: 1rem; height: 1rem; }
   .small-icon { width: 14px; height: 14px; flex: 0 0 auto; }
-  .icon-button:disabled { opacity: 0.3; cursor: not-allowed; }
+  .icon-button:disabled { opacity: 0.3; }
 
   .row-action {
     flex: 0 0 auto;

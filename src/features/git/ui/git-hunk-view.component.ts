@@ -40,15 +40,15 @@ export type GitHunkSelection = {
               <button type="button" class="button small" (click)="clearSelection()">Clear</button>
               @if (actions() === "unstaged") {
                 <button type="button" class="button small discard" (click)="discard.emit(selection(hunkIndex))">Discard Lines</button>
-                <button type="button" class="button small stage" (click)="stage.emit(selection(hunkIndex))">Stage Lines</button>
+                <button type="button" class="button small" (click)="stage.emit(selection(hunkIndex))">Stage Lines</button>
               } @else {
-                <button type="button" class="button small unstage" (click)="unstage.emit(selection(hunkIndex))">Unstage Lines</button>
+                <button type="button" class="button small" (click)="unstage.emit(selection(hunkIndex))">Unstage Lines</button>
               }
             } @else if (actions() === "unstaged") {
               <button type="button" class="button small discard" (click)="discard.emit({ hunk, lines: none })">Discard Hunk</button>
-              <button type="button" class="button small stage" (click)="stage.emit({ hunk, lines: none })">Stage Hunk</button>
+              <button type="button" class="button small" (click)="stage.emit({ hunk, lines: none })">Stage Hunk</button>
             } @else {
-              <button type="button" class="button small unstage" (click)="unstage.emit({ hunk, lines: none })">Unstage Hunk</button>
+              <button type="button" class="button small" (click)="unstage.emit({ hunk, lines: none })">Unstage Hunk</button>
             }
           }
         </div>
@@ -103,7 +103,8 @@ export type GitHunkSelection = {
       }
       .line.add { background: color-mix(in srgb, var(--color-green) 14%, transparent); }
       .line.del { background: color-mix(in srgb, var(--color-red) 14%, transparent); }
-      .line.selectable { cursor: pointer; }
+      .line.selectable.add:not(.selected):hover { background: color-mix(in srgb, var(--color-green) 22%, transparent); }
+      .line.selectable.del:not(.selected):hover { background: color-mix(in srgb, var(--color-red) 22%, transparent); }
       .line.selected { outline: 1px solid var(--highlight-color); outline-offset: -1px; }
       .line.selected.add { background: color-mix(in srgb, var(--color-green) 30%, transparent); }
       .line.selected.del { background: color-mix(in srgb, var(--color-red) 30%, transparent); }

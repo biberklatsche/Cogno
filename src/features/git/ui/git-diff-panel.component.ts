@@ -42,9 +42,9 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         <span class="subtle origin">{{ origin(source) }}</span>
         <span class="grow"></span>
         @if (source.kind === "unstaged") {
-          <button type="button" class="button small stage" (click)="operations.stage([source.file.path])">Stage File</button>
+          <button type="button" class="button small" (click)="operations.stage([source.file.path])">Stage File</button>
         } @else if (source.kind === "staged") {
-          <button type="button" class="button small unstage" (click)="operations.unstage([source.file.path])">Unstage File</button>
+          <button type="button" class="button small" (click)="operations.unstage([source.file.path])">Unstage File</button>
         }
         <div class="mode">
           <button type="button" class="button icon-button" appTooltip="Hunk View"

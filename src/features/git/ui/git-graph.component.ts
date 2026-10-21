@@ -374,7 +374,7 @@ type GraphItem = {
         border-radius: 4px;
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
       }
-      .label.stacked { cursor: pointer; max-width: none; }
+      .label.stacked { max-width: none; }
       .head-check { color: var(--color-green); margin-left: auto; }
     `,
   ],

@@ -138,8 +138,9 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         border: none;
         padding: 0;
         color: var(--highlight-color);
-        cursor: pointer;
+        text-underline-offset: 2px;
       }
+      .link:hover { text-decoration: underline; }
     `,
   ],
 })

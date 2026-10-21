@@ -105,7 +105,6 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         background: none;
         color: var(--git-subtle);
         font: inherit;
-        cursor: pointer;
         transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
       }
       .tool:hover:not(:disabled) {
@@ -113,7 +112,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
         background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
       }
-      .tool:disabled { opacity: 0.3; cursor: not-allowed; }
+      .tool:disabled { opacity: 0.3; }
       .label { font-size: var(--git-font-small); line-height: 1.1; }
       .tool-icon { width: 1.25rem; height: 1.25rem; }
       .split { display: flex; }

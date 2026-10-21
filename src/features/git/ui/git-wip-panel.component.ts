@@ -57,7 +57,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                 [disabled]="unstaged().length === 0" (click)="actions.discardAllUnstaged()">
           <app-icon name="mdiTrashCanOutline"></app-icon>
         </button>
-        <button type="button" class="button small stage" [disabled]="unstaged().length === 0" (click)="operations.stageAll()">
+        <button type="button" class="button small" [disabled]="unstaged().length === 0" (click)="operations.stageAll()">
           Stage All Changes
         </button>
       </div>
@@ -78,7 +78,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           Staged Files ({{ status().staged.length }})
         </button>
         <span class="grow"></span>
-        <button type="button" class="button small unstage" [disabled]="status().staged.length === 0" (click)="operations.unstageAll()">
+        <button type="button" class="button small" [disabled]="status().staged.length === 0" (click)="operations.unstageAll()">
           Unstage All Changes
         </button>
       </div>
@@ -93,10 +93,12 @@ import { GIT_SHARED_STYLES } from "./git-styles";
     </div>
 
     <form class="commit" (submit)="$event.preventDefault(); commit()">
-      <input class="text-input" type="text" placeholder="Commit summary" spellcheck="false"
-             [value]="summary()" (input)="summary.set(value($event))" />
-      <textarea class="text-input description" placeholder="Description"
-                [value]="description()" (input)="description.set(value($event))"></textarea>
+      <div class="message">
+        <input class="summary" type="text" placeholder="Commit summary" spellcheck="false"
+               [value]="summary()" (input)="summary.set(value($event))" />
+        <textarea class="description" placeholder="Description"
+                  [value]="description()" (input)="description.set(value($event))"></textarea>
+      </div>
       <button type="submit" class="button commit commit-button" [disabled]="!canCommit() || committing()">
         @if (committing()) {
           <app-icon name="mdiLoading" class="spin"></app-icon>
@@ -133,10 +135,31 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         padding: var(--git-gutter);
         border-top: 1px solid var(--git-border);
       }
+      /* Summary and description as one field, as in GitKraken: one frame around both, the
+         summary larger than the description. */
+      .message {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        padding: 0.4rem 0.5rem;
+        background: var(--background-color);
+        border: 1px solid var(--git-border);
+        border-radius: var(--button-border-radius);
+      }
+      .message:focus-within { border-color: var(--highlight-color); }
+      .summary, .description {
+        padding: 0;
+        border: none;
+        outline: none;
+        background: none;
+        color: var(--foreground-color);
+        font: inherit;
+      }
+      .summary { font-size: 1.1em; }
       .description {
-        min-height: 56px;
-        max-height: 160px;
-        resize: vertical;
+        height: 64px;
+        font-size: var(--git-font-small);
+        resize: none;
       }
       .commit-button {
         align-self: stretch;
