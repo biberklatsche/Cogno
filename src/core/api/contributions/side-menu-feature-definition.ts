@@ -20,7 +20,6 @@ export interface SideMenuFeatureDefinitionContract<TActionName = string> {
   readonly order: number;
   readonly actionName: TActionName;
   readonly configPath: string;
-  readonly pinned?: boolean;
   readonly targetComponent: Type<unknown> | (() => Promise<Type<unknown>>);
   readonly createLifecycle?: SideMenuFeatureLifecycleFactory;
   readonly isAvailable?: (configuration: Record<string, unknown>) => boolean;

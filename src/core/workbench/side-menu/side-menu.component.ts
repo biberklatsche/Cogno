@@ -33,14 +33,13 @@ export function isSelectedSideMenuItem(
   selector: "app-side-menu",
   imports: [IconComponent, NgComponentOutlet, TooltipDirective, ActionKeybindingPipe],
   host: {
-    "[class.overlay-host]": "!overlay()",
     "[class.expanded-host]": "isExpanded()",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
         <aside #overlayAside class="base-overlay flat"
                [class.hidden]="!selectedItem()"
-               [class.overlay]="!overlay()"
+               [class.overlay]="!isPinned()"
                [class.shift-left]="visibleItems().length > 0"
                [class.expanded]="isExpanded()"
                [style.width.px]="isExpanded() ? null : panelWidthInPixels()"
@@ -58,12 +57,8 @@ export function isSelectedSideMenuItem(
                         <app-icon [name]="isExpanded() ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
                     </button>
                     <button class="button icon-button" (click)="togglePin()"
-                            [appTooltip]="selectedItem()?.pinned ? 'Unpin panel' : 'Pin panel (keeps it open)'">
-                        <app-icon [name]="selectedItem()?.pinned ? 'mdiPin': 'mdiPinOff'"></app-icon>
-                    </button>
-                    <button class="button icon-button" (click)="toggleDisplacement()"
-                            [appTooltip]="overlay() ? 'Push content aside' : 'Overlay content'">
-                        <app-icon [name]="overlay() ? 'mdiCropSquare' : 'mdiDotsSquare'"></app-icon>
+                            [appTooltip]="isPinned() ? 'Unpin panel' : 'Pin panel beside the terminals'">
+                        <app-icon [name]="isPinned() ? 'mdiPin': 'mdiPinOff'"></app-icon>
                     </button>
                     <button class="button icon-button" (click)="close()" appTooltip="Close">
                         <app-icon [name]="'mdiClose'"></app-icon>
@@ -172,6 +167,12 @@ export function isSelectedSideMenuItem(
                 opacity: 0;
             }
 
+            /* Only a floating panel lets the terminals show through; a pinned one
+               sits beside them and an expanded one replaces them. */
+            &:not(.overlay), &.expanded {
+                background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+            }
+
             &.overlay {
                 position: absolute;
                 right: 4px;
@@ -264,7 +265,7 @@ export class SideMenuComponent implements OnDestroy {
       );
   });
   selectedItem = this.menuItemService.selectedItem;
-  overlay = this.menuItemService.displacement;
+  isPinned = this.menuItemService.isPinned;
   focused = this.menuItemService.isFocused;
   panelWidthInPixels = this.menuItemService.panelWidthInPixels;
   isExpanded = this.menuItemService.isExpanded;
@@ -319,7 +320,7 @@ export class SideMenuComponent implements OnDestroy {
     const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
 
     if (!clickedInsideAside && !clickedInsideMenu) {
-      if (this.selectedItem()?.pinned) {
+      if (this.isPinned()) {
         this.menuItemService.blur();
         return;
       }
@@ -327,7 +328,12 @@ export class SideMenuComponent implements OnDestroy {
     }
   };
 
+  /** A click on the open panel's icon closes it, as the X does. */
   open(menuItem: SideMenuItem) {
+    if (this.isMenuItemSelected(menuItem)) {
+      this.close();
+      return;
+    }
     this.menuItemService.open(menuItem.label);
   }
 
@@ -341,10 +347,6 @@ export class SideMenuComponent implements OnDestroy {
 
   focus() {
     this.menuItemService.focus();
-  }
-
-  toggleDisplacement() {
-    this.menuItemService.toggleDisplacement();
   }
 
   togglePin() {

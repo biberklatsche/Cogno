@@ -11,7 +11,6 @@ describe("isSelectedSideMenuItem", () => {
       label: "Notification",
       icon: "mdiBell",
       hidden: false,
-      pinned: false,
       actionName: "open_notification",
       component: DummyComponent,
     };
@@ -30,14 +29,12 @@ describe("isSelectedSideMenuItem", () => {
       label: "AI Chat",
       icon: "mdiRobot",
       hidden: false,
-      pinned: false,
       actionName: "open_ai_chat",
       component: DummyComponent,
     };
 
     const replacedMenuItem: SideMenuItem = {
       ...selectedItem,
-      pinned: true,
     };
 
     expect(selectedItem).not.toBe(replacedMenuItem);

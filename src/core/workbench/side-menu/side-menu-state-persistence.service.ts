@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toObservable } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { combineLatest, debounceTime, filter, skip } from "rxjs";
-import { SideMenuStateRepository } from "./side-menu-state.repository";
+import { SideMenuPanelEntity, SideMenuStateRepository } from "./side-menu-state.repository";
 
 @Injectable({ providedIn: "root" })
 export class SideMenuStatePersistenceService {
@@ -19,10 +19,12 @@ export class SideMenuStatePersistenceService {
       void this.restore();
     });
 
+    // The open panel decides which docked panel comes back; the rest is per panel.
     combineLatest([
       toObservable(this.sideMenuService.selectedItem),
-      toObservable(this.sideMenuService.displacement),
-      toObservable(this.sideMenuService.panelWidthInPixels),
+      toObservable(this.sideMenuService.pinnedLabels),
+      toObservable(this.sideMenuService.expandedLabels),
+      toObservable(this.sideMenuService.panelWidths),
     ])
       .pipe(
         skip(1),
@@ -30,48 +32,37 @@ export class SideMenuStatePersistenceService {
         filter(() => this.dbInitialized),
         takeUntilDestroyed(destroyRef),
       )
-      .subscribe(([selectedItem, displacement, panelWidthInPixels]) => {
-        void this.repository.save({
-          selected_item_label: selectedItem?.label ?? null,
-          is_pinned: selectedItem?.pinned ? 1 : 0,
-          displacement: displacement ? 1 : 0,
-          panel_width_pixels: panelWidthInPixels,
-        });
-      });
-
-    toObservable(this.sideMenuService.expandedLabels)
-      .pipe(
-        skip(1),
-        debounceTime(500),
-        filter(() => this.dbInitialized),
-        takeUntilDestroyed(destroyRef),
-      )
-      .subscribe((labels) => {
-        void this.repository.saveExpandedLabels([...labels]);
+      .subscribe(() => {
+        void this.repository.savePanels(this.panels());
       });
   }
 
+  private panels(): SideMenuPanelEntity[] {
+    const pinned = this.sideMenuService.pinnedLabels();
+    const expanded = this.sideMenuService.expandedLabels();
+    const widths = this.sideMenuService.panelWidths();
+    const docked = this.sideMenuService.dockedPanelLabel();
+    const labels = new Set([...pinned, ...expanded, ...widths.keys()]);
+    return [...labels].map((label) => ({
+      label,
+      is_pinned: pinned.has(label) ? 1 : 0,
+      is_expanded: expanded.has(label) ? 1 : 0,
+      width_pixels: widths.get(label) ?? null,
+      is_open: label === docked ? 1 : 0,
+    }));
+  }
+
   private async restore(): Promise<void> {
-    const [state, expandedLabels] = await Promise.all([
-      this.repository.load(),
-      this.repository.loadExpandedLabels(),
-    ]);
-    this.sideMenuService.setExpandedLabels(expandedLabels);
+    const panels = await this.repository.loadPanels();
+    this.sideMenuService.setPinnedLabels(panels.filter((p) => p.is_pinned).map((p) => p.label));
+    this.sideMenuService.setExpandedLabels(panels.filter((p) => p.is_expanded).map((p) => p.label));
+    this.sideMenuService.setPanelWidths(
+      new Map(panels.flatMap((p) => (p.width_pixels === null ? [] : [[p.label, p.width_pixels]]))),
+    );
     this.dbInitialized = true;
 
-    if (!state) return;
-
-    this.sideMenuService.setPanelWidthInPixels(state.panel_width_pixels);
-
-    if (state.displacement !== 0 && !this.sideMenuService.displacement()) {
-      this.sideMenuService.toggleDisplacement();
-    }
-
-    if (state.selected_item_label) {
-      this.sideMenuService.open(state.selected_item_label);
-      if (state.is_pinned && !this.sideMenuService.selectedItem()?.pinned) {
-        this.sideMenuService.togglePin();
-      }
-    }
+    // The docked panel comes back beside the terminals, which keep the keyboard.
+    const open = panels.find((p) => p.is_open && p.is_pinned);
+    if (open) this.sideMenuService.open(open.label, false);
   }
 }
