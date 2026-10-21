@@ -30,23 +30,43 @@ type GraphCommit = { readonly sha: string; readonly parents: ReadonlyArray<strin
  * even if another lane already waits for that parent. Further parents (a
  * merge) get a lane of their own unless one already waits for them. Freed lanes are reused from the left; lanes are never shifted, so
  * every line is either straight or a single diagonal into or out of a node.
+ *
+ * The checked-out commit (`headSha`, when loaded) keeps the first lane, as in
+ * GitKraken: tips above it start in lane 1, and its first-parent chain runs
+ * down the left edge.
  */
-export function layoutGraph(commits: ReadonlyArray<GraphCommit>): GraphRow[] {
+export function layoutGraph(
+  commits: ReadonlyArray<GraphCommit>,
+  headSha: string | null = null,
+): GraphRow[] {
   const lanes: (string | null)[] = [];
   const laneColors: number[] = [];
   let nextColor = 0;
   const rows: GraphRow[] = [];
 
+  let reserved = headSha && commits.some((commit) => commit.sha === headSha) ? headSha : null;
+  if (reserved) {
+    lanes[0] = null;
+    laneColors[0] = nextColor++;
+  }
+
   const freeLane = (): number => {
-    const index = lanes.indexOf(null);
-    return index === -1 ? lanes.length : index;
+    const first = reserved ? 1 : 0;
+    const index = lanes.indexOf(null, first);
+    return index === -1 ? Math.max(lanes.length, first) : index;
   };
 
   for (const commit of commits) {
     const segments: GraphSegment[] = [];
     let lane = lanes.indexOf(commit.sha);
-    const isBranchTip = lane === -1;
-    if (isBranchTip) {
+    let isBranchTip = lane === -1;
+    if (commit.sha === reserved) {
+      // Lanes waiting for it join lane 0 like at any node; the reserved lane itself has no line above.
+      lane = 0;
+      lanes[0] = commit.sha;
+      isBranchTip = true;
+      reserved = null;
+    } else if (isBranchTip) {
       lane = freeLane();
       lanes[lane] = commit.sha;
       laneColors[lane] = nextColor++;
@@ -96,7 +116,8 @@ export function layoutGraph(commits: ReadonlyArray<GraphCommit>): GraphRow[] {
       segments.push({ half: "bottom", from: index, to: index, color: laneColors[index] ?? 0 });
     }
 
-    while (lanes.length > 0 && lanes[lanes.length - 1] === null) lanes.pop();
+    const keep = reserved ? 1 : 0;
+    while (lanes.length > keep && lanes[lanes.length - 1] === null) lanes.pop();
 
     let width = lane + 1;
     for (const segment of segments) width = Math.max(width, segment.from + 1, segment.to + 1);

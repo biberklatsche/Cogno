@@ -67,6 +67,32 @@ describe("layoutGraph", () => {
     expect(rows[2]?.color).toBe(mainColor);
   });
 
+  it("keeps the first lane for the checked-out commit, as GitKraken does", () => {
+    // Branch x is newer than HEAD h; both come from a.
+    const rows = layoutGraph([commit("x", "a"), commit("h", "a"), commit("a")], "h");
+
+    expect(rows.map((row) => row.lane)).toEqual([1, 0, 0]);
+    expect(segmentsOf(rows[0])).toEqual(["bottom 1>1"]);
+    // No line above HEAD's node: the first lane starts there.
+    expect(segmentsOf(rows[1])).toEqual(["bottom 0>0", "bottom 1>1", "top 1>1"]);
+    expect(segmentsOf(rows[2])).toEqual(["top 0>0", "top 1>0"]);
+    expect(rows[1]?.color).toBe(0);
+    expect(rows[0]?.width).toBe(2);
+  });
+
+  it("joins a tip that sits on HEAD into HEAD's first lane", () => {
+    const rows = layoutGraph([commit("x", "h"), commit("h", "a"), commit("a")], "h");
+
+    expect(rows.map((row) => row.lane)).toEqual([1, 0, 0]);
+    expect(segmentsOf(rows[1])).toEqual(["bottom 0>0", "top 1>0"]);
+  });
+
+  it("reserves nothing when HEAD is not among the loaded commits", () => {
+    const rows = layoutGraph([commit("b", "a"), commit("a")], "elsewhere");
+
+    expect(rows.map((row) => row.lane)).toEqual([0, 0]);
+  });
+
   it("keeps a lane running when the parent is outside the loaded commits", () => {
     const rows = layoutGraph([commit("b", "a")]);
 

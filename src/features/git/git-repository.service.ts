@@ -87,7 +87,7 @@ export class GitRepositoryService {
   readonly hasMoreCommits = this.hasMoreCommitsSignal.asReadonly();
 
   readonly refLabels = computed(() => buildRefLabels(this.refsSignal(), this.headSignal()));
-  readonly graph = computed(() => layoutGraph(this.commitsSignal()));
+  readonly graph = computed(() => layoutGraph(this.commitsSignal(), this.headSignal().sha));
   readonly changeCount = computed(() => {
     const status = this.statusSignal();
     return (

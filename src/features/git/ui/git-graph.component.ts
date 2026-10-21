@@ -24,12 +24,12 @@ import { GitCommit, GitRefLabel } from "../model/git-model";
 import { formatCommitTime, graphColor } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
-const ROW_HEIGHT = 26;
+/** GitKraken's measures: the row, a lane as wide as an avatar, the avatar filling its lane. */
+const ROW_HEIGHT = 28;
 /** The next page of commits loads once the scroll gets this close to the end. */
 const PREFETCH_ROWS = 50;
-const LANE_WIDTH = 14;
-/** Clearly larger than a plain node, with room left for the neighbour lines. */
-const AVATAR_RADIUS = 8.5;
+const LANE_WIDTH = 22;
+const AVATAR_RADIUS = 11;
 /** The graph column grows with the lanes up to this many, then clips. */
 const MAX_VISIBLE_LANES = 12;
 /** Room for the "Graph" header even with a single lane. */
@@ -80,6 +80,7 @@ type GraphItem = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[style.--graph-template]": "gridTemplate()",
+    "[style.--git-row-height]": "rowHeight + 'px'",
   },
   template: `
     <div class="header section-header" (contextmenu)="actions.openColumnMenu($event)">
@@ -121,10 +122,10 @@ type GraphItem = {
           <span class="col-graph">
             <svg [attr.width]="width('graph')" [attr.height]="rowHeight">
               @if (headLane() !== null) {
-                <line [attr.x1]="laneX(headLane() ?? 0)" [attr.y1]="rowHeight / 2 + 5" [attr.x2]="laneX(headLane() ?? 0)"
+                <line [attr.x1]="laneX(headLane() ?? 0)" [attr.y1]="rowHeight / 2 + avatarRadius - 1" [attr.x2]="laneX(headLane() ?? 0)"
                       [attr.y2]="rowHeight" class="wip-link"></line>
               }
-              <circle [attr.cx]="laneX(headLane() ?? 0)" [attr.cy]="rowHeight / 2" r="5" class="wip-node"></circle>
+              <circle [attr.cx]="laneX(headLane() ?? 0)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1" class="wip-node"></circle>
             </svg>
           </span>
         }
