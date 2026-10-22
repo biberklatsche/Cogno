@@ -32,6 +32,8 @@ export type GitBranch = {
   readonly upstreamGone: boolean;
   /** Committer date of the tip, in seconds. */
   readonly lastCommitAt: number;
+  /** The tip has several parents; cherry pick and revert need `-m` for it. */
+  readonly tipIsMerge: boolean;
 };
 
 export type GitRemoteBranch = {

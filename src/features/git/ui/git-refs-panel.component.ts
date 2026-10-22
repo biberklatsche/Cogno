@@ -255,7 +255,9 @@ export class GitRefsPanelComponent {
   private readonly remoteBranchesByRemote = computed(() => {
     const groups = new Map<string, GitRemoteBranch[]>();
     for (const branch of this.remoteBranches()) {
-      groups.set(branch.remote, [...(groups.get(branch.remote) ?? []), branch]);
+      const group = groups.get(branch.remote) ?? [];
+      group.push(branch);
+      groups.set(branch.remote, group);
     }
     return groups;
   });
@@ -265,6 +267,7 @@ export class GitRefsPanelComponent {
   });
   /** The remote branches in the order they are listed: by remote, expanded ones only. */
   readonly listedRemoteBranches = computed(() => {
+    if (!this.isOpen("remote")) return [];
     const collapsed = this.collapsedRemotes();
     return this.remotes()
       .filter((remote) => !collapsed.has(remote.name))
@@ -279,14 +282,14 @@ export class GitRefsPanelComponent {
     readonly actions: GitUiActions,
     readonly view: GitViewState,
   ) {
-    // Marks only ever cover listed rows: a filter, a collapsed remote or a
-    // branch deleted elsewhere drops them, and another repository starts clean.
+    // Marks only ever cover listed rows: a filter, a collapsed section or
+    // remote, or a branch deleted elsewhere drops them; another repository starts clean.
     effect(() => {
       this.repository.root();
       untracked(() => this.view.clearMarks());
     });
     effect(() => {
-      const names = this.branches().map((b) => b.name);
+      const names = this.isOpen("local") ? this.branches().map((b) => b.name) : [];
       untracked(() => this.view.localMarks.retain(names));
     });
     effect(() => {
@@ -325,14 +328,17 @@ export class GitRefsPanelComponent {
 
   clickBranch(event: MouseEvent, branch: GitBranch): void {
     const names = this.branches().map((b) => b.name);
-    if (!this.view.localMarks.click(event, branch.name, names)) this.view.revealCommit(branch.sha);
+    if (this.view.localMarks.click(event, branch.name, names)) return;
+    // A plain click starts over in both lists.
+    this.view.clearMarks();
+    this.view.revealCommit(branch.sha);
   }
 
   clickRemoteBranch(event: MouseEvent, remoteBranch: GitRemoteBranch): void {
     const names = this.listedRemoteBranches().map((b) => b.name);
-    if (!this.view.remoteMarks.click(event, remoteBranch.name, names)) {
-      this.view.revealCommit(remoteBranch.sha);
-    }
+    if (this.view.remoteMarks.click(event, remoteBranch.name, names)) return;
+    this.view.clearMarks();
+    this.view.revealCommit(remoteBranch.sha);
   }
 
   /** The menu of all marked branches when the click is on one of several; otherwise this one's. */
@@ -342,7 +348,7 @@ export class GitRefsPanelComponent {
       this.actions.openBranchesMenu(event, marked, () => this.view.localMarks.clear());
       return;
     }
-    this.view.localMarks.clear();
+    this.view.clearMarks();
     this.actions.openBranchMenu(event, branch);
   }
 
@@ -354,7 +360,7 @@ export class GitRefsPanelComponent {
       this.actions.openRemoteBranchesMenu(event, marked, () => this.view.remoteMarks.clear());
       return;
     }
-    this.view.remoteMarks.clear();
+    this.view.clearMarks();
     this.actions.openRemoteBranchMenu(event, remoteBranch);
   }
 

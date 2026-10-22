@@ -65,15 +65,16 @@ export type GitDeleteBranchesResult = {
           <app-toggle-switch [checked]="alsoRemote()"></app-toggle-switch>
           <span>{{ option.label }}</span>
         </button>
-        @if (alsoRemote()) {
-          <p class="remote-list subtle">
-            @if (remoteBranches().length > 0) {
-              Also deletes {{ remoteBranches().join(", ") }}
-            } @else {
-              None to delete: no upstream, still tracked by another branch, or a default branch
-            }
+        <!-- Both notes share one cell that always keeps its height, so switching does not move the dialog. -->
+        <div class="remote-notes">
+          <p class="remote-warning" [class.shown]="alsoRemote() && remoteBranches().length > 0">
+            The remote branches are deleted for everyone. This may also delete the work of others
+            who pushed to the same remote branches.
           </p>
-        }
+          <p class="remote-none subtle" [class.shown]="alsoRemote() && remoteBranches().length === 0">
+            None to delete: no upstream, still tracked by another branch, or a default branch
+          </p>
+        </div>
       }
       <div class="actions">
         <button type="button" class="button" (click)="dismiss()">Cancel</button>
@@ -128,7 +129,16 @@ export type GitDeleteBranchesResult = {
         font: inherit;
         text-align: left;
       }
-      .remote-list { margin: 0; white-space: normal; line-height: 1.5; }
+      .remote-notes { display: grid; }
+      .remote-notes p {
+        grid-area: 1 / 1;
+        margin: 0;
+        white-space: normal;
+        line-height: 1.5;
+        visibility: hidden;
+      }
+      .remote-notes p.shown { visibility: visible; }
+      .remote-warning { color: var(--color-yellow); }
       .actions {
         display: flex;
         justify-content: flex-end;

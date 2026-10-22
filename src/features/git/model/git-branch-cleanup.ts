@@ -48,7 +48,9 @@ export function remoteBranchesToDelete(
 export function byRemote(remoteBranches: ReadonlyArray<GitRemoteBranch>): Map<string, string[]> {
   const groups = new Map<string, string[]>();
   for (const branch of remoteBranches) {
-    groups.set(branch.remote, [...(groups.get(branch.remote) ?? []), branch.shortName]);
+    const group = groups.get(branch.remote) ?? [];
+    group.push(branch.shortName);
+    groups.set(branch.remote, group);
   }
   return groups;
 }

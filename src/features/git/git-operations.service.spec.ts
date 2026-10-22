@@ -84,6 +84,20 @@ describe("GitOperationsService", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it("toasts a successful push without the porcelain lines", async () => {
+    answer = {
+      stdout: "To origin\n \trefs/heads/main:refs/heads/main\tc1..c2\nDone\n",
+      stderr: "",
+      exitCode: 0,
+    };
+
+    await service.push("main", "origin", "main", { setUpstream: false, force: false });
+
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "success", header: "Pushed main", body: "" }),
+    );
+  });
+
   it("reports a push a hook refused as a failure, not as something to force", async () => {
     answer = {
       stdout: "!\trefs/heads/main:refs/heads/main\t[remote rejected] (pre-receive hook declined)\n",
@@ -132,6 +146,7 @@ describe("GitOperationsService", () => {
       behind: 0,
       upstreamGone,
       lastCommitAt: 0,
+      tipIsMerge: false,
     });
 
     const unmerged = await service.unmergedBranches([
@@ -147,6 +162,25 @@ describe("GitOperationsService", () => {
       ["merge-base", "--is-ancestor", "refs/heads/pushed", "origin/pushed"],
       expect.any(Number),
     );
+  });
+
+  it("does not count an upstream that is deleted along with its branch", async () => {
+    run.mockImplementation((args: string[]) =>
+      Promise.resolve(args[0] === "merge-base" ? ran("", 0) : ran("")),
+    );
+    const pushed = {
+      name: "feature/x",
+      sha: "c1",
+      upstream: "origin/feature/x",
+      ahead: 0,
+      behind: 0,
+      upstreamGone: false,
+      lastCommitAt: 0,
+      tipIsMerge: false,
+    };
+
+    expect(await service.unmergedBranches([pushed])).toEqual([]);
+    expect(await service.unmergedBranches([pushed], ["origin/feature/x"])).toEqual(["feature/x"]);
   });
 
   it("deletes branches with -D and returns the ones still there, read back from the refs", async () => {

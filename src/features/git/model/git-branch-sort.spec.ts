@@ -11,6 +11,7 @@ function branch(name: string, lastCommitAt: number): GitBranch {
     behind: 0,
     upstreamGone: false,
     lastCommitAt,
+    tipIsMerge: false,
   };
 }
 

@@ -7,7 +7,6 @@ import {
   GitHead,
   GitRefLabel,
   GitRefs,
-  GitRemote,
   GitRemoteBranch,
   GitStash,
   GitStatus,
@@ -21,9 +20,7 @@ export const RECORD = "\x1e";
 export const LOG_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%s%x1e";
 export const COMMIT_DETAIL_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ct%x1f%B";
 export const REF_FORMAT =
-  "%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track,nobracket)%1f%(committerdate:unix)%1f%(symref)";
-/** The config keys `parseRemotes` reads: each remote's url. */
-export const REMOTE_URL_KEYS = "^remote\\..*\\.url$";
+  "%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track,nobracket)%1f%(committerdate:unix)%1f%(symref)%1f%(numparent)";
 export const STASH_FORMAT = "%H%x1f%gd%x1f%at%x1f%gs";
 
 /** Both sides of an unmerged path, as `git status` prints them. */
@@ -100,6 +97,7 @@ export function parseRefs(raw: string): GitRefs {
       track = "",
       committed = "",
       symref = "",
+      parents = "",
     ] = line.split(FIELD);
     const lastCommitAt = Number(committed) || 0;
     if (refname.startsWith("refs/heads/")) {
@@ -109,6 +107,7 @@ export function parseRefs(raw: string): GitRefs {
         upstream: upstream || null,
         ...parseTrack(track),
         lastCommitAt,
+        tipIsMerge: Number(parents) > 1,
       });
     } else if (refname.startsWith("refs/remotes/")) {
       const name = refname.slice("refs/remotes/".length);
@@ -144,25 +143,6 @@ export function parseTrack(track: string): Pick<GitBranch, "ahead" | "behind" | 
     behind: behind ? Number(behind[1]) : 0,
     upstreamGone: track.trim() === "gone",
   };
-}
-
-/**
- * Reads `git config -z --get-regexp REMOTE_URL_KEYS`: per remote its key
- * `remote.<name>.url`, a newline and the url, each entry ending in NUL.
- */
-export function parseRemotes(raw: string): GitRemote[] {
-  const remotes: GitRemote[] = [];
-  for (const entry of raw.split("\0")) {
-    const newline = entry.indexOf("\n");
-    const key = newline === -1 ? entry : entry.slice(0, newline);
-    if (!key.startsWith("remote.") || !key.endsWith(".url")) continue;
-    // The name may itself contain dots: `remote.my.fork.url`.
-    remotes.push({
-      name: key.slice("remote.".length, -".url".length),
-      url: entry.slice(newline + 1),
-    });
-  }
-  return remotes;
 }
 
 /**

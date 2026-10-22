@@ -25,10 +25,8 @@ import {
   parseLog,
   parseNameStatus,
   parseRefs,
-  parseRemotes,
   parseStashes,
   REF_FORMAT,
-  REMOTE_URL_KEYS,
   STASH_FORMAT,
 } from "./model/git-parsers";
 
@@ -320,7 +318,7 @@ export class GitRepositoryService {
       git(["rev-parse", "-q", "--verify", "HEAD"]),
       git(["symbolic-ref", "-q", "--short", "HEAD"]),
       git(["for-each-ref", `--format=${REF_FORMAT}`, "refs/heads", "refs/remotes", "refs/tags"]),
-      git(["config", "-z", "--get-regexp", REMOTE_URL_KEYS]),
+      this.loadRemotes(git),
       git(["stash", "list", `--format=${STASH_FORMAT}`]),
       this.readOperation(session),
     ]);
@@ -344,13 +342,33 @@ export class GitRepositoryService {
     this.statusSignal.set(parseGitStatus(status.stdout));
     this.headSignal.set(head);
     this.refsSignal.set(parsedRefs);
-    this.remotesSignal.set(remotes?.exitCode === 0 ? parseRemotes(remotes.stdout) : []);
+    this.remotesSignal.set(remotes);
     this.stashesSignal.set(stashes?.exitCode === 0 ? parseStashes(stashes.stdout) : []);
     this.operationSignal.set(operation);
     if (commits) {
       this.commitsSignal.set(commits);
       this.hasMoreCommitsSignal.set(commits.length >= this.logLimitSignal());
     }
+  }
+
+  /**
+   * Each remote once, with the url git fetches from: `git remote` lists the
+   * names, `git remote get-url` gives the first url with `insteadOf` applied.
+   */
+  private async loadRemotes(
+    git: (args: ReadonlyArray<string>) => Promise<CommandRunnerResultContract | null>,
+  ): Promise<GitRemote[]> {
+    const listed = await git(["remote"]);
+    if (listed?.exitCode !== 0) return [];
+    const names = listed.stdout
+      .split("\n")
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const urls = await Promise.all(names.map((name) => git(["remote", "get-url", name])));
+    return names.map((name, index) => {
+      const url = urls[index];
+      return { name, url: url?.exitCode === 0 ? url.stdout.trim() : "" };
+    });
   }
 
   private async loadLog(

@@ -9,7 +9,6 @@ import {
   parseLog,
   parseNameStatus,
   parseRefs,
-  parseRemotes,
   parseStashes,
   parseTrack,
 } from "./git-parsers";
@@ -74,8 +73,8 @@ describe("parseGitStatus", () => {
 describe("parseRefs", () => {
   it("splits heads, remote branches and tags and reads the remote HEAD as default branch", () => {
     const raw = [
-      f("refs/heads/main", "c1", "", "origin/main", "ahead 2, behind 1", "100", ""),
-      f("refs/heads/feature/x", "c2", "", "", "", "200", ""),
+      f("refs/heads/main", "c1", "", "origin/main", "ahead 2, behind 1", "100", "", "2"),
+      f("refs/heads/feature/x", "c2", "", "", "", "200", "", "1"),
       f("refs/remotes/origin/HEAD", "c1", "", "", "", "100", "refs/remotes/origin/main"),
       f("refs/remotes/origin/feature/x", "c3", "", "", "", "300", ""),
       f("refs/tags/v1", "tagobj", "c4", "", "", "", ""),
@@ -92,6 +91,7 @@ describe("parseRefs", () => {
           behind: 1,
           upstreamGone: false,
           lastCommitAt: 100,
+          tipIsMerge: true,
         },
         {
           name: "feature/x",
@@ -101,6 +101,7 @@ describe("parseRefs", () => {
           behind: 0,
           upstreamGone: false,
           lastCommitAt: 200,
+          tipIsMerge: false,
         },
       ],
       remoteBranches: [
@@ -122,21 +123,6 @@ describe("parseRefs", () => {
 
   it("reads a gone upstream", () => {
     expect(parseTrack("gone")).toEqual({ ahead: 0, behind: 0, upstreamGone: true });
-  });
-});
-
-describe("parseRemotes", () => {
-  it("reads name and url from the config keys, also names with dots and urls with spaces", () => {
-    const raw = [
-      "remote.origin.url\ngit@github.com:a/b.git",
-      "remote.my.fork.url\n/Users/me/my repo",
-      "",
-    ].join("\0");
-
-    expect(parseRemotes(raw)).toEqual([
-      { name: "origin", url: "git@github.com:a/b.git" },
-      { name: "my.fork", url: "/Users/me/my repo" },
-    ]);
   });
 });
 
@@ -235,6 +221,7 @@ describe("buildRefLabels", () => {
             behind: 0,
             upstreamGone: false,
             lastCommitAt: 0,
+            tipIsMerge: false,
           },
         ],
         remoteBranches: [
@@ -266,6 +253,7 @@ describe("buildRefLabels", () => {
             behind: 0,
             upstreamGone: false,
             lastCommitAt: 0,
+            tipIsMerge: false,
           },
         ],
         remoteBranches: [

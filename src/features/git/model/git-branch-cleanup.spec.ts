@@ -11,6 +11,7 @@ function branch(name: string, extra: Partial<GitBranch> = {}): GitBranch {
     behind: 0,
     upstreamGone: false,
     lastCommitAt: 0,
+    tipIsMerge: false,
     ...extra,
   };
 }

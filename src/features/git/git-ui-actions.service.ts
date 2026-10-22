@@ -258,10 +258,6 @@ export class GitUiActions {
     const isHead = branch.name === head.branch;
     const current = head.branch ?? "HEAD";
     const upstream = this.repository.refs().remoteBranches.find((r) => r.name === branch.upstream);
-    // The tip may lie beyond the loaded commits; git then refuses a merge without `-m` itself.
-    const isMerge =
-      (this.repository.commits().find((commit) => commit.sha === branch.sha)?.parents.length ?? 0) >
-      1;
     this.openMenu(event, [
       isHead
         ? item("Pull", () => this.operations.pull("merge"), !branch.upstream)
@@ -287,7 +283,7 @@ export class GitUiActions {
           ]),
       separator(),
       item("Create branch here", () => this.beginBranch(branch.sha)),
-      ...this.commitItems(branch.sha, isMerge),
+      ...this.commitItems(branch.sha, branch.tipIsMerge),
       separator(),
       item("Create tag here", () => this.createTagAt(branch.name, branch.name)),
       separator(),
@@ -611,8 +607,12 @@ export class GitUiActions {
     if (!result) return;
 
     // Asked before deleting: git's own refusal would only come as a translated message.
+    // An upstream deleted along with its branch keeps none of its commits.
     const chosen = shown.filter((branch) => result.names.includes(branch.name));
-    const unmerged = await this.operations.unmergedBranches(chosen);
+    const goingUpstreams = result.alsoRemote
+      ? remoteBranchesToDelete(result.names, refs, head).map((remoteBranch) => remoteBranch.name)
+      : [];
+    const unmerged = await this.operations.unmergedBranches(chosen, goingUpstreams);
     const names =
       unmerged.length > 0 &&
       !(await this.confirm(
@@ -745,7 +745,7 @@ export class GitUiActions {
   ): Promise<GitDeleteBranchesResult | undefined> {
     const ref = this.dialogs.open<GitDeleteBranchesDialogData, GitDeleteBranchesResult>(
       GitDeleteBranchesDialogComponent,
-      { title: "Delete branches", data, width: "36rem", maxWidth: "calc(100vw - 2rem)" },
+      { data, width: "36rem", maxWidth: "calc(100vw - 2rem)" },
     );
     return whenClosed(ref);
   }

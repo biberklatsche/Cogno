@@ -31,6 +31,8 @@ type RunOptions = {
   readonly stdin?: string;
   /** Toast shown on success; failures always show git's own message. */
   readonly success?: string;
+  /** Stdout is a machine format, not a line for the success toast. */
+  readonly machineOutput?: boolean;
   readonly inCwd?: boolean;
   /**
    * Recognises a refusal the user may override (see `GitOperationOutcome`) from
@@ -169,28 +171,32 @@ export class GitOperationsService {
 
   /**
    * The branches whose tip is neither in HEAD nor in their upstream: deleting
-   * them may lose commits. Asked before deleting, from a ref list and exit
-   * codes; a branch git cannot answer for counts as unmerged.
+   * them may lose commits. An upstream in `goingUpstreams` is deleted along
+   * with them and does not count. Asked before deleting, from a ref list and
+   * exit codes; a branch git cannot answer for counts as unmerged.
    */
-  async unmergedBranches(branches: ReadonlyArray<GitBranch>): Promise<ReadonlyArray<string>> {
+  async unmergedBranches(
+    branches: ReadonlyArray<GitBranch>,
+    goingUpstreams: ReadonlyArray<string> = [],
+  ): Promise<ReadonlyArray<string>> {
     const merged = await this.repository.run(
       ["for-each-ref", "--merged=HEAD", "--format=%(refname)", "refs/heads"],
       LOCAL_TIMEOUT_MS,
     );
     const inHead = new Set(merged?.exitCode === 0 ? merged.stdout.split("\n") : []);
-    const unmerged: string[] = [];
-    for (const branch of branches) {
-      if (inHead.has(`refs/heads/${branch.name}`)) continue;
-      if (branch.upstream && !branch.upstreamGone) {
+    const kept = await Promise.all(
+      branches.map(async (branch) => {
+        if (inHead.has(`refs/heads/${branch.name}`)) return true;
+        const upstream = branch.upstream;
+        if (!upstream || branch.upstreamGone || goingUpstreams.includes(upstream)) return false;
         const inUpstream = await this.repository.run(
-          ["merge-base", "--is-ancestor", `refs/heads/${branch.name}`, branch.upstream],
+          ["merge-base", "--is-ancestor", `refs/heads/${branch.name}`, upstream],
           LOCAL_TIMEOUT_MS,
         );
-        if (inUpstream?.exitCode === 0) continue;
-      }
-      unmerged.push(branch.name);
-    }
-    return unmerged;
+        return inUpstream?.exitCode === 0;
+      }),
+    );
+    return branches.filter((_, index) => !kept[index]).map((branch) => branch.name);
   }
 
   /**
@@ -348,7 +354,10 @@ export class GitOperationsService {
       ],
       `Pushing ${branch}`,
       `Pushed ${branch}`,
-      options.force ? undefined : (result) => isPushRejected(result.stdout),
+      {
+        machineOutput: true,
+        ...(options.force ? {} : { refused: (result) => isPushRejected(result.stdout) }),
+      },
     );
   }
 
@@ -416,13 +425,13 @@ export class GitOperationsService {
     args: string[],
     busyLabel: string,
     success: string,
-    refused?: RunOptions["refused"],
+    options: Pick<RunOptions, "refused" | "machineOutput"> = {},
   ): Promise<GitOperationOutcome> {
     return this.withBusy(busyLabel, () =>
       this.git([...this.credentialCacheArgs(), ...args], `${busyLabel.split(" ")[0]} failed`, {
+        ...options,
         timeoutMs: NETWORK_TIMEOUT_MS,
         success,
-        ...(refused ? { refused } : {}),
       }),
     );
   }
@@ -479,7 +488,7 @@ export class GitOperationsService {
       await this.repository.refresh();
       return "rejected";
     }
-    const ok = this.report(result, errorHeader, options.success);
+    const ok = this.report(result, errorHeader, options.success, options.machineOutput);
     await this.repository.refresh();
     return ok ? "ok" : "failed";
   }
@@ -489,6 +498,7 @@ export class GitOperationsService {
     result: CommandRunnerResultContract | null,
     errorHeader: string,
     success?: string,
+    machineOutput = false,
   ): boolean {
     if (!result) {
       this.toast(errorHeader, "Git could not run in this terminal.", "error");
@@ -502,7 +512,9 @@ export class GitOperationsService {
       this.toast(errorHeader, body, "error");
       return false;
     }
-    if (success) this.toast(success, firstLine(result.stdout) ?? "", "success");
+    if (success) {
+      this.toast(success, machineOutput ? "" : (firstLine(result.stdout) ?? ""), "success");
+    }
     return true;
   }
 
