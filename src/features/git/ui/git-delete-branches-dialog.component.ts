@@ -40,7 +40,7 @@ export type GitDeleteBranchesResult = {
       <label class="all">
         <input type="checkbox" [checked]="allSelected()" [indeterminate]="someSelected()"
                [disabled]="selectable.length === 0" (change)="toggleAll()" />
-        <span>All shown</span>
+        <span>All</span>
         <span class="grow"></span>
         <span class="subtle">{{ selected().size }} / {{ selectable.length }}</span>
       </label>

@@ -69,66 +69,28 @@ export class GitUiActions {
     private readonly opener: Opener,
   ) {}
 
-  // Bulk delete
+  // Several branches
 
-  /** Ask which of the shown local branches to delete, then delete them. */
-  async deleteLocalBranches(shown: ReadonlyArray<GitBranch>): Promise<void> {
-    const refs = this.repository.refs();
-    const head = this.repository.head();
-    const reference = ageReference(refs);
-    const result = await this.chooseBranches({
-      message: "Delete these local branches?",
-      items: shown.map((branch) => ({
-        name: branch.name,
-        detail: [branch.upstreamGone ? "gone" : "", formatAge(branch.lastCommitAt, reference)]
-          .filter(Boolean)
-          .join(" · "),
-        keptReason: keptReason(branch, refs, head),
-      })),
-      remoteOption: "Also delete the remote branches they track",
-    });
-    if (!result) return;
-
-    let remaining = await this.operations.deleteBranches(result.names, false);
-    // `-d` refuses branches whose commits are nowhere else; offer to drop them together.
-    if (
-      remaining.length > 0 &&
-      (await this.confirm(
-        `${remaining.join(", ")} ${remaining.length === 1 ? "has" : "have"} commits that are not merged anywhere. Delete anyway? Those commits are lost.`,
-        "Delete anyway",
-      ))
-    ) {
-      remaining = await this.operations.deleteBranches(remaining, true);
-    }
-    if (!result.alsoRemote) return;
-
-    const deleted = shown.filter(
-      (branch) => result.names.includes(branch.name) && !remaining.includes(branch.name),
-    );
-    for (const [remote, names] of byRemote(trackedRemoteBranches(deleted, refs, head))) {
-      await this.operations.deleteRemoteBranches(remote, names);
-    }
+  /** The context menu of several marked local branches; `done` once its action ran. */
+  openBranchesMenu(event: MouseEvent, branches: ReadonlyArray<GitBranch>, done: () => void): void {
+    this.openMenu(event, [
+      item(`Delete ${branches.length} branches`, () =>
+        this.deleteLocalBranches(branches).then(done),
+      ),
+    ]);
   }
 
-  /** Ask which of the shown remote branches to delete, then delete them on their remotes. */
-  async deleteRemoteBranches(shown: ReadonlyArray<GitRemoteBranch>): Promise<void> {
-    const refs = this.repository.refs();
-    const head = this.repository.head();
-    const reference = ageReference(refs);
-    const result = await this.chooseBranches({
-      message: "Delete these branches on the remote? They are gone for everyone who works with it.",
-      items: shown.map((branch) => ({
-        name: branch.name,
-        detail: formatAge(branch.lastCommitAt, reference),
-        keptReason: keptReason(branch, refs, head),
-      })),
-    });
-    if (!result) return;
-
-    const chosen = shown.filter((branch) => result.names.includes(branch.name));
-    for (const [remote, names] of byRemote(chosen)) {
-      await this.operations.deleteRemoteBranches(remote, names);
-    }
+  /** The context menu of several marked remote branches; `done` once its action ran. */
+  openRemoteBranchesMenu(
+    event: MouseEvent,
+    remoteBranches: ReadonlyArray<GitRemoteBranch>,
+    done: () => void,
+  ): void {
+    this.openMenu(event, [
+      item(`Delete ${remoteBranches.length} branches`, () =>
+        this.deleteRemoteBranches(remoteBranches).then(done),
+      ),
+    ]);
   }
 
   // Toolbar
@@ -633,6 +595,66 @@ export class GitUiActions {
       "Delete",
       () => this.operations.deleteRemoteBranch(remoteBranch),
     );
+  }
+
+  /** Confirm which of the marked local branches to delete, then delete them. */
+  private async deleteLocalBranches(shown: ReadonlyArray<GitBranch>): Promise<void> {
+    const refs = this.repository.refs();
+    const head = this.repository.head();
+    const reference = ageReference(refs);
+    const result = await this.chooseBranches({
+      message: "Delete these local branches?",
+      items: shown.map((branch) => ({
+        name: branch.name,
+        detail: [branch.upstreamGone ? "gone" : "", formatAge(branch.lastCommitAt, reference)]
+          .filter(Boolean)
+          .join(" · "),
+        keptReason: keptReason(branch, refs, head),
+      })),
+      remoteOption: "Also delete the remote branches they track",
+    });
+    if (!result) return;
+
+    let remaining = await this.operations.deleteBranches(result.names, false);
+    // `-d` refuses branches whose commits are nowhere else; offer to drop them together.
+    if (
+      remaining.length > 0 &&
+      (await this.confirm(
+        `${remaining.join(", ")} ${remaining.length === 1 ? "has" : "have"} commits that are not merged anywhere. Delete anyway? Those commits are lost.`,
+        "Delete anyway",
+      ))
+    ) {
+      remaining = await this.operations.deleteBranches(remaining, true);
+    }
+    if (!result.alsoRemote) return;
+
+    const deleted = shown.filter(
+      (branch) => result.names.includes(branch.name) && !remaining.includes(branch.name),
+    );
+    for (const [remote, names] of byRemote(trackedRemoteBranches(deleted, refs, head))) {
+      await this.operations.deleteRemoteBranches(remote, names);
+    }
+  }
+
+  /** Confirm which of the marked remote branches to delete, then delete them on their remotes. */
+  private async deleteRemoteBranches(shown: ReadonlyArray<GitRemoteBranch>): Promise<void> {
+    const refs = this.repository.refs();
+    const head = this.repository.head();
+    const reference = ageReference(refs);
+    const result = await this.chooseBranches({
+      message: "Delete these branches on the remote? They are gone for everyone who works with it.",
+      items: shown.map((branch) => ({
+        name: branch.name,
+        detail: formatAge(branch.lastCommitAt, reference),
+        keptReason: keptReason(branch, refs, head),
+      })),
+    });
+    if (!result) return;
+
+    const chosen = shown.filter((branch) => result.names.includes(branch.name));
+    for (const [remote, names] of byRemote(chosen)) {
+      await this.operations.deleteRemoteBranches(remote, names);
+    }
   }
 
   private removeRemote(remote: GitRemote): Promise<void> {

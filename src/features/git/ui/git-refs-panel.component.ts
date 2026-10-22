@@ -12,6 +12,7 @@ import { GitUiActions } from "../git-ui-actions.service";
 import { GitRefsSection, GitViewState } from "../git-view-state.service";
 import { GitBranchSort, nextSort, sortBranches } from "../model/git-branch-sort";
 import { GitBranch, GitRemoteBranch } from "../model/git-model";
+import { GitRowMarks } from "./git-row-marks";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }>> = {
@@ -24,9 +25,10 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
 /**
  * The left panel: local branches, remotes with their branches, stashes and
  * tags, the checked-out branch highlighted. A click shows the commit in the
- * graph without marking the row, a double click checks a branch
- * out, and every row has its context menu. The branch sections sort by date
- * or name with the default branches on top, and delete the shown ones in bulk.
+ * graph without marking the row, a double click checks a branch out, and
+ * every row has its context menu. The branch sections sort by date or name
+ * with the default branches on top; Cmd/Ctrl- and Shift-click mark branches
+ * for one context menu on all of them.
  */
 @Component({
   selector: "app-git-refs-panel",
@@ -52,18 +54,15 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
                 (click)="stepSort(localSort)">
           <app-icon [name]="sortIcon(localSort())"></app-icon>
         </button>
-        <button type="button" class="button icon-button header-action" appTooltip="Delete the shown branches"
-                [disabled]="branches().length === 0" (click)="actions.deleteLocalBranches(branches())">
-          <app-icon name="mdiTrashCanOutline"></app-icon>
-        </button>
         <span class="count">{{ branches().length }}</span>
       </div>
       @if (isOpen("local")) {
         <div class="body">
         @for (branch of branches(); track branch.name) {
           <div class="row ref" [class.selected]="branch.name === head().branch"
-               (click)="view.revealCommit(branch.sha)" (dblclick)="checkout(branch)"
-               (contextmenu)="actions.openBranchMenu($event, branch)">
+               [class.marked]="localMarks.names().has(branch.name)"
+               (click)="clickBranch($event, branch)" (dblclick)="checkout(branch)"
+               (contextmenu)="openBranchMenu($event, branch)">
             @if (branch.name === head().branch) {
               <app-icon class="small-icon head-icon" name="mdiEyeOutline" appTooltip="Checked out"></app-icon>
             }
@@ -96,10 +95,6 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
                 (click)="stepSort(remoteSort)">
           <app-icon [name]="sortIcon(remoteSort())"></app-icon>
         </button>
-        <button type="button" class="button icon-button header-action" appTooltip="Delete the shown branches on their remotes"
-                [disabled]="visibleRemoteBranches().length === 0" (click)="actions.deleteRemoteBranches(visibleRemoteBranches())">
-          <app-icon name="mdiTrashCanOutline"></app-icon>
-        </button>
         <button type="button" class="button icon-button header-action" appTooltip="Add a remote" (click)="actions.addRemote()">
           <app-icon name="mdiPlus"></app-icon>
         </button>
@@ -115,9 +110,9 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
           </div>
           @if (!collapsedRemotes().has(remote.name)) {
             @for (remoteBranch of remoteBranchesOf(remote.name); track remoteBranch.name) {
-              <div class="row ref nested"
-                   (click)="view.revealCommit(remoteBranch.sha)" (dblclick)="operations.checkoutRemoteBranch(remoteBranch)"
-                   (contextmenu)="actions.openRemoteBranchMenu($event, remoteBranch)">
+              <div class="row ref nested" [class.marked]="remoteMarks.names().has(remoteBranch.name)"
+                   (click)="clickRemoteBranch($event, remoteBranch)" (dblclick)="operations.checkoutRemoteBranch(remoteBranch)"
+                   (contextmenu)="openRemoteBranchMenu($event, remoteBranch)">
                 <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
                 <span class="ellipsis grow" [appTooltip]="remoteBranch.name">{{ remoteBranch.shortName }}</span>
               </div>
@@ -212,7 +207,12 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
       .section:first-child .section-header { border-top: none; margin-top: 0; }
       .count { color: var(--highlight-color); padding-right: 0.25rem; }
       .header-action { width: 1.4rem; height: 1.4rem; padding: 0.15rem; }
-      .row.ref { position: relative; padding-left: 1.6rem; }
+      /* No text selection, or Shift-click to mark a range of branches would select their names. */
+      .row.ref { position: relative; padding-left: 1.6rem; user-select: none; }
+      /* Marked for a context menu on several branches: two steps stronger than the hover. */
+      .row.marked {
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+      }
       .row.nested { padding-left: 2.5rem; }
       /* The checked-out mark sits in the indent, in front of the branch icon. */
       .head-icon { position: absolute; left: 0.4rem; color: var(--color-green); }
@@ -256,11 +256,15 @@ export class GitRefsPanelComponent {
       .remotes()
       .filter((r) => !this.filter().trim() || withBranches.has(r.name));
   });
-  /** The remote branches a bulk delete offers: those of expanded remotes. */
-  readonly visibleRemoteBranches = computed(() => {
+  /** The remote branches in the order they are listed: by remote, expanded ones only. */
+  readonly listedRemoteBranches = computed(() => {
     const collapsed = this.collapsedRemotes();
-    return this.remoteBranches().filter((b) => !collapsed.has(b.remote));
+    return this.remotes()
+      .filter((remote) => !collapsed.has(remote.name))
+      .flatMap((remote) => this.remoteBranchesOf(remote.name));
   });
+  readonly localMarks = new GitRowMarks();
+  readonly remoteMarks = new GitRowMarks();
   readonly stashes = computed(() => this.matching(this.repository.stashes(), (s) => s.message));
   readonly tags = computed(() => this.matching(this.repository.refs().tags, (t) => t.name));
 
@@ -297,6 +301,39 @@ export class GitRefsPanelComponent {
 
   toggleRemote(remote: string): void {
     this.collapsedRemotes.update((collapsed) => toggled(collapsed, remote));
+  }
+
+  clickBranch(event: MouseEvent, branch: GitBranch): void {
+    const names = this.branches().map((b) => b.name);
+    if (!this.localMarks.click(event, branch.name, names)) this.view.revealCommit(branch.sha);
+  }
+
+  clickRemoteBranch(event: MouseEvent, remoteBranch: GitRemoteBranch): void {
+    const names = this.listedRemoteBranches().map((b) => b.name);
+    if (!this.remoteMarks.click(event, remoteBranch.name, names)) {
+      this.view.revealCommit(remoteBranch.sha);
+    }
+  }
+
+  /** The menu of all marked branches when the click is on one of several; otherwise this one's. */
+  openBranchMenu(event: MouseEvent, branch: GitBranch): void {
+    const marked = this.branches().filter((b) => this.localMarks.names().has(b.name));
+    if (marked.length > 1 && marked.includes(branch)) {
+      this.actions.openBranchesMenu(event, marked, () => this.localMarks.clear());
+      return;
+    }
+    this.localMarks.clear();
+    this.actions.openBranchMenu(event, branch);
+  }
+
+  openRemoteBranchMenu(event: MouseEvent, remoteBranch: GitRemoteBranch): void {
+    const marked = this.listedRemoteBranches().filter((b) => this.remoteMarks.names().has(b.name));
+    if (marked.length > 1 && marked.includes(remoteBranch)) {
+      this.actions.openRemoteBranchesMenu(event, marked, () => this.remoteMarks.clear());
+      return;
+    }
+    this.remoteMarks.clear();
+    this.actions.openRemoteBranchMenu(event, remoteBranch);
   }
 
   isStashSelected(sha: string): boolean {
