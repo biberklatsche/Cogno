@@ -53,6 +53,7 @@ type Resize = {
 };
 
 type GraphItem = {
+  readonly kind: "commit";
   readonly commit: GitCommit;
   readonly row: GraphRow;
   readonly labels: ReadonlyArray<GitRefLabel>;
@@ -60,11 +61,16 @@ type GraphItem = {
   readonly wipLink: "through" | "end" | null;
 };
 
+/** A row of the tree: a commit, or the work in progress on top. */
+type TreeRow = GraphItem | { readonly kind: "wip" };
+
+const WIP_ROW: TreeRow = { kind: "wip" };
+
 /**
  * The commit graph: one row per commit with its branch and tag labels, the
  * lanes, message, author, date and sha. Only the visible rows are rendered.
- * The "Work in progress" row on top stands for the working tree while there
- * is something to commit.
+ * The "Work in progress" row on top of the tree stands for the working tree
+ * while there is something to commit, and scrolls with it.
  */
 @Component({
   selector: "app-git-graph",
@@ -113,7 +119,18 @@ type GraphItem = {
             (pointerup)="endResize($event)" (pointercancel)="endResize($event)" (dblclick)="resetWidth(column)"></span>
     </ng-template>
 
-    @if (view.wipVisible()) {
+    <!-- The round cut for every avatar, in the image's own box so one serves all lanes. -->
+    <svg class="defs" width="0" height="0" aria-hidden="true">
+      <clipPath id="git-avatar-clip" clipPathUnits="objectBoundingBox">
+        <circle cx="0.5" cy="0.5" r="0.5"></circle>
+      </clipPath>
+    </svg>
+
+    <cdk-virtual-scroll-viewport class="viewport" [itemSize]="rowHeight" [minBufferPx]="400" [maxBufferPx]="800"
+                                 (scrolledIndexChange)="loadMoreNearEnd()">
+      <ng-container *cdkVirtualFor="let item of items(); trackBy: trackByRow; templateCacheSize: 0">
+      <!-- The work in progress is the first row of the tree and scrolls with it. -->
+      @if (item.kind === "wip") {
       <div class="columns row wip" [class.selected]="view.selection().kind === 'wip'" (click)="view.select({ kind: 'wip' })">
         @if (visible("refs")) {
           <span class="col-refs"></span>
@@ -140,19 +157,8 @@ type GraphItem = {
           </span>
         </span>
       </div>
-    }
-
-    <!-- The round cut for every avatar, in the image's own box so one serves all lanes. -->
-    <svg class="defs" width="0" height="0" aria-hidden="true">
-      <clipPath id="git-avatar-clip" clipPathUnits="objectBoundingBox">
-        <circle cx="0.5" cy="0.5" r="0.5"></circle>
-      </clipPath>
-    </svg>
-
-    <cdk-virtual-scroll-viewport class="viewport" [itemSize]="rowHeight" [minBufferPx]="400" [maxBufferPx]="800"
-                                 (scrolledIndexChange)="loadMoreNearEnd()">
-      <div *cdkVirtualFor="let item of items(); trackBy: trackBySha; templateCacheSize: 0"
-           class="columns row" [class.selected]="isSelected(item.commit.sha)"
+      } @else {
+      <div class="columns row" [class.selected]="isSelected(item.commit.sha)"
            [style.--lane-color]="color(item.row.color)"
            (click)="view.select({ kind: 'commit', sha: item.commit.sha })"
            (contextmenu)="actions.openCommitMenu($event, item.commit)">
@@ -220,6 +226,8 @@ type GraphItem = {
           <span class="col-sha mono subtle">{{ item.commit.sha.slice(0, 7) }}</span>
         }
       </div>
+      }
+      </ng-container>
     </cdk-virtual-scroll-viewport>
 
     <!-- All refs of a commit, unfolded in place over the hovered label like
@@ -396,16 +404,18 @@ export class GitGraphComponent {
     const index = this.headIndex();
     return index === -1 ? null : (this.repository.graph()[index]?.lane ?? null);
   });
-  readonly items = computed<GraphItem[]>(() => {
+  readonly items = computed<TreeRow[]>(() => {
     const rows = this.repository.graph();
     const labels = this.repository.refLabels();
     const headIndex = this.headIndex();
-    return this.repository.commits().map((commit, index) => ({
+    const commits = this.repository.commits().map<TreeRow>((commit, index) => ({
+      kind: "commit",
       commit,
       row: rows[index] as GraphRow,
       labels: labels.get(commit.sha) ?? [],
       wipLink: index < headIndex ? "through" : index === headIndex ? "end" : null,
     }));
+    return this.view.wipVisible() ? [WIP_ROW, ...commits] : commits;
   });
   /** The graph column follows the lanes unless the user dragged it. */
   private readonly graphWidth = computed(() => {
@@ -455,10 +465,10 @@ export class GitGraphComponent {
     });
     effect(() => {
       const sha = this.view.reveal();
-      const commits = this.repository.commits();
+      const items = this.items();
       const viewport = this.viewport();
       if (!sha || !viewport) return;
-      const index = commits.findIndex((commit) => commit.sha === sha);
+      const index = items.findIndex((item) => item.kind === "commit" && item.commit.sha === sha);
       if (index === -1) return;
       untracked(() => {
         viewport.scrollToIndex(Math.max(0, index - 3));
@@ -467,7 +477,7 @@ export class GitGraphComponent {
     });
   }
 
-  trackBySha = (_index: number, item: GraphItem) => item.commit.sha;
+  trackByRow = (_index: number, item: TreeRow) => (item.kind === "wip" ? "wip" : item.commit.sha);
 
   /** The next page follows the scroll instead of a button; one request at a time. */
   loadMoreNearEnd(): void {
