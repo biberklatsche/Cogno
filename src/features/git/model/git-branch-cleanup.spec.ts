@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageReference, byRemote, keptReason, trackedRemoteBranches } from "./git-branch-cleanup";
+import { ageReference, byRemote, keptReason, remoteBranchesToDelete } from "./git-branch-cleanup";
 import { GitBranch, GitRefs, GitRemoteBranch } from "./git-model";
 
 function branch(name: string, extra: Partial<GitBranch> = {}): GitBranch {
@@ -65,21 +65,33 @@ describe("keptReason", () => {
   });
 });
 
-describe("trackedRemoteBranches", () => {
-  it("returns the existing upstreams that may be deleted", () => {
-    const repoRefs = refs({
-      remoteBranches: [remoteBranch("origin/a"), remoteBranch("origin/main")],
-    });
-    const branches = [
+describe("remoteBranchesToDelete", () => {
+  const head = { sha: null, branch: null };
+  const repoRefs = refs({
+    branches: [
       branch("a", { upstream: "origin/a" }),
+      branch("a-wip", { upstream: "origin/a" }),
+      branch("b", { upstream: "origin/b" }),
+      branch("keeper", { upstream: "origin/b" }),
       branch("gone", { upstream: "origin/gone", upstreamGone: true }),
-      branch("local"),
       branch("tracks-main", { upstream: "origin/main" }),
-    ];
+      branch("local"),
+    ],
+    remoteBranches: [
+      remoteBranch("origin/a"),
+      remoteBranch("origin/b"),
+      remoteBranch("origin/main"),
+    ],
+  });
 
-    expect(trackedRemoteBranches(branches, repoRefs, { sha: null, branch: null })).toEqual([
+  it("returns each existing upstream once, when all branches tracking it go", () => {
+    expect(remoteBranchesToDelete(["a", "a-wip", "gone", "local"], repoRefs, head)).toEqual([
       remoteBranch("origin/a"),
     ]);
+  });
+
+  it("keeps an upstream another local branch still tracks, and the default branches", () => {
+    expect(remoteBranchesToDelete(["a", "b", "tracks-main"], repoRefs, head)).toEqual([]);
   });
 });
 

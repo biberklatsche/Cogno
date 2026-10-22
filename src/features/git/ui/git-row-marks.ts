@@ -1,8 +1,9 @@
 import { signal } from "@angular/core";
 
 /**
- * Rows marked with Cmd/Ctrl-click and Shift-click, for one action on all of
- * them. A plain click clears the marks; it shows the row's commit instead.
+ * Rows marked with Cmd-click (Ctrl-click off macOS, where Ctrl-click is the
+ * context menu) and Shift-click, for one action on all of them. A plain click
+ * clears the marks; it shows the row's commit instead.
  */
 export class GitRowMarks {
   readonly names = signal<ReadonlySet<string>>(new Set());
@@ -31,6 +32,13 @@ export class GitRowMarks {
 
   clear(): void {
     this.names.set(new Set());
+  }
+
+  /** Drops the marks of rows no longer listed, so no hidden row is acted on. */
+  retain(rows: ReadonlyArray<string>): void {
+    const listed = new Set(rows);
+    const kept = [...this.names()].filter((name) => listed.has(name));
+    if (kept.length !== this.names().size) this.names.set(new Set(kept));
   }
 
   /** From the anchor to `name` in list order, or `name` alone without an anchor in the list. */

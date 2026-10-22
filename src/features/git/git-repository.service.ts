@@ -28,6 +28,7 @@ import {
   parseRemotes,
   parseStashes,
   REF_FORMAT,
+  REMOTE_URL_KEYS,
   STASH_FORMAT,
 } from "./model/git-parsers";
 
@@ -319,7 +320,7 @@ export class GitRepositoryService {
       git(["rev-parse", "-q", "--verify", "HEAD"]),
       git(["symbolic-ref", "-q", "--short", "HEAD"]),
       git(["for-each-ref", `--format=${REF_FORMAT}`, "refs/heads", "refs/remotes", "refs/tags"]),
-      git(["remote", "-v"]),
+      git(["config", "-z", "--get-regexp", REMOTE_URL_KEYS]),
       git(["stash", "list", `--format=${STASH_FORMAT}`]),
       this.readOperation(session),
     ]);

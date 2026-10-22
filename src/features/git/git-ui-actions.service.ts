@@ -20,7 +20,7 @@ import {
   ageReference,
   byRemote,
   keptReason,
-  trackedRemoteBranches,
+  remoteBranchesToDelete,
 } from "./model/git-branch-cleanup";
 import {
   GitBranch,
@@ -232,7 +232,6 @@ export class GitUiActions {
 
   openCommitMenu(event: MouseEvent, commit: GitCommit): void {
     const head = this.repository.head();
-    const current = head.branch ?? "HEAD";
     const short = commit.sha.slice(0, 7);
     const isMerge = commit.parents.length > 1;
     const localBranches = this.repository
@@ -247,13 +246,7 @@ export class GitUiActions {
       item("Create branch here", () => this.beginBranch(commit.sha)),
       item("Create tag here", () => this.createTagAt(commit.sha, short)),
       separator(),
-      item(
-        "Cherry pick commit",
-        () => this.operations.cherryPick(commit.sha, isMerge),
-        commit.sha === head.sha,
-      ),
-      item("Revert commit", () => this.operations.revert(commit.sha, isMerge)),
-      ...(head.sha && commit.sha !== head.sha ? this.resetItems(current, commit.sha) : []),
+      ...this.commitItems(commit.sha, isMerge),
       separator(),
       item("Copy commit sha", () => this.clipboard.writeText(commit.sha)),
       item("Copy commit message", () => this.copyCommitMessage(commit.sha)),
@@ -294,13 +287,7 @@ export class GitUiActions {
           ]),
       separator(),
       item("Create branch here", () => this.beginBranch(branch.sha)),
-      item(
-        "Cherry pick commit",
-        () => this.operations.cherryPick(branch.sha, isMerge),
-        branch.sha === head.sha,
-      ),
-      ...(head.sha && branch.sha !== head.sha ? this.resetItems(current, branch.sha) : []),
-      item("Revert commit", () => this.operations.revert(branch.sha, isMerge)),
+      ...this.commitItems(branch.sha, isMerge),
       separator(),
       item("Create tag here", () => this.createTagAt(branch.name, branch.name)),
       separator(),
@@ -578,15 +565,19 @@ export class GitUiActions {
   }
 
   private async deleteBranch(branch: GitBranch): Promise<void> {
-    if (!(await this.confirm(`Delete the branch ${branch.name}?`, "Delete"))) return;
-    const outcome = await this.operations.deleteBranch(branch.name, false);
-    if (outcome !== "rejected") return;
-    // `-d` refuses a branch whose commits are nowhere else; offer to drop them.
-    const force = await this.confirm(
-      `${branch.name} has commits that are not merged anywhere. Delete it anyway? Those commits are lost.`,
-      "Delete anyway",
-    );
-    if (force) await this.operations.deleteBranch(branch.name, true);
+    const unmerged = await this.operations.unmergedBranches([branch]);
+    const confirmed =
+      unmerged.length > 0
+        ? await this.confirm(this.unmergedMessage(unmerged, "Delete it anyway?"), "Delete anyway")
+        : await this.confirm(`Delete the branch ${branch.name}?`, "Delete");
+    if (confirmed) await this.operations.deleteBranches([branch.name]);
+  }
+
+  /** Says what `unmergedBranches` found, and what deleting them costs. */
+  private unmergedMessage(names: ReadonlyArray<string>, question: string): string {
+    const current = this.repository.head().branch ?? "HEAD";
+    const one = names.length === 1;
+    return `${names.join(", ")} ${one ? "has" : "have"} commits that are neither in ${current} nor in ${one ? "its" : "their"} upstream. ${question} Commits no other branch has are lost.`;
   }
 
   private deleteRemoteBranch(remoteBranch: GitRemoteBranch): Promise<void> {
@@ -611,28 +602,33 @@ export class GitUiActions {
           .join(" · "),
         keptReason: keptReason(branch, refs, head),
       })),
-      remoteOption: "Also delete the remote branches they track",
+      remoteOption: {
+        label: "Also delete the remote branches they track",
+        remoteBranchesFor: (names) =>
+          remoteBranchesToDelete(names, refs, head).map((remoteBranch) => remoteBranch.name),
+      },
     });
     if (!result) return;
 
-    let remaining = await this.operations.deleteBranches(result.names, false);
-    // `-d` refuses branches whose commits are nowhere else; offer to drop them together.
-    if (
-      remaining.length > 0 &&
-      (await this.confirm(
-        `${remaining.join(", ")} ${remaining.length === 1 ? "has" : "have"} commits that are not merged anywhere. Delete anyway? Those commits are lost.`,
+    // Asked before deleting: git's own refusal would only come as a translated message.
+    const chosen = shown.filter((branch) => result.names.includes(branch.name));
+    const unmerged = await this.operations.unmergedBranches(chosen);
+    const names =
+      unmerged.length > 0 &&
+      !(await this.confirm(
+        this.unmergedMessage(unmerged, "Delete them anyway? Otherwise only the others go."),
         "Delete anyway",
       ))
-    ) {
-      remaining = await this.operations.deleteBranches(remaining, true);
-    }
+        ? result.names.filter((name) => !unmerged.includes(name))
+        : result.names;
+    if (names.length === 0) return;
+
+    const remaining = await this.operations.deleteBranches(names);
     if (!result.alsoRemote) return;
 
-    const deleted = shown.filter(
-      (branch) => result.names.includes(branch.name) && !remaining.includes(branch.name),
-    );
-    for (const [remote, names] of byRemote(trackedRemoteBranches(deleted, refs, head))) {
-      await this.operations.deleteRemoteBranches(remote, names);
+    const deleted = names.filter((name) => !remaining.includes(name));
+    for (const [remote, shortNames] of byRemote(remoteBranchesToDelete(deleted, refs, head))) {
+      await this.operations.deleteRemoteBranches(remote, shortNames);
     }
   }
 
@@ -677,6 +673,16 @@ export class GitUiActions {
         ref,
         result.values["message"] ?? "",
       );
+  }
+
+  /** Cherry pick, revert and reset to a commit, for the commit and the branch menus. */
+  private commitItems(sha: string, isMerge: boolean): ContextMenuItem[] {
+    const head = this.repository.head();
+    return [
+      item("Cherry pick commit", () => this.operations.cherryPick(sha, isMerge), sha === head.sha),
+      item("Revert commit", () => this.operations.revert(sha, isMerge)),
+      ...(head.sha && sha !== head.sha ? this.resetItems(head.branch ?? "HEAD", sha) : []),
+    ];
   }
 
   private resetItems(current: string, sha: string): ContextMenuItem[] {

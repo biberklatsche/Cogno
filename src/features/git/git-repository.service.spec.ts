@@ -66,7 +66,7 @@ function repo(root: string, overrides: Record<string, SessionRunResult> = {}): R
         ),
       );
     }
-    if (args[0] === "remote") return Promise.resolve(ran("origin\tgit@x:y.git (fetch)\n"));
+    if (args[0] === "config") return Promise.resolve(ran("remote.origin.url\ngit@x:y.git\0"));
     if (args[0] === "log")
       return Promise.resolve(ran(`${f("c1", "", "Ana", "a@x", "1", "init")}\x1e`));
     return Promise.resolve(ran(""));

@@ -3,6 +3,7 @@ import { GitFile, GitFileStatus } from "./git-model";
 import {
   buildRefLabels,
   cloneDirectoryName,
+  isPushRejected,
   parseCommitDetail,
   parseGitStatus,
   parseLog,
@@ -125,18 +126,32 @@ describe("parseRefs", () => {
 });
 
 describe("parseRemotes", () => {
-  it("lists each remote once with its fetch url", () => {
+  it("reads name and url from the config keys, also names with dots and urls with spaces", () => {
     const raw = [
-      "origin\tgit@github.com:a/b.git (fetch)",
-      "origin\tgit@github.com:a/b-push.git (push)",
-      "upstream\thttps://x/y.git (fetch)",
-      "upstream\thttps://x/y.git (push)",
-    ].join("\n");
+      "remote.origin.url\ngit@github.com:a/b.git",
+      "remote.my.fork.url\n/Users/me/my repo",
+      "",
+    ].join("\0");
 
     expect(parseRemotes(raw)).toEqual([
       { name: "origin", url: "git@github.com:a/b.git" },
-      { name: "upstream", url: "https://x/y.git" },
+      { name: "my.fork", url: "/Users/me/my repo" },
     ]);
+  });
+});
+
+describe("isPushRejected", () => {
+  it("is true for a ref git refused to push, not for a hook's refusal or a success", () => {
+    const line = (flag: string, summary: string) =>
+      `${flag}\trefs/heads/x:refs/heads/x\t${summary}`;
+
+    expect(
+      isPushRejected(["To origin", line("!", "[rejected] (non-fast-forward)"), "Done"].join("\n")),
+    ).toBe(true);
+    expect(isPushRejected(line("!", "[rejected] (stale info)"))).toBe(true);
+    expect(isPushRejected(line("!", "[remote rejected] (pre-receive hook declined)"))).toBe(false);
+    expect(isPushRejected(line(" ", "c1..c2"))).toBe(false);
+    expect(isPushRejected("")).toBe(false);
   });
 });
 

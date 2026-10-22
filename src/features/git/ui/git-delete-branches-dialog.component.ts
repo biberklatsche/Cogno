@@ -19,8 +19,14 @@ export type GitDeleteBranchesItem = {
 export type GitDeleteBranchesDialogData = {
   readonly message: string;
   readonly items: ReadonlyArray<GitDeleteBranchesItem>;
-  /** Label of the switch that also deletes the tracked remote branches; none hides it. */
-  readonly remoteOption?: string;
+  /** The switch that also deletes the tracked remote branches; none hides it. */
+  readonly remoteOption?: GitDeleteBranchesRemoteOption;
+};
+
+export type GitDeleteBranchesRemoteOption = {
+  readonly label: string;
+  /** The remote branches that go along with the chosen branches, by name. */
+  readonly remoteBranchesFor: (names: ReadonlyArray<string>) => ReadonlyArray<string>;
 };
 
 export type GitDeleteBranchesResult = {
@@ -54,11 +60,20 @@ export type GitDeleteBranchesResult = {
           </label>
         }
       </div>
-      @if (data.remoteOption) {
+      @if (data.remoteOption; as option) {
         <button type="button" class="remote-option" (click)="alsoRemote.set(!alsoRemote())">
           <app-toggle-switch [checked]="alsoRemote()"></app-toggle-switch>
-          <span>{{ data.remoteOption }}</span>
+          <span>{{ option.label }}</span>
         </button>
+        @if (alsoRemote()) {
+          <p class="remote-list subtle">
+            @if (remoteBranches().length > 0) {
+              Also deletes {{ remoteBranches().join(", ") }}
+            } @else {
+              None to delete: no upstream, still tracked by another branch, or a default branch
+            }
+          </p>
+        }
       }
       <div class="actions">
         <button type="button" class="button" (click)="dismiss()">Cancel</button>
@@ -113,6 +128,7 @@ export type GitDeleteBranchesResult = {
         font: inherit;
         text-align: left;
       }
+      .remote-list { margin: 0; white-space: normal; line-height: 1.5; }
       .actions {
         display: flex;
         justify-content: flex-end;
@@ -129,6 +145,9 @@ export class GitDeleteBranchesDialogComponent {
     () => this.selectable.length > 0 && this.selected().size === this.selectable.length,
   );
   readonly someSelected = computed(() => this.selected().size > 0 && !this.allSelected());
+  readonly remoteBranches = computed(
+    () => this.data.remoteOption?.remoteBranchesFor(this.chosen()) ?? [],
+  );
 
   constructor(
     private readonly dialogRef: DialogRef<GitDeleteBranchesResult>,
@@ -152,12 +171,15 @@ export class GitDeleteBranchesDialogComponent {
   }
 
   confirm(): void {
-    // Keep the order of the list, not the order of the clicks.
-    const names = this.selectable.filter((name) => this.selected().has(name));
-    this.dialogRef.close({ names, alsoRemote: this.alsoRemote() });
+    this.dialogRef.close({ names: this.chosen(), alsoRemote: this.alsoRemote() });
   }
 
   dismiss(): void {
     this.dialogRef.close();
+  }
+
+  /** The selected branches in the order of the list, not of the clicks. */
+  private chosen(): ReadonlyArray<string> {
+    return this.selectable.filter((name) => this.selected().has(name));
   }
 }

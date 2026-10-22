@@ -22,6 +22,8 @@ export const LOG_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%s%x1e";
 export const COMMIT_DETAIL_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ct%x1f%B";
 export const REF_FORMAT =
   "%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track,nobracket)%1f%(committerdate:unix)%1f%(symref)";
+/** The config keys `parseRemotes` reads: each remote's url. */
+export const REMOTE_URL_KEYS = "^remote\\..*\\.url$";
 export const STASH_FORMAT = "%H%x1f%gd%x1f%at%x1f%gs";
 
 /** Both sides of an unmerged path, as `git status` prints them. */
@@ -144,16 +146,36 @@ export function parseTrack(track: string): Pick<GitBranch, "ahead" | "behind" | 
   };
 }
 
-/** Reads `git remote -v`; each remote is listed once for fetch and once for push. */
+/**
+ * Reads `git config -z --get-regexp REMOTE_URL_KEYS`: per remote its key
+ * `remote.<name>.url`, a newline and the url, each entry ending in NUL.
+ */
 export function parseRemotes(raw: string): GitRemote[] {
-  const remotes = new Map<string, string>();
-  for (const line of raw.split("\n")) {
-    const match = /^(\S+)\t(.+?) \((fetch|push)\)$/.exec(line.trim());
-    if (!match) continue;
-    const [, name = "", url = "", kind] = match;
-    if (kind === "fetch" || !remotes.has(name)) remotes.set(name, url);
+  const remotes: GitRemote[] = [];
+  for (const entry of raw.split("\0")) {
+    const newline = entry.indexOf("\n");
+    const key = newline === -1 ? entry : entry.slice(0, newline);
+    if (!key.startsWith("remote.") || !key.endsWith(".url")) continue;
+    // The name may itself contain dots: `remote.my.fork.url`.
+    remotes.push({
+      name: key.slice("remote.".length, -".url".length),
+      url: entry.slice(newline + 1),
+    });
   }
-  return [...remotes].map(([name, url]) => ({ name, url }));
+  return remotes;
+}
+
+/**
+ * Reads `git push --porcelain`: one tab-separated line per ref with a flag
+ * and a summary. `!` with `[rejected]` is git refusing a push that is not a
+ * fast-forward (or whose lease is stale), which a force push can override; a
+ * `[remote rejected]` from a hook cannot be.
+ */
+export function isPushRejected(stdout: string): boolean {
+  return stdout.split("\n").some((line) => {
+    const [flag, , summary = ""] = line.split("\t");
+    return flag === "!" && summary.startsWith("[rejected]");
+  });
 }
 
 /** Reads `git stash list` with `STASH_FORMAT`. */

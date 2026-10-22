@@ -45,6 +45,16 @@ describe("GitRowMarks", () => {
     expect([...marks.names()]).toEqual(["b"]);
   });
 
+  it("drops the marks of rows that are no longer listed", () => {
+    const marks = new GitRowMarks();
+    marks.click(click({ metaKey: true }), "a", ROWS);
+    marks.click(click({ metaKey: true }), "c", ROWS);
+
+    marks.retain(["b", "c"]);
+
+    expect([...marks.names()]).toEqual(["c"]);
+  });
+
   it("clears the marks on a plain click and leaves the click to the row", () => {
     const marks = new GitRowMarks();
     marks.click(click({ metaKey: true }), "a", ROWS);

@@ -2,15 +2,16 @@ import { Injectable, signal } from "@angular/core";
 import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { GitRepositoryService } from "./git-repository.service";
-import { GitOperation, GitRemoteBranch } from "./model/git-model";
+import { GitBranch, GitOperation, GitRemoteBranch } from "./model/git-model";
+import { isPushRejected } from "./model/git-parsers";
 
 export type GitPullMode = "fetch" | "merge" | "ff-only" | "rebase";
 export type GitResetMode = "soft" | "mixed" | "hard";
 
 /**
  * What an operation ended in. `rejected` is a refusal the user may override by
- * forcing: a push that is not a fast-forward, a branch delete that would lose
- * unmerged commits. It is not toasted; the caller asks instead.
+ * forcing: a push that is not a fast-forward. It is not toasted; the caller
+ * asks instead.
  */
 export type GitOperationOutcome = "ok" | "failed" | "rejected";
 
@@ -31,8 +32,11 @@ type RunOptions = {
   /** Toast shown on success; failures always show git's own message. */
   readonly success?: string;
   readonly inCwd?: boolean;
-  /** A refusal the user may override (see `GitOperationOutcome`) is returned, not toasted. */
-  readonly overridable?: boolean;
+  /**
+   * Recognises a refusal the user may override (see `GitOperationOutcome`) from
+   * a machine-readable output, never from git's messages; it is returned, not toasted.
+   */
+  readonly refused?: (result: CommandRunnerResultContract) => boolean;
 };
 
 /**
@@ -163,34 +167,48 @@ export class GitOperationsService {
     return this.git(["branch", "-m", name, newName], "Rename failed");
   }
 
-  deleteBranch(name: string, force: boolean): Promise<GitOperationOutcome> {
-    return this.git(["branch", force ? "-D" : "-d", name], "Delete branch failed", {
-      overridable: !force,
-    });
+  /**
+   * The branches whose tip is neither in HEAD nor in their upstream: deleting
+   * them may lose commits. Asked before deleting, from a ref list and exit
+   * codes; a branch git cannot answer for counts as unmerged.
+   */
+  async unmergedBranches(branches: ReadonlyArray<GitBranch>): Promise<ReadonlyArray<string>> {
+    const merged = await this.repository.run(
+      ["for-each-ref", "--merged=HEAD", "--format=%(refname)", "refs/heads"],
+      LOCAL_TIMEOUT_MS,
+    );
+    const inHead = new Set(merged?.exitCode === 0 ? merged.stdout.split("\n") : []);
+    const unmerged: string[] = [];
+    for (const branch of branches) {
+      if (inHead.has(`refs/heads/${branch.name}`)) continue;
+      if (branch.upstream && !branch.upstreamGone) {
+        const inUpstream = await this.repository.run(
+          ["merge-base", "--is-ancestor", `refs/heads/${branch.name}`, branch.upstream],
+          LOCAL_TIMEOUT_MS,
+        );
+        if (inUpstream?.exitCode === 0) continue;
+      }
+      unmerged.push(branch.name);
+    }
+    return unmerged;
   }
 
   /**
-   * Deletes several local branches in one run and returns the ones still
-   * there: `-d` refuses those whose commits are nowhere else, and only other
-   * failures are toasted.
+   * Deletes local branches in one run, merged or not, and returns the ones
+   * still there, read back from the refs rather than from git's messages.
    */
-  async deleteBranches(
-    names: ReadonlyArray<string>,
-    force: boolean,
-  ): Promise<ReadonlyArray<string>> {
-    const result = await this.repository.run(
-      ["branch", force ? "-D" : "-d", ...names],
+  async deleteBranches(names: ReadonlyArray<string>): Promise<ReadonlyArray<string>> {
+    const result = await this.repository.run(["branch", "-D", ...names], LOCAL_TIMEOUT_MS);
+    this.report(result, names.length === 1 ? "Delete branch failed" : "Delete branches failed");
+    const listed = await this.repository.run(
+      ["for-each-ref", "--format=%(refname)", ...names.map((name) => `refs/heads/${name}`)],
       LOCAL_TIMEOUT_MS,
     );
-    const failures = (result?.stderr ?? "")
-      .split("\n")
-      .filter((line) => /^(error|fatal):/.test(line) && !/not fully merged/i.test(line));
-    if (!result || result.exitCode === 124) this.report(result, "Delete branches failed");
-    else if (failures.length > 0)
-      this.toast("Delete branches failed", failures.join("\n"), "error");
     await this.repository.refresh();
-    const remaining = new Set(this.repository.refs().branches.map((b) => b.name));
-    return names.filter((name) => remaining.has(name));
+    // Without an answer nothing counts as deleted, so no remote branch goes with it.
+    if (listed?.exitCode !== 0) return names;
+    const existing = new Set(listed.stdout.split("\n"));
+    return names.filter((name) => existing.has(`refs/heads/${name}`));
   }
 
   merge(ref: string): Promise<GitOperationOutcome> {
@@ -322,6 +340,7 @@ export class GitOperationsService {
     return this.network(
       [
         "push",
+        "--porcelain",
         ...(options.force ? ["--force-with-lease"] : []),
         ...(options.setUpstream ? ["-u"] : []),
         remote,
@@ -329,7 +348,7 @@ export class GitOperationsService {
       ],
       `Pushing ${branch}`,
       `Pushed ${branch}`,
-      !options.force,
+      options.force ? undefined : (result) => isPushRejected(result.stdout),
     );
   }
 
@@ -397,13 +416,13 @@ export class GitOperationsService {
     args: string[],
     busyLabel: string,
     success: string,
-    overridable = false,
+    refused?: RunOptions["refused"],
   ): Promise<GitOperationOutcome> {
     return this.withBusy(busyLabel, () =>
       this.git([...this.credentialCacheArgs(), ...args], `${busyLabel.split(" ")[0]} failed`, {
         timeoutMs: NETWORK_TIMEOUT_MS,
         success,
-        overridable,
+        ...(refused ? { refused } : {}),
       }),
     );
   }
@@ -456,7 +475,7 @@ export class GitOperationsService {
     const result = options.inCwd
       ? await this.repository.runInCwd(args, timeoutMs, options.stdin)
       : await this.repository.run(args, timeoutMs, options.stdin);
-    if (options.overridable && result && result.exitCode !== 0 && isOverridableRefusal(result)) {
+    if (options.refused && result && result.exitCode !== 0 && options.refused(result)) {
       await this.repository.refresh();
       return "rejected";
     }
@@ -497,8 +516,4 @@ function firstLine(text: string): string | undefined {
     .split("\n")
     .find((line) => line.trim())
     ?.trim();
-}
-
-function isOverridableRefusal(result: CommandRunnerResultContract): boolean {
-  return /\[rejected\]|non-fast-forward|fetch first|not fully merged/.test(result.stderr);
 }

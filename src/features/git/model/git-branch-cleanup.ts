@@ -24,17 +24,24 @@ export function keptReason(
 }
 
 /**
- * The remote branches the local branches track, for deleting them along with
- * the local ones. Only upstreams that still exist and may be deleted.
+ * The remote branches to delete along with the local branches `names`: the
+ * existing upstreams that may be deleted and that no other local branch still
+ * tracks. Each one once, however many of the branches track it.
  */
-export function trackedRemoteBranches(
-  branches: ReadonlyArray<GitBranch>,
+export function remoteBranchesToDelete(
+  names: ReadonlyArray<string>,
   refs: GitRefs,
   head: GitHead,
 ): GitRemoteBranch[] {
-  return branches
-    .map((branch) => refs.remoteBranches.find((r) => r.name === branch.upstream))
-    .filter((r): r is GitRemoteBranch => !!r && !keptReason(r, refs, head));
+  const going = new Set(names);
+  return refs.remoteBranches.filter((remoteBranch) => {
+    const trackers = refs.branches.filter((branch) => branch.upstream === remoteBranch.name);
+    return (
+      trackers.some((branch) => going.has(branch.name)) &&
+      trackers.every((branch) => going.has(branch.name)) &&
+      !keptReason(remoteBranch, refs, head)
+    );
+  });
 }
 
 /** Remote branches grouped by their remote, one push each. */

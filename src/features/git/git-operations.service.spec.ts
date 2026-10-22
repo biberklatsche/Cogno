@@ -40,6 +40,11 @@ describe("GitOperationsService", () => {
   });
 
   const argsOfLastRun = () => run.mock.calls.at(-1)?.[0];
+  const ran = (stdout: string, exitCode = 0, stderr = ""): CommandRunnerResultContract => ({
+    stdout,
+    stderr,
+    exitCode,
+  });
 
   it("commits summary and description as one message and re-reads the repository", async () => {
     await service.commit("Fix bug ", " Details\nmore ");
@@ -54,26 +59,52 @@ describe("GitOperationsService", () => {
     expect(argsOfLastRun()).toEqual([
       ...CACHE,
       "push",
+      "--porcelain",
       "-u",
       "origin",
       "refs/heads/feature:refs/heads/feature",
     ]);
   });
 
-  it("returns a refused push as rejected without an error toast", async () => {
-    answer = { stdout: "", stderr: " ! [rejected] main -> main (fetch first)", exitCode: 1 };
+  it("returns a push git refused as rejected without an error toast, read from --porcelain", async () => {
+    answer = {
+      stdout: "To origin\n!\trefs/heads/main:refs/heads/main\t[rejected] (fetch first)\nDone\n",
+      // The message is translated; only the porcelain line counts.
+      stderr: "Fehler: Fehler beim Versenden einiger Referenzen",
+      exitCode: 1,
+    };
 
     const outcome = await service.push("main", "origin", "main", {
       setUpstream: false,
       force: false,
     });
 
+    expect(argsOfLastRun()).toContain("--porcelain");
     expect(outcome).toBe("rejected");
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it("reports a push a hook refused as a failure, not as something to force", async () => {
+    answer = {
+      stdout: "!\trefs/heads/main:refs/heads/main\t[remote rejected] (pre-receive hook declined)\n",
+      stderr: "",
+      exitCode: 1,
+    };
+
+    const outcome = await service.push("main", "origin", "main", {
+      setUpstream: false,
+      force: false,
+    });
+
+    expect(outcome).toBe("failed");
+  });
+
   it("reports a refused force push as a failure", async () => {
-    answer = { stdout: "", stderr: " ! [rejected] main -> main (stale info)", exitCode: 1 };
+    answer = {
+      stdout: "!\trefs/heads/main:refs/heads/main\t[rejected] (stale info)\n",
+      stderr: "",
+      exitCode: 1,
+    };
 
     const outcome = await service.push("main", "origin", "main", {
       setUpstream: false,
@@ -85,37 +116,71 @@ describe("GitOperationsService", () => {
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "error" }));
   });
 
-  it("returns an unmerged branch delete as rejected so the user can force it", async () => {
-    answer = { stdout: "", stderr: "error: The branch 'x' is not fully merged.", exitCode: 1 };
+  it("finds unmerged branches from the merged ref list and the upstream's exit code", async () => {
+    run.mockImplementation((args: string[]) => {
+      if (args[0] === "for-each-ref") return Promise.resolve(ran("refs/heads/merged\n"));
+      // `--is-ancestor` answers with its exit code: 0 in the upstream, 1 not.
+      if (args[0] === "merge-base")
+        return Promise.resolve(ran("", args[2] === "refs/heads/pushed" ? 0 : 1));
+      return Promise.resolve(ran(""));
+    });
+    const branch = (name: string, upstream: string | null, upstreamGone = false) => ({
+      name,
+      sha: "c1",
+      upstream,
+      ahead: 0,
+      behind: 0,
+      upstreamGone,
+      lastCommitAt: 0,
+    });
 
-    expect(await service.deleteBranch("x", false)).toBe("rejected");
-    expect(await service.deleteBranch("x", true)).toBe("failed");
-    expect(argsOfLastRun()).toEqual(["branch", "-D", "x"]);
-  });
+    const unmerged = await service.unmergedBranches([
+      branch("merged", null),
+      branch("pushed", "origin/pushed"),
+      branch("ahead", "origin/ahead"),
+      branch("gone", "origin/gone", true),
+      branch("local", null),
+    ]);
 
-  it("deletes several branches in one run and returns the ones still there", async () => {
-    answer = {
-      stdout: "Deleted branch a (was c1).",
-      stderr: "error: the branch 'main' is not fully merged\nhint: run 'git branch -D main'",
-      exitCode: 1,
-    };
-
-    expect(await service.deleteBranches(["a", "main"], false)).toEqual(["main"]);
-    expect(argsOfLastRun()).toEqual(["branch", "-d", "a", "main"]);
-    expect(refresh).toHaveBeenCalled();
-    // An unmerged branch is a question for the caller, not an error.
-    expect(dispatch).not.toHaveBeenCalled();
-  });
-
-  it("reports other failures of a bulk branch delete", async () => {
-    answer = { stdout: "", stderr: "error: branch 'nope' not found", exitCode: 1 };
-
-    await service.deleteBranches(["nope"], true);
-
-    expect(argsOfLastRun()).toEqual(["branch", "-D", "nope"]);
-    expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "error", body: "error: branch 'nope' not found" }),
+    expect(unmerged).toEqual(["ahead", "gone", "local"]);
+    expect(run).toHaveBeenCalledWith(
+      ["merge-base", "--is-ancestor", "refs/heads/pushed", "origin/pushed"],
+      expect.any(Number),
     );
+  });
+
+  it("deletes branches with -D and returns the ones still there, read back from the refs", async () => {
+    run.mockImplementation((args: string[]) =>
+      Promise.resolve(
+        args[0] === "for-each-ref"
+          ? // `refs/heads/b` also lists `b/x`; only exact names count.
+            ran("refs/heads/b\nrefs/heads/b/x\n")
+          : ran("", 1, "Fehler: Branch 'b' ist in einem anderen Worktree ausgecheckt"),
+      ),
+    );
+
+    expect(await service.deleteBranches(["a", "b"])).toEqual(["b"]);
+    expect(run).toHaveBeenCalledWith(["branch", "-D", "a", "b"], expect.any(Number));
+    expect(run).toHaveBeenCalledWith(
+      ["for-each-ref", "--format=%(refname)", "refs/heads/a", "refs/heads/b"],
+      expect.any(Number),
+    );
+    // Git's message is shown as it is, not read.
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "error",
+        body: "Fehler: Branch 'b' ist in einem anderen Worktree ausgecheckt",
+      }),
+    );
+    expect(refresh).toHaveBeenCalled();
+  });
+
+  it("counts no branch as deleted when git cannot list them", async () => {
+    run.mockImplementation((args: string[]) =>
+      Promise.resolve(args[0] === "for-each-ref" ? ran("", 128) : ran("")),
+    );
+
+    expect(await service.deleteBranches(["a"])).toEqual(["a"]);
   });
 
   it("pulls a branch that is not checked out by fetching its upstream into it", async () => {

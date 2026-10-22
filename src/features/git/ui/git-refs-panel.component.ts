@@ -2,7 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   signal,
+  untracked,
   WritableSignal,
 } from "@angular/core";
 import { Icon, IconComponent, TooltipDirective } from "@cogno/shared/ui";
@@ -249,11 +251,17 @@ export class GitRefsPanelComponent {
       refs,
     );
   });
+  /** The listed remote branches grouped by remote, in list order within each. */
+  private readonly remoteBranchesByRemote = computed(() => {
+    const groups = new Map<string, GitRemoteBranch[]>();
+    for (const branch of this.remoteBranches()) {
+      groups.set(branch.remote, [...(groups.get(branch.remote) ?? []), branch]);
+    }
+    return groups;
+  });
   readonly remotes = computed(() => {
-    const withBranches = new Set(this.remoteBranches().map((b) => b.remote));
-    return this.repository
-      .remotes()
-      .filter((r) => !this.filter().trim() || withBranches.has(r.name));
+    const groups = this.remoteBranchesByRemote();
+    return this.repository.remotes().filter((r) => !this.filter().trim() || groups.has(r.name));
   });
   /** The remote branches in the order they are listed: by remote, expanded ones only. */
   readonly listedRemoteBranches = computed(() => {
@@ -270,7 +278,22 @@ export class GitRefsPanelComponent {
     readonly operations: GitOperationsService,
     readonly actions: GitUiActions,
     readonly view: GitViewState,
-  ) {}
+  ) {
+    // Marks only ever cover listed rows: a filter, a collapsed remote or a
+    // branch deleted elsewhere drops them, and another repository starts clean.
+    effect(() => {
+      this.repository.root();
+      untracked(() => this.view.clearMarks());
+    });
+    effect(() => {
+      const names = this.branches().map((b) => b.name);
+      untracked(() => this.view.localMarks.retain(names));
+    });
+    effect(() => {
+      const names = this.listedRemoteBranches().map((b) => b.name);
+      untracked(() => this.view.remoteMarks.retain(names));
+    });
+  }
 
   sortIcon(sort: GitBranchSort): Icon {
     return SORT_BUTTONS[sort].icon;
@@ -284,8 +307,8 @@ export class GitRefsPanelComponent {
     sort.update(nextSort);
   }
 
-  remoteBranchesOf(remote: string): GitRemoteBranch[] {
-    return this.remoteBranches().filter((branch) => branch.remote === remote);
+  remoteBranchesOf(remote: string): ReadonlyArray<GitRemoteBranch> {
+    return this.remoteBranchesByRemote().get(remote) ?? [];
   }
 
   isOpen(section: GitRefsSection): boolean {
