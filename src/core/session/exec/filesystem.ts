@@ -1,4 +1,5 @@
 import type { ShellContextContract } from "@cogno/shared/domain";
+import type { Observable } from "rxjs";
 
 type FilesystemEntryKindContract = "file" | "directory";
 
@@ -29,6 +30,7 @@ export interface FilesystemContract {
   ): Promise<ReadonlyArray<FilesystemEntryContract>>;
   exists(path: string, shellContext: ShellContextContract): Promise<boolean>;
   readTextFile(path: string, shellContext: ShellContextContract): Promise<string>;
+  watch$(path: string, shellContext: ShellContextContract): Observable<void>;
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string;
   appendPathSeparator(path: string, shellContext: ShellContextContract): string;
   toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string;
@@ -48,6 +50,7 @@ export abstract class Filesystem implements FilesystemContract {
   ): Promise<ReadonlyArray<FilesystemEntryContract>>;
   abstract exists(path: string, shellContext: ShellContextContract): Promise<boolean>;
   abstract readTextFile(path: string, shellContext: ShellContextContract): Promise<string>;
+  abstract watch$(path: string, shellContext: ShellContextContract): Observable<void>;
   abstract toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string;
   abstract appendPathSeparator(path: string, shellContext: ShellContextContract): string;
   abstract toRelativePath(path: string, cwd: string, shellContext: ShellContextContract): string;

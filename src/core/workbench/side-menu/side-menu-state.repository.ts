@@ -1,35 +1,40 @@
 import { Injectable } from "@angular/core";
 import { DatabaseAccess } from "@cogno/platform";
 
-export interface SideMenuStateEntity {
-  selected_item_label: string | null;
+/** One panel that differs from the default: floating, default width, not expanded. */
+export interface SideMenuPanelEntity {
+  label: string;
   is_pinned: number;
-  displacement: number;
-  panel_width_pixels: number;
+  is_expanded: number;
+  width_pixels: number | null;
+  /** The docked panel that comes back after a restart; at most one row. */
+  is_open: number;
 }
 
 @Injectable({ providedIn: "root" })
 export class SideMenuStateRepository {
   constructor(private readonly databaseAccess: DatabaseAccess) {}
 
-  /** `null` until the state has been saved once. */
-  async load(): Promise<SideMenuStateEntity | null> {
-    const rows = await this.databaseAccess.select<SideMenuStateEntity[]>(
-      "SELECT selected_item_label, is_pinned, displacement, panel_width_pixels FROM side_menu_state WHERE id = 1",
+  async loadPanels(): Promise<SideMenuPanelEntity[]> {
+    return this.databaseAccess.select<SideMenuPanelEntity[]>(
+      "SELECT label, is_pinned, is_expanded, width_pixels, is_open FROM side_menu_panel",
     );
-    return rows[0] ?? null;
   }
 
-  async save(state: SideMenuStateEntity): Promise<void> {
-    await this.databaseAccess.execute(
-      `INSERT INTO side_menu_state (id, selected_item_label, is_pinned, displacement, panel_width_pixels)
-       VALUES (1, ?1, ?2, ?3, ?4)
-       ON CONFLICT (id) DO UPDATE SET
-           selected_item_label = excluded.selected_item_label,
-           is_pinned = excluded.is_pinned,
-           displacement = excluded.displacement,
-           panel_width_pixels = excluded.panel_width_pixels`,
-      [state.selected_item_label, state.is_pinned, state.displacement, state.panel_width_pixels],
-    );
+  async savePanels(panels: ReadonlyArray<SideMenuPanelEntity>): Promise<void> {
+    await this.databaseAccess.batch([
+      { sql: "DELETE FROM side_menu_panel" },
+      ...panels.map((panel) => ({
+        sql: `INSERT INTO side_menu_panel (label, is_pinned, is_expanded, width_pixels, is_open)
+              VALUES (?1, ?2, ?3, ?4, ?5)`,
+        params: [
+          panel.label,
+          panel.is_pinned,
+          panel.is_expanded,
+          panel.width_pixels,
+          panel.is_open,
+        ],
+      })),
+    ]);
   }
 }

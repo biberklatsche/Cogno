@@ -2,953 +2,339 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
+  ElementRef,
+  OnDestroy,
   signal,
-  untracked,
 } from "@angular/core";
-import { Opener } from "@cogno/platform";
-import { Icon, IconComponent, TooltipDirective } from "@cogno/shared/ui";
-import { GitDiffContent, GitDiffService } from "./git-diff.service";
-import { GitDiffViewComponent } from "./git-diff-view.component";
-import { GitFile, GitStatusService } from "./git-status.service";
+import { IconComponent } from "@cogno/shared/ui";
+import { GitOperationsService } from "./git-operations.service";
+import { GitRepositoryService } from "./git-repository.service";
+import { GitUiActions } from "./git-ui-actions.service";
+import { GitSidePanel, GitViewState } from "./git-view-state.service";
+import { GitCommitPanelComponent } from "./ui/git-commit-panel.component";
+import { GitDiffPanelComponent } from "./ui/git-diff-panel.component";
+import { GitGraphComponent } from "./ui/git-graph.component";
+import { GitRefsPanelComponent } from "./ui/git-refs-panel.component";
+import { GIT_SHARED_STYLES } from "./ui/git-styles";
+import { GitToolbarComponent } from "./ui/git-toolbar.component";
+import { GitWipPanelComponent } from "./ui/git-wip-panel.component";
 
-type SelectedFile = {
-  file: GitFile;
-  isStaged: boolean;
+/** Below this panel width the branches panel becomes a drawer over the graph. */
+const NARROW_WIDTH_PX = 760;
+const MIN_PANEL_WIDTH = 160;
+/** What the graph in the middle keeps at least while a side panel is dragged wider. */
+const MIN_CENTER_WIDTH = 240;
+
+type PanelResize = {
+  panel: GitSidePanel;
+  startX: number;
+  startWidth: number;
+  /** How wide the panel may get before the middle falls below its minimum. */
+  maxWidth: number;
+  handle: HTMLElement;
 };
 
-type ChangeItem = { kind: "file" | "dir" | "dir-child"; file: GitFile };
-
+/**
+ * The git panel of the focused terminal's repository, laid out like
+ * GitKraken's main view: toolbar on top, branches on the left, the commit
+ * graph - or a file's diff in its place - in the middle and the working tree
+ * or the selected commit on the right.
+ */
 @Component({
   selector: "app-git-side",
   standalone: true,
-  imports: [IconComponent, TooltipDirective, GitDiffViewComponent],
+  imports: [
+    IconComponent,
+    GitToolbarComponent,
+    GitRefsPanelComponent,
+    GitGraphComponent,
+    GitDiffPanelComponent,
+    GitWipPanelComponent,
+    GitCommitPanelComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    "[style.--git-refs-width]": "panelWidth('refs')",
+    "[style.--git-detail-width]": "panelWidth('detail')",
+  },
   template: `
-    <div class="git-panel">
-      <!-- Header -->
-      <header class="git-header">
-        <span class="branch">
-          <app-icon name="mdiGit"></app-icon>
-          @if (status()) {
-            <span>{{ status()!.branch }}</span>
+    @if (repository.root()) {
+      <app-git-toolbar></app-git-toolbar>
+
+      @if (repository.operation(); as operation) {
+        <div class="banner">
+          <app-icon class="small-icon" name="mdiAlert"></app-icon>
+          <span class="ellipsis">{{ operationLabel() }}</span>
+          <span class="grow"></span>
+          <button type="button" class="button small" (click)="operations.abortOperation(operation)">Abort</button>
+          @if (operation === "rebase" || operation === "cherry-pick") {
+            <button type="button" class="button small" (click)="operations.skipCommit(operation)">Skip Commit</button>
           }
-        </span>
-        <button
-          type="button"
-          class="button icon-button"
-          appTooltip="Refresh"
-          [disabled]="loading()"
-          (click)="refresh()"
-        >
-          <app-icon name="mdiRefresh"></app-icon>
-        </button>
-      </header>
-
-      @if (status()) {
-        <div class="git-main-content" [class.with-diff]="selectedFile() && (diff() || diffLoading())">
-          <section class="commit-area">
-            <textarea
-              class="commit-message"
-              placeholder="Commit message..."
-              [value]="commitMessage()"
-              (input)="onCommitInput($event)"
-            ></textarea>
-            <button
-              type="button"
-              class="button"
-              [disabled]="!canCommit()"
-              (click)="commit()"
-            >
-              Commit
-            </button>
-          </section>
-
-          <div class="file-sections-scroll-area">
-            @if (status()!.staged.length > 0) {
-              <section class="file-section">
-                <div class="section-header">
-                  <button type="button" class="section-toggle" (click)="toggleStaged()">
-                    <app-icon [name]="stagedExpanded() ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-                    <span>STAGED ({{ status()!.staged.length }})</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="button icon-button file-action-button"
-                    appTooltip="Unstage all"
-                    (click)="unstageAll()"
-                  >
-                    <app-icon name="mdiMinus"></app-icon>
-                  </button>
-                </div>
-                @if (stagedExpanded()) {
-                  <ul class="file-list">
-                    @for (file of status()!.staged; track file.path) {
-                      <li
-                        class="file-item staged"
-                        [class.selected]="isSelected(file, true)"
-                        (click)="selectFile(file, true)"
-                      >
-                        <span
-                          class="status-badge"
-                          [class.status-edited]="isEditedStatus(file)"
-                          [class.status-added]="isAddedStatus(file)"
-                          [class.status-removed]="isRemovedStatus(file)"
-                        >
-                          <app-icon [name]="fileStatusIcon(file)"></app-icon>
-                        </span>
-                        <div class="file-name-group">
-                          <span class="file-path" [appTooltip]="file.path">{{ fileName(file.path) }}</span>
-                          @if (file.status !== 'D') {
-                            <button
-                              type="button"
-                              class="button icon-button file-action-button open-in-editor-btn"
-                              appTooltip="Open in editor"
-                              (click)="$event.stopPropagation(); openInEditor(file)"
-                            >
-                              <app-icon name="mdiOpenInNew"></app-icon>
-                            </button>
-                          }
-                        </div>
-                        <span class="file-dir">{{ fileDir(file.path) }}</span>
-                        <button
-                          type="button"
-                          class="button icon-button file-action-button"
-                          appTooltip="Unstage"
-                          (click)="$event.stopPropagation(); unstageFile(file.path)"
-                        >
-                          <app-icon name="mdiMinus"></app-icon>
-                        </button>
-                      </li>
-                    }
-                  </ul>
-                }
-              </section>
-            }
-
-            @if (changeFiles().length > 0) {
-              <section class="file-section">
-                <div class="section-header">
-                  <button type="button" class="section-toggle" (click)="toggleUnstaged()">
-                    <app-icon [name]="unstagedExpanded() ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-                    <span class="changes-summary">
-                      <span>CHANGES</span>
-                      <span class="changes-counts">
-                        (
-                        <span class="changes-count-item">
-                          <app-icon name="mdiSquareEditOutline"></app-icon>
-                          <span>{{ modifiedUnstagedCount() }}</span>
-                        </span>
-                        <span class="changes-count-item">
-                          <app-icon name="mdiPlus"></app-icon>
-                          <span>{{ addedUnstagedCount() }}</span>
-                        </span>
-                        )
-                      </span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    class="button icon-button file-action-button"
-                    appTooltip="Stage all"
-                    (click)="stageAll()"
-                  >
-                    <app-icon name="mdiPlus"></app-icon>
-                  </button>
-                </div>
-                @if (unstagedExpanded()) {
-                  <ul class="file-list">
-                    @for (item of displayChangeItems(); track item.file.path) {
-                      @if (item.kind === 'dir') {
-                        <li
-                          class="file-item unstaged"
-                          [class.selected]="isSelected(item.file, false)"
-                          (click)="selectFile(item.file, false)"
-                        >
-                          <span class="status-badge status-added">
-                            <app-icon name="mdiFolder"></app-icon>
-                          </span>
-                          <div class="file-name-group">
-                            <span class="file-path" [appTooltip]="item.file.path">{{ fileName(item.file.path) }}</span>
-                          </div>
-                          <span class="file-dir">{{ fileDir(item.file.path) }}</span>
-                          @if (isDirLoading(item.file.path)) {
-                            <span class="file-action-button loading-icon">
-                              <app-icon name="mdiLoading"></app-icon>
-                            </span>
-                          } @else {
-                            <button
-                              type="button"
-                              class="button icon-button file-action-button"
-                              [appTooltip]="isDirExpanded(item.file.path) ? 'Collapse' : 'Show files'"
-                              (click)="$event.stopPropagation(); toggleDirExpand(item.file)"
-                            >
-                              <app-icon [name]="isDirExpanded(item.file.path) ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-                            </button>
-                          }
-                          <button
-                            type="button"
-                            class="button icon-button file-action-button"
-                            appTooltip="Stage directory"
-                            (click)="$event.stopPropagation(); stageFile(item.file.path)"
-                          >
-                            <app-icon name="mdiPlus"></app-icon>
-                          </button>
-                        </li>
-                      } @else {
-                        <li
-                          class="file-item unstaged"
-                          [class.dir-child]="item.kind === 'dir-child'"
-                          [class.selected]="isSelected(item.file, false)"
-                          (click)="selectFile(item.file, false)"
-                        >
-                          <span
-                            class="status-badge"
-                            [class.status-edited]="isEditedStatus(item.file)"
-                            [class.status-added]="isAddedStatus(item.file)"
-                            [class.status-removed]="isRemovedStatus(item.file)"
-                          >
-                            <app-icon [name]="fileStatusIcon(item.file)"></app-icon>
-                          </span>
-                          <div class="file-name-group">
-                            <span class="file-path" [appTooltip]="item.file.path">{{ fileName(item.file.path) }}</span>
-                            @if (!item.file.isDirectory) {
-                              <button
-                                type="button"
-                                class="button icon-button file-action-button open-in-editor-btn"
-                                appTooltip="Open in editor"
-                                (click)="$event.stopPropagation(); openInEditor(item.file)"
-                              >
-                                <app-icon name="mdiOpenInNew"></app-icon>
-                              </button>
-                            }
-                          </div>
-                          <span class="file-dir">{{ fileDir(item.file.path) }}</span>
-                          @if (item.file.status !== '?') {
-                            @if (isDiscardConfirmationPending(item.file.path)) {
-                              <div
-                                class="file-action-group"
-                                (mouseleave)="cancelDiscardConfirmation()"
-                              >
-                                <button
-                                  type="button"
-                                  class="button icon-button file-action-button"
-                                  appTooltip="Confirm discard changes"
-                                  (click)="$event.stopPropagation(); confirmDiscardFile(item.file.path)"
-                                >
-                                  <app-icon name="mdiCheck"></app-icon>
-                                </button>
-                                <button
-                                  type="button"
-                                  class="button icon-button file-action-button"
-                                  appTooltip="Cancel discard changes"
-                                  (click)="$event.stopPropagation(); cancelDiscardConfirmation()"
-                                >
-                                  <app-icon name="mdiClose"></app-icon>
-                                </button>
-                              </div>
-                            } @else {
-                              <button
-                                type="button"
-                                class="button icon-button file-action-button discard-button"
-                                appTooltip="Discard changes"
-                                (click)="$event.stopPropagation(); requestDiscardConfirmation(item.file.path)"
-                              >
-                                <app-icon name="mdiTrashCanOutline"></app-icon>
-                              </button>
-                            }
-                          }
-                          <button
-                            type="button"
-                            class="button icon-button file-action-button"
-                            appTooltip="Stage"
-                            (click)="$event.stopPropagation(); stageFile(item.file.path)"
-                          >
-                            <app-icon name="mdiPlus"></app-icon>
-                          </button>
-                        </li>
-                      }
-                    }
-                  </ul>
-                }
-              </section>
-            }
-
-            @if (status()!.staged.length === 0 && changeFiles().length === 0) {
-              <div class="empty-state">No changes</div>
-            }
-          </div>
-
-          @if (selectedFile() && (diff() || diffLoading())) {
-            <section class="diff-section">
-              <div class="diff-header">
-                <span class="diff-file-name">{{ selectedFile()!.file.path }}</span>
-                <button type="button" class="button icon-button" appTooltip="Close diff" (click)="closeDiff()">
-                  <app-icon name="mdiClose"></app-icon>
-                </button>
-              </div>
-              <div class="diff-view-wrapper">
-                @if (diffLoading()) {
-                  <div class="diff-loading-state">
-                    <app-icon name="mdiLoading"></app-icon>
-                    <span>Loading diff...</span>
-                  </div>
-                } @else if (diff()) {
-                  @defer (when diff() !== null) {
-                    <app-git-diff-view [diff]="diff()"></app-git-diff-view>
-                  }
-                }
-              </div>
-            </section>
-          }
-        </div>
-      } @else if (gitError() === 'no_commits') {
-        <div class="git-unavailable">
-          <app-icon name="mdiGit"></app-icon>
-          <span>No commits yet</span>
-        </div>
-      } @else if (gitError() === 'not_installed') {
-        <div class="git-unavailable">
-          <app-icon name="mdiAlert"></app-icon>
-          <span>Git is not installed or not in PATH</span>
-        </div>
-      } @else if (gitError() === 'no_repo') {
-        <div class="git-unavailable">
-          <app-icon name="mdiGit"></app-icon>
-          <span>Not a git repository</span>
-        </div>
-      } @else if (gitError() === 'status_failed') {
-        <div class="git-unavailable">
-          <app-icon name="mdiAlert"></app-icon>
-          <span>Git status failed</span>
-        </div>
-      } @else {
-        <div class="git-unavailable">
-          <app-icon name="mdiGit"></app-icon>
-          <span>No terminal focused</span>
+          <button type="button" class="button small primary" [disabled]="repository.status().conflicted.length > 0"
+                  (click)="operations.continueOperation(operation)">Continue</button>
         </div>
       }
-    </div>
+
+      <div class="body" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()">
+        @if (view.refsVisible()) {
+          <app-git-refs-panel class="refs"></app-git-refs-panel>
+        }
+        <div class="center">
+          @if (view.diff()) {
+            <app-git-diff-panel></app-git-diff-panel>
+          } @else {
+            <app-git-graph></app-git-graph>
+          }
+        </div>
+        <div class="detail">
+          @switch (view.selection().kind) {
+            @case ("wip") {
+              <app-git-wip-panel></app-git-wip-panel>
+            }
+            @case ("commit") {
+              <app-git-commit-panel [sha]="selectedSha()"></app-git-commit-panel>
+            }
+            @case ("stash") {
+              <app-git-commit-panel [sha]="selectedSha()" [stashRef]="selectedStashRef()"></app-git-commit-panel>
+            }
+          }
+        </div>
+        @if (!narrow()) {
+          @if (view.refsVisible()) {
+            <span class="splitter refs-splitter"
+                  (pointerdown)="startResize('refs', $event)" (pointermove)="resize($event)"
+                  (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
+                  (dblclick)="resetWidth('refs')"></span>
+          }
+          <span class="splitter detail-splitter"
+                (pointerdown)="startResize('detail', $event)" (pointermove)="resize($event)"
+                (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
+                (dblclick)="resetWidth('detail')"></span>
+        }
+      </div>
+    } @else {
+      <div class="unavailable">
+        @switch (repository.error()) {
+          @case ("not_installed") {
+            <app-icon name="mdiAlert"></app-icon>
+            <span>Git is not installed or not in PATH</span>
+          }
+          @case ("unavailable") {
+            <app-icon name="mdiGit"></app-icon>
+            <span>Git is not available in a remote session</span>
+          }
+          @case ("status_failed") {
+            <app-icon name="mdiAlert"></app-icon>
+            <span>Git status failed</span>
+          }
+          @case ("no_repo") {
+            <app-icon name="mdiGit"></app-icon>
+            <span>Not a git repository</span>
+            <div class="start">
+              <button type="button" class="button" (click)="actions.init()">Initialize a repository here</button>
+              <button type="button" class="button" (click)="actions.clone()">Clone a repository</button>
+            </div>
+          }
+          @default {
+            <app-icon name="mdiGit"></app-icon>
+            <span>{{ repository.loading() ? "Reading repository…" : "No terminal focused" }}</span>
+          }
+        }
+      </div>
+    }
   `,
   styles: [
+    GIT_SHARED_STYLES,
     `
       :host {
-        --git-primary-font-size: 1em;
-        --git-secondary-font-size: 0.875em;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        min-height: 0;
-        overflow: hidden;
-        font-size: inherit;
-      }
-
-      .git-panel {
         display: flex;
         flex-direction: column;
         height: 100%;
         min-height: 0;
         overflow: hidden;
       }
-
-      .git-header {
-        flex: 0 0 auto;
+      .banner {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 0.4rem 0;
         gap: 0.5rem;
+        padding: 0.3rem 0.5rem;
+        background: color-mix(in srgb, var(--color-yellow) 15%, transparent);
+        border-bottom: 1px solid var(--git-border);
+      }
+      .banner .grow { flex: 1; }
+      .button.small { padding: 0.1rem 0.6rem; font-size: 0.85em; }
+      /* The side panels follow the available width until the user drags them. */
+      .body {
+        --refs-width: var(--git-refs-width, clamp(11rem, 18%, 16rem));
+        --detail-width: var(--git-detail-width, clamp(16rem, 30%, 24rem));
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) var(--detail-width);
+        grid-template-areas: "center detail";
+      }
+      .body.with-refs {
+        grid-template-columns: var(--refs-width) minmax(0, 1fr) var(--detail-width);
+        grid-template-areas: "refs center detail";
+      }
+      .refs { grid-area: refs; min-height: 0; border-right: 1px solid var(--git-border); }
+      .center { grid-area: center; min-height: 0; min-width: 0; }
+      .detail { grid-area: detail; min-height: 0; min-width: 0; border-left: 1px solid var(--git-border); }
+      /* The drag handles sit over the two dividers; the divider itself lights up while dragging. */
+      .splitter {
+        position: absolute;
+        z-index: 3;
+        top: 0;
+        bottom: 0;
+        width: 7px;
+        cursor: col-resize;
+        touch-action: none;
+      }
+      .refs-splitter { left: calc(var(--refs-width) - 4px); }
+      .detail-splitter { right: calc(var(--detail-width) - 4px); }
+      .splitter::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 3px;
+        width: 1px;
+        background: var(--git-border);
+      }
+      .splitter.active::before { width: 2px; left: 2.5px; background: var(--highlight-color); }
+
+      /* Narrow: graph above, details below; branches slide in over the graph. */
+      .body.narrow, .body.narrow.with-refs {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-areas: "center" "detail";
+      }
+      .body.narrow .detail { border-left: none; border-top: 1px solid var(--git-border); }
+      .body.narrow .refs {
+        position: absolute;
+        z-index: 2;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(16rem, 80%);
+        background: var(--background-color);
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
       }
 
-      .branch {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-weight: 500;
-        color: var(--foreground-color);
-        min-width: 0;
-      }
-
-      .git-unavailable {
+      .unavailable {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
         flex: 1;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-        font-style: italic;
+        color: var(--git-subtle);
         text-align: center;
         padding: 1rem;
       }
-
-      .git-unavailable app-icon {
-        width: 1.5rem;
-        height: 1.5rem;
-        opacity: 0.4;
-      }
-
-      .commit-area {
-        flex: 0 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 0.4rem;
-        padding: 0.5rem 0;
-      }
-
-      .commit-area .commit-message {
-        align-self: stretch;
-      }
-
-      .commit-message {
-        width: 100%;
-        min-height: 56px;
-        max-height: 120px;
-        resize: vertical;
-        background: var(--background-color);
-        color: var(--foreground-color);
-        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-        border-radius: var(--button-border-radius);
-        padding: 0.4rem 0.5rem;
-        font-family: inherit;
-        font-size: inherit;
-        box-sizing: border-box;
-      }
-
-      .commit-message:focus {
-        outline: none;
-        border-color: var(--highlight-color);
-      }
-      
-      .file-section {
-        flex: 0 0 auto;
-      }
-
-      .git-main-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        gap: 0.75rem;
-      }
-
-      .file-sections-scroll-area {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: auto;
-      }
-
-      .git-main-content.with-diff .file-sections-scroll-area {
-        flex: 0 0 auto;
-        max-height: 50%;
-      }
-
-      .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.2rem 0.5rem 0.2rem 0.25rem;
-        background: var(--background-color);
-      }
-
-      .section-toggle {
-        display: flex;
-        align-items: center;
-        gap: 0.2rem;
-        background: none;
-        border: none;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-        font-size: var(--git-secondary-font-size);
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        padding: 0;
-      }
-
-      .changes-summary {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-      }
-
-      .changes-counts {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.2rem;
-      }
-
-      .changes-count-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.15rem;
-      }
-
-      .changes-count-item app-icon {
-        width: 0.8rem;
-        height: 0.8rem;
-      }
-
-      .section-toggle:hover {
-        color: var(--foreground-color);
-      }
-
-      .file-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-
-      .file-item {
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        padding: 0.2rem 0.5rem 0.2rem 0.75rem;
-      }
-
-      .file-item:hover {
-        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
-      }
-
-      .file-item.selected {
-        background: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent);
-      }
-
-      .status-badge {
-        flex: 0 0 auto;
-        width: 14px;
-        height: 14px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .status-badge app-icon {
-        width: 14px;
-        height: 14px;
-      }
-
-      .status-edited { color: var(--color-yellow); }
-      .status-added { color: var(--color-green); }
-      .status-removed { color: var(--color-red); }
-
-      .file-name-group {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        min-width: 0;
-        overflow: hidden;
-      }
-
-      .file-path {
-        flex: 0 1 auto;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: var(--foreground-color);
-        font-size: var(--git-primary-font-size);
-      }
-
-      .file-dir {
-        flex: 0 1 auto;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-        font-size: var(--git-primary-font-size);
-        max-width: 40%;
-      }
-
-      .file-action-button {
-        flex: 0 0 auto;
-        width: 1.75rem;
-        height: 1.75rem;
-        padding: 0.25rem;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-      }
-
-      .dir-child {
-        padding-left: 1.5rem;
-      }
-
-      .loading-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-      }
-
-      .loading-icon app-icon {
-        width: 1.15rem;
-        height: 1.15rem;
-        animation: git-diff-spin 1s linear infinite;
-      }
-
-      .file-action-group {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.1rem;
-      }
-
-      .file-action-button app-icon {
-        width: 1.15rem;
-        height: 1.15rem;
-      }
-
-      .file-action-button:hover {
-        color: var(--foreground-color);
-      }
-
-      .open-in-editor-btn {
-        opacity: 0.4;
-      }
-
-      .file-name-group:hover .open-in-editor-btn {
-        opacity: 1;
-      }
-
-      .icon-button app-icon {
-        width: 1rem;
-        height: 1rem;
-      }
-
-      .icon-button:disabled {
-        opacity: 0.2;
-        cursor: not-allowed;
-      }
-
-      .empty-state {
-        padding: 1rem 0.75rem;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-        font-style: italic;
-        text-align: center;
-      }
-
-      .diff-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      .diff-header {
-        flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.3rem 0.5rem;
-        background: var(--background-color);
-      }
-
-      .diff-file-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-        font-size: var(--git-primary-font-size);
-      }
-
-      .diff-view-wrapper {
-        flex: 1;
-        min-height: 0;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .diff-loading-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.6rem;
-        height: 100%;
-        color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-      }
-
-      .diff-loading-state app-icon {
-        width: 1.2rem;
-        height: 1.2rem;
-        animation: git-diff-spin 1s linear infinite;
-      }
-
-      @keyframes git-diff-spin {
-        from {
-          transform: rotate(0deg);
-        }
-
-        to {
-          transform: rotate(360deg);
-        }
-      }
+      .unavailable > app-icon { width: 1.5rem; height: 1.5rem; opacity: 0.4; }
+      .start { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
     `,
   ],
 })
-export class GitSideComponent {
-  readonly status = this.gitStatusService.status;
-  readonly gitError = this.gitStatusService.gitError;
-  readonly loading = this.gitStatusService.loading;
-  readonly stagedCount = this.gitStatusService.stagedCount;
-
-  private readonly commitMessageSignal = signal("");
-  readonly commitMessage = this.commitMessageSignal.asReadonly();
-
-  readonly canCommit = computed(
-    () => this.stagedCount() > 0 && this.commitMessageSignal().trim().length > 0,
-  );
-
-  readonly stagedExpanded = signal(true);
-  readonly unstagedExpanded = signal(true);
-  readonly changeFiles = computed(() => [
-    ...(this.status()?.unstaged ?? []),
-    ...(this.status()?.untracked ?? []),
-  ]);
-
-  private readonly expandedDirsSignal = signal<ReadonlySet<string>>(new Set());
-  private readonly dirChildrenSignal = signal<ReadonlyMap<string, readonly GitFile[]>>(new Map());
-  private readonly dirLoadingSignal = signal<ReadonlySet<string>>(new Set());
-
-  readonly displayChangeItems = computed((): ChangeItem[] => {
-    const items: ChangeItem[] = [];
-    const expanded = this.expandedDirsSignal();
-    const children = this.dirChildrenSignal();
-    for (const file of this.changeFiles()) {
-      items.push({ kind: file.isDirectory ? "dir" : "file", file });
-      if (file.isDirectory && expanded.has(file.path)) {
-        for (const child of children.get(file.path) ?? []) {
-          items.push({ kind: "dir-child", file: child });
-        }
-      }
-    }
-    return items;
+export class GitSideComponent implements OnDestroy {
+  readonly narrow = signal(false);
+  readonly selectedSha = computed(() => {
+    const selection = this.view.selection();
+    return selection.kind === "wip" ? "" : selection.sha;
   });
-  readonly modifiedUnstagedCount = computed(
-    () => this.status()?.unstaged.filter((file) => file.status !== "A").length ?? 0,
-  );
-  readonly addedUnstagedCount = computed(
-    () =>
-      (this.status()?.unstaged.filter((file) => file.status === "A").length ?? 0) +
-      (this.status()?.untracked.length ?? 0),
-  );
+  readonly selectedStashRef = computed(() => {
+    const selection = this.view.selection();
+    return selection.kind === "stash" ? selection.ref : null;
+  });
+  readonly operationLabel = computed(() => {
+    const conflicts = this.repository.status().conflicted.length;
+    const what = {
+      merge: "Merge in progress",
+      rebase: "Rebase in progress",
+      "cherry-pick": "Cherry pick in progress",
+      revert: "Revert in progress",
+    }[this.repository.operation() ?? "merge"];
+    return conflicts > 0
+      ? `${what} - ${conflicts} conflicted file${conflicts === 1 ? "" : "s"} to resolve`
+      : `${what} - resolved, ready to continue`;
+  });
 
-  private readonly selectedFileSignal = signal<SelectedFile | null>(null);
-  readonly selectedFile = this.selectedFileSignal.asReadonly();
-  private readonly discardConfirmationFilePathSignal = signal<string | null>(null);
-
-  private readonly diffLoadingSignal = signal(false);
-  readonly diffLoading = this.diffLoadingSignal.asReadonly();
-  private readonly diffSignal = signal<GitDiffContent | null>(null);
-  readonly diff = this.diffSignal.asReadonly();
+  private readonly resizeObserver: ResizeObserver;
+  private resizing: PanelResize | null = null;
 
   constructor(
-    private readonly gitStatusService: GitStatusService,
-    private readonly gitDiffService: GitDiffService,
-    private readonly opener: Opener,
+    readonly repository: GitRepositoryService,
+    readonly operations: GitOperationsService,
+    readonly actions: GitUiActions,
+    readonly view: GitViewState,
+    private readonly host: ElementRef<HTMLElement>,
   ) {
-    effect(() => {
-      const status = this.status();
-      const sel = this.selectedFileSignal();
-      if (!sel || !status) return;
-      const allFiles = [...status.staged, ...status.unstaged, ...status.untracked];
-      const stillExists = allFiles.some((f) => f.path === sel.file.path);
-      if (!stillExists) this.closeDiff();
+    this.resizeObserver = new ResizeObserver(([entry]) => {
+      const narrow = (entry?.contentRect.width ?? 0) < NARROW_WIDTH_PX;
+      if (narrow === this.narrow()) return;
+      this.narrow.set(narrow);
+      // The branches are a column when there is room and a drawer when there is not.
+      this.view.refsVisible.set(!narrow);
     });
-
-    effect(() => {
-      const status = this.status();
-      if (!status) return;
-      untracked(() => {
-        for (const dirPath of this.expandedDirsSignal()) {
-          void this.fetchDirChildren(dirPath);
-        }
-      });
-    });
+    this.resizeObserver.observe(host.nativeElement);
   }
 
-  refresh(): void {
-    void this.gitStatusService.refreshStatus();
+  ngOnDestroy(): void {
+    this.resizeObserver.disconnect();
   }
 
-  onCommitInput(event: Event): void {
-    this.commitMessageSignal.set((event.target as HTMLTextAreaElement).value);
+  /** The dragged width as a CSS length, or null to leave the panel its default. */
+  panelWidth(panel: GitSidePanel): string | null {
+    const width = this.view.panelWidths()[panel];
+    return width === undefined ? null : `${width}px`;
   }
 
-  commit(): void {
-    const message = this.commitMessageSignal().trim();
-    if (!message) return;
-    void this.gitStatusService.commit(message).then(() => {
-      this.commitMessageSignal.set("");
-      this.selectedFileSignal.set(null);
-      this.diffSignal.set(null);
-    });
+  startResize(panel: GitSidePanel, event: PointerEvent): void {
+    event.preventDefault();
+    const handle = event.currentTarget as HTMLElement;
+    const element = this.host.nativeElement.querySelector<HTMLElement>(
+      panel === "refs" ? ".refs" : ".detail",
+    );
+    const body = this.host.nativeElement.querySelector<HTMLElement>(".body");
+    if (!element || !body) return;
+    const other = this.host.nativeElement.querySelector<HTMLElement>(
+      panel === "refs" ? ".detail" : ".refs",
+    );
+    handle.setPointerCapture(event.pointerId);
+    handle.classList.add("active");
+    this.resizing = {
+      panel,
+      startX: event.clientX,
+      startWidth: element.getBoundingClientRect().width,
+      maxWidth: body.clientWidth - (other?.getBoundingClientRect().width ?? 0) - MIN_CENTER_WIDTH,
+      handle,
+    };
   }
 
-  requestDiscardConfirmation(path: string): void {
-    this.discardConfirmationFilePathSignal.set(path);
+  resize(event: PointerEvent): void {
+    const resizing = this.resizing;
+    if (!resizing) return;
+    // The branches panel grows to the right, the detail panel to the left.
+    const delta = (event.clientX - resizing.startX) * (resizing.panel === "refs" ? 1 : -1);
+    const width = Math.min(
+      resizing.maxWidth,
+      Math.max(MIN_PANEL_WIDTH, resizing.startWidth + delta),
+    );
+    this.view.panelWidths.update((widths) => ({ ...widths, [resizing.panel]: Math.round(width) }));
   }
 
-  cancelDiscardConfirmation(): void {
-    this.discardConfirmationFilePathSignal.set(null);
+  endResize(event: PointerEvent): void {
+    const resizing = this.resizing;
+    if (!resizing) return;
+    resizing.handle.releasePointerCapture(event.pointerId);
+    resizing.handle.classList.remove("active");
+    this.resizing = null;
   }
 
-  isDiscardConfirmationPending(path: string): boolean {
-    return this.discardConfirmationFilePathSignal() === path;
-  }
-
-  confirmDiscardFile(path: string): void {
-    this.discardConfirmationFilePathSignal.set(null);
-    void this.gitStatusService.discardFileChanges(path);
-  }
-
-  openInEditor(file: GitFile): void {
-    const status = this.status();
-    if (!status) return;
-    void this.opener.openPath(`${status.gitRoot}/${file.path}`);
-  }
-
-  stageFile(path: string): void {
-    void this.gitStatusService.stageFile(path);
-  }
-
-  unstageFile(path: string): void {
-    void this.gitStatusService.unstageFile(path);
-  }
-
-  stageAll(): void {
-    void this.gitStatusService.stageAll();
-  }
-
-  unstageAll(): void {
-    void this.gitStatusService.unstageAll();
-  }
-
-  toggleStaged(): void {
-    this.stagedExpanded.update((v) => !v);
-  }
-  toggleUnstaged(): void {
-    this.unstagedExpanded.update((v) => !v);
-  }
-
-  isSelected(file: GitFile, isStaged: boolean): boolean {
-    const sel = this.selectedFileSignal();
-    return sel?.file.path === file.path && sel?.isStaged === isStaged;
-  }
-
-  fileStatusIcon(file: GitFile): Icon {
-    if (file.isDirectory) return "mdiFolder";
-    if (file.status === "A" || file.status === "?") return "mdiPlus";
-    if (file.status === "D") return "mdiMinus";
-    return "mdiPencil";
-  }
-
-  isEditedStatus(file: GitFile): boolean {
-    return !this.isAddedStatus(file) && !this.isRemovedStatus(file);
-  }
-
-  isAddedStatus(file: GitFile): boolean {
-    return file.status === "A" || file.status === "?";
-  }
-
-  isRemovedStatus(file: GitFile): boolean {
-    return file.status === "D";
-  }
-
-  selectFile(file: GitFile, isStaged: boolean): void {
-    if (this.isSelected(file, isStaged)) {
-      this.selectedFileSignal.set(null);
-      this.diffLoadingSignal.set(false);
-      this.diffSignal.set(null);
-      return;
-    }
-
-    this.selectedFileSignal.set({ file, isStaged });
-
-    if (file.isDirectory) {
-      this.diffLoadingSignal.set(false);
-      this.diffSignal.set(null);
-      return;
-    }
-
-    this.diffLoadingSignal.set(true);
-    this.diffSignal.set(null);
-    void this.loadDiff(file, isStaged);
-  }
-
-  closeDiff(): void {
-    this.selectedFileSignal.set(null);
-    this.diffLoadingSignal.set(false);
-    this.diffSignal.set(null);
-  }
-
-  fileName(path: string): string {
-    return path.split("/").pop() ?? path;
-  }
-
-  fileDir(path: string): string {
-    const parts = path.split("/");
-    if (parts.length <= 1) return "";
-    return parts.slice(0, -1).join("/");
-  }
-
-  isDirExpanded(path: string): boolean {
-    return this.expandedDirsSignal().has(path);
-  }
-
-  isDirLoading(path: string): boolean {
-    return this.dirLoadingSignal().has(path);
-  }
-
-  toggleDirExpand(file: GitFile): void {
-    const expanded = new Set(this.expandedDirsSignal());
-    if (expanded.has(file.path)) {
-      expanded.delete(file.path);
-      this.expandedDirsSignal.set(expanded);
-    } else {
-      expanded.add(file.path);
-      this.expandedDirsSignal.set(expanded);
-      void this.fetchDirChildren(file.path);
-    }
-  }
-
-  private async fetchDirChildren(dirPath: string): Promise<void> {
-    const loading = new Set(this.dirLoadingSignal());
-    loading.add(dirPath);
-    this.dirLoadingSignal.set(loading);
-    try {
-      const children = await this.gitStatusService.listFilesInDir(dirPath);
-      const childMap = new Map(this.dirChildrenSignal());
-      childMap.set(dirPath, children);
-      this.dirChildrenSignal.set(childMap);
-    } finally {
-      const loading2 = new Set(this.dirLoadingSignal());
-      loading2.delete(dirPath);
-      this.dirLoadingSignal.set(loading2);
-    }
-  }
-
-  private async loadDiff(file: GitFile, isStaged: boolean): Promise<void> {
-    const status = this.status();
-    if (!status) {
-      this.diffLoadingSignal.set(false);
-      return;
-    }
-
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => resolve());
-    });
-
-    try {
-      const diff = await this.gitDiffService.loadDiff(
-        file.path,
-        isStaged,
-        file.status === "D",
-        status.gitRoot,
-      );
-      if (!this.isSelected(file, isStaged)) return;
-      this.diffSignal.set(diff);
-    } finally {
-      if (this.isSelected(file, isStaged)) {
-        this.diffLoadingSignal.set(false);
-      }
-    }
+  /** Back to following the available width. */
+  resetWidth(panel: GitSidePanel): void {
+    this.view.panelWidths.update(({ [panel]: _dropped, ...rest }) => rest);
   }
 }

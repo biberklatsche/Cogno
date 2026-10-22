@@ -112,6 +112,16 @@ pub struct CognoMessagePayload {
     pub payload: Option<serde_json::Value>,
 }
 
+/// A prompt from the askpass helper: which runner session asks, and git's prompt text.
+#[derive(Debug, Clone, Deserialize)]
+pub struct AskpassPayload {
+    pub session: String,
+    pub prompt: String,
+}
+
+/// How long a prompt may stay open before the helper gives up.
+const ASKPASS_WAIT: std::time::Duration = std::time::Duration::from_secs(30 * 60);
+
 /// The header every request carries the launch token in.
 pub const TOKEN_HEADER: &str = "x-cogno-token";
 
@@ -192,8 +202,10 @@ pub fn start_http_server(
 
         let app_emit = app.clone();
         let app_run = app.clone();
+        let app_askpass = app.clone();
         let token = app.state::<HttpServerState>().token().to_string();
         let token_for_run = token.clone();
+        let token_for_askpass = token.clone();
         let router = Router::new()
             .route(
                 "/action",
@@ -257,6 +269,39 @@ pub fn start_http_server(
                                 Json(serde_json::json!({ "error": e.to_string() })),
                             ),
                         }
+                    }
+                }),
+            )
+            .route(
+                "/askpass",
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<AskpassPayload>, JsonRejection>| {
+                    let app = app_askpass.clone();
+                    let authorized = is_authorized(&headers, &token_for_askpass, actual_port);
+                    async move {
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /askpass rejected: missing or wrong token");
+                            return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
+                        }
+                        let payload = match result {
+                            Ok(Json(payload)) => payload,
+                            Err(e) => {
+                                return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })));
+                            }
+                        };
+                        let receiver = app
+                            .state::<crate::commands::askpass::AskpassState>()
+                            .request(&app, &payload.session, payload.prompt);
+                        let Some(receiver) = receiver else {
+                            log::warn!(target: "http_server", "POST /askpass: unknown session");
+                            return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "unknown session" })));
+                        };
+                        // The user may take a while; the helper waits, and the runner's timeout pauses.
+                        let answer = tokio::time::timeout(ASKPASS_WAIT, receiver)
+                            .await
+                            .ok()
+                            .and_then(|received| received.ok())
+                            .flatten();
+                        (StatusCode::OK, Json(serde_json::json!({ "answer": answer })))
                     }
                 }),
             );

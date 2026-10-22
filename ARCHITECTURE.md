@@ -246,6 +246,21 @@ nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
 wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
 DNS-Rebinding auf 127.0.0.1 umbiegt.
 
+**Prozesse ohne Terminal fragen über denselben Server.** Was `run` startet
+(2.2), hat keine PTY; git und ssh würden Zugangsdaten, Passphrasen und
+Host-Keys dort abfragen und ohne Terminal abbrechen. Deshalb setzt der
+Runner `GIT_TERMINAL_PROMPT=0` und zeigt `GIT_ASKPASS`/`SSH_ASKPASS` auf das
+Cogno-Binary selbst: mit `COGNO_ASKPASS_SESSION` in der Umgebung arbeitet
+es als Askpass-Helfer (`commands/askpass.rs`), schickt den Prompt-Text mit
+Token an `POST /askpass` und druckt die Antwort. Die Sitzungs-ID bindet den
+Prompt an das Fenster, das den Befehl gestartet hat; dessen Workbench zeigt
+den Dialog (`core/workbench/external/process-prompt.service.ts`) und
+antwortet per `askpass_answer`. Abbrechen heißt „keine Antwort", git meldet
+dann einen fehlgeschlagenen Lesevorgang. Solange ein Prompt offen ist, läuft
+der Timeout des Befehls nicht. Für eine WSL-Distro übersetzt `WSLENV` die
+Pfade. Speichern tut Cogno nichts: das ist Sache der Credential-Helper, die
+git selbst nach einem erfolgreichen Zugriff ruft.
+
 Jeder Kontexteintrag der Zeitachse hat eine **Revision**; `run` und jede
 schreibende API-Operation nennen die Revision, mit der sie geplant wurden,
 und werden abgelehnt, wenn sie nicht mehr aktuell ist.
@@ -474,7 +489,8 @@ Fakt ermittelt, sondern *worüber* er ist:
   gilt. `run` nimmt **keine Shell-Zeichenkette**, sondern Programm und
   Argumentliste: kein Quoting, keine Injection über Pfade mit Leerzeichen
   oder Anführungszeichen, und die Argumente lassen sich vor dem Start
-  kontextgerecht übersetzen. `contextRevision` ist die Revision des
+  kontextgerecht übersetzen. Optional bekommt der Prozess `stdin` — einen
+  Patch für `git apply`, nie eine Shell-Eingabe. `contextRevision` ist die Revision des
   Kontexteintrags, mit dem das Feature geplant hat; ist sie nicht mehr
   aktuell, lehnt `run` ab statt im falschen Kontext zu laufen. `run` startet einen
   **eigenen, unsichtbaren Prozess** im Kontext der Sitzung (cwd, Env; in
@@ -813,12 +829,18 @@ Entscheidungen:
    (Notifications, `navigateToTerminal`, CLI/HTTP mit `terminalId`), trägt es.
 2. **Rust ist der Besitzer alles Prozessglobalen** und die einzige Stelle,
    die alle Fenster kennt: PTYs, Datenbank, HTTP-Server, CLI-Empfang,
-   Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks. Rust
+   Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks,
+   Selbst-Update (`updater.rs`: ein Prüf-, Download- und Installationszustand
+   für die ganze App). Rust
    führt eine Tabelle `terminalId → windowId` (gefüllt beim Spawn, der immer
    aus einem Fenster kommt) und routet: Nachricht mit `terminalId` →
    `emit_to(window)`; globale Aktion ohne Ziel → das fokussierte Fenster;
-   Config-Änderung → Broadcast (der eine Fall, in dem Broadcast richtig
-   ist). Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
+   Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
+   Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
+   Das Feature `updater` fragt aus jedem Fenster nach Prüfungen; Rust
+   beantwortet dicht aufeinanderfolgende aus dem letzten Ergebnis und lädt
+   nie doppelt. Die Ankündigung einer neuen Version ist eine globale Aktion
+   ohne Ziel: einmal je App und Version, an das fokussierte Fenster. Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
    `platform/` (`Window`, `Messaging`); keine Schicht darüber weiß, wie
    viele Fenster es gibt — sie sieht nur Nachrichten für sich.
 3. **Eine Session gehört dem Fenster, dessen Webview ihren xterm-Core
@@ -1012,6 +1034,7 @@ selbst in `try/catch` rufen.
 | Command-Log langsam oder Schreibfehler | ✅ begrenzte Queue, Verlustzähler, Backoff, einmalige Meldung (`session-command-log.ts`, `command-log.health.ts`) |
 | Gefälschte `COGNO:*`-Sequenz aus Programmausgabe | ✅ `COGNO_SESSION_TOKEN`-Prüfung mit Zähler (`session-model.ts`) |
 | Shell-Kontext wechselt (ssh/wsl/su) ohne Handshake | ✅ unbekannter Kontext in der Kontext-Zeitachse (`session-model.ts`) |
+| Prozess ohne Terminal fragt nach Zugangsdaten (git, ssh) | ✅ Askpass-Dialog im Fenster des Aufrufers; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`askpass.rs`, `process-prompt.service.ts`) |
 
 ### 4.2 Testen
 

@@ -22,7 +22,7 @@
           "$HOME/.cogno-dev/shell-integration/zsh/.zshrc"
         ]
       },
-      "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-inline'; script-src 'self'; img-src 'self' asset: file: data: blob: http://asset.localhost"
+      "csp": "default-src 'self' blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-inline'; script-src 'self'; img-src 'self' https://www.gravatar.com asset: file: data: blob: http://asset.localhost"
     }
   },
   "bundle": {
@@ -57,6 +57,17 @@
         "windowSize": { "width": 660, "height": 400 },
         "appPosition": { "x": 180, "y": 160 },
         "applicationFolderPosition": { "x": 480, "y": 160 }
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDBDN0ZFRDdCMUU1OEZBQ0MKUldUTStsZ2VlKzEvREhneU9ReXhCVE9mZ1U2NzcrNDFEdFE1UnN6TUVQVkw2b2lyZnZ5N1psWkUK",
+      "endpoints": [
+        "https://dl.cogno.rocks/update/release/{{target}}/{{arch}}/{{bundle_type}}/{{current_version}}"
+      ],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

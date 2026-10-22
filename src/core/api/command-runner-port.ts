@@ -6,6 +6,8 @@ export interface CommandRunnerRequestContract {
   readonly program: string;
   readonly args?: ReadonlyArray<string>;
   readonly timeoutMs?: number;
+  /** Written to the process and closed; for a patch to `git apply`, a message to `git credential`. */
+  readonly stdin?: string;
 }
 
 export interface CommandRunnerResultContract {

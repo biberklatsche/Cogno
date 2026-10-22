@@ -47,6 +47,7 @@ describe("FilesystemSpecProvider", () => {
       list: vi.fn(),
       exists: vi.fn(),
       readTextFile: vi.fn(),
+      watch$: vi.fn(),
       toDisplayPath: vi.fn((path, cwd) => path.replace(`${cwd}/`, "").replace(/^$/, ".") || "."),
       appendPathSeparator: vi.fn((path) => `${path}/`),
       toRelativePath: vi.fn((path) => path),

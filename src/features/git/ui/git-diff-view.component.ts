@@ -10,11 +10,12 @@ import {
   viewChild,
 } from "@angular/core";
 import { HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
-import { MergeView } from "@codemirror/merge";
-import { EditorState, Extension } from "@codemirror/state";
+import { Chunk, getChunks, MergeView, unifiedMergeView } from "@codemirror/merge";
+import { EditorState, Extension, Text } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
-import { GitDiffContent } from "./git-diff.service";
+import { GitDiffContent } from "../git-diff.service";
+import { GitDiffMode } from "../git-view-state.service";
 
 const cognoTheme = EditorView.theme(
   {
@@ -239,6 +240,11 @@ function nextFrame(): Promise<void> {
         min-height: 0;
       }
 
+      app-git-diff-view .diff-host > .cm-editor {
+        flex: 1;
+        min-height: 0;
+      }
+
       app-git-diff-view .cm-editor {
         flex: 1 !important;
         min-height: 0 !important;
@@ -299,10 +305,12 @@ function nextFrame(): Promise<void> {
 })
 export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() diff: GitDiffContent | null = null;
+  @Input() mode: GitDiffMode = "split";
 
   private readonly editorHost = viewChild<ElementRef<HTMLElement>>("editorHost");
   private readonly ruler = viewChild<ElementRef<HTMLElement>>("ruler");
   private mergeView: MergeView | null = null;
+  private unifiedView: EditorView | null = null;
   private buildTimer: ReturnType<typeof setTimeout> | null = null;
   private generation = 0;
   private unsubscribeScrollSync: (() => void) | null = null;
@@ -340,6 +348,24 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     const { original, modified, language } = this.diff;
     const [extensions] = await Promise.all([buildExtensions(language), nextFrame()]);
     if (this.generation !== gen) return;
+    if (this.mode === "unified") {
+      // One editor on the new text; removed lines are shown inline above their replacement.
+      this.unifiedView = new EditorView({
+        parent: host,
+        doc: modified,
+        extensions: [
+          ...extensions,
+          unifiedMergeView({
+            original,
+            mergeControls: false,
+            highlightChanges: true,
+            gutter: true,
+          }),
+        ],
+      });
+      this.buildRuler(getChunks(this.unifiedView.state)?.chunks ?? [], this.unifiedView.state.doc);
+      return;
+    }
     this.mergeView = new MergeView({
       parent: host,
       orientation: "a-b",
@@ -349,7 +375,7 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
       b: { doc: modified, extensions },
     });
     this.setupScrollSync();
-    this.buildRuler();
+    this.buildRuler(this.mergeView.chunks, this.mergeView.b.state.doc);
   }
 
   private setupScrollSync(): void {
@@ -389,15 +415,14 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     };
   }
 
-  private buildRuler(): void {
+  /** Marks on the right edge where the changes are, relative to the new text. */
+  private buildRuler(chunks: readonly Chunk[], docB: Text): void {
     const ruler = this.ruler()?.nativeElement;
-    if (!ruler || !this.mergeView) return;
+    if (!ruler) return;
 
     ruler.innerHTML = "";
-    const chunks = this.mergeView.chunks;
     if (!chunks.length) return;
 
-    const docB = this.mergeView.b.state.doc;
     const totalLines = docB.lines;
 
     const fragment = document.createDocumentFragment();
@@ -423,6 +448,8 @@ export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy
     this.unsubscribeScrollSync = null;
     this.mergeView?.destroy();
     this.mergeView = null;
+    this.unifiedView?.destroy();
+    this.unifiedView = null;
     const host = this.editorHost()?.nativeElement;
     if (host) host.innerHTML = "";
     const ruler = this.ruler()?.nativeElement;

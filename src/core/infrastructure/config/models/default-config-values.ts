@@ -241,7 +241,7 @@ export const defaultSettings = {
       order: "40",
     },
     git: {
-      mode: "off",
+      mode: "on",
       order: "50",
     },
     process_info: {
@@ -265,6 +265,11 @@ export const defaultSettings = {
           enabled: "false",
         },
       },
+    },
+    updater: {
+      mode: "on",
+      order: "90",
+      install: "background",
     },
   },
   clipboard: {

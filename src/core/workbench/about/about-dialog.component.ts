@@ -48,16 +48,14 @@ import { DialogRef } from "@cogno/shared/ui";
         background: none;
         border: none;
         color: var(--highlight-color);
-        cursor: pointer;
         font-size: 0.85rem;
         margin-top: 0.5rem;
         padding: 0;
-        text-decoration: underline;
         text-underline-offset: 2px;
       }
 
       .about__link:hover {
-        opacity: 0.8;
+        text-decoration: underline;
       }
     `,
   ],

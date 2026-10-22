@@ -11,6 +11,8 @@ export interface SessionRunRequest {
    */
   readonly contextRevision: number;
   readonly timeoutMs?: number;
+  /** Written to the process as its standard input, then closed. */
+  readonly stdin?: string;
 }
 
 export type SessionRunRejection =

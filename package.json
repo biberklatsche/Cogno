@@ -33,6 +33,7 @@
   "private": false,
   "dependencies": {
     "@angular/animations": "21.2.23",
+    "@angular/cdk": "21.2.14",
     "@angular/common": "21.2.23",
     "@angular/compiler": "21.2.23",
     "@angular/core": "21.2.23",

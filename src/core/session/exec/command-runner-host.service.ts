@@ -27,6 +27,7 @@ export class CommandRunnerHostService extends CommandRunnerPort {
         request.args ?? [],
         backendPath,
         request.timeoutMs,
+        request.stdin,
       );
     } catch (error) {
       return {

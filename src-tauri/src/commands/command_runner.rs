@@ -1,10 +1,13 @@
+use crate::commands::askpass::{AskpassState, SESSION_ENV};
+use crate::http_server::HttpServerState;
 use serde::Serialize;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+use tauri::{AppHandle, Manager};
 
 /// How long output may still arrive after the process ended. A grandchild that
 /// inherited the pipes (ssh or a credential helper started by git) keeps them
@@ -26,13 +29,19 @@ pub struct CommandRunnerResult {
 }
 
 /// Runs on a blocking worker: a slow `git status` must never hold up the
-/// thread that drives the UI.
+/// thread that drives the UI. `stdin`, when given, is written to the process
+/// and closed. The process gets no terminal; whatever it would ask on one
+/// (git credentials, an ssh passphrase, a host key) reaches the window that
+/// started it through the askpass helper instead.
 #[tauri::command]
 pub async fn command_runner_execute(
+    app: AppHandle,
+    window: tauri::Window,
     program: String,
     args: Vec<String>,
     cwd: String,
     timeout_ms: Option<u64>,
+    stdin: Option<String>,
 ) -> Result<CommandRunnerResult, String> {
     let mut command = Command::new(program);
     command.current_dir(cwd).args(args);
@@ -40,14 +49,69 @@ pub async fn command_runner_execute(
     #[cfg(windows)]
     command.creation_flags(CREATE_NO_WINDOW);
 
-    tauri::async_runtime::spawn_blocking(move || run(command, timeout_ms))
-        .await
+    let askpass = app.state::<AskpassState>();
+    let session_id = askpass.open_session(window.label());
+    apply_prompt_environment(&mut command, &app, &session_id);
+
+    let pending = {
+        let app = app.clone();
+        let session_id = session_id.clone();
+        move || app.state::<AskpassState>().has_pending(&session_id)
+    };
+    let result =
+        tauri::async_runtime::spawn_blocking(move || run(command, timeout_ms, stdin, &pending))
+            .await;
+    app.state::<AskpassState>().close_session(&app, &session_id);
+
+    result
         .map_err(|error| error.to_string())?
         .map_err(|error| error.to_string())
 }
 
-fn run(mut command: Command, timeout_ms: Option<u64>) -> std::io::Result<CommandRunnerResult> {
+/// Git and ssh ask through this binary instead of a terminal. The variables
+/// also reach a WSL distro, with the helper path translated (`WSLENV` `/p`).
+fn apply_prompt_environment(command: &mut Command, app: &AppHandle, session_id: &str) {
+    command.env("GIT_TERMINAL_PROMPT", "0");
+    let http = app.state::<HttpServerState>();
+    let helper = std::env::current_exe().ok();
+    let (Some(helper), true) = (helper, http.port() != 0) else {
+        return;
+    };
+    command.env("GIT_ASKPASS", &helper);
+    command.env("SSH_ASKPASS", &helper);
+    command.env("SSH_ASKPASS_REQUIRE", "force");
+    command.env(SESSION_ENV, session_id);
+    command.env("COGNO_PORT", http.port().to_string());
+    command.env("COGNO_TOKEN", http.token());
+    let shared = [
+        "GIT_ASKPASS/p",
+        "SSH_ASKPASS/p",
+        "SSH_ASKPASS_REQUIRE",
+        "GIT_TERMINAL_PROMPT",
+        SESSION_ENV,
+        "COGNO_PORT",
+        "COGNO_TOKEN",
+    ]
+    .join(":");
+    let wslenv = match std::env::var("WSLENV") {
+        Ok(existing) if !existing.is_empty() => format!("{existing}:{shared}"),
+        _ => shared,
+    };
+    command.env("WSLENV", wslenv);
+}
+
+fn run(
+    mut command: Command,
+    timeout_ms: Option<u64>,
+    stdin: Option<String>,
+    prompt_pending: &dyn Fn() -> bool,
+) -> std::io::Result<CommandRunnerResult> {
     let mut child = command
+        .stdin(if stdin.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
@@ -56,14 +120,26 @@ fn run(mut command: Command, timeout_ms: Option<u64>) -> std::io::Result<Command
     // buffer holds would otherwise block on its write and never exit.
     let stdout = drain(child.stdout.take());
     let stderr = drain(child.stderr.take());
+    // Written on its own thread for the same reason: a child that answers
+    // before it has read everything must not deadlock against the writer.
+    if let (Some(input), Some(mut pipe)) = (stdin, child.stdin.take()) {
+        thread::spawn(move || {
+            let _ = pipe.write_all(input.as_bytes());
+        });
+    }
 
     let status = match timeout_ms.filter(|value| *value > 0) {
         None => Some(child.wait()?),
         Some(timeout_ms) => {
-            let deadline = Instant::now() + Duration::from_millis(timeout_ms);
+            let timeout = Duration::from_millis(timeout_ms);
+            let mut deadline = Instant::now() + timeout;
             loop {
                 if let Some(status) = child.try_wait()? {
                     break Some(status);
+                }
+                // Time the user spends on a prompt does not count.
+                if prompt_pending() {
+                    deadline = Instant::now() + timeout;
                 }
                 if Instant::now() >= deadline {
                     let _ = child.kill();
@@ -146,6 +222,10 @@ fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> Drain {
 mod tests {
     use super::*;
 
+    fn run(command: Command, timeout_ms: Option<u64>) -> std::io::Result<CommandRunnerResult> {
+        super::run(command, timeout_ms, None, &|| false)
+    }
+
     fn shell(script: &str) -> Command {
         let mut command = Command::new("sh");
         command.args(["-c", script]);
@@ -186,6 +266,19 @@ mod tests {
 "
         );
         assert!(started.elapsed() < Duration::from_secs(3));
+    }
+
+    #[test]
+    fn stdin_is_written_and_closed() {
+        let result = super::run(
+            shell("cat"),
+            Some(5_000),
+            Some("from stdin\n".into()),
+            &|| false,
+        )
+        .unwrap();
+        assert_eq!(result.exit_code, 0);
+        assert_eq!(result.stdout, "from stdin\n");
     }
 
     #[test]

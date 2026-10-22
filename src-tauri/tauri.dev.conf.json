@@ -1,4 +1,11 @@
 {
   "identifier": "rocks.cogno.dev",
-  "productName": "Cogno Dev"
+  "productName": "Cogno Dev",
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://dl.cogno.rocks/update/dev/{{target}}/{{arch}}/{{bundle_type}}/{{current_version}}"
+      ]
+    }
+  }
 }

@@ -39,6 +39,7 @@ button, a {
     color: var(--foreground-color);
     font: inherit;
     font-size: 0.9rem;
+    transition: background 120ms ease, border-color 120ms ease;
 
     &.icon-button {
         border: none;
@@ -61,7 +62,9 @@ button, a {
         background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     }
 
-    &:hover(not:disabled) {
+    /* The same lift as a hovered tab: one step lighter, the border one more. */
+    &:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
         background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
     }
 
@@ -89,7 +92,9 @@ button, a {
 }
 
 
-input {
+/* Text fields only: a checkbox or radio keeps its own size. :where() keeps the
+   weight of a plain `input`, so component styles still win over this. */
+input:where(:not([type]), [type="text"], [type="search"], [type="password"], [type="number"], [type="email"], [type="url"]) {
     border: none;
     outline: none;
     color: var(--foreground-color);

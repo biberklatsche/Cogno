@@ -7,6 +7,7 @@ import {
 } from "@cogno/core/session/exec/filesystem";
 import { Fs } from "@cogno/platform/fs";
 import { ShellContextContract } from "@cogno/shared/domain";
+import { Observable, throwError } from "rxjs";
 import { createPathAdapter } from "../shells/shell-definitions";
 
 @Injectable({ providedIn: "root" })
@@ -121,6 +122,14 @@ export class FilesystemHostService extends Filesystem {
       throw new Error(`Unable to render filesystem path '${path}'.`);
     }
     return this.fs.readTextFile(backendPath);
+  }
+
+  watch$(path: string, shellContext: ShellContextContract): Observable<void> {
+    const backendPath = createPathAdapter(shellContext).render(path, { purpose: "backend_fs" });
+    if (!backendPath) {
+      return throwError(() => new Error(`Unable to render filesystem path '${path}'.`));
+    }
+    return this.fs.watchChanges$(backendPath, { recursive: true });
   }
 
   toDisplayPath(path: string, cwd: string, shellContext: ShellContextContract): string {

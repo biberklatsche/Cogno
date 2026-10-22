@@ -18,7 +18,7 @@ describe("SideMenuFeatureRuntime", () => {
   let sideMenuService: {
     addMenuItem: ReturnType<typeof vi.fn>;
     removeMenuItem: ReturnType<typeof vi.fn>;
-    open: ReturnType<typeof vi.fn>;
+    toggle: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
     updateIcon: ReturnType<typeof vi.fn>;
     updateBadgeColor: ReturnType<typeof vi.fn>;
@@ -67,7 +67,7 @@ describe("SideMenuFeatureRuntime", () => {
     sideMenuService = {
       addMenuItem: vi.fn(),
       removeMenuItem: vi.fn(),
-      open: vi.fn(),
+      toggle: vi.fn(),
       close: vi.fn(),
       updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
@@ -112,7 +112,7 @@ describe("SideMenuFeatureRuntime", () => {
     );
   });
 
-  it("routes view events to the lifecycle and the action to open", () => {
+  it("routes view events to the lifecycle and the action to toggle", () => {
     const lifecycle = { onOpen: vi.fn(), onClose: vi.fn(), onFocus: vi.fn(), onBlur: vi.fn() };
     const runtime = createRuntime(lifecycle);
     runtime.activate();
@@ -128,7 +128,7 @@ describe("SideMenuFeatureRuntime", () => {
 
     const actionEvent = { type: "ActionFired", payload: "open_workspace" };
     appBus.publish(actionEvent as never);
-    expect(sideMenuService.open).toHaveBeenCalledWith("Workspace");
+    expect(sideMenuService.toggle).toHaveBeenCalledWith("Workspace");
     expect((actionEvent as { performed?: boolean }).performed).toBe(true);
   });
 
@@ -172,7 +172,7 @@ describe("SideMenuFeatureRuntime", () => {
     configSubject.next({ feature: { workspace: { mode: "on", order: 9 } } });
 
     expect(lifecycle.onOpen).not.toHaveBeenCalled();
-    expect(sideMenuService.open).not.toHaveBeenCalled();
+    expect(sideMenuService.toggle).not.toHaveBeenCalled();
     expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
   });
 });
