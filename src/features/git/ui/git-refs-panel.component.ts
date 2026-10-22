@@ -24,7 +24,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
              [value]="filter()" (input)="filter.set(value($event))" (keydown.escape)="clearFilter($event)" />
     </div>
     <div class="sections">
-      <section class="section" [class.open]="isOpen('local')">
+      <section class="section">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('local')">
           <app-icon class="small-icon" [name]="isOpen('local') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -44,7 +44,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
               <app-icon class="small-icon head-icon" name="mdiEyeOutline" appTooltip="Checked out"></app-icon>
             }
             <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
-            <span class="ellipsis grow">{{ branch.name }}</span>
+            <span class="ellipsis grow" [appTooltip]="branch.name">{{ branch.name }}</span>
             @if (branch.upstreamGone) {
               <span class="subtle track" appTooltip="The upstream branch was deleted">gone</span>
             }
@@ -60,7 +60,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       }
       </section>
 
-      <section class="section" [class.open]="isOpen('remote')">
+      <section class="section">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('remote')">
           <app-icon class="small-icon" [name]="isOpen('remote') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -87,7 +87,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                    (click)="view.revealCommit(remoteBranch.sha)" (dblclick)="operations.checkoutRemoteBranch(remoteBranch)"
                    (contextmenu)="actions.openRemoteBranchMenu($event, remoteBranch)">
                 <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
-                <span class="ellipsis grow">{{ remoteBranch.shortName }}</span>
+                <span class="ellipsis grow" [appTooltip]="remoteBranch.name">{{ remoteBranch.shortName }}</span>
               </div>
             }
           }
@@ -96,7 +96,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       }
       </section>
 
-      <section class="section" [class.open]="isOpen('stashes')">
+      <section class="section">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('stashes')">
           <app-icon class="small-icon" [name]="isOpen('stashes') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -121,7 +121,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       }
       </section>
 
-      <section class="section" [class.open]="isOpen('tags')">
+      <section class="section">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('tags')">
           <app-icon class="small-icon" [name]="isOpen('tags') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
@@ -137,7 +137,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           <div class="row ref" [class.selected]="isSelected(tag.sha)"
                (click)="view.revealCommit(tag.sha)" (contextmenu)="actions.openTagMenu($event, tag)">
             <app-icon class="small-icon subtle" name="mdiTagOutline"></app-icon>
-            <span class="ellipsis grow">{{ tag.name }}</span>
+            <span class="ellipsis grow" [appTooltip]="tag.name">{{ tag.name }}</span>
           </div>
         }
         </div>
@@ -160,10 +160,19 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       .filter .text-input { padding: 0.15rem 0.4rem; }
       /* An accordion as in GitKraken: the four headers always stay in view, every open section
          scrolls on its own. The open sections share the height equally, but none takes more
-         than its rows need, so the rest goes to the ones that scroll. */
-      .sections { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-      .section { display: flex; flex-direction: column; flex: 0 0 auto; min-height: 0; }
-      .section.open { flex: 1 1 0; max-height: max-content; }
+         than its rows need, so the rest goes to the ones that scroll. Grid rows growing up to
+         max-content do exactly that; a flex item with max-height: max-content collapses to its
+         header in WebKit (the macOS webview). The one column is capped at the panel width, or long
+         names would widen it instead of being cut off. */
+      .sections {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: minmax(0, max-content);
+        align-content: start;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      .section { display: flex; flex-direction: column; min-height: 0; }
       .body { flex: 1 1 auto; min-height: 0; overflow: auto; }
       .grow { flex: 1; }
       /* Sections read as blocks: a rule and some air between them, the count in the highlight colour. */
