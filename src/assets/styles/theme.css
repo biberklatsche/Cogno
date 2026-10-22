@@ -92,7 +92,9 @@ button, a {
 }
 
 
-input {
+/* Text fields only: a checkbox or radio keeps its own size. :where() keeps the
+   weight of a plain `input`, so component styles still win over this. */
+input:where(:not([type]), [type="text"], [type="search"], [type="password"], [type="number"], [type="email"], [type="url"]) {
     border: none;
     outline: none;
     color: var(--foreground-color);
