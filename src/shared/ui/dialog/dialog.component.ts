@@ -64,12 +64,15 @@ import { DialogRef } from "./dialog-ref";
       class="panel base-overlay"
       [style.width]="config().width"
       [style.max-width]="config().maxWidth">
+      <!-- A dialog that says what it asks in its content needs no header. -->
+      @if (config().title || config().showCloseButton) {
         <div class="header">
           <div class="title">{{ config().title }}</div>
             @if (config().showCloseButton) {
           <button class="button icon-button" (click)="close()"><app-icon name="mdiClose"></app-icon></button>
             }
         </div>
+      }
      
       <div class="content" tabindex="0">
           <ng-container *ngComponentOutlet="component(); injector: contentInjector"></ng-container>
