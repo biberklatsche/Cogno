@@ -9,6 +9,7 @@ import type { AppWindow } from "@cogno/platform";
 import { BehaviorSubject, Subject } from "rxjs";
 import { describe, expect, it, vi } from "vitest";
 import { GitRepositoryService } from "./git-repository.service";
+import { REF_FORMAT } from "./model/git-parsers";
 
 type Run = (request: SessionRunRequest) => Promise<SessionRunResult>;
 
@@ -125,8 +126,7 @@ describe("GitRepositoryService", () => {
       sessionHandle(
         repo("/c/new", {
           "rev-parse -q": ran("", 1),
-          "for-each-ref --format=%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track,nobracket)":
-            ran(""),
+          [`for-each-ref --format=${REF_FORMAT}`]: ran(""),
         }),
       ),
     );

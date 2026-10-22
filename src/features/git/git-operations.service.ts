@@ -169,6 +169,30 @@ export class GitOperationsService {
     });
   }
 
+  /**
+   * Deletes several local branches in one run and returns the ones still
+   * there: `-d` refuses those whose commits are nowhere else, and only other
+   * failures are toasted.
+   */
+  async deleteBranches(
+    names: ReadonlyArray<string>,
+    force: boolean,
+  ): Promise<ReadonlyArray<string>> {
+    const result = await this.repository.run(
+      ["branch", force ? "-D" : "-d", ...names],
+      LOCAL_TIMEOUT_MS,
+    );
+    const failures = (result?.stderr ?? "")
+      .split("\n")
+      .filter((line) => /^(error|fatal):/.test(line) && !/not fully merged/i.test(line));
+    if (!result || result.exitCode === 124) this.report(result, "Delete branches failed");
+    else if (failures.length > 0)
+      this.toast("Delete branches failed", failures.join("\n"), "error");
+    await this.repository.refresh();
+    const remaining = new Set(this.repository.refs().branches.map((b) => b.name));
+    return names.filter((name) => remaining.has(name));
+  }
+
   merge(ref: string): Promise<GitOperationOutcome> {
     return this.git(["merge", "--no-edit", ref], "Merge stopped", { success: `Merged ${ref}` });
   }
@@ -273,6 +297,18 @@ export class GitOperationsService {
   }
 
   /**
+   * Pull a branch that is not checked out: fetch its upstream straight into
+   * it. Git only moves it forward and refuses when the two have diverged.
+   */
+  pullBranch(branch: string, upstream: GitRemoteBranch): Promise<GitOperationOutcome> {
+    return this.network(
+      ["fetch", upstream.remote, `refs/heads/${upstream.shortName}:refs/heads/${branch}`],
+      `Pulling ${branch}`,
+      `Pulled ${branch}`,
+    );
+  }
+
+  /**
    * Push `branch` to `remoteBranch` on `remote`. `setUpstream` makes the branch
    * track it from then on. `force` overwrites the remote branch only if it is
    * still where this repository last saw it (`--force-with-lease`).
@@ -306,6 +342,19 @@ export class GitOperationsService {
       ["push", remoteBranch.remote, "--delete", remoteBranch.shortName],
       `Deleting ${remoteBranch.name}`,
       `Deleted ${remoteBranch.name}`,
+    );
+  }
+
+  /** Deletes several branches of one remote in a single push. */
+  deleteRemoteBranches(
+    remote: string,
+    shortNames: ReadonlyArray<string>,
+  ): Promise<GitOperationOutcome> {
+    const count = shortNames.length === 1 ? shortNames[0] : `${shortNames.length} branches`;
+    return this.network(
+      ["push", remote, "--delete", ...shortNames],
+      `Deleting ${count} on ${remote}`,
+      `Deleted ${count} on ${remote}`,
     );
   }
 

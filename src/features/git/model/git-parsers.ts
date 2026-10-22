@@ -21,7 +21,7 @@ export const RECORD = "\x1e";
 export const LOG_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%s%x1e";
 export const COMMIT_DETAIL_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ct%x1f%B";
 export const REF_FORMAT =
-  "%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track,nobracket)";
+  "%(refname)%1f%(objectname)%1f%(*objectname)%1f%(upstream:short)%1f%(upstream:track,nobracket)%1f%(committerdate:unix)%1f%(symref)";
 export const STASH_FORMAT = "%H%x1f%gd%x1f%at%x1f%gs";
 
 /** Both sides of an unmerged path, as `git status` prints them. */
@@ -86,35 +86,51 @@ export function parseRefs(raw: string): GitRefs {
   const branches: GitBranch[] = [];
   const remoteBranches: GitRemoteBranch[] = [];
   const tags: GitTag[] = [];
+  const defaultBranches = new Set<string>();
 
   for (const line of raw.split("\n")) {
     if (!line.trim()) continue;
-    const [refname = "", objectname = "", peeled = "", upstream = "", track = ""] =
-      line.split(FIELD);
+    const [
+      refname = "",
+      objectname = "",
+      peeled = "",
+      upstream = "",
+      track = "",
+      committed = "",
+      symref = "",
+    ] = line.split(FIELD);
+    const lastCommitAt = Number(committed) || 0;
     if (refname.startsWith("refs/heads/")) {
       branches.push({
         name: refname.slice("refs/heads/".length),
         sha: objectname,
         upstream: upstream || null,
         ...parseTrack(track),
+        lastCommitAt,
       });
     } else if (refname.startsWith("refs/remotes/")) {
       const name = refname.slice("refs/remotes/".length);
       const slash = name.indexOf("/");
+      if (slash === -1) continue;
       // `origin/HEAD` is a pointer to the remote's default branch, not a branch.
-      if (slash === -1 || name.endsWith("/HEAD")) continue;
+      if (name.endsWith("/HEAD")) {
+        const target = symref.slice(`refs/remotes/${name.slice(0, slash)}/`.length);
+        if (symref && target) defaultBranches.add(target);
+        continue;
+      }
       remoteBranches.push({
         name,
         remote: name.slice(0, slash),
         shortName: name.slice(slash + 1),
         sha: objectname,
+        lastCommitAt,
       });
     } else if (refname.startsWith("refs/tags/")) {
       tags.push({ name: refname.slice("refs/tags/".length), sha: peeled || objectname });
     }
   }
 
-  return { branches, remoteBranches, tags };
+  return { branches, remoteBranches, tags, defaultBranches: [...defaultBranches] };
 }
 
 /** Reads `%(upstream:track,nobracket)`: "ahead 1, behind 2", "gone" or "". */

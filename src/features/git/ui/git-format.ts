@@ -12,6 +12,14 @@ export function formatCommitTime(seconds: number, now: Date = new Date()): strin
   return `${date.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" })} ${time}`;
 }
 
+/** How much older a commit is than `reference`, short: "3 d", "5 mo", "2 y". */
+export function formatAge(seconds: number, reference: number): string {
+  const days = Math.max(0, Math.floor((reference - seconds) / (24 * 60 * 60)));
+  if (days < 30) return `${days} d`;
+  if (days < 365) return `${Math.floor(days / 30)} mo`;
+  return `${Math.floor(days / 365)} y`;
+}
+
 export function fileStatusIcon(file: GitFile): Icon {
   if (file.isDirectory) return "mdiFolderOutline";
   switch (file.status) {

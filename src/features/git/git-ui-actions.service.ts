@@ -17,6 +17,12 @@ import {
 import { GitRepositoryService } from "./git-repository.service";
 import { GitGraphColumn, GitViewState, GitWipFileGroup } from "./git-view-state.service";
 import {
+  ageReference,
+  byRemote,
+  keptReason,
+  trackedRemoteBranches,
+} from "./model/git-branch-cleanup";
+import {
   GitBranch,
   GitCommit,
   GitFile,
@@ -28,6 +34,12 @@ import {
 } from "./model/git-model";
 import { cloneDirectoryName } from "./model/git-parsers";
 import { buildHunkPatch, GitHunk, GitPatch } from "./model/git-patch";
+import {
+  GitDeleteBranchesDialogComponent,
+  GitDeleteBranchesDialogData,
+  GitDeleteBranchesResult,
+} from "./ui/git-delete-branches-dialog.component";
+import { formatAge } from "./ui/git-format";
 import {
   GitPromptDialogComponent,
   GitPromptDialogData,
@@ -56,6 +68,68 @@ export class GitUiActions {
     private readonly clipboard: ClipboardAccess,
     private readonly opener: Opener,
   ) {}
+
+  // Bulk delete
+
+  /** Ask which of the shown local branches to delete, then delete them. */
+  async deleteLocalBranches(shown: ReadonlyArray<GitBranch>): Promise<void> {
+    const refs = this.repository.refs();
+    const head = this.repository.head();
+    const reference = ageReference(refs);
+    const result = await this.chooseBranches({
+      message: "Delete these local branches?",
+      items: shown.map((branch) => ({
+        name: branch.name,
+        detail: [branch.upstreamGone ? "gone" : "", formatAge(branch.lastCommitAt, reference)]
+          .filter(Boolean)
+          .join(" · "),
+        keptReason: keptReason(branch, refs, head),
+      })),
+      remoteOption: "Also delete the remote branches they track",
+    });
+    if (!result) return;
+
+    let remaining = await this.operations.deleteBranches(result.names, false);
+    // `-d` refuses branches whose commits are nowhere else; offer to drop them together.
+    if (
+      remaining.length > 0 &&
+      (await this.confirm(
+        `${remaining.join(", ")} ${remaining.length === 1 ? "has" : "have"} commits that are not merged anywhere. Delete anyway? Those commits are lost.`,
+        "Delete anyway",
+      ))
+    ) {
+      remaining = await this.operations.deleteBranches(remaining, true);
+    }
+    if (!result.alsoRemote) return;
+
+    const deleted = shown.filter(
+      (branch) => result.names.includes(branch.name) && !remaining.includes(branch.name),
+    );
+    for (const [remote, names] of byRemote(trackedRemoteBranches(deleted, refs, head))) {
+      await this.operations.deleteRemoteBranches(remote, names);
+    }
+  }
+
+  /** Ask which of the shown remote branches to delete, then delete them on their remotes. */
+  async deleteRemoteBranches(shown: ReadonlyArray<GitRemoteBranch>): Promise<void> {
+    const refs = this.repository.refs();
+    const head = this.repository.head();
+    const reference = ageReference(refs);
+    const result = await this.chooseBranches({
+      message: "Delete these branches on the remote? They are gone for everyone who works with it.",
+      items: shown.map((branch) => ({
+        name: branch.name,
+        detail: formatAge(branch.lastCommitAt, reference),
+        keptReason: keptReason(branch, refs, head),
+      })),
+    });
+    if (!result) return;
+
+    const chosen = shown.filter((branch) => result.names.includes(branch.name));
+    for (const [remote, names] of byRemote(chosen)) {
+      await this.operations.deleteRemoteBranches(remote, names);
+    }
+  }
 
   // Toolbar
 
@@ -228,10 +302,19 @@ export class GitUiActions {
     const head = this.repository.head();
     const isHead = branch.name === head.branch;
     const current = head.branch ?? "HEAD";
+    const upstream = this.repository.refs().remoteBranches.find((r) => r.name === branch.upstream);
+    // The tip may lie beyond the loaded commits; git then refuses a merge without `-m` itself.
+    const isMerge =
+      (this.repository.commits().find((commit) => commit.sha === branch.sha)?.parents.length ?? 0) >
+      1;
     this.openMenu(event, [
-      ...(isHead
-        ? [item("Pull", () => this.operations.pull("merge"), !branch.upstream)]
-        : [item(`Checkout ${branch.name}`, () => this.operations.checkoutBranch(branch.name))]),
+      isHead
+        ? item("Pull", () => this.operations.pull("merge"), !branch.upstream)
+        : item(
+            "Pull (fast-forward only)",
+            () => upstream && this.operations.pullBranch(branch.name, upstream),
+            !upstream,
+          ),
       item(branch.upstream ? `Push ${branch.name} to ${branch.upstream}` : "Push", () =>
         this.pushBranch(branch),
       ),
@@ -244,9 +327,19 @@ export class GitUiActions {
             item(`Rebase ${current} onto ${branch.name}`, () =>
               this.operations.rebase(branch.name),
             ),
+            separator(),
+            item(`Checkout ${branch.name}`, () => this.operations.checkoutBranch(branch.name)),
           ]),
       separator(),
       item("Create branch here", () => this.beginBranch(branch.sha)),
+      item(
+        "Cherry pick commit",
+        () => this.operations.cherryPick(branch.sha, isMerge),
+        branch.sha === head.sha,
+      ),
+      ...(head.sha && branch.sha !== head.sha ? this.resetItems(current, branch.sha) : []),
+      item("Revert commit", () => this.operations.revert(branch.sha, isMerge)),
+      separator(),
       item("Create tag here", () => this.createTagAt(branch.name, branch.name)),
       separator(),
       item(`Rename ${branch.name}`, () => this.renameBranch(branch)),
@@ -260,6 +353,7 @@ export class GitUiActions {
         ),
       separator(),
       item("Copy branch name", () => this.clipboard.writeText(branch.name)),
+      item("Copy commit sha", () => this.clipboard.writeText(branch.sha)),
     ]);
   }
 
@@ -616,6 +710,16 @@ export class GitUiActions {
       maxWidth: "calc(100vw - 2rem)",
     });
     return whenClosed(ref).then((result) => result ?? false);
+  }
+
+  private chooseBranches(
+    data: GitDeleteBranchesDialogData,
+  ): Promise<GitDeleteBranchesResult | undefined> {
+    const ref = this.dialogs.open<GitDeleteBranchesDialogData, GitDeleteBranchesResult>(
+      GitDeleteBranchesDialogComponent,
+      { title: "Delete branches", data, width: "36rem", maxWidth: "calc(100vw - 2rem)" },
+    );
+    return whenClosed(ref);
   }
 
   private prompt(title: string, data: GitPromptDialogData): Promise<GitPromptResult | undefined> {

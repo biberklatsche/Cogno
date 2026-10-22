@@ -38,7 +38,7 @@ export const GIT_LOG_PAGE_SIZE = 1000;
 const READ_TIMEOUT_MS = 10_000;
 
 const EMPTY_STATUS: GitStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
-const EMPTY_REFS: GitRefs = { branches: [], remoteBranches: [], tags: [] };
+const EMPTY_REFS: GitRefs = { branches: [], remoteBranches: [], tags: [], defaultBranches: [] };
 
 /** Files in the git dir that say which operation git stopped in. */
 const OPERATION_MARKERS: ReadonlyArray<readonly [string, GitOperation]> = [

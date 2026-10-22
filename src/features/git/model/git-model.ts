@@ -30,6 +30,8 @@ export type GitBranch = {
   readonly behind: number;
   /** The upstream is configured but no longer exists on the remote. */
   readonly upstreamGone: boolean;
+  /** Committer date of the tip, in seconds. */
+  readonly lastCommitAt: number;
 };
 
 export type GitRemoteBranch = {
@@ -39,6 +41,8 @@ export type GitRemoteBranch = {
   /** `feature/x` */
   readonly shortName: string;
   readonly sha: string;
+  /** Committer date of the tip, in seconds. */
+  readonly lastCommitAt: number;
 };
 
 export type GitTag = {
@@ -51,6 +55,8 @@ export type GitRefs = {
   readonly branches: ReadonlyArray<GitBranch>;
   readonly remoteBranches: ReadonlyArray<GitRemoteBranch>;
   readonly tags: ReadonlyArray<GitTag>;
+  /** The branches the remotes' `HEAD` points at, as short names (`main`). */
+  readonly defaultBranches: ReadonlyArray<string>;
 };
 
 export type GitRemote = {

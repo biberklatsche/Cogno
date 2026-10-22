@@ -93,12 +93,64 @@ describe("GitOperationsService", () => {
     expect(argsOfLastRun()).toEqual(["branch", "-D", "x"]);
   });
 
+  it("deletes several branches in one run and returns the ones still there", async () => {
+    answer = {
+      stdout: "Deleted branch a (was c1).",
+      stderr: "error: the branch 'main' is not fully merged\nhint: run 'git branch -D main'",
+      exitCode: 1,
+    };
+
+    expect(await service.deleteBranches(["a", "main"], false)).toEqual(["main"]);
+    expect(argsOfLastRun()).toEqual(["branch", "-d", "a", "main"]);
+    expect(refresh).toHaveBeenCalled();
+    // An unmerged branch is a question for the caller, not an error.
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("reports other failures of a bulk branch delete", async () => {
+    answer = { stdout: "", stderr: "error: branch 'nope' not found", exitCode: 1 };
+
+    await service.deleteBranches(["nope"], true);
+
+    expect(argsOfLastRun()).toEqual(["branch", "-D", "nope"]);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "error", body: "error: branch 'nope' not found" }),
+    );
+  });
+
+  it("pulls a branch that is not checked out by fetching its upstream into it", async () => {
+    await service.pullBranch("dev", {
+      name: "origin/feature/dev",
+      remote: "origin",
+      shortName: "feature/dev",
+      sha: "c1",
+      lastCommitAt: 0,
+    });
+
+    expect(argsOfLastRun()).toEqual([
+      ...CACHE,
+      "fetch",
+      "origin",
+      "refs/heads/feature/dev:refs/heads/dev",
+    ]);
+  });
+
+  it("deletes several remote branches in one push", async () => {
+    await service.deleteRemoteBranches("origin", ["a", "b"]);
+
+    expect(argsOfLastRun()).toEqual([...CACHE, "push", "origin", "--delete", "a", "b"]);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "success", header: "Deleted 2 branches on origin" }),
+    );
+  });
+
   it("checks out an existing local branch for a remote branch of the same name", async () => {
     await service.checkoutRemoteBranch({
       name: "origin/main",
       remote: "origin",
       shortName: "main",
       sha: "c1",
+      lastCommitAt: 0,
     });
     expect(argsOfLastRun()).toEqual(["switch", "main"]);
 
@@ -107,6 +159,7 @@ describe("GitOperationsService", () => {
       remote: "origin",
       shortName: "dev",
       sha: "c2",
+      lastCommitAt: 0,
     });
     expect(argsOfLastRun()).toEqual(["switch", "--track", "origin/dev"]);
   });

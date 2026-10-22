@@ -1,16 +1,32 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
-import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  signal,
+  WritableSignal,
+} from "@angular/core";
+import { Icon, IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitOperationsService } from "../git-operations.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitRefsSection, GitViewState } from "../git-view-state.service";
+import { GitBranchSort, nextSort, sortBranches } from "../model/git-branch-sort";
 import { GitBranch, GitRemoteBranch } from "../model/git-model";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
+const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }>> = {
+  "date-desc": { icon: "mdiSortClockDescendingOutline", label: "Newest commit first" },
+  "date-asc": { icon: "mdiSortClockAscendingOutline", label: "Oldest commit first" },
+  "name-asc": { icon: "mdiSortAlphabeticalAscending", label: "Name A to Z" },
+  "name-desc": { icon: "mdiSortAlphabeticalDescending", label: "Name Z to A" },
+};
+
 /**
  * The left panel: local branches, remotes with their branches, stashes and
- * tags. A click shows the commit in the graph, a double click checks a branch
- * out, and every row has its context menu.
+ * tags, the checked-out branch highlighted. A click shows the commit in the
+ * graph without marking the row, a double click checks a branch
+ * out, and every row has its context menu. The branch sections sort by date
+ * or name with the default branches on top, and delete the shown ones in bulk.
  */
 @Component({
   selector: "app-git-refs-panel",
@@ -32,12 +48,20 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           Local
         </button>
         <span class="grow"></span>
+        <button type="button" class="button icon-button header-action" [appTooltip]="sortLabel(localSort())"
+                (click)="stepSort(localSort)">
+          <app-icon [name]="sortIcon(localSort())"></app-icon>
+        </button>
+        <button type="button" class="button icon-button header-action" appTooltip="Delete the shown branches"
+                [disabled]="branches().length === 0" (click)="actions.deleteLocalBranches(branches())">
+          <app-icon name="mdiTrashCanOutline"></app-icon>
+        </button>
         <span class="count">{{ branches().length }}</span>
       </div>
       @if (isOpen("local")) {
         <div class="body">
         @for (branch of branches(); track branch.name) {
-          <div class="row ref" [class.selected]="isSelected(branch.sha)"
+          <div class="row ref" [class.selected]="branch.name === head().branch"
                (click)="view.revealCommit(branch.sha)" (dblclick)="checkout(branch)"
                (contextmenu)="actions.openBranchMenu($event, branch)">
             @if (branch.name === head().branch) {
@@ -68,6 +92,14 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           Remote
         </button>
         <span class="grow"></span>
+        <button type="button" class="button icon-button header-action" [appTooltip]="sortLabel(remoteSort())"
+                (click)="stepSort(remoteSort)">
+          <app-icon [name]="sortIcon(remoteSort())"></app-icon>
+        </button>
+        <button type="button" class="button icon-button header-action" appTooltip="Delete the shown branches on their remotes"
+                [disabled]="visibleRemoteBranches().length === 0" (click)="actions.deleteRemoteBranches(visibleRemoteBranches())">
+          <app-icon name="mdiTrashCanOutline"></app-icon>
+        </button>
         <button type="button" class="button icon-button header-action" appTooltip="Add a remote" (click)="actions.addRemote()">
           <app-icon name="mdiPlus"></app-icon>
         </button>
@@ -83,7 +115,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           </div>
           @if (!collapsedRemotes().has(remote.name)) {
             @for (remoteBranch of remoteBranchesOf(remote.name); track remoteBranch.name) {
-              <div class="row ref nested" [class.selected]="isSelected(remoteBranch.sha)"
+              <div class="row ref nested"
                    (click)="view.revealCommit(remoteBranch.sha)" (dblclick)="operations.checkoutRemoteBranch(remoteBranch)"
                    (contextmenu)="actions.openRemoteBranchMenu($event, remoteBranch)">
                 <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
@@ -134,7 +166,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       @if (isOpen("tags")) {
         <div class="body">
         @for (tag of tags(); track tag.name) {
-          <div class="row ref" [class.selected]="isSelected(tag.sha)"
+          <div class="row ref"
                (click)="view.revealCommit(tag.sha)" (contextmenu)="actions.openTagMenu($event, tag)">
             <app-icon class="small-icon subtle" name="mdiTagOutline"></app-icon>
             <span class="ellipsis grow" [appTooltip]="tag.name">{{ tag.name }}</span>
@@ -198,16 +230,36 @@ export class GitRefsPanelComponent {
   readonly filter = signal("");
   readonly collapsedRemotes = signal<ReadonlySet<string>>(new Set());
 
+  readonly localSort = signal<GitBranchSort>("date-desc");
+  readonly remoteSort = signal<GitBranchSort>("date-desc");
+
   readonly head = this.repository.head;
-  readonly branches = computed(() => this.matching(this.repository.refs().branches, (b) => b.name));
-  readonly remoteBranches = computed(() =>
-    this.matching(this.repository.refs().remoteBranches, (b) => b.name),
-  );
+  readonly branches = computed(() => {
+    const refs = this.repository.refs();
+    return sortBranches(
+      this.matching(refs.branches, (b) => b.name),
+      this.localSort(),
+      refs,
+    );
+  });
+  readonly remoteBranches = computed(() => {
+    const refs = this.repository.refs();
+    return sortBranches(
+      this.matching(refs.remoteBranches, (b) => b.name),
+      this.remoteSort(),
+      refs,
+    );
+  });
   readonly remotes = computed(() => {
     const withBranches = new Set(this.remoteBranches().map((b) => b.remote));
     return this.repository
       .remotes()
       .filter((r) => !this.filter().trim() || withBranches.has(r.name));
+  });
+  /** The remote branches a bulk delete offers: those of expanded remotes. */
+  readonly visibleRemoteBranches = computed(() => {
+    const collapsed = this.collapsedRemotes();
+    return this.remoteBranches().filter((b) => !collapsed.has(b.remote));
   });
   readonly stashes = computed(() => this.matching(this.repository.stashes(), (s) => s.message));
   readonly tags = computed(() => this.matching(this.repository.refs().tags, (t) => t.name));
@@ -218,6 +270,18 @@ export class GitRefsPanelComponent {
     readonly actions: GitUiActions,
     readonly view: GitViewState,
   ) {}
+
+  sortIcon(sort: GitBranchSort): Icon {
+    return SORT_BUTTONS[sort].icon;
+  }
+
+  sortLabel(sort: GitBranchSort): string {
+    return `${SORT_BUTTONS[sort].label}, click for ${SORT_BUTTONS[nextSort(sort)].label.toLowerCase()}`;
+  }
+
+  stepSort(sort: WritableSignal<GitBranchSort>): void {
+    sort.update(nextSort);
+  }
 
   remoteBranchesOf(remote: string): GitRemoteBranch[] {
     return this.remoteBranches().filter((branch) => branch.remote === remote);
@@ -233,11 +297,6 @@ export class GitRefsPanelComponent {
 
   toggleRemote(remote: string): void {
     this.collapsedRemotes.update((collapsed) => toggled(collapsed, remote));
-  }
-
-  isSelected(sha: string): boolean {
-    const selection = this.view.selection();
-    return selection.kind === "commit" && selection.sha === sha;
   }
 
   isStashSelected(sha: string): boolean {

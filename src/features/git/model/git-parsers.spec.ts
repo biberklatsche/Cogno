@@ -71,14 +71,14 @@ describe("parseGitStatus", () => {
 });
 
 describe("parseRefs", () => {
-  it("splits heads, remote branches and tags and skips the remote HEAD pointer", () => {
+  it("splits heads, remote branches and tags and reads the remote HEAD as default branch", () => {
     const raw = [
-      f("refs/heads/main", "c1", "", "origin/main", "ahead 2, behind 1"),
-      f("refs/heads/feature/x", "c2", "", "", ""),
-      f("refs/remotes/origin/HEAD", "c1", "", "", ""),
-      f("refs/remotes/origin/feature/x", "c3", "", "", ""),
-      f("refs/tags/v1", "tagobj", "c4", "", ""),
-      f("refs/tags/light", "c5", "", "", ""),
+      f("refs/heads/main", "c1", "", "origin/main", "ahead 2, behind 1", "100", ""),
+      f("refs/heads/feature/x", "c2", "", "", "", "200", ""),
+      f("refs/remotes/origin/HEAD", "c1", "", "", "", "100", "refs/remotes/origin/main"),
+      f("refs/remotes/origin/feature/x", "c3", "", "", "", "300", ""),
+      f("refs/tags/v1", "tagobj", "c4", "", "", "", ""),
+      f("refs/tags/light", "c5", "", "", "", "400", ""),
     ].join("\n");
 
     expect(parseRefs(raw)).toEqual({
@@ -90,16 +90,32 @@ describe("parseRefs", () => {
           ahead: 2,
           behind: 1,
           upstreamGone: false,
+          lastCommitAt: 100,
         },
-        { name: "feature/x", sha: "c2", upstream: null, ahead: 0, behind: 0, upstreamGone: false },
+        {
+          name: "feature/x",
+          sha: "c2",
+          upstream: null,
+          ahead: 0,
+          behind: 0,
+          upstreamGone: false,
+          lastCommitAt: 200,
+        },
       ],
       remoteBranches: [
-        { name: "origin/feature/x", remote: "origin", shortName: "feature/x", sha: "c3" },
+        {
+          name: "origin/feature/x",
+          remote: "origin",
+          shortName: "feature/x",
+          sha: "c3",
+          lastCommitAt: 300,
+        },
       ],
       tags: [
         { name: "v1", sha: "c4" },
         { name: "light", sha: "c5" },
       ],
+      defaultBranches: ["main"],
     });
   });
 
@@ -196,13 +212,22 @@ describe("buildRefLabels", () => {
     const labels = buildRefLabels(
       {
         branches: [
-          { name: "main", sha: "c1", upstream: null, ahead: 0, behind: 0, upstreamGone: false },
+          {
+            name: "main",
+            sha: "c1",
+            upstream: null,
+            ahead: 0,
+            behind: 0,
+            upstreamGone: false,
+            lastCommitAt: 0,
+          },
         ],
         remoteBranches: [
-          { name: "origin/main", remote: "origin", shortName: "main", sha: "c1" },
-          { name: "origin/dev", remote: "origin", shortName: "dev", sha: "c1" },
+          { name: "origin/main", remote: "origin", shortName: "main", sha: "c1", lastCommitAt: 0 },
+          { name: "origin/dev", remote: "origin", shortName: "dev", sha: "c1", lastCommitAt: 0 },
         ],
         tags: [{ name: "v1", sha: "c2" }],
+        defaultBranches: [],
       },
       { sha: "c1", branch: "main" },
     );
@@ -218,10 +243,21 @@ describe("buildRefLabels", () => {
     const labels = buildRefLabels(
       {
         branches: [
-          { name: "main", sha: "c2", upstream: null, ahead: 1, behind: 0, upstreamGone: false },
+          {
+            name: "main",
+            sha: "c2",
+            upstream: null,
+            ahead: 1,
+            behind: 0,
+            upstreamGone: false,
+            lastCommitAt: 0,
+          },
         ],
-        remoteBranches: [{ name: "origin/main", remote: "origin", shortName: "main", sha: "c1" }],
+        remoteBranches: [
+          { name: "origin/main", remote: "origin", shortName: "main", sha: "c1", lastCommitAt: 0 },
+        ],
         tags: [],
+        defaultBranches: [],
       },
       { sha: "c2", branch: "main" },
     );
