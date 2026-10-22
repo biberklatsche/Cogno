@@ -24,9 +24,10 @@ export class GitSideMenuLifecycle {
         this.repository.stop();
       },
       onFocus: () => {
-        // Escape closes an open diff first, as in GitKraken; then the panel.
+        // Escape clears marked branches first, then closes an open diff as in GitKraken, then the panel.
         sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
-          if (this.view.diff()) this.view.closeDiff();
+          if (this.view.hasMarks()) this.view.clearMarks();
+          else if (this.view.diff()) this.view.closeDiff();
           else sideMenuFeatureHandle.close();
         });
       },

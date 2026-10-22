@@ -2,6 +2,7 @@ import { computed, Injectable, signal, WritableSignal } from "@angular/core";
 import { GitDiffSource } from "./git-diff.service";
 import { GitPullMode } from "./git-operations.service";
 import { GitRepositoryService } from "./git-repository.service";
+import { GitRowMarks } from "./ui/git-row-marks";
 
 /** What the detail panel on the right shows. */
 export type GitSelection =
@@ -95,6 +96,9 @@ export class GitViewState {
   readonly newBranchAt = signal<string | null>(null);
   /** A commit the graph should scroll to; cleared by the graph once it did. */
   readonly reveal = signal<string | null>(null);
+  /** Branches marked in the refs panel for one action on all of them. */
+  readonly localMarks = new GitRowMarks();
+  readonly remoteMarks = new GitRowMarks();
 
   constructor(private readonly repository: GitRepositoryService) {}
 
@@ -107,6 +111,15 @@ export class GitViewState {
   revealCommit(sha: string): void {
     this.select({ kind: "commit", sha });
     this.reveal.set(sha);
+  }
+
+  hasMarks(): boolean {
+    return this.localMarks.names().size > 0 || this.remoteMarks.names().size > 0;
+  }
+
+  clearMarks(): void {
+    this.localMarks.clear();
+    this.remoteMarks.clear();
   }
 
   openDiff(source: GitDiffSource): void {

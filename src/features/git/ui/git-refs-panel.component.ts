@@ -12,7 +12,6 @@ import { GitUiActions } from "../git-ui-actions.service";
 import { GitRefsSection, GitViewState } from "../git-view-state.service";
 import { GitBranchSort, nextSort, sortBranches } from "../model/git-branch-sort";
 import { GitBranch, GitRemoteBranch } from "../model/git-model";
-import { GitRowMarks } from "./git-row-marks";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }>> = {
@@ -60,7 +59,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
         <div class="body">
         @for (branch of branches(); track branch.name) {
           <div class="row ref" [class.selected]="branch.name === head().branch"
-               [class.marked]="localMarks.names().has(branch.name)"
+               [class.marked]="view.localMarks.names().has(branch.name)"
                (click)="clickBranch($event, branch)" (dblclick)="checkout(branch)"
                (contextmenu)="openBranchMenu($event, branch)">
             @if (branch.name === head().branch) {
@@ -110,7 +109,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
           </div>
           @if (!collapsedRemotes().has(remote.name)) {
             @for (remoteBranch of remoteBranchesOf(remote.name); track remoteBranch.name) {
-              <div class="row ref nested" [class.marked]="remoteMarks.names().has(remoteBranch.name)"
+              <div class="row ref nested" [class.marked]="view.remoteMarks.names().has(remoteBranch.name)"
                    (click)="clickRemoteBranch($event, remoteBranch)" (dblclick)="operations.checkoutRemoteBranch(remoteBranch)"
                    (contextmenu)="openRemoteBranchMenu($event, remoteBranch)">
                 <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
@@ -263,8 +262,6 @@ export class GitRefsPanelComponent {
       .filter((remote) => !collapsed.has(remote.name))
       .flatMap((remote) => this.remoteBranchesOf(remote.name));
   });
-  readonly localMarks = new GitRowMarks();
-  readonly remoteMarks = new GitRowMarks();
   readonly stashes = computed(() => this.matching(this.repository.stashes(), (s) => s.message));
   readonly tags = computed(() => this.matching(this.repository.refs().tags, (t) => t.name));
 
@@ -305,34 +302,36 @@ export class GitRefsPanelComponent {
 
   clickBranch(event: MouseEvent, branch: GitBranch): void {
     const names = this.branches().map((b) => b.name);
-    if (!this.localMarks.click(event, branch.name, names)) this.view.revealCommit(branch.sha);
+    if (!this.view.localMarks.click(event, branch.name, names)) this.view.revealCommit(branch.sha);
   }
 
   clickRemoteBranch(event: MouseEvent, remoteBranch: GitRemoteBranch): void {
     const names = this.listedRemoteBranches().map((b) => b.name);
-    if (!this.remoteMarks.click(event, remoteBranch.name, names)) {
+    if (!this.view.remoteMarks.click(event, remoteBranch.name, names)) {
       this.view.revealCommit(remoteBranch.sha);
     }
   }
 
   /** The menu of all marked branches when the click is on one of several; otherwise this one's. */
   openBranchMenu(event: MouseEvent, branch: GitBranch): void {
-    const marked = this.branches().filter((b) => this.localMarks.names().has(b.name));
+    const marked = this.branches().filter((b) => this.view.localMarks.names().has(b.name));
     if (marked.length > 1 && marked.includes(branch)) {
-      this.actions.openBranchesMenu(event, marked, () => this.localMarks.clear());
+      this.actions.openBranchesMenu(event, marked, () => this.view.localMarks.clear());
       return;
     }
-    this.localMarks.clear();
+    this.view.localMarks.clear();
     this.actions.openBranchMenu(event, branch);
   }
 
   openRemoteBranchMenu(event: MouseEvent, remoteBranch: GitRemoteBranch): void {
-    const marked = this.listedRemoteBranches().filter((b) => this.remoteMarks.names().has(b.name));
+    const marked = this.listedRemoteBranches().filter((b) =>
+      this.view.remoteMarks.names().has(b.name),
+    );
     if (marked.length > 1 && marked.includes(remoteBranch)) {
-      this.actions.openRemoteBranchesMenu(event, marked, () => this.remoteMarks.clear());
+      this.actions.openRemoteBranchesMenu(event, marked, () => this.view.remoteMarks.clear());
       return;
     }
-    this.remoteMarks.clear();
+    this.view.remoteMarks.clear();
     this.actions.openRemoteBranchMenu(event, remoteBranch);
   }
 
