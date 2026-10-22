@@ -2,7 +2,8 @@
 export const GIT_SHARED_STYLES = `
   :host {
     --git-subtle: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
-    --git-hover: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+    /* The hover of the other side lists, e.g. the command palette. */
+    --git-hover: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     --git-border: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     --git-selected: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent);
     /* Two sizes only: the text, and everything secondary (headers, counts, meta). */
