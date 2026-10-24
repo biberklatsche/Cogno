@@ -1,8 +1,8 @@
 import { computed, Injectable, signal, WritableSignal } from "@angular/core";
 import { GitDiffSource } from "./git-diff.service";
 import { GitRepositoryService } from "./git-repository.service";
+import { GitHostId } from "./hosts/_shared/git-host";
 import { GitPullMode } from "./model/git-model";
-import { GitHostProvider } from "./model/git-remote-access";
 import { GitRowMarks } from "./ui/git-row-marks";
 
 /** What the detail panel on the right shows. */
@@ -36,7 +36,7 @@ type StoredView = {
   readonly closedWipGroups?: ReadonlyArray<GitWipFileGroup>;
   readonly panelWidths?: Readonly<Partial<Record<GitSidePanel, number>>>;
   /** What the person said is behind a host nobody can tell (a self-hosted instance). */
-  readonly hosts?: Readonly<Record<string, GitHostProvider>>;
+  readonly hosts?: Readonly<Record<string, GitHostId>>;
 };
 
 /**
@@ -96,9 +96,7 @@ export class GitViewState {
     new Set(this.stored.closedWipGroups ?? []),
   );
   /** What the user said is behind a host nobody can tell (a self-hosted instance). */
-  readonly hosts = this.persistent<Readonly<Record<string, GitHostProvider>>>(
-    this.stored.hosts ?? {},
-  );
+  readonly hosts = this.persistent<Readonly<Record<string, GitHostId>>>(this.stored.hosts ?? {});
   /** The commit a new branch is being named at, inline in its graph row. */
   readonly newBranchAt = signal<string | null>(null);
   /** A commit the graph should scroll to; cleared by the graph once it did. */

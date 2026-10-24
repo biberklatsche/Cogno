@@ -5,14 +5,9 @@ import { isWslShellContext } from "@cogno/shared/domain";
 import { DialogService } from "@cogno/shared/ui";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitViewState } from "./git-view-state.service";
-import {
-  credentialUrlOf,
-  GitAccessPlatform,
-  GitAccessSituation,
-  hostOf,
-  isSshUrl,
-  knownProvider,
-} from "./model/git-remote-access";
+import { GitAccessPlatform, GitAccessSituation } from "./hosts/_shared/git-host";
+import { knownGitHost } from "./hosts/git-hosts";
+import { credentialUrlOf, hostOf, isSshUrl } from "./model/git-remote-url";
 import { GitAccessDialogComponent, GitAccessDialogData } from "./ui/git-access-dialog.component";
 
 /** `git config` reads a few lines of config; no network. */
@@ -39,11 +34,11 @@ export class GitRemoteAccessService {
     const host = hostOf(url);
     const session = this.repository.currentSession();
     if (!host || !session) return;
-    const known = knownProvider(host);
+    const known = knownGitHost(host);
     const remembered = this.view.hosts()[host];
     const situation: GitAccessSituation = {
       host,
-      provider: known ?? remembered ?? "other",
+      provider: known?.id ?? remembered ?? "other",
       platform: platformOf(session.shellContext),
       ssh: isSshUrl(url),
       helpers: await this.helpersFor(credentialUrlOf(url) ?? `https://${host}`),

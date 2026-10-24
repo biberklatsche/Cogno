@@ -8,33 +8,20 @@ import {
   WritableSignal,
 } from "@angular/core";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
-import {
-  accessOptions,
-  accessSummary,
-  GitAccessOption,
-  GitAccessSituation,
-  GitHostProvider,
-  PROVIDER_LABELS,
-} from "../model/git-remote-access";
+import { GitAccessOption, GitAccessSituation, GitHostId } from "../hosts/_shared/git-host";
+import { accessOptions, accessSummary } from "../hosts/git-host-access";
+import { GIT_HOSTS, isGitHostId } from "../hosts/git-hosts";
 
 export type GitAccessDialogData = {
   readonly situation: GitAccessSituation;
   /** The host is nobody's: the person says what is behind it, and it is remembered. */
   readonly askProvider: boolean;
-  readonly onProvider: (provider: GitHostProvider) => void;
+  readonly onProvider: (provider: GitHostId) => void;
   /** Puts the command on the terminal's input line; a reason when the terminal refused. */
   readonly onInsert: (command: string) => Promise<string | null>;
   readonly onCopy: (command: string) => void;
   readonly onOpenLink: (url: string) => void;
 };
-
-const PROVIDERS: ReadonlyArray<GitHostProvider> = [
-  "github",
-  "gitlab",
-  "bitbucket",
-  "azure",
-  "other",
-];
 
 /**
  * How to get git access to a host, as a list of ways with their commands.
@@ -51,8 +38,8 @@ const PROVIDERS: ReadonlyArray<GitHostProvider> = [
         <label class="provider">
           <span>{{ situation().host }} is</span>
           <select [value]="situation().provider" (change)="chooseProvider(select.value)" #select>
-            @for (provider of providers; track provider) {
-              <option [value]="provider">{{ labels[provider] }}</option>
+            @for (host of hosts; track host.id) {
+              <option [value]="host.id">{{ host.label }}</option>
             }
           </select>
         </label>
@@ -175,8 +162,7 @@ const PROVIDERS: ReadonlyArray<GitHostProvider> = [
   ],
 })
 export class GitAccessDialogComponent {
-  readonly providers = PROVIDERS;
-  readonly labels = PROVIDER_LABELS;
+  readonly hosts = GIT_HOSTS;
   readonly situation: WritableSignal<GitAccessSituation>;
   readonly summary: Signal<string>;
   readonly options: Signal<ReadonlyArray<GitAccessOption>>;
@@ -193,10 +179,9 @@ export class GitAccessDialogComponent {
   }
 
   chooseProvider(value: string): void {
-    const provider = PROVIDERS.find((candidate) => candidate === value);
-    if (!provider) return;
-    this.situation.update((situation) => ({ ...situation, provider }));
-    this.data.onProvider(provider);
+    if (!isGitHostId(value)) return;
+    this.situation.update((situation) => ({ ...situation, provider: value }));
+    this.data.onProvider(value);
   }
 
   /** The command is on the line now: the dialog goes away so the person can run it. */
