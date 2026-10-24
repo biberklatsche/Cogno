@@ -9,11 +9,15 @@ export type CommandRunnerExecuteResult = {
 
 @Injectable({ providedIn: "root" })
 export class CommandRunner {
-  /** `stdin`, when given, is written to the process and closed. */
+  /**
+   * `stdin`, when given, is written to the process and closed. Prompts the
+   * process raises (see `AskpassRequests`) carry `promptSession`.
+   */
   execute(
     program: string,
     args: readonly string[],
     cwd: string,
+    promptSession: string,
     timeoutMs?: number,
     stdin?: string,
   ): Promise<CommandRunnerExecuteResult> {
@@ -21,6 +25,7 @@ export class CommandRunner {
       program,
       args: [...args],
       cwd,
+      promptSession,
       timeoutMs,
       stdin,
     });

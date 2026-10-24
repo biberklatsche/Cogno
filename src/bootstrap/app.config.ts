@@ -43,7 +43,6 @@ import { ConfigBootstrapAdapter } from "@cogno/core/workbench/config-bootstrap/c
 import { ErrorReportingRuntimeService } from "@cogno/core/workbench/error/error-reporting-runtime.service";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
 import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
-import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
 import { RunnableActionsPublisher } from "@cogno/core/workbench/external/runnable-actions-publisher.service";
 import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-definitions.token";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
@@ -125,7 +124,6 @@ export const appConfig: ApplicationConfig = {
         injector.get(KeybindService);
         injector.get(CliActionService);
         injector.get(HttpMessageAdapterService);
-        injector.get(ProcessPromptService);
         injector.get(RunnableActionsPublisher);
         injector.get(NativeMenuService);
         injector.get(WindowService);

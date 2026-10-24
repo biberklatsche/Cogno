@@ -1,7 +1,8 @@
 import { computed, Injectable, signal, WritableSignal } from "@angular/core";
 import { GitDiffSource } from "./git-diff.service";
-import { GitPullMode } from "./git-operations.service";
 import { GitRepositoryService } from "./git-repository.service";
+import { GitPullMode } from "./model/git-model";
+import { GitHostProvider } from "./model/git-remote-access";
 import { GitRowMarks } from "./ui/git-row-marks";
 
 /** What the detail panel on the right shows. */
@@ -34,6 +35,8 @@ type StoredView = {
   readonly closedSections?: ReadonlyArray<GitRefsSection>;
   readonly closedWipGroups?: ReadonlyArray<GitWipFileGroup>;
   readonly panelWidths?: Readonly<Partial<Record<GitSidePanel, number>>>;
+  /** What the person said is behind a host nobody can tell (a self-hosted instance). */
+  readonly hosts?: Readonly<Record<string, GitHostProvider>>;
 };
 
 /**
@@ -91,6 +94,10 @@ export class GitViewState {
   /** The file groups of the work-in-progress panel the user folded. */
   readonly closedWipGroups = this.persistent<ReadonlySet<GitWipFileGroup>>(
     new Set(this.stored.closedWipGroups ?? []),
+  );
+  /** What the user said is behind a host nobody can tell (a self-hosted instance). */
+  readonly hosts = this.persistent<Readonly<Record<string, GitHostProvider>>>(
+    this.stored.hosts ?? {},
   );
   /** The commit a new branch is being named at, inline in its graph row. */
   readonly newBranchAt = signal<string | null>(null);
@@ -157,6 +164,7 @@ export class GitViewState {
       closedSections: [...this.closedSections()],
       closedWipGroups: [...this.closedWipGroups()],
       panelWidths: this.panelWidths(),
+      hosts: this.hosts(),
     };
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(view));

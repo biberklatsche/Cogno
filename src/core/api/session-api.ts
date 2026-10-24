@@ -2,7 +2,7 @@ import { ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { ShellContextContract } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 import { BoundSessionIdentity, BoundSessionMode } from "./bound-session";
-import { SessionRunRequest, SessionRunResult } from "./session-run";
+import { SessionInsertResult, SessionRunRequest, SessionRunResult } from "./session-run";
 
 /**
  * The filesystem of the bound session, read in its live shell context (path
@@ -20,10 +20,11 @@ export interface BoundSessionFs {
 /**
  * A live handle on the session the API is bound to. It carries the identity a
  * feature planned against and runs everything in that session's context:
- * `run` starts an own, invisible process (never PTY input), `fs` reads files,
- * both rechecking the identity before they act so a write can never land in
- * another session after the focus moved. `contextRevision` is the revision to
- * plan against and pass back to `run`; `cwd`/`shellContext` are live.
+ * `run` starts an own, invisible process, `fs` reads files, `insertInput`
+ * puts text on the input line for the person to run; all recheck the
+ * identity before they act so a write can never land in another session
+ * after the focus moved. `contextRevision` is the revision to plan against
+ * and pass back; `cwd`/`shellContext` are live.
  */
 export interface BoundSessionHandle {
   readonly identity: BoundSessionIdentity;
@@ -32,6 +33,12 @@ export interface BoundSessionHandle {
   readonly shellContext: ShellContextContract;
   readonly contextRevision: number;
   run(request: SessionRunRequest): Promise<SessionRunResult>;
+  /**
+   * Types `text` on the session's input line, never Enter: the person reads
+   * the command and runs it. Rejected on the same grounds as `run`, and as
+   * `busy` while a command or a full-screen program would receive the text.
+   */
+  insertInput(text: string, contextRevision: number): Promise<SessionInsertResult>;
   readonly fs: BoundSessionFs;
   /**
    * A fresh, live process tree of the bound session on every call. Rejected

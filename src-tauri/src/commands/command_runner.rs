@@ -32,7 +32,10 @@ pub struct CommandRunnerResult {
 /// thread that drives the UI. `stdin`, when given, is written to the process
 /// and closed. The process gets no terminal; whatever it would ask on one
 /// (git credentials, an ssh passphrase, a host key) reaches the window that
-/// started it through the askpass helper instead.
+/// started it through the askpass helper instead, tagged with the caller's
+/// `prompt_session` so the window knows which run is asking.
+// One parameter per invoke key: that is how a Tauri command takes its arguments.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn command_runner_execute(
     app: AppHandle,
@@ -42,6 +45,7 @@ pub async fn command_runner_execute(
     cwd: String,
     timeout_ms: Option<u64>,
     stdin: Option<String>,
+    prompt_session: String,
 ) -> Result<CommandRunnerResult, String> {
     let mut command = Command::new(program);
     command.current_dir(cwd).args(args);
@@ -49,8 +53,9 @@ pub async fn command_runner_execute(
     #[cfg(windows)]
     command.creation_flags(CREATE_NO_WINDOW);
 
-    let askpass = app.state::<AskpassState>();
-    let session_id = askpass.open_session(window.label());
+    let session_id = prompt_session;
+    app.state::<AskpassState>()
+        .open_session(&session_id, window.label());
     apply_prompt_environment(&mut command, &app, &session_id);
 
     let pending = {

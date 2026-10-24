@@ -6,9 +6,16 @@ import {
 } from "@cogno/core/api/bound-session";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import { BoundSession, BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
-import { SessionRunRequest, SessionRunResult } from "@cogno/core/api/session-run";
+import {
+  SessionInsertResult,
+  SessionRunRejection,
+  SessionRunRequest,
+  SessionRunResult,
+} from "@cogno/core/api/session-run";
 import { Filesystem } from "@cogno/core/session/exec/filesystem";
+import { SessionHost } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { isWslShellContext, TerminalId } from "@cogno/shared/domain";
@@ -28,6 +35,7 @@ export class TerminalGatewayService implements SessionApi {
     private readonly terminalSessionRegistry: TerminalSessionRegistry,
     private readonly commandRunner: CommandRunner,
     private readonly filesystem: Filesystem,
+    private readonly processPrompts: ProcessPromptService,
   ) {
     // Focus reaches the binding two ways: an explicit FocusTerminal command
     // (keybind, palette, reveal) and the focusChanged fact a terminal reports
@@ -87,6 +95,7 @@ export class TerminalGatewayService implements SessionApi {
         return stateOf()?.contextRevision ?? -1;
       },
       run: (request) => this.run(request, identity),
+      insertInput: (text, contextRevision) => this.insertInput(text, contextRevision, identity),
       fs: {
         readTextFile: (path) => this.readBoundTextFile(path, identity),
         normalizePath: (path) => this.normalizeBoundPath(path, identity),
@@ -208,23 +217,12 @@ export class TerminalGatewayService implements SessionApi {
    * both in the session's current working directory.
    */
   async run(request: SessionRunRequest, identity: BoundSessionIdentity): Promise<SessionRunResult> {
-    if (!this.boundSessionMatches(identity)) {
-      return { status: "rejected", reason: "unbound" };
-    }
-    const entry = this.terminalSessionRegistry.get(identity.terminalId);
-    if (!entry) {
-      return { status: "rejected", reason: "unbound" };
+    const target = this.writableTarget(identity, request.contextRevision);
+    if ("reason" in target) {
+      return { status: "rejected", reason: target.reason };
     }
 
-    const state = entry.host.state;
-    if (state.contextRevision !== request.contextRevision) {
-      return { status: "rejected", reason: "stale-context" };
-    }
-    if (!state.isContextKnown) {
-      return { status: "rejected", reason: "unknown-context" };
-    }
-
-    const shellContext = state.shellContext;
+    const shellContext = target.state.shellContext;
     const requestedArgs = request.args ?? [];
     const isWsl = isWslShellContext(shellContext);
     const program = isWsl ? "wsl.exe" : request.executable;
@@ -233,13 +231,63 @@ export class TerminalGatewayService implements SessionApi {
       : requestedArgs;
 
     const result = await this.commandRunner.run({
-      cwd: state.cwd,
+      cwd: target.state.cwd,
       shellContext,
       program,
       args,
       timeoutMs: request.timeoutMs,
       stdin: request.stdin,
+      onPrompt: request.onPrompt ?? ((prompt) => this.processPrompts.ask(prompt)),
     });
     return { status: "ran", result };
+  }
+
+  /**
+   * Put `text` on the bound session's input line, guarded like `run` and
+   * only while the shell is at its prompt - a running command or a
+   * full-screen program would get the text instead. Enter is never sent: the
+   * person reads what is there and runs it.
+   */
+  private async insertInput(
+    text: string,
+    contextRevision: number,
+    identity: BoundSessionIdentity,
+  ): Promise<SessionInsertResult> {
+    const target = this.writableTarget(identity, contextRevision);
+    if ("reason" in target) {
+      return { status: "rejected", reason: target.reason };
+    }
+    if (target.state.isCommandRunning || target.state.isInFullScreenMode) {
+      return { status: "rejected", reason: "busy" };
+    }
+    target.host.writeRaw(text);
+    return { status: "inserted" };
+  }
+
+  /**
+   * The bound session as something a feature may write to: the identity is
+   * still the live binding, the caller's context revision still matches
+   * (nothing opened/closed under it), and the context is known (a foreign
+   * shell such as ssh is refused).
+   */
+  private writableTarget(
+    identity: BoundSessionIdentity,
+    contextRevision: number,
+  ): { host: SessionHost; state: SessionHost["state"] } | { reason: SessionRunRejection } {
+    if (!this.boundSessionMatches(identity)) {
+      return { reason: "unbound" };
+    }
+    const entry = this.terminalSessionRegistry.get(identity.terminalId);
+    if (!entry) {
+      return { reason: "unbound" };
+    }
+    const state = entry.host.state;
+    if (state.contextRevision !== contextRevision) {
+      return { reason: "stale-context" };
+    }
+    if (!state.isContextKnown) {
+      return { reason: "unknown-context" };
+    }
+    return { host: entry.host, state };
   }
 }

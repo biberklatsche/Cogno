@@ -1,6 +1,9 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
+import {
+  CommandRunnerResultContract,
+  ProcessPromptHandler,
+} from "@cogno/core/api/command-runner-port";
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { AppWindow } from "@cogno/platform";
@@ -179,11 +182,12 @@ export class GitRepositoryService {
     args: ReadonlyArray<string>,
     timeoutMs = READ_TIMEOUT_MS,
     stdin?: string,
+    onPrompt?: ProcessPromptHandler,
   ): Promise<CommandRunnerResultContract | null> {
     const root = this.rootSignal();
     const session = this.boundSession;
     if (!session || !root) return null;
-    return runGit(session, ["-C", root, ...args], timeoutMs, stdin);
+    return runGit(session, ["-C", root, ...args], timeoutMs, stdin, onPrompt);
   }
 
   /** Run git in the bound session's cwd, without a repository (clone, init). */
@@ -191,10 +195,11 @@ export class GitRepositoryService {
     args: ReadonlyArray<string>,
     timeoutMs: number,
     stdin?: string,
+    onPrompt?: ProcessPromptHandler,
   ): Promise<CommandRunnerResultContract | null> {
     const session = this.boundSession;
     if (!session) return null;
-    return runGit(session, args, timeoutMs, stdin);
+    return runGit(session, args, timeoutMs, stdin, onPrompt);
   }
 
   async loadCommitDetail(sha: string): Promise<GitCommitDetail | null> {
@@ -430,6 +435,7 @@ async function runGit(
   args: ReadonlyArray<string>,
   timeoutMs: number,
   stdin?: string,
+  onPrompt?: ProcessPromptHandler,
 ): Promise<CommandRunnerResultContract | null> {
   const outcome = await session.run({
     executable: "git",
@@ -437,6 +443,7 @@ async function runGit(
     contextRevision: session.contextRevision,
     timeoutMs,
     ...(stdin === undefined ? {} : { stdin }),
+    ...(onPrompt === undefined ? {} : { onPrompt }),
   });
   return outcome.status === "ran" ? outcome.result : null;
 }

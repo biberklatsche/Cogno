@@ -1,39 +1,31 @@
 import { ChangeDetectionStrategy, Component, Inject, signal } from "@angular/core";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
-import { isSecretPrompt, ProcessPrompt } from "./process-prompt";
 
 /**
- * The dialog a process gets instead of a terminal prompt. Confirming answers
- * the process; dismissing refuses the prompt, and the process sees a failed
- * read - git then reports that it could not read the credential.
+ * A process without a terminal asks for something nobody in the workbench
+ * understands: the text as the process printed it and a hidden field. OK
+ * answers, Cancel refuses and the process sees a failed read.
  */
 @Component({
   selector: "app-process-prompt-dialog",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <form class="prompt" (submit)="$event.preventDefault(); confirm()">
-      <pre class="message">{{ data.message }}</pre>
-      @if (data.kind !== "confirm") {
-        <input
-          #field
-          class="field"
-          [type]="secret ? 'password' : 'text'"
-          spellcheck="false"
-          autocomplete="off"
-          autocapitalize="off"
-          [value]="value()"
-          (input)="value.set(field.value)"
-        />
-      }
+    <form class="prompt" (submit)="$event.preventDefault(); dialogRef.close(value())">
+      <pre class="message">{{ text }}</pre>
+      <input
+        #field
+        class="field"
+        type="password"
+        spellcheck="false"
+        autocomplete="off"
+        autocapitalize="off"
+        [value]="value()"
+        (input)="value.set(field.value)"
+      />
       <div class="actions">
-        @if (data.kind === "confirm") {
-          <button type="button" class="button" (click)="dialogRef.close('no')">No</button>
-          <button type="submit" class="button primary">Yes</button>
-        } @else {
-          <button type="button" class="button" (click)="dialogRef.close()">Cancel</button>
-          <button type="submit" class="button primary">OK</button>
-        }
+        <button type="button" class="button" (click)="dialogRef.close()">Cancel</button>
+        <button type="submit" class="button primary">OK</button>
       </div>
     </form>
   `,
@@ -74,19 +66,13 @@ import { isSecretPrompt, ProcessPrompt } from "./process-prompt";
 })
 export class ProcessPromptDialogComponent {
   readonly value = signal("");
-  readonly secret: boolean;
 
   constructor(
     readonly dialogRef: DialogRef<string>,
-    @Inject(DIALOG_DATA) readonly data: ProcessPrompt,
+    @Inject(DIALOG_DATA) readonly text: string,
   ) {
-    this.secret = isSecretPrompt(data.kind);
     queueMicrotask(() =>
       document.querySelector<HTMLInputElement>("app-process-prompt-dialog .field")?.focus(),
     );
-  }
-
-  confirm(): void {
-    this.dialogRef.close(this.data.kind === "confirm" ? "yes" : this.value());
   }
 }

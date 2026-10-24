@@ -1,47 +1,27 @@
-import { DestroyRef, Injectable } from "@angular/core";
-import { AskpassRequest, AskpassRequests } from "@cogno/platform";
-import { DialogRef, DialogService } from "@cogno/shared/ui";
-import { classifyProcessPrompt, ProcessPrompt } from "./process-prompt";
+import { Injectable } from "@angular/core";
+import { ProcessPromptRequest } from "@cogno/core/api/command-runner-port";
+import { DialogService } from "@cogno/shared/ui";
 import { ProcessPromptDialogComponent } from "./process-prompt-dialog.component";
 
 /**
- * Shows the prompts of processes the command runner started in this window
- * (credentials, passphrases, host keys - ARCHITECTURE.md 2.1) and sends the
- * answer back. One dialog per prompt, in the order they arrive.
+ * The prompt dialog for a run whose feature gave no handler of its own
+ * (ARCHITECTURE.md 2.1): the process's text and one hidden field, because the
+ * workbench cannot know whether the answer is a secret. Features that know
+ * their process answer its prompts themselves.
  */
 @Injectable({ providedIn: "root" })
 export class ProcessPromptService {
-  private readonly open = new Map<string, DialogRef<string>>();
+  constructor(private readonly dialogs: DialogService) {}
 
-  constructor(
-    private readonly askpass: AskpassRequests,
-    private readonly dialogs: DialogService,
-    destroyRef: DestroyRef,
-  ) {
-    void askpass
-      .onRequest((request) => this.show(request))
-      .then((unlisten) => destroyRef.onDestroy(unlisten));
-    void askpass
-      .onClosed((requestId) => this.open.get(requestId)?.close())
-      .then((unlisten) => destroyRef.onDestroy(unlisten));
-  }
-
-  private show(request: AskpassRequest): void {
-    const prompt = classifyProcessPrompt(request.prompt);
-    const ref = this.dialogs.open<ProcessPrompt, string>(ProcessPromptDialogComponent, {
+  ask(prompt: ProcessPromptRequest): Promise<string | null> {
+    const ref = this.dialogs.open<string, string>(ProcessPromptDialogComponent, {
       title: "A command asks for input",
-      data: prompt,
+      data: prompt.text,
       closeOnBackdropClick: false,
       width: "32rem",
       maxWidth: "calc(100vw - 2rem)",
     });
-    this.open.set(request.requestId, ref);
-    const close = ref.close.bind(ref);
-    ref.close = (answer?: string) => {
-      if (this.open.delete(request.requestId)) {
-        void this.askpass.answer(request.requestId, answer ?? null);
-      }
-      close(answer);
-    };
+    prompt.closed.addEventListener("abort", () => ref.close(), { once: true });
+    return ref.result.then((answer) => answer ?? null);
   }
 }
