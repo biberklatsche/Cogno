@@ -109,3 +109,6 @@ export type GitRefLabel = {
 
 /** A multi-step operation git stopped in, waiting for the user. */
 export type GitOperation = "merge" | "rebase" | "cherry-pick" | "revert";
+
+/** What "Pull" does: fetch only, or fetch and merge, fast-forward only, or rebase. */
+export type GitPullMode = "fetch" | "merge" | "ff-only" | "rebase";

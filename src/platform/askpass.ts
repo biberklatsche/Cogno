@@ -5,10 +5,12 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 /**
  * A prompt from a process the command runner started: git asking for
  * credentials, ssh for a passphrase or a host key confirmation. `prompt` is
- * the text the process would have printed on a terminal.
+ * the text the process would have printed on a terminal; `sessionId` is the
+ * prompt session the caller named when it started the command.
  */
 export interface AskpassRequest {
   readonly requestId: string;
+  readonly sessionId: string;
   readonly prompt: string;
 }
 

@@ -3,6 +3,7 @@ import type { BoundSession } from "@cogno/core/api/session-api";
 import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { TerminalGatewayService } from "@cogno/core/workbench/api-adapters/terminal-gateway.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
 import {
   type IdentifiedSessionFact,
   TerminalSessionRegistry,
@@ -15,6 +16,7 @@ describe("TerminalGatewayService", () => {
   let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has" | "facts$">;
   let commandRunner: Pick<CommandRunner, "run">;
   let filesystem: Pick<Filesystem, "readTextFile" | "normalizePath">;
+  let processPrompts: Pick<ProcessPromptService, "ask">;
   let sessionFacts: Subject<IdentifiedSessionFact>;
   let service: TerminalGatewayService;
 
@@ -64,11 +66,13 @@ describe("TerminalGatewayService", () => {
       readTextFile: vi.fn().mockResolvedValue("file contents"),
       normalizePath: vi.fn((path: string) => path),
     };
+    processPrompts = { ask: vi.fn().mockResolvedValue(null) };
     service = new TerminalGatewayService(
       appBus,
       terminalSessionRegistry as TerminalSessionRegistry,
       commandRunner as CommandRunner,
       filesystem as Filesystem,
+      processPrompts as ProcessPromptService,
     );
   });
 
@@ -165,6 +169,29 @@ describe("TerminalGatewayService", () => {
       expect(commandRunner.run).not.toHaveBeenCalled();
     });
 
+    it("hands prompts of a run without a handler to the workbench dialog", async () => {
+      bindWith({});
+
+      await service.run({ executable: "git", args: ["push"], contextRevision: 3 }, identity);
+
+      const request = vi.mocked(commandRunner.run).mock.calls[0]?.[0];
+      const prompt = { text: "Password: ", closed: new AbortController().signal };
+      await request?.onPrompt?.(prompt);
+      expect(processPrompts.ask).toHaveBeenCalledWith(prompt);
+    });
+
+    it("hands prompts to the run's own handler when it has one", async () => {
+      bindWith({});
+      const onPrompt = vi.fn().mockResolvedValue("x");
+
+      await service.run(
+        { executable: "git", args: ["push"], contextRevision: 3, onPrompt },
+        identity,
+      );
+
+      expect(vi.mocked(commandRunner.run).mock.calls[0]?.[0].onPrompt).toBe(onPrompt);
+    });
+
     it("rejects when the identity is no longer the bound session", async () => {
       bindWith({});
       appBus.publish({ type: "FocusTerminal", payload: "t2" });
@@ -199,6 +226,7 @@ describe("TerminalGatewayService", () => {
             rootProcess: { processId: 100, name: "bash" },
             descendants: [],
           }),
+          writeRaw: vi.fn(),
           state: {
             shellContext: { shellType: "Bash", backendOs: "linux" },
             cwd: "/workspace",
@@ -241,6 +269,40 @@ describe("TerminalGatewayService", () => {
         shellType: "Bash",
         backendOs: "linux",
       });
+    });
+
+    it("puts text on the input line without running it", async () => {
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      const result = await boundSession.session.insertInput("gh auth login", 7);
+
+      expect(result).toEqual({ status: "inserted" });
+      const host = vi.mocked(terminalSessionRegistry.get).mock.results[0]?.value?.host;
+      expect(host.writeRaw).toHaveBeenCalledWith("gh auth login");
+    });
+
+    it("refuses to insert while a command runs", async () => {
+      const host = vi.mocked(terminalSessionRegistry.get).mock.results[0]?.value?.host;
+      host.state.isCommandRunning = true;
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      const result = await boundSession.session.insertInput("gh auth login", 7);
+
+      expect(result).toEqual({ status: "rejected", reason: "busy" });
+      expect(host.writeRaw).not.toHaveBeenCalled();
+    });
+
+    it("refuses to insert into a stale context", async () => {
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      const result = await boundSession.session.insertInput("gh auth login", 6);
+
+      expect(result).toEqual({ status: "rejected", reason: "stale-context" });
+      const host = vi.mocked(terminalSessionRegistry.get).mock.results[0]?.value?.host;
+      expect(host.writeRaw).not.toHaveBeenCalled();
     });
 
     it("returns the bound session's live process tree", async () => {

@@ -8,12 +8,8 @@ import {
   DialogService,
 } from "@cogno/shared/ui";
 import { GitDiffSource } from "./git-diff.service";
-import {
-  GitOperationOutcome,
-  GitOperationsService,
-  GitPullMode,
-  GitResetMode,
-} from "./git-operations.service";
+import { GitOperationOutcome, GitOperationsService, GitResetMode } from "./git-operations.service";
+import { GitRemoteAccessService } from "./git-remote-access.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitGraphColumn, GitViewState, GitWipFileGroup } from "./git-view-state.service";
 import {
@@ -26,6 +22,7 @@ import {
   GitBranch,
   GitCommit,
   GitFile,
+  GitPullMode,
   GitRefLabel,
   GitRemote,
   GitRemoteBranch,
@@ -67,6 +64,7 @@ export class GitUiActions {
     private readonly contextMenu: ContextMenuOverlayService,
     private readonly clipboard: ClipboardAccess,
     private readonly opener: Opener,
+    private readonly access: GitRemoteAccessService,
   ) {}
 
   // Several branches
@@ -327,6 +325,7 @@ export class GitUiActions {
     this.openMenu(event, [
       item(`Fetch ${remote.name}`, () => this.operations.fetch(remote.name)),
       item("Copy remote URL", () => this.clipboard.writeText(remote.url)),
+      item("Set up access…", () => this.access.open(remote.url)),
       separator(),
       item(`Remove ${remote.name}`, () => this.removeRemote(remote)),
     ]);
@@ -737,7 +736,7 @@ export class GitUiActions {
       width: "32rem",
       maxWidth: "calc(100vw - 2rem)",
     });
-    return whenClosed(ref).then((result) => result ?? false);
+    return ref.result.then((result) => result ?? false);
   }
 
   private chooseBranches(
@@ -747,7 +746,7 @@ export class GitUiActions {
       GitDeleteBranchesDialogComponent,
       { data, width: "36rem", maxWidth: "calc(100vw - 2rem)" },
     );
-    return whenClosed(ref);
+    return ref.result;
   }
 
   private prompt(title: string, data: GitPromptDialogData): Promise<GitPromptResult | undefined> {
@@ -757,7 +756,7 @@ export class GitUiActions {
       width: "32rem",
       maxWidth: "calc(100vw - 2rem)",
     });
-    return whenClosed(ref);
+    return ref.result;
   }
 }
 
@@ -778,15 +777,4 @@ function trimSeparators(items: ContextMenuItem[]): ContextMenuItem[] {
   }
   while (result[result.length - 1]?.separator) result.pop();
   return result;
-}
-
-/** The result a dialog closes with; undefined when dismissed. */
-function whenClosed<T>(ref: { close: (result?: T) => void }): Promise<T | undefined> {
-  return new Promise((resolve) => {
-    const close = ref.close.bind(ref);
-    ref.close = (result?: T) => {
-      resolve(result);
-      close(result);
-    };
-  });
 }

@@ -2,6 +2,7 @@ import type { CommandRunnerResultContract } from "@cogno/core/api/command-runner
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitOperationsService } from "./git-operations.service";
+import type { GitProcessPromptService } from "./git-process-prompt.service";
 import type { GitRepositoryService } from "./git-repository.service";
 
 describe("GitOperationsService", () => {
@@ -12,6 +13,10 @@ describe("GitOperationsService", () => {
   let dispatch: ReturnType<typeof vi.fn>;
   let backendOs: "linux" | "windows";
   let service: GitOperationsService;
+  /** The prompt handler every operation hands git. */
+  const onPrompt = vi.fn();
+  /** Whether the person refused a prompt during the run. */
+  let refused: boolean;
 
   /** The cache helper every network command on macOS and Linux starts with. */
   const CACHE = ["-c", "credential.helper=cache --timeout=3600"];
@@ -23,6 +28,7 @@ describe("GitOperationsService", () => {
     refresh = vi.fn(() => Promise.resolve());
     dispatch = vi.fn();
     backendOs = "linux";
+    refused = false;
     const repository = {
       run,
       runInCwd,
@@ -34,9 +40,13 @@ describe("GitOperationsService", () => {
         tags: [],
       }),
     } as unknown as GitRepositoryService;
-    service = new GitOperationsService(repository, {
-      dispatch,
-    } as unknown as NotificationCenterPort);
+    service = new GitOperationsService(
+      repository,
+      { dispatch } as unknown as NotificationCenterPort,
+      {
+        forRun: () => ({ handler: onPrompt, refused: () => refused }),
+      } as unknown as GitProcessPromptService,
+    );
   });
 
   const argsOfLastRun = () => run.mock.calls.at(-1)?.[0];
@@ -285,6 +295,7 @@ describe("GitOperationsService", () => {
       [...CACHE, "clone", "https://x/y.git", "y"],
       600_000,
       undefined,
+      onPrompt,
     );
     expect(run).not.toHaveBeenCalled();
   });
@@ -304,7 +315,19 @@ describe("GitOperationsService", () => {
       ["apply", "--cached", "--reverse", "--whitespace=nowarn", "--recount", "-"],
       30_000,
       "diff --git a/x b/x\n",
+      onPrompt,
     );
+  });
+
+  it("shows no error for a run whose prompt the person refused", async () => {
+    answer = ran("", 128, "fatal: could not read Username for 'https://github.com'");
+    refused = true;
+
+    const outcome = await service.fetch("origin");
+
+    expect(outcome).toBe("failed");
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalled();
   });
 
   it("explains a timeout instead of showing empty git output", async () => {

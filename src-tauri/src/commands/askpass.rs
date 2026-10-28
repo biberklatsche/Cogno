@@ -1,8 +1,8 @@
 //! Prompts from processes the command runner starts (git, ssh): they get no
 //! terminal, so `GIT_ASKPASS`/`SSH_ASKPASS` point at this binary, which asks
 //! the window that started the command over the HTTP server (`/askpass`) and
-//! prints the answer. One runner session is one running command; its id ties
-//! a prompt to the window that must show the dialog.
+//! prints the answer. One runner session is one running command; the caller
+//! names its id, so the window can hand the prompt to whoever started the run.
 
 use serde::Serialize;
 use std::collections::HashMap;
@@ -21,6 +21,8 @@ pub const CLOSED_EVENT: &str = "askpass-closed";
 #[serde(rename_all = "camelCase")]
 pub struct AskpassRequest {
     pub request_id: String,
+    /// The runner session the caller named when it started the command.
+    pub session_id: String,
     pub prompt: String,
 }
 
@@ -48,14 +50,12 @@ impl AskpassState {
         Self::default()
     }
 
-    /// A command starts in `window`; returns the session id to put in its environment.
-    pub fn open_session(&self, window: &str) -> String {
-        let id = uuid::Uuid::new_v4().simple().to_string();
+    /// A command with the caller's session id starts in `window`.
+    pub fn open_session(&self, session_id: &str, window: &str) {
         self.sessions
             .lock()
             .unwrap()
-            .insert(id.clone(), window.to_string());
-        id
+            .insert(session_id.to_string(), window.to_string());
     }
 
     /// The command ended: prompts still open get no answer and the window closes their dialog.
@@ -112,7 +112,11 @@ impl AskpassState {
         let _ = app.emit_to(
             window.as_str(),
             REQUEST_EVENT,
-            AskpassRequest { request_id, prompt },
+            AskpassRequest {
+                request_id,
+                session_id: session_id.to_string(),
+                prompt,
+            },
         );
         Some(receiver)
     }
@@ -185,7 +189,8 @@ mod tests {
     #[test]
     fn a_session_is_pending_only_while_a_prompt_is_open() {
         let state = AskpassState::new();
-        let session = state.open_session("main");
+        let session = "s1".to_string();
+        state.open_session(&session, "main");
         assert!(!state.has_pending(&session));
         let (sender, _receiver) = oneshot::channel();
         state.pending.lock().unwrap().insert(

@@ -252,14 +252,23 @@ Host-Keys dort abfragen und ohne Terminal abbrechen. Deshalb setzt der
 Runner `GIT_TERMINAL_PROMPT=0` und zeigt `GIT_ASKPASS`/`SSH_ASKPASS` auf das
 Cogno-Binary selbst: mit `COGNO_ASKPASS_SESSION` in der Umgebung arbeitet
 es als Askpass-Helfer (`commands/askpass.rs`), schickt den Prompt-Text mit
-Token an `POST /askpass` und druckt die Antwort. Die Sitzungs-ID bindet den
-Prompt an das Fenster, das den Befehl gestartet hat; dessen Workbench zeigt
-den Dialog (`core/workbench/external/process-prompt.service.ts`) und
-antwortet per `askpass_answer`. Abbrechen heißt „keine Antwort", git meldet
-dann einen fehlgeschlagenen Lesevorgang. Solange ein Prompt offen ist, läuft
-der Timeout des Befehls nicht. Für eine WSL-Distro übersetzt `WSLENV` die
-Pfade. Speichern tut Cogno nichts: das ist Sache der Credential-Helper, die
-git selbst nach einem erfolgreichen Zugriff ruft.
+Token an `POST /askpass` und druckt die Antwort. Die Sitzungs-ID vergibt der
+Aufrufer je Lauf (`CommandRunnerHostService`); das Event trägt sie, und so
+landet der Prompt beim **Lauf, der ihn ausgelöst hat**: `run` nimmt einen
+`onPrompt`-Handler, und das Feature, das git gestartet hat, beantwortet die
+Frage mit seinem eigenen Dialog und seinem eigenen Wissen (das Git-Feature
+liest aus dem Prompt-Text, ob Name, Passwort, Passphrase oder Host-Key
+gefragt ist). Core kennt keinen dieser Prompts: für einen Lauf ohne Handler
+zeigt die Workbench nur den Text und ein maskiertes Feld
+(`core/workbench/external/process-prompt.service.ts`); ein Lauf, der nicht
+über die gebundene Sitzung kam (Autocomplete), lehnt jeden Prompt ab. Die
+Antwort geht per `askpass_answer` zurück. Abbrechen heißt „keine Antwort",
+git meldet dann einen fehlgeschlagenen Lesevorgang; endet der Prozess vorher,
+feuert das `closed`-Signal des Prompts und der Dialog geht zu. Solange ein
+Prompt offen ist, läuft der Timeout des Befehls nicht. Für eine WSL-Distro
+übersetzt `WSLENV` die Pfade. Speichern tut Cogno nichts: das ist Sache der
+Credential-Helper, die git selbst nach einem erfolgreichen Zugriff ruft; das
+Git-Feature erklärt nur, wie man einen einrichtet.
 
 Jeder Kontexteintrag der Zeitachse hat eine **Revision**; `run` und jede
 schreibende API-Operation nennen die Revision, mit der sie geplant wurden,
@@ -490,11 +499,18 @@ Fakt ermittelt, sondern *worüber* er ist:
   Argumentliste: kein Quoting, keine Injection über Pfade mit Leerzeichen
   oder Anführungszeichen, und die Argumente lassen sich vor dem Start
   kontextgerecht übersetzen. Optional bekommt der Prozess `stdin` — einen
-  Patch für `git apply`, nie eine Shell-Eingabe. `contextRevision` ist die Revision des
+  Patch für `git apply`, nie eine Shell-Eingabe — und einen `onPrompt`-Handler
+  für das, was er ohne Terminal fragen würde (2.1). `contextRevision` ist die Revision des
   Kontexteintrags, mit dem das Feature geplant hat; ist sie nicht mehr
   aktuell, lehnt `run` ab statt im falschen Kontext zu laufen. `run` startet einen
   **eigenen, unsichtbaren Prozess** im Kontext der Sitzung (cwd, Env; in
-  einer WSL-Distro über `wsl.exe -d`), nie eine Eingabe in die PTY. In
+  einer WSL-Distro über `wsl.exe -d`), nie eine Eingabe in die PTY. Die
+  einzige Schreibung in die PTY ist `boundSession.insertInput(text,
+  contextRevision)`: sie legt Text auf die Eingabezeile und sendet **nie
+  Enter** — der Nutzer liest den Befehl und führt ihn selbst aus (ein
+  interaktives `gh auth login` kann nur so laufen). Sie prüft dieselben
+  Bedingungen wie `run` und lehnt zusätzlich mit `busy` ab, solange ein
+  Kommando läuft oder ein Vollbildprogramm die Eingabe bekäme. In
   einem Remote- oder unbekannten Kontext gibt es keinen solchen Prozess:
   `run` lehnt ab, das Feature degradiert sichtbar („nicht verfügbar in
   Remote-Sitzung"), statt lokal in einem Pfad zu laufen, der auf dem Host
@@ -1034,7 +1050,7 @@ selbst in `try/catch` rufen.
 | Command-Log langsam oder Schreibfehler | ✅ begrenzte Queue, Verlustzähler, Backoff, einmalige Meldung (`session-command-log.ts`, `command-log.health.ts`) |
 | Gefälschte `COGNO:*`-Sequenz aus Programmausgabe | ✅ `COGNO_SESSION_TOKEN`-Prüfung mit Zähler (`session-model.ts`) |
 | Shell-Kontext wechselt (ssh/wsl/su) ohne Handshake | ✅ unbekannter Kontext in der Kontext-Zeitachse (`session-model.ts`) |
-| Prozess ohne Terminal fragt nach Zugangsdaten (git, ssh) | ✅ Askpass-Dialog im Fenster des Aufrufers; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`askpass.rs`, `process-prompt.service.ts`) |
+| Prozess ohne Terminal fragt nach Zugangsdaten (git, ssh) | ✅ Prompt geht an den `onPrompt`-Handler des Laufs, sonst an den nackten Workbench-Dialog; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`askpass.rs`, `command-runner-host.service.ts`, `process-prompt.service.ts`) |
 
 ### 4.2 Testen
 

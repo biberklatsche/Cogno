@@ -1,11 +1,11 @@
 import { Injectable, signal } from "@angular/core";
 import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import { GitProcessPromptService, GitRunPrompts } from "./git-process-prompt.service";
 import { GitRepositoryService } from "./git-repository.service";
-import { GitBranch, GitOperation, GitRemoteBranch } from "./model/git-model";
+import { GitBranch, GitOperation, GitPullMode, GitRemoteBranch } from "./model/git-model";
 import { isPushRejected } from "./model/git-parsers";
 
-export type GitPullMode = "fetch" | "merge" | "ff-only" | "rebase";
 export type GitResetMode = "soft" | "mixed" | "hard";
 
 /**
@@ -56,6 +56,7 @@ export class GitOperationsService {
   constructor(
     private readonly repository: GitRepositoryService,
     private readonly notifications: NotificationCenterPort,
+    private readonly prompts: GitProcessPromptService,
   ) {}
 
   // Working tree
@@ -465,8 +466,9 @@ export class GitOperationsService {
     errorHeader: string,
   ): Promise<GitOperationOutcome> {
     for (const args of steps) {
-      const result = await this.repository.run(args, LOCAL_TIMEOUT_MS);
-      if (!this.report(result, errorHeader)) {
+      const prompts = this.prompts.forRun();
+      const result = await this.repository.run(args, LOCAL_TIMEOUT_MS, undefined, prompts.handler);
+      if (!this.report(result, errorHeader, prompts)) {
         await this.repository.refresh();
         return "failed";
       }
@@ -481,22 +483,24 @@ export class GitOperationsService {
     options: RunOptions = {},
   ): Promise<GitOperationOutcome> {
     const timeoutMs = options.timeoutMs ?? LOCAL_TIMEOUT_MS;
+    const prompts = this.prompts.forRun();
     const result = options.inCwd
-      ? await this.repository.runInCwd(args, timeoutMs, options.stdin)
-      : await this.repository.run(args, timeoutMs, options.stdin);
+      ? await this.repository.runInCwd(args, timeoutMs, options.stdin, prompts.handler)
+      : await this.repository.run(args, timeoutMs, options.stdin, prompts.handler);
     if (options.refused && result && result.exitCode !== 0 && options.refused(result)) {
       await this.repository.refresh();
       return "rejected";
     }
-    const ok = this.report(result, errorHeader, options.success, options.machineOutput);
+    const ok = this.report(result, errorHeader, prompts, options.success, options.machineOutput);
     await this.repository.refresh();
     return ok ? "ok" : "failed";
   }
 
-  /** Toast the outcome; false when git failed or did not run. */
+  /** Toast the outcome; false when git failed or did not run. `prompts` is the run's, when it could ask. */
   private report(
     result: CommandRunnerResultContract | null,
     errorHeader: string,
+    prompts?: GitRunPrompts,
     success?: string,
     machineOutput = false,
   ): boolean {
@@ -505,6 +509,8 @@ export class GitOperationsService {
       return false;
     }
     if (result.exitCode !== 0) {
+      // The person refused the prompt and is looking at the access dialog now.
+      if (prompts?.refused()) return false;
       const body =
         result.exitCode === 124
           ? "Git did not finish in time. If it waits for credentials, run the command in the terminal once."

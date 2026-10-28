@@ -345,6 +345,9 @@ const WIP_ROW: TreeRow = { kind: "wip" };
         padding: 0 0.35rem;
         border-radius: 3px;
         line-height: 18px;
+        /* A label is clicked, not read: the arrow, and a double click checks out instead of selecting. */
+        cursor: default;
+        user-select: none;
         /* The colored tabs' scheme: the lane colour shows a little on every label, fully on the
            checked-out one, with the same steps on hover. */
         color: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);

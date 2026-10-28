@@ -1,4 +1,7 @@
-import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
+import {
+  CommandRunnerResultContract,
+  ProcessPromptHandler,
+} from "@cogno/core/api/command-runner-port";
 
 /** A command a feature asks to run on the session it is bound to. */
 export interface SessionRunRequest {
@@ -13,6 +16,12 @@ export interface SessionRunRequest {
   readonly timeoutMs?: number;
   /** Written to the process as its standard input, then closed. */
   readonly stdin?: string;
+  /**
+   * Answers what the process asks for without a terminal (credentials, a
+   * passphrase, a host key). Without one the workbench shows a plain dialog
+   * that knows nothing about the process.
+   */
+  readonly onPrompt?: ProcessPromptHandler;
 }
 
 export type SessionRunRejection =
@@ -26,3 +35,13 @@ export type SessionRunRejection =
 export type SessionRunResult =
   | { readonly status: "ran"; readonly result: CommandRunnerResultContract }
   | { readonly status: "rejected"; readonly reason: SessionRunRejection };
+
+export type SessionInsertRejection =
+  | SessionRunRejection
+  /** The shell is not at its prompt: a command or a full-screen program would get the text. */
+  | "busy";
+
+/** `insertInput` put the text on the line, or refused like `run` - or because the shell is busy. */
+export type SessionInsertResult =
+  | { readonly status: "inserted" }
+  | { readonly status: "rejected"; readonly reason: SessionInsertRejection };
