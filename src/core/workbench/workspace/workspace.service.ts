@@ -1,20 +1,12 @@
 import { computed, Injectable, Signal, signal } from "@angular/core";
 import { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
-import {
-  DirectionalNavigationItem,
-  resolveNextNavigationTarget,
-} from "@cogno/core/workbench/workspace/navigation/directional-navigation.engine";
-import { SelectableItemState } from "@cogno/core/workbench/workspace/navigation/selectable-item-state";
-import {
-  SelectableListUseCase,
-  SelectionDirection,
-} from "@cogno/core/workbench/workspace/navigation/selectable-list.use-case";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
+import { nextGridIndex, SelectionDirection } from "./grid-navigation";
 import { WorkspaceEditDialogComponent } from "./workspace-edit-dialog.component";
 import { WorkspaceEntryContract } from "./workspace-entry";
 import { WorkspaceHostApplicationService } from "./workspace-host-application.service";
 
-export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemState<string>;
+export type WorkspaceEntryViewModel = WorkspaceEntryContract & { readonly isSelected: boolean };
 
 /**
  * What the workspace panel talks to. Its own part is the keyboard selection,
@@ -24,7 +16,8 @@ export type WorkspaceEntryViewModel = WorkspaceEntryContract & SelectableItemSta
 @Injectable({ providedIn: "root" })
 export class WorkspaceService {
   private readonly selectedWorkspaceId = signal<string | undefined>(undefined);
-  private navigationItemsProvider?: () => ReadonlyArray<DirectionalNavigationItem<string>>;
+  /** How many tiles the panel lays out per row; the panel knows, the keys don't. */
+  private columnCount: () => number = () => 1;
 
   /** The entries with the selection: the chosen one, else the active, else the first. */
   readonly workspaceEntries: Signal<WorkspaceEntryViewModel[]> = computed(() => {
@@ -43,36 +36,27 @@ export class WorkspaceService {
   ) {}
 
   selectNext(direction: SelectionDirection): void {
-    const entries = SelectableListUseCase.selectNext(
-      this.workspaceEntries(),
-      direction,
-      (activeWorkspaceId, nextDirection) =>
-        resolveNextNavigationTarget({
-          items: this.navigationItemsProvider?.() ?? [],
-          activeId: activeWorkspaceId,
-          direction: nextDirection,
-          wrap: true,
-        }) ?? undefined,
+    const entries = this.workspaceEntries();
+    const index = Math.max(
+      0,
+      entries.findIndex((entry) => entry.isSelected),
     );
-    this.selectedWorkspaceId.set(SelectableListUseCase.getSelectedId(entries));
+    const next = nextGridIndex(index, entries.length, this.columnCount(), direction);
+    this.selectedWorkspaceId.set(entries[next]?.id);
   }
 
-  registerNavigationItemsProvider(
-    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
-  ): void {
-    this.navigationItemsProvider = provider;
+  registerColumnCount(columnCount: () => number): void {
+    this.columnCount = columnCount;
   }
 
-  unregisterNavigationItemsProvider(
-    provider: () => ReadonlyArray<DirectionalNavigationItem<string>>,
-  ): void {
-    if (this.navigationItemsProvider === provider) {
-      this.navigationItemsProvider = undefined;
+  unregisterColumnCount(columnCount: () => number): void {
+    if (this.columnCount === columnCount) {
+      this.columnCount = () => 1;
     }
   }
 
   async restoreSelectedWorkspace(): Promise<void> {
-    const selectedWorkspaceId = SelectableListUseCase.getSelectedId(this.workspaceEntries());
+    const selectedWorkspaceId = this.workspaceEntries().find((entry) => entry.isSelected)?.id;
     if (selectedWorkspaceId) {
       await this.workspaces.restoreWorkspaceById(selectedWorkspaceId);
     }
@@ -120,13 +104,7 @@ export class WorkspaceService {
       width: "32rem",
       maxWidth: "calc(100vw - 2rem)",
     });
-    const confirmed = await new Promise<boolean>((resolve) => {
-      const closeDialog = dialogRef.close.bind(dialogRef);
-      dialogRef.close = (result?: boolean) => {
-        resolve(result ?? false);
-        closeDialog(result);
-      };
-    });
+    const confirmed = (await dialogRef.result) ?? false;
     if (confirmed) {
       await this.workspaces.clearRestoreData();
     }

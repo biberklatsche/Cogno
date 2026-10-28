@@ -12,7 +12,6 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ActionKeybindingPort } from "@cogno/core/infrastructure/keybindings/action-keybinding-port";
 import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import { trackPointerDrag } from "@cogno/core/workbench/drag-preview/pointer-drag";
-import { collectDirectionalNavigationItems } from "@cogno/core/workbench/workspace/navigation/directional-navigation.dom";
 import {
   CopyEditDeleteComponent,
   IconComponent,
@@ -272,8 +271,12 @@ export class WorkspaceSideComponent implements OnDestroy {
   private suppressNextWorkspaceClickTimeoutId: number | undefined;
   private readonly workspaceTileElements =
     viewChildren<ElementRef<HTMLElement>>("workspaceTileElement");
-  private readonly navigationItemsProvider = () =>
-    collectDirectionalNavigationItems(this.workspaceTileElements());
+  /** Tiles per row, read off the layout: every tile that shares the first tile's top edge. */
+  private readonly columnCount = () => {
+    const tiles = this.workspaceTileElements().map((tile) => tile.nativeElement);
+    const firstTop = tiles[0]?.offsetTop;
+    return Math.max(1, tiles.filter((tile) => tile.offsetTop === firstTop).length);
+  };
 
   constructor(
     private readonly workspaceService: WorkspaceService,
@@ -288,9 +291,9 @@ export class WorkspaceSideComponent implements OnDestroy {
         this.restoreEnabledSignal.set(config.terminal?.restore?.enabled ?? true),
       );
     this.workspaceEntries = this.workspaceService.workspaceEntries;
-    this.workspaceService.registerNavigationItemsProvider(this.navigationItemsProvider);
+    this.workspaceService.registerColumnCount(this.columnCount);
     destroyRef.onDestroy(() => {
-      this.workspaceService.unregisterNavigationItemsProvider(this.navigationItemsProvider);
+      this.workspaceService.unregisterColumnCount(this.columnCount);
     });
   }
 

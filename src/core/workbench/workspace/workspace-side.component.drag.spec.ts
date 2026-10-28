@@ -89,8 +89,8 @@ describe("WorkspaceSideComponent drag interaction", () => {
   let component: WorkspaceSideComponent;
   let workspaceService: {
     workspaceEntries: ReturnType<typeof signal>;
-    registerNavigationItemsProvider: ReturnType<typeof vi.fn>;
-    unregisterNavigationItemsProvider: ReturnType<typeof vi.fn>;
+    registerColumnCount: ReturnType<typeof vi.fn>;
+    unregisterColumnCount: ReturnType<typeof vi.fn>;
     reorderWorkspaces: ReturnType<typeof vi.fn>;
     persistWorkspaceOrder: ReturnType<typeof vi.fn>;
     restoreWorkspace: ReturnType<typeof vi.fn>;
@@ -104,8 +104,8 @@ describe("WorkspaceSideComponent drag interaction", () => {
   beforeEach(() => {
     workspaceService = {
       workspaceEntries: signal([]),
-      registerNavigationItemsProvider: vi.fn(),
-      unregisterNavigationItemsProvider: vi.fn(),
+      registerColumnCount: vi.fn(),
+      unregisterColumnCount: vi.fn(),
       reorderWorkspaces: vi.fn().mockResolvedValue(undefined),
       persistWorkspaceOrder: vi.fn().mockResolvedValue(undefined),
       restoreWorkspace: vi.fn().mockResolvedValue(undefined),
