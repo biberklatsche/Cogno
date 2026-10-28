@@ -27,10 +27,10 @@ describe("NotificationSideComponent", () => {
       notificationCenterStateService as NotificationCenterStateService,
     );
 
-    component.remove(1);
+    component.remove("one");
     component.clearAll();
     component.openTarget({
-      id: 1,
+      id: "one",
       header: "Open target",
       type: "info",
       timestamp: new Date(),
@@ -38,14 +38,14 @@ describe("NotificationSideComponent", () => {
       target,
     });
     component.openTarget({
-      id: 2,
+      id: "two",
       header: "Ignore target",
       type: "info",
       timestamp: new Date(),
       count: 1,
     });
 
-    expect(notificationCenterStateService.remove).toHaveBeenCalledWith(1);
+    expect(notificationCenterStateService.remove).toHaveBeenCalledWith("one");
     expect(notificationCenterStateService.clear).toHaveBeenCalledTimes(1);
     expect(notificationCenterStateService.openTarget).toHaveBeenCalledTimes(1);
     expect(notificationCenterStateService.openTarget).toHaveBeenCalledWith(target);
