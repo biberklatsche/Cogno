@@ -3,7 +3,6 @@ import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
 import { defaultWorkspaceIdContract } from "./workspace-entry";
 
 export interface WorkspaceActivationPlan {
-  readonly previousActiveWorkspace?: WorkspaceState;
   readonly shouldRestoreRuntime: boolean;
   readonly workspaceList: WorkspaceState[];
   readonly workspaceToActivate?: WorkspaceState;
@@ -52,18 +51,13 @@ export class WorkspaceStateUseCase {
     const workspaceList = [persistedDefault ?? defaultWorkspace, ...others].map(
       (workspaceConfiguration) => ({
         ...workspaceConfiguration,
-        isSelected: workspaceConfiguration.isActive ?? false,
+        isActive: workspaceConfiguration.isActive ?? false,
         isOpen: false,
-        isDirty: false,
       }),
     );
 
-    if (!workspaceList.find((workspace) => workspace.isSelected) && workspaceList[0]) {
-      workspaceList[0] = {
-        ...workspaceList[0],
-        isSelected: true,
-        isActive: true,
-      };
+    if (!workspaceList.find((workspace) => workspace.isActive) && workspaceList[0]) {
+      workspaceList[0] = { ...workspaceList[0], isActive: true };
     }
 
     return workspaceList;
@@ -73,12 +67,10 @@ export class WorkspaceStateUseCase {
     workspaceList: ReadonlyArray<WorkspaceState>,
     workspaceId: string,
   ): WorkspaceActivationPlan {
-    const previousActiveWorkspace = WorkspaceStateUseCase.getActiveWorkspace(workspaceList);
     const workspaceToActivate = WorkspaceStateUseCase.getWorkspaceById(workspaceList, workspaceId);
 
     if (!workspaceToActivate) {
       return {
-        previousActiveWorkspace,
         shouldRestoreRuntime: false,
         workspaceList: [...workspaceList],
       };
@@ -88,13 +80,11 @@ export class WorkspaceStateUseCase {
     const nextWorkspaceList: WorkspaceState[] = workspaceList.map((workspaceEntry) => ({
       ...workspaceEntry,
       isActive: workspaceEntry.id === workspaceId,
-      isSelected: workspaceEntry.id === workspaceId,
       isOpen: workspaceEntry.id === workspaceId ? true : workspaceEntry.isOpen,
     }));
     const nextWorkspace = WorkspaceStateUseCase.getWorkspaceById(nextWorkspaceList, workspaceId);
 
     return {
-      previousActiveWorkspace,
       shouldRestoreRuntime,
       workspaceList: nextWorkspaceList,
       workspaceToActivate: nextWorkspace,
@@ -111,7 +101,6 @@ export class WorkspaceStateUseCase {
       color: undefined,
       grids: [paneConfiguration],
       tabs: [tabConfiguration],
-      isSelected: true,
       isActive: true,
       isOpen: false,
     };
@@ -136,10 +125,8 @@ export class WorkspaceStateUseCase {
       const nextWorkspaceList = [...workspaceList];
       nextWorkspaceList[existingWorkspaceIndex] = {
         ...workspace,
-        isSelected: nextWorkspaceList[existingWorkspaceIndex].isSelected,
         isActive: nextWorkspaceList[existingWorkspaceIndex].isActive,
         isOpen: nextWorkspaceList[existingWorkspaceIndex].isOpen,
-        isDirty: nextWorkspaceList[existingWorkspaceIndex].isDirty ?? false,
       };
       return {
         wasExisting: true,
@@ -151,7 +138,6 @@ export class WorkspaceStateUseCase {
     const nextWorkspaceList: WorkspaceState[] = workspaceList.map((workspaceEntry) => ({
       ...workspaceEntry,
       isActive: false,
-      isSelected: false,
     }));
     const workspacePosition = nextWorkspaceList.filter(
       (workspaceEntry) => workspaceEntry.id !== defaultWorkspaceIdContract,
@@ -159,10 +145,8 @@ export class WorkspaceStateUseCase {
     const workspaceEntry: WorkspaceState = {
       ...workspace,
       position: workspace.position ?? workspacePosition,
-      isSelected: true,
       isActive: true,
       isOpen: false,
-      isDirty: false,
     };
 
     nextWorkspaceList.push(workspaceEntry);
@@ -238,8 +222,6 @@ export class WorkspaceStateUseCase {
             ...workspaceEntry,
             isOpen: false,
             isActive: false,
-            isSelected: false,
-            isDirty: false,
           },
     );
 
@@ -253,16 +235,6 @@ export class WorkspaceStateUseCase {
         closedWorkspace: workspaceToClose,
         workspaceList: nextWorkspaceList,
         workspaceToActivateId: fallbackWorkspace?.id,
-      };
-    }
-
-    if (
-      !nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isSelected) &&
-      nextWorkspaceList[0]
-    ) {
-      nextWorkspaceList[0] = {
-        ...nextWorkspaceList[0],
-        isSelected: true,
       };
     }
 
@@ -285,16 +257,6 @@ export class WorkspaceStateUseCase {
     const nextWorkspaceList: WorkspaceState[] = workspaceList
       .filter((workspace) => workspace.id !== workspaceId)
       .map((workspace) => ({ ...workspace }));
-
-    if (
-      !nextWorkspaceList.find((workspaceEntry) => workspaceEntry.isSelected) &&
-      nextWorkspaceList[0]
-    ) {
-      nextWorkspaceList[0] = {
-        ...nextWorkspaceList[0],
-        isSelected: true,
-      };
-    }
 
     const workspaceToActivateId = deletedWorkspace.isActive ? nextWorkspaceList[0]?.id : undefined;
     return {

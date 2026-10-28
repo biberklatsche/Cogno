@@ -116,18 +116,22 @@ describe("WorkspaceHostApplicationService", () => {
     vi.restoreAllMocks();
   });
 
+  function entry(id: string) {
+    return service.workspaceEntries().find((workspace) => workspace.id === id);
+  }
+
   it("does not mark a restored workspace dirty for focus and title sync", async () => {
     bus.publish({ type: "DBInitialized" });
 
     await vi.waitFor(() => {
-      expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
+      expect(entry("WS-1")?.isDirty).toBe(false);
     });
 
     const terminalId = getSingleTerminalId(gridListService);
     emitSessionFact(terminalId, { type: "focusChanged", focused: true });
     emitSessionFact(terminalId, { type: "titleChanged", title: "pwsh" });
 
-    expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
+    expect(entry("WS-1")?.isDirty).toBe(false);
   });
 
   it("flags and reports a failed autosave, without throwing, until the next one succeeds", async () => {
@@ -157,7 +161,7 @@ describe("WorkspaceHostApplicationService", () => {
     const terminalId = getSingleTerminalId(gridListService);
     emitSessionFact(terminalId, { type: "cwdReported", cwd: "C:\\other" });
 
-    expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(true);
+    expect(entry("WS-1")?.isDirty).toBe(true);
   });
 
   it("marks a workspace dirty when a tab is added", async () => {
@@ -172,7 +176,7 @@ describe("WorkspaceHostApplicationService", () => {
       payload: { tabId: "T-2", isActive: false, systemTitle: "Shell" },
     });
 
-    expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(true);
+    expect(entry("WS-1")?.isDirty).toBe(true);
   });
 
   it("creates a workspace draft with an empty id and one tab", () => {
@@ -182,7 +186,6 @@ describe("WorkspaceHostApplicationService", () => {
     expect(draft.tabs).toHaveLength(1);
     expect(draft.grids).toHaveLength(1);
     expect(draft.isActive).toBe(true);
-    expect(draft.isSelected).toBe(true);
   });
 
   it("repairs duplicate tab ids across persisted workspaces on startup", async () => {

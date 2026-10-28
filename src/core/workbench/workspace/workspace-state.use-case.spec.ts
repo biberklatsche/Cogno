@@ -23,7 +23,6 @@ describe("WorkspaceStateUseCase", () => {
     );
 
     expect(workspaceList[0].id).toBe(defaultWorkspaceIdContract);
-    expect(workspaceList[0].isSelected).toBe(true);
     expect(workspaceList[0].isActive).toBe(true);
     expect(workspaceList[1].isOpen).toBe(false);
   });
@@ -36,7 +35,6 @@ describe("WorkspaceStateUseCase", () => {
 
     const activationPlan = WorkspaceStateUseCase.activateWorkspace(workspaceList, "WS-1");
 
-    expect(activationPlan.previousActiveWorkspace?.id).toBe(defaultWorkspaceIdContract);
     expect(activationPlan.workspaceToActivate?.id).toBe("WS-1");
     expect(activationPlan.shouldRestoreRuntime).toBe(true);
     expect(activationPlan.workspaceList[1].isActive).toBe(true);
@@ -72,32 +70,27 @@ describe("WorkspaceStateUseCase", () => {
     const activeWorkspaceList = WorkspaceStateUseCase.activateWorkspace(
       initialWorkspaceList,
       "WS-1",
-    ).workspaceList.map((workspace) =>
-      workspace.id === "WS-1" ? { ...workspace, isDirty: true } : workspace,
-    );
+    ).workspaceList;
 
     const closePlan = WorkspaceStateUseCase.closeWorkspace(activeWorkspaceList, "WS-1");
 
     expect(closePlan.closedWorkspace?.id).toBe("WS-1");
     expect(closePlan.workspaceToActivateId).toBe(defaultWorkspaceIdContract);
     expect(closePlan.workspaceList[1].isOpen).toBe(false);
-    expect(closePlan.workspaceList[1].isDirty).toBe(false);
   });
 
   it("deletes the active workspace and resolves the first remaining workspace as fallback", () => {
     const workspaceList = [
       {
         ...defaultWorkspace,
-        isSelected: false,
         isActive: false,
         isOpen: false,
       },
-      { ...persistedWorkspace, id: "WS-1", isSelected: true, isActive: true, isOpen: true },
+      { ...persistedWorkspace, id: "WS-1", isActive: true, isOpen: true },
       {
         ...persistedWorkspace,
         id: "WS-2",
         name: "Project Two",
-        isSelected: false,
         isActive: false,
         isOpen: false,
       },
