@@ -2,10 +2,8 @@ import type { DestroyRef } from "@angular/core";
 import { signal } from "@angular/core";
 import type { SessionApi } from "@cogno/core/api/session-api";
 import type { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { of } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import type { CodingAgentStartupService } from "./coding-agent-startup.service";
 import type { ActiveAgent, CodingAgentStatusService } from "./coding-agent-status.service";
 import { CodingAgentsSideComponent, cardState, countOf } from "./coding-agents-side.component";
@@ -55,9 +53,7 @@ describe("CodingAgentsSideComponent", () => {
         isScanning: signal(false),
       } as unknown as CodingAgentStartupService,
       { activeAgents } as unknown as CodingAgentStatusService,
-      { state: signal({}) } as unknown as CodingAgentNotificationPreferencesService,
       { navigateToTerminal } as unknown as TerminalNavigator,
-      {} as ContextMenuOverlayService,
       { boundSession$: of({ status: "unbound" }) } as unknown as SessionApi,
       { onDestroy: () => () => {} } as unknown as DestroyRef,
     );

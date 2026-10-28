@@ -1,4 +1,7 @@
-import { ApplicationSettingsExtensionContract } from "@cogno/core/api/contributions";
+import {
+  ApplicationSettingsExtensionContract,
+  NotificationSourceContract,
+} from "@cogno/core/api/contributions";
 import { OsType } from "@cogno/platform/os";
 import { z } from "zod";
 import { createConfigSchema } from "./config-schema";
@@ -22,12 +25,14 @@ export class ConfigMapper {
     defaultConfigString: string,
     userConfigString: string,
     settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
+    notificationSources: ReadonlyArray<NotificationSourceContract> = [],
   ): Config {
     return ConfigMapper.fromStringToConfigWithDiagnostics(
       platform,
       defaultConfigString,
       userConfigString,
       settingsExtensions,
+      notificationSources,
     ).config;
   }
 
@@ -36,8 +41,9 @@ export class ConfigMapper {
     defaultConfigString: string,
     userConfigString: string,
     settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
+    notificationSources: ReadonlyArray<NotificationSourceContract> = [],
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
-    const schema = createConfigSchema(settingsExtensions);
+    const schema = createConfigSchema(settingsExtensions, notificationSources);
     const userConfig = ConfigMapper.parseConfigString(userConfigString, schema);
     const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString, schema);
     return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform);
@@ -489,7 +495,11 @@ export class ConfigMapper {
     return undefined;
   }
 
-  private static getSchemaAtDotPath(schema: z.ZodType, dottedPath: string): z.ZodType | undefined {
+  /** The schema of one dotted key in `schema`; undefined when no such key exists. */
+  static getSchemaAtDotPath(
+    schema: z.ZodType | undefined,
+    dottedPath: string,
+  ): z.ZodType | undefined {
     let currentSchema = unwrapZod(schema);
     for (const pathSegment of dottedPath.split(".")) {
       currentSchema = ConfigMapper.getChildSchema(currentSchema, pathSegment);

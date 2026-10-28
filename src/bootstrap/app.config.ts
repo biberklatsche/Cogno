@@ -55,12 +55,14 @@ import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu
 import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
+import { SettingsPanelService } from "@cogno/core/workbench/settings/settings-panel.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { AutocompleteIssueNotifier } from "@cogno/core/workbench/terminal/+state/autocomplete-issue-notifier";
 import { TerminalActionHandlers } from "@cogno/core/workbench/terminal/+state/keybind/terminal-action-handlers";
 import { SessionActionHandlers } from "@cogno/core/workbench/terminal/+state/session-action-handlers";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
+import { UpdaterPanelService } from "@cogno/core/workbench/updater/updater-panel.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
@@ -143,6 +145,8 @@ export const appConfig: ApplicationConfig = {
         eager(HttpMessageAdapterService);
         eager(RunnableActionsPublisher);
         eager(NativeMenuService);
+        eager(SettingsPanelService);
+        eager(UpdaterPanelService);
         eager(WindowService);
         eager(SideMenuStatePersistenceService);
         eager(TerminalSearchApiService);

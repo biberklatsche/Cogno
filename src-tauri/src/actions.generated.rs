@@ -26,8 +26,10 @@ pub const COGNO_ACTIONS: &[(&str, &str)] = &[
     ("new_window", "Open a new Cogno window"),
     ("close_window", "Close the current window"),
     ("minimize_window", "Minimize the current window"),
-    ("open_config", "Open the config file in the default editor"),
-    ("load_config", "Reload the config file without restarting"),
+    ("open_settings", "Open the settings panel"),
+    ("open_updater", "Open the Updates panel"),
+    ("open_config", "Open the settings file in the default editor"),
+    ("load_config", "Reload the settings file without restarting"),
     ("clear_restore_data", "Delete the saved session so that the next launch starts fresh"),
     ("trigger_autocomplete", "Manually trigger autocomplete suggestions"),
     ("trigger_command_history", "Open the command history dropdown"),
@@ -85,5 +87,4 @@ pub const COGNO_ACTIONS: &[(&str, &str)] = &[
     ("open_notification", "Open the Notification panel"),
     ("open_process_info", "Open the Process Info panel"),
     ("open_terminal_search", "Open the Terminal Search panel"),
-    ("open_updater", "Open the Updates panel"),
 ];

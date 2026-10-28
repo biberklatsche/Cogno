@@ -6,7 +6,6 @@ import {
   FeatureNotificationOverviewSchema,
   FeatureProcessInfoSchema,
   FeatureSearchSchema,
-  FeatureUpdaterSchema,
   FeatureWorkspaceSchema,
 } from "@cogno/core/api/contributions";
 import { z } from "zod";
@@ -29,7 +28,6 @@ export const featureSettingsExtensionFixture = {
         git: FeatureGitSchema.optional(),
         process_info: FeatureProcessInfoSchema.optional(),
         coding_agents: FeatureCodingAgentsSchema.optional(),
-        updater: FeatureUpdaterSchema.optional(),
       })
       .optional(),
   },

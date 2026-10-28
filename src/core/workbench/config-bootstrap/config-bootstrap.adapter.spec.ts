@@ -37,6 +37,7 @@ function setup() {
   const shells = { apply: vi.fn(async () => {}) } as unknown as ShellConfigurator;
   const wiring = {
     getSettingsExtensions: vi.fn().mockReturnValue([]),
+    getNotificationSources: vi.fn().mockReturnValue([]),
     getShellSupportDefinitions: vi.fn().mockReturnValue([]),
   } as unknown as FeatureHost;
   const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;

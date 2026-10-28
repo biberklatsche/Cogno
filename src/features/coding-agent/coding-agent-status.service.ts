@@ -1,14 +1,19 @@
 import { computed, DestroyRef, Injectable, Signal, signal } from "@angular/core";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { TerminalPlacement, TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
-import { NotificationTypeContract, TerminalIpcMessage } from "@cogno/shared/domain";
+import {
+  isNotificationEventEnabled,
+  NotificationTypeContract,
+  TerminalIpcMessage,
+} from "@cogno/shared/domain";
 import { filter, map, merge, Subscription } from "rxjs";
 import { AgentStatus } from "./agent-status";
 import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agent-animation";
-import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
+import { CODING_AGENT_NOTIFICATION_SOURCE_ID } from "./coding-agent-notification-source";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { AgentHookEvent, HookDetails } from "./ports";
 import {
@@ -112,7 +117,7 @@ export class CodingAgentStatusService {
     private readonly placement: TerminalPlacementPort,
     destroyRef: DestroyRef,
     private readonly notificationCenterPort: NotificationCenterPort,
-    private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
+    private readonly configuration: ApplicationConfigurationPort,
   ) {
     destroyRef.onDestroy(() => this.stop());
   }
@@ -402,14 +407,18 @@ export class CodingAgentStatusService {
   }
 
   private notifyStatusChanged(providerName: string, status: AgentStatus): void {
-    if (!this.notificationPreferences.shouldNotify(status)) return;
+    const enabled = isNotificationEventEnabled(
+      this.configuration.getConfiguration(),
+      CODING_AGENT_NOTIFICATION_SOURCE_ID,
+      status,
+    );
+    if (!enabled) return;
 
     this.notificationCenterPort.dispatch({
       header: STATUS_NOTIFICATION_HEADERS[status],
       body: providerName || undefined,
       type: this.getNotificationType(status),
       timestamp: new Date(),
-      channels: this.notificationPreferences.getActiveChannels(),
     });
   }
 

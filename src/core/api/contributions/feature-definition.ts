@@ -1,6 +1,7 @@
 import { FeatureModeContract, NotificationChannelContract } from "@cogno/shared/domain";
 import { ApplicationSettingsExtensionContract } from "./application-settings-extension";
 import { DatabaseMigrationContract } from "./database-migration";
+import { NotificationSourceContract } from "./notification-source";
 import { SideMenuFeatureDefinitionContract } from "./side-menu-feature-definition";
 
 /**
@@ -46,4 +47,6 @@ export interface FeatureDefinition<TActionName = string> {
   readonly settings?: ApplicationSettingsExtensionContract;
   /** Additional notification channels. */
   readonly notificationChannels?: ReadonlyArray<NotificationChannelContract>;
+  /** What the feature notifies about; core composes `notification.source.<id>` from it. */
+  readonly notificationSources?: ReadonlyArray<NotificationSourceContract>;
 }

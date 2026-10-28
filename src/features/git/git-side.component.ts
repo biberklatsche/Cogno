@@ -169,6 +169,7 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
     GIT_SHARED_STYLES,
     `
       :host {
+        font-size: var(--panel-font-size);
         display: flex;
         flex-direction: column;
         height: 100%;

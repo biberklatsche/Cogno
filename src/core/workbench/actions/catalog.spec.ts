@@ -3,7 +3,7 @@ import { actionLabel, coreActionCatalog } from "./catalog";
 
 describe("actionLabel", () => {
   it("is the catalog label of a core action", () => {
-    expect(actionLabel("open_config")).toBe("Settings");
+    expect(actionLabel("open_settings")).toBe("Settings");
     expect(actionLabel("split_right")).toBe("Split Right");
   });
 

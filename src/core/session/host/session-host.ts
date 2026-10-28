@@ -212,9 +212,7 @@ export class SessionHost {
     historyStore: TerminalCommandHistoryStore,
     recorder: CommandRecorder,
   ) {
-    this.model = new SessionModel(this.os.platform(), historyStore, recorder, () =>
-      this.isUnreadBadgeEnabled(),
-    );
+    this.model = new SessionModel(this.os.platform(), historyStore, recorder);
     this.pty = new Pty(ptyTransport, environment.isDevMode());
     this.renderer = new Renderer(
       toTerminalMachineOptions(this.configService.config),
@@ -362,9 +360,6 @@ export class SessionHost {
     this.subscription.add(
       this.configService.config$.subscribe((config) => {
         this.renderer.setOptions(toTerminalMachineOptions(config));
-        if (!this.isUnreadBadgeEnabled()) {
-          this.model.clearUnreadNotification();
-        }
         this.resizeSoon();
       }),
     );
@@ -965,10 +960,6 @@ export class SessionHost {
     if (this.configService.config.scrollbar?.scroll_on_user_input ?? true) {
       this.renderer.terminal.scrollToBottom();
     }
-  }
-
-  private isUnreadBadgeEnabled(): boolean {
-    return this.configService.config.terminal?.notifications?.unread_badge ?? true;
   }
 }
 

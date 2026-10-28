@@ -3,6 +3,7 @@ import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { ConfigMapper } from "./config.mapper";
 import { featureSettingsExtensionFixture } from "./feature-settings.extension.fixture";
+import { notificationSourcesFixture } from "./notification-sources.fixture";
 
 type FeatureSettings = {
   git?: { mode?: string };
@@ -12,13 +13,14 @@ type FeatureSettings = {
 };
 
 const extensions = [featureSettingsExtensionFixture];
+const sources = notificationSourcesFixture;
 let defaultText = "";
 let DEFAULTS: any;
 
 beforeAll(() => {
   const p = path.join(process.cwd(), "src-tauri", "src", "default_windows.config");
   defaultText = fs.readFileSync(p, "utf-8");
-  DEFAULTS = ConfigMapper.fromStringToConfig("linux", defaultText, "", extensions);
+  DEFAULTS = ConfigMapper.fromStringToConfig("linux", defaultText, "", extensions, sources);
 });
 
 describe("ConfigMapper", () => {
@@ -36,7 +38,7 @@ describe("ConfigMapper", () => {
       keybind=Ctrl+5=run5
     `;
 
-    const parsed = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
+    const parsed = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
 
     // Basic values
     expect(parsed.terminal?.webgl).toBe(true);
@@ -57,7 +59,13 @@ describe("ConfigMapper", () => {
       terminal.webgl=true
     `;
 
-    const settings = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
+    const settings = ConfigMapper.fromStringToConfig(
+      "linux",
+      defaultText,
+      text,
+      extensions,
+      sources,
+    );
 
     // Override applied
     expect(settings.terminal?.webgl).toBe(true);
@@ -76,6 +84,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
     expect(result.diagnostics.length).toBeGreaterThan(0);
     expect(result.diagnostics.some((d) => d.level === "error")).toBe(true);
@@ -92,6 +101,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
     expect(result.config.font?.size).toBe(13);
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
@@ -109,6 +119,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     // Only the two unknown keys are dropped; nothing falls back to the defaults.
@@ -131,6 +142,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect(result.diagnostics).toEqual([]);
@@ -148,7 +160,7 @@ describe("ConfigMapper", () => {
       keybind=Ctrl+5=custom1
       keybind=Ctrl+6=custom2
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
 
     // User keybinds should be appended to defaults
     const defaultKeybindCount = DEFAULTS.keybind.length;
@@ -169,7 +181,7 @@ describe("ConfigMapper", () => {
       shell.profiles.default.path=/bin/test
       shell.profiles.default.args=[--custom,--args]
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
 
     // Shell args should be replaced, not concatenated with defaults
     expect(config.shell?.profiles["default"]?.args).toEqual(["--custom", "--args"]);
@@ -183,7 +195,7 @@ describe("ConfigMapper", () => {
       shell.profiles.default.path=/bin/test
       shell.profiles.default.args=[]
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
 
     // Empty array should be [], not [undefined]
     expect(config.shell?.profiles["default"]?.args).toEqual([]);
@@ -194,7 +206,7 @@ describe("ConfigMapper", () => {
     const text = `
       font.family=monospace
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
 
     // Font should have fallbacks added
     expect(config.font?.family).toContain("monospace");
@@ -206,7 +218,7 @@ describe("ConfigMapper", () => {
     const text = `
       font.family=Fira Code
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions);
+    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
 
     // Font name with spaces should be preserved without quotes
     expect(config.font?.family).toMatch(/^Fira Code,/);
@@ -220,9 +232,9 @@ describe("ConfigMapper", () => {
       notification.channel.app.duration_seconds=7
       notification.channel.os.available=true
       notification.channel.os.enabled=false
-      terminal.notifications.unread_badge=false
-      terminal.notifications.long_running_command.enabled=true
-      terminal.notifications.long_running_command.minimum_duration_seconds=15
+      notification.channel.badge.enabled=false
+      notification.source.terminal.long_running_command.enabled=true
+      notification.source.terminal.long_running_command.minimum_duration_seconds=15
       feature.notification_overview.overview.max_items=42
     `;
     const result = ConfigMapper.fromStringToConfigWithDiagnostics(
@@ -230,6 +242,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect(result.diagnostics.length).toBe(0);
@@ -238,11 +251,11 @@ describe("ConfigMapper", () => {
     expect(result.config.notification?.channel?.app?.duration_seconds).toBe(7);
     expect(result.config.notification?.channel?.os?.available).toBe(true);
     expect(result.config.notification?.channel?.os?.enabled).toBe(false);
-    expect(result.config.terminal?.notifications?.unread_badge).toBe(false);
-    expect(result.config.terminal?.notifications?.long_running_command?.enabled).toBe(true);
-    expect(
-      result.config.terminal?.notifications?.long_running_command?.minimum_duration_seconds,
-    ).toBe(15);
+    expect(result.config.notification?.channel?.badge?.enabled).toBe(false);
+    expect(result.config.notification?.source?.["terminal"]?.["long_running_command"]).toEqual({
+      enabled: true,
+      minimum_duration_seconds: 15,
+    });
     expect(
       (result.config["feature"] as FeatureSettings | undefined)?.notification_overview?.overview
         ?.max_items,
@@ -259,6 +272,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect(result.diagnostics.length).toBe(0);
@@ -280,6 +294,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect(result.diagnostics.length).toBe(0);
@@ -302,6 +317,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect(result.diagnostics).toEqual([]);
@@ -326,6 +342,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect(result.diagnostics.length).toBe(0);
@@ -349,7 +366,13 @@ describe("ConfigMapper", () => {
     `;
 
     expect(() =>
-      ConfigMapper.fromStringToConfigWithDiagnostics("linux", defaultText, text, extensions),
+      ConfigMapper.fromStringToConfigWithDiagnostics(
+        "linux",
+        defaultText,
+        text,
+        extensions,
+        sources,
+      ),
     ).not.toThrow();
 
     const result = ConfigMapper.fromStringToConfigWithDiagnostics(
@@ -357,12 +380,13 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
     // Stale keys are stripped, not applied — the bundled feature.*/notification.* defaults win instead.
     expect((result.config["feature"] as FeatureSettings | undefined)?.git?.mode).toBe("on");
-    expect(result.config.notification?.exception?.handled?.enabled).toBe(false);
+    expect(result.config.notification?.source?.["errors"]?.["handled"]?.enabled).toBe(false);
     expect(result.config.notification?.channel?.app?.enabled).toBe(true);
   });
 
@@ -377,6 +401,7 @@ describe("ConfigMapper", () => {
       defaultText,
       text,
       extensions,
+      sources,
     );
 
     expect((result.config["feature"] as FeatureSettings | undefined)?.git?.mode).toBe("on");

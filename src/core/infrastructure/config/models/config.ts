@@ -14,6 +14,7 @@ import { ScrollbarSchema } from "./scrollbar-config";
 import { SelectionSchema } from "./selection-config";
 import { ShellConfigSchema, ShellType } from "./shell-config";
 import { TerminalSettingsSchema } from "./terminal-settings";
+import { UpdaterSettingsSchema } from "./updater-settings";
 
 export { Color, ShellType };
 
@@ -52,6 +53,7 @@ export const baseConfigSchemaShape = {
   notification: NotificationSettingsSchema.optional().describe("Which events notify you, and how."),
   terminal: TerminalSettingsSchema.optional().describe("Terminal rendering and behaviour."),
   autocomplete: AutocompleteSettingsSchema.optional().describe("Command autocomplete behaviour."),
+  updater: UpdaterSettingsSchema.optional().describe("How Cogno keeps itself up to date."),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z
