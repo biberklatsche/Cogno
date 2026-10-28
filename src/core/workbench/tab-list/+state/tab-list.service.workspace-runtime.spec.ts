@@ -46,12 +46,12 @@ describe("TabListService workspace runtime", () => {
   }
 
   it("keeps the tabs per workspace", () => {
-    service.addTab(tab("t1"), true);
+    service.addTab(tab("t1"));
 
     service.activateWorkspace("ws-2");
     expect(tabs).toEqual([]);
 
-    service.addTab(tab("t2"), true);
+    service.addTab(tab("t2"));
     expect(tabIds()).toEqual(["t2"]);
     expect(service.getTabConfigs(defaultWorkspaceIdContract).map((c) => c.tabId)).toEqual(["t1"]);
 
@@ -60,10 +60,10 @@ describe("TabListService workspace runtime", () => {
   });
 
   it("removes a tab of a workspace that is not shown, and names its next active tab", () => {
-    service.addTab(tab("t1"), true);
-    service.addTab(tab("t2", false), true);
+    service.addTab(tab("t1"));
+    service.addTab(tab("t2", false));
     service.activateWorkspace("ws-2");
-    service.addTab(tab("t3"), true);
+    service.addTab(tab("t3"));
     let removed: string | undefined;
     bus.on$("TabRemoved").subscribe((event) => (removed = event.payload));
 
@@ -77,7 +77,7 @@ describe("TabListService workspace runtime", () => {
   });
 
   it("renames a tab of a workspace that is not shown", () => {
-    service.addTab(tab("t1"), true);
+    service.addTab(tab("t1"));
     service.activateWorkspace("ws-2");
 
     bus.publish({ type: "ChangeTabTitle", payload: { tabId: "t1", title: "vim" } });
@@ -86,7 +86,7 @@ describe("TabListService workspace runtime", () => {
   });
 
   it("closes an open rename when a workspace is activated", () => {
-    service.addTab(tab("t1"), true);
+    service.addTab(tab("t1"));
     service
       .buildContextMenu("t1")
       .find((item) => item.label === "Rename tab")
@@ -99,20 +99,18 @@ describe("TabListService workspace runtime", () => {
   });
 
   it("removes the active workspace: the stream empties and writes are refused", () => {
-    service.addTab(tab("t1"), true);
+    service.addTab(tab("t1"));
 
     service.removeWorkspaceRuntime(defaultWorkspaceIdContract);
 
     expect(tabs).toEqual([]);
-    expect(() => service.addTab(tab("t2"), true)).toThrow(
-      "No active workspace found for tab list.",
-    );
+    expect(() => service.addTab(tab("t2"))).toThrow("No active workspace found for tab list.");
     service.activateWorkspace(defaultWorkspaceIdContract);
     expect(tabs).toEqual([]);
   });
 
   it("restores and removes an inactive workspace without touching the active one", () => {
-    service.addTab(tab("t1"), true);
+    service.addTab(tab("t1"));
     let emissions = 0;
     service.tabs$.subscribe(() => emissions++);
     emissions = 0;
@@ -129,7 +127,7 @@ describe("TabListService workspace runtime", () => {
 
   it("is not affected by a caller changing a tab after handing it over", () => {
     const handedOver = tab("t1");
-    service.addTab(handedOver, true);
+    service.addTab(handedOver);
 
     handedOver.systemTitle = "changed afterwards";
 
@@ -138,7 +136,7 @@ describe("TabListService workspace runtime", () => {
   });
 
   it("emits a new list on every write", () => {
-    service.addTab(tab("t1"), true);
+    service.addTab(tab("t1"));
     const before = tabs;
 
     service.setColor("t1", "blue");
