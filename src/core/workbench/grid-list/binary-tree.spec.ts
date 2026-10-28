@@ -197,6 +197,41 @@ describe("BinaryTree", () => {
     expect(tree.getPreviousLeaf("lr")?.key).toEqual("ll");
   });
 
+  it("should walk an unbalanced tree in leaf order and wrap at both ends", () => {
+    const tree = new BinaryTree();
+    tree.add(undefined, "r");
+    tree.add("r", "r");
+    tree.add("rr", "r");
+    /*
+           b
+         /  \
+        l    b
+            / \
+           l   b
+              / \
+             l   l
+    */
+    expect(tree.find((node) => node.isLeaf).map((node) => node.key)).toEqual([
+      "l",
+      "rl",
+      "rrl",
+      "rrr",
+    ]);
+    expect(tree.getNextLeaf("l")?.key).toEqual("rl");
+    expect(tree.getNextLeaf("rl")?.key).toEqual("rrl");
+    expect(tree.getNextLeaf("rrl")?.key).toEqual("rrr");
+    expect(tree.getNextLeaf("rrr")?.key).toEqual("l");
+    expect(tree.getPreviousLeaf("l")?.key).toEqual("rrr");
+    expect(tree.getPreviousLeaf("rrr")?.key).toEqual("rrl");
+    expect(tree.getPreviousLeaf("rl")?.key).toEqual("l");
+  });
+
+  it("should return undefined for an unknown leaf key", () => {
+    const tree = new BinaryTree();
+    tree.add(undefined, "r");
+    expect(tree.getNextLeaf("rr")).toBeUndefined();
+  });
+
   it("should find nodes", () => {
     const tree = new BinaryTree<string>();
     tree.root.data = "1";

@@ -91,7 +91,6 @@ pub fn run(cli: Cli) {
             crate::commands::pty::pty_resize,
             crate::commands::pty::pty_kill,
             crate::commands::pty::pty_ack,
-            crate::commands::pty::pty_ack_received,
             crate::commands::processes::pty_get_process_tree_by_terminal_id,
             crate::commands::environment::get_exe_dir,
             crate::commands::environment::get_cogno_home_dir,
