@@ -13,7 +13,6 @@ export class Environment {
   private homeDir = "";
   private configFile = "";
   private dbFile = "";
-  private exeDir = "";
 
   constructor(private readonly paths: Paths) {}
 
@@ -22,7 +21,6 @@ export class Environment {
     Logger.info("Initializing environment");
     const devMode = isDevMode();
     this.homeDir = await this.paths.cognoHomeDir(devMode);
-    this.exeDir = await this.paths.exeDir();
     this.dbFile = await this.paths.cognoDbFilePath(devMode);
     this.configFile = await this.paths.cognoConfigFilePath(devMode);
     Logger.info(`Loaded ${this.homeDir}`);
@@ -44,11 +42,6 @@ export class Environment {
    */
   legacyDatabaseFilePath(): string {
     return this.dbFile;
-  }
-
-  /** Returns the full path to the executable */
-  exeDirPath(): string {
-    return this.exeDir;
   }
 
   /** Returns whether we're in dev mode */

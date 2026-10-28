@@ -1,4 +1,4 @@
-import type { CommandRunnerContract } from "@cogno/core/api/command-runner-port";
+import type { CommandRunner } from "@cogno/core/api/command-runner-port";
 import type { QueryContext } from "@cogno/core/session/autocomplete/suggestor.contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandListSpecProvider } from "./command-list.spec-provider";
@@ -18,7 +18,7 @@ function commandContext(beforeCursor: string): QueryContext {
 }
 
 describe("CommandListSpecProvider", () => {
-  let commandRunner: CommandRunnerContract;
+  let commandRunner: CommandRunner;
 
   beforeEach(() => {
     commandRunner = {

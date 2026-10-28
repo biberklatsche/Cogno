@@ -43,12 +43,13 @@ export interface DatabaseOpenReport {
 }
 
 /**
- * The application database lives in the Rust process behind a single
- * connection. `batch` runs every statement in one transaction — the only
- * way to group statements atomically, so a transaction can never be left
- * open between calls.
+ * SQL access to the application database, which lives in the Rust process
+ * behind a single connection. Statements passed to `batch` run in one
+ * transaction — all of them take effect or none does. There is deliberately
+ * no way to hold a transaction open across calls.
  */
-export const Database = {
+@Injectable({ providedIn: "root" })
+export class DatabaseAccess {
   open(
     devMode: boolean,
     migrations: ReadonlyArray<DatabaseMigration>,
@@ -59,49 +60,21 @@ export const Database = {
       migrations,
       legacyPath: legacyPath ?? null,
     });
-  },
+  }
 
-  execute(statement: DatabaseStatement): Promise<DatabaseExecuteResult> {
-    return invoke<DatabaseExecuteResult>("db_execute", { statement });
-  },
-
-  select<T = unknown>(statement: DatabaseStatement): Promise<T[]> {
-    return invoke<T[]>("db_select", { statement });
-  },
-
-  batch(statements: ReadonlyArray<DatabaseStatement>): Promise<DatabaseExecuteResult[]> {
-    return invoke<DatabaseExecuteResult[]>("db_batch", { statements });
-  },
-};
-
-export type DatabaseStatementContract = DatabaseStatement;
-
-/**
- * SQL access to the application database. Statements passed to `batch` run
- * in one transaction — all of them take effect or none does. There is
- * deliberately no way to hold a transaction open across calls.
- */
-export interface DatabaseAccessContract {
-  execute(query: string, parameters?: ReadonlyArray<unknown>): Promise<DatabaseExecuteResult>;
-  select<T = unknown>(query: string, parameters?: ReadonlyArray<unknown>): Promise<T>;
-  batch(
-    statements: ReadonlyArray<DatabaseStatement>,
-  ): Promise<ReadonlyArray<DatabaseExecuteResult>>;
-}
-
-@Injectable({ providedIn: "root" })
-export class DatabaseAccess implements DatabaseAccessContract {
   execute(query: string, parameters?: ReadonlyArray<unknown>): Promise<DatabaseExecuteResult> {
-    return Database.execute({ sql: query, params: parameters });
+    return invoke<DatabaseExecuteResult>("db_execute", {
+      statement: { sql: query, params: parameters },
+    });
   }
 
   select<T = unknown>(query: string, parameters?: ReadonlyArray<unknown>): Promise<T> {
-    return Database.select({ sql: query, params: parameters }) as Promise<T>;
+    return invoke<T>("db_select", { statement: { sql: query, params: parameters } });
   }
 
   batch(
     statements: ReadonlyArray<DatabaseStatement>,
   ): Promise<ReadonlyArray<DatabaseExecuteResult>> {
-    return Database.batch(statements);
+    return invoke<DatabaseExecuteResult[]>("db_batch", { statements });
   }
 }

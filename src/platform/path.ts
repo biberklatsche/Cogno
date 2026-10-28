@@ -20,10 +20,6 @@ export class Paths {
     return tauriHomeDir();
   }
 
-  exeDir(): Promise<string> {
-    return invoke<string>("get_exe_dir");
-  }
-
   cognoHomeDir(devMode: boolean): Promise<string> {
     return invoke<string>("get_cogno_home_dir", { devMode });
   }

@@ -5,7 +5,7 @@ import {
   PersistedTabConfigurationContract,
   WorkspaceIdentifierContract,
 } from "@cogno/core/workbench/grid-layout";
-import { DatabaseAccess, DatabaseStatementContract } from "@cogno/platform";
+import { DatabaseAccess, DatabaseStatement } from "@cogno/platform";
 import { WorkspaceConfiguration, WorkspaceTerminalSession } from "./workspace.model";
 
 interface WorkspaceEntity {
@@ -250,9 +250,7 @@ export class WorkspaceRepository {
     }));
   }
 
-  private layoutStatements(
-    workspaceConfiguration: WorkspaceConfiguration,
-  ): DatabaseStatementContract[] {
+  private layoutStatements(workspaceConfiguration: WorkspaceConfiguration): DatabaseStatement[] {
     return [
       ...workspaceConfiguration.tabs.map((tabConfiguration, position) =>
         this.insertTabStatement(workspaceConfiguration.id, tabConfiguration, position),
@@ -267,7 +265,7 @@ export class WorkspaceRepository {
     workspaceId: WorkspaceIdentifierContract,
     tabConfiguration: PersistedTabConfigurationContract,
     position: number,
-  ): DatabaseStatementContract {
+  ): DatabaseStatement {
     return {
       sql: "INSERT INTO workspace_tab (workspace_id, tab_id, is_active, color, system_title, user_title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
       params: [
@@ -285,7 +283,7 @@ export class WorkspaceRepository {
   private insertGridStatement(
     workspaceId: WorkspaceIdentifierContract,
     gridConfiguration: PersistedGridConfigurationContract,
-  ): DatabaseStatementContract {
+  ): DatabaseStatement {
     return {
       sql: "INSERT INTO workspace_grid (workspace_id, tab_id, pane_json) VALUES (?, ?, ?)",
       params: [workspaceId, gridConfiguration.tabId, JSON.stringify(gridConfiguration.pane)],

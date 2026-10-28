@@ -3,7 +3,7 @@ import { ApplicationConfigurationPort } from "@cogno/core/api/application-config
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { OsPlatform } from "@cogno/platform";
-import { CodingAgentConfirmDialogService } from "./coding-agent-confirm-dialog.service";
+import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 
 export type InstalledProviderEntry = {
@@ -36,7 +36,7 @@ export class CodingAgentStartupService {
 
   constructor(
     private readonly registry: CodingAgentProviderRegistry,
-    private readonly confirmDialog: CodingAgentConfirmDialogService,
+    private readonly dialogs: DialogService,
     private readonly configPort: ApplicationConfigurationPort,
     private readonly osPort: OsPlatform,
     private readonly notificationCenterPort: NotificationCenterPort,
@@ -149,12 +149,15 @@ export class CodingAgentStartupService {
 
   private async offerHookInstallation(needsHooks: ICodingAgentProvider[]): Promise<void> {
     const names = needsHooks.map((p) => p.name).join(", ");
-    const confirmed = await this.confirmDialog
-      .confirm(
-        "Coding agents found",
-        `${names} ${needsHooks.length === 1 ? "was" : "were"} found. Install hooks to monitor agent status?`,
-      )
-      .catch(() => false);
+    const ref = this.dialogs.open<ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+      title: "Coding agents found",
+      data: {
+        message: `${names} ${needsHooks.length === 1 ? "was" : "were"} found. Install hooks to monitor agent status?`,
+      },
+      width: "32rem",
+      maxWidth: "calc(100vw - 2rem)",
+    });
+    const confirmed = (await ref.result) ?? false;
 
     if (!confirmed) {
       for (const provider of needsHooks) this.rememberDecision(provider, "declined");

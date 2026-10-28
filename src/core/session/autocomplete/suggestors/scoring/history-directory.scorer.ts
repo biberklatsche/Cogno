@@ -1,5 +1,6 @@
 import { DirectoryHistoryRow } from "@cogno/core/command-log/command-log.api";
 import { tokenMatchQuality } from "../../token-match";
+import { recencyDecay, safeAge, sat } from "./decay";
 
 const DIR_SCORING = {
   weights: {
@@ -49,15 +50,15 @@ export class HistoryDirectoryScorer {
       tokenQualities.length > 0
         ? tokenQualities.reduce((a, b) => a + b, 0) / tokenQualities.length
         : 0;
-    const hitCountScore = HistoryDirectoryScorer.sat(tokenHits, DIR_SCORING.saturation.hitCount);
-    const selectScore = HistoryDirectoryScorer.sat(row.selectCount, DIR_SCORING.saturation.select);
-    const visitScore = HistoryDirectoryScorer.sat(row.visitCount, DIR_SCORING.saturation.visit);
-    const recencyVisitScore = HistoryDirectoryScorer.recencyDecay(
-      HistoryDirectoryScorer.safeAge(now, row.lastVisitAt),
+    const hitCountScore = sat(tokenHits, DIR_SCORING.saturation.hitCount);
+    const selectScore = sat(row.selectCount, DIR_SCORING.saturation.select);
+    const visitScore = sat(row.visitCount, DIR_SCORING.saturation.visit);
+    const recencyVisitScore = recencyDecay(
+      safeAge(now, row.lastVisitAt),
       DIR_SCORING.halfLifeMs.visit,
     );
-    const recencySelectScore = HistoryDirectoryScorer.recencyDecay(
-      HistoryDirectoryScorer.safeAge(now, row.lastSelectAt),
+    const recencySelectScore = recencyDecay(
+      safeAge(now, row.lastSelectAt),
       DIR_SCORING.halfLifeMs.select,
     );
 
@@ -83,20 +84,5 @@ export class HistoryDirectoryScorer {
       idx = found + needle.length;
     }
     return count;
-  }
-
-  private static sat(value: number, k: number): number {
-    if (value <= 0) return 0;
-    return value / (value + k);
-  }
-
-  private static safeAge(now: number, ts?: number): number {
-    if (!ts || !Number.isFinite(ts) || ts <= 0) return Number.POSITIVE_INFINITY;
-    return Math.max(0, now - ts);
-  }
-
-  private static recencyDecay(ageMs: number, halfLifeMs: number): number {
-    if (!Number.isFinite(ageMs) || ageMs < 0 || halfLifeMs <= 0) return 0;
-    return Math.exp(-Math.LN2 * (ageMs / halfLifeMs));
   }
 }

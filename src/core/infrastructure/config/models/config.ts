@@ -12,11 +12,10 @@ import { PaddingSchema } from "./padding-config";
 import { PromptConfigSchema } from "./prompt-config";
 import { ScrollbarSchema } from "./scrollbar-config";
 import { SelectionSchema } from "./selection-config";
-import { FeatureMode } from "./shared";
 import { ShellConfigSchema, ShellType } from "./shell-config";
 import { TerminalSettingsSchema } from "./terminal-settings";
 
-export { Color, FeatureMode, ShellType };
+export { Color, ShellType };
 
 export const HTTP_SERVER_DEFAULTS = {
   enabled: true,

@@ -1,4 +1,4 @@
-import { CommandRunnerContract } from "@cogno/core/api/command-runner-port";
+import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 import { CommandListSpecProvider } from "./command-list.spec-provider";
 
@@ -6,7 +6,7 @@ export class GitBranchesSpecProvider implements SpecSuggestionProvider {
   readonly id = "git-branches";
   private readonly delegate: CommandListSpecProvider;
 
-  constructor(commandRunner: CommandRunnerContract) {
+  constructor(commandRunner: CommandRunner) {
     this.delegate = new CommandListSpecProvider(commandRunner);
   }
 

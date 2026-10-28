@@ -4,6 +4,10 @@ import {
   AutocompleteSuggestionContract,
   TerminalAutocompleteSuggestorContract,
 } from "@cogno/core/session/autocomplete/suggestor.contracts";
+import {
+  AutocompleteTimeoutError,
+  withTimeout,
+} from "@cogno/core/session/autocomplete/with-timeout";
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { CommandSpecSource } from "./spec/command-spec.source";
 import {
@@ -68,13 +72,6 @@ type TraverseState = {
 };
 
 const ROOT_NAME = "__root__";
-
-class SpecProviderTimeoutError extends Error {
-  constructor(readonly timeoutMs: number) {
-    super(`Provider did not respond within ${timeoutMs}ms.`);
-    this.name = "SpecProviderTimeoutError";
-  }
-}
 
 function namesOf(name: string | string[]): string[] {
   return Array.isArray(name) ? name : [name];
@@ -445,7 +442,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
   ): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
     const timeoutMs = this.resolveProviderTimeoutMs();
     try {
-      return await this.withProviderTimeout(
+      return await withTimeout(
         provider.suggest({
           queryContext: context,
           command,
@@ -462,7 +459,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
   }
 
   private reportProviderIssue(providerId: string, command: string, error: unknown): void {
-    if (error instanceof SpecProviderTimeoutError) {
+    if (error instanceof AutocompleteTimeoutError) {
       return;
     }
 
@@ -472,18 +469,6 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       command,
       message: this.errorMessage(error),
     });
-  }
-
-  private async withProviderTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(() => reject(new SpecProviderTimeoutError(timeoutMs)), timeoutMs);
-    });
-    try {
-      return await Promise.race([promise, timeoutPromise]);
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-    }
   }
 
   private errorMessage(error: unknown): string {

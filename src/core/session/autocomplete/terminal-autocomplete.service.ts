@@ -20,6 +20,7 @@ import { CommandPatternSuggestor } from "./suggestors/command-pattern.suggestor"
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
+import { AutocompleteTimeoutError, withTimeout } from "./with-timeout";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
@@ -47,13 +48,6 @@ const INITIAL_VIEW_STATE: AutocompleteViewState = {
   selectedIndex: null,
   suggestions: [],
 };
-
-class AutocompleteSuggestorTimeoutError extends Error {
-  constructor(readonly timeoutMs: number) {
-    super(`Provider did not respond within ${timeoutMs}ms.`);
-    this.name = "AutocompleteSuggestorTimeoutError";
-  }
-}
 
 @Injectable()
 export class TerminalAutocompleteService implements OnDestroy {
@@ -376,9 +370,9 @@ export class TerminalAutocompleteService implements OnDestroy {
     void suggestionsPromise.then(release, release);
 
     try {
-      return await this.withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
+      return await withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
     } catch (reason) {
-      if (!(reason instanceof AutocompleteSuggestorTimeoutError)) {
+      if (!(reason instanceof AutocompleteTimeoutError)) {
         this.notifySuggestorIssue(suggestor, reason, context);
       }
       return [];
@@ -704,21 +698,6 @@ export class TerminalAutocompleteService implements OnDestroy {
 
   private takeVisibleOwnership(): void {
     this.dropdownCoordinator.claim(this);
-  }
-
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(
-        () => reject(new AutocompleteSuggestorTimeoutError(timeoutMs)),
-        timeoutMs,
-      );
-    });
-    try {
-      return await Promise.race([promise, timeoutPromise]);
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-    }
   }
 
   /** A suggestor's `matches` must not take the panel down; a throw means "no match". */

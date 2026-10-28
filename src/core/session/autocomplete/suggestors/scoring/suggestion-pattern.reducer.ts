@@ -3,6 +3,7 @@ import {
   CommandPatternSlotStatistics,
 } from "@cogno/core/command-log/command-pattern.models";
 import { AutocompleteSuggestion, QueryContext } from "../../autocomplete.types";
+import { recencyDecay, safeAge } from "./decay";
 import { HistoryCommandScorer } from "./history-command.scorer";
 
 const PATTERN_RULES = {
@@ -161,35 +162,11 @@ export class SuggestionPatternReducer {
   }
 
   private calculatePatternAgePenalty(pattern: CommandPattern, now: number): number {
-    const patternAgeInMilliseconds = this.safeAge(now, pattern.lastSeenAt);
-    const freshness = this.calculateHalfLifeDecay(
-      patternAgeInMilliseconds,
+    const freshness = recencyDecay(
+      safeAge(now, pattern.lastSeenAt),
       PATTERN_RULES.patternAgeHalfLifeMs,
     );
 
     return (1 - freshness) * PATTERN_RULES.stalePatternMaxPenalty;
-  }
-
-  private calculateHalfLifeDecay(
-    ageInMilliseconds: number,
-    halfLifeInMilliseconds: number,
-  ): number {
-    if (
-      !Number.isFinite(ageInMilliseconds) ||
-      ageInMilliseconds < 0 ||
-      halfLifeInMilliseconds <= 0
-    ) {
-      return 0;
-    }
-
-    return Math.exp(-Math.LN2 * (ageInMilliseconds / halfLifeInMilliseconds));
-  }
-
-  private safeAge(now: number, timestamp?: number): number {
-    if (!timestamp || !Number.isFinite(timestamp) || timestamp <= 0) {
-      return Number.POSITIVE_INFINITY;
-    }
-
-    return Math.max(0, now - timestamp);
   }
 }

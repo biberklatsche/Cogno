@@ -1,5 +1,5 @@
+import { hexColorSchema } from "@cogno/core/api/contributions";
 import { z } from "zod";
-import { HexColorSchema } from "./shared";
 
 export const ScrollbarSchema = z.strictObject({
   width: z
@@ -8,14 +8,14 @@ export const ScrollbarSchema = z.strictObject({
     .min(0, "Cursor-With must be at least 0")
     .optional()
     .describe("Scrollbar width in pixels; 0 hides it."),
-  overview_ruler_border_color: HexColorSchema.optional().describe(
-    "Border color of the overview ruler next to the scrollbar.",
-  ),
-  slider_color: HexColorSchema.optional().describe("Scrollbar slider color."),
-  slider_hover_color: HexColorSchema.optional().describe("Scrollbar slider color while hovered."),
-  slider_active_color: HexColorSchema.optional().describe(
-    "Scrollbar slider color while being dragged.",
-  ),
+  overview_ruler_border_color: hexColorSchema
+    .optional()
+    .describe("Border color of the overview ruler next to the scrollbar."),
+  slider_color: hexColorSchema.optional().describe("Scrollbar slider color."),
+  slider_hover_color: hexColorSchema.optional().describe("Scrollbar slider color while hovered."),
+  slider_active_color: hexColorSchema
+    .optional()
+    .describe("Scrollbar slider color while being dragged."),
   sensitivity: z
     .number()
     .int()

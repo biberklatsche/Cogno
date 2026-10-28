@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
-import { NotificationCenterPortContract } from "@cogno/core/api/notification-center-port";
+import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationEventPayloadContract, NotificationTargetContract } from "@cogno/shared/domain";
 import { map, Observable } from "rxjs";
 
 @Injectable({ providedIn: "root" })
-export class NotificationCenterPortAdapterService implements NotificationCenterPortContract {
+export class NotificationCenterPortAdapterService implements NotificationCenterPort {
   readonly notificationEvents$: Observable<NotificationEventPayloadContract>;
 
   constructor(private readonly appBus: AppBus) {

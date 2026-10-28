@@ -1,13 +1,6 @@
 use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
 use std::path::PathBuf;
 
-#[tauri::command]
-pub fn get_exe_dir() -> Result<String, String> {
-    let p = std::env::current_exe().map_err(|e| e.to_string())?;
-    let dir = p.parent().ok_or("no parent dir")?;
-    Ok(dir.display().to_string())
-}
-
 /// Returns the Cogno home directory path based on the active mode.
 #[tauri::command]
 pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {

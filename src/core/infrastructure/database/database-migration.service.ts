@@ -3,7 +3,7 @@ import {
   buildDatabaseMigrationIdentifier,
   DatabaseMigrationContract,
 } from "@cogno/core/api/contributions";
-import { Database, DatabaseOpenReport } from "@cogno/platform/database";
+import { DatabaseAccess, DatabaseOpenReport } from "@cogno/platform/database";
 
 /**
  * Collects the migrations contributed by app and features and hands
@@ -13,6 +13,8 @@ import { Database, DatabaseOpenReport } from "@cogno/platform/database";
 @Injectable({ providedIn: "root" })
 export class DatabaseMigrationService {
   private readonly registeredFeatureMigrations: DatabaseMigrationContract[] = [];
+
+  constructor(private readonly databaseAccess: DatabaseAccess) {}
 
   registerFeatureMigrations(databaseMigrations: ReadonlyArray<DatabaseMigrationContract>): void {
     this.registeredFeatureMigrations.push(...databaseMigrations);
@@ -40,6 +42,6 @@ export class DatabaseMigrationService {
       return { id, sql: databaseMigration.sql, usesLegacy: databaseMigration.usesLegacy ?? false };
     });
 
-    return Database.open(devMode, migrations, legacyDatabasePath);
+    return this.databaseAccess.open(devMode, migrations, legacyDatabasePath);
   }
 }

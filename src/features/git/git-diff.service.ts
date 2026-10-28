@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { detectGitDiffLanguage, GitDiffLanguageLoader } from "./git-diff-languages";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitFile } from "./model/git-model";
 import { GitPatch, parseGitPatch } from "./model/git-patch";
@@ -6,7 +7,8 @@ import { GitPatch, parseGitPatch } from "./model/git-patch";
 export type GitDiffContent = {
   readonly original: string;
   readonly modified: string;
-  readonly language: string;
+  /** How to highlight the file; undefined for plain text. */
+  readonly language: GitDiffLanguageLoader | undefined;
 };
 
 /** Where a file's two sides come from. */
@@ -97,112 +99,4 @@ export class GitDiffService {
 function truncate(content: string): string {
   if (content.length <= TRUNCATE_THRESHOLD_BYTES) return content;
   return `${content.slice(0, TRUNCATE_THRESHOLD_BYTES)}\n\n[... truncated — file too large ...]`;
-}
-
-function detectGitDiffLanguage(filePath: string): string {
-  const filename = (filePath.split("/").pop() ?? filePath).toLowerCase();
-
-  const filenameMap: Record<string, string> = {
-    dockerfile: "dockerfile",
-    "nginx.conf": "nginx",
-    gemfile: "ruby",
-    rakefile: "ruby",
-    vagrantfile: "ruby",
-    ".bashrc": "shell",
-    ".zshrc": "shell",
-    ".bash_profile": "shell",
-    ".zprofile": "shell",
-    ".profile": "shell",
-  };
-  if (filenameMap[filename]) return filenameMap[filename];
-
-  const ext = filename.split(".").pop() ?? "";
-  const map: Record<string, string> = {
-    // TypeScript / JavaScript
-    ts: "typescript",
-    tsx: "typescript",
-    mts: "typescript",
-    cts: "typescript",
-    js: "javascript",
-    jsx: "javascript",
-    mjs: "javascript",
-    cjs: "javascript",
-    // Web
-    html: "html",
-    htm: "html",
-    css: "css",
-    scss: "scss",
-    less: "css",
-    vue: "vue",
-    xml: "xml",
-    svg: "xml",
-    xhtml: "xml",
-    xsd: "xml",
-    // Data / Config
-    json: "json",
-    yaml: "yaml",
-    yml: "yaml",
-    toml: "toml",
-    sql: "sql",
-    // Docs
-    md: "markdown",
-    mdx: "markdown",
-    // Systems
-    rs: "rust",
-    go: "go",
-    cpp: "cpp",
-    cc: "cpp",
-    cxx: "cpp",
-    c: "cpp",
-    h: "cpp",
-    hpp: "cpp",
-    hxx: "cpp",
-    cs: "csharp",
-    java: "java",
-    kt: "kotlin",
-    kts: "kotlin",
-    scala: "scala",
-    sc: "scala",
-    swift: "swift",
-    m: "objectivec",
-    mm: "objectivecpp",
-    // Scripting
-    py: "python",
-    rb: "ruby",
-    rake: "ruby",
-    gemspec: "ruby",
-    lua: "lua",
-    pl: "perl",
-    pm: "perl",
-    php: "php",
-    phtml: "php",
-    // Shell
-    sh: "shell",
-    bash: "shell",
-    zsh: "shell",
-    fish: "shell",
-    ps1: "powershell",
-    psm1: "powershell",
-    psd1: "powershell",
-    // Functional / Other
-    hs: "haskell",
-    lhs: "haskell",
-    dart: "dart",
-    r: "r",
-    jl: "julia",
-    elm: "elm",
-    clj: "clojure",
-    cljs: "clojure",
-    cljc: "clojure",
-    erl: "erlang",
-    hrl: "erlang",
-    ml: "ocaml",
-    mli: "ocaml",
-    groovy: "groovy",
-    gradle: "groovy",
-    coffee: "coffeescript",
-    cr: "crystal",
-    proto: "protobuf",
-  };
-  return map[ext] ?? "text";
 }

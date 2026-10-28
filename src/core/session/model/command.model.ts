@@ -3,7 +3,6 @@ export type CommandData = Record<string, string>;
 
 export class Command {
   private data: CommandData = {};
-  public isInViewport: boolean = false;
   public isFirstCommandOutOfViewport: boolean = false;
 
   constructor(
@@ -61,10 +60,6 @@ export class Command {
 
   get id(): string {
     return this._id;
-  }
-
-  get(key: string): string | undefined {
-    return this.data[key];
   }
 
   set(key: string, value: string): void {

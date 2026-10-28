@@ -2,6 +2,7 @@ import type { CommandRunnerResultContract } from "@cogno/core/api/command-runner
 import type { BoundSessionHandle } from "@cogno/core/api/session-api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitDiffService } from "./git-diff.service";
+import { detectGitDiffLanguage } from "./git-diff-languages";
 import type { GitRepositoryService } from "./git-repository.service";
 import { GitFile } from "./model/git-model";
 
@@ -41,7 +42,7 @@ describe("GitDiffService", () => {
     expect(diff).toEqual({
       original: "blob :0:src/a.ts",
       modified: "working tree",
-      language: "typescript",
+      language: detectGitDiffLanguage("a.ts"),
     });
     expect(readTextFile).toHaveBeenCalledWith("/normalized/c/repo/src/a.ts");
   });

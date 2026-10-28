@@ -1,4 +1,4 @@
-import { DatabaseAccessContract, DatabaseStatementContract } from "@cogno/platform";
+import { DatabaseAccess, DatabaseStatement } from "@cogno/platform";
 import {
   IPathAdapter,
   isWslShellContext,
@@ -86,13 +86,13 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
   );
 
   private constructor(
-    private readonly database: DatabaseAccessContract,
+    private readonly database: DatabaseAccess,
     private readonly contextId: number,
     private readonly adapter: IPathAdapter,
   ) {}
 
   static async createForContext(
-    database: DatabaseAccessContract,
+    database: DatabaseAccess,
     shellContext: ResolvedShellContextContract,
     adapter: IPathAdapter,
   ): Promise<CommandLogRepository> {
@@ -146,7 +146,7 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     if (!cwd) return;
     const ts = nowMs();
 
-    const statements: DatabaseStatementContract[] = [
+    const statements: DatabaseStatement[] = [
       ...this.ensurePathStatements(cwd),
       this.ensureCommandStatement(command, ts),
       {
@@ -270,7 +270,7 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
       const batch = valid.slice(offset, offset + BULK_IMPORT_BATCH_SIZE);
       await this.database.batch([
         ...this.ensurePathStatements(cwd),
-        ...batch.flatMap((entry): DatabaseStatementContract[] => {
+        ...batch.flatMap((entry): DatabaseStatement[] => {
           const command = entry.command.trim();
           return [
             this.ensureCommandStatement(command, entry.timestamp),
@@ -477,7 +477,7 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     const ts = nowMs();
     const signatureKey = occurrence.signature.key;
 
-    const slotValueStatements = originalCommands.flatMap((cmd): DatabaseStatementContract[] => {
+    const slotValueStatements = originalCommands.flatMap((cmd): DatabaseStatement[] => {
       const cmdOccurrence = this.commandPatternAnalyzer.analyzeCommand(cmd.trim());
       if (!cmdOccurrence || cmdOccurrence.signature.key !== signatureKey) return [];
       return cmdOccurrence.slotValues.map((slotValue) => ({
@@ -559,7 +559,7 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
    * Inserts the directory and every ancestor, root first, so parent ids can
    * be resolved by subselect within the same batch.
    */
-  private ensurePathStatements(cwd: string): DatabaseStatementContract[] {
+  private ensurePathStatements(cwd: string): DatabaseStatement[] {
     const chain: PathSegment[] = [];
     const seen = new Set<string>();
     let current: string | null = cwd;
@@ -585,7 +585,7 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     }));
   }
 
-  private ensureCommandStatement(command: string, ts: number): DatabaseStatementContract {
+  private ensureCommandStatement(command: string, ts: number): DatabaseStatement {
     return {
       sql: "INSERT OR IGNORE INTO command (command_text, created_at) VALUES (?, ?)",
       params: [command, ts],

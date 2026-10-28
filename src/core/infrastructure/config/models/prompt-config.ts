@@ -1,5 +1,6 @@
+import { hexColorSchema } from "@cogno/core/api/contributions";
 import { z } from "zod";
-import { HexColorSchema, TerminalNamedColorSchema } from "./shared";
+import { TerminalNamedColorSchema } from "./shared";
 
 /**
  * Recommendation:
@@ -27,7 +28,7 @@ import { HexColorSchema, TerminalNamedColorSchema } from "./shared";
  */
 
 /* ----------------------------- colors ----------------------------- */
-const PromptColorSchema = z.union([TerminalNamedColorSchema, HexColorSchema]);
+const PromptColorSchema = z.union([TerminalNamedColorSchema, hexColorSchema]);
 
 /* ---------------------------- segments ---------------------------- */
 

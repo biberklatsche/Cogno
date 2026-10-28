@@ -4,10 +4,6 @@ export interface NotificationChannelOptionContract {
   readonly defaultEnabled: boolean;
 }
 
-export interface NotificationChannelsPortContract {
-  getAvailableChannels(): ReadonlyArray<NotificationChannelOptionContract>;
-}
-
-export abstract class NotificationChannelsPort implements NotificationChannelsPortContract {
+export abstract class NotificationChannelsPort {
   abstract getAvailableChannels(): ReadonlyArray<NotificationChannelOptionContract>;
 }

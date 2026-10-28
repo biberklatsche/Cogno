@@ -21,7 +21,6 @@ import {
   defaultSettings,
   platformSettingOverrides,
 } from "../src/core/infrastructure/config/models/default-config-values";
-import { HexColorSchema } from "../src/core/infrastructure/config/models/shared";
 import { defaultFeatureSettingsExtension } from "../src/features/feature-settings-extension";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
@@ -137,7 +136,7 @@ function numberType(def: Def): string {
 function isHexColor(schema: ZodLike | undefined): boolean {
   let current = schema;
   for (let guard = 0; guard < 10 && current; guard++) {
-    if (current === HexColorSchema || current === hexColorSchema) return true;
+    if (current === hexColorSchema) return true;
     const def = defOf(current);
     if (def?.type !== "optional" && def?.type !== "nullable" && def?.type !== "default") break;
     current = def.innerType;

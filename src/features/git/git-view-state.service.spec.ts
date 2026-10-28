@@ -1,18 +1,34 @@
-import { signal } from "@angular/core";
+import { provideZonelessChangeDetection, signal } from "@angular/core";
+import { TestBed } from "@angular/core/testing";
+import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { GitRepositoryService } from "./git-repository.service";
 import { GitViewState } from "./git-view-state.service";
+
+TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
 describe("GitViewState", () => {
   let changeCount: ReturnType<typeof signal<number>>;
   let head: ReturnType<typeof signal<{ sha: string | null; branch: string | null }>>;
   let view: GitViewState;
 
+  const create = () =>
+    TestBed.runInInjectionContext(
+      () => new GitViewState({ changeCount, head } as unknown as GitRepositoryService),
+    );
+
+  /** What a restart finds in storage: the last arrangement, written once the effect ran. */
+  const restart = () => {
+    TestBed.tick();
+    return create();
+  };
+
   beforeEach(() => {
     window.localStorage.clear();
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
     changeCount = signal(2);
     head = signal({ sha: "abc123", branch: "main" });
-    view = new GitViewState({ changeCount, head } as unknown as GitRepositoryService);
+    view = create();
   });
 
   it("shows the work in progress row and selects it while there are changes", () => {
@@ -56,7 +72,7 @@ describe("GitViewState", () => {
     view.diffMode.set("split");
     view.refsVisible.set(false);
 
-    const restarted = new GitViewState({ changeCount, head } as unknown as GitRepositoryService);
+    const restarted = restart();
 
     expect([...restarted.hiddenColumns()]).toEqual(["sha", "date"]);
     expect(restarted.columnWidths()).toEqual({ author: 200 });
@@ -69,9 +85,26 @@ describe("GitViewState", () => {
     view.select({ kind: "commit", sha: "def456" });
     view.diffMode.set("unified");
 
-    const restarted = new GitViewState({ changeCount, head } as unknown as GitRepositoryService);
+    const restarted = restart();
 
     expect(restarted.selection()).toEqual({ kind: "wip" });
     expect(restarted.diff()).toBeNull();
+  });
+
+  it("writes the arrangement when it changes, not on a selection, a diff or marks", () => {
+    TestBed.tick();
+    window.localStorage.setItem("cogno.git.view", "untouched");
+
+    view.select({ kind: "commit", sha: "def456" });
+    view.openDiff({ kind: "unstaged", file: { path: "a.ts", status: "M", isDirectory: false } });
+    view.localMarks.names.set(new Set(["main"]));
+    TestBed.tick();
+    expect(window.localStorage.getItem("cogno.git.view")).toBe("untouched");
+
+    view.pullMode.set("rebase");
+    TestBed.tick();
+    expect(JSON.parse(window.localStorage.getItem("cogno.git.view") ?? "{}")).toMatchObject({
+      pullMode: "rebase",
+    });
   });
 });

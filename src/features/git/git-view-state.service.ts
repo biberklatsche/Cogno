@@ -1,4 +1,4 @@
-import { computed, Injectable, signal, WritableSignal } from "@angular/core";
+import { computed, effect, Injectable, signal } from "@angular/core";
 import { GitDiffSource } from "./git-diff.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitHostId } from "./hosts/_shared/git-host";
@@ -70,33 +70,33 @@ export class GitViewState {
   /** The open diff; while set, it takes the graph's place. */
   readonly diff = signal<GitDiffSource | null>(null);
   private readonly stored = readStored();
-  readonly diffMode = this.persistent<GitDiffMode>(this.stored.diffMode ?? "hunks");
-  readonly fileListMode = this.persistent<GitFileListMode>(this.stored.fileListMode ?? "path");
-  readonly refsVisible = this.persistent(this.stored.refsVisible ?? true);
+  readonly diffMode = signal<GitDiffMode>(this.stored.diffMode ?? "hunks");
+  readonly fileListMode = signal<GitFileListMode>(this.stored.fileListMode ?? "path");
+  readonly refsVisible = signal(this.stored.refsVisible ?? true);
   /** What the Pull button does; chosen in its menu, as in GitKraken. */
-  readonly pullMode = this.persistent<GitPullMode>(this.stored.pullMode ?? "merge");
+  readonly pullMode = signal<GitPullMode>(this.stored.pullMode ?? "merge");
   /** Column widths the user dragged, in pixels; a column not listed has its default. */
-  readonly columnWidths = this.persistent<Readonly<Partial<Record<GitGraphColumn, number>>>>(
+  readonly columnWidths = signal<Readonly<Partial<Record<GitGraphColumn, number>>>>(
     this.stored.columnWidths ?? {},
   );
   /** Columns the user switched off; the message column cannot be. */
-  readonly hiddenColumns = this.persistent<ReadonlySet<GitGraphColumn>>(
+  readonly hiddenColumns = signal<ReadonlySet<GitGraphColumn>>(
     new Set(this.stored.hiddenColumns ?? []),
   );
   /** Side panel widths the user dragged, in pixels; a panel not listed has its default. */
-  readonly panelWidths = this.persistent<Readonly<Partial<Record<GitSidePanel, number>>>>(
+  readonly panelWidths = signal<Readonly<Partial<Record<GitSidePanel, number>>>>(
     this.stored.panelWidths ?? {},
   );
   /** The refs panel sections the user folded. */
-  readonly closedSections = this.persistent<ReadonlySet<GitRefsSection>>(
+  readonly closedSections = signal<ReadonlySet<GitRefsSection>>(
     new Set(this.stored.closedSections ?? []),
   );
   /** The file groups of the work-in-progress panel the user folded. */
-  readonly closedWipGroups = this.persistent<ReadonlySet<GitWipFileGroup>>(
+  readonly closedWipGroups = signal<ReadonlySet<GitWipFileGroup>>(
     new Set(this.stored.closedWipGroups ?? []),
   );
   /** What the user said is behind a host nobody can tell (a self-hosted instance). */
-  readonly hosts = this.persistent<Readonly<Record<string, GitHostId>>>(this.stored.hosts ?? {});
+  readonly hosts = signal<Readonly<Record<string, GitHostId>>>(this.stored.hosts ?? {});
   /** The commit a new branch is being named at, inline in its graph row. */
   readonly newBranchAt = signal<string | null>(null);
   /** A commit the graph should scroll to; cleared by the graph once it did. */
@@ -105,7 +105,10 @@ export class GitViewState {
   readonly localMarks = new GitRowMarks();
   readonly remoteMarks = new GitRowMarks();
 
-  constructor(private readonly repository: GitRepositoryService) {}
+  constructor(private readonly repository: GitRepositoryService) {
+    // Every change to the arrangement is written to storage; save() reads exactly what it stores.
+    effect(() => this.save());
+  }
 
   select(selection: GitSelection): void {
     this.chosen.set(selection);
@@ -133,22 +136,6 @@ export class GitViewState {
 
   closeDiff(): void {
     this.diff.set(null);
-  }
-
-  /** A signal whose every change is written to storage along with the other persistent ones. */
-  private persistent<T>(initial: T): WritableSignal<T> {
-    const inner = signal<T>(initial);
-    const set = inner.set;
-    const update = inner.update;
-    inner.set = (value) => {
-      set.call(inner, value);
-      this.save();
-    };
-    inner.update = (fn) => {
-      update.call(inner, fn);
-      this.save();
-    };
-    return inner;
   }
 
   private save(): void {

@@ -1,5 +1,6 @@
 import { CommandHistoryRow } from "@cogno/core/command-log/command-log.api";
 import { tokenMatchQuality } from "../../token-match";
+import { recencyDecay, safeAge, sat } from "./decay";
 
 const SCORING = {
   weights: {
@@ -91,43 +92,25 @@ export class HistoryCommandScorer {
     }, 0);
     // No upper cap — multi-match pushes textScore above 1.0, which is intentional.
     const textScore = idfSum > 0 ? textContrib.reduce((a, b) => a + b, 0) / idfSum : 0;
-    const cwdScore = HistoryCommandScorer.sat(
-      row.cwdExecCount + 1.5 * row.cwdSelectCount,
-      SCORING.saturation.cwd,
-    );
-    const selectScore = HistoryCommandScorer.sat(row.selectCount, SCORING.saturation.select);
-    const execScore = HistoryCommandScorer.sat(row.execCount, SCORING.saturation.exec);
+    const cwdScore = sat(row.cwdExecCount + 1.5 * row.cwdSelectCount, SCORING.saturation.cwd);
+    const selectScore = sat(row.selectCount, SCORING.saturation.select);
+    const execScore = sat(row.execCount, SCORING.saturation.exec);
     const recencySelectScore = Math.max(
-      HistoryCommandScorer.recencyDecay(
-        HistoryCommandScorer.safeAge(now, row.lastSelectAt),
-        SCORING.halfLifeMs.select,
-      ),
-      HistoryCommandScorer.recencyDecay(
-        HistoryCommandScorer.safeAge(now, row.cwdLastSelectAt),
-        SCORING.halfLifeMs.select,
-      ),
+      recencyDecay(safeAge(now, row.lastSelectAt), SCORING.halfLifeMs.select),
+      recencyDecay(safeAge(now, row.cwdLastSelectAt), SCORING.halfLifeMs.select),
     );
     const recencyExecScore = Math.max(
-      HistoryCommandScorer.recencyDecay(
-        HistoryCommandScorer.safeAge(now, row.lastExecAt),
-        SCORING.halfLifeMs.exec,
-      ),
-      HistoryCommandScorer.recencyDecay(
-        HistoryCommandScorer.safeAge(now, row.cwdLastExecAt),
-        SCORING.halfLifeMs.exec,
-      ),
+      recencyDecay(safeAge(now, row.lastExecAt), SCORING.halfLifeMs.exec),
+      recencyDecay(safeAge(now, row.cwdLastExecAt), SCORING.halfLifeMs.exec),
     );
     const transitionProbabilityScore = HistoryCommandScorer.transitionProbability(
       row.transitionCount,
       row.outgoingTransitionCount,
       corpusSize,
     );
-    const transitionCountScore = HistoryCommandScorer.sat(
-      row.transitionCount,
-      SCORING.saturation.transition,
-    );
-    const transitionRecencyScore = HistoryCommandScorer.recencyDecay(
-      HistoryCommandScorer.safeAge(now, row.lastTransitionAt),
+    const transitionCountScore = sat(row.transitionCount, SCORING.saturation.transition);
+    const transitionRecencyScore = recencyDecay(
+      safeAge(now, row.lastTransitionAt),
       SCORING.halfLifeMs.transition,
     );
     const blended =
@@ -148,10 +131,7 @@ export class HistoryCommandScorer {
     const currentCwdRecencyBonus =
       row.cwdExecCount > 0
         ? SCORING.currentCwdRecencyBonus *
-          HistoryCommandScorer.recencyDecay(
-            HistoryCommandScorer.safeAge(now, currentCwdRecency),
-            SCORING.halfLifeMs.cwd,
-          )
+          recencyDecay(safeAge(now, currentCwdRecency), SCORING.halfLifeMs.cwd)
         : 0;
     const currentCwdBonus = row.cwdExecCount > 0 ? SCORING.currentCwdBonus : 0;
     const currentCwdSelectionBonus = row.cwdSelectCount > 0 ? SCORING.currentCwdSelectionBonus : 0;
@@ -163,11 +143,6 @@ export class HistoryCommandScorer {
       currentCwdSelectionBonus +
       currentCwdRecencyBonus
     );
-  }
-
-  private static sat(value: number, k: number): number {
-    if (value <= 0) return 0;
-    return value / (value + k);
   }
 
   private static transitionProbability(
@@ -187,15 +162,5 @@ export class HistoryCommandScorer {
     }
 
     return smoothedNumerator / smoothedDenominator;
-  }
-
-  private static recencyDecay(ageMs: number, halfLifeMs: number): number {
-    if (!Number.isFinite(ageMs) || ageMs < 0 || halfLifeMs <= 0) return 0;
-    return Math.exp(-Math.LN2 * (ageMs / halfLifeMs));
-  }
-
-  private static safeAge(now: number, ts?: number): number {
-    if (!ts || !Number.isFinite(ts) || ts <= 0) return Number.POSITIVE_INFINITY;
-    return Math.max(0, now - ts);
   }
 }

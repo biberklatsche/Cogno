@@ -1,18 +1,10 @@
 import type { ActionDefinitionContract, ActionEntryContract } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 
-export interface ActionCatalogContract {
-  readonly actionEntries$: Observable<ReadonlyArray<ActionEntryContract>>;
-}
-
-export interface ActionDispatcherContract {
-  dispatchAction(actionDefinition: ActionDefinitionContract): void;
-}
-
-export abstract class ActionCatalog implements ActionCatalogContract {
+export abstract class ActionCatalog {
   abstract readonly actionEntries$: Observable<ReadonlyArray<ActionEntryContract>>;
 }
 
-export abstract class ActionDispatcher implements ActionDispatcherContract {
+export abstract class ActionDispatcher {
   abstract dispatchAction(actionDefinition: ActionDefinitionContract): void;
 }

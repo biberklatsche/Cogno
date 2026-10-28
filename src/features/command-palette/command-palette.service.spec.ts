@@ -1,7 +1,4 @@
-import type {
-  ActionCatalogContract,
-  ActionDispatcherContract,
-} from "@cogno/core/api/action-catalog-port";
+import type { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import type { ActionEntryContract } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
@@ -10,7 +7,7 @@ import { CommandPaletteService } from "./command-palette.service";
 
 describe("CommandPaletteService", () => {
   let service: CommandPaletteService;
-  let dispatchActionMock: Mock<ActionDispatcherContract["dispatchAction"]>;
+  let dispatchActionMock: Mock<ActionDispatcher["dispatchAction"]>;
   let actionEntriesSubject: BehaviorSubject<ReadonlyArray<ActionEntryContract>>;
 
   beforeEach(() => {
@@ -30,10 +27,10 @@ describe("CommandPaletteService", () => {
       },
     ]);
 
-    const actionCatalog: ActionCatalogContract = {
+    const actionCatalog: ActionCatalog = {
       actionEntries$: actionEntriesSubject.asObservable(),
     };
-    const actionDispatcher: Pick<ActionDispatcherContract, "dispatchAction"> = {
+    const actionDispatcher: Pick<ActionDispatcher, "dispatchAction"> = {
       dispatchAction: dispatchActionMock,
     };
 

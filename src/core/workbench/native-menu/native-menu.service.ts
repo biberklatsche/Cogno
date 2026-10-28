@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
+import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { actionLabel } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
@@ -10,7 +10,7 @@ import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.servic
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
-import { normalizeFeatureMode } from "@cogno/shared/domain";
+import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
 
 @Injectable({
   providedIn: "root",
@@ -125,11 +125,11 @@ export class NativeMenuService {
     });
   }
 
-  private isFeatureEnabled(mode: FeatureMode | undefined): boolean {
+  private isFeatureEnabled(mode: FeatureModeContract | undefined): boolean {
     return mode !== "off";
   }
 
-  private getFeatureMode(configPath: string): FeatureMode | undefined {
+  private getFeatureMode(configPath: string): FeatureModeContract | undefined {
     // `configPath` is dotted ("feature.git") and the config is nested.
     const featureConfigValue = configPath.split(".").reduce<unknown>((value, segment) => {
       if (typeof value !== "object" || value === null) return undefined;

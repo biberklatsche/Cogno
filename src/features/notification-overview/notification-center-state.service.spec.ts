@@ -1,5 +1,5 @@
 import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
-import type { NotificationCenterPortContract } from "@cogno/core/api/notification-center-port";
+import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { NotificationEventPayloadContract } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -20,7 +20,7 @@ describe("NotificationCenterStateService", () => {
 
     const notificationCenterPort = {
       notificationEvents$: notificationEventSubject.asObservable(),
-    } as NotificationCenterPortContract;
+    } as NotificationCenterPort;
     const configPort = {
       getConfiguration: () => ({
         feature: { notification_overview: { overview: { max_items: overviewMaxItems } } },

@@ -1,36 +1,36 @@
 import { WorkspaceRepository } from "@cogno/core/workbench/workspace/workspace.repository";
-import type { DatabaseAccessContract, DatabaseStatementContract } from "@cogno/platform";
+import type { DatabaseAccess, DatabaseStatement } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceConfiguration } from "./workspace.model";
 
 describe("WorkspaceRepository", () => {
   let workspaceRepository: WorkspaceRepository;
-  let executeMock: ReturnType<typeof vi.fn<DatabaseAccessContract["execute"]>>;
+  let executeMock: ReturnType<typeof vi.fn<DatabaseAccess["execute"]>>;
   let selectMock: ReturnType<
     typeof vi.fn<(query: string, parameters?: ReadonlyArray<unknown>) => Promise<unknown>>
   >;
-  let batchMock: ReturnType<typeof vi.fn<DatabaseAccessContract["batch"]>>;
+  let batchMock: ReturnType<typeof vi.fn<DatabaseAccess["batch"]>>;
 
-  function batchedStatements(): DatabaseStatementContract[] {
-    return batchMock.mock.calls[0][0] as DatabaseStatementContract[];
+  function batchedStatements(): DatabaseStatement[] {
+    return batchMock.mock.calls[0][0] as DatabaseStatement[];
   }
 
   beforeEach(() => {
     executeMock = vi
-      .fn<DatabaseAccessContract["execute"]>()
+      .fn<DatabaseAccess["execute"]>()
       .mockResolvedValue({ rowsAffected: 1, lastInsertId: 0 });
     selectMock = vi
       .fn<(query: string, parameters?: ReadonlyArray<unknown>) => Promise<unknown>>()
       .mockResolvedValue([]);
-    batchMock = vi.fn<DatabaseAccessContract["batch"]>().mockResolvedValue([]);
+    batchMock = vi.fn<DatabaseAccess["batch"]>().mockResolvedValue([]);
 
-    const databaseAccess: DatabaseAccessContract = {
+    const databaseAccess: Pick<DatabaseAccess, "execute" | "select" | "batch"> = {
       execute: executeMock,
-      select: selectMock as DatabaseAccessContract["select"],
+      select: selectMock as DatabaseAccess["select"],
       batch: batchMock,
     };
 
-    workspaceRepository = new WorkspaceRepository(databaseAccess);
+    workspaceRepository = new WorkspaceRepository(databaseAccess as DatabaseAccess);
   });
 
   it("loads workspaces with tabs and grids in three queries", async () => {

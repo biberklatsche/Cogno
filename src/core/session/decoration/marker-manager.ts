@@ -137,7 +137,6 @@ export class MarkerManager implements IDisposable {
 
     const nextCommands = [...commands];
     for (let idx = 0; idx < nextCommands.length; idx++) {
-      nextCommands[idx].isInViewport = visibleCommandIndices.has(idx);
       nextCommands[idx].isFirstCommandOutOfViewport = idx === firstCommandOutOfViewportIdx;
     }
     this.model.updateCommands(nextCommands);

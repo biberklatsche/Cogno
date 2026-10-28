@@ -32,10 +32,6 @@ export interface CommandRunnerResultContract {
   readonly exitCode: number;
 }
 
-export interface CommandRunnerContract {
-  run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract>;
-}
-
-export abstract class CommandRunner implements CommandRunnerContract {
+export abstract class CommandRunner {
   abstract run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract>;
 }
