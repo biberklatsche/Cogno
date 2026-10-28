@@ -13,15 +13,17 @@ import { GIT_SHARED_STYLES } from "./git-styles";
   imports: [IconComponent, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button type="button" class="button icon-button" appTooltip="Toggle branches panel"
-            (click)="view.refsVisible.update(toggle)">
-      <app-icon name="mdiFormatListBulleted"></app-icon>
-    </button>
-    <div class="repo ellipsis" [appTooltip]="repository.root() ?? ''">
-      <app-icon class="small-icon subtle" name="mdiSourceRepository"></app-icon>
-      <span class="ellipsis">{{ repositoryName() }}</span>
-      <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
-      <span class="ellipsis">{{ repository.head().branch ?? detachedLabel() }}</span>
+    <div class="start">
+      <button type="button" class="button icon-button" appTooltip="Toggle branches panel"
+              (click)="view.refsVisible.update(toggle)">
+        <app-icon name="mdiFormatListBulleted"></app-icon>
+      </button>
+      <div class="repo ellipsis" [appTooltip]="repository.root() ?? ''">
+        <app-icon class="small-icon subtle" name="mdiSourceRepository"></app-icon>
+        <span class="ellipsis">{{ repositoryName() }}</span>
+        <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
+        <span class="ellipsis">{{ repository.head().branch ?? detachedLabel() }}</span>
+      </div>
     </div>
 
     <div class="actions">
@@ -72,8 +74,11 @@ import { GIT_SHARED_STYLES } from "./git-styles";
   styles: [
     GIT_SHARED_STYLES,
     `
+      /* The actions sit in the middle of the toolbar: the two sides share the rest equally,
+         whatever is in them. */
       :host {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
         gap: 0.5rem;
         min-height: 44px;
@@ -81,6 +86,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         border-bottom: 1px solid var(--git-border);
         container-type: inline-size;
       }
+      .start { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
       .repo {
         display: flex;
         align-items: center;
@@ -88,7 +94,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         flex: 1 1 auto;
         min-width: 4rem;
       }
-      .actions { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+      .actions { display: flex; align-items: center; gap: 2px; }
       /* Flat tools as in GitKraken's toolbar: the name above the icon,
          lifted on hover the way a tab is. Pull and its caret share one shape. */
       .tool {
@@ -125,10 +131,10 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       }
       .caret app-icon { width: 1rem; height: 1rem; }
       .end {
+        justify-self: end;
         display: flex;
         align-items: center;
         gap: 2px;
-        margin-left: 0.5rem;
         padding-left: 0.5rem;
         border-left: 1px solid var(--git-border);
       }
