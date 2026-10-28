@@ -2,10 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { NotificationPreferencesState } from "@cogno/shared/domain";
 import {
-  buildNotificationPreferencesMenuItems,
-  ContextMenuOverlayService,
   CopyEditDeleteComponent,
   IconComponent,
   KeyframeBarsComponent,
@@ -15,7 +12,6 @@ import {
 import { interval } from "rxjs";
 import { groupAgentsByWorkspace } from "./agent-groups";
 import { AGENT_STATUS_SPECS } from "./coding-agent-animation";
-import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
 import { ActiveAgent, CodingAgentStatusService } from "./coding-agent-status.service";
 import type { ICodingAgentProvider } from "./ports";
@@ -80,14 +76,6 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
             }
           </div>
           <div class="header-actions">
-            <button
-              type="button"
-              class="button icon-button"
-              appTooltip="Notification settings"
-              (click)="openNotificationMenu($event)"
-            >
-              <app-icon name="mdiBellCog"></app-icon>
-            </button>
             <button
               type="button"
               class="button icon-button"
@@ -225,6 +213,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
   `,
   styles: `
     :host {
+      font-size: var(--panel-font-size);
       display: block;
       height: 100%;
     }
@@ -607,22 +596,10 @@ export class CodingAgentsSideComponent {
   private readonly focusedTerminalIdSignal = signal<string | undefined>(undefined);
   readonly focusedTerminalId = this.focusedTerminalIdSignal.asReadonly();
 
-  readonly notificationPreferencesState = this.notificationPreferences.state;
-
-  get notificationDefinitions() {
-    return this.notificationPreferences.getNotificationDefinitions();
-  }
-
-  get channelOptions() {
-    return this.notificationPreferences.getChannelOptions();
-  }
-
   constructor(
     private readonly startupService: CodingAgentStartupService,
     private readonly statusService: CodingAgentStatusService,
-    private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
     private readonly navigator: TerminalNavigator,
-    private readonly contextMenu: ContextMenuOverlayService,
     sessionApi: SessionApi,
     destroyRef: DestroyRef,
   ) {
@@ -690,33 +667,5 @@ export class CodingAgentsSideComponent {
   /** The detail line follows the state: the closing message once done, else the last activity. */
   detail(agent: ActiveAgent): string | undefined {
     return agent.status === "ready" ? agent.result : agent.activity;
-  }
-
-  openNotificationMenu(event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
-    const items = buildNotificationPreferencesMenuItems({
-      notificationDefinitions: this.notificationDefinitions,
-      notificationsLabel: "Notify me when…",
-      channels: this.channelOptions,
-      state: this.notificationPreferencesState(),
-      onToggleNotification: (id) => this.toggleNotification(id),
-      onToggleChannel: (id) => this.toggleChannel(id),
-    });
-    this.contextMenu.openAtElement(
-      event.currentTarget as HTMLElement,
-      { items },
-      { horizontalAlign: "right" },
-    );
-  }
-
-  toggleNotification(notificationId: string): NotificationPreferencesState {
-    this.notificationPreferences.toggleNotification(notificationId);
-    return this.notificationPreferencesState();
-  }
-
-  toggleChannel(channelId: string): NotificationPreferencesState {
-    this.notificationPreferences.toggleChannel(channelId);
-    return this.notificationPreferencesState();
   }
 }

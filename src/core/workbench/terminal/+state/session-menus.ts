@@ -6,7 +6,9 @@ import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { ContextMenuItem } from "@cogno/shared/ui";
-import { SessionNotifications } from "./session-notifications";
+
+/** The notification feature's panel action; a feature action, so not in the core catalogue. */
+const OPEN_NOTIFICATION_ACTION: ActionName = "open_notification";
 
 /**
  * The context and header menus of one terminal. They fire catalogue actions
@@ -18,7 +20,6 @@ export class SessionMenus {
   constructor(
     private readonly bus: AppBus,
     private readonly host: SessionHost,
-    private readonly notifications: SessionNotifications,
     private readonly keybindings: ActionKeybindingPort,
     private readonly layout: PaneLayoutLookup,
   ) {}
@@ -53,8 +54,9 @@ export class SessionMenus {
     ];
   }
 
-  buildHeaderMenu(): ContextMenuItem[] {
-    return this.notifications.buildNotificationMenuItems();
+  /** The bell carries the unread mark; it opens the notifications, where the message is. */
+  openNotifications(): void {
+    this.bus.publish(ActionFired.create(OPEN_NOTIFICATION_ACTION));
   }
 
   buildHeaderCommandMenu(): ContextMenuItem[] {

@@ -51,7 +51,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         min-height: 0;
         margin: 0;
         padding: 0.25rem 0 0;
-        font-size: 0.85rem;
+        font-size: var(--panel-font-size);
         overflow: hidden;
         width: 100%;
         gap: 1rem;
@@ -64,11 +64,13 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         justify-content: space-between;
       }
 
+
       .notification-list {
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
       }
+
 
       .notification {
         display: flex;

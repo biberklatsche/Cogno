@@ -4,6 +4,7 @@ import { ApplicationConfigurationPort } from "@cogno/core/api/application-config
 import {
   ApplicationSettingsExtensionContract,
   FeatureDefinition,
+  NotificationSourceContract,
 } from "@cogno/core/api/contributions";
 import { DatabaseMigrationService } from "@cogno/core/infrastructure/database/database-migration.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
@@ -94,6 +95,11 @@ export class FeatureHost {
   /** The features' settings extensions - for config bootstrap. */
   getSettingsExtensions(): ReadonlyArray<ApplicationSettingsExtensionContract> {
     return this.features.flatMap((feature) => (feature.settings ? [feature.settings] : []));
+  }
+
+  /** The features' notification sources - for config bootstrap and the settings page. */
+  getNotificationSources(): ReadonlyArray<NotificationSourceContract> {
+    return this.features.flatMap((feature) => feature.notificationSources ?? []);
   }
 
   /** The available shells' support descriptors - for config bootstrap. */

@@ -159,16 +159,6 @@ export const defaultSettings = {
     progress_bar: {
       enabled: "true",
     },
-    notifications: {
-      unread_badge: "true",
-      osc9: {
-        enabled: "true",
-      },
-      long_running_command: {
-        enabled: "false",
-        minimum_duration_seconds: "10",
-      },
-    },
     history: {
       max_entries: "unlimited",
       ignore_commands_with_leading_space: "false",
@@ -210,13 +200,41 @@ export const defaultSettings = {
         available: "true",
         enabled: "false",
       },
-    },
-    exception: {
-      handled: {
-        enabled: "false",
+      badge: {
+        enabled: "true",
       },
-      unhandled: {
-        enabled: "false",
+    },
+    source: {
+      terminal: {
+        osc9: {
+          enabled: "true",
+        },
+        long_running_command: {
+          enabled: "false",
+          minimum_duration_seconds: "10",
+        },
+      },
+      coding_agents: {
+        working: {
+          enabled: "false",
+        },
+        question: {
+          enabled: "false",
+        },
+        ready: {
+          enabled: "false",
+        },
+        error: {
+          enabled: "false",
+        },
+      },
+      errors: {
+        handled: {
+          enabled: "false",
+        },
+        unhandled: {
+          enabled: "false",
+        },
       },
     },
   },
@@ -251,26 +269,10 @@ export const defaultSettings = {
     coding_agents: {
       mode: "on",
       order: "65",
-      notifications: {
-        working: {
-          enabled: "false",
-        },
-        question: {
-          enabled: "false",
-        },
-        ready: {
-          enabled: "false",
-        },
-        error: {
-          enabled: "false",
-        },
-      },
     },
-    updater: {
-      mode: "on",
-      order: "90",
-      install: "background",
-    },
+  },
+  updater: {
+    install: "background",
   },
   clipboard: {
     read: "allow",

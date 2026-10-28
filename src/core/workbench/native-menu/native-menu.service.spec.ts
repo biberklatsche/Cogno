@@ -73,6 +73,13 @@ describe("NativeMenuService", () => {
       },
       load: () => Promise.resolve(),
       reload: () => Promise.resolve(),
+      update: () => Promise.resolve(),
+      get schema(): never {
+        throw new Error("not implemented");
+      },
+      get userKeys$(): never {
+        throw new Error("not implemented");
+      },
       getShellProfileOrDefault: vi.fn(),
       getOrderedShellProfiles: vi.fn(),
       getShellProfileByShortcutIndex: vi.fn(),

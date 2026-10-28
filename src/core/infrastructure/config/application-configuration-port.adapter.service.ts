@@ -23,4 +23,8 @@ export class ApplicationConfigurationPortAdapterService extends ApplicationConfi
       return undefined;
     }
   }
+
+  update(entries: Readonly<Record<string, unknown>>): Promise<void> {
+    return this.configService.update(entries);
+  }
 }

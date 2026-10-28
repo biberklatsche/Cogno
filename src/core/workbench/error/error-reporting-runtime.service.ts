@@ -10,6 +10,12 @@ import {
 } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Logger } from "@cogno/platform/logger";
+import { isNotificationEventEnabled } from "@cogno/shared/domain";
+import {
+  ERROR_NOTIFICATION_SOURCE_ID,
+  HANDLED_EXCEPTION_EVENT_ID,
+  UNHANDLED_EXCEPTION_EVENT_ID,
+} from "./error-notification-source";
 
 const DEDUPLICATION_WINDOW_MS = 1000;
 const MAX_NOTIFICATION_BODY_LENGTH = 2000;
@@ -130,11 +136,19 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
     readonly unhandledEnabled: boolean;
   } {
     try {
-      const exceptionsConfiguration = this.configService.config.notification?.exception;
+      const configuration = this.configService.config;
 
       return {
-        handledEnabled: exceptionsConfiguration?.handled?.enabled ?? false,
-        unhandledEnabled: exceptionsConfiguration?.unhandled?.enabled ?? false,
+        handledEnabled: isNotificationEventEnabled(
+          configuration,
+          ERROR_NOTIFICATION_SOURCE_ID,
+          HANDLED_EXCEPTION_EVENT_ID,
+        ),
+        unhandledEnabled: isNotificationEventEnabled(
+          configuration,
+          ERROR_NOTIFICATION_SOURCE_ID,
+          UNHANDLED_EXCEPTION_EVENT_ID,
+        ),
       };
     } catch {
       return {

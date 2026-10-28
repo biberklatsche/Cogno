@@ -118,6 +118,8 @@ Every action, its description and default keybinding. `-` means no default keybi
 
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
+| `open_settings` | Open the settings panel | Ctrl+, | Command+, |
+| `open_updater` | Open the Updates panel | - | - |
 | `open_workspace` | Open the Workspace panel | Ctrl+Alt+W | Command+Control+W |
 | `open_coding_agents` | Open the Coding Agents panel | Ctrl+Alt+R | Command+Control+R |
 | `open_command_palette` | Open the Command Palette panel | Ctrl+P | Command+P |
@@ -125,7 +127,6 @@ Every action, its description and default keybinding. `-` means no default keybi
 | `open_notification` | Open the Notification panel | Ctrl+Alt+N | Command+Control+N |
 | `open_process_info` | Open the Process Info panel | Ctrl+Alt+P | Command+Control+P |
 | `open_terminal_search` | Open the Terminal Search panel | Ctrl+F | Command+F |
-| `open_updater` | Open the Updates panel | - | - |
 
 ## Window
 
@@ -140,8 +141,8 @@ Every action, its description and default keybinding. `-` means no default keybi
 
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
-| `open_config` | Open the config file in the default editor | Ctrl+, | Command+, |
-| `load_config` | Reload the config file without restarting | - | - |
+| `open_config` | Open the settings file in the default editor | - | - |
+| `load_config` | Reload the settings file without restarting | - | - |
 | `clear_restore_data` | Delete the saved session so that the next launch starts fresh | - | - |
 | `open_documentation` | Open the Cogno documentation | - | - |
 | `open_about` | Show the About dialog | - | - |

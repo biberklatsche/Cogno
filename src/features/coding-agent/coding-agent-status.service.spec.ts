@@ -1,4 +1,5 @@
 import type { DestroyRef } from "@angular/core";
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -12,7 +13,6 @@ import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentStatus } from "./agent-status";
 import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agent-animation";
-import type { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import type { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CodingAgentStatusService, resolveShownStatus } from "./coding-agent-status.service";
 import { interpretClaudeStyleHook } from "./providers/_shared/claude-style-hook.interpreter";
@@ -119,9 +119,19 @@ describe("CodingAgentStatusService", () => {
       destroyRef,
       notificationCenter as unknown as NotificationCenterPort,
       {
-        shouldNotify: () => true,
-        getActiveChannels: () => [],
-      } as unknown as CodingAgentNotificationPreferencesService,
+        getConfiguration: () => ({
+          notification: {
+            source: {
+              coding_agents: {
+                working: { enabled: true },
+                question: { enabled: true },
+                ready: { enabled: true },
+                error: { enabled: true },
+              },
+            },
+          },
+        }),
+      } as unknown as ApplicationConfigurationPort,
     );
     service.start();
   });

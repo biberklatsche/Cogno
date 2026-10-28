@@ -1,4 +1,3 @@
-import type { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { SessionHost } from "@cogno/core/session/host/session-host";
@@ -64,7 +63,6 @@ function lastRenderer() {
 describe("SessionNotifications", () => {
   let bus: AppBus;
   let host: SessionHost;
-  let notifications: SessionNotifications;
   let menus: SessionMenus;
   let maximizedTerminalId: string | undefined;
   let configService: ConfigServiceMock;
@@ -72,13 +70,16 @@ describe("SessionNotifications", () => {
   function configure(config: Record<string, unknown>): void {
     configService.setConfig({
       font: { enable_ligatures: false },
-      terminal: {
-        notifications: { long_running_command: { enabled: true, minimum_duration_seconds: 10 } },
-      },
       notification: {
         channel: {
           app: { available: true, enabled: false },
           os: { available: true, enabled: false },
+        },
+        source: {
+          terminal: {
+            osc9: { enabled: true },
+            long_running_command: { enabled: true, minimum_duration_seconds: 10 },
+          },
         },
       },
       ...config,
@@ -108,41 +109,19 @@ describe("SessionNotifications", () => {
       } as unknown as CommandRecorder,
     );
 
-    // The port as SessionNotifications sees it: the two channels, filtered and
-    // defaulted from config the way the real adapter (app/notification) does.
-    const notificationChannelsPort: NotificationChannelsPort = {
-      getAvailableChannels() {
-        const channelConfig = configService.config.notification?.channel as
-          | Readonly<Record<string, { readonly available?: boolean; readonly enabled?: boolean }>>
-          | undefined;
-        return [
-          { id: "app", displayName: "App", sortOrder: 100 },
-          { id: "os", displayName: "OS", sortOrder: 90 },
-        ]
-          .filter((channel) => channelConfig?.[channel.id]?.available ?? true)
-          .sort((left, right) => right.sortOrder - left.sortOrder)
-          .map((channel) => ({
-            id: channel.id,
-            displayName: channel.displayName,
-            defaultEnabled: channelConfig?.[channel.id]?.enabled ?? false,
-          }));
-      },
-    };
-
     host.initialize(terminalId, bashProfile);
 
-    notifications = new SessionNotifications(
+    new SessionNotifications(
       bus,
       host,
       configService as unknown as ConfigService,
       {
         resolveForTerminal: vi.fn().mockReturnValue({ workspaceId: "w", tabId: "t", terminalId }),
       } as unknown as NotificationTargetResolverService,
-      notificationChannelsPort,
     );
 
     maximizedTerminalId = undefined;
-    menus = new SessionMenus(bus, host, notifications, getActionKeybindingPortMock(), {
+    menus = new SessionMenus(bus, host, getActionKeybindingPortMock(), {
       isMaximized: (id: string) => id === maximizedTerminalId,
     } as unknown as PaneLayoutLookup);
 
@@ -151,8 +130,6 @@ describe("SessionNotifications", () => {
 
   describe("facts to notifications", () => {
     it("publishes a notification when a long-running command has finished", () => {
-      configure({ notification: { channel: { app: { available: true, enabled: true } } } });
-
       host.model.report({
         type: "commandCompleted",
         command: { command: "pnpm test", duration: 12_000, directory: "/workspace", returnCode: 0 },
@@ -164,14 +141,12 @@ describe("SessionNotifications", () => {
           payload: expect.objectContaining({
             header: "Command finished after 12s",
             terminalId,
-            channels: { app: true, os: false },
           }),
         }),
       );
     });
 
     it("stays quiet for a command shorter than the threshold", () => {
-      configure({ notification: { channel: { app: { available: true, enabled: true } } } });
       vi.mocked(bus.publish).mockClear();
 
       host.model.report({
@@ -182,11 +157,9 @@ describe("SessionNotifications", () => {
       expect(bus.publish).not.toHaveBeenCalled();
     });
 
-    it("turns an OSC 9 message into a Notification and marks the badge", () => {
-      configure({ notification: { channel: { app: { available: true, enabled: true } } } });
+    it("turns an OSC 9 message into a Notification", () => {
       host.model.report({ type: "notificationRequested", message: "Build done" });
 
-      expect(host.model.hasUnreadNotification).toBe(true);
       expect(bus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "Notification",
@@ -241,40 +214,15 @@ describe("SessionNotifications", () => {
       }
     });
 
-    it("only shows available notification channels in the header menu", () => {
-      configure({
-        notification: {
-          channel: {
-            app: { available: true, enabled: false },
-            os: { available: false, enabled: false },
-          },
-        },
-      });
+    it("sends the bell to the notifications", () => {
+      menus.openNotifications();
 
-      const items = menus.buildHeaderMenu();
-
-      expect(items[0]).toEqual(expect.objectContaining({ header: true, label: "Notify me when…" }));
-      const toggle = items.find((i) => i.label === "Command finished (ran ≥ 10 s)");
-      expect(toggle?.toggle).toBe(true);
-      expect(toggle?.toggled).toBe(true);
-      expect(items.find((i) => i.label === "App")?.toggled).toBe(false);
-      expect(items.find((i) => i.label === "OS")).toBeUndefined();
+      expect(bus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "ActionFired", payload: "open_notification" }),
+      );
     });
 
-    it("toggles long-running command notifications from the header menu", () => {
-      configure({ notification: { channel: { app: { available: true, enabled: true } } } });
-
-      const toggle = menus
-        .buildHeaderMenu()
-        .find((i) => i.label === "Command finished (ran ≥ 10 s)");
-      expect(toggle?.toggled).toBe(true);
-
-      toggle?.action?.(toggle);
-
-      expect(toggle?.toggled).toBe(false);
-    });
-
-    it("keeps the command menu out of the header menu and offers it for the command out of view", () => {
+    it("offers the command menu for the command out of view", () => {
       host.model.updateCommand({ id: "1" });
       host.model.commands[0].set("command", "cat bible.txt");
       host.model.updateCommands([
@@ -289,8 +237,6 @@ describe("SessionNotifications", () => {
         },
       );
       lastRenderer().terminal.buffer.active.length = 3;
-
-      expect(menus.buildHeaderMenu().find((i) => i.label === "Copy Command")).toBeUndefined();
 
       const items = menus.buildHeaderCommandMenu();
       expect(items.map((i) => i.label)).toEqual(

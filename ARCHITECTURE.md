@@ -33,7 +33,18 @@ Der Code liegt vollständig unter `shared/`, `platform/`, `core/`,
    Tabellen. Siehe 2.4.
 7. **Notification-Dispatch ist Core (Workbench)**, die Übersicht ist ein
    Feature. Der Dispatch braucht Layout-Identität, Fokus und Seitenleiste —
-   er ist deshalb Workbench, nicht `core/infrastructure/`.
+   er ist deshalb Workbench, nicht `core/infrastructure/`. Eine Meldung hat
+   eine **Quelle** (Terminal, Coding-Agents, Fehler) mit **Ereignissen** und
+   geht an **Kanäle** (App-Toast, OS, Tab-Badge). Welche Ereignisse melden,
+   steht je Quelle in der Config (`notification.source.<quelle>.<ereignis>.enabled`);
+   wohin, steht einmal global (`notification.channel.<kanal>.enabled`). Eine
+   Quelle nennt nie einen Kanal. Quellen sind Contributions
+   (`notificationSources`, Abschnitt 6): Core setzt Schema, Defaults, Doku
+   und die Settings-Seite daraus zusammen und kennt kein Ereignis selbst;
+   Terminal und Fehler melden sich als Core-Quellen auf demselben Weg an.
+   Bedient wird das wie jede andere Einstellung im Settings-Panel der
+   Workbench (5), das in die Config schreibt; kein Feature hat eigene
+   Notification-Schalter.
 8. **Toter Code raus.** Code ohne Konsumenten wird entfernt, nicht
    für später aufbewahrt.
 9. Nightly-Kanal: nicht Teil dieser Architektur.
@@ -307,11 +318,12 @@ Workbench abonniert das und entscheidet selbst: Tab-Titel und Busy-Indikator
 aktualisieren, bei Prozessende Pane und — wenn es das letzte Pane war — Tab
 entfernen. Auch Benachrichtigungen entstehen so: die Session meldet „Kommando
 endete nach 90 s" oder „OSC 9 kam", der Notification-Dispatch der Workbench
-entscheidet Schwelle, Kanal und Unread-Badge (für lange Kommandos
+entscheidet Schwelle und Kanäle (für lange Kommandos
 `completed-command-notification.handler` in `core/workbench/terminal/`).
-Das Ungelesen-Abzeichen setzt die Workbench; es liegt aber im
-Sitzungsmodell, weil die Session es selbst löscht — bei Eingabe und bei
-Fokus — und es mit ihr stirbt. Welches Pane maximiert ist, ist dagegen
+Das Ungelesen-Abzeichen ist ein Kanal (`badge`) wie Toast und OS-Meldung; er
+setzt es über die Session-Registry auf dem Modell der Session, zu der die
+Meldung gehört. Es liegt im Sitzungsmodell, weil die Session es selbst
+löscht — bei Eingabe und bei Fokus — und es mit ihr stirbt. Welches Pane maximiert ist, ist dagegen
 reiner Workbench-Zustand und liegt im `GridListService`.
 PTY-Exit meldet die Session als Fakt `exited` (siehe 2.3), nicht als Befehl
 `RemovePane` an das Layout. Die Session kennt keinen Bus: sie veröffentlicht
@@ -853,7 +865,8 @@ Entscheidungen:
    `emit_to(window)`; globale Aktion ohne Ziel → das fokussierte Fenster;
    Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
    Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
-   Das Feature `updater` fragt aus jedem Fenster nach Prüfungen; Rust
+   Der Updater (`core/workbench/updater/`, Workbench und kein Feature: die
+   Anwendung aktuell zu halten hat keinen Modus) fragt aus jedem Fenster nach Prüfungen; Rust
    beantwortet dicht aufeinanderfolgende aus dem letzten Ergebnis und lädt
    nie doppelt. Die Ankündigung einer neuen Version ist eine globale Aktion
    ohne Ziel: einmal je App und Version, an das fokussierte Fenster. Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
@@ -1189,6 +1202,33 @@ Feature-Liste aus `bootstrap/`, kennt also auch Feature-Aktionen. CI prüft,
 dass die generierten Dateien aktuell sind — sonst driftet es doch, nur auf
 andere Art.
 
+**Schreiben.** Die Datei ist die Wahrheit, auch für das, was die Oberfläche
+umschaltet. Dafür gibt es genau einen Weg: `ConfigService.update(entries)`,
+nach außen `ApplicationConfigurationPort.update`. Er nimmt Dot-Pfade mit
+Werten, prüft jeden gegen dasselbe Zod-Schema, mit dem gelesen wird —
+unbekannter Schlüssel oder falscher Typ lehnt den ganzen Aufruf ab, nichts
+wird geschrieben — und ändert dann **nur die betroffenen Zeilen**
+(`config-line-editor.ts`): eine vorhandene Zeile wird ersetzt, eine neue
+neben ihre nächsten Verwandten gesetzt, Kommentare und Reihenfolge bleiben.
+Danach liest er neu. Ein Feature schreibt seine eigenen Schlüssel, so wie
+es sie liest; eine zweite Wahrheit neben der Datei (ein Schalter im
+Speicher, der beim Neustart vergisst) gibt es nicht mehr. CLI-Overrides
+(`--config-set`) wirken nur beim Lesen und werden nie persistiert.
+
+**Das Settings-Panel** (`core/workbench/settings/`) ist die Oberfläche
+dazu: ein Eintrag unten in der Seitenleiste, Workbench und kein Feature,
+Aktion `open_settings` (`Cmd+,`). Es rendert sich vollständig aus dem
+Schema: `config-schema-walker.ts` liest je Setting Schlüssel, Abschnitt,
+Beschreibung (`.describe()`), Steuerelement (aus der Zod-Definition) und
+Default (aus `default-config-values.ts`); der Doku-Generator liest
+dieselben Descriptoren. Ein neues Setting, auch eines Features, erscheint
+damit im Panel und in der Referenz, ohne dass jemand eines von beiden
+anfasst. Was das Panel nicht editiert — Maps mit frei gewählten Namen
+(Shell- und Prompt-Profile) und `keybind` — zeigt es als eine Zeile mit
+„Edit in config file" (`open_config`). Die Werte kommen aus `config$`,
+„geändert" aus den Schlüsseln der Nutzerdatei (`userKeys$`), Reset nimmt
+die Zeile wieder heraus.
+
 ### 5.1 Die Default-Konfiguration
 
 Die Defaults haben drei Teile — Werte, Beschreibungen, Keybindings — und
@@ -1239,6 +1279,7 @@ Feature = {
   target: "session" | "workbench"        // Achse 1: worauf es zeigt; Lebensdauer ist immer Anwendung
   actions?                               // Deklaration known, Handler erst bei Aktivierung (5)
   settings?, migrations?                 // Deklaration: immer registriert (6.1)
+  notificationSources?                   // Deklaration: Quellen und Ereignisse für notification.source.<id>
   sideMenu?, notificationChannels?, suggestors? // Aktivierung: nur bei mode: on
   mode: "on" | "off"                      // jedes Feature; Default "on"
 }
@@ -1266,7 +1307,14 @@ gehören nicht dazu.** Sie stehen an einer Stelle, `default-config-values.ts`,
 aus der die Default-Konfiguration generiert wird (5.1); ein zweiter Satz
 Defaults am Feature würde von ihr ohnehin überschrieben und kann ihr nur
 widersprechen. Ein Top-Level-Schlüssel hat genau einen Besitzer — deshalb
-teilen sich alle Features eine Extension für `feature.*`.
+teilen sich alle Features eine Extension für `feature.*`. Die eine
+Ausnahme von „Feature-Einstellungen stehen unter `feature.<id>`" sind die
+Ereignisse einer Notification-Quelle: Sie stehen unter
+`notification.source.<id>`, weil `notification` Core gehört und die
+Quellen darunter **zusammengesetzt** sind, nicht gewusst — Core baut das
+Schema aus den deklarierten Quellen (`createNotificationSettingsSchema`),
+die Doku-Generatoren tun dasselbe, und ein Ereignis einer nicht deklarierten
+Quelle ist ein unbekannter Schlüssel wie jeder Tippfehler.
 
 `requires` gibt es, weil ausdrücklich gewünscht — mit der ehrlichen Anmerkung,
 dass der reale Baum null Kanten hat. Der Feature-Host löst es trotzdem auf (6.1), damit die erste echte

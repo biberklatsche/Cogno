@@ -103,6 +103,14 @@ export class InitialConfigOverridesWriter {
     return JSON.stringify(value);
   }
 
+  /** One value as it stands after `key = ` in the file; a list as `[a,b]`. */
+  static renderDotValue(value: unknown): string {
+    if (Array.isArray(value)) {
+      return `[${value.map((item) => InitialConfigOverridesWriter.renderValue(item)).join(",")}]`;
+    }
+    return InitialConfigOverridesWriter.renderValue(value);
+  }
+
   private static toDotProperties(obj: Record<string, unknown>, prefix: string = ""): string[] {
     const lines: string[] = [];
 

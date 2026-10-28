@@ -1,5 +1,5 @@
-import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { Opener } from "@cogno/platform/opener";
 import type { OsPlatform } from "@cogno/platform/os";
 import type { Updater, UpdaterState } from "@cogno/platform/updater";
@@ -31,7 +31,7 @@ describe("UpdaterService", () => {
   };
   let dispatch: ReturnType<typeof vi.fn>;
   let openUrl: ReturnType<typeof vi.fn>;
-  let configuration: { feature?: { updater?: { install?: "background" | "ask" } } } | undefined;
+  let configuration: { updater?: { install?: "background" | "ask" } } | undefined;
   let service: UpdaterService;
 
   beforeEach(() => {
@@ -44,7 +44,11 @@ describe("UpdaterService", () => {
     configuration = {};
     service = new UpdaterService(
       updater as unknown as Updater,
-      { getConfiguration: () => configuration } as unknown as ApplicationConfigurationPort,
+      {
+        get config() {
+          return configuration;
+        },
+      } as unknown as ConfigService,
       { dispatch } as unknown as NotificationCenterPort,
       { openUrl } as unknown as Opener,
       { platform: () => "linux" } as unknown as OsPlatform,
@@ -71,7 +75,7 @@ describe("UpdaterService", () => {
   });
 
   it("does not download on its own when set to ask", () => {
-    configuration = { feature: { updater: { install: "ask" } } };
+    configuration = { updater: { install: "ask" } };
     service.start();
     expect(updater.check).toHaveBeenLastCalledWith({ force: false, download: false });
   });

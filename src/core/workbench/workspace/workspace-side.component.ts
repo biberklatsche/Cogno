@@ -108,6 +108,8 @@ import { defaultWorkspaceIdContract } from "./workspace-entry";
       }
 
       :host {
+
+        font-size: var(--panel-font-size);
         container-type: inline-size;
       }
 

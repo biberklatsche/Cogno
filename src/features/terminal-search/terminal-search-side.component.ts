@@ -43,8 +43,8 @@ type SearchTextSegment = {
             />
             <button
                 type="button"
-                class="search-option-button"
-                [class.is-active]="caseSensitive()"
+                class="button"
+                [class.active]="caseSensitive()"
                 [style.background-color]="caseSensitive() ? matchBackgroundColor() : null"
                 [style.border-color]="caseSensitive() ? matchBorderColor() : null"
                 [appTooltip]="'Case sensitive'"
@@ -54,8 +54,8 @@ type SearchTextSegment = {
             </button>
             <button
                 type="button"
-                class="search-option-button"
-                [class.is-active]="regularExpression()"
+                class="button"
+                [class.active]="regularExpression()"
                 [style.background-color]="regularExpression() ? matchBackgroundColor() : null"
                 [style.border-color]="regularExpression() ? matchBorderColor() : null"
                 [appTooltip]="'Regular expression'"
@@ -67,7 +67,7 @@ type SearchTextSegment = {
         @if (isBlockSearchActive()) {
             <div class="block-search-banner">
                 <span>Block search active</span>
-                <button type="button" class="block-search-clear-button" (click)="$event.stopPropagation(); clearBlockSearch()">
+                <button type="button" class="button small" (click)="$event.stopPropagation(); clearBlockSearch()">
                     Clear
                 </button>
             </div>
@@ -99,7 +99,7 @@ type SearchTextSegment = {
                     }
                 </ul>
                 @if (hasMoreResults()) {
-                    <button type="button" class="load-more-button" (click)="loadMoreSearchResults()">Load more</button>
+                    <button type="button" class="button" (click)="loadMoreSearchResults()">Load more</button>
                 }
             } @else {
                 <div class="helper-text">No matches</div>
@@ -109,6 +109,7 @@ type SearchTextSegment = {
   styles: [
     `
             :host {
+              font-size: var(--panel-font-size);
                 display: flex;
                 flex-direction: column;
                 height: 100%;
@@ -134,21 +135,6 @@ type SearchTextSegment = {
                 min-width: 0;
             }
 
-            .search-option-button {
-                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
-                color: inherit;
-                border-radius: 6px;
-                height: 2rem;
-                min-width: 2.25rem;
-                padding: 0 0.5rem;
-                font-size: 0.8rem;
-            }
-
-            .search-option-button.is-active {
-                font-weight: 600;
-            }
-
             .result-header,
             .helper-text {
                 font-size: 0.85rem;
@@ -169,18 +155,6 @@ type SearchTextSegment = {
                 color: var(--highlight-color);
                 font-size: 0.85rem;
                 font-weight: 600;
-            }
-
-            .block-search-clear-button {
-                border: 0;
-                background: transparent;
-                color: inherit;
-                min-height: 1.7rem;
-                padding: 0;
-                font-size: 0.75rem;
-                font-weight: 700;
-                flex-shrink: 0;
-                text-decoration: underline;
             }
 
             .result-list {
@@ -214,15 +188,6 @@ type SearchTextSegment = {
 
             .match {
                 border-radius: 2px;
-            }
-
-            .load-more-button {
-                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
-                color: inherit;
-                border-radius: 6px;
-                min-height: 2rem;
-                padding: 0.35rem 0.75rem;
             }
         `,
   ],

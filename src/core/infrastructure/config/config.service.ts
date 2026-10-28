@@ -1,6 +1,9 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { ApplicationSettingsExtensionContract } from "@cogno/core/api/contributions";
+import {
+  ApplicationSettingsExtensionContract,
+  NotificationSourceContract,
+} from "@cogno/core/api/contributions";
 import { CliConfigOverrides } from "@cogno/platform/cli-config-overrides";
 import { DefaultConfig } from "@cogno/platform/default-config";
 import { Fs } from "@cogno/platform/fs";
@@ -8,9 +11,12 @@ import { Logger } from "@cogno/platform/logger";
 import { OsPlatform } from "@cogno/platform/os";
 import { Paths } from "@cogno/platform/path";
 import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
+import { z } from "zod";
 import { Environment } from "../environment/environment";
 import { ErrorReporter } from "../error/error-reporter";
 import { ConfigDiagnostic, ConfigMapper } from "./config.mapper";
+import { ConfigLineEditor } from "./config-line-editor";
+import { createConfigSchema } from "./config-schema";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 import { Config } from "./models/config";
 import { PromptSegment } from "./models/prompt-config";
@@ -33,6 +39,8 @@ export interface ShellProfileEntry {
 export interface ConfigLoadOptions {
   /** Zod extensions the features contribute; the schema is built from them. */
   readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
+  /** The notification sources, core's and the features'; `notification.source` is built from them. */
+  readonly notificationSources?: ReadonlyArray<NotificationSourceContract>;
   /**
    * Fills in values that have to exist before the file is written - today the
    * shell profiles of the first start. Returns true when it changed the
@@ -56,6 +64,17 @@ export abstract class ConfigService {
   abstract load(options: ConfigLoadOptions): Promise<void>;
   /** Reads again with the options of the last `load`. */
   abstract reload(): Promise<void>;
+  /**
+   * Sets entries in the user's file, keyed by dotted path, and reads it again.
+   * Every entry must exist in the schema and fit its type, or nothing is
+   * written; the file's other lines stay as they are. `undefined` removes the
+   * key from the file, so its default applies again.
+   */
+  abstract update(entries: Readonly<Record<string, unknown>>): Promise<void>;
+  /** The schema the config is read with: core, features and notification sources composed. */
+  abstract get schema(): z.ZodObject<z.ZodRawShape>;
+  /** The keys the user's file sets itself - what differs from the defaults by the user's hand. */
+  abstract get userKeys$(): Observable<ReadonlySet<string>>;
 
   /**
    * Returns the shell config for a given profile name.
@@ -77,6 +96,8 @@ export class RealConfigService extends ConfigService {
   private _loaded = new Subject<Config>();
   private _unwatch: Subscription | undefined;
   private _options: ConfigLoadOptions | undefined;
+  private _schema: z.ZodObject<z.ZodRawShape> | undefined;
+  private readonly _userKeys = new BehaviorSubject<ReadonlySet<string>>(new Set());
 
   constructor(
     private readonly defaultConfig: DefaultConfig,
@@ -107,6 +128,17 @@ export class RealConfigService extends ConfigService {
 
   get loaded$(): Observable<Config> {
     return this._loaded.asObservable();
+  }
+
+  get schema(): z.ZodObject<z.ZodRawShape> {
+    if (!this._schema) {
+      throw new Error("Config is not loaded!");
+    }
+    return this._schema;
+  }
+
+  get userKeys$(): Observable<ReadonlySet<string>> {
+    return this._userKeys.asObservable();
   }
 
   /**
@@ -220,6 +252,37 @@ export class RealConfigService extends ConfigService {
     await this.read();
   }
 
+  async update(entries: Readonly<Record<string, unknown>>): Promise<void> {
+    const options = this._options;
+    if (!options) {
+      throw new Error("Config was never loaded!");
+    }
+    const schema = createConfigSchema(options.settingsExtensions, options.notificationSources);
+    const rendered: Record<string, string | null> = {};
+    for (const [key, value] of Object.entries(entries)) {
+      const valueSchema = ConfigMapper.getSchemaAtDotPath(schema, key);
+      if (!valueSchema) {
+        throw new Error(`Unknown config key: ${key}`);
+      }
+      if (value === undefined) {
+        rendered[key] = null;
+        continue;
+      }
+      const parsed = valueSchema.safeParse(value);
+      if (!parsed.success) {
+        throw new Error(
+          `Invalid value for ${key}: ${parsed.error.issues[0]?.message ?? "rejected"}`,
+        );
+      }
+      rendered[key] = InitialConfigOverridesWriter.renderDotValue(value);
+    }
+
+    const path = this.environment.configFilePath();
+    const current = (await this.fs.exists(path)) ? await this.fs.readTextFile(path) : "";
+    await this.fs.writeTextFile(path, ConfigLineEditor.set(current, rendered));
+    await this.read();
+  }
+
   private async watch() {
     Logger.info("Load and watch config...");
     const path = this.environment.configFilePath();
@@ -247,6 +310,7 @@ export class RealConfigService extends ConfigService {
       throw new Error("Config was never loaded!");
     }
     const settingsExtensions = options.settingsExtensions;
+    const notificationSources = options.notificationSources ?? [];
 
     const configDir = this.environment.configDir();
     if (!(await this.fs.exists(configDir))) {
@@ -265,6 +329,7 @@ export class RealConfigService extends ConfigService {
       defaultConfigString,
       "",
       settingsExtensions,
+      notificationSources,
     );
     const writeConfig = (config: Config) =>
       this.fs.writeTextFile(
@@ -273,12 +338,14 @@ export class RealConfigService extends ConfigService {
       );
     const readConfig = async () => {
       let userConfigString = await this.fs.readTextFile(path);
+      this._userKeys.next(ConfigLineEditor.keys(userConfigString));
       userConfigString = await this.applyCliSetOverrides(userConfigString);
       return ConfigMapper.fromStringToConfigWithDiagnostics(
         this.os.platform(),
         defaultConfigString,
         userConfigString,
         settingsExtensions,
+        notificationSources,
       );
     };
 
@@ -288,6 +355,7 @@ export class RealConfigService extends ConfigService {
         defaultConfigString,
         "",
         settingsExtensions,
+        notificationSources,
       );
       await options.completeDefaults?.(userConfig);
       await writeConfig(userConfig);
@@ -308,6 +376,7 @@ export class RealConfigService extends ConfigService {
       await this.watch();
     }
 
+    this._schema = createConfigSchema(settingsExtensions, notificationSources);
     this._config.next(config);
     this._loaded.next(config);
     Logger.info("Config loaded...");

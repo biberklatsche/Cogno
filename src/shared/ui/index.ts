@@ -1,5 +1,7 @@
 export * from "./busy-indicator/busy-indicator.constants";
 export * from "./busy-indicator/keyframe-bars.component";
+export * from "./common/color-field/color-field.component";
+export * from "./common/color-field/hex-color";
 export * from "./common/copy-edit-delete/copy-edit-delete.component";
 export * from "./common/letter-badge/letter-badge.component";
 export * from "./common/text/start-ellipsis.directive";
@@ -16,4 +18,3 @@ export * from "./icons/+model/icon";
 export * from "./icons/icon/icon.component";
 export * from "./menu/context-menu-overlay/context-menu.component";
 export * from "./menu/context-menu-overlay/context-menu-overlay.service";
-export * from "./menu/notification-preferences-menu-items";

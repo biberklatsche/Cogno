@@ -92,8 +92,6 @@ export class SessionModel {
     backendOs: OsType,
     private readonly _historyStore: TerminalCommandHistoryStore,
     private readonly _recorder: CommandRecorder,
-    /** Read at the moment a badge would be set, so a config change applies at once. */
-    private readonly _isUnreadBadgeEnabled: () => boolean = () => true,
   ) {
     this._state = new BehaviorSubject<SessionModelSnapshot>(createInitialSessionState(backendOs));
   }
@@ -427,8 +425,8 @@ export class SessionModel {
     return this._state.pipe(map((s) => s.hasUnreadNotification));
   }
 
+  /** The badge channel marks the tab; focus or typing clears it. */
   markUnreadNotification(): void {
-    if (!this._isUnreadBadgeEnabled()) return;
     if (this._state.value.hasUnreadNotification) return;
     this.update({ hasUnreadNotification: true });
   }

@@ -11,6 +11,7 @@ import { toKnownCoreAction } from "@cogno/core/workbench/actions/catalog";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Hash } from "@cogno/core/workbench/config-bootstrap/hash";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
+import { CORE_NOTIFICATION_SOURCES } from "@cogno/core/workbench/notification/+state/core-notification-sources";
 
 /**
  * Orchestrates config bootstrap: on `InitConfigCommand` it loads the config -
@@ -68,6 +69,10 @@ export class ConfigBootstrapAdapter {
     const shellSupportDefinitions = this.featureHost.getShellSupportDefinitions();
     await this.config.load({
       settingsExtensions: this.featureHost.getSettingsExtensions(),
+      notificationSources: [
+        ...CORE_NOTIFICATION_SOURCES,
+        ...this.featureHost.getNotificationSources(),
+      ],
       completeDefaults: async (config: Config) => {
         if (Object.keys(config.shell?.profiles ?? {}).length > 0) {
           return false;

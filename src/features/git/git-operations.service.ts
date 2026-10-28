@@ -525,7 +525,7 @@ export class GitOperationsService {
   }
 
   private toast(header: string, body: string, type: "error" | "success"): void {
-    this.notifications.dispatch({ header, body, type, source: "git", channels: { toast: true } });
+    this.notifications.dispatch({ header, body, type, source: "git" });
   }
 }
 

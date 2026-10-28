@@ -235,4 +235,107 @@ describe("RealConfigService hot reload", () => {
     changes.next();
     await vi.waitFor(() => expect(service.config.cursor?.blink).toBe(true));
   });
+
+  describe("update", () => {
+    function createLoadedService(userConfig: { text: string }) {
+      const defaults = readFileSync(
+        join(process.cwd(), "src-tauri", "src", "default_windows.config"),
+        "utf-8",
+      );
+      const fs = {
+        exists: vi.fn().mockResolvedValue(true),
+        mkdir: vi.fn(),
+        readTextFile: vi.fn(async () => userConfig.text),
+        writeTextFile: vi.fn(async (_path: string, text: string) => {
+          userConfig.text = text;
+        }),
+        watchChanges$: vi.fn(() => new Subject<void>().asObservable()),
+      } as unknown as Fs;
+      const service = new RealConfigService(
+        { read: async () => defaults } as unknown as DefaultConfig,
+        { getSerializedOverrides: async () => "" } as unknown as CliConfigOverrides,
+        { onDestroy: vi.fn() } as unknown as DestroyRef,
+        { platform: () => "linux" } as unknown as OsPlatform,
+        { dirname: async () => "/config" } as unknown as Paths,
+        {
+          configDir: () => "/config",
+          configFilePath: () => "/config/cogno.config",
+        } as unknown as Environment,
+        fs,
+      );
+      return { service, fs };
+    }
+
+    it("writes the entries into the file and reads them back", async () => {
+      const userConfig = { text: "# mine\ncursor.blink = false\n" };
+      const { service, fs } = createLoadedService(userConfig);
+      await service.load({ settingsExtensions: [] });
+
+      await service.update({
+        "cursor.blink": true,
+        "notification.channel.os.enabled": true,
+      });
+
+      expect(userConfig.text).toBe(
+        "# mine\ncursor.blink = true\nnotification.channel.os.enabled = true\n",
+      );
+      expect(service.config.cursor?.blink).toBe(true);
+      expect(service.config.notification?.channel?.os?.enabled).toBe(true);
+      expect(fs.writeTextFile).toHaveBeenCalledTimes(1);
+    });
+
+    it("refuses an unknown key and writes nothing", async () => {
+      const userConfig = { text: "cursor.blink = false\n" };
+      const { service, fs } = createLoadedService(userConfig);
+      await service.load({ settingsExtensions: [] });
+
+      await expect(service.update({ "cursor.blink": true, "cursor.nope": true })).rejects.toThrow(
+        "Unknown config key: cursor.nope",
+      );
+
+      expect(fs.writeTextFile).not.toHaveBeenCalled();
+      expect(service.config.cursor?.blink).toBe(false);
+    });
+
+    it("refuses a value of the wrong type and writes nothing", async () => {
+      const userConfig = { text: "" };
+      const { service, fs } = createLoadedService(userConfig);
+      await service.load({ settingsExtensions: [] });
+
+      await expect(service.update({ "cursor.blink": "maybe" })).rejects.toThrow(
+        "Invalid value for cursor.blink",
+      );
+
+      expect(fs.writeTextFile).not.toHaveBeenCalled();
+    });
+
+    it("removes a key when its value is undefined and tells which keys the file sets", async () => {
+      const userConfig = { text: "cursor.blink = false\nterminal.webgl = false\n" };
+      const { service } = createLoadedService(userConfig);
+      await service.load({ settingsExtensions: [] });
+      let userKeys: ReadonlySet<string> = new Set();
+      service.userKeys$.subscribe((keys) => (userKeys = keys));
+      expect([...userKeys]).toEqual(["cursor.blink", "terminal.webgl"]);
+
+      await service.update({ "cursor.blink": undefined });
+
+      expect(userConfig.text).toBe("terminal.webgl = false\n");
+      expect([...userKeys]).toEqual(["terminal.webgl"]);
+      expect(service.config.cursor?.blink).toBe(true);
+      expect(service.schema.shape["cursor"]).toBeDefined();
+    });
+
+    it("renders a list the way the file spells it", async () => {
+      const userConfig = { text: "cursor.blink = false\n" };
+      const { service } = createLoadedService(userConfig);
+      await service.load({ settingsExtensions: [] });
+
+      await service.update({ "terminal.history.allowed_return_codes": [0, 1] });
+
+      expect(userConfig.text).toBe(
+        "cursor.blink = false\nterminal.history.allowed_return_codes = [0,1]\n",
+      );
+      expect(service.config.terminal?.history?.allowed_return_codes).toEqual([0, 1]);
+    });
+  });
 });

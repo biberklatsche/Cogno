@@ -36,6 +36,7 @@ export class AppMenuService {
     }
 
     items.push(this.buildMenuItem("new_window"));
+    items.push(this.buildMenuItem("open_settings"));
     items.push(this.buildMenuItem("open_config"));
     items.push({ separator: true });
     for (const actionName of ["open_documentation", "open_about"]) {

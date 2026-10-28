@@ -139,6 +139,7 @@ type ProcessTreeNode = {
   `,
   styles: `
     :host {
+      font-size: var(--panel-font-size);
       display: block;
       height: 100%;
     }

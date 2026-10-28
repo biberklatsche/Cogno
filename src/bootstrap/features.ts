@@ -9,7 +9,6 @@ import { gitFeature } from "@cogno/features/git";
 import { notificationFeature } from "@cogno/features/notification-overview";
 import { processInfoFeature } from "@cogno/features/process-info";
 import { terminalSearchFeature } from "@cogno/features/terminal-search";
-import { updaterFeature } from "@cogno/features/updater";
 
 /**
  * Every feature of the application. Adding one means adding it here. `as
@@ -26,5 +25,4 @@ export const features = [
   gitFeature,
   processInfoFeature,
   codingAgentsFeature,
-  updaterFeature,
 ] as const satisfies readonly FeatureDefinition<ActionName>[];

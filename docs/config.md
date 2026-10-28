@@ -39,13 +39,13 @@ Render programming ligatures (needs a font that has them).
 
 Weight of normal terminal text.
 
-**Type:** `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` | `normal` | `bold` | number · **Default:** `normal`
+**Type:** `normal` | `bold` | `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` · **Default:** `normal`
 
 ### `font.weight_bold`
 
 Weight of bold terminal text.
 
-**Type:** `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` | `normal` | `bold` | number · **Default:** `bold`
+**Type:** `normal` | `bold` | `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` · **Default:** `bold`
 
 ### `font.custom_glyphs`
 
@@ -613,7 +613,7 @@ Static text to display, instead of a `field`.
 
 One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.
 
-**Type:** string[]
+**Type:** keybind lines
 
 ## Terminal
 
@@ -706,30 +706,6 @@ Characters that end a word for double-click selection and word-wise motion.
 Show the progress bar in the terminal header.
 
 **Type:** boolean · **Default:** `true`
-
-### `terminal.notifications.unread_badge`
-
-Show an unread badge on a terminal's tab when a notification-worthy event occurs while it isn't focused.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.notifications.osc9.enabled`
-
-Allow OSC9 terminal notifications to trigger a notification.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.notifications.long_running_command.enabled`
-
-Show a notification after a long-running command has finished.
-
-**Type:** boolean · **Default:** `false`
-
-### `terminal.notifications.long_running_command.minimum_duration_seconds`
-
-Notify only when a command ran for at least this many seconds.
-
-**Type:** integer ≥ 0 · **Default:** `10`
 
 ### `terminal.history.max_entries`
 
@@ -825,15 +801,63 @@ Send notifications to the operating system.
 
 **Type:** boolean · **Default:** `false`
 
-### `notification.exception.handled.enabled`
+### `notification.channel.badge.enabled`
 
-Show a notification for handled exceptions reported through the central error reporter.
+Mark the tab of the terminal a notification belongs to while that terminal isn't focused.
+
+**Type:** boolean · **Default:** `true`
+
+### `notification.source.terminal.osc9.enabled`
+
+Notify when a program sends a notification via the OSC 9 escape sequence.
+
+**Type:** boolean · **Default:** `true`
+
+### `notification.source.terminal.long_running_command.enabled`
+
+Notify when a command that ran for a while has finished.
 
 **Type:** boolean · **Default:** `false`
 
-### `notification.exception.unhandled.enabled`
+### `notification.source.terminal.long_running_command.minimum_duration_seconds`
 
-Show a notification for unhandled renderer exceptions caught by the global error reporter.
+Notify only when a command ran for at least this many seconds.
+
+**Type:** integer ≥ 0 · **Default:** `10`
+
+### `notification.source.errors.handled.enabled`
+
+Notify about handled exceptions reported through the central error reporter.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.errors.unhandled.enabled`
+
+Notify about unhandled renderer exceptions caught by the global error reporter.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.working.enabled`
+
+Notify when an agent starts working.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.question.enabled`
+
+Notify when an agent has a question and needs input.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.ready.enabled`
+
+Notify when an agent becomes ready/idle.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.error.enabled`
+
+Notify when an agent reports an error.
 
 **Type:** boolean · **Default:** `false`
 
@@ -856,6 +880,14 @@ Port of the local HTTP server.
 If the port is taken, try the next free one instead of failing.
 
 **Type:** boolean · **Default:** `true`
+
+## Updates
+
+### `updater.install`
+
+`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
+
+**Type:** `background` | `ask` · **Default:** `background`
 
 ## Features
 
@@ -950,45 +982,3 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 Override the side-menu display position for this feature. Lower numbers appear first.
 
 **Type:** integer · **Default:** `65`
-
-### `feature.coding_agents.notifications.working.enabled`
-
-Notify when an agent starts working.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.coding_agents.notifications.question.enabled`
-
-Notify when an agent has a question and needs input.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.coding_agents.notifications.ready.enabled`
-
-Notify when an agent becomes ready/idle.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.coding_agents.notifications.error.enabled`
-
-Notify when an agent reports an error.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.updater.mode`
-
-Turn the feature on or off. Off removes it entirely, including its side-menu entry, and Cogno no longer asks for updates.
-
-**Type:** `off` | `on` · **Default:** `on`
-
-### `feature.updater.order`
-
-Override the side-menu display position for this feature. Lower numbers appear first.
-
-**Type:** integer · **Default:** `90`
-
-### `feature.updater.install`
-
-`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
-
-**Type:** `background` | `ask` · **Default:** `background`

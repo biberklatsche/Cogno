@@ -25,7 +25,12 @@ pub async fn send_os_notification(
         .map(|body| body.trim().to_string())
         .filter(|body| !body.is_empty());
 
-    show_notification(&window, title, body, target)
+    log::info!(target: "notification", "OS notification: {title}");
+    let result = show_notification(&window, title, body, target);
+    if let Err(error) = &result {
+        log::error!(target: "notification", "OS notification failed: {error}");
+    }
+    result
 }
 
 #[cfg(any(windows, target_os = "linux"))]

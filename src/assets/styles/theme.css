@@ -1,5 +1,7 @@
 html {
     --button-border-radius:6px;
+    /* The text size of the side panels, relative to the app font size. */
+    --panel-font-size: 1rem;
 }
 
 :root {
@@ -62,6 +64,13 @@ button, a {
         background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     }
 
+    /* A toggle that is on: lifted like a hovered button, and it stays there. */
+    &.active {
+        font-weight: 600;
+        border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+    }
+
     /* The same lift as a hovered tab: one step lighter, the border one more. */
     &:hover:not(:disabled) {
         border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
@@ -111,4 +120,18 @@ input:where(:not([type]), [type="text"], [type="search"], [type="password"], [ty
         background-color: transparent;
         padding: 0;
     }
+}
+
+/* A select is a field too: same face as the text fields above. */
+select:where(:not(.native)) {
+    border: none;
+    outline: none;
+    color: var(--foreground-color);
+    font: inherit;
+    font-size: 1rem;
+    padding: 0.5rem;
+    border-radius: var(--button-border-radius);
+    box-sizing: border-box;
+    width: 100%;
+    background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
 }

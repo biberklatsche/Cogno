@@ -40,7 +40,7 @@ export function isSelectedSideMenuItem(
         <aside #overlayAside class="base-overlay flat"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!isPinned()"
-               [class.shift-left]="visibleItems().length > 0"
+               [class.shift-left]="visibleItems().length > 0 || bottomItems().length > 0"
                [class.expanded]="isExpanded()"
                [style.width.px]="isExpanded() ? null : panelWidthInPixels()"
                tabindex="-1"
@@ -73,8 +73,18 @@ export function isSelectedSideMenuItem(
                 }
             </main>
         </aside>
-        <menu #menuCol [class.hidden]="visibleItems().length === 0">
+        <menu #menuCol [class.hidden]="visibleItems().length === 0 && bottomItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem.id ?? menuItem.label) {
+                <button class="button icon-button" (click)="open(menuItem)"
+                        [class.selected]="isMenuItemSelected(menuItem)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
+                    <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
+                    @if (menuItem.badgeColor) {
+                        <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
+                    }
+                </button>
+            }
+            <span class="menu-spacer"></span>
+            @for (menuItem of bottomItems(); track menuItem.id ?? menuItem.label) {
                 <button class="button icon-button" (click)="open(menuItem)"
                         [class.selected]="isMenuItemSelected(menuItem)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
@@ -122,6 +132,10 @@ export function isSelectedSideMenuItem(
 
             .button {
                 position: relative;
+            }
+
+            .menu-spacer {
+                flex: 1 1 auto;
             }
 
             .badge {
@@ -258,12 +272,19 @@ export class SideMenuComponent implements OnDestroy {
   menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
   visibleItems: Signal<SideMenuItem[]> = computed(() => {
     return this.menuItems()
-      .filter((menuItem) => !menuItem.hidden)
+      .filter((menuItem) => !menuItem.hidden && !menuItem.bottom)
       .slice()
       .sort(
         (leftMenuItem, rightMenuItem) => (leftMenuItem.order ?? 0) - (rightMenuItem.order ?? 0),
       );
   });
+  /** The workbench's own entries, below the features. */
+  bottomItems: Signal<SideMenuItem[]> = computed(() =>
+    this.menuItems()
+      .filter((menuItem) => !menuItem.hidden && menuItem.bottom)
+      .slice()
+      .sort((left, right) => (left.order ?? 0) - (right.order ?? 0)),
+  );
   selectedItem = this.menuItemService.selectedItem;
   isPinned = this.menuItemService.isPinned;
   focused = this.menuItemService.isFocused;

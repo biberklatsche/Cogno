@@ -57,10 +57,10 @@ type HeaderCommandViewModel = {
         <button
           class="button icon-button terminal-menu-button"
           type="button"
-          aria-label="Open notification settings"
+          aria-label="Open notifications"
           [class.hasNotification]="isNotificationBadgeVisible()"
-          (click)="openMenu($event)">
-            <app-icon [name]="isNotificationBadgeVisible() ? 'mdiBellBadge' : 'mdiBellCog'"></app-icon>
+          (click)="openNotifications($event)">
+            <app-icon [name]="isNotificationBadgeVisible() ? 'mdiBellBadge' : 'mdiBell'"></app-icon>
         </button>
       </span>
     </div>
@@ -230,16 +230,10 @@ export class TerminalHeaderComponent {
     return timespan(ms);
   }
 
-  openMenu(event: Event): void {
+  openNotifications(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    this.host.focus();
-    const items: ContextMenuItem[] = this.menus.buildHeaderMenu();
-    this.menu.openAtElement(
-      event.currentTarget as HTMLElement,
-      { items },
-      { horizontalAlign: "right" },
-    );
+    this.menus.openNotifications();
   }
 
   openCommandMenu(event: Event): void {

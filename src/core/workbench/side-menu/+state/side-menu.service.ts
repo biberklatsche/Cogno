@@ -16,6 +16,10 @@ export type SideMenuItem = {
   component: Type<unknown> | null;
   // Optional badge color indicator
   badgeColor?: string;
+  /** Shown below the feature entries, apart from them: the workbench's own panels. */
+  bottom?: boolean;
+  /** The panel's width before the user resized it; the common default otherwise. */
+  defaultPanelWidthInPixels?: number;
 };
 
 @Injectable({ providedIn: "root" })
@@ -72,6 +76,7 @@ export class SideMenuService {
     const current = this._selectedItem();
     return (
       (current && this._panelWidths().get(current.label)) ??
+      current?.defaultPanelWidthInPixels ??
       SideMenuService.defaultPanelWidthInPixels
     );
   });

@@ -2,6 +2,7 @@ import {
   FeatureDefinition,
   SideMenuFeatureDefinitionContract,
 } from "@cogno/core/api/contributions";
+import { CODING_AGENT_NOTIFICATION_SOURCE } from "./coding-agent-notification-source";
 import { CodingAgentsSideMenuLifecycle } from "./coding-agents-side-menu.lifecycle";
 
 const codingAgentsFeatureId = "coding-agents";
@@ -24,4 +25,5 @@ export const codingAgentsFeature: FeatureDefinition = {
   target: "session",
   id: codingAgentsSideMenuFeatureDefinition.id,
   sideMenu: [codingAgentsSideMenuFeatureDefinition],
+  notificationSources: [CODING_AGENT_NOTIFICATION_SOURCE],
 };

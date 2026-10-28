@@ -56,41 +56,6 @@ export const TerminalSettingsSchema = z.strictObject({
     })
     .optional()
     .describe("The OSC 9;4 progress bar in the terminal header."),
-  notifications: z
-    .strictObject({
-      unread_badge: z
-        .boolean()
-        .optional()
-        .describe(
-          "Show an unread badge on a terminal's tab when a notification-worthy event occurs while it isn't focused.",
-        ),
-      osc9: z
-        .strictObject({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Allow OSC9 terminal notifications to trigger a notification."),
-        })
-        .optional()
-        .describe("Notifications a program sends itself via the OSC 9 escape sequence."),
-      long_running_command: z
-        .strictObject({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Show a notification after a long-running command has finished."),
-          minimum_duration_seconds: z
-            .number()
-            .int()
-            .min(0)
-            .optional()
-            .describe("Notify only when a command ran for at least this many seconds."),
-        })
-        .optional()
-        .describe("Notification when a command that ran for a while finishes."),
-    })
-    .optional()
-    .describe("Which terminal events raise a notification."),
   history: z
     .strictObject({
       max_entries: limitSchema()

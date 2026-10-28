@@ -1,6 +1,6 @@
 import { Injectable, Signal, signal } from "@angular/core";
-import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Logger } from "@cogno/platform/logger";
 import { Opener } from "@cogno/platform/opener";
 import { OsPlatform } from "@cogno/platform/os";
@@ -15,7 +15,7 @@ const DOWNLOAD_BASE_URL = "https://dl.cogno.rocks/download";
 type InstallMode = "background" | "ask";
 
 /**
- * Follows the app's update state and asks for checks while the feature is on.
+ * Follows the app's update state and asks for checks while the window is open.
  * The state itself is Rust's (one per app); this window only shows it, and
  * turns the announcement Rust sends it - once per app and version - into a
  * notification.
@@ -30,7 +30,7 @@ export class UpdaterService {
 
   constructor(
     private readonly updater: Updater,
-    private readonly configPort: ApplicationConfigurationPort,
+    private readonly config: ConfigService,
     private readonly notificationCenter: NotificationCenterPort,
     private readonly opener: Opener,
     private readonly os: OsPlatform,
@@ -77,11 +77,13 @@ export class UpdaterService {
     }
   }
 
+  /** `background` until the config is loaded; a check may run before it is. */
   private installMode(): InstallMode {
-    const config = this.configPort.getConfiguration() as
-      | { feature?: { updater?: { install?: InstallMode } } }
-      | undefined;
-    return config?.feature?.updater?.install ?? "background";
+    try {
+      return this.config.config.updater?.install ?? "background";
+    } catch {
+      return "background";
+    }
   }
 
   private announce(state: UpdaterState): void {

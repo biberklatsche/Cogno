@@ -2,31 +2,34 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
-  NotificationPreferencesState,
-  NotificationPreferencesUseCase,
+  isNotificationEventEnabled,
   NotificationTargetContract,
+  notificationEventSettings,
   TerminalId,
 } from "@cogno/shared/domain";
 import { timespan } from "@cogno/shared/support";
+import {
+  DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
+  LONG_RUNNING_COMMAND_EVENT_ID,
+  TERMINAL_NOTIFICATION_SOURCE_ID,
+} from "../terminal-notification-source";
 
-export const LONG_RUNNING_COMMAND_NOTIFICATION_ID = "long_running_command";
-export const DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS = 10;
-
+/** A command that ran at least as long as the config asks for has finished: say so. */
 export class CompletedCommandNotificationHandler {
   constructor(
     private readonly configService: ConfigService,
     private readonly appBus: AppBus,
     private readonly terminalIdResolver: () => TerminalId | undefined,
-    private readonly notificationPreferencesStateResolver: () => NotificationPreferencesState,
     private readonly notificationTargetResolver: () => NotificationTargetContract | undefined,
   ) {}
 
   readonly handleCompletedCommand = (executedCommand: ExecutedCommand): void => {
-    const notificationPreferencesState = this.notificationPreferencesStateResolver();
+    const config = this.configService.config;
     if (
-      !NotificationPreferencesUseCase.shouldNotify(
-        notificationPreferencesState,
-        LONG_RUNNING_COMMAND_NOTIFICATION_ID,
+      !isNotificationEventEnabled(
+        config,
+        TERMINAL_NOTIFICATION_SOURCE_ID,
+        LONG_RUNNING_COMMAND_EVENT_ID,
       )
     ) {
       return;
@@ -55,26 +58,30 @@ export class CompletedCommandNotificationHandler {
         timestamp: new Date(),
         terminalId,
         target: this.notificationTargetResolver(),
-        channels: NotificationPreferencesUseCase.getActiveChannels(notificationPreferencesState),
       },
     });
   };
 
   private getLongRunningCommandMinimumDurationMilliseconds(): number {
-    const minimumDurationSeconds =
-      this.configService.config.terminal?.notifications?.long_running_command
-        ?.minimum_duration_seconds ?? DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS;
-    return minimumDurationSeconds * 1000;
+    const settings = notificationEventSettings(
+      this.configService.config,
+      TERMINAL_NOTIFICATION_SOURCE_ID,
+      LONG_RUNNING_COMMAND_EVENT_ID,
+    );
+    const minimumDurationSeconds = settings?.["minimum_duration_seconds"];
+    return (
+      (typeof minimumDurationSeconds === "number"
+        ? minimumDurationSeconds
+        : DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS) * 1000
+    );
   }
 
   private renderLongRunningCommandNotificationBody(executedCommand: ExecutedCommand): string {
     const commandLine = executedCommand.command.trim();
     const details: string[] = [`Duration: ${this.formatDuration(executedCommand.duration)}`];
-
     if (executedCommand.returnCode !== undefined) {
       details.push(`Exit code: ${executedCommand.returnCode}`);
     }
-
     return `${commandLine}\n${details.join(" | ")}`;
   }
 
@@ -82,7 +89,6 @@ export class CompletedCommandNotificationHandler {
     if (durationMilliseconds === undefined) {
       return "unknown";
     }
-
     return timespan(durationMilliseconds);
   }
 }
