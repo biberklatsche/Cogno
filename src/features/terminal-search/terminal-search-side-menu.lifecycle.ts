@@ -10,9 +10,7 @@ import { TerminalSearchService } from "./terminal-search.service";
 export class TerminalSearchSideMenuLifecycle {
   constructor(private readonly terminalSearchService: TerminalSearchService) {}
 
-  create(
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
-  ): SideMenuFeatureLifecycleContract {
+  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract): SideMenuFeatureLifecycleContract {
     return {
       onModeChange: (mode) => {
         if (mode === "off") {

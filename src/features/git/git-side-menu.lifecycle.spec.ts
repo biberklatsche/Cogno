@@ -12,7 +12,7 @@ describe("GitSideMenuLifecycle", () => {
         onEscape = handler;
       },
       close: vi.fn(),
-    } as unknown as SideMenuFeatureHandleContract<string>;
+    } as unknown as SideMenuFeatureHandleContract;
     const view = {
       hasMarks: () => state.marks,
       clearMarks: vi.fn(() => {

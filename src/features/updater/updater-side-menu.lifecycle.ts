@@ -11,7 +11,7 @@ export class UpdaterSideMenuLifecycle {
 
   create(
     injector: Injector,
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract,
   ): SideMenuFeatureLifecycleContract {
     let badgeEffect: EffectRef | undefined;
 

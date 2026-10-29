@@ -47,7 +47,6 @@ describe("command palette behaviour", () => {
     const sideMenuLifecycle = lifecycle.create({
       close: closeMock,
       registerKeybindListener: registerKeybindListenerMock,
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     });
     sideMenuLifecycle.onOpen?.();

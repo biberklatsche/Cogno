@@ -16,7 +16,7 @@ describe("UpdaterSideMenuLifecycle", () => {
     start: ReturnType<typeof vi.fn>;
     stop: ReturnType<typeof vi.fn>;
   };
-  let handle: SideMenuFeatureHandleContract<string>;
+  let handle: SideMenuFeatureHandleContract;
   let lifecycle: ReturnType<UpdaterSideMenuLifecycle["create"]>;
 
   function phase(value: UpdaterState["phase"]): UpdaterState {
@@ -37,7 +37,6 @@ describe("UpdaterSideMenuLifecycle", () => {
     handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
     lifecycle = new UpdaterSideMenuLifecycle(updaterService as unknown as UpdaterService).create(

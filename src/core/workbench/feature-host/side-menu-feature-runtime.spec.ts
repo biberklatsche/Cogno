@@ -21,7 +21,6 @@ describe("SideMenuFeatureRuntime", () => {
     isSelected: ReturnType<typeof vi.fn>;
     toggle: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
-    updateIcon: ReturnType<typeof vi.fn>;
     updateBadgeColor: ReturnType<typeof vi.fn>;
     resolveComponent: ReturnType<typeof vi.fn>;
   };
@@ -71,7 +70,6 @@ describe("SideMenuFeatureRuntime", () => {
       isSelected: vi.fn(() => false),
       toggle: vi.fn(),
       close: vi.fn(),
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
       resolveComponent: vi.fn(),
     };
@@ -188,7 +186,6 @@ describe("SideMenuFeatureRuntime", () => {
     runtime.activate();
 
     runtime.registerKeybindListener(["Enter"], vi.fn());
-    runtime.updateIcon("mdiRobot");
     runtime.updateBadgeColor("var(--color-yellow)");
     runtime.close();
 
@@ -197,7 +194,6 @@ describe("SideMenuFeatureRuntime", () => {
       ["Enter"],
       expect.any(Function),
     );
-    expect(sideMenuService.updateIcon).toHaveBeenCalledWith("Workspace", "mdiRobot");
     expect(sideMenuService.updateBadgeColor).toHaveBeenCalledWith(
       "Workspace",
       "var(--color-yellow)",

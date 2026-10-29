@@ -20,7 +20,7 @@ export class CodingAgentsSideMenuLifecycle {
 
   create(
     injector: Injector,
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract,
   ): SideMenuFeatureLifecycleContract {
     let badgeEffect: EffectRef | undefined;
 

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceService } from "./workspace.service";
 import { WorkspaceSideMenuLifecycle } from "./workspace-side-menu.lifecycle";
 
-type SideMenuFeatureHandle = SideMenuFeatureHandleContract<string>;
+type SideMenuFeatureHandle = SideMenuFeatureHandleContract;
 
 describe("WorkspaceSideMenuLifecycle", () => {
   let workspaceService: Pick<WorkspaceService, "restoreSelectedWorkspace" | "selectNext">;
@@ -12,7 +12,6 @@ describe("WorkspaceSideMenuLifecycle", () => {
     registerKeybindListener: ReturnType<
       typeof vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>
     >;
-    updateIcon: ReturnType<typeof vi.fn<SideMenuFeatureHandle["updateIcon"]>>;
     updateBadgeColor: ReturnType<typeof vi.fn<SideMenuFeatureHandle["updateBadgeColor"]>>;
   };
   let lifecycle: ReturnType<WorkspaceSideMenuLifecycle["create"]>;
@@ -25,7 +24,6 @@ describe("WorkspaceSideMenuLifecycle", () => {
     handle = {
       close: vi.fn<SideMenuFeatureHandle["close"]>(),
       registerKeybindListener: vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>(),
-      updateIcon: vi.fn<SideMenuFeatureHandle["updateIcon"]>(),
       updateBadgeColor: vi.fn<SideMenuFeatureHandle["updateBadgeColor"]>(),
     };
 

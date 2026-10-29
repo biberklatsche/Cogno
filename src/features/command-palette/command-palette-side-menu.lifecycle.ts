@@ -10,9 +10,7 @@ import { CommandPaletteService } from "./command-palette.service";
 export class CommandPaletteSideMenuLifecycle {
   constructor(private readonly commandPaletteService: CommandPaletteService) {}
 
-  create(
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
-  ): SideMenuFeatureLifecycleContract {
+  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract): SideMenuFeatureLifecycleContract {
     return {
       onModeChange: (mode) => {
         if (mode === "off") {

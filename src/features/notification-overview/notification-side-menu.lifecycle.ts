@@ -11,25 +11,25 @@ export class NotificationSideMenuLifecycle {
 
   create(
     injector: Injector,
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract,
   ): SideMenuFeatureLifecycleContract {
-    let iconEffect: EffectRef | undefined;
+    let badgeEffect: EffectRef | undefined;
 
     return {
       onModeChange: (mode) => {
-        iconEffect?.destroy();
-        iconEffect = undefined;
+        badgeEffect?.destroy();
+        badgeEffect = undefined;
         if (mode !== "on") {
           this.notificationCenterStateService.stop();
-          sideMenuFeatureHandle.updateIcon("mdiBell");
+          sideMenuFeatureHandle.updateBadgeColor(undefined);
           return;
         }
         this.notificationCenterStateService.start();
-        // The badge says something arrived, even while the panel is closed.
-        iconEffect = effect(
+        // The dot says something arrived, even while the panel is closed.
+        badgeEffect = effect(
           () => {
-            sideMenuFeatureHandle.updateIcon(
-              this.notificationCenterStateService.unread() ? "mdiBellBadge" : "mdiBell",
+            sideMenuFeatureHandle.updateBadgeColor(
+              this.notificationCenterStateService.unread() ? "var(--highlight-color)" : undefined,
             );
           },
           { injector },

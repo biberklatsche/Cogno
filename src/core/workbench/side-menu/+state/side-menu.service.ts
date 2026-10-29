@@ -270,11 +270,6 @@ export class SideMenuService {
     return this._pinnedStack.at(-1) ?? null;
   }
 
-  updateIcon(label: string, icon: Icon) {
-    this._menuItems.update((s) => s.map((i) => (i.label === label ? { ...i, icon } : i)));
-    this._selectedItem.update((s) => (s?.label === label ? { ...s, icon } : s));
-  }
-
   updateBadgeColor(label: string, color?: string) {
     this._menuItems.update((s) =>
       s.map((i) => (i.label === label ? { ...i, badgeColor: color } : i)),

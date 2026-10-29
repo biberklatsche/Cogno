@@ -17,7 +17,7 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     start: ReturnType<typeof vi.fn>;
     stop: ReturnType<typeof vi.fn>;
   };
-  let handle: SideMenuFeatureHandleContract<string>;
+  let handle: SideMenuFeatureHandleContract;
   let lifecycle: ReturnType<CodingAgentsSideMenuLifecycle["create"]>;
 
   beforeEach(() => {
@@ -28,7 +28,6 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
     lifecycle = new CodingAgentsSideMenuLifecycle(

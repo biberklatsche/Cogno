@@ -16,11 +16,9 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     | "repeatSearch"
     | "revealSelectedSearchResult"
   >;
-  let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
-  let registerKeybindListenerMock: Mock<
-    SideMenuFeatureHandleContract<string>["registerKeybindListener"]
-  >;
-  let closeMock: Mock<SideMenuFeatureHandleContract<string>["close"]>;
+  let sideMenuFeatureHandle: SideMenuFeatureHandleContract;
+  let registerKeybindListenerMock: Mock<SideMenuFeatureHandleContract["registerKeybindListener"]>;
+  let closeMock: Mock<SideMenuFeatureHandleContract["close"]>;
 
   beforeEach(() => {
     registerKeybindListenerMock = vi.fn();
@@ -37,7 +35,6 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     sideMenuFeatureHandle = {
       close: closeMock,
       registerKeybindListener: registerKeybindListenerMock,
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
   });

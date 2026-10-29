@@ -17,9 +17,7 @@ const ARROW_DIRECTIONS: Record<string, SelectionDirection> = {
 export class WorkspaceSideMenuLifecycle {
   constructor(private readonly workspaceService: WorkspaceService) {}
 
-  create(
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
-  ): SideMenuFeatureLifecycleContract {
+  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract): SideMenuFeatureLifecycleContract {
     return {
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(

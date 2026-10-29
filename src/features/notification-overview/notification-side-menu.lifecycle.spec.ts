@@ -16,7 +16,7 @@ describe("NotificationSideMenuLifecycle", () => {
     stop: ReturnType<typeof vi.fn>;
     markRead: ReturnType<typeof vi.fn>;
   };
-  let handle: SideMenuFeatureHandleContract<string>;
+  let handle: SideMenuFeatureHandleContract;
   let lifecycle: ReturnType<NotificationSideMenuLifecycle["create"]>;
 
   beforeEach(() => {
@@ -26,7 +26,6 @@ describe("NotificationSideMenuLifecycle", () => {
     handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
     lifecycle = new NotificationSideMenuLifecycle(
@@ -34,25 +33,25 @@ describe("NotificationSideMenuLifecycle", () => {
     ).create(TestBed.inject(Injector), handle);
   });
 
-  it("collects while the feature is on and stops with a plain icon when it is off", () => {
+  it("collects while the feature is on and stops without a dot when it is off", () => {
     lifecycle.onModeChange?.("on");
     expect(stateService.start).toHaveBeenCalledOnce();
 
     lifecycle.onModeChange?.("off");
     expect(stateService.stop).toHaveBeenCalledOnce();
-    expect(handle.updateIcon).toHaveBeenLastCalledWith("mdiBell");
+    expect(handle.updateBadgeColor).toHaveBeenLastCalledWith(undefined);
   });
 
-  it("shows the badge while something is unread and marks it read on open", () => {
+  it("shows the dot while something is unread and marks it read on open", () => {
     lifecycle.onModeChange?.("on");
     unread.set(true);
     TestBed.tick();
-    expect(handle.updateIcon).toHaveBeenLastCalledWith("mdiBellBadge");
+    expect(handle.updateBadgeColor).toHaveBeenLastCalledWith("var(--highlight-color)");
 
     lifecycle.onOpen?.();
     expect(stateService.markRead).toHaveBeenCalledOnce();
     unread.set(false);
     TestBed.tick();
-    expect(handle.updateIcon).toHaveBeenLastCalledWith("mdiBell");
+    expect(handle.updateBadgeColor).toHaveBeenLastCalledWith(undefined);
   });
 });

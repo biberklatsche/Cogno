@@ -11,7 +11,6 @@ import {
   SideMenuService,
 } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
-import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 import { readFeatureConfig } from "./feature-config";
 
@@ -23,7 +22,7 @@ import { readFeatureConfig } from "./feature-config";
  * 6.1). It owns the menu item, its lazily loaded panel, the open keybinding, the
  * view lifecycle hooks and the live `feature.<id>.order` override.
  */
-export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Icon> {
+export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
   private menuItem: SideMenuItem;
   private readonly lifecycle: SideMenuFeatureLifecycleContract;
   private keybindSubscription?: Subscription;
@@ -87,10 +86,6 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
 
   close(): void {
     this.sideMenuService.close();
-  }
-
-  updateIcon(icon: Icon): void {
-    this.sideMenuService.updateIcon(this.config.title, icon);
   }
 
   updateBadgeColor(color?: string): void {
