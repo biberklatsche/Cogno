@@ -2,9 +2,11 @@ import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { CommandRecorder } from "../recorder/command-recorder";
 import type { SessionFact } from "../session-facts";
 import { TerminalCommandHistoryStore } from "./command-history.store";
+import { CommandLineBuffer } from "./command-line.buffer";
 import { CommandLineObserver } from "./command-line.observer";
 import { SessionModel } from "./session-model";
 
@@ -32,7 +34,15 @@ describe("CommandLineObserver", () => {
     contextMenuOverlayService = {
       openAtElement: vi.fn(),
     };
-    observer = new CommandLineObserver(stateManager, [], contextMenuOverlayService, clipboardStub);
+    const registry = new PromptMarkerRegistry();
+    observer = new CommandLineObserver(
+      stateManager,
+      [],
+      contextMenuOverlayService,
+      clipboardStub,
+      registry,
+      new CommandLineBuffer(registry),
+    );
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 

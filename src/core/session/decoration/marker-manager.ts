@@ -1,14 +1,11 @@
 import { PromptSegment } from "@cogno/core/infrastructure/config/models/prompt-config";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
-import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { IDecoration, IMarker, Terminal } from "@xterm/xterm";
 import { SessionModel } from "../model/session-model";
 import { CommandBlockResolver } from "./command-block-resolver";
 import { PromptMarkerRegistry } from "./prompt-marker.registry";
-import { PromptMarkerRenderer } from "./prompt-renderer";
-
-type MarkerManagerContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
+import { ContextMenuOverlayPort, PromptMarkerRenderer } from "./prompt-renderer";
 
 /** Extra lines around the viewport that keep their decorations alive. */
 const DECORATION_WINDOW_LINES = 20;
@@ -24,7 +21,7 @@ export class MarkerManager implements IDisposable {
   constructor(
     private readonly model: SessionModel,
     promptSegments: PromptSegment[],
-    contextMenuOverlayService: MarkerManagerContextMenuOverlayPort,
+    contextMenuOverlayService: ContextMenuOverlayPort,
     clipboard: ClipboardAccess,
     private readonly markerRegistry: PromptMarkerRegistry,
     promptSeparator?: string,
@@ -161,23 +158,7 @@ export class MarkerManager implements IDisposable {
       this._renderer?.render(element, {
         commandIndex,
         markerText: lineText,
-        getCommandOutput: () =>
-          this.commandBlockResolver.resolveByMarkerLine(marker.line)?.outputText ?? "",
-        getBlockRange: () =>
-          this.commandBlockResolver.resolveByMarkerLine(marker.line)?.blockRange ?? {
-            beginBufferLine: 1,
-            endBufferLine: 0,
-          },
-        scrollToCommandTop: () => {
-          this._terminal?.scrollToLine(marker.line);
-        },
-        scrollToCommandBottom: () => {
-          const commandBlockDetails = this.commandBlockResolver.resolveByMarkerLine(marker.line);
-          const targetLineIndex = commandBlockDetails
-            ? Math.max(marker.line, commandBlockDetails.nextMarkerLineIndex - 1)
-            : marker.line;
-          this._terminal?.scrollToLine(targetLineIndex);
-        },
+        ...this.commandBlockResolver.menuActions(() => marker.line),
       });
     });
     this._decorations.set(marker, decoration);

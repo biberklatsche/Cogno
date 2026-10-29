@@ -8,10 +8,10 @@ import {
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import {
-  computeDropdownPanelPosition,
-  estimateDropdownPanelHeight,
-  resolveBoundsRect,
-  resolveRightUiInset,
+  DROPDOWN_PANEL_MIN_WIDTH,
+  DropdownPosition,
+  inputSignature,
+  positionDropdownPanel,
 } from "@cogno/core/session/dropdown/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
@@ -20,20 +20,17 @@ import { debounceTime } from "rxjs/operators";
 import { TerminalHistoryScopeStore } from "./terminal-history-scope.store";
 
 const REFRESH_DEBOUNCE_MS = 80;
-const PANEL_MIN_WIDTH = 280;
-const PANEL_MAX_WIDTH = 920;
-const PANEL_OUTER_PADDING_AND_BORDER = 10;
 const PANEL_ITEM_HORIZONTAL_PADDING = 16; // 8px left + 8px right
 const PANEL_ITEM_GAP = 8;
 const PANEL_FOOTER_PX = 38;
 const LABEL_MEASURE_MAX_CHARS = 140;
 const META_COLUMN_PX = 110; // origin dot + time-ago text + gap
 
-const INITIAL_VIEW_STATE: TerminalHistoryViewState = {
+export const INITIAL_VIEW_STATE: TerminalHistoryViewState = {
   visible: false,
   x: 0,
   y: 0,
-  width: PANEL_MIN_WIDTH,
+  width: DROPDOWN_PANEL_MIN_WIDTH,
   placement: "below",
   selectedIndex: null,
   entries: [],
@@ -81,10 +78,6 @@ export class TerminalHistoryService implements OnDestroy {
     this._viewState.next({ ...view, selectedIndex: index });
   }
 
-  selectEntry(index: number): void {
-    this.applySelectedEntry(index);
-  }
-
   hide(): void {
     this.dropdownCoordinator.release(this);
     this._allEntries = [];
@@ -102,7 +95,7 @@ export class TerminalHistoryService implements OnDestroy {
           return;
         }
 
-        const signature = this.inputSignature(state);
+        const signature = inputSignature(state);
         if (signature === this._lastInputSignature) return;
         this._lastInputSignature = signature;
         this.applyTextFilter(state.input.text);
@@ -146,7 +139,7 @@ export class TerminalHistoryService implements OnDestroy {
         if (view.selectedIndex === null) return;
         event.preventDefault();
         event.stopPropagation();
-        this.applySelectedEntry(view.selectedIndex);
+        this.selectEntry(view.selectedIndex);
         return;
       }
       case "Escape": {
@@ -180,11 +173,11 @@ export class TerminalHistoryService implements OnDestroy {
   private async showHistory(): Promise<void> {
     const requestId = ++this._activeRequestId;
     const state = this.host.state;
-    const preferredScope = this.scopeStore.scope;
-    const { scope, rows } = await this.fetchEntries(preferredScope, state.cwd);
+    const scope = this.scopeStore.scope;
+    const rows = await this.commandLog.getRecentCommands({ scope, cwdRaw: state.cwd });
     if (requestId !== this._activeRequestId) return;
     this._allEntries = this.toEntries(rows);
-    this._lastInputSignature = this.inputSignature(state);
+    this._lastInputSignature = inputSignature(state);
 
     const entries = this.filterEntries(this._allEntries, state.input.text);
     const position = this.computePanelPosition(state, entries);
@@ -218,10 +211,10 @@ export class TerminalHistoryService implements OnDestroy {
 
     const requestId = ++this._activeRequestId;
     const state = this.host.state;
-    const { rows } = await this.fetchEntries(scope, state.cwd);
+    const rows = await this.commandLog.getRecentCommands({ scope, cwdRaw: state.cwd });
     if (requestId !== this._activeRequestId) return;
 
-    // Re-read view after the async gap — hide() may have fired during fetchEntries.
+    // Re-read view after the async gap — hide() may have fired during the fetch.
     const current = this._viewState.value;
     if (!current.visible) return;
 
@@ -239,14 +232,6 @@ export class TerminalHistoryService implements OnDestroy {
       selectedIndex: entries.length > 0 ? 0 : null,
       entries,
     });
-  }
-
-  private async fetchEntries(
-    preferredScope: HistoryScope,
-    cwdRaw?: string,
-  ): Promise<{ scope: HistoryScope; rows: RecentCommandRow[] }> {
-    const rows = await this.commandLog.getRecentCommands({ scope: preferredScope, cwdRaw });
-    return { scope: preferredScope, rows };
   }
 
   private toEntries(rows: RecentCommandRow[]): HistoryEntry[] {
@@ -273,7 +258,7 @@ export class TerminalHistoryService implements OnDestroy {
     return entries.filter((entry) => entry.command.toLowerCase().includes(query));
   }
 
-  private applySelectedEntry(index: number): void {
+  selectEntry(index: number): void {
     const view = this._viewState.value;
     const entry = view.entries[index];
     if (!entry) return;
@@ -288,61 +273,17 @@ export class TerminalHistoryService implements OnDestroy {
     this.hide();
   }
 
-  private computePanelPosition(
-    state: SessionState,
-    entries: HistoryEntry[],
-  ): { x: number; y: number; width: number; placement: "below" | "above" } {
-    const cellWidth = Math.max(1, state.dimensions.cellWidth || 9);
-    const cellHeight = Math.max(1, state.dimensions.cellHeight || 18);
-    const windowWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
-    const windowHeight = Math.max(
-      1,
-      window.innerHeight || document.documentElement.clientHeight || cellHeight,
-    );
-    const bounds = resolveBoundsRect(windowWidth, windowHeight);
-    const rightUiInset = resolveRightUiInset(windowWidth);
-    const effectiveRight = Math.max(bounds.left + 16, bounds.right - rightUiInset);
-    const availableWidth = Math.max(240, effectiveRight - bounds.left);
-
-    const labelCharPx = Math.max(6, Math.floor(cellWidth * 0.95));
-    const widestLinePx = entries.reduce((max, entry) => {
-      const labelChars = Math.min(entry.command.length, LABEL_MEASURE_MAX_CHARS);
-      return Math.max(
-        max,
-        labelChars * labelCharPx +
-          PANEL_ITEM_GAP +
-          META_COLUMN_PX +
-          PANEL_ITEM_HORIZONTAL_PADDING +
-          PANEL_OUTER_PADDING_AND_BORDER,
-      );
-    }, 0);
-    const estimatedPanelWidth = Math.max(
-      PANEL_MIN_WIDTH,
-      Math.min(availableWidth - 8, Math.min(PANEL_MAX_WIDTH, widestLinePx)),
-    );
-
-    return computeDropdownPanelPosition({
-      col: state.cursorPosition.viewport.col,
-      row: state.cursorPosition.viewport.row,
-      cellWidth,
-      cellHeight,
+  private computePanelPosition(state: SessionState, entries: HistoryEntry[]): DropdownPosition {
+    return positionDropdownPanel({
+      state,
       hostRect: this._hostElement?.getBoundingClientRect(),
-      windowWidth,
-      windowHeight,
-      estimatedPanelWidth,
-      estimatedPanelHeight: estimateDropdownPanelHeight(
-        entries.length,
-        cellHeight,
-        PANEL_FOOTER_PX,
-      ),
+      items: entries,
+      itemWidthPx: (entry, labelCharPx) =>
+        Math.min(entry.command.length, LABEL_MEASURE_MAX_CHARS) * labelCharPx +
+        PANEL_ITEM_GAP +
+        META_COLUMN_PX +
+        PANEL_ITEM_HORIZONTAL_PADDING,
+      footerPx: PANEL_FOOTER_PX,
     });
-  }
-
-  private inputSignature(state: SessionState): string {
-    // NUL separates the fields because it cannot occur in the input text; a
-    // printable separator would let two different inputs share a signature and
-    // the panel would miss the change.
-    const input = state.input;
-    return `${input.text}\u0000${input.cursorIndex}\u0000${input.maxCursorIndex}`;
   }
 }

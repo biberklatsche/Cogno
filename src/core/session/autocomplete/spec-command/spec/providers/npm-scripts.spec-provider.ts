@@ -1,4 +1,4 @@
-import { FilesystemContract } from "@cogno/core/session/exec/filesystem";
+import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { SpecProvidedSuggestion, SpecProviderContext, SpecSuggestionProvider } from "../spec.types";
 
 type CacheEntry = {
@@ -11,7 +11,7 @@ export class NpmScriptsSpecProvider implements SpecSuggestionProvider {
   private static readonly TTL_MS = 1200;
   private readonly _cache = new Map<string, CacheEntry>();
 
-  constructor(private readonly filesystem: FilesystemContract) {}
+  constructor(private readonly filesystem: Filesystem) {}
 
   async suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
     const cwdNorm = this.filesystem.normalizePath(

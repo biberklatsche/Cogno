@@ -12,7 +12,7 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
 import { StartEllipsisDirective, TooltipDirective } from "@cogno/shared/ui";
 import { AutocompleteSuggestion } from "./autocomplete.types";
-import { TerminalAutocompleteService } from "./terminal-autocomplete.service";
+import { INITIAL_VIEW_STATE, TerminalAutocompleteService } from "./terminal-autocomplete.service";
 
 @Component({
   selector: "app-terminal-autocomplete",
@@ -242,15 +242,7 @@ export class TerminalAutocompleteComponent {
   private previousSuggestions: AutocompleteSuggestion[] = [];
 
   protected readonly viewState = toSignal(this.autocomplete.viewState$, {
-    initialValue: {
-      visible: false,
-      x: 0,
-      y: 0,
-      width: 280,
-      placement: "below",
-      selectedIndex: null,
-      suggestions: [],
-    },
+    initialValue: INITIAL_VIEW_STATE,
   });
   protected readonly filterMode = toSignal(this.autocomplete.filterMode$, { initialValue: "all" });
   protected readonly filterModeLabel = computed(() => {

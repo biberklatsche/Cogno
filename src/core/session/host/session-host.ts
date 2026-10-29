@@ -22,7 +22,7 @@ import {
   TerminalSearchRevealRequestContract,
 } from "@cogno/shared/domain";
 import { IDisposable } from "@cogno/shared/support";
-import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
+import { ContextMenuItem } from "@cogno/shared/ui";
 import type { Terminal } from "@xterm/xterm";
 import {
   BehaviorSubject,
@@ -34,8 +34,9 @@ import {
   Subscription,
 } from "rxjs";
 import { CommandBlockResolver } from "../decoration/command-block-resolver";
-import { buildCommandMenuItems, CommandMenuBlockRange } from "../decoration/command-menu-items";
+import { buildCommandMenuItems } from "../decoration/command-menu-items";
 import { PromptMarkerRegistry, promptMarkerIdOf } from "../decoration/prompt-marker.registry";
+import { ContextMenuOverlayPort } from "../decoration/prompt-renderer";
 import { CommandLineEditor } from "../editor/command-line.editor";
 import { TerminalInputWriter } from "../editor/input-writer";
 import { ClipboardHandler } from "../handlers/clipboard.handler";
@@ -142,8 +143,6 @@ export type SessionRuntime = {
 
 /** Axis B - display: whether the machine is in the DOM right now. */
 export type SessionDisplay = "detached" | "attached";
-
-type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 /** How long after the shell answered the terminal takes the keyboard. */
 const FOCUS_AFTER_START_MS = 50;
@@ -398,7 +397,6 @@ export class SessionHost {
       this.pty,
       this.configService,
       this.selectionHandler,
-      shellDefinition?.lineEditor,
       commandLineBuffer,
       inputWriter,
     );
@@ -424,7 +422,6 @@ export class SessionHost {
       );
       this.editor = new CommandLineEditor(
         this.clipboard,
-        this.pty,
         this.model,
         shellDefinition?.lineEditor,
         commandLineBuffer,
@@ -812,24 +809,17 @@ export class SessionHost {
     if (!commandOutOfView?.command) {
       return [];
     }
-    const block = () => this.commandBlockResolver.resolveByCommandId(commandOutOfView.id);
 
     return buildCommandMenuItems({
       clipboard: this.clipboard,
       commandText: commandOutOfView.command,
-      getCommandOutput: () => block()?.outputText ?? "",
-      getBlockRange: () => block()?.blockRange ?? EMPTY_BLOCK_RANGE,
-      scrollToCommandTop: () => {
-        const details = block();
-        if (details) this.renderer.terminal.scrollToLine(details.markerLineIndex);
-      },
-      scrollToCommandBottom: () => {
-        const details = block();
-        if (!details) return;
-        this.renderer.terminal.scrollToLine(
-          Math.max(details.markerLineIndex, details.nextMarkerLineIndex - 1),
-        );
-      },
+      ...this.commandBlockResolver.menuActions(
+        () =>
+          this.promptMarkerRegistry?.markers.find(
+            ({ commandId }) => commandId === commandOutOfView.id,
+          )?.marker.line ??
+          this.commandBlockResolver.findMarkerLineByCommandId(commandOutOfView.id),
+      ),
       onFilterBlock: (range) => this.model.report({ type: "filterBlockRequested", range }),
     });
   }
@@ -878,15 +868,9 @@ export class SessionHost {
   }
 
   private isUnreadBadgeEnabled(): boolean {
-    try {
-      return this.configService.config.terminal?.notifications?.unread_badge ?? true;
-    } catch {
-      return true;
-    }
+    return this.configService.config.terminal?.notifications?.unread_badge ?? true;
   }
 }
-
-const EMPTY_BLOCK_RANGE: CommandMenuBlockRange = { beginBufferLine: 1, endBufferLine: 0 };
 
 function createSessionToken(): string {
   const bytes = new Uint8Array(16);

@@ -1,12 +1,10 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { ShellLineEditorDefinitionContract } from "@cogno/core/session/shells/shell-definition";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { bytesToBase64, ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { TerminalInputWriter } from "../editor/input-writer";
 import { CommandLineBuffer } from "../model/command-line.buffer";
 import { SessionModel } from "../model/session-model";
@@ -29,15 +27,8 @@ export class ClipboardHandler implements ITerminalHandler {
     private pty: IPty,
     private configService: ConfigService,
     private readonly selectionHandler: SelectionHandler,
-    readonly lineEditor?: ShellLineEditorDefinitionContract,
-    private readonly commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(
-      new PromptMarkerRegistry(),
-    ),
-    private readonly inputWriter: TerminalInputWriter = new TerminalInputWriter(
-      pty,
-      model,
-      lineEditor,
-    ),
+    private readonly commandLineBuffer: CommandLineBuffer,
+    private readonly inputWriter: TerminalInputWriter,
   ) {}
 
   dispose(): void {

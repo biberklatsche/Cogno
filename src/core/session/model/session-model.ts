@@ -234,8 +234,11 @@ export class SessionModel {
     this.syncContext();
   }
 
-  /** The command that opened an inner context ended; the outer context is back. */
-  private popContextOnCommandEnd(): void {
+  /**
+   * The prompt is back: a command that opened an inner context (an `ssh`, a
+   * nested shell) ended, so the outer context is current again.
+   */
+  popContextOnCommandEnd(): void {
     if (this._contextStack.length <= 1) return;
     this._contextStack.pop();
     this._nextRevision++;
@@ -342,11 +345,6 @@ export class SessionModel {
 
   get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {
     return this._state.value.sessionCapabilities;
-  }
-
-  /** Ends the current command's context if it opened one; then the prompt is the outer shell's. */
-  onPromptBeforeCommandEnd(): void {
-    this.popContextOnCommandEnd();
   }
 
   // ---- working directory ------------------------------------------------

@@ -251,7 +251,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     context: AutocompleteQueryContextContract,
   ): Promise<AutocompleteSuggestionContract[]> {
     const queryLower = query.toLowerCase();
-    const commands = await this.commandsForShell(context);
+    const commands = await this.commandsForShellType(context.shellContext.shellType);
     const suggestions: AutocompleteSuggestionContract[] = [];
 
     for (const c of commands) {
@@ -330,25 +330,24 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       });
     };
 
-    if (traverse.pendingArgs > 0 && traverse.pendingArgSource === "subcommand") {
+    // The root's options apply at every level; the current node's win on a clash.
+    const addOptions = () => {
       const optionMap = new Map<string, PreparedOption>();
-      for (const option of prepared.root.options) {
+      for (const option of [...prepared.root.options, ...traverse.node.options]) {
         optionMap.set(option.primary.toLowerCase(), option);
       }
-      for (const option of traverse.node.options) {
-        optionMap.set(option.primary.toLowerCase(), option);
-      }
-
       for (const option of optionMap.values()) {
         const aliases = option.names;
         const allUsed = aliases.every((alias) =>
           traverse.usedOptionAliases.has(alias.toLowerCase()),
         );
         if (allUsed && !option.isRepeatable) continue;
-        const selected = this.pickSuggestionName(aliases, activeToken);
-        add(selected, "spec-opt", 38, option.description);
+        add(this.pickSuggestionName(aliases, activeToken), "spec-opt", 38, option.description);
       }
+    };
 
+    if (traverse.pendingArgs > 0 && traverse.pendingArgSource === "subcommand") {
+      addOptions();
       return suggestions;
     }
 
@@ -357,22 +356,7 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       const selected = this.pickSuggestionName(sub.names, activeToken);
       add(selected, "spec-sub", 45, sub.description);
     }
-
-    const optionMap = new Map<string, PreparedOption>();
-    for (const option of prepared.root.options) {
-      optionMap.set(option.primary.toLowerCase(), option);
-    }
-    for (const option of traverse.node.options) {
-      optionMap.set(option.primary.toLowerCase(), option);
-    }
-
-    for (const option of optionMap.values()) {
-      const aliases = option.names;
-      const allUsed = aliases.every((alias) => traverse.usedOptionAliases.has(alias.toLowerCase()));
-      if (allUsed && !option.isRepeatable) continue;
-      const selected = this.pickSuggestionName(aliases, activeToken);
-      add(selected, "spec-opt", 38, option.description);
-    }
+    addOptions();
 
     const providerSuggestions = await this.suggestFromProviders(
       prepared.globalProviders,
@@ -467,12 +451,8 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
       providerId,
       suggestorId: this.id,
       command,
-      message: this.errorMessage(error),
+      message: error instanceof Error ? error.message : String(error),
     });
-  }
-
-  private errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
   }
 
   private resolveProviderTimeoutMs(): number {
@@ -578,21 +558,15 @@ export class SpecCommandSuggestor implements TerminalAutocompleteSuggestorContra
     return true;
   }
 
-  private commandsForShell(
-    context: AutocompleteQueryContextContract,
-  ): Promise<ShellScopedCommand[]> {
-    return this.commandsForShellType(context.shellContext.shellType);
-  }
-
   private commandsForShellType(shellType: ShellConstraint): Promise<ShellScopedCommand[]> {
     const shell = shellType;
     const cached = this._commandNamesByShell.get(shell);
     if (cached) return cached;
 
-    const next = Promise.resolve(this.registry.commandNames()).then(async (names) => {
+    const next = this.registry.commandNames().then(async (names) => {
       const scoped: ShellScopedCommand[] = [];
       for (const name of names) {
-        const constraints = await Promise.resolve(this.registry.getConstraints(name));
+        const constraints = await this.registry.getConstraints(name);
         if (constraints?.shells?.length && !constraints.shells.includes(shell)) continue;
         if (constraints?.excludeShells?.includes(shell)) continue;
         scoped.push({

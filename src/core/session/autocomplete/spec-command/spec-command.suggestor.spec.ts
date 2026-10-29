@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { CommandRunner } from "@cogno/core/api/command-runner-port";
 import type { QueryContext } from "@cogno/core/session/autocomplete/suggestor.contracts";
-import type { FilesystemContract } from "@cogno/core/session/exec/filesystem";
+import type { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { describe, expect, it, vi } from "vitest";
 import { CommandListSpecProvider } from "./spec/providers/command-list.spec-provider";
 import { FilesystemSpecProvider } from "./spec/providers/filesystem.spec-provider";
@@ -73,7 +73,7 @@ function loadCommandSpec(name: string): CommandSpec {
 
 describe("SpecCommandSuggestor", () => {
   const defaults = createCommandSpecsFixture();
-  const filesystem = (): FilesystemContract => ({
+  const filesystem = (): Filesystem => ({
     normalizePath: vi.fn((path) => path),
     resolvePath: vi.fn((cwd, input) => `${cwd.replace(/\/$/, "")}/${input}`),
     list: vi.fn(),
@@ -82,7 +82,6 @@ describe("SpecCommandSuggestor", () => {
     watch$: vi.fn(),
     toDisplayPath: vi.fn((path) => path),
     appendPathSeparator: vi.fn((path) => `${path}/`),
-    toRelativePath: vi.fn((path) => path),
   });
   const commandRunner = (): CommandRunner => ({
     run: vi.fn(),

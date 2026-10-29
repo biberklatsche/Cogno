@@ -43,7 +43,7 @@ export function interpretCognoOsc(data: string, model: SessionModel): CognoOscRe
     return "capabilities";
   }
 
-  model.onPromptBeforeCommandEnd();
+  model.popContextOnCommandEnd();
   model.endCommand();
   model.report({ type: "promptReported" });
   if (!kv) return "ignored";

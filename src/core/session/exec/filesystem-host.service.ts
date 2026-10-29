@@ -139,8 +139,4 @@ export class FilesystemHostService extends Filesystem {
   appendPathSeparator(path: string, shellContext: ShellContextContract): string {
     return AutocompletePathSupport.appendDirectorySeparator(path, shellContext);
   }
-
-  toRelativePath(path: string, cwd: string, _shellContext: ShellContextContract): string {
-    return AutocompletePathSupport.toRelativePath(path, cwd);
-  }
 }
