@@ -12,6 +12,7 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
 import { StartEllipsisDirective, TooltipDirective } from "@cogno/shared/ui";
 import { AutocompleteSuggestion } from "./autocomplete.types";
+import { isHistorySource, isLocalHistorySource } from "./suggestion-source";
 import { INITIAL_VIEW_STATE, TerminalAutocompleteService } from "./terminal-autocomplete.service";
 
 @Component({
@@ -295,15 +296,11 @@ export class TerminalAutocompleteComponent {
   }
 
   protected isHistorySuggestion(item: AutocompleteSuggestion): boolean {
-    const parts = item.source
-      .split("+")
-      .map((v) => v.trim().toLowerCase())
-      .filter(Boolean);
-    return parts.some((part) => part.includes("history"));
+    return isHistorySource(item.source);
   }
 
   protected isLocalHistorySuggestion(item: AutocompleteSuggestion): boolean {
-    return item.source.split("+").some((s) => s.trim() === "history-cmd-local");
+    return isLocalHistorySource(item.source);
   }
 
   private scrollSelectedIntoView(): void {

@@ -15,6 +15,7 @@ import { AutocompleteContextParser } from "./autocomplete-context.parser";
 import { SharedSuggestors } from "./shared-suggestors";
 import { SuggestionCollapser } from "./suggestion-collapser";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
+import { isHistorySource } from "./suggestion-source";
 import { TerminalAutocompleteSuggestorContract } from "./suggestor.contracts";
 import { CommandPatternSuggestor } from "./suggestors/command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
@@ -383,10 +384,10 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   private prioritizeHistorySuggestions(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
-    const history = items.filter((item) => this.isHistorySuggestion(item));
+    const history = items.filter((item) => isHistorySource(item.source));
     const reservedHistory = history.slice(0, MAX_TOP_HISTORY_SUGGESTIONS);
     const used = new Set(reservedHistory);
-    const nonHistory = items.filter((item) => !this.isHistorySuggestion(item));
+    const nonHistory = items.filter((item) => !isHistorySource(item.source));
     const additionalHistory = history.filter((item) => !used.has(item));
 
     return [...reservedHistory, ...nonHistory, ...additionalHistory];
@@ -397,10 +398,10 @@ export class TerminalAutocompleteService implements OnDestroy {
     mode: SuggestionFilterMode,
   ): AutocompleteSuggestion[] {
     if (mode === "history-only") {
-      return items.filter((item) => this.isHistorySuggestion(item)).slice(0, MAX_SUGGESTIONS);
+      return items.filter((item) => isHistorySource(item.source)).slice(0, MAX_SUGGESTIONS);
     }
     if (mode === "context-only") {
-      return items.filter((item) => !this.isHistorySuggestion(item)).slice(0, MAX_SUGGESTIONS);
+      return items.filter((item) => !isHistorySource(item.source)).slice(0, MAX_SUGGESTIONS);
     }
     return this.prioritizeHistorySuggestions(this.dedupeSuggestions(items)).slice(
       0,
@@ -637,14 +638,6 @@ export class TerminalAutocompleteService implements OnDestroy {
     } catch {
       // ignore storage access errors
     }
-  }
-
-  private isHistorySuggestion(item: AutocompleteSuggestion): boolean {
-    const parts = item.source
-      .split("+")
-      .map((v) => v.trim().toLowerCase())
-      .filter(Boolean);
-    return parts.some((part) => part.includes("history"));
   }
 
   /** A suggestor's `matches` must not take the panel down; a throw means "no match". */

@@ -16,8 +16,6 @@ type TemplateFacing = {
   filterModeLabel: Signal<string>;
   filterModeTooltip: Signal<string>;
   selectedDescription(): string;
-  isHistorySuggestion(item: AutocompleteSuggestion): boolean;
-  isLocalHistorySuggestion(item: AutocompleteSuggestion): boolean;
   listRef?: ElementRef<HTMLDivElement>;
 };
 
@@ -175,34 +173,6 @@ describe("TerminalAutocompleteComponent", () => {
       expect(component.filterMode()).toBe(mode);
       expect(component.filterModeLabel()).toBe(label);
       expect(component.filterModeTooltip()).toBe(tooltip);
-    });
-  });
-
-  describe("source dot", () => {
-    it.each([
-      ["history-cmd", true],
-      ["history-cmd-local", true],
-      ["history-dir", true],
-      ["npm-scripts + history-cmd", true],
-      ["History-Cmd", true],
-      ["  history-cmd  ", true],
-      ["npm-scripts", false],
-      ["filesystem + npm-scripts", false],
-      ["", false],
-    ])("recognises source %j as history: %s", (source, expected) => {
-      expect(component.isHistorySuggestion(suggestion({ source }))).toBe(expected);
-    });
-
-    it.each([
-      ["history-cmd-local", true],
-      ["npm-scripts + history-cmd-local", true],
-      ["history-cmd-local+history-cmd", true],
-      ["history-cmd", false],
-      ["History-Cmd-Local", false],
-      ["history-cmd-local-extra", false],
-      ["npm-scripts", false],
-    ])("recognises source %j as local history: %s", (source, expected) => {
-      expect(component.isLocalHistorySuggestion(suggestion({ source }))).toBe(expected);
     });
   });
 
