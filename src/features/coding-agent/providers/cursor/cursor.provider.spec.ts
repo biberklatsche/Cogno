@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ConfigFileService } from "../_shared/config-file.service";
+import { isCognoHookCommand } from "../_shared/hook-command.builder";
 import { CURSOR_CONFIG, type CursorHooksFile } from "./cursor.config";
 import { CursorProvider } from "./cursor.provider";
 
@@ -16,8 +17,8 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
     ensureDir: async (path: string) => {
       dirs.add(path);
     },
-    homeDir: async () => "/home",
-    joinPath: async (...parts: string[]) => parts.join("/"),
+    configDir: async (subDir: string) => `/home/${subDir}`,
+    configPath: async (subDir: string, fileName: string) => `/home/${subDir}/${fileName}`,
   } as unknown as ConfigFileService;
   return { service, files };
 }
@@ -27,7 +28,7 @@ const foreignHook = { command: "./hooks/audit.sh" };
 const cognoHooksIn = (file: CursorHooksFile) =>
   Object.values(file.hooks ?? {})
     .flat()
-    .filter((hook) => CURSOR_CONFIG.isCognoCommand(hook.command));
+    .filter((hook) => isCognoHookCommand(hook.command));
 
 describe("CursorProvider", () => {
   let files: Map<string, unknown>;

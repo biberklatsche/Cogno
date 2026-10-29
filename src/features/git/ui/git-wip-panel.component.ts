@@ -6,6 +6,7 @@ import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState, GitWipFileGroup } from "../git-view-state.service";
 import { GitFile } from "../model/git-model";
 import { GitFileListComponent } from "./git-file-list.component";
+import { toggled } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 /** The working tree: conflicts, unstaged and staged files, and the commit form. */
@@ -22,7 +23,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       </span>
       <button type="button" class="button icon-button"
               [appTooltip]="view.fileListMode() === 'tree' ? 'Show as paths' : 'Show as tree'"
-              (click)="toggleFileListMode()">
+              (click)="view.toggleFileListMode()">
         <app-icon [name]="view.fileListMode() === 'tree' ? 'mdiFormatListBulleted' : 'mdiFileTree'"></app-icon>
       </button>
     </header>
@@ -205,16 +206,7 @@ export class GitWipPanelComponent {
   }
 
   toggle(group: GitWipFileGroup): void {
-    this.view.closedWipGroups.update((closed) => {
-      const next = new Set(closed);
-      if (next.has(group)) next.delete(group);
-      else next.add(group);
-      return next;
-    });
-  }
-
-  toggleFileListMode(): void {
-    this.view.fileListMode.update((mode) => (mode === "tree" ? "path" : "tree"));
+    this.view.closedWipGroups.update((closed) => toggled(closed, group));
   }
 
   selectedPath(kind: "unstaged" | "staged"): string | null {

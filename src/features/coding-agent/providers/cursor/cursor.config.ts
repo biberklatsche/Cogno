@@ -1,5 +1,4 @@
 import { AgentStatus } from "../../agent-status";
-import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
 
 export type CursorHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 
@@ -50,8 +49,4 @@ export const CURSOR_CONFIG = {
     { eventName: CURSOR_HOOK_EVENT.preCompact, status: "working" as AgentStatus },
     { eventName: CURSOR_HOOK_EVENT.stop, status: "ready" as AgentStatus },
   ] as ReadonlyArray<CursorHookEntry>,
-
-  isCognoCommand(command: string): boolean {
-    return command.includes(CODING_AGENT_STATUS_ACTION) && command.includes("COGNO_PORT");
-  },
 } as const;

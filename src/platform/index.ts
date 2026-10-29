@@ -19,7 +19,6 @@ export * from "./path";
 export * from "./process";
 export * from "./pty";
 export * from "./shells";
-export * from "./simple-file-access";
 export * from "./updater";
 export * from "./window";
 export * from "./window-core";

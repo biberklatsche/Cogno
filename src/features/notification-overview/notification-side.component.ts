@@ -12,7 +12,6 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
   imports: [IconComponent, TooltipDirective],
   template: `
     <section class="notification-header">
-      <div></div>
       <button class="button" type="button" [disabled]="notifications().length === 0" (click)="clearAll()">
         Clear
       </button>
@@ -61,7 +60,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         flex: 0 0 auto;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-end;
       }
 
       .notification-list {

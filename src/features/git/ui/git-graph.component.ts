@@ -23,6 +23,7 @@ import { GraphRow, GraphSegment } from "../model/git-graph";
 import { GitCommit, GitRefLabel } from "../model/git-model";
 import { formatCommitTime, graphColor } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
+import { PointerResize } from "./pointer-resize";
 
 /** GitKraken's measures: the row, a lane as wide as an avatar, the avatar filling its lane. */
 const ROW_HEIGHT = 28;
@@ -41,15 +42,6 @@ const DEFAULT_WIDTHS: Readonly<Record<Exclude<GitGraphColumn, "graph">, number>>
   author: 128,
   date: 152,
   sha: 72,
-};
-
-type Resize = {
-  column: GitGraphColumn;
-  startX: number;
-  startWidth: number;
-  /** 1 for a handle on the column's right edge, -1 on its left: dragging left widens it. */
-  direction: 1 | -1;
-  handle: HTMLElement;
 };
 
 type GraphItem = {
@@ -438,7 +430,7 @@ export class GitGraphComponent {
     if (!hidden.has("sha")) tracks.push(`${this.width("sha")}px`);
     return tracks.join(" ");
   });
-  private resizing: Resize | null = null;
+  private readonly resizing = new PointerResize<GitGraphColumn>();
   /** The hovered commit's refs, positioned under its cell. */
   readonly refsPopover = signal<{
     labels: ReadonlyArray<GitRefLabel>;
@@ -500,37 +492,23 @@ export class GitGraphComponent {
     return column === "graph" ? this.graphWidth() : DEFAULT_WIDTHS[column];
   }
 
+  /** `direction` is 1 for a handle on the column's right edge, -1 on its left: dragging left widens it. */
   startResize(column: GitGraphColumn, event: PointerEvent, direction: 1 | -1 = 1): void {
-    event.preventDefault();
     event.stopPropagation();
-    const handle = event.currentTarget as HTMLElement;
-    handle.setPointerCapture(event.pointerId);
-    handle.classList.add("active");
-    this.resizing = {
-      column,
-      startX: event.clientX,
-      startWidth: this.width(column),
-      direction,
-      handle,
-    };
+    this.resizing.start(event, column, this.width(column), direction);
   }
 
   resize(event: PointerEvent): void {
-    const resizing = this.resizing;
-    if (!resizing) return;
-    const width = resizing.startWidth + (event.clientX - resizing.startX) * resizing.direction;
+    const drag = this.resizing.move(event);
+    if (!drag) return;
     this.view.columnWidths.update((widths) => ({
       ...widths,
-      [resizing.column]: Math.round(Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, width))),
+      [drag.target]: Math.round(Math.min(MAX_COLUMN_WIDTH, Math.max(MIN_COLUMN_WIDTH, drag.width))),
     }));
   }
 
   endResize(event: PointerEvent): void {
-    const resizing = this.resizing;
-    if (!resizing) return;
-    resizing.handle.releasePointerCapture(event.pointerId);
-    resizing.handle.classList.remove("active");
-    this.resizing = null;
+    this.resizing.end(event);
   }
 
   /** Back to the default width, or for the graph to following the lanes. */

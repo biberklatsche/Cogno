@@ -1,5 +1,4 @@
 import { AgentStatus } from "../../agent-status";
-import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
 import { CLAUDE_STYLE_HOOK_EVENT } from "../_shared/hook-events";
 
 export type KimiHookEntry = { readonly eventName: string; readonly status: AgentStatus };
@@ -32,8 +31,4 @@ export const KIMI_CONFIG = {
     { eventName: CLAUDE_STYLE_HOOK_EVENT.stop, status: "ready" as AgentStatus },
     { eventName: CLAUDE_STYLE_HOOK_EVENT.stopFailure, status: "error" as AgentStatus },
   ] as ReadonlyArray<KimiHookEntry>,
-
-  isCognoCommand(command: string): boolean {
-    return command.includes(CODING_AGENT_STATUS_ACTION) && command.includes("COGNO_PORT");
-  },
 } as const;

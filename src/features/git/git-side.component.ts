@@ -18,21 +18,13 @@ import { GitRefsPanelComponent } from "./ui/git-refs-panel.component";
 import { GIT_SHARED_STYLES } from "./ui/git-styles";
 import { GitToolbarComponent } from "./ui/git-toolbar.component";
 import { GitWipPanelComponent } from "./ui/git-wip-panel.component";
+import { PointerResize } from "./ui/pointer-resize";
 
 /** Below this panel width the branches panel becomes a drawer over the graph. */
 const NARROW_WIDTH_PX = 760;
 const MIN_PANEL_WIDTH = 160;
 /** What the graph in the middle keeps at least while a side panel is dragged wider. */
 const MIN_CENTER_WIDTH = 240;
-
-type PanelResize = {
-  panel: GitSidePanel;
-  startX: number;
-  startWidth: number;
-  /** How wide the panel may get before the middle falls below its minimum. */
-  maxWidth: number;
-  handle: HTMLElement;
-};
 
 /**
  * The git panel of the focused terminal's repository, laid out like
@@ -262,7 +254,9 @@ export class GitSideComponent implements OnDestroy {
   });
 
   private readonly resizeObserver: ResizeObserver;
-  private resizing: PanelResize | null = null;
+  private readonly resizing = new PointerResize<GitSidePanel>();
+  /** How wide the dragged panel may get before the middle falls below its minimum. */
+  private maxWidth = Infinity;
 
   constructor(
     readonly repository: GitRepositoryService,
@@ -293,7 +287,6 @@ export class GitSideComponent implements OnDestroy {
 
   startResize(panel: GitSidePanel, event: PointerEvent): void {
     event.preventDefault();
-    const handle = event.currentTarget as HTMLElement;
     const element = this.host.nativeElement.querySelector<HTMLElement>(
       panel === "refs" ? ".refs" : ".detail",
     );
@@ -302,35 +295,26 @@ export class GitSideComponent implements OnDestroy {
     const other = this.host.nativeElement.querySelector<HTMLElement>(
       panel === "refs" ? ".detail" : ".refs",
     );
-    handle.setPointerCapture(event.pointerId);
-    handle.classList.add("active");
-    this.resizing = {
+    this.maxWidth =
+      body.clientWidth - (other?.getBoundingClientRect().width ?? 0) - MIN_CENTER_WIDTH;
+    // The branches panel grows to the right, the detail panel to the left.
+    this.resizing.start(
+      event,
       panel,
-      startX: event.clientX,
-      startWidth: element.getBoundingClientRect().width,
-      maxWidth: body.clientWidth - (other?.getBoundingClientRect().width ?? 0) - MIN_CENTER_WIDTH,
-      handle,
-    };
+      element.getBoundingClientRect().width,
+      panel === "refs" ? 1 : -1,
+    );
   }
 
   resize(event: PointerEvent): void {
-    const resizing = this.resizing;
-    if (!resizing) return;
-    // The branches panel grows to the right, the detail panel to the left.
-    const delta = (event.clientX - resizing.startX) * (resizing.panel === "refs" ? 1 : -1);
-    const width = Math.min(
-      resizing.maxWidth,
-      Math.max(MIN_PANEL_WIDTH, resizing.startWidth + delta),
-    );
-    this.view.panelWidths.update((widths) => ({ ...widths, [resizing.panel]: Math.round(width) }));
+    const drag = this.resizing.move(event);
+    if (!drag) return;
+    const width = Math.min(this.maxWidth, Math.max(MIN_PANEL_WIDTH, drag.width));
+    this.view.panelWidths.update((widths) => ({ ...widths, [drag.target]: Math.round(width) }));
   }
 
   endResize(event: PointerEvent): void {
-    const resizing = this.resizing;
-    if (!resizing) return;
-    resizing.handle.releasePointerCapture(event.pointerId);
-    resizing.handle.classList.remove("active");
-    this.resizing = null;
+    this.resizing.end(event);
   }
 
   /** Back to following the available width. */

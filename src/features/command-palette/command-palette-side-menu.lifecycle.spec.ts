@@ -10,7 +10,7 @@ vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", (
 describe("CommandPaletteSideMenuLifecycle", () => {
   let commandPaletteService: Pick<
     CommandPaletteService,
-    "selectedEntry" | "fireSelectedAction" | "handleSideMenuOpen" | "handleSideMenuClose" | "move"
+    "selectedEntry" | "fireSelectedAction" | "handleSideMenuClose" | "move"
   >;
   let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
   let registerKeybindListenerMock: Mock<
@@ -29,7 +29,6 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     commandPaletteService = {
       selectedEntry: vi.fn() as unknown as CommandPaletteService["selectedEntry"],
       fireSelectedAction: vi.fn(),
-      handleSideMenuOpen: vi.fn(),
       handleSideMenuClose: vi.fn(),
       move: vi.fn(),
     };
@@ -53,7 +52,6 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     lifecycle.onClose?.();
     lifecycle.onBlur?.();
 
-    expect(commandPaletteService.handleSideMenuOpen).toHaveBeenCalledTimes(1);
     expect(commandPaletteService.handleSideMenuClose).toHaveBeenCalledTimes(2);
     expect(unregisterKeybindListenerMock).toHaveBeenCalledTimes(1);
   });

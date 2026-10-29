@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ConfigFileService } from "../_shared/config-file.service";
+import { isCognoHookCommand } from "../_shared/hook-command.builder";
 import { CLAUDE_CODE_CONFIG, type ClaudeSettings } from "./claude-code.config";
 import { ClaudeCodeProvider } from "./claude-code.provider";
 
@@ -16,8 +17,8 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
     ensureDir: async (path: string) => {
       dirs.add(path);
     },
-    homeDir: async () => "/home",
-    joinPath: async (...parts: string[]) => parts.join("/"),
+    configDir: async (subDir: string) => `/home/${subDir}`,
+    configPath: async (subDir: string, fileName: string) => `/home/${subDir}/${fileName}`,
   } as unknown as ConfigFileService;
   return { service, files };
 }
@@ -28,7 +29,7 @@ const cognoHooksIn = (settings: ClaudeSettings) =>
   Object.values(settings.hooks ?? {})
     .flat()
     .flatMap((group) => group.hooks)
-    .filter((hook) => CLAUDE_CODE_CONFIG.isCognoCommand(hook.command));
+    .filter((hook) => isCognoHookCommand(hook.command));
 
 describe("ClaudeCodeProvider", () => {
   let files: Map<string, unknown>;

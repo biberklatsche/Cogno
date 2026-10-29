@@ -19,10 +19,7 @@ export class CommandPaletteSideMenuLifecycle {
           this.commandPaletteService.handleSideMenuClose();
         }
       },
-      onOpen: () => {
-        this.commandPaletteService.handleSideMenuOpen();
-        focusSideMenuAutofocusElement();
-      },
+      onOpen: () => focusSideMenuAutofocusElement(),
       onClose: () => this.commandPaletteService.handleSideMenuClose(),
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(

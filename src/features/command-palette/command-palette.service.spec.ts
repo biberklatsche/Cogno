@@ -3,7 +3,7 @@ import type { ActionEntryContract } from "@cogno/shared/domain";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { getDestroyRef } from "../../__test__/destroy-ref";
-import { CommandPaletteService } from "./command-palette.service";
+import { CommandEntry, CommandPaletteService } from "./command-palette.service";
 
 describe("CommandPaletteService", () => {
   let service: CommandPaletteService;
@@ -39,7 +39,6 @@ describe("CommandPaletteService", () => {
       actionDispatcher as any,
       getDestroyRef(),
     );
-    service.handleSideMenuOpen();
   });
 
   it("initializes command list from host port entries", () => {
@@ -70,7 +69,10 @@ describe("CommandPaletteService", () => {
   });
 
   it("publishes selected action", () => {
-    service.fireSelectedAction();
+    const selectedEntry = service.selectedEntry();
+    expect(selectedEntry?.id).toBe("copy");
+
+    service.fireSelectedAction(selectedEntry as CommandEntry);
 
     expect(dispatchActionMock).toHaveBeenCalledWith(
       expect.objectContaining({ actionName: "copy" }),
@@ -103,7 +105,6 @@ describe("CommandPaletteService", () => {
   it("shows commands again when reopened after filtering", () => {
     service.filterCommands("copy");
     service.handleSideMenuClose();
-    service.handleSideMenuOpen();
 
     expect(service.filteredCommandList().length).toBe(3);
   });

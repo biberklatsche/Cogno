@@ -15,6 +15,12 @@ export type GitResetMode = "soft" | "mixed" | "hard";
  */
 export type GitOperationOutcome = "ok" | "failed" | "rejected";
 
+/** A long-running operation in progress: which button spins, and what the toolbar may say. */
+export type GitBusy = {
+  readonly kind: "pull" | "push" | "clone";
+  readonly label: string;
+};
+
 const LOCAL_TIMEOUT_MS = 30_000;
 const NETWORK_TIMEOUT_MS = 120_000;
 const CLONE_TIMEOUT_MS = 600_000;
@@ -49,8 +55,8 @@ type RunOptions = {
  */
 @Injectable({ providedIn: "root" })
 export class GitOperationsService {
-  private readonly busySignal = signal<string | null>(null);
-  /** Label of the long-running operation in progress, for the toolbar. */
+  private readonly busySignal = signal<GitBusy | null>(null);
+  /** The long-running operation in progress, for the toolbar. */
   readonly busy = this.busySignal.asReadonly();
 
   constructor(
@@ -116,14 +122,10 @@ export class GitOperationsService {
     );
   }
 
-  takeConflictSide(path: string, side: "ours" | "theirs"): Promise<GitOperationOutcome> {
-    return this.sequence(
-      [
-        ["checkout", `--${side}`, "--", path],
-        ["add", "--", path],
-      ],
-      "Resolve failed",
-    );
+  async takeConflictSide(path: string, side: "ours" | "theirs"): Promise<GitOperationOutcome> {
+    const outcome = await this.git(["checkout", `--${side}`, "--", path], "Resolve failed");
+    if (outcome !== "ok") return outcome;
+    return this.git(["add", "--", path], "Resolve failed");
   }
 
   markResolved(path: string): Promise<GitOperationOutcome> {
@@ -160,10 +162,9 @@ export class GitOperationsService {
     return this.git(["switch", "--detach", ref], "Checkout failed");
   }
 
-  createBranch(name: string, startPoint: string, checkout: boolean): Promise<GitOperationOutcome> {
-    return checkout
-      ? this.git(["switch", "-c", name, startPoint], "Create branch failed")
-      : this.git(["branch", name, startPoint], "Create branch failed");
+  /** Create the branch at `startPoint` and check it out. */
+  createBranch(name: string, startPoint: string): Promise<GitOperationOutcome> {
+    return this.git(["switch", "-c", name, startPoint], "Create branch failed");
   }
 
   renameBranch(name: string, newName: string): Promise<GitOperationOutcome> {
@@ -273,13 +274,19 @@ export class GitOperationsService {
   }
 
   pushTag(remote: string, name: string): Promise<GitOperationOutcome> {
-    return this.network(["push", remote, `refs/tags/${name}`], `Pushing ${name}`, `Pushed ${name}`);
+    return this.network(
+      ["push", remote, `refs/tags/${name}`],
+      { kind: "push", label: `Pushing ${name}` },
+      "Pushing failed",
+      `Pushed ${name}`,
+    );
   }
 
   deleteRemoteTag(remote: string, name: string): Promise<GitOperationOutcome> {
     return this.network(
       ["push", remote, "--delete", `refs/tags/${name}`],
-      `Deleting ${name}`,
+      { kind: "push", label: `Deleting ${name}` },
+      "Deleting failed",
       `Deleted ${name} from ${remote}`,
     );
   }
@@ -310,7 +317,8 @@ export class GitOperationsService {
   fetch(remote: string | null): Promise<GitOperationOutcome> {
     return this.network(
       ["fetch", "--prune", ...(remote ? [remote] : ["--all"])],
-      "Fetching",
+      { kind: "pull", label: "Fetching" },
+      "Fetching failed",
       remote ? `Fetched ${remote}` : "Fetched all remotes",
     );
   }
@@ -318,7 +326,12 @@ export class GitOperationsService {
   pull(mode: GitPullMode): Promise<GitOperationOutcome> {
     if (mode === "fetch") return this.fetch(null);
     const flag = { merge: "--no-rebase", "ff-only": "--ff-only", rebase: "--rebase" }[mode];
-    return this.network([...NO_EDITOR, "pull", flag], "Pulling", "Pulled");
+    return this.network(
+      [...NO_EDITOR, "pull", flag],
+      { kind: "pull", label: "Pulling" },
+      "Pulling failed",
+      "Pulled",
+    );
   }
 
   /**
@@ -328,7 +341,8 @@ export class GitOperationsService {
   pullBranch(branch: string, upstream: GitRemoteBranch): Promise<GitOperationOutcome> {
     return this.network(
       ["fetch", upstream.remote, `refs/heads/${upstream.shortName}:refs/heads/${branch}`],
-      `Pulling ${branch}`,
+      { kind: "pull", label: `Pulling ${branch}` },
+      "Pulling failed",
       `Pulled ${branch}`,
     );
   }
@@ -353,7 +367,8 @@ export class GitOperationsService {
         remote,
         `refs/heads/${branch}:refs/heads/${remoteBranch}`,
       ],
-      `Pushing ${branch}`,
+      { kind: "push", label: `Pushing ${branch}` },
+      "Pushing failed",
       `Pushed ${branch}`,
       {
         machineOutput: true,
@@ -369,7 +384,8 @@ export class GitOperationsService {
   deleteRemoteBranch(remoteBranch: GitRemoteBranch): Promise<GitOperationOutcome> {
     return this.network(
       ["push", remoteBranch.remote, "--delete", remoteBranch.shortName],
-      `Deleting ${remoteBranch.name}`,
+      { kind: "push", label: `Deleting ${remoteBranch.name}` },
+      "Deleting failed",
       `Deleted ${remoteBranch.name}`,
     );
   }
@@ -382,7 +398,8 @@ export class GitOperationsService {
     const count = shortNames.length === 1 ? shortNames[0] : `${shortNames.length} branches`;
     return this.network(
       ["push", remote, "--delete", ...shortNames],
-      `Deleting ${count} on ${remote}`,
+      { kind: "push", label: `Deleting ${count} on ${remote}` },
+      "Deleting failed",
       `Deleted ${count} on ${remote}`,
     );
   }
@@ -399,7 +416,7 @@ export class GitOperationsService {
 
   /** Clone into `directory`, relative to the bound terminal's cwd unless absolute. */
   clone(url: string, directory: string): Promise<GitOperationOutcome> {
-    return this.withBusy(`Cloning ${url}`, () =>
+    return this.withBusy({ kind: "clone", label: `Cloning ${url}` }, () =>
       this.git(
         [
           ...this.credentialCacheArgs(),
@@ -424,12 +441,13 @@ export class GitOperationsService {
 
   private network(
     args: string[],
-    busyLabel: string,
+    busy: GitBusy,
+    errorHeader: string,
     success: string,
     options: Pick<RunOptions, "refused" | "machineOutput"> = {},
   ): Promise<GitOperationOutcome> {
-    return this.withBusy(busyLabel, () =>
-      this.git([...this.credentialCacheArgs(), ...args], `${busyLabel.split(" ")[0]} failed`, {
+    return this.withBusy(busy, () =>
+      this.git([...this.credentialCacheArgs(), ...args], errorHeader, {
         ...options,
         timeoutMs: NETWORK_TIMEOUT_MS,
         success,
@@ -450,31 +468,15 @@ export class GitOperationsService {
   }
 
   private async withBusy(
-    label: string,
+    busy: GitBusy,
     work: () => Promise<GitOperationOutcome>,
   ): Promise<GitOperationOutcome> {
-    this.busySignal.set(label);
+    this.busySignal.set(busy);
     try {
       return await work();
     } finally {
       this.busySignal.set(null);
     }
-  }
-
-  private async sequence(
-    steps: ReadonlyArray<ReadonlyArray<string>>,
-    errorHeader: string,
-  ): Promise<GitOperationOutcome> {
-    for (const args of steps) {
-      const prompts = this.prompts.forRun();
-      const result = await this.repository.run(args, LOCAL_TIMEOUT_MS, undefined, prompts.handler);
-      if (!this.report(result, errorHeader, prompts)) {
-        await this.repository.refresh();
-        return "failed";
-      }
-    }
-    await this.repository.refresh();
-    return "ok";
   }
 
   private async git(

@@ -186,14 +186,6 @@ describe("command palette behaviour", () => {
       expect(selectedId()).toBe("copy");
     });
 
-    it("selects the first entry again when the side menu reports open", () => {
-      press("ArrowDown");
-
-      service.handleSideMenuOpen();
-
-      expect(selectedId()).toBe("copy");
-    });
-
     it("moves down and up one row", () => {
       press("ArrowDown");
       expect(selectedId()).toBe("open_command_palette");
@@ -293,11 +285,6 @@ describe("command palette behaviour", () => {
       press("ArrowDown");
 
       service.handleSideMenuClose();
-
-      expect(labels()).toHaveLength(4);
-      expect(selectedId()).toBe("copy");
-
-      service.handleSideMenuOpen();
 
       expect(labels()).toHaveLength(4);
       expect(selectedId()).toBe("copy");

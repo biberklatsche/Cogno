@@ -48,11 +48,11 @@ describe("terminal search behaviour", () => {
   const answer = (overrides: Partial<TerminalSearchResultContract>) => {
     terminalSearchResultSubject.next({
       terminalId: "terminal-1",
-      query: service.searchQuery().trim(),
-      caseSensitive: service.caseSensitive(),
-      regularExpression: service.regularExpression(),
-      beginBufferLine: service.beginBufferLine(),
-      endBufferLine: service.endBufferLine(),
+      query: service.state().query.trim(),
+      caseSensitive: service.state().caseSensitive,
+      regularExpression: service.state().regularExpression,
+      beginBufferLine: service.state().beginBufferLine,
+      endBufferLine: service.state().endBufferLine,
       hasMore: false,
       lines: [],
       ...overrides,
@@ -107,7 +107,7 @@ describe("terminal search behaviour", () => {
       service.submitSearchQuery("n");
       service.submitSearchQuery("needle");
 
-      expect(service.searchQuery()).toBe("needle");
+      expect(service.state().query).toBe("needle");
       expect(requestSearchMock).not.toHaveBeenCalled();
 
       vi.advanceTimersByTime(119);
@@ -161,7 +161,7 @@ describe("terminal search behaviour", () => {
       vi.runAllTimers();
 
       expect(requestSearchMock).not.toHaveBeenCalled();
-      expect(service.searchResults()).toEqual([]);
+      expect(service.state().results).toEqual([]);
       expect(service.selectedSearchResultId()).toBeUndefined();
     });
 
@@ -171,14 +171,14 @@ describe("terminal search behaviour", () => {
 
       service.toggleCaseSensitive();
 
-      expect(service.caseSensitive()).toBe(true);
+      expect(service.state().caseSensitive).toBe(true);
       expect(requestSearchMock).toHaveBeenCalledTimes(1);
       expect(requestSearchMock).toHaveBeenCalledWith(
         expect.objectContaining({ caseSensitive: true, regularExpression: false }),
       );
 
       service.toggleCaseSensitive();
-      expect(service.caseSensitive()).toBe(false);
+      expect(service.state().caseSensitive).toBe(false);
     });
 
     it("toggles regular expressions and searches again right away", () => {
@@ -187,7 +187,7 @@ describe("terminal search behaviour", () => {
 
       service.toggleRegularExpression();
 
-      expect(service.regularExpression()).toBe(true);
+      expect(service.state().regularExpression).toBe(true);
       expect(requestSearchMock).toHaveBeenCalledTimes(1);
       expect(requestSearchMock).toHaveBeenCalledWith(
         expect.objectContaining({ caseSensitive: false, regularExpression: true }),
@@ -218,12 +218,12 @@ describe("terminal search behaviour", () => {
   describe("results", () => {
     it("shows the answer and replaces it with the next one", () => {
       search("needle", [lineOne, lineTwo]);
-      expect(service.searchResults()).toEqual([lineOne, lineTwo]);
+      expect(service.state().results).toEqual([lineOne, lineTwo]);
 
       answer({ lines: [lineThree], hasMore: true, nextCursorBufferLine: 40 });
 
-      expect(service.searchResults()).toEqual([lineThree]);
-      expect(service.hasMoreResults()).toBe(true);
+      expect(service.state().results).toEqual([lineThree]);
+      expect(service.state().hasMoreResults).toBe(true);
     });
 
     it("accepts an answer for the trimmed query", () => {
@@ -232,7 +232,7 @@ describe("terminal search behaviour", () => {
 
       answer({ query: "needle", lines: [lineOne] });
 
-      expect(service.searchResults()).toEqual([lineOne]);
+      expect(service.state().results).toEqual([lineOne]);
     });
 
     it("ignores every answer before the first search was requested", () => {
@@ -240,7 +240,7 @@ describe("terminal search behaviour", () => {
 
       answer({ lines: [lineOne] });
 
-      expect(service.searchResults()).toEqual([]);
+      expect(service.state().results).toEqual([]);
     });
 
     it.each<[string, Partial<TerminalSearchResultContract>]>([
@@ -258,8 +258,8 @@ describe("terminal search behaviour", () => {
 
       answer({ lines: [lineTwo, lineThree], hasMore: false, ...staleFields });
 
-      expect(service.searchResults()).toEqual([lineOne]);
-      expect(service.hasMoreResults()).toBe(true);
+      expect(service.state().results).toEqual([lineOne]);
+      expect(service.state().hasMoreResults).toBe(true);
       expect(service.selectedSearchResultId()).toBe(idOf(lineOne));
     });
 
@@ -270,12 +270,12 @@ describe("terminal search behaviour", () => {
       answer({ query: "needle", lines: [lineOne, lineTwo] });
 
       // The old list stays until the new query is answered.
-      expect(service.searchResults()).toEqual([lineOne]);
+      expect(service.state().results).toEqual([lineOne]);
 
       vi.runAllTimers();
       answer({ lines: [] });
 
-      expect(service.searchResults()).toEqual([]);
+      expect(service.state().results).toEqual([]);
     });
 
     it("ignores an answer with the old flags after a toggle", () => {
@@ -284,7 +284,7 @@ describe("terminal search behaviour", () => {
       service.toggleCaseSensitive();
       answer({ caseSensitive: false, lines: [lineOne, lineTwo] });
 
-      expect(service.searchResults()).toEqual([lineOne]);
+      expect(service.state().results).toEqual([lineOne]);
     });
   });
 
@@ -303,8 +303,8 @@ describe("terminal search behaviour", () => {
 
       answer({ cursorBufferLine: 40, lines: [lineThree], hasMore: false });
 
-      expect(service.searchResults()).toEqual([lineOne, lineTwo, lineThree]);
-      expect(service.hasMoreResults()).toBe(false);
+      expect(service.state().results).toEqual([lineOne, lineTwo, lineThree]);
+      expect(service.state().hasMoreResults).toBe(false);
 
       // Without a cursor there is nothing more to ask for.
       requestSearchMock.mockClear();
@@ -496,11 +496,11 @@ describe("terminal search behaviour", () => {
       });
 
       expect(service.isBlockSearchActive()).toBe(true);
-      expect(service.beginBufferLine()).toBe(10);
-      expect(service.endBufferLine()).toBe(20);
-      expect(service.searchQuery()).toBe("needle");
-      expect(service.searchResults()).toEqual([]);
-      expect(service.hasMoreResults()).toBe(false);
+      expect(service.state().beginBufferLine).toBe(10);
+      expect(service.state().endBufferLine).toBe(20);
+      expect(service.state().query).toBe("needle");
+      expect(service.state().results).toEqual([]);
+      expect(service.state().hasMoreResults).toBe(false);
       expect(service.selectedSearchResultId()).toBeUndefined();
       // The request itself does not search; opening the panel does.
       expect(requestSearchMock).not.toHaveBeenCalled();
@@ -552,7 +552,7 @@ describe("terminal search behaviour", () => {
       service.clearBlockSearch();
 
       expect(service.isBlockSearchActive()).toBe(false);
-      expect(service.searchResults()).toEqual([lineThree]);
+      expect(service.state().results).toEqual([lineThree]);
       expect(requestSearchMock).toHaveBeenCalledTimes(1);
       expect(requestSearchMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -600,13 +600,13 @@ describe("terminal search behaviour", () => {
 
       expect(requestSearchMock).not.toHaveBeenCalled();
       expect(requestSearchDecorationClearMock).toHaveBeenCalledTimes(1);
-      expect(service.searchQuery()).toBe("");
-      expect(service.searchResults()).toEqual([]);
+      expect(service.state().query).toBe("");
+      expect(service.state().results).toEqual([]);
       expect(service.selectedSearchResultId()).toBeUndefined();
-      expect(service.caseSensitive()).toBe(false);
-      expect(service.regularExpression()).toBe(false);
+      expect(service.state().caseSensitive).toBe(false);
+      expect(service.state().regularExpression).toBe(false);
       expect(service.isBlockSearchActive()).toBe(false);
-      expect(service.hasMoreResults()).toBe(false);
+      expect(service.state().hasMoreResults).toBe(false);
 
       service.loadMoreSearchResults();
       expect(requestSearchMock).not.toHaveBeenCalled();
@@ -618,19 +618,19 @@ describe("terminal search behaviour", () => {
       service.handleSideMenuClose();
       answer({ query: "needle", lines: [lineOne, lineTwo] });
 
-      expect(service.searchResults()).toEqual([]);
+      expect(service.state().results).toEqual([]);
     });
   });
 
   describe("match colours", () => {
-    it("uses the configured colours, adds a missing # and falls back to the theme", () => {
+    it("uses the configured colours as CSS hex and falls back to the theme", () => {
       const defaultBackgroundColor = service.matchBackgroundColor();
       const defaultBorderColor = service.matchBorderColor();
       expect(defaultBorderColor).toBe("var(--highlight-color)");
 
       terminalSearchColorConfigSubject.next({
         matchBackgroundColor: "ff0000",
-        matchBorderColor: "#00ff00",
+        matchBorderColor: "00ff00",
       });
       expect(service.matchBackgroundColor()).toBe("#ff0000");
       expect(service.matchBorderColor()).toBe("#00ff00");

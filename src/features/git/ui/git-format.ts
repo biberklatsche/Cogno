@@ -59,7 +59,7 @@ export function fileDir(path: string): string {
 }
 
 /** Lane colors of the graph, cycled. */
-export const GRAPH_COLORS = [
+const GRAPH_COLORS = [
   "var(--color-blue)",
   "var(--color-green)",
   "var(--color-magenta)",
@@ -70,4 +70,12 @@ export const GRAPH_COLORS = [
 
 export function graphColor(index: number): string {
   return GRAPH_COLORS[index % GRAPH_COLORS.length] ?? "var(--color-blue)";
+}
+
+/** The set with `value` added when it is missing, removed when it is there. */
+export function toggled<T>(set: ReadonlySet<T>, value: T): ReadonlySet<T> {
+  const next = new Set(set);
+  if (next.has(value)) next.delete(value);
+  else next.add(value);
+  return next;
 }

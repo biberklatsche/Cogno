@@ -56,21 +56,13 @@ export class CommandPaletteService {
       });
   }
 
-  handleSideMenuOpen(): void {
-    this.selectedIndexSignal.set(0);
-  }
-
+  /** Closing drops the query, and with it the selection: the next open starts at the top. */
   handleSideMenuClose(): void {
     this.filterCommands("");
   }
 
-  fireSelectedAction(commandEntry?: CommandEntry): void {
-    const selectedCommandEntry = commandEntry ?? this.selectedEntry();
-    if (!selectedCommandEntry) {
-      return;
-    }
-
-    this.actionDispatcher.dispatchAction(selectedCommandEntry.actionDefinition);
+  fireSelectedAction(commandEntry: CommandEntry): void {
+    this.actionDispatcher.dispatchAction(commandEntry.actionDefinition);
   }
 
   filterCommands(query: string): void {

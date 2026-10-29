@@ -1,12 +1,10 @@
 import { Injectable } from "@angular/core";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { ClipboardAccess, Opener } from "@cogno/platform";
 import { isWslShellContext } from "@cogno/shared/domain";
 import { DialogService } from "@cogno/shared/ui";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitViewState } from "./git-view-state.service";
-import { GitAccessPlatform, GitAccessSituation } from "./hosts/_shared/git-host";
-import { knownGitHost } from "./hosts/git-hosts";
+import { GitAccessPlatform, GitAccessSituation, knownGitHost } from "./hosts/git-hosts";
 import { credentialUrlOf, hostOf, isSshUrl } from "./model/git-remote-url";
 import { GitAccessDialogComponent, GitAccessDialogData } from "./ui/git-access-dialog.component";
 
@@ -24,8 +22,6 @@ export class GitRemoteAccessService {
     private readonly repository: GitRepositoryService,
     private readonly view: GitViewState,
     private readonly dialogs: DialogService,
-    private readonly clipboard: ClipboardAccess,
-    private readonly opener: Opener,
     private readonly navigator: TerminalNavigator,
   ) {}
 
@@ -48,8 +44,6 @@ export class GitRemoteAccessService {
       askProvider: known === null,
       onProvider: (provider) => this.view.hosts.update((hosts) => ({ ...hosts, [host]: provider })),
       onInsert: (command) => this.insert(command),
-      onCopy: (command) => void this.clipboard.writeText(command),
-      onOpenLink: (link) => void this.opener.openUrl(link),
     };
     this.dialogs.open<GitAccessDialogData, void>(GitAccessDialogComponent, {
       title: `Access to ${host}`,

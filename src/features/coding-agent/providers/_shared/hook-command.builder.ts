@@ -80,6 +80,11 @@ export function isCurrentHookCommand(
   );
 }
 
+/** Whether a hook command on disk is one of Cogno's, from whatever version wrote it. */
+export function isCognoHookCommand(command: string | undefined): boolean {
+  return command?.includes("COGNO_PORT") === true && command.includes(CODING_AGENT_STATUS_ACTION);
+}
+
 /** Hooks that are not all current are outdated when the config holds any Cogno hook at all. */
 export function hookStateOf(isCurrent: boolean, hasCognoHook: boolean): HookState {
   if (isCurrent) return "current";

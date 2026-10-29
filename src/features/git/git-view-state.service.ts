@@ -1,7 +1,7 @@
 import { computed, effect, Injectable, signal } from "@angular/core";
 import { GitDiffSource } from "./git-diff.service";
 import { GitRepositoryService } from "./git-repository.service";
-import { GitHostId } from "./hosts/_shared/git-host";
+import { GitHostId } from "./hosts/git-hosts";
 import { GitPullMode } from "./model/git-model";
 import { GitRowMarks } from "./ui/git-row-marks";
 
@@ -128,6 +128,10 @@ export class GitViewState {
   clearMarks(): void {
     this.localMarks.clear();
     this.remoteMarks.clear();
+  }
+
+  toggleFileListMode(): void {
+    this.fileListMode.update((mode) => (mode === "tree" ? "path" : "tree"));
   }
 
   openDiff(source: GitDiffSource): void {

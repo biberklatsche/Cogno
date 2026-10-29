@@ -10,6 +10,7 @@ import { ConfigFileService } from "../_shared/config-file.service";
 import {
   buildHookCommand,
   hookStateOf,
+  isCognoHookCommand,
   isCurrentHookCommand,
 } from "../_shared/hook-command.builder";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
@@ -30,11 +31,7 @@ export class KimiProvider implements ICodingAgentProvider {
   }
 
   async hookState(): Promise<HookState> {
-    const configPath = await this.configFile.joinPath(
-      await this.configDir(),
-      KIMI_CONFIG.configFileName,
-    );
-    const config = await this.configFile.readToml<KimiConfig>(configPath, {});
+    const config = await this.configFile.readToml<KimiConfig>(await this.configPath(), {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
     const isCurrent = KIMI_CONFIG.hookEvents.every(({ eventName, status }) =>
       hooks.some(
@@ -43,17 +40,16 @@ export class KimiProvider implements ICodingAgentProvider {
     );
     return hookStateOf(
       isCurrent,
-      hooks.some((h) => KIMI_CONFIG.isCognoCommand(h.command)),
+      hooks.some((h) => isCognoHookCommand(h.command)),
     );
   }
 
   async installHook(shellType?: string): Promise<void> {
-    const configDir = await this.configDir();
-    await this.configFile.ensureDir(configDir);
-    const configPath = await this.configFile.joinPath(configDir, KIMI_CONFIG.configFileName);
+    await this.configFile.ensureDir(await this.configDir());
+    const configPath = await this.configPath();
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     const withoutCogno = (Array.isArray(config.hooks) ? config.hooks : []).filter(
-      (h) => !KIMI_CONFIG.isCognoCommand(h.command),
+      (h) => !isCognoHookCommand(h.command),
     );
     config.hooks = [
       ...withoutCogno,
@@ -66,18 +62,19 @@ export class KimiProvider implements ICodingAgentProvider {
   }
 
   async removeHook(): Promise<void> {
-    const configPath = await this.configFile.joinPath(
-      await this.configDir(),
-      KIMI_CONFIG.configFileName,
-    );
+    const configPath = await this.configPath();
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     if (Array.isArray(config.hooks)) {
-      config.hooks = config.hooks.filter((h) => !KIMI_CONFIG.isCognoCommand(h.command));
+      config.hooks = config.hooks.filter((h) => !isCognoHookCommand(h.command));
       await this.configFile.writeToml(configPath, config);
     }
   }
 
-  private async configDir(): Promise<string> {
-    return this.configFile.joinPath(await this.configFile.homeDir(), KIMI_CONFIG.configSubDir);
+  private configDir(): Promise<string> {
+    return this.configFile.configDir(KIMI_CONFIG.configSubDir);
+  }
+
+  private configPath(): Promise<string> {
+    return this.configFile.configPath(KIMI_CONFIG.configSubDir, KIMI_CONFIG.configFileName);
   }
 }

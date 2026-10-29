@@ -14,8 +14,8 @@ import {
 } from "./git-model";
 
 /** Field and record separators the format strings below ask git to emit. */
-export const FIELD = "\x1f";
-export const RECORD = "\x1e";
+const FIELD = "\x1f";
+const RECORD = "\x1e";
 
 export const LOG_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%s%x1e";
 export const COMMIT_DETAIL_FORMAT = "%H%x1f%P%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ct%x1f%B";

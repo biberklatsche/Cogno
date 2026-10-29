@@ -36,7 +36,7 @@ import {
   GitDeleteBranchesDialogData,
   GitDeleteBranchesResult,
 } from "./ui/git-delete-branches-dialog.component";
-import { formatAge } from "./ui/git-format";
+import { formatAge, toggled } from "./ui/git-format";
 import {
   GitPromptDialogComponent,
   GitPromptDialogData,
@@ -137,7 +137,7 @@ export class GitUiActions {
     const sha = this.view.newBranchAt();
     this.view.newBranchAt.set(null);
     if (!sha || !name.trim()) return;
-    void this.operations.createBranch(name.trim(), sha, true);
+    void this.operations.createBranch(name.trim(), sha);
   }
 
   cancelBranch(): void {
@@ -197,12 +197,7 @@ export class GitUiActions {
           toggled: !hidden.has(column),
           closeOnSelect: false,
           action: (item) => {
-            this.view.hiddenColumns.update((current) => {
-              const next = new Set(current);
-              if (next.has(column)) next.delete(column);
-              else next.add(column);
-              return next;
-            });
+            this.view.hiddenColumns.update((current) => toggled(current, column));
             // The menu stays open; its switch mirrors the new state.
             if (item) item.toggled = !item.toggled;
           },
@@ -489,13 +484,14 @@ export class GitUiActions {
       void this.operations.addRemote(result.values["name"] ?? "", result.values["url"] ?? "");
   }
 
-  private async pushBranch(branch: GitBranch, force = false): Promise<void> {
+  private async pushBranch(branch: GitBranch): Promise<void> {
     let remote: string;
     let remoteBranch: string;
     let setUpstream = false;
-    const upstream = branch.upstream ? this.splitRemoteRef(branch.upstream) : null;
+    const upstream = this.repository.refs().remoteBranches.find((r) => r.name === branch.upstream);
     if (upstream && !branch.upstreamGone) {
-      [remote, remoteBranch] = upstream;
+      remote = upstream.remote;
+      remoteBranch = upstream.shortName;
     } else {
       const remotes = this.repository.remotes();
       if (remotes.length === 0) {
@@ -522,9 +518,9 @@ export class GitUiActions {
     }
     const outcome = await this.operations.push(branch.name, remote, remoteBranch, {
       setUpstream,
-      force,
+      force: false,
     });
-    if (outcome === "rejected" && !force) {
+    if (outcome === "rejected") {
       const confirmed = await this.confirm(
         `The remote has commits that ${branch.name} does not have. Force push and overwrite ${remote}/${remoteBranch}? It is only overwritten if nobody pushed since your last fetch.`,
         "Force push",
@@ -704,15 +700,6 @@ export class GitUiActions {
   private async copyCommitMessage(sha: string): Promise<void> {
     const result = await this.repository.run(["log", "-1", "--format=%B", sha]);
     if (result?.exitCode === 0) await this.clipboard.writeText(result.stdout.trimEnd());
-  }
-
-  private splitRemoteRef(ref: string): [string, string] | null {
-    const remote = this.repository
-      .remotes()
-      .map((r) => r.name)
-      .sort((a, b) => b.length - a.length)
-      .find((name) => ref.startsWith(`${name}/`));
-    return remote ? [remote, ref.slice(remote.length + 1)] : null;
   }
 
   private openMenu(event: MouseEvent, items: ContextMenuItem[]): void {

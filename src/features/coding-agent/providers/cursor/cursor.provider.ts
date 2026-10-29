@@ -9,6 +9,7 @@ import { ConfigFileService } from "../_shared/config-file.service";
 import {
   buildHookCommand,
   hookStateOf,
+  isCognoHookCommand,
   isCurrentHookCommand,
 } from "../_shared/hook-command.builder";
 import { CURSOR_CONFIG, CursorHooksFile } from "./cursor.config";
@@ -44,7 +45,7 @@ export class CursorProvider implements ICodingAgentProvider {
       ),
     );
     const hasCognoHook = Object.values(hooks).some((list) =>
-      list.some((h) => CURSOR_CONFIG.isCognoCommand(h.command)),
+      list.some((h) => isCognoHookCommand(h.command)),
     );
     return hookStateOf(isCurrent, hasCognoHook);
   }
@@ -73,12 +74,12 @@ export class CursorProvider implements ICodingAgentProvider {
     return this.configFile.readJson<CursorHooksFile>(await this.configPath(), {});
   }
 
-  private async configDir(): Promise<string> {
-    return this.configFile.joinPath(await this.configFile.homeDir(), CURSOR_CONFIG.configSubDir);
+  private configDir(): Promise<string> {
+    return this.configFile.configDir(CURSOR_CONFIG.configSubDir);
   }
 
-  private async configPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), CURSOR_CONFIG.configFileName);
+  private configPath(): Promise<string> {
+    return this.configFile.configPath(CURSOR_CONFIG.configSubDir, CURSOR_CONFIG.configFileName);
   }
 }
 
@@ -89,7 +90,7 @@ export class CursorProvider implements ICodingAgentProvider {
 function withoutCognoHooks(hooks: Readonly<CursorHookMap>): CursorHookMap {
   const cleaned: CursorHookMap = {};
   for (const [eventName, list] of Object.entries(hooks)) {
-    const remaining = list.filter((h) => !CURSOR_CONFIG.isCognoCommand(h.command));
+    const remaining = list.filter((h) => !isCognoHookCommand(h.command));
     if (remaining.length > 0) cleaned[eventName] = remaining;
   }
   return cleaned;

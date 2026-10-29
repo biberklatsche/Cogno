@@ -91,14 +91,14 @@ export class AntigravityProvider implements ICodingAgentProvider {
     return this.configFile.readJson<AntigravityHooksFile>(await this.configPath(), {});
   }
 
-  private async configDir(): Promise<string> {
-    return this.configFile.joinPath(
-      await this.configFile.homeDir(),
-      ANTIGRAVITY_CONFIG.configSubDir,
-    );
+  private configDir(): Promise<string> {
+    return this.configFile.configDir(ANTIGRAVITY_CONFIG.configSubDir);
   }
 
-  private async configPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), ANTIGRAVITY_CONFIG.configFileName);
+  private configPath(): Promise<string> {
+    return this.configFile.configPath(
+      ANTIGRAVITY_CONFIG.configSubDir,
+      ANTIGRAVITY_CONFIG.configFileName,
+    );
   }
 }

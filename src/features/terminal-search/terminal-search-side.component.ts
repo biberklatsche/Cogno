@@ -4,14 +4,10 @@ import {
   computed,
   ElementRef,
   effect,
-  Signal,
   viewChild,
 } from "@angular/core";
-import {
-  TerminalSearchLineMatchContract,
-  TerminalSearchLineResultContract,
-} from "@cogno/shared/domain";
-import { TooltipDirective } from "@cogno/shared/ui";
+import { TerminalSearchLineResultContract } from "@cogno/shared/domain";
+import { SideMenuSearchInputComponent, TooltipDirective } from "@cogno/shared/ui";
 import { scrollSelectedListItemIntoView } from "@cogno/shared/ui/common/navigation/scroll-selected-list-item";
 import { TerminalSearchService } from "./terminal-search.service";
 import { createSearchResultId } from "./terminal-search-state";
@@ -24,42 +20,35 @@ type SearchTextSegment = {
 @Component({
   selector: "app-terminal-search-side",
   standalone: true,
-  imports: [TooltipDirective],
+  imports: [SideMenuSearchInputComponent, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
         <div class="search-controls">
-            <input
-                autocomplete="off"
-                spellcheck="false"
-                data-private="off"
-                data-side-menu-autofocus="true"
-                autocorrect="off"
-                type="text"
-                placeholder="Search active terminal..."
+            <app-side-menu-search-input
                 class="search-input"
-                [value]="searchQuery()"
-                (input)="updateSearchQuery($event)"
-                (click)="$event.stopPropagation()"
-            />
+                placeholder="Search active terminal..."
+                [value]="state().query"
+                (query)="terminalSearchService.submitSearchQuery($event)"
+            ></app-side-menu-search-input>
             <button
                 type="button"
                 class="search-option-button"
-                [class.is-active]="caseSensitive()"
-                [style.background-color]="caseSensitive() ? matchBackgroundColor() : null"
-                [style.border-color]="caseSensitive() ? matchBorderColor() : null"
+                [class.is-active]="state().caseSensitive"
+                [style.background-color]="state().caseSensitive ? matchBackgroundColor() : null"
+                [style.border-color]="state().caseSensitive ? matchBorderColor() : null"
                 [appTooltip]="'Case sensitive'"
-                (click)="$event.stopPropagation(); toggleCaseSensitive()"
+                (click)="$event.stopPropagation(); terminalSearchService.toggleCaseSensitive()"
             >
                 Aa
             </button>
             <button
                 type="button"
                 class="search-option-button"
-                [class.is-active]="regularExpression()"
-                [style.background-color]="regularExpression() ? matchBackgroundColor() : null"
-                [style.border-color]="regularExpression() ? matchBorderColor() : null"
+                [class.is-active]="state().regularExpression"
+                [style.background-color]="state().regularExpression ? matchBackgroundColor() : null"
+                [style.border-color]="state().regularExpression ? matchBorderColor() : null"
                 [appTooltip]="'Regular expression'"
-                (click)="$event.stopPropagation(); toggleRegularExpression()"
+                (click)="$event.stopPropagation(); terminalSearchService.toggleRegularExpression()"
             >
                 .*
             </button>
@@ -67,28 +56,28 @@ type SearchTextSegment = {
         @if (isBlockSearchActive()) {
             <div class="block-search-banner">
                 <span>Block search active</span>
-                <button type="button" class="block-search-clear-button" (click)="$event.stopPropagation(); clearBlockSearch()">
+                <button type="button" class="block-search-clear-button" (click)="$event.stopPropagation(); terminalSearchService.clearBlockSearch()">
                     Clear
                 </button>
             </div>
         }
 
-        @if (searchQuery().trim().length === 0) {
+        @if (state().query.trim().length === 0) {
             <div class="helper-text">Type to search in the active terminal pane.</div>
         } @else {
             <div class="result-header">
-                <span>{{ searchResults().length }} matching lines</span>
-                @if (hasMoreResults()) {
+                <span>{{ state().results.length }} matching lines</span>
+                @if (state().hasMoreResults) {
                     <span>more available</span>
                 }
             </div>
-            @if (searchResults().length > 0) {
+            @if (state().results.length > 0) {
                 <ul #resultListElement class="result-list">
                     @for (searchLine of reversedSearchResults(); track trackSearchLine(searchLine)) {
                         <li
                             class="result-line"
                             [class.selected]="isSelectedSearchResult(searchLine)"
-                            (click)="revealSearchResult(searchLine)"
+                            (click)="terminalSearchService.revealSearchResult(searchLine)"
                         >
                             <span class="line-content">
                                 @for (segment of buildSegments(searchLine); track trackSegment(segment, $index)) {
@@ -98,8 +87,8 @@ type SearchTextSegment = {
                         </li>
                     }
                 </ul>
-                @if (hasMoreResults()) {
-                    <button type="button" class="load-more-button" (click)="loadMoreSearchResults()">Load more</button>
+                @if (state().hasMoreResults) {
+                    <button type="button" class="load-more-button" (click)="terminalSearchService.loadMoreSearchResults()">Load more</button>
                 }
             } @else {
                 <div class="helper-text">No matches</div>
@@ -123,13 +112,6 @@ type SearchTextSegment = {
             }
 
             .search-input {
-                padding: 6px 8px;
-                border-radius: 6px;
-                border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-                background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
-                color: inherit;
-                outline: none;
-                box-sizing: border-box;
                 flex: 1;
                 min-width: 0;
             }
@@ -228,32 +210,16 @@ type SearchTextSegment = {
   ],
 })
 export class TerminalSearchSideComponent {
-  readonly searchQuery: Signal<string>;
-  readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
-  readonly caseSensitive: Signal<boolean>;
-  readonly regularExpression: Signal<boolean>;
-  readonly matchBackgroundColor: Signal<string>;
-  readonly matchBorderColor: Signal<string>;
-  readonly isBlockSearchActive: Signal<boolean>;
-  readonly hasMoreResults: Signal<boolean>;
-  readonly reversedSearchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>>;
-  readonly selectedSearchResultId: Signal<string | undefined>;
+  readonly state = this.terminalSearchService.state;
+  readonly isBlockSearchActive = this.terminalSearchService.isBlockSearchActive;
+  readonly selectedSearchResultId = this.terminalSearchService.selectedSearchResultId;
+  readonly matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
+  readonly matchBorderColor = this.terminalSearchService.matchBorderColor;
+  /** The panel lists the results last-first: the newest line at the top. */
+  readonly reversedSearchResults = computed(() => [...this.state().results].reverse());
   private readonly resultListElement = viewChild<ElementRef<HTMLUListElement>>("resultListElement");
 
-  constructor(private readonly terminalSearchService: TerminalSearchService) {
-    this.searchQuery = this.terminalSearchService.searchQuery;
-    this.searchResults = this.terminalSearchService.searchResults;
-    this.caseSensitive = this.terminalSearchService.caseSensitive;
-    this.regularExpression = this.terminalSearchService.regularExpression;
-    this.matchBackgroundColor = this.terminalSearchService.matchBackgroundColor;
-    this.matchBorderColor = this.terminalSearchService.matchBorderColor;
-    this.isBlockSearchActive = this.terminalSearchService.isBlockSearchActive;
-    this.hasMoreResults = this.terminalSearchService.hasMoreResults;
-    this.selectedSearchResultId = this.terminalSearchService.selectedSearchResultId;
-    this.reversedSearchResults = computed(() => {
-      return [...this.searchResults()].reverse();
-    });
-
+  constructor(readonly terminalSearchService: TerminalSearchService) {
     effect(() => {
       const searchResults = this.reversedSearchResults();
       const selectedSearchResultId = this.selectedSearchResultId();
@@ -269,33 +235,8 @@ export class TerminalSearchSideComponent {
     });
   }
 
-  updateSearchQuery(event: Event): void {
-    const inputElement = event.target as HTMLInputElement;
-    this.terminalSearchService.submitSearchQuery(inputElement.value);
-  }
-
-  clearBlockSearch(): void {
-    this.terminalSearchService.clearBlockSearch();
-  }
-
-  loadMoreSearchResults(): void {
-    this.terminalSearchService.loadMoreSearchResults();
-  }
-
-  revealSearchResult(searchLine: TerminalSearchLineResultContract): void {
-    this.terminalSearchService.revealSearchResult(searchLine);
-  }
-
   isSelectedSearchResult(searchLine: TerminalSearchLineResultContract): boolean {
     return this.selectedSearchResultId() === this.trackSearchLine(searchLine);
-  }
-
-  toggleCaseSensitive(): void {
-    this.terminalSearchService.toggleCaseSensitive();
-  }
-
-  toggleRegularExpression(): void {
-    this.terminalSearchService.toggleRegularExpression();
   }
 
   trackSearchLine(searchLine: TerminalSearchLineResultContract): string {
@@ -306,54 +247,21 @@ export class TerminalSearchSideComponent {
     return `${index}:${segment.text}:${segment.isMatch}`;
   }
 
+  /** The line text cut at its matches, so each match is its own highlighted span. */
   buildSegments(searchLine: TerminalSearchLineResultContract): SearchTextSegment[] {
-    if (searchLine.matches.length === 0) {
-      return [{ text: searchLine.lineText, isMatch: false }];
-    }
-
+    const text = searchLine.lineText;
     const segments: SearchTextSegment[] = [];
-    let currentIndex = 0;
-
+    let index = 0;
     for (const match of searchLine.matches) {
-      this.appendTextBeforeMatch(segments, searchLine.lineText, currentIndex, match);
-      this.appendMatchedText(segments, searchLine.lineText, match);
-      currentIndex = match.endIndex;
+      if (match.startIndex > index) {
+        segments.push({ text: text.slice(index, match.startIndex), isMatch: false });
+      }
+      segments.push({ text: text.slice(match.startIndex, match.endIndex), isMatch: true });
+      index = match.endIndex;
     }
-
-    if (currentIndex < searchLine.lineText.length) {
-      segments.push({
-        text: searchLine.lineText.slice(currentIndex),
-        isMatch: false,
-      });
+    if (index < text.length || segments.length === 0) {
+      segments.push({ text: text.slice(index), isMatch: false });
     }
-
     return segments;
-  }
-
-  private appendTextBeforeMatch(
-    segments: SearchTextSegment[],
-    lineText: string,
-    currentIndex: number,
-    match: TerminalSearchLineMatchContract,
-  ): void {
-    if (match.startIndex <= currentIndex) {
-      return;
-    }
-
-    segments.push({
-      text: lineText.slice(currentIndex, match.startIndex),
-      isMatch: false,
-    });
-  }
-
-  private appendMatchedText(
-    segments: SearchTextSegment[],
-    lineText: string,
-    match: TerminalSearchLineMatchContract,
-  ): void {
-    segments.push({
-      text: lineText.slice(match.startIndex, match.endIndex),
-      isMatch: true,
-    });
   }
 }

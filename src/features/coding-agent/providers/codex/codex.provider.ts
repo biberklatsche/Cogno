@@ -7,7 +7,7 @@ import {
 import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommands } from "../_shared/hook-command.builder";
+import { buildHookCommands, isCognoHookCommand } from "../_shared/hook-command.builder";
 import {
   HookMapFormat,
   hookMapState,
@@ -63,13 +63,14 @@ export class CodexProvider implements ICodingAgentProvider {
         const expected = buildHookCommands(entry.status, this.id, entry.eventName);
         return hook.command === expected.command && hook.commandWindows === expected.commandWindows;
       },
-      isCogno: (hook) => CODEX_CONFIG.isCognoCommand(hook.command, hook.commandWindows),
+      isCogno: (hook) =>
+        isCognoHookCommand(hook.command) || isCognoHookCommand(hook.commandWindows),
     };
   }
 
   private async enableHooksInAppConfig(): Promise<void> {
-    const appConfigPath = await this.configFile.joinPath(
-      await this.configDir(),
+    const appConfigPath = await this.configFile.configPath(
+      CODEX_CONFIG.configSubDir,
       CODEX_CONFIG.appConfigFileName,
     );
     const cfg = await this.configFile.readToml<Record<string, unknown>>(appConfigPath, {});
@@ -80,11 +81,11 @@ export class CodexProvider implements ICodingAgentProvider {
     await this.configFile.writeToml(appConfigPath, cfg);
   }
 
-  private async configDir(): Promise<string> {
-    return this.configFile.joinPath(await this.configFile.homeDir(), CODEX_CONFIG.configSubDir);
+  private configDir(): Promise<string> {
+    return this.configFile.configDir(CODEX_CONFIG.configSubDir);
   }
 
-  private async configPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), CODEX_CONFIG.configFileName);
+  private configPath(): Promise<string> {
+    return this.configFile.configPath(CODEX_CONFIG.configSubDir, CODEX_CONFIG.configFileName);
   }
 }

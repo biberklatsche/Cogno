@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, input, output, signal } from "@angular/core";
 import { TooltipDirective } from "@cogno/shared/ui";
 import { GitHunk, GitHunkLine, GitPatch } from "../model/git-patch";
+import { toggled } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 /** What the view offers on a hunk: the lists it can move a change to. */
@@ -135,31 +136,29 @@ export class GitHunkViewComponent {
   readonly discard = output<GitHunkSelection>();
 
   readonly none: ReadonlySet<number> = new Set();
-  /** Selected lines, keyed `hunk:line`; a selection lives in one hunk. */
-  private readonly selected = signal<ReadonlySet<string>>(new Set());
-  private readonly selectedHunk = computed(() => {
-    const first = [...this.selected()][0];
-    return first === undefined ? -1 : Number(first.split(":")[0]);
-  });
+  /** The selected line indices; a selection lives in one hunk. */
+  private readonly selected = signal<{ hunk: number; lines: ReadonlySet<number> } | null>(null);
   private lastClicked: { hunk: number; line: number } | null = null;
 
   isSelected(hunk: number, line: number): boolean {
-    return this.selected().has(`${hunk}:${line}`);
+    const selected = this.selected();
+    return selected?.hunk === hunk && selected.lines.has(line);
   }
 
   selectedIn(hunk: number): number {
-    return this.selectedHunk() === hunk ? this.selected().size : 0;
+    const selected = this.selected();
+    return selected?.hunk === hunk ? selected.lines.size : 0;
   }
 
   selection(hunk: number): GitHunkSelection {
-    const lines = new Set(
-      [...this.selected()].map((key) => Number(key.split(":")[1])).filter((n) => !Number.isNaN(n)),
-    );
-    return { hunk: this.patch().hunks[hunk] as GitHunk, lines };
+    return {
+      hunk: this.patch().hunks[hunk] as GitHunk,
+      lines: this.selected()?.lines ?? this.none,
+    };
   }
 
   clearSelection(): void {
-    this.selected.set(new Set());
+    this.selected.set(null);
     this.lastClicked = null;
   }
 
@@ -167,18 +166,20 @@ export class GitHunkViewComponent {
   toggleLine(hunk: number, line: number, hunkLine: GitHunkLine, event: MouseEvent): void {
     if (this.actions() === "none" || hunkLine.kind === "context") return;
     const lines = this.patch().hunks[hunk]?.lines ?? [];
-    const next = new Set(this.selectedHunk() === hunk ? this.selected() : []);
+    const selected = this.selected();
+    const current: ReadonlySet<number> = selected?.hunk === hunk ? selected.lines : this.none;
+    let next: ReadonlySet<number>;
     if (event.shiftKey && this.lastClicked?.hunk === hunk) {
+      const range = new Set(current);
       const [from, to] = [this.lastClicked.line, line].sort((a, b) => a - b);
       for (let index = from; index <= to; index++) {
-        if (lines[index]?.kind !== "context") next.add(`${hunk}:${index}`);
+        if (lines[index]?.kind !== "context") range.add(index);
       }
+      next = range;
     } else {
-      const key = `${hunk}:${line}`;
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      next = toggled(current, line);
     }
-    this.selected.set(next);
+    this.selected.set({ hunk, lines: next });
     this.lastClicked = { hunk, line };
   }
 
