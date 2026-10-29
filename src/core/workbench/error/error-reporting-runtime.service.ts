@@ -52,7 +52,7 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
         type: "Notification",
         payload: {
           body: this.buildNotificationBody(report),
-          header: report.handled ? "Behandelte Exception" : "Unbehandelte Exception",
+          header: report.handled ? "Handled exception" : "Unhandled exception",
           source: report.source ?? "ErrorReporting",
           timestamp: new Date(),
           type: "error",
@@ -150,14 +150,14 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
     bodyParts.push(this.limitTextLength(errorDetails));
 
     if (report.source) {
-      bodyParts.push(`Quelle: ${report.source}`);
+      bodyParts.push(`Source: ${report.source}`);
     }
 
     if (report.context && Object.keys(report.context).length > 0) {
       try {
-        bodyParts.push(`Kontext: ${JSON.stringify(report.context)}`);
+        bodyParts.push(`Context: ${JSON.stringify(report.context)}`);
       } catch {
-        bodyParts.push(`Kontext: ${String(report.context)}`);
+        bodyParts.push(`Context: ${String(report.context)}`);
       }
     }
 
