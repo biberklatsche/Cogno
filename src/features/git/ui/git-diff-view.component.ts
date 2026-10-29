@@ -1,13 +1,11 @@
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  Input,
-  OnChanges,
-  OnDestroy,
+  effect,
+  input,
+  untracked,
   ViewEncapsulation,
-  viewChild,
 } from "@angular/core";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { Chunk, getChunks, MergeView, unifiedMergeView } from "@codemirror/merge";
@@ -110,6 +108,108 @@ async function buildExtensions(language: GitDiffLanguageLoader | undefined): Pro
 
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+/** Keep the two panes of a split view at the same scroll offset. Returns the undo. */
+function syncScroll(scrollA: HTMLElement, scrollB: HTMLElement): () => void {
+  let syncingA = false;
+  let syncingB = false;
+
+  const onScrollA = () => {
+    if (syncingA) {
+      syncingA = false;
+      return;
+    }
+    if (Math.abs(scrollB.scrollTop - scrollA.scrollTop) < 1) return;
+    syncingB = true;
+    scrollB.scrollTop = scrollA.scrollTop;
+  };
+
+  const onScrollB = () => {
+    if (syncingB) {
+      syncingB = false;
+      return;
+    }
+    if (Math.abs(scrollA.scrollTop - scrollB.scrollTop) < 1) return;
+    syncingA = true;
+    scrollA.scrollTop = scrollB.scrollTop;
+  };
+
+  scrollA.addEventListener("scroll", onScrollA, { passive: true });
+  scrollB.addEventListener("scroll", onScrollB, { passive: true });
+  return () => {
+    scrollA.removeEventListener("scroll", onScrollA);
+    scrollB.removeEventListener("scroll", onScrollB);
+  };
+}
+
+/** Marks on the right edge where the changes are, relative to the new text. */
+function buildRuler(ruler: HTMLElement, chunks: readonly Chunk[], docB: Text): void {
+  ruler.innerHTML = "";
+  if (!chunks.length) return;
+
+  const totalLines = docB.lines;
+
+  const fragment = document.createDocumentFragment();
+  for (const chunk of chunks) {
+    const isDeletion = chunk.toB === chunk.fromB;
+    const fromLine = docB.lineAt(chunk.fromB).number - 1;
+    const toLine = isDeletion ? fromLine : docB.lineAt(Math.min(chunk.toB, docB.length)).number - 1;
+    const lineSpan = isDeletion ? 1 : Math.max(toLine - fromLine + 1, 1);
+
+    const mark = document.createElement("div");
+    mark.className = `ruler-mark ${isDeletion ? "ruler-mark-delete" : "ruler-mark-change"}`;
+    mark.style.top = `${(fromLine / totalLines) * 100}%`;
+    mark.style.height = `${Math.max((lineSpan / totalLines) * 100, 0.5)}%`;
+    fragment.appendChild(mark);
+  }
+  ruler.appendChild(fragment);
+}
+
+/**
+ * Build the editor for `diff` into `host` once the language is loaded and the
+ * host has had a frame to take its size. Returns the teardown, or nothing when
+ * `stale()` says the inputs changed while loading.
+ */
+async function buildEditor(
+  host: HTMLElement,
+  ruler: HTMLElement,
+  diff: GitDiffContent,
+  mode: GitDiffMode,
+  stale: () => boolean,
+): Promise<(() => void) | undefined> {
+  const { original, modified, language } = diff;
+  const [extensions] = await Promise.all([buildExtensions(language), nextFrame()]);
+  if (stale()) return undefined;
+
+  if (mode === "unified") {
+    // One editor on the new text; removed lines are shown inline above their replacement.
+    const view = new EditorView({
+      parent: host,
+      doc: modified,
+      extensions: [
+        ...extensions,
+        unifiedMergeView({ original, mergeControls: false, highlightChanges: true, gutter: true }),
+      ],
+    });
+    buildRuler(ruler, getChunks(view.state)?.chunks ?? [], view.state.doc);
+    return () => view.destroy();
+  }
+
+  const mergeView = new MergeView({
+    parent: host,
+    orientation: "a-b",
+    highlightChanges: true,
+    gutter: true,
+    a: { doc: original, extensions },
+    b: { doc: modified, extensions },
+  });
+  const stopScrollSync = syncScroll(mergeView.a.scrollDOM, mergeView.b.scrollDOM);
+  buildRuler(ruler, mergeView.chunks, mergeView.b.state.doc);
+  return () => {
+    stopScrollSync();
+    mergeView.destroy();
+  };
 }
 
 @Component({
@@ -221,156 +321,34 @@ function nextFrame(): Promise<void> {
     `,
   ],
 })
-export class GitDiffViewComponent implements AfterViewInit, OnChanges, OnDestroy {
-  @Input() diff: GitDiffContent | null = null;
-  @Input() mode: GitDiffMode = "split";
+export class GitDiffViewComponent {
+  readonly diff = input.required<GitDiffContent>();
+  readonly mode = input<GitDiffMode>("split");
 
-  private readonly editorHost = viewChild<ElementRef<HTMLElement>>("editorHost");
-  private readonly ruler = viewChild<ElementRef<HTMLElement>>("ruler");
-  private mergeView: MergeView | null = null;
-  private unifiedView: EditorView | null = null;
-  private buildTimer: ReturnType<typeof setTimeout> | null = null;
-  private generation = 0;
-  private unsubscribeScrollSync: (() => void) | null = null;
+  constructor(element: ElementRef<HTMLElement>) {
+    // One editor per (diff, mode); the cleanup tears down the last one and
+    // cancels a build still waiting for its language.
+    effect((onCleanup) => {
+      const diff = this.diff();
+      const mode = this.mode();
+      const host = element.nativeElement.querySelector<HTMLElement>(".diff-host");
+      const ruler = element.nativeElement.querySelector<HTMLElement>(".change-ruler");
+      if (!host || !ruler) return;
 
-  ngAfterViewInit(): void {
-    this.scheduleBuild();
-  }
-
-  ngOnChanges(): void {
-    this.scheduleBuild();
-  }
-
-  ngOnDestroy(): void {
-    if (this.buildTimer !== null) clearTimeout(this.buildTimer);
-    this.generation++;
-    this.destroyMergeView();
-  }
-
-  private scheduleBuild(): void {
-    if (this.buildTimer !== null) clearTimeout(this.buildTimer);
-    this.generation++;
-    const gen = this.generation;
-    this.destroyMergeView();
-
-    this.buildTimer = setTimeout(() => {
-      this.buildTimer = null;
-      void this.build(gen);
-    }, 0);
-  }
-
-  private async build(gen: number): Promise<void> {
-    const host = this.editorHost()?.nativeElement;
-    if (!host || !this.diff || this.generation !== gen) return;
-
-    const { original, modified, language } = this.diff;
-    const [extensions] = await Promise.all([buildExtensions(language), nextFrame()]);
-    if (this.generation !== gen) return;
-    if (this.mode === "unified") {
-      // One editor on the new text; removed lines are shown inline above their replacement.
-      this.unifiedView = new EditorView({
-        parent: host,
-        doc: modified,
-        extensions: [
-          ...extensions,
-          unifiedMergeView({
-            original,
-            mergeControls: false,
-            highlightChanges: true,
-            gutter: true,
-          }),
-        ],
+      let stale = false;
+      let teardown: (() => void) | undefined;
+      untracked(() => {
+        void buildEditor(host, ruler, diff, mode, () => stale).then((result) => {
+          if (stale) result?.();
+          else teardown = result;
+        });
       });
-      this.buildRuler(getChunks(this.unifiedView.state)?.chunks ?? [], this.unifiedView.state.doc);
-      return;
-    }
-    this.mergeView = new MergeView({
-      parent: host,
-      orientation: "a-b",
-      highlightChanges: true,
-      gutter: true,
-      a: { doc: original, extensions },
-      b: { doc: modified, extensions },
+      onCleanup(() => {
+        stale = true;
+        teardown?.();
+        host.innerHTML = "";
+        ruler.innerHTML = "";
+      });
     });
-    this.setupScrollSync();
-    this.buildRuler(this.mergeView.chunks, this.mergeView.b.state.doc);
-  }
-
-  private setupScrollSync(): void {
-    if (!this.mergeView) return;
-
-    const scrollA = this.mergeView.a.scrollDOM;
-    const scrollB = this.mergeView.b.scrollDOM;
-    let syncingA = false;
-    let syncingB = false;
-
-    const onScrollA = () => {
-      if (syncingA) {
-        syncingA = false;
-        return;
-      }
-      if (Math.abs(scrollB.scrollTop - scrollA.scrollTop) < 1) return;
-      syncingB = true;
-      scrollB.scrollTop = scrollA.scrollTop;
-    };
-
-    const onScrollB = () => {
-      if (syncingB) {
-        syncingB = false;
-        return;
-      }
-      if (Math.abs(scrollA.scrollTop - scrollB.scrollTop) < 1) return;
-      syncingA = true;
-      scrollA.scrollTop = scrollB.scrollTop;
-    };
-
-    scrollA.addEventListener("scroll", onScrollA, { passive: true });
-    scrollB.addEventListener("scroll", onScrollB, { passive: true });
-
-    this.unsubscribeScrollSync = () => {
-      scrollA.removeEventListener("scroll", onScrollA);
-      scrollB.removeEventListener("scroll", onScrollB);
-    };
-  }
-
-  /** Marks on the right edge where the changes are, relative to the new text. */
-  private buildRuler(chunks: readonly Chunk[], docB: Text): void {
-    const ruler = this.ruler()?.nativeElement;
-    if (!ruler) return;
-
-    ruler.innerHTML = "";
-    if (!chunks.length) return;
-
-    const totalLines = docB.lines;
-
-    const fragment = document.createDocumentFragment();
-    for (const chunk of chunks) {
-      const isDeletion = chunk.toB === chunk.fromB;
-      const fromLine = docB.lineAt(chunk.fromB).number - 1;
-      const toLine = isDeletion
-        ? fromLine
-        : docB.lineAt(Math.min(chunk.toB, docB.length)).number - 1;
-      const lineSpan = isDeletion ? 1 : Math.max(toLine - fromLine + 1, 1);
-
-      const mark = document.createElement("div");
-      mark.className = `ruler-mark ${isDeletion ? "ruler-mark-delete" : "ruler-mark-change"}`;
-      mark.style.top = `${(fromLine / totalLines) * 100}%`;
-      mark.style.height = `${Math.max((lineSpan / totalLines) * 100, 0.5)}%`;
-      fragment.appendChild(mark);
-    }
-    ruler.appendChild(fragment);
-  }
-
-  private destroyMergeView(): void {
-    this.unsubscribeScrollSync?.();
-    this.unsubscribeScrollSync = null;
-    this.mergeView?.destroy();
-    this.mergeView = null;
-    this.unifiedView?.destroy();
-    this.unifiedView = null;
-    const host = this.editorHost()?.nativeElement;
-    if (host) host.innerHTML = "";
-    const ruler = this.ruler()?.nativeElement;
-    if (ruler) ruler.innerHTML = "";
   }
 }
