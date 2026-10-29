@@ -99,12 +99,14 @@ describe("WorkspaceRepository", () => {
       grids: [{ tabId: "TB-1", pane: { terminalId: "TE-1" } }],
     };
 
-    await workspaceRepository.createWorkspace(workspaceConfiguration);
+    await workspaceRepository.upsertWorkspace(workspaceConfiguration);
 
     const statements = batchedStatements();
-    expect(statements).toHaveLength(4);
+    expect(statements).toHaveLength(5);
     expect(statements[0].sql).toContain("INSERT INTO workspace (");
     expect(statements[0].sql).toContain("SELECT COALESCE(MAX(position) + 1, 0) FROM workspace");
+    // Without a position a new row is appended and an existing one keeps its place.
+    expect(statements[0].sql).toContain("position = COALESCE(?, position)");
     expect(statements[0].params).toEqual([
       "ws1",
       "Workspace 1",
@@ -112,14 +114,19 @@ describe("WorkspaceRepository", () => {
       null,
       expect.any(Number),
       expect.any(Number),
+      null,
     ]);
-    expect(statements[1].params).toEqual(["ws1", "TB-1", 1, "green", "C:\\repo", "Tab 1", 0]);
-    expect(statements[2].params).toEqual(["ws1", "TB-2", 0, null, null, null, 1]);
-    expect(statements[3].sql).toContain("INSERT INTO workspace_grid");
-    expect(statements[3].params).toEqual(["ws1", "TB-1", JSON.stringify({ terminalId: "TE-1" })]);
+    expect(statements[1]).toEqual({
+      sql: "DELETE FROM workspace_tab WHERE workspace_id = ?",
+      params: ["ws1"],
+    });
+    expect(statements[2].params).toEqual(["ws1", "TB-1", 1, "green", "C:\\repo", "Tab 1", 0]);
+    expect(statements[3].params).toEqual(["ws1", "TB-2", 0, null, null, null, 1]);
+    expect(statements[4].sql).toContain("INSERT INTO workspace_grid");
+    expect(statements[4].params).toEqual(["ws1", "TB-1", JSON.stringify({ terminalId: "TE-1" })]);
   });
 
-  it("updates metadata and replaces the layout in one batch", async () => {
+  it("writes the position when given and replaces the layout in one batch", async () => {
     const workspaceConfiguration: WorkspaceConfiguration = {
       id: "ws1",
       name: "Updated",
@@ -129,11 +136,19 @@ describe("WorkspaceRepository", () => {
       grids: [{ tabId: "TB-2", pane: { terminalId: "TE-2" } }],
     };
 
-    await workspaceRepository.updateWorkspace(workspaceConfiguration);
+    await workspaceRepository.upsertWorkspace(workspaceConfiguration);
 
     const statements = batchedStatements();
-    expect(statements[0].sql).toContain("UPDATE workspace SET name = ?");
-    expect(statements[0].params).toEqual(["Updated", "red", 4, expect.any(Number), "ws1"]);
+    expect(statements[0].sql).toContain("ON CONFLICT (id) DO UPDATE SET");
+    expect(statements[0].params).toEqual([
+      "ws1",
+      "Updated",
+      "red",
+      4,
+      expect.any(Number),
+      expect.any(Number),
+      4,
+    ]);
     expect(statements[1]).toEqual({
       sql: "DELETE FROM workspace_tab WHERE workspace_id = ?",
       params: ["ws1"],

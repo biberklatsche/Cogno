@@ -12,8 +12,9 @@ import { ShellSupportDefinitionContract } from "@cogno/core/session/shells/shell
 import { ActionNameRegistry } from "@cogno/core/workbench/actions/action-name-registry";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
-import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
+import { FeatureModeContract } from "@cogno/shared/domain";
 import { BehaviorSubject, Observable } from "rxjs";
+import { readFeatureConfig } from "./feature-config";
 import { FEATURE_DEFINITIONS } from "./feature-definitions.token";
 import { FeatureContributionRegistrar, FeatureReconciler } from "./feature-reconciler";
 import { NotificationChannelFeatureRegistrar } from "./notification-channel-feature-registrar";
@@ -169,22 +170,12 @@ export class FeatureHost {
     if (!configPath) {
       return feature.mode;
     }
-    const featureConfiguration = resolveConfigPath(
-      this.applicationConfigurationPort.getConfiguration() as Record<string, unknown>,
+    const mode = readFeatureConfig(
+      this.applicationConfigurationPort.getConfiguration(),
       configPath,
-    );
-    if (typeof featureConfiguration !== "object" || featureConfiguration === null) {
-      return feature.mode;
-    }
-    return normalizeFeatureMode((featureConfiguration as { mode?: unknown }).mode) ?? feature.mode;
+    )?.["mode"];
+    return mode === "on" || mode === "off" ? mode : feature.mode;
   }
-}
-
-function resolveConfigPath(source: Record<string, unknown>, path: string): unknown {
-  return path.split(".").reduce<unknown>((value, segment) => {
-    if (typeof value !== "object" || value === null) return undefined;
-    return (value as Record<string, unknown>)[segment];
-  }, source);
 }
 
 /** A conflict is a programming error: Cogno starts without features and says why. */

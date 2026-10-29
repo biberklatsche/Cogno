@@ -1,7 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { FocusActiveTerminalAction } from "@cogno/core/workbench/bus/grid-list/actions";
 import {
   TabAddedEvent,
   TabRemovedEvent,
@@ -180,14 +179,7 @@ export class GridListService implements PaneLayoutLookup {
     this.bus
       .on$("FocusActiveTerminal")
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((_event: FocusActiveTerminalAction) => {
-        const focusedTerminalId = this.getFocusedTerminalId();
-        if (!focusedTerminalId) return;
-        this.bus.publish({
-          type: "FocusTerminal",
-          payload: focusedTerminalId,
-        });
-      });
+      .subscribe(() => this.focusActiveTerminal());
   }
 
   /** Removes the pane of `terminalId` - in whichever workspace it sits, shown or not. */
@@ -496,7 +488,7 @@ export class GridListService implements PaneLayoutLookup {
     this.deferFocusTo(terminalId);
   }
 
-  getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
+  private getFirstTerminalId(node: BinaryNode<Pane>): TerminalId {
     if (node.isLeaf) {
       const terminalId = node.data?.terminalId;
       if (!terminalId) throw new Error("Leaf pane does not contain a terminal id.");
@@ -581,8 +573,11 @@ export class GridListService implements PaneLayoutLookup {
     return focusedNode.data?.terminalId;
   }
 
+  /** Gives the keyboard to the focused pane of the shown tab, if there is one. */
   focusActiveTerminal(): void {
-    this.bus.publish({ type: "FocusActiveTerminal" });
+    const focusedTerminalId = this.getFocusedTerminalId();
+    if (!focusedTerminalId) return;
+    this.bus.publish({ type: "FocusTerminal", payload: focusedTerminalId });
   }
 
   focusAdjacentPane(terminalId: TerminalId, direction: 1 | -1): void {

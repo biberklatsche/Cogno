@@ -86,7 +86,7 @@ describe("SideMenuFeatureRuntime", () => {
     runtime.activate();
     expect(lifecycle.onModeChange).toHaveBeenCalledWith("on");
     expect(sideMenuService.addMenuItem).toHaveBeenCalledWith(
-      expect.objectContaining({ label: "Workspace", hidden: false, order: 1 }),
+      expect.objectContaining({ label: "Workspace", order: 1 }),
     );
 
     runtime.dispose();

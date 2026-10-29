@@ -13,6 +13,7 @@ import {
 import { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import { Icon } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
+import { readFeatureConfig } from "./feature-config";
 
 /**
  * One side-menu entry for as long as its feature is on. The feature-host builds
@@ -42,7 +43,6 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
     this.menuItem = {
       id: config.id,
       label: config.title,
-      hidden: false,
       icon: config.icon,
       order: config.order,
       component: isLazy ? null : (config.targetComponent as Type<unknown>),
@@ -65,7 +65,7 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
   activate(): void {
     this.lifecycle.onModeChange?.("on");
     this.menuItem = { ...this.menuItem, order: this.resolveOrder() };
-    this.sideMenuService.addMenuItem({ ...this.menuItem, hidden: false });
+    this.sideMenuService.addMenuItem(this.menuItem);
     this.addKeybindHandler();
   }
 
@@ -129,27 +129,17 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
         const order = this.resolveOrder();
         if (order === this.menuItem.order) return;
         this.menuItem = { ...this.menuItem, order };
-        this.sideMenuService.addMenuItem({ ...this.menuItem, hidden: false });
+        this.sideMenuService.addMenuItem(this.menuItem);
       }),
     );
   }
 
   private resolveOrder(): number {
-    const configuration = this.applicationConfigurationPort.getConfiguration() as Record<
-      string,
-      unknown
-    >;
-    const featureConfiguration = this.config.configPath
-      .split(".")
-      .reduce<unknown>((value, segment) => {
-        if (typeof value !== "object" || value === null) return undefined;
-        return (value as Record<string, unknown>)[segment];
-      }, configuration);
-    if (typeof featureConfiguration !== "object" || featureConfiguration === null) {
-      return this.config.order;
-    }
-    const orderValue = (featureConfiguration as { order?: unknown }).order;
-    return typeof orderValue === "number" ? orderValue : this.config.order;
+    const order = readFeatureConfig(
+      this.applicationConfigurationPort.getConfiguration(),
+      this.config.configPath,
+    )?.["order"];
+    return typeof order === "number" ? order : this.config.order;
   }
 
   private addKeybindHandler(): void {

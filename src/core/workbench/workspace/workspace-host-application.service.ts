@@ -482,12 +482,7 @@ export class WorkspaceHostApplicationService {
 
   async closeWorkspace(id: string): Promise<void> {
     const closePlan = WorkspaceStateUseCase.closeWorkspace(this._workspaceList(), id);
-    const workspaceToClose = closePlan.closedWorkspace;
-    if (
-      !workspaceToClose ||
-      workspaceToClose.id === DEFAULT_WORKSPACE_ID ||
-      !workspaceToClose.isOpen
-    ) {
+    if (!closePlan.closedWorkspace) {
       return;
     }
 
@@ -568,7 +563,7 @@ export class WorkspaceHostApplicationService {
         seenTabIds.add(newTabId);
       }
 
-      await this.workspaceRepository.updateWorkspace(workspace);
+      await this.workspaceRepository.upsertWorkspace(workspace);
       for (const terminalId of orphanedTerminalIds) {
         await this.workspaceRepository.deleteTerminalSession(workspace.id, terminalId);
       }
@@ -608,10 +603,8 @@ export class WorkspaceHostApplicationService {
         tabId: freshTabIds.get(grid.tabId) ?? grid.tabId,
         pane: withoutTerminalIds(grid.pane),
       }));
-      await this.workspaceRepository.createWorkspace(workspace);
-    } else {
-      await this.workspaceRepository.updateWorkspace(workspace);
     }
+    await this.workspaceRepository.upsertWorkspace(workspace);
 
     this.persistedWorkspaceRuntimeSignatureById.set(
       workspace.id,

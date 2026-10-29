@@ -10,7 +10,7 @@ import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.servic
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
-import { FeatureModeContract, normalizeFeatureMode } from "@cogno/shared/domain";
+import { readFeatureConfig } from "../feature-host/feature-config";
 
 @Injectable({
   providedIn: "root",
@@ -79,14 +79,13 @@ export class NativeMenuService {
     );
 
     const viewMenuItems = await Promise.all(
-      sortedSideMenuFeatureDefinitions.map(async (sideMenuFeatureDefinition) => {
-        const mode = this.getFeatureMode(sideMenuFeatureDefinition.configPath);
-        return this.buildMenuItem(
+      sortedSideMenuFeatureDefinitions.map((sideMenuFeatureDefinition) =>
+        this.buildMenuItem(
           sideMenuFeatureDefinition.actionName,
           sideMenuFeatureDefinition.title,
-          this.isFeatureEnabled(mode),
-        );
-      }),
+          this.isFeatureEnabled(sideMenuFeatureDefinition.configPath),
+        ),
+      ),
     );
 
     const viewSubmenu = await this.tauriMenu.newSubmenu({
@@ -118,26 +117,13 @@ export class NativeMenuService {
       accelerator: this.keybindService.getKeybinding(actionName),
       action: () => {
         const actionDef = this.keybindService.getActionDefinition(actionName);
-        this.bus.publish(
-          actionDef ? ActionFired.createFromDefinition(actionDef) : ActionFired.create(actionName),
-        );
+        this.bus.publish(ActionFired.create(actionName, actionDef?.trigger, actionDef?.args));
       },
     });
   }
 
-  private isFeatureEnabled(mode: FeatureModeContract | undefined): boolean {
-    return mode !== "off";
-  }
-
-  private getFeatureMode(configPath: string): FeatureModeContract | undefined {
-    // `configPath` is dotted ("feature.git") and the config is nested.
-    const featureConfigValue = configPath.split(".").reduce<unknown>((value, segment) => {
-      if (typeof value !== "object" || value === null) return undefined;
-      return (value as Record<string, unknown>)[segment];
-    }, this.latestConfig);
-    if (typeof featureConfigValue !== "object" || featureConfigValue === null) {
-      return undefined;
-    }
-    return normalizeFeatureMode((featureConfigValue as { mode?: unknown }).mode);
+  /** A feature's entry is enabled unless its config says "off". */
+  private isFeatureEnabled(configPath: string): boolean {
+    return readFeatureConfig(this.latestConfig, configPath)?.["mode"] !== "off";
   }
 }

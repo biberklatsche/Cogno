@@ -10,7 +10,6 @@ describe("isSelectedSideMenuItem", () => {
       id: "notification",
       label: "Notification",
       icon: "mdiBell",
-      hidden: false,
       actionName: "open_notification",
       component: DummyComponent,
     };
@@ -28,7 +27,6 @@ describe("isSelectedSideMenuItem", () => {
     const selectedItem: SideMenuItem = {
       label: "AI Chat",
       icon: "mdiRobot",
-      hidden: false,
       actionName: "open_ai_chat",
       component: DummyComponent,
     };

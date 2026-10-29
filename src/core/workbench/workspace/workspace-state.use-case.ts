@@ -9,6 +9,7 @@ export interface WorkspaceActivationPlan {
 }
 
 export interface WorkspaceClosePlan {
+  /** Unset when there was nothing to close: unknown, the default or not open. */
   readonly closedWorkspace?: WorkspaceState;
   readonly workspaceList: WorkspaceState[];
   readonly workspaceToActivateId?: string;
@@ -209,10 +210,7 @@ export class WorkspaceStateUseCase {
       workspaceToClose.id === defaultWorkspaceIdContract ||
       !workspaceToClose.isOpen
     ) {
-      return {
-        closedWorkspace: workspaceToClose,
-        workspaceList: [...workspaceList],
-      };
+      return { workspaceList: [...workspaceList] };
     }
 
     const nextWorkspaceList: WorkspaceState[] = workspaceList.map((workspaceEntry) =>

@@ -8,7 +8,7 @@ import { GridListService } from "../grid-list/+state/grid-list.service";
 
 @Injectable({ providedIn: "root" })
 export class TerminalBusyStateService {
-  private readonly busyTerminalWorkspaceIds = new Map<TerminalId, string | undefined>();
+  private readonly busyTerminalIds = new Set<TerminalId>();
 
   constructor(
     private readonly appBus: AppBus,
@@ -24,13 +24,10 @@ export class TerminalBusyStateService {
           return;
         }
         if (fact.isBusy) {
-          this.busyTerminalWorkspaceIds.set(
-            terminalId,
-            this.resolveWorkspaceIdentifierForTerminal(terminalId),
-          );
+          this.busyTerminalIds.add(terminalId);
           return;
         }
-        this.busyTerminalWorkspaceIds.delete(terminalId);
+        this.busyTerminalIds.delete(terminalId);
       });
 
     this.appBus
@@ -41,16 +38,16 @@ export class TerminalBusyStateService {
           return;
         }
 
-        this.busyTerminalWorkspaceIds.delete(terminalRemovedEvent.payload);
+        this.busyTerminalIds.delete(terminalRemovedEvent.payload);
       });
   }
 
   hasBusyTerminals(): boolean {
-    return this.busyTerminalWorkspaceIds.size > 0;
+    return this.busyTerminalIds.size > 0;
   }
 
   getBusyTerminalCount(): number {
-    return this.busyTerminalWorkspaceIds.size;
+    return this.busyTerminalIds.size;
   }
 
   hasBusyTerminalsInWorkspace(workspaceId: string): boolean {
@@ -59,8 +56,8 @@ export class TerminalBusyStateService {
 
   getBusyTerminalCountInWorkspace(workspaceId: string): number {
     let count = 0;
-    for (const terminalId of this.busyTerminalWorkspaceIds.keys()) {
-      if (this.resolveWorkspaceIdentifierForTerminal(terminalId) === workspaceId) {
+    for (const terminalId of this.busyTerminalIds) {
+      if (this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId) === workspaceId) {
         count++;
       }
     }
@@ -108,12 +105,5 @@ export class TerminalBusyStateService {
         closeDialog(result);
       };
     });
-  }
-
-  private resolveWorkspaceIdentifierForTerminal(terminalId: TerminalId): string | undefined {
-    const workspaceIdentifier =
-      this.gridListService.findWorkspaceIdentifierByTerminalId(terminalId);
-    this.busyTerminalWorkspaceIds.set(terminalId, workspaceIdentifier);
-    return workspaceIdentifier;
   }
 }

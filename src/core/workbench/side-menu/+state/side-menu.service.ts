@@ -9,7 +9,6 @@ export type SideMenuItem = {
   label: string;
   icon: Icon;
   order?: number;
-  hidden: boolean;
   actionName: ActionName;
   separator?: boolean;
   // Optional component to render in the side "aside" area when this item is active

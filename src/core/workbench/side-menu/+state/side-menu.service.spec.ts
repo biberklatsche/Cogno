@@ -15,7 +15,6 @@ describe("SideMenuService", () => {
     menuItem = {
       label: "Workspace",
       icon: "mdiViewDashboard",
-      hidden: false,
       actionName: "open_workspace",
       component: DummyComponent,
     };
@@ -107,7 +106,6 @@ describe("SideMenuService", () => {
     service.addMenuItem({
       label: "Search",
       icon: "mdiConsole",
-      hidden: false,
       actionName: "open_terminal_search",
       component: DummyComponent,
     });
@@ -147,7 +145,6 @@ describe("SideMenuService", () => {
     service.addMenuItem({
       label: "CommandPalette",
       icon: "mdiConsole",
-      hidden: false,
       actionName: "open_command_palette",
       component: DummyComponent,
     });
@@ -207,7 +204,6 @@ describe("SideMenuService", () => {
     service.addMenuItem({
       label: "Search",
       icon: "mdiConsole",
-      hidden: false,
       actionName: "open_terminal_search",
       component: DummyComponent,
     });

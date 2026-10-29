@@ -82,9 +82,7 @@ describe("AppMenuService", () => {
       expect.objectContaining(ActionFired.create("open_shell_1")),
     );
     expect(publishSpy).toHaveBeenCalledWith(
-      expect.objectContaining(
-        ActionFired.createFromDefinition({ actionName: "new_window" } as never),
-      ),
+      expect.objectContaining(ActionFired.create("new_window")),
     );
   });
 
