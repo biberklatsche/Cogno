@@ -17,14 +17,10 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     SideMenuFeatureHandleContract<string>["registerKeybindListener"]
   >;
   let closeMock: Mock<SideMenuFeatureHandleContract<string>["close"]>;
-  let unregisterKeybindListenerMock: Mock<
-    SideMenuFeatureHandleContract<string>["unregisterKeybindListener"]
-  >;
 
   beforeEach(() => {
     registerKeybindListenerMock = vi.fn();
     closeMock = vi.fn();
-    unregisterKeybindListenerMock = vi.fn();
 
     commandPaletteService = {
       selectedEntry: vi.fn() as unknown as CommandPaletteService["selectedEntry"],
@@ -36,13 +32,12 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     sideMenuFeatureHandle = {
       close: closeMock,
       registerKeybindListener: registerKeybindListenerMock,
-      unregisterKeybindListener: unregisterKeybindListenerMock,
       updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
   });
 
-  it("opens, closes, unregisters and handles off mode", () => {
+  it("resets the palette on close and on off mode", () => {
     const lifecycle = new CommandPaletteSideMenuLifecycle(
       commandPaletteService as CommandPaletteService,
     ).create(sideMenuFeatureHandle);
@@ -50,10 +45,8 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     lifecycle.onOpen?.();
     lifecycle.onModeChange?.("off");
     lifecycle.onClose?.();
-    lifecycle.onBlur?.();
 
     expect(commandPaletteService.handleSideMenuClose).toHaveBeenCalledTimes(2);
-    expect(unregisterKeybindListenerMock).toHaveBeenCalledTimes(1);
   });
 
   it("fires the selected entry captured before close", async () => {
@@ -81,21 +74,19 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     expect(commandPaletteService.fireSelectedAction).toHaveBeenCalledWith(selectedEntry);
   });
 
-  it("closes on Escape and routes navigation keys", () => {
+  it("routes navigation keys and leaves Escape to the host", () => {
     const lifecycle = new CommandPaletteSideMenuLifecycle(
       commandPaletteService as CommandPaletteService,
     );
     lifecycle.create(sideMenuFeatureHandle).onFocus?.();
 
-    const keybindHandler = registerKeybindListenerMock.mock.calls[0][1] as (
-      event: KeyboardEvent,
-    ) => void;
+    const [keys, keybindHandler] = registerKeybindListenerMock.mock.calls[0];
+    expect(keys).not.toContain("Escape");
 
-    keybindHandler({ key: "Escape" } as KeyboardEvent);
     keybindHandler({ key: "ArrowDown" } as KeyboardEvent);
     keybindHandler({ key: "ArrowUp" } as KeyboardEvent);
 
-    expect(closeMock).toHaveBeenCalledTimes(1);
+    expect(closeMock).not.toHaveBeenCalled();
     expect(commandPaletteService.move).toHaveBeenNthCalledWith(1, 1);
     expect(commandPaletteService.move).toHaveBeenNthCalledWith(2, -1);
   });

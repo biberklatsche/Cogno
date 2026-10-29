@@ -47,7 +47,6 @@ describe("command palette behaviour", () => {
     const sideMenuLifecycle = lifecycle.create({
       close: closeMock,
       registerKeybindListener: registerKeybindListenerMock,
-      unregisterKeybindListener: vi.fn(),
       updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     });
@@ -236,7 +235,7 @@ describe("command palette behaviour", () => {
     });
   });
 
-  describe("Enter, click and Escape", () => {
+  describe("Enter and click", () => {
     it("closes on Enter and then dispatches the entry that was selected", async () => {
       press("ArrowDown");
 
@@ -268,14 +267,6 @@ describe("command palette behaviour", () => {
 
       expect(dispatchActionMock).toHaveBeenCalledWith({ actionName: "split_right" });
       expect(closeMock).not.toHaveBeenCalled();
-    });
-
-    it("closes on Escape without dispatching", async () => {
-      press("Escape");
-      await Promise.resolve();
-
-      expect(closeMock).toHaveBeenCalledTimes(1);
-      expect(dispatchActionMock).not.toHaveBeenCalled();
     });
   });
 

@@ -11,7 +11,6 @@ describe("GitSideMenuLifecycle", () => {
       registerKeybindListener: (_keys: string[], handler: () => void) => {
         onEscape = handler;
       },
-      unregisterKeybindListener: vi.fn(),
       close: vi.fn(),
     } as unknown as SideMenuFeatureHandleContract<string>;
     const view = {

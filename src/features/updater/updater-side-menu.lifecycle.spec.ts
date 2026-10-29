@@ -37,7 +37,6 @@ describe("UpdaterSideMenuLifecycle", () => {
     handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
-      unregisterKeybindListener: vi.fn(),
       updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };

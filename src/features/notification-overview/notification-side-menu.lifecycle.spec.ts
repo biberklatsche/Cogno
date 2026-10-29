@@ -26,7 +26,6 @@ describe("NotificationSideMenuLifecycle", () => {
     handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
-      unregisterKeybindListener: vi.fn(),
       updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
@@ -55,15 +54,5 @@ describe("NotificationSideMenuLifecycle", () => {
     unread.set(false);
     TestBed.tick();
     expect(handle.updateIcon).toHaveBeenLastCalledWith("mdiBell");
-  });
-
-  it("registers Escape handling on focus and unregisters on blur", () => {
-    lifecycle.onFocus?.();
-    const keybindHandler = vi.mocked(handle.registerKeybindListener).mock.calls[0]?.[1];
-    keybindHandler?.({ key: "Escape" } as KeyboardEvent);
-    lifecycle.onBlur?.();
-
-    expect(handle.close).toHaveBeenCalledTimes(1);
-    expect(handle.unregisterKeybindListener).toHaveBeenCalledTimes(1);
   });
 });

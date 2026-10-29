@@ -89,7 +89,6 @@ describe("terminal search behaviour", () => {
     const sideMenuLifecycle = lifecycle.create({
       close: closeMock,
       registerKeybindListener: registerKeybindListenerMock,
-      unregisterKeybindListener: vi.fn(),
       updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     });
@@ -574,12 +573,6 @@ describe("terminal search behaviour", () => {
   });
 
   describe("close", () => {
-    it("closes on Escape", () => {
-      press("Escape");
-
-      expect(closeMock).toHaveBeenCalledTimes(1);
-    });
-
     it("drops the pending search, the decorations and the whole search state", () => {
       terminalSearchPanelRequestSubject.next({
         terminalId: "terminal-1",

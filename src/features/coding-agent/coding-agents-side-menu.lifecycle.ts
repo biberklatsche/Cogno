@@ -48,14 +48,6 @@ export class CodingAgentsSideMenuLifecycle {
       onOpen: () => {
         void this.startupService.rescan();
       },
-      onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
-          sideMenuFeatureHandle.close();
-        });
-      },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
-      },
     };
   }
 }

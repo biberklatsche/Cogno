@@ -23,12 +23,8 @@ export class CommandPaletteSideMenuLifecycle {
       onClose: () => this.commandPaletteService.handleSideMenuClose(),
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
-          ["Escape", "Enter", "ArrowDown", "ArrowUp"],
+          ["Enter", "ArrowDown", "ArrowUp"],
           (keyboardEvent: KeyboardEvent) => {
-            if (keyboardEvent.key === "Escape") {
-              sideMenuFeatureHandle.close();
-              return;
-            }
             if (keyboardEvent.key === "Enter") {
               const selectedCommandEntry = this.commandPaletteService.selectedEntry();
               sideMenuFeatureHandle.close();
@@ -46,7 +42,6 @@ export class CommandPaletteSideMenuLifecycle {
         );
         focusSideMenuAutofocusElement();
       },
-      onBlur: () => sideMenuFeatureHandle.unregisterKeybindListener(),
     };
   }
 }

@@ -12,9 +12,6 @@ describe("WorkspaceSideMenuLifecycle", () => {
     registerKeybindListener: ReturnType<
       typeof vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>
     >;
-    unregisterKeybindListener: ReturnType<
-      typeof vi.fn<SideMenuFeatureHandle["unregisterKeybindListener"]>
-    >;
     updateIcon: ReturnType<typeof vi.fn<SideMenuFeatureHandle["updateIcon"]>>;
     updateBadgeColor: ReturnType<typeof vi.fn<SideMenuFeatureHandle["updateBadgeColor"]>>;
   };
@@ -28,7 +25,6 @@ describe("WorkspaceSideMenuLifecycle", () => {
     handle = {
       close: vi.fn<SideMenuFeatureHandle["close"]>(),
       registerKeybindListener: vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>(),
-      unregisterKeybindListener: vi.fn<SideMenuFeatureHandle["unregisterKeybindListener"]>(),
       updateIcon: vi.fn<SideMenuFeatureHandle["updateIcon"]>(),
       updateBadgeColor: vi.fn<SideMenuFeatureHandle["updateBadgeColor"]>(),
     };
@@ -36,26 +32,17 @@ describe("WorkspaceSideMenuLifecycle", () => {
     lifecycle = new WorkspaceSideMenuLifecycle(workspaceService as WorkspaceService).create(handle);
   });
 
-  it("unregisters on off, blur and close", () => {
-    lifecycle.onModeChange?.("off");
-    lifecycle.onBlur?.();
-    lifecycle.onClose?.();
-
-    expect(handle.unregisterKeybindListener).toHaveBeenCalledTimes(3);
-  });
-
-  it("registers keyboard handling for navigation, closing and restore", async () => {
+  it("registers keyboard handling for navigation and restore, Escape stays with the host", async () => {
     lifecycle.onFocus?.();
 
-    const listener = vi.mocked(handle.registerKeybindListener).mock.calls[0]?.[1];
-    expect(listener).toBeTypeOf("function");
+    const [keys, listener] = vi.mocked(handle.registerKeybindListener).mock.calls[0];
+    expect(keys).not.toContain("Escape");
 
-    listener?.({ key: "ArrowDown" } as KeyboardEvent);
-    listener?.({ key: "ArrowUp" } as KeyboardEvent);
-    listener?.({ key: "ArrowLeft" } as KeyboardEvent);
-    listener?.({ key: "ArrowRight" } as KeyboardEvent);
-    listener?.({ key: "Escape" } as KeyboardEvent);
-    listener?.({ key: "Enter" } as KeyboardEvent);
+    listener({ key: "ArrowDown" } as KeyboardEvent);
+    listener({ key: "ArrowUp" } as KeyboardEvent);
+    listener({ key: "ArrowLeft" } as KeyboardEvent);
+    listener({ key: "ArrowRight" } as KeyboardEvent);
+    listener({ key: "Enter" } as KeyboardEvent);
 
     await Promise.resolve();
 
@@ -64,6 +51,6 @@ describe("WorkspaceSideMenuLifecycle", () => {
     expect(workspaceService.selectNext).toHaveBeenNthCalledWith(3, "left");
     expect(workspaceService.selectNext).toHaveBeenNthCalledWith(4, "right");
     expect(workspaceService.restoreSelectedWorkspace).toHaveBeenCalled();
-    expect(handle.close).toHaveBeenCalledTimes(2);
+    expect(handle.close).toHaveBeenCalledTimes(1);
   });
 });

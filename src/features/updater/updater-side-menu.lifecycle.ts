@@ -36,14 +36,6 @@ export class UpdaterSideMenuLifecycle {
           { injector },
         );
       },
-      onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
-          sideMenuFeatureHandle.close();
-        });
-      },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
-      },
     };
   }
 }

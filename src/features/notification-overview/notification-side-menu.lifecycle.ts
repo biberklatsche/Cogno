@@ -38,14 +38,6 @@ export class NotificationSideMenuLifecycle {
       onOpen: () => {
         this.notificationCenterStateService.markRead();
       },
-      onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () =>
-          sideMenuFeatureHandle.close(),
-        );
-      },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
-      },
     };
   }
 }

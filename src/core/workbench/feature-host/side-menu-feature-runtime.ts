@@ -69,22 +69,19 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
     this.addKeybindHandler();
   }
 
-  /** Tear the entry down completely: lifecycle off, keybinding, item, subscriptions. */
+  /** Tear the entry down completely: lifecycle off, keybindings, item, subscriptions. */
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
     this.lifecycle.onModeChange?.("off");
     this.removeKeybindHandler();
+    this.keybinds.unregisterListener(this.config.configPath);
     this.sideMenuService.removeMenuItem(this.menuItem.label);
     this.subscriptions.unsubscribe();
   }
 
   registerKeybindListener(keys: string[], handler: (evt: KeyboardEvent) => void): void {
     this.keybinds.registerListener(this.config.configPath, keys, handler);
-  }
-
-  unregisterKeybindListener(): void {
-    this.keybinds.unregisterListener(this.config.configPath);
   }
 
   close(): void {
@@ -110,14 +107,20 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
         if (event.payload?.label === this.config.title) this.lifecycle.onClose?.();
       }),
     );
+    // While the panel has focus, Escape closes it. A lifecycle that binds
+    // Escape itself in onFocus replaces that default (same id, same key).
     this.subscriptions.add(
       this.bus.on$("SideMenuViewFocused").subscribe((event) => {
-        if (event.payload?.label === this.config.title) this.lifecycle.onFocus?.();
+        if (event.payload?.label !== this.config.title) return;
+        this.registerKeybindListener(["Escape"], () => this.close());
+        this.lifecycle.onFocus?.();
       }),
     );
     this.subscriptions.add(
       this.bus.on$("SideMenuViewBlurred").subscribe((event) => {
-        if (event.payload?.label === this.config.title) this.lifecycle.onBlur?.();
+        if (event.payload?.label !== this.config.title) return;
+        this.lifecycle.onBlur?.();
+        this.keybinds.unregisterListener(this.config.configPath);
       }),
     );
   }

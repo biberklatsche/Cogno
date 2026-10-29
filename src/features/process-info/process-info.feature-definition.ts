@@ -15,8 +15,7 @@ const processInfoSideMenuFeatureDefinition = {
   configPath: "feature.process_info",
   targetComponent: () =>
     import("./process-info-side.component").then((m) => m.ProcessInfoSideComponent),
-  createLifecycle: (injector, sideMenuFeatureHandle) =>
-    injector.get(ProcessInfoSideMenuLifecycle).create(sideMenuFeatureHandle),
+  createLifecycle: (injector) => injector.get(ProcessInfoSideMenuLifecycle).create(),
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const processInfoFeature: FeatureDefinition = {

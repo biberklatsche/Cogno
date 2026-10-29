@@ -31,9 +31,6 @@ export class GitSideMenuLifecycle {
           else sideMenuFeatureHandle.close();
         });
       },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
-      },
     };
   }
 }

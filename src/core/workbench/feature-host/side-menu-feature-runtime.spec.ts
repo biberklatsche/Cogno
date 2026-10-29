@@ -132,12 +132,44 @@ describe("SideMenuFeatureRuntime", () => {
     expect((actionEvent as { performed?: boolean }).performed).toBe(true);
   });
 
+  it("binds Escape to close while the view has focus, before the lifecycle binds its own keys", () => {
+    const calls: string[] = [];
+    keybindService.registerListener.mockImplementation((_id, keys: string[]) =>
+      calls.push(`register ${keys.join(",")}`),
+    );
+    keybindService.unregisterListener.mockImplementation(() => calls.push("unregister"));
+    const lifecycle = {
+      onFocus: vi.fn(() => calls.push("onFocus")),
+      onBlur: vi.fn(() => calls.push("onBlur")),
+    };
+    const runtime = createRuntime(lifecycle);
+    runtime.activate();
+
+    appBus.publish({ type: "SideMenuViewFocused", payload: { label: "Workspace" } });
+    const [id, keys, onEscape] = keybindService.registerListener.mock.calls[0];
+    expect(id).toBe("feature.workspace");
+    expect(keys).toEqual(["Escape"]);
+    onEscape({ key: "Escape" } as KeyboardEvent);
+    expect(sideMenuService.close).toHaveBeenCalledTimes(1);
+
+    appBus.publish({ type: "SideMenuViewBlurred", payload: { label: "Workspace" } });
+    expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
+    expect(calls).toEqual(["register Escape", "onFocus", "onBlur", "unregister"]);
+  });
+
+  it("drops the feature's keys on dispose", () => {
+    const runtime = createRuntime();
+    runtime.activate();
+    runtime.dispose();
+
+    expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
+  });
+
   it("exposes the feature handle", () => {
     const runtime = createRuntime();
     runtime.activate();
 
     runtime.registerKeybindListener(["Enter"], vi.fn());
-    runtime.unregisterKeybindListener();
     runtime.updateIcon("mdiRobot");
     runtime.updateBadgeColor("var(--color-yellow)");
     runtime.close();
@@ -147,7 +179,6 @@ describe("SideMenuFeatureRuntime", () => {
       ["Enter"],
       expect.any(Function),
     );
-    expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
     expect(sideMenuService.updateIcon).toHaveBeenCalledWith("Workspace", "mdiRobot");
     expect(sideMenuService.updateBadgeColor).toHaveBeenCalledWith(
       "Workspace",

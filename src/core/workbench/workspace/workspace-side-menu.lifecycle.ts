@@ -3,7 +3,15 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core/api/contributions";
+import { SelectionDirection } from "./grid-navigation";
 import { WorkspaceService } from "./workspace.service";
+
+const ARROW_DIRECTIONS: Record<string, SelectionDirection> = {
+  ArrowDown: "down",
+  ArrowUp: "up",
+  ArrowLeft: "left",
+  ArrowRight: "right",
+};
 
 @Injectable({ providedIn: "root" })
 export class WorkspaceSideMenuLifecycle {
@@ -13,48 +21,19 @@ export class WorkspaceSideMenuLifecycle {
     sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
   ): SideMenuFeatureLifecycleContract {
     return {
-      onModeChange: (mode) => {
-        if (mode === "off") {
-          sideMenuFeatureHandle.unregisterKeybindListener();
-        }
-      },
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
-          ["Enter", "Escape", "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"],
+          ["Enter", ...Object.keys(ARROW_DIRECTIONS)],
           (keyboardEvent: KeyboardEvent) => {
-            if (keyboardEvent.key === "Escape") {
-              sideMenuFeatureHandle.close();
-              return;
-            }
             if (keyboardEvent.key === "Enter") {
               void this.workspaceService.restoreSelectedWorkspace().then(() => {
                 sideMenuFeatureHandle.close();
               });
               return;
             }
-            if (keyboardEvent.key === "ArrowDown") {
-              this.workspaceService.selectNext("down");
-              return;
-            }
-            if (keyboardEvent.key === "ArrowUp") {
-              this.workspaceService.selectNext("up");
-              return;
-            }
-            if (keyboardEvent.key === "ArrowLeft") {
-              this.workspaceService.selectNext("left");
-              return;
-            }
-            if (keyboardEvent.key === "ArrowRight") {
-              this.workspaceService.selectNext("right");
-            }
+            this.workspaceService.selectNext(ARROW_DIRECTIONS[keyboardEvent.key]);
           },
         );
-      },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
-      },
-      onClose: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
       },
     };
   }
