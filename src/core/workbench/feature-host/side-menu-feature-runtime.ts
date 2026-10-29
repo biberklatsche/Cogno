@@ -69,10 +69,11 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract<Ico
     this.addKeybindHandler();
   }
 
-  /** Tear the entry down completely: lifecycle off, keybindings, item, subscriptions. */
+  /** Tear the entry down completely: open panel, lifecycle off, keybindings, item, subscriptions. */
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    if (this.sideMenuService.isSelected(this.menuItem.label)) this.sideMenuService.close(true);
     this.lifecycle.onModeChange?.("off");
     this.removeKeybindHandler();
     this.keybinds.unregisterListener(this.config.configPath);

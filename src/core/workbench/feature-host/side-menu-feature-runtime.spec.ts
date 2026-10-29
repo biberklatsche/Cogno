@@ -18,6 +18,7 @@ describe("SideMenuFeatureRuntime", () => {
   let sideMenuService: {
     addMenuItem: ReturnType<typeof vi.fn>;
     removeMenuItem: ReturnType<typeof vi.fn>;
+    isSelected: ReturnType<typeof vi.fn>;
     toggle: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
     updateIcon: ReturnType<typeof vi.fn>;
@@ -67,6 +68,7 @@ describe("SideMenuFeatureRuntime", () => {
     sideMenuService = {
       addMenuItem: vi.fn(),
       removeMenuItem: vi.fn(),
+      isSelected: vi.fn(() => false),
       toggle: vi.fn(),
       close: vi.fn(),
       updateIcon: vi.fn(),
@@ -91,7 +93,23 @@ describe("SideMenuFeatureRuntime", () => {
 
     runtime.dispose();
     expect(lifecycle.onModeChange).toHaveBeenCalledWith("off");
+    expect(sideMenuService.close).not.toHaveBeenCalled();
     expect(sideMenuService.removeMenuItem).toHaveBeenCalledWith("Workspace");
+  });
+
+  it("closes the panel on dispose when it is open, before the lifecycle goes off", () => {
+    const calls: string[] = [];
+    sideMenuService.isSelected.mockReturnValue(true);
+    sideMenuService.close.mockImplementation(() => calls.push("close"));
+    const runtime = createRuntime({ onModeChange: vi.fn(() => calls.push("onModeChange")) });
+    runtime.activate();
+    calls.length = 0;
+
+    runtime.dispose();
+
+    expect(sideMenuService.isSelected).toHaveBeenCalledWith("Workspace");
+    expect(sideMenuService.close).toHaveBeenCalledWith(true);
+    expect(calls).toEqual(["close", "onModeChange"]);
   });
 
   it("follows a config order override and falls back to the default", () => {
