@@ -267,10 +267,7 @@ export class RealConfigService extends ConfigService {
       settingsExtensions,
     );
     const writeConfig = (config: Config) =>
-      this.fs.writeTextFile(
-        path,
-        InitialConfigOverridesWriter.toDotString(config, { defaultSettings: defaultConfig }),
-      );
+      this.fs.writeTextFile(path, InitialConfigOverridesWriter.toDotString(config, defaultConfig));
     const readConfig = async () => {
       let userConfigString = await this.fs.readTextFile(path);
       userConfigString = await this.applyCliSetOverrides(userConfigString);
@@ -283,12 +280,9 @@ export class RealConfigService extends ConfigService {
     };
 
     if (!(await this.fs.exists(path))) {
-      const userConfig = ConfigMapper.fromStringToConfig(
-        this.os.platform(),
-        defaultConfigString,
-        "",
-        settingsExtensions,
-      );
+      // A copy: `completeDefaults` fills it in place, and the write compares it
+      // against the untouched defaults.
+      const userConfig: Config = structuredClone(defaultConfig);
       await options.completeDefaults?.(userConfig);
       await writeConfig(userConfig);
     }

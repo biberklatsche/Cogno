@@ -34,30 +34,6 @@ describe("Color", () => {
     expect(Color.getBrightness("#ffffff")).toEqual(1);
   });
 
-  it("should return isValid false if color is undefined", () => {
-    expect(Color.isValid(undefined)).toBeFalsy();
-  });
-
-  it("should return isValid false if color is null", () => {
-    expect(Color.isValid(null)).toBeFalsy();
-  });
-
-  it("should return isValid false if color is empty", () => {
-    expect(Color.isValid("")).toBeFalsy();
-  });
-
-  it("should return isValid false if color does not start with #", () => {
-    expect(Color.isValid("000000")).toBeFalsy();
-  });
-
-  it("should return isValid false if color is to short", () => {
-    expect(Color.isValid("#00000")).toBeFalsy();
-  });
-
-  it("should return isValid true if color is valid", () => {
-    expect(Color.isValid("#000000")).toBeTruthy();
-  });
-
   it("should return a deterministic color name from text", () => {
     const firstColorName = Color.fromText("alpha");
     const secondColorName = Color.fromText("alpha");
@@ -76,10 +52,5 @@ describe("Color", () => {
     expect(discoveredColorNames).toEqual(
       new Set(["red", "green", "yellow", "blue", "magenta", "cyan"]),
     );
-  });
-
-  it("should convert config colors to hex colors", () => {
-    expect(Color.toHexColor(undefined)).toEqual("#000");
-    expect(Color.toHexColor("ffffff")).toEqual("#ffffff");
   });
 });

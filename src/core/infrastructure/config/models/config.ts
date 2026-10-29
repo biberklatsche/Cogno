@@ -17,12 +17,6 @@ import { TerminalSettingsSchema } from "./terminal-settings";
 
 export { Color, ShellType };
 
-export const HTTP_SERVER_DEFAULTS = {
-  enabled: true,
-  port: 9000,
-  auto_next_port: true,
-} as const;
-
 const HttpServerSchema = z.strictObject({
   enabled: z
     .boolean()

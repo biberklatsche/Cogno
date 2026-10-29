@@ -15,36 +15,19 @@
  * Run: `npx tsx scripts/generate-config-docs.ts [--check] [--site]`.
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import type { z } from "zod";
 import { hexColorSchema } from "../src/core/api/contributions/feature-settings";
 import { baseConfigSchemaShape } from "../src/core/infrastructure/config/models/config";
 import {
   defaultSettings,
   platformSettingOverrides,
 } from "../src/core/infrastructure/config/models/default-config-values";
+import { type ZodDef, zodDef } from "../src/core/infrastructure/config/zod-def";
 import { defaultFeatureSettingsExtension } from "../src/features/feature-settings-extension";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const DOCS_MD = `${REPO_ROOT}/docs/config.md`;
 const SITE_MD = `${REPO_ROOT}/../meetcogno/src/content/docs/config/settings.md`;
-
-/** Zod 4 keeps the definition under `_zod.def`; typed as unknown on purpose. */
-type ZodLike = { _zod?: { def?: Def }; description?: string };
-type Def = {
-  type: string;
-  shape?: Record<string, ZodLike>;
-  innerType?: ZodLike;
-  valueType?: ZodLike;
-  element?: ZodLike;
-  options?: ZodLike[];
-  entries?: Record<string, string>;
-  values?: unknown[];
-  in?: ZodLike;
-  out?: ZodLike;
-  checks?: Array<{ _zod?: { def?: CheckDef } } & CheckDef>;
-};
-type CheckDef = { check?: string; value?: number; format?: string; inclusive?: boolean };
-
-const defOf = (schema: ZodLike | undefined): Def | undefined => schema?._zod?.def;
 
 /** Section order and headings; every top-level config key must appear here. */
 const SECTIONS: ReadonlyArray<{ keys: readonly string[]; title: string; lead?: string }> = [
@@ -88,34 +71,25 @@ function recordPlaceholder(path: string): string {
   return lastKey === "env" ? "<var>" : "<name>";
 }
 
-function unwrap(schema: ZodLike | undefined): {
-  schema: ZodLike | undefined;
+/** The schema under its wrappers, with the outermost description along the way. */
+function unwrap(schema: z.ZodType | undefined): {
+  schema: z.ZodType | undefined;
   description?: string;
 } {
   let current = schema;
   let description = schema?.description;
   for (let guard = 0; guard < 10 && current; guard++) {
-    const def = defOf(current);
-    if (!def) break;
-    if (def.type === "optional" || def.type === "nullable" || def.type === "default") {
-      current = def.innerType;
-      description = description ?? current?.description;
-      continue;
-    }
-    if (def.type === "pipe") {
-      // z.preprocess(...): the validated schema is the output side.
-      const out = def.out;
-      if (out === undefined) break;
-      current = out;
-      description = description ?? current?.description;
-      continue;
-    }
-    break;
+    const def = zodDef(current);
+    // z.preprocess(...) is a pipe: the validated schema is its output side.
+    const inner = def?.innerType ?? (def?.type === "pipe" ? def.out : undefined);
+    if (inner === undefined) break;
+    current = inner;
+    description = description ?? current.description;
   }
   return { schema: current, description };
 }
 
-function numberType(def: Def): string {
+function numberType(def: ZodDef): string {
   let isInteger = false;
   let min: number | undefined;
   let max: number | undefined;
@@ -133,22 +107,20 @@ function numberType(def: Def): string {
 }
 
 /** True when the schema is a hex color, however often it is wrapped in optional/default. */
-function isHexColor(schema: ZodLike | undefined): boolean {
+function isHexColor(schema: z.ZodType | undefined): boolean {
   let current = schema;
   for (let guard = 0; guard < 10 && current; guard++) {
     if (current === hexColorSchema) return true;
-    const def = defOf(current);
-    if (def?.type !== "optional" && def?.type !== "nullable" && def?.type !== "default") break;
-    current = def.innerType;
+    current = zodDef(current)?.innerType;
   }
   return false;
 }
 
-function renderType(schema: ZodLike | undefined): string {
+function renderType(schema: z.ZodType | undefined): string {
   // Hex colors are a preprocessed regex; name them rather than print the regex.
   if (isHexColor(schema)) return "hex color";
   const { schema: inner } = unwrap(schema);
-  const def = defOf(inner);
+  const def = zodDef(inner);
   if (!def) return "—";
   switch (def.type) {
     case "boolean":
@@ -210,13 +182,13 @@ function defaultFor(path: string): string {
  * to its `<name>` entry when that entry has none.
  */
 function walk(
-  schema: ZodLike | undefined,
+  schema: z.ZodType | undefined,
   path: string,
   rows: Row[],
   inheritedDescription?: string,
 ): void {
   const { schema: inner, description } = unwrap(schema);
-  const def = defOf(inner);
+  const def = zodDef(inner);
   if (!def) return;
 
   if (def.type === "object" && def.shape) {
@@ -234,7 +206,7 @@ function walk(
   // A union of objects (prompt segments) documents the union of their fields.
   if (
     def.type === "union" &&
-    (def.options ?? []).some((o) => defOf(unwrap(o).schema)?.type === "object")
+    (def.options ?? []).some((o) => zodDef(unwrap(o).schema)?.type === "object")
   ) {
     const seen = new Set<string>();
     for (const option of def.options ?? []) {
@@ -258,9 +230,9 @@ function walk(
 }
 
 function rowsFor(key: string): Row[] {
-  const shape: Record<string, ZodLike> = {
-    ...(baseConfigSchemaShape as unknown as Record<string, ZodLike>),
-    ...(defaultFeatureSettingsExtension.schemaShape as unknown as Record<string, ZodLike>),
+  const shape: Record<string, z.ZodType> = {
+    ...baseConfigSchemaShape,
+    ...defaultFeatureSettingsExtension.schemaShape,
   };
   const rows: Row[] = [];
   walk(shape[key], key, rows);

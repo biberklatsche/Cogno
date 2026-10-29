@@ -3,6 +3,7 @@ import { OsType } from "@cogno/platform/os";
 import { z } from "zod";
 import { createConfigSchema } from "./config-schema";
 import { Config } from "./models/config";
+import { unwrapZod, zodDef } from "./zod-def";
 
 export type ConfigDiagnostic = {
   level: "warning" | "error";
@@ -336,7 +337,7 @@ export class ConfigMapper {
     return true;
   }
 
-  static parseConfigString(text: string, schema?: z.ZodType): Record<string, unknown> {
+  static parseConfigString(text: string, schema: z.ZodType): Record<string, unknown> {
     const root: Record<string, unknown> = {};
     const lines = (text || "").split(/\r?\n/);
 
@@ -432,44 +433,43 @@ export class ConfigMapper {
   }
 
   private static parseValueForSchema(rawValue: string, schema: z.ZodType | undefined): unknown {
-    const unwrappedSchema = ConfigMapper.unwrapSchema(schema);
+    const unwrappedSchema = unwrapZod(schema);
     if (!unwrappedSchema) {
       return undefined;
     }
 
-    if (ConfigMapper.safeParseSchema(unwrappedSchema, rawValue).success) {
+    if (unwrappedSchema.safeParse(rawValue).success) {
       return rawValue;
     }
 
     if (rawValue === "true" || rawValue === "false") {
       const booleanValue = rawValue === "true";
-      if (ConfigMapper.safeParseSchema(unwrappedSchema, booleanValue).success) {
+      if (unwrappedSchema.safeParse(booleanValue).success) {
         return booleanValue;
       }
     }
 
     if (/^-?\d+$/.test(rawValue) || /^-?\d+\.\d+$/.test(rawValue)) {
       const numberValue = Number(rawValue);
-      if (ConfigMapper.safeParseSchema(unwrappedSchema, numberValue).success) {
+      if (unwrappedSchema.safeParse(numberValue).success) {
         return numberValue;
       }
     }
 
     if (rawValue.startsWith("[") && rawValue.endsWith("]")) {
-      const arraySchema = ConfigMapper.unwrapSchema(unwrappedSchema);
-      if (arraySchema && ConfigMapper.isArraySchema(arraySchema)) {
+      if (ConfigMapper.isArraySchema(unwrappedSchema)) {
         const arrayContent = rawValue.slice(1, -1).trim();
         if (!arrayContent) {
           return [];
         }
-        const itemSchema = ConfigMapper.getArrayItemSchema(arraySchema);
+        const itemSchema = ConfigMapper.getArrayItemSchema(unwrappedSchema);
         if (!itemSchema) {
           return undefined;
         }
         const arrayValue = arrayContent
           .split(",")
           .map((arrayEntry) => ConfigMapper.parseValue(arrayEntry.trim(), itemSchema));
-        if (ConfigMapper.safeParseSchema(arraySchema, arrayValue).success) {
+        if (unwrappedSchema.safeParse(arrayValue).success) {
           return arrayValue;
         }
       }
@@ -481,7 +481,7 @@ export class ConfigMapper {
         return undefined;
       }
       const itemValue = ConfigMapper.parseValue(rawValue, itemSchema);
-      if (ConfigMapper.safeParseSchema(unwrappedSchema, [itemValue]).success) {
+      if (unwrappedSchema.safeParse([itemValue]).success) {
         return itemValue;
       }
     }
@@ -489,11 +489,8 @@ export class ConfigMapper {
     return undefined;
   }
 
-  private static getSchemaAtDotPath(
-    schema: z.ZodType | undefined,
-    dottedPath: string,
-  ): z.ZodType | undefined {
-    let currentSchema = ConfigMapper.unwrapSchema(schema);
+  private static getSchemaAtDotPath(schema: z.ZodType, dottedPath: string): z.ZodType | undefined {
+    let currentSchema = unwrapZod(schema);
     for (const pathSegment of dottedPath.split(".")) {
       currentSchema = ConfigMapper.getChildSchema(currentSchema, pathSegment);
       if (!currentSchema) {
@@ -504,21 +501,15 @@ export class ConfigMapper {
   }
 
   private static getChildSchema(schema: z.ZodType | undefined, key: string): z.ZodType | undefined {
-    const unwrappedSchema = ConfigMapper.unwrapSchema(schema);
-    if (!unwrappedSchema) {
-      return undefined;
+    const definition = zodDef(unwrapZod(schema));
+    if (definition?.type === "object") {
+      return definition.shape?.[key];
     }
-
-    const definition = ConfigMapper.getSchemaDefinition(unwrappedSchema);
-    if (definition?.["type"] === "object") {
-      const shape = ConfigMapper.getObjectShape(unwrappedSchema);
-      return ConfigMapper.isPlainObject(shape) ? (shape[key] as z.ZodType | undefined) : undefined;
+    if (definition?.type === "record") {
+      return definition.valueType;
     }
-    if (definition?.["type"] === "record") {
-      return definition["valueType"] as z.ZodType | undefined;
-    }
-    if (definition?.["type"] === "union") {
-      for (const option of definition["options"] as z.ZodType[]) {
+    if (definition?.type === "union") {
+      for (const option of definition.options ?? []) {
         const childSchema = ConfigMapper.getChildSchema(option, key);
         if (childSchema) {
           return childSchema;
@@ -528,54 +519,11 @@ export class ConfigMapper {
     return undefined;
   }
 
-  private static unwrapSchema(schema: z.ZodType | undefined): z.ZodType | undefined {
-    let currentSchema: z.ZodType | undefined = schema;
-    while (currentSchema) {
-      const definition = ConfigMapper.getSchemaDefinition(currentSchema);
-      if (definition?.["innerType"]) {
-        currentSchema = definition["innerType"] as z.ZodType;
-        continue;
-      }
-      if (definition?.["schema"]) {
-        currentSchema = definition["schema"] as z.ZodType;
-        continue;
-      }
-      break;
-    }
-    return currentSchema;
-  }
-
   private static isArraySchema(schema: z.ZodType | undefined): schema is z.ZodType {
-    return (
-      ConfigMapper.getSchemaDefinition(ConfigMapper.unwrapSchema(schema))?.["type"] === "array"
-    );
+    return zodDef(unwrapZod(schema))?.type === "array";
   }
 
   private static getArrayItemSchema(schema: z.ZodType): z.ZodType | undefined {
-    const definition = ConfigMapper.getSchemaDefinition(ConfigMapper.unwrapSchema(schema));
-    return definition?.["element"] as z.ZodType | undefined;
-  }
-
-  private static getObjectShape(schema: z.ZodType): unknown {
-    const definition = ConfigMapper.getSchemaDefinition(schema);
-    const shape = definition?.["shape"];
-    return typeof shape === "function" ? shape() : shape;
-  }
-
-  private static getSchemaDefinition(
-    schema: z.ZodType | undefined,
-  ): Record<string, unknown> | undefined {
-    if (!schema || !ConfigMapper.isPlainObject(schema)) {
-      return undefined;
-    }
-    const definition = schema["def"] ?? schema["_def"];
-    return ConfigMapper.isPlainObject(definition) ? definition : undefined;
-  }
-
-  private static safeParseSchema(
-    schema: z.ZodType,
-    value: unknown,
-  ): ReturnType<z.ZodType["safeParse"]> {
-    return schema.safeParse(value);
+    return zodDef(unwrapZod(schema))?.element;
   }
 }

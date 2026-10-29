@@ -93,7 +93,7 @@ export const TerminalSettingsSchema = z.strictObject({
     .describe("Which terminal events raise a notification."),
   history: z
     .strictObject({
-      max_entries: limitSchema()
+      max_entries: limitSchema
         .optional()
         .describe(
           "Maximum number of commands to keep per shell context in the command history log, or `unlimited`. Older entries beyond this count are pruned; 0 keeps none.",

@@ -18,10 +18,7 @@ import {
   CommandPatternSlotStatistics,
   CommandSignaturePart,
 } from "./command-pattern.models";
-import { CommandPatternAnalyzer } from "./derive/command-pattern-analyzer";
-import { CommandSignatureBuilder } from "./derive/command-signature-builder";
-import { CommandTokenClassifier } from "./derive/command-token-classifier";
-import { CommandTokenizer } from "./derive/command-tokenizer";
+import { analyzeCommand } from "./derive/command-pattern";
 
 type IdRow = { id: number };
 type PathSegment = { path: string; basename: string; depth: number };
@@ -79,12 +76,6 @@ function safeNormalize(adapter: IPathAdapter, raw: string): string | undefined {
  * all; ids are resolved inside the statements rather than round-tripped.
  */
 export class CommandLogRepository implements CommandLogWriter, CommandLogReader {
-  private readonly commandPatternAnalyzer = new CommandPatternAnalyzer(
-    new CommandTokenizer(),
-    new CommandTokenClassifier(),
-    new CommandSignatureBuilder(),
-  );
-
   private constructor(
     private readonly database: DatabaseAccess,
     private readonly contextId: number,
@@ -472,13 +463,13 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
 
   async confirmLivePattern(originalCommands: string[]): Promise<void> {
     const representative = originalCommands[0]?.trim() ?? "";
-    const occurrence = this.commandPatternAnalyzer.analyzeCommand(representative);
+    const occurrence = analyzeCommand(representative);
     if (!occurrence) return;
     const ts = nowMs();
     const signatureKey = occurrence.signature.key;
 
     const slotValueStatements = originalCommands.flatMap((cmd): DatabaseStatement[] => {
-      const cmdOccurrence = this.commandPatternAnalyzer.analyzeCommand(cmd.trim());
+      const cmdOccurrence = analyzeCommand(cmd.trim());
       if (!cmdOccurrence || cmdOccurrence.signature.key !== signatureKey) return [];
       return cmdOccurrence.slotValues.map((slotValue) => ({
         sql: `INSERT INTO command_pattern_slot_value

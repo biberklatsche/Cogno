@@ -1,14 +1,60 @@
 import { describe, expect, it } from "vitest";
+import { analyzeCommand, classifyTokens, tokenizeCommand } from "./command-pattern";
 
-import { CommandTokenClassifier } from "./command-token-classifier";
-import { CommandTokenizer } from "./command-tokenizer";
+describe("analyzeCommand", () => {
+  it("analyzes a plain variable command", () => {
+    const result = analyzeCommand("codex resume abc123");
+    expect(result).not.toBeUndefined();
+    expect(result?.variableSlotCount).toBe(1);
+  });
 
-describe("CommandTokenClassifier", () => {
-  const commandTokenizer = new CommandTokenizer();
-  const commandTokenClassifier = new CommandTokenClassifier();
+  it("returns undefined for piped commands (bash/zsh)", () => {
+    expect(analyzeCommand("git log | grep foo")).toBeUndefined();
+    expect(analyzeCommand("cat file.txt | sort | uniq")).toBeUndefined();
+  });
 
-  const kinds = (command: string) =>
-    commandTokenClassifier.classify(commandTokenizer.tokenize(command)).map((t) => t.kind);
+  it("returns undefined for && chained commands", () => {
+    expect(analyzeCommand("npm test && npm run lint")).toBeUndefined();
+    expect(analyzeCommand("git add . && git commit -m 'msg'")).toBeUndefined();
+  });
+
+  it("returns undefined for || chained commands", () => {
+    expect(analyzeCommand("npm test || echo failed")).toBeUndefined();
+  });
+
+  it("returns undefined for semicolon-separated commands", () => {
+    expect(analyzeCommand("cd /tmp ; ls")).toBeUndefined();
+  });
+
+  it("returns undefined for redirect operators", () => {
+    expect(analyzeCommand("echo foo > output.txt")).toBeUndefined();
+    expect(analyzeCommand("sort < input.txt")).toBeUndefined();
+    expect(analyzeCommand("echo foo >> log.txt")).toBeUndefined();
+  });
+
+  it("returns undefined for PowerShell piped commands", () => {
+    expect(analyzeCommand("Get-Process | Select-Object Name")).toBeUndefined();
+  });
+
+  it("returns undefined for PowerShell script blocks", () => {
+    expect(analyzeCommand("ForEach-Object { $_ }")).toBeUndefined();
+    expect(analyzeCommand("Get-ChildItem | Where-Object { $_.Name -like '*.ts' }")).toBeUndefined();
+  });
+
+  it("does not reject commands with flag-like tokens containing special chars", () => {
+    expect(analyzeCommand("git commit -am 'fix bug'")).not.toBeUndefined();
+    expect(analyzeCommand("docker run --rm ubuntu bash")).not.toBeUndefined();
+  });
+
+  it("does not reject simple commands without operators", () => {
+    expect(analyzeCommand("codex resume abc123")).not.toBeUndefined();
+    expect(analyzeCommand("npm run build")).not.toBeUndefined();
+    expect(analyzeCommand("ssh user@server.example.com")).not.toBeUndefined();
+  });
+});
+
+describe("classifyTokens", () => {
+  const kinds = (command: string) => classifyTokens(tokenizeCommand(command)).map((t) => t.kind);
 
   it("keeps command name and first subcommand/verb stable", () => {
     expect(kinds("git commit")).toEqual(["stable", "stable"]);

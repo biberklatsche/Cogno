@@ -1,4 +1,4 @@
-import { CommandTokenizer } from "@cogno/core/command-log/derive/command-tokenizer";
+import { tokenizeCommand } from "@cogno/core/command-log/derive/command-pattern";
 import { AutocompleteSuggestion } from "./autocomplete.types";
 import { tokenMatchQuality } from "./token-match";
 
@@ -18,8 +18,6 @@ type CollapseGroup = {
 };
 
 export class SuggestionCollapser {
-  private readonly commandTokenizer = new CommandTokenizer();
-
   collapse(suggestions: AutocompleteSuggestion[], query = ""): AutocompleteSuggestion[] {
     const queryTokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     const historySuggestions = suggestions.filter((s) => this.isHistorySuggestion(s));
@@ -31,7 +29,7 @@ export class SuggestionCollapser {
 
     const tokenized = historySuggestions.map((s) => ({
       suggestion: s,
-      tokens: this.commandTokenizer.tokenize(s.label).map((t) => t.value),
+      tokens: tokenizeCommand(s.label).map((t) => t.value),
     }));
 
     const groups = this.findCollapseGroups(tokenized);

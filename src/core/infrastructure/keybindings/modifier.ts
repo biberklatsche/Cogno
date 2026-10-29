@@ -1,16 +1,9 @@
 import { OsType } from "@cogno/platform/os";
 
-export const Modifier = {
-  modifierOrder: (os: OsType): Record<string, number> => {
-    switch (os) {
-      case "macos":
-        return { Ctrl: 1, Alt: 2, Shift: 3, Meta: 4 };
-      case "windows":
-      case "linux":
-        return { Ctrl: 1, Alt: 2, Shift: 3, Meta: 4 };
-    }
-  },
+/** The order modifiers are shown in, the same on every platform. */
+const MODIFIER_ORDER: Record<string, number> = { Ctrl: 1, Alt: 2, Shift: 3, Meta: 4 };
 
+export const Modifier = {
   normalize: (modifier: string): string => {
     switch (modifier.toLowerCase()) {
       case "alt":
@@ -35,10 +28,9 @@ export const Modifier = {
 
   normalizeView: (modifiers: string[], os: OsType): string[] => {
     const normalized = Modifier.normalizeAll(modifiers);
-    const modifierOrder = Modifier.modifierOrder(os);
     normalized.sort((a, b) => {
-      const orderA = modifierOrder[a] || 999;
-      const orderB = modifierOrder[b] || 999;
+      const orderA = MODIFIER_ORDER[a] || 999;
+      const orderB = MODIFIER_ORDER[b] || 999;
       return orderA - orderB;
     });
     return normalized.map((modifier) => {
