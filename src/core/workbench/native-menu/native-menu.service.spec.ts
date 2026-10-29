@@ -68,9 +68,6 @@ describe("NativeMenuService", () => {
       get diagnostics$(): never {
         throw new Error("not implemented");
       },
-      get loaded$(): never {
-        throw new Error("not implemented");
-      },
       load: () => Promise.resolve(),
       reload: () => Promise.resolve(),
       getShellProfileOrDefault: vi.fn(),

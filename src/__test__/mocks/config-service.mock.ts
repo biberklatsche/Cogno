@@ -26,11 +26,6 @@ export class ConfigServiceMock extends ConfigService {
     return this._diagnostics$.asObservable();
   }
 
-  /** Emits whenever `setConfig` supplies a config, like a completed load. */
-  get loaded$(): Observable<Config> {
-    return this.config$;
-  }
-
   async load(_options: ConfigLoadOptions): Promise<void> {
     // The mock is fed through setConfig; loading reads nothing.
   }

@@ -7,7 +7,7 @@ import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { OsPlatform } from "@cogno/platform/os";
 import { Paths } from "@cogno/platform/path";
-import { BehaviorSubject, filter, Observable, Subject, Subscription } from "rxjs";
+import { BehaviorSubject, filter, Observable, Subscription } from "rxjs";
 import { Environment } from "../environment/environment";
 import { ErrorReporter } from "../error/error-reporter";
 import { ConfigDiagnostic, ConfigMapper } from "./config.mapper";
@@ -49,8 +49,6 @@ export abstract class ConfigService {
 
   /** Diagnostics of the last load; empty when the file is clean. */
   abstract get diagnostics$(): Observable<ReadonlyArray<ConfigDiagnostic>>;
-  /** Emits every time a config was loaded, including reloads. */
-  abstract get loaded$(): Observable<Config>;
 
   /** Reads the file, validates it and starts watching when enabled. */
   abstract load(options: ConfigLoadOptions): Promise<void>;
@@ -74,7 +72,6 @@ export abstract class ConfigService {
 export class RealConfigService extends ConfigService {
   private _config = new BehaviorSubject<Config | undefined>(undefined);
   private _diagnostics = new BehaviorSubject<ReadonlyArray<ConfigDiagnostic>>([]);
-  private _loaded = new Subject<Config>();
   private _unwatch: Subscription | undefined;
   private _options: ConfigLoadOptions | undefined;
 
@@ -103,10 +100,6 @@ export class RealConfigService extends ConfigService {
 
   get diagnostics$(): Observable<ReadonlyArray<ConfigDiagnostic>> {
     return this._diagnostics.asObservable();
-  }
-
-  get loaded$(): Observable<Config> {
-    return this._loaded.asObservable();
   }
 
   /**
@@ -303,7 +296,6 @@ export class RealConfigService extends ConfigService {
     }
 
     this._config.next(config);
-    this._loaded.next(config);
     Logger.info("Config loaded...");
     this._diagnostics.next(diagnostics);
   }

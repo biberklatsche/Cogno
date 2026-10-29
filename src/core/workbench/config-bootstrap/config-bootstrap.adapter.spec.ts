@@ -26,7 +26,7 @@ function setup() {
   let captured: ConfigLoadOptions | undefined;
 
   const config = {
-    loaded$: loaded.asObservable(),
+    config$: loaded.asObservable(),
     diagnostics$: diagnostics.asObservable(),
     load: vi.fn(async (options: ConfigLoadOptions) => {
       captured = options;
