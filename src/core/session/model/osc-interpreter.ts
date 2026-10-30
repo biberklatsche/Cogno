@@ -43,11 +43,13 @@ export function interpretCognoOsc(data: string, model: SessionModel): CognoOscRe
     return "capabilities";
   }
 
+  // Read before ending: the end forgets when the command started.
+  const duration = model.getCommandDuration();
   model.popContextOnCommandEnd();
   model.endCommand();
   model.report({ type: "promptReported" });
   if (!kv) return "ignored";
-  kv["duration"] = model.getCommandDuration()?.toString() ?? "";
+  if (duration !== undefined) kv["duration"] = duration.toString();
   model.updateCommand(kv);
   const directory = kv["directory"];
   if (directory?.trim()) {

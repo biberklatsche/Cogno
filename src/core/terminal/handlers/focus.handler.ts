@@ -19,6 +19,15 @@ export class FocusHandler implements ITerminalHandler {
   private _watchedTextarea?: HTMLTextAreaElement;
   private readonly _onTextareaFocus = () => this.report(true);
   private readonly _onTextareaBlur = () => this.report(false);
+  /**
+   * A key in the textarea proves it has the keyboard. WebView2 can drop the
+   * `focus` that should follow a `blur` (the window back from lock or
+   * standby); without this the terminal would count as unfocused while the
+   * user types into it.
+   */
+  private readonly _onTextareaKeydown = () => {
+    if (!this._focused && document.activeElement === this._watchedTextarea) this.report(true);
+  };
 
   constructor(private readonly _onFocusChanged: FocusListener = () => undefined) {}
 
@@ -44,6 +53,7 @@ export class FocusHandler implements ITerminalHandler {
     this.unwatchTextarea();
     textarea.addEventListener("focus", this._onTextareaFocus);
     textarea.addEventListener("blur", this._onTextareaBlur);
+    textarea.addEventListener("keydown", this._onTextareaKeydown);
     this._watchedTextarea = textarea;
   }
 
@@ -64,6 +74,7 @@ export class FocusHandler implements ITerminalHandler {
   private unwatchTextarea(): void {
     this._watchedTextarea?.removeEventListener("focus", this._onTextareaFocus);
     this._watchedTextarea?.removeEventListener("blur", this._onTextareaBlur);
+    this._watchedTextarea?.removeEventListener("keydown", this._onTextareaKeydown);
     this._watchedTextarea = undefined;
   }
 

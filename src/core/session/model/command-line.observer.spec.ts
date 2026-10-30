@@ -322,6 +322,22 @@ describe("CommandLineObserver", () => {
     expect(stateManager.commands[0].user).toBe("larswolfram");
   });
 
+  it("should give a duration only to a prompt that follows a started command", () => {
+    observer.registerTerminal(mockTerminal);
+    const oscHandler = vi.mocked(mockTerminal.parser.registerOscHandler).mock.calls[0][1];
+    oscHandler("COGNO:PROMPT;returnCode=0;id=1;");
+
+    stateManager.startCommand("ls");
+    vi.advanceTimersByTime(1500);
+    oscHandler("COGNO:PROMPT;returnCode=0;id=2;command=ls;");
+    // Ctrl+C in PowerShell re-prompts without a command having started.
+    vi.advanceTimersByTime(60_000);
+    oscHandler("COGNO:PROMPT;returnCode=0;id=3;");
+
+    expect(stateManager.commands[0].duration).toBe(1500);
+    expect(stateManager.commands[1].duration).toBeUndefined();
+  });
+
   it("should store session capabilities from a COGNO:CAPS handshake", () => {
     observer.registerTerminal(mockTerminal);
 

@@ -321,9 +321,13 @@ export class SessionModel {
     }
   }
 
-  /** The command's program title goes with it. */
+  /**
+   * The command's program title goes with it, and so does its start time: a
+   * prompt without a started command (Ctrl+C in PowerShell re-prompts) has
+   * no duration.
+   */
   endCommand(): void {
-    this.update({ isCommandRunning: false });
+    this.update({ isCommandRunning: false, commandStartTime: undefined });
     this.report({ type: "busyChanged", isBusy: false });
     this.report({ type: "titleChanged", title: undefined });
   }

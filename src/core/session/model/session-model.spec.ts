@@ -74,6 +74,17 @@ describe("SessionModel", () => {
     expect(busy).toEqual([true, false, false]);
   });
 
+  it("has no command duration once the command ended", () => {
+    const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorderStub());
+    model.initialize("terminal-1", "Bash", undefined, "linux");
+
+    model.startCommand("ls");
+    expect(model.getCommandDuration()).toBeDefined();
+    model.endCommand();
+
+    expect(model.getCommandDuration()).toBeUndefined();
+  });
+
   it("clears the program's title when the command ends", () => {
     const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorderStub());
     model.initialize("terminal-1", "Bash", undefined, "linux");
