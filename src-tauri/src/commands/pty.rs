@@ -281,41 +281,9 @@ pub async fn pty_spawn(
         let app = app.clone();
         let sessions = state.sessions.clone();
         std::thread::spawn(move || {
-            let mut reader = reader;
-            // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful
-            // across writes; splitting a multi-byte sequence between two reads
-            // is fine.
-            let mut buf = vec![0u8; READ_BUF_SIZE];
-            let mut seq: u32 = 0;
-
-            'reader: loop {
-                if flow.is_closed() {
-                    break;
-                }
-                let n = match std::io::Read::read(&mut reader, &mut buf) {
-                    Ok(0) | Err(_) => break,
-                    Ok(n) => n,
-                };
-                // Split into pieces under MAX_CHUNK_SIZE: a read can be up to
-                // READ_BUF_SIZE, far past the size that keeps every message on
-                // the webview channel's reliable delivery path (see
-                // MAX_CHUNK_SIZE). xterm's parser is stateful across writes,
-                // so splitting mid-sequence is fine, same as splitting across
-                // reads already was.
-                for sub_chunk in buf[..n].chunks(MAX_CHUNK_SIZE) {
-                    if !flow.acquire(seq, sub_chunk.len()) {
-                        break 'reader;
-                    }
-                    if on_data
-                        .send(InvokeResponseBody::Raw(frame_chunk(seq, sub_chunk)))
-                        .is_err()
-                    {
-                        // Webview is gone; nothing left to deliver to.
-                        break 'reader;
-                    }
-                    seq = seq.wrapping_add(1);
-                }
-            }
+            pump_pty_output(reader, &flow, |frame| {
+                on_data.send(InvokeResponseBody::Raw(frame)).is_ok()
+            });
 
             // EOF, read error or a lost webview: the PTY is unusable. If the
             // session was killed or replaced instead, the entry is already
@@ -325,6 +293,50 @@ pub async fn pty_spawn(
     }
 
     Ok(PtySpawnResult { shell_process_id })
+}
+
+/// Reads PTY output and hands it to `deliver` as framed chunks under flow
+/// control, until the PTY ends or `deliver` returns false (the webview is
+/// gone). Once the flow is closed (kill, exit, respawn) nothing is delivered
+/// any more, but reading goes on until the PTY ends: a reader that stops
+/// while the pipe is full leaves the shell blocked on its write, and before
+/// Windows 11 24H2 `ClosePseudoConsole` then waits for that pipe forever.
+fn pump_pty_output(
+    mut reader: Box<dyn std::io::Read + Send>,
+    flow: &FlowControl,
+    mut deliver: impl FnMut(Vec<u8>) -> bool,
+) {
+    // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful
+    // across writes; splitting a multi-byte sequence between two reads
+    // is fine.
+    let mut buf = vec![0u8; READ_BUF_SIZE];
+    let mut seq: u32 = 0;
+
+    'reader: loop {
+        let n = match reader.read(&mut buf) {
+            Ok(0) | Err(_) => break,
+            Ok(n) => n,
+        };
+        if flow.is_closed() {
+            continue;
+        }
+        // Split into pieces under MAX_CHUNK_SIZE: a read can be up to
+        // READ_BUF_SIZE, far past the size that keeps every message on
+        // the webview channel's reliable delivery path (see
+        // MAX_CHUNK_SIZE). xterm's parser is stateful across writes,
+        // so splitting mid-sequence is fine, same as splitting across
+        // reads already was.
+        for sub_chunk in buf[..n].chunks(MAX_CHUNK_SIZE) {
+            if !flow.acquire(seq, sub_chunk.len()) {
+                // Closed while waiting for capacity: drain from here on.
+                continue 'reader;
+            }
+            if !deliver(frame_chunk(seq, sub_chunk)) {
+                break 'reader;
+            }
+            seq = seq.wrapping_add(1);
+        }
+    }
 }
 
 /// The handle PTY input is written through. On Unix this is a plain duplicate
@@ -642,5 +654,112 @@ mod unix_tests {
             !marker.exists(),
             "the pending line was entered when the session was released"
         );
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    /// Spawns `cmd` printing `lines` lines into a ConPTY whose reader stalls
+    /// on tiny watermarks with nothing acknowledged, waits until it has
+    /// stalled and the pipe behind it had time to fill, then returns what a
+    /// session release needs.
+    fn stalled_session(
+        lines: u32,
+    ) -> (
+        Session,
+        Box<dyn portable_pty::Child + Send + Sync>,
+        std::thread::JoinHandle<()>,
+    ) {
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut cmd = CommandBuilder::new("cmd");
+        cmd.args([
+            "/C",
+            &format!("for /L %i in (1,1,{lines}) do @echo line %i"),
+        ]);
+        let child = pair.slave.spawn_command(cmd).unwrap();
+        drop(pair.slave);
+
+        let flow = Arc::new(FlowControl::with_watermarks(
+            4 * MAX_CHUNK_SIZE,
+            MAX_CHUNK_SIZE,
+        ));
+        let reader = pair.master.try_clone_reader().unwrap();
+        let pump = {
+            let flow = flow.clone();
+            std::thread::spawn(move || pump_pty_output(reader, &flow, |_frame| true))
+        };
+        let started = Instant::now();
+        while flow.in_flight() <= 4 * MAX_CHUNK_SIZE {
+            assert!(
+                started.elapsed() < Duration::from_secs(10),
+                "reader never reached the high watermark"
+            );
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        std::thread::sleep(Duration::from_millis(300));
+
+        let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
+        let session = Session {
+            master: pair.master,
+            input_tx,
+            flow,
+            child_killer: child.clone_killer(),
+            shell_process_id: child.process_id(),
+            shell_type: "PowerShell".to_string(),
+            line_editor_pipe_name: None,
+            line_editor_channel: None,
+        };
+        (session, child, pump)
+    }
+
+    fn assert_finishes(handle: std::thread::JoinHandle<()>, what: &str) {
+        let started = Instant::now();
+        while !handle.is_finished() {
+            assert!(
+                started.elapsed() < Duration::from_secs(15),
+                "{what} is still running after 15 s"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        handle.join().unwrap();
+    }
+
+    /// Pane closed while the shell is still printing: the output pipe is
+    /// full, the reader is blocked on flow control, nothing acknowledged.
+    #[test]
+    fn releasing_a_session_with_unread_output_returns() {
+        let (session, _child, pump) = stalled_session(200_000);
+        let release = std::thread::spawn(move || release_session(session));
+        assert_finishes(release, "release_session");
+        assert_finishes(pump, "reader thread");
+    }
+
+    /// Shell exited on its own with output nobody has read yet (the path
+    /// end_session takes from the wait thread). Little enough output that
+    /// the pipe behind the stalled reader can hold the rest of it.
+    #[test]
+    fn releasing_a_session_whose_shell_already_exited_returns() {
+        let (session, mut child, pump) = stalled_session(500);
+        let started = Instant::now();
+        while child.try_wait().unwrap().is_none() {
+            assert!(
+                started.elapsed() < Duration::from_secs(15),
+                "shell did not exit; the pipe may be blocking it"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        let release = std::thread::spawn(move || release_session(session));
+        assert_finishes(release, "release_session");
+        assert_finishes(pump, "reader thread");
     }
 }

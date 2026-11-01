@@ -68,7 +68,7 @@ impl FlowControl {
         Self::with_watermarks(HIGH_WATERMARK, LOW_WATERMARK)
     }
 
-    fn with_watermarks(high_watermark: usize, low_watermark: usize) -> Self {
+    pub(super) fn with_watermarks(high_watermark: usize, low_watermark: usize) -> Self {
         Self {
             state: Mutex::new(FlowState {
                 in_flight_bytes: 0,
@@ -130,7 +130,7 @@ impl FlowControl {
     }
 
     #[cfg(test)]
-    fn in_flight(&self) -> usize {
+    pub(super) fn in_flight(&self) -> usize {
         self.state.lock().unwrap().in_flight_bytes
     }
 }
