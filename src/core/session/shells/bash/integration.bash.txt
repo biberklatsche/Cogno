@@ -11,6 +11,10 @@ export COGNO_BASH_INTEGRATION_LOADED=1
 COGNO_COUNT=0
 COGNO_LAST_CMD=""
 COGNO_CMD_SEEN=0
+# Set once the prompt is up, cleared by the first command run from it.
+COGNO_AT_PROMPT=0
+# The history number the next recorded line gets, read at the prompt.
+COGNO_HISTORY_NEXT=""
 
 # Sanitize command for OSC payload
 _cogno_sanitize_cmd() {
@@ -47,23 +51,50 @@ _cogno_extract_command_name() {
   echo "${line%%[[:space:]]*}"
 }
 
-# Preexec equivalent - capture command before execution
+# Preexec equivalent: capture the command line once per prompt cycle. The
+# DEBUG trap fires before every simple command typed at the prompt - every
+# iteration of a loop, every element of a pipeline - so it must cost one
+# test and no fork on all but the first fire after a prompt. Only that first
+# fire reads the history, the one place bash keeps the whole line:
+# `$BASH_COMMAND` is just its first simple command ("echo a" for
+# "echo a | cat").
 _cogno_preexec() {
-  # Get the actual input from history
-  local actual_input
-  actual_input=$(history 1 | sed 's/^[ ]*[0-9]*[ ]*//')
-  if [[ -z "$actual_input" ]]; then
-    actual_input="$BASH_COMMAND"
-  fi
+  [[ "$COGNO_AT_PROMPT" == 1 ]] || return 0
+  # Not the command yet: a subshell the prompt expands ($(...) in PS1), a
+  # completion function, a `bind -x` handler (fzf, the line editor). The line
+  # they belong to is still being edited.
+  [[ "$BASH_SUBSHELL" == 0 && -z "${COMP_LINE+x}" && -z "${READLINE_LINE+x}" ]] || return 0
+  COGNO_AT_PROMPT=0
 
-  # Filter internal commands
-  if [[ "$actual_input" != "_cogno_precmd"* &&
-        "$actual_input" != "_cogno_preexec"* &&
-        "$actual_input" != "COGNO_"* ]]; then
-
-    COGNO_LAST_CMD="$actual_input"
-    COGNO_CMD_SEEN=1
+  # `history 1` prints "  123  the line" (a `*` after the number marks an
+  # edited entry). The number says whether this line was recorded: bash
+  # gives it the number the prompt saw as HISTCMD.
+  local entry number text
+  entry=$(HISTTIMEFORMAT= builtin history 1)
+  entry="${entry#"${entry%%[![:space:]]*}"}"
+  number="${entry%%[ *]*}"
+  text="${entry#"$number"}"
+  text="${text#[ *]}"
+  text="${text# }"
+  if [[ "$BASH_COMMAND" == "_cogno_precmd" ]]; then
+    # The first fire is PROMPT_COMMAND's own: no simple command ran at the
+    # top level. An empty line or Ctrl-C, which recorded nothing - or a line
+    # that is one subshell, `(cd x && make)`, whose commands run out of the
+    # trap's sight but which the history has.
+    [[ -n "$number" && "$number" == "$COGNO_HISTORY_NEXT" ]] || return 0
+    COGNO_LAST_CMD="$text"
+  elif [[ "$number" == "$COGNO_HISTORY_NEXT" ]]; then
+    COGNO_LAST_CMD="$text"
+  elif [[ -n "$text" && "$text" == "$BASH_COMMAND"* ]]; then
+    # Not recorded, and the previous line starts the way this one does: a
+    # repeat that HISTCONTROL's ignoredups left out.
+    COGNO_LAST_CMD="$text"
+  else
+    # Not recorded (HISTCONTROL=ignorespace, HISTIGNORE, history off): the
+    # first simple command is all bash tells. Never the previous line.
+    COGNO_LAST_CMD="$BASH_COMMAND"
   fi
+  COGNO_CMD_SEEN=1
 }
 
 # Precmd equivalent - run before each prompt
@@ -103,9 +134,12 @@ _cogno_precmd() {
 
 # Re-assert the Cogno prompt after all other PROMPT_COMMAND entries ran:
 # user hooks (starship, oh-my-posh, ...) rewrite PS1 every cycle and would
-# otherwise remove the hidden marker.
+# otherwise remove the hidden marker. Last in PROMPT_COMMAND, so what runs
+# after it is the user's next command.
 _cogno_reassert_ps1() {
   PS1="$COGNO_PS1"
+  COGNO_HISTORY_NEXT="$HISTCMD"
+  COGNO_AT_PROMPT=1
 }
 
 # Set up the preexec hook. If the user's rc files installed bash-preexec, it
