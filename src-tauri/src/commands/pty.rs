@@ -1,6 +1,4 @@
-#[cfg(windows)]
-use portable_pty::ChildKiller;
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Write;
@@ -42,11 +40,11 @@ struct Session {
     /// the writer thread.
     input_tx: std::sync::mpsc::Sender<Vec<u8>>,
     flow: Arc<FlowControl>,
-    /// Ends the shell when the session is released. On Unix closing the
-    /// master already hangs up the shell (and lets it write its history on
-    /// the way out); ConPTY does not terminate its clients when the console
-    /// closes, so on Windows this is the only thing that does.
-    #[cfg(windows)]
+    /// Ends the shell when the session is released: SIGHUP on Unix (what a
+    /// closing terminal sends; the shell saves its history and hangs up its
+    /// jobs), `TerminateProcess` on Windows (ConPTY does not end its clients
+    /// when the console closes). Closing the master alone would not do it:
+    /// the reader thread holds its own descriptor while blocked in `read`.
     child_killer: Box<dyn ChildKiller + Send + Sync>,
     shell_process_id: Option<u32>,
     shell_type: String,
@@ -57,16 +55,12 @@ struct Session {
 type Sessions = Arc<Mutex<HashMap<String, Session>>>;
 
 /// Releases everything a session owns: stops the reader, removes the
-/// line-editor channel, drops the master (closes the PTY) and the input sender
-/// (ends the writer thread). Must be called without holding `sessions`:
-/// closing a ConPTY can block until its output pipe is drained.
-fn release_session(session: Session) {
-    // Only the Windows kill below needs `&mut`.
-    #[cfg(windows)]
-    let mut session = session;
+/// line-editor channel, ends the shell, drops the master (closes the PTY) and
+/// the input sender (ends the writer thread). Must be called without holding
+/// `sessions`: closing a ConPTY can block until its output pipe is drained.
+fn release_session(mut session: Session) {
     session.flow.close();
     remove_line_editor_channel(&session.line_editor_channel);
-    #[cfg(windows)]
     if let Err(e) = session.child_killer.kill() {
         // Already gone (the wait thread ends the entry in that case) or not
         // ours to kill any more; nothing to do about either.
@@ -213,10 +207,7 @@ pub async fn pty_spawn(
         .try_clone_reader()
         .map_err(|e| format!("Failed to clone reader: {}", e))?;
 
-    let writer = pair
-        .master
-        .take_writer()
-        .map_err(|e| format!("Failed to take writer: {}", e))?;
+    let writer = master_writer(&*pair.master)?;
 
     let flow = Arc::new(FlowControl::new());
     let (input_tx, input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
@@ -225,7 +216,6 @@ pub async fn pty_spawn(
         master: pair.master,
         input_tx,
         flow: flow.clone(),
-        #[cfg(windows)]
         child_killer: child.clone_killer(),
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
@@ -335,6 +325,37 @@ pub async fn pty_spawn(
     }
 
     Ok(PtySpawnResult { shell_process_id })
+}
+
+/// The handle PTY input is written through. On Unix this is a plain duplicate
+/// of the master descriptor: portable-pty's own writer sends a newline and EOF
+/// to the shell when it is dropped, which would run whatever line the user had
+/// typed but not yet entered when the pane closes.
+#[cfg(unix)]
+fn master_writer(master: &dyn MasterPty) -> Result<Box<dyn Write + Send>, String> {
+    use std::os::unix::io::FromRawFd;
+
+    let fd = master
+        .as_raw_fd()
+        .ok_or_else(|| "PTY master has no file descriptor".to_string())?;
+    // SAFETY: `fd` is the open master descriptor owned by `master`; `dup`
+    // returns a new descriptor that the returned `File` then owns.
+    let duplicate = unsafe { libc::dup(fd) };
+    if duplicate < 0 {
+        return Err(format!(
+            "Failed to duplicate PTY master: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+    unsafe { libc::fcntl(duplicate, libc::F_SETFD, libc::FD_CLOEXEC) };
+    Ok(Box::new(unsafe { std::fs::File::from_raw_fd(duplicate) }))
+}
+
+#[cfg(windows)]
+fn master_writer(master: &dyn MasterPty) -> Result<Box<dyn Write + Send>, String> {
+    master
+        .take_writer()
+        .map_err(|e| format!("Failed to take writer: {}", e))
 }
 
 /// Per-session writer thread: performs the (potentially blocking) PTY writes in
@@ -524,4 +545,102 @@ pub fn pty_ack(state: State<'_, PtyState>, terminal_id: String, seq: u32) -> Res
         flow.ack_through(seq);
     }
     Ok(())
+}
+
+#[cfg(all(test, unix))]
+mod unix_tests {
+    use super::*;
+    use std::io::Read;
+    use std::time::{Duration, Instant};
+
+    /// Waits up to `limit` for `condition`; the shell lives in another process.
+    fn wait_until(limit: Duration, mut condition: impl FnMut() -> bool) -> bool {
+        let started = Instant::now();
+        while started.elapsed() < limit {
+            if condition() {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        condition()
+    }
+
+    #[test]
+    fn releasing_a_session_hangs_up_the_shell_without_entering_the_pending_line() {
+        let marker = std::env::temp_dir().join(format!(
+            "cogno-pty-release-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = std::fs::remove_file(&marker);
+
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut cmd = CommandBuilder::new("sh");
+        cmd.arg("-i");
+        cmd.env("PS1", "$ ");
+        let mut child = pair.slave.spawn_command(cmd).unwrap();
+        drop(pair.slave);
+
+        // Drain output like the reader thread does, so the shell never blocks.
+        let output = Arc::new(Mutex::new(Vec::<u8>::new()));
+        let mut reader = pair.master.try_clone_reader().unwrap();
+        let drain = {
+            let output = output.clone();
+            std::thread::spawn(move || {
+                let mut buf = [0u8; 1024];
+                while let Ok(n) = reader.read(&mut buf) {
+                    if n == 0 {
+                        break;
+                    }
+                    output.lock().unwrap().extend_from_slice(&buf[..n]);
+                }
+            })
+        };
+
+        // A line typed but not entered; the tty echoes it back once received.
+        let pending = format!("touch {}", marker.display());
+        let mut writer = master_writer(&*pair.master).unwrap();
+        writer.write_all(pending.as_bytes()).unwrap();
+        writer.flush().unwrap();
+        assert!(
+            wait_until(Duration::from_secs(5), || {
+                String::from_utf8_lossy(&output.lock().unwrap()).contains(&pending)
+            }),
+            "shell never echoed the pending input"
+        );
+
+        let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
+        let session = Session {
+            master: pair.master,
+            input_tx,
+            flow: Arc::new(FlowControl::new()),
+            child_killer: child.clone_killer(),
+            shell_process_id: child.process_id(),
+            shell_type: "Bash".to_string(),
+            line_editor_pipe_name: None,
+            line_editor_channel: None,
+        };
+        release_session(session);
+        drop(writer);
+
+        assert!(
+            wait_until(Duration::from_secs(5), || child
+                .try_wait()
+                .map(|status| status.is_some())
+                .unwrap_or(true)),
+            "shell is still running after the session was released"
+        );
+        drain.join().unwrap();
+        assert!(
+            !marker.exists(),
+            "the pending line was entered when the session was released"
+        );
+    }
 }
