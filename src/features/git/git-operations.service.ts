@@ -21,9 +21,14 @@ export type GitBusy = {
   readonly label: string;
 };
 
+/**
+ * Timeouts are idle time (`CommandRunnerRequestContract`): git is ended when it
+ * has been silent for this long. Network commands run with `--progress`, so a
+ * transfer keeps itself alive however large; the quiet to allow for is a
+ * credential helper waiting on a browser login, which prints nothing.
+ */
 const LOCAL_TIMEOUT_MS = 30_000;
-const NETWORK_TIMEOUT_MS = 120_000;
-const CLONE_TIMEOUT_MS = 600_000;
+const NETWORK_TIMEOUT_MS = 300_000;
 const CREDENTIAL_CACHE_SECONDS = 3600;
 
 /**
@@ -316,7 +321,7 @@ export class GitOperationsService {
 
   fetch(remote: string | null): Promise<GitOperationOutcome> {
     return this.network(
-      ["fetch", "--prune", ...(remote ? [remote] : ["--all"])],
+      ["fetch", "--progress", "--prune", ...(remote ? [remote] : ["--all"])],
       { kind: "pull", label: "Fetching" },
       "Fetching failed",
       remote ? `Fetched ${remote}` : "Fetched all remotes",
@@ -327,7 +332,7 @@ export class GitOperationsService {
     if (mode === "fetch") return this.fetch(null);
     const flag = { merge: "--no-rebase", "ff-only": "--ff-only", rebase: "--rebase" }[mode];
     return this.network(
-      [...NO_EDITOR, "pull", flag],
+      [...NO_EDITOR, "pull", "--progress", flag],
       { kind: "pull", label: "Pulling" },
       "Pulling failed",
       "Pulled",
@@ -340,7 +345,12 @@ export class GitOperationsService {
    */
   pullBranch(branch: string, upstream: GitRemoteBranch): Promise<GitOperationOutcome> {
     return this.network(
-      ["fetch", upstream.remote, `refs/heads/${upstream.shortName}:refs/heads/${branch}`],
+      [
+        "fetch",
+        "--progress",
+        upstream.remote,
+        `refs/heads/${upstream.shortName}:refs/heads/${branch}`,
+      ],
       { kind: "pull", label: `Pulling ${branch}` },
       "Pulling failed",
       `Pulled ${branch}`,
@@ -361,6 +371,7 @@ export class GitOperationsService {
     return this.network(
       [
         "push",
+        "--progress",
         "--porcelain",
         ...(options.force ? ["--force-with-lease"] : []),
         ...(options.setUpstream ? ["-u"] : []),
@@ -383,7 +394,7 @@ export class GitOperationsService {
 
   deleteRemoteBranch(remoteBranch: GitRemoteBranch): Promise<GitOperationOutcome> {
     return this.network(
-      ["push", remoteBranch.remote, "--delete", remoteBranch.shortName],
+      ["push", "--progress", remoteBranch.remote, "--delete", remoteBranch.shortName],
       { kind: "push", label: `Deleting ${remoteBranch.name}` },
       "Deleting failed",
       `Deleted ${remoteBranch.name}`,
@@ -397,7 +408,7 @@ export class GitOperationsService {
   ): Promise<GitOperationOutcome> {
     const count = shortNames.length === 1 ? shortNames[0] : `${shortNames.length} branches`;
     return this.network(
-      ["push", remote, "--delete", ...shortNames],
+      ["push", "--progress", remote, "--delete", ...shortNames],
       { kind: "push", label: `Deleting ${count} on ${remote}` },
       "Deleting failed",
       `Deleted ${count} on ${remote}`,
@@ -421,12 +432,13 @@ export class GitOperationsService {
         [
           ...this.credentialCacheArgs(),
           "clone",
+          "--progress",
           url,
           ...(directory.trim() ? [directory.trim()] : []),
         ],
         "Clone failed",
         {
-          timeoutMs: CLONE_TIMEOUT_MS,
+          timeoutMs: NETWORK_TIMEOUT_MS,
           success: "Cloned",
           inCwd: true,
         },
@@ -515,8 +527,8 @@ export class GitOperationsService {
       if (prompts?.refused()) return false;
       const body =
         result.exitCode === 124
-          ? "Git did not finish in time. If it waits for credentials, run the command in the terminal once."
-          : result.stderr.trim() || result.stdout.trim();
+          ? "Git went silent for too long and was ended. If it waits for a login in the browser or for credentials, run the command in the terminal once."
+          : withoutProgress(result.stderr) || result.stdout.trim();
       this.toast(errorHeader, body, "error");
       return false;
     }
@@ -530,6 +542,21 @@ export class GitOperationsService {
     this.notifications.dispatch({ header, body, type, source: "git", channels: { toast: true } });
   }
 }
+
+/**
+ * Git's own message without the progress it printed on the way (`--progress`
+ * reports even without a terminal): the counters are noise in an error.
+ */
+function withoutProgress(stderr: string): string {
+  return stderr
+    .split(/\r\n|\r|\n/)
+    .filter((line) => !PROGRESS_LINE.test(line))
+    .join("\n")
+    .trim();
+}
+
+const PROGRESS_LINE =
+  /^(Enumerating|Counting|Compressing|Writing|Receiving|Resolving|Unpacking|Updating) (objects|deltas|files)/;
 
 function firstLine(text: string): string | undefined {
   return text

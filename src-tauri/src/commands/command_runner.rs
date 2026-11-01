@@ -3,6 +3,7 @@ use crate::http_server::HttpServerState;
 use serde::Serialize;
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -14,6 +15,10 @@ use tauri::{AppHandle, Manager};
 /// open; the result must not wait for it.
 const PIPE_GRACE: Duration = Duration::from_millis(500);
 
+#[cfg(windows)]
+use super::process_job::ProcessJob;
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
@@ -33,7 +38,10 @@ pub struct CommandRunnerResult {
 /// and closed. The process gets no terminal; whatever it would ask on one
 /// (git credentials, an ssh passphrase, a host key) reaches the window that
 /// started it through the askpass helper instead, tagged with the caller's
-/// `prompt_session` so the window knows which run is asking.
+/// `prompt_session` so the window knows which run is asking. `timeout_ms`
+/// is idle time: the process is ended once it has neither produced output
+/// nor had a prompt open for that long, so a transfer that reports progress
+/// may take as long as it takes.
 // One parameter per invoke key: that is how a Tauri command takes its arguments.
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
@@ -129,6 +137,11 @@ fn run(
     stdin: Option<String>,
     prompt_pending: &dyn Fn() -> bool,
 ) -> std::io::Result<CommandRunnerResult> {
+    // In a process group of its own, so a timeout ends everything the
+    // command started and not just the command: git's ssh, a credential
+    // helper waiting on a browser, a hook. Windows uses a job object for it.
+    #[cfg(unix)]
+    command.process_group(0);
     let mut child = command
         .stdin(if stdin.is_some() {
             Stdio::piped()
@@ -138,6 +151,21 @@ fn run(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
+    // A command that cannot join a job (a restricted job around Cogno
+    // itself) still runs; a timeout then ends the command alone.
+    #[cfg(windows)]
+    let job = match ProcessJob::tracking(child.id()) {
+        Ok(job) => Some(job),
+        Err(error) => {
+            log::warn!(
+                target: "command_runner",
+                "pid={} could not join a job object: {}",
+                child.id(),
+                error
+            );
+            None
+        }
+    };
 
     // Drain both pipes while waiting: a child that writes more than the pipe
     // buffer holds would otherwise block on its write and never exit.
@@ -156,15 +184,28 @@ fn run(
         Some(timeout_ms) => {
             let timeout = Duration::from_millis(timeout_ms);
             let mut deadline = Instant::now() + timeout;
+            let mut seen = 0;
             loop {
                 if let Some(status) = child.try_wait()? {
                     break Some(status);
                 }
-                // Time the user spends on a prompt does not count.
-                if prompt_pending() {
+                // Neither time the user spends on a prompt nor time the
+                // command spends talking counts: only silence does.
+                let received = stdout.received() + stderr.received();
+                if prompt_pending() || received != seen {
+                    seen = received;
                     deadline = Instant::now() + timeout;
                 }
                 if Instant::now() >= deadline {
+                    // The group's id is the child's (process_group(0)).
+                    #[cfg(unix)]
+                    unsafe {
+                        libc::kill(-(child.id() as i32), libc::SIGKILL);
+                    }
+                    #[cfg(windows)]
+                    if let Some(job) = &job {
+                        job.terminate();
+                    }
                     let _ = child.kill();
                     let _ = child.wait();
                     break None;
@@ -187,7 +228,7 @@ fn run(
             stdout,
             stderr: if stderr.is_empty() {
                 format!(
-                    "Command timed out after {}ms",
+                    "Command showed no output for {}ms and was ended",
                     timeout_ms.unwrap_or_default()
                 )
             } else {
@@ -202,10 +243,16 @@ fn run(
 /// full pipe buffer.
 struct Drain {
     buffer: Arc<Mutex<Vec<u8>>>,
+    /// Bytes read so far; the idle timeout watches it move.
+    received: Arc<AtomicU64>,
     finished: mpsc::Receiver<()>,
 }
 
 impl Drain {
+    fn received(&self) -> u64 {
+        self.received.load(Ordering::Relaxed)
+    }
+
     /// What was read, once the pipe closed or `grace` passed - whichever comes
     /// first. The reading thread ends by itself when the pipe finally closes.
     fn collect(self, grace: Duration) -> Vec<u8> {
@@ -221,24 +268,33 @@ impl Drain {
 
 fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> Drain {
     let buffer = Arc::new(Mutex::new(Vec::new()));
+    let received = Arc::new(AtomicU64::new(0));
     let (finished_sender, finished) = mpsc::channel();
     let shared = Arc::clone(&buffer);
+    let counted = Arc::clone(&received);
     thread::spawn(move || {
         if let Some(mut pipe) = pipe {
             let mut chunk = [0u8; 8192];
             loop {
                 match pipe.read(&mut chunk) {
                     Ok(0) | Err(_) => break,
-                    Ok(read) => shared
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner())
-                        .extend_from_slice(&chunk[..read]),
+                    Ok(read) => {
+                        shared
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .extend_from_slice(&chunk[..read]);
+                        counted.fetch_add(read as u64, Ordering::Relaxed);
+                    }
                 }
             }
         }
         let _ = finished_sender.send(());
     });
-    Drain { buffer, finished }
+    Drain {
+        buffer,
+        received,
+        finished,
+    }
 }
 
 #[cfg(all(test, unix))]
@@ -274,7 +330,38 @@ mod tests {
         let result = run(shell("exec sleep 5"), Some(100)).unwrap();
 
         assert_eq!(result.exit_code, 124);
-        assert_eq!(result.stderr, "Command timed out after 100ms");
+        assert_eq!(
+            result.stderr,
+            "Command showed no output for 100ms and was ended"
+        );
+    }
+
+    #[test]
+    fn output_keeps_a_command_alive_past_the_timeout() {
+        let result = run(
+            shell("for i in 1 2 3 4 5 6; do echo $i; sleep 0.1; done"),
+            Some(300),
+        )
+        .unwrap();
+
+        assert_eq!(result.exit_code, 0);
+        assert_eq!(result.stdout, "1\n2\n3\n4\n5\n6\n");
+    }
+
+    #[test]
+    fn a_timed_out_command_takes_what_it_started_with_it() {
+        let result = run(shell("sleep 30 & echo $!; wait"), Some(200)).unwrap();
+
+        assert_eq!(result.exit_code, 124);
+        let pid: i32 = result.stdout.trim().parse().unwrap();
+        let gone = (0..60).any(|_| {
+            if unsafe { libc::kill(pid, 0) } != 0 {
+                return true;
+            }
+            thread::sleep(Duration::from_millis(50));
+            false
+        });
+        assert!(gone, "the background sleep outlived the timeout");
     }
 
     #[test]
@@ -337,6 +424,41 @@ mod tests {
 #[cfg(all(test, windows))]
 mod windows_tests {
     use super::*;
+    use sysinfo::{ProcessesToUpdate, System};
+
+    fn ping_with(marker: &str) -> bool {
+        let mut system = System::new();
+        system.refresh_processes(ProcessesToUpdate::All, true);
+        system.processes().values().any(|process| {
+            process
+                .cmd()
+                .iter()
+                .any(|argument| argument.to_string_lossy().contains(marker))
+        })
+    }
+
+    #[test]
+    fn a_timed_out_command_takes_what_it_started_with_it() {
+        // The pings start after the command joined the job; `start /B`
+        // leaves the first one running on its own.
+        let marker = "54321";
+        let mut command = Command::new("cmd");
+        command.args([
+            "/C",
+            "ping -n 2 127.0.0.1 >nul & start /B ping -n 30 -w 54321 127.0.0.1 >nul & ping -n 30 -w 54321 127.0.0.1 >nul",
+        ]);
+        let result = run(command, Some(1_500), None, &|| false).unwrap();
+
+        assert_eq!(result.exit_code, 124);
+        let gone = (0..100).any(|_| {
+            if !ping_with(marker) {
+                return true;
+            }
+            thread::sleep(Duration::from_millis(50));
+            false
+        });
+        assert!(gone, "what the command started outlived the timeout");
+    }
 
     #[test]
     fn optional_locks_reach_the_command() {

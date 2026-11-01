@@ -13,6 +13,7 @@ export interface SessionRunRequest {
    * never run in a context the caller did not mean.
    */
   readonly contextRevision: number;
+  /** Idle time without output or an open prompt, after which the process is ended. */
   readonly timeoutMs?: number;
   /** Written to the process as its standard input, then closed. */
   readonly stdin?: string;
