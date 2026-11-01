@@ -81,6 +81,9 @@ const WIP_ROW: TreeRow = { kind: "wip" };
     "[style.--git-row-height]": "rowHeight + 'px'",
   },
   template: `
+    @if (repository.logError(); as error) {
+      <div class="log-error" [title]="error">Commit graph could not be read: {{ error }}</div>
+    }
     <div class="header section-header" (contextmenu)="actions.openColumnMenu($event)">
       <div class="columns header-cells">
       @if (visible("refs")) {
@@ -310,6 +313,14 @@ const WIP_ROW: TreeRow = { kind: "wip" };
       .resizer.active::before { width: 2px; left: 2.5px; background: var(--highlight-color); }
       .row { height: var(--git-row-height); display: grid; }
       .viewport { flex: 1 1 auto; min-height: 0; }
+      .log-error {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85em;
+        color: var(--git-subtle);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
       .row .col-graph { height: var(--git-row-height); overflow: hidden; }
       /* The commit's lane colour, as a stripe in front of its message like in GitKraken;
          a little shorter than the row so the stripes of neighbouring rows stay apart. */

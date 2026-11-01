@@ -47,7 +47,13 @@ export type GitError =
 
 /** The commit count the graph loads first and adds per "load more". */
 export const GIT_LOG_PAGE_SIZE = 1000;
-const READ_TIMEOUT_MS = 10_000;
+/**
+ * Idle time per read (`CommandRunnerRequestContract`). A status on a large
+ * repository with a cold file cache is quiet for a long while before it
+ * prints anything; ten seconds ended it on repositories that git itself
+ * reads fine.
+ */
+const READ_TIMEOUT_MS = 60_000;
 
 const EMPTY_STATUS: GitStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
 const EMPTY_REFS: GitRefs = { branches: [], remoteBranches: [], tags: [], defaultBranches: [] };
@@ -83,6 +89,7 @@ export class GitRepositoryService {
   private readonly operationSignal = signal<GitOperation | null>(null);
   private readonly errorSignal = signal<GitError | null>(null);
   private readonly errorDetailSignal = signal<string | null>(null);
+  private readonly logErrorSignal = signal<string | null>(null);
   private readonly loadingSignal = signal(false);
   private readonly logLimitSignal = signal(GIT_LOG_PAGE_SIZE);
   private readonly hasMoreCommitsSignal = signal(false);
@@ -98,6 +105,8 @@ export class GitRepositoryService {
   readonly error = this.errorSignal.asReadonly();
   /** What git said when it failed: shown with the error, so the user can act on it. */
   readonly errorDetail = this.errorDetailSignal.asReadonly();
+  /** Why the commit graph could not be read, while the rest of the repository could. */
+  readonly logError = this.logErrorSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly hasMoreCommits = this.hasMoreCommitsSignal.asReadonly();
 
@@ -347,7 +356,9 @@ export class GitRepositoryService {
       runGit(session, ["-C", root, ...args], READ_TIMEOUT_MS);
 
     const [status, sha, branch, refs, remotes, stashes, operation] = await Promise.all([
-      git(["status", "--porcelain=v1", "-z", "-uall"]),
+      // Untracked directories as one entry each, as git shows them: listing
+      // every file under an untracked build output took longer than the rest.
+      git(["status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
       git(["rev-parse", "-q", "--verify", "HEAD"]),
       git(["symbolic-ref", "-q", "--short", "HEAD"]),
       git(["for-each-ref", `--format=${REF_FORMAT}`, "refs/heads", "refs/remotes", "refs/tags"]),
@@ -425,7 +436,14 @@ export class GitRepositoryService {
       `--format=${LOG_FORMAT}`,
     ]);
     if (!result) return null;
-    return result.exitCode === 0 ? parseLog(result.stdout) : [];
+    if (result.exitCode !== 0) {
+      // Said, not shown as an empty graph: a graph with no commits in a
+      // repository that has them would be read as a broken repository.
+      this.logErrorSignal.set(result.stderr.trim() || "git log failed");
+      return null;
+    }
+    this.logErrorSignal.set(null);
+    return parseLog(result.stdout);
   }
 
   private async readOperation(session: BoundSessionHandle): Promise<GitOperation | null> {
@@ -455,6 +473,7 @@ export class GitRepositoryService {
     this.operationSignal.set(null);
     this.hasMoreCommitsSignal.set(false);
     this.logLimitSignal.set(GIT_LOG_PAGE_SIZE);
+    this.logErrorSignal.set(null);
     this.errorSignal.set(error);
     this.errorDetailSignal.set(detail);
   }

@@ -254,6 +254,19 @@ describe("GitRepositoryService", () => {
     expect(service.errorDetail()).toBe("fatal: index file corrupt");
   });
 
+  it("says why the commit graph could not be read instead of showing it empty", async () => {
+    const { service } = makeService(
+      sessionHandle(repo("/c/repo", { "log --branches": ran("", 128, "fatal: bad object HEAD") })),
+    );
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBeNull();
+    expect(service.head().branch).toBe("main");
+    expect(service.logError()).toBe("fatal: bad object HEAD");
+  });
+
   it("sees a merge git stopped in", async () => {
     const { service } = makeService(
       sessionHandle(repo("/c/repo"), "t1", ["/c/repo/.git/MERGE_HEAD"]),
