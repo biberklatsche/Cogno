@@ -145,6 +145,9 @@ pub fn run(cli: Cli) {
         .expect("error while building tauri application")
         .run(|app, event| {
             if let RunEvent::Exit = event {
+                // Shells first, so none outlives the app (SIGHUP lets them
+                // write their history on the way out).
+                app.state::<PtyState>().release_all();
                 // Fold the WAL back into the main file so the database is a
                 // single, consistent file once the process is gone.
                 app.state::<Db>().close();

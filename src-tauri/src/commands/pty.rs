@@ -14,6 +14,8 @@ use super::line_editor::{
 };
 use super::window_registry::{route, WindowRegistry};
 
+#[cfg(windows)]
+use super::shell_job::ShellJob;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
 use crate::http_server::HttpServerState;
 
@@ -46,6 +48,10 @@ struct Session {
     /// when the console closes). Closing the master alone would not do it:
     /// the reader thread holds its own descriptor while blocked in `read`.
     child_killer: Box<dyn ChildKiller + Send + Sync>,
+    /// Held only for its drop: ends the shell's whole process tree with the
+    /// session, and with the process should Cogno abort (see `shell_job`).
+    #[cfg(windows)]
+    _job: Option<ShellJob>,
     shell_process_id: Option<u32>,
     shell_type: String,
     line_editor_pipe_name: Option<String>,
@@ -108,6 +114,18 @@ impl PtyState {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// Ends every shell: what the app does on its way out, so no shell (or,
+    /// on Windows, grandchild) is left running after the window is gone.
+    pub fn release_all(&self) {
+        let sessions: Vec<Session> = {
+            let mut sessions = self.sessions.lock().unwrap();
+            sessions.drain().map(|(_, session)| session).collect()
+        };
+        for session in sessions {
+            release_session(session);
         }
     }
 
@@ -201,6 +219,21 @@ pub async fn pty_spawn(
         .spawn_command(cmd)
         .map_err(|e| format!("Failed to spawn command: {}", e))?;
     let shell_process_id = child.process_id();
+    // A shell that fails to join a job (a restricted job around Cogno itself)
+    // still runs; it just ends the old way, by TerminateProcess alone.
+    #[cfg(windows)]
+    let job = shell_process_id.and_then(|pid| match ShellJob::containing(pid) {
+        Ok(job) => Some(job),
+        Err(error) => {
+            log::warn!(
+                target: "pty",
+                "shell_pid={} could not join a job object: {}",
+                pid,
+                error
+            );
+            None
+        }
+    });
 
     let reader = pair
         .master
@@ -217,6 +250,8 @@ pub async fn pty_spawn(
         input_tx,
         flow: flow.clone(),
         child_killer: child.clone_killer(),
+        #[cfg(windows)]
+        _job: job,
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
         line_editor_pipe_name,
@@ -714,6 +749,7 @@ mod windows_tests {
             input_tx,
             flow,
             child_killer: child.clone_killer(),
+            _job: None,
             shell_process_id: child.process_id(),
             shell_type: "PowerShell".to_string(),
             line_editor_pipe_name: None,
