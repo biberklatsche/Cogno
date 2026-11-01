@@ -21,7 +21,6 @@ describe("PtyHandler", () => {
   let handler: PtyHandler;
   let mockTerminal: Terminal;
   let listener: {
-    onStarted: Mock<() => void>;
     onExited: Mock<(exitCode: number) => void>;
     onOutput: Mock<() => void>;
   };
@@ -38,7 +37,6 @@ describe("PtyHandler", () => {
 
   beforeEach(() => {
     listener = {
-      onStarted: vi.fn<() => void>(),
       onExited: vi.fn<(exitCode: number) => void>(),
       onOutput: vi.fn<() => void>(),
     };
@@ -91,14 +89,8 @@ describe("PtyHandler", () => {
       expect(mockPty.write).toHaveBeenCalledWith("user input");
     });
 
-    it("should write PTY data to terminal in order and report started after the first parse", async () => {
+    it("should write PTY data to terminal in order", async () => {
       const writeSpy = vi.spyOn(mockTerminal, "write");
-      const onWriteParsedDispose = vi.fn();
-      let onWriteParsedCallback: any;
-      vi.mocked(mockTerminal.onWriteParsed).mockImplementation((cb) => {
-        onWriteParsedCallback = cb;
-        return { dispose: onWriteParsedDispose };
-      });
 
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.spawn).toHaveBeenCalled());
@@ -107,26 +99,13 @@ describe("PtyHandler", () => {
 
       const chunk1 = chunk(0, "pty output 1");
       onPtyDataCallback(chunk1);
-
-      // onWriteParsed is armed before the first write, and the chunk is written immediately
-      expect(mockTerminal.onWriteParsed).toHaveBeenCalledOnce();
       expect(writeSpy).toHaveBeenCalledOnce();
       expect(writeSpy.mock.calls[0][0]).toBe(chunk1.data);
-      expect(listener.onStarted).not.toHaveBeenCalled();
 
-      onWriteParsedCallback();
-
-      expect(listener.onStarted).toHaveBeenCalled();
-      expect(onWriteParsedDispose).toHaveBeenCalled();
-
-      // Second chunk: written as-is, no second started fact
-      listener.onStarted.mockClear();
       const chunk2 = chunk(1, "pty output 2");
       onPtyDataCallback(chunk2);
       expect(writeSpy).toHaveBeenCalledTimes(2);
       expect(writeSpy.mock.calls[1][0]).toBe(chunk2.data);
-      expect(mockTerminal.onWriteParsed).toHaveBeenCalledOnce();
-      expect(listener.onStarted).not.toHaveBeenCalled();
     });
   });
 

@@ -154,6 +154,24 @@ describe("GridListService", () => {
       initialTerminalId = grids[0].tree.root.data?.terminalId as string;
     });
 
+    it("hands the keyboard to the new pane once the view is up", () => {
+      vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
+      vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+        callback(0);
+        return 0;
+      });
+      try {
+        const focused: unknown[] = [];
+        bus.on$("FocusTerminal").subscribe((event) => focused.push(event.payload));
+
+        service.split(initialTerminalId, "vertical", "r");
+
+        expect(focused).toEqual(["term-2"]);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
     it("should split pane right", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       const publishSpy = vi.spyOn(bus, "publish");

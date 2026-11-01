@@ -152,8 +152,6 @@ export type SessionRuntime = {
 /** Axis B - display: whether the machine is in the DOM right now. */
 export type SessionDisplay = "detached" | "attached";
 
-/** How long after the shell answered the terminal takes the keyboard. */
-const FOCUS_AFTER_START_MS = 50;
 /** How long after the shell started its COGNO:CAPS handshake is waited for. */
 const HANDSHAKE_TIMEOUT_MS = 10_000;
 /** Padding and theme changes settle before the terminal is measured again. */
@@ -179,6 +177,8 @@ export class SessionHost {
   private readonly hostFacts = new Subject<SessionFact>();
   private readonly runtime$$ = new BehaviorSubject<SessionRuntime>({ status: "allocated" });
   private _display: SessionDisplay = "detached";
+  /** A focus asked for while off screen, honoured on attach. */
+  private _focusOnAttach = false;
   private readonly subscription = new Subscription();
   private readonly disposables: IDisposable[] = [];
   private readonly commandBlockResolver: CommandBlockResolver;
@@ -374,7 +374,6 @@ export class SessionHost {
         this.watchForHandshake(spawnProfile);
       },
       onFailed: (error) => this.onStartFailed(error),
-      onStarted: () => setTimeout(() => this.focus(), FOCUS_AFTER_START_MS),
       onExited: (exitCode) => {
         this.stopWatchingForHandshake();
         this.setRuntime({ status: "exited", exitCode });
@@ -521,6 +520,10 @@ export class SessionHost {
     this._display = "attached";
     this.renderer.setVisible(true);
     this.resizeHandler?.resize();
+    if (this._focusOnAttach) {
+      this._focusOnAttach = false;
+      this.focusHandler?.focus();
+    }
     this.scheduleRestoreIfPending();
   }
 
@@ -552,12 +555,24 @@ export class SessionHost {
 
   // ---- focus and view --------------------------------------------------
 
+  /**
+   * Hands the keyboard to the terminal. Off screen there is nothing to hand
+   * it to yet, so the wish keeps until the attach: the workbench names the
+   * pane that gets the keyboard (a fresh split, the pane of a selected tab)
+   * before its view exists. The session never takes the keyboard on its
+   * own: a restored workspace's shells answer in no particular order, and
+   * the last one must not snatch it from the pane the user had.
+   */
   focus(): void {
-    if (this.display !== "attached") return;
+    if (this.display !== "attached") {
+      this._focusOnAttach = true;
+      return;
+    }
     this.focusHandler?.focus();
   }
 
   blur(): void {
+    this._focusOnAttach = false;
     this.focusHandler?.blur();
   }
 
