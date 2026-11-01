@@ -260,7 +260,9 @@ mod tests {
             [root.join("git-bash.exe"), root.join("bin").join("bash.exe")]
                 .into_iter()
                 .collect();
-        let found = git_bash(None, &[root.clone()], |path| files.contains(path));
+        let found = git_bash(None, std::slice::from_ref(&root), |path| {
+            files.contains(path)
+        });
         assert_eq!(found, Some(root.join("bin").join("bash.exe")));
 
         // A bash.exe under a directory that is not Git's (WSL's launcher in
@@ -268,9 +270,11 @@ mod tests {
         let stray = PathBuf::from("C:/Windows/System32");
         let stray_files: HashSet<PathBuf> =
             [stray.join("bin").join("bash.exe")].into_iter().collect();
-        let none = git_bash(Some(&stray.join("git.exe")), &[stray.clone()], |path| {
-            stray_files.contains(path)
-        });
+        let none = git_bash(
+            Some(&stray.join("git.exe")),
+            std::slice::from_ref(&stray),
+            |path| stray_files.contains(path),
+        );
         assert_eq!(none, None);
     }
 }

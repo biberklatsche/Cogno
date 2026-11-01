@@ -1,6 +1,6 @@
 use crate::app_identity::TERM_PROGRAM_NAME;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -137,7 +137,7 @@ impl EnvironmentBuilder {
         self
     }
 
-    fn format_path_for_shell(path: &PathBuf, _shell_type: &str) -> String {
+    fn format_path_for_shell(path: &Path, _shell_type: &str) -> String {
         path.to_string_lossy().to_string()
     }
 

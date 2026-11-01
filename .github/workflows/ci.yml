@@ -54,7 +54,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
+          components: rustfmt, clippy
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -70,6 +70,10 @@ jobs:
           echo '<!doctype html><title>Cogno</title>' > dist/cogno/browser/index.html
 
       - run: cargo fmt --check
+        working-directory: src-tauri
+
+      # Tests included: a lint in a test is a lint.
+      - run: cargo clippy --all-targets -- -D warnings
         working-directory: src-tauri
 
       - run: cargo test
