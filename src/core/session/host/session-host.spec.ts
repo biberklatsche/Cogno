@@ -166,6 +166,23 @@ describe("SessionHost", () => {
     }
   });
 
+  it("states lost output and failed acknowledgements as facts", () => {
+    const host = createHost();
+    const facts: SessionFact[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact));
+    host.initialize("terminal-1", bashProfile);
+    const pty = (host as unknown as { pty: { faults$: Subject<unknown> } }).pty;
+
+    pty.faults$.next({ operation: "onData", error: new Error("chunks 3..5 lost"), context: {} });
+    pty.faults$.next({ operation: "ack", error: new Error("no backend"), context: {} });
+    pty.faults$.next({ operation: "resize", error: new Error("ignored"), context: {} });
+
+    expect(facts).toEqual([
+      { type: "outputDegraded", reason: "chunksLost", detail: "chunks 3..5 lost" },
+      { type: "outputDegraded", reason: "ackFailed", detail: "no backend" },
+    ]);
+  });
+
   it("refuses a profile without a shell type", () => {
     const host = createHost();
     expect(() =>

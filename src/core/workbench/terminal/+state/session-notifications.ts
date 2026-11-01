@@ -76,6 +76,14 @@ export class SessionNotifications {
           `The ${fact.shellType} shell started, but Cogno's integration never answered. Commands, directory and history are not tracked in this terminal; check the shell's startup files.`,
         );
         break;
+      case "outputDegraded":
+        this.warn(
+          fact.reason === "chunksLost"
+            ? "Terminal output was lost"
+            : "Terminal output acknowledgement failed",
+          `${fact.detail}. What the shell prints may be incomplete; if it seems stuck, press Enter or restart the terminal.`,
+        );
+        break;
       default:
         break;
     }

@@ -51,4 +51,15 @@ export type SessionFact =
    * not load (a missing file, an rc that exec's another shell). Commands,
    * cwd and history stay dark in this session (ARCHITECTURE.md 4.3).
    */
-  | { readonly type: "integrationMissing"; readonly shellType: string };
+  | { readonly type: "integrationMissing"; readonly shellType: string }
+  /**
+   * Output did not reach the screen whole: chunks were lost on the way from
+   * the pty, or an acknowledgement failed, after which the shell may block
+   * on a full buffer. Said so the user does not take a stuck shell for a
+   * hung command.
+   */
+  | {
+      readonly type: "outputDegraded";
+      readonly reason: "chunksLost" | "ackFailed";
+      readonly detail: string;
+    };

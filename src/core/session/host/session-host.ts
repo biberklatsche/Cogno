@@ -215,14 +215,26 @@ export class SessionHost {
     // The machine reports faults, it does not handle them: the host decides
     // who hears about it (ARCHITECTURE.md 2.1, boundary decision 2).
     this.subscription.add(
-      this.pty.faults$.subscribe((fault) =>
+      this.pty.faults$.subscribe((fault) => {
         ErrorReporter.reportException({
           error: fault.error,
           handled: true,
           source: "Pty",
           context: { operation: fault.operation, ...fault.context },
-        }),
-      ),
+        });
+        // Output that did not arrive whole is the user's business too, not
+        // only the log's: the shell may sit on a full buffer afterwards.
+        const reason =
+          fault.operation === "onData"
+            ? "chunksLost"
+            : fault.operation === "ack"
+              ? "ackFailed"
+              : undefined;
+        if (reason) {
+          const detail = fault.error instanceof Error ? fault.error.message : String(fault.error);
+          this.hostFacts.next({ type: "outputDegraded", reason, detail });
+        }
+      }),
     );
     this.commandBlockResolver = new CommandBlockResolver(() => this.renderer.terminal);
   }

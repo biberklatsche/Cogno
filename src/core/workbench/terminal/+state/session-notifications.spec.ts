@@ -166,6 +166,26 @@ describe("SessionNotifications", () => {
       );
     });
 
+    it("warns when output did not arrive whole", () => {
+      host.model.report({
+        type: "outputDegraded",
+        reason: "chunksLost",
+        detail: "chunks 3..5 lost",
+      });
+
+      expect(bus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "Notification",
+          payload: expect.objectContaining({
+            header: "Terminal output was lost",
+            body: expect.stringContaining("chunks 3..5 lost"),
+            type: "warning",
+            terminalId,
+          }),
+        }),
+      );
+    });
+
     it("publishes a notification when a long-running command has finished", () => {
       configure({ notification: { channel: { app: { available: true, enabled: true } } } });
 
