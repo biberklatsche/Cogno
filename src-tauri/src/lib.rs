@@ -7,6 +7,7 @@ mod db;
 mod http_server;
 mod updater;
 
+use app_identity::LOG_FILE_STEM;
 use cli::Cli;
 use commands::pty::PtyState;
 use commands::window_registry::{route, WindowRegistry};
@@ -14,6 +15,11 @@ use db::Db;
 use http_server::{HttpServerState, RunnableActionsState};
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+
+/// The log plugin's default is 40 KB, less than one busy session writes. A
+/// few MB hold the last sessions, and the two full files before stay for a
+/// report.
+const LOG_MAX_FILE_SIZE: u128 = 5 * 1024 * 1024;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
@@ -36,9 +42,11 @@ pub fn run(cli: Cli) {
                 .targets([
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                        file_name: None,
+                        file_name: Some(LOG_FILE_STEM.to_string()),
                     }),
                 ])
+                .max_file_size(LOG_MAX_FILE_SIZE)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(2))
                 .build()
         })
         .plugin(tauri_plugin_fs::init())

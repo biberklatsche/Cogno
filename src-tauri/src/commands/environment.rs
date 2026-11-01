@@ -1,4 +1,4 @@
-use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
+use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME, LOG_FILE_STEM};
 use std::path::PathBuf;
 
 /// Returns the Cogno home directory path based on the active mode.
@@ -42,7 +42,7 @@ pub fn get_cogno_db_file_path(dev_mode: bool) -> Result<String, String> {
 pub fn get_cogno_log_file_path(app_handle: tauri::AppHandle) -> Result<String, String> {
     use tauri::Manager;
     let log_dir = app_handle.path().app_log_dir().map_err(|e| e.to_string())?;
-    let log_file = log_dir.join("cogno.log");
+    let log_file = log_dir.join(format!("{LOG_FILE_STEM}.log"));
     Ok(log_file.display().to_string())
 }
 
