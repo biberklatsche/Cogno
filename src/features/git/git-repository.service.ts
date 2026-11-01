@@ -33,7 +33,17 @@ import {
   STASH_FORMAT,
 } from "./model/git-parsers";
 
-export type GitError = "not_installed" | "no_repo" | "status_failed" | "unavailable";
+/**
+ * Why there is no repository to show. `repo_unreadable`: there is one, but
+ * git refuses it (an owner mismatch git calls dubious, a broken .git); the
+ * detail says why, and offering `git init` there would be wrong.
+ */
+export type GitError =
+  | "not_installed"
+  | "no_repo"
+  | "repo_unreadable"
+  | "status_failed"
+  | "unavailable";
 
 /** The commit count the graph loads first and adds per "load more". */
 export const GIT_LOG_PAGE_SIZE = 1000;
@@ -72,6 +82,7 @@ export class GitRepositoryService {
   private readonly commitsSignal = signal<ReadonlyArray<GitCommit>>([]);
   private readonly operationSignal = signal<GitOperation | null>(null);
   private readonly errorSignal = signal<GitError | null>(null);
+  private readonly errorDetailSignal = signal<string | null>(null);
   private readonly loadingSignal = signal(false);
   private readonly logLimitSignal = signal(GIT_LOG_PAGE_SIZE);
   private readonly hasMoreCommitsSignal = signal(false);
@@ -85,6 +96,8 @@ export class GitRepositoryService {
   readonly commits = this.commitsSignal.asReadonly();
   readonly operation = this.operationSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
+  /** What git said when it failed: shown with the error, so the user can act on it. */
+  readonly errorDetail = this.errorDetailSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly hasMoreCommits = this.hasMoreCommitsSignal.asReadonly();
 
@@ -288,13 +301,12 @@ export class GitRepositoryService {
       this.clear(outcome.reason === "unknown-context" ? "unavailable" : null);
       return false;
     }
-    const { exitCode, stdout } = outcome.result;
+    const { exitCode, stdout, stderr } = outcome.result;
     const [root, gitDir] = stdout.split("\n").map((line) => line.trim());
     if (exitCode !== 0 || !root || !gitDir) {
-      // exit 128 = "not a git repository"; anything else means git isn't usable.
-      const noRepo = exitCode === 128 || exitCode === 0;
-      this.gitMissing = !noRepo;
-      this.clear(noRepo ? "no_repo" : "not_installed");
+      const error = classifyRootFailure(exitCode, stderr);
+      this.gitMissing = error === "not_installed";
+      this.clear(error, error === "no_repo" ? null : stderr.trim() || null);
       return false;
     }
     if (root !== this.rootSignal()) {
@@ -348,6 +360,7 @@ export class GitRepositoryService {
     if (session !== this.boundSession || !status || !sha || !branch || !refs) return;
     if (status.exitCode !== 0) {
       this.errorSignal.set("status_failed");
+      this.errorDetailSignal.set(status.stderr.trim() || null);
       return;
     }
 
@@ -360,6 +373,7 @@ export class GitRepositoryService {
     if (session !== this.boundSession) return;
 
     this.errorSignal.set(null);
+    this.errorDetailSignal.set(null);
     this.statusSignal.set(parseGitStatus(status.stdout));
     this.headSignal.set(head);
     this.refsSignal.set(parsedRefs);
@@ -428,7 +442,7 @@ export class GitRepositoryService {
     return null;
   }
 
-  private clear(error: GitError | null): void {
+  private clear(error: GitError | null, detail: string | null = null): void {
     this.unwatchGitDir();
     this.rootSignal.set(null);
     this.gitDir = null;
@@ -442,7 +456,20 @@ export class GitRepositoryService {
     this.hasMoreCommitsSignal.set(false);
     this.logLimitSignal.set(GIT_LOG_PAGE_SIZE);
     this.errorSignal.set(error);
+    this.errorDetailSignal.set(detail);
   }
+}
+
+/**
+ * Exit 128 alone does not mean "not a repository": git uses it for every
+ * fatal error, and only the message tells a missing repository from one git
+ * will not touch (dubious ownership, a corrupt .git). Any other failure means
+ * git itself did not run, or is too old for the options used here.
+ */
+function classifyRootFailure(exitCode: number, stderr: string): GitError {
+  if (exitCode === 0) return "no_repo";
+  if (exitCode !== 128) return "not_installed";
+  return /not a git repository/i.test(stderr) ? "no_repo" : "repo_unreadable";
 }
 
 /** Run `git` in a session; null when the session rejects it. */

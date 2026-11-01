@@ -17,8 +17,8 @@ const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const z = (...entries: string[]) => entries.map((entry) => `${entry}\0`).join("");
 const f = (...fields: string[]) => fields.join("\x1f");
 
-function ran(stdout: string, exitCode = 0): SessionRunResult {
-  return { status: "ran", result: { stdout, stderr: "", exitCode } };
+function ran(stdout: string, exitCode = 0, stderr = ""): SessionRunResult {
+  return { status: "ran", result: { stdout, stderr, exitCode } };
 }
 
 function sessionHandle(
@@ -192,12 +192,66 @@ describe("GitRepositoryService", () => {
   });
 
   it("reports 'no_repo' outside a repository", async () => {
-    const { service } = makeService(sessionHandle(() => Promise.resolve(ran("", 128))));
+    const { service } = makeService(
+      sessionHandle(() =>
+        Promise.resolve(
+          ran("", 128, "fatal: not a git repository (or any of the parent directories): .git\n"),
+        ),
+      ),
+    );
 
     service.start();
     await flush();
 
     expect(service.error()).toBe("no_repo");
+    expect(service.errorDetail()).toBeNull();
+  });
+
+  it("tells a repository git refuses from a missing one, with git's reason", async () => {
+    const reason =
+      "fatal: detected dubious ownership in repository at '/c/repo'\n" +
+      "To add an exception for this directory, call:\n\n" +
+      "\tgit config --global --add safe.directory /c/repo\n";
+    const session = sessionHandle(() => Promise.resolve(ran("", 128, reason)));
+    const { service, focus$ } = makeService(session);
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBe("repo_unreadable");
+    expect(service.errorDetail()).toBe(reason.trim());
+    // Git runs; the next focus asks again, the user may have fixed it.
+    focus$.next(true);
+    await flush();
+    expect(vi.mocked(session.run)).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows what git said when it is not usable", async () => {
+    const { service } = makeService(
+      sessionHandle(() =>
+        Promise.resolve(ran("", 129, "error: unknown option `absolute-git-dir'")),
+      ),
+    );
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBe("not_installed");
+    expect(service.errorDetail()).toBe("error: unknown option `absolute-git-dir'");
+  });
+
+  it("shows why the status could not be read", async () => {
+    const { service } = makeService(
+      sessionHandle(
+        repo("/c/repo", { "status --porcelain=v1": ran("", 128, "fatal: index file corrupt") }),
+      ),
+    );
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBe("status_failed");
+    expect(service.errorDetail()).toBe("fatal: index file corrupt");
   });
 
   it("sees a merge git stopped in", async () => {
