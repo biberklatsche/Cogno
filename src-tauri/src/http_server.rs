@@ -160,17 +160,22 @@ pub const TOKEN_HEADER: &str = "x-cogno-token";
 /// terminal - may talk to the server, and only by the loopback name: a web
 /// page that rebinds its own host name to 127.0.0.1 sends that name as Host.
 fn is_authorized(headers: &axum::http::HeaderMap, token: &str, port: u16) -> bool {
-    let token_matches = headers
+    presented_token(headers) == Some(token) && host_is_loopback(headers, port)
+}
+
+fn presented_token(headers: &axum::http::HeaderMap) -> Option<&str> {
+    headers
         .get(TOKEN_HEADER)
         .and_then(|value| value.to_str().ok())
-        .is_some_and(|value| value == token);
-    let host_is_loopback = headers
+}
+
+fn host_is_loopback(headers: &axum::http::HeaderMap, port: u16) -> bool {
+    headers
         .get(axum::http::header::HOST)
         .and_then(|value| value.to_str().ok())
         .is_some_and(|host| {
             host == format!("127.0.0.1:{port}") || host == format!("localhost:{port}")
-        });
-    token_matches && host_is_loopback
+        })
 }
 
 /// Binds the first free port from `start` on - up to 99 above it with
@@ -234,7 +239,6 @@ pub fn start_http_server(
         let app_askpass = app.clone();
         let token = app.state::<HttpServerState>().token().to_string();
         let token_for_run = token.clone();
-        let token_for_askpass = token.clone();
         let router = Router::new()
             .route(
                 "/action",
@@ -305,31 +309,34 @@ pub fn start_http_server(
                 "/askpass",
                 post(move |headers: axum::http::HeaderMap, result: Result<Json<AskpassPayload>, JsonRejection>| {
                     let app = app_askpass.clone();
-                    let authorized = is_authorized(&headers, &token_for_askpass, actual_port);
                     async move {
-                        if !authorized {
-                            log::warn!(target: "http_server", "POST /askpass rejected: missing or wrong token");
-                            return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
-                        }
                         let payload = match result {
                             Ok(Json(payload)) => payload,
                             Err(e) => {
                                 return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })));
                             }
                         };
-                        let receiver = app
-                            .state::<crate::commands::askpass::AskpassState>()
-                            .request(&app, &payload.session, payload.prompt);
-                        let Some(receiver) = receiver else {
-                            log::warn!(target: "http_server", "POST /askpass: unknown session");
+                        // The run's own token, not the launch token: see askpass.rs.
+                        let askpass = app.state::<crate::commands::askpass::AskpassState>();
+                        let authorized = host_is_loopback(&headers, actual_port)
+                            && presented_token(&headers)
+                                .is_some_and(|token| askpass.authorizes(&payload.session, token));
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /askpass rejected: missing or wrong token");
+                            return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
+                        }
+                        let Some((request_id, receiver)) = askpass.request(&app, &payload.session, payload.prompt) else {
+                            log::warn!(target: "http_server", "POST /askpass: unknown session or closed window");
                             return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "unknown session" })));
                         };
                         // The user may take a while; the helper waits, and the runner's timeout pauses.
-                        let answer = tokio::time::timeout(ASKPASS_WAIT, receiver)
-                            .await
-                            .ok()
-                            .and_then(|received| received.ok())
-                            .flatten();
+                        let answer = match tokio::time::timeout(ASKPASS_WAIT, receiver).await {
+                            Ok(received) => received.ok().flatten(),
+                            Err(_) => {
+                                askpass.expire(&app, &request_id);
+                                None
+                            }
+                        };
                         (StatusCode::OK, Json(serde_json::json!({ "answer": answer })))
                     }
                 }),

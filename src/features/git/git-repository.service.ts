@@ -7,7 +7,7 @@ import {
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { AppWindow } from "@cogno/platform";
-import { catchError, EMPTY, filter, Subscription } from "rxjs";
+import { catchError, EMPTY, filter, merge, Subscription } from "rxjs";
 import { layoutGraph } from "./model/git-graph";
 import {
   GitCommit,
@@ -33,11 +33,27 @@ import {
   STASH_FORMAT,
 } from "./model/git-parsers";
 
-export type GitError = "not_installed" | "no_repo" | "status_failed" | "unavailable";
+/**
+ * Why there is no repository to show. `repo_unreadable`: there is one, but
+ * git refuses it (an owner mismatch git calls dubious, a broken .git); the
+ * detail says why, and offering `git init` there would be wrong.
+ */
+export type GitError =
+  | "not_installed"
+  | "no_repo"
+  | "repo_unreadable"
+  | "status_failed"
+  | "unavailable";
 
 /** The commit count the graph loads first and adds per "load more". */
 export const GIT_LOG_PAGE_SIZE = 1000;
-const READ_TIMEOUT_MS = 10_000;
+/**
+ * Idle time per read (`CommandRunnerRequestContract`). A status on a large
+ * repository with a cold file cache is quiet for a long while before it
+ * prints anything; ten seconds ended it on repositories that git itself
+ * reads fine.
+ */
+const READ_TIMEOUT_MS = 60_000;
 
 const EMPTY_STATUS: GitStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
 const EMPTY_REFS: GitRefs = { branches: [], remoteBranches: [], tags: [], defaultBranches: [] };
@@ -72,6 +88,8 @@ export class GitRepositoryService {
   private readonly commitsSignal = signal<ReadonlyArray<GitCommit>>([]);
   private readonly operationSignal = signal<GitOperation | null>(null);
   private readonly errorSignal = signal<GitError | null>(null);
+  private readonly errorDetailSignal = signal<string | null>(null);
+  private readonly logErrorSignal = signal<string | null>(null);
   private readonly loadingSignal = signal(false);
   private readonly logLimitSignal = signal(GIT_LOG_PAGE_SIZE);
   private readonly hasMoreCommitsSignal = signal(false);
@@ -85,6 +103,10 @@ export class GitRepositoryService {
   readonly commits = this.commitsSignal.asReadonly();
   readonly operation = this.operationSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
+  /** What git said when it failed: shown with the error, so the user can act on it. */
+  readonly errorDetail = this.errorDetailSignal.asReadonly();
+  /** Why the commit graph could not be read, while the rest of the repository could. */
+  readonly logError = this.logErrorSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly hasMoreCommits = this.hasMoreCommitsSignal.asReadonly();
 
@@ -277,7 +299,7 @@ export class GitRepositoryService {
     // Runs in the session's cwd to find the repository it is in.
     const outcome = await session.run({
       executable: "git",
-      args: ["rev-parse", "--show-toplevel", "--absolute-git-dir"],
+      args: ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir"],
       contextRevision: session.contextRevision,
       timeoutMs: READ_TIMEOUT_MS,
     });
@@ -288,13 +310,12 @@ export class GitRepositoryService {
       this.clear(outcome.reason === "unknown-context" ? "unavailable" : null);
       return false;
     }
-    const { exitCode, stdout } = outcome.result;
-    const [root, gitDir] = stdout.split("\n").map((line) => line.trim());
+    const { exitCode, stdout, stderr } = outcome.result;
+    const [root, gitDir, commonDir] = stdout.split("\n").map((line) => line.trim());
     if (exitCode !== 0 || !root || !gitDir) {
-      // exit 128 = "not a git repository"; anything else means git isn't usable.
-      const noRepo = exitCode === 128 || exitCode === 0;
-      this.gitMissing = !noRepo;
-      this.clear(noRepo ? "no_repo" : "not_installed");
+      const error = classifyRootFailure(exitCode, stderr);
+      this.gitMissing = error === "not_installed";
+      this.clear(error, error === "no_repo" ? null : stderr.trim() || null);
       return false;
     }
     if (root !== this.rootSignal()) {
@@ -303,24 +324,23 @@ export class GitRepositoryService {
     }
     this.rootSignal.set(root);
     this.gitDir = gitDir;
-    this.watchGitDir(session, gitDir);
+    this.watchGitDirs(session, dirsToWatch(gitDir, commonDir ?? ""));
     return true;
   }
 
   /**
-   * Follow the git dir of the bound session while the panel is open. Rebound
-   * on every context resolution: the dir or the session it is read in may
+   * Follow the git dirs of the bound session while the panel is open. Rebound
+   * on every context resolution: the dirs or the session they are read in may
    * have changed. A session that refuses to watch (remote) just goes unwatched.
    */
-  private watchGitDir(session: BoundSessionHandle, gitDir: string): void {
+  private watchGitDirs(session: BoundSessionHandle, dirs: ReadonlyArray<string>): void {
     this.unwatchGitDir();
     if (!this.active) return;
-    this.gitDirWatch = session.fs
-      .watch$(gitDir)
-      .pipe(catchError(() => EMPTY))
-      .subscribe(() => {
-        if (this.active) this.requestRefresh(false);
-      });
+    this.gitDirWatch = merge(
+      ...dirs.map((dir) => session.fs.watch$(dir).pipe(catchError(() => EMPTY))),
+    ).subscribe(() => {
+      if (this.active) this.requestRefresh(false);
+    });
   }
 
   private unwatchGitDir(): void {
@@ -335,7 +355,9 @@ export class GitRepositoryService {
       runGit(session, ["-C", root, ...args], READ_TIMEOUT_MS);
 
     const [status, sha, branch, refs, remotes, stashes, operation] = await Promise.all([
-      git(["status", "--porcelain=v1", "-z", "-uall"]),
+      // Untracked directories as one entry each, as git shows them: listing
+      // every file under an untracked build output took longer than the rest.
+      git(["status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
       git(["rev-parse", "-q", "--verify", "HEAD"]),
       git(["symbolic-ref", "-q", "--short", "HEAD"]),
       git(["for-each-ref", `--format=${REF_FORMAT}`, "refs/heads", "refs/remotes", "refs/tags"]),
@@ -348,6 +370,7 @@ export class GitRepositoryService {
     if (session !== this.boundSession || !status || !sha || !branch || !refs) return;
     if (status.exitCode !== 0) {
       this.errorSignal.set("status_failed");
+      this.errorDetailSignal.set(status.stderr.trim() || null);
       return;
     }
 
@@ -360,6 +383,7 @@ export class GitRepositoryService {
     if (session !== this.boundSession) return;
 
     this.errorSignal.set(null);
+    this.errorDetailSignal.set(null);
     this.statusSignal.set(parseGitStatus(status.stdout));
     this.headSignal.set(head);
     this.refsSignal.set(parsedRefs);
@@ -411,7 +435,14 @@ export class GitRepositoryService {
       `--format=${LOG_FORMAT}`,
     ]);
     if (!result) return null;
-    return result.exitCode === 0 ? parseLog(result.stdout) : [];
+    if (result.exitCode !== 0) {
+      // Said, not shown as an empty graph: a graph with no commits in a
+      // repository that has them would be read as a broken repository.
+      this.logErrorSignal.set(result.stderr.trim() || "git log failed");
+      return null;
+    }
+    this.logErrorSignal.set(null);
+    return parseLog(result.stdout);
   }
 
   private async readOperation(session: BoundSessionHandle): Promise<GitOperation | null> {
@@ -428,7 +459,7 @@ export class GitRepositoryService {
     return null;
   }
 
-  private clear(error: GitError | null): void {
+  private clear(error: GitError | null, detail: string | null = null): void {
     this.unwatchGitDir();
     this.rootSignal.set(null);
     this.gitDir = null;
@@ -441,8 +472,36 @@ export class GitRepositoryService {
     this.operationSignal.set(null);
     this.hasMoreCommitsSignal.set(false);
     this.logLimitSignal.set(GIT_LOG_PAGE_SIZE);
+    this.logErrorSignal.set(null);
     this.errorSignal.set(error);
+    this.errorDetailSignal.set(detail);
   }
+}
+
+/**
+ * Exit 128 alone does not mean "not a repository": git uses it for every
+ * fatal error, and only the message tells a missing repository from one git
+ * will not touch (dubious ownership, a corrupt .git). Any other failure means
+ * git itself did not run, or is too old for the options used here.
+ */
+function classifyRootFailure(exitCode: number, stderr: string): GitError {
+  if (exitCode === 0) return "no_repo";
+  if (exitCode !== 128) return "not_installed";
+  return /not a git repository/i.test(stderr) ? "no_repo" : "repo_unreadable";
+}
+
+/**
+ * What to watch for changes. In a linked worktree the git dir is only that
+ * worktree's slice (HEAD, index, a stopped rebase); branches, remote refs
+ * and objects live in the common dir, so a commit or fetch from the main
+ * worktree would go unseen. Git prints the common dir relative to the cwd
+ * only when it is the worktree's own .git, so a relative one adds nothing.
+ */
+function dirsToWatch(gitDir: string, commonDir: string): string[] {
+  const isAbsolute = commonDir.startsWith("/") || /^[A-Za-z]:[\\/]/.test(commonDir);
+  if (!isAbsolute || commonDir === gitDir) return [gitDir];
+  if (gitDir.startsWith(`${commonDir}/`)) return [commonDir];
+  return [gitDir, commonDir];
 }
 
 /** Run `git` in a session; null when the session rejects it. */

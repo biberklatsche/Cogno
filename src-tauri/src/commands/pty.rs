@@ -15,7 +15,7 @@ use super::line_editor::{
 use super::window_registry::{route, WindowRegistry};
 
 #[cfg(windows)]
-use super::shell_job::ShellJob;
+use super::process_job::ProcessJob;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
 use crate::http_server::HttpServerState;
 
@@ -49,9 +49,9 @@ struct Session {
     /// the reader thread holds its own descriptor while blocked in `read`.
     child_killer: Box<dyn ChildKiller + Send + Sync>,
     /// Held only for its drop: ends the shell's whole process tree with the
-    /// session, and with the process should Cogno abort (see `shell_job`).
+    /// session, and with the process should Cogno abort (see `process_job`).
     #[cfg(windows)]
-    _job: Option<ShellJob>,
+    _job: Option<ProcessJob>,
     shell_process_id: Option<u32>,
     shell_type: String,
     line_editor_pipe_name: Option<String>,
@@ -232,7 +232,7 @@ pub async fn pty_spawn(
     // A shell that fails to join a job (a restricted job around Cogno itself)
     // still runs; it just ends the old way, by TerminateProcess alone.
     #[cfg(windows)]
-    let job = shell_process_id.and_then(|pid| match ShellJob::containing(pid) {
+    let job = shell_process_id.and_then(|pid| match ProcessJob::containing(pid) {
         Ok(job) => Some(job),
         Err(error) => {
             log::warn!(

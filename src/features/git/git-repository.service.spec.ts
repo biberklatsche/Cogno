@@ -17,8 +17,8 @@ const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const z = (...entries: string[]) => entries.map((entry) => `${entry}\0`).join("");
 const f = (...fields: string[]) => fields.join("\x1f");
 
-function ran(stdout: string, exitCode = 0): SessionRunResult {
-  return { status: "ran", result: { stdout, stderr: "", exitCode } };
+function ran(stdout: string, exitCode = 0, stderr = ""): SessionRunResult {
+  return { status: "ran", result: { stdout, stderr, exitCode } };
 }
 
 function sessionHandle(
@@ -51,7 +51,7 @@ function repo(root: string, overrides: Record<string, SessionRunResult> = {}): R
     const command = args.slice(0, 2).join(" ");
     if (overrides[command]) return Promise.resolve(overrides[command]);
     if (args[0] === "rev-parse" && args.includes("--show-toplevel")) {
-      return Promise.resolve(ran(`${root}\n${root}/.git\n`));
+      return Promise.resolve(ran(`${root}\n${root}/.git\n.git\n`));
     }
     if (args[0] === "status") return Promise.resolve(ran(z("M  a.ts")));
     if (command === "rev-parse -q") return Promise.resolve(ran("c1\n"));
@@ -192,12 +192,79 @@ describe("GitRepositoryService", () => {
   });
 
   it("reports 'no_repo' outside a repository", async () => {
-    const { service } = makeService(sessionHandle(() => Promise.resolve(ran("", 128))));
+    const { service } = makeService(
+      sessionHandle(() =>
+        Promise.resolve(
+          ran("", 128, "fatal: not a git repository (or any of the parent directories): .git\n"),
+        ),
+      ),
+    );
 
     service.start();
     await flush();
 
     expect(service.error()).toBe("no_repo");
+    expect(service.errorDetail()).toBeNull();
+  });
+
+  it("tells a repository git refuses from a missing one, with git's reason", async () => {
+    const reason =
+      "fatal: detected dubious ownership in repository at '/c/repo'\n" +
+      "To add an exception for this directory, call:\n\n" +
+      "\tgit config --global --add safe.directory /c/repo\n";
+    const session = sessionHandle(() => Promise.resolve(ran("", 128, reason)));
+    const { service, focus$ } = makeService(session);
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBe("repo_unreadable");
+    expect(service.errorDetail()).toBe(reason.trim());
+    // Git runs; the next focus asks again, the user may have fixed it.
+    focus$.next(true);
+    await flush();
+    expect(vi.mocked(session.run)).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows what git said when it is not usable", async () => {
+    const { service } = makeService(
+      sessionHandle(() =>
+        Promise.resolve(ran("", 129, "error: unknown option `absolute-git-dir'")),
+      ),
+    );
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBe("not_installed");
+    expect(service.errorDetail()).toBe("error: unknown option `absolute-git-dir'");
+  });
+
+  it("shows why the status could not be read", async () => {
+    const { service } = makeService(
+      sessionHandle(
+        repo("/c/repo", { "status --porcelain=v1": ran("", 128, "fatal: index file corrupt") }),
+      ),
+    );
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBe("status_failed");
+    expect(service.errorDetail()).toBe("fatal: index file corrupt");
+  });
+
+  it("says why the commit graph could not be read instead of showing it empty", async () => {
+    const { service } = makeService(
+      sessionHandle(repo("/c/repo", { "log --branches": ran("", 128, "fatal: bad object HEAD") })),
+    );
+
+    service.start();
+    await flush();
+
+    expect(service.error()).toBeNull();
+    expect(service.head().branch).toBe("main");
+    expect(service.logError()).toBe("fatal: bad object HEAD");
   });
 
   it("sees a merge git stopped in", async () => {
@@ -255,6 +322,23 @@ describe("GitRepositoryService", () => {
 
     service.stop();
     expect(gitDirChanges$.observed).toBe(false);
+  });
+
+  it("watches the common git dir of a linked worktree, where the refs live", async () => {
+    const base = repo("/c/wt");
+    const session = sessionHandle((request) =>
+      request.args?.includes("--show-toplevel")
+        ? Promise.resolve(ran("/c/wt\n/c/repo/.git/worktrees/wt\n/c/repo/.git\n"))
+        : base(request),
+    );
+    const { service } = makeService(session);
+
+    service.start();
+    await flush();
+
+    expect(service.root()).toBe("/c/wt");
+    expect(session.fs.watch$).toHaveBeenCalledTimes(1);
+    expect(session.fs.watch$).toHaveBeenCalledWith("/c/repo/.git");
   });
 
   it("re-reads the repository when the window regains focus", async () => {

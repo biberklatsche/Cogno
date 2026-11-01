@@ -115,6 +115,10 @@ const MIN_CENTER_WIDTH = 240;
             <app-icon name="mdiGit"></app-icon>
             <span>Git is not available in a remote session</span>
           }
+          @case ("repo_unreadable") {
+            <app-icon name="mdiAlert"></app-icon>
+            <span>Git refuses this repository</span>
+          }
           @case ("status_failed") {
             <app-icon name="mdiAlert"></app-icon>
             <span>Git status failed</span>
@@ -131,6 +135,9 @@ const MIN_CENTER_WIDTH = 240;
             <app-icon name="mdiGit"></app-icon>
             <span>{{ repository.loading() ? "Reading repository…" : "No terminal focused" }}</span>
           }
+        }
+        @if (repository.errorDetail(); as detail) {
+          <pre class="detail">{{ detail }}</pre>
         }
       </div>
     }
@@ -226,6 +233,15 @@ const MIN_CENTER_WIDTH = 240;
         padding: 1rem;
       }
       .unavailable > app-icon { width: 1.5rem; height: 1.5rem; opacity: 0.4; }
+      .unavailable > .detail {
+        max-width: 100%;
+        margin: 0.25rem 0 0;
+        font-size: 0.8em;
+        text-align: left;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        user-select: text;
+      }
       .start { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin-top: 0.5rem; }
     `,
   ],

@@ -12,6 +12,7 @@ describe("GitOperationsService", () => {
   let refresh: ReturnType<typeof vi.fn>;
   let dispatch: ReturnType<typeof vi.fn>;
   let backendOs: "linux" | "windows";
+  let wslDistroName: string | undefined;
   let service: GitOperationsService;
   /** The prompt handler every operation hands git. */
   const onPrompt = vi.fn();
@@ -28,12 +29,19 @@ describe("GitOperationsService", () => {
     refresh = vi.fn(() => Promise.resolve());
     dispatch = vi.fn();
     backendOs = "linux";
+    wslDistroName = undefined;
     refused = false;
     const repository = {
       run,
       runInCwd,
       refresh,
-      currentSession: () => ({ shellContext: { shellType: "Bash", backendOs } }),
+      currentSession: () => ({
+        shellContext: {
+          shellType: "Bash",
+          backendOs,
+          ...(wslDistroName ? { wslDistroName } : {}),
+        },
+      }),
       refs: () => ({
         branches: [{ name: "main" }],
         remoteBranches: [],
@@ -69,6 +77,7 @@ describe("GitOperationsService", () => {
     expect(argsOfLastRun()).toEqual([
       ...CACHE,
       "push",
+      "--progress",
       "--porcelain",
       "-u",
       "origin",
@@ -239,6 +248,7 @@ describe("GitOperationsService", () => {
     expect(argsOfLastRun()).toEqual([
       ...CACHE,
       "fetch",
+      "--progress",
       "origin",
       "refs/heads/feature/dev:refs/heads/dev",
     ]);
@@ -247,7 +257,15 @@ describe("GitOperationsService", () => {
   it("deletes several remote branches in one push", async () => {
     await service.deleteRemoteBranches("origin", ["a", "b"]);
 
-    expect(argsOfLastRun()).toEqual([...CACHE, "push", "origin", "--delete", "a", "b"]);
+    expect(argsOfLastRun()).toEqual([
+      ...CACHE,
+      "push",
+      "--progress",
+      "origin",
+      "--delete",
+      "a",
+      "b",
+    ]);
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "success", header: "Deleted 2 branches on origin" }),
     );
@@ -292,8 +310,8 @@ describe("GitOperationsService", () => {
     await service.clone("https://x/y.git", "y");
 
     expect(runInCwd).toHaveBeenCalledWith(
-      [...CACHE, "clone", "https://x/y.git", "y"],
-      600_000,
+      [...CACHE, "clone", "--progress", "https://x/y.git", "y"],
+      300_000,
       undefined,
       onPrompt,
     );
@@ -305,7 +323,16 @@ describe("GitOperationsService", () => {
 
     await service.fetch("origin");
 
-    expect(argsOfLastRun()).toEqual(["fetch", "--prune", "origin"]);
+    expect(argsOfLastRun()).toEqual(["fetch", "--progress", "--prune", "origin"]);
+  });
+
+  it("caches credentials in a WSL shell, which has no credential manager", async () => {
+    backendOs = "windows";
+    wslDistroName = "Ubuntu";
+
+    await service.fetch("origin");
+
+    expect(argsOfLastRun()).toEqual([...CACHE, "fetch", "--progress", "--prune", "origin"]);
   });
 
   it("hands a patch to git apply on stdin", async () => {
@@ -338,7 +365,26 @@ describe("GitOperationsService", () => {
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "error",
-        body: expect.stringContaining("did not finish in time"),
+        body: expect.stringContaining("went silent for too long"),
+      }),
+    );
+  });
+
+  it("keeps the progress counters out of an error", async () => {
+    answer = ran(
+      "",
+      1,
+      "Enumerating objects: 5, done.\r\nCounting objects:  20% (1/5)\rCounting objects: 100% (5/5), done.\n" +
+        "Writing objects: 100% (3/3), 300 bytes | 300.00 KiB/s, done.\n" +
+        "error: failed to push some refs to 'origin'\n",
+    );
+
+    await service.push("main", "origin", "main", { setUpstream: false, force: true });
+
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "error",
+        body: "error: failed to push some refs to 'origin'",
       }),
     );
   });

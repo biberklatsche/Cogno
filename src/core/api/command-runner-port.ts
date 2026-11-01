@@ -19,6 +19,11 @@ export interface CommandRunnerRequestContract {
   readonly shellContext: ShellContextContract;
   readonly program: string;
   readonly args?: ReadonlyArray<string>;
+  /**
+   * Idle time, not total: the process is ended once it has shown no output
+   * and had no prompt open for this long. A transfer that reports progress
+   * runs as long as it takes; a process that went silent is ended.
+   */
   readonly timeoutMs?: number;
   /** Written to the process and closed; for a patch to `git apply`, a message to `git credential`. */
   readonly stdin?: string;

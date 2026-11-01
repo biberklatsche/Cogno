@@ -1,48 +1,69 @@
-//! Keeps a shell and everything it starts in one Windows job object that
-//! kills them all when its handle closes. The handle lives in the session,
-//! so the tree ends with the pane; and the OS closes it when the process
-//! dies, so an abort or crash of Cogno takes the shells down too, instead
-//! of leaving them and their children behind. `TerminateProcess` on the
-//! shell alone never reached grandchildren.
+//! Keeps a process and everything it starts in one Windows job object, so
+//! the whole tree can be ended at once: `TerminateProcess` on the root
+//! alone never reached grandchildren. A shell's job kills its members when
+//! its handle closes; the handle lives in the session, so the tree ends with
+//! the pane, and the OS closes it when Cogno dies, so an abort or crash takes
+//! the shells down too. A command run's job is only terminated on demand (a
+//! timeout): what the command started may legitimately outlive it.
 use winapi::shared::minwindef::{DWORD, FALSE};
 use winapi::um::handleapi::CloseHandle;
-use winapi::um::jobapi2::{AssignProcessToJobObject, CreateJobObjectW, SetInformationJobObject};
+use winapi::um::jobapi2::{
+    AssignProcessToJobObject, CreateJobObjectW, SetInformationJobObject, TerminateJobObject,
+};
 use winapi::um::processthreadsapi::OpenProcess;
 use winapi::um::winnt::{
     JobObjectExtendedLimitInformation, HANDLE, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
     JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, PROCESS_SET_QUOTA, PROCESS_TERMINATE,
 };
 
-pub struct ShellJob {
+pub struct ProcessJob {
     handle: HANDLE,
 }
 
 // A job handle is a plain kernel handle; using it from another thread is fine.
-unsafe impl Send for ShellJob {}
-unsafe impl Sync for ShellJob {}
+unsafe impl Send for ProcessJob {}
+unsafe impl Sync for ProcessJob {}
 
-impl ShellJob {
+impl ProcessJob {
     /// Puts the process (and from then on everything it starts) into a new
     /// job that kills its members when the returned value is dropped.
     pub fn containing(process_id: u32) -> std::io::Result<Self> {
+        Self::create(process_id, true)
+    }
+
+    /// Puts the process (and from then on everything it starts) into a new
+    /// job whose members live on when the value is dropped; `terminate`
+    /// ends them all.
+    pub fn tracking(process_id: u32) -> std::io::Result<Self> {
+        Self::create(process_id, false)
+    }
+
+    /// Ends every process in the job, now.
+    pub fn terminate(&self) {
+        unsafe { TerminateJobObject(self.handle, 1) };
+    }
+
+    fn create(process_id: u32, kill_on_close: bool) -> std::io::Result<Self> {
         unsafe {
             let handle = CreateJobObjectW(std::ptr::null_mut(), std::ptr::null());
             if handle.is_null() {
                 return Err(std::io::Error::last_os_error());
             }
             // Owns the handle from here on, so every early return closes it.
-            let job = ShellJob { handle };
+            let job = ProcessJob { handle };
 
-            let mut limits: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
-            limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-            let set = SetInformationJobObject(
-                handle,
-                JobObjectExtendedLimitInformation,
-                &mut limits as *mut _ as *mut _,
-                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as DWORD,
-            );
-            if set == 0 {
-                return Err(std::io::Error::last_os_error());
+            if kill_on_close {
+                let mut limits: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+                limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+                let set = SetInformationJobObject(
+                    handle,
+                    JobObjectExtendedLimitInformation,
+                    &mut limits as *mut _ as *mut _,
+                    std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as DWORD,
+                );
+                if set == 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
             }
 
             let process = OpenProcess(PROCESS_SET_QUOTA | PROCESS_TERMINATE, FALSE, process_id);
@@ -60,7 +81,7 @@ impl ShellJob {
     }
 }
 
-impl Drop for ShellJob {
+impl Drop for ProcessJob {
     fn drop(&mut self) {
         unsafe { CloseHandle(self.handle) };
     }
@@ -108,7 +129,7 @@ mod tests {
             .spawn()
             .unwrap();
         let shell_pid = shell.id();
-        let job = ShellJob::containing(shell_pid).unwrap();
+        let job = ProcessJob::containing(shell_pid).unwrap();
         assert!(
             wait_until(Duration::from_secs(5), || ping_started_by(shell_pid)),
             "the shell never started its child"
