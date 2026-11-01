@@ -1,5 +1,7 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { PtyHandler } from "@cogno/core/terminal/handlers/pty.handler";
+import { Renderer } from "@cogno/core/terminal/renderer";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import type { IBufferCell } from "@xterm/xterm";
@@ -9,7 +11,7 @@ import { ConfigServiceMock } from "../../../__test__/mocks/config-service.mock";
 import { Command } from "../model/command.model";
 import { TerminalCommandHistoryStore } from "../model/command-history.store";
 import type { CommandRecorder } from "../recorder/command-recorder";
-import { SessionHost } from "./session-host";
+import { RESTORE_FRAME_FALLBACK_MS, SessionHost } from "./session-host";
 import { SESSION_SNAPSHOT_VERSION } from "./session-snapshot";
 
 interface CellOptions {
@@ -334,6 +336,31 @@ describe("SessionHost snapshot/restore", () => {
 
     // terminalMock.rows === 24 → a full screen of blank lines carries the callback.
     expect(writeMock).toHaveBeenCalledWith("\r\n".repeat(24), expect.any(Function));
+  });
+
+  it("replays and spawns the shell even when the window never draws a frame", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("requestAnimationFrame", vi.fn());
+    try {
+      host.restore({
+        version: SESSION_SNAPSHOT_VERSION,
+        scrollback: "PREVIOUS-OUTPUT",
+        commands: [],
+      });
+      host.start();
+      host.attach(document.createElement("div"));
+      const renderer = vi.mocked(Renderer).mock.results.at(-1)?.value;
+      expect(writeMock).not.toHaveBeenCalledWith("PREVIOUS-OUTPUT");
+      expect(renderer.register).not.toHaveBeenCalledWith(expect.any(PtyHandler));
+
+      vi.advanceTimersByTime(RESTORE_FRAME_FALLBACK_MS);
+
+      expect(writeMock).toHaveBeenCalledWith("PREVIOUS-OUTPUT");
+      expect(renderer.register).toHaveBeenCalledWith(expect.any(PtyHandler));
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
   });
 
   it("does not stash a snapshot of a different version or without scrollback", () => {

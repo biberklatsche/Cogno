@@ -113,6 +113,14 @@ function cutIdlePrompt(serialized: string): { scrollback: string; idlePromptId?:
  */
 const RESTORED_MARKER_ID_OFFSET = 1_000_000_000_000_000;
 
+/**
+ * A restored session waits a frame after its first attach for the
+ * container's layout before it replays. A hidden or minimized window draws
+ * no frame, ever - this timer stands in, and the fit's measurements force
+ * the layout anyway.
+ */
+export const RESTORE_FRAME_FALLBACK_MS = 100;
+
 function offsetMarkerId(id: string): string {
   const numeric = Number(id);
   return Number.isFinite(numeric) ? String(numeric + RESTORED_MARKER_ID_OFFSET) : id;
@@ -725,7 +733,15 @@ export class SessionHost {
     this._restoreScheduled = true;
     // A frame after the first attach the container has laid out, so the fit
     // yields the real row count the fill and the pty spawn depend on.
-    requestAnimationFrame(() => this.completeRestore());
+    let completed = false;
+    const complete = () => {
+      if (completed) return;
+      completed = true;
+      clearTimeout(fallback);
+      this.completeRestore();
+    };
+    const fallback = setTimeout(complete, RESTORE_FRAME_FALLBACK_MS);
+    requestAnimationFrame(complete);
   }
 
   /**
