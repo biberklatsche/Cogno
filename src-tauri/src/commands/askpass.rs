@@ -7,7 +7,7 @@
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Mutex;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::oneshot;
 
 /// The variable that turns this binary into the askpass helper.
@@ -91,14 +91,21 @@ impl AskpassState {
             .any(|entry| entry.session_id == session_id)
     }
 
-    /// Ask the session's window; `None` when the session is unknown.
+    /// Ask the session's window; `None` when the session is unknown or its
+    /// window is gone (closed while the command still ran): nobody could
+    /// answer, so the process gets its refusal now rather than after the
+    /// full prompt time.
     pub fn request(
         &self,
         app: &AppHandle,
         session_id: &str,
         prompt: String,
-    ) -> Option<oneshot::Receiver<Option<String>>> {
+    ) -> Option<(String, oneshot::Receiver<Option<String>>)> {
         let window = self.sessions.lock().unwrap().get(session_id)?.clone();
+        if app.get_webview_window(&window).is_none() {
+            log::warn!(target: "askpass", "prompt for a closed window {window}; refused");
+            return None;
+        }
         let request_id = uuid::Uuid::new_v4().simple().to_string();
         let (sender, receiver) = oneshot::channel();
         self.pending.lock().unwrap().insert(
@@ -113,16 +120,34 @@ impl AskpassState {
             window.as_str(),
             REQUEST_EVENT,
             AskpassRequest {
-                request_id,
+                request_id: request_id.clone(),
                 session_id: session_id.to_string(),
                 prompt,
             },
         );
-        Some(receiver)
+        Some((request_id, receiver))
+    }
+
+    /// Nobody answered in time: the prompt is forgotten, so the run's
+    /// timeout counts again, and the window drops its dialog.
+    pub fn expire(&self, app: &AppHandle, request_id: &str) {
+        if let Some(entry) = self.forget(request_id) {
+            let _ = app.emit_to(
+                entry.window.as_str(),
+                CLOSED_EVENT,
+                AskpassClosed {
+                    request_id: request_id.to_string(),
+                },
+            );
+        }
+    }
+
+    fn forget(&self, request_id: &str) -> Option<Pending> {
+        self.pending.lock().unwrap().remove(request_id)
     }
 
     fn answer(&self, request_id: &str, answer: Option<String>) -> bool {
-        match self.pending.lock().unwrap().remove(request_id) {
+        match self.forget(request_id) {
             Some(entry) => entry.answer.send(answer).is_ok(),
             None => false,
         }
@@ -184,6 +209,26 @@ mod tests {
     fn an_answer_for_an_unknown_request_is_refused() {
         let state = AskpassState::new();
         assert!(!state.answer("nope", Some("x".into())));
+    }
+
+    #[test]
+    fn an_expired_prompt_no_longer_counts_as_pending() {
+        let state = AskpassState::new();
+        state.open_session("s1", "main");
+        let (sender, _receiver) = oneshot::channel();
+        state.pending.lock().unwrap().insert(
+            "r1".into(),
+            Pending {
+                session_id: "s1".into(),
+                window: "main".into(),
+                answer: sender,
+            },
+        );
+
+        assert!(state.forget("r1").is_some());
+
+        assert!(!state.has_pending("s1"));
+        assert!(!state.answer("r1", Some("late".into())));
     }
 
     #[test]

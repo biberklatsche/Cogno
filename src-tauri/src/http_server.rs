@@ -317,19 +317,19 @@ pub fn start_http_server(
                                 return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })));
                             }
                         };
-                        let receiver = app
-                            .state::<crate::commands::askpass::AskpassState>()
-                            .request(&app, &payload.session, payload.prompt);
-                        let Some(receiver) = receiver else {
-                            log::warn!(target: "http_server", "POST /askpass: unknown session");
+                        let askpass = app.state::<crate::commands::askpass::AskpassState>();
+                        let Some((request_id, receiver)) = askpass.request(&app, &payload.session, payload.prompt) else {
+                            log::warn!(target: "http_server", "POST /askpass: unknown session or closed window");
                             return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "unknown session" })));
                         };
                         // The user may take a while; the helper waits, and the runner's timeout pauses.
-                        let answer = tokio::time::timeout(ASKPASS_WAIT, receiver)
-                            .await
-                            .ok()
-                            .and_then(|received| received.ok())
-                            .flatten();
+                        let answer = match tokio::time::timeout(ASKPASS_WAIT, receiver).await {
+                            Ok(received) => received.ok().flatten(),
+                            Err(_) => {
+                                askpass.expire(&app, &request_id);
+                                None
+                            }
+                        };
                         (StatusCode::OK, Json(serde_json::json!({ "answer": answer })))
                     }
                 }),
