@@ -80,11 +80,14 @@ pub async fn command_runner_execute(
 /// What every run gets. The login PATH: a GUI process started by launchd or
 /// systemd has a minimal one, so git, gh or a credential helper configured by
 /// name would not be found, or Apple's /usr/bin/git shim would be taken over
-/// the git the user's terminal uses.
+/// the git the user's terminal uses. `GIT_OPTIONAL_LOCKS=0`: a read such as
+/// `git status` otherwise rewrites the index under index.lock and collides
+/// with a git command the user types in the pane at that moment.
 fn apply_runner_environment(command: &mut Command, login_path: Option<String>) {
     if let Some(path) = login_path {
         command.env("PATH", path);
     }
+    command.env("GIT_OPTIONAL_LOCKS", "0");
 }
 
 /// Git and ssh ask through this binary instead of a terminal. The variables
@@ -107,6 +110,7 @@ fn apply_prompt_environment(command: &mut Command, app: &AppHandle, session_id: 
         "SSH_ASKPASS/p",
         "SSH_ASKPASS_REQUIRE",
         "GIT_TERMINAL_PROMPT",
+        "GIT_OPTIONAL_LOCKS",
         SESSION_ENV,
         "COGNO_PORT",
         "COGNO_TOKEN",
@@ -309,14 +313,14 @@ mod tests {
     }
 
     #[test]
-    fn the_login_path_reaches_the_command() {
-        let mut command = shell("echo \"$PATH\"");
+    fn the_login_path_and_optional_locks_reach_the_command() {
+        let mut command = shell("echo \"$PATH\"; echo \"$GIT_OPTIONAL_LOCKS\"");
         apply_runner_environment(&mut command, Some("/cogno/login/bin:/usr/bin:/bin".into()));
 
         let result = run(command, Some(5_000)).unwrap();
 
         assert_eq!(result.exit_code, 0);
-        assert_eq!(result.stdout, "/cogno/login/bin:/usr/bin:/bin\n");
+        assert_eq!(result.stdout, "/cogno/login/bin:/usr/bin:/bin\n0\n");
     }
 
     #[test]
@@ -333,6 +337,17 @@ mod tests {
 #[cfg(all(test, windows))]
 mod windows_tests {
     use super::*;
+
+    #[test]
+    fn optional_locks_reach_the_command() {
+        let mut command = Command::new("cmd");
+        command.args(["/C", "echo %GIT_OPTIONAL_LOCKS%"]);
+        apply_runner_environment(&mut command, None);
+
+        let result = run(command, Some(5_000), None, &|| false).unwrap();
+
+        assert_eq!(result.stdout.trim_end(), "0");
+    }
 
     #[test]
     fn a_grandchild_holding_the_pipes_does_not_hold_up_the_result() {
