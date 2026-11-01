@@ -312,6 +312,9 @@ export class GridListService implements PaneLayoutLookup {
     const paneChild: Pane = { terminalId: IdCreator.newTerminalId() };
     tree.add(node.key, side, paneParent, paneChild);
     this.setActiveWorkspaceGridList(gridList);
+    // The new pane gets the keyboard once its view is up; a session never
+    // takes it on its own.
+    this.deferFocusTo(paneChild.terminalId);
   }
 
   restoreGridsForWorkspace(gridConfigList: GridConfig[], workspaceIdentifier: string): void {

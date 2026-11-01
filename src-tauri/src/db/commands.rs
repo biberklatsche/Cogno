@@ -32,45 +32,61 @@ fn run<T>(db: &Db, f: impl FnOnce(&mut Connection) -> DbResult<T>) -> Result<T, 
     })
 }
 
+/// SQLite works on the thread that calls it. A command hands its work to a
+/// blocking thread of the runtime, so an integrity check of a large file, a
+/// migration or a slow disk never stalls the thread that drives the window.
+async fn off_thread<T: Send + 'static>(
+    db: &Db,
+    work: impl FnOnce(&Db) -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    let db = db.clone();
+    tauri::async_runtime::spawn_blocking(move || work(&db))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 /// Opens (or, once open, simply reports on) the application database and
 /// brings its schema up to date with the migrations the frontend collected.
 /// `legacy_path` points at the previous-generation database for migrations
 /// that import from it. Safe to call from every window.
 #[tauri::command]
-pub fn db_open(
+pub async fn db_open(
     db: State<'_, Db>,
     dev_mode: bool,
     migrations: Vec<Migration>,
     legacy_path: Option<String>,
 ) -> Result<OpenReport, String> {
-    let home = get_cogno_home_dir(dev_mode)?;
-    let path = PathBuf::from(home).join(DB_FILE_NAME);
-    let legacy = legacy_path.map(PathBuf::from);
-    db.open(&path, &migrations, legacy.as_deref())
-        .map_err(|e| e.to_string())
+    off_thread(&db, move |db| {
+        let home = get_cogno_home_dir(dev_mode)?;
+        let path = PathBuf::from(home).join(DB_FILE_NAME);
+        let legacy = legacy_path.map(PathBuf::from);
+        db.open(&path, &migrations, legacy.as_deref())
+            .map_err(|e| e.to_string())
+    })
+    .await
 }
 
 #[tauri::command]
-pub fn db_execute(db: State<'_, Db>, statement: Statement) -> Result<ExecuteResult, String> {
-    run(&db, |conn| execute(conn, &statement))
+pub async fn db_execute(db: State<'_, Db>, statement: Statement) -> Result<ExecuteResult, String> {
+    off_thread(&db, move |db| run(db, |conn| execute(conn, &statement))).await
 }
 
 #[tauri::command]
-pub fn db_select(
+pub async fn db_select(
     db: State<'_, Db>,
     statement: Statement,
 ) -> Result<Vec<Map<String, serde_json::Value>>, String> {
-    run(&db, |conn| select(conn, &statement))
+    off_thread(&db, move |db| run(db, |conn| select(conn, &statement))).await
 }
 
 /// Runs every statement in one transaction: either all of them take effect
 /// or none does.
 #[tauri::command]
-pub fn db_batch(
+pub async fn db_batch(
     db: State<'_, Db>,
     statements: Vec<Statement>,
 ) -> Result<Vec<ExecuteResult>, String> {
-    run(&db, |conn| batch(conn, &statements))
+    off_thread(&db, move |db| run(db, |conn| batch(conn, &statements))).await
 }
 
 pub fn execute(conn: &Connection, statement: &Statement) -> DbResult<ExecuteResult> {

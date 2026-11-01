@@ -235,6 +235,31 @@ describe("SessionHost", () => {
     expect(facts).toContainEqual({ type: "focusChanged", focused: true });
   });
 
+  it("keeps a focus asked for off screen and hands over the keyboard on attach", () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+
+    host.focus();
+    expect(host.isFocused).toBe(false);
+
+    host.attach(document.createElement("div"));
+
+    expect(host.isFocused).toBe(true);
+  });
+
+  it("forgets a focus asked for off screen once the keyboard goes elsewhere", () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+
+    host.focus();
+    host.blur();
+    host.attach(document.createElement("div"));
+
+    expect(host.isFocused).toBe(false);
+  });
+
   it("reads both halves as one state", () => {
     const host = createHost();
     host.initialize("terminal-1", bashProfile);

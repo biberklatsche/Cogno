@@ -25,8 +25,6 @@ export type PtyHandlerListener = {
   readonly onSpawned?: () => void;
   /** The shell could not be started. */
   readonly onFailed?: (error: unknown) => void;
-  /** The shell answered for the first time and xterm has parsed it. */
-  readonly onStarted?: () => void;
   /** The shell process ended. */
   readonly onExited?: (exitCode: number) => void;
   /** Output arrived - before it is parsed. */
@@ -35,7 +33,6 @@ export type PtyHandlerListener = {
 
 export class PtyHandler implements ITerminalHandler {
   private _terminal?: Terminal;
-  private _firstWriteEvent: boolean = false;
   private _disposed = false;
   private _unparsedBytes = 0;
   private _lastParsedSeq = -1;
@@ -91,10 +88,6 @@ export class PtyHandler implements ITerminalHandler {
   private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract): void {
     if (this._disposed) return;
     this._listener.onOutput?.();
-    if (!this._firstWriteEvent) {
-      this._firstWriteEvent = true;
-      this.reportStartedAfterFirstParse(terminal);
-    }
     const bytes = chunk.data.byteLength;
     this._unparsedBytes += bytes;
     terminal.write(chunk.data, () => {
@@ -104,13 +97,6 @@ export class PtyHandler implements ITerminalHandler {
     if (this._isWindowHidden() && this._unparsedBytes <= HIDDEN_UNPARSED_BUDGET_BYTES) {
       this.parsed(chunk.seq);
     }
-  }
-
-  private reportStartedAfterFirstParse(terminal: Terminal): void {
-    const disposable = terminal.onWriteParsed(() => {
-      this._listener.onStarted?.();
-      disposable.dispose();
-    });
   }
 
   /**
