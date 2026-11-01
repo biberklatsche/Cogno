@@ -6,6 +6,14 @@ import { IFitHandler, ITerminalHandler } from "../terminal-handler";
 import { isValidTerminalDimensions, TerminalDimensions } from "../terminal-machine.events";
 import type { TerminalMachineState } from "../terminal-machine.state";
 
+/**
+ * The least time between two sizes the pty is told. xterm refits on every
+ * frame of a drag so the text reflows with the pane; the pty (ConPTY above
+ * all, which repaints its whole screen for each size it gets) hears the
+ * first size at once and then one per period, the last of a drag included.
+ */
+export const PTY_RESIZE_SETTLE_MS = 80;
+
 type TerminalCoreWithCharSize = {
   _core?: {
     _renderService?: {
@@ -22,6 +30,9 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
   private _terminal?: Terminal;
   private _fitAddon?: FitAddon;
   private _resizeRaf?: number;
+  private _ptyResizeTimer?: ReturnType<typeof setTimeout>;
+  private _pendingPtyDimensions?: TerminalDimensions;
+  private _sentPtyDimensions?: TerminalDimensions;
 
   constructor(
     private _pty: IPty,
@@ -38,6 +49,11 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
       cancelAnimationFrame(this._resizeRaf);
       this._resizeRaf = undefined;
     }
+    if (this._ptyResizeTimer !== undefined) {
+      clearTimeout(this._ptyResizeTimer);
+      this._ptyResizeTimer = undefined;
+    }
+    this._pendingPtyDimensions = undefined;
 
     this._resizeObserver?.disconnect();
     this._resizeObserver = undefined;
@@ -78,8 +94,8 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
       isValidTerminalDimensions(newRendererDimensions) &&
       !this.areDimensionsEqual(newRendererDimensions, currentDimensions)
     ) {
-      this._pty.resize(newRendererDimensions);
       this._fitAddon.fit();
+      this.resizePty(newRendererDimensions);
     }
     const core = terminalCore._core;
     const cellHeight = core?._renderService?._charSizeService?.height ?? cellHeightBeforeFit ?? 0;
@@ -107,6 +123,27 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
     if (dimensions && isValidTerminalDimensions(dimensions)) {
       this._fitAddon.fit();
     }
+  }
+
+  /**
+   * Tell the pty the size: now when it has been quiet, otherwise once the
+   * period is over - only the newest size, a drag's intermediate ones are
+   * never sent.
+   */
+  private resizePty(dimensions: TerminalDimensions): void {
+    if (this._ptyResizeTimer !== undefined) {
+      this._pendingPtyDimensions = dimensions;
+      return;
+    }
+    if (this.areDimensionsEqual(dimensions, this._sentPtyDimensions)) return;
+    this._sentPtyDimensions = dimensions;
+    this._pty.resize(dimensions);
+    this._ptyResizeTimer = setTimeout(() => {
+      this._ptyResizeTimer = undefined;
+      const pending = this._pendingPtyDimensions;
+      this._pendingPtyDimensions = undefined;
+      if (pending) this.resizePty(pending);
+    }, PTY_RESIZE_SETTLE_MS);
   }
 
   private areDimensionsEqual(a?: TerminalDimensions, b?: TerminalDimensions) {

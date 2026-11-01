@@ -8,7 +8,7 @@ import type {
   TerminalMousePosition,
   TerminalViewportDimensions,
 } from "../terminal-machine.state";
-import { ResizeHandler } from "./resize.handler";
+import { PTY_RESIZE_SETTLE_MS, ResizeHandler } from "./resize.handler";
 
 /** Records what the machine reports, which is all these handlers do. */
 function createMachineState() {
@@ -106,6 +106,61 @@ describe("ResizeHandler", () => {
       // PTY resize is debounced with setTimeout
       vi.runAllTimers();
       expect(mockPty.resize).toHaveBeenCalledWith({ cols: 100, rows: 30 });
+    });
+
+    it("tells the pty the first size of a drag at once and the last one after it", () => {
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
+      const steps = [
+        { cols: 100, rows: 30 },
+        { cols: 101, rows: 30 },
+        { cols: 102, rows: 31 },
+      ];
+      for (const step of steps) {
+        vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue(step);
+        vi.mocked(mockFitAddon.fit).mockImplementation(() => {
+          (mockTerminal as any).cols = step.cols;
+          (mockTerminal as any).rows = step.rows;
+        });
+        handler.resize();
+      }
+
+      // xterm followed every step; the pty heard only the first so far.
+      expect(mockFitAddon.fit).toHaveBeenCalledTimes(3);
+      expect(mockPty.resize).toHaveBeenCalledTimes(1);
+      expect(mockPty.resize).toHaveBeenCalledWith({ cols: 100, rows: 30 });
+
+      vi.advanceTimersByTime(PTY_RESIZE_SETTLE_MS);
+
+      expect(mockPty.resize).toHaveBeenCalledTimes(2);
+      expect(mockPty.resize).toHaveBeenLastCalledWith({ cols: 102, rows: 31 });
+    });
+
+    it("does not tell the pty a size it already has, nor any after dispose", () => {
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
+      const resizeTo = (cols: number, rows: number) => {
+        vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue({ cols, rows });
+        vi.mocked(mockFitAddon.fit).mockImplementation(() => {
+          (mockTerminal as any).cols = cols;
+          (mockTerminal as any).rows = rows;
+        });
+        handler.resize();
+      };
+
+      resizeTo(100, 30);
+      resizeTo(101, 30);
+      resizeTo(100, 30);
+      vi.advanceTimersByTime(PTY_RESIZE_SETTLE_MS);
+      // Back at the size the pty was told first: nothing to say.
+      expect(mockPty.resize).toHaveBeenCalledTimes(1);
+
+      resizeTo(120, 40);
+      resizeTo(121, 40);
+      handler.dispose();
+      vi.advanceTimersByTime(PTY_RESIZE_SETTLE_MS);
+      expect(mockPty.resize).toHaveBeenCalledTimes(2);
+      expect(mockPty.resize).toHaveBeenLastCalledWith({ cols: 120, rows: 40 });
     });
 
     it("should update stateManager on resize", () => {
