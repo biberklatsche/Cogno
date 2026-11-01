@@ -56,6 +56,10 @@ pub async fn command_runner_execute(
     let session_id = prompt_session;
     app.state::<AskpassState>()
         .open_session(&session_id, window.label());
+    // Bounded like the shell spawn: the login shell is normally captured long
+    // before the first run; if it hangs, run with the process PATH instead.
+    let login_path = super::login_environment::get_login_environment(Duration::from_secs(2)).path;
+    apply_runner_environment(&mut command, login_path);
     apply_prompt_environment(&mut command, &app, &session_id);
 
     let pending = {
@@ -71,6 +75,16 @@ pub async fn command_runner_execute(
     result
         .map_err(|error| error.to_string())?
         .map_err(|error| error.to_string())
+}
+
+/// What every run gets. The login PATH: a GUI process started by launchd or
+/// systemd has a minimal one, so git, gh or a credential helper configured by
+/// name would not be found, or Apple's /usr/bin/git shim would be taken over
+/// the git the user's terminal uses.
+fn apply_runner_environment(command: &mut Command, login_path: Option<String>) {
+    if let Some(path) = login_path {
+        command.env("PATH", path);
+    }
 }
 
 /// Git and ssh ask through this binary instead of a terminal. The variables
@@ -292,6 +306,27 @@ mod tests {
 
         assert_eq!(result.exit_code, 3);
         assert_eq!(result.stderr, "oops\n");
+    }
+
+    #[test]
+    fn the_login_path_reaches_the_command() {
+        let mut command = shell("echo \"$PATH\"");
+        apply_runner_environment(&mut command, Some("/cogno/login/bin:/usr/bin:/bin".into()));
+
+        let result = run(command, Some(5_000)).unwrap();
+
+        assert_eq!(result.exit_code, 0);
+        assert_eq!(result.stdout, "/cogno/login/bin:/usr/bin:/bin\n");
+    }
+
+    #[test]
+    fn without_a_login_path_the_process_path_stays() {
+        let mut command = shell("echo \"$PATH\"");
+        apply_runner_environment(&mut command, None);
+
+        let result = run(command, Some(5_000)).unwrap();
+
+        assert_eq!(result.stdout.trim_end(), std::env::var("PATH").unwrap());
     }
 }
 
