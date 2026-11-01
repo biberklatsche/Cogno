@@ -236,6 +236,22 @@ export class SessionHost {
         }
       }),
     );
+    this.subscription.add(
+      this.renderer.webglGivenUp$.subscribe((givenUp) =>
+        ErrorReporter.reportWarning({
+          message:
+            givenUp.reason === "unavailable"
+              ? "WebGL is unavailable; the DOM renderer draws this terminal"
+              : "WebGL context was lost repeatedly; the DOM renderer draws this terminal from now on",
+          source: "Renderer",
+          context: {
+            reason: givenUp.reason,
+            error: String(givenUp.error),
+            terminalId: this._terminalId,
+          },
+        }),
+      ),
+    );
     this.commandBlockResolver = new CommandBlockResolver(() => this.renderer.terminal);
   }
 

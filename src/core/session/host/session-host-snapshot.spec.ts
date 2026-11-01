@@ -76,6 +76,7 @@ vi.mock("@cogno/core/terminal/renderer", () => {
     restoreCursorColor = vi.fn();
     terminal = terminalMock;
     isWebglContextLost$ = new BehaviorSubject(false);
+    webglGivenUp$ = new Subject();
   }
   return { Renderer: vi.fn(RendererMock) };
 });

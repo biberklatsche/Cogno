@@ -1,5 +1,6 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Renderer } from "@cogno/core/terminal/renderer";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
@@ -24,6 +25,7 @@ vi.mock("@cogno/core/terminal/renderer", () => {
     restoreCursorColor = vi.fn();
     terminal = TerminalMockFactory.createTerminal();
     isWebglContextLost$ = new BehaviorSubject(false);
+    webglGivenUp$ = new Subject();
   }
   return { Renderer: vi.fn(RendererMock) };
 });
@@ -181,6 +183,21 @@ describe("SessionHost", () => {
       { type: "outputDegraded", reason: "chunksLost", detail: "chunks 3..5 lost" },
       { type: "outputDegraded", reason: "ackFailed", detail: "no backend" },
     ]);
+  });
+
+  it("logs a warning when the renderer gave WebGL up", () => {
+    const warned = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+
+    lastRenderer().webglGivenUp$.next({ reason: "unavailable", error: new Error("no WebGL2") });
+
+    expect(warned).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: "Renderer",
+        context: expect.objectContaining({ reason: "unavailable", terminalId: "terminal-1" }),
+      }),
+    );
   });
 
   it("refuses a profile without a shell type", () => {
