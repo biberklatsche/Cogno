@@ -20,7 +20,7 @@ pub use recovery::RecoveryReport;
 use rusqlite::Connection;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Serialize)]
@@ -41,9 +41,11 @@ struct OpenDatabase {
     conn: Connection,
 }
 
-#[derive(Default)]
+/// Cloned into the blocking task of every command (`commands.rs`); the
+/// clones share the one connection behind the lock.
+#[derive(Default, Clone)]
 pub struct Db {
-    inner: Mutex<Option<OpenDatabase>>,
+    inner: Arc<Mutex<Option<OpenDatabase>>>,
 }
 
 impl Db {

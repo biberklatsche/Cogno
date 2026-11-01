@@ -3,8 +3,28 @@
 /// variant), the input source id
 /// on macOS ("com.apple.keylayout.German"). The frontend looks its keymap up by
 /// this id and falls back to a default keymap on `None`.
+///
+/// `GetKeyboardLayoutNameW` answers for the calling thread; a worker thread
+/// would name the system default, so on Windows the command stays where it
+/// is called.
+#[cfg(target_os = "windows")]
 #[tauri::command]
 pub fn get_keyboard_layout() -> Option<String> {
+    detect_layout()
+}
+
+/// Linux and macOS ask a child process (`setxkbmap`, `defaults`), which must
+/// not hold up the thread that drives the window.
+#[cfg(not(target_os = "windows"))]
+#[tauri::command]
+pub async fn get_keyboard_layout() -> Option<String> {
+    tauri::async_runtime::spawn_blocking(detect_layout)
+        .await
+        .ok()
+        .flatten()
+}
+
+fn detect_layout() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
         use std::ffi::OsString;
