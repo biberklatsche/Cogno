@@ -10,6 +10,9 @@ import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
+import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
+import { TerminalInputWriter } from "../editor/input-writer";
+import { CommandLineBuffer } from "../model/command-line.buffer";
 import type { SessionModel, TerminalInput } from "../model/session-model";
 import { ClipboardHandler } from "./clipboard.handler";
 
@@ -63,6 +66,22 @@ describe("ClipboardHandler", () => {
   let mockConfigService: ConfigService;
   let mockSelectionHandler: SelectionHandler;
 
+  function createHandler(
+    configService: ConfigService,
+    lineEditor?: ShellLineEditorDefinitionContract,
+  ): ClipboardHandler {
+    const model = mockStateManager as unknown as SessionModel;
+    return new ClipboardHandler(
+      clipboardStub,
+      model,
+      mockPty as IPty,
+      configService,
+      mockSelectionHandler,
+      new CommandLineBuffer(new PromptMarkerRegistry()),
+      new TerminalInputWriter(mockPty as IPty, model, lineEditor),
+    );
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockStateManager = {
@@ -74,13 +93,7 @@ describe("ClipboardHandler", () => {
     mockPty = { write: vi.fn(), executeLineEditorAction: vi.fn() };
     mockConfigService = makeConfigService();
     mockSelectionHandler = makeMockSelectionHandler();
-    handler = new ClipboardHandler(
-      clipboardStub,
-      mockStateManager as unknown as SessionModel,
-      mockPty as IPty,
-      mockConfigService,
-      mockSelectionHandler,
-    );
+    handler = createHandler(mockConfigService);
     mockTerminal = TerminalMockFactory.createTerminal();
   });
 
@@ -167,14 +180,7 @@ describe("ClipboardHandler", () => {
     it("flattens continuations and bracket-pastes real newlines when pasting multiline text over a selection", async () => {
       // POSIX shells provide the insert sanitizer via their shell definition.
       handler.dispose();
-      handler = new ClipboardHandler(
-        clipboardStub,
-        mockStateManager as unknown as SessionModel,
-        mockPty as IPty,
-        mockConfigService,
-        mockSelectionHandler,
-        { insertSanitizer: posixInsertSanitizer },
-      );
+      handler = createHandler(mockConfigService, { insertSanitizer: posixInsertSanitizer });
       handler.registerTerminal(mockTerminal);
       (mockTerminal as { cols: number }).cols = 80;
       (mockTerminal.buffer.active as { length: number }).length = 2;
@@ -211,14 +217,7 @@ describe("ClipboardHandler", () => {
         nativeActions: ["replaceCurrentInput"],
         bracketedPaste: false,
       };
-      handler = new ClipboardHandler(
-        clipboardStub,
-        mockStateManager as unknown as SessionModel,
-        mockPty as IPty,
-        mockConfigService,
-        mockSelectionHandler,
-        lineEditor,
-      );
+      handler = createHandler(mockConfigService, lineEditor);
       handler.registerTerminal(mockTerminal);
 
       (mockStateManager as { input: typeof mockStateManager.input }).input = {
@@ -254,14 +253,7 @@ describe("ClipboardHandler", () => {
       };
       // No capability handshake for this session (sessionCapabilities stays
       // undefined) — the static definition must not enable the native path.
-      handler = new ClipboardHandler(
-        clipboardStub,
-        mockStateManager as unknown as SessionModel,
-        mockPty as IPty,
-        mockConfigService,
-        mockSelectionHandler,
-        lineEditor,
-      );
+      handler = createHandler(mockConfigService, lineEditor);
       handler.registerTerminal(mockTerminal);
 
       (mockTerminal as { cols: number }).cols = 80;
@@ -309,13 +301,7 @@ describe("ClipboardHandler", () => {
     });
 
     it("does not trim trailing whitespace when trim_trailing_spaces is false", async () => {
-      handler = new ClipboardHandler(
-        clipboardStub,
-        mockStateManager as unknown as SessionModel,
-        mockPty as IPty,
-        makeConfigService({ trim_trailing_spaces: false }),
-        mockSelectionHandler,
-      );
+      handler = createHandler(makeConfigService({ trim_trailing_spaces: false }));
       handler.registerTerminal(mockTerminal);
       vi.mocked(mockSelectionHandler.getSelection).mockReturnValue("line one   \n");
 
@@ -325,13 +311,7 @@ describe("ClipboardHandler", () => {
     });
 
     it("clears selection after copy when clear_on_copy is true", async () => {
-      handler = new ClipboardHandler(
-        clipboardStub,
-        mockStateManager as unknown as SessionModel,
-        mockPty as IPty,
-        makeConfigService({ clear_on_copy: true }),
-        mockSelectionHandler,
-      );
+      handler = createHandler(makeConfigService({ clear_on_copy: true }));
       handler.registerTerminal(mockTerminal);
 
       void handler.copy();
@@ -367,13 +347,7 @@ describe("ClipboardHandler", () => {
       });
 
       it("does nothing when clipboard.write is deny", async () => {
-        handler = new ClipboardHandler(
-          clipboardStub,
-          mockStateManager as unknown as SessionModel,
-          mockPty as IPty,
-          makeConfigService({ write: "deny" }),
-          mockSelectionHandler,
-        );
+        handler = createHandler(makeConfigService({ write: "deny" }));
         vi.mocked(mockTerminal.parser.registerOscHandler).mockImplementation((code, oscHandler) => {
           if (code === 52) triggerOsc52 = oscHandler as (data: string) => boolean;
           return { dispose: vi.fn() };
@@ -406,13 +380,7 @@ describe("ClipboardHandler", () => {
       });
 
       it("responds with empty payload when clipboard.read is deny", async () => {
-        handler = new ClipboardHandler(
-          clipboardStub,
-          mockStateManager as unknown as SessionModel,
-          mockPty as IPty,
-          makeConfigService({ read: "deny" }),
-          mockSelectionHandler,
-        );
+        handler = createHandler(makeConfigService({ read: "deny" }));
         vi.mocked(mockTerminal.parser.registerOscHandler).mockImplementation((code, oscHandler) => {
           if (code === 52) triggerOsc52 = oscHandler as (data: string) => boolean;
           return { dispose: vi.fn() };

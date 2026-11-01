@@ -1,20 +1,14 @@
 import { Config } from "./models/config";
 
-interface DotStringOptions {
-  readonly defaultSettings?: Config;
-}
-
 /**
- * Writes the initial user config as a compact overrides file.
+ * Writes the initial user config as a compact overrides file: only what
+ * differs from the defaults.
  */
 export class InitialConfigOverridesWriter {
-  public static toDotString(settings: Config, options: DotStringOptions = {}): string {
-    const { defaultSettings } = options;
-    const effectiveSettings =
-      defaultSettings === undefined
-        ? settings
-        : InitialConfigOverridesWriter.extractOverrides(settings, defaultSettings);
-    const lines = InitialConfigOverridesWriter.toDotProperties(effectiveSettings);
+  public static toDotString(settings: Config, defaultSettings: Config): string {
+    const lines = InitialConfigOverridesWriter.toDotProperties(
+      InitialConfigOverridesWriter.extractOverrides(settings, defaultSettings),
+    );
     return lines.join("\n") + (lines.length ? "\n" : "");
   }
 

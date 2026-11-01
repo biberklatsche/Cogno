@@ -234,8 +234,11 @@ export class SessionModel {
     this.syncContext();
   }
 
-  /** The command that opened an inner context ended; the outer context is back. */
-  private popContextOnCommandEnd(): void {
+  /**
+   * The prompt is back: a command that opened an inner context (an `ssh`, a
+   * nested shell) ended, so the outer context is current again.
+   */
+  popContextOnCommandEnd(): void {
     if (this._contextStack.length <= 1) return;
     this._contextStack.pop();
     this._nextRevision++;
@@ -318,9 +321,13 @@ export class SessionModel {
     }
   }
 
-  /** The command's program title goes with it. */
+  /**
+   * The command's program title goes with it, and so does its start time: a
+   * prompt without a started command (Ctrl+C in PowerShell re-prompts) has
+   * no duration.
+   */
   endCommand(): void {
-    this.update({ isCommandRunning: false });
+    this.update({ isCommandRunning: false, commandStartTime: undefined });
     this.report({ type: "busyChanged", isBusy: false });
     this.report({ type: "titleChanged", title: undefined });
   }
@@ -342,11 +349,6 @@ export class SessionModel {
 
   get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {
     return this._state.value.sessionCapabilities;
-  }
-
-  /** Ends the current command's context if it opened one; then the prompt is the outer shell's. */
-  onPromptBeforeCommandEnd(): void {
-    this.popContextOnCommandEnd();
   }
 
   // ---- working directory ------------------------------------------------

@@ -30,9 +30,7 @@ export class HistoryDirectorySuggestor implements TerminalAutocompleteSuggestor 
 
     const result: AutocompleteSuggestion[] = [];
     for (const row of rows) {
-      const effectiveTokens =
-        tokens.length > 0 ? tokens : this.extractTokens(context.fragment, context.shellContext);
-      const score = HistoryDirectoryScorer.scoreRow(row, effectiveTokens, now);
+      const score = HistoryDirectoryScorer.scoreRow(row, tokens, now);
       if (score === null) continue;
 
       const relative = AutocompletePathSupport.toRelativePath(row.path, cwdNorm);

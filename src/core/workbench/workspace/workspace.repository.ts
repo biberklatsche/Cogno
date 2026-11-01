@@ -5,7 +5,7 @@ import {
   PersistedTabConfigurationContract,
   WorkspaceIdentifierContract,
 } from "@cogno/core/workbench/grid-layout";
-import { DatabaseAccess, DatabaseStatementContract } from "@cogno/platform";
+import { DatabaseAccess, DatabaseStatement } from "@cogno/platform";
 import { WorkspaceConfiguration, WorkspaceTerminalSession } from "./workspace.model";
 
 interface WorkspaceEntity {
@@ -83,33 +83,16 @@ export class WorkspaceRepository {
     }));
   }
 
-  async createWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
-    const now = Date.now();
-    await this.databaseAccess.batch([
-      {
-        sql: `INSERT INTO workspace (id, name, color, position, created_at, updated_at)
-              VALUES (?, ?, ?, ${NEXT_POSITION_SQL}, ?, ?)`,
-        params: [
-          workspaceConfiguration.id,
-          workspaceConfiguration.name,
-          workspaceConfiguration.color ?? null,
-          workspaceConfiguration.position ?? null,
-          now,
-          now,
-        ],
-      },
-      ...this.layoutStatements(workspaceConfiguration),
-    ]);
-  }
-
   /**
-   * Create the workspace row if missing, else update it (name/colour), and
-   * replace its layout - one transaction. Used by the autosave path, which must
-   * also persist the default workspace (no row on first launch). Position is set
-   * only on insert.
+   * Create the workspace row if missing, else update it (name, colour and, when
+   * given, position), and replace its tabs and grids - one transaction. Sessions
+   * are untouched. Serves the explicit save, the start-up repair and the
+   * autosave, which must also persist the default workspace (no row on first
+   * launch). A new row without a position is appended.
    */
   async upsertWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
     const now = Date.now();
+    const position = workspaceConfiguration.position ?? null;
     await this.databaseAccess.batch([
       {
         sql: `INSERT INTO workspace (id, name, color, position, created_at, updated_at)
@@ -117,35 +100,16 @@ export class WorkspaceRepository {
               ON CONFLICT (id) DO UPDATE SET
                   name = excluded.name,
                   color = excluded.color,
+                  position = COALESCE(?, position),
                   updated_at = excluded.updated_at`,
         params: [
           workspaceConfiguration.id,
           workspaceConfiguration.name,
           workspaceConfiguration.color ?? null,
-          workspaceConfiguration.position ?? null,
+          position,
           now,
           now,
-        ],
-      },
-      {
-        sql: "DELETE FROM workspace_tab WHERE workspace_id = ?",
-        params: [workspaceConfiguration.id],
-      },
-      ...this.layoutStatements(workspaceConfiguration),
-    ]);
-  }
-
-  /** Replaces name, colour, position, tabs and grids. Sessions are untouched. */
-  async updateWorkspace(workspaceConfiguration: WorkspaceConfiguration): Promise<void> {
-    await this.databaseAccess.batch([
-      {
-        sql: `UPDATE workspace SET name = ?, color = ?, position = ${NEXT_POSITION_SQL}, updated_at = ? WHERE id = ?`,
-        params: [
-          workspaceConfiguration.name,
-          workspaceConfiguration.color ?? null,
-          workspaceConfiguration.position ?? null,
-          Date.now(),
-          workspaceConfiguration.id,
+          position,
         ],
       },
       // Grids cascade from tabs.
@@ -250,9 +214,7 @@ export class WorkspaceRepository {
     }));
   }
 
-  private layoutStatements(
-    workspaceConfiguration: WorkspaceConfiguration,
-  ): DatabaseStatementContract[] {
+  private layoutStatements(workspaceConfiguration: WorkspaceConfiguration): DatabaseStatement[] {
     return [
       ...workspaceConfiguration.tabs.map((tabConfiguration, position) =>
         this.insertTabStatement(workspaceConfiguration.id, tabConfiguration, position),
@@ -267,7 +229,7 @@ export class WorkspaceRepository {
     workspaceId: WorkspaceIdentifierContract,
     tabConfiguration: PersistedTabConfigurationContract,
     position: number,
-  ): DatabaseStatementContract {
+  ): DatabaseStatement {
     return {
       sql: "INSERT INTO workspace_tab (workspace_id, tab_id, is_active, color, system_title, user_title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
       params: [
@@ -285,7 +247,7 @@ export class WorkspaceRepository {
   private insertGridStatement(
     workspaceId: WorkspaceIdentifierContract,
     gridConfiguration: PersistedGridConfigurationContract,
-  ): DatabaseStatementContract {
+  ): DatabaseStatement {
     return {
       sql: "INSERT INTO workspace_grid (workspace_id, tab_id, pane_json) VALUES (?, ?, ?)",
       params: [workspaceId, gridConfiguration.tabId, JSON.stringify(gridConfiguration.pane)],

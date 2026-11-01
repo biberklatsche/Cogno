@@ -234,11 +234,6 @@ export class SessionCommandLog {
     this.write((writer) => writer.confirmLivePattern(originalCommands));
   }
 
-  deleteCommandExecution(commandRaw: string, cwdRaw: string): void {
-    if (!commandRaw?.trim() || !cwdRaw?.trim()) return;
-    this.write((writer) => writer.deleteCommandExecution(commandRaw, cwdRaw));
-  }
-
   /**
    * A failed read answers empty, like a missing log. Autocomplete reads on every
    * keystroke, so a failing database is reported once, not once per key.

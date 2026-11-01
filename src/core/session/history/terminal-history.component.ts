@@ -17,18 +17,7 @@ import {
 import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
 import { TimeAgoPipe } from "@cogno/core/session/history/time-ago.pipe";
 import { StartEllipsisDirective, TooltipDirective } from "@cogno/shared/ui";
-import { TerminalHistoryService } from "./terminal-history.service";
-
-const INITIAL_VIEW_STATE = {
-  visible: false,
-  x: 0,
-  y: 0,
-  width: 280,
-  placement: "below" as const,
-  selectedIndex: null,
-  entries: [],
-  scope: "global" as const,
-};
+import { INITIAL_VIEW_STATE, TerminalHistoryService } from "./terminal-history.service";
 
 @Component({
   selector: "app-terminal-history",

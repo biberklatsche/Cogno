@@ -6,12 +6,16 @@ export type CommandMenuBlockRange = {
   endBufferLine: number;
 };
 
-type CommandMenuItemsOptions = {
-  commandText?: string;
+/** The menu entries that need the command's block in the buffer. */
+export type CommandBlockMenuActions = {
   getCommandOutput?: () => string;
   getBlockRange?: () => CommandMenuBlockRange;
   scrollToCommandTop?: () => void;
   scrollToCommandBottom?: () => void;
+};
+
+type CommandMenuItemsOptions = CommandBlockMenuActions & {
+  commandText?: string;
   /** Present when there is somewhere to filter to; the menu only asks. */
   onFilterBlock?: (range: CommandMenuBlockRange) => void;
   clipboard: ClipboardAccess;

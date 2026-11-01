@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ConfigFileService } from "../_shared/config-file.service";
+import { isCognoHookCommand } from "../_shared/hook-command.builder";
 import { GEMINI_CONFIG, type GeminiSettings } from "./gemini.config";
 import { GeminiProvider } from "./gemini.provider";
 
@@ -16,8 +17,8 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
     ensureDir: async (path: string) => {
       dirs.add(path);
     },
-    homeDir: async () => "/home",
-    joinPath: async (...parts: string[]) => parts.join("/"),
+    configDir: async (subDir: string) => `/home/${subDir}`,
+    configPath: async (subDir: string, fileName: string) => `/home/${subDir}/${fileName}`,
   } as unknown as ConfigFileService;
   return { service, files };
 }
@@ -28,7 +29,7 @@ const cognoHooksIn = (settings: GeminiSettings) =>
   Object.values(settings.hooks ?? {})
     .flat()
     .flatMap((group) => group.hooks)
-    .filter((hook) => GEMINI_CONFIG.isCognoCommand(hook.command));
+    .filter((hook) => isCognoHookCommand(hook.command));
 
 describe("GeminiProvider", () => {
   let files: Map<string, unknown>;

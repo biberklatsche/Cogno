@@ -6,7 +6,11 @@ import {
 } from "@cogno/features/coding-agent/ports";
 import { AgentStatus } from "../../agent-status";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
+import {
+  buildHookCommand,
+  isCognoHookCommand,
+  isCurrentHookCommand,
+} from "../_shared/hook-command.builder";
 import {
   HookMapFormat,
   hookMapState,
@@ -68,15 +72,15 @@ export class GeminiProvider implements ICodingAgentProvider {
       }),
       isCurrent: (hook, entry) =>
         isCurrentHookCommand(hook.command, entry.status, this.id, entry.eventName),
-      isCogno: (hook) => GEMINI_CONFIG.isCognoCommand(hook.command),
+      isCogno: (hook) => isCognoHookCommand(hook.command),
     };
   }
 
-  private async configDir(): Promise<string> {
-    return this.configFile.joinPath(await this.configFile.homeDir(), GEMINI_CONFIG.configSubDir);
+  private configDir(): Promise<string> {
+    return this.configFile.configDir(GEMINI_CONFIG.configSubDir);
   }
 
-  private async configPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), GEMINI_CONFIG.configFileName);
+  private configPath(): Promise<string> {
+    return this.configFile.configPath(GEMINI_CONFIG.configSubDir, GEMINI_CONFIG.configFileName);
   }
 }

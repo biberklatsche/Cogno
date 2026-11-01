@@ -1,7 +1,5 @@
 import { CommandSpec, ShellConstraint } from "./spec.types";
 
-type MaybePromise<T> = T | Promise<T>;
-
 export type CommandShellConstraints = {
   shells?: ShellConstraint[];
   excludeShells?: ShellConstraint[];
@@ -9,7 +7,7 @@ export type CommandShellConstraints = {
 };
 
 export interface CommandSpecSource {
-  commandNames(): MaybePromise<string[]>;
-  get(command: string): MaybePromise<CommandSpec | undefined>;
-  getConstraints(command: string): MaybePromise<CommandShellConstraints | undefined>;
+  commandNames(): Promise<string[]>;
+  get(command: string): Promise<CommandSpec | undefined>;
+  getConstraints(command: string): Promise<CommandShellConstraints | undefined>;
 }

@@ -1,5 +1,4 @@
 import { AgentStatus } from "../../agent-status";
-import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
 
 export type GeminiHookEntry = { readonly eventName: string; readonly status: AgentStatus };
 
@@ -47,8 +46,4 @@ export const GEMINI_CONFIG = {
     { eventName: GEMINI_HOOK_EVENT.preCompress, status: "working" as AgentStatus },
     { eventName: GEMINI_HOOK_EVENT.notification, status: "question" as AgentStatus },
   ] as ReadonlyArray<GeminiHookEntry>,
-
-  isCognoCommand(command: string): boolean {
-    return command.includes(CODING_AGENT_STATUS_ACTION) && command.includes("COGNO_PORT");
-  },
 } as const;

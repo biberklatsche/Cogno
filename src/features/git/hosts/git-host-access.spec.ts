@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { GitAccessSituation } from "./_shared/git-host";
 import { accessOptions, accessSummary } from "./git-host-access";
-import { isGitHostId, knownGitHost } from "./git-hosts";
+import { GitAccessSituation, isGitHostId, knownGitHost } from "./git-hosts";
 
 const github: GitAccessSituation = {
   host: "github.com",

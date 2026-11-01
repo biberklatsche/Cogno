@@ -1,5 +1,5 @@
+import { hexColorSchema } from "@cogno/core/api/contributions";
 import { z } from "zod";
-import { HexColorSchema } from "./shared";
 
 export const CursorSchema = z.strictObject({
   width: z
@@ -18,10 +18,10 @@ export const CursorSchema = z.strictObject({
     .enum(["outline", "block", "bar", "underline", "none"])
     .optional()
     .describe("Cursor shape while the terminal does not have focus."),
-  color: HexColorSchema.optional().describe("Cursor color."),
-  accent_color: HexColorSchema.optional().describe(
-    "Color of the character underneath a block cursor.",
-  ),
+  color: hexColorSchema.optional().describe("Cursor color."),
+  accent_color: hexColorSchema
+    .optional()
+    .describe("Color of the character underneath a block cursor."),
   alt_click_moves_cursor: z
     .boolean()
     .optional()

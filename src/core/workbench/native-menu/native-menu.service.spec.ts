@@ -68,9 +68,6 @@ describe("NativeMenuService", () => {
       get diagnostics$(): never {
         throw new Error("not implemented");
       },
-      get loaded$(): never {
-        throw new Error("not implemented");
-      },
       load: () => Promise.resolve(),
       reload: () => Promise.resolve(),
       getShellProfileOrDefault: vi.fn(),
@@ -100,6 +97,14 @@ describe("NativeMenuService", () => {
           actionName: "open_workspace",
           configPath: "feature.workspace",
         },
+        {
+          id: "git",
+          title: "Git",
+          order: 3,
+          icon: "mdiGit",
+          actionName: "open_git",
+          configPath: "feature.git",
+        },
       ]),
     };
 
@@ -127,7 +132,10 @@ describe("NativeMenuService", () => {
     const newItemCalls = vi.mocked(tauriMenuStub.newItem).mock.calls;
     const workspaceCall = newItemCalls.find((call) => call[0].id === "open_workspace");
     const aiCall = newItemCalls.find((call) => call[0].id === "open_ai");
+    const gitCall = newItemCalls.find((call) => call[0].id === "open_git");
 
+    // A feature the config says nothing about is on.
+    expect(gitCall?.[0]).toEqual(expect.objectContaining({ text: "Git", enabled: true }));
     expect(workspaceCall?.[0]).toEqual(
       expect.objectContaining({
         text: "Workspace",
@@ -160,24 +168,8 @@ describe("NativeMenuService", () => {
     );
   });
 
-  it("falls back to a plain action event when the definition is missing and reports feature modes", async () => {
+  it("falls back to a plain action event when the definition is missing", async () => {
     vi.mocked(keybindService.getActionDefinition).mockReturnValue(undefined as never);
-
-    expect(
-      (
-        nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }
-      ).getFeatureMode("feature.workspace"),
-    ).toBe("on");
-    expect(
-      (
-        nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }
-      ).getFeatureMode("feature.ai"),
-    ).toBe("off");
-    expect(
-      (
-        nativeMenuService as unknown as { getFeatureMode: (configPath: string) => unknown }
-      ).getFeatureMode("feature.missing"),
-    ).toBeUndefined();
 
     const publishedEvents: unknown[] = [];
     vi.spyOn(appBus, "publish").mockImplementation((event) => {

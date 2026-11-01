@@ -1,5 +1,4 @@
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
-import { defaultSettings } from "@cogno/core/infrastructure/config/models/default-config-values";
 import { Fs } from "@cogno/platform/fs";
 import { Logger } from "@cogno/platform/logger";
 import { Paths } from "@cogno/platform/path";
@@ -266,17 +265,6 @@ describe("StyleService", () => {
   });
 
   describe("Edge Cases", () => {
-    it("should handle missing menu config by falling back to the default opacity", () => {
-      const configNoMenu = { ...baseConfig, menu: undefined };
-      _styleService = new StyleService(configService, destroyRef, pathsStub, fs);
-      configService.setConfig(configNoMenu);
-
-      expect(document.documentElement.style.setProperty).toHaveBeenCalledWith(
-        "--menu-opacity-ct",
-        `${defaultSettings.menu.opacity}%`,
-      );
-    });
-
     it("should handle zero opacity correctly", () => {
       const configZeroOpacity = { ...baseConfig, menu: { opacity: 0 } };
       _styleService = new StyleService(configService, destroyRef, pathsStub, fs);

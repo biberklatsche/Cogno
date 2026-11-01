@@ -54,7 +54,7 @@ describe("ErrorReportingRuntimeService", () => {
       expect.objectContaining({
         type: "Notification",
         payload: expect.objectContaining({
-          header: "Behandelte Exception",
+          header: "Handled exception",
           source: "unit-test",
           type: "error",
         }),

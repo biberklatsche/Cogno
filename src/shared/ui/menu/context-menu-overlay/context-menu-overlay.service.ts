@@ -5,7 +5,6 @@ import {
   EnvironmentInjector,
   Injectable,
 } from "@angular/core";
-import { ContextMenuOverlayComponent } from "../../context-menu-item";
 import { ContextMenuComponent } from "./context-menu.component";
 
 export type Point = { x: number; y: number };
@@ -23,7 +22,7 @@ export interface ContextMenuOverlayRef {
 export class ContextMenuOverlayService {
   private current?: {
     host: HTMLDivElement;
-    compRef: ComponentRef<unknown>;
+    compRef: ComponentRef<ContextMenuComponent>;
     removeOutsideListener: () => void;
     removeKeyListener: () => void;
     removeScrollResizeListener: () => void;
@@ -66,7 +65,7 @@ export class ContextMenuOverlayService {
       hostElement: host,
     });
 
-    const instance = compRef.instance as ContextMenuOverlayComponent;
+    const instance = compRef.instance;
     instance.close = () => this.close();
 
     if (inputs) {

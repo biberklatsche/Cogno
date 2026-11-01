@@ -70,29 +70,12 @@ export class BinaryTree<Data> {
     return this.getNextLeafInternal(key, -1);
   }
 
-  private getNextLeafInternal(key: string, counter: 1 | -1): BinaryNode<Data> | undefined {
-    const bits = key.replace(/l/g, "0").replace(/r/g, "1");
-    let number = Number.parseInt(bits, 2);
-    number += counter;
-    if (number < 0) {
-      number = Number.MAX_SAFE_INTEGER;
-    }
-    let bitsResult = number.toString(2);
-    if (bitsResult.length > key.length) {
-      bitsResult = bitsResult.substring(bitsResult.length - key.length, bitsResult.length);
-    }
-    while (bitsResult.length < key.length) {
-      bitsResult = `0${bitsResult}`;
-    }
-    const possibleKey = bitsResult.replace(/0/g, "l").replace(/1/g, "r");
-    let node = BinaryTree.getNode(this._root, possibleKey);
-    while (node === undefined) {
-      node = BinaryTree.getNode(this._root, possibleKey.substring(0, possibleKey.length - 1));
-    }
-    while (!node?.isLeaf) {
-      node = counter === 1 ? node?.left : node?.right;
-    }
-    return node;
+  /** Neighbour of `key` in left-to-right leaf order, wrapping at both ends. */
+  private getNextLeafInternal(key: string, direction: 1 | -1): BinaryNode<Data> | undefined {
+    const leaves = this.find((node) => node.isLeaf);
+    const index = leaves.findIndex((leaf) => leaf.key === key);
+    if (index === -1) return undefined;
+    return leaves[(index + direction + leaves.length) % leaves.length];
   }
 }
 

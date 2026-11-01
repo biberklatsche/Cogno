@@ -1,4 +1,4 @@
-import { CommandRunnerContract } from "@cogno/core/api/command-runner-port";
+import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import {
   CommandListSpecProviderParams,
   SpecProvidedSuggestion,
@@ -20,7 +20,7 @@ export class CommandListSpecProvider implements SpecSuggestionProvider {
   private readonly cache = new Map<string, CacheEntry>();
   private readonly inFlight = new Map<string, Promise<ReadonlyArray<SpecProvidedSuggestion>>>();
 
-  constructor(private readonly commandRunner: CommandRunnerContract) {}
+  constructor(private readonly commandRunner: CommandRunner) {}
 
   async suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
     const params = this.readParams(context);

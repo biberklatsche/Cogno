@@ -47,8 +47,6 @@ describe("command palette behaviour", () => {
     const sideMenuLifecycle = lifecycle.create({
       close: closeMock,
       registerKeybindListener: registerKeybindListenerMock,
-      unregisterKeybindListener: vi.fn(),
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     });
     sideMenuLifecycle.onOpen?.();
@@ -186,14 +184,6 @@ describe("command palette behaviour", () => {
       expect(selectedId()).toBe("copy");
     });
 
-    it("selects the first entry again when the side menu reports open", () => {
-      press("ArrowDown");
-
-      service.handleSideMenuOpen();
-
-      expect(selectedId()).toBe("copy");
-    });
-
     it("moves down and up one row", () => {
       press("ArrowDown");
       expect(selectedId()).toBe("open_command_palette");
@@ -244,7 +234,7 @@ describe("command palette behaviour", () => {
     });
   });
 
-  describe("Enter, click and Escape", () => {
+  describe("Enter and click", () => {
     it("closes on Enter and then dispatches the entry that was selected", async () => {
       press("ArrowDown");
 
@@ -277,14 +267,6 @@ describe("command palette behaviour", () => {
       expect(dispatchActionMock).toHaveBeenCalledWith({ actionName: "split_right" });
       expect(closeMock).not.toHaveBeenCalled();
     });
-
-    it("closes on Escape without dispatching", async () => {
-      press("Escape");
-      await Promise.resolve();
-
-      expect(closeMock).toHaveBeenCalledTimes(1);
-      expect(dispatchActionMock).not.toHaveBeenCalled();
-    });
   });
 
   describe("close", () => {
@@ -293,11 +275,6 @@ describe("command palette behaviour", () => {
       press("ArrowDown");
 
       service.handleSideMenuClose();
-
-      expect(labels()).toHaveLength(4);
-      expect(selectedId()).toBe("copy");
-
-      service.handleSideMenuOpen();
 
       expect(labels()).toHaveLength(4);
       expect(selectedId()).toBe("copy");

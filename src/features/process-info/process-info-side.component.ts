@@ -17,7 +17,6 @@ type ProcessTreeNode = {
   template: `
     <div class="process-panel">
       <header class="panel-header">
-        <span class="panel-title"></span>
         <button
           type="button"
           class="button icon-button"
@@ -37,37 +36,14 @@ type ProcessTreeNode = {
         <div class="status">Loading process information...</div>
       } @else if (hasError() && !snapshot()) {
         <div class="status">Failed to load process information.</div>
-      } @else if (snapshot()) {
+      } @else if (rootProcessNode(); as rootProcessNode) {
         <div class="section">
           <div class="section-title">Process</div>
-          <div class="row">
-            <div class="label">Name</div>
-            <div class="value">{{ rootProcessDetails()?.name ?? "-" }}</div>
-          </div>
-          <div class="row">
-            <div class="label">PID</div>
-            <div class="value">{{ rootProcessDetails()?.processId ?? "-" }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Status</div>
-            <div class="value">{{ rootProcessDetails()?.status ?? "-" }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Memory</div>
-            <div class="value">{{ formatBytes(rootProcessDetails()?.memoryBytes) }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Memory (Total)</div>
-            <div class="value">{{ formatBytes(totalMemoryBytes()) }}</div>
-          </div>
-          <div class="row">
-            <div class="label">CWD</div>
-            <div class="value">{{ rootProcessDetails()?.currentWorkingDirectory ?? "-" }}</div>
-          </div>
-          <div class="row">
-            <div class="label">Runtime</div>
-            <div class="value">{{ formatSeconds(rootProcessDetails()?.runTimeSeconds) }}</div>
-          </div>
+          <ul class="process-tree">
+            <ng-container
+              *ngTemplateOutlet="processTreeNodeTemplate; context: { $implicit: rootProcessNode, totalMemoryBytes: totalMemoryBytes() }"
+            ></ng-container>
+          </ul>
         </div>
 
         <div class="section">
@@ -87,7 +63,8 @@ type ProcessTreeNode = {
       }
     </div>
 
-    <ng-template #processTreeNodeTemplate let-processTreeNode>
+    <!-- One process; the root also gets the memory of the whole tree. -->
+    <ng-template #processTreeNodeTemplate let-processTreeNode let-totalMemoryBytes="totalMemoryBytes">
       <li class="process-node">
         <div class="row process-name-row">
           <div class="node-toggle-cell">
@@ -103,20 +80,26 @@ type ProcessTreeNode = {
             }
           </div>
           <div class="label">Name</div>
-          <div class="value">{{ processTreeNode.processDetails.name ?? "-" }}</div>
+          <div class="value">{{ processTreeNode.processDetails.name }}</div>
         </div>
         <div class="row">
           <div class="label">PID</div>
-          <div class="value">{{ processTreeNode.processDetails.processId ?? "-" }}</div>
+          <div class="value">{{ processTreeNode.processDetails.processId }}</div>
         </div>
         <div class="row">
           <div class="label">Status</div>
-          <div class="value">{{ processTreeNode.processDetails.status ?? "-" }}</div>
+          <div class="value">{{ processTreeNode.processDetails.status }}</div>
         </div>
         <div class="row">
           <div class="label">Memory</div>
           <div class="value">{{ formatBytes(processTreeNode.processDetails.memoryBytes) }}</div>
         </div>
+        @if (totalMemoryBytes !== undefined) {
+          <div class="row">
+            <div class="label">Memory (Total)</div>
+            <div class="value">{{ formatBytes(totalMemoryBytes) }}</div>
+          </div>
+        }
         <div class="row">
           <div class="label">CWD</div>
           <div class="value">{{ processTreeNode.processDetails.currentWorkingDirectory ?? "-" }}</div>
@@ -154,11 +137,9 @@ type ProcessTreeNode = {
     .panel-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       padding: 0.25rem 0;
     }
-
-
 
     .icon-button.is-active {
       opacity: 1;
@@ -244,9 +225,11 @@ export class ProcessInfoSideComponent {
 
   private readonly collapsedProcessIdentifiers = signal<Set<number>>(new Set<number>());
 
-  readonly rootProcessDetails = computed<ProcessDetails | null>(
-    () => this.snapshot()?.rootProcess ?? null,
-  );
+  /** The root as a node of its own; its children are listed in their own section. */
+  readonly rootProcessNode = computed<ProcessTreeNode | null>(() => {
+    const rootProcess = this.snapshot()?.rootProcess;
+    return rootProcess ? { processDetails: rootProcess, childProcessNodes: [] } : null;
+  });
 
   readonly rootChildProcessNodes = computed<ProcessTreeNode[]>(() => {
     const processTreeSnapshot = this.snapshot();
@@ -256,17 +239,15 @@ export class ProcessInfoSideComponent {
     return buildRootChildProcessNodes(processTreeSnapshot);
   });
 
-  readonly totalMemoryBytes = computed<number | null>(() => {
+  readonly totalMemoryBytes = computed<number | undefined>(() => {
     const processTreeSnapshot = this.snapshot();
     if (processTreeSnapshot === null) {
-      return null;
+      return undefined;
     }
-    const rootMemoryBytes = processTreeSnapshot.rootProcess.memoryBytes ?? 0;
-    const descendantsMemoryBytes = processTreeSnapshot.descendants.reduce(
-      (sum, processDetails) => sum + (processDetails.memoryBytes ?? 0),
-      0,
+    return processTreeSnapshot.descendants.reduce(
+      (sum, processDetails) => sum + processDetails.memoryBytes,
+      processTreeSnapshot.rootProcess.memoryBytes,
     );
-    return rootMemoryBytes + descendantsMemoryBytes;
   });
 
   constructor(private readonly processInfo: ProcessInfoService) {}

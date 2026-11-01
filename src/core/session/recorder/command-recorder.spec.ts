@@ -36,7 +36,6 @@ type CommandLogRepositoryDouble = {
   upsertCommandTransition: ReturnType<
     typeof vi.fn<CommandLogRepository["upsertCommandTransition"]>
   >;
-  deleteCommandExecution: ReturnType<typeof vi.fn<CommandLogRepository["deleteCommandExecution"]>>;
   searchCommandPatterns: ReturnType<typeof vi.fn<CommandLogRepository["searchCommandPatterns"]>>;
   confirmLivePattern: ReturnType<typeof vi.fn<CommandLogRepository["confirmLivePattern"]>>;
   markCommandPatternSelected: ReturnType<
@@ -49,7 +48,6 @@ function createRepositoryDouble(): CommandLogRepositoryDouble {
     upsertWorkingDirectory: vi.fn().mockResolvedValue(undefined),
     upsertCommandExecution: vi.fn().mockResolvedValue(undefined),
     upsertCommandTransition: vi.fn().mockResolvedValue(undefined),
-    deleteCommandExecution: vi.fn().mockResolvedValue(undefined),
     searchCommandPatterns: vi.fn().mockResolvedValue([]),
     confirmLivePattern: vi.fn().mockResolvedValue(undefined),
     markCommandPatternSelected: vi.fn().mockResolvedValue(undefined),
@@ -327,19 +325,6 @@ describe("CommandRecorder", () => {
     await flushActions();
 
     expect(repositoryDouble.markCommandPatternSelected).toHaveBeenCalledWith("pattern-a");
-  });
-
-  it("deletes command executions from history without touching pattern rows", async () => {
-    const repositoryDouble = createRepositoryDouble();
-    const { commandLog } = await createService(repositoryDouble);
-
-    commandLog.deleteCommandExecution('git commit -am "fix bug"', "/tmp");
-    await flushActions();
-
-    expect(repositoryDouble.deleteCommandExecution).toHaveBeenCalledWith(
-      'git commit -am "fix bug"',
-      "/tmp",
-    );
   });
 
   it("passes the configured max_entries through to the repository", async () => {

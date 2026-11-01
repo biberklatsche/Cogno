@@ -2,7 +2,7 @@ import { NgTemplateOutlet } from "@angular/common";
 import { Component, Input, TemplateRef } from "@angular/core";
 import { LetterBadgeComponent } from "../../common/letter-badge/letter-badge.component";
 import { ToggleSwitchComponent } from "../../common/toggle-switch/toggle-switch.component";
-import { ContextMenuItem, ContextMenuOverlayComponent } from "../../context-menu-item";
+import { ContextMenuItem } from "../../context-menu-item";
 import { IconComponent } from "../../icons/icon/icon.component";
 
 @Component({
@@ -180,7 +180,7 @@ import { IconComponent } from "../../icons/icon/icon.component";
         `,
   ],
 })
-export class ContextMenuComponent implements ContextMenuOverlayComponent {
+export class ContextMenuComponent {
   @Input() items: ContextMenuItem[] = [];
   @Input() close?: () => void;
   @Input() customItemTemplate?: TemplateRef<{ $implicit: ContextMenuItem }>;

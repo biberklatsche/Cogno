@@ -1,5 +1,4 @@
 import { AgentStatus } from "../../agent-status";
-import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
 import { CLAUDE_STYLE_HOOK_EVENT } from "../_shared/hook-events";
 
 export type CodexHookEntry = {
@@ -41,10 +40,4 @@ export const CODEX_CONFIG = {
     { eventName: CLAUDE_STYLE_HOOK_EVENT.postCompact, status: "working" as AgentStatus },
     { eventName: CLAUDE_STYLE_HOOK_EVENT.stop, status: "ready" as AgentStatus },
   ] as ReadonlyArray<CodexHookEntry>,
-
-  isCognoCommand(command?: string, commandWindows?: string): boolean {
-    const check = (cmd: string) =>
-      cmd.includes("COGNO_PORT") && cmd.includes(CODING_AGENT_STATUS_ACTION);
-    return (command ? check(command) : false) || (commandWindows ? check(commandWindows) : false);
-  },
 } as const;

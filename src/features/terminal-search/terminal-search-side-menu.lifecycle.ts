@@ -10,9 +10,7 @@ import { TerminalSearchService } from "./terminal-search.service";
 export class TerminalSearchSideMenuLifecycle {
   constructor(private readonly terminalSearchService: TerminalSearchService) {}
 
-  create(
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
-  ): SideMenuFeatureLifecycleContract {
+  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract): SideMenuFeatureLifecycleContract {
     return {
       onModeChange: (mode) => {
         if (mode === "off") {
@@ -26,12 +24,8 @@ export class TerminalSearchSideMenuLifecycle {
       onClose: () => this.terminalSearchService.handleSideMenuClose(),
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
-          ["Escape", "Enter", "ArrowDown", "ArrowUp"],
+          ["Enter", "ArrowDown", "ArrowUp"],
           (keyboardEvent: KeyboardEvent) => {
-            if (keyboardEvent.key === "Escape") {
-              sideMenuFeatureHandle.close();
-              return;
-            }
             if (keyboardEvent.key === "Enter") {
               if (!this.terminalSearchService.revealSelectedSearchResult()) {
                 this.terminalSearchService.repeatSearch();
@@ -43,7 +37,6 @@ export class TerminalSearchSideMenuLifecycle {
         );
         focusSideMenuAutofocusElement();
       },
-      onBlur: () => sideMenuFeatureHandle.unregisterKeybindListener(),
     };
   }
 }

@@ -168,9 +168,9 @@ export class GitToolbarComponent {
   readonly toggle = (visible: boolean) => !visible;
 
   /** The running network operation shows as a spinner in its own button. */
-  readonly pulling = computed(() => /^(Pull|Fetch)/.test(this.operations.busy() ?? ""));
-  readonly pushing = computed(() => /^Push/.test(this.operations.busy() ?? ""));
-  readonly cloning = computed(() => /^Clon/.test(this.operations.busy() ?? ""));
+  readonly pulling = computed(() => this.operations.busy()?.kind === "pull");
+  readonly pushing = computed(() => this.operations.busy()?.kind === "push");
+  readonly cloning = computed(() => this.operations.busy()?.kind === "clone");
 
   constructor(
     readonly repository: GitRepositoryService,

@@ -3,13 +3,8 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { IPty } from "../pty";
 import { IFitHandler, ITerminalHandler } from "../terminal-handler";
+import { isValidTerminalDimensions, TerminalDimensions } from "../terminal-machine.events";
 import type { TerminalMachineState } from "../terminal-machine.state";
-
-export type TerminalViewportDimensions = { rows: number; cols: number };
-type NullableTerminalViewportDimensions = {
-  rows: number | null | undefined;
-  cols: number | null | undefined;
-};
 
 type TerminalCoreWithCharSize = {
   _core?: {
@@ -66,7 +61,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
 
   public resize() {
     if (this._terminal === undefined || this._fitAddon === undefined) return;
-    const currentDimensions: TerminalViewportDimensions = {
+    const currentDimensions: TerminalDimensions = {
       cols: this._terminal.cols,
       rows: this._terminal.rows,
     };
@@ -80,7 +75,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
     const viewportHeight = this._terminalContainer.clientHeight;
 
     if (
-      this.isValidDimensions(newRendererDimensions) &&
+      isValidTerminalDimensions(newRendererDimensions) &&
       !this.areDimensionsEqual(newRendererDimensions, currentDimensions)
     ) {
       this._pty.resize(newRendererDimensions);
@@ -109,28 +104,12 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
   fitTerminalWithoutPty(): void {
     if (!this._terminal || !this._fitAddon) return;
     const dimensions = this._fitAddon.proposeDimensions();
-    if (dimensions && this.isValidDimensions(dimensions)) {
+    if (dimensions && isValidTerminalDimensions(dimensions)) {
       this._fitAddon.fit();
     }
   }
 
-  private areDimensionsEqual(a?: TerminalViewportDimensions, b?: TerminalViewportDimensions) {
+  private areDimensionsEqual(a?: TerminalDimensions, b?: TerminalDimensions) {
     return a?.rows === b?.rows && a?.cols === b?.cols;
-  }
-
-  private isValidDimensions(
-    dimensions: NullableTerminalViewportDimensions,
-  ): dimensions is TerminalViewportDimensions {
-    const { cols, rows } = dimensions;
-    return (
-      Number.isInteger(cols) &&
-      Number.isInteger(rows) &&
-      cols !== null &&
-      cols !== undefined &&
-      rows !== null &&
-      rows !== undefined &&
-      cols > 0 &&
-      rows > 0
-    );
   }
 }

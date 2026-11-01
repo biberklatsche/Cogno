@@ -24,7 +24,7 @@ describe("InitialConfigOverridesWriter", () => {
     if (!curr.scrollbar) curr.scrollbar = {};
     curr.scrollbar.scrollback_lines = 1234;
 
-    const text = InitialConfigOverridesWriter.toDotString(curr);
+    const text = InitialConfigOverridesWriter.toDotString(curr, {} as Config);
     const lines = text.trimEnd().split("\n");
 
     // Ensure no comment lines are present
@@ -59,9 +59,7 @@ describe("InitialConfigOverridesWriter", () => {
       },
     };
 
-    const text = InitialConfigOverridesWriter.toDotString(currentConfig, {
-      defaultSettings: DEFAULTS,
-    });
+    const text = InitialConfigOverridesWriter.toDotString(currentConfig, DEFAULTS);
 
     expect(text).toContain("scrollbar.scrollback_lines = 1234");
     expect(text).toContain("shell.default = zsh");
@@ -71,9 +69,7 @@ describe("InitialConfigOverridesWriter", () => {
   it("writes nothing when config matches defaults exactly", () => {
     const currentConfig: Config = JSON.parse(JSON.stringify(DEFAULTS));
 
-    const text = InitialConfigOverridesWriter.toDotString(currentConfig, {
-      defaultSettings: DEFAULTS,
-    });
+    const text = InitialConfigOverridesWriter.toDotString(currentConfig, DEFAULTS);
 
     expect(text).toBe("");
   });
@@ -82,7 +78,7 @@ describe("InitialConfigOverridesWriter", () => {
     const config = {
       some_array: [1, 2, "three"],
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config);
+    const text = InitialConfigOverridesWriter.toDotString(config, {} as Config);
     expect(text).toContain("some_array = [1,2,three]");
   });
 
@@ -95,7 +91,7 @@ describe("InitialConfigOverridesWriter", () => {
         d: 2,
       },
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config);
+    const text = InitialConfigOverridesWriter.toDotString(config, {} as Config);
     const lines = text.trim().split("\n");
     expect(lines).toContain("a.b.c = 1");
     expect(lines).toContain("a.d = 2");
@@ -115,7 +111,7 @@ describe("InitialConfigOverridesWriter", () => {
     const config = {
       keybind: ["a=b", "c=d"],
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config);
+    const text = InitialConfigOverridesWriter.toDotString(config, {} as Config);
     expect(text).toContain("keybind = a=b\nkeybind = c=d");
   });
 
@@ -127,7 +123,7 @@ describe("InitialConfigOverridesWriter", () => {
         },
       },
     } as any;
-    const text = InitialConfigOverridesWriter.toDotString(config);
+    const text = InitialConfigOverridesWriter.toDotString(config, {} as Config);
     expect(text).toContain("terminal.progress_bar.enabled = false");
   });
 });

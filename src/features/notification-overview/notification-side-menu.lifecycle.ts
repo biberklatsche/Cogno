@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { EffectRef, effect, Injectable, Injector } from "@angular/core";
 import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
@@ -10,26 +10,33 @@ export class NotificationSideMenuLifecycle {
   constructor(private readonly notificationCenterStateService: NotificationCenterStateService) {}
 
   create(
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+    injector: Injector,
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract,
   ): SideMenuFeatureLifecycleContract {
-    this.notificationCenterStateService.setSideMenuIconUpdater((iconName) => {
-      sideMenuFeatureHandle.updateIcon(iconName);
-    });
+    let badgeEffect: EffectRef | undefined;
 
     return {
       onModeChange: (mode) => {
-        this.notificationCenterStateService.handleSideMenuModeChange(mode);
-      },
-      onOpen: () => {
-        this.notificationCenterStateService.handleSideMenuOpen();
-      },
-      onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () =>
-          sideMenuFeatureHandle.close(),
+        badgeEffect?.destroy();
+        badgeEffect = undefined;
+        if (mode !== "on") {
+          this.notificationCenterStateService.stop();
+          sideMenuFeatureHandle.updateBadgeColor(undefined);
+          return;
+        }
+        this.notificationCenterStateService.start();
+        // The dot says something arrived, even while the panel is closed.
+        badgeEffect = effect(
+          () => {
+            sideMenuFeatureHandle.updateBadgeColor(
+              this.notificationCenterStateService.unread() ? "var(--highlight-color)" : undefined,
+            );
+          },
+          { injector },
         );
       },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
+      onOpen: () => {
+        this.notificationCenterStateService.markRead();
       },
     };
   }

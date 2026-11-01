@@ -48,7 +48,7 @@ export class ConfigBootstrapAdapter {
 
     // Every load announces itself on the bus; every load but the first one -
     // watch or `load_config` - also shows a toast, as it did before the split.
-    this.config.loaded$.pipe(takeUntilDestroyed(destroyRef)).subscribe((config) => {
+    this.config.config$.pipe(takeUntilDestroyed(destroyRef)).subscribe((config) => {
       // The diagnostics of this load follow right after; they are reported together.
       this.keybindDiagnostics = this.unknownKeybindActions(config.keybind ?? []);
       this.appBus.publish({ type: "ConfigLoaded" });

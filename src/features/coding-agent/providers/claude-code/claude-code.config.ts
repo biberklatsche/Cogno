@@ -1,5 +1,4 @@
 import { AgentStatus } from "../../agent-status";
-import { CODING_AGENT_STATUS_ACTION } from "../_shared/hook-command.builder";
 import { CLAUDE_STYLE_HOOK_EVENT } from "../_shared/hook-events";
 
 export type ClaudeHookEntry = {
@@ -54,8 +53,4 @@ export const CLAUDE_CODE_CONFIG = {
     // Read for the model only; its status is ignored.
     { eventName: CLAUDE_STYLE_HOOK_EVENT.postModelSwitch, status: "ready" as AgentStatus },
   ] as ReadonlyArray<ClaudeHookEntry>,
-
-  isCognoCommand(command: string): boolean {
-    return command.includes("COGNO_PORT") && command.includes(CODING_AGENT_STATUS_ACTION);
-  },
 } as const;

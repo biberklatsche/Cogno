@@ -1,5 +1,5 @@
 import { AutocompletePathSupport } from "@cogno/core/session/autocomplete/autocomplete-path.support";
-import { FilesystemContract } from "@cogno/core/session/exec/filesystem";
+import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { ShellContextContract } from "@cogno/shared/domain";
 import {
   FilesystemSpecProviderParams,
@@ -33,7 +33,7 @@ export class FilesystemSpecProvider implements SpecSuggestionProvider {
 
   private readonly cache = new Map<string, CacheEntry>();
 
-  constructor(private readonly filesystem: FilesystemContract) {}
+  constructor(private readonly filesystem: Filesystem) {}
 
   async suggest(context: SpecProviderContext): Promise<ReadonlyArray<SpecProvidedSuggestion>> {
     // A fresh terminal has no cwd until the first prompt handshake reports it;

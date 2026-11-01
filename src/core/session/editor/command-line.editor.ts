@@ -2,12 +2,10 @@ import {
   ShellLineEditorActionContract,
   ShellLineEditorDefinitionContract,
 } from "@cogno/core/session/shells/shell-definition";
-import { IPty } from "@cogno/core/terminal/pty";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { CommandLineBuffer } from "../model/command-line.buffer";
 import { SessionModel } from "../model/session-model";
 import { TerminalInputWriter } from "./input-writer";
@@ -26,17 +24,10 @@ export class CommandLineEditor implements ITerminalHandler {
 
   constructor(
     private readonly _clipboard: ClipboardAccess,
-    _pty: IPty,
     private readonly model: SessionModel,
-    private readonly lineEditor?: ShellLineEditorDefinitionContract,
-    private readonly commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(
-      new PromptMarkerRegistry(),
-    ),
-    private readonly inputWriter: TerminalInputWriter = new TerminalInputWriter(
-      _pty,
-      model,
-      lineEditor,
-    ),
+    private readonly lineEditor: ShellLineEditorDefinitionContract | undefined,
+    private readonly commandLineBuffer: CommandLineBuffer,
+    private readonly inputWriter: TerminalInputWriter,
   ) {}
 
   dispose(): void {
@@ -161,7 +152,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private executeNativeAction(actionId: ShellLineEditorActionContract): boolean {
-    if (this.supportsNativeShellAction(actionId)) {
+    if (this.inputWriter.isNativeActionAvailable(actionId)) {
       this.inputWriter.executeNativeAction(actionId);
       return true;
     }
@@ -173,10 +164,6 @@ export class CommandLineEditor implements ITerminalHandler {
 
     this._ptyWrite(nativeInput);
     return true;
-  }
-
-  private supportsNativeShellAction(actionId: ShellLineEditorActionContract): boolean {
-    return this.inputWriter.isNativeActionAvailable(actionId);
   }
 
   /**
@@ -439,7 +426,7 @@ export class CommandLineEditor implements ITerminalHandler {
       return true;
     }
 
-    if (this.supportsNativeShellAction("deleteSelection")) {
+    if (this.inputWriter.isNativeActionAvailable("deleteSelection")) {
       this.inputWriter.executeNativeAction("deleteSelection", {
         start: range.startIndex,
         length: deleteLength,
@@ -473,7 +460,7 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   private replaceSelectedRange(replacementText: string): boolean {
-    if (!this.supportsNativeShellAction("replaceCurrentInput")) {
+    if (!this.inputWriter.isNativeActionAvailable("replaceCurrentInput")) {
       return false;
     }
 

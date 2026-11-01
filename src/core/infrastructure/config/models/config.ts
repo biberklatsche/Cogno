@@ -12,17 +12,10 @@ import { PaddingSchema } from "./padding-config";
 import { PromptConfigSchema } from "./prompt-config";
 import { ScrollbarSchema } from "./scrollbar-config";
 import { SelectionSchema } from "./selection-config";
-import { FeatureMode } from "./shared";
 import { ShellConfigSchema, ShellType } from "./shell-config";
 import { TerminalSettingsSchema } from "./terminal-settings";
 
-export { Color, FeatureMode, ShellType };
-
-export const HTTP_SERVER_DEFAULTS = {
-  enabled: true,
-  port: 9000,
-  auto_next_port: true,
-} as const;
+export { Color, ShellType };
 
 const HttpServerSchema = z.strictObject({
   enabled: z

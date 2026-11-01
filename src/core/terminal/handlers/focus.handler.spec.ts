@@ -47,6 +47,30 @@ describe("FocusHandler", () => {
     expect(focusChanges).toEqual([true, false]);
   });
 
+  it("takes a key in the focused textarea as focus when the focus event went missing", () => {
+    const textarea = document.createElement("textarea");
+    document.body.appendChild(textarea);
+    handler.registerTerminal({ textarea } as unknown as Terminal);
+    textarea.focus();
+    textarea.dispatchEvent(new FocusEvent("blur"));
+
+    textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+    textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "b" }));
+
+    expect(handler.hasFocus()).toBe(true);
+    expect(focusChanges).toEqual([true, false, true]);
+    textarea.remove();
+  });
+
+  it("ignores a key while the textarea does not have the keyboard", () => {
+    const textarea = document.createElement("textarea");
+    handler.registerTerminal({ textarea } as unknown as Terminal);
+
+    textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+
+    expect(focusChanges).toEqual([]);
+  });
+
   it("stops listening when disposed", () => {
     const textarea = document.createElement("textarea");
     handler.registerTerminal({ textarea } as unknown as Terminal);

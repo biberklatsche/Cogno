@@ -1,63 +1,57 @@
+import { Injector, provideZonelessChangeDetection, signal } from "@angular/core";
+import { TestBed } from "@angular/core/testing";
+import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
 import type { SideMenuFeatureHandleContract } from "@cogno/core/api/contributions";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NotificationCenterStateService } from "./notification-center-state.service";
 import { NotificationSideMenuLifecycle } from "./notification-side-menu.lifecycle";
 
+TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
+
 describe("NotificationSideMenuLifecycle", () => {
-  let notificationCenterStateService: Pick<
-    NotificationCenterStateService,
-    "handleSideMenuModeChange" | "handleSideMenuOpen" | "setSideMenuIconUpdater"
-  >;
-  let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
+  let unread: ReturnType<typeof signal<boolean>>;
+  let stateService: {
+    unread: typeof unread;
+    start: ReturnType<typeof vi.fn>;
+    stop: ReturnType<typeof vi.fn>;
+    markRead: ReturnType<typeof vi.fn>;
+  };
+  let handle: SideMenuFeatureHandleContract;
+  let lifecycle: ReturnType<NotificationSideMenuLifecycle["create"]>;
 
   beforeEach(() => {
-    notificationCenterStateService = {
-      handleSideMenuModeChange: vi.fn(),
-      handleSideMenuOpen: vi.fn(),
-      setSideMenuIconUpdater: vi.fn(),
-    };
-    sideMenuFeatureHandle = {
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+    unread = signal(false);
+    stateService = { unread, start: vi.fn(), stop: vi.fn(), markRead: vi.fn() };
+    handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
-      unregisterKeybindListener: vi.fn(),
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
+    lifecycle = new NotificationSideMenuLifecycle(
+      stateService as unknown as NotificationCenterStateService,
+    ).create(TestBed.inject(Injector), handle);
   });
 
-  it("wires the icon updater and delegates side menu lifecycle events", () => {
-    const lifecycle = new NotificationSideMenuLifecycle(
-      notificationCenterStateService as NotificationCenterStateService,
-    ).create(sideMenuFeatureHandle);
+  it("collects while the feature is on and stops without a dot when it is off", () => {
+    lifecycle.onModeChange?.("on");
+    expect(stateService.start).toHaveBeenCalledOnce();
 
-    const iconUpdater = vi.mocked(notificationCenterStateService.setSideMenuIconUpdater).mock
-      .calls[0]?.[0];
-    expect(iconUpdater).toBeTypeOf("function");
-
-    iconUpdater?.("bell");
     lifecycle.onModeChange?.("off");
-    lifecycle.onOpen?.();
-
-    expect(sideMenuFeatureHandle.updateIcon).toHaveBeenCalledWith("bell");
-    expect(notificationCenterStateService.handleSideMenuModeChange).toHaveBeenCalledWith("off");
-    expect(notificationCenterStateService.handleSideMenuOpen).toHaveBeenCalledTimes(1);
+    expect(stateService.stop).toHaveBeenCalledOnce();
+    expect(handle.updateBadgeColor).toHaveBeenLastCalledWith(undefined);
   });
 
-  it("registers Escape handling on focus and unregisters on blur", () => {
-    const lifecycle = new NotificationSideMenuLifecycle(
-      notificationCenterStateService as NotificationCenterStateService,
-    ).create(sideMenuFeatureHandle);
+  it("shows the dot while something is unread and marks it read on open", () => {
+    lifecycle.onModeChange?.("on");
+    unread.set(true);
+    TestBed.tick();
+    expect(handle.updateBadgeColor).toHaveBeenLastCalledWith("var(--highlight-color)");
 
-    lifecycle.onFocus?.();
-
-    const keybindHandler = vi.mocked(sideMenuFeatureHandle.registerKeybindListener).mock
-      .calls[0]?.[1];
-    expect(keybindHandler).toBeTypeOf("function");
-
-    keybindHandler?.({ key: "Escape" } as KeyboardEvent);
-    lifecycle.onBlur?.();
-
-    expect(sideMenuFeatureHandle.close).toHaveBeenCalledTimes(1);
-    expect(sideMenuFeatureHandle.unregisterKeybindListener).toHaveBeenCalledTimes(1);
+    lifecycle.onOpen?.();
+    expect(stateService.markRead).toHaveBeenCalledOnce();
+    unread.set(false);
+    TestBed.tick();
+    expect(handle.updateBadgeColor).toHaveBeenLastCalledWith(undefined);
   });
 });

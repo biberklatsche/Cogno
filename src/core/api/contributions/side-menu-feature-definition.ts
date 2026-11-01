@@ -5,7 +5,7 @@ import { SideMenuFeatureLifecycleContract } from "./side-menu-feature-lifecycle"
 
 export type SideMenuFeatureLifecycleFactory = (
   injector: Injector,
-  sideMenuFeatureHandle: SideMenuFeatureHandleContract<Icon>,
+  sideMenuFeatureHandle: SideMenuFeatureHandleContract,
 ) => SideMenuFeatureLifecycleContract;
 
 /**

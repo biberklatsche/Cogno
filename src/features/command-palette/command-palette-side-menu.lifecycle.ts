@@ -10,28 +10,19 @@ import { CommandPaletteService } from "./command-palette.service";
 export class CommandPaletteSideMenuLifecycle {
   constructor(private readonly commandPaletteService: CommandPaletteService) {}
 
-  create(
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
-  ): SideMenuFeatureLifecycleContract {
+  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract): SideMenuFeatureLifecycleContract {
     return {
       onModeChange: (mode) => {
         if (mode === "off") {
           this.commandPaletteService.handleSideMenuClose();
         }
       },
-      onOpen: () => {
-        this.commandPaletteService.handleSideMenuOpen();
-        focusSideMenuAutofocusElement();
-      },
+      onOpen: () => focusSideMenuAutofocusElement(),
       onClose: () => this.commandPaletteService.handleSideMenuClose(),
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
-          ["Escape", "Enter", "ArrowDown", "ArrowUp"],
+          ["Enter", "ArrowDown", "ArrowUp"],
           (keyboardEvent: KeyboardEvent) => {
-            if (keyboardEvent.key === "Escape") {
-              sideMenuFeatureHandle.close();
-              return;
-            }
             if (keyboardEvent.key === "Enter") {
               const selectedCommandEntry = this.commandPaletteService.selectedEntry();
               sideMenuFeatureHandle.close();
@@ -49,7 +40,6 @@ export class CommandPaletteSideMenuLifecycle {
         );
         focusSideMenuAutofocusElement();
       },
-      onBlur: () => sideMenuFeatureHandle.unregisterKeybindListener(),
     };
   }
 }

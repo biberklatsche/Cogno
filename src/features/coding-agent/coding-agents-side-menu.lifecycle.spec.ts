@@ -17,7 +17,7 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     start: ReturnType<typeof vi.fn>;
     stop: ReturnType<typeof vi.fn>;
   };
-  let handle: SideMenuFeatureHandleContract<string>;
+  let handle: SideMenuFeatureHandleContract;
   let lifecycle: ReturnType<CodingAgentsSideMenuLifecycle["create"]>;
 
   beforeEach(() => {
@@ -28,8 +28,6 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     handle = {
       close: vi.fn(),
       registerKeybindListener: vi.fn(),
-      unregisterKeybindListener: vi.fn(),
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
     lifecycle = new CodingAgentsSideMenuLifecycle(
@@ -72,13 +70,8 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     expect(vi.mocked(handle.updateBadgeColor).mock.calls.length).toBe(calls);
   });
 
-  it("rescans on open and binds Escape while focused", () => {
+  it("rescans on open", () => {
     lifecycle.onOpen?.();
     expect(rescan).toHaveBeenCalled();
-
-    lifecycle.onFocus?.();
-    expect(handle.registerKeybindListener).toHaveBeenCalledWith(["Escape"], expect.any(Function));
-    lifecycle.onBlur?.();
-    expect(handle.unregisterKeybindListener).toHaveBeenCalled();
   });
 });

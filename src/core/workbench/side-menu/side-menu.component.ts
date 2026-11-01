@@ -258,7 +258,6 @@ export class SideMenuComponent implements OnDestroy {
   menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
   visibleItems: Signal<SideMenuItem[]> = computed(() => {
     return this.menuItems()
-      .filter((menuItem) => !menuItem.hidden)
       .slice()
       .sort(
         (leftMenuItem, rightMenuItem) => (leftMenuItem.order ?? 0) - (rightMenuItem.order ?? 0),

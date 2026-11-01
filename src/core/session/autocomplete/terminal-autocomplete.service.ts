@@ -1,10 +1,10 @@
 import { Injectable, OnDestroy } from "@angular/core";
 import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
 import {
-  computeDropdownPanelPosition,
-  estimateDropdownPanelHeight,
-  resolveBoundsRect,
-  resolveRightUiInset,
+  DROPDOWN_PANEL_MIN_WIDTH,
+  DropdownPosition,
+  inputSignature,
+  positionDropdownPanel,
 } from "@cogno/core/session/dropdown/dropdown-panel-positioning";
 import { TerminalDropdownCoordinatorService } from "@cogno/core/session/dropdown/terminal-dropdown-coordinator.service";
 import { SessionHost, SessionState } from "@cogno/core/session/host/session-host";
@@ -15,11 +15,13 @@ import { AutocompleteContextParser } from "./autocomplete-context.parser";
 import { SharedSuggestors } from "./shared-suggestors";
 import { SuggestionCollapser } from "./suggestion-collapser";
 import { SuggestionHighlighter } from "./suggestion-highlighter";
+import { isHistorySource } from "./suggestion-source";
 import { TerminalAutocompleteSuggestorContract } from "./suggestor.contracts";
 import { CommandPatternSuggestor } from "./suggestors/command-pattern.suggestor";
 import { HistoryCommandSuggestor } from "./suggestors/history-command.suggestor";
 import { HistoryDirectorySuggestor } from "./suggestors/history-directory.suggestor";
 import { TerminalAutocompleteSuggestor } from "./suggestors/terminal-autocomplete.suggestor";
+import { AutocompleteTimeoutError, withTimeout } from "./with-timeout";
 
 const REFRESH_DEBOUNCE_MS = 80;
 const SUGGESTOR_TIMEOUT_MS = 180;
@@ -27,33 +29,23 @@ const MAX_SUGGESTIONS = 100;
 const MAX_TOP_HISTORY_SUGGESTIONS = 3;
 const SUGGESTOR_ISSUE_NOTIFICATION_THROTTLE_MS = 10_000;
 
-const PANEL_MIN_WIDTH = 280;
-const PANEL_MAX_WIDTH = 920;
 const PANEL_ITEM_HORIZONTAL_PADDING = 16; // 8px left + 8px right
 const PANEL_ITEM_GAP = 8;
-const PANEL_OUTER_PADDING_AND_BORDER = 10; // panel padding + border budget
 const LABEL_MEASURE_MAX_CHARS = 140;
 const PANEL_LIST_EXTRA_PX = 8;
 const PANEL_DESCRIPTION_MIN_PX = 30;
 export type SuggestionFilterMode = "all" | "history-only" | "context-only";
 const FILTER_MODE_STORAGE_KEY = "terminal.autocomplete.filterMode";
 
-const INITIAL_VIEW_STATE: AutocompleteViewState = {
+export const INITIAL_VIEW_STATE: AutocompleteViewState = {
   visible: false,
   x: 0,
   y: 0,
-  width: PANEL_MIN_WIDTH,
+  width: DROPDOWN_PANEL_MIN_WIDTH,
   placement: "below",
   selectedIndex: null,
   suggestions: [],
 };
-
-class AutocompleteSuggestorTimeoutError extends Error {
-  constructor(readonly timeoutMs: number) {
-    super(`Provider did not respond within ${timeoutMs}ms.`);
-    this.name = "AutocompleteSuggestorTimeoutError";
-  }
-}
 
 @Injectable()
 export class TerminalAutocompleteService implements OnDestroy {
@@ -91,7 +83,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     private readonly dropdownCoordinator: TerminalDropdownCoordinatorService,
   ) {
     this._filterMode.next(this.loadFilterMode());
-    this._lastInputSignature = this.inputSignature(this.host.state);
+    this._lastInputSignature = inputSignature(this.host.state);
     this.registerDefaultSuggestors();
     this.subscribeStateChanges();
 
@@ -131,7 +123,7 @@ export class TerminalAutocompleteService implements OnDestroy {
     this._subscription.add(
       this.host.state$.pipe(debounceTime(REFRESH_DEBOUNCE_MS)).subscribe((terminalState) => {
         const viewState = this._viewState.value;
-        const currentInputSignature = this.inputSignature(terminalState);
+        const currentInputSignature = inputSignature(terminalState);
         if (
           this._manualTriggerInputSignature !== undefined &&
           currentInputSignature !== this._manualTriggerInputSignature
@@ -145,7 +137,7 @@ export class TerminalAutocompleteService implements OnDestroy {
           return;
         }
         this._viewState.next({ ...viewState, selectedIndex: null });
-        this._lastInputSignature = this.inputSignature(terminalState);
+        this._lastInputSignature = inputSignature(terminalState);
         void this.refreshSuggestions(terminalState);
       }),
     );
@@ -158,8 +150,8 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
 
     this._suppressUntilTyping = false;
-    this._manualTriggerInputSignature = this.inputSignature(this.host.state);
-    await this.showSuggestionsOnDemand(this.host.state);
+    this._manualTriggerInputSignature = inputSignature(this.host.state);
+    await this.showSuggestions(this.host.state, true);
     return this._viewState.value.visible;
   }
 
@@ -238,14 +230,10 @@ export class TerminalAutocompleteService implements OnDestroy {
       this.hide();
       return;
     }
-    if (this.inputSignature(state) === this._manualTriggerInputSignature) {
+    if (inputSignature(state) === this._manualTriggerInputSignature) {
       return;
     }
     await this.showSuggestions(state, false);
-  }
-
-  private async showSuggestionsOnDemand(state: SessionState): Promise<void> {
-    await this.showSuggestions(state, true);
   }
 
   private async showSuggestions(state: SessionState, allowEmptyInput: boolean): Promise<void> {
@@ -291,7 +279,7 @@ export class TerminalAutocompleteService implements OnDestroy {
       visibleSuggestions,
       this.readRenderedPanelHeight(),
     );
-    this.takeVisibleOwnership();
+    this.dropdownCoordinator.claim(this);
 
     this._viewState.next({
       visible: true,
@@ -376,9 +364,9 @@ export class TerminalAutocompleteService implements OnDestroy {
     void suggestionsPromise.then(release, release);
 
     try {
-      return await this.withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
+      return await withTimeout(suggestionsPromise, SUGGESTOR_TIMEOUT_MS);
     } catch (reason) {
-      if (!(reason instanceof AutocompleteSuggestorTimeoutError)) {
+      if (!(reason instanceof AutocompleteTimeoutError)) {
         this.notifySuggestorIssue(suggestor, reason, context);
       }
       return [];
@@ -396,10 +384,10 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   private prioritizeHistorySuggestions(items: AutocompleteSuggestion[]): AutocompleteSuggestion[] {
-    const history = items.filter((item) => this.isHistorySuggestion(item));
+    const history = items.filter((item) => isHistorySource(item.source));
     const reservedHistory = history.slice(0, MAX_TOP_HISTORY_SUGGESTIONS);
     const used = new Set(reservedHistory);
-    const nonHistory = items.filter((item) => !this.isHistorySuggestion(item));
+    const nonHistory = items.filter((item) => !isHistorySource(item.source));
     const additionalHistory = history.filter((item) => !used.has(item));
 
     return [...reservedHistory, ...nonHistory, ...additionalHistory];
@@ -410,10 +398,10 @@ export class TerminalAutocompleteService implements OnDestroy {
     mode: SuggestionFilterMode,
   ): AutocompleteSuggestion[] {
     if (mode === "history-only") {
-      return items.filter((item) => this.isHistorySuggestion(item)).slice(0, MAX_SUGGESTIONS);
+      return items.filter((item) => isHistorySource(item.source)).slice(0, MAX_SUGGESTIONS);
     }
     if (mode === "context-only") {
-      return items.filter((item) => !this.isHistorySuggestion(item)).slice(0, MAX_SUGGESTIONS);
+      return items.filter((item) => !isHistorySource(item.source)).slice(0, MAX_SUGGESTIONS);
     }
     return this.prioritizeHistorySuggestions(this.dedupeSuggestions(items)).slice(
       0,
@@ -459,66 +447,24 @@ export class TerminalAutocompleteService implements OnDestroy {
     state: SessionState,
     suggestions: AutocompleteSuggestion[],
     measuredPanelHeight: number | null,
-  ): { x: number; y: number; width: number; placement: "below" | "above" } {
-    const cellWidth = Math.max(1, state.dimensions.cellWidth || 9);
-    const cellHeight = Math.max(1, state.dimensions.cellHeight || 18);
-    const fallbackViewportWidth = Math.max(cellWidth, state.dimensions.cols * cellWidth);
-    const viewportWidth = Math.max(
-      cellWidth,
-      state.dimensions.viewportWidth || fallbackViewportWidth,
-    );
-    const windowWidth = Math.max(
-      1,
-      window.innerWidth || document.documentElement.clientWidth || viewportWidth,
-    );
-    const windowHeight = Math.max(
-      1,
-      window.innerHeight || document.documentElement.clientHeight || cellHeight,
-    );
-    const bounds = resolveBoundsRect(windowWidth, windowHeight);
-    const rightUiInset = resolveRightUiInset(windowWidth);
-    const effectiveRight = Math.max(bounds.left + 16, bounds.right - rightUiInset);
-    // Width is derived from the full window bounds (minus right-side overlays), not pane width.
-    const availableWidth = Math.max(240, effectiveRight - bounds.left);
-
-    const labelCharPx = Math.max(6, Math.floor(cellWidth * 0.95));
-    const metaCharPx = Math.max(6, Math.floor(labelCharPx * 0.9));
-    const widestLinePx = suggestions.reduce((max, item) => {
-      const labelChars = Math.min(item.label.length, LABEL_MEASURE_MAX_CHARS);
-      const metaText = `${item.source} · ${item.score}`;
-      const linePx =
-        labelChars * labelCharPx +
-        PANEL_ITEM_GAP +
-        metaText.length * metaCharPx +
-        PANEL_ITEM_HORIZONTAL_PADDING;
-      return Math.max(max, linePx);
-    }, 0);
-    const desiredWidth = widestLinePx + PANEL_OUTER_PADDING_AND_BORDER;
-    const estimatedPanelWidth = Math.max(
-      PANEL_MIN_WIDTH,
-      Math.min(availableWidth - 8, Math.min(PANEL_MAX_WIDTH, desiredWidth)),
-    );
-
-    return computeDropdownPanelPosition({
-      col: state.cursorPosition.viewport.col,
-      row: state.cursorPosition.viewport.row,
-      cellWidth,
-      cellHeight,
+  ): DropdownPosition {
+    return positionDropdownPanel({
+      state,
       hostRect: this._hostElement?.getBoundingClientRect(),
-      windowWidth,
-      windowHeight,
-      estimatedPanelWidth,
-      estimatedPanelHeight: this.estimatePanelHeight(suggestions.length, cellHeight),
+      items: suggestions,
+      itemWidthPx: (item, labelCharPx) => {
+        const metaCharPx = Math.max(6, Math.floor(labelCharPx * 0.9));
+        const metaText = `${item.source} · ${item.score}`;
+        return (
+          Math.min(item.label.length, LABEL_MEASURE_MAX_CHARS) * labelCharPx +
+          PANEL_ITEM_GAP +
+          metaText.length * metaCharPx +
+          PANEL_ITEM_HORIZONTAL_PADDING
+        );
+      },
+      footerPx: PANEL_LIST_EXTRA_PX + PANEL_DESCRIPTION_MIN_PX,
       measuredPanelHeight,
     });
-  }
-
-  private estimatePanelHeight(suggestionCount: number, cellHeight: number): number {
-    return estimateDropdownPanelHeight(
-      suggestionCount,
-      cellHeight,
-      PANEL_LIST_EXTRA_PX + PANEL_DESCRIPTION_MIN_PX,
-    );
   }
 
   private repositionUsingRenderedPanelHeight(): void {
@@ -694,33 +640,6 @@ export class TerminalAutocompleteService implements OnDestroy {
     }
   }
 
-  private isHistorySuggestion(item: AutocompleteSuggestion): boolean {
-    const parts = item.source
-      .split("+")
-      .map((v) => v.trim().toLowerCase())
-      .filter(Boolean);
-    return parts.some((part) => part.includes("history"));
-  }
-
-  private takeVisibleOwnership(): void {
-    this.dropdownCoordinator.claim(this);
-  }
-
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(
-        () => reject(new AutocompleteSuggestorTimeoutError(timeoutMs)),
-        timeoutMs,
-      );
-    });
-    try {
-      return await Promise.race([promise, timeoutPromise]);
-    } finally {
-      if (timeoutId) clearTimeout(timeoutId);
-    }
-  }
-
   /** A suggestor's `matches` must not take the panel down; a throw means "no match". */
   private suggestorMatches(
     suggestor: TerminalAutocompleteSuggestorContract,
@@ -757,12 +676,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   private hasInputChanged(state: SessionState): boolean {
-    return this.inputSignature(state) !== this._lastInputSignature;
-  }
-
-  private inputSignature(state: SessionState): string {
-    const input = state.input;
-    return `${input.text}\u0000${input.cursorIndex}\u0000${input.maxCursorIndex}`;
+    return inputSignature(state) !== this._lastInputSignature;
   }
 
   private isArrowKey(key: string): boolean {

@@ -22,18 +22,6 @@ export const Color = {
     return result;
   },
 
-  isValid(color: string | undefined | null): boolean {
-    try {
-      if (!color || color.length < 7 || color.length > 7 || color[0] !== "#") {
-        return false;
-      }
-      parseInt(color.substring(1, 6), 16);
-      return true;
-    } catch {
-      return false;
-    }
-  },
-
   getBrightness(col: string): number {
     const c = new TinyColor(col);
     return c.getBrightness() / 255;
@@ -70,10 +58,5 @@ export const Color = {
       default:
         return "grey";
     }
-  },
-
-  toHexColor(configColor: string | undefined): string {
-    if (!configColor) return "#000";
-    return `#${configColor}`;
   },
 };

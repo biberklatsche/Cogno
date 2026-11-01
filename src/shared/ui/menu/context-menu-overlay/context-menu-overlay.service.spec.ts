@@ -1,6 +1,6 @@
 import { ApplicationRef, createComponent, EnvironmentInjector } from "@angular/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ContextMenuOverlayComponent } from "../../context-menu-item";
+import type { ContextMenuComponent } from "./context-menu.component";
 import { ContextMenuOverlayService } from "./context-menu-overlay.service";
 
 vi.mock("@angular/core", async (importOriginal) => {
@@ -11,7 +11,7 @@ vi.mock("@angular/core", async (importOriginal) => {
   };
 });
 
-type TestOverlayComponent = ContextMenuOverlayComponent & {
+type TestOverlayComponent = Pick<ContextMenuComponent, "items" | "close"> & {
   title?: string;
 };
 

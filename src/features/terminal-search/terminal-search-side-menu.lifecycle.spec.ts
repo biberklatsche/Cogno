@@ -16,19 +16,13 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     | "repeatSearch"
     | "revealSelectedSearchResult"
   >;
-  let sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>;
-  let registerKeybindListenerMock: Mock<
-    SideMenuFeatureHandleContract<string>["registerKeybindListener"]
-  >;
-  let closeMock: Mock<SideMenuFeatureHandleContract<string>["close"]>;
-  let unregisterKeybindListenerMock: Mock<
-    SideMenuFeatureHandleContract<string>["unregisterKeybindListener"]
-  >;
+  let sideMenuFeatureHandle: SideMenuFeatureHandleContract;
+  let registerKeybindListenerMock: Mock<SideMenuFeatureHandleContract["registerKeybindListener"]>;
+  let closeMock: Mock<SideMenuFeatureHandleContract["close"]>;
 
   beforeEach(() => {
     registerKeybindListenerMock = vi.fn();
     closeMock = vi.fn();
-    unregisterKeybindListenerMock = vi.fn();
 
     terminalSearchService = {
       handleSideMenuOpen: vi.fn(),
@@ -41,13 +35,11 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     sideMenuFeatureHandle = {
       close: closeMock,
       registerKeybindListener: registerKeybindListenerMock,
-      unregisterKeybindListener: unregisterKeybindListenerMock,
-      updateIcon: vi.fn(),
       updateBadgeColor: vi.fn(),
     };
   });
 
-  it("opens, closes and unregisters the side menu state", () => {
+  it("opens and closes the side menu state", () => {
     const lifecycle = new TerminalSearchSideMenuLifecycle(
       terminalSearchService as TerminalSearchService,
     ).create(sideMenuFeatureHandle);
@@ -55,11 +47,9 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     lifecycle.onOpen?.();
     lifecycle.onModeChange?.("off");
     lifecycle.onClose?.();
-    lifecycle.onBlur?.();
 
     expect(terminalSearchService.handleSideMenuOpen).toHaveBeenCalledTimes(1);
     expect(terminalSearchService.handleSideMenuClose).toHaveBeenCalledTimes(2);
-    expect(unregisterKeybindListenerMock).toHaveBeenCalledTimes(1);
   });
 
   it("reveals the selected search result on Enter when one is selected", () => {
@@ -95,20 +85,18 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     expect(terminalSearchService.move).toHaveBeenNthCalledWith(2, -1);
   });
 
-  it("closes on Escape and repeats the search when nothing is selected", () => {
+  it("repeats the search on Enter when nothing is selected and leaves Escape to the host", () => {
     const lifecycle = new TerminalSearchSideMenuLifecycle(
       terminalSearchService as TerminalSearchService,
     );
     lifecycle.create(sideMenuFeatureHandle).onFocus?.();
 
-    const keybindHandler = registerKeybindListenerMock.mock.calls[0][1] as (
-      event: KeyboardEvent,
-    ) => void;
+    const [keys, keybindHandler] = registerKeybindListenerMock.mock.calls[0];
+    expect(keys).not.toContain("Escape");
 
-    keybindHandler({ key: "Escape" } as KeyboardEvent);
     keybindHandler({ key: "Enter" } as KeyboardEvent);
 
-    expect(closeMock).toHaveBeenCalledTimes(1);
+    expect(closeMock).not.toHaveBeenCalled();
     expect(terminalSearchService.repeatSearch).toHaveBeenCalledTimes(1);
   });
 });

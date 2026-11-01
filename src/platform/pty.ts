@@ -117,13 +117,6 @@ export class PtyDataChannel {
   onmessage: (chunk: PtyChunkContract) => void = () => {};
   /** Chunks `fromSeq` up to (excluding) `toSeq` were given up as lost. */
   onGap: (fromSeq: number, toSeq: number) => void = () => {};
-  /**
-   * A chunk arrived over the transport, fired immediately per raw message
-   * (before reordering/`onmessage`), regardless of delivery order. Paces the
-   * backend's send concurrency; distinct from `onmessage`, which only fires
-   * once a chunk's turn in sequence order comes up.
-   */
-  onReceived: (seq: number) => void = () => {};
 
   constructor() {
     this.id = transformCallback((message: ChannelMessage) => this.receive(message));
@@ -150,7 +143,6 @@ export class PtyDataChannel {
     const buffer = message.message;
     if (buffer.byteLength < CHUNK_HEADER_LEN) return;
     const seq = new DataView(buffer).getUint32(0, true);
-    this.onReceived(seq);
     // Late arrival of a chunk already given up. Wraparound-aware: near
     // 0xffffffff -> 0, `seq` can be numerically *smaller* than `_nextSeq`
     // while still being the next one due, so this can't be a plain `<`.
@@ -232,28 +224,6 @@ export class PtyTransport {
     const channel = new PtyDataChannel();
     channel.onmessage = (chunk) => output.onChunk(chunk);
     channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
-    // Transport-internal pacing signal (not part of PtyTransport): lets
-    // the backend send the next burst as soon as a chunk has arrived,
-    // without waiting for xterm to parse it. Coalesced per microtask, the
-    // same way the (much slower) parse-based ack already is — firing one
-    // invoke per chunk would flood the IPC command channel under exactly the
-    // kind of burst this is meant to protect against, defeating the pacing
-    // during the heavy output it matters most for. Best-effort: a batch lost
-    // in transit just falls back to the backend's slower parse-based release
-    // of the same slots, so no error handling is needed here.
-    let pendingReceivedSeqs: number[] = [];
-    let receivedAckScheduled = false;
-    channel.onReceived = (seq) => {
-      pendingReceivedSeqs.push(seq);
-      if (receivedAckScheduled) return;
-      receivedAckScheduled = true;
-      queueMicrotask(() => {
-        receivedAckScheduled = false;
-        const seqs = pendingReceivedSeqs;
-        pendingReceivedSeqs = [];
-        void invoke("pty_ack_received", { terminalId: options.terminalId, seqs }).catch(() => {});
-      });
-    };
     const ready = invoke<PtySpawnResultContract>("pty_spawn", {
       options: {
         name: options.terminalId,

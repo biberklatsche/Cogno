@@ -1,6 +1,7 @@
 import { NotificationEventPayloadContract, NotificationTargetContract } from "@cogno/shared/domain";
 
-export type NotificationCenterItemIdContract = number;
+/** The notification's text and target; the same notification again is the same entry. */
+export type NotificationCenterItemIdContract = string;
 
 export interface NotificationCenterItemContract {
   readonly id: NotificationCenterItemIdContract;

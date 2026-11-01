@@ -170,8 +170,8 @@ describe("TerminalSearchService", () => {
       ],
     });
 
-    expect(terminalSearchService.searchResults()).toHaveLength(2);
-    expect(terminalSearchService.hasMoreResults()).toBe(false);
+    expect(terminalSearchService.state().results).toHaveLength(2);
+    expect(terminalSearchService.state().hasMoreResults).toBe(false);
   });
 
   it("selects the first rendered result and navigates through results with arrow keys", () => {

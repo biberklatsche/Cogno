@@ -79,7 +79,6 @@ describe("WorkspaceHostApplicationService", () => {
           grids: [{ tabId: "T-1", pane: { workingDir: "C:\\repo" } }],
         },
       ]),
-      updateWorkspace: vi.fn(),
       upsertWorkspace: vi.fn().mockResolvedValue(undefined),
       deleteTerminalSession: vi.fn().mockResolvedValue(undefined),
       saveOpenState: vi.fn().mockResolvedValue(undefined),
@@ -116,18 +115,22 @@ describe("WorkspaceHostApplicationService", () => {
     vi.restoreAllMocks();
   });
 
+  function entry(id: string) {
+    return service.workspaceEntries().find((workspace) => workspace.id === id);
+  }
+
   it("does not mark a restored workspace dirty for focus and title sync", async () => {
     bus.publish({ type: "DBInitialized" });
 
     await vi.waitFor(() => {
-      expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
+      expect(entry("WS-1")?.isDirty).toBe(false);
     });
 
     const terminalId = getSingleTerminalId(gridListService);
     emitSessionFact(terminalId, { type: "focusChanged", focused: true });
     emitSessionFact(terminalId, { type: "titleChanged", title: "pwsh" });
 
-    expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(false);
+    expect(entry("WS-1")?.isDirty).toBe(false);
   });
 
   it("flags and reports a failed autosave, without throwing, until the next one succeeds", async () => {
@@ -157,7 +160,7 @@ describe("WorkspaceHostApplicationService", () => {
     const terminalId = getSingleTerminalId(gridListService);
     emitSessionFact(terminalId, { type: "cwdReported", cwd: "C:\\other" });
 
-    expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(true);
+    expect(entry("WS-1")?.isDirty).toBe(true);
   });
 
   it("marks a workspace dirty when a tab is added", async () => {
@@ -172,7 +175,7 @@ describe("WorkspaceHostApplicationService", () => {
       payload: { tabId: "T-2", isActive: false, systemTitle: "Shell" },
     });
 
-    expect(service.getWorkspaceById("WS-1")?.isDirty).toBe(true);
+    expect(entry("WS-1")?.isDirty).toBe(true);
   });
 
   it("creates a workspace draft with an empty id and one tab", () => {
@@ -182,12 +185,11 @@ describe("WorkspaceHostApplicationService", () => {
     expect(draft.tabs).toHaveLength(1);
     expect(draft.grids).toHaveLength(1);
     expect(draft.isActive).toBe(true);
-    expect(draft.isSelected).toBe(true);
   });
 
   it("repairs duplicate tab ids across persisted workspaces on startup", async () => {
     const getAllWorkspacesMock = workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>;
-    const updateWorkspaceSpy = workspaceRepository.updateWorkspace as ReturnType<typeof vi.fn>;
+    const upsertWorkspaceSpy = workspaceRepository.upsertWorkspace as ReturnType<typeof vi.fn>;
     getAllWorkspacesMock.mockResolvedValue([
       {
         id: "WS-1",
@@ -209,10 +211,10 @@ describe("WorkspaceHostApplicationService", () => {
     bus.publish({ type: "DBInitialized" });
 
     await vi.waitFor(() => {
-      expect(updateWorkspaceSpy).toHaveBeenCalledTimes(1);
+      expect(upsertWorkspaceSpy).toHaveBeenCalledTimes(1);
     });
 
-    const repairedWorkspace = updateWorkspaceSpy.mock.calls[0][0];
+    const repairedWorkspace = upsertWorkspaceSpy.mock.calls[0][0];
     expect(repairedWorkspace.id).toBe("WS-2");
     expect(repairedWorkspace.tabs[0].tabId).not.toBe("TB_DEFAULT");
     expect(repairedWorkspace.grids[0].tabId).toBe(repairedWorkspace.tabs[0].tabId);
@@ -220,7 +222,7 @@ describe("WorkspaceHostApplicationService", () => {
 
   it("repairs duplicate terminal ids across persisted workspaces on startup", async () => {
     const getAllWorkspacesMock = workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>;
-    const updateWorkspaceSpy = workspaceRepository.updateWorkspace as ReturnType<typeof vi.fn>;
+    const upsertWorkspaceSpy = workspaceRepository.upsertWorkspace as ReturnType<typeof vi.fn>;
     getAllWorkspacesMock.mockResolvedValue([
       {
         id: "WS-1",
@@ -252,10 +254,10 @@ describe("WorkspaceHostApplicationService", () => {
     bus.publish({ type: "DBInitialized" });
 
     await vi.waitFor(() => {
-      expect(updateWorkspaceSpy).toHaveBeenCalledTimes(1);
+      expect(upsertWorkspaceSpy).toHaveBeenCalledTimes(1);
     });
 
-    const repairedWorkspace = updateWorkspaceSpy.mock.calls[0][0];
+    const repairedWorkspace = upsertWorkspaceSpy.mock.calls[0][0];
     expect(repairedWorkspace.id).toBe("WS-2");
     expect(repairedWorkspace.tabs[0].tabId).toBe("T-2");
     expect(repairedWorkspace.grids[0].pane.leftChild.terminalId).not.toBe("TE-DUP");
@@ -268,8 +270,7 @@ describe("WorkspaceHostApplicationService", () => {
   });
 
   it("opens a new workspace as a copy of the active layout with its own tabs and terminals", async () => {
-    const createWorkspaceSpy = vi.fn().mockResolvedValue(undefined);
-    (workspaceRepository as { createWorkspace?: unknown }).createWorkspace = createWorkspaceSpy;
+    const upsertWorkspaceSpy = workspaceRepository.upsertWorkspace as ReturnType<typeof vi.fn>;
     bus.publish({ type: "DBInitialized" });
     await vi.waitFor(() => {
       expect(getSingleTerminalId(gridListService)).toBeTruthy();
@@ -286,7 +287,7 @@ describe("WorkspaceHostApplicationService", () => {
     expect(service.getWorkspaceById("WS-1")?.isOpen).toBe(true);
     expect(service.getWorkspaceById("WS-1")?.tabs[0].tabId).toBe("T-1");
     // ... the copy is persisted with fresh tab ids and no terminal ids ...
-    const persisted = createWorkspaceSpy.mock.calls[0][0];
+    const persisted = upsertWorkspaceSpy.mock.calls[0][0];
     expect(persisted.id).toBe(newWorkspaceId);
     expect(persisted.tabs).toHaveLength(1);
     expect(persisted.tabs[0].tabId).not.toBe("T-1");
@@ -572,12 +573,12 @@ describe("WorkspaceHostApplicationService", () => {
   });
 
   it("ignores saveWorkspace for the default workspace or missing workspaces", async () => {
-    const updateWorkspaceSpy = workspaceRepository.updateWorkspace as ReturnType<typeof vi.fn>;
+    const upsertWorkspaceSpy = workspaceRepository.upsertWorkspace as ReturnType<typeof vi.fn>;
 
     await service.saveWorkspace("default");
     await service.saveWorkspace("missing");
 
-    expect(updateWorkspaceSpy).not.toHaveBeenCalled();
+    expect(upsertWorkspaceSpy).not.toHaveBeenCalled();
   });
 });
 

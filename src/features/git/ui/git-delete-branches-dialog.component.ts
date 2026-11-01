@@ -7,6 +7,7 @@ import {
   WritableSignal,
 } from "@angular/core";
 import { DIALOG_DATA, DialogRef, ToggleSwitchComponent } from "@cogno/shared/ui";
+import { toggled } from "./git-format";
 
 export type GitDeleteBranchesItem = {
   readonly name: string;
@@ -168,12 +169,7 @@ export class GitDeleteBranchesDialogComponent {
   }
 
   toggle(name: string): void {
-    this.selected.update((selected) => {
-      const next = new Set(selected);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
+    this.selected.update((selected) => toggled(selected, name));
   }
 
   toggleAll(): void {

@@ -16,7 +16,7 @@ const notificationSideMenuFeatureDefinition = {
   targetComponent: () =>
     import("./notification-side.component").then((m) => m.NotificationSideComponent),
   createLifecycle: (injector, sideMenuFeatureHandle) =>
-    injector.get(NotificationSideMenuLifecycle).create(sideMenuFeatureHandle),
+    injector.get(NotificationSideMenuLifecycle).create(injector, sideMenuFeatureHandle),
 } as const satisfies SideMenuFeatureDefinitionContract;
 
 export const notificationFeature: FeatureDefinition = {

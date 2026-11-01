@@ -9,7 +9,6 @@ export type SideMenuItem = {
   label: string;
   icon: Icon;
   order?: number;
-  hidden: boolean;
   actionName: ActionName;
   separator?: boolean;
   // Optional component to render in the side "aside" area when this item is active
@@ -269,11 +268,6 @@ export class SideMenuService {
   dockedPanelLabel(): string | null {
     if (this.isPinned()) return this._selectedItem()?.label ?? null;
     return this._pinnedStack.at(-1) ?? null;
-  }
-
-  updateIcon(label: string, icon: Icon) {
-    this._menuItems.update((s) => s.map((i) => (i.label === label ? { ...i, icon } : i)));
-    this._selectedItem.update((s) => (s?.label === label ? { ...s, icon } : s));
   }
 
   updateBadgeColor(label: string, color?: string) {

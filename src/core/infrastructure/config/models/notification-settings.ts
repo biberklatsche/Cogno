@@ -12,7 +12,7 @@ export const NotificationSettingsSchema = z.strictObject({
             .optional()
             .describe("Whether in-app notifications may be used at all."),
           enabled: z.boolean().optional().describe("Show notifications inside Cogno."),
-          duration_seconds: limitSchema()
+          duration_seconds: limitSchema
             .optional()
             .describe(
               "Seconds an in-app notification stays before it fades. `unlimited` keeps it until you dismiss it; 0 shows none.",

@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { Config, FeatureMode } from "@cogno/core/infrastructure/config/models/config";
+import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { actionLabel } from "@cogno/core/workbench/actions/catalog";
 import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
@@ -10,7 +10,7 @@ import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.servic
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
-import { normalizeFeatureMode } from "@cogno/shared/domain";
+import { readFeatureConfig } from "../feature-host/feature-config";
 
 @Injectable({
   providedIn: "root",
@@ -79,14 +79,13 @@ export class NativeMenuService {
     );
 
     const viewMenuItems = await Promise.all(
-      sortedSideMenuFeatureDefinitions.map(async (sideMenuFeatureDefinition) => {
-        const mode = this.getFeatureMode(sideMenuFeatureDefinition.configPath);
-        return this.buildMenuItem(
+      sortedSideMenuFeatureDefinitions.map((sideMenuFeatureDefinition) =>
+        this.buildMenuItem(
           sideMenuFeatureDefinition.actionName,
           sideMenuFeatureDefinition.title,
-          this.isFeatureEnabled(mode),
-        );
-      }),
+          this.isFeatureEnabled(sideMenuFeatureDefinition.configPath),
+        ),
+      ),
     );
 
     const viewSubmenu = await this.tauriMenu.newSubmenu({
@@ -118,26 +117,13 @@ export class NativeMenuService {
       accelerator: this.keybindService.getKeybinding(actionName),
       action: () => {
         const actionDef = this.keybindService.getActionDefinition(actionName);
-        this.bus.publish(
-          actionDef ? ActionFired.createFromDefinition(actionDef) : ActionFired.create(actionName),
-        );
+        this.bus.publish(ActionFired.create(actionName, actionDef?.trigger, actionDef?.args));
       },
     });
   }
 
-  private isFeatureEnabled(mode: FeatureMode | undefined): boolean {
-    return mode !== "off";
-  }
-
-  private getFeatureMode(configPath: string): FeatureMode | undefined {
-    // `configPath` is dotted ("feature.git") and the config is nested.
-    const featureConfigValue = configPath.split(".").reduce<unknown>((value, segment) => {
-      if (typeof value !== "object" || value === null) return undefined;
-      return (value as Record<string, unknown>)[segment];
-    }, this.latestConfig);
-    if (typeof featureConfigValue !== "object" || featureConfigValue === null) {
-      return undefined;
-    }
-    return normalizeFeatureMode((featureConfigValue as { mode?: unknown }).mode);
+  /** A feature's entry is enabled unless its config says "off". */
+  private isFeatureEnabled(configPath: string): boolean {
+    return readFeatureConfig(this.latestConfig, configPath)?.["mode"] !== "off";
   }
 }

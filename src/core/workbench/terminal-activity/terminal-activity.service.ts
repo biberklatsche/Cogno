@@ -1,40 +1,20 @@
 import { Injectable } from "@angular/core";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalId } from "@cogno/shared/domain";
-import { Observable, Subject } from "rxjs";
-import { throttleTime } from "rxjs/operators";
+import { filter, map, Observable, throttleTime } from "rxjs";
 
 const ACTIVITY_THROTTLE_MS = 100;
 
 @Injectable({ providedIn: "root" })
 export class TerminalActivityService {
-  private readonly subjects = new Map<TerminalId, Subject<void>>();
+  constructor(private readonly sessionRegistry: TerminalSessionRegistry) {}
 
-  constructor(sessionRegistry: TerminalSessionRegistry) {
-    sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
-      if (fact.type === "outputReceived") this.emit(terminalId);
-    });
-  }
-
-  emit(terminalId: TerminalId): void {
-    this.getSubject(terminalId).next();
-  }
-
+  /** Fires, throttled, whenever the terminal received output. */
   activity$(terminalId: TerminalId): Observable<void> {
-    return this.getSubject(terminalId).pipe(throttleTime(ACTIVITY_THROTTLE_MS));
-  }
-
-  dispose(terminalId: TerminalId): void {
-    this.subjects.get(terminalId)?.complete();
-    this.subjects.delete(terminalId);
-  }
-
-  private getSubject(terminalId: TerminalId): Subject<void> {
-    let subject = this.subjects.get(terminalId);
-    if (!subject) {
-      subject = new Subject<void>();
-      this.subjects.set(terminalId, subject);
-    }
-    return subject;
+    return this.sessionRegistry.facts$.pipe(
+      filter((fact) => fact.terminalId === terminalId && fact.fact.type === "outputReceived"),
+      map(() => undefined),
+      throttleTime(ACTIVITY_THROTTLE_MS),
+    );
   }
 }

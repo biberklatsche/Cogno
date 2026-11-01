@@ -11,7 +11,7 @@ export class UpdaterSideMenuLifecycle {
 
   create(
     injector: Injector,
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
+    sideMenuFeatureHandle: SideMenuFeatureHandleContract,
   ): SideMenuFeatureLifecycleContract {
     let badgeEffect: EffectRef | undefined;
 
@@ -35,14 +35,6 @@ export class UpdaterSideMenuLifecycle {
           },
           { injector },
         );
-      },
-      onFocus: () => {
-        sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
-          sideMenuFeatureHandle.close();
-        });
-      },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
       },
     };
   }

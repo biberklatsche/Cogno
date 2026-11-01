@@ -29,9 +29,3 @@ export interface ContextMenuItem {
   custom?: boolean;
   customData?: unknown;
 }
-
-export interface ContextMenuOverlayComponent {
-  // Provided by ContextMenuOverlayService upon open; call to close the overlay
-  close?: () => void;
-  items: ContextMenuItem[];
-}

@@ -1,4 +1,5 @@
 import { signal } from "@angular/core";
+import { toggled } from "./git-format";
 
 /**
  * Rows marked with Cmd-click (Ctrl-click off macOS, where Ctrl-click is the
@@ -18,12 +19,7 @@ export class GitRowMarks {
     }
     this.anchor = name;
     if (event.metaKey || event.ctrlKey) {
-      this.names.update((names) => {
-        const next = new Set(names);
-        if (next.has(name)) next.delete(name);
-        else next.add(name);
-        return next;
-      });
+      this.names.update((names) => toggled(names, name));
       return true;
     }
     this.clear();

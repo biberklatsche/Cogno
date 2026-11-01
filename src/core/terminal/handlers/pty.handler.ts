@@ -1,8 +1,8 @@
-import { PtyShellProfileContract } from "@cogno/platform";
+import { PtyChunkContract, PtyShellProfileContract } from "@cogno/platform";
 import { TerminalId } from "@cogno/shared/domain";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
-import { IPty, PtyChunk } from "../pty";
+import { IPty } from "../pty";
 import { ITerminalHandler } from "../terminal-handler";
 
 /**
@@ -88,7 +88,7 @@ export class PtyHandler implements ITerminalHandler {
     );
   }
 
-  private onPtyChunk(terminal: Terminal, chunk: PtyChunk): void {
+  private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract): void {
     if (this._disposed) return;
     this._listener.onOutput?.();
     if (!this._firstWriteEvent) {

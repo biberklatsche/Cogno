@@ -7,7 +7,11 @@ import {
 import { AgentStatus } from "../../agent-status";
 import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { buildHookCommand, isCurrentHookCommand } from "../_shared/hook-command.builder";
+import {
+  buildHookCommand,
+  isCognoHookCommand,
+  isCurrentHookCommand,
+} from "../_shared/hook-command.builder";
 import {
   HookMapFormat,
   hookMapState,
@@ -75,18 +79,18 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
       }),
       isCurrent: (hook, entry) =>
         isCurrentHookCommand(hook.command, entry.status, this.id, entry.eventName),
-      isCogno: (hook) => CLAUDE_CODE_CONFIG.isCognoCommand(hook.command),
+      isCogno: (hook) => isCognoHookCommand(hook.command),
     };
   }
 
-  private async configDir(): Promise<string> {
-    return this.configFile.joinPath(
-      await this.configFile.homeDir(),
-      CLAUDE_CODE_CONFIG.configSubDir,
-    );
+  private configDir(): Promise<string> {
+    return this.configFile.configDir(CLAUDE_CODE_CONFIG.configSubDir);
   }
 
-  private async configPath(): Promise<string> {
-    return this.configFile.joinPath(await this.configDir(), CLAUDE_CODE_CONFIG.configFileName);
+  private configPath(): Promise<string> {
+    return this.configFile.configPath(
+      CLAUDE_CODE_CONFIG.configSubDir,
+      CLAUDE_CODE_CONFIG.configFileName,
+    );
   }
 }

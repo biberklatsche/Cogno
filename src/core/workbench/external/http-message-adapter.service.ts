@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { HTTP_SERVER_DEFAULTS } from "@cogno/core/infrastructure/config/models/config";
+import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { CognoMessageListener } from "@cogno/platform/cogno-message";
 import { HttpServer } from "@cogno/platform/http-server";
 import { take } from "rxjs";
@@ -18,11 +18,14 @@ export class HttpMessageAdapterService {
     ref: DestroyRef,
   ) {
     config.config$.pipe(take(1)).subscribe((cfg) => {
+      // Present after every load: ConfigMapper merges the defaults under the
+      // user file and replaces invalid values with them.
+      const httpServer = cfg.http_server as Required<NonNullable<Config["http_server"]>>;
       this.httpServer
         .start({
-          enabled: cfg.http_server?.enabled ?? HTTP_SERVER_DEFAULTS.enabled,
-          port: cfg.http_server?.port ?? HTTP_SERVER_DEFAULTS.port,
-          autoNextPort: cfg.http_server?.auto_next_port ?? HTTP_SERVER_DEFAULTS.auto_next_port,
+          enabled: httpServer.enabled,
+          port: httpServer.port,
+          autoNextPort: httpServer.auto_next_port,
         })
         .then((port) => console.log(`[http-server] listening on port ${port}`))
         .catch((err) => console.error("[http-server] Failed to start:", err));

@@ -2,7 +2,7 @@ import type {
   CdAutocompleteQueryContextContract,
   QueryContext,
 } from "@cogno/core/session/autocomplete/suggestor.contracts";
-import type { FilesystemContract } from "@cogno/core/session/exec/filesystem";
+import type { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FilesystemSpecProvider } from "./filesystem.spec-provider";
 
@@ -35,7 +35,7 @@ function commandContext(beforeCursor: string): QueryContext {
 }
 
 describe("FilesystemSpecProvider", () => {
-  let filesystem: FilesystemContract;
+  let filesystem: Filesystem;
 
   beforeEach(() => {
     filesystem = {
@@ -50,7 +50,6 @@ describe("FilesystemSpecProvider", () => {
       watch$: vi.fn(),
       toDisplayPath: vi.fn((path, cwd) => path.replace(`${cwd}/`, "").replace(/^$/, ".") || "."),
       appendPathSeparator: vi.fn((path) => `${path}/`),
-      toRelativePath: vi.fn((path) => path),
     };
   });
 

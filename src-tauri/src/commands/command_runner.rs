@@ -306,7 +306,7 @@ mod windows_tests {
         let mut command = Command::new("cmd");
         command.args(["/C", "start /B ping -n 6 127.0.0.1 & echo done"]);
         let started = Instant::now();
-        let result = run(command, Some(10_000)).unwrap();
+        let result = run(command, Some(10_000), None, &|| false).unwrap();
 
         assert_eq!(result.exit_code, 0);
         assert!(result.stdout.contains("done"));

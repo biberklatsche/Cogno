@@ -1,17 +1,20 @@
 import {
   PtyChunkContract,
+  PtyExitEventContract,
   PtyShellProfileContract,
   PtySpawnHandleContract,
   PtyTransport,
 } from "@cogno/platform";
 import { IDisposable } from "@cogno/shared/support";
 import { Observable, Subject } from "rxjs";
-import { TerminalDimensions, TerminalMachineFault } from "./terminal-machine.events";
+import {
+  isValidTerminalDimensions,
+  TerminalDimensions,
+  TerminalMachineFault,
+} from "./terminal-machine.events";
 
-export type PtyChunk = PtyChunkContract;
-export type PtyChunkListener = (chunk: PtyChunk) => void;
-export type PtyExit = { exitCode: number; signal?: number };
-export type PtyExitListener = (exit: PtyExit) => void;
+export type PtyChunkListener = (chunk: PtyChunkContract) => void;
+export type PtyExitListener = (exit: PtyExitEventContract) => void;
 
 export interface IPty extends IDisposable {
   /** Things the machine could not do; the host decides who is told. */
@@ -61,7 +64,7 @@ export class Pty implements IPty {
   private _pendingResize?: TerminalDimensions;
   private _spawn: PtySpawnHandleContract | undefined = undefined;
   private _exitUnlisten: (() => void) | undefined = undefined;
-  private _exit: PtyExit | undefined = undefined;
+  private _exit: PtyExitEventContract | undefined = undefined;
   private readonly _exitListeners = new Set<PtyExitListener>();
 
   constructor(
@@ -164,7 +167,7 @@ export class Pty implements IPty {
 
   resize(dimensions: TerminalDimensions) {
     if (!this._terminalId) throw Error("Please spawn Pty before resize.");
-    if (!this.isValidDimensions(dimensions)) return;
+    if (!isValidTerminalDimensions(dimensions)) return;
     if (!this._spawned) {
       this._pendingResize = dimensions;
       return;
@@ -204,7 +207,7 @@ export class Pty implements IPty {
     return { dispose: () => this._exitListeners.delete(listener) };
   }
 
-  private notifyExit(exit: PtyExit): void {
+  private notifyExit(exit: PtyExitEventContract): void {
     this._exit = exit;
     for (const listener of this._exitListeners) listener(exit);
   }
@@ -228,7 +231,6 @@ export class Pty implements IPty {
     if (!this._terminalId || !this._spawned || !this._pendingResize) return;
     const pendingResize = this._pendingResize;
     this._pendingResize = undefined;
-    if (!this.isValidDimensions(pendingResize)) return;
     this._transport
       .resize(this._terminalId, pendingResize.cols, pendingResize.rows)
       .catch((error) =>
@@ -242,21 +244,5 @@ export class Pty implements IPty {
           },
         }),
       );
-  }
-
-  private isValidDimensions(
-    dimensions: Partial<TerminalDimensions> & { cols?: number | null; rows?: number | null },
-  ): dimensions is TerminalDimensions {
-    const { cols, rows } = dimensions;
-    return (
-      Number.isInteger(cols) &&
-      Number.isInteger(rows) &&
-      cols !== null &&
-      cols !== undefined &&
-      rows !== null &&
-      rows !== undefined &&
-      cols > 0 &&
-      rows > 0
-    );
   }
 }

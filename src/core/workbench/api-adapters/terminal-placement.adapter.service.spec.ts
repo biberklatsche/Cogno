@@ -21,8 +21,8 @@ describe("TerminalPlacementAdapterService", () => {
     grids$ = new Subject();
     tabs$ = new Subject();
     workspaceList = signal<WorkspaceState[]>([
-      { id: "ws-a", name: "Alpha", grids: [], tabs: [], isSelected: false },
-      { id: "ws-b", name: "Beta", color: "blue", grids: [], tabs: [], isSelected: true },
+      { id: "ws-a", name: "Alpha", grids: [], tabs: [] },
+      { id: "ws-b", name: "Beta", color: "blue", grids: [], tabs: [] },
     ]);
 
     const gridListService = {

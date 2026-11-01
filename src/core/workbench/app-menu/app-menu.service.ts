@@ -56,7 +56,7 @@ export class AppMenuService {
         if (!actionDef) {
           throw new Error(`Action definition ${actionName} not found.`);
         }
-        this.bus.publish(ActionFired.createFromDefinition(actionDef));
+        this.bus.publish(ActionFired.create(actionName, actionDef.trigger, actionDef.args));
       },
       keybinding: this.keybindingFor(actionName),
     };

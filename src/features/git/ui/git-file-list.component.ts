@@ -4,11 +4,11 @@ import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitFileListMode } from "../git-view-state.service";
 import { buildFileTree, GitFileTreeRow } from "../model/git-file-tree";
 import { GitFile } from "../model/git-model";
-import { fileDir, fileStatusClass, fileStatusIcon } from "./git-format";
+import { fileDir, fileName, fileStatusClass, fileStatusIcon, toggled } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 /** Which actions a list offers on its rows. */
-export type GitFileListKind = "unstaged" | "staged" | "conflicted" | "commit";
+type GitFileListKind = "unstaged" | "staged" | "conflicted" | "commit";
 
 /**
  * Files as a flat path list or a folder tree, with the row actions their list
@@ -105,12 +105,7 @@ export class GitFileListComponent {
   readonly treeRows = computed(() => buildFileTree(this.files(), this.collapsed()));
 
   toggleFolder(path: string): void {
-    this.collapsed.update((collapsed) => {
-      const next = new Set(collapsed);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
-    });
+    this.collapsed.update((collapsed) => toggled(collapsed, path));
   }
 
   rowKey(row: GitFileTreeRow): string {
@@ -118,7 +113,7 @@ export class GitFileListComponent {
   }
 
   name(path: string): string {
-    return path.split("/").pop() ?? path;
+    return fileName(path);
   }
 
   dir(path: string): string {

@@ -26,38 +26,23 @@ export class TerminalSearchService {
   private readonly matchBorderColorSignal = signal<string>(this.defaultMatchBorderColor);
   private pendingSearchTimeoutHandle?: ReturnType<typeof setTimeout>;
 
-  readonly searchQuery: Signal<string> = computed(() => this.searchStateSignal().query);
-  readonly searchResults: Signal<ReadonlyArray<TerminalSearchLineResultContract>> = computed(
-    () => this.searchStateSignal().results,
-  );
+  readonly state: Signal<TerminalSearchState> = this.searchStateSignal.asReadonly();
   /** The explicitly selected result while the list still has it, else the last one. */
   readonly selectedSearchResultId: Signal<string | undefined> = computed(() => {
-    const searchResultIds = this.searchResults().map(createSearchResultId);
+    const searchResultIds = this.state().results.map(createSearchResultId);
     const explicitlySelectedSearchResultId = this.explicitlySelectedSearchResultIdSignal();
     return explicitlySelectedSearchResultId !== undefined &&
       searchResultIds.includes(explicitlySelectedSearchResultId)
       ? explicitlySelectedSearchResultId
       : searchResultIds.at(-1);
   });
-  readonly caseSensitive: Signal<boolean> = computed(() => this.searchStateSignal().caseSensitive);
-  readonly regularExpression: Signal<boolean> = computed(
-    () => this.searchStateSignal().regularExpression,
-  );
   readonly matchBackgroundColor: Signal<string> = this.matchBackgroundColorSignal.asReadonly();
   readonly matchBorderColor: Signal<string> = this.matchBorderColorSignal.asReadonly();
-  readonly beginBufferLine: Signal<number | undefined> = computed(
-    () => this.searchStateSignal().beginBufferLine,
-  );
-  readonly endBufferLine: Signal<number | undefined> = computed(
-    () => this.searchStateSignal().endBufferLine,
-  );
+  /** Whether the search is limited to one command's output. */
   readonly isBlockSearchActive: Signal<boolean> = computed(() => {
-    const searchState = this.searchStateSignal();
+    const searchState = this.state();
     return searchState.beginBufferLine !== undefined || searchState.endBufferLine !== undefined;
   });
-  readonly hasMoreResults: Signal<boolean> = computed(
-    () => this.searchStateSignal().hasMoreResults,
-  );
 
   constructor(
     private readonly terminalSearchApi: TerminalSearchApi,
@@ -109,12 +94,12 @@ export class TerminalSearchService {
   }
 
   toggleCaseSensitive(): void {
-    this.patchSearchState({ caseSensitive: !this.caseSensitive() });
+    this.patchSearchState({ caseSensitive: !this.state().caseSensitive });
     this.repeatSearch();
   }
 
   toggleRegularExpression(): void {
-    this.patchSearchState({ regularExpression: !this.regularExpression() });
+    this.patchSearchState({ regularExpression: !this.state().regularExpression });
     this.repeatSearch();
   }
 
@@ -139,7 +124,7 @@ export class TerminalSearchService {
 
   revealSelectedSearchResult(): boolean {
     const selectedSearchResultId = this.selectedSearchResultId();
-    const selectedSearchResult = this.searchResults().find(
+    const selectedSearchResult = this.state().results.find(
       (searchLine) => createSearchResultId(searchLine) === selectedSearchResultId,
     );
     if (!selectedSearchResult) {
@@ -155,7 +140,7 @@ export class TerminalSearchService {
    * ends. The panel lists the results last-first, so a row down is a result back.
    */
   move(delta: 1 | -1): void {
-    const searchResultIds = this.searchResults().map(createSearchResultId);
+    const searchResultIds = this.state().results.map(createSearchResultId);
     const selectedSearchResultId = this.selectedSearchResultId();
     if (selectedSearchResultId === undefined) {
       return;
@@ -175,7 +160,7 @@ export class TerminalSearchService {
 
   handleSideMenuClose(): void {
     this.cancelPendingSearch();
-    this.clearDecorationsInAllTerminals();
+    this.terminalSearchApi.requestSearchDecorationClear();
     this.searchStateSignal.set(initialTerminalSearchState);
     this.explicitlySelectedSearchResultIdSignal.set(undefined);
   }
@@ -228,25 +213,18 @@ export class TerminalSearchService {
     const isNextPage = terminalSearchResult.cursorBufferLine !== undefined;
     this.showSearchResults(
       isNextPage
-        ? [...this.searchResults(), ...terminalSearchResult.lines]
+        ? [...this.state().results, ...terminalSearchResult.lines]
         : terminalSearchResult.lines,
       terminalSearchResult.hasMore,
       terminalSearchResult.nextCursorBufferLine,
     );
   }
 
-  private clearDecorationsInAllTerminals(): void {
-    this.terminalSearchApi.requestSearchDecorationClear();
-  }
-
   private updateSearchColors(matchBackgroundColor?: string, matchBorderColor?: string): void {
-    const normalizedMatchBackgroundColor = this.normalizeHexColor(matchBackgroundColor);
-    const normalizedMatchBorderColor = this.normalizeHexColor(matchBorderColor);
-
     this.matchBackgroundColorSignal.set(
-      normalizedMatchBackgroundColor ?? this.defaultMatchBackgroundColor,
+      cssHexColor(matchBackgroundColor) ?? this.defaultMatchBackgroundColor,
     );
-    this.matchBorderColorSignal.set(normalizedMatchBorderColor ?? this.defaultMatchBorderColor);
+    this.matchBorderColorSignal.set(cssHexColor(matchBorderColor) ?? this.defaultMatchBorderColor);
   }
 
   private showSearchResults(
@@ -264,16 +242,9 @@ export class TerminalSearchService {
   private patchSearchState(change: Partial<TerminalSearchState>): void {
     this.searchStateSignal.update((searchState) => ({ ...searchState, ...change }));
   }
+}
 
-  private normalizeHexColor(colorValue?: string): string | undefined {
-    if (colorValue === undefined || colorValue === null || colorValue.trim().length === 0) {
-      return undefined;
-    }
-
-    if (colorValue.startsWith("#")) {
-      return colorValue;
-    }
-
-    return `#${colorValue}`;
-  }
+/** The configured hex digits (the config mapper strips a `#`) as a CSS color; none for blank. */
+function cssHexColor(hexDigits?: string): string | undefined {
+  return hexDigits?.trim() ? `#${hexDigits}` : undefined;
 }

@@ -11,15 +11,15 @@ export class CommandSpecRegistry implements CommandSpecSource {
     }
   }
 
-  commandNames(): string[] {
+  async commandNames(): Promise<string[]> {
     return [...this._specs.keys()];
   }
 
-  get(command: string): CommandSpec | undefined {
+  async get(command: string): Promise<CommandSpec | undefined> {
     return this._specs.get(command);
   }
 
-  getConstraints(command: string): CommandShellConstraints | undefined {
+  async getConstraints(command: string): Promise<CommandShellConstraints | undefined> {
     const spec = this._specs.get(command);
     if (!spec) return undefined;
     return {

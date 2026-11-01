@@ -45,7 +45,7 @@ export const FeatureNotificationOverviewSchema = z.strictObject({
   order: featureOrderSchema,
   overview: z
     .strictObject({
-      max_items: limitSchema()
+      max_items: limitSchema
         .optional()
         .describe("How many notifications the overview keeps, or `unlimited`."),
     })

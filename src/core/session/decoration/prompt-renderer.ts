@@ -9,7 +9,11 @@ import { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
 import { mdiDotsVertical } from "@mdi/js";
 import { Command } from "../model/command.model";
 import { SessionModel } from "../model/session-model";
-import { buildCommandMenuItems, CommandMenuBlockRange } from "./command-menu-items";
+import {
+  buildCommandMenuItems,
+  CommandBlockMenuActions,
+  CommandMenuBlockRange,
+} from "./command-menu-items";
 
 type PromptRecord = {
   label?: string;
@@ -23,15 +27,12 @@ type PromptRecord = {
 
 type ComparisonOperator = "==" | "!=";
 type PrimitiveValue = string | number | boolean;
-type PromptMarkerRenderContext = {
-  commandIndex?: number;
+type PromptMarkerRenderContext = CommandBlockMenuActions & {
+  commandIndex: number;
   markerText?: string;
-  getCommandOutput?: () => string;
-  getBlockRange?: () => CommandMenuBlockRange;
-  scrollToCommandTop?: () => void;
-  scrollToCommandBottom?: () => void;
 };
-type PromptMarkerContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
+/** What the session layer needs of the context menu overlay: opening a menu at an element. */
+export type ContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 export class PromptMarkerRenderer {
   private static readonly DEFAULT_LABEL = "COGNO";
@@ -45,17 +46,12 @@ export class PromptMarkerRenderer {
     private readonly model: SessionModel,
     private readonly segments: PromptSegment[],
     private readonly clipboard: ClipboardAccess,
-    private readonly contextMenuOverlayService?: PromptMarkerContextMenuOverlayPort,
+    private readonly contextMenuOverlayService?: ContextMenuOverlayPort,
     private readonly separator?: string,
   ) {}
 
-  public render(
-    hostElement: HTMLElement,
-    commandIndexOrContext?: number | PromptMarkerRenderContext,
-  ): void {
-    const renderContext = this.resolveRenderContext(commandIndexOrContext);
-    const commands = this.model.commands;
-    const command = commands[renderContext.commandIndex ?? 0];
+  public render(hostElement: HTMLElement, renderContext: PromptMarkerRenderContext): void {
+    const command = this.model.commands[renderContext.commandIndex];
 
     // No backing command, or Cogno's own injected bootstrap dot-source (not a
     // user command) - render nothing so its marker leaves no visible bar.
@@ -77,7 +73,7 @@ export class PromptMarkerRenderer {
     const markerElement = this.createMarkerElement(command);
     const markerCoverElement = this.createMarkerCoverElement(renderContext.markerText, command);
     const markerContentElement = this.createMarkerContentElement();
-    const record = this.buildRecord(command);
+    const record = this.createCommandRecord(command);
 
     if (this.segments.length === 0) {
       this.renderFallback(markerContentElement);
@@ -248,10 +244,6 @@ export class PromptMarkerRenderer {
     return buttonElement;
   }
 
-  private buildRecord(command: Command): PromptRecord {
-    return this.createCommandRecord(command);
-  }
-
   private buildRenderSignature(renderContext: PromptMarkerRenderContext, command: Command): string {
     // Command objects are mutated in place when OSC data arrives, so the
     // signature must cover every field that influences the rendered output.
@@ -307,23 +299,6 @@ export class PromptMarkerRenderer {
       scrollToCommandBottom,
       onFilterBlock: (range) => this.model.report({ type: "filterBlockRequested", range }),
     });
-  }
-
-  private resolveRenderContext(
-    commandIndexOrContext?: number | PromptMarkerRenderContext,
-  ): PromptMarkerRenderContext {
-    if (typeof commandIndexOrContext === "number" || commandIndexOrContext === undefined) {
-      return {
-        commandIndex: commandIndexOrContext,
-        markerText: undefined,
-        getCommandOutput: undefined,
-        getBlockRange: undefined,
-        scrollToCommandTop: undefined,
-        scrollToCommandBottom: undefined,
-      };
-    }
-
-    return commandIndexOrContext;
   }
 
   private resolveSegmentText(segment: PromptSegment, record: PromptRecord): string {

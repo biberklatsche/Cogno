@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { DatabaseSync, SQLInputValue, SQLOutputValue } from "node:sqlite";
-import type { DatabaseAccessContract } from "@cogno/platform";
+import type { DatabaseAccess } from "@cogno/platform";
 import type { IPathAdapter } from "@cogno/shared/domain";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandLogRepository } from "./command-log.repository";
@@ -38,7 +38,7 @@ describe("command log queries against SQLite", () => {
             lastInsertId: Number(result.lastInsertRowid),
           };
         },
-      } as unknown as DatabaseAccessContract,
+      } as unknown as DatabaseAccess,
       { backendOs: "linux", shellType: "Bash" } as never,
       { normalize: (path: string) => path } as IPathAdapter,
     );

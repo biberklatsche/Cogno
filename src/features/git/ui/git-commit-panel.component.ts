@@ -26,7 +26,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         <span class="grow"></span>
         <button type="button" class="button icon-button"
                 [appTooltip]="view.fileListMode() === 'tree' ? 'Show as paths' : 'Show as tree'"
-                (click)="toggleFileListMode()">
+                (click)="view.toggleFileListMode()">
           <app-icon [name]="view.fileListMode() === 'tree' ? 'mdiFormatListBulleted' : 'mdiFileTree'"></app-icon>
         </button>
       </header>
@@ -195,10 +195,6 @@ export class GitCommitPanelComponent {
       sha: commit.sha,
       parent: commit.parents[0] ?? null,
     });
-  }
-
-  toggleFileListMode(): void {
-    this.view.fileListMode.update((mode) => (mode === "tree" ? "path" : "tree"));
   }
 
   /** Up to two letters of the name, standing in while there is no avatar to show. */

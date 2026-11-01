@@ -131,7 +131,7 @@ export class GitDiffPanelComponent {
       const source = untracked(() => this.view.diff());
       if (source?.kind !== "commit") this.repository.status();
       if (!key || !source) return;
-      untracked(() => void (hunks ? this.loadPatch(source, key) : this.load(source, key)));
+      untracked(() => void this.load(source, key, hunks));
     });
 
     // A staged file moves to the other list; the diff follows it or closes.
@@ -179,26 +179,33 @@ export class GitDiffPanelComponent {
     return fileStatusClass(source.file);
   }
 
-  private async loadPatch(source: GitDiffSource, key: string): Promise<void> {
-    const keepShowing = this.patch() !== null && key === this.loadedKey;
-    if (!keepShowing) this.patch.set(null);
-    const patch = await this.diffs.loadPatch(source);
-    // Another file was opened while git was reading this one.
-    if (key !== this.sourceKey() || this.view.diffMode() !== "hunks") return;
+  /**
+   * Read the file as hunks or as text. A re-read of the same file keeps the
+   * last result on screen meanwhile; another file starts blank.
+   */
+  private async load(source: GitDiffSource, key: string, hunks: boolean): Promise<void> {
+    if (key !== this.loadedKey) {
+      this.patch.set(null);
+      this.content.set(null);
+    }
+    if (hunks) {
+      const patch = await this.diffs.loadPatch(source);
+      if (!this.stillShowing(key, hunks)) return;
+      this.patch.set(patch);
+    } else {
+      const content = await this.diffs.loadDiff(source);
+      if (!this.stillShowing(key, hunks)) return;
+      // The same text again (a status refresh): leave the editor alone.
+      const current = this.content();
+      if (current?.original !== content.original || current.modified !== content.modified) {
+        this.content.set(content);
+      }
+    }
     this.loadedKey = key;
-    this.patch.set(patch);
   }
 
-  private async load(source: GitDiffSource, key: string): Promise<void> {
-    const keepShowing = this.content() !== null && key === this.loadedKey;
-    if (!keepShowing) this.content.set(null);
-    const content = await this.diffs.loadDiff(source);
-    // Another file was opened while git was reading this one.
-    if (key !== this.sourceKey() || this.view.diffMode() === "hunks") return;
-    this.loadedKey = key;
-    const current = this.content();
-    if (current && current.original === content.original && current.modified === content.modified)
-      return;
-    this.content.set(content);
+  /** False when another file was opened or the view switched while git was reading. */
+  private stillShowing(key: string, hunks: boolean): boolean {
+    return key === this.sourceKey() && hunks === (this.view.diffMode() === "hunks");
   }
 }

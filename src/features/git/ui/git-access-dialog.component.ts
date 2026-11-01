@@ -7,10 +7,16 @@ import {
   signal,
   WritableSignal,
 } from "@angular/core";
+import { ClipboardAccess, Opener } from "@cogno/platform";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
-import { GitAccessOption, GitAccessSituation, GitHostId } from "../hosts/_shared/git-host";
 import { accessOptions, accessSummary } from "../hosts/git-host-access";
-import { GIT_HOSTS, isGitHostId } from "../hosts/git-hosts";
+import {
+  GIT_HOSTS,
+  GitAccessOption,
+  GitAccessSituation,
+  GitHostId,
+  isGitHostId,
+} from "../hosts/git-hosts";
 
 export type GitAccessDialogData = {
   readonly situation: GitAccessSituation;
@@ -19,8 +25,6 @@ export type GitAccessDialogData = {
   readonly onProvider: (provider: GitHostId) => void;
   /** Puts the command on the terminal's input line; a reason when the terminal refused. */
   readonly onInsert: (command: string) => Promise<string | null>;
-  readonly onCopy: (command: string) => void;
-  readonly onOpenLink: (url: string) => void;
 };
 
 /**
@@ -61,13 +65,13 @@ export type GitAccessDialogData = {
                   <button type="button" class="button" (click)="insert(command)">
                     To terminal
                   </button>
-                  <button type="button" class="button" (click)="data.onCopy(command)">Copy</button>
+                  <button type="button" class="button" (click)="clipboard.writeText(command)">Copy</button>
                 </div>
               }
               @if (step.link; as link) {
                 <div class="command">
                   <code class="link">{{ link }}</code>
-                  <button type="button" class="button" (click)="data.onOpenLink(link)">Open</button>
+                  <button type="button" class="button" (click)="opener.openUrl(link)">Open</button>
                 </div>
               }
             </div>
@@ -172,6 +176,8 @@ export class GitAccessDialogComponent {
   constructor(
     readonly dialogRef: DialogRef<void>,
     @Inject(DIALOG_DATA) readonly data: GitAccessDialogData,
+    readonly clipboard: ClipboardAccess,
+    readonly opener: Opener,
   ) {
     this.situation = signal(data.situation);
     this.summary = computed(() => accessSummary(this.situation()));

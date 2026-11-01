@@ -1,4 +1,6 @@
-/** The shape every bus message shares. Imports nothing, so message types never import the bus. */
+import { ActionTriggerContract } from "@cogno/shared/domain";
+
+/** The shape every bus message shares. Imports nothing from the workbench, so message types never import the bus. */
 export type MessageBase<T extends string = string, P = unknown> = {
   type: T;
   payload?: P;
@@ -9,6 +11,6 @@ export type MessageBase<T extends string = string, P = unknown> = {
 };
 
 export type ActionBase<T extends string = string, P = unknown> = MessageBase<T, P> & {
-  trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
+  trigger?: ActionTriggerContract;
   args?: string[];
 };

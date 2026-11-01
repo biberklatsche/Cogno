@@ -68,9 +68,5 @@ export class SharedSuggestors {
 }
 
 function providerTimeoutMs(configService: ConfigService): number {
-  try {
-    return configService.config.autocomplete?.provider?.timeout_ms ?? DEFAULT_PROVIDER_TIMEOUT_MS;
-  } catch {
-    return DEFAULT_PROVIDER_TIMEOUT_MS;
-  }
+  return configService.config.autocomplete?.provider?.timeout_ms ?? DEFAULT_PROVIDER_TIMEOUT_MS;
 }

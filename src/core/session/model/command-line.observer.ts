@@ -3,16 +3,14 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ITerminalHandler } from "@cogno/core/terminal/terminal-handler";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { IDisposable } from "@cogno/shared/support";
-import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { Terminal } from "@xterm/xterm";
 import { debounceTime, Subject } from "rxjs";
 import { MarkerManager } from "../decoration/marker-manager";
 import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
+import { ContextMenuOverlayPort } from "../decoration/prompt-renderer";
 import { CommandLineBuffer } from "./command-line.buffer";
 import { interpretCognoOsc } from "./osc-interpreter";
 import { SessionModel } from "./session-model";
-
-type CommandLineObserverContextMenuOverlayPort = Pick<ContextMenuOverlayService, "openAtElement">;
 
 /**
  * Watches the terminal for the session model: mirrors the input line and
@@ -29,10 +27,10 @@ export class CommandLineObserver implements ITerminalHandler {
   constructor(
     private readonly model: SessionModel,
     promptSegments: PromptSegment[],
-    contextMenuOverlayService: CommandLineObserverContextMenuOverlayPort,
+    contextMenuOverlayService: ContextMenuOverlayPort,
     clipboard: ClipboardAccess,
-    private readonly _markerRegistry: PromptMarkerRegistry = new PromptMarkerRegistry(),
-    private readonly _commandLineBuffer: CommandLineBuffer = new CommandLineBuffer(_markerRegistry),
+    private readonly _markerRegistry: PromptMarkerRegistry,
+    private readonly _commandLineBuffer: CommandLineBuffer,
     promptSeparator?: string,
   ) {
     this._markerManager = new MarkerManager(

@@ -2,7 +2,6 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
-import { defaultSettings } from "@cogno/core/infrastructure/config/models/default-config-values";
 import {
   terminalColorConfigKey,
   terminalColorCssVariable,
@@ -34,11 +33,11 @@ export class StyleService {
     const isLightTheme = Color.isLight(`#${config.color?.background}`);
     const backgroundFactor = this.getBackgroundFactor(config, isLightTheme);
     const shadowFactor = this.getShadowFactor(isLightTheme);
-    const menuOpacity = config.menu?.opacity ?? Number(defaultSettings.menu.opacity);
+    // Both are present after every load: ConfigMapper merges the defaults under
+    // the user file and replaces invalid values with them.
+    const menuOpacity = config.menu?.opacity as number;
     const menuOpacity2 = menuOpacity === 100 ? 100 : menuOpacity / 2;
-    const inactiveOpacity =
-      (config.terminal?.inactive_overlay_opacity ??
-        Number(defaultSettings.terminal.inactive_overlay_opacity)) / 100;
+    const inactiveOpacity = (config.terminal?.inactive_overlay_opacity as number) / 100;
 
     document.documentElement.style.setProperty(
       "--theme-lighten-color",

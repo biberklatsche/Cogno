@@ -13,9 +13,7 @@ export class GitSideMenuLifecycle {
     private readonly view: GitViewState,
   ) {}
 
-  create(
-    sideMenuFeatureHandle: SideMenuFeatureHandleContract<string>,
-  ): SideMenuFeatureLifecycleContract {
+  create(sideMenuFeatureHandle: SideMenuFeatureHandleContract): SideMenuFeatureLifecycleContract {
     return {
       onOpen: () => {
         this.repository.start();
@@ -30,9 +28,6 @@ export class GitSideMenuLifecycle {
           else if (this.view.diff()) this.view.closeDiff();
           else sideMenuFeatureHandle.close();
         });
-      },
-      onBlur: () => {
-        sideMenuFeatureHandle.unregisterKeybindListener();
       },
     };
   }

@@ -146,7 +146,6 @@ describe("TabListService", () => {
           systemTitle: "Shell",
           activeShellType: "PowerShell",
         }),
-        false,
         { shellName: "test" },
       );
       expect(event.performed).toBe(true);

@@ -35,13 +35,13 @@ export class LinkHandler implements ITerminalHandler {
 
   private _terminal?: Terminal;
   private _linkProviderDisposable?: IDisposable;
+  private readonly _pathResolver = new TerminalPathResolver();
 
   constructor(
     private readonly _clipboard: ClipboardAccess,
     private readonly _model: SessionModel,
     private readonly _opener: Opener,
     private readonly _os: OsPlatform,
-    private readonly _pathResolver: TerminalPathResolver = new TerminalPathResolver(),
   ) {}
 
   registerTerminal(terminal: Terminal): IDisposable {

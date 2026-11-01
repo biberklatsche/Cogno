@@ -14,6 +14,7 @@ import { GitUiActions } from "../git-ui-actions.service";
 import { GitRefsSection, GitViewState } from "../git-view-state.service";
 import { GitBranchSort, nextSort, sortBranches } from "../model/git-branch-sort";
 import { GitBranch, GitRemoteBranch } from "../model/git-model";
+import { toggled } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }>> = {
@@ -388,11 +389,4 @@ export class GitRefsPanelComponent {
     const query = this.filter().trim().toLowerCase();
     return query ? items.filter((item) => text(item).toLowerCase().includes(query)) : [...items];
   }
-}
-
-function toggled<T>(set: ReadonlySet<T>, value: T): ReadonlySet<T> {
-  const next = new Set(set);
-  if (next.has(value)) next.delete(value);
-  else next.add(value);
-  return next;
 }

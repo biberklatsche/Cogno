@@ -1,6 +1,5 @@
 import { signal, type WritableSignal } from "@angular/core";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
-import type { DirectionalNavigationItem } from "@cogno/core/workbench/workspace/navigation/directional-navigation.engine";
 import { WorkspaceService } from "@cogno/core/workbench/workspace/workspace.service";
 import type { DialogService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,7 +19,7 @@ describe("WorkspaceService", () => {
   let deleteWorkspaceMock: ReturnType<typeof vi.fn>;
   let confirmCloseWorkspaceMock: ReturnType<typeof vi.fn>;
   let clearRestoreDataMock: ReturnType<typeof vi.fn>;
-  let confirmDialogRef: { close: (result?: boolean) => void } | undefined;
+  let closeConfirmDialog: (result?: boolean) => void;
 
   beforeEach(() => {
     workspaceEntries = signal<ReadonlyArray<WorkspaceEntryContract>>([
@@ -43,8 +42,9 @@ describe("WorkspaceService", () => {
     openEditWorkspaceDialogMock = vi.fn<(workspaceName: string) => void>();
     openDialogMock.mockImplementation((_component: unknown, config: { title: string }) => {
       if (config.title === "Delete restore data") {
-        confirmDialogRef = { close: vi.fn() };
-        return confirmDialogRef;
+        return {
+          result: new Promise<boolean | undefined>((resolve) => (closeConfirmDialog = resolve)),
+        };
       }
       if (config.title === "Create workspace") openCreateWorkspaceDialogMock();
       else openEditWorkspaceDialogMock(config.title.replace("Edit ", ""));
@@ -75,12 +75,12 @@ describe("WorkspaceService", () => {
 
   it("clears the restore data only after the user confirms", async () => {
     const cancelled = workspaceService.clearRestoreData();
-    confirmDialogRef?.close(false);
+    closeConfirmDialog(false);
     await cancelled;
     expect(clearRestoreDataMock).not.toHaveBeenCalled();
 
     const confirmed = workspaceService.clearRestoreData();
-    confirmDialogRef?.close(true);
+    closeConfirmDialog(true);
     await confirmed;
     expect(clearRestoreDataMock).toHaveBeenCalledTimes(1);
   });
@@ -91,35 +91,32 @@ describe("WorkspaceService", () => {
     expect(workspaceEntries[0].isSelected).toBe(true);
   });
 
-  it("selects next workspace by navigation", () => {
-    workspaceService.registerNavigationItemsProvider(() => [
-      createNavigationItem("WS-DEFAULT", 0, 0, 120, 60),
-      createNavigationItem("WS-1", 140, 0, 120, 60),
-      createNavigationItem("WS-2", 0, 90, 120, 60),
-    ]);
+  it("selects the next workspace in the panel's grid", () => {
+    workspaceService.registerColumnCount(() => 2);
 
     workspaceService.selectNext("right");
     expect(workspaceService.workspaceEntries()[1].isSelected).toBe(true);
   });
 
-  it("moves through a variable grid using registered geometry", () => {
+  it("moves through the grid with the registered column count", () => {
     workspaceEntries.set([
       { id: "WS-DEFAULT", name: "Default Workspace", isActive: true },
       { id: "WS-1", name: "Project One", color: "blue", isActive: false },
       { id: "WS-2", name: "Project Two", color: "red", isActive: false },
       { id: "WS-3", name: "Project Three", color: "yellow", isActive: false },
     ]);
+    workspaceService.registerColumnCount(() => 2);
 
-    workspaceService.registerNavigationItemsProvider(() => [
-      createNavigationItem("WS-DEFAULT", 0, 0, 120, 60),
-      createNavigationItem("WS-1", 140, 0, 120, 60),
-      createNavigationItem("WS-2", 0, 90, 180, 60),
-      createNavigationItem("WS-3", 200, 90, 120, 60),
-    ]);
     workspaceService.selectNext("right");
     workspaceService.selectNext("down");
 
     expect(workspaceService.workspaceEntries()[3].isSelected).toBe(true);
+  });
+
+  it("falls back to one column when no panel is registered", () => {
+    workspaceService.selectNext("right");
+    workspaceService.selectNext("down");
+    expect(workspaceService.workspaceEntries()[2].isSelected).toBe(true);
   });
 
   it("restores selected workspace", async () => {
@@ -154,23 +151,3 @@ describe("WorkspaceService", () => {
     expect(closeWorkspaceMock).not.toHaveBeenCalled();
   });
 });
-
-function createNavigationItem(
-  id: string,
-  left: number,
-  top: number,
-  width: number,
-  height: number,
-): DirectionalNavigationItem<string> {
-  return {
-    id,
-    rect: {
-      left,
-      top,
-      width,
-      height,
-      right: left + width,
-      bottom: top + height,
-    },
-  };
-}

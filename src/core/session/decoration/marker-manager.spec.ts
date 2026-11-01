@@ -200,7 +200,6 @@ describe("MarkerManager", () => {
     markerManager.refreshMarkers();
 
     expect(updateCommandsSpy).toHaveBeenCalledTimes(1);
-    expect(stateManager.commands[0].isInViewport).toBe(true);
   });
 
   it("should mark the last command above the viewport as first out of viewport", () => {
@@ -212,7 +211,5 @@ describe("MarkerManager", () => {
     markerManager.refreshMarkers();
 
     expect(stateManager.commands[0].isFirstCommandOutOfViewport).toBe(true);
-    expect(stateManager.commands[0].isInViewport).toBe(false);
-    expect(stateManager.commands[1].isInViewport).toBe(true);
   });
 });
