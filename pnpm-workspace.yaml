@@ -1,0 +1,8 @@
+# pnpm 12 refuses to install while a dependency's build script is neither
+# allowed nor denied. None of these needs its script: each ships prebuilt
+# binaries as optional dependencies, which is what pnpm 10 silently used.
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: false
+  lmdb: false
+  msgpackr-extract: false

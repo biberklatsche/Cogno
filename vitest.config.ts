@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     environment: "happy-dom",
     setupFiles: ["setup-vitest.ts"],
+    // Node 26 ships its own global `localStorage`, which keeps vitest from exposing
+    // happy-dom's one; turn it off so the browser storage mocks reach the tests.
+    execArgv: ["--no-experimental-webstorage"],
     alias: [
       {
         find: "@xterm/addon-ligatures",
