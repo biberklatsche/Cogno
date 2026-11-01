@@ -74,6 +74,30 @@ describe("SessionModel", () => {
     expect(busy).toEqual([true, false, false]);
   });
 
+  it("degrades to an unknown context for nested, privileged and remote shells", () => {
+    const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorderStub());
+    model.initialize("terminal-1", "Bash", undefined, "linux");
+
+    for (const command of [
+      "sudo -i",
+      "bash",
+      "ssh host",
+      "/usr/bin/su -",
+      "docker exec -it c sh",
+    ]) {
+      model.updateInput({ text: command, cursorIndex: 0, maxCursorIndex: 0 });
+      model.startCommand();
+      expect(model.state.isContextKnown, command).toBe(false);
+      model.popContextOnCommandEnd();
+      model.endCommand();
+      expect(model.state.isContextKnown, command).toBe(true);
+    }
+
+    model.updateInput({ text: "ls -la", cursorIndex: 0, maxCursorIndex: 0 });
+    model.startCommand();
+    expect(model.state.isContextKnown).toBe(true);
+  });
+
   it("has no command duration once the command ended", () => {
     const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorderStub());
     model.initialize("terminal-1", "Bash", undefined, "linux");

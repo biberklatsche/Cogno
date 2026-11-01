@@ -447,10 +447,42 @@ export class SessionModel {
   }
 }
 
-const CONTEXT_CHANGING_COMMANDS = new Set(["ssh", "wsl"]);
+/**
+ * Programs that put another shell, or another machine's shell, in front of
+ * the user: remote and WSL logins, nested and privileged shells, containers,
+ * multiplexers. Unless that inner shell loads the integration and
+ * authenticates, nothing it prints is Cogno's prompt (ARCHITECTURE.md 2.1,
+ * context timeline).
+ */
+const CONTEXT_CHANGING_COMMANDS = new Set([
+  "ssh",
+  "wsl",
+  "wsl.exe",
+  "su",
+  "sudo",
+  "doas",
+  "sh",
+  "bash",
+  "zsh",
+  "fish",
+  "nu",
+  "pwsh",
+  "powershell",
+  "cmd",
+  "docker",
+  "podman",
+  "kubectl",
+  "nix-shell",
+  "nix",
+  "chroot",
+  "tmux",
+  "screen",
+]);
 
 /** True when the command's program takes the shell into a context Cogno cannot resolve. */
 function leavesTheKnownContext(commandText: string): boolean {
   const program = commandText.trim().split(/\s+/, 1)[0];
-  return CONTEXT_CHANGING_COMMANDS.has(program);
+  // `/usr/bin/sudo`, `C:\...\wsl.exe`: the name decides, not the path.
+  const name = program.slice(Math.max(program.lastIndexOf("/"), program.lastIndexOf("\\")) + 1);
+  return CONTEXT_CHANGING_COMMANDS.has(name.toLowerCase());
 }

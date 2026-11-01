@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::net::TcpListener;
 use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
-use std::sync::Mutex;
+use std::sync::{Condvar, Mutex};
+use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 
 /// The action names the webview currently accepts, split by whether they would
@@ -57,6 +58,8 @@ pub struct HttpServerState {
     /// A secret for this launch. Only processes started in a Cogno terminal
     /// get it (`COGNO_TOKEN`); every request must carry it.
     token: String,
+    start_decided: Mutex<bool>,
+    start_decision: Condvar,
 }
 
 impl Default for HttpServerState {
@@ -65,6 +68,8 @@ impl Default for HttpServerState {
             port: AtomicU16::new(0),
             started: AtomicBool::new(false),
             token: uuid::Uuid::new_v4().simple().to_string(),
+            start_decided: Mutex::new(false),
+            start_decision: Condvar::new(),
         }
     }
 }
@@ -95,6 +100,32 @@ impl HttpServerState {
     fn mark_failed(&self) {
         self.port.store(0, Ordering::Relaxed);
         self.started.store(false, Ordering::Relaxed);
+    }
+
+    /// The webview asked for the server (and it is up, disabled or failed).
+    fn decide_start(&self) {
+        let mut decided = self
+            .start_decided
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        *decided = true;
+        self.start_decision.notify_all();
+    }
+
+    /// Waits until the webview's start request has been handled, at most
+    /// `max_wait`. A terminal spawned before that would get no COGNO_PORT and
+    /// no agent hook could ever reach it; the two requests leave the webview
+    /// independently, so the spawn waits for the server's answer here.
+    pub fn wait_for_start_decision(&self, max_wait: Duration) -> bool {
+        let decided = self
+            .start_decided
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let (decided, _) = self
+            .start_decision
+            .wait_timeout_while(decided, max_wait, |decided| !*decided)
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        *decided
     }
 }
 
@@ -166,6 +197,7 @@ pub fn start_http_server(
 ) -> Result<u16, String> {
     if !enabled {
         log::info!(target: "http_server", "HTTP server disabled via config");
+        state.decide_start();
         return Ok(0);
     }
 
@@ -173,12 +205,9 @@ pub fn start_http_server(
         return Ok(state.port());
     }
 
-    let bound = bind_port(port, auto_next_port)
-        .ok_or_else(|| format!("No available port found starting from {}", port))?;
-    let actual_port = bound.local_addr().map_err(|e| e.to_string())?.port();
-    bound.set_nonblocking(true).map_err(|e| e.to_string())?;
-
-    state.set_port(actual_port);
+    let bound = bind_listener(&state, port, auto_next_port);
+    state.decide_start();
+    let (bound, actual_port) = bound?;
 
     tauri::async_runtime::spawn(async move {
         use axum::extract::rejection::JsonRejection;
@@ -309,9 +338,38 @@ pub fn start_http_server(
         if let Err(e) = axum::serve(listener, router).await {
             log::error!(target: "http_server", "HTTP server error: {}", e);
         }
+        // Nobody listens any more: new terminals must not inherit a dead port.
+        app.state::<HttpServerState>().mark_failed();
     });
 
     Ok(actual_port)
+}
+
+/// Binds and records the port. Every failure hands the claim back, so the
+/// state never says "started" for a server that is not listening: a webview
+/// retry can start it, and no terminal gets a COGNO_PORT nothing answers on.
+fn bind_listener(
+    state: &HttpServerState,
+    port: u16,
+    auto_next_port: bool,
+) -> Result<(TcpListener, u16), String> {
+    let result = (|| {
+        let bound = bind_port(port, auto_next_port)
+            .ok_or_else(|| format!("No available port found starting from {}", port))?;
+        let actual_port = bound.local_addr().map_err(|e| e.to_string())?.port();
+        bound.set_nonblocking(true).map_err(|e| e.to_string())?;
+        Ok((bound, actual_port))
+    })();
+    match result {
+        Ok((bound, actual_port)) => {
+            state.set_port(actual_port);
+            Ok((bound, actual_port))
+        }
+        Err(error) => {
+            state.mark_failed();
+            Err(error)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -395,6 +453,49 @@ mod tests {
             "secret",
             9000
         ));
+    }
+
+    #[test]
+    fn a_failed_bind_hands_the_start_claim_back() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = taken.local_addr().unwrap().port();
+        let state = HttpServerState::new();
+        assert!(state.try_claim_start());
+
+        assert!(bind_listener(&state, port, false).is_err());
+
+        assert_eq!(state.port(), 0);
+        assert!(
+            state.try_claim_start(),
+            "the next start attempt must be possible"
+        );
+    }
+
+    #[test]
+    fn a_successful_bind_records_the_port() {
+        let state = HttpServerState::new();
+        assert!(state.try_claim_start());
+
+        let (_listener, port) = bind_listener(&state, 0, false).unwrap();
+
+        assert_ne!(port, 0);
+        assert_eq!(state.port(), port);
+        assert!(!state.try_claim_start());
+    }
+
+    #[test]
+    fn the_start_decision_is_waited_for_and_then_known() {
+        let state = std::sync::Arc::new(HttpServerState::new());
+        assert!(!state.wait_for_start_decision(Duration::from_millis(50)));
+
+        let deciding = state.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(50));
+            deciding.decide_start();
+        });
+
+        assert!(state.wait_for_start_decision(Duration::from_secs(5)));
+        assert!(state.wait_for_start_decision(Duration::ZERO));
     }
 
     #[test]

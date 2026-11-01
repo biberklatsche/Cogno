@@ -194,7 +194,17 @@ pub async fn pty_spawn(
         None => {}
     }
 
-    // Inject HTTP server port and terminal ID so hooks can reach cogno
+    // Inject HTTP server port and terminal ID so hooks can reach cogno. The
+    // webview starts the server and spawns terminals independently; a short
+    // wait for the server's answer keeps the port out of a race it would lose
+    // on a cold start.
+    let server_state = app.clone();
+    let _ = tauri::async_runtime::spawn_blocking(move || {
+        server_state
+            .state::<HttpServerState>()
+            .wait_for_start_decision(std::time::Duration::from_secs(2))
+    })
+    .await;
     let http_port = http_server.port();
     if http_port != 0 {
         cmd.env("COGNO_PORT", http_port.to_string());

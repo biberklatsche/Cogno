@@ -28,6 +28,7 @@ vi.mock("@cogno/core/terminal/renderer", () => {
     restoreCursorColor = vi.fn();
     terminal = TerminalMockFactory.createTerminal();
     isWebglContextLost$ = new BehaviorSubject(false);
+    webglGivenUp$ = new Subject();
   }
   return { Renderer: vi.fn(RendererMock) };
 });
@@ -150,6 +151,42 @@ describe("SessionNotifications", () => {
   });
 
   describe("facts to notifications", () => {
+    it("warns when the shell integration did not load", () => {
+      host.model.report({ type: "integrationMissing", shellType: "Zsh" });
+
+      expect(bus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "Notification",
+          payload: expect.objectContaining({
+            header: "Shell integration did not load",
+            body: expect.stringContaining("Zsh"),
+            type: "warning",
+            terminalId,
+          }),
+        }),
+      );
+    });
+
+    it("warns when output did not arrive whole", () => {
+      host.model.report({
+        type: "outputDegraded",
+        reason: "chunksLost",
+        detail: "chunks 3..5 lost",
+      });
+
+      expect(bus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "Notification",
+          payload: expect.objectContaining({
+            header: "Terminal output was lost",
+            body: expect.stringContaining("chunks 3..5 lost"),
+            type: "warning",
+            terminalId,
+          }),
+        }),
+      );
+    });
+
     it("publishes a notification when a long-running command has finished", () => {
       configure({ notification: { channel: { app: { available: true, enabled: true } } } });
 

@@ -1,5 +1,6 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Renderer } from "@cogno/core/terminal/renderer";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
@@ -24,6 +25,7 @@ vi.mock("@cogno/core/terminal/renderer", () => {
     restoreCursorColor = vi.fn();
     terminal = TerminalMockFactory.createTerminal();
     isWebglContextLost$ = new BehaviorSubject(false);
+    webglGivenUp$ = new Subject();
   }
   return { Renderer: vi.fn(RendererMock) };
 });
@@ -118,6 +120,84 @@ describe("SessionHost", () => {
     host.attach(document.createElement("div"));
 
     expect(lastRenderer().register).toHaveBeenCalledTimes(18);
+  });
+
+  it("says so when the shell integration never handshakes", async () => {
+    vi.useFakeTimers();
+    try {
+      const host = createHost();
+      const facts: SessionFact[] = [];
+      host.facts$.subscribe((fact) => facts.push(fact));
+      host.initialize("terminal-1", { ...bashProfile, enable_shell_integration: true });
+      host.start();
+      host.attach(document.createElement("div"));
+      await vi.advanceTimersByTimeAsync(9_000);
+      expect(facts.some((fact) => fact.type === "integrationMissing")).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(facts).toContainEqual({ type: "integrationMissing", shellType: "Bash" });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("stays quiet about the handshake once it arrived, and without the integration", async () => {
+    vi.useFakeTimers();
+    try {
+      const handshaken = createHost();
+      const facts: SessionFact[] = [];
+      handshaken.facts$.subscribe((fact) => facts.push(fact));
+      handshaken.initialize("terminal-1", { ...bashProfile, enable_shell_integration: true });
+      handshaken.start();
+      handshaken.attach(document.createElement("div"));
+      await vi.advanceTimersByTimeAsync(0);
+      handshaken.model.applyHandshake({} as never, { shell: "Bash", os: "linux" });
+
+      const plain = createHost();
+      plain.facts$.subscribe((fact) => facts.push(fact));
+      plain.initialize("terminal-2", bashProfile);
+      plain.start();
+      plain.attach(document.createElement("div"));
+
+      await vi.advanceTimersByTimeAsync(20_000);
+
+      expect(facts.some((fact) => fact.type === "integrationMissing")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("states lost output and failed acknowledgements as facts", () => {
+    const host = createHost();
+    const facts: SessionFact[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact));
+    host.initialize("terminal-1", bashProfile);
+    const pty = (host as unknown as { pty: { faults$: Subject<unknown> } }).pty;
+
+    pty.faults$.next({ operation: "onData", error: new Error("chunks 3..5 lost"), context: {} });
+    pty.faults$.next({ operation: "ack", error: new Error("no backend"), context: {} });
+    pty.faults$.next({ operation: "resize", error: new Error("ignored"), context: {} });
+
+    expect(facts).toEqual([
+      { type: "outputDegraded", reason: "chunksLost", detail: "chunks 3..5 lost" },
+      { type: "outputDegraded", reason: "ackFailed", detail: "no backend" },
+    ]);
+  });
+
+  it("logs a warning when the renderer gave WebGL up", () => {
+    const warned = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+
+    lastRenderer().webglGivenUp$.next({ reason: "unavailable", error: new Error("no WebGL2") });
+
+    expect(warned).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: "Renderer",
+        context: expect.objectContaining({ reason: "unavailable", terminalId: "terminal-1" }),
+      }),
+    );
   });
 
   it("refuses a profile without a shell type", () => {

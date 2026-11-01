@@ -25,11 +25,14 @@ vi.mock("@xterm/xterm", () => {
 vi.mock("@xterm/addon-fit", () => ({ FitAddon: vi.fn() }));
 vi.mock("@xterm/addon-search", () => ({ SearchAddon: vi.fn() }));
 vi.mock("@xterm/addon-unicode11", () => ({ Unicode11Addon: vi.fn() }));
+let webglUnavailable = false;
+
 vi.mock("@xterm/addon-webgl", () => ({
   WebglAddon: class WebglAddonMock {
     dispose = vi.fn();
 
     constructor() {
+      if (webglUnavailable) throw new Error("WebGL2 not supported");
       webglAddonDisposeSpy = this.dispose;
       webglContextLossDisposable = { dispose: vi.fn() };
     }
@@ -51,6 +54,7 @@ describe("Renderer", () => {
     webglContextLossListener = undefined;
     webglContextLossDisposable = undefined;
     webglAddonDisposeSpy = undefined;
+    webglUnavailable = false;
     mockOptions = {
       overviewRulerWidth: 10,
       scrollbackLines: 1000,
@@ -99,6 +103,48 @@ describe("Renderer", () => {
     } as any;
     renderer.register(mockHandler);
     expect(mockHandler.registerFitAddon).toHaveBeenCalled();
+  });
+
+  it("falls back to the DOM renderer and says so when WebGL is unavailable", () => {
+    webglUnavailable = true;
+    mockOptions = { ...mockOptions, webgl: true };
+    renderer = new Renderer(mockOptions, "linux", new WebglContextPool());
+    const givenUp: unknown[] = [];
+    renderer.webglGivenUp$.subscribe((event) => givenUp.push(event));
+
+    expect(() => renderer.setVisible(true)).not.toThrow();
+
+    expect(givenUp).toEqual([expect.objectContaining({ reason: "unavailable" })]);
+    expect(renderer.terminal.loadAddon).not.toHaveBeenCalledWith(
+      expect.objectContaining({ onContextLoss: expect.anything() }),
+    );
+    // Showing it again does not try again.
+    renderer.setVisible(false);
+    renderer.setVisible(true);
+    expect(givenUp).toHaveLength(1);
+  });
+
+  it("gives WebGL up after the context keeps getting lost", () => {
+    mockOptions = { ...mockOptions, webgl: true };
+    renderer = new Renderer(mockOptions, "linux", new WebglContextPool());
+    renderer.setVisible(true);
+    const givenUp: unknown[] = [];
+    renderer.webglGivenUp$.subscribe((event) => givenUp.push(event));
+    const lostStates: boolean[] = [];
+    renderer.isWebglContextLost$.subscribe((lost) => lostStates.push(lost));
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+      webglContextLossListener?.();
+      vi.advanceTimersByTime(3000);
+    }
+    expect(givenUp).toHaveLength(0);
+
+    webglContextLossListener?.();
+    vi.advanceTimersByTime(3000);
+
+    expect(givenUp).toEqual([expect.objectContaining({ reason: "lost" })]);
+    expect(lostStates.at(-1)).toBe(false);
+    expect(webglAddonDisposeSpy).toHaveBeenCalled();
   });
 
   it("should use WebGL addon when the option asks for it", () => {

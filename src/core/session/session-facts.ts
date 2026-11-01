@@ -45,4 +45,21 @@ export type SessionFact =
    * the output stream pretends to be the integration (ARCHITECTURE.md 2.1,
    * "Der Handshake ist authentisiert"). Stated once, at the threshold.
    */
-  | { readonly type: "untrustedSequencesIgnored"; readonly count: number };
+  | { readonly type: "untrustedSequencesIgnored"; readonly count: number }
+  /**
+   * The shell is up but its integration never said hello: the scripts did
+   * not load (a missing file, an rc that exec's another shell). Commands,
+   * cwd and history stay dark in this session (ARCHITECTURE.md 4.3).
+   */
+  | { readonly type: "integrationMissing"; readonly shellType: string }
+  /**
+   * Output did not reach the screen whole: chunks were lost on the way from
+   * the pty, or an acknowledgement failed, after which the shell may block
+   * on a full buffer. Said so the user does not take a stuck shell for a
+   * hung command.
+   */
+  | {
+      readonly type: "outputDegraded";
+      readonly reason: "chunksLost" | "ackFailed";
+      readonly detail: string;
+    };

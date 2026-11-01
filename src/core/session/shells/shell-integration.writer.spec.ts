@@ -39,6 +39,41 @@ describe("ShellIntegrationWriter", () => {
     expect(mkdirSpy).not.toHaveBeenCalled();
   });
 
+  it("reinstalls when a script is missing although the version is current", async () => {
+    const missing = "/tmp/cogno/shell-integration/bash/base.sh";
+    vi.mocked(fs.exists).mockImplementation(async (path: string) => path !== missing);
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
+    vi.mocked(shellsStub.load).mockResolvedValue([{ shell_type: "Bash" }] as never);
+    const writeTextFileSpy = vi.mocked(fs.writeTextFile).mockResolvedValue(undefined);
+    vi.spyOn(Logger, "info").mockImplementation(() => undefined);
+    vi.spyOn(Logger, "warn").mockImplementation(() => undefined);
+
+    await writer.ensure([
+      {
+        shellType: "Bash",
+        integrationFiles: [{ relativePath: "bash/base.sh", content: "base" }],
+      },
+    ] as unknown as ReadonlyArray<ShellSupportDefinitionContract>);
+
+    expect(writeTextFileSpy).toHaveBeenCalledWith(missing, "base");
+  });
+
+  it("leaves a complete, current installation alone", async () => {
+    vi.mocked(fs.exists).mockResolvedValue(true);
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
+    vi.mocked(shellsStub.load).mockResolvedValue([{ shell_type: "Bash" }] as never);
+    const writeTextFileSpy = vi.mocked(fs.writeTextFile);
+
+    await writer.ensure([
+      {
+        shellType: "Bash",
+        integrationFiles: [{ relativePath: "bash/base.sh", content: "base" }],
+      },
+    ] as unknown as ReadonlyArray<ShellSupportDefinitionContract>);
+
+    expect(writeTextFileSpy).not.toHaveBeenCalled();
+  });
+
   it("creates directories, writes each shell's integration files and updates version logs", async () => {
     const existingPaths = new Set<string>([
       "/tmp/cogno/shell-integration/VERSION",

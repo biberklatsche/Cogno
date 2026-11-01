@@ -6,7 +6,7 @@ import { SearchAddon } from "@xterm/addon-search";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { Terminal } from "@xterm/xterm";
-import { BehaviorSubject, Observable } from "rxjs";
+import { BehaviorSubject, Observable, Subject } from "rxjs";
 import {
   IFitHandler,
   ISearchHandler,
@@ -23,12 +23,19 @@ export interface IRenderer {
   restoreCursorColor(): void;
   readonly terminal: Terminal;
   readonly isWebglContextLost$: Observable<boolean>;
+  /** WebGL given up on for good (not available, or lost and not restorable); the DOM renderer draws from here on. */
+  readonly webglGivenUp$: Observable<WebglGivenUp>;
 
   dispose(): void;
 
   register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable;
 
   setVisible(visible: boolean): void;
+}
+
+export interface WebglGivenUp {
+  readonly reason: "unavailable" | "lost";
+  readonly error: unknown;
 }
 
 interface WebglPoolMember {
@@ -94,7 +101,8 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
   private static readonly WEBGL_RESTORE_DELAYS_MS = [0, 250, 1000, 3000] as const;
 
   private _terminal: Terminal;
-  private readonly _webglEnabled: boolean;
+  /** Off once WebGL is known not to work here; xterm's DOM renderer then stays. */
+  private _webglEnabled: boolean;
   private _disposed = false;
 
   private _fitAddon = new FitAddon();
@@ -112,6 +120,7 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
    */
   private _visible = false;
   private readonly _isWebglContextLostSubject = new BehaviorSubject<boolean>(false);
+  private readonly _webglGivenUpSubject = new Subject<WebglGivenUp>();
 
   constructor(
     options: TerminalMachineOptions,
@@ -217,15 +226,34 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     this._terminal.loadAddon(this._ligaturesAddon);
   }
 
-  private useWebGl() {
-    if (!this._webglAddon) {
-      this._webglAddon = new WebglAddon();
-      this._webglContextLossDisposable = this._webglAddon.onContextLoss(() => {
-        this.handleWebGlContextLoss();
-      });
+  /**
+   * Creating the context throws where WebGL2 is missing (a VM without GPU
+   * acceleration, a remote desktop session, a crashed GPU process). That is
+   * no reason to leave the terminal unsized or unspawned: the DOM renderer
+   * takes over for good and the machine reports it once.
+   */
+  private useWebGl(reason: WebglGivenUp["reason"]): boolean {
+    try {
+      if (!this._webglAddon) {
+        this._webglAddon = new WebglAddon();
+        this._webglContextLossDisposable = this._webglAddon.onContextLoss(() => {
+          this.handleWebGlContextLoss();
+        });
+      }
+      this._terminal.loadAddon(this._webglAddon);
+      this.webglPool.registerActive(this);
+      return true;
+    } catch (error) {
+      this.giveUpWebGl(reason, error);
+      return false;
     }
-    this._terminal.loadAddon(this._webglAddon);
-    this.webglPool.registerActive(this);
+  }
+
+  private giveUpWebGl(reason: WebglGivenUp["reason"], error: unknown): void {
+    this.disposeWebGlAddon();
+    this._webglEnabled = false;
+    this._isWebglContextLostSubject.next(false);
+    this._webglGivenUpSubject.next({ reason, error });
   }
 
   public dispose() {
@@ -237,6 +265,7 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     this.disposeWebGlAddon();
     this._terminal?.dispose();
     this._isWebglContextLostSubject.complete();
+    this._webglGivenUpSubject.complete();
   }
 
   public get terminal(): Terminal {
@@ -245,6 +274,10 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
 
   public get isWebglContextLost$(): Observable<boolean> {
     return this._isWebglContextLostSubject.asObservable();
+  }
+
+  public get webglGivenUp$(): Observable<WebglGivenUp> {
+    return this._webglGivenUpSubject.asObservable();
   }
 
   public setVisible(visible: boolean): void {
@@ -264,8 +297,8 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     this._webglRestoreAttempt = 0;
     if (this._webglAddon) {
       this.webglPool.touch(this);
-    } else {
-      this.useWebGl();
+    } else if (!this.useWebGl("unavailable")) {
+      return;
     }
     this._isWebglContextLostSubject.next(false);
   }
@@ -293,21 +326,30 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     this.scheduleWebGlRestore();
   }
 
+  /**
+   * One attempt per delay in WEBGL_RESTORE_DELAYS_MS; a context that keeps
+   * getting lost (the GPU is gone, a remote session without acceleration)
+   * is given up on after the last, instead of retrying every few seconds for
+   * the rest of the session.
+   */
   private scheduleWebGlRestore() {
     if (!this._webglEnabled || this._disposed || this._webglRestoreTimeout) {
       return;
     }
-    const restoreDelay =
-      Renderer.WEBGL_RESTORE_DELAYS_MS[this._webglRestoreAttempt] ??
-      Renderer.WEBGL_RESTORE_DELAYS_MS[Renderer.WEBGL_RESTORE_DELAYS_MS.length - 1];
+    const restoreDelay = Renderer.WEBGL_RESTORE_DELAYS_MS[this._webglRestoreAttempt];
+    if (restoreDelay === undefined) {
+      this.giveUpWebGl("lost", new Error("WebGL context was lost repeatedly"));
+      return;
+    }
     this._webglRestoreAttempt += 1;
     this._webglRestoreTimeout = setTimeout(() => {
       this._webglRestoreTimeout = undefined;
       if (this._disposed) {
         return;
       }
-      this.useWebGl();
-      this._isWebglContextLostSubject.next(false);
+      if (this.useWebGl("lost")) {
+        this._isWebglContextLostSubject.next(false);
+      }
     }, restoreDelay);
   }
 }

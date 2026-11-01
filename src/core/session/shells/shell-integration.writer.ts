@@ -30,18 +30,21 @@ export class ShellIntegrationWriter {
   ): Promise<void> {
     const integrationRoot = await this.getIntegrationRoot();
 
-    const needsUpdate = await this.needsUpdate(integrationRoot);
-    if (!needsUpdate) {
-      return;
-    }
-
-    Logger.info("Installing/updating shell integration scripts...");
-
     try {
       const availableShells = await this.shells.load();
       const availableShellTypes = new Set(availableShells.map((shell) => shell.shell_type));
       const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
 
+      const needsUpdate = await this.needsUpdate(
+        integrationRoot,
+        availableShellTypes,
+        definitionsByShellType,
+      );
+      if (!needsUpdate) {
+        return;
+      }
+
+      Logger.info("Installing/updating shell integration scripts...");
       Logger.info(`Found shells: ${Array.from(availableShellTypes).join(", ")}`);
 
       await this.createBaseDirectories(integrationRoot);
@@ -82,7 +85,17 @@ export class ShellIntegrationWriter {
     return definitionsByShellType;
   }
 
-  private async needsUpdate(integrationRoot: string): Promise<boolean> {
+  /**
+   * A current VERSION file alone is no proof the scripts are there: one may
+   * have been deleted, or the directory restored half-way. A shell that
+   * starts without its script runs with no integration at all, so every
+   * file an available shell needs has to exist too.
+   */
+  private async needsUpdate(
+    integrationRoot: string,
+    availableShellTypes: ReadonlySet<ShellTypeContract>,
+    definitionsByShellType: ReadonlyMap<ShellTypeContract, ShellSupportDefinitionContract>,
+  ): Promise<boolean> {
     const versionFile = `${integrationRoot}/VERSION`;
 
     if (!(await this.fs.exists(versionFile))) {
@@ -90,7 +103,20 @@ export class ShellIntegrationWriter {
     }
 
     const currentVersion = await this.fs.readTextFile(versionFile);
-    return currentVersion.trim() !== INTEGRATION_VERSION;
+    if (currentVersion.trim() !== INTEGRATION_VERSION) {
+      return true;
+    }
+
+    for (const shellType of availableShellTypes) {
+      for (const integrationFile of definitionsByShellType.get(shellType)?.integrationFiles ?? []) {
+        const filePath = `${integrationRoot}/${integrationFile.relativePath}`;
+        if (!(await this.fs.exists(filePath))) {
+          Logger.warn(`Shell integration file missing, reinstalling: ${filePath}`);
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private async createBaseDirectories(integrationRoot: string): Promise<void> {

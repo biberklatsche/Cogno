@@ -3,6 +3,7 @@ import {
   ErrorHandler,
   Injector,
   inject,
+  ProviderToken,
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
@@ -118,23 +119,39 @@ export const appConfig: ApplicationConfig = {
 
       const injector = inject(Injector);
       setTimeout(() => {
-        injector.get(NotificationDispatchService);
-        injector.get(NotificationTargetRuntimeService);
-        injector.get(WorkspaceHostApplicationService);
-        injector.get(KeybindService);
-        injector.get(CliActionService);
-        injector.get(HttpMessageAdapterService);
-        injector.get(RunnableActionsPublisher);
-        injector.get(NativeMenuService);
-        injector.get(WindowService);
-        injector.get(SideMenuStatePersistenceService);
-        injector.get(TerminalSearchApiService);
-        injector.get(WorkspaceShortcutActionService);
+        // Each service on its own: one that fails to construct must not take
+        // the rest with it (the WindowService below is what loads the config
+        // and opens the first terminal).
+        const eager = (service: ProviderToken<unknown>) => {
+          try {
+            injector.get(service);
+          } catch (error) {
+            ErrorReporter.reportException({
+              error,
+              handled: true,
+              notify: true,
+              source: "app.config",
+              context: { operation: "eager-service", service: String(service) },
+            });
+          }
+        };
+        eager(NotificationDispatchService);
+        eager(NotificationTargetRuntimeService);
+        eager(WorkspaceHostApplicationService);
+        eager(KeybindService);
+        eager(CliActionService);
+        eager(HttpMessageAdapterService);
+        eager(RunnableActionsPublisher);
+        eager(NativeMenuService);
+        eager(WindowService);
+        eager(SideMenuStatePersistenceService);
+        eager(TerminalSearchApiService);
+        eager(WorkspaceShortcutActionService);
 
-        injector.get(AboutDialogAdapterService);
+        eager(AboutDialogAdapterService);
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).
-        injector.get(TabListService);
+        eager(TabListService);
         const unhandledActions = injector.get(ActionHandlers).unhandledCoreActions();
         if (unhandledActions.length > 0) {
           ErrorReporter.reportException({
