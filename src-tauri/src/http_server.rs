@@ -173,12 +173,7 @@ pub fn start_http_server(
         return Ok(state.port());
     }
 
-    let bound = bind_port(port, auto_next_port)
-        .ok_or_else(|| format!("No available port found starting from {}", port))?;
-    let actual_port = bound.local_addr().map_err(|e| e.to_string())?.port();
-    bound.set_nonblocking(true).map_err(|e| e.to_string())?;
-
-    state.set_port(actual_port);
+    let (bound, actual_port) = bind_listener(&state, port, auto_next_port)?;
 
     tauri::async_runtime::spawn(async move {
         use axum::extract::rejection::JsonRejection;
@@ -309,9 +304,38 @@ pub fn start_http_server(
         if let Err(e) = axum::serve(listener, router).await {
             log::error!(target: "http_server", "HTTP server error: {}", e);
         }
+        // Nobody listens any more: new terminals must not inherit a dead port.
+        app.state::<HttpServerState>().mark_failed();
     });
 
     Ok(actual_port)
+}
+
+/// Binds and records the port. Every failure hands the claim back, so the
+/// state never says "started" for a server that is not listening: a webview
+/// retry can start it, and no terminal gets a COGNO_PORT nothing answers on.
+fn bind_listener(
+    state: &HttpServerState,
+    port: u16,
+    auto_next_port: bool,
+) -> Result<(TcpListener, u16), String> {
+    let result = (|| {
+        let bound = bind_port(port, auto_next_port)
+            .ok_or_else(|| format!("No available port found starting from {}", port))?;
+        let actual_port = bound.local_addr().map_err(|e| e.to_string())?.port();
+        bound.set_nonblocking(true).map_err(|e| e.to_string())?;
+        Ok((bound, actual_port))
+    })();
+    match result {
+        Ok((bound, actual_port)) => {
+            state.set_port(actual_port);
+            Ok((bound, actual_port))
+        }
+        Err(error) => {
+            state.mark_failed();
+            Err(error)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -395,6 +419,34 @@ mod tests {
             "secret",
             9000
         ));
+    }
+
+    #[test]
+    fn a_failed_bind_hands_the_start_claim_back() {
+        let taken = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = taken.local_addr().unwrap().port();
+        let state = HttpServerState::new();
+        assert!(state.try_claim_start());
+
+        assert!(bind_listener(&state, port, false).is_err());
+
+        assert_eq!(state.port(), 0);
+        assert!(
+            state.try_claim_start(),
+            "the next start attempt must be possible"
+        );
+    }
+
+    #[test]
+    fn a_successful_bind_records_the_port() {
+        let state = HttpServerState::new();
+        assert!(state.try_claim_start());
+
+        let (_listener, port) = bind_listener(&state, 0, false).unwrap();
+
+        assert_ne!(port, 0);
+        assert_eq!(state.port(), port);
+        assert!(!state.try_claim_start());
     }
 
     #[test]
