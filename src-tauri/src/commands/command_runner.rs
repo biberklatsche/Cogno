@@ -62,13 +62,14 @@ pub async fn command_runner_execute(
     command.creation_flags(CREATE_NO_WINDOW);
 
     let session_id = prompt_session;
-    app.state::<AskpassState>()
+    let askpass_token = app
+        .state::<AskpassState>()
         .open_session(&session_id, window.label());
     // Bounded like the shell spawn: the login shell is normally captured long
     // before the first run; if it hangs, run with the process PATH instead.
     let login_path = super::login_environment::get_login_environment(Duration::from_secs(2)).path;
     apply_runner_environment(&mut command, login_path);
-    apply_prompt_environment(&mut command, &app, &session_id);
+    apply_prompt_environment(&mut command, &app, &session_id, &askpass_token);
 
     let pending = {
         let app = app.clone();
@@ -100,7 +101,14 @@ fn apply_runner_environment(command: &mut Command, login_path: Option<String>) {
 
 /// Git and ssh ask through this binary instead of a terminal. The variables
 /// also reach a WSL distro, with the helper path translated (`WSLENV` `/p`).
-fn apply_prompt_environment(command: &mut Command, app: &AppHandle, session_id: &str) {
+/// `COGNO_TOKEN` is the run's askpass token, not the launch token: hooks and
+/// helpers git starts inherit this environment (`askpass.rs`).
+fn apply_prompt_environment(
+    command: &mut Command,
+    app: &AppHandle,
+    session_id: &str,
+    askpass_token: &str,
+) {
     command.env("GIT_TERMINAL_PROMPT", "0");
     let http = app.state::<HttpServerState>();
     let helper = std::env::current_exe().ok();
@@ -112,7 +120,7 @@ fn apply_prompt_environment(command: &mut Command, app: &AppHandle, session_id: 
     command.env("SSH_ASKPASS_REQUIRE", "force");
     command.env(SESSION_ENV, session_id);
     command.env("COGNO_PORT", http.port().to_string());
-    command.env("COGNO_TOKEN", http.token());
+    command.env("COGNO_TOKEN", askpass_token);
     let shared = [
         "GIT_ASKPASS/p",
         "SSH_ASKPASS/p",

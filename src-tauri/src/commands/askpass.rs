@@ -3,6 +3,12 @@
 //! the window that started the command over the HTTP server (`/askpass`) and
 //! prints the answer. One runner session is one running command; the caller
 //! names its id, so the window can hand the prompt to whoever started the run.
+//!
+//! Each session has a token of its own that opens `/askpass` for that
+//! session and nothing else. Everything git starts inherits the run's
+//! environment (hooks in the repository, remote helpers, the credential
+//! helper); with the launch token in there, a hook could drive the agent
+//! endpoints. With the session token it can at most ask its own run's window.
 
 use serde::Serialize;
 use std::collections::HashMap;
@@ -38,10 +44,16 @@ struct Pending {
     answer: oneshot::Sender<Option<String>>,
 }
 
+struct Session {
+    /// The window that started the command.
+    window: String,
+    /// What the run's processes present on `/askpass`.
+    token: String,
+}
+
 #[derive(Default)]
 pub struct AskpassState {
-    /// Runner session -> the window that started the command.
-    sessions: Mutex<HashMap<String, String>>,
+    sessions: Mutex<HashMap<String, Session>>,
     pending: Mutex<HashMap<String, Pending>>,
 }
 
@@ -50,12 +62,27 @@ impl AskpassState {
         Self::default()
     }
 
-    /// A command with the caller's session id starts in `window`.
-    pub fn open_session(&self, session_id: &str, window: &str) {
+    /// A command with the caller's session id starts in `window`. Returns
+    /// the token its processes get for `/askpass`.
+    pub fn open_session(&self, session_id: &str, window: &str) -> String {
+        let token = uuid::Uuid::new_v4().simple().to_string();
+        self.sessions.lock().unwrap().insert(
+            session_id.to_string(),
+            Session {
+                window: window.to_string(),
+                token: token.clone(),
+            },
+        );
+        token
+    }
+
+    /// Whether `token` is the one this session's processes were given.
+    pub fn authorizes(&self, session_id: &str, token: &str) -> bool {
         self.sessions
             .lock()
             .unwrap()
-            .insert(session_id.to_string(), window.to_string());
+            .get(session_id)
+            .is_some_and(|session| session.token == token)
     }
 
     /// The command ended: prompts still open get no answer and the window closes their dialog.
@@ -101,7 +128,13 @@ impl AskpassState {
         session_id: &str,
         prompt: String,
     ) -> Option<(String, oneshot::Receiver<Option<String>>)> {
-        let window = self.sessions.lock().unwrap().get(session_id)?.clone();
+        let window = self
+            .sessions
+            .lock()
+            .unwrap()
+            .get(session_id)?
+            .window
+            .clone();
         if app.get_webview_window(&window).is_none() {
             log::warn!(target: "askpass", "prompt for a closed window {window}; refused");
             return None;
@@ -209,6 +242,19 @@ mod tests {
     fn an_answer_for_an_unknown_request_is_refused() {
         let state = AskpassState::new();
         assert!(!state.answer("nope", Some("x".into())));
+    }
+
+    #[test]
+    fn a_session_token_opens_only_its_own_session() {
+        let state = AskpassState::new();
+        let first = state.open_session("s1", "main");
+        let second = state.open_session("s2", "main");
+
+        assert!(state.authorizes("s1", &first));
+        assert!(state.authorizes("s2", &second));
+        assert!(!state.authorizes("s1", &second));
+        assert!(!state.authorizes("s3", &first));
+        assert!(!state.authorizes("s1", ""));
     }
 
     #[test]

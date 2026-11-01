@@ -252,8 +252,11 @@ Host-Keys dort abfragen und ohne Terminal abbrechen. Deshalb setzt der
 Runner `GIT_TERMINAL_PROMPT=0` und zeigt `GIT_ASKPASS`/`SSH_ASKPASS` auf das
 Cogno-Binary selbst: mit `COGNO_ASKPASS_SESSION` in der Umgebung arbeitet
 es als Askpass-Helfer (`commands/askpass.rs`), schickt den Prompt-Text mit
-Token an `POST /askpass` und druckt die Antwort. Die Sitzungs-ID vergibt der
-Aufrufer je Lauf (`CommandRunnerHostService`); das Event trägt sie, und so
+Token an `POST /askpass` und druckt die Antwort. Das Token ist eines je
+Lauf und öffnet nur `/askpass` für diese Sitzung — nicht das Launch-Token,
+denn Hooks und Helper, die git startet, erben die Umgebung des Laufs. Die
+Sitzungs-ID vergibt der Aufrufer je Lauf (`CommandRunnerHostService`); das
+Event trägt sie, und so
 landet der Prompt beim **Lauf, der ihn ausgelöst hat**: `run` nimmt einen
 `onPrompt`-Handler, und das Feature, das git gestartet hat, beantwortet die
 Frage mit seinem eigenen Dialog und seinem eigenen Wissen (das Git-Feature
