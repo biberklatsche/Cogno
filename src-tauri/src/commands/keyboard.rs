@@ -183,7 +183,7 @@ mod tests {
     #[test]
     fn reads_an_input_source_id_on_this_machine() {
         // Not every machine has the key set, but when it is, it is a reverse-DNS id.
-        if let Some(id) = get_keyboard_layout() {
+        if let Some(id) = detect_layout() {
             assert!(id.contains('.'), "unexpected layout id: {id}");
         }
     }
