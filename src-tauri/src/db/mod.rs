@@ -643,7 +643,7 @@ mod tests {
         {
             let mut conn = Connection::open(&source).unwrap();
             connection::configure(&conn).unwrap();
-            migrations::apply(&mut conn, &[schema.clone()], None).unwrap();
+            migrations::apply(&mut conn, std::slice::from_ref(&schema), None).unwrap();
             conn.execute_batch(
                 "INSERT INTO doc (text) VALUES ('pnpm run lint:fix'), ('git status')",
             )

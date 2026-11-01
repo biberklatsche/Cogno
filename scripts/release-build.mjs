@@ -255,6 +255,11 @@ function printHelp() {
   console.log("");
   console.log("Config file:");
   console.log(`  ${releaseSettingsFilePath}`);
+  console.log("");
+  console.log("Code signing:");
+  console.log("  macOS    apple.signingIdentity, plus apple.appleId/appleIdPassword/teamId to notarize");
+  console.log("  Windows  windows.certificateThumbprint (+ timestampUrl, digestAlgorithm)");
+  console.log("           or windows.signCommand (string or {cmd, args}, %1 = file to sign)");
 }
 
 function printBuildSummary({
@@ -377,6 +382,12 @@ function loadReleaseSettings({ releaseChannel }) {
     updater: {
       privateKeyPassword: parsedSettings.updater?.privateKeyPassword,
       privateKeyPath: parsedSettings.updater?.privateKeyPath,
+    },
+    windows: {
+      certificateThumbprint: parsedSettings.windows?.certificateThumbprint,
+      digestAlgorithm: parsedSettings.windows?.digestAlgorithm,
+      signCommand: parsedSettings.windows?.signCommand,
+      timestampUrl: parsedSettings.windows?.timestampUrl,
     },
     // "updater.notesFilePath" is the legacy location of this setting; it feeds latest.json.
     notesFilePath: parsedSettings.updater?.notesFilePath ?? releaseChannelSettings.notesFilePath,
@@ -553,7 +564,52 @@ function runBuild({
     return;
   }
 
+  if (currentPlatformName === "windows") {
+    runTauriBuild({
+      buildConfig: createTauriWindowsBuildConfig(buildConfig, releaseSettings),
+      buildEnvironment,
+    });
+    return;
+  }
+
   runTauriBuild({ buildConfig, buildEnvironment });
+}
+
+/**
+ * Windows code signing, from the release settings. Either a certificate in
+ * the user's store, named by "windows.certificateThumbprint" (signtool signs
+ * with it; the timestamp lets the signature outlive the certificate), or a
+ * command of the user's own in "windows.signCommand", as for Azure Trusted
+ * Signing: a string or {"cmd": "...", "args": [..., "%1"]}, where %1 is the
+ * file to sign. An unsigned installer trips SmartScreen on every install, so
+ * a release without either says so instead of passing quietly.
+ */
+function createTauriWindowsBuildConfig(tauriConfig, releaseSettings) {
+  const { certificateThumbprint, digestAlgorithm, signCommand, timestampUrl } =
+    releaseSettings.windows;
+  const windowsBundleConfig = {
+    ...(tauriConfig.bundle?.windows ?? {}),
+  };
+
+  if (signCommand !== undefined && signCommand !== null && signCommand !== "") {
+    windowsBundleConfig.signCommand = signCommand;
+  } else if (typeof certificateThumbprint === "string" && certificateThumbprint.length > 0) {
+    windowsBundleConfig.certificateThumbprint = certificateThumbprint;
+    windowsBundleConfig.digestAlgorithm = digestAlgorithm ?? "sha256";
+    windowsBundleConfig.timestampUrl = timestampUrl ?? "http://timestamp.digicert.com";
+  } else {
+    console.log(
+      `Skipping Windows code signing: neither "windows.certificateThumbprint" nor "windows.signCommand" is set in ${releaseSettings.settingsFilePath}. SmartScreen will warn on every install.`,
+    );
+  }
+
+  return {
+    ...tauriConfig,
+    bundle: {
+      ...tauriConfig.bundle,
+      windows: windowsBundleConfig,
+    },
+  };
 }
 
 /**

@@ -7,6 +7,7 @@ mod db;
 mod http_server;
 mod updater;
 
+use app_identity::LOG_FILE_STEM;
 use cli::Cli;
 use commands::pty::PtyState;
 use commands::window_registry::{route, WindowRegistry};
@@ -14,6 +15,11 @@ use db::Db;
 use http_server::{HttpServerState, RunnableActionsState};
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+
+/// The log plugin's default is 40 KB, less than one busy session writes. A
+/// few MB hold the last sessions, and the two full files before stay for a
+/// report.
+const LOG_MAX_FILE_SIZE: u128 = 5 * 1024 * 1024;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run(cli: Cli) {
@@ -36,9 +42,11 @@ pub fn run(cli: Cli) {
                 .targets([
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
                     tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                        file_name: None,
+                        file_name: Some(LOG_FILE_STEM.to_string()),
                     }),
                 ])
+                .max_file_size(LOG_MAX_FILE_SIZE)
+                .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(2))
                 .build()
         })
         .plugin(tauri_plugin_fs::init())
@@ -48,10 +56,32 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             use clap::Parser;
-            if let Ok(cli) = Cli::try_parse_from(argv) {
-                if let Some(action_payload) = cli.action_payload() {
-                    route(app, "cli-action", &action_payload, None);
-                }
+            let Ok(cli) = Cli::try_parse_from(argv) else {
+                return;
+            };
+            if let Some(action_payload) = cli.action_payload() {
+                route(app, "cli-action", &action_payload, None);
+            }
+            // `--config` and `--set` shape a process at its start; the one
+            // already running cannot take them on, and the second process
+            // is gone before it could say so. The window says it instead.
+            if cli.config.is_some() || !cli.config_set_overrides.is_empty() {
+                route(
+                    app,
+                    "cli-notice",
+                    "Cogno is already running: --config and --set only apply to a fresh start and were ignored.",
+                    None,
+                );
+            }
+            // A second start means "show me Cogno": the window the user last
+            // worked in comes to the front.
+            if let Some(window) = app
+                .state::<WindowRegistry>()
+                .resolve_target(None)
+                .and_then(|label| app.get_webview_window(&label))
+            {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
             }
         }))
         .manage(PtyState::new())

@@ -110,6 +110,12 @@ pub struct PtyState {
     sessions: Sessions,
 }
 
+impl Default for PtyState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PtyState {
     pub fn new() -> Self {
         Self {

@@ -22,6 +22,10 @@ pub struct ShellSpawner {
     integration_root: PathBuf,
 }
 
+/// What a spawn needs: the program, its arguments, its environment and the
+/// working directory.
+pub type PreparedSpawn = (String, Vec<String>, HashMap<String, String>, String);
+
 impl ShellSpawner {
     pub fn new(dev_mode: bool) -> Result<Self, String> {
         let home = dirs::home_dir().ok_or("Could not determine home directory")?;
@@ -35,10 +39,7 @@ impl ShellSpawner {
         Ok(Self { integration_root })
     }
 
-    pub fn prepare_spawn(
-        &self,
-        profile: &ShellProfile,
-    ) -> Result<(String, Vec<String>, HashMap<String, String>, String), String> {
+    pub fn prepare_spawn(&self, profile: &ShellProfile) -> Result<PreparedSpawn, String> {
         let shell_path = profile
             .path
             .clone()
