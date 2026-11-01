@@ -56,6 +56,10 @@ pub async fn command_runner_execute(
     let session_id = prompt_session;
     app.state::<AskpassState>()
         .open_session(&session_id, window.label());
+    // Bounded like the shell spawn: the login shell is normally captured long
+    // before the first run; if it hangs, run with the process PATH instead.
+    let login_path = super::login_environment::get_login_environment(Duration::from_secs(2)).path;
+    apply_runner_environment(&mut command, login_path);
     apply_prompt_environment(&mut command, &app, &session_id);
 
     let pending = {
@@ -71,6 +75,19 @@ pub async fn command_runner_execute(
     result
         .map_err(|error| error.to_string())?
         .map_err(|error| error.to_string())
+}
+
+/// What every run gets. The login PATH: a GUI process started by launchd or
+/// systemd has a minimal one, so git, gh or a credential helper configured by
+/// name would not be found, or Apple's /usr/bin/git shim would be taken over
+/// the git the user's terminal uses. `GIT_OPTIONAL_LOCKS=0`: a read such as
+/// `git status` otherwise rewrites the index under index.lock and collides
+/// with a git command the user types in the pane at that moment.
+fn apply_runner_environment(command: &mut Command, login_path: Option<String>) {
+    if let Some(path) = login_path {
+        command.env("PATH", path);
+    }
+    command.env("GIT_OPTIONAL_LOCKS", "0");
 }
 
 /// Git and ssh ask through this binary instead of a terminal. The variables
@@ -93,6 +110,7 @@ fn apply_prompt_environment(command: &mut Command, app: &AppHandle, session_id: 
         "SSH_ASKPASS/p",
         "SSH_ASKPASS_REQUIRE",
         "GIT_TERMINAL_PROMPT",
+        "GIT_OPTIONAL_LOCKS",
         SESSION_ENV,
         "COGNO_PORT",
         "COGNO_TOKEN",
@@ -293,11 +311,43 @@ mod tests {
         assert_eq!(result.exit_code, 3);
         assert_eq!(result.stderr, "oops\n");
     }
+
+    #[test]
+    fn the_login_path_and_optional_locks_reach_the_command() {
+        let mut command = shell("echo \"$PATH\"; echo \"$GIT_OPTIONAL_LOCKS\"");
+        apply_runner_environment(&mut command, Some("/cogno/login/bin:/usr/bin:/bin".into()));
+
+        let result = run(command, Some(5_000)).unwrap();
+
+        assert_eq!(result.exit_code, 0);
+        assert_eq!(result.stdout, "/cogno/login/bin:/usr/bin:/bin\n0\n");
+    }
+
+    #[test]
+    fn without_a_login_path_the_process_path_stays() {
+        let mut command = shell("echo \"$PATH\"");
+        apply_runner_environment(&mut command, None);
+
+        let result = run(command, Some(5_000)).unwrap();
+
+        assert_eq!(result.stdout.trim_end(), std::env::var("PATH").unwrap());
+    }
 }
 
 #[cfg(all(test, windows))]
 mod windows_tests {
     use super::*;
+
+    #[test]
+    fn optional_locks_reach_the_command() {
+        let mut command = Command::new("cmd");
+        command.args(["/C", "echo %GIT_OPTIONAL_LOCKS%"]);
+        apply_runner_environment(&mut command, None);
+
+        let result = run(command, Some(5_000), None, &|| false).unwrap();
+
+        assert_eq!(result.stdout.trim_end(), "0");
+    }
 
     #[test]
     fn a_grandchild_holding_the_pipes_does_not_hold_up_the_result() {

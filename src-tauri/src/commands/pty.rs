@@ -1,6 +1,4 @@
-#[cfg(windows)]
-use portable_pty::ChildKiller;
-use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Write;
@@ -16,6 +14,8 @@ use super::line_editor::{
 };
 use super::window_registry::{route, WindowRegistry};
 
+#[cfg(windows)]
+use super::shell_job::ShellJob;
 use super::shell_spawner::{ShellProfile, ShellSpawner};
 use crate::http_server::HttpServerState;
 
@@ -42,12 +42,16 @@ struct Session {
     /// the writer thread.
     input_tx: std::sync::mpsc::Sender<Vec<u8>>,
     flow: Arc<FlowControl>,
-    /// Ends the shell when the session is released. On Unix closing the
-    /// master already hangs up the shell (and lets it write its history on
-    /// the way out); ConPTY does not terminate its clients when the console
-    /// closes, so on Windows this is the only thing that does.
-    #[cfg(windows)]
+    /// Ends the shell when the session is released: SIGHUP on Unix (what a
+    /// closing terminal sends; the shell saves its history and hangs up its
+    /// jobs), `TerminateProcess` on Windows (ConPTY does not end its clients
+    /// when the console closes). Closing the master alone would not do it:
+    /// the reader thread holds its own descriptor while blocked in `read`.
     child_killer: Box<dyn ChildKiller + Send + Sync>,
+    /// Held only for its drop: ends the shell's whole process tree with the
+    /// session, and with the process should Cogno abort (see `shell_job`).
+    #[cfg(windows)]
+    _job: Option<ShellJob>,
     shell_process_id: Option<u32>,
     shell_type: String,
     line_editor_pipe_name: Option<String>,
@@ -57,16 +61,12 @@ struct Session {
 type Sessions = Arc<Mutex<HashMap<String, Session>>>;
 
 /// Releases everything a session owns: stops the reader, removes the
-/// line-editor channel, drops the master (closes the PTY) and the input sender
-/// (ends the writer thread). Must be called without holding `sessions`:
-/// closing a ConPTY can block until its output pipe is drained.
-fn release_session(session: Session) {
-    // Only the Windows kill below needs `&mut`.
-    #[cfg(windows)]
-    let mut session = session;
+/// line-editor channel, ends the shell, drops the master (closes the PTY) and
+/// the input sender (ends the writer thread). Must be called without holding
+/// `sessions`: closing a ConPTY can block until its output pipe is drained.
+fn release_session(mut session: Session) {
     session.flow.close();
     remove_line_editor_channel(&session.line_editor_channel);
-    #[cfg(windows)]
     if let Err(e) = session.child_killer.kill() {
         // Already gone (the wait thread ends the entry in that case) or not
         // ours to kill any more; nothing to do about either.
@@ -114,6 +114,18 @@ impl PtyState {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// Ends every shell: what the app does on its way out, so no shell (or,
+    /// on Windows, grandchild) is left running after the window is gone.
+    pub fn release_all(&self) {
+        let sessions: Vec<Session> = {
+            let mut sessions = self.sessions.lock().unwrap();
+            sessions.drain().map(|(_, session)| session).collect()
+        };
+        for session in sessions {
+            release_session(session);
         }
     }
 
@@ -207,16 +219,28 @@ pub async fn pty_spawn(
         .spawn_command(cmd)
         .map_err(|e| format!("Failed to spawn command: {}", e))?;
     let shell_process_id = child.process_id();
+    // A shell that fails to join a job (a restricted job around Cogno itself)
+    // still runs; it just ends the old way, by TerminateProcess alone.
+    #[cfg(windows)]
+    let job = shell_process_id.and_then(|pid| match ShellJob::containing(pid) {
+        Ok(job) => Some(job),
+        Err(error) => {
+            log::warn!(
+                target: "pty",
+                "shell_pid={} could not join a job object: {}",
+                pid,
+                error
+            );
+            None
+        }
+    });
 
     let reader = pair
         .master
         .try_clone_reader()
         .map_err(|e| format!("Failed to clone reader: {}", e))?;
 
-    let writer = pair
-        .master
-        .take_writer()
-        .map_err(|e| format!("Failed to take writer: {}", e))?;
+    let writer = master_writer(&*pair.master)?;
 
     let flow = Arc::new(FlowControl::new());
     let (input_tx, input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
@@ -225,8 +249,9 @@ pub async fn pty_spawn(
         master: pair.master,
         input_tx,
         flow: flow.clone(),
-        #[cfg(windows)]
         child_killer: child.clone_killer(),
+        #[cfg(windows)]
+        _job: job,
         shell_process_id,
         shell_type: options.profile.shell_type.clone(),
         line_editor_pipe_name,
@@ -291,41 +316,9 @@ pub async fn pty_spawn(
         let app = app.clone();
         let sessions = state.sessions.clone();
         std::thread::spawn(move || {
-            let mut reader = reader;
-            // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful
-            // across writes; splitting a multi-byte sequence between two reads
-            // is fine.
-            let mut buf = vec![0u8; READ_BUF_SIZE];
-            let mut seq: u32 = 0;
-
-            'reader: loop {
-                if flow.is_closed() {
-                    break;
-                }
-                let n = match std::io::Read::read(&mut reader, &mut buf) {
-                    Ok(0) | Err(_) => break,
-                    Ok(n) => n,
-                };
-                // Split into pieces under MAX_CHUNK_SIZE: a read can be up to
-                // READ_BUF_SIZE, far past the size that keeps every message on
-                // the webview channel's reliable delivery path (see
-                // MAX_CHUNK_SIZE). xterm's parser is stateful across writes,
-                // so splitting mid-sequence is fine, same as splitting across
-                // reads already was.
-                for sub_chunk in buf[..n].chunks(MAX_CHUNK_SIZE) {
-                    if !flow.acquire(seq, sub_chunk.len()) {
-                        break 'reader;
-                    }
-                    if on_data
-                        .send(InvokeResponseBody::Raw(frame_chunk(seq, sub_chunk)))
-                        .is_err()
-                    {
-                        // Webview is gone; nothing left to deliver to.
-                        break 'reader;
-                    }
-                    seq = seq.wrapping_add(1);
-                }
-            }
+            pump_pty_output(reader, &flow, |frame| {
+                on_data.send(InvokeResponseBody::Raw(frame)).is_ok()
+            });
 
             // EOF, read error or a lost webview: the PTY is unusable. If the
             // session was killed or replaced instead, the entry is already
@@ -335,6 +328,81 @@ pub async fn pty_spawn(
     }
 
     Ok(PtySpawnResult { shell_process_id })
+}
+
+/// Reads PTY output and hands it to `deliver` as framed chunks under flow
+/// control, until the PTY ends or `deliver` returns false (the webview is
+/// gone). Once the flow is closed (kill, exit, respawn) nothing is delivered
+/// any more, but reading goes on until the PTY ends: a reader that stops
+/// while the pipe is full leaves the shell blocked on its write, and before
+/// Windows 11 24H2 `ClosePseudoConsole` then waits for that pipe forever.
+fn pump_pty_output(
+    mut reader: Box<dyn std::io::Read + Send>,
+    flow: &FlowControl,
+    mut deliver: impl FnMut(Vec<u8>) -> bool,
+) {
+    // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful
+    // across writes; splitting a multi-byte sequence between two reads
+    // is fine.
+    let mut buf = vec![0u8; READ_BUF_SIZE];
+    let mut seq: u32 = 0;
+
+    'reader: loop {
+        let n = match reader.read(&mut buf) {
+            Ok(0) | Err(_) => break,
+            Ok(n) => n,
+        };
+        if flow.is_closed() {
+            continue;
+        }
+        // Split into pieces under MAX_CHUNK_SIZE: a read can be up to
+        // READ_BUF_SIZE, far past the size that keeps every message on
+        // the webview channel's reliable delivery path (see
+        // MAX_CHUNK_SIZE). xterm's parser is stateful across writes,
+        // so splitting mid-sequence is fine, same as splitting across
+        // reads already was.
+        for sub_chunk in buf[..n].chunks(MAX_CHUNK_SIZE) {
+            if !flow.acquire(seq, sub_chunk.len()) {
+                // Closed while waiting for capacity: drain from here on.
+                continue 'reader;
+            }
+            if !deliver(frame_chunk(seq, sub_chunk)) {
+                break 'reader;
+            }
+            seq = seq.wrapping_add(1);
+        }
+    }
+}
+
+/// The handle PTY input is written through. On Unix this is a plain duplicate
+/// of the master descriptor: portable-pty's own writer sends a newline and EOF
+/// to the shell when it is dropped, which would run whatever line the user had
+/// typed but not yet entered when the pane closes.
+#[cfg(unix)]
+fn master_writer(master: &dyn MasterPty) -> Result<Box<dyn Write + Send>, String> {
+    use std::os::unix::io::FromRawFd;
+
+    let fd = master
+        .as_raw_fd()
+        .ok_or_else(|| "PTY master has no file descriptor".to_string())?;
+    // SAFETY: `fd` is the open master descriptor owned by `master`; `dup`
+    // returns a new descriptor that the returned `File` then owns.
+    let duplicate = unsafe { libc::dup(fd) };
+    if duplicate < 0 {
+        return Err(format!(
+            "Failed to duplicate PTY master: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+    unsafe { libc::fcntl(duplicate, libc::F_SETFD, libc::FD_CLOEXEC) };
+    Ok(Box::new(unsafe { std::fs::File::from_raw_fd(duplicate) }))
+}
+
+#[cfg(windows)]
+fn master_writer(master: &dyn MasterPty) -> Result<Box<dyn Write + Send>, String> {
+    master
+        .take_writer()
+        .map_err(|e| format!("Failed to take writer: {}", e))
 }
 
 /// Per-session writer thread: performs the (potentially blocking) PTY writes in
@@ -524,4 +592,210 @@ pub fn pty_ack(state: State<'_, PtyState>, terminal_id: String, seq: u32) -> Res
         flow.ack_through(seq);
     }
     Ok(())
+}
+
+#[cfg(all(test, unix))]
+mod unix_tests {
+    use super::*;
+    use std::io::Read;
+    use std::time::{Duration, Instant};
+
+    /// Waits up to `limit` for `condition`; the shell lives in another process.
+    fn wait_until(limit: Duration, mut condition: impl FnMut() -> bool) -> bool {
+        let started = Instant::now();
+        while started.elapsed() < limit {
+            if condition() {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        condition()
+    }
+
+    #[test]
+    fn releasing_a_session_hangs_up_the_shell_without_entering_the_pending_line() {
+        let marker = std::env::temp_dir().join(format!(
+            "cogno-pty-release-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
+        let _ = std::fs::remove_file(&marker);
+
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut cmd = CommandBuilder::new("sh");
+        cmd.arg("-i");
+        cmd.env("PS1", "$ ");
+        let mut child = pair.slave.spawn_command(cmd).unwrap();
+        drop(pair.slave);
+
+        // Drain output like the reader thread does, so the shell never blocks.
+        let output = Arc::new(Mutex::new(Vec::<u8>::new()));
+        let mut reader = pair.master.try_clone_reader().unwrap();
+        let drain = {
+            let output = output.clone();
+            std::thread::spawn(move || {
+                let mut buf = [0u8; 1024];
+                while let Ok(n) = reader.read(&mut buf) {
+                    if n == 0 {
+                        break;
+                    }
+                    output.lock().unwrap().extend_from_slice(&buf[..n]);
+                }
+            })
+        };
+
+        // A line typed but not entered; the tty echoes it back once received.
+        let pending = format!("touch {}", marker.display());
+        let mut writer = master_writer(&*pair.master).unwrap();
+        writer.write_all(pending.as_bytes()).unwrap();
+        writer.flush().unwrap();
+        assert!(
+            wait_until(Duration::from_secs(5), || {
+                String::from_utf8_lossy(&output.lock().unwrap()).contains(&pending)
+            }),
+            "shell never echoed the pending input"
+        );
+
+        let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
+        let session = Session {
+            master: pair.master,
+            input_tx,
+            flow: Arc::new(FlowControl::new()),
+            child_killer: child.clone_killer(),
+            shell_process_id: child.process_id(),
+            shell_type: "Bash".to_string(),
+            line_editor_pipe_name: None,
+            line_editor_channel: None,
+        };
+        release_session(session);
+        drop(writer);
+
+        assert!(
+            wait_until(Duration::from_secs(5), || child
+                .try_wait()
+                .map(|status| status.is_some())
+                .unwrap_or(true)),
+            "shell is still running after the session was released"
+        );
+        drain.join().unwrap();
+        assert!(
+            !marker.exists(),
+            "the pending line was entered when the session was released"
+        );
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    /// Spawns `cmd` printing `lines` lines into a ConPTY whose reader stalls
+    /// on tiny watermarks with nothing acknowledged, waits until it has
+    /// stalled and the pipe behind it had time to fill, then returns what a
+    /// session release needs.
+    fn stalled_session(
+        lines: u32,
+    ) -> (
+        Session,
+        Box<dyn portable_pty::Child + Send + Sync>,
+        std::thread::JoinHandle<()>,
+    ) {
+        let pair = native_pty_system()
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .unwrap();
+        let mut cmd = CommandBuilder::new("cmd");
+        cmd.args([
+            "/C",
+            &format!("for /L %i in (1,1,{lines}) do @echo line %i"),
+        ]);
+        let child = pair.slave.spawn_command(cmd).unwrap();
+        drop(pair.slave);
+
+        let flow = Arc::new(FlowControl::with_watermarks(
+            4 * MAX_CHUNK_SIZE,
+            MAX_CHUNK_SIZE,
+        ));
+        let reader = pair.master.try_clone_reader().unwrap();
+        let pump = {
+            let flow = flow.clone();
+            std::thread::spawn(move || pump_pty_output(reader, &flow, |_frame| true))
+        };
+        let started = Instant::now();
+        while flow.in_flight() <= 4 * MAX_CHUNK_SIZE {
+            assert!(
+                started.elapsed() < Duration::from_secs(10),
+                "reader never reached the high watermark"
+            );
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        std::thread::sleep(Duration::from_millis(300));
+
+        let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
+        let session = Session {
+            master: pair.master,
+            input_tx,
+            flow,
+            child_killer: child.clone_killer(),
+            _job: None,
+            shell_process_id: child.process_id(),
+            shell_type: "PowerShell".to_string(),
+            line_editor_pipe_name: None,
+            line_editor_channel: None,
+        };
+        (session, child, pump)
+    }
+
+    fn assert_finishes(handle: std::thread::JoinHandle<()>, what: &str) {
+        let started = Instant::now();
+        while !handle.is_finished() {
+            assert!(
+                started.elapsed() < Duration::from_secs(15),
+                "{what} is still running after 15 s"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        handle.join().unwrap();
+    }
+
+    /// Pane closed while the shell is still printing: the output pipe is
+    /// full, the reader is blocked on flow control, nothing acknowledged.
+    #[test]
+    fn releasing_a_session_with_unread_output_returns() {
+        let (session, _child, pump) = stalled_session(200_000);
+        let release = std::thread::spawn(move || release_session(session));
+        assert_finishes(release, "release_session");
+        assert_finishes(pump, "reader thread");
+    }
+
+    /// Shell exited on its own with output nobody has read yet (the path
+    /// end_session takes from the wait thread). Little enough output that
+    /// the pipe behind the stalled reader can hold the rest of it.
+    #[test]
+    fn releasing_a_session_whose_shell_already_exited_returns() {
+        let (session, mut child, pump) = stalled_session(500);
+        let started = Instant::now();
+        while child.try_wait().unwrap().is_none() {
+            assert!(
+                started.elapsed() < Duration::from_secs(15),
+                "shell did not exit; the pipe may be blocking it"
+            );
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        let release = std::thread::spawn(move || release_session(session));
+        assert_finishes(release, "release_session");
+        assert_finishes(pump, "reader thread");
+    }
 }

@@ -112,6 +112,13 @@ export class GitRepositoryService {
   private refreshInFlight = false;
   private refreshPending = false;
   private contextPending = false;
+  /**
+   * Git itself was not usable at the last look. Focus changes, cwd changes and
+   * finished commands then no longer run git again (on macOS without the
+   * command line tools every attempt pops Apple's install dialog); opening
+   * the panel or an explicit refresh does.
+   */
+  private gitMissing = false;
 
   constructor(
     sessionApi: SessionApi,
@@ -121,10 +128,10 @@ export class GitRepositoryService {
   ) {
     sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
       this.boundSession = boundSession.status === "active" ? boundSession.session : null;
-      if (this.active) this.requestRefresh(true);
+      this.requestAutomaticRefresh(true);
     });
     sessionApi.cwdChanges$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
-      if (this.active) this.requestRefresh(true);
+      this.requestAutomaticRefresh(true);
     });
     // A command that finished in the bound terminal (a `git commit` typed there) may have
     // changed the repository.
@@ -136,7 +143,7 @@ export class GitRepositoryService {
         takeUntilDestroyed(destroyRef),
       )
       .subscribe(() => {
-        if (this.active) this.requestRefresh(false);
+        this.requestAutomaticRefresh(false);
       });
     appWindow.onFocusChanged$
       .pipe(
@@ -144,7 +151,7 @@ export class GitRepositoryService {
         takeUntilDestroyed(destroyRef),
       )
       .subscribe(() => {
-        if (this.active) this.requestRefresh(false);
+        this.requestAutomaticRefresh(false);
       });
     destroyRef.onDestroy(() => this.stop());
   }
@@ -152,6 +159,7 @@ export class GitRepositoryService {
   start(): void {
     if (this.active) return;
     this.active = true;
+    this.gitMissing = false;
     this.requestRefresh(true);
   }
 
@@ -161,6 +169,7 @@ export class GitRepositoryService {
   }
 
   refresh(): Promise<void> {
+    this.gitMissing = false;
     return this.requestRefresh(false);
   }
 
@@ -215,6 +224,11 @@ export class GitRepositoryService {
       show.stdout,
       files?.exitCode === 0 ? parseNameStatus(files.stdout) : [],
     );
+  }
+
+  private requestAutomaticRefresh(resolveContext: boolean): void {
+    if (!this.active || this.gitMissing) return;
+    this.requestRefresh(resolveContext);
   }
 
   /**
@@ -278,7 +292,9 @@ export class GitRepositoryService {
     const [root, gitDir] = stdout.split("\n").map((line) => line.trim());
     if (exitCode !== 0 || !root || !gitDir) {
       // exit 128 = "not a git repository"; anything else means git isn't usable.
-      this.clear(exitCode === 128 || exitCode === 0 ? "no_repo" : "not_installed");
+      const noRepo = exitCode === 128 || exitCode === 0;
+      this.gitMissing = !noRepo;
+      this.clear(noRepo ? "no_repo" : "not_installed");
       return false;
     }
     if (root !== this.rootSignal()) {

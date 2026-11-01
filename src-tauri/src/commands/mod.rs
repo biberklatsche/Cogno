@@ -11,6 +11,8 @@ pub mod login_environment;
 pub mod notification;
 pub mod processes;
 pub mod pty;
+#[cfg(windows)]
+pub mod shell_job;
 pub mod shell_spawner;
 pub mod shells;
 pub mod window;

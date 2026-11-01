@@ -109,6 +109,24 @@ describe("GitRepositoryService", () => {
     ]);
   });
 
+  it("stops asking git on focus, cwd and command events once git is missing", async () => {
+    const session = sessionHandle(() => Promise.resolve(ran("", 127)));
+    const { service, activity$, focus$ } = makeService(session);
+
+    service.start();
+    await flush();
+    expect(service.error()).toBe("not_installed");
+    expect(vi.mocked(session.run)).toHaveBeenCalledTimes(1);
+
+    focus$.next(true);
+    activity$.next({ terminalId: "t1", isBusy: false } as TerminalActivityEvent);
+    await flush();
+    expect(vi.mocked(session.run)).toHaveBeenCalledTimes(1);
+
+    await service.refresh();
+    expect(vi.mocked(session.run)).toHaveBeenCalledTimes(2);
+  });
+
   it("runs every repository command in the repository root", async () => {
     const session = sessionHandle(repo("/c/repo"));
     const { service } = makeService(session);
