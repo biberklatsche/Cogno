@@ -7,7 +7,7 @@ import {
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { AppWindow } from "@cogno/platform";
-import { catchError, EMPTY, filter, Subscription } from "rxjs";
+import { catchError, EMPTY, filter, merge, Subscription } from "rxjs";
 import { layoutGraph } from "./model/git-graph";
 import {
   GitCommit,
@@ -299,7 +299,7 @@ export class GitRepositoryService {
     // Runs in the session's cwd to find the repository it is in.
     const outcome = await session.run({
       executable: "git",
-      args: ["rev-parse", "--show-toplevel", "--absolute-git-dir"],
+      args: ["rev-parse", "--show-toplevel", "--absolute-git-dir", "--git-common-dir"],
       contextRevision: session.contextRevision,
       timeoutMs: READ_TIMEOUT_MS,
     });
@@ -311,7 +311,7 @@ export class GitRepositoryService {
       return false;
     }
     const { exitCode, stdout, stderr } = outcome.result;
-    const [root, gitDir] = stdout.split("\n").map((line) => line.trim());
+    const [root, gitDir, commonDir] = stdout.split("\n").map((line) => line.trim());
     if (exitCode !== 0 || !root || !gitDir) {
       const error = classifyRootFailure(exitCode, stderr);
       this.gitMissing = error === "not_installed";
@@ -324,24 +324,23 @@ export class GitRepositoryService {
     }
     this.rootSignal.set(root);
     this.gitDir = gitDir;
-    this.watchGitDir(session, gitDir);
+    this.watchGitDirs(session, dirsToWatch(gitDir, commonDir ?? ""));
     return true;
   }
 
   /**
-   * Follow the git dir of the bound session while the panel is open. Rebound
-   * on every context resolution: the dir or the session it is read in may
+   * Follow the git dirs of the bound session while the panel is open. Rebound
+   * on every context resolution: the dirs or the session they are read in may
    * have changed. A session that refuses to watch (remote) just goes unwatched.
    */
-  private watchGitDir(session: BoundSessionHandle, gitDir: string): void {
+  private watchGitDirs(session: BoundSessionHandle, dirs: ReadonlyArray<string>): void {
     this.unwatchGitDir();
     if (!this.active) return;
-    this.gitDirWatch = session.fs
-      .watch$(gitDir)
-      .pipe(catchError(() => EMPTY))
-      .subscribe(() => {
-        if (this.active) this.requestRefresh(false);
-      });
+    this.gitDirWatch = merge(
+      ...dirs.map((dir) => session.fs.watch$(dir).pipe(catchError(() => EMPTY))),
+    ).subscribe(() => {
+      if (this.active) this.requestRefresh(false);
+    });
   }
 
   private unwatchGitDir(): void {
@@ -489,6 +488,20 @@ function classifyRootFailure(exitCode: number, stderr: string): GitError {
   if (exitCode === 0) return "no_repo";
   if (exitCode !== 128) return "not_installed";
   return /not a git repository/i.test(stderr) ? "no_repo" : "repo_unreadable";
+}
+
+/**
+ * What to watch for changes. In a linked worktree the git dir is only that
+ * worktree's slice (HEAD, index, a stopped rebase); branches, remote refs
+ * and objects live in the common dir, so a commit or fetch from the main
+ * worktree would go unseen. Git prints the common dir relative to the cwd
+ * only when it is the worktree's own .git, so a relative one adds nothing.
+ */
+function dirsToWatch(gitDir: string, commonDir: string): string[] {
+  const isAbsolute = commonDir.startsWith("/") || /^[A-Za-z]:[\\/]/.test(commonDir);
+  if (!isAbsolute || commonDir === gitDir) return [gitDir];
+  if (gitDir.startsWith(`${commonDir}/`)) return [commonDir];
+  return [gitDir, commonDir];
 }
 
 /** Run `git` in a session; null when the session rejects it. */

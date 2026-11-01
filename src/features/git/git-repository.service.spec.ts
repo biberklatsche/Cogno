@@ -51,7 +51,7 @@ function repo(root: string, overrides: Record<string, SessionRunResult> = {}): R
     const command = args.slice(0, 2).join(" ");
     if (overrides[command]) return Promise.resolve(overrides[command]);
     if (args[0] === "rev-parse" && args.includes("--show-toplevel")) {
-      return Promise.resolve(ran(`${root}\n${root}/.git\n`));
+      return Promise.resolve(ran(`${root}\n${root}/.git\n.git\n`));
     }
     if (args[0] === "status") return Promise.resolve(ran(z("M  a.ts")));
     if (command === "rev-parse -q") return Promise.resolve(ran("c1\n"));
@@ -322,6 +322,23 @@ describe("GitRepositoryService", () => {
 
     service.stop();
     expect(gitDirChanges$.observed).toBe(false);
+  });
+
+  it("watches the common git dir of a linked worktree, where the refs live", async () => {
+    const base = repo("/c/wt");
+    const session = sessionHandle((request) =>
+      request.args?.includes("--show-toplevel")
+        ? Promise.resolve(ran("/c/wt\n/c/repo/.git/worktrees/wt\n/c/repo/.git\n"))
+        : base(request),
+    );
+    const { service } = makeService(session);
+
+    service.start();
+    await flush();
+
+    expect(service.root()).toBe("/c/wt");
+    expect(session.fs.watch$).toHaveBeenCalledTimes(1);
+    expect(session.fs.watch$).toHaveBeenCalledWith("/c/repo/.git");
   });
 
   it("re-reads the repository when the window regains focus", async () => {
