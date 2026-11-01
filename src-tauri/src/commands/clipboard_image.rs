@@ -2,7 +2,15 @@ use base64::{engine::general_purpose, Engine as _};
 use std::path::Path;
 use uuid::Uuid;
 
-const PASTE_FILE_PREFIX: &str = "cogno_paste_";
+/// A dev build and a release build share the temp dir, and each removes
+/// its leftovers on start: the prefix tells their files apart, so a dev
+/// instance never takes the pasted images of the release instance running
+/// beside it (the path has been handed to the shell by then).
+const PASTE_FILE_PREFIX: &str = if cfg!(debug_assertions) {
+    "cogno-dev_paste_"
+} else {
+    "cogno_paste_"
+};
 
 #[tauri::command]
 pub async fn save_clipboard_image_to_file(
@@ -28,7 +36,8 @@ pub async fn save_clipboard_image_to_file(
 }
 
 /// Pasted images live until Cogno exits; the next start removes what is left.
-/// Single instance, so no running Cogno still needs them.
+/// Single instance per build, so no running Cogno of this build still needs
+/// them; the other build's files are its own to remove.
 pub fn remove_leftover_paste_files() {
     remove_paste_files_in(&std::env::temp_dir());
 }
@@ -52,16 +61,27 @@ fn remove_paste_files_in(dir: &Path) {
 mod tests {
     use super::*;
 
+    /// What the other build names its files.
+    const OTHER_BUILDS_PREFIX: &str = if cfg!(debug_assertions) {
+        "cogno_paste_"
+    } else {
+        "cogno-dev_paste_"
+    };
+
     #[test]
-    fn removes_only_paste_files() {
+    fn removes_only_this_builds_paste_files() {
         let dir = std::env::temp_dir().join(format!("cogno-paste-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("cogno_paste_abc.png"), b"x").unwrap();
+        let own = dir.join(format!("{PASTE_FILE_PREFIX}abc.png"));
+        let other_builds = dir.join(format!("{OTHER_BUILDS_PREFIX}abc.png"));
+        std::fs::write(&own, b"x").unwrap();
+        std::fs::write(&other_builds, b"x").unwrap();
         std::fs::write(dir.join("other.png"), b"x").unwrap();
 
         remove_paste_files_in(&dir);
 
-        assert!(!dir.join("cogno_paste_abc.png").exists());
+        assert!(!own.exists());
+        assert!(other_builds.exists());
         assert!(dir.join("other.png").exists());
         std::fs::remove_dir_all(&dir).unwrap();
     }
