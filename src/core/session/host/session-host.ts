@@ -146,6 +146,8 @@ export type SessionDisplay = "detached" | "attached";
 
 /** How long after the shell answered the terminal takes the keyboard. */
 const FOCUS_AFTER_START_MS = 50;
+/** How long after the shell started its COGNO:CAPS handshake is waited for. */
+const HANDSHAKE_TIMEOUT_MS = 10_000;
 /** Padding and theme changes settle before the terminal is measured again. */
 const RESIZE_AFTER_LAYOUT_CHANGE_MS = 100;
 
@@ -189,6 +191,7 @@ export class SessionHost {
   /** A snapshot waiting to be replayed on the first attach. */
   private _pendingRestore?: SessionSnapshot;
   private _restoreScheduled = false;
+  private handshakeTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
     private readonly os: OsPlatform,
@@ -330,10 +333,14 @@ export class SessionHost {
     );
 
     this.ptyHandler = new PtyHandler(terminalId, this.pty, spawnProfile, {
-      onSpawned: () => this.setRuntime({ status: "running" }),
+      onSpawned: () => {
+        this.setRuntime({ status: "running" });
+        this.watchForHandshake(spawnProfile);
+      },
       onFailed: (error) => this.onStartFailed(error),
       onStarted: () => setTimeout(() => this.focus(), FOCUS_AFTER_START_MS),
       onExited: (exitCode) => {
+        this.stopWatchingForHandshake();
         this.setRuntime({ status: "exited", exitCode });
         this.hostFacts.next({ type: "exited", exitCode });
       },
@@ -443,6 +450,7 @@ export class SessionHost {
     const status = this.runtime.status;
     if (status === "closed" || status === "closing") return;
     this.setRuntime({ status: "closing" });
+    this.stopWatchingForHandshake();
     this.detach();
     this.model.dispose();
     this.hostFacts.complete();
@@ -829,6 +837,27 @@ export class SessionHost {
   private setRuntime(runtime: SessionRuntime): void {
     if (this.runtime$$.closed) return;
     this.runtime$$.next(runtime);
+  }
+
+  /**
+   * A profile with the integration on is expected to handshake soon after
+   * the shell starts. When nothing arrives, the session says so instead of
+   * looking like a plain terminal that just happens to record nothing.
+   */
+  private watchForHandshake(profile: ShellProfile): void {
+    this.stopWatchingForHandshake();
+    if (!profile.enable_shell_integration) return;
+    this.handshakeTimeout = setTimeout(() => {
+      this.handshakeTimeout = undefined;
+      if (this.model.sessionCapabilities !== undefined) return;
+      this.hostFacts.next({ type: "integrationMissing", shellType: profile.shell_type });
+    }, HANDSHAKE_TIMEOUT_MS);
+  }
+
+  private stopWatchingForHandshake(): void {
+    if (!this.handshakeTimeout) return;
+    clearTimeout(this.handshakeTimeout);
+    this.handshakeTimeout = undefined;
   }
 
   private onStartFailed(error: unknown): void {

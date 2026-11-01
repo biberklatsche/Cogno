@@ -45,4 +45,10 @@ export type SessionFact =
    * the output stream pretends to be the integration (ARCHITECTURE.md 2.1,
    * "Der Handshake ist authentisiert"). Stated once, at the threshold.
    */
-  | { readonly type: "untrustedSequencesIgnored"; readonly count: number };
+  | { readonly type: "untrustedSequencesIgnored"; readonly count: number }
+  /**
+   * The shell is up but its integration never said hello: the scripts did
+   * not load (a missing file, an rc that exec's another shell). Commands,
+   * cwd and history stay dark in this session (ARCHITECTURE.md 4.3).
+   */
+  | { readonly type: "integrationMissing"; readonly shellType: string };

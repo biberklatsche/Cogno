@@ -65,21 +65,35 @@ export class SessionNotifications {
         this.notifyFromTerminal(fact.message);
         break;
       case "untrustedSequencesIgnored":
-        this.bus.publish({
-          type: "Notification",
-          payload: {
-            header: "Untrusted Cogno sequences ignored",
-            body: `Something in this terminal's output pretends to be the Cogno shell integration; ${fact.count} sequences were ignored.`,
-            type: "warning",
-            timestamp: new Date(),
-            terminalId: this.host.terminalId,
-            target: this.resolveNotificationTarget(),
-          },
-        });
+        this.warn(
+          "Untrusted Cogno sequences ignored",
+          `Something in this terminal's output pretends to be the Cogno shell integration; ${fact.count} sequences were ignored.`,
+        );
+        break;
+      case "integrationMissing":
+        this.warn(
+          "Shell integration did not load",
+          `The ${fact.shellType} shell started, but Cogno's integration never answered. Commands, directory and history are not tracked in this terminal; check the shell's startup files.`,
+        );
         break;
       default:
         break;
     }
+  }
+
+  /** Something degraded in this session: always told, no preference gates it. */
+  private warn(header: string, body: string): void {
+    this.bus.publish({
+      type: "Notification",
+      payload: {
+        header,
+        body,
+        type: "warning",
+        timestamp: new Date(),
+        terminalId: this.host.terminalId,
+        target: this.resolveNotificationTarget(),
+      },
+    });
   }
 
   /** OSC 9 asked for attention: check the preferences, then tell the user. */
