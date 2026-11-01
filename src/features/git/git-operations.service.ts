@@ -1,6 +1,7 @@
 import { Injectable, signal } from "@angular/core";
 import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import { isWslShellContext } from "@cogno/shared/domain";
 import { GitProcessPromptService, GitRunPrompts } from "./git-process-prompt.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitBranch, GitOperation, GitPullMode, GitRemoteBranch } from "./model/git-model";
@@ -468,14 +469,18 @@ export class GitOperationsService {
   }
 
   /**
-   * On macOS and Linux git's cache helper keeps credentials the user typed
-   * into the prompt for an hour, so one push does not ask for every fetch.
-   * It comes after the user's own helpers, and git forgets an entry the
-   * remote rejects. Windows has the Git Credential Manager for this.
+   * On macOS, Linux and in WSL git's cache helper keeps credentials the user
+   * typed into the prompt for an hour, so one push does not ask for every
+   * fetch. It comes after the user's own helpers, and git forgets an entry
+   * the remote rejects. Windows itself has the Git Credential Manager for
+   * this; a WSL distro has it only when the user wired it up, and then it
+   * answers first.
    */
   private credentialCacheArgs(): string[] {
     const session = this.repository.currentSession();
-    if (!session || session.shellContext.backendOs === "windows") return [];
+    if (!session) return [];
+    const { shellContext } = session;
+    if (shellContext.backendOs === "windows" && !isWslShellContext(shellContext)) return [];
     return ["-c", `credential.helper=cache --timeout=${CREDENTIAL_CACHE_SECONDS}`];
   }
 

@@ -12,6 +12,7 @@ describe("GitOperationsService", () => {
   let refresh: ReturnType<typeof vi.fn>;
   let dispatch: ReturnType<typeof vi.fn>;
   let backendOs: "linux" | "windows";
+  let wslDistroName: string | undefined;
   let service: GitOperationsService;
   /** The prompt handler every operation hands git. */
   const onPrompt = vi.fn();
@@ -28,12 +29,19 @@ describe("GitOperationsService", () => {
     refresh = vi.fn(() => Promise.resolve());
     dispatch = vi.fn();
     backendOs = "linux";
+    wslDistroName = undefined;
     refused = false;
     const repository = {
       run,
       runInCwd,
       refresh,
-      currentSession: () => ({ shellContext: { shellType: "Bash", backendOs } }),
+      currentSession: () => ({
+        shellContext: {
+          shellType: "Bash",
+          backendOs,
+          ...(wslDistroName ? { wslDistroName } : {}),
+        },
+      }),
       refs: () => ({
         branches: [{ name: "main" }],
         remoteBranches: [],
@@ -316,6 +324,15 @@ describe("GitOperationsService", () => {
     await service.fetch("origin");
 
     expect(argsOfLastRun()).toEqual(["fetch", "--progress", "--prune", "origin"]);
+  });
+
+  it("caches credentials in a WSL shell, which has no credential manager", async () => {
+    backendOs = "windows";
+    wslDistroName = "Ubuntu";
+
+    await service.fetch("origin");
+
+    expect(argsOfLastRun()).toEqual([...CACHE, "fetch", "--progress", "--prune", "origin"]);
   });
 
   it("hands a patch to git apply on stdin", async () => {
