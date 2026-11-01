@@ -56,10 +56,32 @@ pub fn run(cli: Cli) {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             use clap::Parser;
-            if let Ok(cli) = Cli::try_parse_from(argv) {
-                if let Some(action_payload) = cli.action_payload() {
-                    route(app, "cli-action", &action_payload, None);
-                }
+            let Ok(cli) = Cli::try_parse_from(argv) else {
+                return;
+            };
+            if let Some(action_payload) = cli.action_payload() {
+                route(app, "cli-action", &action_payload, None);
+            }
+            // `--config` and `--set` shape a process at its start; the one
+            // already running cannot take them on, and the second process
+            // is gone before it could say so. The window says it instead.
+            if cli.config.is_some() || !cli.config_set_overrides.is_empty() {
+                route(
+                    app,
+                    "cli-notice",
+                    "Cogno is already running: --config and --set only apply to a fresh start and were ignored.",
+                    None,
+                );
+            }
+            // A second start means "show me Cogno": the window the user last
+            // worked in comes to the front.
+            if let Some(window) = app
+                .state::<WindowRegistry>()
+                .resolve_target(None)
+                .and_then(|label| app.get_webview_window(&label))
+            {
+                let _ = window.unminimize();
+                let _ = window.set_focus();
             }
         }))
         .manage(PtyState::new())

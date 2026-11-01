@@ -4,6 +4,7 @@ import {
   KeybindActionInterpreter,
 } from "@cogno/core/infrastructure/keybindings/keybind-action.interpreter";
 import type { ActionRunner } from "@cogno/core/workbench/actions/action-runner";
+import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { CliActionListener } from "@cogno/platform/cli-action";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CliActionService } from "./cli-action.service";
@@ -15,13 +16,20 @@ describe("CliActionService", () => {
   let actionRunnerMock: Pick<ActionRunner, "run">;
   let destroyRefMock: DestroyRefPort;
   let registerSpy: ReturnType<typeof vi.fn>;
+  let registerNoticeSpy: ReturnType<typeof vi.fn>;
   let unlistenMock: ReturnType<typeof vi.fn>;
   let cliActionsStub: CliActionListener;
+  let appBusStub: Pick<AppBus, "publish">;
 
   beforeEach(() => {
     unlistenMock = vi.fn();
     registerSpy = vi.fn().mockResolvedValue(unlistenMock as unknown as () => void);
-    cliActionsStub = { register: registerSpy } as unknown as CliActionListener;
+    registerNoticeSpy = vi.fn().mockResolvedValue(unlistenMock as unknown as () => void);
+    cliActionsStub = {
+      register: registerSpy,
+      registerNotice: registerNoticeSpy,
+    } as unknown as CliActionListener;
+    appBusStub = { publish: vi.fn() };
 
     actionRunnerMock = {
       run: vi.fn().mockReturnValue("dispatched"),
@@ -36,15 +44,38 @@ describe("CliActionService", () => {
     _service = new CliActionService(
       cliActionsStub,
       actionRunnerMock as ActionRunner,
+      appBusStub as AppBus,
       destroyRefMock as unknown as DestroyRef,
     );
     expect(registerSpy).toHaveBeenCalled();
+  });
+
+  it("shows what a second start could not pass on as a warning", () => {
+    _service = new CliActionService(
+      cliActionsStub,
+      actionRunnerMock as ActionRunner,
+      appBusStub as AppBus,
+      destroyRefMock as unknown as DestroyRef,
+    );
+    const onNotice = registerNoticeSpy.mock.calls[0][0];
+
+    onNotice("Cogno is already running: --set was ignored.");
+
+    expect(appBusStub.publish).toHaveBeenCalledWith({
+      type: "Notification",
+      payload: {
+        header: "Command line",
+        body: "Cogno is already running: --set was ignored.",
+        type: "warning",
+      },
+    });
   });
 
   it("should parse and dispatch action when listener is triggered", async () => {
     _service = new CliActionService(
       cliActionsStub,
       actionRunnerMock as ActionRunner,
+      appBusStub as AppBus,
       destroyRefMock as unknown as DestroyRef,
     );
 
@@ -68,6 +99,7 @@ describe("CliActionService", () => {
     _service = new CliActionService(
       cliActionsStub,
       actionRunnerMock as ActionRunner,
+      appBusStub as AppBus,
       destroyRefMock as unknown as DestroyRef,
     );
 
