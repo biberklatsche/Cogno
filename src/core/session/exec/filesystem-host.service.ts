@@ -55,7 +55,7 @@ export class FilesystemHostService extends Filesystem {
     const backendPath = adapter.render(path, { purpose: "backend_fs" });
     if (!backendPath) return [];
 
-    const entries = await this.fs.readDir(backendPath);
+    const entries = await this.readDirIfPresent(backendPath);
     const prefixMatches: FilesystemEntryContract[] = [];
     const containsMatches: FilesystemEntryContract[] = [];
     const sep = backendPath.includes("\\") ? "\\" : "/";
@@ -105,6 +105,20 @@ export class FilesystemHostService extends Filesystem {
     }
 
     return [...prefixMatches, ...containsMatches].slice(0, limit);
+  }
+
+  /**
+   * A path that does not exist is a normal state while the user is typing
+   * (`cd /ef` on the way to `/efg`), not a failure: it lists as empty. Any
+   * other read error still surfaces.
+   */
+  private async readDirIfPresent(backendPath: string) {
+    try {
+      return await this.fs.readDir(backendPath);
+    } catch (error) {
+      if (!(await this.fs.exists(backendPath))) return [];
+      throw error;
+    }
   }
 
   async exists(path: string, shellContext: ShellContextContract): Promise<boolean> {

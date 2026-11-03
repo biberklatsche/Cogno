@@ -67,6 +67,23 @@ describe("FilesystemHostService", () => {
     await expect(service.list("/workspace", shellContext)).resolves.toEqual([]);
   });
 
+  it("lists a path that does not exist as empty instead of failing", async () => {
+    vi.mocked(fs.readDir).mockRejectedValueOnce(
+      new Error('failed to read directory at path: /efg with error: "No such file or directory"'),
+    );
+    vi.mocked(fs.exists).mockResolvedValueOnce(false);
+
+    await expect(service.list("/efg", shellContext)).resolves.toEqual([]);
+  });
+
+  it("still fails when an existing directory cannot be read", async () => {
+    const error = new Error("failed to read directory at path: /root with error: Permission denied");
+    vi.mocked(fs.readDir).mockRejectedValueOnce(error);
+    vi.mocked(fs.exists).mockResolvedValueOnce(true);
+
+    await expect(service.list("/root", shellContext)).rejects.toBe(error);
+  });
+
   it("delegates existence and text file reads to fs", async () => {
     vi.mocked(fs.exists).mockResolvedValue(true);
     vi.mocked(fs.readTextFile).mockResolvedValue("hello");
