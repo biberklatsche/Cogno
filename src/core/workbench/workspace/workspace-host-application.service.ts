@@ -362,7 +362,10 @@ export class WorkspaceHostApplicationService {
       return;
     }
 
-    this.sideMenuService.updateBadgeColor("Workspace", workspaceToActivate.color);
+    this.sideMenuService.updateBadgeColor(
+      "Workspace",
+      workspaceToActivate.color ? `var(--color-${workspaceToActivate.color})` : undefined,
+    );
   }
 
   createWorkspaceDraft(): WorkspaceState {

@@ -134,6 +134,15 @@ describe("WorkspaceHostApplicationService", () => {
     expect(entry("WS-1")?.isDirty).toBe(false);
   });
 
+  it("colours the side menu dot with the theme colour of the active workspace", async () => {
+    const updateBadgeColor = vi.spyOn(sideMenuService, "updateBadgeColor");
+    bus.publish({ type: "DBInitialized" });
+
+    await vi.waitFor(() => {
+      expect(updateBadgeColor).toHaveBeenLastCalledWith("Workspace", "var(--color-blue)");
+    });
+  });
+
   it("flags and reports a failed autosave, without throwing, until the next one succeeds", async () => {
     bus.publish({ type: "DBInitialized" });
     await vi.waitFor(() => {
