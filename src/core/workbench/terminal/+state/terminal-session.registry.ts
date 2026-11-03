@@ -31,9 +31,12 @@ export class TerminalSessionRegistry {
   private readonly entriesByTerminalId = new Map<TerminalId, TerminalSessionRegistryEntry>();
   private readonly factSubscriptions = new Map<TerminalId, Subscription>();
   private readonly facts = new Subject<IdentifiedSessionFact>();
+  private readonly changes = new Subject<void>();
 
   /** Every session's facts, each tagged with its terminal id. */
   readonly facts$: Observable<IdentifiedSessionFact> = this.facts.asObservable();
+  /** A session was registered or unregistered; `entries` has changed. */
+  readonly changes$: Observable<void> = this.changes.asObservable();
 
   register(terminalId: TerminalId, shellProfile: ShellProfile, host: SessionHost): void {
     this.entriesByTerminalId.set(terminalId, { terminalId, shellProfile, host });
@@ -42,6 +45,7 @@ export class TerminalSessionRegistry {
       terminalId,
       host.facts$.subscribe((fact) => this.facts.next({ terminalId, fact })),
     );
+    this.changes.next();
   }
 
   unregister(terminalId: TerminalId | undefined): void {
@@ -50,7 +54,9 @@ export class TerminalSessionRegistry {
     }
     this.factSubscriptions.get(terminalId)?.unsubscribe();
     this.factSubscriptions.delete(terminalId);
-    this.entriesByTerminalId.delete(terminalId);
+    if (this.entriesByTerminalId.delete(terminalId)) {
+      this.changes.next();
+    }
   }
 
   get(terminalId: TerminalId | undefined): TerminalSessionRegistryEntry | undefined {

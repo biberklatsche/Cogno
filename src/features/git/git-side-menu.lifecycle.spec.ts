@@ -1,5 +1,6 @@
 import type { SideMenuFeatureHandleContract } from "@cogno/core/api/contributions";
 import { describe, expect, it, vi } from "vitest";
+import type { GitRepositoriesOverviewService } from "./git-repositories-overview.service";
 import type { GitRepositoryService } from "./git-repository.service";
 import { GitSideMenuLifecycle } from "./git-side-menu.lifecycle";
 import type { GitViewState } from "./git-view-state.service";
@@ -25,6 +26,7 @@ describe("GitSideMenuLifecycle", () => {
     };
     const lifecycle = new GitSideMenuLifecycle(
       {} as GitRepositoryService,
+      {} as GitRepositoriesOverviewService,
       view as unknown as GitViewState,
     ).create(handle);
     lifecycle.onFocus?.();

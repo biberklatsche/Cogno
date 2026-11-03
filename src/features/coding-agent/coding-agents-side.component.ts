@@ -2,18 +2,19 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { NotificationPreferencesState } from "@cogno/shared/domain";
+import { groupByWorkspace, NotificationPreferencesState } from "@cogno/shared/domain";
 import {
   buildNotificationPreferencesMenuItems,
   ContextMenuOverlayService,
   CopyEditDeleteComponent,
   IconComponent,
   KeyframeBarsComponent,
-  StartEllipsisDirective,
+  TabChipComponent,
+  TileComponent,
   TooltipDirective,
+  WorkspaceGroupHeaderComponent,
 } from "@cogno/shared/ui";
 import { interval } from "rxjs";
-import { groupAgentsByWorkspace } from "./agent-groups";
 import { AGENT_STATUS_SPECS } from "./coding-agent-animation";
 import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
@@ -53,9 +54,11 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
   imports: [
     IconComponent,
     TooltipDirective,
-    StartEllipsisDirective,
     KeyframeBarsComponent,
     CopyEditDeleteComponent,
+    TileComponent,
+    TabChipComponent,
+    WorkspaceGroupHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -107,20 +110,19 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
           }
           @for (group of groups(); track group.workspaceId) {
             @if (group.workspaceName) {
-              <div class="group-header">
-                <span
-                  class="workspace-dot"
-                  [style.background-color]="'var(--color-' + group.workspaceColor + ')'"
-                ></span>
-                <span class="group-name">{{ group.workspaceName }}</span>
-              </div>
+              <app-workspace-group-header
+                class="group-header"
+                [name]="group.workspaceName"
+                [color]="group.workspaceColor ?? ''"
+              ></app-workspace-group-header>
             }
-            @for (agent of group.agents; track agent.terminalId) {
+            @for (agent of group.items; track agent.terminalId) {
               <button
                 type="button"
+                appTile
                 class="agent-card"
                 [class]="cardState(agent)"
-                [class.focused]="agent.terminalId === focusedTerminalId()"
+                [focused]="agent.terminalId === focusedTerminalId()"
                 (click)="navigateTo(agent)"
               >
                 <div class="agent-state">
@@ -150,13 +152,12 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 }
                 <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
                 <div class="agent-footer">
-                  <span
+                  <app-tab-chip
                     class="agent-tab"
-                    [class.colored]="!!agent.placement?.tabColor"
-                    [style.--tab-color]="agent.placement?.tabColor ? 'var(--color-' + agent.placement?.tabColor + ')' : null"
-                    [appStartEllipsis]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
-                    [appTooltip]="agent.cwd ?? ''"
-                  ></span>
+                    [title]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
+                    [color]="agent.placement?.tabColor"
+                    [tooltip]="agent.cwd ?? ''"
+                  ></app-tab-chip>
                 </div>
               </button>
             }
@@ -357,32 +358,14 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       min-height: 0;
     }
 
+    /* A group header takes a whole row of the wrap grid. */
     .group-header {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
       flex-basis: 100%;
       margin-top: 1rem;
-      font-size: 0.8rem;
-      opacity: 0.75;
     }
 
     .group-header:first-child {
       margin-top: 0.5rem;
-    }
-
-    .workspace-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .group-name {
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .empty-state {
@@ -396,29 +379,10 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       text-align: center;
     }
 
-    /* One card = fixed slots: state, task, detail, then changed files and tab. */
+    /* One card = fixed slots: state, task, detail, then the tab. */
     .agent-card {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-      padding: 0.65rem 0.8rem;
-      border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-      border-radius: 10px;
-      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
-      color: inherit;
-      cursor: default;
-      text-align: left;
       flex: 1 1 400px;
       min-width: 265px;
-      transition: background 0.1s;
-    }
-
-    .agent-card:hover {
-      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-    }
-
-    .agent-card.focused {
-      border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
     }
 
     /* A card that needs the user is tinted as a whole, not just marked. */
@@ -448,18 +412,6 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       flex-shrink: 0;
       max-width: 55%;
       margin-left: auto;
-      opacity: 0.55;
-      white-space: nowrap;
-      overflow: hidden;
-    }
-
-    /* A coloured tab is marked here as in its header: tinted chip with the tab's colour. */
-    .agent-tab.colored {
-      opacity: 1;
-      padding: 0 6px;
-      border: 1px solid color-mix(in srgb, var(--tab-color) 60%, transparent);
-      border-radius: 4px;
-      background: color-mix(in srgb, var(--tab-color) 25%, transparent);
     }
 
     .agent-badge {
@@ -584,7 +536,9 @@ export class CodingAgentsSideComponent {
   readonly installedProviders = this.startupService.installedProviders;
   readonly isScanning = this.startupService.isScanning;
   readonly activeAgents = this.statusService.activeAgents;
-  readonly groups = computed(() => groupAgentsByWorkspace(this.activeAgents()));
+  readonly groups = computed(() =>
+    groupByWorkspace(this.activeAgents(), (agent) => agent.placement),
+  );
   readonly summary = computed(() => {
     const counts: Record<CardState, number> = {
       working: 0,

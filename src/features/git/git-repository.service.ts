@@ -8,6 +8,7 @@ import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { AppWindow } from "@cogno/platform";
 import { catchError, EMPTY, filter, merge, Subscription } from "rxjs";
+import { classifyRootFailure, GitError, READ_TIMEOUT_MS, runGit } from "./git-run";
 import { layoutGraph } from "./model/git-graph";
 import {
   GitCommit,
@@ -33,27 +34,10 @@ import {
   STASH_FORMAT,
 } from "./model/git-parsers";
 
-/**
- * Why there is no repository to show. `repo_unreadable`: there is one, but
- * git refuses it (an owner mismatch git calls dubious, a broken .git); the
- * detail says why, and offering `git init` there would be wrong.
- */
-export type GitError =
-  | "not_installed"
-  | "no_repo"
-  | "repo_unreadable"
-  | "status_failed"
-  | "unavailable";
+export type { GitError };
 
 /** The commit count the graph loads first and adds per "load more". */
 export const GIT_LOG_PAGE_SIZE = 1000;
-/**
- * Idle time per read (`CommandRunnerRequestContract`). A status on a large
- * repository with a cold file cache is quiet for a long while before it
- * prints anything; ten seconds ended it on repositories that git itself
- * reads fine.
- */
-const READ_TIMEOUT_MS = 60_000;
 
 const EMPTY_STATUS: GitStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
 const EMPTY_REFS: GitRefs = { branches: [], remoteBranches: [], tags: [], defaultBranches: [] };
@@ -479,18 +463,6 @@ export class GitRepositoryService {
 }
 
 /**
- * Exit 128 alone does not mean "not a repository": git uses it for every
- * fatal error, and only the message tells a missing repository from one git
- * will not touch (dubious ownership, a corrupt .git). Any other failure means
- * git itself did not run, or is too old for the options used here.
- */
-function classifyRootFailure(exitCode: number, stderr: string): GitError {
-  if (exitCode === 0) return "no_repo";
-  if (exitCode !== 128) return "not_installed";
-  return /not a git repository/i.test(stderr) ? "no_repo" : "repo_unreadable";
-}
-
-/**
  * What to watch for changes. In a linked worktree the git dir is only that
  * worktree's slice (HEAD, index, a stopped rebase); branches, remote refs
  * and objects live in the common dir, so a commit or fetch from the main
@@ -502,23 +474,4 @@ function dirsToWatch(gitDir: string, commonDir: string): string[] {
   if (!isAbsolute || commonDir === gitDir) return [gitDir];
   if (gitDir.startsWith(`${commonDir}/`)) return [commonDir];
   return [gitDir, commonDir];
-}
-
-/** Run `git` in a session; null when the session rejects it. */
-async function runGit(
-  session: BoundSessionHandle,
-  args: ReadonlyArray<string>,
-  timeoutMs: number,
-  stdin?: string,
-  onPrompt?: ProcessPromptHandler,
-): Promise<CommandRunnerResultContract | null> {
-  const outcome = await session.run({
-    executable: "git",
-    args: [...args],
-    contextRevision: session.contextRevision,
-    timeoutMs,
-    ...(stdin === undefined ? {} : { stdin }),
-    ...(onPrompt === undefined ? {} : { onPrompt }),
-  });
-  return outcome.status === "ran" ? outcome.result : null;
 }

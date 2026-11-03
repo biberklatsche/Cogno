@@ -1,6 +1,7 @@
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
-import type { BoundSession } from "@cogno/core/api/session-api";
+import type { BoundSession, SessionHandle } from "@cogno/core/api/session-api";
 import { Filesystem } from "@cogno/core/session/exec/filesystem";
+import type { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalGatewayService } from "@cogno/core/workbench/api-adapters/terminal-gateway.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
@@ -13,21 +14,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("TerminalGatewayService", () => {
   let appBus: AppBus;
-  let terminalSessionRegistry: Pick<TerminalSessionRegistry, "get" | "has" | "facts$">;
+  let terminalSessionRegistry: Pick<
+    TerminalSessionRegistry,
+    "get" | "has" | "facts$" | "changes$"
+  > & {
+    entries: TerminalSessionRegistry["entries"];
+  };
   let commandRunner: Pick<CommandRunner, "run">;
   let filesystem: Pick<Filesystem, "readTextFile" | "normalizePath">;
   let processPrompts: Pick<ProcessPromptService, "ask">;
   let sessionFacts: Subject<IdentifiedSessionFact>;
+  let registryChanges: Subject<void>;
   let service: TerminalGatewayService;
 
   beforeEach(() => {
     appBus = new AppBus();
     sessionFacts = new Subject<IdentifiedSessionFact>();
+    registryChanges = new Subject<void>();
     commandRunner = {
       run: vi.fn().mockResolvedValue({ stdout: "ok", stderr: "", exitCode: 0 }),
     };
     terminalSessionRegistry = {
       facts$: sessionFacts,
+      changes$: registryChanges,
+      entries: [],
       has: vi.fn().mockReturnValue(true),
       get: vi.fn().mockReturnValue({
         host: {
@@ -325,6 +335,94 @@ describe("TerminalGatewayService", () => {
       await expect(boundSession.session.processTree()).rejects.toThrow(
         "The bound session is no longer active.",
       );
+    });
+  });
+
+  describe("session directory", () => {
+    function host(contextRevision: number, isContextKnown = true): SessionHost {
+      return {
+        state: {
+          shellContext: { shellType: "Bash", backendOs: "linux" },
+          cwd: "/workspace",
+          contextRevision,
+          isContextKnown,
+        },
+      } as unknown as SessionHost;
+    }
+
+    function currentSessions(): ReadonlyArray<SessionHandle> {
+      let latest: ReadonlyArray<SessionHandle> = [];
+      const subscription = service.sessions$.subscribe((sessions) => {
+        latest = sessions;
+      });
+      subscription.unsubscribe();
+      return latest;
+    }
+
+    it("lists every registered session and follows registrations", () => {
+      const first = host(1);
+      terminalSessionRegistry.entries = [{ terminalId: "t1", host: first } as never];
+      const seen: ReadonlyArray<SessionHandle>[] = [];
+      const subscription = service.sessions$.subscribe((sessions) => seen.push(sessions));
+
+      terminalSessionRegistry.entries = [
+        { terminalId: "t1", host: first } as never,
+        { terminalId: "t2", host: host(1) } as never,
+      ];
+      registryChanges.next();
+      subscription.unsubscribe();
+
+      expect(seen.map((sessions) => sessions.map((session) => session.terminalId))).toEqual([
+        ["t1"],
+        ["t1", "t2"],
+      ]);
+      expect(seen[1]?.[0]?.contextRevision).toBe(1);
+    });
+
+    it("runs in the session's own context, regardless of focus", async () => {
+      const theHost = host(4);
+      terminalSessionRegistry.entries = [{ terminalId: "t2", host: theHost } as never];
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue({ host: theHost } as never);
+
+      const [session] = currentSessions();
+      const runResult = await session!.run({
+        executable: "git",
+        args: ["status"],
+        contextRevision: 4,
+      });
+
+      expect(runResult.status).toBe("ran");
+      expect(commandRunner.run).toHaveBeenCalledWith(
+        expect.objectContaining({ cwd: "/workspace", program: "git", args: ["status"] }),
+      );
+    });
+
+    it("rejects once the terminal runs another session, or none", async () => {
+      const theHost = host(4);
+      terminalSessionRegistry.entries = [{ terminalId: "t2", host: theHost } as never];
+      const [session] = currentSessions();
+
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue({ host: host(4) } as never);
+      const replaced = await session!.run({ executable: "git", contextRevision: 4 });
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue(undefined);
+      const gone = await session!.run({ executable: "git", contextRevision: 4 });
+
+      expect(replaced).toEqual({ status: "rejected", reason: "unbound" });
+      expect(gone).toEqual({ status: "rejected", reason: "unbound" });
+      expect(commandRunner.run).not.toHaveBeenCalled();
+    });
+
+    it("guards the context like the bound handle", async () => {
+      const theHost = host(4, false);
+      terminalSessionRegistry.entries = [{ terminalId: "t2", host: theHost } as never];
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue({ host: theHost } as never);
+      const [session] = currentSessions();
+
+      const stale = await session!.run({ executable: "git", contextRevision: 3 });
+      const foreign = await session!.run({ executable: "git", contextRevision: 4 });
+
+      expect(stale).toEqual({ status: "rejected", reason: "stale-context" });
+      expect(foreign).toEqual({ status: "rejected", reason: "unknown-context" });
     });
   });
 });

@@ -943,8 +943,12 @@ cwd je Terminal), `TerminalNavigator.navigateToTerminal(id)` (Workspace,
 Tab und Fokus auf ein Terminal bringen) und als dessen lesendes Gegenstück
 `TerminalPlacementPort.getPlacement(id)` (Workspace und Tab eines Terminals
 samt Anzeigereihenfolge, plus `changes$`; Konsument: Coding-Agents-Panel,
-gruppiert nach Workspace in Tab-Reihenfolge). Ein Sitzungs-Verzeichnis
-`sessions$` entsteht erst mit dem ersten Feature, das eines braucht.
+gruppiert nach Workspace in Tab-Reihenfolge). Das Sitzungs-Verzeichnis
+`SessionApi.sessions$` liefert jede laufende Sitzung als `SessionHandle`
+(`terminalId`, `contextRevision`, `run`); `run` prüft dieselben
+Kontext-Guards wie der gebundene Handle, nur statt der Bindung, ob das
+Terminal noch genau diese Sitzung führt. Konsument: das Git-Panel, das die
+Repositories aller offenen Terminals zeigt.
 
 Features schreiben nicht in die PTY; die API hat dafür keine Operation. Was
 in die Eingabezeile schreibt — Autocomplete, History, Composer — ist Core

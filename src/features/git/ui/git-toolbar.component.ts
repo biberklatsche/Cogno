@@ -61,6 +61,10 @@ import { GIT_SHARED_STYLES } from "./git-styles";
     </div>
 
     <div class="end">
+      <button type="button" class="button icon-button" appTooltip="Toggle repositories panel"
+              (click)="view.repositoriesVisible.update(toggle)">
+        <app-icon name="mdiSourceRepositoryMultiple"></app-icon>
+      </button>
       <button type="button" class="button icon-button" appTooltip="Clone a repository"
               [disabled]="cloning()" (click)="actions.clone()">
         <app-icon [name]="cloning() ? 'mdiLoading' : 'mdiDownload'" [class.spin]="cloning()"></app-icon>
