@@ -1,6 +1,7 @@
 import {
   PersistedGridConfigurationContract,
   PersistedTabConfigurationContract,
+  PersistedTabStackConfigurationContract,
   WorkspaceIdentifierContract,
 } from "@cogno/core/workbench/grid-layout";
 
@@ -13,6 +14,8 @@ export interface WorkspaceConfiguration {
   color?: string;
   grids: PersistedGridConfigurationContract[];
   tabs: PersistedTabConfigurationContract[];
+  /** The stacks the tabs refer to by `stackId`. */
+  stacks: PersistedTabStackConfigurationContract[];
   position?: number;
   /** Selected and shown; at most one workspace is active. */
   isActive?: boolean;

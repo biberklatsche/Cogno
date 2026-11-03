@@ -8,6 +8,7 @@ const persistedWorkspace = {
   color: "blue",
   grids: [{ tabId: "TB-1", pane: {} }],
   tabs: [{ tabId: "TB-1" }],
+  stacks: [],
 };
 
 const defaultWorkspace = WorkspaceStateUseCase.createDefaultWorkspace(

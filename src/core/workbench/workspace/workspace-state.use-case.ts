@@ -35,6 +35,7 @@ export class WorkspaceStateUseCase {
       color: "grey",
       grids: [{ tabId, pane: {} }],
       tabs: [{ tabId }],
+      stacks: [],
     };
   }
 
@@ -102,6 +103,7 @@ export class WorkspaceStateUseCase {
       color: undefined,
       grids: [paneConfiguration],
       tabs: [tabConfiguration],
+      stacks: [],
       isActive: true,
       isOpen: false,
     };

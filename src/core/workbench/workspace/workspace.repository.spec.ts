@@ -33,7 +33,7 @@ describe("WorkspaceRepository", () => {
     workspaceRepository = new WorkspaceRepository(databaseAccess as DatabaseAccess);
   });
 
-  it("loads workspaces with tabs and grids in three queries", async () => {
+  it("loads workspaces with tabs, stacks and grids in four queries", async () => {
     selectMock
       .mockResolvedValueOnce([
         { id: "ws1", name: "Workspace 1", color: "blue", position: 0, is_open: 1, is_active: 1 },
@@ -47,6 +47,7 @@ describe("WorkspaceRepository", () => {
           color: "blue",
           system_title: "C:\\repo",
           user_title: "Tab 1",
+          stack_id: "TS-1",
         },
         {
           workspace_id: "ws2",
@@ -55,6 +56,17 @@ describe("WorkspaceRepository", () => {
           color: null,
           system_title: null,
           user_title: null,
+          stack_id: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          stack_id: "TS-1",
+          workspace_id: "ws1",
+          name: "backend",
+          color: "blue",
+          current_tab_id: "TB-1",
+          is_expanded: 1,
         },
       ])
       .mockResolvedValueOnce([
@@ -64,7 +76,7 @@ describe("WorkspaceRepository", () => {
 
     const workspaces = await workspaceRepository.getAllWorkspaces();
 
-    expect(selectMock).toHaveBeenCalledTimes(3);
+    expect(selectMock).toHaveBeenCalledTimes(4);
     expect(workspaces).toHaveLength(2);
     expect(workspaces[0]).toMatchObject({
       id: "ws1",
@@ -72,13 +84,48 @@ describe("WorkspaceRepository", () => {
       position: 0,
       isOpen: true,
       isActive: true,
-      tabs: [{ tabId: "TB-1", isActive: true, systemTitle: "C:\\repo", userTitle: "Tab 1" }],
+      tabs: [
+        {
+          tabId: "TB-1",
+          isActive: true,
+          systemTitle: "C:\\repo",
+          userTitle: "Tab 1",
+          stackId: "TS-1",
+        },
+      ],
+      stacks: [
+        { stackId: "TS-1", name: "backend", color: "blue", currentTabId: "TB-1", isExpanded: true },
+      ],
       grids: [{ tabId: "TB-1", pane: { terminalId: "TE-1" } }],
     });
     expect(workspaces[1].color).toBeUndefined();
+    expect(workspaces[1].tabs[0].stackId).toBeUndefined();
+    expect(workspaces[1].stacks).toEqual([]);
     expect(workspaces[1]).toMatchObject({ isOpen: false, isActive: false });
     expect(workspaces[1].tabs[0]).toMatchObject({ isActive: false, systemTitle: "Shell" });
     expect(workspaces[1].grids[0].pane).toEqual({});
+  });
+
+  it("lists a workspace's stacks in the order of their first member, whatever the row order", async () => {
+    selectMock
+      .mockResolvedValueOnce([
+        { id: "ws1", name: "Workspace 1", color: null, position: 0, is_open: 1, is_active: 1 },
+      ])
+      .mockResolvedValueOnce([
+        { workspace_id: "ws1", tab_id: "TB-1", is_active: 1, stack_id: "TS-b" },
+        { workspace_id: "ws1", tab_id: "TB-2", is_active: 0, stack_id: "TS-b" },
+        { workspace_id: "ws1", tab_id: "TB-3", is_active: 0, stack_id: "TS-a" },
+        { workspace_id: "ws1", tab_id: "TB-4", is_active: 0, stack_id: "TS-a" },
+      ])
+      .mockResolvedValueOnce([
+        { stack_id: "TS-a", workspace_id: "ws1", name: null },
+        { stack_id: "TS-b", workspace_id: "ws1", name: null },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const workspaces = await workspaceRepository.getAllWorkspaces();
+
+    expect(workspaces[0].stacks.map((stack) => stack.stackId)).toEqual(["TS-b", "TS-a"]);
   });
 
   it("creates a workspace with its layout in one batch", async () => {
@@ -93,8 +140,18 @@ describe("WorkspaceRepository", () => {
           systemTitle: "C:\\repo",
           userTitle: "Tab 1",
           color: "green",
+          stackId: "TS-1",
         },
-        { tabId: "TB-2" },
+        { tabId: "TB-2", stackId: "TS-1" },
+      ],
+      stacks: [
+        {
+          stackId: "TS-1",
+          name: "backend",
+          color: "green",
+          currentTabId: "TB-2",
+          isExpanded: true,
+        },
       ],
       grids: [{ tabId: "TB-1", pane: { terminalId: "TE-1" } }],
     };
@@ -102,7 +159,7 @@ describe("WorkspaceRepository", () => {
     await workspaceRepository.upsertWorkspace(workspaceConfiguration);
 
     const statements = batchedStatements();
-    expect(statements).toHaveLength(5);
+    expect(statements).toHaveLength(7);
     expect(statements[0].sql).toContain("INSERT INTO workspace (");
     expect(statements[0].sql).toContain("SELECT COALESCE(MAX(position) + 1, 0) FROM workspace");
     // Without a position a new row is appended and an existing one keeps its place.
@@ -120,10 +177,26 @@ describe("WorkspaceRepository", () => {
       sql: "DELETE FROM workspace_tab WHERE workspace_id = ?",
       params: ["ws1"],
     });
-    expect(statements[2].params).toEqual(["ws1", "TB-1", 1, "green", "C:\\repo", "Tab 1", 0]);
-    expect(statements[3].params).toEqual(["ws1", "TB-2", 0, null, null, null, 1]);
-    expect(statements[4].sql).toContain("INSERT INTO workspace_grid");
-    expect(statements[4].params).toEqual(["ws1", "TB-1", JSON.stringify({ terminalId: "TE-1" })]);
+    // Tabs point at stacks: the old tabs go before the old stacks, the new stacks before the new tabs.
+    expect(statements[2]).toEqual({
+      sql: "DELETE FROM workspace_tab_stack WHERE workspace_id = ?",
+      params: ["ws1"],
+    });
+    expect(statements[3].sql).toContain("INSERT INTO workspace_tab_stack");
+    expect(statements[3].params).toEqual(["TS-1", "ws1", "backend", "green", "TB-2", 1]);
+    expect(statements[4].params).toEqual([
+      "ws1",
+      "TB-1",
+      1,
+      "green",
+      "C:\\repo",
+      "Tab 1",
+      "TS-1",
+      0,
+    ]);
+    expect(statements[5].params).toEqual(["ws1", "TB-2", 0, null, null, null, "TS-1", 1]);
+    expect(statements[6].sql).toContain("INSERT INTO workspace_grid");
+    expect(statements[6].params).toEqual(["ws1", "TB-1", JSON.stringify({ terminalId: "TE-1" })]);
   });
 
   it("writes the position when given and replaces the layout in one batch", async () => {
@@ -133,6 +206,7 @@ describe("WorkspaceRepository", () => {
       color: "red",
       position: 4,
       tabs: [{ tabId: "TB-2", isActive: true, systemTitle: "Tab 2", color: "red" }],
+      stacks: [],
       grids: [{ tabId: "TB-2", pane: { terminalId: "TE-2" } }],
     };
 
@@ -153,8 +227,10 @@ describe("WorkspaceRepository", () => {
       sql: "DELETE FROM workspace_tab WHERE workspace_id = ?",
       params: ["ws1"],
     });
-    expect(statements[2].sql).toContain("INSERT INTO workspace_tab");
-    expect(statements[3].sql).toContain("INSERT INTO workspace_grid");
+    expect(statements[2].sql).toContain("DELETE FROM workspace_tab_stack");
+    expect(statements[3].sql).toContain("INSERT INTO workspace_tab");
+    expect(statements[3].params).toEqual(["ws1", "TB-2", 1, "red", "Tab 2", null, null, 0]);
+    expect(statements[4].sql).toContain("INSERT INTO workspace_grid");
   });
 
   it("records the open workspaces and the active one in one statement", async () => {

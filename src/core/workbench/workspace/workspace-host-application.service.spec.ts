@@ -76,6 +76,7 @@ describe("WorkspaceHostApplicationService", () => {
           color: "blue",
           isActive: true,
           tabs: [{ tabId: "T-1", isActive: true, systemTitle: "Shell" }],
+          stacks: [],
           grids: [{ tabId: "T-1", pane: { workingDir: "C:\\repo" } }],
         },
       ]),
@@ -178,6 +179,50 @@ describe("WorkspaceHostApplicationService", () => {
     expect(entry("WS-1")?.isDirty).toBe(true);
   });
 
+  it("marks a workspace dirty when tabs are stacked or a stack is renamed, not when one is selected", async () => {
+    (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: "WS-1",
+        name: "Workspace One",
+        color: "blue",
+        isActive: true,
+        tabs: [
+          { tabId: "T-1", isActive: true, systemTitle: "Shell", stackId: "S-1" },
+          { tabId: "T-2", isActive: false, systemTitle: "Shell", stackId: "S-1" },
+          { tabId: "T-3", isActive: false, systemTitle: "Shell" },
+        ],
+        stacks: [{ stackId: "S-1", name: "backend" }],
+        grids: [
+          { tabId: "T-1", pane: { workingDir: "C:\\repo" } },
+          { tabId: "T-2", pane: { workingDir: "C:\\repo" } },
+          { tabId: "T-3", pane: { workingDir: "C:\\repo" } },
+        ],
+      },
+    ]);
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(entry("WS-1")?.isDirty).toBe(false);
+    });
+
+    tabListService.selectTab("T-2");
+    expect(entry("WS-1")?.isDirty).toBe(false);
+
+    tabListService
+      .buildStackContextMenu("S-1")
+      .find((item) => item.label === "Rename stack")
+      ?.action?.();
+    tabListService.commitRename("ops");
+    expect(entry("WS-1")?.isDirty).toBe(true);
+
+    await service.saveWorkspace("WS-1");
+    await vi.waitFor(() => {
+      expect(entry("WS-1")?.isDirty).toBe(false);
+    });
+
+    tabListService.placeTabInStack("T-3", "S-1", "T-2", "after");
+    expect(entry("WS-1")?.isDirty).toBe(true);
+  });
+
   it("creates a workspace draft with an empty id and one tab", () => {
     const draft = service.createWorkspaceDraft();
 
@@ -197,6 +242,7 @@ describe("WorkspaceHostApplicationService", () => {
         color: "blue",
         isActive: true,
         tabs: [{ tabId: "TB_DEFAULT", isActive: true, systemTitle: "Shell" }],
+        stacks: [],
         grids: [{ tabId: "TB_DEFAULT", pane: { workingDir: "C:\\repo" } }],
       },
       {
@@ -204,6 +250,7 @@ describe("WorkspaceHostApplicationService", () => {
         name: "Workspace Two",
         color: "red",
         tabs: [{ tabId: "TB_DEFAULT", isActive: true, systemTitle: "Shell" }],
+        stacks: [],
         grids: [{ tabId: "TB_DEFAULT", pane: { workingDir: "C:\\other" } }],
       },
     ]);
@@ -230,6 +277,7 @@ describe("WorkspaceHostApplicationService", () => {
         color: "blue",
         isActive: true,
         tabs: [{ tabId: "T-1", isActive: true, systemTitle: "Shell" }],
+        stacks: [],
         grids: [{ tabId: "T-1", pane: { workingDir: "C:\\repo", terminalId: "TE-DUP" } }],
       },
       {
@@ -237,6 +285,7 @@ describe("WorkspaceHostApplicationService", () => {
         name: "Workspace Two",
         color: "red",
         tabs: [{ tabId: "T-2", isActive: true, systemTitle: "Shell" }],
+        stacks: [],
         grids: [
           {
             tabId: "T-2",
@@ -303,6 +352,48 @@ describe("WorkspaceHostApplicationService", () => {
     expect(newTerminalIds).not.toContain(keptTerminalIds[1]);
   });
 
+  it("copies a workspace's stacks under fresh stack ids, members pointing at the copies", async () => {
+    const upsertWorkspaceSpy = workspaceRepository.upsertWorkspace as ReturnType<typeof vi.fn>;
+    (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: "WS-1",
+        name: "Workspace One",
+        color: "blue",
+        isActive: true,
+        tabs: [
+          { tabId: "T-1", isActive: true, systemTitle: "Shell", stackId: "S-1" },
+          { tabId: "T-2", isActive: false, systemTitle: "Shell", stackId: "S-1" },
+        ],
+        stacks: [{ stackId: "S-1", name: "backend", currentTabId: "T-2" }],
+        grids: [
+          { tabId: "T-1", pane: { workingDir: "C:\\repo" } },
+          { tabId: "T-2", pane: { workingDir: "C:\\repo" } },
+        ],
+      },
+    ]);
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getWorkspaceById("WS-1")?.isOpen).toBe(true);
+    });
+
+    await service.save({ ...service.createWorkspaceDraft(), name: "Two" });
+
+    const persisted = upsertWorkspaceSpy.mock.calls[0][0];
+    expect(persisted.stacks).toHaveLength(1);
+    expect(persisted.stacks[0].stackId).not.toBe("S-1");
+    expect(persisted.stacks[0].name).toBe("backend");
+    expect(persisted.tabs.map((tab: { stackId?: string }) => tab.stackId)).toEqual([
+      persisted.stacks[0].stackId,
+      persisted.stacks[0].stackId,
+    ]);
+    // The copy stands for the copied member, by its new id; T-1 is active, so it wins over T-2.
+    expect(persisted.stacks[0].currentTabId).toBe(persisted.tabs[0].tabId);
+    // The source keeps its own stack.
+    expect(tabListService.getTabStackConfigs("WS-1")).toEqual([
+      { stackId: "S-1", name: "backend", currentTabId: "T-1", isExpanded: false },
+    ]);
+  });
+
   describe("open state across restarts", () => {
     const threeWorkspaces = () => [
       {
@@ -312,6 +403,7 @@ describe("WorkspaceHostApplicationService", () => {
         isOpen: true,
         isActive: false,
         tabs: [{ tabId: "T-1", isActive: true, systemTitle: "Shell" }],
+        stacks: [],
         grids: [{ tabId: "T-1", pane: { workingDir: "C:\\one" } }],
       },
       {
@@ -321,6 +413,7 @@ describe("WorkspaceHostApplicationService", () => {
         isOpen: true,
         isActive: true,
         tabs: [{ tabId: "T-2", isActive: true, systemTitle: "Shell" }],
+        stacks: [],
         grids: [{ tabId: "T-2", pane: { workingDir: "C:\\two" } }],
       },
       {
@@ -330,6 +423,7 @@ describe("WorkspaceHostApplicationService", () => {
         isOpen: false,
         isActive: false,
         tabs: [{ tabId: "T-3", isActive: true, systemTitle: "Shell" }],
+        stacks: [],
         grids: [{ tabId: "T-3", pane: { workingDir: "C:\\three" } }],
       },
     ];
@@ -367,6 +461,7 @@ describe("WorkspaceHostApplicationService", () => {
           color: "grey",
           isOpen: true,
           tabs: [{ tabId: "T-OLD", isActive: true, userTitle: "from a restored session" }],
+          stacks: [],
           grids: [{ tabId: "T-OLD", pane: { workingDir: "C:\\old" } }],
         },
       ]);

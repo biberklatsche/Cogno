@@ -18,7 +18,7 @@ import {
   getConfigService,
   getDestroyRef,
 } from "../../../../__test__/test-factory";
-import type { Tab } from "../+model/tab";
+import { flatTabs, type Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
 
 describe("TabListService", () => {
@@ -82,7 +82,7 @@ describe("TabListService", () => {
       bus.publish(event);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.length).toBe(1);
       expect(currentTabs[0].id).toBe("created-tab");
       expect(currentTabs[0].systemTitle).toBe("Moved Pane");
@@ -127,7 +127,7 @@ describe("TabListService", () => {
       bus.publish(event);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs[0].systemTitle).toBe("New Title");
     });
   });
@@ -225,7 +225,7 @@ describe("TabListService", () => {
       bus.publish(event);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.find((t) => t.id === "t2")?.isActive).toBe(true);
       expect(event.performed).toBe(true);
       expect(event.defaultPrevented).toBe(true);
@@ -241,7 +241,7 @@ describe("TabListService", () => {
       bus.publish(event);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.find((t) => t.id === "t1")?.isActive).toBe(true);
       expect(event.performed).toBe(true);
       expect(event.defaultPrevented).toBe(true);
@@ -256,7 +256,7 @@ describe("TabListService", () => {
       bus.publish(event);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.find((t) => t.id === "t2")?.isActive).toBe(true);
       expect(currentTabs.find((t) => t.id === "t1")?.isActive).toBe(false);
       expect(event.performed).toBe(true);
@@ -271,7 +271,7 @@ describe("TabListService", () => {
       bus.publish(event);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.find((t) => t.id === "t1")?.isActive).toBe(true);
       expect(currentTabs.find((t) => t.id === "t2")?.isActive).toBe(false);
       expect(event.performed).toBe(true);
@@ -309,7 +309,7 @@ describe("TabListService", () => {
       service.addTab(tab);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.length).toBe(1);
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -325,7 +325,7 @@ describe("TabListService", () => {
       service.addTab(tab);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.length).toBe(1);
     });
 
@@ -334,7 +334,7 @@ describe("TabListService", () => {
       service.addTab({ id: "t2", systemTitle: "T2", isActive: true, activeShellType: "unknown" });
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.find((t) => t.id === "t1")?.isActive).toBe(false);
       expect(currentTabs.find((t) => t.id === "t2")?.isActive).toBe(true);
     });
@@ -346,7 +346,7 @@ describe("TabListService", () => {
       service.removeTab("t1");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.length).toBe(0);
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -363,7 +363,7 @@ describe("TabListService", () => {
       service.removeTab("t2");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs[0].isActive).toBe(true);
     });
 
@@ -374,7 +374,7 @@ describe("TabListService", () => {
       service.selectTab("t2");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.find((t) => t.id === "t1")?.isActive).toBe(false);
       expect(currentTabs.find((t) => t.id === "t2")?.isActive).toBe(true);
     });
@@ -386,7 +386,7 @@ describe("TabListService", () => {
       service.removeAllTabs("t1");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.length).toBe(1);
       expect(currentTabs[0].id).toBe("t1");
     });
@@ -396,10 +396,10 @@ describe("TabListService", () => {
       service.addTab({ id: "t2", systemTitle: "T2", isActive: false, activeShellType: "unknown" });
       service.addTab({ id: "t3", systemTitle: "T3", isActive: false, activeShellType: "unknown" });
 
-      service.reorderTabs("t1", "t3");
+      service.placeSlot("t1", "t3", "after");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.map((tab) => tab.id)).toEqual(["t2", "t3", "t1"]);
     });
   });
@@ -414,7 +414,7 @@ describe("TabListService", () => {
       service.commitRename("New Name");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs[0].systemTitle).toBe("Old");
       expect(currentTabs[0].userTitle).toBe("New Name");
       expect(service.showRename$()).toBeUndefined();
@@ -449,7 +449,7 @@ describe("TabListService", () => {
       service.resetTabName("t1");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs[0].systemTitle).toBe("C:\\repo");
       expect(currentTabs[0].userTitle).toBeUndefined();
     });
@@ -498,7 +498,7 @@ describe("TabListService", () => {
       menu.find((i) => i.label === "Reset Tab Name")?.action?.();
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs[0].systemTitle).toBe("C:\\repo");
       expect(currentTabs[0].userTitle).toBeUndefined();
     });
@@ -511,7 +511,7 @@ describe("TabListService", () => {
       service.setColor("t1", "red");
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs[0].color).toBe("red");
     });
   });
@@ -528,10 +528,10 @@ describe("TabListService", () => {
         },
       ];
 
-      service.restoreTabs(configs);
+      service.restoreTabs(configs, []);
 
       let currentTabs: Tab[] = [];
-      service.tabs$.subscribe((tabs) => (currentTabs = tabs));
+      service.slots$.subscribe((slots) => (currentTabs = flatTabs(slots)));
       expect(currentTabs.length).toBe(1);
       expect(currentTabs[0].id).toBe("c1");
       expect(currentTabs[0].color).toBe("blue");

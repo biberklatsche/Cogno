@@ -18,10 +18,10 @@ export class TerminalPlacementAdapterService extends TerminalPlacementPort {
     private readonly workspaceHost: WorkspaceHostApplicationService,
   ) {
     super();
-    // Tab order/title changes surface on tabs$, pane moves between tabs on grids$,
+    // Tab order/title changes surface on slots$, pane moves between tabs on grids$,
     // workspace order/name/color changes on the workspace list.
     this.changes$ = merge(
-      this.tabListService.tabs$,
+      this.tabListService.slots$,
       this.gridListService.grids$,
       toObservable(this.workspaceHost.workspaceList),
     ).pipe(map(() => undefined));

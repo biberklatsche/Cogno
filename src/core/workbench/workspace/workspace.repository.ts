@@ -3,6 +3,7 @@ import {
   PersistedGridConfigurationContract,
   PersistedPaneConfigurationContract,
   PersistedTabConfigurationContract,
+  PersistedTabStackConfigurationContract,
   WorkspaceIdentifierContract,
 } from "@cogno/core/workbench/grid-layout";
 import { DatabaseAccess, DatabaseStatement } from "@cogno/platform";
@@ -24,6 +25,16 @@ interface WorkspaceTabEntity {
   color: string | null;
   system_title: string | null;
   user_title: string | null;
+  stack_id: string | null;
+}
+
+interface WorkspaceTabStackEntity {
+  stack_id: string;
+  workspace_id: string;
+  name: string | null;
+  color: string | null;
+  current_tab_id: string | null;
+  is_expanded: number;
 }
 
 interface WorkspaceGridEntity {
@@ -46,46 +57,66 @@ export class WorkspaceRepository {
   constructor(private readonly databaseAccess: DatabaseAccess) {}
 
   async getAllWorkspaces(): Promise<WorkspaceConfiguration[]> {
-    const [workspaces, tabs, grids] = await Promise.all([
+    const [workspaces, tabs, stacks, grids] = await Promise.all([
       this.databaseAccess.select<WorkspaceEntity[]>(
         "SELECT id, name, color, position, is_open, is_active FROM workspace ORDER BY position, created_at, id",
       ),
       this.databaseAccess.select<WorkspaceTabEntity[]>(
-        "SELECT workspace_id, tab_id, is_active, color, system_title, user_title FROM workspace_tab ORDER BY workspace_id, position",
+        "SELECT workspace_id, tab_id, is_active, color, system_title, user_title, stack_id FROM workspace_tab ORDER BY workspace_id, position",
+      ),
+      this.databaseAccess.select<WorkspaceTabStackEntity[]>(
+        "SELECT stack_id, workspace_id, name, color, current_tab_id, is_expanded FROM workspace_tab_stack",
       ),
       this.databaseAccess.select<WorkspaceGridEntity[]>(
         "SELECT workspace_id, tab_id, pane_json FROM workspace_grid",
       ),
     ]);
 
-    return workspaces.map((workspaceEntity) => ({
-      id: workspaceEntity.id,
-      name: workspaceEntity.name,
-      color: workspaceEntity.color ?? undefined,
-      position: workspaceEntity.position,
-      isOpen: workspaceEntity.is_open === 1,
-      isActive: workspaceEntity.is_active === 1,
-      tabs: tabs
-        .filter((tabEntity) => tabEntity.workspace_id === workspaceEntity.id)
-        .map((tabEntity) => ({
+    return workspaces.map((workspaceEntity) => {
+      const workspaceTabs = tabs.filter(
+        (tabEntity) => tabEntity.workspace_id === workspaceEntity.id,
+      );
+      // Stacks in bar order, the order of their first member, as the runtime lists them.
+      const firstMemberIndex = (stackId: string) =>
+        workspaceTabs.findIndex((tabEntity) => tabEntity.stack_id === stackId);
+      return {
+        id: workspaceEntity.id,
+        name: workspaceEntity.name,
+        color: workspaceEntity.color ?? undefined,
+        position: workspaceEntity.position,
+        isOpen: workspaceEntity.is_open === 1,
+        isActive: workspaceEntity.is_active === 1,
+        tabs: workspaceTabs.map((tabEntity) => ({
           tabId: tabEntity.tab_id,
           isActive: tabEntity.is_active === 1,
           color: tabEntity.color ?? undefined,
           systemTitle: tabEntity.system_title ?? "Shell",
           userTitle: tabEntity.user_title ?? undefined,
+          stackId: tabEntity.stack_id ?? undefined,
         })),
-      grids: grids
-        .filter((gridEntity) => gridEntity.workspace_id === workspaceEntity.id)
-        .map((gridEntity) => ({
-          tabId: gridEntity.tab_id,
-          pane: this.parsePaneJson(gridEntity.pane_json),
-        })),
-    }));
+        stacks: stacks
+          .filter((stackEntity) => stackEntity.workspace_id === workspaceEntity.id)
+          .sort((a, b) => firstMemberIndex(a.stack_id) - firstMemberIndex(b.stack_id))
+          .map((stackEntity) => ({
+            stackId: stackEntity.stack_id,
+            name: stackEntity.name ?? undefined,
+            color: stackEntity.color ?? undefined,
+            currentTabId: stackEntity.current_tab_id ?? undefined,
+            isExpanded: stackEntity.is_expanded === 1,
+          })),
+        grids: grids
+          .filter((gridEntity) => gridEntity.workspace_id === workspaceEntity.id)
+          .map((gridEntity) => ({
+            tabId: gridEntity.tab_id,
+            pane: this.parsePaneJson(gridEntity.pane_json),
+          })),
+      };
+    });
   }
 
   /**
    * Create the workspace row if missing, else update it (name, colour and, when
-   * given, position), and replace its tabs and grids - one transaction. Sessions
+   * given, position), and replace its tabs, stacks and grids - one transaction. Sessions
    * are untouched. Serves the explicit save, the start-up repair and the
    * autosave, which must also persist the default workspace (no row on first
    * launch). A new row without a position is appended.
@@ -112,9 +143,13 @@ export class WorkspaceRepository {
           position,
         ],
       },
-      // Grids cascade from tabs.
+      // Grids cascade from tabs; tabs point at stacks, so they go first.
       {
         sql: "DELETE FROM workspace_tab WHERE workspace_id = ?",
+        params: [workspaceConfiguration.id],
+      },
+      {
+        sql: "DELETE FROM workspace_tab_stack WHERE workspace_id = ?",
         params: [workspaceConfiguration.id],
       },
       ...this.layoutStatements(workspaceConfiguration),
@@ -216,6 +251,9 @@ export class WorkspaceRepository {
 
   private layoutStatements(workspaceConfiguration: WorkspaceConfiguration): DatabaseStatement[] {
     return [
+      ...workspaceConfiguration.stacks.map((stackConfiguration) =>
+        this.insertTabStackStatement(workspaceConfiguration.id, stackConfiguration),
+      ),
       ...workspaceConfiguration.tabs.map((tabConfiguration, position) =>
         this.insertTabStatement(workspaceConfiguration.id, tabConfiguration, position),
       ),
@@ -231,7 +269,7 @@ export class WorkspaceRepository {
     position: number,
   ): DatabaseStatement {
     return {
-      sql: "INSERT INTO workspace_tab (workspace_id, tab_id, is_active, color, system_title, user_title, position) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      sql: "INSERT INTO workspace_tab (workspace_id, tab_id, is_active, color, system_title, user_title, stack_id, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       params: [
         workspaceId,
         tabConfiguration.tabId,
@@ -239,7 +277,25 @@ export class WorkspaceRepository {
         tabConfiguration.color ?? null,
         tabConfiguration.systemTitle ?? null,
         tabConfiguration.userTitle ?? null,
+        tabConfiguration.stackId ?? null,
         position,
+      ],
+    };
+  }
+
+  private insertTabStackStatement(
+    workspaceId: WorkspaceIdentifierContract,
+    stackConfiguration: PersistedTabStackConfigurationContract,
+  ): DatabaseStatement {
+    return {
+      sql: "INSERT INTO workspace_tab_stack (stack_id, workspace_id, name, color, current_tab_id, is_expanded) VALUES (?, ?, ?, ?, ?, ?)",
+      params: [
+        stackConfiguration.stackId,
+        workspaceId,
+        stackConfiguration.name ?? null,
+        stackConfiguration.color ?? null,
+        stackConfiguration.currentTabId ?? null,
+        stackConfiguration.isExpanded ? 1 : 0,
       ],
     };
   }

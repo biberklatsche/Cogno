@@ -21,8 +21,8 @@ describe("TerminalPlacementAdapterService", () => {
     grids$ = new Subject();
     tabs$ = new Subject();
     workspaceList = signal<WorkspaceState[]>([
-      { id: "ws-a", name: "Alpha", grids: [], tabs: [] },
-      { id: "ws-b", name: "Beta", color: "blue", grids: [], tabs: [] },
+      { id: "ws-a", name: "Alpha", grids: [], tabs: [], stacks: [] },
+      { id: "ws-b", name: "Beta", color: "blue", grids: [], tabs: [], stacks: [] },
     ]);
 
     const gridListService = {
@@ -35,7 +35,7 @@ describe("TerminalPlacementAdapterService", () => {
       ),
     };
     const tabListService = {
-      tabs$,
+      slots$: tabs$,
       getTabConfigs: vi.fn(() => [
         { tabId: "tab-1", systemTitle: "first" },
         { tabId: "tab-2", systemTitle: "zsh", userTitle: "Agent", color: "red" },

@@ -302,6 +302,25 @@ workspace; what is and is not restored after a restart (nothing is re-run);
 several windows (a new window starts fresh, a workspace is open in one window at a
 time).
 
+### Page 12 — Tabs & Stacks
+
+**Write to:** `../meetcogno/src/content/docs/tabs.md`
+
+**Sources:**
+- `src/core/workbench/tab-list/tab-list.component.ts`, `.html` — the bar: click, drag zones (edges reorder, middle stacks), the stack head with count, name and chevron, the context menus
+- `src/core/workbench/tab-list/+state/tab-list.service.ts` — tab and stack operations, the context menu items, `select_tab_N` on places, next/previous through members, what is saved and restored
+- `src/core/workbench/tab-list/+model/tab.ts` — what a tab and a stack are, the stack invariants
+- `src/core/workbench/grid-list/+state/grid-list.service.ts` — the automatic tab title, closing a tab with its last pane
+- `src/core/workbench/actions/catalog.ts` — the tab actions and their defaults
+
+**Required sections:** the tab actions in one table (open, switch, reorder, rename,
+color, close) and the automatic title; keyboard switching and that `1…9` count the
+places in the bar; stacks: how tabs join and leave (drag zones), the head (name,
+count, chevron), that expansion is a state only the chevron changes, that a click
+on the name selects the last-used member, the head's menu (rename, color, unstack,
+close), that a stack dissolves with one member left, that stacks are saved with
+the workspace. No settings of their own; name the actions to rebind.
+
 ---
 
 ## Sidebar (`../meetcogno/astro.config.mjs`)
@@ -311,8 +330,8 @@ Cogno, not alphabetically.
 
 ```text
 Getting started
-Features        Coding Agents · Workspaces · Autocomplete & History · Command Palette
-                · Search · Notifications · Git · Process Info
+Features        Coding Agents · Workspaces · Tabs & Stacks · Autocomplete & History
+                · Command Palette · Search · Notifications · Git · Process Info
 Configuration   Overview · Shell profiles · Prompt · Keybindings · All settings · All actions
 CLI
 Help            Logging & troubleshooting

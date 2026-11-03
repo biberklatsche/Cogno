@@ -9,7 +9,7 @@ import {
   getConfigService,
   getDestroyRef,
 } from "../../../../__test__/test-factory";
-import type { Tab } from "../+model/tab";
+import { flatTabs, type Tab } from "../+model/tab";
 import { TabListService } from "./tab-list.service";
 
 /**
@@ -30,7 +30,7 @@ describe("TabListService workspace runtime", () => {
       new ActionHandlers(bus, getDestroyRef()),
       getDestroyRef(),
     );
-    service.tabs$.subscribe((value) => (tabs = value));
+    service.slots$.subscribe((value) => (tabs = flatTabs(value)));
   });
 
   afterEach(() => {
@@ -112,10 +112,10 @@ describe("TabListService workspace runtime", () => {
   it("restores and removes an inactive workspace without touching the active one", () => {
     service.addTab(tab("t1"));
     let emissions = 0;
-    service.tabs$.subscribe(() => emissions++);
+    service.slots$.subscribe(() => emissions++);
     emissions = 0;
 
-    service.restoreTabs([{ tabId: "t2", isActive: true }], "ws-2");
+    service.restoreTabs([{ tabId: "t2", isActive: true }], [], "ws-2");
     expect(emissions).toBe(0);
     expect(service.getTabConfigs("ws-2").map((c) => c.tabId)).toEqual(["t2"]);
 
