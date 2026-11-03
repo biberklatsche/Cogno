@@ -12,27 +12,39 @@ import {
   RemoveTabAction,
   SelectTabAction,
 } from "@cogno/core/workbench/bus/tab-list/actions";
-import { TabConfig, TabId } from "@cogno/core/workbench/grid-layout";
+import { StackId, TabConfig, TabId, TabStackConfig } from "@cogno/core/workbench/grid-layout";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import { ColorName } from "@cogno/shared/support";
 import { ContextMenuItem } from "@cogno/shared/ui";
 import { BehaviorSubject, map, Observable } from "rxjs";
-import { Tab, TabList } from "../+model/tab";
+import { flatTabs, isStack, mapTabs, Tab, TabList, TabSlot, TabStack } from "../+model/tab";
+
+/** Where a dragged tab or stack lands relative to the target. */
+export type PlacementSide = "before" | "after";
+
+/** A slot in bar order with the index it had before a tab was taken out. */
+type PositionedSlot = { slot: TabSlot; originalIndex: number };
+
+/** What stands in for the item at `index` once it is gone: the one before it, else the first. */
+function neighbourBefore<T>(items: T[], index: number): T | undefined {
+  const remaining = items.filter((_item, itemIndex) => itemIndex !== index);
+  return remaining.length > 0 ? remaining[Math.max(index - 1, 0)] : undefined;
+}
 
 @Injectable({ providedIn: "root" })
 export class TabListService {
-  private _showRename: WritableSignal<TabId | undefined> = signal(undefined);
-  /** The tabs of every workspace, shown or not; the only store. */
+  private _showRename: WritableSignal<TabId | StackId | undefined> = signal(undefined);
+  /** The slots of every workspace, shown or not; the only store. */
   private readonly tabListByWorkspaceIdentifier = new Map<string, TabList>();
   private activeWorkspaceIdentifier: string | undefined = defaultWorkspaceIdContract;
   /** Fires after every write that changes what the shown workspace lists. */
   private readonly activeTabsChanged = new BehaviorSubject<void>(undefined);
 
-  /** The shown workspace's tabs; a new list on every write. */
-  readonly tabs$: Observable<Tab[]> = this.activeTabsChanged.pipe(map(() => this.activeTabs()));
+  /** The shown workspace's slots; a new list on every write. */
+  readonly slots$: Observable<TabList> = this.activeTabsChanged.pipe(map(() => this.activeSlots()));
 
-  get showRename$(): Signal<TabId | undefined> {
+  get showRename$(): Signal<TabId | StackId | undefined> {
     return this._showRename.asReadonly();
   }
 
@@ -120,7 +132,7 @@ export class TabListService {
       actions.handle(`open_shell_${slot}`, () =>
         this.openShell(this.configService.getShellProfileByShortcutIndex(slot)?.name),
       );
-      actions.handle(`select_tab_${slot}`, () => this.selectTabByShortcutIndex(slot));
+      actions.handle(`select_tab_${slot}`, () => this.selectSlotByShortcutIndex(slot));
     }
   }
 
@@ -156,6 +168,20 @@ export class TabListService {
     return items.filter((s) => !!s);
   }
 
+  buildStackContextMenu(stackId: StackId): ContextMenuItem[] {
+    const stack = this.findStack(this.activeSlots(), stackId);
+    if (!stack) throw new Error("No stack found for TabList");
+    const items: (ContextMenuItem | undefined)[] = [
+      { label: "Close stack", action: () => this.closeStack(stackId) },
+      { label: "Unstack", action: () => this.unstack(stackId) },
+      { separator: true },
+      { label: "Rename stack", action: () => this._showRename.set(stackId) },
+      { separator: true },
+      { custom: true },
+    ];
+    return items.filter((s) => !!s);
+  }
+
   private keybindingFor(actionName: ActionName): string {
     return this.keybindings.getKeybindingLabel(actionName);
   }
@@ -163,22 +189,22 @@ export class TabListService {
   removeAllTabs(except?: TabId) {
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
     const tabs = this.activeTabs();
-    const tabsToClose = tabs.filter((tab) => tab.id !== except);
-    this.setTabListForWorkspace(
-      workspaceIdentifier,
-      tabs.filter((tab) => tab.id === except),
-    );
-    for (const tab of tabsToClose) {
+    const kept = tabs.find((tab) => tab.id === except);
+    this.setTabListForWorkspace(workspaceIdentifier, kept ? [kept] : []);
+    for (const tab of tabs) {
+      if (tab.id === except) continue;
       this.bus.publish({ type: "TabRemoved", payload: tab.id });
     }
   }
 
-  /** Adds a copy of `tab` to the shown workspace; the caller keeps its own object. */
+  /** Adds a copy of `tab` as the last slot of the shown workspace; the caller keeps its own object. */
   addTab(tab: Tab, paneConfig?: { shellName?: string; workingDir?: string }) {
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
-    const tabs = this.activeTabs();
-    if (tabs.some((s) => s.id === tab?.id)) return;
-    const others = tab.isActive ? tabs.map((other) => ({ ...other, isActive: false })) : tabs;
+    const slots = this.activeSlots();
+    if (this.activeTabs().some((s) => s.id === tab?.id)) return;
+    const others = tab.isActive
+      ? mapTabs(slots, (other) => ({ ...other, isActive: false }))
+      : slots;
     this.setTabListForWorkspace(workspaceIdentifier, [...others, { ...tab }]);
     this.bus.publish({
       type: "TabAdded",
@@ -196,20 +222,21 @@ export class TabListService {
     if (!tabId) return;
     const workspaceIdentifier = this.workspaceOfTab(tabId);
     if (!workspaceIdentifier) return;
-    const tabs = this.getTabListForWorkspace(workspaceIdentifier);
-    const tabIndex = tabs.findIndex((tab) => tab.id === tabId);
-    const remaining = tabs.filter((tab) => tab.id !== tabId);
-    const nextActiveTab =
-      tabs[tabIndex].isActive && remaining.length > 0
-        ? remaining[Math.max(tabIndex - 1, 0)]
-        : undefined;
+    const slots = this.getTabListForWorkspace(workspaceIdentifier);
+    const tabs = flatTabs(slots);
+    const removed = tabs.find((tab) => tab.id === tabId);
+    if (!removed) return;
+    const nextActiveTab = removed.isActive ? this.neighbourOf(slots, tabId) : undefined;
+    const { slots: remaining } = this.extractTab(slots, tabId);
     const isShown = workspaceIdentifier === this.activeWorkspaceIdentifier;
     // A workspace in the background only notes its next active tab; selecting
     // it for real happens when the workspace is shown.
     this.setTabListForWorkspace(
       workspaceIdentifier,
       nextActiveTab && !isShown
-        ? remaining.map((tab) => (tab === nextActiveTab ? { ...tab, isActive: true } : tab))
+        ? mapTabs(remaining, (tab) =>
+            tab.id === nextActiveTab.id ? { ...tab, isActive: true } : tab,
+          )
         : remaining,
     );
     this.bus.publish({ type: "TabRemoved", payload: tabId });
@@ -218,29 +245,136 @@ export class TabListService {
     }
   }
 
-  reorderTabs(sourceTabId: TabId, destinationTabId: TabId) {
-    if (sourceTabId === destinationTabId) return;
+  /** Closes every member of the stack; the slot before it becomes active if one of them was. */
+  closeStack(stackId: StackId) {
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
-    const reorderedTabList = [...this.activeTabs()];
-    const sourceTabIndex = reorderedTabList.findIndex((tab) => tab.id === sourceTabId);
-    const destinationTabIndex = reorderedTabList.findIndex((tab) => tab.id === destinationTabId);
-    if (sourceTabIndex === -1 || destinationTabIndex === -1) return;
+    const slots = this.activeSlots();
+    const stackIndex = slots.findIndex((slot) => slot.id === stackId);
+    const stack = slots[stackIndex];
+    if (!stack || !isStack(stack)) return;
+    const nextActiveSlot = stack.tabs.some((tab) => tab.isActive)
+      ? neighbourBefore(slots, stackIndex)
+      : undefined;
+    this.setTabListForWorkspace(
+      workspaceIdentifier,
+      slots.filter((slot) => slot.id !== stackId),
+    );
+    for (const tab of stack.tabs) {
+      this.bus.publish({ type: "TabRemoved", payload: tab.id });
+    }
+    if (nextActiveSlot) {
+      this.selectTab(isStack(nextActiveSlot) ? nextActiveSlot.currentTabId : nextActiveSlot.id);
+    }
+  }
 
-    const [sourceTab] = reorderedTabList.splice(sourceTabIndex, 1);
-    reorderedTabList.splice(destinationTabIndex, 0, sourceTab);
-    this.setTabListForWorkspace(workspaceIdentifier, reorderedTabList);
+  /** The members take the stack's place as slots of their own. */
+  unstack(stackId: StackId) {
+    const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+    const slots = this.activeSlots();
+    if (!this.findStack(slots, stackId)) return;
+    this.setTabListForWorkspace(
+      workspaceIdentifier,
+      slots.flatMap((slot) => (slot.id === stackId && isStack(slot) ? slot.tabs : [slot])),
+    );
+  }
+
+  /**
+   * Puts a tab, a stack or a stack member (taken out of its stack) before or
+   * after another slot of the shown workspace.
+   */
+  placeSlot(draggedId: TabId | StackId, targetSlotId: TabId | StackId, side: PlacementSide) {
+    if (draggedId === targetSlotId) return;
+    const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+    const slots = this.activeSlots();
+    const targetIndex = slots.findIndex((slot) => slot.id === targetSlotId);
+    if (targetIndex === -1) return;
+    const { positioned, dragged } = this.takeOut(slots, draggedId);
+    if (!dragged) return;
+    const insertAt = positioned.filter(({ originalIndex }) =>
+      side === "before" ? originalIndex < targetIndex : originalIndex <= targetIndex,
+    ).length;
+    const result = positioned.map(({ slot }) => slot);
+    result.splice(insertAt, 0, dragged);
+    if (this.sameShape(slots, result)) return;
+    this.setTabListForWorkspace(workspaceIdentifier, result);
+  }
+
+  /**
+   * Puts a tab before or after a member of the stack: from outside, from
+   * another stack, or from the same stack (a plain reorder then).
+   */
+  placeTabInStack(tabId: TabId, stackId: StackId, targetTabId: TabId, side: PlacementSide) {
+    if (tabId === targetTabId) return;
+    const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+    const slots = this.activeSlots();
+    const stack = this.findStack(slots, stackId);
+    if (!stack || !stack.tabs.some((tab) => tab.id === targetTabId)) return;
+    const isMember = stack.tabs.some((tab) => tab.id === tabId);
+    const { slots: without, tab } = isMember
+      ? { slots, tab: stack.tabs.find((member) => member.id === tabId) }
+      : this.extractTab(slots, tabId);
+    if (!tab) return;
+    const result = without.map((slot) => {
+      if (slot.id !== stackId || !isStack(slot)) return slot;
+      const members = slot.tabs.filter((member) => member.id !== tabId);
+      const targetIndex = members.findIndex((member) => member.id === targetTabId);
+      members.splice(side === "before" ? targetIndex : targetIndex + 1, 0, tab);
+      return { ...slot, tabs: members };
+    });
+    if (this.sameShape(slots, result)) return;
+    this.setTabListForWorkspace(workspaceIdentifier, result);
+  }
+
+  /** A new, collapsed stack in the place of `ontoTabId` holding it and the dragged tab. */
+  stackTabs(tabId: TabId, ontoTabId: TabId) {
+    if (tabId === ontoTabId) return;
+    const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+    const slots = this.activeSlots();
+    const onto = slots.find((slot) => slot.id === ontoTabId);
+    if (!onto || isStack(onto)) return;
+    const { slots: without, tab } = this.extractTab(slots, tabId);
+    if (!tab) return;
+    const stack: TabStack = {
+      id: IdCreator.newStackId(),
+      name: this.nextStackName(slots),
+      currentTabId: tab.isActive ? tab.id : onto.id,
+      isExpanded: false,
+      tabs: [onto, tab],
+    };
+    this.setTabListForWorkspace(
+      workspaceIdentifier,
+      without.map((slot) => (slot.id === ontoTabId ? stack : slot)),
+    );
   }
 
   selectTab(tabId: TabId) {
     if (this._showRename()) return;
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
-    const tabs = this.activeTabs();
-    if (!tabs.some((tab) => tab.id === tabId)) return;
-    this.setTabListForWorkspace(
-      workspaceIdentifier,
-      tabs.map((tab) => ({ ...tab, isActive: tab.id === tabId })),
-    );
+    const slots = this.activeSlots();
+    if (!this.activeTabs().some((tab) => tab.id === tabId)) return;
+    const selected = slots.map((slot) => {
+      if (!isStack(slot)) return { ...slot, isActive: slot.id === tabId };
+      const members = slot.tabs.map((tab) => ({ ...tab, isActive: tab.id === tabId }));
+      const isMember = members.some((tab) => tab.id === tabId);
+      return { ...slot, tabs: members, currentTabId: isMember ? tabId : slot.currentTabId };
+    });
+    this.setTabListForWorkspace(workspaceIdentifier, selected);
     this.bus.publish({ type: "TabSelected", payload: tabId });
+  }
+
+  /** Brings the member the stack stands for to the front; shown or hidden members stay as they are. */
+  selectStack(stackId: StackId) {
+    const stack = this.findStack(this.activeSlots(), stackId);
+    if (!stack) return;
+    this.selectTab(stack.currentTabId);
+  }
+
+  /** Shows the stack's members, or hides them again; nothing is selected by it. */
+  toggleStack(stackId: StackId) {
+    this.updateStack(this.getRequiredActiveWorkspaceIdentifier(), stackId, (stack) => ({
+      ...stack,
+      isExpanded: !stack.isExpanded,
+    }));
   }
 
   closeRename() {
@@ -250,12 +384,14 @@ export class TabListService {
 
   commitRename(value: string) {
     if (!value?.trim()) return;
-    const tabId = this._showRename();
-    if (!tabId) return;
-    this.updateTab(this.getRequiredActiveWorkspaceIdentifier(), tabId, (tab) => ({
-      ...tab,
-      userTitle: value,
-    }));
+    const id = this._showRename();
+    if (!id) return;
+    const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
+    if (this.findStack(this.activeSlots(), id)) {
+      this.updateStack(workspaceIdentifier, id, (stack) => ({ ...stack, name: value }));
+    } else {
+      this.updateTab(workspaceIdentifier, id, (tab) => ({ ...tab, userTitle: value }));
+    }
     this.closeRename();
   }
 
@@ -272,10 +408,30 @@ export class TabListService {
     }));
   }
 
-  restoreTabs(tabConfigList: TabConfig[], workspaceIdentifier?: string) {
+  setStackColor(stackId: StackId, name: ColorName | undefined) {
+    this.updateStack(this.getRequiredActiveWorkspaceIdentifier(), stackId, (stack) => ({
+      ...stack,
+      color: name,
+    }));
+  }
+
+  /**
+   * Rebuilds the slots from the persisted tabs and stacks. Members join the
+   * stack named by their `stackId` at its first member's place; a stack left
+   * with fewer than two members is dissolved, one without members is dropped.
+   * A stack stands for its active member, else the saved one, else the first.
+   */
+  restoreTabs(
+    tabConfigList: TabConfig[],
+    stackConfigList: TabStackConfig[],
+    workspaceIdentifier?: string,
+  ) {
     const targetWorkspaceIdentifier =
       workspaceIdentifier ?? this.getRequiredActiveWorkspaceIdentifier();
-    const tabs: TabList = tabConfigList.map((config) => {
+    const stackConfigs = new Map(stackConfigList.map((stack) => [stack.stackId, stack]));
+    const stacksById = new Map<StackId, TabStack>();
+    const slots: TabList = [];
+    for (const config of tabConfigList) {
       const tab: Tab = {
         id: config.tabId,
         color: config.color as ColorName | undefined,
@@ -284,21 +440,80 @@ export class TabListService {
         isActive: config.isActive ?? false,
         activeShellType: "unknown",
       };
-      return tab;
-    });
-    this.setTabListForWorkspace(targetWorkspaceIdentifier, tabs);
+      if (!config.stackId) {
+        slots.push(tab);
+        continue;
+      }
+      const stack = stacksById.get(config.stackId);
+      if (stack) {
+        stack.tabs.push(tab);
+        continue;
+      }
+      const created: TabStack = {
+        id: config.stackId,
+        name: stackConfigs.get(config.stackId)?.name ?? "",
+        color: stackConfigs.get(config.stackId)?.color as ColorName | undefined,
+        currentTabId: stackConfigs.get(config.stackId)?.currentTabId ?? tab.id,
+        isExpanded: stackConfigs.get(config.stackId)?.isExpanded ?? false,
+        tabs: [tab],
+      };
+      stacksById.set(config.stackId, created);
+      slots.push(created);
+    }
+    const repaired: TabList = [];
+    for (const slot of slots) {
+      if (!isStack(slot)) {
+        repaired.push(slot);
+        continue;
+      }
+      repaired.push(
+        ...this.normalizeStack({
+          ...slot,
+          name: slot.name || this.nextStackName([...slots, ...repaired]),
+        }),
+      );
+    }
+    this.setTabListForWorkspace(targetWorkspaceIdentifier, repaired);
   }
 
+  /** "Stack N" with the smallest N no stack of the list is named after. */
+  private nextStackName(slots: TabList): string {
+    const taken = new Set(slots.filter(isStack).map((stack) => stack.name));
+    for (let number = 1; ; number++) {
+      const candidate = `Stack ${number}`;
+      if (!taken.has(candidate)) return candidate;
+    }
+  }
+
+  /** The tabs in bar order; a member carries the id of its stack. */
   getTabConfigs(workspaceIdentifier?: string): TabConfig[] {
     const targetWorkspaceIdentifier =
       workspaceIdentifier ?? this.getRequiredActiveWorkspaceIdentifier();
-    return this.getTabListForWorkspace(targetWorkspaceIdentifier).map<TabConfig>((tab) => ({
+    const toConfig = (tab: Tab, stackId?: StackId): TabConfig => ({
       tabId: tab.id,
       isActive: tab.isActive,
       color: tab.color,
       systemTitle: tab.systemTitle,
       userTitle: tab.userTitle,
-    }));
+      stackId,
+    });
+    return this.getTabListForWorkspace(targetWorkspaceIdentifier).flatMap((slot) =>
+      isStack(slot) ? slot.tabs.map((tab) => toConfig(tab, slot.id)) : [toConfig(slot)],
+    );
+  }
+
+  getTabStackConfigs(workspaceIdentifier?: string): TabStackConfig[] {
+    const targetWorkspaceIdentifier =
+      workspaceIdentifier ?? this.getRequiredActiveWorkspaceIdentifier();
+    return this.getTabListForWorkspace(targetWorkspaceIdentifier)
+      .filter(isStack)
+      .map((stack) => ({
+        stackId: stack.id,
+        name: stack.name,
+        color: stack.color,
+        currentTabId: stack.currentTabId,
+        isExpanded: stack.isExpanded,
+      }));
   }
 
   focusActiveTerminal() {
@@ -333,12 +548,100 @@ export class TabListService {
     );
   }
 
-  private selectTabByShortcutIndex(index: number): void {
-    const tab = this.activeTabs()[index - 1];
-    if (!tab) {
+  /** `select_tab_N` names the N-th slot as shown; a stack stands for its current member. */
+  private selectSlotByShortcutIndex(index: number): void {
+    const slot = this.activeSlots()[index - 1];
+    if (!slot) {
       return;
     }
-    this.selectTab(tab.id);
+    this.selectTab(isStack(slot) ? slot.currentTabId : slot.id);
+  }
+
+  /**
+   * The tab to activate after `tabId` is gone: its neighbour in the stack
+   * (the one before, else the first), or without a stack its neighbour in the
+   * flat order.
+   */
+  private neighbourOf(slots: TabList, tabId: TabId): Tab | undefined {
+    const stack = this.stackOf(slots, tabId);
+    const tabs = stack ? stack.tabs : flatTabs(slots);
+    return neighbourBefore(
+      tabs,
+      tabs.findIndex((tab) => tab.id === tabId),
+    );
+  }
+
+  /**
+   * The list without `tabId`, from a slot or a stack. A stack left with one
+   * member is replaced by that member; one that loses its current member
+   * points at the neighbour before it.
+   */
+  private extractTab(slots: TabList, tabId: TabId): { slots: TabList; tab: Tab | undefined } {
+    const { positioned, dragged } = this.takeOut(slots, tabId);
+    return {
+      slots: positioned.map(({ slot }) => slot),
+      tab: dragged && !isStack(dragged) ? dragged : undefined,
+    };
+  }
+
+  /** Takes a slot or a stack member out of the list, keeping each remaining slot's former index. */
+  private takeOut(
+    slots: TabList,
+    id: TabId | StackId,
+  ): { positioned: PositionedSlot[]; dragged: TabSlot | undefined } {
+    let dragged: TabSlot | undefined;
+    const positioned = slots.flatMap((slot, originalIndex): PositionedSlot[] => {
+      if (slot.id === id) {
+        dragged = slot;
+        return [];
+      }
+      if (!isStack(slot)) return [{ slot, originalIndex }];
+      const member = slot.tabs.find((tab) => tab.id === id);
+      if (!member) return [{ slot, originalIndex }];
+      dragged = member;
+      const tabs = slot.tabs.filter((tab) => tab.id !== id);
+      const currentTabId =
+        slot.currentTabId === id
+          ? (neighbourBefore(slot.tabs, slot.tabs.indexOf(member))?.id ?? slot.currentTabId)
+          : slot.currentTabId;
+      return this.normalizeStack({ ...slot, tabs, currentTabId }).map((slot) => ({
+        slot,
+        originalIndex,
+      }));
+    });
+    return { positioned, dragged };
+  }
+
+  /** A stack as a slot while it has two members or more; otherwise what is left of it. */
+  private normalizeStack(stack: TabStack): TabSlot[] {
+    return stack.tabs.length >= 2 ? [stack] : stack.tabs;
+  }
+
+  private sameShape(a: TabList, b: TabList): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((slot, index) => {
+      const other = b[index];
+      if (slot.id !== other.id || isStack(slot) !== isStack(other)) return false;
+      if (!isStack(slot) || !isStack(other)) return true;
+      return (
+        slot.tabs.length === other.tabs.length &&
+        slot.tabs.every((tab, tabIndex) => tab.id === other.tabs[tabIndex].id)
+      );
+    });
+  }
+
+  private findStack(slots: TabList, stackId: StackId): TabStack | undefined {
+    const slot = slots.find((slot) => slot.id === stackId);
+    return slot && isStack(slot) ? slot : undefined;
+  }
+
+  /** The shown workspace's stack holding `tabId`, if it is a member of one. */
+  stackOfTab(tabId: TabId): TabStack | undefined {
+    return this.stackOf(this.activeSlots(), tabId);
+  }
+
+  private stackOf(slots: TabList, tabId: TabId): TabStack | undefined {
+    return slots.filter(isStack).find((stack) => stack.tabs.some((tab) => tab.id === tabId));
   }
 
   private getRequiredActiveWorkspaceIdentifier(): string {
@@ -351,7 +654,7 @@ export class TabListService {
   /** The workspace holding `tabId`, shown or not; tab ids are unique across workspaces. */
   private workspaceOfTab(tabId: TabId): string | undefined {
     for (const [workspaceIdentifier, tabList] of this.tabListByWorkspaceIdentifier) {
-      if (tabList.some((tab) => tab.id === tabId)) return workspaceIdentifier;
+      if (flatTabs(tabList).some((tab) => tab.id === tabId)) return workspaceIdentifier;
     }
     return undefined;
   }
@@ -360,26 +663,60 @@ export class TabListService {
     return this.tabListByWorkspaceIdentifier.get(workspaceIdentifier) ?? [];
   }
 
-  private activeTabs(): TabList {
+  private activeSlots(): TabList {
     return this.activeWorkspaceIdentifier
       ? this.getTabListForWorkspace(this.activeWorkspaceIdentifier)
       : [];
   }
 
-  /** Stores `tabList` as it is: every writer builds a new list and new tab objects. */
+  /** The shown workspace's tabs in bar order, members in place of their stack. */
+  private activeTabs(): Tab[] {
+    return flatTabs(this.activeSlots());
+  }
+
+  /**
+   * Stores `tabList`: every writer builds a new list and new objects. The
+   * member a stack stands for is settled here for all of them: its active
+   * member, else the one it stood for while that is still a member, else the
+   * first.
+   */
   private setTabListForWorkspace(workspaceIdentifier: string, tabList: TabList): void {
-    this.tabListByWorkspaceIdentifier.set(workspaceIdentifier, tabList);
+    const settled = tabList.map((slot) =>
+      isStack(slot) ? { ...slot, currentTabId: this.currentMemberOf(slot) } : slot,
+    );
+    this.tabListByWorkspaceIdentifier.set(workspaceIdentifier, settled);
     if (this.activeWorkspaceIdentifier === workspaceIdentifier) {
       this.activeTabsChanged.next();
     }
   }
 
+  private currentMemberOf(stack: TabStack): TabId {
+    return (
+      stack.tabs.find((tab) => tab.isActive)?.id ??
+      stack.tabs.find((tab) => tab.id === stack.currentTabId)?.id ??
+      stack.tabs[0].id
+    );
+  }
+
   private updateTab(workspaceIdentifier: string, tabId: TabId, change: (tab: Tab) => Tab): void {
-    const tabs = this.getTabListForWorkspace(workspaceIdentifier);
-    if (!tabs.some((tab) => tab.id === tabId)) return;
+    const slots = this.getTabListForWorkspace(workspaceIdentifier);
+    if (!flatTabs(slots).some((tab) => tab.id === tabId)) return;
     this.setTabListForWorkspace(
       workspaceIdentifier,
-      tabs.map((tab) => (tab.id === tabId ? change(tab) : tab)),
+      mapTabs(slots, (tab) => (tab.id === tabId ? change(tab) : tab)),
+    );
+  }
+
+  private updateStack(
+    workspaceIdentifier: string,
+    stackId: StackId,
+    change: (stack: TabStack) => TabStack,
+  ): void {
+    const slots = this.getTabListForWorkspace(workspaceIdentifier);
+    if (!this.findStack(slots, stackId)) return;
+    this.setTabListForWorkspace(
+      workspaceIdentifier,
+      slots.map((slot) => (slot.id === stackId && isStack(slot) ? change(slot) : slot)),
     );
   }
 }

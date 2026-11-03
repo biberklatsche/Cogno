@@ -215,3 +215,142 @@
   display: flex;
   gap: 1px;
 }
+
+// A stack: one slot of the strip, a frame in the stack's colour. The head
+// (count, name, chevron) selects it, the chevron shows or hides the members,
+// which sit in the frame as pills. Nothing in the frame shrinks below its
+// content: a stack grows with its members instead of squeezing their titles.
+.stack {
+  --stack-color: color-mix(in srgb, var(--foreground-color) 40%, transparent);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  height: 26px;
+  padding: 0 2px;
+  border-radius: var(--button-border-radius);
+  border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+  background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct2), transparent);
+
+  &.is-active {
+    border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+  }
+
+  &.has-color {
+    --stack-color: var(--tab-color);
+    border-color: color-mix(in srgb, var(--tab-color) 55%, transparent);
+    background: color-mix(in srgb, var(--tab-color) 18%, transparent);
+
+    &.is-active {
+      border-color: var(--tab-color);
+      background: color-mix(in srgb, var(--tab-color) 30%, transparent);
+    }
+  }
+
+  &.is-dragging {
+    border-style: dashed;
+  }
+
+  // Every tab in the frame keeps its content width, up to a cap.
+  > .tab {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 200px;
+    height: 20px;
+    min-height: 20px;
+    container-type: normal;
+
+    .title {
+      flex-shrink: 1;
+      min-width: 0;
+    }
+  }
+
+  > .stack-head {
+    gap: 6px;
+    padding: 0 4px 0 6px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--foreground-color);
+
+    &:hover {
+      border-color: transparent;
+      background: color-mix(in srgb, var(--foreground-color) 8%, transparent);
+    }
+
+    &.is-busy {
+      padding-left: 26px;
+    }
+  }
+
+  > .segment {
+    padding-right: 24px;
+    border-color: transparent;
+    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+
+    &:hover {
+      border-color: transparent;
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+    }
+
+    &.is-active {
+      color: var(--foreground-color);
+      border-color: color-mix(in srgb, var(--stack-color) 70%, transparent);
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+    }
+
+    &.has-color {
+      border-color: color-mix(in srgb, var(--tab-color) 50%, transparent);
+
+      &.is-active {
+        border-color: var(--tab-color);
+        background: color-mix(in srgb, var(--tab-color) 35%, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color)));
+      }
+    }
+
+    .close {
+      opacity: 1;
+      background: transparent;
+    }
+  }
+}
+
+// The member count, in the stack's colour; it is the head's mark.
+.stack-count {
+  flex: 0 0 auto;
+  min-width: 16px;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 8px;
+  text-align: center;
+  color: var(--foreground-color);
+  background: color-mix(in srgb, var(--stack-color) 35%, transparent);
+}
+
+// The one control that shows or hides the members; a press on it never drags or selects.
+.stack-chevron {
+  flex: 0 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--foreground-color) 12%, transparent);
+  }
+}
+
+// The tab or stack a dragged tab joins when released over it.
+.tab.is-stack-target,
+.stack.is-stack-target {
+  border-color: var(--highlight-color);
+  box-shadow: inset 0 0 0 1px var(--highlight-color);
+}

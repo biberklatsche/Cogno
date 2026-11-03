@@ -1,5 +1,5 @@
 import { TerminalId } from "@cogno/shared/domain";
-import { TabId, WorkspaceId } from "./grid-layout";
+import { StackId, TabId, WorkspaceId } from "./grid-layout";
 
 export const IdCreator = {
   newId(prefix = "ID"): string {
@@ -8,6 +8,10 @@ export const IdCreator = {
 
   newTabId(): TabId {
     return this.newId("TB");
+  },
+
+  newStackId(): StackId {
+    return this.newId("TS");
   },
 
   newTerminalId(): TerminalId {

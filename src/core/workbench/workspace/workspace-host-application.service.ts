@@ -50,8 +50,11 @@ const IDLE_AUTOSAVE_MS = 2500;
  */
 const DIRTY_TRACKED_KEYS = [
   "tabs",
+  "stacks",
   "grids",
   "tabId",
+  "stackId",
+  "name",
   "color",
   "userTitle",
   "pane",
@@ -117,7 +120,7 @@ export class WorkspaceHostApplicationService {
       for (const workspace of workspaces) {
         this.persistedWorkspaceRuntimeSignatureById.set(
           workspace.id,
-          this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.grids),
+          this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.stacks, workspace.grids),
         );
       }
 
@@ -147,7 +150,7 @@ export class WorkspaceHostApplicationService {
       }
     });
 
-    merge(this.tabListService.tabs$, this.gridListService.grids$)
+    merge(this.tabListService.slots$, this.gridListService.grids$)
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => this.runtimeVersion.update((version) => version + 1));
 
@@ -187,7 +190,7 @@ export class WorkspaceHostApplicationService {
 
   /** Build a workspace's runtime without showing it; its sessions run behind the active one. */
   private openInBackground(workspace: WorkspaceConfiguration): void {
-    this.tabListService.restoreTabs(workspace.tabs, workspace.id);
+    this.tabListService.restoreTabs(workspace.tabs, workspace.stacks, workspace.id);
     this.gridListService.restoreGridsForWorkspace(workspace.grids, workspace.id);
     this._workspaceList.update((workspaceList) =>
       workspaceList.map((entry) =>
@@ -329,7 +332,11 @@ export class WorkspaceHostApplicationService {
     }
 
     if (activationPlan.shouldRestoreRuntime) {
-      this.tabListService.restoreTabs(workspaceToActivate.tabs, workspaceToActivate.id);
+      this.tabListService.restoreTabs(
+        workspaceToActivate.tabs,
+        workspaceToActivate.stacks,
+        workspaceToActivate.id,
+      );
       this.gridListService.restoreGridsForWorkspace(
         workspaceToActivate.grids,
         workspaceToActivate.id,
@@ -409,6 +416,7 @@ export class WorkspaceHostApplicationService {
         isActive: workspace.isActive,
         grids: this.gridListService.getGridConfigs(workspaceId),
         tabs: this.tabListService.getTabConfigs(workspaceId),
+        stacks: this.tabListService.getTabStackConfigs(workspaceId),
       });
       await this.sessionPersistence.persistWorkspace(workspaceId);
     } catch (error) {
@@ -440,6 +448,7 @@ export class WorkspaceHostApplicationService {
       color: workspace.color,
       grids: workspace.grids,
       tabs: workspace.tabs,
+      stacks: workspace.stacks,
       position: workspace.position,
       isActive: workspace.isActive,
     };
@@ -587,6 +596,7 @@ export class WorkspaceHostApplicationService {
     if (sourceWorkspaceId) {
       workspace.grids = this.gridListService.getGridConfigs(sourceWorkspaceId);
       workspace.tabs = this.tabListService.getTabConfigs(sourceWorkspaceId);
+      workspace.stacks = this.tabListService.getTabStackConfigs(sourceWorkspaceId);
     }
 
     if (isNewWorkspace) {
@@ -595,9 +605,19 @@ export class WorkspaceHostApplicationService {
         (workspaceEntry) => workspaceEntry.id !== DEFAULT_WORKSPACE_ID,
       ).length;
       const freshTabIds = new Map(workspace.tabs.map((tab) => [tab.tabId, IdCreator.newTabId()]));
+      const freshStackIds = new Map(
+        workspace.stacks.map((stack) => [stack.stackId, IdCreator.newStackId()]),
+      );
       workspace.tabs = workspace.tabs.map((tab) => ({
         ...tab,
         tabId: freshTabIds.get(tab.tabId) ?? tab.tabId,
+        stackId: tab.stackId && (freshStackIds.get(tab.stackId) ?? tab.stackId),
+      }));
+      workspace.stacks = workspace.stacks.map((stack) => ({
+        ...stack,
+        stackId: freshStackIds.get(stack.stackId) ?? stack.stackId,
+        currentTabId:
+          stack.currentTabId && (freshTabIds.get(stack.currentTabId) ?? stack.currentTabId),
       }));
       workspace.grids = workspace.grids.map((grid) => ({
         tabId: freshTabIds.get(grid.tabId) ?? grid.tabId,
@@ -608,7 +628,7 @@ export class WorkspaceHostApplicationService {
 
     this.persistedWorkspaceRuntimeSignatureById.set(
       workspace.id,
-      this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.grids),
+      this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.stacks, workspace.grids),
     );
 
     return workspace.id;
@@ -621,6 +641,7 @@ export class WorkspaceHostApplicationService {
     }
     const currentSignature = this.createWorkspaceRuntimeSignature(
       this.tabListService.getTabConfigs(workspace.id),
+      this.tabListService.getTabStackConfigs(workspace.id),
       this.gridListService.getGridConfigs(workspace.id),
     );
     return this.persistedWorkspaceRuntimeSignatureById.get(workspace.id) !== currentSignature;
@@ -640,8 +661,9 @@ export class WorkspaceHostApplicationService {
 
   private createWorkspaceRuntimeSignature(
     tabs: WorkspaceConfiguration["tabs"],
+    stacks: WorkspaceConfiguration["stacks"],
     grids: WorkspaceConfiguration["grids"],
   ): string {
-    return JSON.stringify({ tabs, grids }, DIRTY_TRACKED_KEYS);
+    return JSON.stringify({ tabs, stacks, grids }, DIRTY_TRACKED_KEYS);
   }
 }

@@ -27,6 +27,16 @@ export class TooltipDirective implements OnChanges, OnDestroy {
 
   private tooltipElement?: HTMLElement;
   private showTimeout?: ReturnType<typeof setTimeout>;
+  /**
+   * `mouseleave` only comes with a pointer move across the host's edge. A host
+   * that moves away from under a still pointer (the tab strip reorders live
+   * while a tab is dragged) leaves no such event behind, so while a hover
+   * tooltip is shown the pointer is watched instead and the tooltip goes as
+   * soon as the host is no longer hovered.
+   */
+  private readonly hideWhenNotHovered = (): void => {
+    if (!this.host.nativeElement.matches(":hover")) this.removeTooltip();
+  };
 
   constructor(private readonly host: ElementRef<HTMLElement>) {}
 
@@ -51,12 +61,21 @@ export class TooltipDirective implements OnChanges, OnDestroy {
     if (this.tooltipElement || this.tooltipVisible) return;
     clearTimeout(this.showTimeout);
     this.showTimeout = setTimeout(() => {
-      this.showTooltip();
+      // The host may have moved away from under the pointer meanwhile.
+      if (this.host.nativeElement.matches(":hover")) this.showTooltip();
     }, HOVER_DELAY_MS);
   }
 
   @HostListener("mouseleave")
   onMouseLeave(): void {
+    if (this.tooltipVisible) return;
+    clearTimeout(this.showTimeout);
+    this.removeTooltip();
+  }
+
+  /** A press means a click or a drag is coming; the hover tooltip is in the way then. */
+  @HostListener("mousedown")
+  onMouseDown(): void {
     if (this.tooltipVisible) return;
     clearTimeout(this.showTimeout);
     this.removeTooltip();
@@ -106,6 +125,9 @@ export class TooltipDirective implements OnChanges, OnDestroy {
 
     document.body.appendChild(this.tooltipElement);
     this.positionTooltip();
+    if (!this.tooltipVisible) {
+      document.addEventListener("mousemove", this.hideWhenNotHovered, true);
+    }
 
     requestAnimationFrame(() => {
       if (this.tooltipElement) this.tooltipElement.style.opacity = "1";
@@ -135,6 +157,7 @@ export class TooltipDirective implements OnChanges, OnDestroy {
   }
 
   private removeTooltip(): void {
+    document.removeEventListener("mousemove", this.hideWhenNotHovered, true);
     if (this.tooltipElement) {
       this.tooltipElement.remove();
       this.tooltipElement = undefined;

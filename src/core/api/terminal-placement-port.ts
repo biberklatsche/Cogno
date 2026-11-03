@@ -13,7 +13,7 @@ export type TerminalPlacement = {
   readonly tabTitle: string;
   /** Colour name of the tab, absent when the user gave it none. */
   readonly tabColor?: string;
-  /** Index of the tab in its workspace's tab bar. */
+  /** Position of the tab in its workspace's tab order; a stack's members count in its place. */
   readonly tabIndex: number;
 };
 

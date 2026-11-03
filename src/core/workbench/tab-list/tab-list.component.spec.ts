@@ -4,7 +4,7 @@ import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
-import type { Tab } from "@cogno/core/workbench/tab-list/+model/tab";
+import { flatTabs } from "@cogno/core/workbench/tab-list/+model/tab";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,16 +16,6 @@ import {
   getDestroyRef,
 } from "../../../__test__/test-factory";
 import { TabListComponent } from "./tab-list.component";
-
-function tab(overrides: Partial<Tab> = {}): Tab {
-  return {
-    id: "t1",
-    systemTitle: "T1",
-    isActive: true,
-    activeShellType: "unknown",
-    ...overrides,
-  };
-}
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
@@ -83,17 +73,17 @@ describe("TabListComponent", () => {
     clear();
   });
 
-  describe("tabColor", () => {
-    it("resolves the css variable from the tab's color name", () => {
+  describe("colorVariable", () => {
+    it("resolves the css variable from the color name", () => {
       const component = createComponent();
 
-      expect(component.tabColor(tab({ color: "red" }))).toBe("var(--color-red)");
+      expect(component.colorVariable("red")).toBe("var(--color-red)");
     });
 
-    it("returns undefined for tabs without a color", () => {
+    it("returns undefined without a color", () => {
       const component = createComponent();
 
-      expect(component.tabColor(tab({ color: undefined }))).toBeUndefined();
+      expect(component.colorVariable(undefined)).toBeUndefined();
     });
   });
 
@@ -117,6 +107,26 @@ describe("TabListComponent", () => {
       expect(component.contextMenuSelectedColor()).toBe("green");
     });
 
+    it("colours the stack whose menu is open, not a member", () => {
+      tabListService.addTab({
+        id: "t2",
+        systemTitle: "T2",
+        isActive: false,
+        activeShellType: "unknown",
+      });
+      tabListService.stackTabs("t2", "t1");
+      const stackId = tabListService.stackOfTab("t1")?.id ?? "";
+      const component = createComponent();
+      component.buildStackContextMenu(fakeContextMenuEvent(), stackId);
+      expect(component.contextMenuSelectedColor()).toBeUndefined();
+
+      component.onTabColorPick("red");
+
+      expect(component.contextMenuSelectedColor()).toBe("red");
+      expect(tabListService.getTabStackConfigs()[0].color).toBe("red");
+      expect(tabListService.getTabConfigs().every((tab) => tab.color === undefined)).toBe(true);
+    });
+
     it("delegates the picked color to TabListService", () => {
       const component = createComponent();
       component.buildContextMenu(fakeContextMenuEvent(), "t1");
@@ -124,8 +134,8 @@ describe("TabListComponent", () => {
       component.onTabColorPick("magenta");
 
       let currentColor: string | undefined;
-      tabListService.tabs$.subscribe((tabs) => {
-        currentColor = tabs.find((tab) => tab.id === "t1")?.color;
+      tabListService.slots$.subscribe((slots) => {
+        currentColor = flatTabs(slots).find((tab) => tab.id === "t1")?.color;
       });
       expect(currentColor).toBe("magenta");
     });
@@ -136,8 +146,8 @@ describe("TabListComponent", () => {
       component.onTabColorPick("red");
 
       let currentColor: string | undefined;
-      tabListService.tabs$.subscribe((tabs) => {
-        currentColor = tabs.find((tab) => tab.id === "t1")?.color;
+      tabListService.slots$.subscribe((slots) => {
+        currentColor = flatTabs(slots).find((tab) => tab.id === "t1")?.color;
       });
       expect(currentColor).toBeUndefined();
     });
