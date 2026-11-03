@@ -16,12 +16,17 @@ import { TooltipDirective } from "../tooltip/tooltip.directive";
     "[class.colored]": "!!color()",
     "[style.--tab-color]": "color() ? 'var(--color-' + color() + ')' : null",
   },
-  template: `<span [appStartEllipsis]="title()" [appTooltip]="tooltip()"></span>`,
+  template: `<span class="title" [appStartEllipsis]="title()" [appTooltip]="tooltip()"></span>`,
   styles: `
     :host {
       display: block;
       min-width: 0;
       opacity: 0.55;
+    }
+
+    /* A block, so the ellipsis directive can measure it: an inline span has no width of its own. */
+    .title {
+      display: block;
       white-space: nowrap;
       overflow: hidden;
     }

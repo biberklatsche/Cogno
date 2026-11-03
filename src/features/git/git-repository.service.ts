@@ -7,7 +7,8 @@ import {
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { AppWindow } from "@cogno/platform";
-import { catchError, EMPTY, filter, merge, Subscription } from "rxjs";
+import { catchError, EMPTY, filter, merge, Observable, Subject, Subscription } from "rxjs";
+import { GitAvailability } from "./git-availability";
 import { classifyRootFailure, GitError, READ_TIMEOUT_MS, runGit } from "./git-run";
 import { layoutGraph } from "./model/git-graph";
 import {
@@ -118,18 +119,20 @@ export class GitRepositoryService {
   private refreshInFlight = false;
   private refreshPending = false;
   private contextPending = false;
+  private readonly explicitRefreshes = new Subject<void>();
   /**
-   * Git itself was not usable at the last look. Focus changes, cwd changes and
-   * finished commands then no longer run git again (on macOS without the
-   * command line tools every attempt pops Apple's install dialog); opening
-   * the panel or an explicit refresh does.
+   * The panel asked for a re-read itself - after a commit, a stash, the
+   * Refresh button - rather than because of something in the terminal.
+   * Anything else that reads this repository has no terminal event to go by
+   * then and follows this.
    */
-  private gitMissing = false;
+  readonly explicitRefreshes$: Observable<void> = this.explicitRefreshes.asObservable();
 
   constructor(
     sessionApi: SessionApi,
     terminalMonitor: TerminalMonitorPort,
     appWindow: AppWindow,
+    private readonly availability: GitAvailability,
     destroyRef: DestroyRef,
   ) {
     sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
@@ -165,7 +168,7 @@ export class GitRepositoryService {
   start(): void {
     if (this.active) return;
     this.active = true;
-    this.gitMissing = false;
+    this.availability.reset();
     this.requestRefresh(true);
   }
 
@@ -175,13 +178,14 @@ export class GitRepositoryService {
   }
 
   refresh(): Promise<void> {
-    this.gitMissing = false;
+    this.availability.reset();
+    this.explicitRefreshes.next();
     return this.requestRefresh(false);
   }
 
   loadMoreCommits(): Promise<void> {
     this.logLimitSignal.update((limit) => limit + GIT_LOG_PAGE_SIZE);
-    return this.refresh();
+    return this.requestRefresh(false);
   }
 
   /** The session git runs in right now; null without a bound session. */
@@ -233,7 +237,7 @@ export class GitRepositoryService {
   }
 
   private requestAutomaticRefresh(resolveContext: boolean): void {
-    if (!this.active || this.gitMissing) return;
+    if (!this.active || this.availability.missing) return;
     this.requestRefresh(resolveContext);
   }
 
@@ -298,7 +302,7 @@ export class GitRepositoryService {
     const [root, gitDir, commonDir] = stdout.split("\n").map((line) => line.trim());
     if (exitCode !== 0 || !root || !gitDir) {
       const error = classifyRootFailure(exitCode, stderr);
-      this.gitMissing = error === "not_installed";
+      if (error === "not_installed") this.availability.markMissing();
       this.clear(error, error === "no_repo" ? null : stderr.trim() || null);
       return false;
     }

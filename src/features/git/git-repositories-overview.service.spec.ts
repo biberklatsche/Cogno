@@ -1,6 +1,4 @@
-import { type DestroyRef, provideZonelessChangeDetection, signal } from "@angular/core";
-import { TestBed } from "@angular/core/testing";
-import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
+import type { DestroyRef } from "@angular/core";
 import type { SessionApi, SessionHandle } from "@cogno/core/api/session-api";
 import type { SessionRunRequest, SessionRunResult } from "@cogno/core/api/session-run";
 import type {
@@ -12,10 +10,9 @@ import type { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-p
 import type { AppWindow } from "@cogno/platform";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GitAvailability } from "./git-availability";
 import { GitRepositoriesOverviewService } from "./git-repositories-overview.service";
 import type { GitRepositoryService } from "./git-repository.service";
-
-TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
 type Run = (request: SessionRunRequest) => Promise<SessionRunResult>;
 
@@ -51,19 +48,20 @@ describe("GitRepositoriesOverviewService", () => {
   let activity$: Subject<TerminalActivityEvent>;
   let placementChanges$: Subject<void>;
   let focus$: Subject<boolean>;
-  let loading: ReturnType<typeof signal<boolean>>;
+  let explicitRefreshes$: Subject<void>;
   let boundTerminalId: string | null;
+  let availability: GitAvailability;
   let getPlacement: ReturnType<typeof vi.fn>;
   let service: GitRepositoriesOverviewService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
     sessions$ = new BehaviorSubject<ReadonlyArray<SessionHandle>>([]);
     cwdChanges$ = new Subject();
     activity$ = new Subject();
     placementChanges$ = new Subject();
     focus$ = new Subject();
-    loading = signal(false);
+    explicitRefreshes$ = new Subject();
+    availability = new GitAvailability();
     boundTerminalId = null;
     getPlacement = vi.fn((terminalId: string) => ({
       workspaceId: "w1",
@@ -73,20 +71,18 @@ describe("GitRepositoriesOverviewService", () => {
       tabTitle: `tab ${terminalId}`,
       tabIndex: 0,
     }));
-    service = TestBed.runInInjectionContext(
-      () =>
-        new GitRepositoriesOverviewService(
-          { sessions$ } as unknown as SessionApi,
-          { cwdChanges$, activity$ } as unknown as TerminalMonitorPort,
-          { getPlacement, changes$: placementChanges$ } as unknown as TerminalPlacementPort,
-          { onFocusChanged$: focus$ } as unknown as AppWindow,
-          {
-            loading,
-            currentSession: () =>
-              boundTerminalId ? { identity: { terminalId: boundTerminalId } } : null,
-          } as unknown as GitRepositoryService,
-          { onDestroy: vi.fn() } as unknown as DestroyRef,
-        ),
+    service = new GitRepositoriesOverviewService(
+      { sessions$ } as unknown as SessionApi,
+      { cwdChanges$, activity$ } as unknown as TerminalMonitorPort,
+      { getPlacement, changes$: placementChanges$ } as unknown as TerminalPlacementPort,
+      { onFocusChanged$: focus$ } as unknown as AppWindow,
+      {
+        explicitRefreshes$,
+        currentSession: () =>
+          boundTerminalId ? { identity: { terminalId: boundTerminalId } } : null,
+      } as unknown as GitRepositoryService,
+      availability,
+      { onDestroy: vi.fn() } as unknown as DestroyRef,
     );
   });
 
@@ -144,7 +140,7 @@ describe("GitRepositoriesOverviewService", () => {
     expect(service.tiles()[0]?.branch).toBe("fix");
   });
 
-  it("follows the bound repository once it was re-read, so a commit from the panel shows", async () => {
+  it("follows the panel's own re-read of the bound repository, so a commit from the panel shows", async () => {
     let status = z("M  a.ts");
     const t1 = session("t1", (request) => repo("/c/app", "main", status)(request));
     sessions$.next([t1]);
@@ -154,10 +150,7 @@ describe("GitRepositoriesOverviewService", () => {
 
     status = "";
     boundTerminalId = "t1";
-    loading.set(true);
-    TestBed.tick();
-    loading.set(false);
-    TestBed.tick();
+    explicitRefreshes$.next();
     await flush();
 
     expect(service.tiles()[0]?.counts.modified).toBe(0);
@@ -184,15 +177,92 @@ describe("GitRepositoriesOverviewService", () => {
     expect(vi.mocked(t1.run).mock.calls.length).toBe(calls);
   });
 
-  it("stops asking once git itself is missing", async () => {
-    const missing = session("t1", () => Promise.resolve(ran("", 127)));
+  it("stops asking once git itself is missing, until an explicit refresh", async () => {
+    let exitCode = 127;
+    const missing = session("t1", () => Promise.resolve(ran("", exitCode)));
     const other = session("t2", repo("/c/app", "main", ""));
     sessions$.next([missing, other]);
 
     service.start();
     await flush();
-
+    expect(availability.missing).toBe(true);
     expect(service.tiles()).toEqual([]);
     expect(other.run).not.toHaveBeenCalled();
+
+    exitCode = 128;
+    await service.refresh();
+    expect(service.tiles().map((tile) => tile.terminalId)).toEqual(["t2"]);
+  });
+
+  it("keeps the other terminals when one terminal's git timed out", async () => {
+    const slow = session("t1", () => Promise.resolve(ran("", 124, "no output for 60000ms")));
+    const other = session("t2", repo("/c/app", "main", ""));
+    sessions$.next([slow, other]);
+
+    service.start();
+    await flush();
+
+    expect(availability.missing).toBe(false);
+    expect(service.tiles().map((tile) => tile.terminalId)).toEqual(["t2"]);
+  });
+
+  it("reads terminals one after the other until git answered once, then side by side", async () => {
+    const order: string[] = [];
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const slowRepo = (id: string): Run => {
+      const inner = repo(`/c/${id}`, "main", "");
+      return async (request) => {
+        // One entry per terminal: the first call is the one that finds the repository.
+        if (request.args?.includes("--show-toplevel")) order.push(id);
+        await gate;
+        return inner(request);
+      };
+    };
+    sessions$.next([
+      session("t1", slowRepo("t1")),
+      session("t2", slowRepo("t2")),
+      session("t3", slowRepo("t3")),
+    ]);
+
+    service.start();
+    await flush();
+    // The first terminal has git on the line; the others wait for its answer.
+    expect(order).toEqual(["t1"]);
+
+    release();
+    await flush();
+    await flush();
+    expect(order).toEqual(["t1", "t2", "t3"]);
+    expect(
+      service
+        .tiles()
+        .map((tile) => tile.terminalId)
+        .sort(),
+    ).toEqual(["t1", "t2", "t3"]);
+  });
+
+  it("writes no tile after the panel closed", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const inner = repo("/c/app", "main", "");
+    sessions$.next([
+      session("t1", async (request) => {
+        await gate;
+        return inner(request);
+      }),
+    ]);
+
+    service.start();
+    service.stop();
+    release();
+    await flush();
+    await flush();
+
+    expect(service.tiles()).toEqual([]);
   });
 });

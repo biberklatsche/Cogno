@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed } from "@angular/core";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitOperationsService } from "../git-operations.service";
+import { GitRepositoriesOverviewService } from "../git-repositories-overview.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState } from "../git-view-state.service";
@@ -70,7 +71,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         <app-icon [name]="cloning() ? 'mdiLoading' : 'mdiDownload'" [class.spin]="cloning()"></app-icon>
       </button>
       <button type="button" class="button icon-button" appTooltip="Refresh" [disabled]="repository.loading()"
-              (click)="repository.refresh()">
+              (click)="refresh()">
         <app-icon name="mdiRefresh" [class.spin]="repository.loading()"></app-icon>
       </button>
     </div>
@@ -181,5 +182,12 @@ export class GitToolbarComponent {
     readonly operations: GitOperationsService,
     readonly actions: GitUiActions,
     readonly view: GitViewState,
+    private readonly overview: GitRepositoriesOverviewService,
   ) {}
+
+  /** The bound repository and the tiles of all open terminals, both asked again. */
+  refresh(): void {
+    void this.repository.refresh();
+    void this.overview.refresh();
+  }
 }

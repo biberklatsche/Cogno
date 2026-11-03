@@ -142,6 +142,10 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
             <app-icon name="mdiAlert"></app-icon>
             <span>Git status failed</span>
           }
+          @case ("timed_out") {
+            <app-icon name="mdiAlert"></app-icon>
+            <span>Git did not answer in time</span>
+          }
           @case ("no_repo") {
             <app-icon name="mdiGit"></app-icon>
             <span>Not a git repository</span>

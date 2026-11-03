@@ -8,13 +8,19 @@ import { SessionHandle } from "@cogno/core/api/session-api";
  * Why there is no repository to show. `repo_unreadable`: there is one, but
  * git refuses it (an owner mismatch git calls dubious, a broken .git); the
  * detail says why, and offering `git init` there would be wrong.
+ * `timed_out`: git showed no output for `READ_TIMEOUT_MS` and was ended (a
+ * slow network mount); git itself is fine.
  */
 export type GitError =
   | "not_installed"
   | "no_repo"
   | "repo_unreadable"
   | "status_failed"
+  | "timed_out"
   | "unavailable";
+
+/** The exit code the command runner reports for a process it ended after the idle timeout. */
+const TIMEOUT_EXIT_CODE = 124;
 
 /**
  * Idle time per read (`CommandRunnerRequestContract`). A status on a large
@@ -54,6 +60,7 @@ export async function runGit(
  */
 export function classifyRootFailure(exitCode: number, stderr: string): GitError {
   if (exitCode === 0) return "no_repo";
+  if (exitCode === TIMEOUT_EXIT_CODE) return "timed_out";
   if (exitCode !== 128) return "not_installed";
   return /not a git repository/i.test(stderr) ? "no_repo" : "repo_unreadable";
 }
