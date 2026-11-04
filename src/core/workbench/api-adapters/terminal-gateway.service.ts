@@ -5,7 +5,12 @@ import {
   SessionBinding,
 } from "@cogno/core/api/bound-session";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
-import { BoundSession, BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
+import {
+  BoundSession,
+  BoundSessionHandle,
+  SessionApi,
+  SessionHandle,
+} from "@cogno/core/api/session-api";
 import {
   SessionInsertResult,
   SessionRunRejection,
@@ -19,7 +24,16 @@ import { ProcessPromptService } from "@cogno/core/workbench/external/process-pro
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";
 import { isWslShellContext, TerminalId } from "@cogno/shared/domain";
-import { defer, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
+import {
+  defer,
+  distinctUntilChanged,
+  filter,
+  map,
+  merge,
+  Observable,
+  shareReplay,
+  startWith,
+} from "rxjs";
 import { BoundRuntimeStatus, BoundSessionTracker } from "./bound-session.tracker";
 
 @Injectable({ providedIn: "root" })
@@ -28,6 +42,8 @@ export class TerminalGatewayService implements SessionApi {
 
   /** The session the API is bound to; follows focus unless held. */
   readonly boundSession$: Observable<BoundSession>;
+  /** Every live session, as a handle that runs in it; a new list per start or end. */
+  readonly sessions$: Observable<ReadonlyArray<SessionHandle>>;
   private readonly boundSessionTracker: BoundSessionTracker;
 
   constructor(
@@ -65,6 +81,36 @@ export class TerminalGatewayService implements SessionApi {
     this.boundSession$ = this.boundSessionTracker.binding$.pipe(
       map((binding) => this.toBoundSession(binding)),
     );
+    this.sessions$ = this.terminalSessionRegistry.changes$.pipe(
+      startWith(undefined),
+      map(() =>
+        this.terminalSessionRegistry.entries.map((entry) =>
+          this.createSessionHandle(entry.terminalId, entry.host),
+        ),
+      ),
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+  }
+
+  /**
+   * A handle on one session of the directory. It names the session by its
+   * host, not a token: a restored session gets its token only when its shell
+   * starts, later than it is registered, and the handle must stay valid across
+   * that.
+   */
+  private createSessionHandle(terminalId: TerminalId, host: SessionHost): SessionHandle {
+    return {
+      terminalId,
+      get contextRevision() {
+        return host.state.contextRevision;
+      },
+      run: (request) =>
+        this.runOn(request, () =>
+          this.terminalSessionRegistry.get(terminalId)?.host === host
+            ? { host, state: host.state }
+            : { reason: "unbound" },
+        ),
+    };
   }
 
   /** Turn the tracker's binding into the public bound session (a handle when active). */
@@ -217,7 +263,18 @@ export class TerminalGatewayService implements SessionApi {
    * both in the session's current working directory.
    */
   async run(request: SessionRunRequest, identity: BoundSessionIdentity): Promise<SessionRunResult> {
-    const target = this.writableTarget(identity, request.contextRevision);
+    return this.runOn(request, () => this.boundTarget(identity));
+  }
+
+  /**
+   * Run `request` on the session `target` resolves to, once it passed the
+   * context guards shared by the bound handle and the directory handles.
+   */
+  private async runOn(
+    request: SessionRunRequest,
+    resolve: () => SessionTarget | { reason: SessionRunRejection },
+  ): Promise<SessionRunResult> {
+    const target = this.writableTarget(resolve, request.contextRevision);
     if ("reason" in target) {
       return { status: "rejected", reason: target.reason };
     }
@@ -253,7 +310,7 @@ export class TerminalGatewayService implements SessionApi {
     contextRevision: number,
     identity: BoundSessionIdentity,
   ): Promise<SessionInsertResult> {
-    const target = this.writableTarget(identity, contextRevision);
+    const target = this.writableTarget(() => this.boundTarget(identity), contextRevision);
     if ("reason" in target) {
       return { status: "rejected", reason: target.reason };
     }
@@ -264,16 +321,8 @@ export class TerminalGatewayService implements SessionApi {
     return { status: "inserted" };
   }
 
-  /**
-   * The bound session as something a feature may write to: the identity is
-   * still the live binding, the caller's context revision still matches
-   * (nothing opened/closed under it), and the context is known (a foreign
-   * shell such as ssh is refused).
-   */
-  private writableTarget(
-    identity: BoundSessionIdentity,
-    contextRevision: number,
-  ): { host: SessionHost; state: SessionHost["state"] } | { reason: SessionRunRejection } {
+  /** The bound session, while the identity is still the live binding. */
+  private boundTarget(identity: BoundSessionIdentity): SessionTarget | { reason: "unbound" } {
     if (!this.boundSessionMatches(identity)) {
       return { reason: "unbound" };
     }
@@ -281,13 +330,33 @@ export class TerminalGatewayService implements SessionApi {
     if (!entry) {
       return { reason: "unbound" };
     }
-    const state = entry.host.state;
-    if (state.contextRevision !== contextRevision) {
+    return { host: entry.host, state: entry.host.state };
+  }
+
+  /**
+   * A session as something a feature may write to: `resolve` still finds
+   * it (for the bound handle: the identity is still the live binding; for a
+   * directory handle: the terminal still runs this session), the caller's
+   * context revision still matches (nothing opened/closed under it), and the
+   * context is known (a foreign shell such as ssh is refused).
+   */
+  private writableTarget(
+    resolve: () => SessionTarget | { reason: SessionRunRejection },
+    contextRevision: number,
+  ): SessionTarget | { reason: SessionRunRejection } {
+    const resolved = resolve();
+    if ("reason" in resolved) {
+      return resolved;
+    }
+    if (resolved.state.contextRevision !== contextRevision) {
       return { reason: "stale-context" };
     }
-    if (!state.isContextKnown) {
+    if (!resolved.state.isContextKnown) {
       return { reason: "unknown-context" };
     }
-    return { host: entry.host, state };
+    return resolved;
   }
 }
+
+/** A live session a run is about to go to. */
+type SessionTarget = { host: SessionHost; state: SessionHost["state"] };

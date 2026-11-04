@@ -71,6 +71,7 @@ describe("GitViewState", () => {
     view.closedSections.update((closed) => new Set([...closed, "tags"]));
     view.diffMode.set("split");
     view.refsVisible.set(false);
+    view.repositoriesVisible.set(false);
 
     const restarted = restart();
 
@@ -79,6 +80,7 @@ describe("GitViewState", () => {
     expect([...restarted.closedSections()]).toEqual(["tags"]);
     expect(restarted.diffMode()).toBe("split");
     expect(restarted.refsVisible()).toBe(false);
+    expect(restarted.repositoriesVisible()).toBe(false);
   });
 
   it("does not carry the selection or an open diff across a restart", () => {

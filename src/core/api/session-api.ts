@@ -1,5 +1,5 @@
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";
-import { ShellContextContract } from "@cogno/shared/domain";
+import { ShellContextContract, TerminalId } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 import { BoundSessionIdentity, BoundSessionMode } from "./bound-session";
 import { SessionInsertResult, SessionRunRequest, SessionRunResult } from "./session-run";
@@ -60,13 +60,29 @@ export type BoundSession =
   | { readonly status: "closed"; readonly identity: BoundSessionIdentity };
 
 /**
+ * One entry of the session directory: a live session, named by its terminal,
+ * that a feature may run a command in. `run` rechecks that this very session
+ * is still the live one behind the terminal (not a successor) and guards the
+ * context like the bound handle does; it does not care about focus.
+ * `contextRevision` is live, to plan a run against.
+ */
+export interface SessionHandle {
+  readonly terminalId: TerminalId;
+  readonly contextRevision: number;
+  run(request: SessionRunRequest): Promise<SessionRunResult>;
+}
+
+/**
  * What a session-bound feature imports from `core/api`: the session it is bound
  * to (following focus unless held) and a signal that its cwd changed, so it can
  * re-derive its own facts. Everything context-bound goes through the handle.
+ * `sessions$` is the directory of every live session for a feature that shows
+ * all of them at once; it emits a new list when a session starts or ends.
  */
 export abstract class SessionApi {
   abstract readonly boundSession$: Observable<BoundSession>;
   abstract readonly cwdChanges$: Observable<void>;
+  abstract readonly sessions$: Observable<ReadonlyArray<SessionHandle>>;
   /** Pin the binding to the current session so it stops following focus. */
   abstract hold(): void;
   /** Return to following focus. */

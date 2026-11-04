@@ -15,6 +15,7 @@ import { GitCommitPanelComponent } from "./ui/git-commit-panel.component";
 import { GitDiffPanelComponent } from "./ui/git-diff-panel.component";
 import { GitGraphComponent } from "./ui/git-graph.component";
 import { GitRefsPanelComponent } from "./ui/git-refs-panel.component";
+import { GitRepositoriesPanelComponent } from "./ui/git-repositories-panel.component";
 import { GIT_SHARED_STYLES } from "./ui/git-styles";
 import { GitToolbarComponent } from "./ui/git-toolbar.component";
 import { GitWipPanelComponent } from "./ui/git-wip-panel.component";
@@ -25,12 +26,18 @@ const NARROW_WIDTH_PX = 760;
 const MIN_PANEL_WIDTH = 160;
 /** What the graph in the middle keeps at least while a side panel is dragged wider. */
 const MIN_CENTER_WIDTH = 240;
+const PANEL_SELECTORS: Record<GitSidePanel, string> = {
+  refs: ".refs",
+  detail: ".detail",
+  repositories: ".repositories",
+};
 
 /**
  * The git panel of the focused terminal's repository, laid out like
  * GitKraken's main view: toolbar on top, branches on the left, the commit
- * graph - or a file's diff in its place - in the middle and the working tree
- * or the selected commit on the right.
+ * graph - or a file's diff in its place - in the middle, the working tree
+ * or the selected commit on the right, and at the right edge the
+ * repositories of all open terminals.
  */
 @Component({
   selector: "app-git-side",
@@ -43,11 +50,13 @@ const MIN_CENTER_WIDTH = 240;
     GitDiffPanelComponent,
     GitWipPanelComponent,
     GitCommitPanelComponent,
+    GitRepositoriesPanelComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     "[style.--git-refs-width]": "panelWidth('refs')",
     "[style.--git-detail-width]": "panelWidth('detail')",
+    "[style.--git-repositories-width]": "panelWidth('repositories')",
   },
   template: `
     @if (repository.root()) {
@@ -67,7 +76,8 @@ const MIN_CENTER_WIDTH = 240;
         </div>
       }
 
-      <div class="body" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()">
+      <div class="body" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()"
+           [class.with-repositories]="repositoriesVisible()">
         @if (view.refsVisible()) {
           <app-git-refs-panel class="refs"></app-git-refs-panel>
         }
@@ -91,6 +101,9 @@ const MIN_CENTER_WIDTH = 240;
             }
           }
         </div>
+        @if (repositoriesVisible()) {
+          <app-git-repositories-panel class="repositories"></app-git-repositories-panel>
+        }
         @if (!narrow()) {
           @if (view.refsVisible()) {
             <span class="splitter refs-splitter"
@@ -102,6 +115,12 @@ const MIN_CENTER_WIDTH = 240;
                 (pointerdown)="startResize('detail', $event)" (pointermove)="resize($event)"
                 (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
                 (dblclick)="resetWidth('detail')"></span>
+          @if (repositoriesVisible()) {
+            <span class="splitter repositories-splitter"
+                  (pointerdown)="startResize('repositories', $event)" (pointermove)="resize($event)"
+                  (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
+                  (dblclick)="resetWidth('repositories')"></span>
+          }
         }
       </div>
     } @else {
@@ -122,6 +141,10 @@ const MIN_CENTER_WIDTH = 240;
           @case ("status_failed") {
             <app-icon name="mdiAlert"></app-icon>
             <span>Git status failed</span>
+          }
+          @case ("timed_out") {
+            <app-icon name="mdiAlert"></app-icon>
+            <span>Git did not answer in time</span>
           }
           @case ("no_repo") {
             <app-icon name="mdiGit"></app-icon>
@@ -166,6 +189,8 @@ const MIN_CENTER_WIDTH = 240;
       .body {
         --refs-width: var(--git-refs-width, clamp(11rem, 18%, 16rem));
         --detail-width: var(--git-detail-width, clamp(16rem, 30%, 24rem));
+        /* Zero while the repositories are hidden, so the detail splitter sits at the edge. */
+        --repositories-width: 0px;
         position: relative;
         flex: 1 1 auto;
         min-height: 0;
@@ -177,9 +202,19 @@ const MIN_CENTER_WIDTH = 240;
         grid-template-columns: var(--refs-width) minmax(0, 1fr) var(--detail-width);
         grid-template-areas: "refs center detail";
       }
+      .body.with-repositories {
+        --repositories-width: var(--git-repositories-width, clamp(12rem, 20%, 18rem));
+        grid-template-columns: minmax(0, 1fr) var(--detail-width) var(--repositories-width);
+        grid-template-areas: "center detail repositories";
+      }
+      .body.with-refs.with-repositories {
+        grid-template-columns: var(--refs-width) minmax(0, 1fr) var(--detail-width) var(--repositories-width);
+        grid-template-areas: "refs center detail repositories";
+      }
       .refs { grid-area: refs; min-height: 0; border-right: 1px solid var(--git-border); }
       .center { grid-area: center; min-height: 0; min-width: 0; }
       .detail { grid-area: detail; min-height: 0; min-width: 0; border-left: 1px solid var(--git-border); }
+      .repositories { grid-area: repositories; min-height: 0; min-width: 0; border-left: 1px solid var(--git-border); }
       /* The drag handles sit over the two dividers; the divider itself lights up while dragging. */
       .splitter {
         position: absolute;
@@ -191,7 +226,8 @@ const MIN_CENTER_WIDTH = 240;
         touch-action: none;
       }
       .refs-splitter { left: calc(var(--refs-width) - 4px); }
-      .detail-splitter { right: calc(var(--detail-width) - 4px); }
+      .detail-splitter { right: calc(var(--detail-width) + var(--repositories-width) - 4px); }
+      .repositories-splitter { right: calc(var(--repositories-width) - 4px); }
       .splitter::before {
         content: "";
         position: absolute;
@@ -248,6 +284,8 @@ const MIN_CENTER_WIDTH = 240;
 })
 export class GitSideComponent implements OnDestroy {
   readonly narrow = signal(false);
+  /** The repositories are a column when there is room; narrow has none to spare. */
+  readonly repositoriesVisible = computed(() => this.view.repositoriesVisible() && !this.narrow());
   readonly selectedSha = computed(() => {
     const selection = this.view.selection();
     return selection.kind === "wip" ? "" : selection.sha;
@@ -303,17 +341,20 @@ export class GitSideComponent implements OnDestroy {
 
   startResize(panel: GitSidePanel, event: PointerEvent): void {
     event.preventDefault();
-    const element = this.host.nativeElement.querySelector<HTMLElement>(
-      panel === "refs" ? ".refs" : ".detail",
-    );
+    const element = this.host.nativeElement.querySelector<HTMLElement>(PANEL_SELECTORS[panel]);
     const body = this.host.nativeElement.querySelector<HTMLElement>(".body");
     if (!element || !body) return;
-    const other = this.host.nativeElement.querySelector<HTMLElement>(
-      panel === "refs" ? ".detail" : ".refs",
-    );
-    this.maxWidth =
-      body.clientWidth - (other?.getBoundingClientRect().width ?? 0) - MIN_CENTER_WIDTH;
-    // The branches panel grows to the right, the detail panel to the left.
+    // What the other side panels take stays theirs; the middle keeps its minimum.
+    const others = (Object.keys(PANEL_SELECTORS) as GitSidePanel[])
+      .filter((other) => other !== panel)
+      .map(
+        (other) =>
+          this.host.nativeElement
+            .querySelector<HTMLElement>(PANEL_SELECTORS[other])
+            ?.getBoundingClientRect().width ?? 0,
+      );
+    this.maxWidth = body.clientWidth - others.reduce((sum, w) => sum + w, 0) - MIN_CENTER_WIDTH;
+    // The branches panel grows to the right, the panels on the right to the left.
     this.resizing.start(
       event,
       panel,

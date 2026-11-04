@@ -8,6 +8,7 @@ import type {
 import type { AppWindow } from "@cogno/platform";
 import { BehaviorSubject, Subject } from "rxjs";
 import { describe, expect, it, vi } from "vitest";
+import { GitAvailability } from "./git-availability";
 import { GitRepositoryService } from "./git-repository.service";
 import { REF_FORMAT } from "./model/git-parsers";
 
@@ -83,7 +84,13 @@ function makeService(session: BoundSessionHandle) {
   const appWindow = { onFocusChanged$: focus$ } as unknown as AppWindow;
   const destroyRef = { onDestroy: vi.fn() } as unknown as DestroyRef;
   return {
-    service: new GitRepositoryService(sessionApi, monitor, appWindow, destroyRef),
+    service: new GitRepositoryService(
+      sessionApi,
+      monitor,
+      appWindow,
+      new GitAvailability(),
+      destroyRef,
+    ),
     bind: (next: BoundSessionHandle) => boundSession$.next({ status: "active", session: next }),
     activity$,
     focus$,
@@ -221,6 +228,22 @@ describe("GitRepositoryService", () => {
     expect(service.error()).toBe("repo_unreadable");
     expect(service.errorDetail()).toBe(reason.trim());
     // Git runs; the next focus asks again, the user may have fixed it.
+    focus$.next(true);
+    await flush();
+    expect(vi.mocked(session.run)).toHaveBeenCalledTimes(2);
+  });
+
+  it("says so when git was ended for silence, and keeps asking", async () => {
+    const session = sessionHandle(() =>
+      Promise.resolve(ran("", 124, "Command showed no output for 60000ms and was ended")),
+    );
+    const { service, focus$ } = makeService(session);
+
+    service.start();
+    await flush();
+    expect(service.error()).toBe("timed_out");
+    expect(service.errorDetail()).toBe("Command showed no output for 60000ms and was ended");
+
     focus$.next(true);
     await flush();
     expect(vi.mocked(session.run)).toHaveBeenCalledTimes(2);

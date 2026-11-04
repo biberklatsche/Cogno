@@ -7,7 +7,9 @@ import {
 import { BoundSessionHandle, SessionApi } from "@cogno/core/api/session-api";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { AppWindow } from "@cogno/platform";
-import { catchError, EMPTY, filter, merge, Subscription } from "rxjs";
+import { catchError, EMPTY, filter, merge, Observable, Subject, Subscription } from "rxjs";
+import { GitAvailability } from "./git-availability";
+import { classifyRootFailure, GitError, READ_TIMEOUT_MS, runGit } from "./git-run";
 import { layoutGraph } from "./model/git-graph";
 import {
   GitCommit,
@@ -33,27 +35,10 @@ import {
   STASH_FORMAT,
 } from "./model/git-parsers";
 
-/**
- * Why there is no repository to show. `repo_unreadable`: there is one, but
- * git refuses it (an owner mismatch git calls dubious, a broken .git); the
- * detail says why, and offering `git init` there would be wrong.
- */
-export type GitError =
-  | "not_installed"
-  | "no_repo"
-  | "repo_unreadable"
-  | "status_failed"
-  | "unavailable";
+export type { GitError };
 
 /** The commit count the graph loads first and adds per "load more". */
 export const GIT_LOG_PAGE_SIZE = 1000;
-/**
- * Idle time per read (`CommandRunnerRequestContract`). A status on a large
- * repository with a cold file cache is quiet for a long while before it
- * prints anything; ten seconds ended it on repositories that git itself
- * reads fine.
- */
-const READ_TIMEOUT_MS = 60_000;
 
 const EMPTY_STATUS: GitStatus = { staged: [], unstaged: [], untracked: [], conflicted: [] };
 const EMPTY_REFS: GitRefs = { branches: [], remoteBranches: [], tags: [], defaultBranches: [] };
@@ -134,18 +119,20 @@ export class GitRepositoryService {
   private refreshInFlight = false;
   private refreshPending = false;
   private contextPending = false;
+  private readonly explicitRefreshes = new Subject<void>();
   /**
-   * Git itself was not usable at the last look. Focus changes, cwd changes and
-   * finished commands then no longer run git again (on macOS without the
-   * command line tools every attempt pops Apple's install dialog); opening
-   * the panel or an explicit refresh does.
+   * The panel asked for a re-read itself - after a commit, a stash, the
+   * Refresh button - rather than because of something in the terminal.
+   * Anything else that reads this repository has no terminal event to go by
+   * then and follows this.
    */
-  private gitMissing = false;
+  readonly explicitRefreshes$: Observable<void> = this.explicitRefreshes.asObservable();
 
   constructor(
     sessionApi: SessionApi,
     terminalMonitor: TerminalMonitorPort,
     appWindow: AppWindow,
+    private readonly availability: GitAvailability,
     destroyRef: DestroyRef,
   ) {
     sessionApi.boundSession$.pipe(takeUntilDestroyed(destroyRef)).subscribe((boundSession) => {
@@ -181,7 +168,7 @@ export class GitRepositoryService {
   start(): void {
     if (this.active) return;
     this.active = true;
-    this.gitMissing = false;
+    this.availability.reset();
     this.requestRefresh(true);
   }
 
@@ -191,13 +178,14 @@ export class GitRepositoryService {
   }
 
   refresh(): Promise<void> {
-    this.gitMissing = false;
+    this.availability.reset();
+    this.explicitRefreshes.next();
     return this.requestRefresh(false);
   }
 
   loadMoreCommits(): Promise<void> {
     this.logLimitSignal.update((limit) => limit + GIT_LOG_PAGE_SIZE);
-    return this.refresh();
+    return this.requestRefresh(false);
   }
 
   /** The session git runs in right now; null without a bound session. */
@@ -249,7 +237,7 @@ export class GitRepositoryService {
   }
 
   private requestAutomaticRefresh(resolveContext: boolean): void {
-    if (!this.active || this.gitMissing) return;
+    if (!this.active || this.availability.missing) return;
     this.requestRefresh(resolveContext);
   }
 
@@ -314,7 +302,7 @@ export class GitRepositoryService {
     const [root, gitDir, commonDir] = stdout.split("\n").map((line) => line.trim());
     if (exitCode !== 0 || !root || !gitDir) {
       const error = classifyRootFailure(exitCode, stderr);
-      this.gitMissing = error === "not_installed";
+      if (error === "not_installed") this.availability.markMissing();
       this.clear(error, error === "no_repo" ? null : stderr.trim() || null);
       return false;
     }
@@ -479,18 +467,6 @@ export class GitRepositoryService {
 }
 
 /**
- * Exit 128 alone does not mean "not a repository": git uses it for every
- * fatal error, and only the message tells a missing repository from one git
- * will not touch (dubious ownership, a corrupt .git). Any other failure means
- * git itself did not run, or is too old for the options used here.
- */
-function classifyRootFailure(exitCode: number, stderr: string): GitError {
-  if (exitCode === 0) return "no_repo";
-  if (exitCode !== 128) return "not_installed";
-  return /not a git repository/i.test(stderr) ? "no_repo" : "repo_unreadable";
-}
-
-/**
  * What to watch for changes. In a linked worktree the git dir is only that
  * worktree's slice (HEAD, index, a stopped rebase); branches, remote refs
  * and objects live in the common dir, so a commit or fetch from the main
@@ -502,23 +478,4 @@ function dirsToWatch(gitDir: string, commonDir: string): string[] {
   if (!isAbsolute || commonDir === gitDir) return [gitDir];
   if (gitDir.startsWith(`${commonDir}/`)) return [commonDir];
   return [gitDir, commonDir];
-}
-
-/** Run `git` in a session; null when the session rejects it. */
-async function runGit(
-  session: BoundSessionHandle,
-  args: ReadonlyArray<string>,
-  timeoutMs: number,
-  stdin?: string,
-  onPrompt?: ProcessPromptHandler,
-): Promise<CommandRunnerResultContract | null> {
-  const outcome = await session.run({
-    executable: "git",
-    args: [...args],
-    contextRevision: session.contextRevision,
-    timeoutMs,
-    ...(stdin === undefined ? {} : { stdin }),
-    ...(onPrompt === undefined ? {} : { onPrompt }),
-  });
-  return outcome.status === "ran" ? outcome.result : null;
 }

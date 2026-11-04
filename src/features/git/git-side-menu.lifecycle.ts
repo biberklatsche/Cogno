@@ -3,6 +3,7 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core/api/contributions";
+import { GitRepositoriesOverviewService } from "./git-repositories-overview.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitViewState } from "./git-view-state.service";
 
@@ -10,6 +11,7 @@ import { GitViewState } from "./git-view-state.service";
 export class GitSideMenuLifecycle {
   constructor(
     private readonly repository: GitRepositoryService,
+    private readonly overview: GitRepositoriesOverviewService,
     private readonly view: GitViewState,
   ) {}
 
@@ -17,9 +19,11 @@ export class GitSideMenuLifecycle {
     return {
       onOpen: () => {
         this.repository.start();
+        this.overview.start();
       },
       onClose: () => {
         this.repository.stop();
+        this.overview.stop();
       },
       onFocus: () => {
         // Escape clears marked branches first, then closes an open diff as in GitKraken, then the panel.
