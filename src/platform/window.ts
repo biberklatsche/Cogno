@@ -1,8 +1,10 @@
 import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { CloseRequestedEvent, DragDropEvent, getCurrentWindow } from "@tauri-apps/api/window";
-import { distinctUntilChanged } from "rxjs/operators";
+import { Observable } from "rxjs";
+import { distinctUntilChanged, mergeMap } from "rxjs/operators";
+import { Logger } from "./logger";
 import { fromTauriListener } from "./tauri-listener";
 
 function currentWindow() {
@@ -12,22 +14,34 @@ function currentWindow() {
 /** The label Tauri gives the window the app starts with; further windows are `win-…`. */
 const MAIN_WINDOW_LABEL = "main";
 
+/** A step of a coordinated quit: every window confirms, then every window saves. */
+export type QuitPhase = "confirm" | "persist";
+
+type QuitRequest = { readonly requestId: string; readonly phase: QuitPhase };
+
 @Injectable({ providedIn: "root" })
 export class AppWindow {
-  readonly prepareQuit$ = fromTauriListener<{ requestId: string; phase: "confirm" | "persist" }>(
-    (emit) =>
-      listen<{ requestId: string; phase: "confirm" | "persist" }>("cogno-prepare-quit", (event) =>
-        emit(event.payload),
-      ),
-  );
-
+  /** Quits after every window agreed and saved; false when one said no. */
   prepareQuit(): Promise<boolean> {
     return invoke("window_prepare_quit");
   }
 
-  answerQuit(requestId: string, accepted: boolean, error?: string): Promise<void> {
-    return invoke("window_answer_quit", { requestId, accepted, error });
+  /**
+   * Answers the quit coordinator's requests to this window with `handler`.
+   * Receipt is confirmed at once, since the coordinator does not wait for a
+   * window that stays silent, while the answer may wait for the user's
+   * dialog. A handler that throws answers yes: a technical failure never
+   * keeps the app open. Listens on this window only: a global listener would
+   * also get every other window's requests.
+   */
+  answerQuitRequests(handler: (phase: QuitPhase) => Promise<boolean>): Observable<void> {
+    return fromTauriListener<QuitRequest>((emit) =>
+      getCurrentWebviewWindow().listen<QuitRequest>("cogno-prepare-quit", (event) =>
+        emit(event.payload),
+      ),
+    ).pipe(mergeMap((request) => answerQuitRequest(request, handler)));
   }
+
   /** The window the app started with - the only one that restores the last session. */
   get isMain(): boolean {
     return currentWindow().label === MAIN_WINDOW_LABEL;
@@ -105,5 +119,22 @@ export class AppWindow {
 
   readonly onDragDrop$ = fromTauriListener<DragDropEvent>((emit) =>
     currentWindow().onDragDropEvent((event) => emit(event.payload)),
+  );
+}
+
+/** One request: receipt first, then the handler's answer; a failed handler is a yes. Never throws. */
+async function answerQuitRequest(
+  { requestId, phase }: QuitRequest,
+  handler: (phase: QuitPhase) => Promise<boolean>,
+): Promise<void> {
+  await invoke("window_receive_quit", { requestId }).catch(() => undefined);
+  let accepted = true;
+  try {
+    accepted = await handler(phase);
+  } catch (error) {
+    Logger.warn(`Quit step "${phase}" failed, quitting anyway: ${String(error)}`);
+  }
+  await invoke("window_answer_quit", { requestId, accepted }).catch((error) =>
+    Logger.warn(`Could not answer the quit request: ${String(error)}`),
   );
 }

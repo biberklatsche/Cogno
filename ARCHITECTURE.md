@@ -850,29 +850,53 @@ Entscheidungen:
    die alle Fenster kennt: PTYs, Datenbank, HTTP-Server, CLI-Empfang,
    Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks,
    Selbst-Update (`updater.rs`: ein Prüf-, Download- und Installationszustand
-   für die ganze App). Rust
-   führt eine Tabelle `terminalId → windowId` (gefüllt beim Spawn, der immer
-   aus einem Fenster kommt) und routet: Nachricht mit `terminalId` →
-   `emit_to(window)`; globale Aktion ohne Ziel → das fokussierte Fenster;
+   für die ganze App). Welches Fenster zu einem Terminal gehört, weiß
+   allein sein PTY: der Spawn kommt immer aus einem Fenster, und dessen
+   Label trägt die Session in `pty.rs` (keine zweite Tabelle). Rust routet:
+   Nachricht mit `terminalId` → `emit_to` an das Fenster dieses PTY; globale Aktion ohne Ziel → das fokussierte Fenster;
    Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
    Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
    Das Feature `updater` fragt aus jedem Fenster nach Prüfungen; Rust
    beantwortet dicht aufeinanderfolgende aus dem letzten Ergebnis und lädt
    nie doppelt. Die Ankündigung einer neuen Version ist eine globale Aktion
-   ohne Ziel: einmal je App und Version, an das fokussierte Fenster. Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
+   ohne Ziel: einmal je App und Version, an das fokussierte Fenster.
+   **Beenden koordiniert Rust über alle Fenster, und Beenden gewinnt**
+   (`window.rs`, `window_prepare_quit`): erst fragt ein Fenster nach dem
+   anderen nach (Busy-Guard, das Fenster kommt dafür nach vorn), dann
+   speichern alle gleichzeitig ihre Sessions, dann endet der Prozess. Nur
+   ein Nein des Nutzers hält Cogno offen. Ein Fenster, das den Empfang nicht
+   binnen Sekunden bestätigt, das beim Speichern über die Zeit geht, das
+   geschlossen wird oder dessen Schritt fehlschlägt, zählt als Ja — ein
+   technischer Fehler lässt die App nie hängen. Auf eine offene Nachfrage
+   wird dagegen so lange gewartet, wie das Fenster lebt: der Nutzer
+   entscheidet. Jede Anfrage geht per `emit_to` an genau ein Fenster, das
+   sie auf sich selbst hört (nicht global — ein globaler Listener bekäme
+   jede Anfrage jedes Fensters); den Empfang bestätigt und das Antworten
+   übernimmt `platform/window.ts`, die Workbench gibt nur ihre
+   Entscheidung. Während des Beendens entstehen keine neuen Fenster. Diese Routing-Schicht liegt in Rust und auf der TS-Seite in
    `platform/` (`Window`, `Messaging`); keine Schicht darüber weiß, wie
    viele Fenster es gibt — sie sieht nur Nachrichten für sich.
 3. **Eine Session gehört dem Fenster, dessen Webview ihren xterm-Core
-   hält.** Der PTY-Prozess lebt in Rust und ist fensterfrei; nur der Buffer
-   ist im JS-Heap. „Pane in anderes Fenster" ist damit kein Umhängen,
+   hält.** Der PTY-Prozess lebt in Rust; nur der Buffer ist im JS-Heap.
+   Rust merkt sich am PTY das Fenster, das ihn gestartet hat: daraus routet
+   es seine Nachrichten (Entscheidung 2), und damit gibt es ihn frei, wenn
+   dieses Fenster verschwindet (Entscheidung 4). Weil das Fenster nur am
+   PTY steht, entscheidet das Aufräumen unter demselben Lock wie der Spawn,
+   welche Sessions dem Fenster gehören. „Pane in anderes Fenster" ist damit kein Umhängen,
    sondern ein Restore (2.5): Snapshot im Quellfenster, neuer Core im
-   Zielfenster, Übernahme derselben PTY über `terminalId`. Die Architektur
-   trägt das; geplant ist es nicht (Abschnitt 8).
+   Zielfenster, Übernahme derselben PTY über `terminalId` – dabei zieht
+   das gemerkte Fenster des PTY mit um. Die Architektur trägt das; geplant
+   ist es nicht (Abschnitt 8).
 4. **Ein Workspace ist in höchstens einem Fenster offen.** Öffnet man ihn
    aus einem anderen, fokussiert Rust das Fenster, das ihn hält
-   (`workspaceId → windowId` in derselben Rust-Tabelle). Das Schließen
+   (`workspaceId → windowId` in der `WindowRegistry`). Das Schließen
    eines Fensters schließt seine Sessions explizit (mit Busy-Guard)
-   und gibt seine Workspaces frei.
+   und gibt seine Workspaces frei. Verschwindet ein Fenster, ohne das zu
+   tun (Absturz, hartes Schließen), gibt Rust beim `Destroyed` seine PTYs
+   frei — auf einem eigenen Thread, damit die anderen Fenster nicht warten,
+   und beim Exit abgewartet, damit keine Shell die App überlebt; ein Spawn,
+   der noch lief, als das Fenster ging, wird verworfen, statt eine
+   wiedergeöffnete Session gleicher `terminalId` zu ersetzen.
 5. **Feature-Host und Status sind pro Fenster.** `mode` ist global (Config),
    der Runtime-Status nicht — ein Feature kann in einem Fenster `failed`
    sein und im anderen laufen. Deklarationen laufen pro Fenster idempotent;

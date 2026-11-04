@@ -77,7 +77,7 @@ pub fn run(cli: Cli) {
             // worked in comes to the front.
             if let Some(window) = app
                 .state::<WindowRegistry>()
-                .resolve_target(None)
+                .last_focused()
                 .and_then(|label| app.get_webview_window(&label))
             {
                 let _ = window.unminimize();
@@ -99,18 +99,17 @@ pub fn run(cli: Cli) {
                     .set_focus(window.label());
             }
             WindowEvent::Destroyed => {
-                window.app_handle().state::<crate::commands::window::QuitState>().cancel_window(window.label());
-                let release_sessions = window.app_handle().state::<PtyState>().take_window_sessions(window.label());
-                window
-                    .app_handle()
-                    .state::<WindowRegistry>()
-                    .on_destroyed(window.label());
-                tauri::async_runtime::spawn_blocking(release_sessions);
+                let app = window.app_handle();
+                app.state::<crate::commands::window::QuitState>()
+                    .cancel_window(window.label());
+                app.state::<PtyState>().release_window(window.label());
+                app.state::<WindowRegistry>().on_destroyed(window.label());
             }
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
             crate::commands::window::window_prepare_quit,
+            crate::commands::window::window_receive_quit,
             crate::commands::window::window_answer_quit,
             crate::db::commands::db_open,
             crate::db::commands::db_execute,

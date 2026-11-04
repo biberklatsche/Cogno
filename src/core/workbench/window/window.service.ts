@@ -7,7 +7,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { Logger } from "@cogno/platform/logger";
-import { AppWindow } from "@cogno/platform/window";
+import { AppWindow, QuitPhase } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 
 /** Max time the quit/close path waits for the session auto-save. */
@@ -30,21 +30,10 @@ export class WindowService {
   ) {
     this.bus.publish({ type: "InitConfigCommand" });
 
-    this.appWindow.prepareQuit$.pipe(takeUntilDestroyed(ref)).subscribe((request) => {
-      void this.prepareQuit(request.phase)
-        .then(
-          (accepted) => this.appWindow.answerQuit(request.requestId, accepted),
-          (error) => this.appWindow.answerQuit(request.requestId, false, String(error)),
-        )
-        .catch((error) =>
-          ErrorReporter.reportException({
-            error,
-            handled: true,
-            source: "WindowService",
-            context: { action: "prepare_quit" },
-          }),
-        );
-    });
+    this.appWindow
+      .answerQuitRequests((phase) => this.prepareQuit(phase))
+      .pipe(takeUntilDestroyed(ref))
+      .subscribe();
 
     actions.handle("quit", () => this.quit());
     actions.handle("new_window", () => {
@@ -69,35 +58,46 @@ export class WindowService {
     });
   }
 
+  /** Quits once every window agreed and saved; false when a user said no. */
   private async quit(): Promise<boolean> {
     try {
       return await this.appWindow.prepareQuit();
     } catch (error) {
-      ErrorReporter.reportException({
-        error,
-        handled: true,
-        source: "WindowService",
-        context: { action: "quit" },
-      });
-      this.bus.publish({
-        type: "Notification",
-        payload: {
-          header: "Could not quit Cogno",
-          body: String(error),
-          source: "Window",
-          timestamp: new Date(),
-          type: "error",
-        },
-      });
+      this.reportFailure("quit", "Could not quit Cogno", error);
       return false;
     }
   }
 
-  private async prepareQuit(phase: "confirm" | "persist"): Promise<boolean> {
+  /** Logs the error and tells the user in the header's words, once. */
+  private reportFailure(action: string, header: string, error: unknown): void {
+    ErrorReporter.reportException({
+      error,
+      handled: true,
+      notify: false,
+      source: "WindowService",
+      context: { action },
+    });
+    this.bus.publish({
+      type: "Notification",
+      payload: {
+        header,
+        body: String(error),
+        source: "Window",
+        timestamp: new Date(),
+        type: "error",
+      },
+    });
+  }
+
+  /** This window's part of a coordinated quit. */
+  private async prepareQuit(phase: QuitPhase): Promise<boolean> {
     if (phase === "confirm") {
       if (this.terminalBusyStateService.hasBusyTerminals()) {
-        await this.appWindow.unminimize();
-        await this.appWindow.setFocus();
+        // Best effort: a window that cannot come forward still asks.
+        await this.appWindow
+          .unminimize()
+          .then(() => this.appWindow.setFocus())
+          .catch((error) => Logger.warn(`Could not bring the window forward: ${String(error)}`));
       }
       return this.terminalBusyStateService.confirmProceedIfNoBusyTerminals("quit the application");
     }
@@ -118,11 +118,12 @@ export class WindowService {
     try {
       await this.appWindow.close();
       Logger.debug("close window");
+      return true;
     } catch (error) {
       this.isClosing = false;
-      throw error;
+      this.reportFailure("close_window", "Could not close the window", error);
+      return false;
     }
-    return true;
   }
 
   /**

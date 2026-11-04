@@ -69,6 +69,7 @@
     "core:window:allow-unmaximize",
     "core:window:allow-minimize",
     "core:window:allow-unminimize",
+    "core:window:allow-set-focus",
     "core:window:allow-close",
     "core:window:allow-destroy",
     "core:window:allow-inner-size",
@@ -76,7 +77,6 @@
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-read-image",
-    "core:app:allow-exit",
     "notification:default",
     {
       "identifier": "opener:allow-open-url",

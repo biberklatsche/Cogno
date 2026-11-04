@@ -131,13 +131,6 @@ describe("SessionHost snapshot/restore", () => {
     host.initialize("t1", bashProfile);
   });
 
-  it("ignores a structurally invalid persisted snapshot", () => {
-    host.restore(
-      JSON.parse(JSON.stringify({ version: SESSION_SNAPSHOT_VERSION, scrollback: "old output" })),
-    );
-    expect(() => (host as any).completeRestore()).not.toThrow();
-  });
-
   it("does not replay into a closed terminal", () => {
     vi.useFakeTimers();
     vi.stubGlobal("requestAnimationFrame", vi.fn());

@@ -1,10 +1,10 @@
 use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, PtySize};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 use tauri::ipc::{Channel, InvokeResponseBody};
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use super::flow_control::{frame_chunk, FlowControl, MAX_CHUNK_SIZE};
 use super::line_editor::{
@@ -12,7 +12,6 @@ use super::line_editor::{
     remove_line_editor_channel, write_message_to_fifo, write_message_to_trigger_file,
     write_shell_action_to_pipe, LineEditorChannel, LINE_EDITOR_TRIGGER,
 };
-use super::window_registry::{route, WindowRegistry};
 
 #[cfg(windows)]
 use super::process_job::ProcessJob;
@@ -98,17 +97,24 @@ fn end_session(
     let Some(session) = removed else {
         return;
     };
+    // The session is out of the map: its window comes from the session itself.
+    let window = session.window_label.clone();
     release_session(session);
-    route(
-        app,
+    let _ = app.emit_to(
+        window.as_str(),
         &format!("pty-exit:{}", terminal_id),
         serde_json::json!({ "exitCode": exit_code }),
-        Some(terminal_id),
     );
 }
 
 pub struct PtyState {
     sessions: Sessions,
+    /// Windows that are gone. Only touched while `sessions` is locked, so a
+    /// spawn and the cleanup of its window decide in one order.
+    gone_windows: Mutex<HashSet<String>>,
+    /// Releases of closed windows' sessions still running on threads of
+    /// their own; `release_all` joins them before the process ends.
+    releases: Mutex<Vec<std::thread::JoinHandle<()>>>,
 }
 
 impl Default for PtyState {
@@ -121,12 +127,19 @@ impl PtyState {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
+            gone_windows: Mutex::new(HashSet::new()),
+            releases: Mutex::new(Vec::new()),
         }
     }
 
     /// Ends every shell: what the app does on its way out, so no shell (or,
     /// on Windows, grandchild) is left running after the window is gone.
     pub fn release_all(&self) {
+        // A window closed just before the exit may still be releasing.
+        let releases = std::mem::take(&mut *self.releases.lock().unwrap());
+        for release in releases {
+            let _ = release.join();
+        }
         let sessions: Vec<Session> = {
             let mut sessions = self.sessions.lock().unwrap();
             sessions.drain().map(|(_, session)| session).collect()
@@ -136,25 +149,38 @@ impl PtyState {
         }
     }
 
-    /// Detach instances before releasing workspace ownership. The returned work
-    /// never looks up ids again, so a reopened workspace cannot lose new shells.
-    pub fn take_window_sessions(&self, label: &str) -> impl FnOnce() + Send + 'static {
+    /// Takes the window's sessions out at once and releases them on a thread
+    /// of their own: closing a ConPTY can block until its output is drained,
+    /// and the other windows must not wait for that. The release never looks
+    /// ids up again, so a reopened workspace cannot lose its new shells.
+    pub fn release_window(&self, label: &str) {
         let removed = {
             let mut sessions = self.sessions.lock().unwrap();
-            let ids: Vec<_> = sessions
-                .iter()
-                .filter(|(_, session)| session.window_label == label)
-                .map(|(id, _)| id.clone())
-                .collect();
-            ids.iter()
-                .filter_map(|id| sessions.remove(id))
+            // Under the sessions lock: a spawn from this window that has not
+            // inserted yet sees it gone and never will.
+            self.gone_windows.lock().unwrap().insert(label.to_string());
+            sessions
+                .extract_if(|_, session| session.window_label == label)
+                .map(|(_, session)| session)
                 .collect::<Vec<_>>()
         };
-        move || {
+        if removed.is_empty() {
+            return;
+        }
+        let release = std::thread::spawn(move || {
             for session in removed {
                 release_session(session);
             }
-        }
+        });
+        self.releases.lock().unwrap().push(release);
+    }
+
+    /// The window that spawned the terminal: where its messages go.
+    pub fn window_of(&self, terminal_id: &str) -> Option<String> {
+        let sessions = self.sessions.lock().ok()?;
+        sessions
+            .get(terminal_id)
+            .map(|session| session.window_label.clone())
     }
 
     pub fn get_shell_process_id(&self, terminal_id: &str) -> Option<u32> {
@@ -181,10 +207,6 @@ pub async fn pty_spawn(
     on_data: Channel<InvokeResponseBody>,
 ) -> Result<PtySpawnResult, String> {
     let terminal_id = options.name.clone();
-    // Bind the session to the window that spawned it, so its events route back
-    // to that window instead of broadcasting to all of them.
-    app.state::<WindowRegistry>()
-        .bind_terminal(&terminal_id, window.label());
 
     // Prepare shell spawn with integration
     let dev_mode = options.dev_mode.unwrap_or(false);
@@ -299,9 +321,9 @@ pub async fn pty_spawn(
 
     let (replaced, abandoned) = {
         let mut sessions = state.sessions.lock().unwrap();
-        // Check under the same lock used by window cleanup: a late spawn from
-        // a closed window must never replace a reopened workspace's session.
-        if app.get_webview_window(window.label()).is_none() {
+        // Checked under the lock window cleanup takes: a late spawn from a
+        // closed window must never replace a reopened workspace's session.
+        if state.gone_windows.lock().unwrap().contains(window.label()) {
             (None, Some(session))
         } else {
             (sessions.insert(terminal_id.clone(), session), None)
@@ -373,15 +395,11 @@ pub async fn pty_spawn(
         });
     }
 
-    // The window can disappear while shell preparation/spawn is in flight,
-    // before its Destroyed handler finds the newly inserted session.
+    // The window went while the shell was being prepared. A spawn that
+    // inserted first is released by the window's cleanup instead.
     if let Some(session) = abandoned {
         // Start the reader above before closing ConPTY so its pipe can drain.
         release_session(session);
-        return Err("Window closed while starting the shell".to_string());
-    }
-    if app.get_webview_window(window.label()).is_none() {
-        end_session(&state.sessions, &terminal_id, &flow, &app, -1);
         return Err("Window closed while starting the shell".to_string());
     }
     Ok(PtySpawnResult { shell_process_id })
@@ -840,6 +858,20 @@ mod windows_tests {
     }
 
     #[test]
+    fn a_terminal_names_the_window_that_spawned_it_until_it_is_gone() {
+        let (session, _child, pump) = stalled_session(200_000);
+        let state = PtyState::new();
+        state.sessions.lock().unwrap().insert("t1".into(), session);
+
+        assert_eq!(state.window_of("t1").as_deref(), Some("test"));
+        assert_eq!(state.window_of("unknown"), None);
+
+        state.release_all();
+        assert_finishes(pump, "reader");
+        assert_eq!(state.window_of("t1"), None);
+    }
+
+    #[test]
     fn releasing_window_terminals_preserves_other_windows_sessions() {
         let (first, _first_child, first_pump) = stalled_session(200_000);
         let (mut second, _second_child, second_pump) = stalled_session(200_000);
@@ -853,8 +885,7 @@ mod windows_tests {
             .lock()
             .unwrap()
             .insert("second".into(), second);
-        let release = std::thread::spawn(state.take_window_sessions("test"));
-        assert_finishes(release, "window release");
+        state.release_window("test");
         assert_finishes(first_pump, "first reader");
         let remaining = state.sessions.lock().unwrap().contains_key("second");
         let first_closed = first_flow.is_closed();
@@ -874,14 +905,13 @@ mod windows_tests {
         let new_flow = replacement.flow.clone();
         let state = PtyState::new();
         state.sessions.lock().unwrap().insert("same-id".into(), old);
-        let release_old = state.take_window_sessions("test");
+        state.release_window("test");
         assert!(state.sessions.lock().unwrap().is_empty());
         state
             .sessions
             .lock()
             .unwrap()
             .insert("same-id".into(), replacement);
-        assert_finishes(std::thread::spawn(release_old), "old window cleanup");
         assert_finishes(old_pump, "old reader");
         let survived = state
             .sessions

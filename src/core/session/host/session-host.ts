@@ -59,7 +59,6 @@ import { shellDefinitions } from "../shells/shell-definitions";
 import { serializeScrollback } from "./scrollback-serializer";
 import {
   type CommandSnapshot,
-  isSessionSnapshot,
   SESSION_SNAPSHOT_VERSION,
   type SessionSnapshot,
 } from "./session-snapshot";
@@ -200,7 +199,6 @@ export class SessionHost {
   /** A snapshot waiting to be replayed on the first attach. */
   private _pendingRestore?: SessionSnapshot;
   private _restoreScheduled = false;
-  private cancelRestore?: () => void;
   private handshakeTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
@@ -278,6 +276,12 @@ export class SessionHost {
 
   get runtime$(): Observable<SessionRuntime> {
     return this.runtime$$.asObservable();
+  }
+
+  /** The session is closing or closed: nothing may start or write any more. */
+  private get isEnding(): boolean {
+    const status = this.runtime.status;
+    return status === "closing" || status === "closed";
   }
 
   get display(): SessionDisplay {
@@ -484,11 +488,8 @@ export class SessionHost {
 
   /** Ends the session for good: the workbench decided so. Idempotent. */
   close(): void {
-    const status = this.runtime.status;
-    if (status === "closed" || status === "closing") return;
+    if (this.isEnding) return;
     this.setRuntime({ status: "closing" });
-    this.cancelRestore?.();
-    this._pendingRestore = undefined;
     this.stopWatchingForHandshake();
     this.detach();
     this.model.dispose();
@@ -737,7 +738,7 @@ export class SessionHost {
    * or without scrollback is ignored.
    */
   restore(snapshot: SessionSnapshot): void {
-    if (!isSessionSnapshot(snapshot) || !snapshot.scrollback) {
+    if (snapshot.version !== SESSION_SNAPSHOT_VERSION || !snapshot.scrollback) {
       return;
     }
     // Stash it; the replay waits for the first attach, when the terminal is open
@@ -752,20 +753,19 @@ export class SessionHost {
     this._restoreScheduled = true;
     // A frame after the first attach the container has laid out, so the fit
     // yields the real row count the fill and the pty spawn depend on.
-    let completed = false;
-    const complete = () => {
-      if (completed) return;
-      completed = true;
+    // Whichever comes first replays; the other is cancelled, and so are both
+    // when the session closes before either fires.
+    const settle = () => {
       clearTimeout(fallback);
+      cancelAnimationFrame(frame);
+    };
+    const complete = () => {
+      settle();
       this.completeRestore();
     };
     const fallback = setTimeout(complete, RESTORE_FRAME_FALLBACK_MS);
     const frame = requestAnimationFrame(complete);
-    this.cancelRestore = () => {
-      completed = true;
-      clearTimeout(fallback);
-      cancelAnimationFrame(frame);
-    };
+    this.disposables.push({ dispose: settle });
   }
 
   /**
@@ -777,7 +777,6 @@ export class SessionHost {
    * until the writes are parsed.
    */
   private completeRestore(): void {
-    if (this.runtime.status === "closing" || this.runtime.status === "closed") return;
     const snapshot = this._pendingRestore;
     this._pendingRestore = undefined;
     const terminal = this.renderer?.terminal;
@@ -801,7 +800,8 @@ export class SessionHost {
     );
     const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
-      if (this.runtime.status === "closing" || this.runtime.status === "closed") return;
+      // xterm may call back after the session closed.
+      if (this.isEnding) return;
       this.model.updateCommands(
         snapshot.commands
           .filter((command) => command.id !== idlePromptId)
@@ -828,7 +828,7 @@ export class SessionHost {
    * it neither shows as characters nor gets re-captured.
    */
   private renderRestoreBoundary(terminal: Terminal): void {
-    if (this.runtime.status === "closing" || this.runtime.status === "closed") return;
+    if (this.isEnding) return;
     const marker = terminal.registerMarker(0);
     if (!marker) {
       return;
@@ -862,7 +862,7 @@ export class SessionHost {
 
   /** Register the pty handler that `start()` held back for a restored session. */
   private startDeferredPty(): void {
-    if (!this.ptyHandler || this.runtime.status === "closing" || this.runtime.status === "closed") {
+    if (!this.ptyHandler || this.isEnding) {
       return;
     }
     this.disposables.push(this.renderer.register(this.ptyHandler));
