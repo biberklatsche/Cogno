@@ -1,13 +1,15 @@
 import type { DestroyRef } from "@angular/core";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
-import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import type {
   TerminalActivityEvent,
   TerminalMonitorPort,
 } from "@cogno/core/api/terminal-monitor-port";
 import type { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
-import type { TerminalIpcMessage } from "@cogno/shared/domain";
+import type {
+  TerminalProcess,
+  TerminalProcessesPort,
+} from "@cogno/core/api/terminal-processes-port";
 import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AgentStatus } from "./agent-status";
@@ -15,10 +17,11 @@ import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agen
 import type { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import type { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 import { CodingAgentStatusService, resolveShownStatus } from "./coding-agent-status.service";
+import type { AgentSessionEvent, ICodingAgentProvider } from "./ports";
 import { interpretClaudeStyleHook } from "./providers/_shared/claude-style-hook.interpreter";
-import { CODING_AGENT_STATUS_ACTION } from "./providers/_shared/hook-command.builder";
 
 const GRACE_MS = 2000;
+const UNBOUND_POLL_MS = 3000;
 
 describe("resolveShownStatus", () => {
   it("shows every status but ready at once", () => {
@@ -55,22 +58,62 @@ describe("resolveShownStatus", () => {
   });
 });
 
+/** The daemon-run agent's process in a Cogno terminal. */
+function codexProcess(
+  terminalId: string,
+  overrides: Partial<TerminalProcess> = {},
+): TerminalProcess {
+  return {
+    terminalId,
+    processId: 1,
+    name: "codex.exe",
+    cwd: "/repo",
+    startedAt: Math.floor(Date.now() / 1000),
+    ...overrides,
+  };
+}
+
 describe("CodingAgentStatusService", () => {
-  let messages: Subject<TerminalIpcMessage>;
+  let claudeEvents: Subject<AgentSessionEvent>;
+  let codexEvents: Subject<AgentSessionEvent>;
   let activity: Subject<TerminalActivityEvent>;
   let terminated: Subject<string>;
+  let processes: TerminalProcess[];
+  let snapshot: ReturnType<typeof vi.fn>;
   let animation: { register: ReturnType<typeof vi.fn>; unregister: ReturnType<typeof vi.fn> };
   let notificationCenter: { dispatch: ReturnType<typeof vi.fn> };
   let destroyCallbacks: Array<() => void>;
   let service: CodingAgentStatusService;
 
-  function ping(status: string, hookEvent: string, payload?: unknown, seq = 0): void {
-    messages.next({
-      command: CODING_AGENT_STATUS_ACTION,
-      args: [status, "claude-code", hookEvent, String(seq)],
+  /** A Claude Code hook that ran in terminal t-1, as its adapter reads it. */
+  function ping(status: AgentStatus, hookEvent: string, payload?: unknown, sentAt = 0): void {
+    claudeEvents.next({
+      sessionId: "s-1",
       terminalId: "t-1",
-      payload,
+      cwd: "/repo",
+      sentAt,
+      event: interpretClaudeStyleHook(hookEvent, status, payload),
     });
+  }
+
+  /** A Codex hook from the background service: no terminal, only the session. */
+  function codexPing(
+    status: AgentStatus,
+    hookEvent: string,
+    payload?: unknown,
+    sessionId = "c-1",
+  ): void {
+    codexEvents.next({
+      sessionId,
+      cwd: "/repo",
+      sentAt: 0,
+      event: interpretClaudeStyleHook(hookEvent, status, payload),
+    });
+  }
+
+  /** Lets the pending process snapshot resolve and the binding apply. */
+  async function settle(): Promise<void> {
+    await vi.advanceTimersByTimeAsync(0);
   }
 
   function agent() {
@@ -79,9 +122,12 @@ describe("CodingAgentStatusService", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    messages = new Subject<TerminalIpcMessage>();
+    claudeEvents = new Subject<AgentSessionEvent>();
+    codexEvents = new Subject<AgentSessionEvent>();
     activity = new Subject<TerminalActivityEvent>();
     terminated = new Subject<string>();
+    processes = [];
+    snapshot = vi.fn(async () => processes);
     animation = { register: vi.fn(), unregister: vi.fn() };
     notificationCenter = { dispatch: vi.fn() };
     destroyCallbacks = [];
@@ -91,22 +137,16 @@ describe("CodingAgentStatusService", () => {
         return () => {};
       },
     } as unknown as DestroyRef;
+    const providers: Partial<ICodingAgentProvider>[] = [
+      { id: "claude-code", name: "Claude Code", processNames: ["claude"], events$: claudeEvents },
+      { id: "codex", name: "Codex", processNames: ["codex", "codex.exe"], events$: codexEvents },
+    ];
 
     service = new CodingAgentStatusService(
-      { messages$: messages } as unknown as TerminalIpcPort,
       animation as unknown as TerminalAnimationPort,
+      { providers } as unknown as CodingAgentProviderRegistry,
       {
-        providers: [
-          {
-            id: "claude-code",
-            name: "Claude Code",
-            interpretHook: (hookEvent: string, status: AgentStatus, payload: unknown) =>
-              interpretClaudeStyleHook(hookEvent, status, payload),
-          },
-        ],
-      } as unknown as CodingAgentProviderRegistry,
-      {
-        isTerminalActive: () => true,
+        isTerminalActive: (id: string) => id.startsWith("t-"),
         getCwd: () => "/repo",
         activity$: activity,
         terminated$: terminated,
@@ -116,6 +156,7 @@ describe("CodingAgentStatusService", () => {
         getPlacement: () => undefined,
         changes$: new Subject(),
       } as unknown as TerminalPlacementPort,
+      { snapshot } as unknown as TerminalProcessesPort,
       destroyRef,
       notificationCenter as unknown as NotificationCenterPort,
       {
@@ -271,7 +312,7 @@ describe("CodingAgentStatusService", () => {
       expect(agent()?.subagentCount).toBe(0);
     });
 
-    it("does not drop a subagent start that arrives after a newer status ping", () => {
+    it("does not drop a subagent start that arrives after a newer status event", () => {
       ping("working", "PreToolUse", { tool_name: "Bash", tool_input: { command: "ls" } }, 200);
       ping("working", "SubagentStart", { agent_id: "late" }, 100);
       expect(agent()?.subagentCount).toBe(1);
@@ -323,8 +364,8 @@ describe("CodingAgentStatusService", () => {
     });
   });
 
-  describe("status pings", () => {
-    it("drops a status ping older than the newest one applied", () => {
+  describe("status events", () => {
+    it("drops a status event older than the newest one applied", () => {
       ping("working", "UserPromptSubmit", { prompt: "Write a poem" }, 200);
       ping("question", "PermissionRequest", { tool_name: "Bash" }, 100);
       expect(agent()?.status).toBe("working");
@@ -358,16 +399,26 @@ describe("CodingAgentStatusService", () => {
       expect(service.attention()).toBe("error");
     });
 
-    it("takes an unregistered provider's status without reading its payload", () => {
-      messages.next({
-        command: CODING_AGENT_STATUS_ACTION,
-        args: ["working", "unknown-agent", "Whatever", "0"],
-        terminalId: "t-1",
-        payload: { prompt: "should not be read" },
+    it("keys the cards by session: two sessions are two cards", () => {
+      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
+      claudeEvents.next({
+        sessionId: "s-2",
+        terminalId: "t-2",
+        sentAt: 0,
+        event: interpretClaudeStyleHook("UserPromptSubmit", "working", { prompt: "Other" }),
       });
-      expect(agent()?.status).toBe("working");
-      expect(agent()?.providerName).toBe("unknown-agent");
-      expect(agent()?.task).toBeUndefined();
+      expect(service.activeAgents().map((a) => a.sessionId)).toEqual(["s-1", "s-2"]);
+    });
+
+    it("replaces the session a terminal ran before when a new one binds to it", () => {
+      ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
+      claudeEvents.next({
+        sessionId: "s-2",
+        terminalId: "t-1",
+        sentAt: 0,
+        event: interpretClaudeStyleHook("SessionStart", "ready", { source: "startup" }),
+      });
+      expect(service.activeAgents().map((a) => a.sessionId)).toEqual(["s-2"]);
     });
   });
 
@@ -388,6 +439,98 @@ describe("CodingAgentStatusService", () => {
     });
   });
 
+  describe("sessions without a terminal", () => {
+    it("binds the session to the one terminal that runs the agent in its folder", async () => {
+      processes = [codexProcess("t-1"), codexProcess("t-2", { cwd: "/other" })];
+      codexPing("working", "UserPromptSubmit", { prompt: "Fix the build" });
+
+      // Held back until the terminals' processes were looked at.
+      expect(service.activeAgents()).toHaveLength(0);
+      await settle();
+
+      expect(agent()?.terminalId).toBe("t-1");
+      expect(agent()?.task).toBe("Fix the build");
+      expect(animation.register).toHaveBeenCalledWith(
+        "t-1",
+        AGENT_STATUS_REGISTRATION_KEY,
+        AGENT_STATUS_SPECS.working,
+      );
+    });
+
+    it("shows the session without a terminal while several terminals come into question", async () => {
+      const old = Math.floor(Date.now() / 1000) - 3600;
+      processes = [
+        codexProcess("t-1", { startedAt: old }),
+        codexProcess("t-2", { startedAt: old }),
+      ];
+      codexPing("working", "UserPromptSubmit", { prompt: "Fix the build" });
+      await settle();
+
+      expect(agent()?.terminalId).toBeUndefined();
+      expect(agent()?.cwd).toBe("/repo");
+      expect(animation.register).not.toHaveBeenCalled();
+
+      // One terminal's agent is gone: the other one is it.
+      processes = [codexProcess("t-2", { startedAt: old })];
+      await vi.advanceTimersByTimeAsync(UNBOUND_POLL_MS);
+      expect(agent()?.terminalId).toBe("t-2");
+    });
+
+    it("ignores a session no Cogno terminal runs, and looks again later", async () => {
+      processes = [];
+      codexPing("working", "UserPromptSubmit", { prompt: "From VS Code" });
+      await settle();
+      expect(service.activeAgents()).toHaveLength(0);
+
+      codexPing("working", "PreToolUse", { tool_name: "Bash", tool_input: { command: "ls" } });
+      expect(snapshot).toHaveBeenCalledTimes(1);
+
+      processes = [codexProcess("t-1")];
+      vi.advanceTimersByTime(60_000);
+      codexPing("working", "PreToolUse", { tool_name: "Bash", tool_input: { command: "ls" } });
+      await settle();
+      expect(agent()?.terminalId).toBe("t-1");
+    });
+
+    it("forgets a session without a terminal once its agent runs nowhere", async () => {
+      const old = Math.floor(Date.now() / 1000) - 3600;
+      processes = [
+        codexProcess("t-1", { startedAt: old }),
+        codexProcess("t-2", { startedAt: old }),
+      ];
+      codexPing("working", "UserPromptSubmit", { prompt: "Fix the build" });
+      await settle();
+      expect(service.activeAgents()).toHaveLength(1);
+
+      processes = [];
+      await vi.advanceTimersByTimeAsync(UNBOUND_POLL_MS);
+      expect(service.activeAgents()).toHaveLength(0);
+    });
+
+    it("does not notify for a session before it is shown", async () => {
+      processes = [codexProcess("t-1")];
+      codexPing("working", "UserPromptSubmit", { prompt: "Fix the build" });
+      codexPing("question", "PermissionRequest", { tool_name: "Bash" });
+      await settle();
+
+      expect(agent()?.status).toBe("question");
+      expect(notificationCenter.dispatch).not.toHaveBeenCalled();
+    });
+
+    it("treats a terminal this window does not have as none", async () => {
+      processes = [codexProcess("t-1")];
+      codexEvents.next({
+        sessionId: "c-1",
+        terminalId: "stale-from-daemon",
+        cwd: "/repo",
+        sentAt: 0,
+        event: interpretClaudeStyleHook("UserPromptSubmit", "working", { prompt: "Go" }),
+      });
+      await settle();
+      expect(agent()?.terminalId).toBe("t-1");
+    });
+  });
+
   describe("lifetime", () => {
     it("forgets the agent and its pending ready when the terminal goes idle or ends", () => {
       ping("working", "UserPromptSubmit", { prompt: "Write a poem" });
@@ -395,6 +538,7 @@ describe("CodingAgentStatusService", () => {
       activity.next({ terminalId: "t-1", isBusy: false });
 
       expect(service.activeAgents()).toHaveLength(0);
+      expect(animation.unregister).toHaveBeenCalledWith("t-1", AGENT_STATUS_REGISTRATION_KEY);
       vi.advanceTimersByTime(GRACE_MS);
       expect(notificationCenter.dispatch).not.toHaveBeenCalled();
 

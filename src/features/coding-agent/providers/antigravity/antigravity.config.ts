@@ -46,6 +46,8 @@ export const ANTIGRAVITY_CONFIG = {
   configSubDir: ".gemini/config",
   configFileName: "hooks.json",
   hookName: "cogno-status",
+  /** Antigravity is an IDE; its hooks carry the terminal, so no process is matched. */
+  processNames: [],
   // PreToolUse is intentionally not hooked: its "decision" output would override Antigravity's
   // own permission flow, which is a side effect a status reporter must not introduce.
   hookEvents: [

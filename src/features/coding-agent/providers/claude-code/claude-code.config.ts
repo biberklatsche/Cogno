@@ -29,6 +29,8 @@ export const CLAUDE_CODE_CONFIG = {
   name: "Claude Code",
   configSubDir: ".claude",
   configFileName: "settings.json",
+  /** The native binary, or node for the npm install. */
+  processNames: ["claude", "claude.exe", "node", "node.exe"],
   hookEvents: [
     { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },
     { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },

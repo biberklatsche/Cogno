@@ -1,7 +1,9 @@
+use crate::agent_hooks;
 use crate::commands::window_registry::route;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::net::TcpListener;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 use std::sync::{Condvar, Mutex};
 use std::time::Duration;
@@ -58,6 +60,13 @@ pub struct HttpServerState {
     /// A secret for this launch. Only processes started in a Cogno terminal
     /// get it (`COGNO_TOKEN`); every request must carry it.
     token: String,
+    /// A second secret, published in the endpoint file for agent hooks that
+    /// run outside any terminal (ARCHITECTURE.md 3.2). It opens `/agent-hook`
+    /// and nothing else.
+    hook_token: String,
+    /// The Cogno home the endpoint file was written to, so the exit can take
+    /// it away again.
+    endpoint_home: Mutex<Option<PathBuf>>,
     start_decided: Mutex<bool>,
     start_decision: Condvar,
 }
@@ -68,6 +77,8 @@ impl Default for HttpServerState {
             port: AtomicU16::new(0),
             started: AtomicBool::new(false),
             token: uuid::Uuid::new_v4().simple().to_string(),
+            hook_token: uuid::Uuid::new_v4().simple().to_string(),
+            endpoint_home: Mutex::new(None),
             start_decided: Mutex::new(false),
             start_decision: Condvar::new(),
         }
@@ -85,6 +96,25 @@ impl HttpServerState {
 
     pub fn token(&self) -> &str {
         &self.token
+    }
+
+    /// Nobody listens any more: the endpoint file must not name this instance.
+    pub fn remove_endpoint(&self) {
+        let home = self
+            .endpoint_home
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take();
+        if let Some(home) = home {
+            agent_hooks::remove_endpoint(&home);
+        }
+    }
+
+    fn remember_endpoint(&self, home: PathBuf) {
+        *self
+            .endpoint_home
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(home);
     }
 
     fn try_claim_start(&self) -> bool {
@@ -143,6 +173,41 @@ pub struct CognoMessagePayload {
     pub payload: Option<serde_json::Value>,
 }
 
+/// What the hook scripts post: which adapter the hook belongs to, the hook
+/// event as the adapter named it in the agent's config, the terminal when the
+/// hook still had one in its environment, when it ran (Unix milliseconds, for
+/// ordering) and the agent's payload as it came.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AgentHookPayload {
+    pub provider: String,
+    pub hook_event: Option<String>,
+    pub terminal_id: Option<String>,
+    pub sent_at: Option<u64>,
+    pub payload: Option<serde_json::Value>,
+}
+
+/// The message the webview gets for a hook; the feature reads it by this command.
+pub const AGENT_HOOK_COMMAND: &str = "coding_agent_hook";
+
+impl AgentHookPayload {
+    /// As the webview's message: `args` carries provider, `sentAt` and the
+    /// hook event; the terminal stays empty when the hook had none.
+    fn into_message(self) -> CognoMessagePayload {
+        let terminal_id = self.terminal_id.filter(|id| !id.is_empty());
+        CognoMessagePayload {
+            command: AGENT_HOOK_COMMAND.to_string(),
+            args: Some(vec![
+                self.provider,
+                self.sent_at.unwrap_or(0).to_string(),
+                self.hook_event.unwrap_or_default(),
+            ]),
+            terminal_id,
+            payload: self.payload,
+        }
+    }
+}
+
 /// A prompt from the askpass helper: which runner session asks, and git's prompt text.
 #[derive(Debug, Clone, Deserialize)]
 pub struct AskpassPayload {
@@ -161,6 +226,19 @@ pub const TOKEN_HEADER: &str = "x-cogno-token";
 /// page that rebinds its own host name to 127.0.0.1 sends that name as Host.
 fn is_authorized(headers: &axum::http::HeaderMap, token: &str, port: u16) -> bool {
     presented_token(headers) == Some(token) && host_is_loopback(headers, port)
+}
+
+/// `/agent-hook` takes the launch token (a hook that still runs in a Cogno
+/// terminal) or the hook token from the endpoint file (one that runs in an
+/// agent's background service).
+fn is_hook_authorized(
+    headers: &axum::http::HeaderMap,
+    token: &str,
+    hook_token: &str,
+    port: u16,
+) -> bool {
+    let presented = presented_token(headers);
+    (presented == Some(token) || presented == Some(hook_token)) && host_is_loopback(headers, port)
 }
 
 fn presented_token(headers: &axum::http::HeaderMap) -> Option<&str> {
@@ -199,9 +277,13 @@ pub fn start_http_server(
     enabled: bool,
     port: u16,
     auto_next_port: bool,
+    dev_mode: bool,
 ) -> Result<u16, String> {
+    let cogno_home = crate::commands::environment::cogno_home(dev_mode)?;
     if !enabled {
         log::info!(target: "http_server", "HTTP server disabled via config");
+        // A file from an earlier run would send hooks to a port nobody serves.
+        agent_hooks::remove_endpoint(&cogno_home);
         state.decide_start();
         return Ok(0);
     }
@@ -213,6 +295,18 @@ pub fn start_http_server(
     let bound = bind_listener(&state, port, auto_next_port);
     state.decide_start();
     let (bound, actual_port) = bound?;
+
+    match agent_hooks::install(
+        &cogno_home,
+        crate::commands::environment::home_dir_name(dev_mode),
+        actual_port,
+        &state.hook_token,
+    ) {
+        Ok(()) => state.remember_endpoint(cogno_home),
+        // The server still serves terminals; only hooks without an
+        // environment stay unreachable, and the log says why.
+        Err(e) => log::error!(target: "http_server", "Cannot write agent hook files: {}", e),
+    }
 
     tauri::async_runtime::spawn(async move {
         use axum::extract::rejection::JsonRejection;
@@ -237,9 +331,38 @@ pub fn start_http_server(
         let app_emit = app.clone();
         let app_run = app.clone();
         let app_askpass = app.clone();
+        let app_hook = app.clone();
         let token = app.state::<HttpServerState>().token().to_string();
         let token_for_run = token.clone();
+        let token_for_hook = token.clone();
+        let hook_token = app.state::<HttpServerState>().hook_token.clone();
         let router = Router::new()
+            .route(
+                "/agent-hook",
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<AgentHookPayload>, JsonRejection>| {
+                    let app = app_hook.clone();
+                    let authorized = is_hook_authorized(&headers, &token_for_hook, &hook_token, actual_port);
+                    async move {
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /agent-hook rejected: missing or wrong token");
+                            return StatusCode::FORBIDDEN;
+                        }
+                        match result {
+                            Ok(Json(payload)) => {
+                                log::info!(target: "http_server", "POST /agent-hook: provider={} terminal_id={:?}", payload.provider, payload.terminal_id);
+                                let message = payload.into_message();
+                                let terminal_id = message.terminal_id.clone();
+                                route(&app, "cogno-message", message, terminal_id.as_deref());
+                                StatusCode::NO_CONTENT
+                            }
+                            Err(e) => {
+                                log::error!(target: "http_server", "POST /agent-hook parse error: {}", e);
+                                StatusCode::BAD_REQUEST
+                            }
+                        }
+                    }
+                }),
+            )
             .route(
                 "/action",
                 post(move |headers: axum::http::HeaderMap, result: Result<Json<CognoMessagePayload>, JsonRejection>| {
@@ -345,8 +468,10 @@ pub fn start_http_server(
         if let Err(e) = axum::serve(listener, router).await {
             log::error!(target: "http_server", "HTTP server error: {}", e);
         }
-        // Nobody listens any more: new terminals must not inherit a dead port.
+        // Nobody listens any more: new terminals must not inherit a dead port,
+        // and no hook must find it in the endpoint file.
         app.state::<HttpServerState>().mark_failed();
+        app.state::<HttpServerState>().remove_endpoint();
     });
 
     Ok(actual_port)
@@ -460,6 +585,51 @@ mod tests {
             "secret",
             9000
         ));
+    }
+
+    #[test]
+    fn the_hook_route_takes_either_token_but_nothing_else() {
+        let hook = |token: Option<&str>, host: &str| {
+            is_hook_authorized(&headers(token, host), "launch", "hook", 9000)
+        };
+        assert!(hook(Some("launch"), "127.0.0.1:9000"));
+        assert!(hook(Some("hook"), "localhost:9000"));
+        assert!(!hook(Some("guess"), "127.0.0.1:9000"));
+        assert!(!hook(None, "127.0.0.1:9000"));
+        assert!(!hook(Some("hook"), "evil.example:9000"));
+    }
+
+    #[test]
+    fn the_hook_token_does_not_open_the_other_routes() {
+        assert!(!is_authorized(
+            &headers(Some("hook"), "127.0.0.1:9000"),
+            "launch",
+            9000
+        ));
+    }
+
+    #[test]
+    fn a_hook_becomes_a_message_with_provider_and_order_but_no_empty_terminal() {
+        let message = AgentHookPayload {
+            provider: "codex".into(),
+            hook_event: Some("Stop".into()),
+            terminal_id: Some(String::new()),
+            sent_at: Some(1700000000123),
+            payload: Some(serde_json::json!({ "session_id": "s1" })),
+        }
+        .into_message();
+
+        assert_eq!(message.command, AGENT_HOOK_COMMAND);
+        assert_eq!(
+            message.args,
+            Some(vec![
+                "codex".to_string(),
+                "1700000000123".to_string(),
+                "Stop".to_string()
+            ])
+        );
+        assert_eq!(message.terminal_id, None);
+        assert_eq!(message.payload, Some(serde_json::json!({ "session_id": "s1" })));
     }
 
     #[test]

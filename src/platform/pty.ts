@@ -271,11 +271,24 @@ export class PtyTransport {
   }
 }
 
+export type TerminalProcessContract = {
+  terminalId: string;
+  processId: number;
+  name: string;
+  currentWorkingDirectory: string | null;
+  /** Unix seconds. */
+  startedAt: number;
+};
+
 /** Process inspection of PTY sessions (not part of the transport port). */
 export const TauriPty = {
   getProcessTreeByTerminalId(terminalId: string) {
     return invoke<ProcessTreeSnapshot>("pty_get_process_tree_by_terminal_id", {
       terminalId,
     });
+  },
+  /** The processes under every terminal's shell, one pass over the machine. */
+  listTerminalProcesses() {
+    return invoke<TerminalProcessContract[]>("pty_list_terminal_processes");
   },
 };

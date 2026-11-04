@@ -12,6 +12,7 @@ import { CodingAgentsSideComponent, cardState, countOf } from "./coding-agents-s
 
 function agent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
   return {
+    sessionId: "s-1",
     terminalId: "t-1",
     providerId: "claude-code",
     providerName: "Claude Code",
@@ -111,8 +112,17 @@ describe("CodingAgentsSideComponent", () => {
     expect(component.summary()).toEqual({ working: 2, question: 1, error: 0, done: 1, idle: 1 });
   });
 
-  it("navigates to the agent's terminal on click", () => {
+  it("navigates to the agent's terminal on click, and nowhere for a session without one", () => {
     component.navigateTo(agent({ terminalId: "t-9" }));
     expect(navigateToTerminal).toHaveBeenCalledWith("t-9");
+
+    component.navigateTo(agent({ terminalId: undefined }));
+    expect(navigateToTerminal).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the folder of a session without a terminal", () => {
+    expect(component.folderName("C:\\work\\app\\")).toBe("app");
+    expect(component.folderName("/home/me/app")).toBe("app");
+    expect(component.folderName(undefined)).toBe("Unknown folder");
   });
 });

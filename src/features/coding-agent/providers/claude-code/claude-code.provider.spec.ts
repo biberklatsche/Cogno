@@ -1,6 +1,9 @@
+import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
+import { EMPTY } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ConfigFileService } from "../_shared/config-file.service";
-import { isCognoHookCommand } from "../_shared/hook-command.builder";
+import { isCognoHookCommand } from "../_shared/hook-command";
+import type { HookScriptPathsService } from "../_shared/hook-script-paths.service";
 import { CLAUDE_CODE_CONFIG, type ClaudeSettings } from "./claude-code.config";
 import { ClaudeCodeProvider } from "./claude-code.provider";
 
@@ -23,6 +26,14 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
   return { service, files };
 }
 
+const scripts = {
+  get: async () => ({
+    bash: "/cogno/hooks/cogno-agent-hook.sh",
+    powershell: "C:cognohookscogno-agent-hook.ps1",
+  }),
+} as unknown as HookScriptPathsService;
+const ipc = { messages$: EMPTY } as unknown as TerminalIpcPort;
+
 const SETTINGS = "/home/.claude/settings.json";
 const foreignHook = { type: "command" as const, command: "echo foreign" };
 const cognoHooksIn = (settings: ClaudeSettings) =>
@@ -43,11 +54,11 @@ describe("ClaudeCodeProvider", () => {
       },
     });
     files = memory.files;
-    provider = new ClaudeCodeProvider(memory.service);
+    provider = new ClaudeCodeProvider(memory.service, scripts, ipc);
   });
 
   it("installs one Cogno hook per event next to the hooks that were there", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook("sh");
 
     const settings = files.get(SETTINGS) as ClaudeSettings;
     expect(settings["theme"]).toBe("dark");
@@ -57,8 +68,8 @@ describe("ClaudeCodeProvider", () => {
   });
 
   it("installs idempotently: a second install does not double the hooks", async () => {
-    await provider.installHook("Bash");
-    await provider.installHook("Bash");
+    await provider.installHook("sh");
+    await provider.installHook("sh");
 
     expect(cognoHooksIn(files.get(SETTINGS) as ClaudeSettings)).toHaveLength(
       CLAUDE_CODE_CONFIG.hookEvents.length,
@@ -66,7 +77,7 @@ describe("ClaudeCodeProvider", () => {
   });
 
   it("removes only the Cogno hooks and drops events that are empty afterwards", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook("sh");
 
     await provider.removeHook();
 
@@ -78,14 +89,15 @@ describe("ClaudeCodeProvider", () => {
   });
 
   it("reads a Cogno hook in an older form as outdated, and installing brings it up to date", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook("sh");
     const settings = files.get(SETTINGS) as ClaudeSettings;
     const postCompact = settings.hooks?.["PostCompact"]?.[0]?.hooks[0];
-    if (postCompact) postCompact.command = postCompact.command.replace('"working"', '"ready"');
+    if (postCompact)
+      postCompact.command = postCompact.command.replace("cogno-agent-hook", "cogno-agent-hook-old");
 
     expect(await provider.hookState()).toBe("outdated");
 
-    await provider.installHook("Bash");
+    await provider.installHook("sh");
     expect(await provider.hookState()).toBe("current");
     expect(cognoHooksIn(files.get(SETTINGS) as ClaudeSettings)).toHaveLength(
       CLAUDE_CODE_CONFIG.hookEvents.length,
@@ -97,7 +109,7 @@ describe("ClaudeCodeProvider", () => {
     const settings = files.get(SETTINGS) as ClaudeSettings;
     settings.hooks = { ...settings.hooks, OldEvent: [{ hooks: [stale, foreignHook] }] };
 
-    await provider.installHook("Bash");
+    await provider.installHook("sh");
     const installed = files.get(SETTINGS) as ClaudeSettings;
     expect(installed.hooks?.["OldEvent"]).toEqual([{ hooks: [foreignHook] }]);
     expect(await provider.hookState()).toBe("current");

@@ -28,6 +28,7 @@ export const CODEX_CONFIG = {
   configSubDir: ".codex",
   configFileName: "hooks.json",
   appConfigFileName: "config.toml",
+  processNames: ["codex", "codex.exe"],
   hookEvents: [
     { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
     { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },

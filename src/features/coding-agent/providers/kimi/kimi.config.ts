@@ -17,6 +17,7 @@ export const KIMI_CONFIG = {
   name: "Kimi CLI",
   configSubDir: ".kimi",
   configFileName: "config.toml",
+  processNames: ["kimi", "kimi.exe"],
   hookEvents: [
     { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
     { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },

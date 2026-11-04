@@ -28,6 +28,58 @@ pub struct ProcessTreeSnapshot {
     pub descendants: Vec<ProcessDetails>,
 }
 
+/// A process under one terminal's shell, as the coding-agents feature matches
+/// an agent's session to its terminal (ARCHITECTURE.md 3.2): name and cwd to
+/// find candidates, the start time to tell two apart.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TerminalProcess {
+    pub terminal_id: String,
+    pub process_id: u32,
+    pub name: String,
+    pub current_working_directory: Option<String>,
+    /// Unix seconds.
+    pub started_at: u64,
+}
+
+/// The processes under every terminal's shell, in one pass over the machine.
+#[tauri::command]
+pub async fn pty_list_terminal_processes(
+    state: State<'_, PtyState>,
+) -> Result<Vec<TerminalProcess>, String> {
+    let shells = state.shell_process_ids();
+    tauri::async_runtime::spawn_blocking(move || list_terminal_processes(&shells))
+        .await
+        .map_err(|error| error.to_string())
+}
+
+fn list_terminal_processes(shells: &[(String, u32)]) -> Vec<TerminalProcess> {
+    let mut system = System::new();
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::nothing().with_cwd(UpdateKind::Always),
+    );
+    let mut processes = Vec::new();
+    for (terminal_id, shell_pid) in shells {
+        for pid in collect_descendant_process_ids(&system, Pid::from_u32(*shell_pid)) {
+            let Some(process) = system.process(pid) else {
+                continue;
+            };
+            processes.push(TerminalProcess {
+                terminal_id: terminal_id.clone(),
+                process_id: pid.as_u32(),
+                name: process.name().to_string_lossy().to_string(),
+                current_working_directory: process
+                    .cwd()
+                    .map(|path| path.to_string_lossy().to_string()),
+                started_at: process.start_time(),
+            });
+        }
+    }
+    processes
+}
+
 /// Enumerating the machine's processes takes a while; it runs on a blocking
 /// worker, never on the thread that drives the UI.
 #[tauri::command]

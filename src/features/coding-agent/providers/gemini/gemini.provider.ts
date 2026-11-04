@@ -1,22 +1,27 @@
 import { Injectable } from "@angular/core";
+import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import {
-  AgentHookEvent,
+  AgentSessionEvent,
   HookState,
   ICodingAgentProvider,
 } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "../../agent-status";
+import { Observable } from "rxjs";
+import { claudeStyleSession } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
-  buildHookCommand,
+  HookShell,
+  hookCommand,
   isCognoHookCommand,
   isCurrentHookCommand,
-} from "../_shared/hook-command.builder";
+} from "../_shared/hook-command";
 import {
   HookMapFormat,
   hookMapState,
   withCurrentCognoHooks,
   withoutCognoHooksOnEveryEvent,
 } from "../_shared/hook-groups";
+import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
+import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
 import { GEMINI_CONFIG, GeminiHookEntry, GeminiHookGroup, GeminiSettings } from "./gemini.config";
 import { interpretGeminiHook } from "./gemini-hook.interpreter";
 
@@ -24,11 +29,20 @@ import { interpretGeminiHook } from "./gemini-hook.interpreter";
 export class GeminiProvider implements ICodingAgentProvider {
   readonly id = GEMINI_CONFIG.id;
   readonly name = GEMINI_CONFIG.name;
+  readonly processNames = GEMINI_CONFIG.processNames;
+  readonly events$: Observable<AgentSessionEvent>;
 
-  constructor(private readonly configFile: ConfigFileService) {}
-
-  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretGeminiHook(hookEvent, status, payload);
+  constructor(
+    private readonly configFile: ConfigFileService,
+    private readonly scripts: HookScriptPathsService,
+    ipc: TerminalIpcPort,
+  ) {
+    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
+      statusOf: statusTable(GEMINI_CONFIG.hookEvents),
+      interpret: interpretGeminiHook,
+      // Gemini CLI names `session_id` and `cwd` like the Claude protocol.
+      sessionOf: claudeStyleSession,
+    });
   }
 
   async isAgentInstalled(): Promise<boolean> {
@@ -37,17 +51,17 @@ export class GeminiProvider implements ICodingAgentProvider {
 
   async hookState(): Promise<HookState> {
     const settings = await this.configFile.readJson<GeminiSettings>(await this.configPath(), {});
-    return hookMapState(settings.hooks, GEMINI_CONFIG.hookEvents, this.hookFormat());
+    return hookMapState(settings.hooks, GEMINI_CONFIG.hookEvents, await this.hookFormat());
   }
 
-  async installHook(shellType?: string): Promise<void> {
+  async installHook(shell: HookShell): Promise<void> {
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     settings.hooks = withCurrentCognoHooks(
       settings.hooks,
       GEMINI_CONFIG.hookEvents,
-      this.hookFormat(shellType),
+      await this.hookFormat(shell),
     );
     await this.configFile.writeJson(configPath, settings);
   }
@@ -56,22 +70,24 @@ export class GeminiProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     if (!settings.hooks) return;
-    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, this.hookFormat().isCogno);
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, (hook) =>
+      isCognoHookCommand(hook.command),
+    );
     await this.configFile.writeJson(configPath, settings);
   }
 
-  private hookFormat(shellType?: string): HookMapFormat<GeminiHookEntry, GeminiHookGroup> {
+  private async hookFormat(
+    shell: HookShell = "sh",
+  ): Promise<HookMapFormat<GeminiHookEntry, GeminiHookGroup>> {
+    const scripts = await this.scripts.get();
     return {
       groupFor: (entry) => ({
         hooks: [
-          {
-            type: "command",
-            command: buildHookCommand(entry.status, shellType, this.id, entry.eventName),
-          },
+          { type: "command", command: hookCommand(scripts, shell, this.id, entry.eventName) },
         ],
       }),
       isCurrent: (hook, entry) =>
-        isCurrentHookCommand(hook.command, entry.status, this.id, entry.eventName),
+        isCurrentHookCommand(hook.command, scripts, this.id, entry.eventName),
       isCogno: (hook) => isCognoHookCommand(hook.command),
     };
   }

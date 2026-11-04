@@ -1,5 +1,5 @@
 import type { HookState } from "../../ports";
-import { hookStateOf } from "./hook-command.builder";
+import { hookStateOf } from "./hook-command";
 
 /**
  * The hook groups of one event without Cogno's own entries. Claude Code, Gemini

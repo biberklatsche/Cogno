@@ -1,29 +1,44 @@
 import { Injectable } from "@angular/core";
+import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import {
-  AgentHookEvent,
+  AgentSessionEvent,
   HookState,
   ICodingAgentProvider,
 } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "../../agent-status";
-import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
+import { Observable } from "rxjs";
+import {
+  claudeStyleSession,
+  interpretClaudeStyleHook,
+} from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
-  buildHookCommand,
+  HookShell,
+  hookCommand,
   hookStateOf,
   isCognoHookCommand,
   isCurrentHookCommand,
-} from "../_shared/hook-command.builder";
+} from "../_shared/hook-command";
+import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
+import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
 
 @Injectable({ providedIn: "root" })
 export class KimiProvider implements ICodingAgentProvider {
   readonly id = KIMI_CONFIG.id;
   readonly name = KIMI_CONFIG.name;
+  readonly processNames = KIMI_CONFIG.processNames;
+  readonly events$: Observable<AgentSessionEvent>;
 
-  constructor(private readonly configFile: ConfigFileService) {}
-
-  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretClaudeStyleHook(hookEvent, status, payload);
+  constructor(
+    private readonly configFile: ConfigFileService,
+    private readonly scripts: HookScriptPathsService,
+    ipc: TerminalIpcPort,
+  ) {
+    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
+      statusOf: statusTable(KIMI_CONFIG.hookEvents),
+      interpret: interpretClaudeStyleHook,
+      sessionOf: claudeStyleSession,
+    });
   }
 
   async isAgentInstalled(): Promise<boolean> {
@@ -31,11 +46,13 @@ export class KimiProvider implements ICodingAgentProvider {
   }
 
   async hookState(): Promise<HookState> {
+    const scripts = await this.scripts.get();
     const config = await this.configFile.readToml<KimiConfig>(await this.configPath(), {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
-    const isCurrent = KIMI_CONFIG.hookEvents.every(({ eventName, status }) =>
+    const isCurrent = KIMI_CONFIG.hookEvents.every(({ eventName }) =>
       hooks.some(
-        (h) => h.event === eventName && isCurrentHookCommand(h.command, status, this.id, eventName),
+        (h) =>
+          h.event === eventName && isCurrentHookCommand(h.command, scripts, this.id, eventName),
       ),
     );
     return hookStateOf(
@@ -44,7 +61,8 @@ export class KimiProvider implements ICodingAgentProvider {
     );
   }
 
-  async installHook(shellType?: string): Promise<void> {
+  async installHook(shell: HookShell): Promise<void> {
+    const scripts = await this.scripts.get();
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
@@ -55,7 +73,7 @@ export class KimiProvider implements ICodingAgentProvider {
       ...withoutCogno,
       ...KIMI_CONFIG.hookEvents.map((entry) => ({
         event: entry.eventName,
-        command: buildHookCommand(entry.status, shellType, this.id, entry.eventName),
+        command: hookCommand(scripts, shell, this.id, entry.eventName),
       })),
     ];
     await this.configFile.writeToml(configPath, config);

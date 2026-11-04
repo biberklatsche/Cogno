@@ -5,6 +5,7 @@ import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
 import { OsPlatform } from "@cogno/platform";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
+import { HookShell } from "./providers/_shared/hook-command";
 
 export type InstalledProviderEntry = {
   readonly provider: ICodingAgentProvider;
@@ -90,7 +91,7 @@ export class CodingAgentStartupService {
   /** Installs the hook from the panel; a "no" or a removal from before no longer counts. */
   async installHook(provider: ICodingAgentProvider): Promise<void> {
     await this.changeHook(provider, "install", async () => {
-      await provider.installHook(this.resolveDefaultShellType());
+      await provider.installHook(this.resolveHookShell());
       this.rememberDecision(provider, undefined);
     });
   }
@@ -109,7 +110,7 @@ export class CodingAgentStartupService {
    */
   private async updateHook(provider: ICodingAgentProvider): Promise<boolean> {
     try {
-      await provider.installHook(this.resolveDefaultShellType());
+      await provider.installHook(this.resolveHookShell());
       return true;
     } catch (error) {
       this.reportProblem(provider, `Could not update the ${provider.name} hook`, error);
@@ -164,10 +165,10 @@ export class CodingAgentStartupService {
       return;
     }
 
-    const shellType = this.resolveDefaultShellType();
+    const shell = this.resolveHookShell();
     for (const provider of needsHooks) {
       try {
-        await provider.installHook(shellType);
+        await provider.installHook(shell);
       } catch (error) {
         this.notifyFailure(`Could not install the ${provider.name} hook`, error);
       }
@@ -209,14 +210,20 @@ export class CodingAgentStartupService {
     }
   }
 
-  private resolveDefaultShellType(): string {
+  /**
+   * The shell the hooks run with: PowerShell where the default profile is one
+   * (Windows PowerShell on Windows, pwsh elsewhere), else sh.
+   */
+  private resolveHookShell(): HookShell {
     const config = this.configPort.getConfiguration();
     const shell = config?.["shell"] as
       | { default?: string; profiles?: Record<string, { shell_type?: string }> }
       | undefined;
     const defaultName = shell?.default;
     const configured = defaultName ? shell?.profiles?.[defaultName]?.shell_type : undefined;
-    if (configured) return configured;
-    return this.osPort.platform() === "windows" ? "PowerShell" : "Bash";
+    const windows = this.osPort.platform() === "windows";
+    const powershell = configured ? configured === "PowerShell" : windows;
+    if (!powershell) return "sh";
+    return windows ? "powershell" : "pwsh";
   }
 }

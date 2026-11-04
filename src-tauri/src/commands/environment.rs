@@ -1,17 +1,35 @@
 use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME, LOG_FILE_STEM};
 use std::path::PathBuf;
 
-/// Returns the Cogno home directory path based on the active mode.
-#[tauri::command]
-pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
-    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let dir_name = if dev_mode {
+/// The Cogno home's name under the user's home: `.cogno`, or `.cogno-dev` in
+/// development.
+pub fn home_dir_name(dev_mode: bool) -> &'static str {
+    if dev_mode {
         DEVELOPMENT_HOME_DIRECTORY_NAME
     } else {
         HOME_DIRECTORY_NAME
-    };
-    let cogno_home = home.join(dir_name);
-    Ok(cogno_home.display().to_string())
+    }
+}
+
+/// The Cogno home directory for the active mode.
+pub fn cogno_home(dev_mode: bool) -> Result<PathBuf, String> {
+    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
+    Ok(home.join(home_dir_name(dev_mode)))
+}
+
+/// Returns the Cogno home directory path based on the active mode.
+#[tauri::command]
+pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
+    Ok(cogno_home(dev_mode)?.display().to_string())
+}
+
+/// Where the agent hook scripts are (ARCHITECTURE.md 3.2): what an adapter
+/// writes into an agent's config as the hook command.
+#[tauri::command]
+pub fn get_agent_hook_script_paths(
+    dev_mode: bool,
+) -> Result<crate::agent_hooks::AgentHookScriptPaths, String> {
+    Ok(crate::agent_hooks::script_paths(&cogno_home(dev_mode)?))
 }
 
 /// Returns the cogno config file path
