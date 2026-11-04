@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { CloseRequestedEvent, DragDropEvent, getCurrentWindow } from "@tauri-apps/api/window";
 import { distinctUntilChanged } from "rxjs/operators";
 import { fromTauriListener } from "./tauri-listener";
@@ -13,6 +14,20 @@ const MAIN_WINDOW_LABEL = "main";
 
 @Injectable({ providedIn: "root" })
 export class AppWindow {
+  readonly prepareQuit$ = fromTauriListener<{ requestId: string; phase: "confirm" | "persist" }>(
+    (emit) =>
+      listen<{ requestId: string; phase: "confirm" | "persist" }>("cogno-prepare-quit", (event) =>
+        emit(event.payload),
+      ),
+  );
+
+  prepareQuit(): Promise<boolean> {
+    return invoke("window_prepare_quit");
+  }
+
+  answerQuit(requestId: string, accepted: boolean, error?: string): Promise<void> {
+    return invoke("window_answer_quit", { requestId, accepted, error });
+  }
   /** The window the app started with - the only one that restores the last session. */
   get isMain(): boolean {
     return currentWindow().label === MAIN_WINDOW_LABEL;
@@ -54,6 +69,10 @@ export class AppWindow {
 
   minimize(): Promise<void> {
     return currentWindow().minimize();
+  }
+
+  unminimize(): Promise<void> {
+    return currentWindow().unminimize();
   }
 
   maximize(): Promise<void> {

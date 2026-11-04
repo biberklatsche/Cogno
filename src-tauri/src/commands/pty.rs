@@ -34,6 +34,7 @@ pub struct SpawnOptions {
 const READ_BUF_SIZE: usize = 64 * 1024;
 
 struct Session {
+    window_label: String,
     master: Box<dyn portable_pty::MasterPty + Send>,
     /// Ordered, non-blocking hand-off to the per-session writer thread. PTY
     /// writes can block (the child stops reading stdin while it is blocked on
@@ -132,6 +133,27 @@ impl PtyState {
         };
         for session in sessions {
             release_session(session);
+        }
+    }
+
+    /// Detach instances before releasing workspace ownership. The returned work
+    /// never looks up ids again, so a reopened workspace cannot lose new shells.
+    pub fn take_window_sessions(&self, label: &str) -> impl FnOnce() + Send + 'static {
+        let removed = {
+            let mut sessions = self.sessions.lock().unwrap();
+            let ids: Vec<_> = sessions
+                .iter()
+                .filter(|(_, session)| session.window_label == label)
+                .map(|(id, _)| id.clone())
+                .collect();
+            ids.iter()
+                .filter_map(|id| sessions.remove(id))
+                .collect::<Vec<_>>()
+        };
+        move || {
+            for session in removed {
+                release_session(session);
+            }
         }
     }
 
@@ -262,6 +284,7 @@ pub async fn pty_spawn(
     let (input_tx, input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
 
     let session = Session {
+        window_label: window.label().to_string(),
         master: pair.master,
         input_tx,
         flow: flow.clone(),
@@ -274,9 +297,15 @@ pub async fn pty_spawn(
         line_editor_channel,
     };
 
-    let replaced = {
+    let (replaced, abandoned) = {
         let mut sessions = state.sessions.lock().unwrap();
-        sessions.insert(terminal_id.clone(), session)
+        // Check under the same lock used by window cleanup: a late spawn from
+        // a closed window must never replace a reopened workspace's session.
+        if app.get_webview_window(window.label()).is_none() {
+            (None, Some(session))
+        } else {
+            (sessions.insert(terminal_id.clone(), session), None)
+        }
     };
     if let Some(old_session) = replaced {
         // The id is reused (e.g. webview reload re-spawning a persisted
@@ -331,6 +360,7 @@ pub async fn pty_spawn(
         let terminal_id = terminal_id.clone();
         let app = app.clone();
         let sessions = state.sessions.clone();
+        let flow = flow.clone();
         std::thread::spawn(move || {
             pump_pty_output(reader, &flow, |frame| {
                 on_data.send(InvokeResponseBody::Raw(frame)).is_ok()
@@ -343,6 +373,17 @@ pub async fn pty_spawn(
         });
     }
 
+    // The window can disappear while shell preparation/spawn is in flight,
+    // before its Destroyed handler finds the newly inserted session.
+    if let Some(session) = abandoned {
+        // Start the reader above before closing ConPTY so its pipe can drain.
+        release_session(session);
+        return Err("Window closed while starting the shell".to_string());
+    }
+    if app.get_webview_window(window.label()).is_none() {
+        end_session(&state.sessions, &terminal_id, &flow, &app, -1);
+        return Err("Window closed while starting the shell".to_string());
+    }
     Ok(PtySpawnResult { shell_process_id })
 }
 
@@ -681,6 +722,7 @@ mod unix_tests {
 
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
+            window_label: "test".to_string(),
             master: pair.master,
             input_tx,
             flow: Arc::new(FlowControl::new()),
@@ -761,6 +803,7 @@ mod windows_tests {
 
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
+            window_label: "test".to_string(),
             master: pair.master,
             input_tx,
             flow,
@@ -794,6 +837,63 @@ mod windows_tests {
         let release = std::thread::spawn(move || release_session(session));
         assert_finishes(release, "release_session");
         assert_finishes(pump, "reader thread");
+    }
+
+    #[test]
+    fn releasing_window_terminals_preserves_other_windows_sessions() {
+        let (first, _first_child, first_pump) = stalled_session(200_000);
+        let (mut second, _second_child, second_pump) = stalled_session(200_000);
+        second.window_label = "other".into();
+        let first_flow = first.flow.clone();
+        let second_flow = second.flow.clone();
+        let state = Arc::new(PtyState::new());
+        state.sessions.lock().unwrap().insert("first".into(), first);
+        state
+            .sessions
+            .lock()
+            .unwrap()
+            .insert("second".into(), second);
+        let release = std::thread::spawn(state.take_window_sessions("test"));
+        assert_finishes(release, "window release");
+        assert_finishes(first_pump, "first reader");
+        let remaining = state.sessions.lock().unwrap().contains_key("second");
+        let first_closed = first_flow.is_closed();
+        let second_closed = second_flow.is_closed();
+        state.release_all();
+        assert_finishes(second_pump, "second reader");
+        assert!(remaining);
+        assert!(first_closed);
+        assert!(!second_closed);
+    }
+
+    #[test]
+    fn delayed_window_cleanup_does_not_remove_a_reopened_terminal() {
+        let (old, _old_child, old_pump) = stalled_session(200_000);
+        let (mut replacement, _new_child, new_pump) = stalled_session(200_000);
+        replacement.window_label = "new-window".into();
+        let new_flow = replacement.flow.clone();
+        let state = PtyState::new();
+        state.sessions.lock().unwrap().insert("same-id".into(), old);
+        let release_old = state.take_window_sessions("test");
+        assert!(state.sessions.lock().unwrap().is_empty());
+        state
+            .sessions
+            .lock()
+            .unwrap()
+            .insert("same-id".into(), replacement);
+        assert_finishes(std::thread::spawn(release_old), "old window cleanup");
+        assert_finishes(old_pump, "old reader");
+        let survived = state
+            .sessions
+            .lock()
+            .unwrap()
+            .get("same-id")
+            .is_some_and(|session| Arc::ptr_eq(&session.flow, &new_flow));
+        let still_open = !new_flow.is_closed();
+        state.release_all();
+        assert_finishes(new_pump, "replacement reader");
+        assert!(survived);
+        assert!(still_open);
     }
 
     /// Shell exited on its own with output nobody has read yet (the path

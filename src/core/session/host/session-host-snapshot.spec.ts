@@ -131,6 +131,34 @@ describe("SessionHost snapshot/restore", () => {
     host.initialize("t1", bashProfile);
   });
 
+  it("ignores a structurally invalid persisted snapshot", () => {
+    host.restore(
+      JSON.parse(JSON.stringify({ version: SESSION_SNAPSHOT_VERSION, scrollback: "old output" })),
+    );
+    expect(() => (host as any).completeRestore()).not.toThrow();
+  });
+
+  it("does not replay into a closed terminal", () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("requestAnimationFrame", vi.fn());
+    try {
+      host.restore({
+        version: SESSION_SNAPSHOT_VERSION,
+        scrollback: "PREVIOUS-OUTPUT",
+        commands: [],
+      });
+      host.start();
+      host.attach(document.createElement("div"));
+      host.close();
+      writeMock.mockClear();
+      vi.advanceTimersByTime(RESTORE_FRAME_FALLBACK_MS);
+      expect(writeMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
+    }
+  });
+
   it("captures SGR scrollback, keeps concealed markers, and offsets their ids", () => {
     bufferLines = [
       makeLine("error", { fg: 1 }),

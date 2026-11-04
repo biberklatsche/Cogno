@@ -92,13 +92,20 @@ impl WindowRegistry {
     }
 
     /// Drop everything a destroyed window owned.
-    pub fn on_destroyed(&self, label: &str) {
+    pub fn on_destroyed(&self, label: &str) -> Vec<String> {
         let mut inner = self.inner.lock().unwrap();
+        let terminals = inner
+            .terminal_to_label
+            .iter()
+            .filter(|(_, owner)| owner.as_str() == label)
+            .map(|(id, _)| id.clone())
+            .collect();
         inner.terminal_to_label.retain(|_, owner| owner != label);
         inner.workspace_to_label.retain(|_, owner| owner != label);
         if inner.last_focused.as_deref() == Some(label) {
             inner.last_focused = None;
         }
+        terminals
     }
 
     pub fn label_for_workspace(&self, workspace_id: &str) -> Option<String> {
@@ -198,7 +205,7 @@ mod tests {
         registry.claim_workspace("ws1", "win-a").unwrap();
         registry.set_focus("win-a");
 
-        registry.on_destroyed("win-a");
+        assert_eq!(registry.on_destroyed("win-a"), vec!["t1".to_string()]);
 
         assert_eq!(registry.resolve_target(Some("t1")), None);
         assert_eq!(

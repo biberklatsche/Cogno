@@ -16,7 +16,6 @@ export * from "./notification";
 export * from "./opener";
 export * from "./os";
 export * from "./path";
-export * from "./process";
 export * from "./pty";
 export * from "./shells";
 export * from "./updater";

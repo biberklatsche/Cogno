@@ -59,6 +59,7 @@ import { shellDefinitions } from "../shells/shell-definitions";
 import { serializeScrollback } from "./scrollback-serializer";
 import {
   type CommandSnapshot,
+  isSessionSnapshot,
   SESSION_SNAPSHOT_VERSION,
   type SessionSnapshot,
 } from "./session-snapshot";
@@ -199,6 +200,7 @@ export class SessionHost {
   /** A snapshot waiting to be replayed on the first attach. */
   private _pendingRestore?: SessionSnapshot;
   private _restoreScheduled = false;
+  private cancelRestore?: () => void;
   private handshakeTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
@@ -485,6 +487,8 @@ export class SessionHost {
     const status = this.runtime.status;
     if (status === "closed" || status === "closing") return;
     this.setRuntime({ status: "closing" });
+    this.cancelRestore?.();
+    this._pendingRestore = undefined;
     this.stopWatchingForHandshake();
     this.detach();
     this.model.dispose();
@@ -733,7 +737,7 @@ export class SessionHost {
    * or without scrollback is ignored.
    */
   restore(snapshot: SessionSnapshot): void {
-    if (snapshot.version !== SESSION_SNAPSHOT_VERSION || !snapshot.scrollback) {
+    if (!isSessionSnapshot(snapshot) || !snapshot.scrollback) {
       return;
     }
     // Stash it; the replay waits for the first attach, when the terminal is open
@@ -756,7 +760,12 @@ export class SessionHost {
       this.completeRestore();
     };
     const fallback = setTimeout(complete, RESTORE_FRAME_FALLBACK_MS);
-    requestAnimationFrame(complete);
+    const frame = requestAnimationFrame(complete);
+    this.cancelRestore = () => {
+      completed = true;
+      clearTimeout(fallback);
+      cancelAnimationFrame(frame);
+    };
   }
 
   /**
@@ -768,6 +777,7 @@ export class SessionHost {
    * until the writes are parsed.
    */
   private completeRestore(): void {
+    if (this.runtime.status === "closing" || this.runtime.status === "closed") return;
     const snapshot = this._pendingRestore;
     this._pendingRestore = undefined;
     const terminal = this.renderer?.terminal;
@@ -791,6 +801,7 @@ export class SessionHost {
     );
     const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
+      if (this.runtime.status === "closing" || this.runtime.status === "closed") return;
       this.model.updateCommands(
         snapshot.commands
           .filter((command) => command.id !== idlePromptId)
@@ -817,6 +828,7 @@ export class SessionHost {
    * it neither shows as characters nor gets re-captured.
    */
   private renderRestoreBoundary(terminal: Terminal): void {
+    if (this.runtime.status === "closing" || this.runtime.status === "closed") return;
     const marker = terminal.registerMarker(0);
     if (!marker) {
       return;

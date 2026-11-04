@@ -85,6 +85,7 @@ pub fn run(cli: Cli) {
             }
         }))
         .manage(PtyState::new())
+        .manage(crate::commands::window::QuitState::default())
         .manage(HttpServerState::new())
         .manage(RunnableActionsState::new())
         .manage(Db::new())
@@ -98,14 +99,19 @@ pub fn run(cli: Cli) {
                     .set_focus(window.label());
             }
             WindowEvent::Destroyed => {
+                window.app_handle().state::<crate::commands::window::QuitState>().cancel_window(window.label());
+                let release_sessions = window.app_handle().state::<PtyState>().take_window_sessions(window.label());
                 window
                     .app_handle()
                     .state::<WindowRegistry>()
                     .on_destroyed(window.label());
+                tauri::async_runtime::spawn_blocking(release_sessions);
             }
             _ => {}
         })
         .invoke_handler(tauri::generate_handler![
+            crate::commands::window::window_prepare_quit,
+            crate::commands::window::window_answer_quit,
             crate::db::commands::db_open,
             crate::db::commands::db_execute,
             crate::db::commands::db_select,
