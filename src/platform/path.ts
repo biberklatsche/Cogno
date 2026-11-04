@@ -35,14 +35,4 @@ export class Paths {
   cognoLogFilePath(): Promise<string> {
     return invoke<string>("get_cogno_log_file_path");
   }
-
-  /** The hook scripts Cogno keeps for coding agents, one per shell. */
-  agentHookScriptPaths(devMode: boolean): Promise<AgentHookScriptPaths> {
-    return invoke<AgentHookScriptPaths>("get_agent_hook_script_paths", { devMode });
-  }
 }
-
-export type AgentHookScriptPaths = {
-  readonly bash: string;
-  readonly powershell: string;
-};

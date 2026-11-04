@@ -246,13 +246,18 @@ nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
 wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
 DNS-Rebinding auf 127.0.0.1 umbiegt.
 
-Eine Ausnahme hat einen eigenen Schlüssel: Agenten-Hooks, die nicht im
-Terminal laufen (3.2). Für sie schreibt der Server beim Start eine
-Endpoint-Datei `~/.cogno/agent-endpoint.json` (Port, PID und ein
-**Hook-Token**, nur für den Nutzer lesbar) und löscht sie beim Beenden. Das
-Hook-Token öffnet ausschließlich `POST /agent-hook`; `/action/run` bleibt
-beim Launch-Token. Ein lokaler Prozess, der die Datei liest, kann Cogno damit
-Agentenereignisse melden — mehr nicht.
+Prozesse außerhalb jedes Cogno-Terminals haben einen eigenen Schlüssel —
+etwa der Hintergrunddienst eines Coding-Agents (3.2). Für sie schreibt der
+Server beim Start eine Endpoint-Datei `~/.cogno/endpoint.json` (Port, PID
+und ein **externes Token**, nur für den Nutzer lesbar) und löscht sie beim
+Beenden. Rust kennt dabei keinen Konsumenten: das externe Token öffnet
+ausschließlich `POST /action`, das eine Nachricht an die Webview reicht;
+`/action/run` (Aktionen auslösen) und `/askpass` bleiben beim Launch- bzw.
+Lauf-Token. Ein lokaler Prozess, der die Datei liest, kann damit nur
+Nachrichten schicken. Heute liest sie allein das Coding-Agents-Feature, das
+Schlimmste ist eine falsche Agent-Karte. **Wer künftig `/action`-Nachrichten
+mit Wirkung verarbeitet, muss davon ausgehen, dass sie von außen kommen
+können.**
 
 **Prozesse ohne Terminal fragen über denselben Server.** Was `run` startet
 (2.2), hat keine PTY; git und ssh würden Zugangsdaten, Passphrasen und
@@ -1075,13 +1080,16 @@ Deshalb gilt:
    jedem Ereignis nennt (`session_id` bei Codex und Claude Code, die
    Session-ID bei OpenCode). Das Terminal ist ein Attribut der Sitzung, das
    Cogno ermittelt, nicht die Identität.
-2. **Hooks finden Cogno ohne Umgebung.** Cogno legt je Shell ein stabiles
-   Hook-Skript unter `~/.cogno/hooks/` ab (bash und PowerShell; Rust schreibt
-   beide beim Start des HTTP-Servers, inhaltsgleich bleibt unberührt). Das
-   Skript liest den Payload von stdin, nimmt Port, Token und Terminal aus der
-   Umgebung, wenn sie da ist, sonst Port und Hook-Token aus der
-   Endpoint-Datei (2.1), und sendet `{ provider, terminalId?, payload }` an
-   `POST /agent-hook`. In der Agenten-Config steht nur `<skript> <provider>`:
+2. **Hooks finden Cogno ohne Umgebung.** Das Feature legt je Shell ein
+   stabiles Hook-Skript unter `~/.cogno/coding-agents/` ab (sh und
+   PowerShell; geschrieben über `platform/`, wenn ein Adapter es zum ersten
+   Mal braucht, inhaltsgleich bleibt unberührt). Das Skript liest den Payload
+   von stdin, nimmt Port, Token und Terminal aus der Umgebung, wenn sie da
+   ist, sonst Port und externes Token aus der Endpoint-Datei (2.1), und
+   sendet die Nachricht `coding_agent_hook` mit `[provider, sentAt, event]`
+   an `POST /action`. Das Protokoll kennt nur das Feature; Rust reicht die
+   Nachricht weiter wie jede andere. In der Agenten-Config steht nur
+   `<skript> <provider> <event>`:
    der Befehl ändert sich nie, auch wenn das Protokoll sich ändert. Das
    zählt, weil Codex jeden geänderten Hook-Befehl bis zur erneuten Freigabe
    im Terminal (`/hooks`, `trusted_hash`) stillschweigend nicht ausführt.
@@ -1096,7 +1104,7 @@ Deshalb gilt:
    `sessionId` (Status, Details, Sitzungsgrenze, Subagent) mit dem, was der
    Agent über die Sitzung weiß: `terminalId`, wenn der Hook sie noch hatte,
    `cwd`, Startzeit. Woher die Ereignisse kommen — Hook-Payloads über
-   `/agent-hook`, ein Plugin, später ein App-Server-Protokoll — entscheidet der
+   `/action`, ein Plugin, später ein App-Server-Protokoll — entscheidet der
    Adapter; das Feature sieht nur `events$`. Der Status steht nicht mehr im
    Hook-Befehl, sondern wird im Adapter aus dem Ereignis gelesen.
 4. **Die Zuordnung zum Terminal ist generisch.** Ein Binder im Feature nimmt

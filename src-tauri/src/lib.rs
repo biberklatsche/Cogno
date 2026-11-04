@@ -1,10 +1,10 @@
 #[path = "actions.generated.rs"]
 pub mod actions_generated;
-mod agent_hooks;
 mod app_identity;
 pub mod cli;
 pub mod commands;
 mod db;
+mod endpoint;
 mod http_server;
 mod updater;
 
@@ -130,7 +130,6 @@ pub fn run(cli: Cli) {
             crate::commands::processes::pty_get_process_tree_by_terminal_id,
             crate::commands::processes::pty_list_terminal_processes,
             crate::commands::environment::get_cogno_home_dir,
-            crate::commands::environment::get_agent_hook_script_paths,
             crate::commands::environment::get_cogno_config_file_path,
             crate::commands::environment::get_cogno_db_file_path,
             crate::commands::environment::get_cogno_log_file_path,
@@ -186,7 +185,7 @@ pub fn run(cli: Cli) {
                 // Shells first, so none outlives the app (SIGHUP lets them
                 // write their history on the way out).
                 app.state::<PtyState>().release_all();
-                // No hook must find this instance's port once it is gone.
+                // No process must find this instance's port once it is gone.
                 app.state::<HttpServerState>().remove_endpoint();
                 // Fold the WAL back into the main file so the database is a
                 // single, consistent file once the process is gone.

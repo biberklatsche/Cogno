@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 /// The Cogno home's name under the user's home: `.cogno`, or `.cogno-dev` in
 /// development.
-pub fn home_dir_name(dev_mode: bool) -> &'static str {
+fn home_dir_name(dev_mode: bool) -> &'static str {
     if dev_mode {
         DEVELOPMENT_HOME_DIRECTORY_NAME
     } else {
@@ -21,15 +21,6 @@ pub fn cogno_home(dev_mode: bool) -> Result<PathBuf, String> {
 #[tauri::command]
 pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
     Ok(cogno_home(dev_mode)?.display().to_string())
-}
-
-/// Where the agent hook scripts are (ARCHITECTURE.md 3.2): what an adapter
-/// writes into an agent's config as the hook command.
-#[tauri::command]
-pub fn get_agent_hook_script_paths(
-    dev_mode: bool,
-) -> Result<crate::agent_hooks::AgentHookScriptPaths, String> {
-    Ok(crate::agent_hooks::script_paths(&cogno_home(dev_mode)?))
 }
 
 /// Returns the cogno config file path
