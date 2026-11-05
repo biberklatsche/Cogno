@@ -49,16 +49,17 @@ export class KimiProvider implements ICodingAgentProvider {
     const scripts = await this.scripts.get();
     const config = await this.configFile.readToml<KimiConfig>(await this.configPath(), {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
-    const isCurrent = KIMI_CONFIG.hookEvents.every(({ eventName }) =>
-      hooks.some(
-        (h) =>
-          h.event === eventName && isCurrentHookCommand(h.command, scripts, this.id, eventName),
-      ),
-    );
-    return hookStateOf(
-      isCurrent,
-      hooks.some((h) => isCognoHookCommand(h.command)),
-    );
+    const cognoHooks = hooks.filter((h) => isCognoHookCommand(h.command));
+    // Exactly this version's hooks, nothing older next to them (it would run twice).
+    const isCurrent =
+      cognoHooks.length === KIMI_CONFIG.hookEvents.length &&
+      KIMI_CONFIG.hookEvents.every(({ eventName }) =>
+        cognoHooks.some(
+          (h) =>
+            h.event === eventName && isCurrentHookCommand(h.command, scripts, this.id, eventName),
+        ),
+      );
+    return hookStateOf(isCurrent, cognoHooks.length > 0);
   }
 
   async installHook(shell: HookShell): Promise<void> {

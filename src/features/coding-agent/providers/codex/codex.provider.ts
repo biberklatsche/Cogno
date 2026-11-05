@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import {
   AgentSessionEvent,
@@ -21,13 +22,18 @@ import {
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
 import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
 import { CODEX_CONFIG, CodexHookEntry, CodexHookGroup, CodexHooksFile } from "./codex.config";
+import { featuresHooksEnabled, withFeaturesHooksEnabled } from "./codex-app-config";
 
 /**
- * Codex runs its hooks in a shared background service since 0.157, so a hook
- * carries no terminal: the session is known from `session_id` and `cwd` in
- * the payload (ARCHITECTURE.md 3.2). Codex also runs a changed hook command
- * only after the user trusts it again (`/hooks`); the command written here
- * never changes, only the script behind it.
+ * Codex runs its hooks in a shared background service since 0.157. The hook
+ * still gets the environment of the Codex session that fired it (0.166), so
+ * the terminal usually comes along; the session is keyed by `session_id` and
+ * `cwd` from the payload either way (ARCHITECTURE.md 3.2). Subagents report
+ * under the parent's `session_id` with their own `agent_id`.
+ *
+ * Codex runs a changed hook command only after the user trusts it again
+ * (`/hooks`): the command written here never changes, only the script behind
+ * it, and the user is told whenever the hooks file did change.
  */
 @Injectable({ providedIn: "root" })
 export class CodexProvider implements ICodingAgentProvider {
@@ -39,6 +45,7 @@ export class CodexProvider implements ICodingAgentProvider {
   constructor(
     private readonly configFile: ConfigFileService,
     private readonly scripts: HookScriptPathsService,
+    private readonly notifications: NotificationCenterPort,
     ipc: TerminalIpcPort,
   ) {
     this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
@@ -52,9 +59,12 @@ export class CodexProvider implements ICodingAgentProvider {
     return this.configFile.exists(await this.configDir());
   }
 
+  /** Current only when Codex also has hooks switched on; installing switches them on. */
   async hookState(): Promise<HookState> {
     const file = await this.configFile.readJson<CodexHooksFile>(await this.configPath(), {});
-    return hookMapState(file.hooks, CODEX_CONFIG.hookEvents, await this.hookFormat());
+    const state = hookMapState(file.hooks, CODEX_CONFIG.hookEvents, await this.hookFormat());
+    if (state !== "current") return state;
+    return (await this.hooksEnabledInAppConfig()) ? "current" : "outdated";
   }
 
   /** Codex runs one hook entry on every OS and picks the shell itself, so the install-time shell does not matter. */
@@ -62,13 +72,16 @@ export class CodexProvider implements ICodingAgentProvider {
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
+    const before = JSON.stringify(file.hooks ?? {});
     file.hooks = withCurrentCognoHooks(
       file.hooks,
       CODEX_CONFIG.hookEvents,
       await this.hookFormat(),
     );
-    await this.configFile.writeJson(configPath, file);
+    const changed = JSON.stringify(file.hooks) !== before;
+    if (changed) await this.configFile.writeJson(configPath, file);
     await this.enableHooksInAppConfig();
+    if (changed) this.askForTrust();
   }
 
   async removeHook(): Promise<void> {
@@ -103,17 +116,30 @@ export class CodexProvider implements ICodingAgentProvider {
     };
   }
 
-  private async enableHooksInAppConfig(): Promise<void> {
-    const appConfigPath = await this.configFile.configPath(
-      CODEX_CONFIG.configSubDir,
-      CODEX_CONFIG.appConfigFileName,
+  private async hooksEnabledInAppConfig(): Promise<boolean> {
+    const config = await this.configFile.readToml<Record<string, unknown>>(
+      await this.appConfigPath(),
+      {},
     );
-    const cfg = await this.configFile.readToml<Record<string, unknown>>(appConfigPath, {});
-    const features = (cfg["features"] ?? {}) as Record<string, unknown>;
-    if (features["hooks"] === true) return;
-    features["hooks"] = true;
-    cfg["features"] = features;
-    await this.configFile.writeToml(appConfigPath, cfg);
+    return featuresHooksEnabled(config);
+  }
+
+  /** Switches `features.hooks` on by editing the line, so the rest of the file stays as Codex wrote it. */
+  private async enableHooksInAppConfig(): Promise<void> {
+    if (await this.hooksEnabledInAppConfig()) return;
+    const path = await this.appConfigPath();
+    const text = (await this.configFile.readText(path)) ?? "";
+    await this.configFile.writeText(path, withFeaturesHooksEnabled(text));
+  }
+
+  /** A changed hooks file runs only once the user trusts it in Codex. */
+  private askForTrust(): void {
+    this.notifications.dispatch({
+      header: `${this.name} hook changed`,
+      body: `${this.name} runs a changed hook only after you trust it: run /hooks in ${this.name} and approve the Cogno hooks.`,
+      type: "info",
+      timestamp: new Date(),
+    });
   }
 
   private configDir(): Promise<string> {
@@ -122,5 +148,9 @@ export class CodexProvider implements ICodingAgentProvider {
 
   private configPath(): Promise<string> {
     return this.configFile.configPath(CODEX_CONFIG.configSubDir, CODEX_CONFIG.configFileName);
+  }
+
+  private appConfigPath(): Promise<string> {
+    return this.configFile.configPath(CODEX_CONFIG.configSubDir, CODEX_CONFIG.appConfigFileName);
   }
 }

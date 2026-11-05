@@ -1092,7 +1092,11 @@ Deshalb gilt:
    `<skript> <provider> <event>`:
    der Befehl ändert sich nie, auch wenn das Protokoll sich ändert. Das
    zählt, weil Codex jeden geänderten Hook-Befehl bis zur erneuten Freigabe
-   im Terminal (`/hooks`, `trusted_hash`) stillschweigend nicht ausführt.
+   im Terminal (`/hooks`, `trusted_hash`) stillschweigend nicht ausführt;
+   ändert sich die Hooks-Datei doch, sagt der Codex-Adapter das per
+   Benachrichtigung. Ein Hook gilt nur als aktuell, wenn genau die Hooks
+   dieser Fassung da sind: ein älterer Cogno-Hook daneben liefe doppelt und
+   wird beim nächsten Abgleich entfernt.
    Mehrere Cogno-Instanzen teilen eine Datei; die zuletzt gestartete gewinnt.
    Rust routet einen Hook mit Terminal an dessen Fenster, einen ohne an das
    zuletzt fokussierte (2.6); bei mehreren Fenstern kann die Zuordnung dort

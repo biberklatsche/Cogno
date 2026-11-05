@@ -65,7 +65,7 @@ export class ConfigFileService {
   }
 
   /** The file's text, or undefined when there is no such file. */
-  private async readText(path: string): Promise<string | undefined> {
+  async readText(path: string): Promise<string | undefined> {
     try {
       if (!(await this.fs.exists(path))) return undefined;
       return await this.fs.readTextFile(path);
@@ -74,7 +74,7 @@ export class ConfigFileService {
     }
   }
 
-  private async writeText(path: string, content: string): Promise<void> {
+  async writeText(path: string, content: string): Promise<void> {
     try {
       await this.fs.writeTextFile(path, content);
     } catch (err) {
