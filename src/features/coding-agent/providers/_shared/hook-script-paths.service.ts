@@ -33,10 +33,15 @@ export class HookScriptPathsService {
     return this.scripts;
   }
 
+  /** The endpoint file the scripts fall back to; an adapter with its own transport (a plugin) reads it the same way. */
+  async endpointPath(): Promise<string> {
+    return this.paths.join(await this.paths.cognoHomeDir(isDevMode()), ENDPOINT_FILE);
+  }
+
   private async write(): Promise<HookScriptPaths> {
     const home = await this.paths.cognoHomeDir(isDevMode());
     const dir = await this.paths.join(home, SCRIPTS_DIR);
-    const endpoint = await this.paths.join(home, ENDPOINT_FILE);
+    const endpoint = await this.endpointPath();
     const scripts = {
       bash: await this.paths.join(dir, BASH_SCRIPT),
       powershell: await this.paths.join(dir, POWERSHELL_SCRIPT),

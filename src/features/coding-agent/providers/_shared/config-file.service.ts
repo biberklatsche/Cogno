@@ -20,6 +20,10 @@ export class ConfigFileService {
     return this.paths.join(await this.configDir(subDir), fileName);
   }
 
+  join(...parts: string[]): Promise<string> {
+    return this.paths.join(...parts);
+  }
+
   async readJson<T>(path: string, fallback: T): Promise<T> {
     const raw = await this.readText(path);
     if (raw === undefined) return fallback;
@@ -56,6 +60,16 @@ export class ConfigFileService {
 
   exists(path: string): Promise<boolean> {
     return this.fs.exists(path);
+  }
+
+  /** Removes a file, or with `recursive` a directory; nothing to remove is fine. */
+  async remove(path: string, options?: { recursive?: boolean }): Promise<void> {
+    try {
+      if (!(await this.fs.exists(path))) return;
+      await this.fs.remove(path, options);
+    } catch (err) {
+      throw new Error(`Cannot remove ${path}`, { cause: err });
+    }
   }
 
   async ensureDir(path: string): Promise<void> {

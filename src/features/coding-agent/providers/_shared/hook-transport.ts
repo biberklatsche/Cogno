@@ -41,7 +41,12 @@ export type HookSession = {
  */
 export type HookReading = {
   readonly statusOf: (hookEvent: string) => AgentStatus | undefined;
-  readonly interpret: (hookEvent: string, status: AgentStatus, payload: unknown) => AgentHookEvent;
+  /** What the hook says; undefined when it says nothing about the agent (a subagent's inner events, say). */
+  readonly interpret: (
+    hookEvent: string,
+    status: AgentStatus,
+    payload: unknown,
+  ) => AgentHookEvent | undefined;
   readonly sessionOf: (payload: unknown) => HookSession;
 };
 
@@ -65,12 +70,14 @@ export function toSessionEvent(
   const sessionId =
     session.sessionId ?? (message.terminalId ? `terminal:${message.terminalId}` : undefined);
   if (!sessionId) return undefined;
+  const event = reading.interpret(message.hookEvent, status, message.payload);
+  if (!event) return undefined;
   return {
     sessionId,
     ...(message.terminalId ? { terminalId: message.terminalId } : {}),
     ...(session.cwd ? { cwd: session.cwd } : {}),
     sentAt: message.sentAt,
-    event: reading.interpret(message.hookEvent, status, message.payload),
+    event,
   };
 }
 

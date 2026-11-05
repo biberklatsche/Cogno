@@ -1110,7 +1110,12 @@ Deshalb gilt:
    `cwd`, Startzeit. Woher die Ereignisse kommen — Hook-Payloads über
    `/action`, ein Plugin, später ein App-Server-Protokoll — entscheidet der
    Adapter; das Feature sieht nur `events$`. Der Status steht nicht mehr im
-   Hook-Befehl, sondern wird im Adapter aus dem Ereignis gelesen.
+   Hook-Befehl, sondern wird im Adapter aus dem Ereignis gelesen. OpenCode
+   ist der Plugin-Fall: ein Ordner von Cogno unter
+   `~/.config/opencode/plugins/`, der im Hintergrunddienst läuft, Cogno über
+   die Endpoint-Datei findet, nie ein Terminal nennt (die Umgebung des
+   Dienstes ist die des ersten Starters) und Kind-Sitzungen (`parentID`) als
+   Subagenten der Eltern-Sitzung meldet.
 4. **Die Zuordnung zum Terminal ist generisch.** Ein Binder im Feature nimmt
    `terminalId`, wenn das Ereignis eine nennt (Claude Code: exakt wie
    bisher). Sonst gleicht er `cwd` und Startzeit der Sitzung gegen die

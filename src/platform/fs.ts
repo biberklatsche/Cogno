@@ -6,6 +6,7 @@ import {
   mkdir as tauriMkdir,
   readDir as tauriReadDir,
   readTextFile as tauriReadTextFile,
+  remove as tauriRemove,
   watch as tauriWatch,
   writeTextFile as tauriWriteTextFile,
   WatchEvent,
@@ -29,6 +30,11 @@ export class Fs {
 
   readDir(path: string): Promise<DirEntry[]> {
     return tauriReadDir(path);
+  }
+
+  /** Removes a file, or with `recursive` a directory and everything in it. */
+  remove(path: string, options?: { recursive?: boolean }): Promise<void> {
+    return tauriRemove(path, options);
   }
 
   /**
