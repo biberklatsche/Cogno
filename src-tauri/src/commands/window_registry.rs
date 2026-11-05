@@ -4,18 +4,25 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
 
+use super::pty::PtyState;
+
 /// Emit `event` to the window that owns `terminal_id` (or the last-focused
 /// window when no terminal is given or known), falling back to a broadcast
-/// when no target window is known yet. This is the only window-routing code
-/// that touches Tauri; the resolution it relies on lives on the (pure,
-/// unit-tested) registry.
+/// when no target window is known yet. A terminal's window is known by its
+/// PTY alone, which carries the window that spawned it (ARCHITECTURE.md 2.6).
+/// Everything that resolves a target window goes through here; code that
+/// already holds its window's label (a session's exit, a quit request) emits
+/// to it directly.
 pub fn route<P: Serialize + Clone>(
     app: &AppHandle,
     event: &str,
     payload: P,
     terminal_id: Option<&str>,
 ) {
-    match app.state::<WindowRegistry>().resolve_target(terminal_id) {
+    let target = terminal_id
+        .and_then(|id| app.state::<PtyState>().window_of(id))
+        .or_else(|| app.state::<WindowRegistry>().last_focused());
+    match target {
         Some(label) => {
             let _ = app.emit_to(label, event, payload);
         }
@@ -25,13 +32,13 @@ pub fn route<P: Serialize + Clone>(
     }
 }
 
-/// Maps sessions and workspaces to the window that owns them, and remembers
-/// which window was focused last. Backend events are then routed to a single
-/// window instead of broadcast to all of them (ARCHITECTURE.md 2.6).
+/// Maps workspaces to the window that holds them, and remembers which window
+/// was focused last. Which window a terminal belongs to is its PTY's to say.
+/// With both, backend events are routed to a single window instead of
+/// broadcast to all of them (ARCHITECTURE.md 2.6).
 ///
-/// Plain state on purpose: it holds only ids and labels, so the routing logic
-/// is unit-tested without a running Tauri app. Only the thin `route` helper in
-/// the app layer touches `AppHandle`/`emit_to`.
+/// Plain state on purpose: it holds only ids and labels, so it is unit-tested
+/// without a running Tauri app.
 #[derive(Default)]
 pub struct WindowRegistry {
     inner: Mutex<Inner>,
@@ -39,7 +46,6 @@ pub struct WindowRegistry {
 
 #[derive(Default)]
 struct Inner {
-    terminal_to_label: HashMap<String, String>,
     workspace_to_label: HashMap<String, String>,
     last_focused: Option<String>,
 }
@@ -52,15 +58,6 @@ impl WindowRegistry {
     /// Record `label` as the most recently focused window.
     pub fn set_focus(&self, label: &str) {
         self.inner.lock().unwrap().last_focused = Some(label.to_string());
-    }
-
-    /// Bind a session to the window that spawned it.
-    pub fn bind_terminal(&self, terminal_id: &str, label: &str) {
-        self.inner
-            .lock()
-            .unwrap()
-            .terminal_to_label
-            .insert(terminal_id.to_string(), label.to_string());
     }
 
     /// Claim a workspace for `label`. Fails with the holding label when another
@@ -94,7 +91,6 @@ impl WindowRegistry {
     /// Drop everything a destroyed window owned.
     pub fn on_destroyed(&self, label: &str) {
         let mut inner = self.inner.lock().unwrap();
-        inner.terminal_to_label.retain(|_, owner| owner != label);
         inner.workspace_to_label.retain(|_, owner| owner != label);
         if inner.last_focused.as_deref() == Some(label) {
             inner.last_focused = None;
@@ -110,16 +106,9 @@ impl WindowRegistry {
             .cloned()
     }
 
-    /// The window an event should go to: the session's window when a known
-    /// `terminal_id` is given, otherwise the last-focused window.
-    pub fn resolve_target(&self, terminal_id: Option<&str>) -> Option<String> {
-        let inner = self.inner.lock().unwrap();
-        if let Some(id) = terminal_id {
-            if let Some(label) = inner.terminal_to_label.get(id) {
-                return Some(label.clone());
-            }
-        }
-        inner.last_focused.clone()
+    /// The window focused last: where an event without a terminal goes.
+    pub fn last_focused(&self) -> Option<String> {
+        self.inner.lock().unwrap().last_focused.clone()
     }
 }
 
@@ -128,30 +117,12 @@ mod tests {
     use super::WindowRegistry;
 
     #[test]
-    fn resolves_target_by_terminal_then_falls_back_to_focus() {
+    fn remembers_the_window_focused_last() {
         let registry = WindowRegistry::new();
-        registry.bind_terminal("t1", "win-a");
+        assert_eq!(registry.last_focused(), None);
+        registry.set_focus("win-a");
         registry.set_focus("win-b");
-
-        // known terminal -> its window
-        assert_eq!(
-            registry.resolve_target(Some("t1")).as_deref(),
-            Some("win-a")
-        );
-        // unknown terminal -> last focused
-        assert_eq!(
-            registry.resolve_target(Some("unknown")).as_deref(),
-            Some("win-b")
-        );
-        // no terminal -> last focused
-        assert_eq!(registry.resolve_target(None).as_deref(), Some("win-b"));
-    }
-
-    #[test]
-    fn resolves_to_none_without_focus_or_binding() {
-        let registry = WindowRegistry::new();
-        assert_eq!(registry.resolve_target(None), None);
-        assert_eq!(registry.resolve_target(Some("t1")), None);
+        assert_eq!(registry.last_focused().as_deref(), Some("win-b"));
     }
 
     #[test]
@@ -193,19 +164,12 @@ mod tests {
     #[test]
     fn destroyed_window_drops_all_its_entries() {
         let registry = WindowRegistry::new();
-        registry.bind_terminal("t1", "win-a");
-        registry.bind_terminal("t2", "win-b");
         registry.claim_workspace("ws1", "win-a").unwrap();
         registry.set_focus("win-a");
 
         registry.on_destroyed("win-a");
 
-        assert_eq!(registry.resolve_target(Some("t1")), None);
-        assert_eq!(
-            registry.resolve_target(Some("t2")).as_deref(),
-            Some("win-b")
-        );
         assert_eq!(registry.label_for_workspace("ws1"), None);
-        assert_eq!(registry.resolve_target(None), None);
+        assert_eq!(registry.last_focused(), None);
     }
 }

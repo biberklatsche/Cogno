@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { PendingSessionSnapshots } from "@cogno/core/session/host/pending-session-snapshots";
-import { SessionSnapshot } from "@cogno/core/session/host/session-snapshot";
+import { isSessionSnapshot } from "@cogno/core/session/host/session-snapshot";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import { WorkspaceTerminalSession } from "./workspace.model";
@@ -38,10 +38,8 @@ export class SessionPersistenceService {
       const sessions = await this.workspaceRepository.getTerminalSessions(workspaceId);
       for (const session of sessions) {
         try {
-          this.pendingSnapshots.set(
-            session.terminalId,
-            JSON.parse(session.sessionData) as SessionSnapshot,
-          );
+          const snapshot: unknown = JSON.parse(session.sessionData);
+          if (isSessionSnapshot(snapshot)) this.pendingSnapshots.set(session.terminalId, snapshot);
         } catch {
           // Unreadable snapshot: skip; the terminal starts without scrollback.
         }

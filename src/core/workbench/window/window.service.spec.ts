@@ -1,24 +1,35 @@
-import { Subject } from "rxjs";
+import { EMPTY, Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { appWindowMock } = vi.hoisted(() => ({
-  appWindowMock: {
-    isFocused: vi.fn().mockResolvedValue(true),
-    isVisible: vi.fn().mockResolvedValue(true),
-    isMaximized: vi.fn().mockResolvedValue(false),
-    isMinimized: vi.fn().mockResolvedValue(false),
-    setFocus: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn().mockResolvedValue(undefined),
-    minimize: vi.fn().mockResolvedValue(undefined),
-    unminimize: vi.fn().mockResolvedValue(undefined),
-    maximize: vi.fn().mockResolvedValue(undefined),
-    unmaximize: vi.fn().mockResolvedValue(undefined),
-    windowSize$: undefined as unknown,
-    onCloseRequested$: undefined as unknown,
-    onFocusChanged$: undefined as unknown,
-    onDragDrop$: undefined as unknown,
-  },
-}));
+type QuitHandler = (phase: "confirm" | "persist") => Promise<boolean>;
+
+const { appWindowMock, quit } = vi.hoisted(() => {
+  const quit: { handler?: QuitHandler } = {};
+  return {
+    quit,
+    appWindowMock: {
+      prepareQuit: vi.fn(),
+      answerQuitRequests: vi.fn((handler: QuitHandler) => {
+        quit.handler = handler;
+        return EMPTY;
+      }),
+      isFocused: vi.fn().mockResolvedValue(true),
+      isVisible: vi.fn().mockResolvedValue(true),
+      isMaximized: vi.fn().mockResolvedValue(false),
+      isMinimized: vi.fn().mockResolvedValue(false),
+      setFocus: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn().mockResolvedValue(undefined),
+      minimize: vi.fn().mockResolvedValue(undefined),
+      unminimize: vi.fn().mockResolvedValue(undefined),
+      maximize: vi.fn().mockResolvedValue(undefined),
+      unmaximize: vi.fn().mockResolvedValue(undefined),
+      windowSize$: undefined as unknown,
+      onCloseRequested$: undefined as unknown,
+      onFocusChanged$: undefined as unknown,
+      onDragDrop$: undefined as unknown,
+    },
+  };
+});
 
 vi.mock("@cogno/platform/logger", () => ({
   Logger: {
@@ -33,7 +44,6 @@ import { ActionFired, type ActionFiredEvent } from "@cogno/core/workbench/bus/ac
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { Logger } from "@cogno/platform/logger";
-import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 import {
@@ -47,9 +57,6 @@ import type { WindowService } from "./window.service";
 const windowCoreStub = {
   newWindow: vi.fn(() => Promise.resolve()),
 } as unknown as WindowCore;
-const processStub = {
-  exit: vi.fn(() => Promise.resolve()),
-} as unknown as Process;
 
 describe("WindowService", () => {
   let service: WindowService;
@@ -61,10 +68,11 @@ describe("WindowService", () => {
     appWindowMock.onCloseRequested$ = new Subject<any>();
     appWindowMock.onFocusChanged$ = new Subject<boolean>();
     appWindowMock.onDragDrop$ = new Subject<any>();
+    appWindowMock.prepareQuit.mockResolvedValue(true);
     bus = getAppBus();
     terminalBusyStateService = getTerminalBusyStateService();
     vi.spyOn(bus, "publish");
-    service = getWindowService(appWindowMock as unknown as AppWindow, windowCoreStub, processStub);
+    service = getWindowService(appWindowMock as unknown as AppWindow, windowCoreStub);
   });
 
   afterEach(() => {
@@ -79,6 +87,24 @@ describe("WindowService", () => {
     return ActionFired.create(actionName, undefined, args);
   }
 
+  /** This window's answer to a quit request of the coordinator. */
+  function answerQuit(phase: "confirm" | "persist"): Promise<boolean> {
+    if (!quit.handler) throw new Error("the service answers no quit requests");
+    return quit.handler(phase);
+  }
+
+  /** Makes the session save wait until the returned function is called. */
+  function holdPersistence(): { persist: ReturnType<typeof vi.spyOn>; finish: () => void } {
+    let finish!: () => void;
+    const persist = vi.spyOn(service as any, "persistSessionWithinBudget").mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    return { persist, finish: () => finish() };
+  }
+
   it("should be created and publish InitConfigCommand", () => {
     expect(service).toBeTruthy();
     expect(bus.publish).toHaveBeenCalledWith(
@@ -87,17 +113,40 @@ describe("WindowService", () => {
   });
 
   describe("ActionFired events", () => {
-    it("should handle quit action", async () => {
+    it("quits through the coordinator", async () => {
       const event = createActionEvent("quit");
       bus.publish(event);
 
       await vi.waitFor(() => {
-        expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalledWith(
-          "quit the application",
-        );
-        expect(processStub.exit).toHaveBeenCalled();
+        expect(appWindowMock.prepareQuit).toHaveBeenCalled();
         expect(event.performed).toBe(true);
       });
+    });
+
+    it("shows a technical quit failure and leaves the action unperformed", async () => {
+      appWindowMock.prepareQuit.mockRejectedValueOnce("A window did not respond");
+      const event = createActionEvent("quit");
+      bus.publish(event);
+      await vi.waitFor(() => expect(event.performed).toBe(false));
+      expect(bus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "Notification",
+          payload: expect.objectContaining({
+            header: "Could not quit Cogno",
+            body: "A window did not respond",
+          }),
+        }),
+      );
+    });
+
+    it("does not report a user cancellation as a technical failure", async () => {
+      appWindowMock.prepareQuit.mockResolvedValueOnce(false);
+      const event = createActionEvent("quit");
+      bus.publish(event);
+      await vi.waitFor(() => expect(event.performed).toBe(false));
+      expect(bus.publish).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: "Notification" }),
+      );
     });
 
     it("should handle new_window action", async () => {
@@ -123,19 +172,22 @@ describe("WindowService", () => {
       });
     });
 
-    it("should not quit when busy terminals block the action", async () => {
-      vi.mocked(terminalBusyStateService.confirmProceedIfNoBusyTerminals).mockResolvedValue(false);
-      const event = createActionEvent("quit");
+    it("tells the user when the window cannot be closed, and can try again", async () => {
+      appWindowMock.close.mockRejectedValueOnce(new Error("not allowed"));
+      const event = createActionEvent("close_window");
       bus.publish(event);
 
-      await vi.waitFor(() => {
-        expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalledWith(
-          "quit the application",
-        );
-      });
+      await vi.waitFor(() => expect(event.performed).toBe(false));
+      expect(bus.publish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "Notification",
+          payload: expect.objectContaining({ header: "Could not close the window" }),
+        }),
+      );
 
-      expect(processStub.exit).not.toHaveBeenCalled();
-      expect(event.performed).not.toBe(true);
+      const retry = createActionEvent("close_window");
+      bus.publish(retry);
+      await vi.waitFor(() => expect(retry.performed).toBe(true));
     });
 
     it("should not close the window when busy terminals block the action", async () => {
@@ -163,6 +215,56 @@ describe("WindowService", () => {
       });
 
       expect(Logger.error).toHaveBeenCalled();
+    });
+  });
+
+  describe("answering quit requests", () => {
+    it("confirms after asking about busy terminals, and saves nothing yet", async () => {
+      const { persist } = holdPersistence();
+      await expect(answerQuit("confirm")).resolves.toBe(true);
+      expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalledWith(
+        "quit the application",
+      );
+      expect(persist).not.toHaveBeenCalled();
+    });
+
+    it("answers no when the user keeps the busy terminals", async () => {
+      vi.mocked(terminalBusyStateService.confirmProceedIfNoBusyTerminals).mockResolvedValue(false);
+      await expect(answerQuit("confirm")).resolves.toBe(false);
+    });
+
+    it("brings a busy window forward before asking", async () => {
+      vi.mocked(terminalBusyStateService.hasBusyTerminals).mockReturnValue(true);
+      await expect(answerQuit("confirm")).resolves.toBe(true);
+      expect(appWindowMock.unminimize).toHaveBeenCalled();
+      expect(appWindowMock.setFocus).toHaveBeenCalled();
+    });
+
+    it("still asks when the window cannot come forward", async () => {
+      vi.mocked(terminalBusyStateService.hasBusyTerminals).mockReturnValue(true);
+      appWindowMock.setFocus.mockRejectedValueOnce(new Error("not allowed"));
+      await expect(answerQuit("confirm")).resolves.toBe(true);
+      expect(terminalBusyStateService.confirmProceedIfNoBusyTerminals).toHaveBeenCalled();
+    });
+
+    it("answers a save only once the local save finished", async () => {
+      const { persist, finish } = holdPersistence();
+      let answered = false;
+      const answer = answerQuit("persist").then((accepted) => {
+        answered = true;
+        return accepted;
+      });
+      await vi.waitFor(() => expect(persist).toHaveBeenCalled());
+      expect(answered).toBe(false);
+      finish();
+      await expect(answer).resolves.toBe(true);
+    });
+
+    it("lets a failed save through to the platform, which answers yes for it", async () => {
+      vi.spyOn(service as any, "persistSessionWithinBudget").mockRejectedValueOnce(
+        new Error("Save failed"),
+      );
+      await expect(answerQuit("persist")).rejects.toThrow("Save failed");
     });
   });
 

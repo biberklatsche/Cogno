@@ -145,6 +145,26 @@ describe("TerminalAutocompleteService", () => {
     vi.useRealTimers();
   });
 
+  it.each([
+    ["hide", (s: TerminalAutocompleteService) => s.hide()],
+    ["destruction", (s: TerminalAutocompleteService) => s.ngOnDestroy()],
+  ])("ignores pending suggestions after %s", async (_name, end) => {
+    let resolve!: (items: AutocompleteSuggestion[]) => void;
+    service.registerSuggestor(
+      new DummySuggestor(
+        () =>
+          new Promise((done) => {
+            resolve = done;
+          }),
+      ),
+    );
+    const pending = (service as any).showSuggestions(fakeState.state, false);
+    end(service);
+    resolve([makeSuggestion("git status")]);
+    await pending;
+    expect((service as any)._viewState.value.visible).toBe(false);
+  });
+
   it("does not preselect a suggestion and filters suggestion equal to current input", async () => {
     service.registerSuggestor(
       new DummySuggestor(async () => [makeSuggestion("git s"), makeSuggestion("git status")]),

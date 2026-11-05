@@ -21,3 +21,25 @@ export interface SessionSnapshot {
 // at close. v1 (SerializeAddon ANSI) and v2 (plain text, markers stripped) are
 // ignored on load.
 export const SESSION_SNAPSHOT_VERSION = 3;
+
+export function isSessionSnapshot(value: unknown): value is SessionSnapshot {
+  if (!value || typeof value !== "object") return false;
+  const snapshot = value as Partial<SessionSnapshot>;
+  return (
+    snapshot.version === SESSION_SNAPSHOT_VERSION &&
+    (snapshot.scrollback === null || typeof snapshot.scrollback === "string") &&
+    Array.isArray(snapshot.commands) &&
+    snapshot.commands.every(
+      (command) =>
+        command &&
+        typeof command.id === "string" &&
+        typeof command.directory === "string" &&
+        typeof command.machine === "string" &&
+        typeof command.user === "string" &&
+        command.data &&
+        typeof command.data === "object" &&
+        !Array.isArray(command.data) &&
+        Object.values(command.data).every((v) => typeof v === "string"),
+    )
+  );
+}

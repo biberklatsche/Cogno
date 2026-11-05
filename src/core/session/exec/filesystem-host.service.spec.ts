@@ -77,7 +77,9 @@ describe("FilesystemHostService", () => {
   });
 
   it("still fails when an existing directory cannot be read", async () => {
-    const error = new Error("failed to read directory at path: /root with error: Permission denied");
+    const error = new Error(
+      "failed to read directory at path: /root with error: Permission denied",
+    );
     vi.mocked(fs.readDir).mockRejectedValueOnce(error);
     vi.mocked(fs.exists).mockResolvedValueOnce(true);
 

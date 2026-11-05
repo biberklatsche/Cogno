@@ -92,7 +92,8 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.dropdownCoordinator.release(this);
+    // Also invalidates pending requests, so late results cannot reopen the dropdown.
+    this.hide();
     this._subscription.unsubscribe();
     window.removeEventListener("keydown", this._keydownHandler, { capture: true });
   }
@@ -574,6 +575,7 @@ export class TerminalAutocompleteService implements OnDestroy {
   }
 
   hide(): void {
+    ++this._activeRequestId;
     this.dropdownCoordinator.release(this);
     this._latestSuggestions = [];
     this._latestContext = null;

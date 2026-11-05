@@ -65,6 +65,26 @@ describe("SessionPersistenceService", () => {
     ]);
   });
 
+  it("loads only snapshots of the current shape; the rest start without scrollback", async () => {
+    const valid = { version: 3, scrollback: "OUT", commands: [] };
+    const set = vi.fn();
+    const repo = {
+      getTerminalSessions: vi.fn().mockResolvedValue([
+        { terminalId: "t1", sessionData: JSON.stringify(valid) },
+        { terminalId: "t2", sessionData: JSON.stringify({ version: 3, scrollback: "OLD" }) },
+        { terminalId: "t3", sessionData: "not json" },
+      ]),
+    } as unknown as WorkspaceRepository;
+    const config = { config: { terminal: { restore } } } as unknown as ConfigService;
+    await new SessionPersistenceService({} as never, {} as never, repo, config, {
+      set,
+      take: vi.fn(),
+      peek: vi.fn(),
+    } as never).loadPendingSnapshots(["ws-1"]);
+
+    expect(set).toHaveBeenCalledExactlyOnceWith("t1", valid);
+  });
+
   it("does nothing when restore is disabled", async () => {
     restore = { enabled: false };
     await make().persistWorkspace("ws-1");

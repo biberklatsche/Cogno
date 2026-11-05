@@ -278,6 +278,12 @@ export class SessionHost {
     return this.runtime$$.asObservable();
   }
 
+  /** The session is closing or closed: nothing may start or write any more. */
+  private get isEnding(): boolean {
+    const status = this.runtime.status;
+    return status === "closing" || status === "closed";
+  }
+
   get display(): SessionDisplay {
     return this._display;
   }
@@ -482,8 +488,7 @@ export class SessionHost {
 
   /** Ends the session for good: the workbench decided so. Idempotent. */
   close(): void {
-    const status = this.runtime.status;
-    if (status === "closed" || status === "closing") return;
+    if (this.isEnding) return;
     this.setRuntime({ status: "closing" });
     this.stopWatchingForHandshake();
     this.detach();
@@ -748,15 +753,19 @@ export class SessionHost {
     this._restoreScheduled = true;
     // A frame after the first attach the container has laid out, so the fit
     // yields the real row count the fill and the pty spawn depend on.
-    let completed = false;
-    const complete = () => {
-      if (completed) return;
-      completed = true;
+    // Whichever comes first replays; the other is cancelled, and so are both
+    // when the session closes before either fires.
+    const settle = () => {
       clearTimeout(fallback);
+      cancelAnimationFrame(frame);
+    };
+    const complete = () => {
+      settle();
       this.completeRestore();
     };
     const fallback = setTimeout(complete, RESTORE_FRAME_FALLBACK_MS);
-    requestAnimationFrame(complete);
+    const frame = requestAnimationFrame(complete);
+    this.disposables.push({ dispose: settle });
   }
 
   /**
@@ -791,6 +800,8 @@ export class SessionHost {
     );
     const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
+      // xterm may call back after the session closed.
+      if (this.isEnding) return;
       this.model.updateCommands(
         snapshot.commands
           .filter((command) => command.id !== idlePromptId)
@@ -817,6 +828,7 @@ export class SessionHost {
    * it neither shows as characters nor gets re-captured.
    */
   private renderRestoreBoundary(terminal: Terminal): void {
+    if (this.isEnding) return;
     const marker = terminal.registerMarker(0);
     if (!marker) {
       return;
@@ -850,7 +862,7 @@ export class SessionHost {
 
   /** Register the pty handler that `start()` held back for a restored session. */
   private startDeferredPty(): void {
-    if (!this.ptyHandler || this.runtime.status === "closing" || this.runtime.status === "closed") {
+    if (!this.ptyHandler || this.isEnding) {
       return;
     }
     this.disposables.push(this.renderer.register(this.ptyHandler));

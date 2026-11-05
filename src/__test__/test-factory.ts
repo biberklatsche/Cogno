@@ -15,7 +15,6 @@ import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/t
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
-import { Process } from "@cogno/platform/process";
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 import { TerminalId } from "@cogno/shared/domain";
@@ -139,13 +138,11 @@ export function getDestroyRef(): DestroyRef {
 export function getWindowService(
   appWindow: AppWindow = {} as AppWindow,
   windowCore: WindowCore = {} as WindowCore,
-  osProcess: Process = {} as Process,
 ): WindowService {
   if (!windowService) {
     windowService = new WindowService(
       appWindow,
       windowCore,
-      osProcess,
       getAppBus(),
       getTerminalBusyStateService(),
       {

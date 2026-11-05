@@ -53,7 +53,11 @@ export class Updater {
     return invoke("updater_check", options);
   }
 
-  /** Installs the update - downloading it first when needed - and restarts the app. */
+  /**
+   * Installs the update - downloading it first when needed - and restarts the
+   * app, once every window agreed and saved like for a quit. A user's no
+   * resolves too: the update stays ready.
+   */
   install(): Promise<void> {
     return invoke("updater_install");
   }
