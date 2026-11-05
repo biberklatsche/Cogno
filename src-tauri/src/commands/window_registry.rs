@@ -10,7 +10,9 @@ use super::pty::PtyState;
 /// window when no terminal is given or known), falling back to a broadcast
 /// when no target window is known yet. A terminal's window is known by its
 /// PTY alone, which carries the window that spawned it (ARCHITECTURE.md 2.6).
-/// This is the only window-routing code that touches Tauri.
+/// Everything that resolves a target window goes through here; code that
+/// already holds its window's label (a session's exit, a quit request) emits
+/// to it directly.
 pub fn route<P: Serialize + Clone>(
     app: &AppHandle,
     event: &str,
@@ -31,12 +33,12 @@ pub fn route<P: Serialize + Clone>(
 }
 
 /// Maps workspaces to the window that holds them, and remembers which window
-/// was focused last. Which window a terminal belongs to is its PTY's to say. Backend events are then routed to a single
-/// window instead of broadcast to all of them (ARCHITECTURE.md 2.6).
+/// was focused last. Which window a terminal belongs to is its PTY's to say.
+/// With both, backend events are routed to a single window instead of
+/// broadcast to all of them (ARCHITECTURE.md 2.6).
 ///
-/// Plain state on purpose: it holds only ids and labels, so the routing logic
-/// is unit-tested without a running Tauri app. Only the thin `route` helper in
-/// the app layer touches `AppHandle`/`emit_to`.
+/// Plain state on purpose: it holds only ids and labels, so it is unit-tested
+/// without a running Tauri app.
 #[derive(Default)]
 pub struct WindowRegistry {
     inner: Mutex<Inner>,

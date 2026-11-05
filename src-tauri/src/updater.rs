@@ -4,6 +4,7 @@
 //! that follow each other closely are answered from the last result. A new
 //! version is announced once per app, to the focused window.
 
+use crate::commands::window::QuitState;
 use crate::commands::window_registry::route;
 use crate::db::Db;
 use serde::Serialize;
@@ -264,10 +265,18 @@ async fn run_check(app: &AppHandle, updater: &Updater, download: bool) {
 }
 
 /// Installs the update, downloading it first when needed, and restarts the app.
-/// On Windows the installer ends the process itself. A download already
-/// running - from a check - is waited for, not doubled.
+/// A download already running - from a check - is waited for, not doubled.
+///
+/// The restart is a quit like any other (ARCHITECTURE.md 2.6): every window
+/// agrees and saves first, and a user's no leaves the update ready and Cogno
+/// running. That comes before the install, not before the restart: on Windows
+/// the installer ends the process itself.
 #[tauri::command]
-pub async fn updater_install(app: AppHandle, updater: State<'_, Updater>) -> Result<(), String> {
+pub async fn updater_install(
+    app: AppHandle,
+    updater: State<'_, Updater>,
+    quit: State<'_, QuitState>,
+) -> Result<(), String> {
     if !updater.snapshot().installable {
         return Err("This installation cannot update itself.".into());
     }
@@ -275,6 +284,12 @@ pub async fn updater_install(app: AppHandle, updater: State<'_, Updater>) -> Res
     if updater.inner.lock().unwrap().bytes.is_none() {
         fetch_update(&app, &updater).await;
     }
+    if updater.inner.lock().unwrap().bytes.is_none() {
+        return Err(nothing_to_install(&app, &updater));
+    }
+    let Some(quit) = quit.prepare(&app).await else {
+        return Ok(());
+    };
     // The bytes move out: an installer is used once, and a failed install
     // downloads again next time instead of retrying stale bytes.
     let downloaded = {
@@ -285,11 +300,7 @@ pub async fn updater_install(app: AppHandle, updater: State<'_, Updater>) -> Res
         }
     };
     let Some((update, bytes)) = downloaded else {
-        let error = "No downloaded update to install.";
-        if updater.snapshot().phase != UpdaterPhase::Failed {
-            updater.fail(&app, error);
-        }
-        return Err(error.into());
+        return Err(nothing_to_install(&app, &updater));
     };
     let installed = tauri::async_runtime::spawn_blocking(move || update.install(bytes)).await;
     let error = match installed {
@@ -301,8 +312,17 @@ pub async fn updater_install(app: AppHandle, updater: State<'_, Updater>) -> Res
         updater.fail(&app, &error);
         return Err(error);
     }
+    quit.commit();
     app.request_restart();
     Ok(())
+}
+
+fn nothing_to_install(app: &AppHandle, updater: &Updater) -> String {
+    let error = "No downloaded update to install.";
+    if updater.snapshot().phase != UpdaterPhase::Failed {
+        updater.fail(app, error);
+    }
+    error.into()
 }
 
 async fn fetch_update(app: &AppHandle, updater: &Updater) {

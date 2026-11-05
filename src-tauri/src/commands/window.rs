@@ -12,7 +12,8 @@ const QUIT_REQUEST_EVENT: &str = "cogno-prepare-quit";
 /// How long a window may take to say it got a request. One that stays silent
 /// is loading or hung and is not waited for: quitting wins.
 const QUIT_RECEIVED_TIMEOUT: Duration = Duration::from_secs(5);
-/// Persistence has a 3 s frontend budget; a window past this is not waited for.
+/// Persistence has a 3 s frontend budget; a window that has not answered this
+/// long after it was asked is not waited for.
 const QUIT_PERSIST_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// What a window sends back for a quit request: that it got it, then its answer.
@@ -38,10 +39,17 @@ pub struct QuitState {
     pending: Mutex<HashMap<String, PendingQuit>>,
 }
 
-/// Ends the quit when dropped, unless it was committed.
-struct QuitAttempt<'a> {
+/// A quit every window agreed to and saved for. Dropping it calls the quit
+/// off; `commit` right before the process ends keeps window creation refused.
+pub struct QuitAttempt<'a> {
     state: &'a QuitState,
     committed: bool,
+}
+
+impl QuitAttempt<'_> {
+    pub fn commit(mut self) {
+        self.committed = true;
+    }
 }
 
 impl Drop for QuitAttempt<'_> {
@@ -57,13 +65,21 @@ struct AskedWindow<'a> {
     state: &'a QuitState,
     request_id: String,
     messages: UnboundedReceiver<QuitMessage>,
+    /// Both timeouts count from here, so windows asked together are waited
+    /// for together, not one timeout after the other.
+    asked_at: tokio::time::Instant,
 }
 
 impl AskedWindow<'_> {
     /// The window's answer. Without `answer_timeout` the answer is waited for
     /// as long as the window lives: its dialog is open, the user decides.
     async fn answer(mut self, answer_timeout: Option<Duration>) -> bool {
-        await_quit_reply(&mut self.messages, QUIT_RECEIVED_TIMEOUT, answer_timeout).await
+        await_quit_reply(
+            &mut self.messages,
+            self.asked_at + QUIT_RECEIVED_TIMEOUT,
+            answer_timeout.map(|timeout| self.asked_at + timeout),
+        )
+        .await
     }
 }
 
@@ -74,6 +90,8 @@ impl Drop for AskedWindow<'_> {
 }
 
 impl QuitState {
+    // Unlike the other states, a poisoned lock is taken over here: a panic
+    // elsewhere must not keep Cogno from quitting.
     fn quitting_lock(&self) -> MutexGuard<'_, bool> {
         self.quitting
             .lock()
@@ -92,6 +110,33 @@ impl QuitState {
             return Err("Cogno is quitting.".to_string());
         }
         Ok(())
+    }
+
+    /// The one way Cogno ends on purpose, whatever follows it - an exit or a
+    /// restart into an update. One window after the other confirms (each may
+    /// ask the user), then all save at once, whatever a window failed to do
+    /// on the way. `None` when a user said no, or when a quit already runs.
+    /// Rust alone enumerates windows.
+    pub async fn prepare(&self, app: &tauri::AppHandle) -> Option<QuitAttempt<'_>> {
+        let attempt = self.begin_quit()?;
+        let windows: Vec<String> = app.webview_windows().into_keys().collect();
+
+        for window in &windows {
+            if let Some(asked) = self.ask(app, window, "confirm") {
+                if !asked.answer(None).await {
+                    return None;
+                }
+            }
+        }
+
+        let saving: Vec<_> = windows
+            .iter()
+            .filter_map(|window| self.ask(app, window, "persist"))
+            .collect();
+        for asked in saving {
+            asked.answer(Some(QUIT_PERSIST_TIMEOUT)).await;
+        }
+        Some(attempt)
     }
 
     /// `None` when a quit already runs: its dialogs are open, a second press
@@ -130,6 +175,7 @@ impl QuitState {
             state: self,
             request_id: request_id.clone(),
             messages,
+            asked_at: tokio::time::Instant::now(),
         };
         // To this window only: `emit` reaches every window.
         if let Err(error) = app.emit_to(
@@ -160,13 +206,13 @@ impl QuitState {
 
 /// Waits for a window to confirm receipt, then for its answer; an answer
 /// without a receipt counts as both. A window that stays silent past
-/// `received_timeout` or `answer_timeout`, or closes meanwhile, has said yes.
+/// `received_by` or `answer_by`, or closes meanwhile, has said yes.
 async fn await_quit_reply(
     messages: &mut UnboundedReceiver<QuitMessage>,
-    received_timeout: Duration,
-    answer_timeout: Option<Duration>,
+    received_by: tokio::time::Instant,
+    answer_by: Option<tokio::time::Instant>,
 ) -> bool {
-    let mut deadline = Some(tokio::time::Instant::now() + received_timeout);
+    let mut deadline = Some(received_by);
     loop {
         let message = match deadline {
             Some(at) => match tokio::time::timeout_at(at, messages.recv()).await {
@@ -178,7 +224,7 @@ async fn await_quit_reply(
         match message {
             Some(QuitMessage::Answer(accepted)) => return accepted,
             Some(QuitMessage::Received) => {
-                deadline = answer_timeout.map(|timeout| tokio::time::Instant::now() + timeout);
+                deadline = answer_by;
             }
             None => return true,
         }
@@ -192,38 +238,18 @@ struct QuitRequest {
     phase: &'static str,
 }
 
-/// Rust alone enumerates windows. One window after the other confirms (each
-/// may ask the user), then all save at once, then the process ends - whatever
-/// a window failed to do on the way. False only when a user said no. The
-/// `Result` is Tauri's: an async command with `State` must return one; it
+/// Quits once every window agreed and saved. False only when a user said no.
+/// The `Result` is Tauri's: an async command with `State` must return one; it
 /// never errs.
 #[tauri::command]
 pub async fn window_prepare_quit(
     app: tauri::AppHandle,
     state: State<'_, QuitState>,
 ) -> Result<bool, String> {
-    let Some(mut attempt) = state.begin_quit() else {
+    let Some(quit) = state.prepare(&app).await else {
         return Ok(false);
     };
-    let windows: Vec<String> = app.webview_windows().into_keys().collect();
-
-    for window in &windows {
-        if let Some(asked) = state.ask(&app, window, "confirm") {
-            if !asked.answer(None).await {
-                return Ok(false);
-            }
-        }
-    }
-
-    let saving: Vec<_> = windows
-        .iter()
-        .filter_map(|window| state.ask(&app, window, "persist"))
-        .collect();
-    for asked in saving {
-        asked.answer(Some(QUIT_PERSIST_TIMEOUT)).await;
-    }
-
-    attempt.committed = true;
+    quit.commit();
     app.exit(0);
     Ok(true)
 }
@@ -321,6 +347,10 @@ mod tests {
     const SHORT: Duration = Duration::from_millis(20);
     const LONG: Duration = Duration::from_secs(1);
 
+    fn within(timeout: Duration) -> tokio::time::Instant {
+        tokio::time::Instant::now() + timeout
+    }
+
     /// A pending request as `ask` leaves it, without a Tauri app.
     fn pending<'a>(state: &'a QuitState, window: &str, request_id: &str) -> AskedWindow<'a> {
         let (sender, messages) = unbounded_channel();
@@ -335,6 +365,7 @@ mod tests {
             state,
             request_id: request_id.to_string(),
             messages,
+            asked_at: tokio::time::Instant::now(),
         }
     }
 
@@ -385,10 +416,9 @@ mod tests {
     fn window_creation_is_refused_during_quit_and_after_commit() {
         let state = QuitState::default();
         assert!(state.refuse_while_quitting().is_ok());
-        let mut attempt = state.begin_quit().unwrap();
+        let attempt = state.begin_quit().unwrap();
         assert!(state.refuse_while_quitting().is_err());
-        attempt.committed = true;
-        drop(attempt);
+        attempt.commit();
         assert!(state.refuse_while_quitting().is_err());
     }
 
@@ -396,7 +426,7 @@ mod tests {
     fn a_window_that_never_confirms_receipt_counts_as_yes_quickly() {
         runtime().block_on(async {
             let (_sender, mut messages) = unbounded_channel();
-            assert!(await_quit_reply(&mut messages, SHORT, None).await);
+            assert!(await_quit_reply(&mut messages, within(SHORT), None).await);
         });
     }
 
@@ -405,19 +435,20 @@ mod tests {
         runtime().block_on(async {
             let (sender, mut messages) = unbounded_channel();
             sender.send(QuitMessage::Received).unwrap();
-            let waiting = tokio::time::timeout(SHORT, await_quit_reply(&mut messages, LONG, None));
+            let waiting =
+                tokio::time::timeout(SHORT, await_quit_reply(&mut messages, within(LONG), None));
             assert!(
                 waiting.await.is_err(),
                 "no deadline while the dialog is open"
             );
 
             sender.send(QuitMessage::Answer(false)).unwrap();
-            assert!(!await_quit_reply(&mut messages, LONG, None).await);
+            assert!(!await_quit_reply(&mut messages, within(LONG), None).await);
 
             let (sender, mut messages) = unbounded_channel();
             sender.send(QuitMessage::Received).unwrap();
             drop(sender);
-            assert!(await_quit_reply(&mut messages, LONG, None).await);
+            assert!(await_quit_reply(&mut messages, within(LONG), None).await);
         });
     }
 
@@ -426,7 +457,25 @@ mod tests {
         runtime().block_on(async {
             let (sender, mut messages) = unbounded_channel();
             sender.send(QuitMessage::Received).unwrap();
-            assert!(await_quit_reply(&mut messages, LONG, Some(SHORT)).await);
+            assert!(await_quit_reply(&mut messages, within(LONG), Some(within(SHORT))).await);
+        });
+    }
+
+    #[test]
+    fn windows_asked_together_are_waited_for_together() {
+        runtime().block_on(async {
+            let state = QuitState::default();
+            let first = pending(&state, "win-a", "r1");
+            let second = pending(&state, "win-b", "r2");
+            state.deliver("win-a", "r1", QuitMessage::Received);
+            state.deliver("win-b", "r2", QuitMessage::Received);
+            let started = tokio::time::Instant::now();
+            assert!(first.answer(Some(LONG)).await);
+            assert!(second.answer(Some(LONG)).await);
+            assert!(
+                started.elapsed() < LONG + LONG / 2,
+                "the second window's timeout started only after the first one's"
+            );
         });
     }
 
@@ -435,7 +484,7 @@ mod tests {
         runtime().block_on(async {
             let (sender, mut messages) = unbounded_channel();
             sender.send(QuitMessage::Answer(false)).unwrap();
-            assert!(!await_quit_reply(&mut messages, LONG, None).await);
+            assert!(!await_quit_reply(&mut messages, within(LONG), None).await);
         });
     }
 }

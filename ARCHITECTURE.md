@@ -861,13 +861,19 @@ Entscheidungen:
    nie doppelt. Die Ankündigung einer neuen Version ist eine globale Aktion
    ohne Ziel: einmal je App und Version, an das fokussierte Fenster.
    **Beenden koordiniert Rust über alle Fenster, und Beenden gewinnt**
-   (`window.rs`, `window_prepare_quit`): erst fragt ein Fenster nach dem
+   (`window.rs`, `QuitState::prepare`): erst fragt ein Fenster nach dem
    anderen nach (Busy-Guard, das Fenster kommt dafür nach vorn), dann
-   speichern alle gleichzeitig ihre Sessions, dann endet der Prozess. Nur
+   speichern alle gleichzeitig ihre Sessions, dann endet der Prozess. Das
+   ist der eine Weg, auf dem Cogno sich selbst beendet: die Aktion `quit`
+   (`window_prepare_quit`) und der Neustart in ein Update
+   (`updater_install`) gehen beide hindurch und unterscheiden sich nur im
+   Ende — Exit oder Restart. Beim Update steht er vor der Installation,
+   weil der Installer unter Windows den Prozess selbst beendet. Nur
    ein Nein des Nutzers hält Cogno offen. Ein Fenster, das den Empfang nicht
    binnen Sekunden bestätigt, das beim Speichern über die Zeit geht, das
    geschlossen wird oder dessen Schritt fehlschlägt, zählt als Ja — ein
-   technischer Fehler lässt die App nie hängen. Auf eine offene Nachfrage
+   technischer Fehler lässt die App nie hängen. Die Fristen zählen ab der
+   Anfrage, gemeinsam gefragte Fenster werden also gemeinsam abgewartet. Auf eine offene Nachfrage
    wird dagegen so lange gewartet, wie das Fenster lebt: der Nutzer
    entscheidet. Jede Anfrage geht per `emit_to` an genau ein Fenster, das
    sie auf sich selbst hört (nicht global — ein globaler Listener bekäme
@@ -889,14 +895,18 @@ Entscheidungen:
    ist es nicht (Abschnitt 8).
 4. **Ein Workspace ist in höchstens einem Fenster offen.** Öffnet man ihn
    aus einem anderen, fokussiert Rust das Fenster, das ihn hält
-   (`workspaceId → windowId` in der `WindowRegistry`). Das Schließen
-   eines Fensters schließt seine Sessions explizit (mit Busy-Guard)
-   und gibt seine Workspaces frei. Verschwindet ein Fenster, ohne das zu
-   tun (Absturz, hartes Schließen), gibt Rust beim `Destroyed` seine PTYs
-   frei — auf einem eigenen Thread, damit die anderen Fenster nicht warten,
-   und beim Exit abgewartet, damit keine Shell die App überlebt; ein Spawn,
-   der noch lief, als das Fenster ging, wird verworfen, statt eine
-   wiedergeöffnete Session gleicher `terminalId` zu ersetzen.
+   (`workspaceId → windowId` in der `WindowRegistry`). Ein Fenster zu
+   schließen hat zwei Hälften. Die Workbench entscheidet und sichert: sie
+   fragt nach (Busy-Guard), speichert die Sessions und schließt dann das
+   Fenster — ihre Sessions beendet sie dabei nicht selbst. Rust räumt auf,
+   und zwar an genau einer Stelle, dem `Destroyed` des Fensters: es gibt
+   dessen PTYs und Workspaces frei, gleich ob das Fenster ordentlich
+   geschlossen wurde oder verschwunden ist (Absturz, hartes Schließen).
+   Die PTYs gibt es auf einem eigenen Thread frei, damit die anderen
+   Fenster nicht warten, und wartet ihn beim Exit ab, damit keine Shell
+   die App überlebt; ein Spawn, der noch lief, als das Fenster ging, wird
+   verworfen, statt eine wiedergeöffnete Session gleicher `terminalId` zu
+   ersetzen.
 5. **Feature-Host und Status sind pro Fenster.** `mode` ist global (Config),
    der Runtime-Status nicht — ein Feature kann in einem Fenster `failed`
    sein und im anderen laufen. Deklarationen laufen pro Fenster idempotent;
