@@ -1,6 +1,8 @@
 import { Injectable, isDevMode } from "@angular/core";
-import { Fs, Paths } from "@cogno/platform";
-import { HookScriptPaths } from "./hook-command";
+import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import { OsPlatform, Paths } from "@cogno/platform";
+import { ConfigFileService } from "./config-file.service";
+import { HookScriptPaths, HookShell } from "./hook-command";
 import { bashHookScript, powershellHookScript } from "./hook-scripts";
 
 /** The feature's folder in the Cogno home, and the endpoint file Cogno's HTTP server writes there. */
@@ -20,8 +22,10 @@ export class HookScriptPathsService {
   private scripts?: Promise<HookScriptPaths>;
 
   constructor(
-    private readonly fs: Fs,
+    private readonly files: ConfigFileService,
     private readonly paths: Paths,
+    private readonly config: ApplicationConfigurationPort,
+    private readonly os: OsPlatform,
   ) {}
 
   /** The scripts' paths, once they are written. A failed write is tried again on the next call. */
@@ -33,6 +37,22 @@ export class HookScriptPathsService {
     return this.scripts;
   }
 
+  /**
+   * The shell the hooks run with: PowerShell where the default profile is one
+   * (Windows PowerShell on Windows, pwsh elsewhere), else sh.
+   */
+  shell(): HookShell {
+    const shell = this.config.getConfiguration()?.["shell"] as
+      | { default?: string; profiles?: Record<string, { shell_type?: string }> }
+      | undefined;
+    const defaultName = shell?.default;
+    const configured = defaultName ? shell?.profiles?.[defaultName]?.shell_type : undefined;
+    const windows = this.os.platform() === "windows";
+    const powershell = configured ? configured === "PowerShell" : windows;
+    if (!powershell) return "sh";
+    return windows ? "powershell" : "pwsh";
+  }
+
   /** The endpoint file the scripts fall back to; an adapter with its own transport (a plugin) reads it the same way. */
   async endpointPath(): Promise<string> {
     return this.paths.join(await this.paths.cognoHomeDir(isDevMode()), ENDPOINT_FILE);
@@ -41,19 +61,14 @@ export class HookScriptPathsService {
   private async write(): Promise<HookScriptPaths> {
     const home = await this.paths.cognoHomeDir(isDevMode());
     const dir = await this.paths.join(home, SCRIPTS_DIR);
-    const endpoint = await this.endpointPath();
+    const endpoint = await this.paths.join(home, ENDPOINT_FILE);
     const scripts = {
       bash: await this.paths.join(dir, BASH_SCRIPT),
       powershell: await this.paths.join(dir, POWERSHELL_SCRIPT),
     };
-    if (!(await this.fs.exists(dir))) await this.fs.mkdir(dir, { recursive: true });
-    await this.writeIfChanged(scripts.bash, bashHookScript(endpoint));
-    await this.writeIfChanged(scripts.powershell, powershellHookScript(endpoint));
+    await this.files.ensureDir(dir);
+    await this.files.writeText(scripts.bash, bashHookScript(endpoint));
+    await this.files.writeText(scripts.powershell, powershellHookScript(endpoint));
     return scripts;
-  }
-
-  private async writeIfChanged(path: string, content: string): Promise<void> {
-    if ((await this.fs.exists(path)) && (await this.fs.readTextFile(path)) === content) return;
-    await this.fs.writeTextFile(path, content);
   }
 }

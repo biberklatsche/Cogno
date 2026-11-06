@@ -1,5 +1,5 @@
 import type { HookState } from "../../ports";
-import { hookStateOf } from "./hook-command";
+import { cognoHookState } from "./hook-command";
 
 /**
  * The hook groups of one event without Cogno's own entries. Claude Code, Gemini
@@ -50,11 +50,7 @@ export interface HookMapFormat<
   isCogno(hook: TGroup["hooks"][number]): boolean;
 }
 
-/**
- * Current when every event has this version's hook and no other Cogno hook is
- * left anywhere (an older version's, or another instance's, would run twice);
- * outdated when Cogno hooks are there but not exactly these.
- */
+/** The state of Cogno's hooks in a map of hook groups per event (see `cognoHookState`). */
 export function hookMapState<
   TEntry extends { eventName: string },
   TGroup extends { hooks: unknown[] },
@@ -63,20 +59,12 @@ export function hookMapState<
   entries: ReadonlyArray<TEntry>,
   format: HookMapFormat<TEntry, TGroup>,
 ): HookState {
-  const hooks = hooksByEvent ?? {};
-  const cognoHooks = Object.entries(hooks).flatMap(([eventName, groups]) =>
+  const cognoHooks = Object.entries(hooksByEvent ?? {}).flatMap(([eventName, groups]) =>
     groups.flatMap((group) =>
       group.hooks.filter((hook) => format.isCogno(hook)).map((hook) => ({ eventName, hook })),
     ),
   );
-  const isCurrent =
-    cognoHooks.length === entries.length &&
-    entries.every((entry) =>
-      cognoHooks.some(
-        ({ eventName, hook }) => eventName === entry.eventName && format.isCurrent(hook, entry),
-      ),
-    );
-  return hookStateOf(isCurrent, cognoHooks.length > 0);
+  return cognoHookState(cognoHooks, entries, format.isCurrent);
 }
 
 /** The hook map with Cogno's hooks replaced by this version's, one group per event. */

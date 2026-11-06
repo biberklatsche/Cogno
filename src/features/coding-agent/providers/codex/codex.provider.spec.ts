@@ -40,6 +40,7 @@ function inMemoryConfigFiles(initial: Record<string, string> = {}) {
 }
 
 const scripts = {
+  shell: () => "sh",
   get: async () => ({
     bash: "/cogno/hooks/cogno-agent-hook.sh",
     powershell: "C:cognohookscogno-agent-hook.ps1",

@@ -65,7 +65,6 @@ function codexProcess(
 ): TerminalProcess {
   return {
     terminalId,
-    processId: 1,
     name: "codex.exe",
     cwd: "/repo",
     startedAt: Math.floor(Date.now() / 1000),

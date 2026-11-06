@@ -16,7 +16,10 @@ export type UnboundSession = {
 export type BindingResult =
   /** Exactly one terminal runs the agent in the session's folder. */
   | { readonly kind: "bound"; readonly terminalId: string }
-  /** Several do, and their start times do not settle it: shown without a terminal. */
+  /**
+   * Several do and their start times do not settle it, or the ones that do
+   * already hold a session: shown without a terminal.
+   */
   | { readonly kind: "ambiguous" }
   /** None does: the session runs outside Cogno's terminals. */
   | { readonly kind: "none" };
@@ -32,11 +35,11 @@ export function bindSession(
   processNames: ReadonlyArray<string>,
   takenTerminals: ReadonlySet<string>,
 ): BindingResult {
-  const candidates = candidateProcesses(processes, session, processNames).filter(
-    (process) => !takenTerminals.has(process.terminalId),
-  );
+  const running = candidateProcesses(processes, session, processNames);
+  if (running.length === 0) return { kind: "none" };
+  const candidates = running.filter((process) => !takenTerminals.has(process.terminalId));
   const [only] = candidates;
-  if (!only) return { kind: "none" };
+  if (!only) return { kind: "ambiguous" };
   if (candidates.every((process) => process.terminalId === only.terminalId)) {
     return { kind: "bound", terminalId: only.terminalId };
   }
@@ -58,15 +61,6 @@ export function bindSession(
     return { kind: "bound", terminalId: first.process.terminalId };
   }
   return { kind: "ambiguous" };
-}
-
-/** Whether any terminal still runs the agent in the session's folder. */
-export function isSessionRunning(
-  processes: ReadonlyArray<TerminalProcess>,
-  session: UnboundSession,
-  processNames: ReadonlyArray<string>,
-): boolean {
-  return candidateProcesses(processes, session, processNames).length > 0;
 }
 
 function candidateProcesses(

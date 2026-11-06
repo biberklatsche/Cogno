@@ -1,5 +1,5 @@
-use crate::endpoint;
 use crate::commands::window_registry::route;
+use crate::endpoint;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::net::TcpListener;
@@ -202,9 +202,7 @@ fn is_message_authorized(
     external_token: &str,
     port: u16,
 ) -> bool {
-    let presented = presented_token(headers);
-    (presented == Some(token) || presented == Some(external_token))
-        && host_is_loopback(headers, port)
+    is_authorized(headers, token, port) || is_authorized(headers, external_token, port)
 }
 
 fn presented_token(headers: &axum::http::HeaderMap) -> Option<&str> {

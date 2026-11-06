@@ -10,8 +10,8 @@ import { claudeStyleSession } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
   HookShell,
+  hasCognoCommand,
   hookCommand,
-  isCognoHookCommand,
   isCurrentHookCommand,
 } from "../_shared/hook-command";
 import {
@@ -21,7 +21,7 @@ import {
   withoutCognoHooksOnEveryEvent,
 } from "../_shared/hook-groups";
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
-import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import { GEMINI_CONFIG, GeminiHookEntry, GeminiHookGroup, GeminiSettings } from "./gemini.config";
 import { interpretGeminiHook } from "./gemini-hook.interpreter";
 
@@ -37,8 +37,8 @@ export class GeminiProvider implements ICodingAgentProvider {
     private readonly scripts: HookScriptPathsService,
     ipc: TerminalIpcPort,
   ) {
-    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
-      statusOf: statusTable(GEMINI_CONFIG.hookEvents),
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: GEMINI_CONFIG.hookEvents,
       interpret: interpretGeminiHook,
       // Gemini CLI names `session_id` and `cwd` like the Claude protocol.
       sessionOf: claudeStyleSession,
@@ -54,7 +54,8 @@ export class GeminiProvider implements ICodingAgentProvider {
     return hookMapState(settings.hooks, GEMINI_CONFIG.hookEvents, await this.hookFormat());
   }
 
-  async installHook(shell: HookShell): Promise<void> {
+  async installHook(): Promise<void> {
+    const shell = this.scripts.shell();
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
@@ -70,9 +71,7 @@ export class GeminiProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<GeminiSettings>(configPath, {});
     if (!settings.hooks) return;
-    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, (hook) =>
-      isCognoHookCommand(hook.command),
-    );
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, hasCognoCommand);
     await this.configFile.writeJson(configPath, settings);
   }
 
@@ -88,7 +87,7 @@ export class GeminiProvider implements ICodingAgentProvider {
       }),
       isCurrent: (hook, entry) =>
         isCurrentHookCommand(hook.command, scripts, this.id, entry.eventName),
-      isCogno: (hook) => isCognoHookCommand(hook.command),
+      isCogno: hasCognoCommand,
     };
   }
 

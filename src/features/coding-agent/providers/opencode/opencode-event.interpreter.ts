@@ -8,16 +8,13 @@ import {
   stringField,
 } from "../_shared/hook-payload";
 import { HookSession } from "../_shared/hook-transport";
-import { OPENCODE_PROMPT_EVENT, OPENCODE_TOOL_EVENT } from "./opencode.config";
+import { OPENCODE_EVENT } from "./opencode.config";
 
-const SESSION_CREATED = "session.created";
-const EXECUTION_FAILED = "session.execution.failed";
-const PERMISSION_ASKED = "permission.asked";
 /** A subagent's session is over when its run ends, however it ends. */
-const EXECUTION_ENDED = new Set([
-  "session.execution.succeeded",
-  "session.execution.failed",
-  "session.execution.interrupted",
+const EXECUTION_ENDED = new Set<string>([
+  OPENCODE_EVENT.succeeded,
+  OPENCODE_EVENT.failed,
+  OPENCODE_EVENT.interrupted,
 ]);
 
 /**
@@ -45,7 +42,7 @@ export function interpretOpenCodeEvent(
   const fields = payloadFields(payload);
   const childId = stringField(fields, "parent_id") ? stringField(fields, "session_id") : undefined;
   if (childId) {
-    if (hookEvent === SESSION_CREATED)
+    if (hookEvent === OPENCODE_EVENT.created)
       return { kind: "subagent", change: "start", agentId: childId };
     if (EXECUTION_ENDED.has(hookEvent))
       return { kind: "subagent", change: "stop", agentId: childId };
@@ -54,29 +51,29 @@ export function interpretOpenCodeEvent(
   return {
     kind: "status",
     status,
-    sessionBoundary: hookEvent === SESSION_CREATED,
+    sessionBoundary: hookEvent === OPENCODE_EVENT.created,
     details: readDetails(hookEvent, fields),
   };
 }
 
 function readDetails(hookEvent: string, fields: PayloadFields | undefined): HookDetails {
-  const details: { -readonly [K in keyof HookDetails]: HookDetails[K] } = {};
-  const task = hookEvent === OPENCODE_PROMPT_EVENT ? firstLine(fields?.["prompt"]) : undefined;
-  if (task) details.task = task;
+  const task = hookEvent === OPENCODE_EVENT.prompt ? firstLine(fields?.["prompt"]) : undefined;
   const activity = readActivity(hookEvent, fields);
-  if (activity) details.activity = activity;
   const model = readModel(fields?.["model"]);
-  if (model) details.model = model;
-  return details;
+  return {
+    ...(task ? { task } : {}),
+    ...(activity ? { activity } : {}),
+    ...(model ? { model } : {}),
+  };
 }
 
 function readActivity(hookEvent: string, fields: PayloadFields | undefined): string | undefined {
-  if (hookEvent === OPENCODE_TOOL_EVENT) return describeToolCall(fields);
-  if (hookEvent === PERMISSION_ASKED) {
+  if (hookEvent === OPENCODE_EVENT.tool) return describeToolCall(fields);
+  if (hookEvent === OPENCODE_EVENT.permissionAsked) {
     const what = firstLine(fields?.["message"]) ?? stringField(fields, "action");
     return what ? `Permission: ${what}` : "Permission requested";
   }
-  if (hookEvent === EXECUTION_FAILED) {
+  if (hookEvent === OPENCODE_EVENT.failed) {
     const error = fields?.["error"];
     const message =
       error && typeof error === "object"

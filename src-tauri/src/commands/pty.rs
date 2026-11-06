@@ -229,7 +229,9 @@ impl PtyState {
             .live
             .iter()
             .filter_map(|(terminal_id, session)| {
-                session.shell_process_id.map(|pid| (terminal_id.clone(), pid))
+                session
+                    .shell_process_id
+                    .map(|pid| (terminal_id.clone(), pid))
             })
             .collect()
     }

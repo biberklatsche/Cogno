@@ -1,6 +1,6 @@
 import type { TerminalProcess } from "@cogno/core/api/terminal-processes-port";
 import { describe, expect, it } from "vitest";
-import { bindSession, isSessionRunning, normalizePath } from "./agent-session-binder";
+import { bindSession, normalizePath } from "./agent-session-binder";
 
 const NOW = 1_700_000_000_000;
 const names = ["codex", "codex.exe"];
@@ -8,7 +8,6 @@ const names = ["codex", "codex.exe"];
 function process(overrides: Partial<TerminalProcess>): TerminalProcess {
   return {
     terminalId: "t-1",
-    processId: 1,
     name: "codex.exe",
     cwd: "C:\\work\\app",
     startedAt: NOW / 1000,
@@ -40,8 +39,13 @@ describe("bindSession", () => {
     });
   });
 
-  it("skips terminals that already hold a session", () => {
-    expect(bindSession([process({})], session, names, new Set(["t-1"]))).toEqual({ kind: "none" });
+  it("skips terminals that already hold a session, and stays ambiguous when only those run it", () => {
+    expect(
+      bindSession([process({}), process({ terminalId: "t-2" })], session, names, new Set(["t-1"])),
+    ).toEqual({ kind: "bound", terminalId: "t-2" });
+    expect(bindSession([process({})], session, names, new Set(["t-1"]))).toEqual({
+      kind: "ambiguous",
+    });
   });
 
   it("tells two terminals in the same folder apart by the start time", () => {
@@ -80,20 +84,13 @@ describe("bindSession", () => {
 
   it("ignores a second candidate process in the same terminal", () => {
     const processes = [
-      process({ terminalId: "t-1", processId: 1 }),
-      process({ terminalId: "t-1", processId: 2, startedAt: (NOW - 1_000) / 1000 }),
+      process({ terminalId: "t-1" }),
+      process({ terminalId: "t-1", startedAt: (NOW - 1_000) / 1000 }),
     ];
     expect(bindSession(processes, session, names, new Set())).toEqual({
       kind: "bound",
       terminalId: "t-1",
     });
-  });
-});
-
-describe("isSessionRunning", () => {
-  it("is true while any terminal runs the agent in the folder", () => {
-    expect(isSessionRunning([process({})], session, names)).toBe(true);
-    expect(isSessionRunning([process({ name: "bash" })], session, names)).toBe(false);
   });
 });
 

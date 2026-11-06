@@ -248,7 +248,7 @@ DNS-Rebinding auf 127.0.0.1 umbiegt.
 
 Prozesse außerhalb jedes Cogno-Terminals haben einen eigenen Schlüssel —
 etwa der Hintergrunddienst eines Coding-Agents (3.2). Für sie schreibt der
-Server beim Start eine Endpoint-Datei `~/.cogno/endpoint.json` (Port, PID
+Server beim Start eine Endpoint-Datei `~/.cogno/endpoint.json` (Port
 und ein **externes Token**, nur für den Nutzer lesbar) und löscht sie beim
 Beenden. Rust kennt dabei keinen Konsumenten: das externe Token öffnet
 ausschließlich `POST /action`, das eine Nachricht an die Webview reicht;

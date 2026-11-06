@@ -3,19 +3,31 @@ import { CODING_AGENT_HOOK_COMMAND } from "../_shared/hook-command";
 
 export type OpenCodeEventEntry = { readonly eventName: string; readonly status: AgentStatus };
 
-/** The plugin's own names for what it gets from OpenCode's hooks rather than its events. */
-export const OPENCODE_PROMPT_EVENT = "session.prompt";
-export const OPENCODE_TOOL_EVENT = "tool.execute.before";
+/**
+ * What the plugin reports. Most are events of `ctx.event.subscribe()`
+ * (`session.idle` is declared but never sent by OpenCode 2); `prompt` and
+ * `tool` are the plugin's own names for what it gets from OpenCode's hooks.
+ */
+export const OPENCODE_EVENT = {
+  created: "session.created",
+  started: "session.execution.started",
+  succeeded: "session.execution.succeeded",
+  interrupted: "session.execution.interrupted",
+  failed: "session.execution.failed",
+  permissionAsked: "permission.asked",
+  permissionReplied: "permission.replied",
+  prompt: "session.prompt",
+  tool: "tool.execute.before",
+} as const;
 
-/** Events of `ctx.event.subscribe()`; `session.idle` is declared but never sent by OpenCode 2. */
 const SUBSCRIBED_EVENTS: ReadonlyArray<OpenCodeEventEntry> = [
-  { eventName: "session.created", status: "ready" },
-  { eventName: "session.execution.started", status: "working" },
-  { eventName: "session.execution.succeeded", status: "ready" },
-  { eventName: "session.execution.interrupted", status: "ready" },
-  { eventName: "session.execution.failed", status: "error" },
-  { eventName: "permission.asked", status: "question" },
-  { eventName: "permission.replied", status: "working" },
+  { eventName: OPENCODE_EVENT.created, status: "ready" },
+  { eventName: OPENCODE_EVENT.started, status: "working" },
+  { eventName: OPENCODE_EVENT.succeeded, status: "ready" },
+  { eventName: OPENCODE_EVENT.interrupted, status: "ready" },
+  { eventName: OPENCODE_EVENT.failed, status: "error" },
+  { eventName: OPENCODE_EVENT.permissionAsked, status: "question" },
+  { eventName: OPENCODE_EVENT.permissionReplied, status: "working" },
 ];
 
 /**
@@ -36,8 +48,8 @@ export const OPENCODE_CONFIG = {
   processNames: ["opencode", "opencode.exe"],
   hookEvents: [
     ...SUBSCRIBED_EVENTS,
-    { eventName: OPENCODE_PROMPT_EVENT, status: "working" },
-    { eventName: OPENCODE_TOOL_EVENT, status: "working" },
+    { eventName: OPENCODE_EVENT.prompt, status: "working" },
+    { eventName: OPENCODE_EVENT.tool, status: "working" },
   ] as ReadonlyArray<OpenCodeEventEntry>,
 } as const;
 
@@ -129,7 +141,7 @@ export default {
           if (!data.sessionID) continue;
           const location = (data.location && data.location.directory) || (event.location && event.location.directory);
           const facts =
-            event.type === "session.created"
+            event.type === ${JSON.stringify(OPENCODE_EVENT.created)}
               ? remember(data.sessionID, data.parentID, location)
               : await factsOf(data.sessionID);
           post(event.type, { ...data, ...facts, directory: facts.directory || location });
@@ -140,13 +152,13 @@ export default {
     await ctx.session.hook("prompt", async (event) => {
       try {
         const facts = await factsOf(event.sessionID);
-        post(${JSON.stringify(OPENCODE_PROMPT_EVENT)}, { ...facts, prompt: promptText(event.prompt) });
+        post(${JSON.stringify(OPENCODE_EVENT.prompt)}, { ...facts, prompt: promptText(event.prompt) });
       } catch {}
     });
     await ctx.tool.hook("execute.before", async (event) => {
       try {
         const facts = await factsOf(event.sessionID);
-        post(${JSON.stringify(OPENCODE_TOOL_EVENT)}, { ...facts, tool_name: event.tool, tool_input: toolInput(event.input) });
+        post(${JSON.stringify(OPENCODE_EVENT.tool)}, { ...facts, tool_name: event.tool, tool_input: toolInput(event.input) });
       } catch {}
     });
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { hookCommand, hookStateOf, isCognoHookCommand, isCurrentHookCommand } from "./hook-command";
+import {
+  cognoHookState,
+  hookCommand,
+  isCognoHookCommand,
+  isCurrentHookCommand,
+} from "./hook-command";
 
 const scripts = {
   bash: "C:\\Users\\me\\.cogno\\hooks\\cogno-agent-hook.sh",
@@ -60,10 +65,42 @@ describe("isCognoHookCommand", () => {
   });
 });
 
-describe("hookStateOf", () => {
-  it("is outdated only when a Cogno hook of some version is there", () => {
-    expect(hookStateOf(true, true)).toBe("current");
-    expect(hookStateOf(false, true)).toBe("outdated");
-    expect(hookStateOf(false, false)).toBe("missing");
+describe("cognoHookState", () => {
+  const entries = [{ eventName: "Stop" }, { eventName: "UserPromptSubmit" }];
+  const isCurrent = (hook: string, entry: { eventName: string }) =>
+    hook === `new ${entry.eventName}`;
+
+  it("is current with exactly this version's hook on every event", () => {
+    expect(
+      cognoHookState(
+        [
+          { eventName: "Stop", hook: "new Stop" },
+          { eventName: "UserPromptSubmit", hook: "new UserPromptSubmit" },
+        ],
+        entries,
+        isCurrent,
+      ),
+    ).toBe("current");
+  });
+
+  it("is outdated when an event lacks its hook or another Cogno hook is left", () => {
+    expect(cognoHookState([{ eventName: "Stop", hook: "new Stop" }], entries, isCurrent)).toBe(
+      "outdated",
+    );
+    expect(
+      cognoHookState(
+        [
+          { eventName: "Stop", hook: "new Stop" },
+          { eventName: "UserPromptSubmit", hook: "new UserPromptSubmit" },
+          { eventName: "Stop", hook: "old Stop" },
+        ],
+        entries,
+        isCurrent,
+      ),
+    ).toBe("outdated");
+  });
+
+  it("is missing without any Cogno hook", () => {
+    expect(cognoHookState([], entries, isCurrent)).toBe("missing");
   });
 });

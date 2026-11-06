@@ -78,7 +78,7 @@ export interface ICodingAgentProvider {
   readonly events$: Observable<AgentSessionEvent>;
   isAgentInstalled(): Promise<boolean>;
   hookState(): Promise<HookState>;
-  /** @param shellType The Cogno shell profile type (e.g. "PowerShell", "Bash"). Determines which hook script to write. */
-  installHook(shellType?: string): Promise<void>;
+  /** Installs or updates Cogno's hook; how it reaches Cogno is the adapter's business. */
+  installHook(): Promise<void>;
   removeHook(): Promise<void>;
 }

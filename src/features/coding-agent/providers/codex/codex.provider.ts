@@ -20,9 +20,16 @@ import {
   withoutCognoHooksOnEveryEvent,
 } from "../_shared/hook-groups";
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
-import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import { CODEX_CONFIG, CodexHookEntry, CodexHookGroup, CodexHooksFile } from "./codex.config";
 import { featuresHooksEnabled, withFeaturesHooksEnabled } from "./codex-app-config";
+
+type CodexHook = CodexHookGroup["hooks"][number];
+
+/** Codex runs `commandWindows` on Windows and `command` elsewhere: either may be Cogno's. */
+function isCognoCodexHook(hook: CodexHook): boolean {
+  return isCognoHookCommand(hook.command) || isCognoHookCommand(hook.commandWindows);
+}
 
 /**
  * Codex runs its hooks in a shared background service since 0.157. The hook
@@ -48,8 +55,8 @@ export class CodexProvider implements ICodingAgentProvider {
     private readonly notifications: NotificationCenterPort,
     ipc: TerminalIpcPort,
   ) {
-    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
-      statusOf: statusTable(CODEX_CONFIG.hookEvents),
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: CODEX_CONFIG.hookEvents,
       interpret: interpretClaudeStyleHook,
       sessionOf: claudeStyleSession,
     });
@@ -88,10 +95,7 @@ export class CodexProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const file = await this.configFile.readJson<CodexHooksFile>(configPath, {});
     if (!file.hooks) return;
-    file.hooks = withoutCognoHooksOnEveryEvent(
-      file.hooks,
-      (hook) => isCognoHookCommand(hook.command) || isCognoHookCommand(hook.commandWindows),
-    );
+    file.hooks = withoutCognoHooksOnEveryEvent(file.hooks, isCognoCodexHook);
     await this.configFile.writeJson(configPath, file);
   }
 
@@ -111,8 +115,7 @@ export class CodexProvider implements ICodingAgentProvider {
       isCurrent: (hook, entry) =>
         isCurrentHookCommand(hook.command, scripts, this.id, entry.eventName) &&
         isCurrentHookCommand(hook.commandWindows, scripts, this.id, entry.eventName),
-      isCogno: (hook) =>
-        isCognoHookCommand(hook.command) || isCognoHookCommand(hook.commandWindows),
+      isCogno: isCognoCodexHook,
     };
   }
 

@@ -65,8 +65,29 @@ export function isCognoHookCommand(command: string | undefined): boolean {
   );
 }
 
-/** Hooks that are not all current are outdated when the config holds any Cogno hook at all. */
-export function hookStateOf(isCurrent: boolean, hasCognoHook: boolean): HookState {
-  if (isCurrent) return "current";
-  return hasCognoHook ? "outdated" : "missing";
+/** Whether a hook that names its command in `command` is one of Cogno's. */
+export function hasCognoCommand(hook: { command?: string }): boolean {
+  return isCognoHookCommand(hook.command);
+}
+
+/**
+ * The state of Cogno's hooks found in an agent's config, by the event each
+ * hangs on. Current when there is exactly this version's hook for every event
+ * and no other Cogno hook (an older version's, or another instance's, would
+ * run twice); outdated when Cogno hooks are there but not exactly these.
+ */
+export function cognoHookState<THook, TEntry extends { eventName: string }>(
+  cognoHooks: ReadonlyArray<{ eventName: string; hook: THook }>,
+  entries: ReadonlyArray<TEntry>,
+  isCurrent: (hook: THook, entry: TEntry) => boolean,
+): HookState {
+  if (cognoHooks.length === 0) return "missing";
+  const exactlyCurrent =
+    cognoHooks.length === entries.length &&
+    entries.every((entry) =>
+      cognoHooks.some(
+        ({ eventName, hook }) => eventName === entry.eventName && isCurrent(hook, entry),
+      ),
+    );
+  return exactlyCurrent ? "current" : "outdated";
 }

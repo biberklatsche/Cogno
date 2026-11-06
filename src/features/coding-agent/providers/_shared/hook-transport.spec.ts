@@ -4,20 +4,13 @@ import { Subject } from "rxjs";
 import { describe, expect, it } from "vitest";
 import type { AgentSessionEvent } from "../../ports";
 import { CODING_AGENT_HOOK_COMMAND } from "./hook-command";
-import {
-  HookMessage,
-  HookReading,
-  hookMessages$,
-  sessionEvents$,
-  statusTable,
-  toSessionEvent,
-} from "./hook-transport";
+import { HookMessage, HookReading, hookSessionEvents$, toSessionEvent } from "./hook-transport";
 
 const reading: HookReading = {
-  statusOf: statusTable([
+  hookEvents: [
     { eventName: "Stop", status: "ready" },
     { eventName: "UserPromptSubmit", status: "working" },
-  ]),
+  ],
   interpret: (_hookEvent, status) => ({
     kind: "status",
     status,
@@ -37,11 +30,11 @@ const message = (overrides: Partial<HookMessage> = {}): HookMessage => ({
   ...overrides,
 });
 
-describe("hookMessages$", () => {
+describe("hookSessionEvents$", () => {
   it("takes only this provider's hooks and reads provider, order and event from the args", () => {
     const ipc = { messages$: new Subject<TerminalIpcMessage>() } as unknown as TerminalIpcPort;
-    const received: HookMessage[] = [];
-    hookMessages$(ipc, "codex").subscribe((m) => received.push(m));
+    const received: AgentSessionEvent[] = [];
+    hookSessionEvents$(ipc, "codex", reading).subscribe((event) => received.push(event));
 
     (ipc.messages$ as Subject<TerminalIpcMessage>).next({
       command: CODING_AGENT_HOOK_COMMAND,
@@ -58,12 +51,18 @@ describe("hookMessages$", () => {
       payload: { session_id: "s1" },
     });
 
+    (ipc.messages$ as Subject<TerminalIpcMessage>).next({
+      command: CODING_AGENT_HOOK_COMMAND,
+      args: ["codex", "1", "Unknown"],
+      payload: { session_id: "s1" },
+    });
+
     expect(received).toEqual([
       {
-        hookEvent: "UserPromptSubmit",
+        sessionId: "s1",
         terminalId: "t-1",
         sentAt: 1700000000123,
-        payload: { session_id: "s1" },
+        event: { kind: "status", status: "working", sessionBoundary: false, details: {} },
       },
     ]);
   });
@@ -89,19 +88,5 @@ describe("toSessionEvent", () => {
   it("drops a hook with neither session nor terminal, and one on an event not hooked", () => {
     expect(toSessionEvent(message({ payload: {} }), reading)).toBeUndefined();
     expect(toSessionEvent(message({ hookEvent: "Unknown" }), reading)).toBeUndefined();
-  });
-});
-
-describe("sessionEvents$", () => {
-  it("passes the readable events on", () => {
-    const messages = new Subject<HookMessage>();
-    const events: AgentSessionEvent[] = [];
-    sessionEvents$(messages, reading).subscribe((event) => events.push(event));
-
-    messages.next(message());
-    messages.next(message({ hookEvent: "Unknown" }));
-
-    expect(events).toHaveLength(1);
-    expect(events[0]?.sessionId).toBe("s1");
   });
 });

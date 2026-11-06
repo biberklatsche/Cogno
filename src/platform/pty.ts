@@ -273,7 +273,6 @@ export class PtyTransport {
 
 export type TerminalProcessContract = {
   terminalId: string;
-  processId: number;
   name: string;
   currentWorkingDirectory: string | null;
   /** Unix seconds. */

@@ -1,6 +1,4 @@
-import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
-import type { OsPlatform } from "@cogno/platform";
 import type { ConfirmDialogData, DialogConfig, DialogService } from "@cogno/shared/ui";
 import { EMPTY } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -53,10 +51,6 @@ describe("CodingAgentStartupService", () => {
     const service = new CodingAgentStartupService(
       { providers } as unknown as CodingAgentProviderRegistry,
       { open } as unknown as DialogService,
-      {
-        getConfiguration: () => ({}),
-      } as unknown as ApplicationConfigurationPort,
-      { platform: () => "macos" } as unknown as OsPlatform,
       { dispatch } as unknown as NotificationCenterPort,
     );
     void service.rescan();
@@ -94,7 +88,7 @@ describe("CodingAgentStartupService", () => {
 
       expect(open).toHaveBeenCalledTimes(1);
       expect(messageOf(0)).toContain("CLAUDE");
-      expect(claude.installHook).toHaveBeenCalledExactlyOnceWith("sh");
+      expect(claude.installHook).toHaveBeenCalledOnce();
       expect(codex.installHook).not.toHaveBeenCalled();
       expect(hookOf(service, "claude")).toBe(true);
     });
@@ -125,7 +119,7 @@ describe("CodingAgentStartupService", () => {
       await settle();
 
       expect(open).not.toHaveBeenCalled();
-      expect(claude.installHook).toHaveBeenCalledExactlyOnceWith("sh");
+      expect(claude.installHook).toHaveBeenCalledOnce();
       expect(hookOf(service, "claude")).toBe(true);
     });
 
@@ -243,7 +237,7 @@ describe("CodingAgentStartupService", () => {
       expect(open).toHaveBeenCalledTimes(1);
 
       await service.installHook(claude);
-      expect(claude.installHook).toHaveBeenCalledExactlyOnceWith("sh");
+      expect(claude.installHook).toHaveBeenCalledOnce();
       expect(hookOf(service, "claude")).toBe(true);
 
       // The hook vanishes outside Cogno (the user edits settings.json): ask again.

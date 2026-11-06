@@ -35,7 +35,6 @@ pub struct ProcessTreeSnapshot {
 #[serde(rename_all = "camelCase")]
 pub struct TerminalProcess {
     pub terminal_id: String,
-    pub process_id: u32,
     pub name: String,
     pub current_working_directory: Option<String>,
     /// Unix seconds.
@@ -53,22 +52,42 @@ pub async fn pty_list_terminal_processes(
         .map_err(|error| error.to_string())
 }
 
+/// Reading a process's cwd is the costly part (on Windows it reads the
+/// process's memory), so the machine is walked without it first and only the
+/// processes under the terminals' shells get their cwd read.
 fn list_terminal_processes(shells: &[(String, u32)]) -> Vec<TerminalProcess> {
     let mut system = System::new();
+    // Name, parent and start time come with every refresh.
+    system.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+    let descendants: Vec<(&String, Vec<Pid>)> = shells
+        .iter()
+        .map(|(terminal_id, shell_pid)| {
+            (
+                terminal_id,
+                collect_descendant_process_ids(&system, Pid::from_u32(*shell_pid)),
+            )
+        })
+        .collect();
+    let all: Vec<Pid> = descendants
+        .iter()
+        .flat_map(|(_, pids)| pids.clone())
+        .collect();
+    if all.is_empty() {
+        return Vec::new();
+    }
     system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
+        ProcessesToUpdate::Some(&all),
+        false,
         ProcessRefreshKind::nothing().with_cwd(UpdateKind::Always),
     );
     let mut processes = Vec::new();
-    for (terminal_id, shell_pid) in shells {
-        for pid in collect_descendant_process_ids(&system, Pid::from_u32(*shell_pid)) {
+    for (terminal_id, pids) in descendants {
+        for pid in pids {
             let Some(process) = system.process(pid) else {
                 continue;
             };
             processes.push(TerminalProcess {
                 terminal_id: terminal_id.clone(),
-                process_id: pid.as_u32(),
                 name: process.name().to_string_lossy().to_string(),
                 current_working_directory: process
                     .cwd()

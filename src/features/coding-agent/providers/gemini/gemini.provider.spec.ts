@@ -27,6 +27,7 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
 }
 
 const scripts = {
+  shell: () => "sh",
   get: async () => ({
     bash: "/cogno/hooks/cogno-agent-hook.sh",
     powershell: "C:cognohookscogno-agent-hook.ps1",
@@ -57,7 +58,7 @@ describe("GeminiProvider", () => {
   it("is missing its hook until installed, then current", async () => {
     expect(await provider.hookState()).toBe("missing");
 
-    await provider.installHook("sh");
+    await provider.installHook();
 
     const settings = files.get(SETTINGS) as GeminiSettings;
     expect(settings["theme"]).toBe("dark");
@@ -67,8 +68,8 @@ describe("GeminiProvider", () => {
   });
 
   it("installs idempotently", async () => {
-    await provider.installHook("sh");
-    await provider.installHook("sh");
+    await provider.installHook();
+    await provider.installHook();
 
     expect(cognoHooksIn(files.get(SETTINGS) as GeminiSettings)).toHaveLength(
       GEMINI_CONFIG.hookEvents.length,
@@ -76,7 +77,7 @@ describe("GeminiProvider", () => {
   });
 
   it("reads a Cogno hook in an older form as outdated", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
     const hook = (files.get(SETTINGS) as GeminiSettings).hooks?.["AfterAgent"]?.[0]?.hooks[0];
     if (hook) hook.command = hook.command.replace("cogno-agent-hook", "cogno-agent-hook-old");
 
@@ -84,7 +85,7 @@ describe("GeminiProvider", () => {
   });
 
   it("removes only the Cogno hooks", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
 
     await provider.removeHook();
 

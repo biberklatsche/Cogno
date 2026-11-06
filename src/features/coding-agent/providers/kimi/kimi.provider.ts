@@ -12,14 +12,13 @@ import {
 } from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
-  HookShell,
+  cognoHookState,
+  hasCognoCommand,
   hookCommand,
-  hookStateOf,
-  isCognoHookCommand,
   isCurrentHookCommand,
 } from "../_shared/hook-command";
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
-import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
 
 @Injectable({ providedIn: "root" })
@@ -34,8 +33,8 @@ export class KimiProvider implements ICodingAgentProvider {
     private readonly scripts: HookScriptPathsService,
     ipc: TerminalIpcPort,
   ) {
-    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
-      statusOf: statusTable(KIMI_CONFIG.hookEvents),
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: KIMI_CONFIG.hookEvents,
       interpret: interpretClaudeStyleHook,
       sessionOf: claudeStyleSession,
     });
@@ -49,26 +48,22 @@ export class KimiProvider implements ICodingAgentProvider {
     const scripts = await this.scripts.get();
     const config = await this.configFile.readToml<KimiConfig>(await this.configPath(), {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
-    const cognoHooks = hooks.filter((h) => isCognoHookCommand(h.command));
-    // Exactly this version's hooks, nothing older next to them (it would run twice).
-    const isCurrent =
-      cognoHooks.length === KIMI_CONFIG.hookEvents.length &&
-      KIMI_CONFIG.hookEvents.every(({ eventName }) =>
-        cognoHooks.some(
-          (h) =>
-            h.event === eventName && isCurrentHookCommand(h.command, scripts, this.id, eventName),
-        ),
-      );
-    return hookStateOf(isCurrent, cognoHooks.length > 0);
+    const cognoHooks = hooks
+      .filter(hasCognoCommand)
+      .map((hook) => ({ eventName: hook.event, hook }));
+    return cognoHookState(cognoHooks, KIMI_CONFIG.hookEvents, (hook, { eventName }) =>
+      isCurrentHookCommand(hook.command, scripts, this.id, eventName),
+    );
   }
 
-  async installHook(shell: HookShell): Promise<void> {
+  async installHook(): Promise<void> {
+    const shell = this.scripts.shell();
     const scripts = await this.scripts.get();
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     const withoutCogno = (Array.isArray(config.hooks) ? config.hooks : []).filter(
-      (h) => !isCognoHookCommand(h.command),
+      (h) => !hasCognoCommand(h),
     );
     config.hooks = [
       ...withoutCogno,
@@ -84,7 +79,7 @@ export class KimiProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     if (Array.isArray(config.hooks)) {
-      config.hooks = config.hooks.filter((h) => !isCognoHookCommand(h.command));
+      config.hooks = config.hooks.filter((h) => !hasCognoCommand(h));
       await this.configFile.writeToml(configPath, config);
     }
   }

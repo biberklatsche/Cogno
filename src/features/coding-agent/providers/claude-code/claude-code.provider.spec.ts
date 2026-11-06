@@ -27,6 +27,7 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
 }
 
 const scripts = {
+  shell: () => "sh",
   get: async () => ({
     bash: "/cogno/hooks/cogno-agent-hook.sh",
     powershell: "C:cognohookscogno-agent-hook.ps1",
@@ -58,7 +59,7 @@ describe("ClaudeCodeProvider", () => {
   });
 
   it("installs one Cogno hook per event next to the hooks that were there", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
 
     const settings = files.get(SETTINGS) as ClaudeSettings;
     expect(settings["theme"]).toBe("dark");
@@ -68,8 +69,8 @@ describe("ClaudeCodeProvider", () => {
   });
 
   it("installs idempotently: a second install does not double the hooks", async () => {
-    await provider.installHook("sh");
-    await provider.installHook("sh");
+    await provider.installHook();
+    await provider.installHook();
 
     expect(cognoHooksIn(files.get(SETTINGS) as ClaudeSettings)).toHaveLength(
       CLAUDE_CODE_CONFIG.hookEvents.length,
@@ -77,7 +78,7 @@ describe("ClaudeCodeProvider", () => {
   });
 
   it("removes only the Cogno hooks and drops events that are empty afterwards", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
 
     await provider.removeHook();
 
@@ -89,7 +90,7 @@ describe("ClaudeCodeProvider", () => {
   });
 
   it("reads a Cogno hook in an older form as outdated, and installing brings it up to date", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
     const settings = files.get(SETTINGS) as ClaudeSettings;
     const postCompact = settings.hooks?.["PostCompact"]?.[0]?.hooks[0];
     if (postCompact)
@@ -97,7 +98,7 @@ describe("ClaudeCodeProvider", () => {
 
     expect(await provider.hookState()).toBe("outdated");
 
-    await provider.installHook("sh");
+    await provider.installHook();
     expect(await provider.hookState()).toBe("current");
     expect(cognoHooksIn(files.get(SETTINGS) as ClaudeSettings)).toHaveLength(
       CLAUDE_CODE_CONFIG.hookEvents.length,
@@ -109,7 +110,7 @@ describe("ClaudeCodeProvider", () => {
     const settings = files.get(SETTINGS) as ClaudeSettings;
     settings.hooks = { ...settings.hooks, OldEvent: [{ hooks: [stale, foreignHook] }] };
 
-    await provider.installHook("sh");
+    await provider.installHook();
     const installed = files.get(SETTINGS) as ClaudeSettings;
     expect(installed.hooks?.["OldEvent"]).toEqual([{ hooks: [foreignHook] }]);
     expect(await provider.hookState()).toBe("current");

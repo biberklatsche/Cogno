@@ -13,8 +13,8 @@ import {
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
   HookShell,
+  hasCognoCommand,
   hookCommand,
-  isCognoHookCommand,
   isCurrentHookCommand,
 } from "../_shared/hook-command";
 import {
@@ -24,7 +24,7 @@ import {
   withoutCognoHooksOnEveryEvent,
 } from "../_shared/hook-groups";
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
-import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import {
   CLAUDE_CODE_CONFIG,
   ClaudeHookEntry,
@@ -44,8 +44,8 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     private readonly scripts: HookScriptPathsService,
     ipc: TerminalIpcPort,
   ) {
-    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
-      statusOf: statusTable(CLAUDE_CODE_CONFIG.hookEvents),
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: CLAUDE_CODE_CONFIG.hookEvents,
       interpret: interpretClaudeStyleHook,
       sessionOf: claudeStyleSession,
     });
@@ -60,7 +60,8 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     return hookMapState(settings.hooks, CLAUDE_CODE_CONFIG.hookEvents, await this.hookFormat());
   }
 
-  async installHook(shell: HookShell): Promise<void> {
+  async installHook(): Promise<void> {
+    const shell = this.scripts.shell();
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
@@ -76,9 +77,7 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
     if (!settings.hooks) return;
-    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, (hook) =>
-      isCognoHookCommand(hook.command),
-    );
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, hasCognoCommand);
     await this.configFile.writeJson(configPath, settings);
   }
 
@@ -99,7 +98,7 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
       }),
       isCurrent: (hook, entry) =>
         isCurrentHookCommand(hook.command, scripts, this.id, entry.eventName),
-      isCogno: (hook) => isCognoHookCommand(hook.command),
+      isCogno: hasCognoCommand,
     };
   }
 

@@ -8,7 +8,7 @@ import {
 import { Observable } from "rxjs";
 import { ConfigFileService } from "../_shared/config-file.service";
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
-import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import { OPENCODE_CONFIG, openCodePlugin } from "./opencode.config";
 import { interpretOpenCodeEvent, openCodeSession } from "./opencode-event.interpreter";
 
@@ -31,8 +31,8 @@ export class OpenCodeProvider implements ICodingAgentProvider {
     private readonly scripts: HookScriptPathsService,
     ipc: TerminalIpcPort,
   ) {
-    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
-      statusOf: statusTable(OPENCODE_CONFIG.hookEvents),
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: OPENCODE_CONFIG.hookEvents,
       interpret: interpretOpenCodeEvent,
       sessionOf: openCodeSession,
     });
@@ -53,11 +53,7 @@ export class OpenCodeProvider implements ICodingAgentProvider {
   /** Writes only what changed: OpenCode reloads its plugins on every write to the folder. */
   async installHook(): Promise<void> {
     await this.configFile.ensureDir(await this.pluginDir());
-    const path = await this.pluginPath();
-    const source = await this.pluginSource();
-    if ((await this.configFile.readText(path)) !== source) {
-      await this.configFile.writeText(path, source);
-    }
+    await this.configFile.writeText(await this.pluginPath(), await this.pluginSource());
     await this.configFile.remove(await this.legacyPluginPath());
   }
 

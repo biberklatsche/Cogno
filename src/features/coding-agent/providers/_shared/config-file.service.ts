@@ -37,7 +37,7 @@ export class ConfigFileService {
     }
   }
 
-  writeJson(path: string, data: unknown): Promise<void> {
+  writeJson(path: string, data: unknown): Promise<boolean> {
     return this.replaceText(path, JSON.stringify(data, null, 2));
   }
 
@@ -51,14 +51,14 @@ export class ConfigFileService {
     }
   }
 
-  async writeToml(path: string, data: unknown): Promise<void> {
+  async writeToml(path: string, data: unknown): Promise<boolean> {
     let raw: string;
     try {
       raw = stringifyToml(data as Parameters<typeof stringifyToml>[0]);
     } catch (err) {
       throw new Error(`Cannot serialize TOML for ${path}`, { cause: err });
     }
-    await this.replaceText(path, raw);
+    return this.replaceText(path, raw);
   }
 
   exists(path: string): Promise<boolean> {
@@ -92,19 +92,26 @@ export class ConfigFileService {
   }
 
   /**
-   * Rewrites a config file the agent owns. Unchanged text is not written; changed
-   * text first keeps the file's previous text next to it, so a user can get back
-   * what Cogno overwrote.
+   * Rewrites a config file the agent owns, and says whether it wrote. Unchanged
+   * text is not written; changed text first keeps the file's previous text next
+   * to it, so a user can get back what Cogno overwrote.
    */
-  async replaceText(path: string, content: string): Promise<void> {
+  async replaceText(path: string, content: string): Promise<boolean> {
     const previous = await this.readText(path);
-    if (previous === content) return;
-    if (previous !== undefined) await this.writeText(`${path}${BACKUP_SUFFIX}`, previous);
-    await this.writeText(path, content);
+    if (previous === content) return false;
+    if (previous !== undefined) await this.write(`${path}${BACKUP_SUFFIX}`, previous);
+    await this.write(path, content);
+    return true;
   }
 
-  /** Writes a file of Cogno's own as is. */
-  async writeText(path: string, content: string): Promise<void> {
+  /** Writes a file of Cogno's own, unless it already holds this text; says whether it wrote. */
+  async writeText(path: string, content: string): Promise<boolean> {
+    if ((await this.readText(path)) === content) return false;
+    await this.write(path, content);
+    return true;
+  }
+
+  private async write(path: string, content: string): Promise<void> {
     try {
       await this.fs.writeTextFile(path, content);
     } catch (err) {

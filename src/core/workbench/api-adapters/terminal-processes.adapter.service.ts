@@ -8,7 +8,6 @@ export class TerminalProcessesAdapterService extends TerminalProcessesPort {
     const processes = await TauriPty.listTerminalProcesses();
     return processes.map((process) => ({
       terminalId: process.terminalId,
-      processId: process.processId,
       name: process.name,
       ...(process.currentWorkingDirectory ? { cwd: process.currentWorkingDirectory } : {}),
       startedAt: process.startedAt,

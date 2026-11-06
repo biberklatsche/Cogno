@@ -6,7 +6,7 @@ import { TerminalPlacement, TerminalPlacementPort } from "@cogno/core/api/termin
 import { TerminalProcess, TerminalProcessesPort } from "@cogno/core/api/terminal-processes-port";
 import { NotificationTypeContract } from "@cogno/shared/domain";
 import { filter, map, merge, Subscription } from "rxjs";
-import { bindSession, isSessionRunning } from "./agent-session-binder";
+import { bindSession } from "./agent-session-binder";
 import { AgentStatus } from "./agent-status";
 import { AGENT_STATUS_REGISTRATION_KEY, AGENT_STATUS_SPECS } from "./coding-agent-animation";
 import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
@@ -83,8 +83,8 @@ type SessionState = {
    * whether a Cogno terminal runs it at all.
    */
   shown: boolean;
-  /** Sequence of the newest status event applied; older ones are stale. */
-  lastSeq: number;
+  /** When the newest status event applied was sent; older ones are stale. */
+  lastSentAt: number;
   subagentIds: Set<string>;
   /** The main agent reported "ready" while subagents were still running. */
   readyDeferred: boolean;
@@ -284,11 +284,11 @@ export class CodingAgentStatusService {
     terminalId: string | undefined,
     hook: Extract<AgentHookEvent, { kind: "status" }>,
   ): void {
-    const shownBefore = this.states.get(key)?.agent.status;
-    const state =
-      this.states.get(key) ?? this.createState(key, provider, event, terminalId, hook.status);
-    if (event.sentAt > 0 && event.sentAt < state.lastSeq) return;
-    if (event.sentAt > 0) state.lastSeq = event.sentAt;
+    const existing = this.states.get(key);
+    const shownBefore = existing?.agent.status;
+    const state = existing ?? this.createState(key, provider, event, terminalId, hook.status);
+    if (event.sentAt > 0 && event.sentAt < state.lastSentAt) return;
+    if (event.sentAt > 0) state.lastSentAt = event.sentAt;
 
     // A user's prompt also starts over: a subagent whose stop never came (the
     // turn was interrupted, a hook failed) must not keep the card working. A
@@ -391,7 +391,7 @@ export class CodingAgentStatusService {
       provider,
       firstSeenAt: Date.now(),
       shown: terminalId !== undefined,
-      lastSeq: 0,
+      lastSentAt: 0,
       subagentIds: new Set(),
       readyDeferred: false,
     };
@@ -461,10 +461,7 @@ export class CodingAgentStatusService {
         this.bindTo(state, binding.terminalId);
         taken.add(binding.terminalId);
         changed = true;
-      } else if (
-        binding.kind === "none" &&
-        !isSessionRunning(processes, session, state.provider.processNames)
-      ) {
+      } else if (binding.kind === "none") {
         // Nothing of Cogno's runs it: another program's terminal does.
         this.clearReadyTimer(state);
         this.states.delete(key);

@@ -3,7 +3,6 @@ import { TerminalId } from "@cogno/shared/domain";
 /** A process running under a terminal's shell. */
 export type TerminalProcess = {
   readonly terminalId: TerminalId;
-  readonly processId: number;
   /** The executable's name, as the OS reports it (`codex`, `codex.exe`). */
   readonly name: string;
   readonly cwd?: string;

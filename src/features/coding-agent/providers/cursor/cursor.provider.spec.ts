@@ -27,6 +27,7 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
 }
 
 const scripts = {
+  shell: () => "sh",
   get: async () => ({
     bash: "/cogno/hooks/cogno-agent-hook.sh",
     powershell: "C:cognohookscogno-agent-hook.ps1",
@@ -56,7 +57,7 @@ describe("CursorProvider", () => {
   it("installs one Cogno hook per event next to the hooks that were there", async () => {
     expect(await provider.hookState()).toBe("missing");
 
-    await provider.installHook("sh");
+    await provider.installHook();
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     expect(file.version).toBe(1);
@@ -66,7 +67,7 @@ describe("CursorProvider", () => {
   });
 
   it("reads a Cogno hook in an older form as outdated", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
     const hook = (files.get(HOOKS_FILE) as CursorHooksFile).hooks?.["stop"]?.[1];
     if (hook) hook.command = hook.command.replace("cogno-agent-hook", "cogno-agent-hook-old");
 
@@ -74,12 +75,12 @@ describe("CursorProvider", () => {
   });
 
   it("drops a Cogno hook on an event this version no longer hooks", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     const staleCommand = file.hooks?.["stop"]?.[1]?.command ?? "";
     file.hooks = { ...file.hooks, subagentStop: [{ command: staleCommand }] };
 
-    await provider.installHook("sh");
+    await provider.installHook();
 
     expect((files.get(HOOKS_FILE) as CursorHooksFile).hooks?.["subagentStop"]).toBeUndefined();
   });
@@ -87,7 +88,7 @@ describe("CursorProvider", () => {
   it("creates a versioned hooks file when there is none", async () => {
     files.delete(HOOKS_FILE);
 
-    await provider.installHook("sh");
+    await provider.installHook();
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     expect(file.version).toBe(CURSOR_CONFIG.fileVersion);
@@ -95,8 +96,8 @@ describe("CursorProvider", () => {
   });
 
   it("installs idempotently: a second install does not double the hooks", async () => {
-    await provider.installHook("sh");
-    await provider.installHook("sh");
+    await provider.installHook();
+    await provider.installHook();
 
     expect(cognoHooksIn(files.get(HOOKS_FILE) as CursorHooksFile)).toHaveLength(
       CURSOR_CONFIG.hookEvents.length,
@@ -104,7 +105,7 @@ describe("CursorProvider", () => {
   });
 
   it("does not touch Cursor's permission hooks", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     for (const event of [
@@ -118,7 +119,7 @@ describe("CursorProvider", () => {
   });
 
   it("removes only the Cogno hooks and drops events that are empty afterwards", async () => {
-    await provider.installHook("sh");
+    await provider.installHook();
 
     await provider.removeHook();
 

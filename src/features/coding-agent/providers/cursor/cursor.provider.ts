@@ -8,14 +8,13 @@ import {
 import { Observable } from "rxjs";
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
-  HookShell,
+  cognoHookState,
+  hasCognoCommand,
   hookCommand,
-  hookStateOf,
-  isCognoHookCommand,
   isCurrentHookCommand,
 } from "../_shared/hook-command";
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
-import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import { CURSOR_CONFIG, CursorHooksFile } from "./cursor.config";
 import { cursorSession, interpretCursorHook } from "./cursor-hook.interpreter";
 
@@ -38,8 +37,8 @@ export class CursorProvider implements ICodingAgentProvider {
     private readonly scripts: HookScriptPathsService,
     ipc: TerminalIpcPort,
   ) {
-    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
-      statusOf: statusTable(CURSOR_CONFIG.hookEvents),
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: CURSOR_CONFIG.hookEvents,
       interpret: interpretCursorHook,
       sessionOf: cursorSession,
     });
@@ -52,18 +51,16 @@ export class CursorProvider implements ICodingAgentProvider {
   async hookState(): Promise<HookState> {
     const scripts = await this.scripts.get();
     const hooks = (await this.readHooksFile()).hooks ?? {};
-    const isCurrent = CURSOR_CONFIG.hookEvents.every(({ eventName }) =>
-      (hooks[eventName] ?? []).some((h) =>
-        isCurrentHookCommand(h.command, scripts, this.id, eventName),
-      ),
+    const cognoHooks = Object.entries(hooks).flatMap(([eventName, list]) =>
+      list.filter(hasCognoCommand).map((hook) => ({ eventName, hook })),
     );
-    const hasCognoHook = Object.values(hooks).some((list) =>
-      list.some((h) => isCognoHookCommand(h.command)),
+    return cognoHookState(cognoHooks, CURSOR_CONFIG.hookEvents, (hook, { eventName }) =>
+      isCurrentHookCommand(hook.command, scripts, this.id, eventName),
     );
-    return hookStateOf(isCurrent, hasCognoHook);
   }
 
-  async installHook(shell: HookShell): Promise<void> {
+  async installHook(): Promise<void> {
+    const shell = this.scripts.shell();
     const scripts = await this.scripts.get();
     await this.configFile.ensureDir(await this.configDir());
     const file = await this.readHooksFile();
@@ -104,7 +101,7 @@ export class CursorProvider implements ICodingAgentProvider {
 function withoutCognoHooks(hooks: Readonly<CursorHookMap>): CursorHookMap {
   const cleaned: CursorHookMap = {};
   for (const [eventName, list] of Object.entries(hooks)) {
-    const remaining = list.filter((h) => !isCognoHookCommand(h.command));
+    const remaining = list.filter((h) => !hasCognoCommand(h));
     if (remaining.length > 0) cleaned[eventName] = remaining;
   }
   return cleaned;

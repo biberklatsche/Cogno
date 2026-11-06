@@ -1,5 +1,7 @@
-import type { Fs, Paths } from "@cogno/platform";
+import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import type { Fs, OsPlatform, Paths } from "@cogno/platform";
 import { describe, expect, it, vi } from "vitest";
+import { ConfigFileService } from "./config-file.service";
 import { CODING_AGENT_HOOK_COMMAND } from "./hook-command";
 import { HookScriptPathsService } from "./hook-script-paths.service";
 import { bashHookScript, powershellHookScript } from "./hook-scripts";
@@ -22,10 +24,18 @@ const paths = {
   join: async (...parts: string[]) => parts.join("/"),
 } as unknown as Paths;
 
+const config = { getConfiguration: () => ({}) } as unknown as ApplicationConfigurationPort;
+const os = { platform: () => "macos" } as unknown as OsPlatform;
+
 describe("HookScriptPathsService", () => {
   it("writes both scripts next to the endpoint file and names them", async () => {
     const { fs, files } = inMemoryFs();
-    const service = new HookScriptPathsService(fs as unknown as Fs, paths);
+    const service = new HookScriptPathsService(
+      new ConfigFileService(fs as unknown as Fs, paths),
+      paths,
+      config,
+      os,
+    );
 
     expect(await service.get()).toEqual({
       bash: "C:/home/.cogno/coding-agents/cogno-agent-hook.sh",
@@ -42,7 +52,12 @@ describe("HookScriptPathsService", () => {
         "C:/home/.cogno/endpoint.json",
       ),
     });
-    const service = new HookScriptPathsService(fs as unknown as Fs, paths);
+    const service = new HookScriptPathsService(
+      new ConfigFileService(fs as unknown as Fs, paths),
+      paths,
+      config,
+      os,
+    );
 
     await service.get();
     await service.get();
@@ -57,10 +72,39 @@ describe("HookScriptPathsService", () => {
   it("tries again after a failed write", async () => {
     const { fs } = inMemoryFs();
     fs.writeTextFile.mockRejectedValueOnce(new Error("read-only"));
-    const service = new HookScriptPathsService(fs as unknown as Fs, paths);
+    const service = new HookScriptPathsService(
+      new ConfigFileService(fs as unknown as Fs, paths),
+      paths,
+      config,
+      os,
+    );
 
-    await expect(service.get()).rejects.toThrow("read-only");
+    await expect(service.get()).rejects.toThrow("Cannot write");
     await expect(service.get()).resolves.toBeDefined();
+  });
+});
+
+describe("HookScriptPathsService.shell", () => {
+  const shellOf = (platform: string, configuration: Record<string, unknown>) =>
+    new HookScriptPathsService(
+      {} as ConfigFileService,
+      paths,
+      { getConfiguration: () => configuration } as unknown as ApplicationConfigurationPort,
+      { platform: () => platform } as unknown as OsPlatform,
+    ).shell();
+  const defaultProfile = (shellType: string) => ({
+    shell: { default: "main", profiles: { main: { shell_type: shellType } } },
+  });
+
+  it("follows the default profile, PowerShell as Windows PowerShell on Windows and pwsh elsewhere", () => {
+    expect(shellOf("windows", defaultProfile("PowerShell"))).toBe("powershell");
+    expect(shellOf("macos", defaultProfile("PowerShell"))).toBe("pwsh");
+    expect(shellOf("windows", defaultProfile("Bash"))).toBe("sh");
+  });
+
+  it("falls back to the platform's shell without a profile", () => {
+    expect(shellOf("windows", {})).toBe("powershell");
+    expect(shellOf("linux", {})).toBe("sh");
   });
 });
 

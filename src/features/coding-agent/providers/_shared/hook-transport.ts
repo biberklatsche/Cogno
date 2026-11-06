@@ -13,19 +13,6 @@ export type HookMessage = {
   readonly payload: unknown;
 };
 
-/** The hooks of one adapter, as they arrive over Cogno's HTTP server. */
-export function hookMessages$(ipc: TerminalIpcPort, providerId: string): Observable<HookMessage> {
-  return ipc.messages$.pipe(
-    filter((m) => m.command === CODING_AGENT_HOOK_COMMAND && m.args?.[0] === providerId),
-    map((m) => ({
-      hookEvent: m.args?.[2] ?? "",
-      ...(m.terminalId ? { terminalId: m.terminalId } : {}),
-      sentAt: Number(m.args?.[1] ?? 0) || 0,
-      payload: m.payload,
-    })),
-  );
-}
-
 /** What the adapter reads from a payload about the session it belongs to. */
 export type HookSession = {
   readonly sessionId?: string;
@@ -33,14 +20,14 @@ export type HookSession = {
 };
 
 /**
- * How an adapter turns a hook into a session event: the status each hook
+ * How an adapter turns a hook into a session event: the status each hooked
  * event stands for (a hook on an event not listed is not Cogno's and is
  * dropped), what the payload says about the agent, and which session it
  * belongs to. A payload that names no session falls back to the terminal; a
  * hook with neither is dropped, as nothing could be shown for it.
  */
 export type HookReading = {
-  readonly statusOf: (hookEvent: string) => AgentStatus | undefined;
+  readonly hookEvents: ReadonlyArray<{ readonly eventName: string; readonly status: AgentStatus }>;
   /** What the hook says; undefined when it says nothing about the agent (a subagent's inner events, say). */
   readonly interpret: (
     hookEvent: string,
@@ -50,12 +37,25 @@ export type HookReading = {
   readonly sessionOf: (payload: unknown) => HookSession;
 };
 
-export function sessionEvents$(
-  messages: Observable<HookMessage>,
+/** One adapter's hooks, as they arrive over Cogno's HTTP server, read as session events. */
+export function hookSessionEvents$(
+  ipc: TerminalIpcPort,
+  providerId: string,
   reading: HookReading,
 ): Observable<AgentSessionEvent> {
-  return messages.pipe(
-    map((message) => toSessionEvent(message, reading)),
+  return ipc.messages$.pipe(
+    filter((m) => m.command === CODING_AGENT_HOOK_COMMAND && m.args?.[0] === providerId),
+    map((m) =>
+      toSessionEvent(
+        {
+          hookEvent: m.args?.[2] ?? "",
+          ...(m.terminalId ? { terminalId: m.terminalId } : {}),
+          sentAt: Number(m.args?.[1] ?? 0) || 0,
+          payload: m.payload,
+        },
+        reading,
+      ),
+    ),
     filter((event): event is AgentSessionEvent => event !== undefined),
   );
 }
@@ -64,7 +64,9 @@ export function toSessionEvent(
   message: HookMessage,
   reading: HookReading,
 ): AgentSessionEvent | undefined {
-  const status = reading.statusOf(message.hookEvent);
+  const status = reading.hookEvents.find(
+    ({ eventName }) => eventName === message.hookEvent,
+  )?.status;
   if (!status) return undefined;
   const session = reading.sessionOf(message.payload);
   const sessionId =
@@ -79,12 +81,4 @@ export function toSessionEvent(
     sentAt: message.sentAt,
     event,
   };
-}
-
-/** `statusOf` over a table of hooked events. */
-export function statusTable(
-  entries: ReadonlyArray<{ readonly eventName: string; readonly status: AgentStatus }>,
-): (hookEvent: string) => AgentStatus | undefined {
-  const byEvent = new Map(entries.map((entry) => [entry.eventName, entry.status]));
-  return (hookEvent) => byEvent.get(hookEvent);
 }

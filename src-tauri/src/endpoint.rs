@@ -1,6 +1,6 @@
 //! How a process without a Cogno terminal's environment reaches the running
 //! instance (ARCHITECTURE.md 2.1): an endpoint file in the Cogno home naming
-//! port, process id and an **external token**. The token opens `POST /action`
+//! port and an **external token**. The token opens `POST /action`
 //! (a message to the webview) and nothing else. What a message means is the
 //! business of whoever reads it; this file knows no consumer.
 
@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 const ENDPOINT_FILE: &str = "endpoint.json";
 
-pub fn endpoint_path(cogno_home: &Path) -> PathBuf {
+fn endpoint_path(cogno_home: &Path) -> PathBuf {
     cogno_home.join(ENDPOINT_FILE)
 }
 
@@ -20,7 +20,6 @@ pub fn write(cogno_home: &Path, port: u16, external_token: &str) -> io::Result<(
     let content = serde_json::json!({
         "port": port,
         "token": external_token,
-        "pid": std::process::id(),
     })
     .to_string();
     let path = endpoint_path(cogno_home);
@@ -47,7 +46,7 @@ mod tests {
     }
 
     #[test]
-    fn writes_port_token_and_pid() {
+    fn writes_port_and_token() {
         let home = temp_home();
         write(&home, 4321, "secret").unwrap();
 
@@ -55,7 +54,6 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(endpoint_path(&home)).unwrap()).unwrap();
         assert_eq!(endpoint["port"], 4321);
         assert_eq!(endpoint["token"], "secret");
-        assert_eq!(endpoint["pid"], std::process::id());
         fs::remove_dir_all(home).unwrap();
     }
 

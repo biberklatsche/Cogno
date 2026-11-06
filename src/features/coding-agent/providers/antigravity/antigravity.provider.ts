@@ -9,10 +9,10 @@ import {
 import { Observable } from "rxjs";
 import { AgentStatus } from "../../agent-status";
 import { ConfigFileService } from "../_shared/config-file.service";
-import { HookShell, hookCommand, hookStateOf, isCurrentHookCommand } from "../_shared/hook-command";
+import { hookCommand, isCurrentHookCommand } from "../_shared/hook-command";
 import { payloadFields, stringField } from "../_shared/hook-payload";
 import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
-import { hookMessages$, sessionEvents$, statusTable } from "../_shared/hook-transport";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import {
   ANTIGRAVITY_CONFIG,
   AntigravityHookDefinition,
@@ -41,8 +41,8 @@ export class AntigravityProvider implements ICodingAgentProvider {
     private readonly scripts: HookScriptPathsService,
     ipc: TerminalIpcPort,
   ) {
-    this.events$ = sessionEvents$(hookMessages$(ipc, this.id), {
-      statusOf: statusTable(ANTIGRAVITY_CONFIG.hookEvents),
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: ANTIGRAVITY_CONFIG.hookEvents,
       interpret: interpretAntigravityHook,
       // Antigravity's payload names no session: its hooks run in the terminal, which stands in.
       sessionOf: () => ({}),
@@ -67,10 +67,11 @@ export class AntigravityProvider implements ICodingAgentProvider {
         isCurrentHookCommand(h.command, scripts, this.id, entry.eventName, entry.stdout),
       );
     });
-    return hookStateOf(isCurrent, true);
+    return isCurrent ? "current" : "outdated";
   }
 
-  async installHook(shell: HookShell): Promise<void> {
+  async installHook(): Promise<void> {
+    const shell = this.scripts.shell();
     const scripts = await this.scripts.get();
     const configDir = await this.configDir();
     await this.configFile.ensureDir(configDir);
