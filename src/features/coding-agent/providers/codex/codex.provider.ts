@@ -129,7 +129,7 @@ export class CodexProvider implements ICodingAgentProvider {
     if (await this.hooksEnabledInAppConfig()) return;
     const path = await this.appConfigPath();
     const text = (await this.configFile.readText(path)) ?? "";
-    await this.configFile.writeText(path, withFeaturesHooksEnabled(text));
+    await this.configFile.replaceText(path, withFeaturesHooksEnabled(text));
   }
 
   /** A changed hooks file runs only once the user trusts it in Codex. */

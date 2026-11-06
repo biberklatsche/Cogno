@@ -2,6 +2,9 @@ import { Injectable } from "@angular/core";
 import { Fs, Paths } from "@cogno/platform";
 import { parse as parseToml, stringify as stringifyToml } from "smol-toml";
 
+/** Suffix of the copy of an agent's config file as it was before Cogno's last change. */
+const BACKUP_SUFFIX = ".cogno-backup";
+
 /** The agents' config files under the home directory, as JSON or TOML. */
 @Injectable({ providedIn: "root" })
 export class ConfigFileService {
@@ -35,7 +38,7 @@ export class ConfigFileService {
   }
 
   writeJson(path: string, data: unknown): Promise<void> {
-    return this.writeText(path, JSON.stringify(data, null, 2));
+    return this.replaceText(path, JSON.stringify(data, null, 2));
   }
 
   async readToml<T>(path: string, fallback: T): Promise<T> {
@@ -55,7 +58,7 @@ export class ConfigFileService {
     } catch (err) {
       throw new Error(`Cannot serialize TOML for ${path}`, { cause: err });
     }
-    await this.writeText(path, raw);
+    await this.replaceText(path, raw);
   }
 
   exists(path: string): Promise<boolean> {
@@ -88,6 +91,19 @@ export class ConfigFileService {
     }
   }
 
+  /**
+   * Rewrites a config file the agent owns. Unchanged text is not written; changed
+   * text first keeps the file's previous text next to it, so a user can get back
+   * what Cogno overwrote.
+   */
+  async replaceText(path: string, content: string): Promise<void> {
+    const previous = await this.readText(path);
+    if (previous === content) return;
+    if (previous !== undefined) await this.writeText(`${path}${BACKUP_SUFFIX}`, previous);
+    await this.writeText(path, content);
+  }
+
+  /** Writes a file of Cogno's own as is. */
   async writeText(path: string, content: string): Promise<void> {
     try {
       await this.fs.writeTextFile(path, content);

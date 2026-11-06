@@ -15,7 +15,7 @@ function inMemoryConfigFiles(initial: Record<string, string> = {}) {
   const dirs = new Set<string>(["/home/.codex"]);
   const service = {
     readText: async (path: string) => files.get(path),
-    writeText: async (path: string, content: string) => {
+    replaceText: async (path: string, content: string) => {
       files.set(path, content);
     },
     readJson: async <T>(path: string, fallback: T) => {
