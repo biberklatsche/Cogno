@@ -55,41 +55,41 @@ export type SettingGroup = {
 };
 
 export type SettingSection = {
-  readonly keys: ReadonlyArray<string>;
+  readonly key: string;
   readonly title: string;
   readonly lead?: string;
 };
 
 /** Section order and headings; every top-level config key must appear here. */
 export const SETTING_SECTIONS: ReadonlyArray<SettingSection> = [
-  { keys: ["enable_watch_config"], title: "General" },
-  { keys: ["font"], title: "Font" },
-  { keys: ["color"], title: "Colors", lead: "Colors are hex without `#`; 8 digits add alpha." },
-  { keys: ["cursor"], title: "Cursor" },
-  { keys: ["padding"], title: "Padding" },
-  { keys: ["background_image"], title: "Background image" },
-  { keys: ["menu"], title: "Menu" },
-  { keys: ["scrollbar"], title: "Scrollbar" },
-  { keys: ["selection"], title: "Selection" },
-  { keys: ["clipboard"], title: "Clipboard" },
+  { key: "enable_watch_config", title: "General" },
+  { key: "font", title: "Font" },
+  { key: "color", title: "Colors", lead: "Colors are hex without `#`; 8 digits add alpha." },
+  { key: "cursor", title: "Cursor" },
+  { key: "padding", title: "Padding" },
+  { key: "background_image", title: "Background image" },
+  { key: "menu", title: "Menu" },
+  { key: "scrollbar", title: "Scrollbar" },
+  { key: "selection", title: "Selection" },
+  { key: "clipboard", title: "Clipboard" },
   {
-    keys: ["shell"],
+    key: "shell",
     title: "Shell",
     lead: "`<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.",
   },
   {
-    keys: ["prompt"],
+    key: "prompt",
     title: "Prompt",
     lead: "`<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.",
   },
-  { keys: ["keybind"], title: "Keybindings" },
-  { keys: ["terminal"], title: "Terminal" },
-  { keys: ["autocomplete"], title: "Autocomplete" },
-  { keys: ["notification"], title: "Notifications" },
-  { keys: ["http_server"], title: "HTTP server" },
-  { keys: ["updater"], title: "Updates" },
+  { key: "keybind", title: "Keybindings" },
+  { key: "terminal", title: "Terminal" },
+  { key: "autocomplete", title: "Autocomplete" },
+  { key: "notification", title: "Notifications" },
+  { key: "http_server", title: "HTTP server" },
+  { key: "updater", title: "Updates" },
   {
-    keys: ["feature"],
+    key: "feature",
     title: "Features",
     lead: "Each feature can be switched off entirely and ordered in the side menu.",
   },
@@ -110,9 +110,14 @@ export function describeSettings(
 ): SettingDescriptor[] {
   const descriptors: SettingDescriptor[] = [];
   for (const section of SETTING_SECTIONS) {
-    for (const key of section.keys) {
-      walk(shape[key] as z.ZodType | undefined, key, section.title, [], options, descriptors);
-    }
+    walk(
+      shape[section.key] as z.ZodType | undefined,
+      section.key,
+      section.title,
+      [],
+      options,
+      descriptors,
+    );
   }
   return descriptors;
 }
@@ -315,7 +320,7 @@ function titleOf(schema: z.ZodType | undefined): string | undefined {
 }
 
 /** `coding_agents` -> "Coding agents"; a placeholder like `<name>` stays. */
-export function humanize(segment: string): string {
+function humanize(segment: string): string {
   if (segment.startsWith("<")) return segment;
   const words = segment.replace(/_/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
@@ -355,14 +360,20 @@ function isHexColor(schema: z.ZodType | undefined): boolean {
   return false;
 }
 
+/** The value under a dotted key in a nested object; undefined when the path leads nowhere. */
+export function valueAt(tree: unknown, key: string): unknown {
+  let node: unknown = tree;
+  for (const part of key.split(".")) {
+    if (typeof node !== "object" || node === null) return undefined;
+    node = (node as Record<string, unknown>)[part];
+  }
+  return node;
+}
+
 function defaultFor(path: string, options: DescribeSettingsOptions): SettingDefault {
   const fromTree = (tree: unknown): string | undefined => {
-    let node: unknown = tree;
-    for (const part of path.split(".")) {
-      if (typeof node !== "object" || node === null) return undefined;
-      node = (node as Record<string, unknown>)[part];
-    }
-    return typeof node === "string" ? node : undefined;
+    const value = valueAt(tree, path);
+    return typeof value === "string" ? value : undefined;
   };
   const base = fromTree(options.defaults);
   const perOs: Record<string, string> = {};

@@ -127,34 +127,15 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
       return false;
     }
 
-    const notificationConfig = this.readExceptionNotificationConfiguration();
-    return report.handled ? notificationConfig.handledEnabled : notificationConfig.unhandledEnabled;
-  }
-
-  private readExceptionNotificationConfiguration(): {
-    readonly handledEnabled: boolean;
-    readonly unhandledEnabled: boolean;
-  } {
     try {
-      const configuration = this.configService.config;
-
-      return {
-        handledEnabled: isNotificationEventEnabled(
-          configuration,
-          ERROR_NOTIFICATION_SOURCE_ID,
-          HANDLED_EXCEPTION_EVENT_ID,
-        ),
-        unhandledEnabled: isNotificationEventEnabled(
-          configuration,
-          ERROR_NOTIFICATION_SOURCE_ID,
-          UNHANDLED_EXCEPTION_EVENT_ID,
-        ),
-      };
+      return isNotificationEventEnabled(
+        this.configService.config,
+        ERROR_NOTIFICATION_SOURCE_ID,
+        report.handled ? HANDLED_EXCEPTION_EVENT_ID : UNHANDLED_EXCEPTION_EVENT_ID,
+      );
     } catch {
-      return {
-        handledEnabled: false,
-        unhandledEnabled: false,
-      };
+      // The config is not loaded yet: an error this early is reported, not shown.
+      return false;
     }
   }
 

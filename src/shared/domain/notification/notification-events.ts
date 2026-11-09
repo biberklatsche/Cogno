@@ -24,8 +24,3 @@ export function isNotificationEventEnabled(
 ): boolean {
   return notificationEventSettings(configuration, sourceId, eventId)?.enabled ?? false;
 }
-
-/** The config key of an event's switch, for writing it. */
-export function notificationEventKey(sourceId: string, eventId: string): string {
-  return `notification.source.${sourceId}.${eventId}.enabled`;
-}

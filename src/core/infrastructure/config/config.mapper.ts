@@ -43,7 +43,21 @@ export class ConfigMapper {
     settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
     notificationSources: ReadonlyArray<NotificationSourceContract> = [],
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
-    const schema = createConfigSchema(settingsExtensions, notificationSources);
+    return ConfigMapper.fromStringToConfigWithSchema(
+      platform,
+      defaultConfigString,
+      userConfigString,
+      createConfigSchema(settingsExtensions, notificationSources),
+    );
+  }
+
+  /** Like `fromStringToConfigWithDiagnostics`, against a schema the caller already composed. */
+  static fromStringToConfigWithSchema(
+    platform: OsType,
+    defaultConfigString: string,
+    userConfigString: string,
+    schema: z.ZodObject<z.ZodRawShape>,
+  ): { config: Config; diagnostics: ConfigDiagnostic[] } {
     const userConfig = ConfigMapper.parseConfigString(userConfigString, schema);
     const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString, schema);
     return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform);

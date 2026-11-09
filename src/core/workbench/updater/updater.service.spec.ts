@@ -56,7 +56,7 @@ describe("UpdaterService", () => {
   });
 
   afterEach(() => {
-    service.stop();
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
@@ -83,18 +83,6 @@ describe("UpdaterService", () => {
   it("forces the check the user asks for", async () => {
     await service.checkNow();
     expect(updater.check).toHaveBeenLastCalledWith({ force: true, download: true });
-  });
-
-  it("stops checking and following the state once stopped", () => {
-    service.start();
-    service.stop();
-
-    vi.advanceTimersByTime(CHECK_INTERVAL_MS);
-    state$.next(state({ phase: "ready", version: "0.6.0" }));
-    announcement$.next(state({ phase: "ready", version: "0.6.0" }));
-    expect(updater.check).toHaveBeenCalledOnce();
-    expect(service.state()).toBeUndefined();
-    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("shows the state without announcing it; announcing is Rust's call", () => {

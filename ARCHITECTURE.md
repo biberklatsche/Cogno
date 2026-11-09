@@ -950,7 +950,7 @@ Features importieren, und besteht **nur aus Verträgen**:
 - **Ports** (Core → Feature): `SessionApi`, `TerminalMonitorPort`,
   `TerminalNavigator`, `TerminalPlacementPort`, `TerminalIpcPort`,
   `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
-  `NotificationChannelsPort`, `ApplicationConfigurationPort`,
+  `ApplicationConfigurationPort`,
   `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
   `FeatureDefinition`, Side-Menu-Features, Feature-Settings,

@@ -27,7 +27,7 @@ const setting = (key: string): SettingDescriptor => {
 
 describe("describeSettings", () => {
   it("names every top-level key of the schema in a section", () => {
-    const sectioned = new Set(SETTING_SECTIONS.flatMap((section) => section.keys));
+    const sectioned = new Set(SETTING_SECTIONS.map((section) => section.key));
     for (const key of Object.keys(schema.shape)) {
       expect(sectioned.has(key), `section for ${key}`).toBe(true);
     }

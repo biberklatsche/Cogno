@@ -1,6 +1,13 @@
 import { SettingDescriptor } from "@cogno/core/infrastructure/config/config-schema-walker";
 import { describe, expect, it } from "vitest";
-import { buildSettingsView, headingsBefore, parseInput, renderValue } from "./settings-view";
+import {
+  buildSettingRows,
+  buildSettingsView,
+  parseInput,
+  renderValue,
+  SettingRowsInput,
+  SettingsViewFilter,
+} from "./settings-view";
 
 const descriptor = (partial: Partial<SettingDescriptor> & { key: string }): SettingDescriptor => ({
   section: "Terminal",
@@ -44,11 +51,14 @@ const input = {
   query: "",
 };
 
+const view = (input: SettingRowsInput & SettingsViewFilter) =>
+  buildSettingsView(buildSettingRows(input), input);
+
 describe("buildSettingsView", () => {
   it("shows the chosen section with values, platform defaults and what the user set", () => {
-    const view = buildSettingsView(input);
+    const shown = view(input);
 
-    expect(view.rows).toEqual([
+    expect(shown.rows).toEqual([
       expect.objectContaining({
         key: "terminal.webgl",
         value: "true",
@@ -56,7 +66,7 @@ describe("buildSettingsView", () => {
         modified: true,
       }),
     ]);
-    expect(view.sections).toEqual([
+    expect(shown.sections).toEqual([
       { title: "Font", count: 1 },
       { title: "Shell", count: 1 },
       { title: "Terminal", count: 1 },
@@ -64,18 +74,18 @@ describe("buildSettingsView", () => {
   });
 
   it("counts a line that repeats the default as unchanged", () => {
-    const view = buildSettingsView({
+    const shown = view({
       ...input,
       userKeys: new Set(["terminal.webgl", "font.size"]),
       section: "Font",
     });
-    expect(view.rows[0]).toEqual(expect.objectContaining({ key: "font.size", modified: false }));
+    expect(shown.rows[0]).toEqual(expect.objectContaining({ key: "font.size", modified: false }));
   });
 
   it("collapses a record into one row that points at the file", () => {
-    const view = buildSettingsView({ ...input, section: "Shell" });
+    const shown = view({ ...input, section: "Shell" });
 
-    expect(view.rows).toEqual([
+    expect(shown.rows).toEqual([
       expect.objectContaining({
         key: "shell.profiles",
         description: "Your shell profiles.",
@@ -85,64 +95,64 @@ describe("buildSettingsView", () => {
   });
 
   it("searches across sections by key, description and section", () => {
-    expect(buildSettingsView({ ...input, query: "SIZE" }).rows.map((row) => row.key)).toEqual([
-      "font.size",
-    ]);
-    expect(buildSettingsView({ ...input, query: "shell" }).rows.map((row) => row.key)).toEqual([
+    expect(view({ ...input, query: "SIZE" }).rows.map((row) => row.key)).toEqual(["font.size"]);
+    expect(view({ ...input, query: "shell" }).rows.map((row) => row.key)).toEqual([
       "shell.profiles",
     ]);
-    expect(buildSettingsView({ ...input, query: "webgl font" }).rows).toEqual([]);
+    expect(view({ ...input, query: "webgl font" }).rows).toEqual([]);
   });
 });
 
-describe("headingsBefore", () => {
+describe("headings", () => {
   const group = (key: string) => ({
     key,
     title: key.split(".").at(-1)?.toUpperCase() ?? key,
     description: `${key} described`,
   });
-  const rows = buildSettingsView({
-    descriptors: [
-      descriptor({
-        key: "n.source.agents.working.enabled",
-        section: "Notifications",
-        groups: [
-          group("n"),
-          group("n.source"),
-          group("n.source.agents"),
-          group("n.source.agents.working"),
-        ],
-      }),
-      descriptor({
-        key: "n.source.agents.ready.enabled",
-        section: "Notifications",
-        groups: [
-          group("n"),
-          group("n.source"),
-          group("n.source.agents"),
-          group("n.source.agents.ready"),
-        ],
-      }),
-      descriptor({
-        key: "n.source.errors.handled.enabled",
-        section: "Notifications",
-        groups: [
-          group("n"),
-          group("n.source"),
-          group("n.source.errors"),
-          group("n.source.errors.handled"),
-        ],
-      }),
-    ],
-    configuration: {},
-    userKeys: new Set(),
-    platform: "linux",
-    section: "Notifications",
-    query: "",
-  }).rows;
+  const notifications = (query: string) =>
+    view({
+      descriptors: [
+        descriptor({
+          key: "n.source.agents.working.enabled",
+          section: "Notifications",
+          groups: [
+            group("n"),
+            group("n.source"),
+            group("n.source.agents"),
+            group("n.source.agents.working"),
+          ],
+        }),
+        descriptor({
+          key: "n.source.agents.ready.enabled",
+          section: "Notifications",
+          groups: [
+            group("n"),
+            group("n.source"),
+            group("n.source.agents"),
+            group("n.source.agents.ready"),
+          ],
+        }),
+        descriptor({
+          key: "n.source.errors.handled.enabled",
+          section: "Notifications",
+          groups: [
+            group("n"),
+            group("n.source"),
+            group("n.source.errors"),
+            group("n.source.errors.handled"),
+          ],
+        }),
+      ],
+      configuration: {},
+      userKeys: new Set(),
+      platform: "linux",
+      section: "Notifications",
+      query,
+    }).rows;
 
   it("opens the groups a row enters, stepped by depth, and skips groups of one setting", () => {
-    expect(headingsBefore(rows, 0, false)).toEqual([
+    const rows = notifications("");
+    expect(rows[0]?.headings).toEqual([
       { key: "n.source", title: "SOURCE", description: "n.source described", level: 1 },
       {
         key: "n.source.agents",
@@ -151,12 +161,16 @@ describe("headingsBefore", () => {
         level: 2,
       },
     ]);
-    expect(headingsBefore(rows, 1, false)).toEqual([]);
-    expect(headingsBefore(rows, 2, false)).toEqual([]);
+    expect(rows[1]?.headings).toEqual([]);
+    expect(rows[2]?.headings).toEqual([]);
   });
 
   it("names the section first while searching", () => {
-    expect(headingsBefore(rows, 0, true)[0]).toEqual({ key: "", title: "Notifications", level: 0 });
+    expect(notifications("n.source")[0]?.headings[0]).toEqual({
+      key: "",
+      title: "Notifications",
+      level: 0,
+    });
   });
 });
 

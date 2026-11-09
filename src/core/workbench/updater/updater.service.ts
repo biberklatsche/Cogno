@@ -5,7 +5,6 @@ import { Logger } from "@cogno/platform/logger";
 import { Opener } from "@cogno/platform/opener";
 import { OsPlatform } from "@cogno/platform/os";
 import { Updater, UpdaterState } from "@cogno/platform/updater";
-import { Subscription } from "rxjs";
 
 /** How often a running window asks for a check; Rust skips the ones that come too close together. */
 export const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -25,9 +24,6 @@ export class UpdaterService {
   private readonly stateSignal = signal<UpdaterState | undefined>(undefined);
   readonly state: Signal<UpdaterState | undefined> = this.stateSignal.asReadonly();
 
-  private subscriptions?: Subscription;
-  private timer?: ReturnType<typeof setInterval>;
-
   constructor(
     private readonly updater: Updater,
     private readonly config: ConfigService,
@@ -36,20 +32,12 @@ export class UpdaterService {
     private readonly os: OsPlatform,
   ) {}
 
+  /** Called once, by the always-on updater panel; the service lives as long as the window. */
   start(): void {
-    if (this.subscriptions) return;
-    this.subscriptions = new Subscription();
-    this.subscriptions.add(this.updater.state$.subscribe((state) => this.stateSignal.set(state)));
-    this.subscriptions.add(this.updater.announcement$.subscribe((state) => this.announce(state)));
+    this.updater.state$.subscribe((state) => this.stateSignal.set(state));
+    this.updater.announcement$.subscribe((state) => this.announce(state));
     void this.check(false);
-    this.timer = setInterval(() => void this.check(false), CHECK_INTERVAL_MS);
-  }
-
-  stop(): void {
-    this.subscriptions?.unsubscribe();
-    this.subscriptions = undefined;
-    clearInterval(this.timer);
-    this.timer = undefined;
+    setInterval(() => void this.check(false), CHECK_INTERVAL_MS);
   }
 
   checkNow(): Promise<void> {

@@ -224,7 +224,7 @@ describe("RealConfigService hot reload", () => {
       fs,
     );
     const report = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => {});
-    await service.load({ settingsExtensions: [] });
+    await service.load({ settingsExtensions: [], notificationSources: [] });
     expect(service.config.cursor?.blink).toBe(false);
 
     vi.mocked(fs.readTextFile).mockRejectedValueOnce(new Error("file is locked"));
@@ -269,7 +269,7 @@ describe("RealConfigService hot reload", () => {
     it("writes the entries into the file and reads them back", async () => {
       const userConfig = { text: "# mine\ncursor.blink = false\n" };
       const { service, fs } = createLoadedService(userConfig);
-      await service.load({ settingsExtensions: [] });
+      await service.load({ settingsExtensions: [], notificationSources: [] });
 
       await service.update({
         "cursor.blink": true,
@@ -287,7 +287,7 @@ describe("RealConfigService hot reload", () => {
     it("refuses an unknown key and writes nothing", async () => {
       const userConfig = { text: "cursor.blink = false\n" };
       const { service, fs } = createLoadedService(userConfig);
-      await service.load({ settingsExtensions: [] });
+      await service.load({ settingsExtensions: [], notificationSources: [] });
 
       await expect(service.update({ "cursor.blink": true, "cursor.nope": true })).rejects.toThrow(
         "Unknown config key: cursor.nope",
@@ -300,7 +300,7 @@ describe("RealConfigService hot reload", () => {
     it("refuses a value of the wrong type and writes nothing", async () => {
       const userConfig = { text: "" };
       const { service, fs } = createLoadedService(userConfig);
-      await service.load({ settingsExtensions: [] });
+      await service.load({ settingsExtensions: [], notificationSources: [] });
 
       await expect(service.update({ "cursor.blink": "maybe" })).rejects.toThrow(
         "Invalid value for cursor.blink",
@@ -312,7 +312,7 @@ describe("RealConfigService hot reload", () => {
     it("removes a key when its value is undefined and tells which keys the file sets", async () => {
       const userConfig = { text: "cursor.blink = false\nterminal.webgl = false\n" };
       const { service } = createLoadedService(userConfig);
-      await service.load({ settingsExtensions: [] });
+      await service.load({ settingsExtensions: [], notificationSources: [] });
       let userKeys: ReadonlySet<string> = new Set();
       service.userKeys$.subscribe((keys) => (userKeys = keys));
       expect([...userKeys]).toEqual(["cursor.blink", "terminal.webgl"]);
@@ -328,7 +328,7 @@ describe("RealConfigService hot reload", () => {
     it("renders a list the way the file spells it", async () => {
       const userConfig = { text: "cursor.blink = false\n" };
       const { service } = createLoadedService(userConfig);
-      await service.load({ settingsExtensions: [] });
+      await service.load({ settingsExtensions: [], notificationSources: [] });
 
       await service.update({ "terminal.history.allowed_return_codes": [0, 1] });
 

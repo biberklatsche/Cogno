@@ -40,7 +40,7 @@ export interface ConfigLoadOptions {
   /** Zod extensions the features contribute; the schema is built from them. */
   readonly settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>;
   /** The notification sources, core's and the features'; `notification.source` is built from them. */
-  readonly notificationSources?: ReadonlyArray<NotificationSourceContract>;
+  readonly notificationSources: ReadonlyArray<NotificationSourceContract>;
   /**
    * Fills in values that have to exist before the file is written - today the
    * shell profiles of the first start. Returns true when it changed the
@@ -235,6 +235,8 @@ export class RealConfigService extends ConfigService {
 
   async load(options: ConfigLoadOptions): Promise<void> {
     this._options = options;
+    // Built once: the extensions and sources are fixed for the life of the app.
+    this._schema = createConfigSchema(options.settingsExtensions, options.notificationSources);
     await this.read();
   }
 
@@ -246,11 +248,7 @@ export class RealConfigService extends ConfigService {
   }
 
   async update(entries: Readonly<Record<string, unknown>>): Promise<void> {
-    const options = this._options;
-    if (!options) {
-      throw new Error("Config was never loaded!");
-    }
-    const schema = createConfigSchema(options.settingsExtensions, options.notificationSources);
+    const schema = this.schema;
     const rendered: Record<string, string | null> = {};
     for (const [key, value] of Object.entries(entries)) {
       const valueSchema = ConfigMapper.getSchemaAtDotPath(schema, key);
@@ -302,8 +300,7 @@ export class RealConfigService extends ConfigService {
     if (!options) {
       throw new Error("Config was never loaded!");
     }
-    const settingsExtensions = options.settingsExtensions;
-    const notificationSources = options.notificationSources ?? [];
+    const schema = this.schema;
 
     const configDir = this.environment.configDir();
     if (!(await this.fs.exists(configDir))) {
@@ -317,25 +314,23 @@ export class RealConfigService extends ConfigService {
     }
 
     const defaultConfigString = await this.defaultConfig.read();
-    const defaultConfig = ConfigMapper.fromStringToConfig(
+    const defaultConfig = ConfigMapper.fromStringToConfigWithSchema(
       this.os.platform(),
       defaultConfigString,
       "",
-      settingsExtensions,
-      notificationSources,
-    );
+      schema,
+    ).config;
     const writeConfig = (config: Config) =>
       this.fs.writeTextFile(path, InitialConfigOverridesWriter.toDotString(config, defaultConfig));
     const readConfig = async () => {
       let userConfigString = await this.fs.readTextFile(path);
-      this._userKeys.next(ConfigLineEditor.keys(userConfigString));
+      this.publishUserKeys(ConfigLineEditor.keys(userConfigString));
       userConfigString = await this.applyCliSetOverrides(userConfigString);
-      return ConfigMapper.fromStringToConfigWithDiagnostics(
+      return ConfigMapper.fromStringToConfigWithSchema(
         this.os.platform(),
         defaultConfigString,
         userConfigString,
-        settingsExtensions,
-        notificationSources,
+        schema,
       );
     };
 
@@ -362,10 +357,16 @@ export class RealConfigService extends ConfigService {
       await this.watch();
     }
 
-    this._schema = createConfigSchema(settingsExtensions, notificationSources);
     this._config.next(config);
     Logger.info("Config loaded...");
     this._diagnostics.next(diagnostics);
+  }
+
+  /** Emits only when the set of keys changed, so a reload of the same file costs the panel nothing. */
+  private publishUserKeys(keys: ReadonlySet<string>): void {
+    const current = this._userKeys.value;
+    if (keys.size === current.size && [...keys].every((key) => current.has(key))) return;
+    this._userKeys.next(keys);
   }
 
   private async applyCliSetOverrides(userConfigString: string): Promise<string> {

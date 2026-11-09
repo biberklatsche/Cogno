@@ -11,7 +11,6 @@ import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-
 import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
-import { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -52,7 +51,6 @@ import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-la
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu.service";
-import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
 import { SettingsPanelService } from "@cogno/core/workbench/settings/settings-panel.service";
@@ -85,7 +83,6 @@ export const appConfig: ApplicationConfig = {
     },
     { provide: FEATURE_DEFINITIONS, useValue: features },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
-    { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     { provide: SessionApi, useExisting: TerminalGatewayService },
     { provide: TerminalSearchApi, useExisting: TerminalSearchApiService },
     { provide: PaneLayoutLookup, useExisting: GridListService },

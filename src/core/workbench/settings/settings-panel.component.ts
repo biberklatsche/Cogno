@@ -10,6 +10,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   describeSettings,
+  SETTING_SECTIONS,
   SettingDescriptor,
 } from "@cogno/core/infrastructure/config/config-schema-walker";
 import {
@@ -22,16 +23,23 @@ import { OsPlatform } from "@cogno/platform/os";
 import {
   ColorFieldComponent,
   IconComponent,
+  SideMenuSearchInputComponent,
   ToggleSwitchComponent,
   TooltipDirective,
 } from "@cogno/shared/ui";
 import {
+  buildSettingRows,
   buildSettingsView,
-  headingsBefore,
   parseInput,
-  SettingHeading,
   SettingRow,
+  SettingsView,
 } from "./settings-view";
+
+/**
+ * The descriptors per schema: the panel is created on every open, the schema
+ * once per app, so walking it again would find the same settings.
+ */
+const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>>();
 
 /**
  * Every setting, from the schema: searchable, grouped by section, each with
@@ -43,20 +51,21 @@ import {
 @Component({
   selector: "app-settings-panel",
   standalone: true,
-  imports: [ColorFieldComponent, IconComponent, ToggleSwitchComponent, TooltipDirective],
+  imports: [
+    ColorFieldComponent,
+    IconComponent,
+    SideMenuSearchInputComponent,
+    ToggleSwitchComponent,
+    TooltipDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="search">
-      <input
-        type="search"
+      <app-side-menu-search-input
         placeholder="Search settings"
-        autocomplete="off"
-        spellcheck="false"
-        data-side-menu-autofocus="true"
         [value]="query()"
-        (input)="query.set(search.value)"
-        #search
-      />
+        (query)="query.set($event)"
+      ></app-side-menu-search-input>
     </div>
 
     <div class="body">
@@ -65,11 +74,11 @@ import {
           <button
             type="button"
             class="section"
-            [class.active]="!searching() && section.title === activeSection()"
+            [class.active]="!view().searching && section.title === activeSection()"
             (click)="activeSection.set(section.title); query.set('')"
           >
             <span>{{ section.title }}</span>
-            @if (searching()) {
+            @if (view().searching) {
               <span class="count">{{ section.count }}</span>
             }
           </button>
@@ -85,8 +94,8 @@ import {
         @if (view().rows.length === 0) {
           <p class="empty">No setting matches.</p>
         }
-        @for (row of view().rows; track row.key; let index = $index) {
-          @for (heading of headingsBefore(index); track heading.key) {
+        @for (row of view().rows; track row.key) {
+          @for (heading of row.headings; track heading.key) {
             <h3 class="group" [class]="'group level-' + heading.level">{{ heading.title }}</h3>
             @if (heading.description) {
               <p class="group-description">{{ heading.description }}</p>
@@ -372,11 +381,10 @@ import {
 })
 export class SettingsPanelComponent {
   readonly query = signal("");
-  readonly activeSection = signal("General");
-  readonly searching = computed(() => this.query().trim().length > 0);
+  readonly activeSection = signal(SETTING_SECTIONS[0]?.title ?? "");
   /** Why the last write of a key was refused; cleared by the next successful one. */
   readonly errors = signal<Readonly<Record<string, string>>>({});
-  readonly view: Signal<ReturnType<typeof buildSettingsView>>;
+  readonly view: Signal<SettingsView>;
 
   private readonly configuration = signal<Readonly<Record<string, unknown>> | undefined>(undefined);
   private readonly userKeys = signal<ReadonlySet<string>>(new Set());
@@ -389,30 +397,25 @@ export class SettingsPanelComponent {
     destroyRef: DestroyRef,
   ) {
     const platform = os.platform();
-    this.descriptors = describeSettings(config.schema.shape, {
-      defaults: defaultSettings,
-      platformOverrides: platformSettingOverrides,
-    });
+    this.descriptors = descriptorsFor(config.schema);
     config.config$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((configuration) => this.configuration.set(configuration));
     config.userKeys$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((keys) => this.userKeys.set(keys));
-    this.view = computed(() =>
-      buildSettingsView({
+    // Two steps, so a keystroke in the search filters rows instead of rebuilding them.
+    const rows = computed(() =>
+      buildSettingRows({
         descriptors: this.descriptors,
         configuration: this.configuration(),
         userKeys: this.userKeys(),
         platform,
-        section: this.activeSection(),
-        query: this.query(),
       }),
     );
-  }
-
-  headingsBefore(index: number): ReadonlyArray<SettingHeading> {
-    return headingsBefore(this.view().rows, index, this.searching());
+    this.view = computed(() =>
+      buildSettingsView(rows(), { section: this.activeSection(), query: this.query() }),
+    );
   }
 
   write(row: SettingRow, text: string): void {
@@ -440,4 +443,16 @@ export class SettingsPanelComponent {
   openConfigFile(): void {
     this.bus.publish(ActionFired.create("open_config"));
   }
+}
+
+function descriptorsFor(schema: object & { shape: Readonly<Record<string, unknown>> }) {
+  let descriptors = descriptorsBySchema.get(schema);
+  if (!descriptors) {
+    descriptors = describeSettings(schema.shape, {
+      defaults: defaultSettings,
+      platformOverrides: platformSettingOverrides,
+    });
+    descriptorsBySchema.set(schema, descriptors);
+  }
+  return descriptors;
 }

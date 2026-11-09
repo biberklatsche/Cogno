@@ -28,8 +28,7 @@ import {
   defaultSettings,
   platformSettingOverrides,
 } from "../src/core/infrastructure/config/models/default-config-values";
-import { ERROR_NOTIFICATION_SOURCE } from "../src/core/workbench/error/error-notification-source";
-import { TERMINAL_NOTIFICATION_SOURCE } from "../src/core/workbench/terminal/+state/terminal-notification-source";
+import { CORE_NOTIFICATION_SOURCES } from "../src/core/workbench/notification/+state/core-notification-sources";
 import { CODING_AGENT_NOTIFICATION_SOURCE } from "../src/features/coding-agent/coding-agent-notification-source";
 import { defaultFeatureSettingsExtension } from "../src/features/feature-settings-extension";
 
@@ -41,7 +40,7 @@ const SITE_MD = `${REPO_ROOT}/../meetcogno/src/content/docs/config/settings.md`;
 const settings = describeSettings(
   createConfigSchema(
     [defaultFeatureSettingsExtension],
-    [TERMINAL_NOTIFICATION_SOURCE, ERROR_NOTIFICATION_SOURCE, CODING_AGENT_NOTIFICATION_SOURCE],
+    [...CORE_NOTIFICATION_SOURCES, CODING_AGENT_NOTIFICATION_SOURCE],
   ).shape,
   { defaults: defaultSettings, platformOverrides: platformSettingOverrides },
 );

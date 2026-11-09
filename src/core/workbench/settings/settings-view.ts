@@ -1,9 +1,11 @@
+import { UNLIMITED } from "@cogno/core/api/contributions/limit-setting";
 import {
   defaultOn,
   SETTING_SECTIONS,
   SettingControl,
   SettingDescriptor,
   SettingGroup,
+  valueAt,
 } from "@cogno/core/infrastructure/config/config-schema-walker";
 
 /**
@@ -25,11 +27,18 @@ export type SettingRow = {
   readonly default: string | undefined;
   /** The user's file sets this key to something other than the default. */
   readonly modified: boolean;
+  /** Key, description, section and group descriptions, lowercased once for the search. */
+  readonly searchText: string;
 };
+
+/** A row as the panel shows it, with the headings it opens. */
+export type ShownSettingRow = SettingRow & { readonly headings: ReadonlyArray<SettingHeading> };
 
 export type SettingsView = {
   readonly sections: ReadonlyArray<{ readonly title: string; readonly count: number }>;
-  readonly rows: ReadonlyArray<SettingRow>;
+  readonly rows: ReadonlyArray<ShownSettingRow>;
+  /** A query is set: the rows come from every section, each headed by its section. */
+  readonly searching: boolean;
 };
 
 export type SettingHeading = {
@@ -40,27 +49,40 @@ export type SettingHeading = {
   readonly level: number;
 };
 
-export type SettingsViewInput = {
+export type SettingRowsInput = {
   readonly descriptors: ReadonlyArray<SettingDescriptor>;
   readonly configuration: Readonly<Record<string, unknown>> | undefined;
   readonly userKeys: ReadonlySet<string>;
   readonly platform: string;
+};
+
+export type SettingsViewFilter = {
   /** The section shown; ignored while `query` is set. */
   readonly section: string;
   readonly query: string;
 };
 
-export function buildSettingsView(input: SettingsViewInput): SettingsView {
-  const rows = collapseRecords(input.descriptors).map((descriptor) => toRow(descriptor, input));
-  const terms = input.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const matching = terms.length > 0 ? rows.filter((row) => matches(row, terms)) : rows;
+/** Every row with its value; changes only when the config or the user's keys do. */
+export function buildSettingRows(input: SettingRowsInput): SettingRow[] {
+  return collapseRecords(input.descriptors).map((descriptor) => toRow(descriptor, input));
+}
+
+/** What the panel shows for a section or a query, headings included. */
+export function buildSettingsView(
+  rows: ReadonlyArray<SettingRow>,
+  filter: SettingsViewFilter,
+): SettingsView {
+  const terms = filter.query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const searching = terms.length > 0;
+  const matching = searching
+    ? rows.filter((row) => terms.every((term) => row.searchText.includes(term)))
+    : rows;
   const sections = SETTING_SECTIONS.map((section) => ({
     title: section.title,
     count: matching.filter((row) => row.section === section.title).length,
   })).filter((section) => section.count > 0);
-  const shown =
-    terms.length > 0 ? matching : matching.filter((row) => row.section === input.section);
-  return { sections, rows: shown };
+  const shown = searching ? matching : matching.filter((row) => row.section === filter.section);
+  return { sections, rows: withHeadings(shown, searching), searching };
 }
 
 /**
@@ -91,7 +113,7 @@ function collapseRecords(descriptors: ReadonlyArray<SettingDescriptor>): Setting
   return out;
 }
 
-function toRow(descriptor: SettingDescriptor, input: SettingsViewInput): SettingRow {
+function toRow(descriptor: SettingDescriptor, input: SettingRowsInput): SettingRow {
   const value = renderValue(valueAt(input.configuration, descriptor.key));
   const fallback = defaultOn(descriptor, input.platform);
   return {
@@ -106,6 +128,14 @@ function toRow(descriptor: SettingDescriptor, input: SettingsViewInput): Setting
     // presence still counts, because some effective values (a font family
     // with its fallbacks appended) never equal their default verbatim.
     modified: input.userKeys.has(descriptor.key) && !sameSpelling(value, fallback),
+    searchText: [
+      descriptor.key,
+      descriptor.description,
+      descriptor.section,
+      ...descriptor.groups.map((group) => group.description),
+    ]
+      .join(" ")
+      .toLowerCase(),
   };
 }
 
@@ -121,65 +151,38 @@ function sameSpelling(value: string, fallback: string | undefined): boolean {
   );
 }
 
-function matches(row: SettingRow, terms: ReadonlyArray<string>): boolean {
-  const haystack = [
-    row.key,
-    row.description,
-    row.section,
-    ...row.groups.map((group) => group.description),
-  ]
-    .join(" ")
-    .toLowerCase();
-  return terms.every((term) => haystack.includes(term));
-}
-
 /**
- * The headings a row opens, in order: its section while searching, then
+ * The headings each row opens, in order: its section while searching, then
  * every group it enters that the previous row was not in. A group with a
- * single setting gets no heading of its own - the setting says it all.
+ * single shown setting gets no heading of its own - the setting says it all.
  */
-export function headingsBefore(
-  rows: ReadonlyArray<SettingRow>,
-  index: number,
-  searching: boolean,
-): SettingHeading[] {
-  const row = rows[index];
-  if (!row) return [];
-  const previous = rows[index - 1];
-  const newSection = row.section !== previous?.section;
-  const headings: SettingHeading[] = [];
-  if (searching && newSection) headings.push({ key: "", title: row.section, level: 0 });
-  const previousKeys = new Set((previous?.groups ?? []).map((group) => group.key));
-  row.groups.forEach((group, depth) => {
-    // The outermost group is the section itself; its name is already on the left.
-    if (depth === 0) return;
-    if (!newSection && previousKeys.has(group.key)) return;
-    if (settingsIn(rows, group.key) < 2) return;
-    headings.push({
-      key: group.key,
-      title: group.title,
-      ...(group.description ? { description: group.description } : {}),
-      level: depth,
-    });
-  });
-  return headings;
-}
-
-function settingsIn(rows: ReadonlyArray<SettingRow>, groupKey: string): number {
-  return rows.filter((row) => row.groups.some((group) => group.key === groupKey)).length;
-}
-
-/** The effective value under a dotted key; undefined when the path leads nowhere. */
-export function valueAt(
-  configuration: Readonly<Record<string, unknown>> | undefined,
-  key: string,
-): unknown {
-  let node: unknown = configuration;
-  for (const part of key.split(".")) {
-    if (typeof node !== "object" || node === null) return undefined;
-    node = (node as Record<string, unknown>)[part];
+function withHeadings(rows: ReadonlyArray<SettingRow>, searching: boolean): ShownSettingRow[] {
+  const settingsPerGroup = new Map<string, number>();
+  for (const row of rows) {
+    for (const group of row.groups) {
+      settingsPerGroup.set(group.key, (settingsPerGroup.get(group.key) ?? 0) + 1);
+    }
   }
-  return node;
+  return rows.map((row, index) => {
+    const previous = rows[index - 1];
+    const newSection = row.section !== previous?.section;
+    const headings: SettingHeading[] = [];
+    if (searching && newSection) headings.push({ key: "", title: row.section, level: 0 });
+    const previousKeys = new Set((previous?.groups ?? []).map((group) => group.key));
+    row.groups.forEach((group, depth) => {
+      // The outermost group is the section itself; its name is already on the left.
+      if (depth === 0) return;
+      if (!newSection && previousKeys.has(group.key)) return;
+      if ((settingsPerGroup.get(group.key) ?? 0) < 2) return;
+      headings.push({
+        key: group.key,
+        title: group.title,
+        ...(group.description ? { description: group.description } : {}),
+        level: depth,
+      });
+    });
+    return { ...row, headings };
+  });
 }
 
 /** A value the way the file spells it: `true`, `14`, `a,b` for a list. */
@@ -213,7 +216,7 @@ export function parseInput(
       return { value: number };
     }
     case "limit": {
-      if (trimmed === "unlimited") return { value: "unlimited" };
+      if (trimmed === UNLIMITED) return { value: UNLIMITED };
       const number = Number(trimmed);
       if (trimmed === "" || !Number.isInteger(number))
         return { error: "A whole number or unlimited" };
