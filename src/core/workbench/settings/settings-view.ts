@@ -1,7 +1,6 @@
 import { UNLIMITED } from "@cogno/core/api/contributions/limit-setting";
 import {
   defaultOn,
-  SETTING_SECTIONS,
   SettingControl,
   SettingDescriptor,
   SettingGroup,
@@ -77,10 +76,10 @@ export function buildSettingsView(
   const matching = searching
     ? rows.filter((row) => terms.every((term) => row.searchText.includes(term)))
     : rows;
-  const sections = SETTING_SECTIONS.map((section) => ({
-    title: section.title,
-    count: matching.filter((row) => row.section === section.title).length,
-  })).filter((section) => section.count > 0);
+  // Sections in the order the rows come in, which is the schema's.
+  const counts = new Map<string, number>();
+  for (const row of matching) counts.set(row.section, (counts.get(row.section) ?? 0) + 1);
+  const sections = [...counts].map(([title, count]) => ({ title, count }));
   const shown = searching ? matching : matching.filter((row) => row.section === filter.section);
   return { sections, rows: withHeadings(shown, searching), searching };
 }

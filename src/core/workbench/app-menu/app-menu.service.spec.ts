@@ -41,6 +41,9 @@ describe("AppMenuService", () => {
       get userKeys$(): never {
         throw new Error("not implemented");
       },
+      get defaultSettings(): never {
+        throw new Error("not implemented");
+      },
       getShellProfileOrDefault: vi.fn(),
       getOrderedShellProfiles: vi.fn().mockReturnValue([
         {

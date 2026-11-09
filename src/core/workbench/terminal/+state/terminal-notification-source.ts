@@ -21,12 +21,15 @@ export const TERMINAL_NOTIFICATION_SOURCE: NotificationSourceContract = {
       label: "A long-running command finishes",
       description: "Notify when a command that ran for a while has finished.",
       settings: {
-        minimum_duration_seconds: z
-          .number()
-          .int()
-          .min(0)
-          .optional()
-          .describe("Notify only when a command ran for at least this many seconds."),
+        minimum_duration_seconds: {
+          schema: z
+            .number()
+            .int()
+            .min(0)
+            .optional()
+            .describe("Notify only when a command ran for at least this many seconds."),
+          default: String(DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS),
+        },
       },
     },
   ],

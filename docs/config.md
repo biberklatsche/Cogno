@@ -17,6 +17,8 @@ Reload the config automatically when the file changes on disk.
 
 ## Font
 
+Terminal and app fonts.
+
 ### `font.family`
 
 Terminal font family; falls back per OS when unset.
@@ -77,9 +79,9 @@ Font size of the app UI in pixels.
 
 **Type:** integer ≥ 1 · **Default:** `14`
 
-## Colors
+## Color
 
-Colors are hex without `#`; 8 digits add alpha.
+Terminal color palette. Colors are hex without `#`; 8 digits add alpha.
 
 ### `color.foreground`
 
@@ -197,6 +199,8 @@ ANSI color 15 (bright white).
 
 ## Cursor
 
+Cursor shape, color and behaviour.
+
 ### `cursor.width`
 
 Cursor width in pixels; applies to the bar style.
@@ -241,6 +245,8 @@ Alt+click moves the shell cursor to the clicked position.
 
 ## Padding
 
+Padding around the terminal content.
+
 ### `padding.left`
 
 Padding between terminal content and left edge.
@@ -273,6 +279,8 @@ Drop the padding while a full-screen app (vim, less) owns the screen.
 
 ## Background image
 
+Optional terminal background image.
+
 ### `background_image.path`
 
 Path to a background image; empty means no background image.
@@ -293,6 +301,8 @@ Blur radius applied to the background image, 0-10.
 
 ## Menu
 
+Appearance of menus and panels.
+
 ### `menu.opacity`
 
 Opacity of menus and panels, 0-100.
@@ -300,6 +310,8 @@ Opacity of menus and panels, 0-100.
 **Type:** integer 0-100 · **Default:** `80`
 
 ## Scrollbar
+
+Scrollbar appearance and scrolling behaviour.
 
 ### `scrollbar.width`
 
@@ -363,6 +375,8 @@ How many lines of scrollback the terminal keeps.
 
 ## Selection
 
+Text selection colors and behaviour.
+
 ### `selection.clear_on_copy`
 
 Clear the selection right after copying.
@@ -389,6 +403,8 @@ Right-click selects the word under the pointer.
 
 ## Clipboard
 
+Clipboard access and copy behaviour.
+
 ### `clipboard.read`
 
 Whether programs in the terminal may read the clipboard (OSC 52).
@@ -409,7 +425,7 @@ Strip trailing spaces from copied lines.
 
 ## Shell
 
-`<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.
+Shell profiles and which one starts by default. `<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.
 
 ### `shell.default`
 
@@ -441,7 +457,7 @@ Extra launch arguments for the shell.
 
 **Type:** string[]
 
-### `shell.profiles.<name>.env.<var>`
+### `shell.profiles.<name>.env.<name>`
 
 Environment variables added to the shell process.
 
@@ -473,7 +489,7 @@ Also load your own shell rc/profile files.
 
 ## Prompt
 
-`<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.
+The configurable prompt rendered by Cogno. `<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.
 
 ### `prompt.active`
 
@@ -607,15 +623,17 @@ Static text to display, instead of a `field`.
 
 **Type:** string
 
-## Keybindings
+## Keybind
 
 ### `keybind`
 
 One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.
 
-**Type:** keybind lines
+**Type:** lines
 
 ## Terminal
+
+Terminal rendering and behaviour.
 
 ### `terminal.webgl`
 
@@ -763,13 +781,17 @@ Maximum scrollback lines captured per terminal for restore. Caps the stored size
 
 ## Autocomplete
 
+Command autocomplete behaviour.
+
 ### `autocomplete.provider.timeout_ms`
 
 Maximum time in milliseconds for one dynamic autocomplete provider.
 
 **Type:** integer ≥ 1 · **Default:** `160`
 
-## Notifications
+## Notification
+
+Which events notify you, and how.
 
 ### `notification.channel.app.available`
 
@@ -811,7 +833,7 @@ Mark the tab of the terminal a notification belongs to while that terminal isn't
 
 Notify when a program sends a notification via the OSC 9 escape sequence.
 
-**Type:** boolean · **Default:** `true`
+**Type:** boolean · **Default:** `false`
 
 ### `notification.source.terminal.long_running_command.enabled`
 
@@ -863,6 +885,8 @@ Notify when an agent reports an error.
 
 ## HTTP server
 
+Local HTTP server used by the CLI.
+
 ### `http_server.enabled`
 
 Run the local HTTP server that the `cogno` CLI talks to.
@@ -881,7 +905,9 @@ If the port is taken, try the next free one instead of failing.
 
 **Type:** boolean · **Default:** `true`
 
-## Updates
+## Updater
+
+How Cogno keeps itself up to date.
 
 ### `updater.install`
 
@@ -889,7 +915,7 @@ If the port is taken, try the next free one instead of failing.
 
 **Type:** `background` | `ask` · **Default:** `background`
 
-## Features
+## Feature
 
 Each feature can be switched off entirely and ordered in the side menu.
 

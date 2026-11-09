@@ -22,7 +22,8 @@ const featureSettingsSchemaShape = {
       process_info: FeatureProcessInfoSchema.optional(),
       coding_agents: FeatureCodingAgentsSchema.optional(),
     })
-    .optional(),
+    .optional()
+    .describe("Each feature can be switched off entirely and ordered in the side menu."),
 } as const;
 
 export const defaultFeatureSettingsExtension = {

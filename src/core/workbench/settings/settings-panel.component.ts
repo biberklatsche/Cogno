@@ -10,13 +10,9 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   describeSettings,
-  SETTING_SECTIONS,
   SettingDescriptor,
 } from "@cogno/core/infrastructure/config/config-schema-walker";
-import {
-  defaultSettings,
-  platformSettingOverrides,
-} from "@cogno/core/infrastructure/config/models/default-config-values";
+import { platformSettingOverrides } from "@cogno/core/infrastructure/config/models/default-config-values";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { OsPlatform } from "@cogno/platform/os";
@@ -381,7 +377,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
 })
 export class SettingsPanelComponent {
   readonly query = signal("");
-  readonly activeSection = signal(SETTING_SECTIONS[0]?.title ?? "");
+  readonly activeSection = signal("");
   /** Why the last write of a key was refused; cleared by the next successful one. */
   readonly errors = signal<Readonly<Record<string, string>>>({});
   readonly view: Signal<SettingsView>;
@@ -397,7 +393,8 @@ export class SettingsPanelComponent {
     destroyRef: DestroyRef,
   ) {
     const platform = os.platform();
-    this.descriptors = descriptorsFor(config.schema);
+    this.descriptors = descriptorsFor(config);
+    this.activeSection.set(this.descriptors[0]?.section ?? "");
     config.config$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((configuration) => this.configuration.set(configuration));
@@ -445,14 +442,14 @@ export class SettingsPanelComponent {
   }
 }
 
-function descriptorsFor(schema: object & { shape: Readonly<Record<string, unknown>> }) {
-  let descriptors = descriptorsBySchema.get(schema);
+function descriptorsFor(config: ConfigService): ReadonlyArray<SettingDescriptor> {
+  let descriptors = descriptorsBySchema.get(config.schema);
   if (!descriptors) {
-    descriptors = describeSettings(schema.shape, {
-      defaults: defaultSettings,
+    descriptors = describeSettings(config.schema.shape, {
+      defaults: config.defaultSettings,
       platformOverrides: platformSettingOverrides,
     });
-    descriptorsBySchema.set(schema, descriptors);
+    descriptorsBySchema.set(config.schema, descriptors);
   }
   return descriptors;
 }

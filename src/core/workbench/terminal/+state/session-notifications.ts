@@ -4,7 +4,7 @@ import { SessionHost } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationTargetResolverService } from "@cogno/core/workbench/grid-list/+state/notification-target-resolver.service";
-import { isNotificationEventEnabled, TerminalId } from "@cogno/shared/domain";
+import { TerminalId } from "@cogno/shared/domain";
 import { Subscription } from "rxjs";
 import { CompletedCommandNotificationHandler } from "./handler/completed-command-notification.handler";
 import { OSC9_EVENT_ID, TERMINAL_NOTIFICATION_SOURCE_ID } from "./terminal-notification-source";
@@ -87,20 +87,12 @@ export class SessionNotifications {
     });
   }
 
-  /** OSC 9 asked for attention: tell the user, if the config says so. */
+  /** OSC 9 asked for attention; whether it is shown is the dispatch's call. */
   private notifyFromTerminal(message: string): void {
-    if (
-      !isNotificationEventEnabled(
-        this.configService.config,
-        TERMINAL_NOTIFICATION_SOURCE_ID,
-        OSC9_EVENT_ID,
-      )
-    ) {
-      return;
-    }
     this.bus.publish({
       type: "Notification",
       payload: {
+        event: { source: TERMINAL_NOTIFICATION_SOURCE_ID, id: OSC9_EVENT_ID },
         header: "Terminal Notification",
         body: message,
         type: "info",

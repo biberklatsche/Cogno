@@ -32,3 +32,25 @@ export function unwrapZod(schema: z.ZodType | undefined): z.ZodType | undefined 
   }
   return current;
 }
+
+/** The `.meta()` of a schema and of the wrappers around it; an outer wrapper wins. */
+export function zodMeta(schema: z.ZodType | undefined): Readonly<Record<string, unknown>> {
+  const layers: Record<string, unknown>[] = [];
+  let current = schema;
+  for (let guard = 0; guard < 10 && current; guard++) {
+    const meta = (current as { meta?: () => Record<string, unknown> | undefined }).meta?.();
+    if (meta) layers.unshift(meta);
+    current = zodDef(current)?.innerType;
+  }
+  return Object.assign({}, ...layers);
+}
+
+/**
+ * Marks a list whose lines add to the defaults instead of replacing them
+ * (`keybind`). The reader merges such a list, the panel leaves it to the file.
+ */
+export const ADDITIVE_LIST = { additive: true } as const;
+
+export function isAdditiveList(schema: z.ZodType | undefined): boolean {
+  return zodMeta(schema)["additive"] === true;
+}

@@ -66,10 +66,11 @@ describe("buildSettingsView", () => {
         modified: true,
       }),
     ]);
+    // In the order the rows come in, which is the schema's.
     expect(shown.sections).toEqual([
+      { title: "Terminal", count: 1 },
       { title: "Font", count: 1 },
       { title: "Shell", count: 1 },
-      { title: "Terminal", count: 1 },
     ]);
   });
 

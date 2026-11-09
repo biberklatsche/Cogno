@@ -204,39 +204,6 @@ export const defaultSettings = {
         enabled: "true",
       },
     },
-    source: {
-      terminal: {
-        osc9: {
-          enabled: "true",
-        },
-        long_running_command: {
-          enabled: "false",
-          minimum_duration_seconds: "10",
-        },
-      },
-      coding_agents: {
-        working: {
-          enabled: "false",
-        },
-        question: {
-          enabled: "false",
-        },
-        ready: {
-          enabled: "false",
-        },
-        error: {
-          enabled: "false",
-        },
-      },
-      errors: {
-        handled: {
-          enabled: "false",
-        },
-        unhandled: {
-          enabled: "false",
-        },
-      },
-    },
   },
   feature: {
     workspace: {

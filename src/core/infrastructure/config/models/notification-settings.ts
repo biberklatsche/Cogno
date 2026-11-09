@@ -53,7 +53,9 @@ function eventSchema(event: NotificationSourceContract["events"][number]) {
         .boolean()
         .optional()
         .describe(event.description ?? event.label),
-      ...(event.settings ?? {}),
+      ...Object.fromEntries(
+        Object.entries(event.settings ?? {}).map(([key, setting]) => [key, setting.schema]),
+      ),
     })
     .meta({ title: event.label })
     .optional();

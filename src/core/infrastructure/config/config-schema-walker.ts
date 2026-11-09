@@ -1,7 +1,8 @@
 import { hexColorSchema } from "@cogno/core/api/contributions";
 import { UNLIMITED } from "@cogno/core/api/contributions/limit-setting";
 import type { z } from "zod";
-import { type ZodDef, zodDef } from "./zod-def";
+import type { DefaultTree } from "./default-settings";
+import { isAdditiveList, type ZodDef, zodDef } from "./zod-def";
 
 /**
  * Reads the config schema the way a person needs it: one entry per setting
@@ -54,70 +55,54 @@ export type SettingGroup = {
   readonly description?: string;
 };
 
+/** A section of the settings: one top-level key, or `General` for the plain values. */
 export type SettingSection = {
-  readonly key: string;
   readonly title: string;
-  readonly lead?: string;
+  /** The top-level key's `.describe()`: the reference prints it under the heading. */
+  readonly description?: string;
 };
 
-/** Section order and headings; every top-level config key must appear here. */
-export const SETTING_SECTIONS: ReadonlyArray<SettingSection> = [
-  { key: "enable_watch_config", title: "General" },
-  { key: "font", title: "Font" },
-  { key: "color", title: "Colors", lead: "Colors are hex without `#`; 8 digits add alpha." },
-  { key: "cursor", title: "Cursor" },
-  { key: "padding", title: "Padding" },
-  { key: "background_image", title: "Background image" },
-  { key: "menu", title: "Menu" },
-  { key: "scrollbar", title: "Scrollbar" },
-  { key: "selection", title: "Selection" },
-  { key: "clipboard", title: "Clipboard" },
-  {
-    key: "shell",
-    title: "Shell",
-    lead: "`<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.",
-  },
-  {
-    key: "prompt",
-    title: "Prompt",
-    lead: "`<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.",
-  },
-  { key: "keybind", title: "Keybindings" },
-  { key: "terminal", title: "Terminal" },
-  { key: "autocomplete", title: "Autocomplete" },
-  { key: "notification", title: "Notifications" },
-  { key: "http_server", title: "HTTP server" },
-  { key: "updater", title: "Updates" },
-  {
-    key: "feature",
-    title: "Features",
-    lead: "Each feature can be switched off entirely and ordered in the side menu.",
-  },
-];
+/** Top-level keys that are a single value (`enable_watch_config`) share this section. */
+export const GENERAL_SECTION = "General";
 
-/** Raw default values as `default-config-values.ts` holds them: strings, nested by key. */
-type DefaultTree = { readonly [key: string]: string | DefaultTree };
+/**
+ * The sections in the schema's own order, by convention: a top-level group,
+ * map or list is a section named after its key (`background_image` ->
+ * "Background image", `.meta({ title })` where that reads wrong); a single
+ * value goes to `General`. A new top-level key needs no entry anywhere.
+ */
+export function describeSections(shape: Readonly<Record<string, unknown>>): SettingSection[] {
+  const sections = new Map<string, SettingSection>();
+  for (const [key, schema] of Object.entries(shape)) {
+    const section = sectionOf(key, schema as z.ZodType | undefined);
+    if (!sections.has(section.title)) sections.set(section.title, section);
+  }
+  return [...sections.values()];
+}
+
+function sectionOf(key: string, schema: z.ZodType | undefined): SettingSection {
+  const { schema: inner, description } = unwrap(schema);
+  const type = zodDef(inner)?.type;
+  if (type !== "object" && type !== "record" && type !== "array") return { title: GENERAL_SECTION };
+  const title = titleOf(schema) ?? titleOf(inner) ?? humanize(key);
+  // A list is itself the one setting of its section; its description stays with it.
+  return description && type !== "array" ? { title, description } : { title };
+}
 
 export type DescribeSettingsOptions = {
   readonly defaults: DefaultTree;
   readonly platformOverrides: Readonly<Record<string, DefaultTree>>;
 };
 
-/** Every setting of `shape`, in section order; `shape` is the composed config schema's shape. */
+/** Every setting of `shape`, in the schema's order; `shape` is the composed config schema's shape. */
 export function describeSettings(
   shape: Readonly<Record<string, unknown>>,
   options: DescribeSettingsOptions,
 ): SettingDescriptor[] {
   const descriptors: SettingDescriptor[] = [];
-  for (const section of SETTING_SECTIONS) {
-    walk(
-      shape[section.key] as z.ZodType | undefined,
-      section.key,
-      section.title,
-      [],
-      options,
-      descriptors,
-    );
+  for (const [key, schema] of Object.entries(shape)) {
+    const section = sectionOf(key, schema as z.ZodType | undefined).title;
+    walk(schema as z.ZodType | undefined, key, section, [], options, descriptors);
   }
   return descriptors;
 }
@@ -182,7 +167,7 @@ function walk(
     // and every one of them remembers the record it lives in.
     walk(
       def.valueType,
-      `${path}.${recordPlaceholder(path)}`,
+      `${path}.<name>`,
       section,
       [...groups, groupOf(schema, inner, path, description)],
       options,
@@ -215,7 +200,8 @@ function walk(
     section,
     groups,
     description: description ?? inherited?.description ?? "",
-    control: path === "keybind" ? { kind: "file-only", type: "keybind lines" } : controlOf(schema),
+    // Additive lines (keybinds) are edited in the file, where each line adds one.
+    control: isAdditiveList(schema) ? { kind: "file-only", type: "lines" } : controlOf(schema),
     default: defaultFor(path, options),
     ...(inherited?.record ? { record: inherited.record } : {}),
   });
@@ -324,12 +310,6 @@ function humanize(segment: string): string {
   if (segment.startsWith("<")) return segment;
   const words = segment.replace(/_/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
-/** What a user-chosen key in a record is called, so nested records stay readable. */
-function recordPlaceholder(path: string): string {
-  const lastKey = path.split(".").at(-1) ?? "";
-  return lastKey === "env" ? "<var>" : "<name>";
 }
 
 /** The schema under its wrappers, with the outermost description along the way. */

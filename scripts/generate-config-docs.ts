@@ -20,30 +20,26 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createConfigSchema } from "../src/core/infrastructure/config/config-schema";
 import {
   controlLabel,
+  describeSections,
   describeSettings,
-  SETTING_SECTIONS,
   SettingDescriptor,
 } from "../src/core/infrastructure/config/config-schema-walker";
-import {
-  defaultSettings,
-  platformSettingOverrides,
-} from "../src/core/infrastructure/config/models/default-config-values";
-import { CORE_NOTIFICATION_SOURCES } from "../src/core/workbench/notification/+state/core-notification-sources";
-import { CODING_AGENT_NOTIFICATION_SOURCE } from "../src/features/coding-agent/coding-agent-notification-source";
+import { composeDefaultSettings } from "../src/core/infrastructure/config/default-settings";
+import { platformSettingOverrides } from "../src/core/infrastructure/config/models/default-config-values";
 import { defaultFeatureSettingsExtension } from "../src/features/feature-settings-extension";
+import { ALL_NOTIFICATION_SOURCES } from "./notification-sources";
 
 const REPO_ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const DOCS_MD = `${REPO_ROOT}/docs/config.md`;
 const SITE_MD = `${REPO_ROOT}/../meetcogno/src/content/docs/config/settings.md`;
 
 /** The same composition as at runtime: features' settings and the notification sources. */
-const settings = describeSettings(
-  createConfigSchema(
-    [defaultFeatureSettingsExtension],
-    [...CORE_NOTIFICATION_SOURCES, CODING_AGENT_NOTIFICATION_SOURCE],
-  ).shape,
-  { defaults: defaultSettings, platformOverrides: platformSettingOverrides },
-);
+const shape = createConfigSchema([defaultFeatureSettingsExtension], ALL_NOTIFICATION_SOURCES).shape;
+const sections = describeSections(shape);
+const settings = describeSettings(shape, {
+  defaults: composeDefaultSettings(ALL_NOTIFICATION_SOURCES),
+  platformOverrides: platformSettingOverrides,
+});
 
 /** A value as inline code; a backtick inside needs the double-backtick form. */
 function codeSpan(value: string): string {
@@ -76,11 +72,11 @@ function renderSetting(setting: SettingDescriptor): string {
 /** The reference body, shared by `docs/config.md` and the website page. */
 function renderBody(): string {
   const parts: string[] = [];
-  for (const section of SETTING_SECTIONS) {
+  for (const section of sections) {
     const rows = settings.filter((setting) => setting.section === section.title);
     if (rows.length === 0) continue;
     parts.push(`## ${section.title}`, "");
-    if (section.lead) parts.push(section.lead, "");
+    if (section.description) parts.push(section.description, "");
     for (const row of rows) parts.push(renderSetting(row));
   }
   return `${parts.join("\n").trimEnd()}\n`;

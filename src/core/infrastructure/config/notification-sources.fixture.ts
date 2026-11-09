@@ -15,12 +15,15 @@ export const notificationSourcesFixture: ReadonlyArray<NotificationSourceContrac
         id: "long_running_command",
         label: "Long-running command",
         settings: {
-          minimum_duration_seconds: z
-            .number()
-            .int()
-            .min(0)
-            .optional()
-            .describe("Notify only when a command ran for at least this many seconds."),
+          minimum_duration_seconds: {
+            schema: z
+              .number()
+              .int()
+              .min(0)
+              .optional()
+              .describe("Notify only when a command ran for at least this many seconds."),
+            default: "10",
+          },
         },
       },
     ],

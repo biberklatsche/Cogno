@@ -30,29 +30,42 @@ const HttpServerSchema = z.strictObject({
     .describe("If the port is taken, try the next free one instead of failing."),
 });
 
+/**
+ * The top-level keys in the order the settings panel and the reference show
+ * them; each group, map or list is a section named after its key, plain values
+ * share "General". The description is what the reference prints under it.
+ */
 export const baseConfigSchemaShape = {
-  keybind: KeybindsSchema.optional().describe(
-    "One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.",
-  ),
   enable_watch_config: z
     .boolean()
     .optional()
     .describe("Reload the config automatically when the file changes on disk."),
   font: FontSchema.optional().describe("Terminal and app fonts."),
-  color: ColorSchema.optional().describe("Terminal color palette."),
+  color: ColorSchema.optional().describe(
+    "Terminal color palette. Colors are hex without `#`; 8 digits add alpha.",
+  ),
   cursor: CursorSchema.optional().describe("Cursor shape, color and behaviour."),
   padding: PaddingSchema.optional().describe("Padding around the terminal content."),
   background_image: ImageSchema.optional().describe("Optional terminal background image."),
-  shell: ShellConfigSchema.optional().describe("Shell profiles and which one starts by default."),
-  selection: SelectionSchema.optional().describe("Text selection colors and behaviour."),
-  clipboard: ClipboardConfigSchema.optional().describe("Clipboard access and copy behaviour."),
   menu: MenuSchema.optional().describe("Appearance of menus and panels."),
   scrollbar: ScrollbarSchema.optional().describe("Scrollbar appearance and scrolling behaviour."),
-  prompt: PromptConfigSchema.optional().describe("The configurable prompt rendered by Cogno."),
-  http_server: HttpServerSchema.optional().describe("Local HTTP server used by the CLI."),
-  notification: NotificationSettingsSchema.optional().describe("Which events notify you, and how."),
+  selection: SelectionSchema.optional().describe("Text selection colors and behaviour."),
+  clipboard: ClipboardConfigSchema.optional().describe("Clipboard access and copy behaviour."),
+  shell: ShellConfigSchema.optional().describe(
+    "Shell profiles and which one starts by default. `<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.",
+  ),
+  prompt: PromptConfigSchema.optional().describe(
+    "The configurable prompt rendered by Cogno. `<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.",
+  ),
+  keybind: KeybindsSchema.optional().describe(
+    "One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.",
+  ),
   terminal: TerminalSettingsSchema.optional().describe("Terminal rendering and behaviour."),
   autocomplete: AutocompleteSettingsSchema.optional().describe("Command autocomplete behaviour."),
+  notification: NotificationSettingsSchema.optional().describe("Which events notify you, and how."),
+  http_server: HttpServerSchema.meta({ title: "HTTP server" })
+    .optional()
+    .describe("Local HTTP server used by the CLI."),
   updater: UpdaterSettingsSchema.optional().describe("How Cogno keeps itself up to date."),
 } satisfies z.ZodRawShape;
 

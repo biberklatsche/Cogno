@@ -1,12 +1,7 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ExecutedCommand } from "@cogno/core/session/recorder/executed-command";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import {
-  isNotificationEventEnabled,
-  NotificationTargetContract,
-  notificationEventSettings,
-  TerminalId,
-} from "@cogno/shared/domain";
+import { NotificationTargetContract, TerminalId } from "@cogno/shared/domain";
 import { timespan } from "@cogno/shared/support";
 import {
   DEFAULT_LONG_RUNNING_COMMAND_MINIMUM_DURATION_SECONDS,
@@ -24,17 +19,6 @@ export class CompletedCommandNotificationHandler {
   ) {}
 
   readonly handleCompletedCommand = (executedCommand: ExecutedCommand): void => {
-    const config = this.configService.config;
-    if (
-      !isNotificationEventEnabled(
-        config,
-        TERMINAL_NOTIFICATION_SOURCE_ID,
-        LONG_RUNNING_COMMAND_EVENT_ID,
-      )
-    ) {
-      return;
-    }
-
     const minimumDurationMilliseconds = this.getLongRunningCommandMinimumDurationMilliseconds();
     const commandDurationMilliseconds = executedCommand.duration;
     if (
@@ -52,6 +36,7 @@ export class CompletedCommandNotificationHandler {
     this.appBus.publish({
       type: "Notification",
       payload: {
+        event: { source: TERMINAL_NOTIFICATION_SOURCE_ID, id: LONG_RUNNING_COMMAND_EVENT_ID },
         header: `Command finished after ${this.formatDuration(executedCommand.duration)}`,
         body: this.renderLongRunningCommandNotificationBody(executedCommand),
         type: executedCommand.returnCode && executedCommand.returnCode !== 0 ? "warning" : "info",
@@ -63,12 +48,10 @@ export class CompletedCommandNotificationHandler {
   };
 
   private getLongRunningCommandMinimumDurationMilliseconds(): number {
-    const settings = notificationEventSettings(
-      this.configService.config,
-      TERMINAL_NOTIFICATION_SOURCE_ID,
-      LONG_RUNNING_COMMAND_EVENT_ID,
-    );
-    const minimumDurationSeconds = settings?.["minimum_duration_seconds"];
+    const minimumDurationSeconds =
+      this.configService.config.notification?.source?.[TERMINAL_NOTIFICATION_SOURCE_ID]?.[
+        LONG_RUNNING_COMMAND_EVENT_ID
+      ]?.["minimum_duration_seconds"];
     return (
       (typeof minimumDurationSeconds === "number"
         ? minimumDurationSeconds

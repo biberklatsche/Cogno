@@ -17,7 +17,7 @@ import { fromPickerValue, toCssColor, toPickerValue } from "./hex-color";
         type="color"
         class="picker"
         [value]="pickerValue() ?? '#000000'"
-        (input)="valueChange.emit(fromPicker(picker.value))"
+        (change)="valueChange.emit(fromPicker(picker.value))"
         #picker
       />
     </label>

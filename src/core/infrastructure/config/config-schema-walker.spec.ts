@@ -5,17 +5,19 @@ import { createConfigSchema } from "./config-schema";
 import {
   controlLabel,
   defaultOn,
+  describeSections,
   describeSettings,
-  SETTING_SECTIONS,
+  GENERAL_SECTION,
   SettingDescriptor,
 } from "./config-schema-walker";
+import { composeDefaultSettings } from "./default-settings";
 import { featureSettingsExtensionFixture } from "./feature-settings.extension.fixture";
-import { defaultSettings, platformSettingOverrides } from "./models/default-config-values";
+import { platformSettingOverrides } from "./models/default-config-values";
 import { notificationSourcesFixture } from "./notification-sources.fixture";
 
 const schema = createConfigSchema([featureSettingsExtensionFixture], notificationSourcesFixture);
 const settings = describeSettings(schema.shape, {
-  defaults: defaultSettings,
+  defaults: composeDefaultSettings(notificationSourcesFixture),
   platformOverrides: platformSettingOverrides,
 });
 const byKey = new Map(settings.map((setting) => [setting.key, setting]));
@@ -26,11 +28,18 @@ const setting = (key: string): SettingDescriptor => {
 };
 
 describe("describeSettings", () => {
-  it("names every top-level key of the schema in a section", () => {
-    const sectioned = new Set(SETTING_SECTIONS.map((section) => section.key));
-    for (const key of Object.keys(schema.shape)) {
-      expect(sectioned.has(key), `section for ${key}`).toBe(true);
-    }
+  it("names sections after their key, in schema order, with plain values under General", () => {
+    const sections = describeSections(schema.shape).map((section) => section.title);
+    expect(sections[0]).toBe(GENERAL_SECTION);
+    expect(sections).toContain("Background image");
+    expect(sections).toContain("HTTP server");
+    expect(sections.indexOf("Font")).toBeLessThan(sections.indexOf("Color"));
+    expect(setting("enable_watch_config").section).toBe(GENERAL_SECTION);
+    expect(setting("shell.default").section).toBe("Shell");
+  });
+
+  it("leaves additive lines to the file", () => {
+    expect(setting("keybind").control).toEqual({ kind: "file-only", type: "lines" });
   });
 
   it("describes every setting the shipped defaults name", () => {
@@ -45,7 +54,7 @@ describe("describeSettings", () => {
     // A key inside a user-named record (`shell.profiles.zsh.path`) is described under `<name>`.
     const patterns = settings.map((entry) => ({
       entry,
-      pattern: new RegExp(`^${entry.key.replace(/\./g, "\\.").replace(/<name>|<var>/g, "[^.]+")}$`),
+      pattern: new RegExp(`^${entry.key.replace(/\./g, "\\.").replace(/<name>/g, "[^.]+")}$`),
     }));
     for (const key of keys) {
       const described = byKey.get(key) ?? patterns.find(({ pattern }) => pattern.test(key))?.entry;
@@ -66,7 +75,6 @@ describe("describeSettings", () => {
       kind: "list",
       item: { kind: "number", integer: true },
     });
-    expect(setting("keybind").control).toEqual({ kind: "file-only", type: "keybind lines" });
   });
 
   it("marks what lives in a user-named record", () => {

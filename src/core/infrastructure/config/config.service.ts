@@ -17,6 +17,7 @@ import { ErrorReporter } from "../error/error-reporter";
 import { ConfigDiagnostic, ConfigMapper } from "./config.mapper";
 import { ConfigLineEditor } from "./config-line-editor";
 import { createConfigSchema } from "./config-schema";
+import { composeDefaultSettings, DefaultTree } from "./default-settings";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 import { Config } from "./models/config";
 import { PromptSegment } from "./models/prompt-config";
@@ -73,6 +74,8 @@ export abstract class ConfigService {
   abstract get schema(): z.ZodObject<z.ZodRawShape>;
   /** The keys the user's file sets itself - what differs from the defaults by the user's hand. */
   abstract get userKeys$(): Observable<ReadonlySet<string>>;
+  /** Every default, composed from core's own and the declared notification sources. */
+  abstract get defaultSettings(): DefaultTree;
 
   /**
    * Returns the shell config for a given profile name.
@@ -94,6 +97,7 @@ export class RealConfigService extends ConfigService {
   private _unwatch: Subscription | undefined;
   private _options: ConfigLoadOptions | undefined;
   private _schema: z.ZodObject<z.ZodRawShape> | undefined;
+  private _defaultSettings: DefaultTree | undefined;
   private readonly _userKeys = new BehaviorSubject<ReadonlySet<string>>(new Set());
 
   constructor(
@@ -132,6 +136,13 @@ export class RealConfigService extends ConfigService {
 
   get userKeys$(): Observable<ReadonlySet<string>> {
     return this._userKeys.asObservable();
+  }
+
+  get defaultSettings(): DefaultTree {
+    if (!this._defaultSettings) {
+      throw new Error("Config is not loaded!");
+    }
+    return this._defaultSettings;
   }
 
   /**
@@ -237,6 +248,7 @@ export class RealConfigService extends ConfigService {
     this._options = options;
     // Built once: the extensions and sources are fixed for the life of the app.
     this._schema = createConfigSchema(options.settingsExtensions, options.notificationSources);
+    this._defaultSettings = composeDefaultSettings(options.notificationSources);
     await this.read();
   }
 

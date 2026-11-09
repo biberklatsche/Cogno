@@ -6,7 +6,7 @@ import { OsType } from "@cogno/platform/os";
 import { z } from "zod";
 import { createConfigSchema } from "./config-schema";
 import { Config } from "./models/config";
-import { unwrapZod, zodDef } from "./zod-def";
+import { isAdditiveList, unwrapZod, zodDef } from "./zod-def";
 
 export type ConfigDiagnostic = {
   level: "warning" | "error";
@@ -72,6 +72,7 @@ export class ConfigMapper {
     const mergedConfig = ConfigMapper.mergeConfigValues(
       defaultConfig ?? {},
       userConfig ?? {},
+      schema,
     ) as Record<string, unknown>;
     const diagnostics: ConfigDiagnostic[] = [];
     const initialCandidate = ConfigMapper.clone(mergedConfig);
@@ -112,7 +113,11 @@ export class ConfigMapper {
     return { config: fallback, diagnostics };
   }
 
-  private static mergeConfigValues(defaultValue: unknown, userValue: unknown): unknown {
+  private static mergeConfigValues(
+    defaultValue: unknown,
+    userValue: unknown,
+    schema: z.ZodType | undefined,
+  ): unknown {
     if (userValue === undefined) {
       return ConfigMapper.clone(defaultValue);
     }
@@ -133,30 +138,28 @@ export class ConfigMapper {
     ]);
 
     for (const configKey of configKeys) {
-      if (configKey === "keybind") {
-        const defaultKeybindValue = defaultValue[configKey];
-        const userKeybindValue = userValue[configKey];
-        const defaultKeybindEntries = Array.isArray(defaultKeybindValue)
-          ? defaultKeybindValue
-          : defaultKeybindValue === undefined
-            ? []
-            : [defaultKeybindValue];
-        const userKeybindEntries = Array.isArray(userKeybindValue)
-          ? userKeybindValue
-          : userKeybindValue === undefined
-            ? []
-            : [userKeybindValue];
-        mergedConfig[configKey] = [...defaultKeybindEntries, ...userKeybindEntries];
+      const childSchema = ConfigMapper.getChildSchema(schema, configKey);
+      if (isAdditiveList(childSchema)) {
+        mergedConfig[configKey] = [
+          ...ConfigMapper.asList(defaultValue[configKey]),
+          ...ConfigMapper.asList(userValue[configKey]),
+        ];
         continue;
       }
 
       mergedConfig[configKey] = ConfigMapper.mergeConfigValues(
         defaultValue[configKey],
         userValue[configKey],
+        childSchema,
       );
     }
 
     return mergedConfig;
+  }
+
+  private static asList(value: unknown): unknown[] {
+    if (value === undefined) return [];
+    return Array.isArray(value) ? value : [value];
   }
 
   private static addFontFallbacks(fontFamily: string, platform: OsType): string {

@@ -1,8 +1,15 @@
-import { ZodRawShape } from "zod";
+import { z } from "zod";
+
+/** A further key of an event, next to `enabled`: its schema and its default, as the file spells it. */
+export interface NotificationEventSettingContract {
+  readonly schema: z.ZodType;
+  readonly default: string;
+}
 
 /**
  * One thing a source can notify about: `ready` for a coding agent, `osc9`
- * for the terminal. Switched on or off at `notification.source.<source>.<event>.enabled`;
+ * for the terminal. Switched at `notification.source.<source>.<event>.enabled`,
+ * off by default - a user switches on what they want to hear about.
  * `settings` are the event's own further keys under the same path.
  */
 export interface NotificationEventContract {
@@ -11,14 +18,14 @@ export interface NotificationEventContract {
   readonly label: string;
   /** What the settings reference says: "Notify when an agent becomes ready."; `label` when absent. */
   readonly description?: string;
-  readonly settings?: ZodRawShape;
+  readonly settings?: Readonly<Record<string, NotificationEventSettingContract>>;
 }
 
 /**
  * A source of notifications - the terminal, the coding agents, the error
- * reporter - as it declares itself. Core composes the config schema
- * (`notification.source.<id>`), the defaults and the settings page from these
- * declarations and knows no event of its own.
+ * reporter - as it declares itself. Core composes the config schema, the
+ * defaults (`notification.source.<id>`), the reference and the settings page
+ * from these declarations and knows no event of its own.
  */
 export interface NotificationSourceContract {
   readonly id: string;

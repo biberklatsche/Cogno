@@ -1261,12 +1261,20 @@ dazu: ein Eintrag unten in der Seitenleiste, Workbench und kein Feature,
 Aktion `open_settings` (`Cmd+,`). Es rendert sich vollständig aus dem
 Schema: `config-schema-walker.ts` liest je Setting Schlüssel, Abschnitt,
 Beschreibung (`.describe()`), Steuerelement (aus der Zod-Definition) und
-Default (aus `default-config-values.ts`); der Doku-Generator liest
-dieselben Descriptoren. Ein neues Setting, auch eines Features, erscheint
-damit im Panel und in der Referenz, ohne dass jemand eines von beiden
-anfasst. Was das Panel nicht editiert — Maps mit frei gewählten Namen
-(Shell- und Prompt-Profile) und `keybind` — zeigt es als eine Zeile mit
-„Edit in config file" (`open_config`). Die Werte kommen aus `config$`,
+Default (aus `composeDefaultSettings`, 5.1); der Doku-Generator liest
+dieselben Descriptoren. Abschnitte folgen einer Konvention statt einer
+Liste: Jeder Top-Level-Schlüssel, der Gruppe, Map oder Liste ist, ist ein
+Abschnitt mit dem Namen seines Schlüssels (`.meta({ title })` nur, wo der
+Name falsch läse, etwa „HTTP server"), in der Reihenfolge des Schemas;
+einzelne Werte stehen unter „General". Ein neues Setting oder ein neuer
+Top-Level-Schlüssel, auch eines Features, erscheint damit im Panel und in
+der Referenz, ohne dass jemand eines von beiden anfasst. Was das Panel
+nicht editiert — Maps mit frei gewählten Namen (Shell- und Prompt-Profile)
+und additive Listen wie `keybind` — zeigt es als eine Zeile mit „Edit in
+config file" (`open_config`). Additiv ist eine Liste durch die Markierung
+`ADDITIVE_LIST` an ihrem Schema; der Leser hängt ihre Zeilen dann an die
+Defaults an, statt sie zu ersetzen, ohne den Schlüssel beim Namen zu
+kennen. Die Werte kommen aus `config$`,
 „geändert" aus den Schlüsseln der Nutzerdatei (`userKeys$`), Reset nimmt
 die Zeile wieder heraus.
 
@@ -1280,8 +1288,12 @@ jede Datei könnte für sich abdriften.
 Regel: **Quelle ist Code, Sicht ist eine vollständige generierte Datei pro
 OS.**
 
-- Settings: die Beschreibung in Zod (`.describe(…)`), der Wert an einer
-  Stelle, `default-config-values.ts`, auch wo er vom OS abhängt (Abschnitt 6).
+- Settings: die Beschreibung in Zod (`.describe(…)`), der Wert aus einer
+  Komposition, `composeDefaultSettings`: was Core besitzt, steht in
+  `default-config-values.ts`, auch wo es vom OS abhängt; was eine
+  Notification-Quelle deklariert, bringt sie selbst mit (Abschnitt 6).
+  Generierte Default-Config, Referenz und Settings-Panel lesen dieselbe
+  Komposition.
 - Keybindings: Core-Aktionen in ihrer Katalogdefinition, pro OS
   (`defaultKeys`); Feature-Aktionen in `featureKeybinds`
   (`default-config-values.ts`). Eine Aktion ohne Default-Keybinding ist
@@ -1344,10 +1356,9 @@ Ein Feature besitzt seine Einstellungen (eigenes Zod-Schema — kein zentraler
 Sammelpunkt, keine Kopie im statischen `Config`-Typ), seine Tabellen
 und Migrationen, seine Contributions und seine UI. Die `settings`-Contribution
 ist genau dieses Schema (`schemaShape`) und nichts weiter: **Default-Werte
-gehören nicht dazu.** Sie stehen an einer Stelle, `default-config-values.ts`,
-aus der die Default-Konfiguration generiert wird (5.1); ein zweiter Satz
-Defaults am Feature würde von ihr ohnehin überschrieben und kann ihr nur
-widersprechen. Ein Top-Level-Schlüssel hat genau einen Besitzer — deshalb
+gehören nicht dazu.** Sie stehen in `default-config-values.ts`, aus der die
+Default-Konfiguration generiert wird (5.1); ein zweiter Satz Defaults am
+Feature würde von ihr ohnehin überschrieben und kann ihr nur widersprechen. Ein Top-Level-Schlüssel hat genau einen Besitzer — deshalb
 teilen sich alle Features eine Extension für `feature.*`. Die eine
 Ausnahme von „Feature-Einstellungen stehen unter `feature.<id>`" sind die
 Ereignisse einer Notification-Quelle: Sie stehen unter
@@ -1355,7 +1366,16 @@ Ereignisse einer Notification-Quelle: Sie stehen unter
 Quellen darunter **zusammengesetzt** sind, nicht gewusst — Core baut das
 Schema aus den deklarierten Quellen (`createNotificationSettingsSchema`),
 die Doku-Generatoren tun dasselbe, und ein Ereignis einer nicht deklarierten
-Quelle ist ein unbekannter Schlüssel wie jeder Tippfehler.
+Quelle ist ein unbekannter Schlüssel wie jeder Tippfehler. Auch ihre
+Defaults sind zusammengesetzt, nicht gewusst: Per Konvention ist jedes
+Ereignis aus, bis der Nutzer es einschaltet; eigene Einstellungen eines
+Ereignisses deklarieren Schema und Default zusammen
+(`NotificationEventSettingContract`), sodass keines ohne Default sein kann.
+
+Ob eine Meldung erscheint, entscheidet eine Stelle: Eine Meldung trägt ihr
+Ereignis als Daten (`event: { source, id }`), der Dispatch prüft dessen
+Schalter und gibt nur Durchgelassenes an Kanäle und Übersicht weiter. Kein
+Sender liest Schalter; eine Meldung ohne Ereignis erscheint immer.
 
 `requires` gibt es, weil ausdrücklich gewünscht — mit der ehrlichen Anmerkung,
 dass der reale Baum null Kanten hat. Der Feature-Host löst es trotzdem auf (6.1), damit die erste echte

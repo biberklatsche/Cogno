@@ -48,6 +48,9 @@ describe("NotificationDispatchService", () => {
             enabled: true,
           },
         },
+        source: {
+          terminal: { osc9: { enabled: true }, long_running_command: { enabled: false } },
+        },
       },
     } as Config);
     dispatchNotificationMock = vi.fn<NotificationChannelContract["dispatch"]>();
@@ -84,6 +87,24 @@ describe("NotificationDispatchService", () => {
         settings: expect.objectContaining({ enabled: true }),
       }),
     );
+  });
+
+  it("lets an event through only when its switch is on, and a notification without one always", () => {
+    const service = createService([
+      createNotificationChannel({ id: "app", dispatch: dispatchNotificationMock }),
+    ]);
+    const delivered: string[] = [];
+    service.delivered$.subscribe((notification) => delivered.push(notification.header));
+
+    const publish = (header: string, event?: { source: string; id: string }) =>
+      appBus.publish({ type: "Notification", payload: { header, ...(event ? { event } : {}) } });
+    publish("on", { source: "terminal", id: "osc9" });
+    publish("off", { source: "terminal", id: "long_running_command" });
+    publish("unconfigured", { source: "coding_agents", id: "ready" });
+    publish("plain");
+
+    expect(delivered).toEqual(["on", "plain"]);
+    expect(dispatchNotificationMock).toHaveBeenCalledTimes(2);
   });
 
   it("isolates a throwing channel so the others still receive the notification", async () => {

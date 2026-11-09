@@ -8,12 +8,25 @@ import {
   NotificationChannelContract,
   NotificationChannelSettingsContract,
   NotificationChannelsContract,
+  NotificationEventRefContract,
   NotificationReplyChannelContract,
   NotificationTargetContract,
 } from "@cogno/shared/domain";
+import { Observable, Subject } from "rxjs";
 
+/**
+ * The one gate every notification passes: a notification of a declared event
+ * goes on only when `notification.source.<source>.<event>.enabled` says so,
+ * one without an event always. What passes goes to the enabled channels and
+ * to `delivered$`, which the notification overview reads; nobody else listens
+ * to the bus, so a switched-off event is nowhere to be seen.
+ */
 @Injectable({ providedIn: "root" })
 export class NotificationDispatchService {
+  private readonly deliveredSubject = new Subject<NotificationPayload>();
+  /** Every notification that passed the gate, before the channels run. */
+  readonly delivered$: Observable<NotificationPayload> = this.deliveredSubject.asObservable();
+
   constructor(
     private readonly appBus: AppBus,
     private readonly notificationChannelRegistry: NotificationChannelRegistry,
@@ -39,6 +52,10 @@ export class NotificationDispatchService {
     if (!isNotificationPayload(notificationPayload)) {
       return;
     }
+    if (notificationPayload.event && !this.isEventEnabled(notificationPayload.event)) {
+      return;
+    }
+    this.deliveredSubject.next(notificationPayload);
 
     for (const notificationChannel of this.notificationChannelRegistry.getChannels()) {
       if (!this.isNotificationChannelEnabled(notificationChannel, notificationPayload.channels)) {
@@ -70,6 +87,13 @@ export class NotificationDispatchService {
         context: { operation: "dispatch", channelId: notificationChannel.id },
       });
     }
+  }
+
+  /** Off until the config says otherwise: an event nobody configured does not notify. */
+  private isEventEnabled(event: NotificationEventRefContract): boolean {
+    return (
+      this.configService.config.notification?.source?.[event.source]?.[event.id]?.enabled === true
+    );
   }
 
   private isNotificationChannelEnabled(
@@ -152,9 +176,10 @@ function hasStringHeader(
   return typeof notificationPayloadCandidate.header === "string";
 }
 
-type NotificationPayload = {
+export type NotificationPayload = {
   readonly body?: string;
   readonly channels?: Partial<NotificationChannelsContract>;
+  readonly event?: NotificationEventRefContract;
   readonly header: string;
   readonly source?: string;
   readonly target?: NotificationTargetContract;

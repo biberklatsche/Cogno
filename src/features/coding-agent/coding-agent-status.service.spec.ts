@@ -1,5 +1,4 @@
 import type { DestroyRef } from "@angular/core";
-import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import type { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import type { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -118,20 +117,6 @@ describe("CodingAgentStatusService", () => {
       } as unknown as TerminalPlacementPort,
       destroyRef,
       notificationCenter as unknown as NotificationCenterPort,
-      {
-        getConfiguration: () => ({
-          notification: {
-            source: {
-              coding_agents: {
-                working: { enabled: true },
-                question: { enabled: true },
-                ready: { enabled: true },
-                error: { enabled: true },
-              },
-            },
-          },
-        }),
-      } as unknown as ApplicationConfigurationPort,
     );
     service.start();
   });
@@ -174,7 +159,10 @@ describe("CodingAgentStatusService", () => {
       expect(agent()?.result).toBe("Poem done.");
       expect(notificationCenter.dispatch).toHaveBeenCalledTimes(1);
       expect(notificationCenter.dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({ header: "Agent is ready" }),
+        expect.objectContaining({
+          event: { source: "coding_agents", id: "ready" },
+          header: "Agent is ready",
+        }),
       );
     });
 
