@@ -320,9 +320,11 @@ import {
         visibility: hidden;
         pointer-events: none;
       }
+      /* The key is what the file says, so it leads the row: larger than the description. */
       .key {
         font-family: var(--terminal-font-family, monospace);
-        font-size: 0.9em;
+        font-size: 1.1em;
+        font-weight: 600;
         overflow-wrap: anywhere;
       }
       .description {
