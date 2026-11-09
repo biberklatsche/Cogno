@@ -71,7 +71,7 @@ describe("describeSettings", () => {
       min: 0,
     });
     expect(setting("color.background").control).toEqual({ kind: "string", hexColor: true });
-    expect(setting("terminal.history.allowed_return_codes").control).toEqual({
+    expect(setting("autocomplete.allowed_return_codes").control).toEqual({
       kind: "list",
       item: { kind: "number", integer: true },
     });

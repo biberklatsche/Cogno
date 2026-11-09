@@ -92,6 +92,9 @@ $global:COGNO_COUNT = 0
 $global:COGNO_LAST_CMD = ""
 $global:COGNO_CMD_SEEN = $false
 $global:COGNO_LAST_HISTORY_ID = -1
+# The newest error already accounted for; anything above it in $Error was
+# added by the command that just ran. Starts past the profile's errors.
+$global:COGNO_LAST_ERROR = if ($global:Error.Count -gt 0) { $global:Error[0] } else { $null }
 
 function Sanitize-CognoCommand {
     param([string]$Command)
@@ -105,23 +108,6 @@ function Sanitize-CognoCommand {
     $s = $s -replace "\|", "\|"
 
     return $s
-}
-
-function Get-CognoCommandName {
-    param([string]$CommandLine)
-
-    $line = [string]$CommandLine
-    $line = $line -replace '^\s+', ''
-    while ($line -match '^[A-Za-z_][A-Za-z0-9_]*=[^\s]+\s+') {
-        $line = $line -replace '^[A-Za-z_][A-Za-z0-9_]*=[^\s]+\s+', ''
-        $line = $line -replace '^\s+', ''
-    }
-
-    if ([string]::IsNullOrWhiteSpace($line)) {
-        return ""
-    }
-
-    return ($line -split '\s+', 2)[0]
 }
 
 # Pre-Execution Hook via PSReadLine
@@ -141,9 +127,34 @@ if ($null -ne (Get-Module -ListAvailable PSReadLine)) {
 
 # Prompt function
 function prompt {
-    $lastEc = $LASTEXITCODE
-    if ($null -eq $lastEc) { $lastEc = 0 }
+    # `$?` describes the user's command only until the first statement here
+    # has run, so it is read before anything else.
+    $succeeded = $global:?
+    $nativeEc = $global:LASTEXITCODE
+
+    $newError = $null
+    if ($global:Error.Count -gt 0 -and -not [object]::ReferenceEquals($global:Error[0], $global:COGNO_LAST_ERROR)) {
+        $newError = $global:Error[0]
+    }
+
+    # $LASTEXITCODE belongs to native programs only and stays stale after a
+    # cmdlet. So a success is 0, a failure with a PowerShell error of its own
+    # is 1, and only a native program's failure reports $LASTEXITCODE.
+    $lastEc = 0
+    if (-not $succeeded) {
+        $nativeFailure = $null -eq $newError -or $newError.Exception.GetType().Name -eq "NativeCommandExitException"
+        if ($nativeFailure -and $nativeEc) { $lastEc = $nativeEc } else { $lastEc = 1 }
+    }
+    # Ctrl+C on a native program
     if ($lastEc -eq -1073741510 -or $lastEc -eq 3221225786) { $lastEc = 0 }
+
+    # What PowerShell itself reported: the command failed because it could not
+    # be resolved. Covers `& "C:\tools\gbak.exe"`, `.\script.ps1` and plain names
+    # alike - unlike asking afterwards whether the first word exists.
+    $commandExists = "true"
+    if (-not $succeeded -and $null -ne $newError -and $newError.FullyQualifiedErrorId -eq "CommandNotFoundException") {
+        $commandExists = "false"
+    }
 
     $global:COGNO_COUNT++
 
@@ -164,18 +175,10 @@ function prompt {
         }
     }
 
-    $commandExists = "false"
     if ($global:COGNO_LAST_CMD) {
         $cmd = Sanitize-CognoCommand $global:COGNO_LAST_CMD
-        $commandName = Get-CognoCommandName $global:COGNO_LAST_CMD
-        if (-not [string]::IsNullOrWhiteSpace($commandName)) {
-            if ($null -ne (Get-Command -Name $commandName -ErrorAction SilentlyContinue)) {
-                $commandExists = "true"
-            }
-        }
     }
 
-    # Compute and insert commandExists into the existing OSC payload
     # The token proves the sequence comes from this session's integration.
     $osc = "${esc}]733;COGNO:PROMPT;token=$($env:COGNO_SESSION_TOKEN);returnCode=$lastEc;user=$user;machine=$host_name;directory=$cwd;id=$ts;command=$cmd;commandExists=$commandExists;${bel}"
     Write-Host -NoNewline $osc
@@ -183,6 +186,7 @@ function prompt {
     # Reset for next prompt
     $global:COGNO_LAST_CMD = ""
     $global:COGNO_CMD_SEEN = $false
+    $global:COGNO_LAST_ERROR = if ($global:Error.Count -gt 0) { $global:Error[0] } else { $null }
 
     # Return prompt string
     return "`n${conceal}^^#$ts${sgrReset}`n"

@@ -749,18 +749,6 @@ When enabled, selecting a history entry immediately executes the command. When d
 
 **Type:** boolean · **Default:** `false`
 
-### `terminal.history.allowed_return_codes`
-
-Return codes a command may exit with to be added to the history, e.g. `[0]` to keep only successful commands. Empty (default) keeps every command that exists. A command's own list under `allowed_return_codes_by_command` wins.
-
-**Type:** integer[] · **Default:** `[]`
-
-### `terminal.history.allowed_return_codes_by_command.<name>`
-
-Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.
-
-**Type:** integer[]
-
 ### `terminal.restore.enabled`
 
 Restore workspaces, tabs, panes and terminal scrollback on the next launch, auto-saved on idle, workspace switch and exit. When off, nothing is persisted and each launch starts fresh; the explicit workspace save controls apply instead.
@@ -788,6 +776,18 @@ Command autocomplete behaviour.
 Maximum time in milliseconds for one dynamic autocomplete provider.
 
 **Type:** integer ≥ 1 · **Default:** `160`
+
+### `autocomplete.allowed_return_codes`
+
+Return codes a command may exit with to be suggested by autocomplete, e.g. `[0]` to suggest only successful commands. Empty (default) suggests every command the shell found. The history keeps every command regardless. A command's own list under `allowed_return_codes_by_command` wins.
+
+**Type:** integer[] · **Default:** `[]`
+
+### `autocomplete.allowed_return_codes_by_command.<name>`
+
+Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.
+
+**Type:** integer[]
 
 ## Notification
 

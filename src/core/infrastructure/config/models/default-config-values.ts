@@ -164,7 +164,6 @@ export const defaultSettings = {
       ignore_commands_with_leading_space: "false",
       import_shell_history: "false",
       auto_execute: "false",
-      allowed_return_codes: "[]",
     },
     restore: {
       enabled: "true",
@@ -188,6 +187,7 @@ export const defaultSettings = {
     provider: {
       timeout_ms: "160",
     },
+    allowed_return_codes: "[]",
   },
   notification: {
     channel: {

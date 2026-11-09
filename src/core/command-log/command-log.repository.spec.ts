@@ -165,16 +165,27 @@ describe("CommandLogRepository", () => {
     expect(database.batch).not.toHaveBeenCalled();
   });
 
-  it("forgets a command at a directory including its log rows", async () => {
+  it("appends an execution to the log without ranking it", async () => {
     const repository = await createRepository(database);
 
-    await repository.deleteCommandExecution("npm test", "/workspace");
+    await repository.appendCommandExecution("gti status", "/workspace", "TE123-abc", 500, {
+      returnCode: 127,
+    });
 
     const statements = batchedStatements(database);
-    expect(statements.map((s) => s.sql.split(" ")[2])).toEqual(["command_stat", "command_log"]);
-    for (const statement of statements) {
-      expect(statement.params).toEqual([7, "/workspace", "npm test"]);
-    }
+    expect(statements.some((s) => s.sql.includes("command_stat"))).toBe(false);
+    const log = statements.find((s) => s.sql.includes("INSERT INTO command_log"));
+    expect(log?.params).toEqual([
+      7,
+      "TE123-abc",
+      "/workspace",
+      "gti status",
+      expect.any(Number),
+      null,
+      127,
+    ]);
+    const trim = statements.find((s) => s.sql.includes("DELETE FROM command_log"));
+    expect(trim?.params).toEqual([7, 500]);
   });
 
   it("records a transition together with both commands", async () => {

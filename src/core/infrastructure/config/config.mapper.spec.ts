@@ -260,25 +260,25 @@ describe("ConfigMapper", () => {
     expect(result.config.prompt?.segment["user"]?.background).toBe("050505");
   });
 
-  it("reads the history's allowed return codes, globally and per command", () => {
+  it("reads the autocomplete allowed return codes, globally and per command", () => {
     const text = `
-      terminal.history.allowed_return_codes = [0]
-      terminal.history.allowed_return_codes_by_command.grep = [0,1]
-      terminal.history.allowed_return_codes_by_command.diff = [0, 1]
+      autocomplete.allowed_return_codes = [0]
+      autocomplete.allowed_return_codes_by_command.grep = [0,1]
+      autocomplete.allowed_return_codes_by_command.diff = [0, 1]
     `;
     const result = read(text);
 
     expect(result.diagnostics).toEqual([]);
-    expect(result.config.terminal?.history?.allowed_return_codes).toEqual([0]);
-    expect(result.config.terminal?.history?.allowed_return_codes_by_command).toEqual({
+    expect(result.config.autocomplete?.allowed_return_codes).toEqual([0]);
+    expect(result.config.autocomplete?.allowed_return_codes_by_command).toEqual({
       grep: [0, 1],
       diff: [0, 1],
     });
   });
 
   it("reads the default's empty allowed return codes as an empty list", () => {
-    expect(DEFAULTS.terminal?.history?.allowed_return_codes).toEqual([]);
-    expect(DEFAULTS.terminal?.history?.allowed_return_codes_by_command).toBeUndefined();
+    expect(DEFAULTS.autocomplete?.allowed_return_codes).toEqual([]);
+    expect(DEFAULTS.autocomplete?.allowed_return_codes_by_command).toBeUndefined();
   });
 
   it("parses terminal progress bar visibility setting", () => {

@@ -330,12 +330,12 @@ describe("RealConfigService hot reload", () => {
       const { service } = createLoadedService(userConfig);
       await service.load({ settingsExtensions: [], notificationSources: [] });
 
-      await service.update({ "terminal.history.allowed_return_codes": [0, 1] });
+      await service.update({ "autocomplete.allowed_return_codes": [0, 1] });
 
       expect(userConfig.text).toBe(
-        "cursor.blink = false\nterminal.history.allowed_return_codes = [0,1]\n",
+        "cursor.blink = false\nautocomplete.allowed_return_codes = [0,1]\n",
       );
-      expect(service.config.terminal?.history?.allowed_return_codes).toEqual([0, 1]);
+      expect(service.config.autocomplete?.allowed_return_codes).toEqual([0, 1]);
     });
   });
 });

@@ -46,6 +46,7 @@ export type CommandExecutionDetails = {
 /** Turns what the shell reported into rows. Never reads. */
 export interface CommandLogWriter {
   upsertWorkingDirectory(cwdRaw: string): Promise<void>;
+  /** An execution that counts: logged for the history and ranked for suggestions. */
   upsertCommandExecution(
     commandRaw: string,
     cwdRaw: string,
@@ -53,8 +54,18 @@ export interface CommandLogWriter {
     maxEntries?: number,
     details?: CommandExecutionDetails,
   ): Promise<void>;
+  /**
+   * An execution that is only logged: the history shows it, suggestions never
+   * offer it (a command the shell could not find).
+   */
+  appendCommandExecution(
+    commandRaw: string,
+    cwdRaw: string,
+    groupId?: string,
+    maxEntries?: number,
+    details?: CommandExecutionDetails,
+  ): Promise<void>;
   upsertCommandTransition(previousCommandRaw: string, nextCommandRaw: string): Promise<void>;
-  deleteCommandExecution(commandRaw: string, cwdRaw: string): Promise<void>;
   bulkImportCommands(
     entries: { command: string; timestamp: number }[],
     cwdRaw: string,

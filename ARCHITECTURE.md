@@ -708,15 +708,19 @@ setzt eigene SELECTs ab. Drei Rollen, drei Orte:
 Der Recorder liegt in `core/session/recorder/`, die Abfrage-API in
 `core/command-log/command-log.api.ts` (sitzungsgebunden erreichbar über
 `core/session/command-log/`). Die
-Rückkehrcode-Regel ist Recorder-Konfiguration und kommt aus der Config:
-`terminal.history.allowed_return_codes` (leer = kein Filter, der
-Auslieferungszustand; `[0]` = nur erfolgreiche Kommandos) und
-`allowed_return_codes_by_command.<kommando>` als Ausnahme je erstem Wort
-(`grep = [0,1]`, weil Exit 1 dort „nichts gefunden" heißt). Sie greift erst
-nach der ersten Hürde: ein Kommando, das die Shell nicht gefunden hat
-(`commandExists`), wird nie gespeichert, ein Tippfehler im Namen also auch bei
-leerer Liste nicht. Der Recorder liest die Config bei jeder Entscheidung, ein
-Reload wirkt sofort.
+History speichert jedes Kommando, auch Tippfehler — dort sucht man sie, um sie
+zu korrigieren. Das Autocomplete bekommt nur, was es vorschlagen darf: der
+Recorder schreibt dann zusätzlich die Ranking-Zeile (`command_stat`) und den
+Übergang, sonst nur die Log-Zeile (`appendCommandExecution`). Nicht
+vorgeschlagen wird ein Kommando, das die Shell nicht gefunden hat
+(`commandExists`). Das meldet die Shell selbst nach der Ausführung — bash und
+zsh über Exit 126/127, PowerShell über eine neue `CommandNotFoundException` —,
+nicht eine nachträgliche Prüfung des ersten Worts. Danach greift die
+Rückkehrcode-Regel aus der Config: `autocomplete.allowed_return_codes` (leer =
+kein Filter, der Auslieferungszustand; `[0]` = nur erfolgreiche Kommandos) und
+`autocomplete.allowed_return_codes_by_command.<kommando>` als Ausnahme je
+erstem Wort (`grep = [0,1]`, weil Exit 1 dort „nichts gefunden" heißt). Der
+Recorder liest die Config bei jeder Entscheidung, ein Reload wirkt sofort.
 Der Degradationspfad „DB fehlt" liegt einmal in `command-log/`; jede Sicht sieht
 dann eine leere, aber gültige Datenquelle.
 
