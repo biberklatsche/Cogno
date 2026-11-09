@@ -2,11 +2,12 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { ConfigMapper } from "./config.mapper";
+import { createConfigSchema } from "./config-schema";
 import { featureSettingsExtensionFixture } from "./feature-settings.extension.fixture";
 import { InitialConfigOverridesWriter } from "./initial-config-overrides.writer";
 import type { Config } from "./models/config";
 
-const extensions = [featureSettingsExtensionFixture];
+const schema = createConfigSchema([featureSettingsExtensionFixture], []);
 let defaultText = "";
 let DEFAULTS: Config;
 
@@ -14,7 +15,7 @@ beforeAll(() => {
   const p = join(process.cwd(), "src-tauri", "src", "default_windows.config");
   defaultText = readFileSync(p, "utf-8");
   // Parse defaults from text (no user overrides)
-  DEFAULTS = ConfigMapper.fromStringToConfig("linux", defaultText, "", extensions);
+  DEFAULTS = ConfigMapper.fromStringToConfig("linux", defaultText, "", schema).config;
 });
 
 describe("InitialConfigOverridesWriter", () => {

@@ -107,6 +107,23 @@ describe("NotificationDispatchService", () => {
     expect(dispatchNotificationMock).toHaveBeenCalledTimes(2);
   });
 
+  it("drops an event's notification while the config is not loaded, without throwing", () => {
+    configService = new ConfigServiceMock();
+    const service = createService([
+      createNotificationChannel({ id: "app", dispatch: dispatchNotificationMock }),
+    ]);
+    const delivered: string[] = [];
+    service.delivered$.subscribe((notification) => delivered.push(notification.header));
+
+    appBus.publish({
+      type: "Notification",
+      payload: { header: "early", event: { source: "errors", id: "handled" } },
+    });
+
+    expect(delivered).toEqual([]);
+    expect(dispatchNotificationMock).not.toHaveBeenCalled();
+  });
+
   it("isolates a throwing channel so the others still receive the notification", async () => {
     const throwingDispatch = vi.fn(() => {
       throw new Error("channel boom");

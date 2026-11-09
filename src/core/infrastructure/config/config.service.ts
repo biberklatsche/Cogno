@@ -326,7 +326,7 @@ export class RealConfigService extends ConfigService {
     }
 
     const defaultConfigString = await this.defaultConfig.read();
-    const defaultConfig = ConfigMapper.fromStringToConfigWithSchema(
+    const defaultConfig = ConfigMapper.fromStringToConfig(
       this.os.platform(),
       defaultConfigString,
       "",
@@ -338,7 +338,7 @@ export class RealConfigService extends ConfigService {
       let userConfigString = await this.fs.readTextFile(path);
       this.publishUserKeys(ConfigLineEditor.keys(userConfigString));
       userConfigString = await this.applyCliSetOverrides(userConfigString);
-      return ConfigMapper.fromStringToConfigWithSchema(
+      return ConfigMapper.fromStringToConfig(
         this.os.platform(),
         defaultConfigString,
         userConfigString,

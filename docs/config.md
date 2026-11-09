@@ -457,7 +457,7 @@ Extra launch arguments for the shell.
 
 **Type:** string[]
 
-### `shell.profiles.<name>.env.<name>`
+### `shell.profiles.<name>.env.<var>`
 
 Environment variables added to the shell process.
 

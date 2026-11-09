@@ -54,7 +54,7 @@ describe("describeSettings", () => {
     // A key inside a user-named record (`shell.profiles.zsh.path`) is described under `<name>`.
     const patterns = settings.map((entry) => ({
       entry,
-      pattern: new RegExp(`^${entry.key.replace(/\./g, "\\.").replace(/<name>/g, "[^.]+")}$`),
+      pattern: new RegExp(`^${entry.key.replace(/\./g, "\\.").replace(/<name>|<var>/g, "[^.]+")}$`),
     }));
     for (const key of keys) {
       const described = byKey.get(key) ?? patterns.find(({ pattern }) => pattern.test(key))?.entry;

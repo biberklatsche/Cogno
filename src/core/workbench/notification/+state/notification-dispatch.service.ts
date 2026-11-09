@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
@@ -26,6 +27,8 @@ export class NotificationDispatchService {
   private readonly deliveredSubject = new Subject<NotificationPayload>();
   /** Every notification that passed the gate, before the channels run. */
   readonly delivered$: Observable<NotificationPayload> = this.deliveredSubject.asObservable();
+  /** The loaded config; undefined until the file was read, and then no event is on yet. */
+  private config: Config | undefined;
 
   constructor(
     private readonly appBus: AppBus,
@@ -33,7 +36,8 @@ export class NotificationDispatchService {
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
-    this.configService.config$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+    this.configService.config$.pipe(takeUntilDestroyed(destroyRef)).subscribe((config) => {
+      this.config = config;
       void this.reconcileReplyChannels();
     });
 
@@ -89,11 +93,9 @@ export class NotificationDispatchService {
     }
   }
 
-  /** Off until the config says otherwise: an event nobody configured does not notify. */
+  /** Off until the config says otherwise: an event nobody configured, or a config not loaded yet, does not notify. */
   private isEventEnabled(event: NotificationEventRefContract): boolean {
-    return (
-      this.configService.config.notification?.source?.[event.source]?.[event.id]?.enabled === true
-    );
+    return this.config?.notification?.source?.[event.source]?.[event.id]?.enabled === true;
   }
 
   private isNotificationChannelEnabled(

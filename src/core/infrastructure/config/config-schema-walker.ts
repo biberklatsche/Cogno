@@ -2,7 +2,7 @@ import { hexColorSchema } from "@cogno/core/api/contributions";
 import { UNLIMITED } from "@cogno/core/api/contributions/limit-setting";
 import type { z } from "zod";
 import type { DefaultTree } from "./default-settings";
-import { isAdditiveList, type ZodDef, zodDef } from "./zod-def";
+import { isAdditiveList, recordPlaceholder, type ZodDef, zodDef } from "./zod-def";
 
 /**
  * Reads the config schema the way a person needs it: one entry per setting
@@ -163,11 +163,11 @@ function walk(
   }
 
   if (def.type === "record" && def.valueType) {
-    // A map of user-named entries: the entries are described under `<name>`,
+    // A map of user-named entries: the entries are described under `<name>` (or the map's own placeholder),
     // and every one of them remembers the record it lives in.
     walk(
       def.valueType,
-      `${path}.<name>`,
+      `${path}.${recordPlaceholder(schema)}`,
       section,
       [...groups, groupOf(schema, inner, path, description)],
       options,

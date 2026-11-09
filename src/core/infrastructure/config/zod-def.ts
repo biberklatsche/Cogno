@@ -54,3 +54,14 @@ export const ADDITIVE_LIST = { additive: true } as const;
 export function isAdditiveList(schema: z.ZodType | undefined): boolean {
   return zodMeta(schema)["additive"] === true;
 }
+
+/**
+ * What a user-chosen key of a map is called in the reference and the panel:
+ * `<name>` unless the map says otherwise, `<var>` for environment variables.
+ */
+export const RECORD_OF_VARIABLES = { placeholder: "<var>" } as const;
+
+export function recordPlaceholder(schema: z.ZodType | undefined): string {
+  const placeholder = zodMeta(schema)["placeholder"];
+  return typeof placeholder === "string" ? placeholder : "<name>";
+}

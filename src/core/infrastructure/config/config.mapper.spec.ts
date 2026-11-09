@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { ConfigMapper } from "./config.mapper";
+import { createConfigSchema } from "./config-schema";
 import { featureSettingsExtensionFixture } from "./feature-settings.extension.fixture";
 import { notificationSourcesFixture } from "./notification-sources.fixture";
 
@@ -12,15 +13,16 @@ type FeatureSettings = {
   notification_overview?: { overview?: { max_items?: number } };
 };
 
-const extensions = [featureSettingsExtensionFixture];
-const sources = notificationSourcesFixture;
+const schema = createConfigSchema([featureSettingsExtensionFixture], notificationSourcesFixture);
+/** The defaults plus `user`, as the reader composes them on Linux. */
+const read = (user: string) => ConfigMapper.fromStringToConfig("linux", defaultText, user, schema);
 let defaultText = "";
 let DEFAULTS: any;
 
 beforeAll(() => {
   const p = path.join(process.cwd(), "src-tauri", "src", "default_windows.config");
   defaultText = fs.readFileSync(p, "utf-8");
-  DEFAULTS = ConfigMapper.fromStringToConfig("linux", defaultText, "", extensions, sources);
+  DEFAULTS = read("").config;
 });
 
 describe("ConfigMapper", () => {
@@ -38,7 +40,7 @@ describe("ConfigMapper", () => {
       keybind=Ctrl+5=run5
     `;
 
-    const parsed = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
+    const parsed = read(text).config;
 
     // Basic values
     expect(parsed.terminal?.webgl).toBe(true);
@@ -59,13 +61,7 @@ describe("ConfigMapper", () => {
       terminal.webgl=true
     `;
 
-    const settings = ConfigMapper.fromStringToConfig(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const settings = read(text).config;
 
     // Override applied
     expect(settings.terminal?.webgl).toBe(true);
@@ -79,13 +75,7 @@ describe("ConfigMapper", () => {
     const text = `
       scrollbar.scrollback_lines=-1
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
     expect(result.diagnostics.length).toBeGreaterThan(0);
     expect(result.diagnostics.some((d) => d.level === "error")).toBe(true);
     expect(result.config.scrollbar?.scrollback_lines).toBe(100000);
@@ -96,13 +86,7 @@ describe("ConfigMapper", () => {
       unknown_key=123
       font.size=13
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
     expect(result.config.font?.size).toBe(13);
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
   });
@@ -114,13 +98,7 @@ describe("ConfigMapper", () => {
       feature.ai.mode=on
       cursor.blink=false
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     // Only the two unknown keys are dropped; nothing falls back to the defaults.
     expect(result.config.font?.size).toBe(13);
@@ -137,13 +115,7 @@ describe("ConfigMapper", () => {
       feature.notification_overview.overview.max_items=0
       terminal.history.max_entries=200
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect(result.diagnostics).toEqual([]);
     expect(result.config.notification?.channel?.app?.duration_seconds).toBe("unlimited");
@@ -160,7 +132,7 @@ describe("ConfigMapper", () => {
       keybind=Ctrl+5=custom1
       keybind=Ctrl+6=custom2
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
+    const config = read(text).config;
 
     // User keybinds should be appended to defaults
     const defaultKeybindCount = DEFAULTS.keybind.length;
@@ -181,7 +153,7 @@ describe("ConfigMapper", () => {
       shell.profiles.default.path=/bin/test
       shell.profiles.default.args=[--custom,--args]
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
+    const config = read(text).config;
 
     // Shell args should be replaced, not concatenated with defaults
     expect(config.shell?.profiles["default"]?.args).toEqual(["--custom", "--args"]);
@@ -195,7 +167,7 @@ describe("ConfigMapper", () => {
       shell.profiles.default.path=/bin/test
       shell.profiles.default.args=[]
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
+    const config = read(text).config;
 
     // Empty array should be [], not [undefined]
     expect(config.shell?.profiles["default"]?.args).toEqual([]);
@@ -206,7 +178,7 @@ describe("ConfigMapper", () => {
     const text = `
       font.family=monospace
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
+    const config = read(text).config;
 
     // Font should have fallbacks added
     expect(config.font?.family).toContain("monospace");
@@ -218,7 +190,7 @@ describe("ConfigMapper", () => {
     const text = `
       font.family=Fira Code
     `;
-    const config = ConfigMapper.fromStringToConfig("linux", defaultText, text, extensions, sources);
+    const config = read(text).config;
 
     // Font name with spaces should be preserved without quotes
     expect(config.font?.family).toMatch(/^Fira Code,/);
@@ -237,13 +209,7 @@ describe("ConfigMapper", () => {
       notification.source.terminal.long_running_command.minimum_duration_seconds=15
       feature.notification_overview.overview.max_items=42
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect(result.diagnostics.length).toBe(0);
     expect(result.config.notification?.channel?.app?.available).toBe(true);
@@ -267,13 +233,7 @@ describe("ConfigMapper", () => {
       terminal.decoration.color.background=2f8fda55
       terminal.decoration.active_color.border=f5e663
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect(result.diagnostics.length).toBe(0);
     expect(result.config.terminal?.decoration?.color?.background).toBe("2f8fda55");
@@ -289,13 +249,7 @@ describe("ConfigMapper", () => {
       terminal.decoration.color.border=123
       prompt.segment.user.background=050505
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect(result.diagnostics.length).toBe(0);
     expect(result.config.color?.background).toBe("050505");
@@ -312,13 +266,7 @@ describe("ConfigMapper", () => {
       terminal.history.allowed_return_codes_by_command.grep = [0,1]
       terminal.history.allowed_return_codes_by_command.diff = [0, 1]
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect(result.diagnostics).toEqual([]);
     expect(result.config.terminal?.history?.allowed_return_codes).toEqual([0]);
@@ -337,13 +285,7 @@ describe("ConfigMapper", () => {
     const text = `
       terminal.progress_bar.enabled=false
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect(result.diagnostics.length).toBe(0);
     expect(result.config.terminal?.progress_bar?.enabled).toBe(false);
@@ -365,23 +307,9 @@ describe("ConfigMapper", () => {
       search.match.background_color=000000
     `;
 
-    expect(() =>
-      ConfigMapper.fromStringToConfigWithDiagnostics(
-        "linux",
-        defaultText,
-        text,
-        extensions,
-        sources,
-      ),
-    ).not.toThrow();
+    expect(() => read(text)).not.toThrow();
 
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect(result.diagnostics.some((d) => d.level === "warning")).toBe(true);
     // Stale keys are stripped, not applied — the bundled feature.*/notification.* defaults win instead.
@@ -396,13 +324,7 @@ describe("ConfigMapper", () => {
       feature.coding_agents.mode=hidden
       feature.workspace.mode=off
     `;
-    const result = ConfigMapper.fromStringToConfigWithDiagnostics(
-      "linux",
-      defaultText,
-      text,
-      extensions,
-      sources,
-    );
+    const result = read(text);
 
     expect((result.config["feature"] as FeatureSettings | undefined)?.git?.mode).toBe("on");
     expect((result.config["feature"] as FeatureSettings | undefined)?.coding_agents?.mode).toBe(

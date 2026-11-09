@@ -1,10 +1,5 @@
-import {
-  ApplicationSettingsExtensionContract,
-  NotificationSourceContract,
-} from "@cogno/core/api/contributions";
 import { OsType } from "@cogno/platform/os";
 import { z } from "zod";
-import { createConfigSchema } from "./config-schema";
 import { Config } from "./models/config";
 import { isAdditiveList, unwrapZod, zodDef } from "./zod-def";
 
@@ -20,39 +15,8 @@ export type ConfigDiagnostic = {
  * `ConfigService` does the reading and writing.
  */
 export class ConfigMapper {
+  /** The config a default text and a user text make against the composed schema, with what had to be corrected. */
   static fromStringToConfig(
-    platform: OsType,
-    defaultConfigString: string,
-    userConfigString: string,
-    settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
-    notificationSources: ReadonlyArray<NotificationSourceContract> = [],
-  ): Config {
-    return ConfigMapper.fromStringToConfigWithDiagnostics(
-      platform,
-      defaultConfigString,
-      userConfigString,
-      settingsExtensions,
-      notificationSources,
-    ).config;
-  }
-
-  static fromStringToConfigWithDiagnostics(
-    platform: OsType,
-    defaultConfigString: string,
-    userConfigString: string,
-    settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
-    notificationSources: ReadonlyArray<NotificationSourceContract> = [],
-  ): { config: Config; diagnostics: ConfigDiagnostic[] } {
-    return ConfigMapper.fromStringToConfigWithSchema(
-      platform,
-      defaultConfigString,
-      userConfigString,
-      createConfigSchema(settingsExtensions, notificationSources),
-    );
-  }
-
-  /** Like `fromStringToConfigWithDiagnostics`, against a schema the caller already composed. */
-  static fromStringToConfigWithSchema(
     platform: OsType,
     defaultConfigString: string,
     userConfigString: string,
