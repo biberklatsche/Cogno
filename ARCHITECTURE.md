@@ -249,13 +249,26 @@ OSC 9 Nachricht, 9;4 Fortschritt) bleiben ohne Token — sie ändern kein
 Modell, nur Anzeige.
 
 **Der lokale HTTP-Server ist ebenso geschützt.** Über ihn melden
-Coding-Agent-Hooks ihren Status und löst `cogno action run` Aktionen aus.
+Coding-Agent-Hooks ihre Ereignisse und löst `cogno action run` Aktionen aus.
 Rust erzeugt je Start ein Geheimnis `COGNO_TOKEN` und gibt es jeder Shell mit
 (neben `COGNO_PORT`); jede Anfrage muss es im Header `X-Cogno-Token` tragen
 und die Loopback-Adresse (`127.0.0.1:<port>`, `localhost:<port>`) als Host
 nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
 wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
 DNS-Rebinding auf 127.0.0.1 umbiegt.
+
+Prozesse außerhalb jedes Cogno-Terminals haben einen eigenen Schlüssel —
+etwa der Hintergrunddienst eines Coding-Agents (3.2). Für sie schreibt der
+Server beim Start eine Endpoint-Datei `~/.cogno/endpoint.json` (Port
+und ein **externes Token**, nur für den Nutzer lesbar) und löscht sie beim
+Beenden. Rust kennt dabei keinen Konsumenten: das externe Token öffnet
+ausschließlich `POST /action`, das eine Nachricht an die Webview reicht;
+`/action/run` (Aktionen auslösen) und `/askpass` bleiben beim Launch- bzw.
+Lauf-Token. Ein lokaler Prozess, der die Datei liest, kann damit nur
+Nachrichten schicken. Heute liest sie allein das Coding-Agents-Feature, das
+Schlimmste ist eine falsche Agent-Karte. **Wer künftig `/action`-Nachrichten
+mit Wirkung verarbeitet, muss davon ausgehen, dass sie von außen kommen
+können.**
 
 **Prozesse ohne Terminal fragen über denselben Server.** Was `run` startet
 (2.2), hat keine PTY; git und ssh würden Zugangsdaten, Passphrasen und
@@ -365,7 +378,7 @@ features/            Git, Coding-Agents, Palette, …
     │  benutzen Ports, erfüllen Contributions
     ▼
 core/api/            nur Verträge: SessionApi, TerminalMonitor, TerminalNavigator,
-    ▲                TerminalPlacement, Ports (Config, Actions, Dateisystem, …), contributions/
+    ▲                TerminalPlacement, TerminalProcesses, Ports (Config, Actions, …), contributions/
     │  implementieren Ports, lesen Contributions
     ├────────  core/workbench/   Fokus, Layout-Identität, Reveal, Feature-Host, api-adapters/
     │                 │  besitzt
@@ -948,9 +961,9 @@ beitragen kann. Es lebt in `core/api/`, dem einzigen Ordner in `core/`, den
 Features importieren, und besteht **nur aus Verträgen**:
 
 - **Ports** (Core → Feature): `SessionApi`, `TerminalMonitorPort`,
-  `TerminalNavigator`, `TerminalPlacementPort`, `TerminalIpcPort`,
-  `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
-  `ApplicationConfigurationPort`,
+  `NotificationChannelsPort`, `ApplicationConfigurationPort`,
+  `TerminalIpcPort`, `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
+  `TerminalNavigator`, `TerminalPlacementPort`, `TerminalProcessesPort`,
   `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
   `FeatureDefinition`, Side-Menu-Features, Feature-Settings,
@@ -1060,6 +1073,78 @@ Für Ports und Schnittstellen gelten drei Regeln:
    Contributions-Liste, die Plattform-Provider und jeden Port aus
    `core/api/` an seine Implementierung (`provide: Port, useExisting:
    Adapter`).
+
+### 3.2 Coding-Agents: Sitzung des Agenten als Schlüssel
+
+Die Coding-Agents waren zuerst **terminalgeschlüsselt**: der Hook eines
+Agenten erbte `COGNO_PORT`, `COGNO_TOKEN` und `COGNO_TERMINAL_ID` aus der
+Shell, meldete sich damit, und das Feature führte je Terminal einen
+Agenten. Das trägt nicht mehr: Codex (ab 0.157) und OpenCode (ab 2.x) lassen
+Hooks und Plugins in einem zentralen Hintergrunddienst laufen, der die
+Umgebung der Shell hat, die ihn zuerst gestartet hat — oder gar keine. Dort
+gibt es weder Port noch Terminal. Cogno zwingt die Agenten nicht in einen
+Betrieb ohne Dienst (`--no-daemon`, `daemon_auto_start = false`): das ist
+ein Eingriff in fremde Befehle und Konfiguration, und der Modus fällt
+absehbar weg.
+
+Deshalb gilt:
+
+1. **Der Schlüssel ist die Sitzung des Agenten**, die er selbst kennt und in
+   jedem Ereignis nennt (`session_id` bei Codex und Claude Code, die
+   Session-ID bei OpenCode). Das Terminal ist ein Attribut der Sitzung, das
+   Cogno ermittelt, nicht die Identität.
+2. **Hooks finden Cogno ohne Umgebung.** Das Feature legt je Shell ein
+   stabiles Hook-Skript unter `~/.cogno/coding-agents/` ab (sh und
+   PowerShell; geschrieben über `platform/`, wenn ein Adapter es zum ersten
+   Mal braucht, inhaltsgleich bleibt unberührt). Das Skript liest den Payload
+   von stdin, nimmt Port, Token und Terminal aus der Umgebung, wenn sie da
+   ist, sonst Port und externes Token aus der Endpoint-Datei (2.1), und
+   sendet die Nachricht `coding_agent_hook` mit `[provider, sentAt, event]`
+   an `POST /action`. Das Protokoll kennt nur das Feature; Rust reicht die
+   Nachricht weiter wie jede andere. In der Agenten-Config steht nur
+   `<skript> <provider> <event>`:
+   der Befehl ändert sich nie, auch wenn das Protokoll sich ändert. Das
+   zählt, weil Codex jeden geänderten Hook-Befehl bis zur erneuten Freigabe
+   im Terminal (`/hooks`, `trusted_hash`) stillschweigend nicht ausführt;
+   ändert sich die Hooks-Datei doch, sagt der Codex-Adapter das per
+   Benachrichtigung. Ein Hook gilt nur als aktuell, wenn genau die Hooks
+   dieser Fassung da sind: ein älterer Cogno-Hook daneben liefe doppelt und
+   wird beim nächsten Abgleich entfernt.
+   Mehrere Cogno-Instanzen teilen eine Datei; die zuletzt gestartete gewinnt.
+   Rust routet einen Hook mit Terminal an dessen Fenster, einen ohne an das
+   zuletzt fokussierte (2.6); bei mehreren Fenstern kann die Zuordnung dort
+   fehlschlagen, die Karte erscheint dann ohne Platzierung.
+3. **Der Adapter besitzt seinen Transport.** Die Adapter-Schnittstelle
+   (`ICodingAgentProvider`, intern im Feature) liefert `install`, `remove`,
+   `state` wie bisher — Konfigurationsformat, Feature-Flags und Trust-Hinweise
+   sind Sache des Adapters — und dazu `events$`: normierte Ereignisse je
+   `sessionId` (Status, Details, Sitzungsgrenze, Subagent) mit dem, was der
+   Agent über die Sitzung weiß: `terminalId`, wenn der Hook sie noch hatte,
+   `cwd`, Startzeit. Woher die Ereignisse kommen — Hook-Payloads über
+   `/action`, ein Plugin, später ein App-Server-Protokoll — entscheidet der
+   Adapter; das Feature sieht nur `events$`. Der Status steht nicht mehr im
+   Hook-Befehl, sondern wird im Adapter aus dem Ereignis gelesen. OpenCode
+   ist der Plugin-Fall: ein Ordner von Cogno unter
+   `~/.config/opencode/plugins/`, der im Hintergrunddienst läuft, Cogno über
+   die Endpoint-Datei findet, nie ein Terminal nennt (die Umgebung des
+   Dienstes ist die des ersten Starters) und Kind-Sitzungen (`parentID`) als
+   Subagenten der Eltern-Sitzung meldet.
+4. **Die Zuordnung zum Terminal ist generisch.** Ein Binder im Feature nimmt
+   `terminalId`, wenn das Ereignis eine nennt (Claude Code: exakt wie
+   bisher). Sonst gleicht er `cwd` und Startzeit der Sitzung gegen die
+   Prozesse der Terminals ab, mit den Prozessnamen, die der Adapter als Daten
+   nennt (`processNames`). Dafür bekommt das Protokoll
+   `TerminalProcessesPort` (Prozesse je Terminal: Name, cwd, Startzeit) —
+   die Daten gibt es (`pty_get_process_tree_by_terminal_id`), bisher nur
+   für die gebundene Sitzung. Kein Adapter und kein Service unterscheidet
+   Agenten per `if`/`switch`; ein neuer Agent ist ein neuer Adapter und ein
+   Eintrag in der Registry.
+5. **Lebenszyklus je Sitzung.** Der Status-Service führt Sitzungen, nicht
+   Terminals. Eine Sitzung endet mit ihrem Ende-Ereignis oder wenn ihr
+   Prozess aus den Terminals verschwindet; ein Terminal, das endet, nimmt die
+   Sitzungen mit, die ihm zugeordnet waren. Eine Sitzung ohne eindeutiges
+   Terminal (zwei Instanzen im selben Ordner, gleiches Zeitfenster) wird
+   gezeigt, ohne Platzierung — der Fall wird sichtbar statt still verloren.
 
 ---
 

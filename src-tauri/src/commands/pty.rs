@@ -219,6 +219,22 @@ impl PtyState {
             .get(terminal_id)
             .and_then(|session| session.shell_process_id)
     }
+
+    /// Every session's shell process, for one pass over the machine's processes.
+    pub fn shell_process_ids(&self) -> Vec<(String, u32)> {
+        let Ok(sessions) = self.sessions.lock() else {
+            return Vec::new();
+        };
+        sessions
+            .live
+            .iter()
+            .filter_map(|(terminal_id, session)| {
+                session
+                    .shell_process_id
+                    .map(|pid| (terminal_id.clone(), pid))
+            })
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

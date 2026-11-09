@@ -34,6 +34,8 @@ export const CURSOR_CONFIG = {
   configSubDir: ".cursor",
   configFileName: "hooks.json",
   fileVersion: 1,
+  /** The Cursor agent CLI. */
+  processNames: ["cursor-agent", "cursor-agent.exe", "agent", "agent.exe"],
   // Only observing events are hooked. Cursor's permission hooks (preToolUse,
   // beforeShellExecution, beforeMCPExecution, beforeReadFile, subagentStart)
   // read a decision from stdout; a status reporter must not take part in that.

@@ -1,23 +1,30 @@
 import { Injectable } from "@angular/core";
+import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import {
-  AgentHookEvent,
+  AgentSessionEvent,
   HookState,
   ICodingAgentProvider,
 } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "../../agent-status";
-import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
+import { Observable } from "rxjs";
+import {
+  claudeStyleSession,
+  interpretClaudeStyleHook,
+} from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
-  buildHookCommand,
-  isCognoHookCommand,
+  HookShell,
+  hasCognoCommand,
+  hookCommand,
   isCurrentHookCommand,
-} from "../_shared/hook-command.builder";
+} from "../_shared/hook-command";
 import {
   HookMapFormat,
   hookMapState,
   withCurrentCognoHooks,
   withoutCognoHooksOnEveryEvent,
 } from "../_shared/hook-groups";
+import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import {
   CLAUDE_CODE_CONFIG,
   ClaudeHookEntry,
@@ -29,11 +36,19 @@ import {
 export class ClaudeCodeProvider implements ICodingAgentProvider {
   readonly id = CLAUDE_CODE_CONFIG.id;
   readonly name = CLAUDE_CODE_CONFIG.name;
+  readonly processNames = CLAUDE_CODE_CONFIG.processNames;
+  readonly events$: Observable<AgentSessionEvent>;
 
-  constructor(private readonly configFile: ConfigFileService) {}
-
-  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretClaudeStyleHook(hookEvent, status, payload);
+  constructor(
+    private readonly configFile: ConfigFileService,
+    private readonly scripts: HookScriptPathsService,
+    ipc: TerminalIpcPort,
+  ) {
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: CLAUDE_CODE_CONFIG.hookEvents,
+      interpret: interpretClaudeStyleHook,
+      sessionOf: claudeStyleSession,
+    });
   }
 
   async isAgentInstalled(): Promise<boolean> {
@@ -42,17 +57,18 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
 
   async hookState(): Promise<HookState> {
     const settings = await this.configFile.readJson<ClaudeSettings>(await this.configPath(), {});
-    return hookMapState(settings.hooks, CLAUDE_CODE_CONFIG.hookEvents, this.hookFormat());
+    return hookMapState(settings.hooks, CLAUDE_CODE_CONFIG.hookEvents, await this.hookFormat());
   }
 
-  async installHook(shellType?: string): Promise<void> {
+  async installHook(): Promise<void> {
+    const shell = this.scripts.shell();
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
     settings.hooks = withCurrentCognoHooks(
       settings.hooks,
       CLAUDE_CODE_CONFIG.hookEvents,
-      this.hookFormat(shellType),
+      await this.hookFormat(shell),
     );
     await this.configFile.writeJson(configPath, settings);
   }
@@ -61,25 +77,28 @@ export class ClaudeCodeProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const settings = await this.configFile.readJson<ClaudeSettings>(configPath, {});
     if (!settings.hooks) return;
-    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, this.hookFormat().isCogno);
+    settings.hooks = withoutCognoHooksOnEveryEvent(settings.hooks, hasCognoCommand);
     await this.configFile.writeJson(configPath, settings);
   }
 
-  private hookFormat(shellType?: string): HookMapFormat<ClaudeHookEntry, ClaudeHookGroup> {
+  private async hookFormat(
+    shell: HookShell = "sh",
+  ): Promise<HookMapFormat<ClaudeHookEntry, ClaudeHookGroup>> {
+    const scripts = await this.scripts.get();
     return {
       groupFor: (entry) => ({
         ...(entry.matcher ? { matcher: entry.matcher } : {}),
         hooks: [
           {
             type: "command",
-            command: buildHookCommand(entry.status, shellType, this.id, entry.eventName),
-            shell: shellType === "PowerShell" ? "powershell" : "bash",
+            command: hookCommand(scripts, shell, this.id, entry.eventName),
+            shell: shell === "sh" ? "bash" : "powershell",
           },
         ],
       }),
       isCurrent: (hook, entry) =>
-        isCurrentHookCommand(hook.command, entry.status, this.id, entry.eventName),
-      isCogno: (hook) => isCognoHookCommand(hook.command),
+        isCurrentHookCommand(hook.command, scripts, this.id, entry.eventName),
+      isCogno: hasCognoCommand,
     };
   }
 

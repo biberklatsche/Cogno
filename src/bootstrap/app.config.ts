@@ -17,6 +17,7 @@ import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
 import { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
+import { TerminalProcessesPort } from "@cogno/core/api/terminal-processes-port";
 import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/core/infrastructure/config/application-configuration-port.adapter.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
@@ -38,6 +39,7 @@ import { TerminalIpcAdapterService } from "@cogno/core/workbench/api-adapters/te
 import { TerminalMonitorAdapterService } from "@cogno/core/workbench/api-adapters/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/core/workbench/api-adapters/terminal-navigator.adapter.service";
 import { TerminalPlacementAdapterService } from "@cogno/core/workbench/api-adapters/terminal-placement.adapter.service";
+import { TerminalProcessesAdapterService } from "@cogno/core/workbench/api-adapters/terminal-processes.adapter.service";
 import { TerminalSearchApiService } from "@cogno/core/workbench/api-adapters/terminal-search-api.service";
 import { ConfigBootstrapAdapter } from "@cogno/core/workbench/config-bootstrap/config-bootstrap.adapter";
 import { ErrorReportingRuntimeService } from "@cogno/core/workbench/error/error-reporting-runtime.service";
@@ -90,6 +92,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
     { provide: TerminalPlacementPort, useExisting: TerminalPlacementAdapterService },
+    { provide: TerminalProcessesPort, useExisting: TerminalProcessesAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {

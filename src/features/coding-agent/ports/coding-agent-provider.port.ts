@@ -1,3 +1,4 @@
+import { Observable } from "rxjs";
 import { AgentStatus } from "../agent-status";
 
 /** What a hook payload tells about the agent's work, each field only when present. */
@@ -13,10 +14,9 @@ export type HookDetails = {
 };
 
 /**
- * A hook as its provider reads it. The transport carries only a status, the
- * event's name and the raw payload; what they mean - which events are subagents,
- * which start a new session, where the prompt sits in the payload - is the
- * provider's knowledge and stays with it.
+ * What one hook says about the agent, as its adapter read it. Which events
+ * are subagents, which start a new session, where the prompt sits in the
+ * payload - that is the adapter's knowledge and stays with it.
  */
 export type AgentHookEvent =
   | {
@@ -29,7 +29,7 @@ export type AgentHookEvent =
   | {
       readonly kind: "subagent";
       readonly change: "start" | "stop";
-      /** The subagent's id when the provider reports one. */
+      /** The subagent's id when the adapter reports one. */
       readonly agentId?: string;
     }
   | {
@@ -40,25 +40,45 @@ export type AgentHookEvent =
     };
 
 /**
+ * One event of an agent's session, keyed by the session the agent itself
+ * names (ARCHITECTURE.md 3.2). The terminal is what the hook still knew from
+ * its environment, if anything; `cwd` is what the agent reports, so a session
+ * without a terminal can still be matched to one.
+ */
+export type AgentSessionEvent = {
+  readonly sessionId: string;
+  readonly terminalId?: string;
+  readonly cwd?: string;
+  /** Unix milliseconds when the hook ran; events apply in this order. 0 when unknown. */
+  readonly sentAt: number;
+  readonly event: AgentHookEvent;
+};
+
+/**
  * Whether Cogno's hook sits in the agent's config: `current` as this version
  * writes it, `outdated` when an older version's Cogno hook is there, `missing`
  * when there is none.
  */
 export type HookState = "current" | "outdated" | "missing";
 
+/**
+ * An adapter for one coding agent. It owns the agent's config format and its
+ * transport: how a hook, a plugin or a protocol turns into `events$` is its
+ * business alone, and nothing outside tells agents apart.
+ */
 export interface ICodingAgentProvider {
   readonly id: string;
   readonly name: string;
-
+  /**
+   * The executable names the agent runs under in a terminal (`codex`,
+   * `codex.exe`), for matching a session without a terminal to one.
+   */
+  readonly processNames: ReadonlyArray<string>;
+  /** The agent's session events, from whatever transport the adapter uses. */
+  readonly events$: Observable<AgentSessionEvent>;
   isAgentInstalled(): Promise<boolean>;
   hookState(): Promise<HookState>;
-  /** @param shellType The Cogno shell profile type (e.g. "PowerShell", "Bash"). Determines which hook command syntax to write. */
-  installHook(shellType?: string): Promise<void>;
+  /** Installs or updates Cogno's hook; how it reaches Cogno is the adapter's business. */
+  installHook(): Promise<void>;
   removeHook(): Promise<void>;
-  /**
-   * Reads one of this provider's hooks. `status` is what the installed hook
-   * command reported for `hookEvent`; `payload` is the hook's stdin as JSON, or
-   * a marker string when it was omitted.
-   */
-  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent;
 }

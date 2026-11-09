@@ -10,6 +10,16 @@ import {
   payloadFields,
   stringField,
 } from "./hook-payload";
+import { HookSession } from "./hook-transport";
+
+/** The session a Claude-protocol hook belongs to: `session_id` and `cwd` on every hook. */
+export function claudeStyleSession(payload: unknown): HookSession {
+  const fields = payloadFields(payload);
+  return {
+    sessionId: stringField(fields, "session_id"),
+    cwd: stringField(fields, "cwd"),
+  };
+}
 
 /**
  * Reads a hook of the Claude Code protocol (shared by Codex and Kimi CLI) by the

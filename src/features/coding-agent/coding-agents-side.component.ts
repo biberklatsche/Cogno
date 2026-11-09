@@ -105,13 +105,14 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 [color]="group.workspaceColor ?? ''"
               ></app-workspace-group-header>
             }
-            @for (agent of group.items; track agent.terminalId) {
+            @for (agent of group.items; track agent.sessionId) {
               <button
                 type="button"
                 appTile
                 class="agent-card"
                 [class]="cardState(agent)"
-                [focused]="agent.terminalId === focusedTerminalId()"
+                [class.unplaced]="!agent.terminalId"
+                [focused]="!!agent.terminalId && agent.terminalId === focusedTerminalId()"
                 (click)="navigateTo(agent)"
               >
                 <div class="agent-state">
@@ -141,12 +142,19 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 }
                 <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
                 <div class="agent-footer">
-                  <app-tab-chip
-                    class="agent-tab"
-                    [title]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
-                    [color]="agent.placement?.tabColor"
-                    [tooltip]="agent.cwd ?? ''"
-                  ></app-tab-chip>
+                  @if (agent.terminalId) {
+                    <app-tab-chip
+                      class="agent-tab"
+                      [title]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
+                      [color]="agent.placement?.tabColor"
+                      [tooltip]="agent.cwd ?? ''"
+                    ></app-tab-chip>
+                  } @else {
+                    <span class="agent-folder" [appTooltip]="unplacedTooltip(agent)">
+                      <app-icon name="mdiFolderOutline"></app-icon>
+                      <span>{{ folderName(agent.cwd) }}</span>
+                    </span>
+                  }
                 </div>
               </button>
             }
@@ -404,6 +412,34 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       margin-left: auto;
     }
 
+    /* A session whose terminal is not settled shows its folder where the tab would be. */
+    .agent-folder {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      min-width: 0;
+      max-width: 55%;
+      margin-left: auto;
+      opacity: 0.6;
+    }
+
+    .agent-folder app-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .agent-folder > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .agent-card.unplaced {
+      cursor: default;
+      border-style: dashed;
+    }
+
     .agent-badge {
       display: inline-flex;
       align-items: center;
@@ -592,10 +628,24 @@ export class CodingAgentsSideComponent {
     void this.startupService.rescan();
   }
 
+  /** Goes to the agent's terminal; a session whose terminal is not settled has nowhere to go. */
   navigateTo(agent: ActiveAgent): void {
+    if (!agent.terminalId) return;
     this.navigator.navigateToTerminal(agent.terminalId).catch((error: unknown) => {
       console.error("[coding-agents-side] Failed to navigate to terminal:", error);
     });
+  }
+
+  /** The folder's own name; the tooltip carries the path. */
+  folderName(cwd: string | undefined): string {
+    if (!cwd) return "Unknown folder";
+    const segments = cwd.replace(/[\\/]+$/, "").split(/[\\/]/);
+    return segments[segments.length - 1] || cwd;
+  }
+
+  unplacedTooltip(agent: ActiveAgent): string {
+    const where = agent.cwd ?? "an unknown folder";
+    return `Running in ${where}. Several terminals run ${agent.providerName} there, so this session cannot be placed yet.`;
   }
 
   /** Time spent working: "42s", "3m 05s", "1h 12m". */
