@@ -29,7 +29,6 @@ type StoredView = {
   readonly diffMode?: GitDiffMode;
   readonly fileListMode?: GitFileListMode;
   readonly refsVisible?: boolean;
-  readonly repositoriesVisible?: boolean;
   readonly pullMode?: GitPullMode;
   readonly columnWidths?: Readonly<Partial<Record<GitGraphColumn, number>>>;
   readonly hiddenColumns?: ReadonlyArray<GitGraphColumn>;
@@ -74,8 +73,6 @@ export class GitViewState {
   readonly diffMode = signal<GitDiffMode>(this.stored.diffMode ?? "hunks");
   readonly fileListMode = signal<GitFileListMode>(this.stored.fileListMode ?? "path");
   readonly refsVisible = signal(this.stored.refsVisible ?? true);
-  /** The repositories of all open terminals, on the right edge. */
-  readonly repositoriesVisible = signal(this.stored.repositoriesVisible ?? true);
   /** What the Pull button does; chosen in its menu, as in GitKraken. */
   readonly pullMode = signal<GitPullMode>(this.stored.pullMode ?? "merge");
   /** Column widths the user dragged, in pixels; a column not listed has its default. */
@@ -150,7 +147,6 @@ export class GitViewState {
       diffMode: this.diffMode(),
       fileListMode: this.fileListMode(),
       refsVisible: this.refsVisible(),
-      repositoriesVisible: this.repositoriesVisible(),
       pullMode: this.pullMode(),
       columnWidths: this.columnWidths(),
       hiddenColumns: [...this.hiddenColumns()],

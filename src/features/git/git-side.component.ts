@@ -77,7 +77,7 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
       }
 
       <div class="body" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()"
-           [class.with-repositories]="repositoriesVisible()">
+           [class.with-repositories]="!narrow()">
         @if (view.refsVisible()) {
           <app-git-refs-panel class="refs"></app-git-refs-panel>
         }
@@ -101,10 +101,8 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
             }
           }
         </div>
-        @if (repositoriesVisible()) {
-          <app-git-repositories-panel class="repositories"></app-git-repositories-panel>
-        }
         @if (!narrow()) {
+          <app-git-repositories-panel class="repositories"></app-git-repositories-panel>
           @if (view.refsVisible()) {
             <span class="splitter refs-splitter"
                   (pointerdown)="startResize('refs', $event)" (pointermove)="resize($event)"
@@ -115,12 +113,10 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
                 (pointerdown)="startResize('detail', $event)" (pointermove)="resize($event)"
                 (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
                 (dblclick)="resetWidth('detail')"></span>
-          @if (repositoriesVisible()) {
-            <span class="splitter repositories-splitter"
-                  (pointerdown)="startResize('repositories', $event)" (pointermove)="resize($event)"
-                  (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
-                  (dblclick)="resetWidth('repositories')"></span>
-          }
+          <span class="splitter repositories-splitter"
+                (pointerdown)="startResize('repositories', $event)" (pointermove)="resize($event)"
+                (pointerup)="endResize($event)" (pointercancel)="endResize($event)"
+                (dblclick)="resetWidth('repositories')"></span>
         }
       </div>
     } @else {
@@ -285,8 +281,6 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
 })
 export class GitSideComponent implements OnDestroy {
   readonly narrow = signal(false);
-  /** The repositories are a column when there is room; narrow has none to spare. */
-  readonly repositoriesVisible = computed(() => this.view.repositoriesVisible() && !this.narrow());
   readonly selectedSha = computed(() => {
     const selection = this.view.selection();
     return selection.kind === "wip" ? "" : selection.sha;
