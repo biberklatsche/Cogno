@@ -98,13 +98,45 @@ describe("GitRepositoriesOverviewService", () => {
 
     expect(service.tiles()).toEqual([
       {
-        terminalId: "t1",
+        terminalIds: ["t1"],
         root: "/c/app",
         branch: "main",
         sha: "c1",
         counts: { added: 2, modified: 1, deleted: 1 },
         placement: expect.objectContaining({ tabTitle: "tab t1" }),
       },
+    ]);
+  });
+
+  it("merges terminals of one workspace in the same repository into one tile, in tab order", async () => {
+    const tabs: Record<string, { workspaceId: string; tabIndex: number }> = {
+      t1: { workspaceId: "w1", tabIndex: 2 },
+      t2: { workspaceId: "w1", tabIndex: 0 },
+      t3: { workspaceId: "w2", tabIndex: 3 },
+      t4: { workspaceId: "w1", tabIndex: 1 },
+    };
+    getPlacement.mockImplementation((terminalId: string) => ({
+      workspaceName: "Work",
+      workspacePosition: 0,
+      tabTitle: `tab ${terminalId}`,
+      ...tabs[terminalId],
+    }));
+    sessions$.next([
+      session("t1", repo("/c/app", "main", "")),
+      session("t2", repo("/c/app", "main", "")),
+      session("t3", repo("/c/app", "main", "")),
+      session("t4", repo("/c/other", "main", "")),
+    ]);
+
+    service.start();
+    await flush();
+
+    expect(
+      service.tiles().map((tile) => [tile.root, tile.terminalIds, tile.placement?.tabTitle]),
+    ).toEqual([
+      ["/c/app", ["t2", "t1"], "tab t2"],
+      ["/c/other", ["t4"], "tab t4"],
+      ["/c/app", ["t3"], "tab t3"],
     ]);
   });
 
@@ -116,7 +148,7 @@ describe("GitRepositoriesOverviewService", () => {
 
     service.start();
     await flush();
-    expect(service.tiles().map((tile) => tile.terminalId)).toEqual(["t1"]);
+    expect(service.tiles().flatMap((tile) => tile.terminalIds)).toEqual(["t1"]);
 
     sessions$.next([]);
     expect(service.tiles()).toEqual([]);
@@ -191,7 +223,7 @@ describe("GitRepositoriesOverviewService", () => {
 
     exitCode = 128;
     await service.refresh();
-    expect(service.tiles().map((tile) => tile.terminalId)).toEqual(["t2"]);
+    expect(service.tiles().flatMap((tile) => tile.terminalIds)).toEqual(["t2"]);
   });
 
   it("keeps the other terminals when one terminal's git timed out", async () => {
@@ -203,7 +235,7 @@ describe("GitRepositoriesOverviewService", () => {
     await flush();
 
     expect(availability.missing).toBe(false);
-    expect(service.tiles().map((tile) => tile.terminalId)).toEqual(["t2"]);
+    expect(service.tiles().flatMap((tile) => tile.terminalIds)).toEqual(["t2"]);
   });
 
   it("reads terminals one after the other until git answered once, then side by side", async () => {
@@ -239,7 +271,7 @@ describe("GitRepositoriesOverviewService", () => {
     expect(
       service
         .tiles()
-        .map((tile) => tile.terminalId)
+        .flatMap((tile) => tile.terminalIds)
         .sort(),
     ).toEqual(["t1", "t2", "t3"]);
   });
