@@ -36,8 +36,8 @@ export const GEMINI_CONFIG = {
   name: "Gemini CLI",
   configSubDir: ".gemini",
   configFileName: "settings.json",
-  /** Gemini CLI is a node program. */
-  processNames: ["gemini", "gemini.exe", "node", "node.exe"],
+  /** Its hooks run inside the agent in its terminal and always name it: nothing to look for. */
+  processNames: [],
   hookEvents: [
     { eventName: GEMINI_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
     { eventName: GEMINI_HOOK_EVENT.beforeAgent, status: "working" as AgentStatus },

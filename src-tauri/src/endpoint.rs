@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 const ENDPOINT_FILE: &str = "endpoint.json";
 
-fn endpoint_path(cogno_home: &Path) -> PathBuf {
+pub fn endpoint_path(cogno_home: &Path) -> PathBuf {
     cogno_home.join(ENDPOINT_FILE)
 }
 

@@ -5,9 +5,8 @@ import { ConfigFileService } from "./config-file.service";
 import { HookScriptPaths, HookShell } from "./hook-command";
 import { bashHookScript, powershellHookScript } from "./hook-scripts";
 
-/** The feature's folder in the Cogno home, and the endpoint file Cogno's HTTP server writes there. */
+/** The feature's folder in the Cogno home. */
 const SCRIPTS_DIR = "coding-agents";
-const ENDPOINT_FILE = "endpoint.json";
 const BASH_SCRIPT = "cogno-agent-hook.sh";
 const POWERSHELL_SCRIPT = "cogno-agent-hook.ps1";
 
@@ -55,13 +54,13 @@ export class HookScriptPathsService {
 
   /** The endpoint file the scripts fall back to; an adapter with its own transport (a plugin) reads it the same way. */
   async endpointPath(): Promise<string> {
-    return this.paths.join(await this.paths.cognoHomeDir(isDevMode()), ENDPOINT_FILE);
+    return this.paths.cognoEndpointFilePath(isDevMode());
   }
 
   private async write(): Promise<HookScriptPaths> {
     const home = await this.paths.cognoHomeDir(isDevMode());
     const dir = await this.paths.join(home, SCRIPTS_DIR);
-    const endpoint = await this.paths.join(home, ENDPOINT_FILE);
+    const endpoint = await this.endpointPath();
     const scripts = {
       bash: await this.paths.join(dir, BASH_SCRIPT),
       powershell: await this.paths.join(dir, POWERSHELL_SCRIPT),

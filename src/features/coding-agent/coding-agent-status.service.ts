@@ -224,6 +224,8 @@ export class CodingAgentStatusService {
       event.terminalId && this.monitor.isTerminalActive(event.terminalId)
         ? event.terminalId
         : undefined;
+    // An agent that always names its terminal runs outside Cogno's when it names none.
+    if (!terminalId && provider.processNames.length === 0) return;
 
     const hook = event.event;
     if (hook.kind === "subagent") this.onSubagentEvent(key, provider, event, terminalId, hook);

@@ -23,6 +23,15 @@ pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
     Ok(cogno_home(dev_mode)?.display().to_string())
 }
 
+/// The endpoint file Cogno's HTTP server writes for processes outside its
+/// terminals; whoever points such a process at Cogno names this path.
+#[tauri::command]
+pub fn get_cogno_endpoint_file_path(dev_mode: bool) -> Result<String, String> {
+    Ok(crate::endpoint::endpoint_path(&cogno_home(dev_mode)?)
+        .display()
+        .to_string())
+}
+
 /// Returns the cogno config file path
 #[tauri::command]
 pub fn get_cogno_config_file_path(dev_mode: bool) -> Result<String, String> {

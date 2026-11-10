@@ -71,7 +71,9 @@ export interface ICodingAgentProvider {
   readonly name: string;
   /**
    * The executable names the agent runs under in a terminal (`codex`,
-   * `codex.exe`), for matching a session without a terminal to one.
+   * `codex.exe`), for matching a session without a terminal to one. Empty
+   * when the agent's hooks always name their terminal: an event without one
+   * then comes from outside Cogno's terminals and is dropped.
    */
   readonly processNames: ReadonlyArray<string>;
   /** The agent's session events, from whatever transport the adapter uses. */

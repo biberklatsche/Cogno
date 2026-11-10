@@ -136,7 +136,7 @@ describe("CodingAgentStatusService", () => {
       },
     } as unknown as DestroyRef;
     const providers: Partial<ICodingAgentProvider>[] = [
-      { id: "claude-code", name: "Claude Code", processNames: ["claude"], events$: claudeEvents },
+      { id: "claude-code", name: "Claude Code", processNames: [], events$: claudeEvents },
       { id: "codex", name: "Codex", processNames: ["codex", "codex.exe"], events$: codexEvents },
     ];
 
@@ -525,6 +525,19 @@ describe("CodingAgentStatusService", () => {
       });
       await settle();
       expect(agent()?.terminalId).toBe("t-1");
+    });
+
+    it("drops a session without a terminal from an agent whose hooks always name theirs", async () => {
+      claudeEvents.next({
+        sessionId: "s-outside",
+        cwd: "/repo",
+        sentAt: 0,
+        event: interpretClaudeStyleHook("UserPromptSubmit", "working", { prompt: "From VS Code" }),
+      });
+      await settle();
+
+      expect(service.activeAgents()).toHaveLength(0);
+      expect(snapshot).not.toHaveBeenCalled();
     });
   });
 

@@ -21,6 +21,7 @@ function inMemoryFs(initial: Record<string, string> = {}) {
 
 const paths = {
   cognoHomeDir: async () => "C:/home/.cogno",
+  cognoEndpointFilePath: async () => "C:/home/.cogno/endpoint.json",
   join: async (...parts: string[]) => parts.join("/"),
 } as unknown as Paths;
 
