@@ -32,6 +32,15 @@ describe("FilesystemHostService", () => {
     expect(service.resolvePath("/workspace", "/tmp/test.ts", shellContext)).toBe("/tmp/test.ts");
   });
 
+  it("shows a path as the session's shell writes it", () => {
+    const powershell = { backendOs: "windows", shellType: "PowerShell" } as const;
+    const gitBash = { backendOs: "windows", shellType: "Bash" } as const;
+
+    expect(service.displayPath("/c/dev/app", powershell)).toBe(String.raw`C:\dev\app`);
+    expect(service.displayPath(String.raw`C:\dev\app`, powershell)).toBe(String.raw`C:\dev\app`);
+    expect(service.displayPath(String.raw`C:\dev\app`, gitBash)).toBe("/c/dev/app");
+  });
+
   it("preserves unusual path segments when the adapter accepts them", () => {
     expect(service.resolvePath("/workspace", "\0", shellContext)).toBe("/workspace/\0");
   });

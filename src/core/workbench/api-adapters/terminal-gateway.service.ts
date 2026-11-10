@@ -145,6 +145,8 @@ export class TerminalGatewayService implements SessionApi {
       fs: {
         readTextFile: (path) => this.readBoundTextFile(path, identity),
         normalizePath: (path) => this.normalizeBoundPath(path, identity),
+        displayPath: (path) =>
+          this.filesystem.displayPath(path, this.boundShellContextOrThrow(identity)),
         watch$: (path) => this.watchBoundPath(path, identity),
       },
       processTree: () => this.boundProcessTree(identity),

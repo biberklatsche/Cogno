@@ -13,6 +13,8 @@ import { SessionInsertResult, SessionRunRequest, SessionRunResult } from "./sess
 export interface BoundSessionFs {
   readTextFile(path: string): Promise<string>;
   normalizePath(path: string): string;
+  /** `path`, in Cogno's form or as the operating system names it, as the session's shell writes it. */
+  displayPath(path: string): string;
   /** Emits once per burst of changes under `path` (a directory, recursively). */
   watch$(path: string): Observable<void>;
 }

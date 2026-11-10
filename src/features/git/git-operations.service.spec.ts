@@ -307,7 +307,7 @@ describe("GitOperationsService", () => {
   });
 
   it("clones in the terminal's cwd, not in a repository", async () => {
-    await service.clone("https://x/y.git", "y");
+    await service.clone("https://x/y.git", "", "y");
 
     expect(runInCwd).toHaveBeenCalledWith(
       [...CACHE, "clone", "--progress", "https://x/y.git", "y"],
@@ -316,6 +316,20 @@ describe("GitOperationsService", () => {
       onPrompt,
     );
     expect(run).not.toHaveBeenCalled();
+  });
+
+  it("clones into the chosen parent folder", async () => {
+    await service.clone("https://x/y.git", " /home/me/projects ", "y");
+
+    expect(runInCwd.mock.calls[0]?.[0]).toEqual([
+      "-C",
+      "/home/me/projects",
+      ...CACHE,
+      "clone",
+      "--progress",
+      "https://x/y.git",
+      "y",
+    ]);
   });
 
   it("leaves credential caching to the Git Credential Manager on Windows", async () => {

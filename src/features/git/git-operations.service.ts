@@ -426,11 +426,15 @@ export class GitOperationsService {
 
   // Repositories
 
-  /** Clone into `directory`, relative to the bound terminal's cwd unless absolute. */
-  clone(url: string, directory: string): Promise<GitOperationOutcome> {
+  /**
+   * Clone into `directory` inside `parent`; an empty `parent` is the bound
+   * terminal's cwd, and either may be relative to it.
+   */
+  clone(url: string, parent: string, directory: string): Promise<GitOperationOutcome> {
     return this.withBusy({ kind: "clone", label: `Cloning ${url}` }, () =>
       this.git(
         [
+          ...(parent.trim() ? ["-C", parent.trim()] : []),
           ...this.credentialCacheArgs(),
           "clone",
           "--progress",

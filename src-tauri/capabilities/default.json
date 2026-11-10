@@ -10,6 +10,7 @@
     "core:default",
     "core:path:default",
     "opener:default",
+    "dialog:allow-open",
     "fs:default",
     "fs:allow-watch",
     "fs:allow-mkdir",

@@ -7,6 +7,7 @@ export * from "./cogno-message";
 export * from "./command-runner";
 export * from "./database";
 export * from "./default-config";
+export * from "./folder-picker";
 export * from "./fs";
 export * from "./http-server";
 export * from "./keyboard-layout";
