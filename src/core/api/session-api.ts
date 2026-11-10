@@ -49,6 +49,12 @@ export interface BoundSessionHandle {
    * sessions too.
    */
   processTree(): Promise<ProcessTreeSnapshot>;
+  /**
+   * Ends a process of that tree together with everything it started. Rejected
+   * when the identity is no longer the live bound session, for the shell
+   * itself (closing the terminal ends it) and for a process outside the tree.
+   */
+  terminateProcess(processId: number): Promise<void>;
 }
 
 /**

@@ -562,7 +562,10 @@ Konkret: Prozess-Info ist ein **Panel in der Seitenleiste** — ein
 sitzungsgebundenes Feature wie Git, das `boundSession$` folgt und den
 Prozessbaum daraus liest. Einen Dialog im Kontextmenü und einen Menüeintrag
 „Process Info" gibt es nicht; der Baum ist kein Modell-Fakt, sondern wird über `boundSession.processTree()` bei
-jedem Aufruf frisch ermittelt. Git bleibt eine vollständige
+jedem Aufruf frisch ermittelt. `boundSession.terminateProcess(processId)` beendet
+einen Prozess dieses Baums samt allem, was er gestartet hat: mit Identitäts-Check
+wie `run`, und das Backend nimmt nur Nachfahren der Shell dieses Terminals an —
+nie die Shell selbst, nie eine fremde PID. Git bleibt eine vollständige
 Scheibe — Ermittlung über `boundSession.run({ executable: "git", args: ["status", "--porcelain"], contextRevision })`, Tabellen, UI,
 Settings — und
 `mode: off` heißt: alles weg. Coding-Agents bleiben ein Ganzes, inklusive

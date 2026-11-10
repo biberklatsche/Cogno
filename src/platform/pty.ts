@@ -290,4 +290,11 @@ export const TauriPty = {
   listTerminalProcesses() {
     return invoke<TerminalProcessContract[]>("pty_list_terminal_processes");
   },
+  /**
+   * Ends a process under the terminal's shell and everything it started;
+   * rejects for the shell itself and for a process outside that tree.
+   */
+  terminateProcess(terminalId: string, processId: number) {
+    return invoke<void>("pty_terminate_process", { terminalId, processId });
+  },
 };

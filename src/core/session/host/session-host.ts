@@ -875,6 +875,15 @@ export class SessionHost {
     return TauriPty.getProcessTreeByTerminalId(terminalId);
   }
 
+  /** Ends a process running under the session's shell, with everything it started. */
+  terminateProcess(processId: number): Promise<void> {
+    const terminalId = this.terminalId;
+    if (!terminalId) {
+      return Promise.reject(new Error("Session has no terminal id yet."));
+    }
+    return TauriPty.terminateProcess(terminalId, processId);
+  }
+
   /** The marker menu for the first command scrolled out of view; empty when there is none. */
   buildCommandOutOfViewMenu(): ContextMenuItem[] {
     const commandOutOfView = this.model.commands.find(

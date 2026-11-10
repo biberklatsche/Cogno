@@ -248,6 +248,7 @@ describe("TerminalGatewayService", () => {
             rootProcess: { processId: 100, name: "bash" },
             descendants: [],
           }),
+          terminateProcess: vi.fn().mockResolvedValue(undefined),
           writeRaw: vi.fn(),
           state: {
             shellContext: { shellType: "Bash", backendOs: "linux" },
@@ -347,6 +348,31 @@ describe("TerminalGatewayService", () => {
       await expect(boundSession.session.processTree()).rejects.toThrow(
         "The bound session is no longer active.",
       );
+    });
+
+    it("ends a process of the bound session", async () => {
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      await boundSession.session.terminateProcess(4711);
+
+      const host = vi.mocked(terminalSessionRegistry.get).mock.results[0]?.value?.host;
+      expect(host.terminateProcess).toHaveBeenCalledWith(4711);
+    });
+
+    it("rejects terminateProcess once the identity is no longer the bound session", async () => {
+      const boundSession = currentBoundSession();
+      if (boundSession.status !== "active") throw new Error("expected active");
+
+      const terminateProcess = vi.fn();
+      vi.mocked(terminalSessionRegistry.get).mockReturnValue({
+        host: { model: { sessionToken: "token-2" }, terminateProcess },
+      } as unknown as ReturnType<TerminalSessionRegistry["get"]>);
+
+      await expect(boundSession.session.terminateProcess(4711)).rejects.toThrow(
+        "The bound session is no longer active.",
+      );
+      expect(terminateProcess).not.toHaveBeenCalled();
     });
   });
 

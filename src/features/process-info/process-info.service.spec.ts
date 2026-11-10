@@ -53,4 +53,61 @@ describe("ProcessInfoService", () => {
 
     expect(service.loading()).toBe(false);
   });
+
+  describe("terminate", () => {
+    function terminable(terminateProcess: (processId: number) => Promise<void>) {
+      const handle = {
+        identity: { terminalId: "t1", sessionToken: "token-1" },
+        terminateProcess: vi.fn(terminateProcess),
+      };
+      bind(handle as unknown as BoundSessionHandle);
+      return handle;
+    }
+
+    it("ends the process in the bound session and marks it while that runs", async () => {
+      let finish!: () => void;
+      const handle = terminable(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+
+      const done = service.terminate(4711);
+      expect(handle.terminateProcess).toHaveBeenCalledWith(4711);
+      expect(service.terminating().has(4711)).toBe(true);
+
+      // A second click while the first request runs sends nothing.
+      await service.terminate(4711);
+      expect(handle.terminateProcess).toHaveBeenCalledTimes(1);
+
+      finish();
+      await done;
+      expect(service.terminating().has(4711)).toBe(false);
+      expect(service.terminateFailed()).toBeNull();
+    });
+
+    it("keeps a failure until the next request or another session", async () => {
+      const handle = terminable(() => Promise.reject(new Error("denied")));
+
+      await service.terminate(4711);
+      expect(service.terminateFailed()).toBe(4711);
+      expect(service.terminating().has(4711)).toBe(false);
+
+      handle.terminateProcess.mockResolvedValue(undefined);
+      await service.terminate(4712);
+      expect(service.terminateFailed()).toBeNull();
+    });
+
+    it("does not show one session's failure in another", async () => {
+      terminable(() => Promise.reject(new Error("denied")));
+      await service.terminate(4711);
+
+      bind({
+        identity: { terminalId: "t2", sessionToken: "token-2" },
+      } as unknown as BoundSessionHandle);
+
+      expect(service.terminateFailed()).toBeNull();
+    });
+  });
 });

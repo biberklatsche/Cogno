@@ -130,6 +130,7 @@ pub fn run(cli: Cli) {
             crate::commands::pty::pty_ack,
             crate::commands::processes::pty_get_process_tree_by_terminal_id,
             crate::commands::processes::pty_list_terminal_processes,
+            crate::commands::processes::pty_terminate_process,
             crate::commands::environment::get_cogno_home_dir,
             crate::commands::environment::get_cogno_endpoint_file_path,
             crate::commands::environment::get_cogno_config_file_path,

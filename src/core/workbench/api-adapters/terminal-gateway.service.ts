@@ -150,6 +150,7 @@ export class TerminalGatewayService implements SessionApi {
         watch$: (path) => this.watchBoundPath(path, identity),
       },
       processTree: () => this.boundProcessTree(identity),
+      terminateProcess: (processId) => this.boundTerminateProcess(identity, processId),
     };
   }
 
@@ -166,6 +167,21 @@ export class TerminalGatewayService implements SessionApi {
       throw new Error("The bound session is no longer active.");
     }
     return entry.host.getProcessTree();
+  }
+
+  /** End a process of the bound session's tree; the identity is rechecked first, like `run`. */
+  private async boundTerminateProcess(
+    identity: BoundSessionIdentity,
+    processId: number,
+  ): Promise<void> {
+    if (!this.boundSessionMatches(identity)) {
+      throw new Error("The bound session is no longer active.");
+    }
+    const entry = this.terminalSessionRegistry.get(identity.terminalId);
+    if (!entry) {
+      throw new Error("The bound session is no longer active.");
+    }
+    return entry.host.terminateProcess(processId);
   }
 
   /** Read a file in the bound session's live context; rejects like `run`. */
