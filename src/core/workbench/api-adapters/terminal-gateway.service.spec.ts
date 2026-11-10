@@ -179,6 +179,18 @@ describe("TerminalGatewayService", () => {
       expect(commandRunner.run).not.toHaveBeenCalled();
     });
 
+    it("rejects a run while the shell has not reported its cwd yet", async () => {
+      bindWith({ cwd: "" });
+
+      const runResult = await service.run(
+        { executable: "git", args: ["status"], contextRevision: 3 },
+        identity,
+      );
+
+      expect(runResult).toEqual({ status: "rejected", reason: "starting" });
+      expect(commandRunner.run).not.toHaveBeenCalled();
+    });
+
     it("hands prompts of a run without a handler to the workbench dialog", async () => {
       bindWith({});
 

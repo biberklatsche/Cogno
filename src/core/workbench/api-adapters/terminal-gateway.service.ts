@@ -354,6 +354,11 @@ export class TerminalGatewayService implements SessionApi {
     if (!resolved.state.isContextKnown) {
       return { reason: "unknown-context" };
     }
+    // Without a cwd the command would fail before it starts, and a feature
+    // would read that failure as its own (git "not installed").
+    if (!resolved.state.cwd) {
+      return { reason: "starting" };
+    }
     return resolved;
   }
 }
