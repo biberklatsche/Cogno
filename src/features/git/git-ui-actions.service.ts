@@ -159,7 +159,7 @@ export class GitUiActions {
     const session = this.repository.currentSession();
     // The picker names a folder of this machine, which a WSL shell cannot use as it is.
     const canBrowse = !!session && !isWslShellContext(session.shellContext);
-    const result = await this.prompt("Clone a repository", {
+    await this.prompt("Clone a repository", {
       fields: [
         {
           key: "url",
@@ -185,10 +185,13 @@ export class GitUiActions {
       confirmLabel: "Clone",
       derive: (key, values): Record<string, string> =>
         key === "url" ? { directory: cloneDirectoryName(values["url"] ?? "") } : {},
+      // The dialog stays open while git clones and closes once the repository is there.
+      submit: {
+        run: async ({ url = "", parent = "", directory = "" }) =>
+          (await this.operations.clone(url, parent, directory)) === "ok",
+        label: () => this.operations.busy()?.label ?? "",
+      },
     });
-    if (!result) return;
-    const { url = "", parent = "", directory = "" } = result.values;
-    void this.operations.clone(url, parent, directory);
   }
 
   init(): void {
