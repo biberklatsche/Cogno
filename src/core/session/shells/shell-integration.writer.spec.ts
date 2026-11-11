@@ -1,160 +1,69 @@
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ShellSupportDefinitionContract } from "@cogno/core/session/shells/shell-support";
-import { Fs } from "@cogno/platform/fs";
-import { Logger } from "@cogno/platform/logger";
-import { Shells } from "@cogno/platform/shells";
+import { Hosts } from "@cogno/platform/hosts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ShellIntegrationWriter } from "./shell-integration.writer";
 
-const fs = {
-  exists: vi.fn(async () => false),
-  readTextFile: vi.fn(async () => ""),
-  writeTextFile: vi.fn(async () => undefined),
-  mkdir: vi.fn(async () => undefined),
-  readDir: vi.fn(async () => []),
-  watchChanges$: vi.fn(),
-  convertFileSrc: vi.fn((path: string) => `mock-url://${path}`),
-} as unknown as Fs;
-
-const environmentStub = { configDir: () => "/tmp/cogno" } as never;
-const shellsStub = { load: vi.fn(async () => []) } as unknown as Shells;
-const writer = new ShellIntegrationWriter(shellsStub, environmentStub, fs);
+const definitions = [
+  {
+    shellType: "Bash",
+    integrationFiles: [
+      { relativePath: "common/base.sh", content: "base" },
+      { relativePath: "bash/bootstrap.bash", content: "bash" },
+    ],
+  },
+  {
+    shellType: "ZSH",
+    integrationFiles: [
+      { relativePath: "common/base.sh", content: "base" },
+      { relativePath: "zsh/.zshrc", content: "zsh" },
+    ],
+  },
+] as unknown as ReadonlyArray<ShellSupportDefinitionContract>;
 
 describe("ShellIntegrationWriter", () => {
+  let installShellIntegration: ReturnType<typeof vi.fn>;
+  let writer: ShellIntegrationWriter;
+
   beforeEach(() => {
     vi.restoreAllMocks();
-  });
-
-  it("returns the configured integration root", async () => {
-    await expect(writer.getIntegrationRoot()).resolves.toBe("/tmp/cogno/shell-integration");
-  });
-
-  it("skips installation when the version is already current", async () => {
-    vi.mocked(fs.exists).mockResolvedValue(true);
-    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
-    const mkdirSpy = vi.mocked(fs.mkdir);
-
-    await writer.ensure([]);
-
-    expect(mkdirSpy).not.toHaveBeenCalled();
-  });
-
-  it("reinstalls when a script is missing although the version is current", async () => {
-    const missing = "/tmp/cogno/shell-integration/bash/base.sh";
-    vi.mocked(fs.exists).mockImplementation(async (path: string) => path !== missing);
-    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
-    vi.mocked(shellsStub.load).mockResolvedValue([{ shell_type: "Bash" }] as never);
-    const writeTextFileSpy = vi.mocked(fs.writeTextFile).mockResolvedValue(undefined);
-    vi.spyOn(Logger, "info").mockImplementation(() => undefined);
-    vi.spyOn(Logger, "warn").mockImplementation(() => undefined);
-
-    await writer.ensure([
-      {
-        shellType: "Bash",
-        integrationFiles: [{ relativePath: "bash/base.sh", content: "base" }],
-      },
-    ] as unknown as ReadonlyArray<ShellSupportDefinitionContract>);
-
-    expect(writeTextFileSpy).toHaveBeenCalledWith(missing, "base");
-  });
-
-  it("leaves a complete, current installation alone", async () => {
-    vi.mocked(fs.exists).mockResolvedValue(true);
-    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
-    vi.mocked(shellsStub.load).mockResolvedValue([{ shell_type: "Bash" }] as never);
-    const writeTextFileSpy = vi.mocked(fs.writeTextFile);
-
-    await writer.ensure([
-      {
-        shellType: "Bash",
-        integrationFiles: [{ relativePath: "bash/base.sh", content: "base" }],
-      },
-    ] as unknown as ReadonlyArray<ShellSupportDefinitionContract>);
-
-    expect(writeTextFileSpy).not.toHaveBeenCalled();
-  });
-
-  it("creates directories, writes each shell's integration files and updates version logs", async () => {
-    const existingPaths = new Set<string>([
-      "/tmp/cogno/shell-integration/VERSION",
-      "/tmp/cogno/shell-integration/logs/updates.log",
-    ]);
-
-    vi.mocked(fs.exists).mockImplementation(async (path: string) => existingPaths.has(path));
-    vi.mocked(fs.readTextFile).mockImplementation(async (path: string) => {
-      if (path.endsWith("/VERSION")) {
-        return "1.0.0";
-      }
-      if (path.endsWith("/updates.log")) {
-        return "existing log\n";
-      }
-      return "";
-    });
-    const mkdirSpy = vi.mocked(fs.mkdir).mockResolvedValue(undefined);
-    const writeTextFileSpy = vi.mocked(fs.writeTextFile).mockResolvedValue(undefined);
-    const loggerSpy = vi.spyOn(Logger, "info").mockImplementation(() => undefined);
-    vi.mocked(shellsStub.load).mockResolvedValue([
-      { shell_type: "Bash" },
-      { shell_type: "Zsh" },
-      { shell_type: "ZSH" },
-    ] as never);
-
-    await writer.ensure([
-      {
-        shellType: "Bash",
-        integrationFiles: [
-          { relativePath: "bash/base.sh", content: "base" },
-          { relativePath: "shared/env.sh", content: "bash shared" },
-        ],
-      },
-      {
-        shellType: "Zsh",
-        integrationFiles: [
-          { relativePath: "zsh/entry.zsh", content: "entry" },
-          { relativePath: "shared/env.sh", content: "zsh shared" },
-        ],
-      },
-    ] as unknown as ReadonlyArray<ShellSupportDefinitionContract>);
-
-    expect(mkdirSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration", { recursive: true });
-    expect(mkdirSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/logs", { recursive: true });
-    expect(writeTextFileSpy).toHaveBeenCalledWith(
-      "/tmp/cogno/shell-integration/bash/base.sh",
-      "base",
+    installShellIntegration = vi.fn().mockResolvedValue(undefined);
+    writer = new ShellIntegrationWriter(
+      { installShellIntegration } as unknown as Hosts,
+      { isDevMode: () => true } as never,
     );
-    expect(writeTextFileSpy).toHaveBeenCalledWith(
-      "/tmp/cogno/shell-integration/shared/env.sh",
-      "bash shared",
-    );
-    expect(writeTextFileSpy).toHaveBeenCalledWith(
-      "/tmp/cogno/shell-integration/zsh/entry.zsh",
-      "entry",
-    );
-    expect(writeTextFileSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/VERSION", "1.3.0");
-    expect(writeTextFileSpy).toHaveBeenCalledWith(
-      "/tmp/cogno/shell-integration/logs/updates.log",
-      expect.stringContaining("Updated shell integration to version 1.3.0"),
-    );
-    expect(loggerSpy).toHaveBeenCalledWith("Installing/updating shell integration scripts...");
   });
 
-  it("reports and rethrows installation errors", async () => {
-    const installError = new Error("shell discovery failed");
-    vi.mocked(fs.exists).mockResolvedValue(false);
-    vi.mocked(shellsStub.load).mockRejectedValue(installError);
-    const reportExceptionSpy = vi
-      .spyOn(ErrorReporter, "reportException")
-      .mockImplementation(() => undefined);
+  it("hands this machine the scripts of every supported shell, a shared one once", async () => {
+    await writer.ensure(definitions);
 
-    await expect(writer.ensure([])).rejects.toThrow("shell discovery failed");
+    expect(installShellIntegration).toHaveBeenCalledWith(
+      undefined,
+      "1.3.0",
+      [
+        { relativePath: "common/base.sh", content: "base" },
+        { relativePath: "bash/bootstrap.bash", content: "bash" },
+        { relativePath: "zsh/.zshrc", content: "zsh" },
+      ],
+      true,
+    );
+  });
 
-    expect(reportExceptionSpy).toHaveBeenCalledWith({
-      error: installError,
-      handled: true,
-      source: "ShellIntegrationWriter",
-      context: {
-        operation: "ensure",
-      },
-    });
+  it("hands a connected host the same scripts", async () => {
+    await writer.ensure(definitions, "mac");
+
+    expect(installShellIntegration).toHaveBeenCalledWith("mac", "1.3.0", expect.any(Array), true);
+  });
+
+  it("reports and rethrows when the scripts could not be laid down", async () => {
+    const error = new Error("Permission denied");
+    installShellIntegration.mockRejectedValue(error);
+    const reported = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => undefined);
+
+    await expect(writer.ensure(definitions, "mac")).rejects.toBe(error);
+
+    expect(reported).toHaveBeenCalledWith(
+      expect.objectContaining({ error, handled: true, source: "ShellIntegrationWriter" }),
+    );
   });
 });

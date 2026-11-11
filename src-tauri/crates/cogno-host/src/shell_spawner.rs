@@ -26,17 +26,22 @@ pub struct ShellSpawner {
 /// working directory.
 pub type PreparedSpawn = (String, Vec<String>, HashMap<String, String>, String);
 
+/// Where the shell integration scripts of this machine lie.
+pub(crate) fn integration_root(dev_mode: bool) -> Result<PathBuf, String> {
+    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
+    let dir_name = if dev_mode {
+        DEVELOPMENT_HOME_DIRECTORY_NAME
+    } else {
+        HOME_DIRECTORY_NAME
+    };
+    Ok(home.join(dir_name).join("shell-integration"))
+}
+
 impl ShellSpawner {
     pub fn new(dev_mode: bool) -> Result<Self, String> {
-        let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-        let dir_name = if dev_mode {
-            DEVELOPMENT_HOME_DIRECTORY_NAME
-        } else {
-            HOME_DIRECTORY_NAME
-        };
-        let integration_root = home.join(dir_name).join("shell-integration");
-
-        Ok(Self { integration_root })
+        Ok(Self {
+            integration_root: integration_root(dev_mode)?,
+        })
     }
 
     pub fn prepare_spawn(&self, profile: &ShellProfile) -> Result<PreparedSpawn, String> {

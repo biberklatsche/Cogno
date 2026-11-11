@@ -5,6 +5,7 @@ use crate::processes::{
 };
 use crate::protocol::{Event, Reply, Request, Response};
 use crate::pty::PtyState;
+use crate::shell_integration;
 use crate::shells::detect_shells;
 
 /// Where a host's events go.
@@ -82,6 +83,11 @@ impl Host {
             } => terminate_process_tree(self.shell_process_id(&terminal_id)?, process_id)
                 .map(|_| Response::Done),
             Request::ListShells => Ok(Response::Shells(detect_shells())),
+            Request::InstallShellIntegration {
+                dev_mode,
+                version,
+                files,
+            } => shell_integration::install(dev_mode, &version, &files).map(|_| Response::Done),
         }
     }
 

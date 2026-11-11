@@ -3,9 +3,7 @@
 //! (`remote`). The commands turn what the webview asks into requests; what a
 //! host reports goes back to the webview from here.
 
-use cogno_host::protocol::{
-    Event, PtySpawnResult, Reply, Request, Response, ShellInfo, SpawnOptions,
-};
+use cogno_host::protocol::{Event, PtySpawnResult, Reply, Request, Response, SpawnOptions};
 use cogno_host::{EventSink, Host};
 use serde::Serialize;
 use std::collections::HashMap;
@@ -309,19 +307,16 @@ impl HostState {
         }
     }
 
-    /// The shells installed on `host`, this machine when `None`.
-    pub async fn list_shells(&self, host: Option<String>) -> Result<Vec<ShellInfo>, String> {
+    /// Answers a request about a host as a whole, not about one terminal:
+    /// `host` is asked, this machine when `None`. On a blocking worker.
+    pub async fn request_on(&self, host: Option<String>, request: Request) -> Reply {
         let hosts = self.0.clone();
-        let reply = tauri::async_runtime::spawn_blocking(move || match host {
-            None => hosts.local.handle(Request::ListShells),
-            Some(name) => hosts.remote(&name)?.request(Request::ListShells),
+        tauri::async_runtime::spawn_blocking(move || match host {
+            None => hosts.local.handle(request),
+            Some(name) => hosts.remote(&name)?.request(request),
         })
         .await
-        .map_err(|error| error.to_string())??;
-        match reply {
-            Response::Shells(shells) => Ok(shells),
-            _ => Err("The host answered something else".to_string()),
-        }
+        .map_err(|error| error.to_string())?
     }
 
     /// Answers on the calling thread: only for requests about one terminal

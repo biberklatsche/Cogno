@@ -1,186 +1,70 @@
 import { Injectable } from "@angular/core";
 import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { ShellSupportDefinitionContract } from "@cogno/core/session/shells/shell-support";
-import { Fs } from "@cogno/platform/fs";
-import { Logger } from "@cogno/platform/logger";
-import { Shells } from "@cogno/platform/shells";
-import { ShellTypeContract } from "@cogno/shared/domain";
+import {
+  ShellIntegrationFileContract,
+  ShellSupportDefinitionContract,
+} from "@cogno/core/session/shells/shell-support";
+import { Hosts } from "@cogno/platform/hosts";
 
 const INTEGRATION_VERSION = "1.3.0";
 
 /**
- * Manages shell integration scripts in ~/.cogno/shell-integration
- * (or ~/.cogno-dev/shell-integration in development mode)
+ * Puts the shell integration scripts where a shell started with integration
+ * sources them: `shell-integration` in the Cogno home of the machine the
+ * shell runs on. The scripts are this Cogno's; the machine - this one or a
+ * connected host - only lays them down, and leaves them alone when they are
+ * there in this version already.
  */
 @Injectable({ providedIn: "root" })
 export class ShellIntegrationWriter {
   constructor(
-    private readonly shells: Shells,
+    private readonly hosts: Hosts,
     private readonly environment: Environment,
-    private readonly fs: Fs,
   ) {}
 
   /**
-   * Ensures shell integration scripts are installed and up-to-date.
-   * Only installs scripts for shells that are available and supported in the active feature set.
+   * Makes sure the scripts of every supported shell are installed and current
+   * on `host`, this machine when none is named. Which shells exist there does
+   * not matter: a script for a shell that is not installed is a small file.
    */
   async ensure(
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
+    host?: string,
   ): Promise<void> {
-    const integrationRoot = await this.getIntegrationRoot();
-
     try {
-      const availableShells = await this.shells.load();
-      const availableShellTypes = new Set(availableShells.map((shell) => shell.shell_type));
-      const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
-
-      const needsUpdate = await this.needsUpdate(
-        integrationRoot,
-        availableShellTypes,
-        definitionsByShellType,
+      await this.hosts.installShellIntegration(
+        host,
+        INTEGRATION_VERSION,
+        this.filesOf(shellSupportDefinitions),
+        this.environment.isDevMode(),
       );
-      if (!needsUpdate) {
-        return;
-      }
-
-      Logger.info("Installing/updating shell integration scripts...");
-      Logger.info(`Found shells: ${Array.from(availableShellTypes).join(", ")}`);
-
-      await this.createBaseDirectories(integrationRoot);
-      await this.writeIntegrationFiles(
-        integrationRoot,
-        availableShellTypes,
-        definitionsByShellType,
-      );
-      await this.writeVersion(integrationRoot);
-      await this.logUpdate(integrationRoot);
-
-      Logger.info("Shell integration scripts installed successfully");
     } catch (error) {
       ErrorReporter.reportException({
         error,
         handled: true,
         source: "ShellIntegrationWriter",
-        context: {
-          operation: "ensure",
-        },
+        context: { operation: "ensure", host },
       });
       throw error;
     }
   }
 
-  async getIntegrationRoot(): Promise<string> {
-    const cognoHome = this.environment.configDir();
-    return `${cognoHome}/shell-integration`;
-  }
-
-  private createDefinitionsByShellType(
+  /** Every script once: two shells may share a file. */
+  private filesOf(
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
-  ): Map<ShellTypeContract, ShellSupportDefinitionContract> {
-    const definitionsByShellType = new Map<ShellTypeContract, ShellSupportDefinitionContract>();
+  ): ShellIntegrationFileContract[] {
+    const filesByPath = new Map<string, ShellIntegrationFileContract>();
     for (const definition of shellSupportDefinitions) {
-      definitionsByShellType.set(definition.shellType, definition);
-    }
-    return definitionsByShellType;
-  }
-
-  /**
-   * A current VERSION file alone is no proof the scripts are there: one may
-   * have been deleted, or the directory restored half-way. A shell that
-   * starts without its script runs with no integration at all, so every
-   * file an available shell needs has to exist too.
-   */
-  private async needsUpdate(
-    integrationRoot: string,
-    availableShellTypes: ReadonlySet<ShellTypeContract>,
-    definitionsByShellType: ReadonlyMap<ShellTypeContract, ShellSupportDefinitionContract>,
-  ): Promise<boolean> {
-    const versionFile = `${integrationRoot}/VERSION`;
-
-    if (!(await this.fs.exists(versionFile))) {
-      return true;
-    }
-
-    const currentVersion = await this.fs.readTextFile(versionFile);
-    if (currentVersion.trim() !== INTEGRATION_VERSION) {
-      return true;
-    }
-
-    for (const shellType of availableShellTypes) {
-      for (const integrationFile of definitionsByShellType.get(shellType)?.integrationFiles ?? []) {
-        const filePath = `${integrationRoot}/${integrationFile.relativePath}`;
-        if (!(await this.fs.exists(filePath))) {
-          Logger.warn(`Shell integration file missing, reinstalling: ${filePath}`);
-          return true;
+      for (const file of definition.integrationFiles) {
+        if (!filesByPath.has(file.relativePath)) {
+          filesByPath.set(file.relativePath, {
+            relativePath: file.relativePath,
+            content: file.content,
+          });
         }
       }
     }
-    return false;
-  }
-
-  private async createBaseDirectories(integrationRoot: string): Promise<void> {
-    const directories = [integrationRoot, `${integrationRoot}/logs`];
-
-    for (const directory of directories) {
-      if (!(await this.fs.exists(directory))) {
-        await this.fs.mkdir(directory, { recursive: true });
-      }
-    }
-  }
-
-  private async writeIntegrationFiles(
-    integrationRoot: string,
-    availableShellTypes: ReadonlySet<ShellTypeContract>,
-    definitionsByShellType: ReadonlyMap<ShellTypeContract, ShellSupportDefinitionContract>,
-  ): Promise<void> {
-    const writtenRelativePaths = new Set<string>();
-
-    for (const shellType of availableShellTypes) {
-      const shellDefinition = definitionsByShellType.get(shellType);
-      if (!shellDefinition) {
-        continue;
-      }
-
-      for (const integrationFile of shellDefinition.integrationFiles) {
-        if (writtenRelativePaths.has(integrationFile.relativePath)) {
-          continue;
-        }
-        writtenRelativePaths.add(integrationFile.relativePath);
-
-        const filePath = `${integrationRoot}/${integrationFile.relativePath}`;
-        const directoryPath = this.getDirectoryPath(filePath);
-        if (!(await this.fs.exists(directoryPath))) {
-          await this.fs.mkdir(directoryPath, { recursive: true });
-        }
-
-        await this.fs.writeTextFile(filePath, integrationFile.content);
-      }
-    }
-  }
-
-  private getDirectoryPath(path: string): string {
-    const separatorIndex = path.lastIndexOf("/");
-    if (separatorIndex < 0) {
-      return path;
-    }
-    return path.slice(0, separatorIndex);
-  }
-
-  private async writeVersion(integrationRoot: string): Promise<void> {
-    await this.fs.writeTextFile(`${integrationRoot}/VERSION`, INTEGRATION_VERSION);
-  }
-
-  private async logUpdate(integrationRoot: string): Promise<void> {
-    const logFile = `${integrationRoot}/logs/updates.log`;
-    const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-    const entry = `[${timestamp}] Updated shell integration to version ${INTEGRATION_VERSION}\n`;
-
-    let existing = "";
-    if (await this.fs.exists(logFile)) {
-      existing = await this.fs.readTextFile(logFile);
-    }
-
-    await this.fs.writeTextFile(logFile, existing + entry);
+    return [...filesByPath.values()];
   }
 }

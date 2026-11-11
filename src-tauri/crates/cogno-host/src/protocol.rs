@@ -3,6 +3,7 @@
 
 pub use crate::processes::{ProcessDetails, ProcessTreeSnapshot, TerminalProcess};
 pub use crate::pty::{PtySpawnResult, SpawnOptions};
+pub use crate::shell_integration::IntegrationFile;
 pub use crate::shell_spawner::ShellProfile;
 pub use crate::shells::ShellInfo;
 use serde::{Deserialize, Serialize};
@@ -56,6 +57,13 @@ pub enum Request {
         process_id: u32,
     },
     ListShells,
+    /// Lays the shell integration scripts of `version` down, unless they are
+    /// there already. `dev_mode` as in a spawn: which Cogno home is meant.
+    InstallShellIntegration {
+        dev_mode: bool,
+        version: String,
+        files: Vec<IntegrationFile>,
+    },
 }
 
 impl Request {
@@ -70,7 +78,10 @@ impl Request {
             | Request::PtyAck { terminal_id, .. }
             | Request::ProcessTree { terminal_id }
             | Request::TerminateProcess { terminal_id, .. } => Some(terminal_id),
-            Request::ReleaseOwner { .. } | Request::TerminalProcesses | Request::ListShells => None,
+            Request::ReleaseOwner { .. }
+            | Request::TerminalProcesses
+            | Request::ListShells
+            | Request::InstallShellIntegration { .. } => None,
         }
     }
 
@@ -83,7 +94,8 @@ impl Request {
             | Request::ProcessTree { .. }
             | Request::TerminalProcesses
             | Request::TerminateProcess { .. }
-            | Request::ListShells => true,
+            | Request::ListShells
+            | Request::InstallShellIntegration { .. } => true,
             Request::PtyWrite { .. }
             | Request::PtyLineEditorAction { .. }
             | Request::PtyResize { .. }

@@ -123,6 +123,7 @@ pub fn run(cli: Cli) {
             crate::commands::config::get_default_config,
             crate::commands::hosts::list_shells,
             crate::commands::hosts::host_connect,
+            crate::commands::hosts::host_install_shell_integration,
             crate::commands::keyboard::get_keyboard_layout,
             crate::commands::pty::pty_spawn,
             crate::commands::pty::pty_write,
