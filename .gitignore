@@ -56,3 +56,15 @@ test_output.txt
 test_output_2.txt
 
 scripts/fig-commands/
+
+# Secrets: they live outside the repository (~/.cogno-secrets). These entries
+# only keep one from being committed by accident.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.cogno-secrets/
+release.settings.json
