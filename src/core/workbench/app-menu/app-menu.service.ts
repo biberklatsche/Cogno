@@ -36,15 +36,6 @@ export class AppMenuService {
     }
 
     items.push(this.buildMenuItem("new_window"));
-    items.push(this.buildMenuItem("open_config"));
-    items.push({ separator: true });
-    for (const actionName of ["open_documentation", "open_about"]) {
-      items.push({
-        label: actionLabel(actionName),
-        action: () => this.bus.publish(ActionFired.create(actionName)),
-        keybinding: this.keybindingFor(actionName),
-      });
-    }
     return items;
   }
 

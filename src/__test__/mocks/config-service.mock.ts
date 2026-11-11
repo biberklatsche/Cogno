@@ -4,10 +4,15 @@ import {
   ConfigService,
   type ShellProfileEntry,
 } from "@cogno/core/infrastructure/config/config.service";
+import {
+  composeDefaultSettings,
+  type DefaultTree,
+} from "@cogno/core/infrastructure/config/default-settings";
 import type { Config } from "@cogno/core/infrastructure/config/models/config";
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { BehaviorSubject, type Observable } from "rxjs";
 import { filter } from "rxjs/operators";
+import type { z } from "zod";
 
 export class ConfigServiceMock extends ConfigService {
   private _config$ = new BehaviorSubject<Config | undefined>(undefined);
@@ -28,6 +33,20 @@ export class ConfigServiceMock extends ConfigService {
 
   async load(_options: ConfigLoadOptions): Promise<void> {
     // The mock is fed through setConfig; loading reads nothing.
+  }
+
+  async update(_entries: Readonly<Record<string, unknown>>): Promise<void> {}
+
+  get schema(): z.ZodObject<z.ZodRawShape> {
+    throw new Error("not implemented");
+  }
+
+  get defaultSettings(): DefaultTree {
+    return composeDefaultSettings([]);
+  }
+
+  get userKeys$(): Observable<ReadonlySet<string>> {
+    return new BehaviorSubject<ReadonlySet<string>>(new Set()).asObservable();
   }
 
   async reload(): Promise<void> {

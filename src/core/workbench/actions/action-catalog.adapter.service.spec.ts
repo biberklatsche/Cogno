@@ -27,7 +27,9 @@ function entries(): ReadonlyArray<ActionEntryContract> {
 
 describe("ActionCatalogAdapterService", () => {
   it("gives a core action its catalog label", () => {
-    const settings = entries().find((entry) => entry.actionDefinition.actionName === "open_config");
+    const settings = entries().find(
+      (entry) => entry.actionDefinition.actionName === "open_settings",
+    );
 
     expect(settings?.label).toBe("Settings");
   });

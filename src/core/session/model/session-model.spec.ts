@@ -24,20 +24,6 @@ describe("SessionModel", () => {
     expect(model.hasUnreadNotification).toBe(false);
   });
 
-  it("does not mark the unread notification while the badge is disabled", () => {
-    const model = new SessionModel(
-      "linux",
-      new TerminalCommandHistoryStore(),
-      recorderStub(),
-      () => false,
-    );
-    model.initialize("terminal-1", "Bash", undefined, "linux");
-
-    model.markUnreadNotification();
-
-    expect(model.hasUnreadNotification).toBe(false);
-  });
-
   it("reports the working directory as a backend path and the change to the recorder", () => {
     const recorder = recorderStub();
     const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorder);

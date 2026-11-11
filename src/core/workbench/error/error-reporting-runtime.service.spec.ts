@@ -1,4 +1,3 @@
-import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,36 +12,16 @@ vi.mock("@cogno/platform/logger", () => ({
 
 describe("ErrorReportingRuntimeService", () => {
   let appBus: Pick<AppBus, "publish">;
-  let configService: ConfigService;
   let service: ErrorReportingRuntimeService;
 
   beforeEach(() => {
     appBus = {
       publish: vi.fn(),
     };
-    configService = {
-      get config() {
-        return {
-          notification: {
-            exception: {
-              handled: { enabled: true },
-              unhandled: { enabled: true },
-            },
-          },
-        };
-      },
-      get config$() {
-        throw new Error("not implemented");
-      },
-      getShellProfileOrDefault: vi.fn(),
-      getOrderedShellProfiles: vi.fn(),
-      getShellProfileByShortcutIndex: vi.fn(),
-      getPromptSegments: vi.fn(),
-    } as unknown as ConfigService;
-    service = new ErrorReportingRuntimeService(appBus as AppBus, configService);
+    service = new ErrorReportingRuntimeService(appBus as AppBus);
   });
 
-  it("publishes notifications for handled exceptions when enabled", () => {
+  it("publishes handled exceptions with their event; the dispatch decides whether they show", () => {
     service.reportException({
       error: new Error("boom"),
       handled: true,
@@ -54,6 +33,7 @@ describe("ErrorReportingRuntimeService", () => {
       expect.objectContaining({
         type: "Notification",
         payload: expect.objectContaining({
+          event: { source: "errors", id: "handled" },
           header: "Handled exception",
           source: "unit-test",
           type: "error",
@@ -90,31 +70,11 @@ describe("ErrorReportingRuntimeService", () => {
     vi.useRealTimers();
   });
 
-  it("respects config flags and explicit notify overrides", () => {
-    configService = {
-      get config() {
-        return {
-          notification: {
-            exception: {
-              handled: { enabled: false },
-              unhandled: { enabled: false },
-            },
-          },
-        };
-      },
-      get config$() {
-        throw new Error("not implemented");
-      },
-      getShellProfileOrDefault: vi.fn(),
-      getOrderedShellProfiles: vi.fn(),
-      getShellProfileByShortcutIndex: vi.fn(),
-      getPromptSegments: vi.fn(),
-    } as unknown as ConfigService;
-    service = new ErrorReportingRuntimeService(appBus as AppBus, configService);
-
+  it("stays quiet when the caller asks for no notification", () => {
     service.reportException({
       error: "ignored",
       handled: false,
+      notify: false,
       source: "unit-test",
     });
     service.reportWarning({

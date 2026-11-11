@@ -179,12 +179,12 @@ in `renderSitePage()` in `scripts/generate-actions.ts`.
 - `src/core/session/autocomplete/suggestors/command-pattern.suggestor.ts`
 - `src/core/session/autocomplete/suggestors/history-directory.suggestor.ts`
 - `src/core/session/autocomplete/spec-command/` — the spec-command suggestor (1000+ CLI tools)
-- `src/core/session/recorder/command-recorder.ts` — which commands are recorded into the history (return-code whitelist)
+- `src/core/session/recorder/command-recorder.ts` — the history keeps every command; which of them autocomplete may suggest (not-found commands never, plus the return-code whitelist)
 
 **Required sections:** how suggestions appear; the suggestion sources (history
 commands, history patterns, history directories, spec commands); filter modes and
-how `cycle_tab` cycles them; keyboard handling; what gets into the history
-(`terminal.history.allowed_return_codes*`). Settings: link to the generated
+how `cycle_tab` cycles them; keyboard handling; what gets into the history and what
+autocomplete may suggest (`autocomplete.allowed_return_codes*`). Settings: link to the generated
 `autocomplete.*` and `terminal.history.*` rows.
 
 ### Page 5 — Notifications

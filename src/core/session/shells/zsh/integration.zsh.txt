@@ -15,25 +15,6 @@ typeset -g COGNO_COUNT=0
 typeset -g COGNO_LAST_CMD=""
 typeset -g COGNO_CMD_SEEN=0
 
-# Extract command name: trim, drop leading KEY=VALUE prefixes, take first token
-_cogno_extract_command_name() {
-  local line="$1"
-  line="${line#${line%%[![:space:]]*}}"
-
-  local assignment_re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+'
-  while [[ "$line" =~ $assignment_re ]]; do
-    line="${line#${MATCH}}"
-  done
-
-  line="${line#${line%%[![:space:]]*}}"
-  if [[ -z "$line" ]]; then
-    print -r -- ""
-    return
-  fi
-
-  print -r -- "${line%%[[:space:]]*}"
-}
-
 _cogno_preexec() {
   # $1 = command line as entered
   COGNO_LAST_CMD="$1"
@@ -51,14 +32,16 @@ _cogno_precmd() {
   local cwd="$PWD"
 
   local cmd=""
-  local command_exists="false"
   if (( COGNO_CMD_SEEN )); then
     cmd="$COGNO_LAST_CMD"
-    local command_name
-    command_name="$(_cogno_extract_command_name "$COGNO_LAST_CMD")"
-    if [[ -n "$command_name" ]] && whence -w -- "$command_name" >/dev/null 2>&1; then
-      command_exists="true"
-    fi
+  fi
+
+  # What the shell itself reported: 127 is "command not found", 126 "found
+  # but not executable" (POSIX). Asking afterwards whether the name exists
+  # would misjudge `./x` after a `cd`, quoted paths and prefixes like `env`.
+  local command_exists="true"
+  if (( last_ec == 127 || last_ec == 126 )); then
+    command_exists="false"
   fi
 
   # Sanitize command for OSC payload
@@ -69,7 +52,6 @@ _cogno_precmd() {
   cmd="${cmd//;/\\;}"
   cmd="${cmd//|/\\|}"
 
-  # Compute and insert commandExists into the existing OSC payload
   # The token proves the sequence comes from this session's integration.
   local osc=$'\e]733;COGNO:PROMPT;'"token=${COGNO_SESSION_TOKEN};returnCode=${last_ec};user=${USER};machine=${host};directory=${cwd};id=${ts};command=${cmd};commandExists=${command_exists};"$'\e\\'
 

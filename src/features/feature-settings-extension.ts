@@ -7,7 +7,6 @@ import {
   FeatureNotificationOverviewSchema,
   FeatureProcessInfoSchema,
   FeatureSearchSchema,
-  FeatureUpdaterSchema,
   FeatureWorkspaceSchema,
 } from "@cogno/core/api/contributions";
 import { z } from "zod";
@@ -22,9 +21,9 @@ const featureSettingsSchemaShape = {
       git: FeatureGitSchema.optional(),
       process_info: FeatureProcessInfoSchema.optional(),
       coding_agents: FeatureCodingAgentsSchema.optional(),
-      updater: FeatureUpdaterSchema.optional(),
     })
-    .optional(),
+    .optional()
+    .describe("Each feature can be switched off entirely and ordered in the side menu."),
 } as const;
 
 export const defaultFeatureSettingsExtension = {

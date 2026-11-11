@@ -1,7 +1,9 @@
 use crate::commands::window_registry::route;
+use crate::endpoint;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::net::TcpListener;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 use std::sync::{Condvar, Mutex};
 use std::time::Duration;
@@ -58,6 +60,13 @@ pub struct HttpServerState {
     /// A secret for this launch. Only processes started in a Cogno terminal
     /// get it (`COGNO_TOKEN`); every request must carry it.
     token: String,
+    /// A second secret, published in the endpoint file for processes that
+    /// run outside any Cogno terminal (ARCHITECTURE.md 2.1). It opens
+    /// `/action` - a message to the webview - and nothing else.
+    external_token: String,
+    /// The Cogno home the endpoint file was written to, so the exit can take
+    /// it away again.
+    endpoint_home: Mutex<Option<PathBuf>>,
     start_decided: Mutex<bool>,
     start_decision: Condvar,
 }
@@ -68,6 +77,8 @@ impl Default for HttpServerState {
             port: AtomicU16::new(0),
             started: AtomicBool::new(false),
             token: uuid::Uuid::new_v4().simple().to_string(),
+            external_token: uuid::Uuid::new_v4().simple().to_string(),
+            endpoint_home: Mutex::new(None),
             start_decided: Mutex::new(false),
             start_decision: Condvar::new(),
         }
@@ -85,6 +96,25 @@ impl HttpServerState {
 
     pub fn token(&self) -> &str {
         &self.token
+    }
+
+    /// Nobody listens any more: the endpoint file must not name this instance.
+    pub fn remove_endpoint(&self) {
+        let home = self
+            .endpoint_home
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .take();
+        if let Some(home) = home {
+            endpoint::remove(&home);
+        }
+    }
+
+    fn remember_endpoint(&self, home: PathBuf) {
+        *self
+            .endpoint_home
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(home);
     }
 
     fn try_claim_start(&self) -> bool {
@@ -163,6 +193,18 @@ fn is_authorized(headers: &axum::http::HeaderMap, token: &str, port: u16) -> boo
     presented_token(headers) == Some(token) && host_is_loopback(headers, port)
 }
 
+/// `/action` takes the launch token (a process in a Cogno terminal) or the
+/// external token from the endpoint file (one outside any, such as a coding
+/// agent's background service). It only hands a message to the webview.
+fn is_message_authorized(
+    headers: &axum::http::HeaderMap,
+    token: &str,
+    external_token: &str,
+    port: u16,
+) -> bool {
+    is_authorized(headers, token, port) || is_authorized(headers, external_token, port)
+}
+
 fn presented_token(headers: &axum::http::HeaderMap) -> Option<&str> {
     headers
         .get(TOKEN_HEADER)
@@ -199,9 +241,13 @@ pub fn start_http_server(
     enabled: bool,
     port: u16,
     auto_next_port: bool,
+    dev_mode: bool,
 ) -> Result<u16, String> {
+    let cogno_home = crate::commands::environment::cogno_home(dev_mode)?;
     if !enabled {
         log::info!(target: "http_server", "HTTP server disabled via config");
+        // A file from an earlier run would name a port nobody serves.
+        endpoint::remove(&cogno_home);
         state.decide_start();
         return Ok(0);
     }
@@ -213,6 +259,13 @@ pub fn start_http_server(
     let bound = bind_listener(&state, port, auto_next_port);
     state.decide_start();
     let (bound, actual_port) = bound?;
+
+    match endpoint::write(&cogno_home, actual_port, &state.external_token) {
+        Ok(()) => state.remember_endpoint(cogno_home),
+        // The server still serves terminals; only processes without a Cogno
+        // environment cannot find it, and the log says why.
+        Err(e) => log::error!(target: "http_server", "Cannot write the endpoint file: {}", e),
+    }
 
     tauri::async_runtime::spawn(async move {
         use axum::extract::rejection::JsonRejection;
@@ -239,12 +292,13 @@ pub fn start_http_server(
         let app_askpass = app.clone();
         let token = app.state::<HttpServerState>().token().to_string();
         let token_for_run = token.clone();
+        let external_token = app.state::<HttpServerState>().external_token.clone();
         let router = Router::new()
             .route(
                 "/action",
                 post(move |headers: axum::http::HeaderMap, result: Result<Json<CognoMessagePayload>, JsonRejection>| {
                     let app = app_emit.clone();
-                    let authorized = is_authorized(&headers, &token, actual_port);
+                    let authorized = is_message_authorized(&headers, &token, &external_token, actual_port);
                     async move {
                         if !authorized {
                             log::warn!(target: "http_server", "POST /action rejected: missing or wrong token");
@@ -345,8 +399,10 @@ pub fn start_http_server(
         if let Err(e) = axum::serve(listener, router).await {
             log::error!(target: "http_server", "HTTP server error: {}", e);
         }
-        // Nobody listens any more: new terminals must not inherit a dead port.
+        // Nobody listens any more: new terminals must not inherit a dead port,
+        // and no hook must find it in the endpoint file.
         app.state::<HttpServerState>().mark_failed();
+        app.state::<HttpServerState>().remove_endpoint();
     });
 
     Ok(actual_port)
@@ -458,6 +514,27 @@ mod tests {
         assert!(!is_authorized(
             &headers(Some("secret"), "127.0.0.1:9001"),
             "secret",
+            9000
+        ));
+    }
+
+    #[test]
+    fn a_message_takes_either_token_but_nothing_else() {
+        let message = |token: Option<&str>, host: &str| {
+            is_message_authorized(&headers(token, host), "launch", "external", 9000)
+        };
+        assert!(message(Some("launch"), "127.0.0.1:9000"));
+        assert!(message(Some("external"), "localhost:9000"));
+        assert!(!message(Some("guess"), "127.0.0.1:9000"));
+        assert!(!message(None, "127.0.0.1:9000"));
+        assert!(!message(Some("external"), "evil.example:9000"));
+    }
+
+    #[test]
+    fn the_external_token_does_not_open_the_other_routes() {
+        assert!(!is_authorized(
+            &headers(Some("external"), "127.0.0.1:9000"),
+            "launch",
             9000
         ));
     }

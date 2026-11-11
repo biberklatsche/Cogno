@@ -3,6 +3,7 @@ export * from "./database-migration";
 export * from "./feature-definition";
 export * from "./feature-settings";
 export * from "./limit-setting";
+export * from "./notification-source";
 export * from "./side-menu-feature-definition";
 export * from "./side-menu-feature-handle";
 export * from "./side-menu-feature-lifecycle";

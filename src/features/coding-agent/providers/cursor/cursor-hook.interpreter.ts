@@ -7,7 +7,16 @@ import {
   payloadFields,
   stringField,
 } from "../_shared/hook-payload";
+import { HookSession } from "../_shared/hook-transport";
 import { CURSOR_HOOK_EVENT } from "./cursor.config";
+
+/** Cursor names the session `conversation_id` and the folder in `workspace_roots`. */
+export function cursorSession(payload: unknown): HookSession {
+  const fields = payloadFields(payload);
+  const roots = fields?.["workspace_roots"];
+  const cwd = Array.isArray(roots) && typeof roots[0] === "string" ? roots[0] : undefined;
+  return { sessionId: stringField(fields, "conversation_id"), cwd };
+}
 
 /**
  * Reads a Cursor hook: `prompt` on beforeSubmitPrompt, `tool_name`/`tool_input`

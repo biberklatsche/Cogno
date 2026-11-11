@@ -2,10 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { groupByWorkspace, NotificationPreferencesState } from "@cogno/shared/domain";
+import { groupByWorkspace } from "@cogno/shared/domain";
 import {
-  buildNotificationPreferencesMenuItems,
-  ContextMenuOverlayService,
   CopyEditDeleteComponent,
   IconComponent,
   KeyframeBarsComponent,
@@ -16,7 +14,6 @@ import {
 } from "@cogno/shared/ui";
 import { interval } from "rxjs";
 import { AGENT_STATUS_SPECS } from "./coding-agent-animation";
-import { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import { CodingAgentStartupService } from "./coding-agent-startup.service";
 import { ActiveAgent, CodingAgentStatusService } from "./coding-agent-status.service";
 import type { ICodingAgentProvider } from "./ports";
@@ -86,14 +83,6 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
             <button
               type="button"
               class="button icon-button"
-              appTooltip="Notification settings"
-              (click)="openNotificationMenu($event)"
-            >
-              <app-icon name="mdiBellCog"></app-icon>
-            </button>
-            <button
-              type="button"
-              class="button icon-button"
               appTooltip="Detected agents"
               (click)="showDetected()"
             >
@@ -109,6 +98,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
             </div>
           }
           @for (group of groups(); track group.workspaceId) {
+            <section class="group">
             @if (group.workspaceName) {
               <app-workspace-group-header
                 class="group-header"
@@ -116,13 +106,14 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 [color]="group.workspaceColor ?? ''"
               ></app-workspace-group-header>
             }
-            @for (agent of group.items; track agent.terminalId) {
+            @for (agent of group.items; track agent.sessionId) {
               <button
                 type="button"
                 appTile
                 class="agent-card"
                 [class]="cardState(agent)"
-                [focused]="agent.terminalId === focusedTerminalId()"
+                [class.unplaced]="!agent.terminalId"
+                [focused]="!!agent.terminalId && agent.terminalId === focusedTerminalId()"
                 (click)="navigateTo(agent)"
               >
                 <div class="agent-state">
@@ -152,15 +143,23 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 }
                 <span class="agent-detail" [appTooltip]="detail(agent) ?? ''">{{ detail(agent) ?? "" }}</span>
                 <div class="agent-footer">
-                  <app-tab-chip
-                    class="agent-tab"
-                    [title]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
-                    [color]="agent.placement?.tabColor"
-                    [tooltip]="agent.cwd ?? ''"
-                  ></app-tab-chip>
+                  @if (agent.terminalId) {
+                    <app-tab-chip
+                      class="agent-tab"
+                      [title]="agent.placement?.tabTitle ?? agent.cwd ?? ''"
+                      [color]="agent.placement?.tabColor"
+                      [tooltip]="agent.cwd ?? ''"
+                    ></app-tab-chip>
+                  } @else {
+                    <span class="agent-folder" [appTooltip]="unplacedTooltip(agent)">
+                      <app-icon name="mdiFolderOutline"></app-icon>
+                      <span>{{ folderName(agent.cwd) }}</span>
+                    </span>
+                  }
                 </div>
               </button>
             }
+            </section>
           }
         </div>
       } @else {
@@ -226,6 +225,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
   `,
   styles: `
     :host {
+      font-size: var(--panel-font-size);
       display: block;
       height: 100%;
     }
@@ -350,22 +350,31 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
 
     .active-list {
       display: flex;
-      flex-flow: row wrap;
-      align-content: flex-start;
+      flex-direction: column;
       gap: 0.5rem;
       flex: 1;
       overflow-y: auto;
       min-height: 0;
     }
 
+    /* Each workspace is its own wrap grid, so its sticky header stays on top
+       while its cards scroll by and is pushed away by the next one. */
+    .group {
+      display: flex;
+      flex-flow: row wrap;
+      align-content: flex-start;
+      gap: 0.5rem;
+    }
+
     /* A group header takes a whole row of the wrap grid. */
     .group-header {
       flex-basis: 100%;
-      margin-top: 1rem;
-    }
-
-    .group-header:first-child {
-      margin-top: 0.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 0.5rem 0 0.25rem;
+      /* The side menu's own surface, so the header looks like part of the list. */
+      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
     }
 
     .empty-state {
@@ -412,6 +421,34 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       flex-shrink: 0;
       max-width: 55%;
       margin-left: auto;
+    }
+
+    /* A session whose terminal is not settled shows its folder where the tab would be. */
+    .agent-folder {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      min-width: 0;
+      max-width: 55%;
+      margin-left: auto;
+      opacity: 0.6;
+    }
+
+    .agent-folder app-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .agent-folder > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .agent-card.unplaced {
+      cursor: default;
+      border-style: dashed;
     }
 
     .agent-badge {
@@ -561,22 +598,10 @@ export class CodingAgentsSideComponent {
   private readonly focusedTerminalIdSignal = signal<string | undefined>(undefined);
   readonly focusedTerminalId = this.focusedTerminalIdSignal.asReadonly();
 
-  readonly notificationPreferencesState = this.notificationPreferences.state;
-
-  get notificationDefinitions() {
-    return this.notificationPreferences.getNotificationDefinitions();
-  }
-
-  get channelOptions() {
-    return this.notificationPreferences.getChannelOptions();
-  }
-
   constructor(
     private readonly startupService: CodingAgentStartupService,
     private readonly statusService: CodingAgentStatusService,
-    private readonly notificationPreferences: CodingAgentNotificationPreferencesService,
     private readonly navigator: TerminalNavigator,
-    private readonly contextMenu: ContextMenuOverlayService,
     sessionApi: SessionApi,
     destroyRef: DestroyRef,
   ) {
@@ -614,10 +639,24 @@ export class CodingAgentsSideComponent {
     void this.startupService.rescan();
   }
 
+  /** Goes to the agent's terminal; a session whose terminal is not settled has nowhere to go. */
   navigateTo(agent: ActiveAgent): void {
+    if (!agent.terminalId) return;
     this.navigator.navigateToTerminal(agent.terminalId).catch((error: unknown) => {
       console.error("[coding-agents-side] Failed to navigate to terminal:", error);
     });
+  }
+
+  /** The folder's own name; the tooltip carries the path. */
+  folderName(cwd: string | undefined): string {
+    if (!cwd) return "Unknown folder";
+    const segments = cwd.replace(/[\\/]+$/, "").split(/[\\/]/);
+    return segments[segments.length - 1] || cwd;
+  }
+
+  unplacedTooltip(agent: ActiveAgent): string {
+    const where = agent.cwd ?? "an unknown folder";
+    return `Running in ${where}. Several terminals run ${agent.providerName} there, so this session cannot be placed yet.`;
   }
 
   /** Time spent working: "42s", "3m 05s", "1h 12m". */
@@ -644,33 +683,5 @@ export class CodingAgentsSideComponent {
   /** The detail line follows the state: the closing message once done, else the last activity. */
   detail(agent: ActiveAgent): string | undefined {
     return agent.status === "ready" ? agent.result : agent.activity;
-  }
-
-  openNotificationMenu(event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
-    const items = buildNotificationPreferencesMenuItems({
-      notificationDefinitions: this.notificationDefinitions,
-      notificationsLabel: "Notify me when…",
-      channels: this.channelOptions,
-      state: this.notificationPreferencesState(),
-      onToggleNotification: (id) => this.toggleNotification(id),
-      onToggleChannel: (id) => this.toggleChannel(id),
-    });
-    this.contextMenu.openAtElement(
-      event.currentTarget as HTMLElement,
-      { items },
-      { horizontalAlign: "right" },
-    );
-  }
-
-  toggleNotification(notificationId: string): NotificationPreferencesState {
-    this.notificationPreferences.toggleNotification(notificationId);
-    return this.notificationPreferencesState();
-  }
-
-  toggleChannel(channelId: string): NotificationPreferencesState {
-    this.notificationPreferences.toggleChannel(channelId);
-    return this.notificationPreferencesState();
   }
 }

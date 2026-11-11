@@ -34,6 +34,22 @@ export class ProcessInfoService {
     return bound.status === "active" && bound.session.mode === "held";
   });
 
+  private readonly terminatingSignal = signal<ReadonlySet<number>>(new Set<number>());
+  private readonly terminateFailureSignal = signal<{
+    readonly terminalId: string;
+    readonly processId: number;
+  } | null>(null);
+
+  /** The processes a terminate request is still running for. */
+  readonly terminating = this.terminatingSignal.asReadonly();
+  /** The process the last terminate request failed for, while its session is still the bound one. */
+  readonly terminateFailed = computed(() => {
+    const failure = this.terminateFailureSignal();
+    const bound = this.boundSessionSignal();
+    if (failure === null || bound.status !== "active") return null;
+    return bound.session.identity.terminalId === failure.terminalId ? failure.processId : null;
+  });
+
   private polling?: Subscription;
 
   constructor(
@@ -84,6 +100,31 @@ export class ProcessInfoService {
       this.sessionApi.release();
     } else {
       this.sessionApi.hold();
+    }
+  }
+
+  /**
+   * End a process of the bound session's tree, with everything it started. The
+   * next poll shows the result; a failure is kept for the panel to show.
+   */
+  async terminate(processId: number): Promise<void> {
+    const bound = this.boundSessionSignal();
+    if (bound.status !== "active" || this.terminatingSignal().has(processId)) return;
+    this.terminateFailureSignal.set(null);
+    this.terminatingSignal.update((terminating) => new Set(terminating).add(processId));
+    try {
+      await bound.session.terminateProcess(processId);
+    } catch {
+      this.terminateFailureSignal.set({
+        terminalId: bound.session.identity.terminalId,
+        processId,
+      });
+    } finally {
+      this.terminatingSignal.update((terminating) => {
+        const next = new Set(terminating);
+        next.delete(processId);
+        return next;
+      });
     }
   }
 

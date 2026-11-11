@@ -1,6 +1,7 @@
 import { MessageBase } from "@cogno/core/workbench/bus/message-base";
 import {
   NotificationChannelsContract,
+  NotificationEventRefContract,
   NotificationTargetContract,
   NotificationTypeContract,
   TerminalId,
@@ -14,6 +15,7 @@ export type NotificationEvent = MessageBase<
   {
     readonly body?: string;
     readonly channels?: Partial<NotificationChannels>;
+    readonly event?: NotificationEventRefContract;
     readonly header: string;
     readonly source?: NotificationSource;
     readonly terminalId?: TerminalId;

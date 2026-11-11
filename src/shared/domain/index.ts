@@ -1,7 +1,6 @@
 export * from "./action";
 export * from "./feature-mode";
 export * from "./notification";
-export * from "./notification-preferences";
 export * from "./path-adapter";
 export * from "./placement";
 export * from "./shell";

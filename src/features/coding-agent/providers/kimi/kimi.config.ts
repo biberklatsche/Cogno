@@ -17,6 +17,8 @@ export const KIMI_CONFIG = {
   name: "Kimi CLI",
   configSubDir: ".kimi",
   configFileName: "config.toml",
+  /** Its hooks run inside the agent in its terminal and always name it: nothing to look for. */
+  processNames: [],
   hookEvents: [
     { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },
     { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },

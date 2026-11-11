@@ -13,6 +13,8 @@ import { SessionInsertResult, SessionRunRequest, SessionRunResult } from "./sess
 export interface BoundSessionFs {
   readTextFile(path: string): Promise<string>;
   normalizePath(path: string): string;
+  /** `path`, in Cogno's form or as the operating system names it, as the session's shell writes it. */
+  displayPath(path: string): string;
   /** Emits once per burst of changes under `path` (a directory, recursively). */
   watch$(path: string): Observable<void>;
 }
@@ -47,6 +49,12 @@ export interface BoundSessionHandle {
    * sessions too.
    */
   processTree(): Promise<ProcessTreeSnapshot>;
+  /**
+   * Ends a process of that tree together with everything it started. Rejected
+   * when the identity is no longer the live bound session, for the shell
+   * itself (closing the terminal ends it) and for a process outside the tree.
+   */
+  terminateProcess(processId: number): Promise<void>;
 }
 
 /**

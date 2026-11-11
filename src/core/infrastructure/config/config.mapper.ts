@@ -1,9 +1,7 @@
-import { ApplicationSettingsExtensionContract } from "@cogno/core/api/contributions";
 import { OsType } from "@cogno/platform/os";
 import { z } from "zod";
-import { createConfigSchema } from "./config-schema";
 import { Config } from "./models/config";
-import { unwrapZod, zodDef } from "./zod-def";
+import { isAdditiveList, unwrapZod, zodDef } from "./zod-def";
 
 export type ConfigDiagnostic = {
   level: "warning" | "error";
@@ -17,27 +15,13 @@ export type ConfigDiagnostic = {
  * `ConfigService` does the reading and writing.
  */
 export class ConfigMapper {
+  /** The config a default text and a user text make against the composed schema, with what had to be corrected. */
   static fromStringToConfig(
     platform: OsType,
     defaultConfigString: string,
     userConfigString: string,
-    settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
-  ): Config {
-    return ConfigMapper.fromStringToConfigWithDiagnostics(
-      platform,
-      defaultConfigString,
-      userConfigString,
-      settingsExtensions,
-    ).config;
-  }
-
-  static fromStringToConfigWithDiagnostics(
-    platform: OsType,
-    defaultConfigString: string,
-    userConfigString: string,
-    settingsExtensions: ReadonlyArray<ApplicationSettingsExtensionContract>,
+    schema: z.ZodObject<z.ZodRawShape>,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
-    const schema = createConfigSchema(settingsExtensions);
     const userConfig = ConfigMapper.parseConfigString(userConfigString, schema);
     const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString, schema);
     return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform);
@@ -52,6 +36,7 @@ export class ConfigMapper {
     const mergedConfig = ConfigMapper.mergeConfigValues(
       defaultConfig ?? {},
       userConfig ?? {},
+      schema,
     ) as Record<string, unknown>;
     const diagnostics: ConfigDiagnostic[] = [];
     const initialCandidate = ConfigMapper.clone(mergedConfig);
@@ -92,7 +77,11 @@ export class ConfigMapper {
     return { config: fallback, diagnostics };
   }
 
-  private static mergeConfigValues(defaultValue: unknown, userValue: unknown): unknown {
+  private static mergeConfigValues(
+    defaultValue: unknown,
+    userValue: unknown,
+    schema: z.ZodType | undefined,
+  ): unknown {
     if (userValue === undefined) {
       return ConfigMapper.clone(defaultValue);
     }
@@ -113,30 +102,28 @@ export class ConfigMapper {
     ]);
 
     for (const configKey of configKeys) {
-      if (configKey === "keybind") {
-        const defaultKeybindValue = defaultValue[configKey];
-        const userKeybindValue = userValue[configKey];
-        const defaultKeybindEntries = Array.isArray(defaultKeybindValue)
-          ? defaultKeybindValue
-          : defaultKeybindValue === undefined
-            ? []
-            : [defaultKeybindValue];
-        const userKeybindEntries = Array.isArray(userKeybindValue)
-          ? userKeybindValue
-          : userKeybindValue === undefined
-            ? []
-            : [userKeybindValue];
-        mergedConfig[configKey] = [...defaultKeybindEntries, ...userKeybindEntries];
+      const childSchema = ConfigMapper.getChildSchema(schema, configKey);
+      if (isAdditiveList(childSchema)) {
+        mergedConfig[configKey] = [
+          ...ConfigMapper.asList(defaultValue[configKey]),
+          ...ConfigMapper.asList(userValue[configKey]),
+        ];
         continue;
       }
 
       mergedConfig[configKey] = ConfigMapper.mergeConfigValues(
         defaultValue[configKey],
         userValue[configKey],
+        childSchema,
       );
     }
 
     return mergedConfig;
+  }
+
+  private static asList(value: unknown): unknown[] {
+    if (value === undefined) return [];
+    return Array.isArray(value) ? value : [value];
   }
 
   private static addFontFallbacks(fontFamily: string, platform: OsType): string {
@@ -489,7 +476,11 @@ export class ConfigMapper {
     return undefined;
   }
 
-  private static getSchemaAtDotPath(schema: z.ZodType, dottedPath: string): z.ZodType | undefined {
+  /** The schema of one dotted key in `schema`; undefined when no such key exists. */
+  static getSchemaAtDotPath(
+    schema: z.ZodType | undefined,
+    dottedPath: string,
+  ): z.ZodType | undefined {
     let currentSchema = unwrapZod(schema);
     for (const pathSegment of dottedPath.split(".")) {
       currentSchema = ConfigMapper.getChildSchema(currentSchema, pathSegment);

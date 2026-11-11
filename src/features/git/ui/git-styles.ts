@@ -87,12 +87,12 @@ export const GIT_SHARED_STYLES = `
     letter-spacing: normal;
   }
 
-  /* Stage and unstage are plain buttons; only discard is red, as it cannot be undone.
-     The commit itself is a filled green button. */
-  .button.discard { color: var(--color-red); border-color: color-mix(in srgb, var(--color-red) 60%, transparent); }
+  /* Stage, unstage and discard look alike at rest; discard turns red only under
+     the pointer, as it cannot be undone. The commit itself is a filled green button. */
   .button.discard:hover:not(:disabled) {
-    border-color: var(--color-red);
-    background: color-mix(in srgb, var(--color-red) 18%, var(--background-color));
+    color: var(--color-red);
+    border-color: color-mix(in srgb, var(--color-red) 60%, transparent);
+    background: color-mix(in srgb, var(--color-red) 12%, var(--background-color));
   }
   .button.commit {
     color: var(--background-color);

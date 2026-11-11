@@ -12,8 +12,8 @@ import { classifyRootFailure, READ_TIMEOUT_MS, runGit } from "./git-run";
 import { countChanges, GitChangeCounts } from "./model/git-change-counts";
 import { parseGitStatus } from "./model/git-parsers";
 
-/** One open terminal that stands in a repository, as the repositories panel shows it. */
-export type GitRepositoryTile = {
+/** One open terminal that stands in a repository. */
+type TerminalRepository = {
   readonly terminalId: TerminalId;
   readonly root: string;
   /** The checked-out branch; null when HEAD is detached or before the first commit. */
@@ -21,6 +21,15 @@ export type GitRepositoryTile = {
   readonly sha: string | null;
   readonly counts: GitChangeCounts;
   readonly placement: TerminalPlacement | undefined;
+};
+
+/**
+ * A repository as the repositories panel shows it: all terminals of one
+ * workspace that stand in it, in tab order, share one tile, which shows the
+ * placement of the first.
+ */
+export type GitRepositoryTile = Omit<TerminalRepository, "terminalId"> & {
+  readonly terminalIds: ReadonlyArray<TerminalId>;
 };
 
 /** A refresh of one terminal that is running; a request meanwhile makes it run once more. */
@@ -38,8 +47,8 @@ type Refresh = { pending: boolean; readonly done: Promise<void> };
  */
 @Injectable({ providedIn: "root" })
 export class GitRepositoriesOverviewService {
-  private readonly tilesByTerminal = signal<ReadonlyMap<TerminalId, GitRepositoryTile>>(new Map());
-  readonly tiles = computed(() => [...this.tilesByTerminal().values()]);
+  private readonly tilesByTerminal = signal<ReadonlyMap<TerminalId, TerminalRepository>>(new Map());
+  readonly tiles = computed(() => mergeSameRepository([...this.tilesByTerminal().values()]));
 
   private sessions = new Map<TerminalId, SessionHandle>();
   private readonly refreshes = new Map<TerminalId, Refresh>();
@@ -227,4 +236,25 @@ export class GitRepositoriesOverviewService {
         ),
     );
   }
+}
+
+/** One tile per repository and workspace, in tab order; its first terminal gives the placement. */
+function mergeSameRepository(repositories: ReadonlyArray<TerminalRepository>): GitRepositoryTile[] {
+  const byKey = new Map<string, GitRepositoryTile>();
+  const inTabOrder = [...repositories].sort(
+    (a, b) =>
+      (a.placement?.tabIndex ?? Number.MAX_SAFE_INTEGER) -
+      (b.placement?.tabIndex ?? Number.MAX_SAFE_INTEGER),
+  );
+  for (const { terminalId, ...repository } of inTabOrder) {
+    const key = `${repository.placement?.workspaceId ?? ""}\0${repository.root}`;
+    const tile = byKey.get(key);
+    byKey.set(
+      key,
+      tile
+        ? { ...tile, terminalIds: [...tile.terminalIds, terminalId] }
+        : { ...repository, terminalIds: [terminalId] },
+    );
+  }
+  return [...byKey.values()];
 }

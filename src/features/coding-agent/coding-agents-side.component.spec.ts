@@ -2,16 +2,15 @@ import type { DestroyRef } from "@angular/core";
 import { signal } from "@angular/core";
 import type { SessionApi } from "@cogno/core/api/session-api";
 import type { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import type { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { of } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { CodingAgentNotificationPreferencesService } from "./coding-agent-notification-preferences.service";
 import type { CodingAgentStartupService } from "./coding-agent-startup.service";
 import type { ActiveAgent, CodingAgentStatusService } from "./coding-agent-status.service";
 import { CodingAgentsSideComponent, cardState, countOf } from "./coding-agents-side.component";
 
 function agent(overrides: Partial<ActiveAgent> = {}): ActiveAgent {
   return {
+    sessionId: "s-1",
     terminalId: "t-1",
     providerId: "claude-code",
     providerName: "Claude Code",
@@ -55,9 +54,7 @@ describe("CodingAgentsSideComponent", () => {
         isScanning: signal(false),
       } as unknown as CodingAgentStartupService,
       { activeAgents } as unknown as CodingAgentStatusService,
-      { state: signal({}) } as unknown as CodingAgentNotificationPreferencesService,
       { navigateToTerminal } as unknown as TerminalNavigator,
-      {} as ContextMenuOverlayService,
       { boundSession$: of({ status: "unbound" }) } as unknown as SessionApi,
       { onDestroy: () => () => {} } as unknown as DestroyRef,
     );
@@ -111,8 +108,17 @@ describe("CodingAgentsSideComponent", () => {
     expect(component.summary()).toEqual({ working: 2, question: 1, error: 0, done: 1, idle: 1 });
   });
 
-  it("navigates to the agent's terminal on click", () => {
+  it("navigates to the agent's terminal on click, and nowhere for a session without one", () => {
     component.navigateTo(agent({ terminalId: "t-9" }));
     expect(navigateToTerminal).toHaveBeenCalledWith("t-9");
+
+    component.navigateTo(agent({ terminalId: undefined }));
+    expect(navigateToTerminal).toHaveBeenCalledTimes(1);
+  });
+
+  it("names the folder of a session without a terminal", () => {
+    expect(component.folderName("C:\\work\\app\\")).toBe("app");
+    expect(component.folderName("/home/me/app")).toBe("app");
+    expect(component.folderName(undefined)).toBe("Unknown folder");
   });
 });

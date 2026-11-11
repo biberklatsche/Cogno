@@ -17,6 +17,8 @@ Reload the config automatically when the file changes on disk.
 
 ## Font
 
+Terminal and app fonts.
+
 ### `font.family`
 
 Terminal font family; falls back per OS when unset.
@@ -39,13 +41,13 @@ Render programming ligatures (needs a font that has them).
 
 Weight of normal terminal text.
 
-**Type:** `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` | `normal` | `bold` | number · **Default:** `normal`
+**Type:** `normal` | `bold` | `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` · **Default:** `normal`
 
 ### `font.weight_bold`
 
 Weight of bold terminal text.
 
-**Type:** `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` | `normal` | `bold` | number · **Default:** `bold`
+**Type:** `normal` | `bold` | `100` | `200` | `300` | `400` | `500` | `600` | `700` | `800` | `900` · **Default:** `bold`
 
 ### `font.custom_glyphs`
 
@@ -77,9 +79,9 @@ Font size of the app UI in pixels.
 
 **Type:** integer ≥ 1 · **Default:** `14`
 
-## Colors
+## Color
 
-Colors are hex without `#`; 8 digits add alpha.
+Terminal color palette. Colors are hex without `#`; 8 digits add alpha.
 
 ### `color.foreground`
 
@@ -197,6 +199,8 @@ ANSI color 15 (bright white).
 
 ## Cursor
 
+Cursor shape, color and behaviour.
+
 ### `cursor.width`
 
 Cursor width in pixels; applies to the bar style.
@@ -241,6 +245,8 @@ Alt+click moves the shell cursor to the clicked position.
 
 ## Padding
 
+Padding around the terminal content.
+
 ### `padding.left`
 
 Padding between terminal content and left edge.
@@ -273,6 +279,8 @@ Drop the padding while a full-screen app (vim, less) owns the screen.
 
 ## Background image
 
+Optional terminal background image.
+
 ### `background_image.path`
 
 Path to a background image; empty means no background image.
@@ -293,6 +301,8 @@ Blur radius applied to the background image, 0-10.
 
 ## Menu
 
+Appearance of menus and panels.
+
 ### `menu.opacity`
 
 Opacity of menus and panels, 0-100.
@@ -300,6 +310,8 @@ Opacity of menus and panels, 0-100.
 **Type:** integer 0-100 · **Default:** `80`
 
 ## Scrollbar
+
+Scrollbar appearance and scrolling behaviour.
 
 ### `scrollbar.width`
 
@@ -363,6 +375,8 @@ How many lines of scrollback the terminal keeps.
 
 ## Selection
 
+Text selection colors and behaviour.
+
 ### `selection.clear_on_copy`
 
 Clear the selection right after copying.
@@ -389,6 +403,8 @@ Right-click selects the word under the pointer.
 
 ## Clipboard
 
+Clipboard access and copy behaviour.
+
 ### `clipboard.read`
 
 Whether programs in the terminal may read the clipboard (OSC 52).
@@ -409,7 +425,7 @@ Strip trailing spaces from copied lines.
 
 ## Shell
 
-`<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.
+Shell profiles and which one starts by default. `<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.
 
 ### `shell.default`
 
@@ -473,7 +489,7 @@ Also load your own shell rc/profile files.
 
 ## Prompt
 
-`<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.
+The configurable prompt rendered by Cogno. `<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.
 
 ### `prompt.active`
 
@@ -607,15 +623,17 @@ Static text to display, instead of a `field`.
 
 **Type:** string
 
-## Keybindings
+## Keybind
 
 ### `keybind`
 
 One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.
 
-**Type:** string[]
+**Type:** lines
 
 ## Terminal
+
+Terminal rendering and behaviour.
 
 ### `terminal.webgl`
 
@@ -707,30 +725,6 @@ Show the progress bar in the terminal header.
 
 **Type:** boolean · **Default:** `true`
 
-### `terminal.notifications.unread_badge`
-
-Show an unread badge on a terminal's tab when a notification-worthy event occurs while it isn't focused.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.notifications.osc9.enabled`
-
-Allow OSC9 terminal notifications to trigger a notification.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.notifications.long_running_command.enabled`
-
-Show a notification after a long-running command has finished.
-
-**Type:** boolean · **Default:** `false`
-
-### `terminal.notifications.long_running_command.minimum_duration_seconds`
-
-Notify only when a command ran for at least this many seconds.
-
-**Type:** integer ≥ 0 · **Default:** `10`
-
 ### `terminal.history.max_entries`
 
 Maximum number of commands to keep per shell context in the command history log, or `unlimited`. Older entries beyond this count are pruned; 0 keeps none.
@@ -755,18 +749,6 @@ When enabled, selecting a history entry immediately executes the command. When d
 
 **Type:** boolean · **Default:** `false`
 
-### `terminal.history.allowed_return_codes`
-
-Return codes a command may exit with to be added to the history, e.g. `[0]` to keep only successful commands. Empty (default) keeps every command that exists. A command's own list under `allowed_return_codes_by_command` wins.
-
-**Type:** integer[] · **Default:** `[]`
-
-### `terminal.history.allowed_return_codes_by_command.<name>`
-
-Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.
-
-**Type:** integer[]
-
 ### `terminal.restore.enabled`
 
 Restore workspaces, tabs, panes and terminal scrollback on the next launch, auto-saved on idle, workspace switch and exit. When off, nothing is persisted and each launch starts fresh; the explicit workspace save controls apply instead.
@@ -787,19 +769,29 @@ Maximum scrollback lines captured per terminal for restore. Caps the stored size
 
 ## Autocomplete
 
+Command autocomplete behaviour.
+
 ### `autocomplete.provider.timeout_ms`
 
 Maximum time in milliseconds for one dynamic autocomplete provider.
 
 **Type:** integer ≥ 1 · **Default:** `160`
 
-## Notifications
+### `autocomplete.allowed_return_codes`
 
-### `notification.channel.app.available`
+Return codes a command may exit with to be suggested by autocomplete, e.g. `[0]` to suggest only successful commands. Empty (default) suggests every command the shell found. The history keeps every command regardless. A command's own list under `allowed_return_codes_by_command` wins.
 
-Whether in-app notifications may be used at all.
+**Type:** integer[] · **Default:** `[]`
 
-**Type:** boolean · **Default:** `true`
+### `autocomplete.allowed_return_codes_by_command.<name>`
+
+Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.
+
+**Type:** integer[]
+
+## Notification
+
+Which events notify you, and how.
 
 ### `notification.channel.app.enabled`
 
@@ -813,31 +805,75 @@ Seconds an in-app notification stays before it fades. `unlimited` keeps it until
 
 **Type:** `unlimited` | integer ≥ 0 · **Default:** `5`
 
-### `notification.channel.os.available`
-
-Whether OS notifications may be used at all.
-
-**Type:** boolean · **Default:** `true`
-
 ### `notification.channel.os.enabled`
 
 Send notifications to the operating system.
 
 **Type:** boolean · **Default:** `false`
 
-### `notification.exception.handled.enabled`
+### `notification.channel.badge.enabled`
 
-Show a notification for handled exceptions reported through the central error reporter.
+Mark the tab of the terminal a notification belongs to while that terminal isn't focused.
+
+**Type:** boolean · **Default:** `true`
+
+### `notification.source.terminal.osc9.enabled`
+
+Notify when a program sends a notification via the OSC 9 escape sequence.
 
 **Type:** boolean · **Default:** `false`
 
-### `notification.exception.unhandled.enabled`
+### `notification.source.terminal.long_running_command.enabled`
 
-Show a notification for unhandled renderer exceptions caught by the global error reporter.
+Notify when a command that ran for a while has finished.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.terminal.long_running_command.minimum_duration_seconds`
+
+Notify only when a command ran for at least this many seconds.
+
+**Type:** integer ≥ 0 · **Default:** `10`
+
+### `notification.source.errors.handled.enabled`
+
+Notify about handled exceptions reported through the central error reporter.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.errors.unhandled.enabled`
+
+Notify about unhandled renderer exceptions caught by the global error reporter.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.working.enabled`
+
+Notify when an agent starts working.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.question.enabled`
+
+Notify when an agent has a question and needs input.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.ready.enabled`
+
+Notify when an agent becomes ready/idle.
+
+**Type:** boolean · **Default:** `false`
+
+### `notification.source.coding_agents.error.enabled`
+
+Notify when an agent reports an error.
 
 **Type:** boolean · **Default:** `false`
 
 ## HTTP server
+
+Local HTTP server used by the CLI.
 
 ### `http_server.enabled`
 
@@ -857,7 +893,17 @@ If the port is taken, try the next free one instead of failing.
 
 **Type:** boolean · **Default:** `true`
 
-## Features
+## Updater
+
+How Cogno keeps itself up to date.
+
+### `updater.install`
+
+`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
+
+**Type:** `background` | `ask` · **Default:** `background`
+
+## Feature
 
 Each feature can be switched off entirely and ordered in the side menu.
 
@@ -950,45 +996,3 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 Override the side-menu display position for this feature. Lower numbers appear first.
 
 **Type:** integer · **Default:** `65`
-
-### `feature.coding_agents.notifications.working.enabled`
-
-Notify when an agent starts working.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.coding_agents.notifications.question.enabled`
-
-Notify when an agent has a question and needs input.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.coding_agents.notifications.ready.enabled`
-
-Notify when an agent becomes ready/idle.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.coding_agents.notifications.error.enabled`
-
-Notify when an agent reports an error.
-
-**Type:** boolean · **Default:** `false`
-
-### `feature.updater.mode`
-
-Turn the feature on or off. Off removes it entirely, including its side-menu entry, and Cogno no longer asks for updates.
-
-**Type:** `off` | `on` · **Default:** `on`
-
-### `feature.updater.order`
-
-Override the side-menu display position for this feature. Lower numbers appear first.
-
-**Type:** integer · **Default:** `90`
-
-### `feature.updater.install`
-
-`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
-
-**Type:** `background` | `ask` · **Default:** `background`

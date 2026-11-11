@@ -32,25 +32,6 @@ _cogno_sanitize_cmd() {
   echo "$s"
 }
 
-# Extract command name: trim, drop leading KEY=VALUE prefixes, take first token
-_cogno_extract_command_name() {
-  local line="$1"
-  line="${line#"${line%%[![:space:]]*}"}"
-
-  local assignment_re='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]+[[:space:]]+'
-  while [[ "$line" =~ $assignment_re ]]; do
-    line="${line#${BASH_REMATCH[0]}}"
-  done
-
-  line="${line#"${line%%[![:space:]]*}"}"
-  if [[ -z "$line" ]]; then
-    echo ""
-    return
-  fi
-
-  echo "${line%%[[:space:]]*}"
-}
-
 # Preexec equivalent: capture the command line once per prompt cycle. The
 # DEBUG trap fires before every simple command typed at the prompt - every
 # iteration of a loop, every element of a pipeline - so it must cost one
@@ -110,18 +91,19 @@ _cogno_precmd() {
   local cwd="$PWD"
 
   local cmd=""
-  local command_exists="false"
   if [ "$COGNO_CMD_SEEN" -eq 1 ]; then
     cmd="$(_cogno_sanitize_cmd "$COGNO_LAST_CMD")"
-    local command_name
-    command_name="$(_cogno_extract_command_name "$COGNO_LAST_CMD")"
-    if [[ -n "$command_name" ]] && [[ -n "$(type -t -- "$command_name" 2>/dev/null)" ]]; then
-      command_exists="true"
-    fi
   fi
 
-  # Compute and insert commandExists into the existing OSC payload. The
-  # token proves the sequence comes from this session's integration.
+  # What the shell itself reported: 127 is "command not found", 126 "found
+  # but not executable" (POSIX). Asking afterwards whether the name exists
+  # would misjudge `./x` after a `cd`, quoted paths and prefixes like `env`.
+  local command_exists="true"
+  if [ "$last_ec" -eq 127 ] || [ "$last_ec" -eq 126 ]; then
+    command_exists="false"
+  fi
+
+  # The token proves the sequence comes from this session's integration.
   printf '\033]733;COGNO:PROMPT;token=%s;returnCode=%s;user=%s;machine=%s;directory=%s;id=%s;command=%s;commandExists=%s;\033\\' \
     "$COGNO_SESSION_TOKEN" "$last_ec" "$user" "$host" "$cwd" "$ts" "$cmd" "$command_exists"
 

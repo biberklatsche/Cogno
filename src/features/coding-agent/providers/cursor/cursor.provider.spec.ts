@@ -1,6 +1,9 @@
+import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
+import { EMPTY } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ConfigFileService } from "../_shared/config-file.service";
-import { isCognoHookCommand } from "../_shared/hook-command.builder";
+import { isCognoHookCommand } from "../_shared/hook-command";
+import type { HookScriptPathsService } from "../_shared/hook-script-paths.service";
 import { CURSOR_CONFIG, type CursorHooksFile } from "./cursor.config";
 import { CursorProvider } from "./cursor.provider";
 
@@ -23,6 +26,15 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
   return { service, files };
 }
 
+const scripts = {
+  shell: () => "sh",
+  get: async () => ({
+    bash: "/cogno/hooks/cogno-agent-hook.sh",
+    powershell: "C:cognohookscogno-agent-hook.ps1",
+  }),
+} as unknown as HookScriptPathsService;
+const ipc = { messages$: EMPTY } as unknown as TerminalIpcPort;
+
 const HOOKS_FILE = "/home/.cursor/hooks.json";
 const foreignHook = { command: "./hooks/audit.sh" };
 const cognoHooksIn = (file: CursorHooksFile) =>
@@ -39,13 +51,13 @@ describe("CursorProvider", () => {
       [HOOKS_FILE]: { version: 1, hooks: { stop: [foreignHook] } },
     });
     files = memory.files;
-    provider = new CursorProvider(memory.service);
+    provider = new CursorProvider(memory.service, scripts, ipc);
   });
 
   it("installs one Cogno hook per event next to the hooks that were there", async () => {
     expect(await provider.hookState()).toBe("missing");
 
-    await provider.installHook("Bash");
+    await provider.installHook();
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     expect(file.version).toBe(1);
@@ -55,20 +67,20 @@ describe("CursorProvider", () => {
   });
 
   it("reads a Cogno hook in an older form as outdated", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook();
     const hook = (files.get(HOOKS_FILE) as CursorHooksFile).hooks?.["stop"]?.[1];
-    if (hook) hook.command = hook.command.replace('"ready"', '"working"');
+    if (hook) hook.command = hook.command.replace("cogno-agent-hook", "cogno-agent-hook-old");
 
     expect(await provider.hookState()).toBe("outdated");
   });
 
   it("drops a Cogno hook on an event this version no longer hooks", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook();
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     const staleCommand = file.hooks?.["stop"]?.[1]?.command ?? "";
     file.hooks = { ...file.hooks, subagentStop: [{ command: staleCommand }] };
 
-    await provider.installHook("Bash");
+    await provider.installHook();
 
     expect((files.get(HOOKS_FILE) as CursorHooksFile).hooks?.["subagentStop"]).toBeUndefined();
   });
@@ -76,7 +88,7 @@ describe("CursorProvider", () => {
   it("creates a versioned hooks file when there is none", async () => {
     files.delete(HOOKS_FILE);
 
-    await provider.installHook("Bash");
+    await provider.installHook();
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     expect(file.version).toBe(CURSOR_CONFIG.fileVersion);
@@ -84,8 +96,8 @@ describe("CursorProvider", () => {
   });
 
   it("installs idempotently: a second install does not double the hooks", async () => {
-    await provider.installHook("Bash");
-    await provider.installHook("Bash");
+    await provider.installHook();
+    await provider.installHook();
 
     expect(cognoHooksIn(files.get(HOOKS_FILE) as CursorHooksFile)).toHaveLength(
       CURSOR_CONFIG.hookEvents.length,
@@ -93,7 +105,7 @@ describe("CursorProvider", () => {
   });
 
   it("does not touch Cursor's permission hooks", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook();
 
     const file = files.get(HOOKS_FILE) as CursorHooksFile;
     for (const event of [
@@ -107,7 +119,7 @@ describe("CursorProvider", () => {
   });
 
   it("removes only the Cogno hooks and drops events that are empty afterwards", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook();
 
     await provider.removeHook();
 

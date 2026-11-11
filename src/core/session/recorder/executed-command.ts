@@ -4,5 +4,6 @@ export type ExecutedCommand = {
   duration?: number;
   directory: string;
   returnCode?: number;
+  /** `false` when the shell could not find the command it was asked to run. */
   commandExists?: boolean;
 };

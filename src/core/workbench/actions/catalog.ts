@@ -212,18 +212,23 @@ export const coreActionCatalog = [
     description: "Minimize the current window",
   }),
   defineAction({
-    name: "open_config",
+    name: "open_settings",
     label: "Settings",
-    description: "Open the config file in the default editor",
+    description: "Open the settings panel",
     defaultKeys: {
       default: [{ combo: "Ctrl+,", always: true }],
       macos: [{ combo: "Command+,", always: true }],
     },
   }),
   defineAction({
+    name: "open_config",
+    label: "Open Settings File",
+    description: "Open the settings file in the default editor",
+  }),
+  defineAction({
     name: "load_config",
-    label: "Reload Configuration",
-    description: "Reload the config file without restarting",
+    label: "Reload Settings",
+    description: "Reload the settings file without restarting",
   }),
   defineAction({
     name: "clear_restore_data",
@@ -406,7 +411,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "open_about",
     label: "About Cogno",
-    description: "Show the About dialog",
+    description: "Open the About Cogno panel with version and updates",
   }),
 ] as const;
 

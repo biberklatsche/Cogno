@@ -1,29 +1,43 @@
 import { Injectable } from "@angular/core";
+import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import {
-  AgentHookEvent,
+  AgentSessionEvent,
   HookState,
   ICodingAgentProvider,
 } from "@cogno/features/coding-agent/ports";
-import { AgentStatus } from "../../agent-status";
-import { interpretClaudeStyleHook } from "../_shared/claude-style-hook.interpreter";
+import { Observable } from "rxjs";
+import {
+  claudeStyleSession,
+  interpretClaudeStyleHook,
+} from "../_shared/claude-style-hook.interpreter";
 import { ConfigFileService } from "../_shared/config-file.service";
 import {
-  buildHookCommand,
-  hookStateOf,
-  isCognoHookCommand,
+  cognoHookState,
+  hasCognoCommand,
+  hookCommand,
   isCurrentHookCommand,
-} from "../_shared/hook-command.builder";
+} from "../_shared/hook-command";
+import { HookScriptPathsService } from "../_shared/hook-script-paths.service";
+import { hookSessionEvents$ } from "../_shared/hook-transport";
 import { KIMI_CONFIG, KimiConfig } from "./kimi.config";
 
 @Injectable({ providedIn: "root" })
 export class KimiProvider implements ICodingAgentProvider {
   readonly id = KIMI_CONFIG.id;
   readonly name = KIMI_CONFIG.name;
+  readonly processNames = KIMI_CONFIG.processNames;
+  readonly events$: Observable<AgentSessionEvent>;
 
-  constructor(private readonly configFile: ConfigFileService) {}
-
-  interpretHook(hookEvent: string, status: AgentStatus, payload: unknown): AgentHookEvent {
-    return interpretClaudeStyleHook(hookEvent, status, payload);
+  constructor(
+    private readonly configFile: ConfigFileService,
+    private readonly scripts: HookScriptPathsService,
+    ipc: TerminalIpcPort,
+  ) {
+    this.events$ = hookSessionEvents$(ipc, this.id, {
+      hookEvents: KIMI_CONFIG.hookEvents,
+      interpret: interpretClaudeStyleHook,
+      sessionOf: claudeStyleSession,
+    });
   }
 
   async isAgentInstalled(): Promise<boolean> {
@@ -31,31 +45,31 @@ export class KimiProvider implements ICodingAgentProvider {
   }
 
   async hookState(): Promise<HookState> {
+    const scripts = await this.scripts.get();
     const config = await this.configFile.readToml<KimiConfig>(await this.configPath(), {});
     const hooks = Array.isArray(config.hooks) ? config.hooks : [];
-    const isCurrent = KIMI_CONFIG.hookEvents.every(({ eventName, status }) =>
-      hooks.some(
-        (h) => h.event === eventName && isCurrentHookCommand(h.command, status, this.id, eventName),
-      ),
-    );
-    return hookStateOf(
-      isCurrent,
-      hooks.some((h) => isCognoHookCommand(h.command)),
+    const cognoHooks = hooks
+      .filter(hasCognoCommand)
+      .map((hook) => ({ eventName: hook.event, hook }));
+    return cognoHookState(cognoHooks, KIMI_CONFIG.hookEvents, (hook, { eventName }) =>
+      isCurrentHookCommand(hook.command, scripts, this.id, eventName),
     );
   }
 
-  async installHook(shellType?: string): Promise<void> {
+  async installHook(): Promise<void> {
+    const shell = this.scripts.shell();
+    const scripts = await this.scripts.get();
     await this.configFile.ensureDir(await this.configDir());
     const configPath = await this.configPath();
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     const withoutCogno = (Array.isArray(config.hooks) ? config.hooks : []).filter(
-      (h) => !isCognoHookCommand(h.command),
+      (h) => !hasCognoCommand(h),
     );
     config.hooks = [
       ...withoutCogno,
       ...KIMI_CONFIG.hookEvents.map((entry) => ({
         event: entry.eventName,
-        command: buildHookCommand(entry.status, shellType, this.id, entry.eventName),
+        command: hookCommand(scripts, shell, this.id, entry.eventName),
       })),
     ];
     await this.configFile.writeToml(configPath, config);
@@ -65,7 +79,7 @@ export class KimiProvider implements ICodingAgentProvider {
     const configPath = await this.configPath();
     const config = await this.configFile.readToml<KimiConfig>(configPath, {});
     if (Array.isArray(config.hooks)) {
-      config.hooks = config.hooks.filter((h) => !isCognoHookCommand(h.command));
+      config.hooks = config.hooks.filter((h) => !hasCognoCommand(h));
       await this.configFile.writeToml(configPath, config);
     }
   }

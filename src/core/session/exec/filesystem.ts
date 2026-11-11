@@ -19,6 +19,8 @@ export interface FilesystemListOptionsContract {
 /** The session's view of the file system; the DI token, implemented by `FilesystemHostService`. */
 export abstract class Filesystem {
   abstract normalizePath(path: string, shellContext: ShellContextContract): string;
+  /** `path`, in any form the context understands, as its shell writes it. */
+  abstract displayPath(path: string, shellContext: ShellContextContract): string;
   abstract resolvePath(
     cwd: string,
     inputPath: string,

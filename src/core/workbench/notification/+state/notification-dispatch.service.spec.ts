@@ -35,18 +35,18 @@ describe("NotificationDispatchService", () => {
       notification: {
         channel: {
           app: {
-            available: true,
             enabled: true,
             duration_seconds: 5,
           },
           os: {
-            available: true,
             enabled: false,
           },
           "reply-channel": {
-            available: true,
             enabled: true,
           },
+        },
+        source: {
+          terminal: { osc9: { enabled: true }, long_running_command: { enabled: false } },
         },
       },
     } as Config);
@@ -84,6 +84,57 @@ describe("NotificationDispatchService", () => {
         settings: expect.objectContaining({ enabled: true }),
       }),
     );
+  });
+
+  it("delivers to the channels a notification names itself, whatever their switch says", () => {
+    const osDispatchMock = vi.fn<NotificationChannelContract["dispatch"]>();
+    createService([
+      createNotificationChannel({ id: "app", dispatch: dispatchNotificationMock }),
+      createNotificationChannel({ id: "os", dispatch: osDispatchMock }),
+    ]);
+
+    appBus.publish({
+      type: "Notification",
+      payload: { header: "OS notifications disabled", channels: { app: false, os: true } },
+    });
+
+    expect(dispatchNotificationMock).not.toHaveBeenCalled();
+    expect(osDispatchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets an event through only when its switch is on, and a notification without one always", () => {
+    const service = createService([
+      createNotificationChannel({ id: "app", dispatch: dispatchNotificationMock }),
+    ]);
+    const delivered: string[] = [];
+    service.delivered$.subscribe((notification) => delivered.push(notification.header));
+
+    const publish = (header: string, event?: { source: string; id: string }) =>
+      appBus.publish({ type: "Notification", payload: { header, ...(event ? { event } : {}) } });
+    publish("on", { source: "terminal", id: "osc9" });
+    publish("off", { source: "terminal", id: "long_running_command" });
+    publish("unconfigured", { source: "coding_agents", id: "ready" });
+    publish("plain");
+
+    expect(delivered).toEqual(["on", "plain"]);
+    expect(dispatchNotificationMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("drops an event's notification while the config is not loaded, without throwing", () => {
+    configService = new ConfigServiceMock();
+    const service = createService([
+      createNotificationChannel({ id: "app", dispatch: dispatchNotificationMock }),
+    ]);
+    const delivered: string[] = [];
+    service.delivered$.subscribe((notification) => delivered.push(notification.header));
+
+    appBus.publish({
+      type: "Notification",
+      payload: { header: "early", event: { source: "errors", id: "handled" } },
+    });
+
+    expect(delivered).toEqual([]);
+    expect(dispatchNotificationMock).not.toHaveBeenCalled();
   });
 
   it("isolates a throwing channel so the others still receive the notification", async () => {

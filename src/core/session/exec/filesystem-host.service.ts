@@ -20,6 +20,11 @@ export class FilesystemHostService extends Filesystem {
     return createPathAdapter(shellContext).normalize(path);
   }
 
+  displayPath(path: string, shellContext: ShellContextContract): string {
+    const adapter = createPathAdapter(shellContext);
+    return adapter.render(adapter.normalize(path), { purpose: "display" }) ?? path;
+  }
+
   resolvePath(
     cwd: string,
     inputPath: string,

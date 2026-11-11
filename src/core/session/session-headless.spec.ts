@@ -133,6 +133,35 @@ describe.each(STREAMS)("headless session ($name)", ({ shellType, backendOs, stre
     expect(session.model.input.cursorIndex).toBe("echo hello".length);
   });
 
+  it("leaves a dim italic prediction after the cursor out of the input", async () => {
+    // The cursor was at 10 once, so the prediction drawn there later is inside the read window.
+    await session.write("cd second\\");
+    await session.write(`${ESC}[5D${ESC}[K${ESC}[97;2;3mcond\\${RESET}${ESC}[5D`);
+
+    expect(session.model.input.maxCursorIndex).toBe(10);
+    expect(session.model.input.cursorIndex).toBe(5);
+    expect(session.model.input.text).toBe("cd se");
+  });
+
+  it("keeps plain text after the cursor as input", async () => {
+    await session.write("cd second\\");
+    await session.write(`${ESC}[5D`);
+
+    expect(session.model.input.cursorIndex).toBe(5);
+    expect(session.model.input.text).toBe("cd second\\");
+  });
+
+  it("keeps text after the cursor that is only partly dim and italic", async () => {
+    await session.write("cd se");
+    await session.write(`${ESC}[97;2;3mco${RESET}nd${ESC}[4D`);
+    // Moved right over it and back, as the person does with the arrow keys.
+    await session.write(`${ESC}[4C`);
+    await session.write(`${ESC}[4D`);
+
+    expect(session.model.input.cursorIndex).toBe(5);
+    expect(session.model.input.text).toBe("cd second");
+  });
+
   it("keeps the command list and the cwd from the prompt reports", async () => {
     await session.write("echo hello\r\n");
     await session.write("hello\r\n");

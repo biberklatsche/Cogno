@@ -31,7 +31,9 @@ export type SessionRunRejection =
   /** The session's context moved since the caller planned against it. */
   | "stale-context"
   /** The session is in a foreign/unauthenticated context (e.g. ssh). */
-  | "unknown-context";
+  | "unknown-context"
+  /** The shell is still starting and has not told its directory yet; ask again on its cwd report. */
+  | "starting";
 
 export type SessionRunResult =
   | { readonly status: "ran"; readonly result: CommandRunnerResultContract }

@@ -1,4 +1,4 @@
-import { NgComponentOutlet } from "@angular/common";
+import { NgComponentOutlet, NgTemplateOutlet } from "@angular/common";
 import {
   ChangeDetectionStrategy,
   Component,
@@ -31,7 +31,13 @@ export function isSelectedSideMenuItem(
 
 @Component({
   selector: "app-side-menu",
-  imports: [IconComponent, NgComponentOutlet, TooltipDirective, ActionKeybindingPipe],
+  imports: [
+    IconComponent,
+    NgComponentOutlet,
+    NgTemplateOutlet,
+    TooltipDirective,
+    ActionKeybindingPipe,
+  ],
   host: {
     "[class.expanded-host]": "isExpanded()",
   },
@@ -40,7 +46,7 @@ export function isSelectedSideMenuItem(
         <aside #overlayAside class="base-overlay flat"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!isPinned()"
-               [class.shift-left]="visibleItems().length > 0"
+               [class.shift-left]="visibleItems().length > 0 || bottomItems().length > 0"
                [class.expanded]="isExpanded()"
                [style.width.px]="isExpanded() ? null : panelWidthInPixels()"
                tabindex="-1"
@@ -73,8 +79,16 @@ export function isSelectedSideMenuItem(
                 }
             </main>
         </aside>
-        <menu #menuCol [class.hidden]="visibleItems().length === 0">
+        <menu #menuCol [class.hidden]="visibleItems().length === 0 && bottomItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem.id ?? menuItem.label) {
+                <ng-container *ngTemplateOutlet="menuButton; context: { $implicit: menuItem }"></ng-container>
+            }
+            <span class="menu-spacer"></span>
+            @for (menuItem of bottomItems(); track menuItem.id ?? menuItem.label) {
+                <ng-container *ngTemplateOutlet="menuButton; context: { $implicit: menuItem }"></ng-container>
+            }
+        </menu>
+        <ng-template #menuButton let-menuItem>
                 <button class="button icon-button" (click)="open(menuItem)"
                         [class.selected]="isMenuItemSelected(menuItem)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
@@ -82,8 +96,7 @@ export function isSelectedSideMenuItem(
                         <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
                     }
                 </button>
-            }
-        </menu>`,
+        </ng-template>`,
   styles: [
     `
         :host {
@@ -109,7 +122,7 @@ export function isSelectedSideMenuItem(
             display: flex;
             flex-direction: column;
             gap: 4px;
-            margin: 2px 4px 0 2px;
+            margin: 2px 4px 4px 2px;
             padding: 0;
             z-index: 3;
             &.hidden {
@@ -122,6 +135,10 @@ export function isSelectedSideMenuItem(
 
             .button {
                 position: relative;
+            }
+
+            .menu-spacer {
+                flex: 1 1 auto;
             }
 
             .badge {
@@ -256,13 +273,13 @@ export function isSelectedSideMenuItem(
 })
 export class SideMenuComponent implements OnDestroy {
   menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
-  visibleItems: Signal<SideMenuItem[]> = computed(() => {
-    return this.menuItems()
-      .slice()
-      .sort(
-        (leftMenuItem, rightMenuItem) => (leftMenuItem.order ?? 0) - (rightMenuItem.order ?? 0),
-      );
-  });
+  visibleItems: Signal<SideMenuItem[]> = computed(() =>
+    byOrder(this.menuItems().filter((menuItem) => !menuItem.bottom)),
+  );
+  /** The workbench's own entries, below the features. */
+  bottomItems: Signal<SideMenuItem[]> = computed(() =>
+    byOrder(this.menuItems().filter((menuItem) => menuItem.bottom)),
+  );
   selectedItem = this.menuItemService.selectedItem;
   isPinned = this.menuItemService.isPinned;
   focused = this.menuItemService.isFocused;
@@ -376,4 +393,9 @@ export class SideMenuComponent implements OnDestroy {
     window.removeEventListener("pointermove", this.onWindowPointerMove, true);
     window.removeEventListener("pointerup", this.onWindowPointerUp, true);
   };
+}
+
+/** Sorts in place; callers pass a list they just filtered, never the service's own. */
+function byOrder(items: SideMenuItem[]): SideMenuItem[] {
+  return items.sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
 }

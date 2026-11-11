@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { Config } from "@cogno/core/infrastructure/config/models/config";
+import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { CognoMessageListener } from "@cogno/platform/cogno-message";
 import { HttpServer } from "@cogno/platform/http-server";
 import { take } from "rxjs";
@@ -15,6 +16,7 @@ export class HttpMessageAdapterService {
     private readonly cognoMessages: CognoMessageListener,
     dispatcher: CognoMessageDispatcher,
     config: ConfigService,
+    environment: Environment,
     ref: DestroyRef,
   ) {
     config.config$.pipe(take(1)).subscribe((cfg) => {
@@ -22,11 +24,14 @@ export class HttpMessageAdapterService {
       // user file and replaces invalid values with them.
       const httpServer = cfg.http_server as Required<NonNullable<Config["http_server"]>>;
       this.httpServer
-        .start({
-          enabled: httpServer.enabled,
-          port: httpServer.port,
-          autoNextPort: httpServer.auto_next_port,
-        })
+        .start(
+          {
+            enabled: httpServer.enabled,
+            port: httpServer.port,
+            autoNextPort: httpServer.auto_next_port,
+          },
+          environment.isDevMode(),
+        )
         .then((port) => console.log(`[http-server] listening on port ${port}`))
         .catch((err) => console.error("[http-server] Failed to start:", err));
     });

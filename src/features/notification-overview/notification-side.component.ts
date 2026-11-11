@@ -1,4 +1,5 @@
 import { Component, Signal } from "@angular/core";
+import { ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import { IconComponent, NOTIFICATION_GLYPH_PATHS, TooltipDirective } from "@cogno/shared/ui";
 import {
   NotificationCenterItemContract,
@@ -14,6 +15,9 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
     <section class="notification-header">
       <button class="button" type="button" [disabled]="notifications().length === 0" (click)="clearAll()">
         Clear
+      </button>
+      <button class="button icon-button" type="button" appTooltip="Notification settings" (click)="openSettings()">
+        <app-icon name="mdiCog"></app-icon>
       </button>
     </section>
 
@@ -55,7 +59,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         min-height: 0;
         margin: 0;
         padding: 0.25rem 0 0;
-        font-size: 0.85rem;
+        font-size: var(--panel-font-size);
         overflow: hidden;
         width: 100%;
         gap: 1rem;
@@ -66,13 +70,16 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         display: flex;
         align-items: center;
         justify-content: flex-end;
+        gap: 0.25rem;
       }
+
 
       .notification-list {
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
       }
+
 
       .notification {
         display: flex;
@@ -126,7 +133,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         white-space: pre-wrap;
       }
 
-      .icon-button {
+      .notification > .icon-button {
         position: absolute;
         top: 3px;
         right: 3px;
@@ -175,8 +182,16 @@ export class NotificationSideComponent {
   readonly notifications: Signal<NotificationCenterItemContract[]>;
   readonly glyphPaths = NOTIFICATION_GLYPH_PATHS;
 
-  constructor(private readonly notificationCenterStateService: NotificationCenterStateService) {
+  constructor(
+    private readonly notificationCenterStateService: NotificationCenterStateService,
+    private readonly actions: ActionDispatcher,
+  ) {
     this.notifications = this.notificationCenterStateService.notifications;
+  }
+
+  /** Which events notify, and where, is set in the settings; this panel only shows what came. */
+  openSettings(): void {
+    this.actions.dispatchAction({ actionName: "open_settings", args: ["notification"] });
   }
 
   remove(notificationId: NotificationCenterItemIdContract): void {

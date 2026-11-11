@@ -79,23 +79,43 @@ export class CommandRecorder {
     this.commandLog.write((writer) => writer.upsertWorkingDirectory(cwdRaw));
   }
 
+  /**
+   * Every recordable command goes into the history, typos included - that is
+   * where the user looks to fix them. Only a command worth suggesting is also
+   * ranked and becomes a transition, so autocomplete never offers a typo.
+   */
   onCommandExecuted(executedCommand: ExecutedCommand | undefined): void {
-    if (!this.shouldPersistCommand(executedCommand)) return;
-    if (!executedCommand) return;
+    if (!executedCommand || !this.isRecordableCommandText(executedCommand)) return;
 
     const persistedCommand = executedCommand.command.trim();
-    const timestamp = Date.now();
-    const recentPreviousCommand = this.commandLog.transitionSourceCommand();
     const maxEntries = this.historyLimit();
     const groupId = this.commandLog.sessionGroupId;
+    const details = {
+      durationMs: executedCommand.duration,
+      returnCode: executedCommand.returnCode,
+    };
 
+    if (!this.isSuggestable(executedCommand)) {
+      this.commandLog.write((writer) =>
+        writer.appendCommandExecution(
+          persistedCommand,
+          executedCommand.directory,
+          groupId,
+          maxEntries,
+          details,
+        ),
+      );
+      return;
+    }
+
+    const recentPreviousCommand = this.commandLog.transitionSourceCommand();
     this.commandLog.write(async (writer) => {
       await writer.upsertCommandExecution(
         persistedCommand,
         executedCommand.directory,
         groupId,
         maxEntries,
-        { durationMs: executedCommand.duration, returnCode: executedCommand.returnCode },
+        details,
       );
 
       if (recentPreviousCommand) {
@@ -103,7 +123,7 @@ export class CommandRecorder {
       }
     });
 
-    this.commandLog.recordExecutionForTransition(persistedCommand, timestamp);
+    this.commandLog.recordExecutionForTransition(persistedCommand, Date.now());
   }
 
   private async importShellHistory(
@@ -139,8 +159,8 @@ export class CommandRecorder {
 
   /**
    * Record a command that was still running when the app quit as an aborted
-   * entry: it never reported a return code, so `shouldPersistCommand` would drop
-   * it, but it must not vanish from history. Same text filters, no
+   * entry. It never reported a return code, so a return-code list would keep it
+   * out of suggestions, yet it ran like any other command. Same text filters, no
    * return-code gate; awaited so it reaches the log before the process exits.
    */
   async recordAbortedCommand(executedCommand: ExecutedCommand): Promise<void> {
@@ -165,8 +185,7 @@ export class CommandRecorder {
   }
 
   /** The command-text filters shared by normal and aborted recording. */
-  private isRecordableCommandText(executedCommand: ExecutedCommand | undefined): boolean {
-    if (executedCommand === undefined) return false;
+  private isRecordableCommandText(executedCommand: ExecutedCommand): boolean {
     if (executedCommand.command === undefined) return false;
     if (
       this.configService.config.terminal?.history?.ignore_commands_with_leading_space &&
@@ -185,10 +204,8 @@ export class CommandRecorder {
     return true;
   }
 
-  private shouldPersistCommand(executedCommand: ExecutedCommand | undefined): boolean {
-    if (!this.isRecordableCommandText(executedCommand) || executedCommand === undefined) {
-      return false;
-    }
+  /** Whether autocomplete may offer the command; the history keeps it either way. */
+  private isSuggestable(executedCommand: ExecutedCommand): boolean {
     // A command the shell could not find is a typo, whatever its return code.
     if (executedCommand.commandExists === false) return false;
     return this.isReturnCodeAllowed(
@@ -204,14 +221,16 @@ export class CommandRecorder {
   }
 
   /**
-   * The configured return-code filter: the command's own list, else the global
-   * one. An empty list is no filter. With a list set, a command whose result is
-   * unknown (no return code) is not kept.
+   * The configured return-code filter for suggestions: the command's own list,
+   * else the global one. An empty list is no filter. With a list set, a command
+   * whose result is unknown (no return code) is not suggested.
    */
   private isReturnCodeAllowed(token: string, returnCode: number | undefined): boolean {
-    const history = this.configService.config.terminal?.history;
+    const autocomplete = this.configService.config.autocomplete;
     const allowed =
-      history?.allowed_return_codes_by_command?.[token] ?? history?.allowed_return_codes ?? [];
+      autocomplete?.allowed_return_codes_by_command?.[token] ??
+      autocomplete?.allowed_return_codes ??
+      [];
     if (allowed.length === 0) return true;
     return returnCode !== undefined && allowed.includes(returnCode);
   }

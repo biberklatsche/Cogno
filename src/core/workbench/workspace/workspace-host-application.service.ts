@@ -5,7 +5,6 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
-import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { AppWindow } from "@cogno/platform/window";
@@ -95,7 +94,6 @@ export class WorkspaceHostApplicationService {
 
   constructor(
     private readonly bus: AppBus,
-    private readonly sideMenuService: SideMenuService,
     private readonly workspaceRepository: WorkspaceRepository,
     private readonly gridListService: GridListService,
     private readonly tabListService: TabListService,
@@ -356,16 +354,6 @@ export class WorkspaceHostApplicationService {
 
     this._workspaceList.set(activationPlan.workspaceList);
     await this.persistOpenState();
-
-    if (workspaceToActivate.id === DEFAULT_WORKSPACE_ID) {
-      this.sideMenuService.updateBadgeColor("Workspace", undefined);
-      return;
-    }
-
-    this.sideMenuService.updateBadgeColor(
-      "Workspace",
-      workspaceToActivate.color ? `var(--color-${workspaceToActivate.color})` : undefined,
-    );
   }
 
   createWorkspaceDraft(): WorkspaceState {
