@@ -1,6 +1,6 @@
 import { Component, Signal } from "@angular/core";
 import { ActionDispatcher } from "@cogno/core/api/action-catalog-port";
-import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import { IconComponent, NOTIFICATION_GLYPH_PATHS, TooltipDirective } from "@cogno/shared/ui";
 import {
   NotificationCenterItemContract,
   NotificationCenterItemIdContract,
@@ -28,6 +28,11 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
           [class]="notification.type"
           (click)="openTarget(notification)"
         >
+          <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
+            @for (path of glyphPaths[notification.type]; track $index) {
+              <path [attr.d]="path"></path>
+            }
+          </svg>
           <div class="content">
             <header class="title">{{ notification.header }}</header>
             @if (notification.body) {
@@ -84,7 +89,6 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         padding: 0.5rem 0.75rem 0.5rem 0.5rem;
         margin: 0 0 0.25rem;
         border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-        border-left: 3px solid transparent;
         border-radius: 4px;
         transition: background 0.1s;
       }
@@ -110,7 +114,17 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         line-height: 1.2;
         font-size: 1rem;
         margin-bottom: 2px;
-        color: var(--accent, var(--color-foreground));
+      }
+
+      .glyph {
+        flex: 0 0 auto;
+        width: 1.25rem;
+        height: 1.25rem;
+        fill: none;
+        stroke: var(--accent);
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
       }
 
       .message {
@@ -148,28 +162,25 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
 
       .notification.info {
         --accent: var(--color-blue);
-        border-left-color: var(--color-blue);
       }
 
       .notification.success {
         --accent: var(--color-green);
-        border-left-color: var(--color-green);
       }
 
       .notification.warning {
         --accent: var(--color-yellow);
-        border-left-color: var(--color-yellow);
       }
 
       .notification.error {
         --accent: var(--color-red);
-        border-left-color: var(--color-red);
       }
     `,
   ],
 })
 export class NotificationSideComponent {
   readonly notifications: Signal<NotificationCenterItemContract[]>;
+  readonly glyphPaths = NOTIFICATION_GLYPH_PATHS;
 
   constructor(
     private readonly notificationCenterStateService: NotificationCenterStateService,
