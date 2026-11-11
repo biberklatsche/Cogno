@@ -1,10 +1,10 @@
 import { CommonModule } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
 import { ProcessDetails, ProcessTreeSnapshot } from "@cogno/platform/pty";
-import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import { IconComponent, SideMenuSearchInputComponent, TooltipDirective } from "@cogno/shared/ui";
 import { ProcessInfoService } from "./process-info.service";
 
-type ProcessTreeNode = {
+export type ProcessTreeNode = {
   readonly processDetails: ProcessDetails;
   readonly childProcessNodes: ProcessTreeNode[];
 };
@@ -12,7 +12,7 @@ type ProcessTreeNode = {
 @Component({
   selector: "app-process-info-side",
   standalone: true,
-  imports: [CommonModule, IconComponent, TooltipDirective],
+  imports: [CommonModule, IconComponent, SideMenuSearchInputComponent, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="process-panel">
@@ -41,27 +41,45 @@ type ProcessTreeNode = {
           <div class="status">Failed to terminate process {{ terminateFailed() }}.</div>
         }
 
-        <!-- The shell: always open, never terminated from here. -->
+        <!-- The shell: one line with what the whole tree uses; never terminated from here. -->
         <section class="shell">
           <div class="process-row">
-            <span class="name">{{ tree.rootProcess.name }}</span>
-            <span class="memory">{{ formatBytes(tree.rootProcess.memoryBytes) }}</span>
+            <button
+              type="button"
+              class="name"
+              [attr.aria-expanded]="shellDetailsShown()"
+              (click)="shellDetailsShown.set(!shellDetailsShown())"
+            >
+              {{ tree.rootProcess.name }}
+            </button>
+            <span class="memory" appTooltip="Memory of the shell and everything it started">
+              {{ formatBytes(totalMemoryBytes()) }}
+            </span>
             <span class="terminate-slot"></span>
           </div>
-          <dl class="details">
-            <dt>PID</dt>
-            <dd>{{ tree.rootProcess.processId }}</dd>
-            <dt>Total memory</dt>
-            <dd>{{ formatBytes(totalMemoryBytes()) }}</dd>
-            <dt>Runtime</dt>
-            <dd>{{ formatSeconds(tree.rootProcess.runTimeSeconds) }}</dd>
-            <dt>CWD</dt>
-            <dd>{{ tree.rootProcess.currentWorkingDirectory ?? "-" }}</dd>
-          </dl>
+          @if (shellDetailsShown()) {
+            <dl class="details">
+              <dt>PID</dt>
+              <dd>{{ tree.rootProcess.processId }}</dd>
+              <dt>Own memory</dt>
+              <dd>{{ formatBytes(tree.rootProcess.memoryBytes) }}</dd>
+              <dt>Runtime</dt>
+              <dd>{{ formatSeconds(tree.rootProcess.runTimeSeconds) }}</dd>
+              <dt>CWD</dt>
+              <dd>{{ tree.rootProcess.currentWorkingDirectory ?? "-" }}</dd>
+            </dl>
+          }
         </section>
 
+        <app-side-menu-search-input
+          class="filter"
+          placeholder="Filter by name or PID"
+          [value]="filter()"
+          (query)="filter.set($event)"
+        ></app-side-menu-search-input>
+
         @if (rootChildProcessNodes().length === 0) {
-          <div class="status">No child processes.</div>
+          <div class="status">{{ filtering() ? "No matching processes." : "No child processes." }}</div>
         } @else {
           <ul class="process-tree scrolling">
             @for (processTreeNode of rootChildProcessNodes(); track processTreeNode.processDetails.processId) {
@@ -94,6 +112,7 @@ type ProcessTreeNode = {
             type="button"
             class="name"
             [attr.aria-expanded]="showsDetails(processTreeNode)"
+            [appTooltip]="processTreeNode.processDetails.name"
             (click)="toggleDetails(processTreeNode)"
           >
             {{ processTreeNode.processDetails.name }}
@@ -157,6 +176,12 @@ type ProcessTreeNode = {
       padding: 0.25rem 0;
     }
 
+    /* Filter and shell line stay in place above the tree. */
+    .filter {
+      flex: none;
+      margin-bottom: 6px;
+    }
+
     .icon-button.is-active {
       opacity: 1;
       color: var(--color-accent, inherit);
@@ -170,7 +195,7 @@ type ProcessTreeNode = {
 
     .shell {
       flex: none;
-      padding-bottom: 8px;
+      padding-bottom: 4px;
       margin-bottom: 6px;
       border-bottom: 1px solid color-mix(in srgb, var(--foreground-color) 15%, transparent);
     }
@@ -193,7 +218,6 @@ type ProcessTreeNode = {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-weight: 600;
       text-align: left;
     }
 
@@ -202,7 +226,6 @@ type ProcessTreeNode = {
       background: transparent;
       color: inherit;
       font: inherit;
-      font-weight: 600;
       padding: 0;
       cursor: pointer;
     }
@@ -308,11 +331,13 @@ type ProcessTreeNode = {
     .process-tree.scrolling {
       flex: 1;
       min-height: 0;
+      /* Never sideways: the name gives way, memory and the terminate button stay in view. */
+      overflow-x: hidden;
       overflow-y: auto;
     }
 
     .process-node > .process-tree {
-      margin-left: 16px;
+      margin-left: 8px;
     }
   `,
 })
@@ -325,6 +350,10 @@ export class ProcessInfoSideComponent {
   readonly terminating = this.processInfo.terminating;
   readonly terminateFailed = this.processInfo.terminateFailed;
 
+  readonly shellDetailsShown = signal(false);
+  readonly filter = signal("");
+  readonly filtering = computed(() => this.filter().trim() !== "");
+
   private readonly collapsedProcessIdentifiers = signal<Set<number>>(new Set<number>());
   private readonly detailedProcessIdentifiers = signal<Set<number>>(new Set<number>());
 
@@ -333,7 +362,7 @@ export class ProcessInfoSideComponent {
     if (processTreeSnapshot === null) {
       return [];
     }
-    return buildRootChildProcessNodes(processTreeSnapshot);
+    return filterProcessNodes(buildRootChildProcessNodes(processTreeSnapshot), this.filter());
   });
 
   readonly totalMemoryBytes = computed<number | undefined>(() => {
@@ -381,7 +410,9 @@ export class ProcessInfoSideComponent {
     return processTreeNode.childProcessNodes.length > 0;
   }
 
+  /** While filtering every branch is open: a match must not hide in a collapsed one. */
   isExpanded(processTreeNode: ProcessTreeNode): boolean {
+    if (this.filtering()) return true;
     return !this.collapsedProcessIdentifiers().has(processTreeNode.processDetails.processId);
   }
 
@@ -423,6 +454,26 @@ const NOTICEABLE_STATUSES = new Set(["Zombie", "Dead", "Stop", "Tracing"]);
 /** The status to show in a process's line: only one that is out of the ordinary. */
 export function noticeableStatus(status: string): string | null {
   return NOTICEABLE_STATUSES.has(status) ? status : null;
+}
+
+/**
+ * The tree narrowed to a query on name or PID: a matching process stays with
+ * everything it started, and with the parents that lead to it.
+ */
+export function filterProcessNodes(
+  processNodes: ProcessTreeNode[],
+  query: string,
+): ProcessTreeNode[] {
+  const term = query.trim().toLowerCase();
+  if (term === "") return processNodes;
+  return processNodes.flatMap((processNode) => {
+    const { name, processId } = processNode.processDetails;
+    if (name.toLowerCase().includes(term) || String(processId).includes(term)) {
+      return [processNode];
+    }
+    const childProcessNodes = filterProcessNodes(processNode.childProcessNodes, term);
+    return childProcessNodes.length > 0 ? [{ ...processNode, childProcessNodes }] : [];
+  });
 }
 
 function buildRootChildProcessNodes(processTreeSnapshot: ProcessTreeSnapshot): ProcessTreeNode[] {

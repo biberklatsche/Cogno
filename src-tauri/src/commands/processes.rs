@@ -155,6 +155,10 @@ fn get_process_tree_snapshot(root_process_id: u32) -> Result<ProcessTreeSnapshot
 /// A process keeps naming its parent's pid after the parent is gone (always on
 /// Windows), and the system hands that pid out again. A "child" older than its
 /// parent is such a leftover and belongs to another tree.
+///
+/// The system lists its processes in no particular order, different on every
+/// read. A parent's children come out oldest first (the pid settles a tie), so
+/// two reads of the same tree give the same order.
 fn collect_descendant_process_ids(system: &System, root_process_id: Pid) -> Vec<Pid> {
     let mut descendant_process_ids: Vec<Pid> = Vec::new();
     let mut queue: VecDeque<Pid> = VecDeque::new();
@@ -164,13 +168,19 @@ fn collect_descendant_process_ids(system: &System, root_process_id: Pid) -> Vec<
         let parent_started_at = system
             .process(parent_process_id)
             .map(|parent| parent.start_time());
-        for (process_id, process) in system.processes() {
-            if process.parent() == Some(parent_process_id)
-                && parent_started_at.is_none_or(|started_at| process.start_time() >= started_at)
-            {
-                descendant_process_ids.push(*process_id);
-                queue.push_back(*process_id);
-            }
+        let mut children: Vec<(u64, Pid)> = system
+            .processes()
+            .iter()
+            .filter(|(_, process)| {
+                process.parent() == Some(parent_process_id)
+                    && parent_started_at.is_none_or(|started_at| process.start_time() >= started_at)
+            })
+            .map(|(process_id, process)| (process.start_time(), *process_id))
+            .collect();
+        children.sort_unstable();
+        for (_, process_id) in children {
+            descendant_process_ids.push(process_id);
+            queue.push_back(process_id);
         }
     }
 
