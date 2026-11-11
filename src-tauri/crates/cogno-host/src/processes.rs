@@ -312,6 +312,9 @@ mod tests {
     fn shell_with_child(_prelude: &str) -> Child {
         use std::os::windows::process::CommandExt;
         const CREATE_NO_WINDOW: u32 = 0x08000000;
+        // Not while another test opens a PTY: this process would inherit its
+        // pipe and hold it for the hundred seconds it runs.
+        let _no_pty_opens = crate::pty::handle_inheritance_lock();
         Command::new("cmd")
             .args(["/C", "ping -n 100 127.0.0.1 >nul"])
             .creation_flags(CREATE_NO_WINDOW)
