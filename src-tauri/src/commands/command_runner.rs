@@ -16,7 +16,7 @@ use tauri::{AppHandle, Manager};
 const PIPE_GRACE: Duration = Duration::from_millis(500);
 
 #[cfg(windows)]
-use super::process_job::ProcessJob;
+use cogno_host::process_job::ProcessJob;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 #[cfg(windows)]
@@ -67,7 +67,8 @@ pub async fn command_runner_execute(
         .open_session(&session_id, window.label());
     // Bounded like the shell spawn: the login shell is normally captured long
     // before the first run; if it hangs, run with the process PATH instead.
-    let login_path = super::login_environment::get_login_environment(Duration::from_secs(2)).path;
+    let login_path =
+        cogno_host::login_environment::get_login_environment(Duration::from_secs(2)).path;
     apply_runner_environment(&mut command, login_path);
     apply_prompt_environment(&mut command, &app, &session_id, &askpass_token);
 

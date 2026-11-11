@@ -1,8 +1,9 @@
+use crate::identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use super::environment_builder::EnvironmentBuilder;
+use crate::environment_builder::EnvironmentBuilder;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ShellProfile {
@@ -29,7 +30,13 @@ pub type PreparedSpawn = (String, Vec<String>, HashMap<String, String>, String);
 
 impl ShellSpawner {
     pub fn new(dev_mode: bool, bootstrap_log_dir: Option<PathBuf>) -> Result<Self, String> {
-        let integration_root = super::environment::cogno_home(dev_mode)?.join("shell-integration");
+        let home = dirs::home_dir().ok_or("Could not determine home directory")?;
+        let dir_name = if dev_mode {
+            DEVELOPMENT_HOME_DIRECTORY_NAME
+        } else {
+            HOME_DIRECTORY_NAME
+        };
+        let integration_root = home.join(dir_name).join("shell-integration");
 
         Ok(Self {
             integration_root,
@@ -85,7 +92,7 @@ impl ShellSpawner {
         // files are slow or hang, spawn without the login baseline instead of
         // blocking the terminal.
         let login_environment =
-            super::login_environment::get_login_environment(std::time::Duration::from_secs(2));
+            crate::login_environment::get_login_environment(std::time::Duration::from_secs(2));
 
         let env_builder = EnvironmentBuilder::new(
             self.integration_root.clone(),
@@ -95,7 +102,7 @@ impl ShellSpawner {
         )
         .with_login_environment(
             login_environment.path,
-            super::login_environment::fallback_lang(),
+            crate::login_environment::fallback_lang(),
         )
         .with_path_injection(inject_cogno_cli, cogno_paths, &profile.shell_type)
         .with_shell_specific_env(&profile.shell_type, &working_dir, enable_integration);

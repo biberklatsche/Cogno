@@ -3,17 +3,10 @@ pub mod clipboard_image;
 pub mod command_runner;
 pub mod config;
 pub mod environment;
-pub mod environment_builder;
-mod flow_control;
 pub mod keyboard;
-mod line_editor;
-pub mod login_environment;
 pub mod notification;
-#[cfg(windows)]
-pub mod process_job;
 pub mod processes;
 pub mod pty;
-pub mod shell_spawner;
 pub mod shells;
 pub mod window;
 pub mod window_registry;
