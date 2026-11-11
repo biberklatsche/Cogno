@@ -69,7 +69,33 @@ export class CommandLineBuffer {
     if (text.length > maxCursorIndex) {
       text = text.substring(0, maxCursorIndex);
     }
-    return text.trimEnd();
+    text = text.trimEnd();
+    return this.startsGhostTextAtCursor(text.length)
+      ? text.substring(0, this.cursorInputIndex()).trimEnd()
+      : text;
+  }
+
+  /**
+   * Whether everything from the cursor to `endIndex` is a shell prediction
+   * rather than input. `maxCursorIndex` alone lets one through once the cursor
+   * has been further right in this input and the line got shorter in a way
+   * nobody tracked (Esc, a shell-side edit). PSReadLine draws its inline
+   * prediction dim and italic, which typed input never is, so a run of such
+   * cells reaching from the cursor to the end of the line is one. A prediction
+   * in a plain colour (zsh-autosuggestions) is not told apart this way.
+   */
+  private startsGhostTextAtCursor(endIndex: number): boolean {
+    const buffer = this._terminal?.buffer?.active;
+    if (!this._terminal || !buffer) return false;
+    const cursorIndex = this.cursorInputIndex();
+    if (cursorIndex < 0 || cursorIndex >= endIndex) return false;
+    const cols = this._terminal.cols;
+    const startLine = this.inputStartLine();
+    for (let index = cursorIndex; index < endIndex; index++) {
+      const cell = buffer.getLine(startLine + Math.floor(index / cols))?.getCell(index % cols);
+      if (!cell || !(cell.isDim() || cell.isItalic())) return false;
+    }
+    return true;
   }
 
   /**
