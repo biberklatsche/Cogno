@@ -1,4 +1,5 @@
 import { Component, Signal } from "@angular/core";
+import { ActionDispatcher } from "@cogno/core/api/action-catalog-port";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import {
   NotificationCenterItemContract,
@@ -14,6 +15,9 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
     <section class="notification-header">
       <button class="button" type="button" [disabled]="notifications().length === 0" (click)="clearAll()">
         Clear
+      </button>
+      <button class="button icon-button" type="button" appTooltip="Notification settings" (click)="openSettings()">
+        <app-icon name="mdiCog"></app-icon>
       </button>
     </section>
 
@@ -61,6 +65,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         display: flex;
         align-items: center;
         justify-content: flex-end;
+        gap: 0.25rem;
       }
 
 
@@ -114,7 +119,7 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         white-space: pre-wrap;
       }
 
-      .icon-button {
+      .notification > .icon-button {
         position: absolute;
         top: 3px;
         right: 3px;
@@ -166,8 +171,16 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
 export class NotificationSideComponent {
   readonly notifications: Signal<NotificationCenterItemContract[]>;
 
-  constructor(private readonly notificationCenterStateService: NotificationCenterStateService) {
+  constructor(
+    private readonly notificationCenterStateService: NotificationCenterStateService,
+    private readonly actions: ActionDispatcher,
+  ) {
     this.notifications = this.notificationCenterStateService.notifications;
+  }
+
+  /** Which events notify, and where, is set in the settings; this panel only shows what came. */
+  openSettings(): void {
+    this.actions.dispatchAction({ actionName: "open_settings", args: ["notification"] });
   }
 
   remove(notificationId: NotificationCenterItemIdContract): void {

@@ -32,7 +32,6 @@ export interface NotificationEventPayloadContract {
 }
 
 export interface NotificationChannelSettingsContract {
-  readonly available?: boolean;
   readonly enabled?: boolean;
 }
 

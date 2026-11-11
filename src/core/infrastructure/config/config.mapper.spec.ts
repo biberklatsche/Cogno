@@ -199,10 +199,8 @@ describe("ConfigMapper", () => {
 
   it("parses notification channel and overview settings", () => {
     const text = `
-      notification.channel.app.available=true
       notification.channel.app.enabled=true
       notification.channel.app.duration_seconds=7
-      notification.channel.os.available=true
       notification.channel.os.enabled=false
       notification.channel.badge.enabled=false
       notification.source.terminal.long_running_command.enabled=true
@@ -212,10 +210,8 @@ describe("ConfigMapper", () => {
     const result = read(text);
 
     expect(result.diagnostics.length).toBe(0);
-    expect(result.config.notification?.channel?.app?.available).toBe(true);
     expect(result.config.notification?.channel?.app?.enabled).toBe(true);
     expect(result.config.notification?.channel?.app?.duration_seconds).toBe(7);
-    expect(result.config.notification?.channel?.os?.available).toBe(true);
     expect(result.config.notification?.channel?.os?.enabled).toBe(false);
     expect(result.config.notification?.channel?.badge?.enabled).toBe(false);
     expect(result.config.notification?.source?.["terminal"]?.["long_running_command"]).toEqual({

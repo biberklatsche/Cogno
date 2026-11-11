@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   Signal,
   signal,
 } from "@angular/core";
@@ -23,12 +24,14 @@ import {
   ToggleSwitchComponent,
   TooltipDirective,
 } from "@cogno/shared/ui";
+import { SettingsNavigation } from "./settings-navigation";
 import {
   buildSettingRows,
   buildSettingsView,
   parseInput,
   SettingRow,
   SettingsView,
+  sectionOfKey,
 } from "./settings-view";
 
 /**
@@ -391,10 +394,21 @@ export class SettingsPanelComponent {
     private readonly bus: AppBus,
     os: OsPlatform,
     destroyRef: DestroyRef,
+    navigation: SettingsNavigation,
   ) {
     const platform = os.platform();
     this.descriptors = descriptorsFor(config);
     this.activeSection.set(this.descriptors[0]?.section ?? "");
+    // Asked for by key, on open or while already open: show that section.
+    effect(() => {
+      const key = navigation.requestedKey();
+      if (key === undefined) return;
+      navigation.taken();
+      const section = sectionOfKey(this.descriptors, key);
+      if (!section) return;
+      this.activeSection.set(section);
+      this.query.set("");
+    });
     config.config$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((configuration) => this.configuration.set(configuration));

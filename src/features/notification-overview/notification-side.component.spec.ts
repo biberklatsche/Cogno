@@ -23,9 +23,17 @@ describe("NotificationSideComponent", () => {
       clear: vi.fn(),
       openTarget: vi.fn(),
     };
+    const actions = { dispatchAction: vi.fn() };
     const component = new NotificationSideComponent(
       notificationCenterStateService as NotificationCenterStateService,
+      actions,
     );
+
+    component.openSettings();
+    expect(actions.dispatchAction).toHaveBeenCalledWith({
+      actionName: "open_settings",
+      args: ["notification"],
+    });
 
     component.remove("one");
     component.clearAll();
@@ -54,12 +62,15 @@ describe("NotificationSideComponent", () => {
   it("formats relative timestamps across all display buckets", () => {
     Date.now = vi.fn(() => new Date("2026-05-07T12:00:00.000Z").getTime());
 
-    const component = new NotificationSideComponent({
-      notifications: signal<NotificationCenterItemContract[]>([]),
-      remove: vi.fn(),
-      clear: vi.fn(),
-      openTarget: vi.fn(),
-    } as unknown as NotificationCenterStateService);
+    const component = new NotificationSideComponent(
+      {
+        notifications: signal<NotificationCenterItemContract[]>([]),
+        remove: vi.fn(),
+        clear: vi.fn(),
+        openTarget: vi.fn(),
+      } as unknown as NotificationCenterStateService,
+      { dispatchAction: vi.fn() },
+    );
 
     expect(component.toRelativeTime(new Date("2026-05-07T11:59:45.000Z"))).toBe("just now");
     expect(component.toRelativeTime(new Date("2026-05-07T11:55:00.000Z"))).toBe("5m ago");

@@ -968,7 +968,7 @@ beitragen kann. Es lebt in `core/api/`, dem einzigen Ordner in `core/`, den
 Features importieren, und besteht **nur aus Verträgen**:
 
 - **Ports** (Core → Feature): `SessionApi`, `TerminalMonitorPort`,
-  `NotificationChannelsPort`, `ApplicationConfigurationPort`,
+  `ApplicationConfigurationPort`,
   `TerminalIpcPort`, `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
   `TerminalNavigator`, `TerminalPlacementPort`, `TerminalProcessesPort`,
   `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
@@ -1336,21 +1336,25 @@ dass die generierten Dateien aktuell sind — sonst driftet es doch, nur auf
 andere Art.
 
 **Schreiben.** Die Datei ist die Wahrheit, auch für das, was die Oberfläche
-umschaltet. Dafür gibt es genau einen Weg: `ConfigService.update(entries)`,
-nach außen `ApplicationConfigurationPort.update`. Er nimmt Dot-Pfade mit
-Werten, prüft jeden gegen dasselbe Zod-Schema, mit dem gelesen wird —
+umschaltet. Dafür gibt es genau einen Weg: `ConfigService.update(entries)`.
+Er nimmt Dot-Pfade mit Werten, prüft jeden gegen dasselbe Zod-Schema, mit dem gelesen wird —
 unbekannter Schlüssel oder falscher Typ lehnt den ganzen Aufruf ab, nichts
 wird geschrieben — und ändert dann **nur die betroffenen Zeilen**
 (`config-line-editor.ts`): eine vorhandene Zeile wird ersetzt, eine neue
 neben ihre nächsten Verwandten gesetzt, Kommentare und Reihenfolge bleiben.
-Danach liest er neu. Ein Feature schreibt seine eigenen Schlüssel, so wie
-es sie liest; eine zweite Wahrheit neben der Datei (ein Schalter im
-Speicher, der beim Neustart vergisst) gibt es nicht mehr. CLI-Overrides
+Danach liest er neu. Es schreibt nur das Settings-Panel; Features lesen die
+Config über `ApplicationConfigurationPort` und schreiben sie nicht. Eine
+zweite Wahrheit neben der Datei (ein Schalter im Speicher, der beim
+Neustart vergisst) gibt es nicht mehr. CLI-Overrides
 (`--config-set`) wirken nur beim Lesen und werden nie persistiert.
 
 **Das Settings-Panel** (`core/workbench/settings/`) ist die Oberfläche
 dazu: ein Eintrag unten in der Seitenleiste, Workbench und kein Feature,
-Aktion `open_settings` (`Cmd+,`). Es rendert sich vollständig aus dem
+Aktion `open_settings` (`Cmd+,`). Mit einem Top-Level-Schlüssel als Argument
+(`open_settings notification`) öffnet die Aktion das Panel im Abschnitt
+dieses Schlüssels; so springt ein Feature über den `ActionDispatcher` zu
+seinen Einstellungen, statt eine zweite Oberfläche dafür zu bauen (das
+Zahnrad der Benachrichtigungsübersicht). Es rendert sich vollständig aus dem
 Schema: `config-schema-walker.ts` liest je Setting Schlüssel, Abschnitt,
 Beschreibung (`.describe()`), Steuerelement (aus der Zod-Definition) und
 Default (aus `composeDefaultSettings`, 5.1); der Doku-Generator liest

@@ -106,16 +106,11 @@ export class NotificationDispatchService {
       return false;
     }
 
-    const notificationChannelSettings = this.getNotificationChannelSettings(notificationChannel.id);
-    const channelAvailable = notificationChannelSettings.available ?? true;
-    const channelEnabled = notificationChannelSettings.enabled ?? false;
-    const eventChannelEnabled = notificationChannels?.[notificationChannel.id];
-
-    if (!channelAvailable) {
-      return false;
-    }
-
-    return eventChannelEnabled ?? channelEnabled;
+    // A notification may name its channels itself (a warning that must reach
+    // the app whatever the switch says); otherwise the channel's switch decides.
+    const channelEnabled =
+      this.getNotificationChannelSettings(notificationChannel.id).enabled ?? false;
+    return notificationChannels?.[notificationChannel.id] ?? channelEnabled;
   }
 
   private getNotificationChannelSettings(
@@ -140,10 +135,7 @@ export class NotificationDispatchService {
       const notificationChannelSettings = this.getNotificationChannelSettings(
         notificationChannel.id,
       );
-      const channelAvailable = notificationChannelSettings.available ?? true;
-      const channelEnabled = notificationChannelSettings.enabled ?? false;
-
-      if (channelAvailable && channelEnabled) {
+      if (notificationChannelSettings.enabled ?? false) {
         await notificationChannel.startReceivingReplies?.(notificationChannelSettings);
         continue;
       }

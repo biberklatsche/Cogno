@@ -192,12 +192,10 @@ export const defaultSettings = {
   notification: {
     channel: {
       app: {
-        available: "true",
         enabled: "true",
         duration_seconds: "5",
       },
       os: {
-        available: "true",
         enabled: "false",
       },
       badge: {

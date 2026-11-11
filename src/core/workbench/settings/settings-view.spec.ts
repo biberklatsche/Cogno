@@ -7,6 +7,7 @@ import {
   renderValue,
   SettingRowsInput,
   SettingsViewFilter,
+  sectionOfKey,
 } from "./settings-view";
 
 const descriptor = (partial: Partial<SettingDescriptor> & { key: string }): SettingDescriptor => ({
@@ -199,5 +200,12 @@ describe("renderValue", () => {
     expect(renderValue(true)).toBe("true");
     expect(renderValue([0, 1])).toBe("0,1");
     expect(renderValue(undefined)).toBe("");
+  });
+});
+
+describe("sectionOfKey", () => {
+  it("finds the section of a top-level key, and none for a key no setting has", () => {
+    expect(sectionOfKey(descriptors, "font")).toBe("Font");
+    expect(sectionOfKey(descriptors, "fon")).toBeUndefined();
   });
 });

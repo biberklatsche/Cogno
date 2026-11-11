@@ -6,10 +6,6 @@ const channelSchema = z
   .strictObject({
     app: z
       .strictObject({
-        available: z
-          .boolean()
-          .optional()
-          .describe("Whether in-app notifications may be used at all."),
         enabled: z.boolean().optional().describe("Show notifications inside Cogno."),
         duration_seconds: limitSchema
           .optional()
@@ -22,7 +18,6 @@ const channelSchema = z
       .describe("In-app notification toasts."),
     os: z
       .strictObject({
-        available: z.boolean().optional().describe("Whether OS notifications may be used at all."),
         enabled: z.boolean().optional().describe("Send notifications to the operating system."),
       })
       .meta({ title: "Operating system" })

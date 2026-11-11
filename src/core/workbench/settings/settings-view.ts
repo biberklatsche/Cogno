@@ -61,6 +61,16 @@ export type SettingsViewFilter = {
   readonly query: string;
 };
 
+/** The section a top-level key's settings stand in (`notification` -> "Notification"); undefined when no setting has that key. */
+export function sectionOfKey(
+  descriptors: ReadonlyArray<SettingDescriptor>,
+  key: string,
+): string | undefined {
+  return descriptors.find(
+    (descriptor) => descriptor.key === key || descriptor.key.startsWith(`${key}.`),
+  )?.section;
+}
+
 /** Every row with its value; changes only when the config or the user's keys do. */
 export function buildSettingRows(input: SettingRowsInput): SettingRow[] {
   return collapseRecords(input.descriptors).map((descriptor) => toRow(descriptor, input));

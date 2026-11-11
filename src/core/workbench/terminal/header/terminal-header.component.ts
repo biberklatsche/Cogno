@@ -53,16 +53,15 @@ type HeaderCommandViewModel = {
           <span class="command">&nbsp;</span>
         }
       </span>
-      <span class="header-actions">
+      @if (isNotificationBadgeVisible()) {
         <button
-          class="button icon-button terminal-menu-button"
+          class="button icon-button unread-button"
           type="button"
           aria-label="Open notifications"
-          [class.hasNotification]="isNotificationBadgeVisible()"
           (click)="openNotifications($event)">
-            <app-icon [name]="isNotificationBadgeVisible() ? 'mdiBellBadge' : 'mdiBell'"></app-icon>
+            <app-icon name="mdiBellBadge"></app-icon>
         </button>
-      </span>
+      }
     </div>
   `,
   styles: `
@@ -102,7 +101,8 @@ type HeaderCommandViewModel = {
       display: flex;
       align-items: center;
       gap: 8px;
-      min-height: 1.2rem;
+      /* As tall as the unread bell, so the header does not jump when it appears. */
+      min-height: 1.6rem;
       min-width: 0;
       flex: 1;
     }
@@ -115,13 +115,6 @@ type HeaderCommandViewModel = {
       text-overflow: ellipsis;
       white-space: nowrap;
       overflow: hidden;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-left: auto;
     }
 
     .command-menu-button {
@@ -137,20 +130,10 @@ type HeaderCommandViewModel = {
       }
     }
 
-    .terminal-menu-button {
+    .unread-button {
       flex: 0 0 auto;
-
       width: 1.6rem;
       height: 1.6rem;
-
-      opacity: 0.5;
-      &:hover {
-        opacity: 1;
-      }
-
-      &.hasNotification {
-        opacity: 1;
-      }
     }
 
     .meta {

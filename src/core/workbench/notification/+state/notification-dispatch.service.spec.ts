@@ -35,16 +35,13 @@ describe("NotificationDispatchService", () => {
       notification: {
         channel: {
           app: {
-            available: true,
             enabled: true,
             duration_seconds: 5,
           },
           os: {
-            available: true,
             enabled: false,
           },
           "reply-channel": {
-            available: true,
             enabled: true,
           },
         },
@@ -87,6 +84,22 @@ describe("NotificationDispatchService", () => {
         settings: expect.objectContaining({ enabled: true }),
       }),
     );
+  });
+
+  it("delivers to the channels a notification names itself, whatever their switch says", () => {
+    const osDispatchMock = vi.fn<NotificationChannelContract["dispatch"]>();
+    createService([
+      createNotificationChannel({ id: "app", dispatch: dispatchNotificationMock }),
+      createNotificationChannel({ id: "os", dispatch: osDispatchMock }),
+    ]);
+
+    appBus.publish({
+      type: "Notification",
+      payload: { header: "OS notifications disabled", channels: { app: false, os: true } },
+    });
+
+    expect(dispatchNotificationMock).not.toHaveBeenCalled();
+    expect(osDispatchMock).toHaveBeenCalledTimes(1);
   });
 
   it("lets an event through only when its switch is on, and a notification without one always", () => {

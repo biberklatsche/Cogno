@@ -793,12 +793,6 @@ Return codes allowed for one command, matched by its first word, e.g. `allowed_r
 
 Which events notify you, and how.
 
-### `notification.channel.app.available`
-
-Whether in-app notifications may be used at all.
-
-**Type:** boolean · **Default:** `true`
-
 ### `notification.channel.app.enabled`
 
 Show notifications inside Cogno.
@@ -810,12 +804,6 @@ Show notifications inside Cogno.
 Seconds an in-app notification stays before it fades. `unlimited` keeps it until you dismiss it; 0 shows none.
 
 **Type:** `unlimited` | integer ≥ 0 · **Default:** `5`
-
-### `notification.channel.os.available`
-
-Whether OS notifications may be used at all.
-
-**Type:** boolean · **Default:** `true`
 
 ### `notification.channel.os.enabled`
 

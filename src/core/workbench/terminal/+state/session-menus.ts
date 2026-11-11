@@ -54,7 +54,7 @@ export class SessionMenus {
     ];
   }
 
-  /** The bell carries the unread mark; it opens the notifications, where the message is. */
+  /** The bell is the unread mark, shown only while unread; it opens the notifications, where the message is. */
   openNotifications(): void {
     this.bus.publish(ActionFired.create(OPEN_NOTIFICATION_ACTION));
   }
