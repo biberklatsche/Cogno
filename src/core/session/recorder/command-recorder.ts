@@ -5,7 +5,11 @@ import { ShellHistoryReader } from "@cogno/core/command-log/import/shell-history
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Paths } from "@cogno/platform/path";
-import { IPathAdapter, ResolvedShellContextContract } from "@cogno/shared/domain";
+import {
+  IPathAdapter,
+  isRemoteShellContext,
+  ResolvedShellContextContract,
+} from "@cogno/shared/domain";
 import { SessionCommandLog } from "../command-log/session-command-log";
 import { ExecutedCommand } from "./executed-command";
 
@@ -64,6 +68,8 @@ export class CommandRecorder {
       ) {
         return;
       }
+      // The history file to import is this machine's.
+      if (isRemoteShellContext(shellContext)) return;
       CommandRecorder.shellHistoryImportStarted = true;
       // Only into an empty history: the import is a first-launch seed, not a sync.
       if (await this.commandLog.hasAnyCommands()) return;

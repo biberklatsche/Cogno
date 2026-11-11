@@ -331,7 +331,13 @@ export class SessionHost {
     }
     this._terminalId = terminalId;
     this._shellProfile = shellProfile;
-    this.model.initialize(terminalId, shellProfile.shell_type, shellProfile, this.backend.os);
+    this.model.initialize(
+      terminalId,
+      shellProfile.shell_type,
+      shellProfile,
+      this.backend.os,
+      this.backend.host,
+    );
   }
 
   /**

@@ -88,18 +88,21 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     adapter: IPathAdapter,
   ): Promise<CommandLogRepository> {
     // The WSL distro affects path normalisation, so it is part of the key.
+    // So is the machine: another machine's commands and directories are its own.
     const key = [
       shellContext.backendOs,
       shellContext.shellType,
       isWslShellContext(shellContext) ? shellContext.wslDistroName : "",
+      shellContext.host ?? "",
     ];
     await database.execute(
-      `INSERT OR IGNORE INTO shell_context (backend_os, shell_type, wsl_distro, created_at)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT OR IGNORE INTO shell_context (backend_os, shell_type, wsl_distro, host, created_at)
+       VALUES (?, ?, ?, ?, ?)`,
       [...key, nowMs()],
     );
     const rows = await database.select<IdRow[]>(
-      "SELECT id FROM shell_context WHERE backend_os = ? AND shell_type = ? AND wsl_distro = ?",
+      `SELECT id FROM shell_context
+       WHERE backend_os = ? AND shell_type = ? AND wsl_distro = ? AND host = ?`,
       key,
     );
     if (rows.length === 0) throw new Error("ensureContextId failed");

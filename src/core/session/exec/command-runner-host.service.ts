@@ -6,12 +6,16 @@ import {
 } from "@cogno/core/api/command-runner-port";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
 import { CommandRunner } from "@cogno/platform/command-runner";
+import { isRemoteShellContext } from "@cogno/shared/domain";
 import { createPathAdapter } from "../shells/shell-definitions";
 
 /**
  * Runs commands in the backend. What a run's process asks without a terminal
  * (git credentials, an ssh passphrase, a host key - ARCHITECTURE.md 2.1)
  * goes to the run's own handler; a run without one refuses its prompts.
+ *
+ * The backend is this machine's: a run for a shell on another machine is
+ * refused, not started here in a directory that exists over there.
  */
 @Injectable({ providedIn: "root" })
 export class CommandRunnerHostService extends CommandRunnerPort {
@@ -23,6 +27,13 @@ export class CommandRunnerHostService extends CommandRunnerPort {
   }
 
   async run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract> {
+    if (isRemoteShellContext(request.shellContext)) {
+      return {
+        stdout: "",
+        stderr: "Commands cannot be run yet for a shell on another machine.",
+        exitCode: 1,
+      };
+    }
     const promptSession = crypto.randomUUID();
     const forgetHandler = request.onPrompt
       ? this.prompts.register(promptSession, request.onPrompt)

@@ -150,8 +150,9 @@ export class SessionModel {
     shellType: ShellType,
     shellProfile: ShellProfile | undefined,
     backendOs: OsType,
+    host?: string,
   ): void {
-    const shellContext = deriveShellContext(shellType, shellProfile, backendOs);
+    const shellContext = deriveShellContext(shellType, shellProfile, backendOs, host);
     const pathAdapter = createPathAdapter(shellContext);
     this._contextStack = [
       { context: shellContext, capabilities: undefined, pathAdapter, revision: 0 },
