@@ -212,7 +212,7 @@ Recorder (Kontext-Spalte der History) nicht mehr. Ein einmal beim Start aus
 dem Profil abgeleiteter Kontext reicht deshalb nicht.
 
 Das Sitzungsmodell führt eine **Kontext-Zeitachse**. Ein Kontext hat
-`{ shellType, backendOs, wslDistro?, remoteHost?, capabilities, since }`; der
+`{ shellType, backendOs, wslDistro?, host?, capabilities, since }`; der
 aktuelle ist der letzte Eintrag. Kontextwechsel erkennt die Session aus
 denselben Quellen wie alles andere: der neue `COGNO:CAPS`-Handshake, wenn die
 innere Shell die Integration geladen hat (der erwünschte Fall), sonst
@@ -1040,6 +1040,24 @@ Zuständigkeiten:
 
 Warum die Sitzung warten muss: Sie braucht das Betriebssystem ihrer Shell
 schon beim Entstehen, und das sagt erst der verbundene Host.
+
+**Der Host steht im Shell-Kontext** (`host`, fehlt für diesen Rechner). Eine
+Shell, die in einer Sitzung auf einem Host gestartet wird, bleibt auf ihm.
+Daran hängen zwei Dinge:
+
+- **Nichts von dort wird hier geöffnet oder gestartet.** Pfade eines solchen
+  Kontexts gehören dem anderen Rechner. `CommandRunnerHostService` und
+  `FilesystemHostService` (`core/session/exec/`), die einzigen Stellen, die
+  im Sitzungskontext diesen Rechner anfassen, lehnen ihn ab; die
+  Sitzungs-API weist `run`, `insertInput` und `fs` mit `unknown-context`
+  zurück, wie bei einer fremden Shell. Der History-Import liest die Datei
+  dieses Rechners und läuft für einen Host nicht. `run` und Dateien über den
+  Host zu leiten ist der nächste Ausbau; bis dahin zeigen Features in einer
+  solchen Sitzung „nicht verfügbar". Prozess-Info geht schon, weil sie über
+  die Terminal-ID läuft.
+- **Die Historie ist je Rechner getrennt.** `shell_context` führt den Host im
+  Schlüssel (2.4), Kommandos und Verzeichnisse zweier Rechner mischen sich
+  nicht.
 
 Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
 

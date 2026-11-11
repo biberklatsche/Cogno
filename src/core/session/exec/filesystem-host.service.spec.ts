@@ -1,4 +1,5 @@
 import { Fs } from "@cogno/platform/fs";
+import { firstValueFrom } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FilesystemHostService } from "./filesystem-host.service";
 
@@ -102,5 +103,25 @@ describe("FilesystemHostService", () => {
     await expect(service.exists("/workspace/file.txt", shellContext)).resolves.toBe(true);
     await expect(service.readTextFile("/workspace/file.txt", shellContext)).resolves.toBe("hello");
     await expect(service.readTextFile("", shellContext)).resolves.toBe("hello");
+  });
+
+  it("finds nothing on this machine for the paths of a shell on another one", async () => {
+    const remote = { backendOs: "linux", shellType: "Bash", host: "box" } as const;
+    vi.mocked(fs.exists).mockClear().mockResolvedValue(true);
+    vi.mocked(fs.readDir).mockClear();
+    vi.mocked(fs.readTextFile).mockClear();
+    vi.mocked(fs.watchChanges$).mockClear();
+
+    await expect(service.list("/etc", remote)).resolves.toEqual([]);
+    await expect(service.exists("/etc/hosts", remote)).resolves.toBe(false);
+    await expect(service.readTextFile("/etc/hosts", remote)).rejects.toThrow();
+    await expect(firstValueFrom(service.watch$("/etc", remote))).rejects.toThrow();
+
+    expect(fs.readDir).not.toHaveBeenCalled();
+    expect(fs.exists).not.toHaveBeenCalled();
+    expect(fs.readTextFile).not.toHaveBeenCalled();
+    expect(fs.watchChanges$).not.toHaveBeenCalled();
+    // The path itself is still the shell's to show and compare.
+    expect(service.normalizePath("/etc/../var", remote)).toBe("/var");
   });
 });

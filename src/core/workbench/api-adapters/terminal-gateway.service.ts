@@ -23,7 +23,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { ProcessTreeSnapshot } from "@cogno/platform/pty";
-import { isWslShellContext, TerminalId } from "@cogno/shared/domain";
+import { isRemoteShellContext, isWslShellContext, TerminalId } from "@cogno/shared/domain";
 import {
   defer,
   distinctUntilChanged,
@@ -208,7 +208,7 @@ export class TerminalGatewayService implements SessionApi {
     if (!state) {
       throw new Error("The bound session is no longer active.");
     }
-    if (!state.isContextKnown) {
+    if (!state.isContextKnown || isRemoteShellContext(state.shellContext)) {
       throw new Error("The bound session's context is not available (remote or unknown shell).");
     }
     return state.shellContext;
@@ -356,7 +356,9 @@ export class TerminalGatewayService implements SessionApi {
    * it (for the bound handle: the identity is still the live binding; for a
    * directory handle: the terminal still runs this session), the caller's
    * context revision still matches (nothing opened/closed under it), and the
-   * context is known (a foreign shell such as ssh is refused).
+   * context is known and of this machine (a foreign shell such as ssh is
+   * refused, and so is a shell on another machine: nothing can be run or
+   * read there yet).
    */
   private writableTarget(
     resolve: () => SessionTarget | { reason: SessionRunRejection },
@@ -369,7 +371,7 @@ export class TerminalGatewayService implements SessionApi {
     if (resolved.state.contextRevision !== contextRevision) {
       return { reason: "stale-context" };
     }
-    if (!resolved.state.isContextKnown) {
+    if (!resolved.state.isContextKnown || isRemoteShellContext(resolved.state.shellContext)) {
       return { reason: "unknown-context" };
     }
     // Without a cwd the command would fail before it starts, and a feature

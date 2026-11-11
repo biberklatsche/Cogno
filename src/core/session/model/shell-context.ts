@@ -11,21 +11,28 @@ export function deriveShellContext(
   shellType: ShellType,
   shellProfile: ShellProfile | undefined,
   backendOs: OsType,
+  host?: string,
 ): ShellContext {
+  const base = { shellType, backendOs, ...onHost(host) };
   if (backendOs !== "windows") {
-    return { shellType, backendOs };
+    return base;
   }
 
   if (!(shellType === "Bash" || shellType === "ZSH")) {
-    return { shellType, backendOs };
+    return base;
   }
 
   const distro = extractWslDistro(shellProfile);
   if (!distro) {
-    return { shellType, backendOs };
+    return base;
   }
 
-  return { shellType, backendOs, wslDistroName: distro };
+  return { ...base, backendOs, wslDistroName: distro };
+}
+
+/** A context of this machine carries no `host` key at all. */
+function onHost(host: string | undefined): { host?: string } {
+  return host === undefined ? {} : { host };
 }
 
 /**
@@ -33,8 +40,9 @@ export function deriveShellContext(
  * and `distro` fields. A distro on a Windows host means WSL (the inner
  * shell reports os=linux via uname, but the path space is the host's WSL
  * mount), so the outer OS wins there; otherwise the reported os is taken at
- * face value. Returns undefined for a shell Cogno has no adapter for - the
- * caller treats that as an unknown context.
+ * face value. The shell runs where the outer one does. Returns undefined
+ * for a shell Cogno has no adapter for - the caller treats that as an
+ * unknown context.
  */
 export function contextFromHandshake(
   fields: { shell?: string; os?: string; distro?: string },
@@ -49,11 +57,16 @@ export function contextFromHandshake(
     outerContext.backendOs === "windows" &&
     (shellType === "Bash" || shellType === "ZSH")
   ) {
-    return { shellType, backendOs: "windows", wslDistroName: distro };
+    return {
+      shellType,
+      backendOs: "windows",
+      wslDistroName: distro,
+      ...onHost(outerContext.host),
+    };
   }
 
   const backendOs = HANDSHAKE_BACKEND_OS[fields.os?.trim() ?? ""] ?? outerContext.backendOs;
-  return { shellType, backendOs };
+  return { shellType, backendOs, ...onHost(outerContext.host) };
 }
 
 const HANDSHAKE_SHELL_TYPES: Record<string, ShellTypeContract> = {

@@ -2,6 +2,7 @@ import { registerDatabaseMigrations } from "@cogno/core/api/contributions";
 import initHistoryMigration from "./001_init_history.sql?raw";
 import importLegacyHistoryMigration from "./002_import_legacy_history.sql?raw";
 import recentHistoryIndexesMigration from "./003_recent_history_indexes.sql?raw";
+import shellContextHostMigration from "./004_shell_context_host.sql?raw";
 
 /**
  * The command log's tables. The source stays "app" although they live in
@@ -13,4 +14,5 @@ export const commandLogMigrations = registerDatabaseMigrations("app", [
   { name: "init-history", sql: initHistoryMigration },
   { name: "import-legacy-history", sql: importLegacyHistoryMigration, usesLegacy: true },
   { name: "recent-history-indexes", sql: recentHistoryIndexesMigration },
+  { name: "shell-context-host", sql: shellContextHostMigration },
 ]);

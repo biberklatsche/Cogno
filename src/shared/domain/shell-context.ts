@@ -3,6 +3,7 @@ import { ShellContextContract } from "./shell";
 type BaseShellContextContract = {
   backendOs: ShellContextContract["backendOs"];
   shellType: ShellContextContract["shellType"];
+  host?: ShellContextContract["host"];
 };
 
 export type WslShellContextContract = BaseShellContextContract & {
@@ -12,6 +13,11 @@ export type WslShellContextContract = BaseShellContextContract & {
 };
 
 export type ResolvedShellContextContract = BaseShellContextContract | WslShellContextContract;
+
+/** Whether the context's shell runs on another machine than Cogno. */
+export function isRemoteShellContext(ctx: ShellContextContract): boolean {
+  return ctx.host !== undefined;
+}
 
 export function isWslShellContext(ctx: ShellContextContract): ctx is WslShellContextContract {
   return (

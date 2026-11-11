@@ -66,6 +66,21 @@ describe("CommandRunnerHostService", () => {
     expect(register).not.toHaveBeenCalled();
   });
 
+  it("starts nothing on this machine for a shell on another one", async () => {
+    const result = await service.run({
+      cwd: "/home/lars/project",
+      shellContext: { shellType: "Bash", backendOs: "linux", host: "box" },
+      program: "git",
+      args: ["status"],
+      onPrompt: vi.fn(),
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("another machine");
+    expect(execute).not.toHaveBeenCalled();
+    expect(register).not.toHaveBeenCalled();
+  });
+
   it("forgets the handler of a run that failed to start", async () => {
     execute.mockRejectedValue(new Error("spawn failed"));
 

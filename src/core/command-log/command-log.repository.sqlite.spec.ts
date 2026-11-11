@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandLogRepository } from "./command-log.repository";
 import schema from "./schema/001_init_history.sql?raw";
 import indexes from "./schema/003_recent_history_indexes.sql?raw";
+import contextHost from "./schema/004_shell_context_host.sql?raw";
 
 describe("command log queries against SQLite", () => {
   let db: DatabaseSync;
@@ -20,6 +21,7 @@ describe("command log queries against SQLite", () => {
     db = new DatabaseSync(":memory:");
     db.exec(schema);
     db.exec(indexes);
+    db.exec(contextHost);
     select = vi.fn(async (sql: string, parameters: SQLInputValue[] = []) => {
       const statement = db.prepare(sql);
       if (!/\?\d/.test(sql)) return statement.all(...parameters);
@@ -43,7 +45,7 @@ describe("command log queries against SQLite", () => {
       { normalize: (path: string) => path } as IPathAdapter,
     );
     db.exec(`
-      INSERT INTO shell_context VALUES (2, 'macos', 'Zsh', '', 0);
+      INSERT INTO shell_context VALUES (2, 'macos', 'Zsh', '', '', 0);
       INSERT INTO path VALUES (1, '/work', NULL, 'work', 1, 0), (2, '/other', NULL, 'other', 1, 0);
       INSERT INTO command VALUES (1, 'git status', 0), (2, 'ls', 0), (3, 'pwd', 0);
     `);

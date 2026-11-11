@@ -6,14 +6,25 @@ import {
   FilesystemListOptionsContract,
 } from "@cogno/core/session/exec/filesystem";
 import { Fs } from "@cogno/platform/fs";
-import { ShellContextContract } from "@cogno/shared/domain";
+import { isRemoteShellContext, ShellContextContract } from "@cogno/shared/domain";
 import { Observable, throwError } from "rxjs";
 import { createPathAdapter } from "../shells/shell-definitions";
 
+/**
+ * The files a session's paths name, read through this machine's file system.
+ * The paths of a shell on another machine name nothing here: for them every
+ * read finds nothing, instead of whatever lies at that path on this machine.
+ */
 @Injectable({ providedIn: "root" })
 export class FilesystemHostService extends Filesystem {
   constructor(private readonly fs: Fs) {
     super();
+  }
+
+  /** The path as this machine's file system takes it, if it is one of its own. */
+  private localPath(path: string, shellContext: ShellContextContract): string | undefined {
+    if (isRemoteShellContext(shellContext)) return undefined;
+    return createPathAdapter(shellContext).render(path, { purpose: "backend_fs" });
   }
 
   normalizePath(path: string, shellContext: ShellContextContract): string {
@@ -57,7 +68,7 @@ export class FilesystemHostService extends Filesystem {
     options?: FilesystemListOptionsContract,
   ): Promise<ReadonlyArray<FilesystemEntryContract>> {
     const adapter = createPathAdapter(shellContext);
-    const backendPath = adapter.render(path, { purpose: "backend_fs" });
+    const backendPath = this.localPath(path, shellContext);
     if (!backendPath) return [];
 
     const entries = await this.readDirIfPresent(backendPath);
@@ -127,16 +138,12 @@ export class FilesystemHostService extends Filesystem {
   }
 
   async exists(path: string, shellContext: ShellContextContract): Promise<boolean> {
-    const backendPath = createPathAdapter(shellContext).render(path, {
-      purpose: "backend_fs",
-    });
+    const backendPath = this.localPath(path, shellContext);
     return backendPath ? this.fs.exists(backendPath) : false;
   }
 
   async readTextFile(path: string, shellContext: ShellContextContract): Promise<string> {
-    const backendPath = createPathAdapter(shellContext).render(path, {
-      purpose: "backend_fs",
-    });
+    const backendPath = this.localPath(path, shellContext);
     if (!backendPath) {
       throw new Error(`Unable to render filesystem path '${path}'.`);
     }
@@ -144,7 +151,7 @@ export class FilesystemHostService extends Filesystem {
   }
 
   watch$(path: string, shellContext: ShellContextContract): Observable<void> {
-    const backendPath = createPathAdapter(shellContext).render(path, { purpose: "backend_fs" });
+    const backendPath = this.localPath(path, shellContext);
     if (!backendPath) {
       return throwError(() => new Error(`Unable to render filesystem path '${path}'.`));
     }
