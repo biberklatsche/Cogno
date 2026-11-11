@@ -101,7 +101,7 @@ impl Drop for Server {
 /// The platform's plain shell printing `ready` and then waiting for input.
 fn waiting_shell(terminal_id: &str, stream: u64) -> Request {
     #[cfg(windows)]
-    let (shell_type, path, args) = ("PowerShell", "cmd.exe", ["/C", "echo ready & pause >nul"]);
+    let (shell_type, path, args) = ("PowerShell", "cmd.exe", ["/C", "echo ready & set /p line="]);
     #[cfg(unix)]
     let (shell_type, path, args) = ("Bash", "/bin/sh", ["-c", "echo ready; read line"]);
     Request::PtySpawn {
@@ -188,7 +188,7 @@ fn a_shell_runs_behind_the_server_takes_input_and_reports_its_end() {
     assert!(matches!(spawned, Ok(Response::Spawned(_))));
     wait_for_output(&mut server, 5, "ready", early_output);
 
-    // Any key ends the wait, and with it the shell. Its exit may overtake
+    // A line ends the wait, and with it the shell. Its exit may overtake
     // the reply to the write.
     fn exit_of(message: HostMessage) -> Option<(String, String)> {
         match message {
