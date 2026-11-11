@@ -7,8 +7,8 @@ import { OsType } from "./os";
 export type HostInfo = { os: OsType };
 
 /**
- * Machines other than this one whose shells Cogno runs: each is reached over
- * ssh, with a Cogno there as the other end.
+ * The machines whose shells Cogno runs: this one, and others reached over
+ * ssh with a Cogno there as the other end.
  */
 @Injectable({ providedIn: "root" })
 export class Hosts {
@@ -28,6 +28,25 @@ export class Hosts {
       destination,
       command: command ?? null,
       promptSession,
+    });
+  }
+
+  /**
+   * Makes sure the shell integration scripts of `version` lie on `host`, this
+   * machine when none is named: in `shell-integration` of the Cogno home
+   * there. Scripts that are there in this version are left alone.
+   */
+  installShellIntegration(
+    host: string | undefined,
+    version: string,
+    files: ReadonlyArray<{ relativePath: string; content: string }>,
+    devMode: boolean,
+  ): Promise<void> {
+    return invoke("host_install_shell_integration", {
+      host: host ?? null,
+      version,
+      files,
+      devMode,
     });
   }
 

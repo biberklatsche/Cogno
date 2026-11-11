@@ -15,6 +15,7 @@ mod processes;
 pub mod protocol;
 mod pty;
 mod server;
+mod shell_integration;
 mod shell_spawner;
 mod shells;
 pub mod wire;

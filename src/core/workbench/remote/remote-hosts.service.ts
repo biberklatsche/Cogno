@@ -2,14 +2,17 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
+import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integration.writer";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
+import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 
 /**
  * The connections to the machines of `remote.hosts`. A connection is set up
  * when the first shell on that machine is wanted and stands until it breaks
  * or Cogno ends; what ssh asks on the way (a password, a host key) is shown
- * with the workbench's plain prompt dialog.
+ * with the workbench's plain prompt dialog. A host counts as connected once
+ * it has this Cogno's shell integration, so a shell started there finds it.
  */
 @Injectable({ providedIn: "root" })
 export class RemoteHostsService {
@@ -21,6 +24,8 @@ export class RemoteHostsService {
     private readonly configService: ConfigService,
     private readonly prompts: ProcessPromptDispatcher,
     private readonly promptDialog: ProcessPromptService,
+    private readonly shellIntegration: ShellIntegrationWriter,
+    private readonly featureHost: FeatureHost,
     destroyRef: DestroyRef,
   ) {
     void hosts
@@ -51,7 +56,8 @@ export class RemoteHostsService {
     const connecting = this.hosts
       .connect(name, host.destination, host.command, promptSession)
       .then(
-        (info) => {
+        async (info) => {
+          await this.shellIntegration.ensure(this.featureHost.getShellSupportDefinitions(), name);
           this.connected.set(name, info);
           return info;
         },

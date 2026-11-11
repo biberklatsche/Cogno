@@ -1,3 +1,4 @@
+use cogno_host::protocol::{IntegrationFile, Request, Response, ShellInfo};
 use serde::Serialize;
 use std::process::Command;
 use tauri::{AppHandle, Manager, State};
@@ -84,8 +85,35 @@ pub async fn host_connect(
 pub async fn list_shells(
     hosts: State<'_, HostState>,
     host: Option<String>,
-) -> Result<Vec<cogno_host::protocol::ShellInfo>, String> {
-    hosts.list_shells(host).await
+) -> Result<Vec<ShellInfo>, String> {
+    match hosts.request_on(host, Request::ListShells).await? {
+        Response::Shells(shells) => Ok(shells),
+        _ => Err("The host answered something else".to_string()),
+    }
+}
+
+/// Makes sure the shell integration scripts of `version` lie on a host, this
+/// machine when none is named. The scripts are this Cogno's: a host on
+/// another machine gets them from here, so both sides agree on them.
+#[tauri::command]
+pub async fn host_install_shell_integration(
+    hosts: State<'_, HostState>,
+    host: Option<String>,
+    version: String,
+    files: Vec<IntegrationFile>,
+    dev_mode: bool,
+) -> Result<(), String> {
+    hosts
+        .request_on(
+            host,
+            Request::InstallShellIntegration {
+                dev_mode,
+                version,
+                files,
+            },
+        )
+        .await
+        .map(|_| ())
 }
 
 #[cfg(test)]

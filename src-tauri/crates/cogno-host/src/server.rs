@@ -27,7 +27,7 @@ impl<W: Write + Send + 'static> EventSink for Output<W> {
 pub fn serve<W: Write + Send + 'static>(mut input: impl Read, output: W) -> io::Result<()> {
     let output = Arc::new(Output(Mutex::new(output)));
     wire::write_hello(&mut *output.0.lock().unwrap())?;
-    let host = Arc::new(Host::new(output.clone()));
+    let host = Arc::new(Host::new(output.clone(), None));
 
     let served = loop {
         let RequestEnvelope { id, request } = match wire::read_request(&mut input) {

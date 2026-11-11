@@ -28,18 +28,22 @@ pub struct ShellSpawner {
 /// working directory.
 pub type PreparedSpawn = (String, Vec<String>, HashMap<String, String>, String);
 
-impl ShellSpawner {
-    pub fn new(dev_mode: bool, bootstrap_log_dir: Option<PathBuf>) -> Result<Self, String> {
-        let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-        let dir_name = if dev_mode {
-            DEVELOPMENT_HOME_DIRECTORY_NAME
-        } else {
-            HOME_DIRECTORY_NAME
-        };
-        let integration_root = home.join(dir_name).join("shell-integration");
+/// Where the shell integration scripts of this machine lie.
+pub(crate) fn integration_root(dev_mode: bool) -> Result<PathBuf, String> {
+    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
+    let dir_name = if dev_mode {
+        DEVELOPMENT_HOME_DIRECTORY_NAME
+    } else {
+        HOME_DIRECTORY_NAME
+    };
+    Ok(home.join(dir_name).join("shell-integration"))
+}
 
+impl ShellSpawner {
+    /// `bootstrap_log_dir`: where shells write their start-up log, if anywhere.
+    pub fn new(dev_mode: bool, bootstrap_log_dir: Option<PathBuf>) -> Result<Self, String> {
         Ok(Self {
-            integration_root,
+            integration_root: integration_root(dev_mode)?,
             bootstrap_log_dir,
         })
     }
