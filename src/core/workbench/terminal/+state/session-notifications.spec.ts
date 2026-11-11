@@ -108,6 +108,7 @@ describe("SessionNotifications", () => {
         onCwdChanged: vi.fn(),
         onCommandExecuted: vi.fn(),
       } as unknown as CommandRecorder,
+      { os: "linux" },
     );
 
     host.initialize(terminalId, bashProfile);

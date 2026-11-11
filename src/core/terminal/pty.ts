@@ -70,6 +70,8 @@ export class Pty implements IPty {
   constructor(
     private readonly _transport: PtyTransport,
     private readonly _devMode: boolean,
+    /** The connected host the shell runs on; left out for this machine. */
+    private readonly _host?: string,
   ) {}
 
   async spawn(
@@ -100,6 +102,7 @@ export class Pty implements IPty {
         rows: dimensions.rows,
         profile: shellProfile,
         devMode: this._devMode,
+        host: this._host,
       },
       {
         onChunk: onData,

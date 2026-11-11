@@ -71,6 +71,7 @@ function createHost(config: Record<string, unknown> = { font: { enable_ligatures
     {} as never,
     new TerminalCommandHistoryStore(),
     recorder,
+    { os: "linux" },
   );
 }
 

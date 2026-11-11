@@ -24,6 +24,8 @@ export type PtySpawnOptionsContract = {
   rows: number;
   profile: PtyShellProfileContract;
   devMode: boolean;
+  /** The connected host the shell runs on; left out for this machine. */
+  host?: string;
 };
 
 type PtySpawnResultContract = {
@@ -232,6 +234,7 @@ export class PtyTransport {
         profile: options.profile,
         dev_mode: options.devMode,
       },
+      host: options.host ?? null,
       onData: channel,
     });
     return {

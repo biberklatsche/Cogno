@@ -76,6 +76,7 @@ describe("SessionKeybindings", () => {
         onCwdChanged: vi.fn(),
         onCommandExecuted: vi.fn(),
       } as unknown as CommandRecorder,
+      { os: "linux" },
     );
 
     preloadForShellIntegration = vi.fn();
