@@ -122,12 +122,15 @@ mod tests {
 
     #[test]
     fn closing_the_job_ends_the_shell_and_what_it_started() {
-        // The second ping starts well after the shell joined the job.
+        // The second ping starts well after the shell joined the job. Not
+        // started while another test opens a PTY: it would inherit its pipe.
+        let no_pty_opens = crate::pty::handle_inheritance_lock();
         let mut shell = Command::new("cmd")
             .args(["/C", "ping -n 2 127.0.0.1 >nul & ping -n 60 127.0.0.1 >nul"])
             .creation_flags(CREATE_NO_WINDOW)
             .spawn()
             .unwrap();
+        drop(no_pty_opens);
         let shell_pid = shell.id();
         let job = ProcessJob::containing(shell_pid).unwrap();
         assert!(
