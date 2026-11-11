@@ -114,6 +114,12 @@ import { NotificationCenterStateService } from "./notification-center-state.serv
         line-height: 1.2;
         font-size: 1rem;
         margin-bottom: 2px;
+        /* Keeps the title clear of the close button, which sits on top of the card's corner. */
+        padding-right: 1.5rem;
+      }
+
+      .notification:has(.count) .title {
+        padding-right: 4.5rem;
       }
 
       .glyph {
