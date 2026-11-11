@@ -18,6 +18,7 @@ export * from "./dialog/dialog-config";
 export * from "./dialog/dialog-ref";
 export type { Icon } from "./icon";
 export * from "./icons/icon/icon.component";
+export * from "./icons/notification-glyph-paths";
 export * from "./menu/context-menu-overlay/context-menu.component";
 export * from "./menu/context-menu-overlay/context-menu-overlay.service";
 export * from "./menu/notification-preferences-menu-items";

@@ -4,8 +4,19 @@ import {
   NotificationChannelContract,
   NotificationChannelDispatchRequestContract,
 } from "@cogno/shared/domain";
-import { AppNotificationToast, AppNotificationToastId } from "./app-notification-toast.models";
+import { AppNotificationToast, AppNotificationToastPhase } from "./app-notification-toast.models";
 
+/** The shape arrives, then the pill opens. */
+const OPEN_DELAY_MS = 450;
+/** The text goes and the pill shrinks back to the shape. */
+const CLOSING_MS = 340;
+/** The shape leaves the screen. */
+const EXIT_MS = 220;
+
+/**
+ * Shows one toast at a time: the notification overview keeps every
+ * notification, so a new one takes over the pill that is on screen.
+ */
 @Injectable({ providedIn: "root" })
 export class AppNotificationChannelService implements NotificationChannelContract {
   readonly displayName = "App";
@@ -13,14 +24,13 @@ export class AppNotificationChannelService implements NotificationChannelContrac
   readonly sortOrder = 300;
 
   private appNotificationToastIdCounter = 0;
-  private readonly appNotificationToastTimerById = new Map<
-    AppNotificationToastId,
-    ReturnType<typeof setTimeout>
-  >();
-  private readonly appNotificationToastsSignal = signal<AppNotificationToast[]>([]);
+  /** How long the toast stays open; Infinity keeps it until it is dismissed. */
+  private openDurationMs = Number.POSITIVE_INFINITY;
+  private phaseTimer?: ReturnType<typeof setTimeout>;
+  private readonly appNotificationToastSignal = signal<AppNotificationToast | undefined>(undefined);
 
-  readonly appNotificationToasts: Signal<AppNotificationToast[]> =
-    this.appNotificationToastsSignal.asReadonly();
+  readonly appNotificationToast: Signal<AppNotificationToast | undefined> =
+    this.appNotificationToastSignal.asReadonly();
 
   dispatch(notificationChannelDispatchRequest: NotificationChannelDispatchRequestContract): void {
     // `unlimited` resolves to Infinity: the toast stays until it is dismissed.
@@ -32,65 +42,61 @@ export class AppNotificationChannelService implements NotificationChannelContrac
       return;
     }
 
-    const toastId = this.showAppNotificationToast({
-      body: notificationChannelDispatchRequest.notification.body,
-      header: notificationChannelDispatchRequest.notification.header,
-      target: notificationChannelDispatchRequest.notification.target,
-      timestamp: notificationChannelDispatchRequest.notification.timestamp ?? new Date(),
-      type: notificationChannelDispatchRequest.notification.type ?? "info",
-    });
-
-    if (!Number.isFinite(durationSeconds)) {
-      return;
-    }
-    const timer = setTimeout(() => {
-      this.dismissAppNotificationToast(toastId);
-    }, durationSeconds * 1000);
-    this.appNotificationToastTimerById.set(toastId, timer);
-  }
-
-  dismissAppNotificationToast(toastId: AppNotificationToastId): void {
-    this.clearAppNotificationToastTimer(toastId);
-    this.appNotificationToastsSignal.update((appNotificationToasts) =>
-      appNotificationToasts.filter((appNotificationToast) => appNotificationToast.id !== toastId),
-    );
-  }
-
-  clear(): void {
-    for (const timer of this.appNotificationToastTimerById.values()) {
-      clearTimeout(timer);
-    }
-    this.appNotificationToastTimerById.clear();
-    this.appNotificationToastsSignal.set([]);
-  }
-
-  private showAppNotificationToast(
-    toast: Omit<AppNotificationToast, "id">,
-  ): AppNotificationToastId {
+    const notification = notificationChannelDispatchRequest.notification;
     this.appNotificationToastIdCounter += 1;
     const toastId = this.appNotificationToastIdCounter;
-    const nextToast: AppNotificationToast = { ...toast, id: toastId };
+    // A pill that is already leaving is not brought back; the new toast gets its own.
+    const shownToast = this.appNotificationToastSignal();
+    const reusedPill = shownToast && shownToast.phase !== "exit" ? shownToast : undefined;
 
-    this.appNotificationToastsSignal.update((appNotificationToasts) => {
-      const nextToastList = [...appNotificationToasts, nextToast];
-      while (nextToastList.length > 3) {
-        const removedToast = nextToastList.shift();
-        if (removedToast) {
-          this.clearAppNotificationToastTimer(removedToast.id);
-        }
-      }
-      return nextToastList;
+    this.openDurationMs = durationSeconds * 1000;
+    this.appNotificationToastSignal.set({
+      body: notification.body,
+      header: notification.header,
+      id: toastId,
+      phase: reusedPill && reusedPill.phase !== "enter" ? "open" : "enter",
+      pillId: reusedPill?.pillId ?? toastId,
+      shownAt: Date.now(),
+      target: notification.target,
+      type: notification.type ?? "info",
     });
-
-    return toastId;
+    // A pill that is still arriving opens when it was going to: a burst must not hold it shut.
+    if (reusedPill?.phase !== "enter") {
+      this.scheduleNextPhase();
+    }
   }
 
-  private clearAppNotificationToastTimer(toastId: AppNotificationToastId): void {
-    const timer = this.appNotificationToastTimerById.get(toastId);
-    if (!timer) {
-      return;
+  dismissAppNotificationToast(): void {
+    const phase = this.appNotificationToastSignal()?.phase;
+    if (phase === "enter" || phase === "open") {
+      this.enterPhase("closing");
     }
-    clearTimeout(timer);
-    this.appNotificationToastTimerById.delete(toastId);
+  }
+
+  private enterPhase(phase: AppNotificationToastPhase): void {
+    this.appNotificationToastSignal.update((toast) => toast && { ...toast, phase });
+    this.scheduleNextPhase();
+  }
+
+  private scheduleNextPhase(): void {
+    clearTimeout(this.phaseTimer);
+    this.phaseTimer = undefined;
+
+    switch (this.appNotificationToastSignal()?.phase) {
+      case "enter":
+        this.phaseTimer = setTimeout(() => this.enterPhase("open"), OPEN_DELAY_MS);
+        break;
+      case "open":
+        if (Number.isFinite(this.openDurationMs)) {
+          this.phaseTimer = setTimeout(() => this.enterPhase("closing"), this.openDurationMs);
+        }
+        break;
+      case "closing":
+        this.phaseTimer = setTimeout(() => this.enterPhase("exit"), CLOSING_MS);
+        break;
+      case "exit":
+        this.phaseTimer = setTimeout(() => this.appNotificationToastSignal.set(undefined), EXIT_MS);
+        break;
+    }
   }
 }
