@@ -10,20 +10,32 @@ fn done(reply: Result<Response, String>) -> Result<(), String> {
     reply.map(|_| ())
 }
 
+/// Starts a shell on `host`, this machine when none is named.
 #[tauri::command]
 pub async fn pty_spawn(
     app: AppHandle,
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     options: SpawnOptions,
+    host: Option<String>,
     on_data: Channel<InvokeResponseBody>,
 ) -> Result<PtySpawnResult, String> {
-    // HTTP server port and token, so hooks can reach cogno. The webview starts
-    // the server and spawns terminals independently; a short wait for the
-    // server's answer keeps the port out of a race it would lose on a cold
-    // start.
+    // This app's HTTP server is of no use to a shell on another machine.
+    let env = match host {
+        Some(_) => Vec::new(),
+        None => http_server_environment(&app).await,
+    };
+    hosts
+        .spawn(host, options, window.label().to_string(), env, on_data)
+        .await
+}
+
+/// HTTP server port and token, so hooks can reach cogno. The webview starts
+/// the server and spawns terminals independently; a short wait for the
+/// server's answer keeps the port out of a race it would lose on a cold start.
+async fn http_server_environment(app: &AppHandle) -> Vec<(String, String)> {
     let server_state = app.clone();
-    let env = tauri::async_runtime::spawn_blocking(move || {
+    tauri::async_runtime::spawn_blocking(move || {
         let http_server = server_state.state::<HttpServerState>();
         http_server.wait_for_start_decision(std::time::Duration::from_secs(2));
         match http_server.port() {
@@ -35,28 +47,7 @@ pub async fn pty_spawn(
         }
     })
     .await
-    .unwrap_or_default();
-
-    let stream = host.open_stream(on_data);
-    let reply = host
-        .request(Request::PtySpawn {
-            options,
-            owner: window.label().to_string(),
-            stream,
-            env,
-        })
-        .await;
-    match reply {
-        Ok(Response::Spawned(result)) => Ok(result),
-        Ok(_) => {
-            host.close_stream(stream);
-            Err("The host did not answer the spawn".to_string())
-        }
-        Err(error) => {
-            host.close_stream(stream);
-            Err(error)
-        }
-    }
+    .unwrap_or_default()
 }
 
 #[tauri::command]

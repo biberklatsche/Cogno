@@ -7,11 +7,11 @@ mod db;
 mod endpoint;
 mod host;
 mod http_server;
+mod remote;
 mod updater;
 
 use app_identity::LOG_FILE_STEM;
 use cli::Cli;
-use cogno_host::protocol::Request;
 use commands::window_registry::{route, WindowRegistry};
 use db::Db;
 use host::HostState;
@@ -105,11 +105,7 @@ pub fn run(cli: Cli) {
                 let app = window.app_handle();
                 app.state::<crate::commands::window::QuitState>()
                     .cancel_window(window.label());
-                // Returns at once: the host releases the sessions on a thread
-                // of its own.
-                let _ = app.state::<HostState>().handle(Request::ReleaseOwner {
-                    owner: window.label().to_string(),
-                });
+                app.state::<HostState>().release_window(window.label());
                 app.state::<WindowRegistry>().on_destroyed(window.label());
             }
             _ => {}
@@ -125,7 +121,8 @@ pub fn run(cli: Cli) {
             crate::commands::command_runner::command_runner_execute,
             crate::commands::askpass::askpass_answer,
             crate::commands::config::get_default_config,
-            crate::commands::shells::list_shells,
+            crate::commands::hosts::list_shells,
+            crate::commands::hosts::host_connect,
             crate::commands::keyboard::get_keyboard_layout,
             crate::commands::pty::pty_spawn,
             crate::commands::pty::pty_write,
