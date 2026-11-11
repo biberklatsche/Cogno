@@ -187,6 +187,28 @@ impl AskpassState {
     }
 }
 
+/// Makes ssh ask through this binary instead of a terminal it does not have:
+/// `session_id` and `token` are what `open_session` took and gave. Returns
+/// the helper, or `None` when nothing could answer (no HTTP server) and the
+/// process is left as it is.
+pub fn point_ssh_at_helper(
+    command: &mut std::process::Command,
+    port: u16,
+    session_id: &str,
+    token: &str,
+) -> Option<std::path::PathBuf> {
+    let helper = std::env::current_exe().ok()?;
+    if port == 0 {
+        return None;
+    }
+    command.env("SSH_ASKPASS", &helper);
+    command.env("SSH_ASKPASS_REQUIRE", "force");
+    command.env(SESSION_ENV, session_id);
+    command.env("COGNO_PORT", port.to_string());
+    command.env("COGNO_TOKEN", token);
+    Some(helper)
+}
+
 /// The window answers a prompt; `None` cancels it, and the process sees a failed read.
 #[tauri::command]
 pub fn askpass_answer(

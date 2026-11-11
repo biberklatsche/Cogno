@@ -59,6 +59,21 @@ pub enum Request {
 }
 
 impl Request {
+    /// The terminal the request is about, if it is about one.
+    pub fn terminal_id(&self) -> Option<&str> {
+        match self {
+            Request::PtySpawn { options, .. } => Some(&options.name),
+            Request::PtyWrite { terminal_id, .. }
+            | Request::PtyLineEditorAction { terminal_id, .. }
+            | Request::PtyResize { terminal_id, .. }
+            | Request::PtyKill { terminal_id }
+            | Request::PtyAck { terminal_id, .. }
+            | Request::ProcessTree { terminal_id }
+            | Request::TerminateProcess { terminal_id, .. } => Some(terminal_id),
+            Request::ReleaseOwner { .. } | Request::TerminalProcesses | Request::ListShells => None,
+        }
+    }
+
     /// Whether answering can take a while (starting a shell, closing a
     /// ConPTY, walking the machine's processes).
     pub fn may_block(&self) -> bool {

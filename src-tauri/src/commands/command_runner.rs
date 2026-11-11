@@ -1,4 +1,4 @@
-use crate::commands::askpass::{AskpassState, SESSION_ENV};
+use crate::commands::askpass::{point_ssh_at_helper, AskpassState, SESSION_ENV};
 use crate::http_server::HttpServerState;
 use serde::Serialize;
 use std::io::{Read, Write};
@@ -111,17 +111,11 @@ fn apply_prompt_environment(
     askpass_token: &str,
 ) {
     command.env("GIT_TERMINAL_PROMPT", "0");
-    let http = app.state::<HttpServerState>();
-    let helper = std::env::current_exe().ok();
-    let (Some(helper), true) = (helper, http.port() != 0) else {
+    let port = app.state::<HttpServerState>().port();
+    let Some(helper) = point_ssh_at_helper(command, port, session_id, askpass_token) else {
         return;
     };
     command.env("GIT_ASKPASS", &helper);
-    command.env("SSH_ASKPASS", &helper);
-    command.env("SSH_ASKPASS_REQUIRE", "force");
-    command.env(SESSION_ENV, session_id);
-    command.env("COGNO_PORT", http.port().to_string());
-    command.env("COGNO_TOKEN", askpass_token);
     let shared = [
         "GIT_ASKPASS/p",
         "SSH_ASKPASS/p",
