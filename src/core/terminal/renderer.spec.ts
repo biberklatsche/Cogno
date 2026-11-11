@@ -44,6 +44,19 @@ vi.mock("@xterm/addon-webgl", () => ({
   },
 }));
 vi.mock("@xterm/addon-ligatures", () => ({ LigaturesAddon: vi.fn() }));
+let imageAddonOptions: unknown;
+let imageAddonDisposeSpy: ReturnType<typeof vi.fn> | undefined;
+vi.mock("@xterm/addon-image", () => ({
+  ImageAddon: class ImageAddonMock {
+    storageLimit = 0;
+    dispose = vi.fn();
+
+    constructor(options: unknown) {
+      imageAddonOptions = options;
+      imageAddonDisposeSpy = this.dispose;
+    }
+  },
+}));
 
 describe("Renderer", () => {
   let renderer: Renderer;
@@ -337,6 +350,57 @@ describe("Renderer", () => {
       renderer.setOptions({ ...mockOptions, theme: undefined });
 
       expect(terminal.options.theme).toEqual({ background: "#000000" });
+    });
+  });
+
+  describe("images", () => {
+    function terminalOf(index: number) {
+      return vi.mocked(Terminal).mock.results[index].value;
+    }
+    function lastTerminalIndex(): number {
+      return vi.mocked(Terminal).mock.results.length - 1;
+    }
+
+    beforeEach(() => {
+      imageAddonOptions = undefined;
+      imageAddonDisposeSpy = undefined;
+    });
+
+    it("does not load the image addon unless asked for", async () => {
+      await vi.dynamicImportSettled();
+
+      expect(imageAddonOptions).toBeUndefined();
+    });
+
+    it("loads the image addon with the storage limit when images are on", async () => {
+      new Renderer(
+        { ...mockOptions, images: true, imageStorageLimitMb: 32 },
+        "linux",
+        new WebglContextPool(),
+      );
+      const terminalInstance = terminalOf(lastTerminalIndex());
+      await vi.dynamicImportSettled();
+
+      expect(imageAddonOptions).toEqual({ storageLimit: 32 });
+      expect(terminalInstance.loadAddon).toHaveBeenCalledTimes(4); // Fit, Search, Unicode, Image
+    });
+
+    it("drops the image addon when images are switched off", async () => {
+      renderer.setOptions({ ...mockOptions, images: true });
+      await vi.dynamicImportSettled();
+      expect(imageAddonDisposeSpy).toBeDefined();
+
+      renderer.setOptions({ ...mockOptions, images: false });
+
+      expect(imageAddonDisposeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not load the addon when images were switched off while it was fetched", async () => {
+      renderer.setOptions({ ...mockOptions, images: true });
+      renderer.setOptions({ ...mockOptions, images: false });
+      await vi.dynamicImportSettled();
+
+      expect(imageAddonOptions).toBeUndefined();
     });
   });
 });

@@ -612,6 +612,11 @@ export class SessionHost {
     return this.clipboardHandler?.copy() ?? Promise.resolve();
   }
 
+  /** The user's answer to the fact `clipboardReadRequested`. */
+  answerClipboardRead(allowed: boolean): Promise<void> {
+    return this.clipboardHandler?.answerClipboardRead(allowed) ?? Promise.resolve();
+  }
+
   cut(): void {
     this.editor?.cut();
   }

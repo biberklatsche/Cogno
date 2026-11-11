@@ -18,7 +18,7 @@ import { ClipboardHandler } from "./clipboard.handler";
 
 function makeConfigService(
   overrides: {
-    read?: "allow" | "deny";
+    read?: "ask" | "allow" | "deny";
     write?: "allow" | "deny";
     trim_trailing_spaces?: boolean;
     clear_on_copy?: boolean;
@@ -391,6 +391,59 @@ describe("ClipboardHandler", () => {
 
         await vi.waitFor(() => expect(mockPty.write).toHaveBeenCalledWith("\x1b]52;c;\x07"));
         expect(clipboardStub.readText).not.toHaveBeenCalled();
+      });
+
+      describe("when clipboard.read is ask", () => {
+        beforeEach(() => {
+          handler = createHandler(makeConfigService({ read: "ask" }));
+          vi.mocked(mockTerminal.parser.registerOscHandler).mockImplementation(
+            (code, oscHandler) => {
+              if (code === 52) triggerOsc52 = oscHandler as (data: string) => boolean;
+              return { dispose: vi.fn() };
+            },
+          );
+          handler.registerTerminal(mockTerminal);
+          vi.mocked(clipboardStub.readText).mockResolvedValue("secret");
+        });
+
+        it("states the request and reads nothing until it is answered", async () => {
+          triggerOsc52("c;?");
+          await new Promise((r) => setTimeout(r, 10));
+
+          expect(mockStateManager.report).toHaveBeenCalledWith({ type: "clipboardReadRequested" });
+          expect(clipboardStub.readText).not.toHaveBeenCalled();
+          expect(mockPty.write).not.toHaveBeenCalled();
+        });
+
+        it("hands over the clipboard once the user allows it", async () => {
+          triggerOsc52("c;?");
+          await handler.answerClipboardRead(true);
+
+          expect(mockPty.write).toHaveBeenCalledWith(`\x1b]52;c;${btoa("secret")}\x07`);
+        });
+
+        it("answers with an empty payload when the user refuses", async () => {
+          triggerOsc52("c;?");
+          await handler.answerClipboardRead(false);
+
+          expect(mockPty.write).toHaveBeenCalledWith("\x1b]52;c;\x07");
+          expect(clipboardStub.readText).not.toHaveBeenCalled();
+        });
+
+        it("refuses a second request while the first is unanswered", async () => {
+          triggerOsc52("c;?");
+          triggerOsc52("c;?");
+          await vi.waitFor(() => expect(mockPty.write).toHaveBeenCalledWith("\x1b]52;c;\x07"));
+
+          expect(mockStateManager.report).toHaveBeenCalledTimes(1);
+        });
+
+        it("ignores an answer nobody asked for", async () => {
+          await handler.answerClipboardRead(true);
+
+          expect(clipboardStub.readText).not.toHaveBeenCalled();
+          expect(mockPty.write).not.toHaveBeenCalled();
+        });
       });
     });
   });

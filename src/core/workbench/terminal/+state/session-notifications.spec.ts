@@ -206,6 +206,32 @@ describe("SessionNotifications", () => {
     });
   });
 
+  it("confirms a copied link in the app only", () => {
+    host.model.report({ type: "linkCopied", target: "https://example.com/a" });
+
+    expect(bus.publish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "Notification",
+        payload: expect.objectContaining({
+          header: "Copied to clipboard",
+          body: "https://example.com/a",
+          channels: { os: false, badge: false },
+        }),
+      }),
+    );
+  });
+
+  it("uses the title a program sent with its message (OSC 777)", () => {
+    host.model.report({ type: "notificationRequested", message: "done", title: "Build" });
+
+    expect(bus.publish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "Notification",
+        payload: expect.objectContaining({ header: "Build", body: "done" }),
+      }),
+    );
+  });
+
   describe("menu reads the workbench's maximized pane", () => {
     it("shows Minimize when the pane is maximized", () => {
       maximizedTerminalId = terminalId;

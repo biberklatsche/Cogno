@@ -9,11 +9,13 @@ const decorationColorSchema = z.strictObject({
     .describe("Marker color in the overview ruler beside the scrollbar."),
 });
 
-export const TerminalSettingsSchema = z.strictObject({
+export const TerminalConfigSchema = z.strictObject({
   webgl: z
     .boolean()
     .optional()
-    .describe("Render the terminal with the WebGL renderer instead of the canvas one."),
+    .describe(
+      "Draw the terminal with the graphics card, which is faster. Turn it off if text looks broken.",
+    ),
   decoration: z
     .strictObject({
       color: decorationColorSchema
@@ -35,11 +37,15 @@ export const TerminalSettingsSchema = z.strictObject({
   ignore_bracketed_paste_mode: z
     .boolean()
     .optional()
-    .describe("Paste as plain keystrokes even when the shell asked for bracketed paste."),
+    .describe(
+      "Paste text as if you had typed it, even where a program wants to be told it is a paste. Pasted lines then run at once.",
+    ),
   minimum_contrast_ratio: z
     .number()
     .optional()
-    .describe("Raise text contrast until at least this ratio is met; 1 disables the correction."),
+    .describe(
+      "Adjust text colors until they stand out from their background by at least this ratio; 1 changes nothing.",
+    ),
   screen_reader_mode: z.boolean().optional().describe("Expose terminal output to screen readers."),
   allow_transparency: z
     .boolean()
@@ -56,30 +62,49 @@ export const TerminalSettingsSchema = z.strictObject({
     })
     .optional()
     .describe("The OSC 9;4 progress bar in the terminal header."),
+  images: z
+    .strictObject({
+      enabled: z
+        .boolean()
+        .optional()
+        .describe(
+          "Show images that programs print into the terminal (sixel and iTerm2's OSC 1337).",
+        ),
+      storage_limit_mb: z
+        .number()
+        .min(1)
+        .max(1000)
+        .optional()
+        .describe(
+          "Megabytes of images each terminal keeps; when it is full the oldest images are replaced by a placeholder.",
+        ),
+    })
+    .optional()
+    .describe("Inline images in the terminal output."),
   history: z
     .strictObject({
       max_entries: limitSchema
         .optional()
         .describe(
-          "Maximum number of commands to keep per shell context in the command history log, or `unlimited`. Older entries beyond this count are pruned; 0 keeps none.",
+          "How many commands the history keeps per shell, or `unlimited`; the oldest go first. 0 keeps none.",
         ),
       ignore_commands_with_leading_space: z
         .boolean()
         .optional()
         .describe(
-          "Don't add a command to history if it was typed with a leading space, matching the HISTCONTROL=ignorespace convention used by bash/zsh.",
+          "Keep a command out of the history when you type a space in front of it, as bash and zsh do.",
         ),
       import_shell_history: z
         .boolean()
         .optional()
         .describe(
-          "On first launch with an empty history, import commands from the native shell history file (bash/gitbash: ~/.bash_history, zsh: ~/.zsh_history, powershell: PSReadLine ConsoleHost_history.txt).",
+          "Fill an empty history from your shell's own history file the first time Cogno starts (bash, zsh, PowerShell).",
         ),
       auto_execute: z
         .boolean()
         .optional()
         .describe(
-          "When enabled, selecting a history entry immediately executes the command. When disabled (default), the entry is written to the input line and must be confirmed with Enter.",
+          "Run a command as soon as you pick it from the history. Off puts it on the input line and waits for Enter.",
         ),
     })
     .optional()
@@ -90,13 +115,13 @@ export const TerminalSettingsSchema = z.strictObject({
         .boolean()
         .optional()
         .describe(
-          "Restore workspaces, tabs, panes and terminal scrollback on the next launch, auto-saved on idle, workspace switch and exit. When off, nothing is persisted and each launch starts fresh; the explicit workspace save controls apply instead.",
+          "Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.",
         ),
       scrollback: z
         .boolean()
         .optional()
         .describe(
-          "Include the terminal scrollback in the restored session, above a separator line. When off, the layout is restored but terminals start empty.",
+          "Bring back what the terminals showed, above a separator line. Off restores the layout with empty terminals.",
         ),
       max_lines: z
         .number()
@@ -104,7 +129,7 @@ export const TerminalSettingsSchema = z.strictObject({
         .min(0)
         .optional()
         .describe(
-          "Maximum scrollback lines captured per terminal for restore. Caps the stored size; 0 means no scrollback.",
+          "How many lines of output are kept per terminal for the next start; 0 keeps none.",
         ),
     })
     .optional()

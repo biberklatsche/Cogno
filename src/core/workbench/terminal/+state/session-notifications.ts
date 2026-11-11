@@ -11,7 +11,8 @@ import { OSC9_EVENT_ID, TERMINAL_NOTIFICATION_SOURCE_ID } from "./terminal-notif
 
 /**
  * Everything the app tells the user about one session: the OSC 9 message,
- * the long-running-command notice, the untrusted-sequence warning. Whether an
+ * the long-running-command notice, the untrusted-sequence warning, the
+ * confirmation that a clicked link was copied. Whether an
  * event notifies is config (`notification.source.terminal.*`); where it goes
  * is the dispatch's business, so nothing here names a channel.
  */
@@ -45,7 +46,10 @@ export class SessionNotifications {
         this.completedCommandNotificationHandler.handleCompletedCommand(fact.command);
         break;
       case "notificationRequested":
-        this.notifyFromTerminal(fact.message);
+        this.notifyFromTerminal(fact.message, fact.title);
+        break;
+      case "linkCopied":
+        this.confirmLinkCopied(fact.target);
         break;
       case "untrustedSequencesIgnored":
         this.warn(
@@ -87,18 +91,35 @@ export class SessionNotifications {
     });
   }
 
-  /** OSC 9 asked for attention; whether it is shown is the dispatch's call. */
-  private notifyFromTerminal(message: string): void {
+  /** A program asked for attention (OSC 9 / 777); whether it is shown is the dispatch's call. */
+  private notifyFromTerminal(message: string, title: string | undefined): void {
     this.bus.publish({
       type: "Notification",
       payload: {
         event: { source: TERMINAL_NOTIFICATION_SOURCE_ID, id: OSC9_EVENT_ID },
-        header: "Terminal Notification",
+        header: title ?? "Terminal Notification",
         body: message,
         type: "info",
         timestamp: new Date(),
         terminalId: this.host.terminalId,
         target: this.resolveNotificationTarget(),
+      },
+    });
+  }
+
+  /**
+   * The answer to a click the user just made in this terminal: a toast if
+   * they have toasts on, never a system notification or an unread mark.
+   */
+  private confirmLinkCopied(target: string): void {
+    this.bus.publish({
+      type: "Notification",
+      payload: {
+        header: "Copied to clipboard",
+        body: target,
+        type: "info",
+        timestamp: new Date(),
+        channels: { os: false, badge: false },
       },
     });
   }

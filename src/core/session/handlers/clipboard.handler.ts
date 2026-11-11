@@ -13,13 +13,23 @@ function base64ToText(base64: string): string {
   return new TextDecoder().decode(Uint8Array.from(atob(base64), (c) => c.charCodeAt(0)));
 }
 
+/** The OSC 52 answer that hands over nothing: refused, or nothing to read. */
+const OSC52_EMPTY_REPLY = "\x1b]52;c;\x07";
+
 /**
  * Copy, paste and OSC 52 for one session. `paste()` and `copy()` are asked
  * for; what they do with the input line is decided here.
+ *
+ * A program reading the clipboard over OSC 52 is not the user pasting:
+ * anything in the output can send the request - a `cat` of a prepared file,
+ * an SSH host. With `clipboard.read = ask` the session states the request
+ * and holds the answer back until `answerClipboardRead`.
  */
 export class ClipboardHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private osc52Disposable?: IDisposable;
+  /** A read the user has been asked about and not answered yet. */
+  private isReadAwaitingAnswer = false;
 
   constructor(
     private readonly _clipboard: ClipboardAccess,
@@ -34,6 +44,18 @@ export class ClipboardHandler implements ITerminalHandler {
   dispose(): void {
     this.osc52Disposable?.dispose();
     this.osc52Disposable = undefined;
+    this.isReadAwaitingAnswer = false;
+  }
+
+  /** The user's answer to `clipboardReadRequested`. Without an open request it does nothing. */
+  async answerClipboardRead(allowed: boolean): Promise<void> {
+    if (!this.isReadAwaitingAnswer) return;
+    this.isReadAwaitingAnswer = false;
+    if (allowed) {
+      await this.replyWithClipboard();
+    } else {
+      this.pty.write(OSC52_EMPTY_REPLY);
+    }
   }
 
   registerTerminal(terminal: Terminal): IDisposable {
@@ -123,16 +145,26 @@ export class ClipboardHandler implements ITerminalHandler {
   }
 
   private async handleOsc52Read(): Promise<void> {
-    const allowed = (this.configService.config.clipboard?.read ?? "allow") === "allow";
-    if (!allowed) {
-      this.pty.write("\x1b]52;c;\x07");
+    const access = this.configService.config.clipboard?.read ?? "ask";
+    if (access === "allow") {
+      await this.replyWithClipboard();
       return;
     }
+    // One question at a time: a request while one is open is refused, not queued.
+    if (access === "deny" || this.isReadAwaitingAnswer) {
+      this.pty.write(OSC52_EMPTY_REPLY);
+      return;
+    }
+    this.isReadAwaitingAnswer = true;
+    this.model.report({ type: "clipboardReadRequested" });
+  }
+
+  private async replyWithClipboard(): Promise<void> {
     try {
       const text = await this._clipboard.readText();
       this.pty.write(`\x1b]52;c;${bytesToBase64(new TextEncoder().encode(text))}\x07`);
     } catch {
-      this.pty.write("\x1b]52;c;\x07");
+      this.pty.write(OSC52_EMPTY_REPLY);
     }
   }
 

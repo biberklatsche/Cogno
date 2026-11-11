@@ -4,7 +4,7 @@ import {
 } from "@cogno/core/api/contributions";
 import { ZodRawShape, z } from "zod";
 import { baseConfigSchemaShape } from "./models/config";
-import { createNotificationSettingsSchema } from "./models/notification-settings";
+import { createNotificationConfigSchema } from "./models/notification-config";
 
 /**
  * The config schema: the core's own keys plus what the features contribute.
@@ -18,7 +18,7 @@ export function createConfigSchema(
 ): z.ZodObject<ZodRawShape> {
   const schemaShape: Record<string, ZodRawShape[string]> = {
     ...baseConfigSchemaShape,
-    notification: createNotificationSettingsSchema(notificationSources)
+    notification: createNotificationConfigSchema(notificationSources)
       .optional()
       .describe(baseConfigSchemaShape.notification.description ?? ""),
   };

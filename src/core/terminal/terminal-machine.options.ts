@@ -41,6 +41,11 @@ export type TerminalMachineOptions = {
   readonly cursorStyle?: ICursorStyle;
   readonly cursorInactiveStyle?: "outline" | "block" | "bar" | "underline" | "none";
 
+  /** Show images a program prints (sixel, OSC 1337). */
+  readonly images?: boolean;
+  /** How many megabytes of images this terminal keeps before the oldest go. */
+  readonly imageStorageLimitMb?: number;
+
   /** Colours, ready to use - the machine does not know a config key. */
   readonly theme?: ITheme;
 };

@@ -33,7 +33,10 @@ const AppFontSchema = z.strictObject({
 });
 
 export const FontSchema = z.strictObject({
-  family: z.string().optional().describe("Terminal font family; falls back per OS when unset."),
+  family: z
+    .string()
+    .optional()
+    .describe("Font of the terminal; when empty, Cogno picks one for your system."),
   size: z
     .number()
     .int()

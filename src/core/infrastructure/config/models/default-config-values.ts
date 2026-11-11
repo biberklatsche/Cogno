@@ -159,6 +159,10 @@ export const defaultSettings = {
     progress_bar: {
       enabled: "true",
     },
+    images: {
+      enabled: "false",
+      storage_limit_mb: "32",
+    },
     history: {
       max_entries: "unlimited",
       ignore_commands_with_leading_space: "false",
@@ -240,7 +244,7 @@ export const defaultSettings = {
     install: "background",
   },
   clipboard: {
-    read: "allow",
+    read: "ask",
     write: "allow",
     trim_trailing_spaces: "true",
   },

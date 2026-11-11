@@ -245,8 +245,13 @@ außer der Nutzer leitet das Token bewusst weiter (`SendEnv
 COGNO_SESSION_TOKEN` plus Integration auf dem Host). Dann ist der Wechsel
 authentisiert und gewollt. Für WSL wird die Umgebung übernommen, der
 Wechsel funktioniert ohne Zutun. Rein informative Sequenzen (OSC 0/2 Titel,
-OSC 9 Nachricht, 9;4 Fortschritt) bleiben ohne Token — sie ändern kein
-Modell, nur Anzeige.
+OSC 9 und OSC 777 Nachricht, 9;4 Fortschritt, OSC 8 Hyperlink) bleiben ohne
+Token — sie ändern kein Modell, nur Anzeige. Dieselbe Herkunftsfrage stellt
+sich bei OSC 52: die Zwischenablage zu lesen kann jeder Inhalt verlangen,
+deshalb fragt die Session standardmäßig nach (`clipboard.read = ask`) — sie
+meldet den Fakt `clipboardReadRequested`, die Workbench fragt den Nutzer und
+ruft `answerClipboardRead` auf dem Host. Einfügen durch den Nutzer ist davon
+nicht berührt.
 
 **Der lokale HTTP-Server ist ebenso geschützt.** Über ihn melden
 Coding-Agent-Hooks ihre Ereignisse und löst `cogno action run` Aktionen aus.
@@ -329,7 +334,7 @@ Informationen fließen trotzdem nach oben — als **Fakten über das Modell**, n
 als Befehle an die Workbench. Die Session veröffentlicht auf ihrem Modell bzw.
 ihrem Lebenszyklus: cwd geändert, Titel geändert oder gelöscht (OSC 0/2), Kommando
 begonnen/beendet mit Dauer und Exit-Code, Shell-Kontext gewechselt,
-OSC-9-Nachricht empfangen, Fortschritt (OSC 9;4), Prozess beendet. Die
+OSC-9-/OSC-777-Nachricht empfangen, Fortschritt (OSC 9;4), Prozess beendet. Die
 Workbench abonniert das und entscheidet selbst: Tab-Titel und Busy-Indikator
 aktualisieren, bei Prozessende Pane und — wenn es das letzte Pane war — Tab
 entfernen. Auch Benachrichtigungen entstehen so: die Session meldet „Kommando
@@ -1460,7 +1465,7 @@ Ausnahme von „Feature-Einstellungen stehen unter `feature.<id>`" sind die
 Ereignisse einer Notification-Quelle: Sie stehen unter
 `notification.source.<id>`, weil `notification` Core gehört und die
 Quellen darunter **zusammengesetzt** sind, nicht gewusst — Core baut das
-Schema aus den deklarierten Quellen (`createNotificationSettingsSchema`),
+Schema aus den deklarierten Quellen (`createNotificationConfigSchema`),
 die Doku-Generatoren tun dasselbe, und ein Ereignis einer nicht deklarierten
 Quelle ist ein unbekannter Schlüssel wie jeder Tippfehler. Auch ihre
 Defaults sind zusammengesetzt, nicht gewusst: Per Konvention ist jedes

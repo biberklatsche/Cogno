@@ -14,7 +14,7 @@ export const TERMINAL_NOTIFICATION_SOURCE: NotificationSourceContract = {
     {
       id: OSC9_EVENT_ID,
       label: "A program asks for attention",
-      description: "Notify when a program sends a notification via the OSC 9 escape sequence.",
+      description: "Notify when a program in the terminal sends a message (OSC 9 or OSC 777).",
     },
     {
       id: LONG_RUNNING_COMMAND_EVENT_ID,

@@ -21,7 +21,7 @@ Terminal and app fonts.
 
 ### `font.family`
 
-Terminal font family; falls back per OS when unset.
+Font of the terminal; when empty, Cogno picks one for your system.
 
 **Type:** string · **Default:** `monospace`
 
@@ -407,13 +407,13 @@ Clipboard access and copy behaviour.
 
 ### `clipboard.read`
 
-Whether programs in the terminal may read the clipboard (OSC 52).
+Whether programs in the terminal may read your clipboard (OSC 52); `ask` asks each time. Your own pasting always works.
 
-**Type:** `allow` | `deny` · **Default:** `allow`
+**Type:** `ask` | `allow` | `deny` · **Default:** `ask`
 
 ### `clipboard.write`
 
-Whether programs in the terminal may write the clipboard (OSC 52).
+Whether programs in the terminal may put text on your clipboard (OSC 52).
 
 **Type:** `allow` | `deny` · **Default:** `allow`
 
@@ -471,19 +471,19 @@ Directory the shell starts in.
 
 ### `shell.profiles.<name>.inject_cogno_cli`
 
-Put the `cogno` CLI on the shell's PATH.
+Make the `cogno` command available in this shell.
 
 **Type:** boolean
 
 ### `shell.profiles.<name>.enable_shell_integration`
 
-Load Cogno's shell integration (prompt markers, command status, cwd tracking).
+Let Cogno follow this shell: which commands run, how they end and the current directory. Without it, history and command status stay empty.
 
 **Type:** boolean
 
 ### `shell.profiles.<name>.load_user_rc`
 
-Also load your own shell rc/profile files.
+Also load your own shell startup files (`.zshrc`, `.bashrc`, the PowerShell profile).
 
 **Type:** boolean
 
@@ -627,7 +627,7 @@ Static text to display, instead of a `field`.
 
 ### `keybind`
 
-One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.
+A key for an action, one per line, e.g. `keybind = Command+T=new_tab`. Your lines add to the defaults; the last line for an action wins.
 
 **Type:** lines
 
@@ -637,7 +637,7 @@ Terminal rendering and behaviour.
 
 ### `terminal.webgl`
 
-Render the terminal with the WebGL renderer instead of the canvas one.
+Draw the terminal with the graphics card, which is faster. Turn it off if text looks broken.
 
 **Type:** boolean · **Default:** `true` (linux: `false`)
 
@@ -685,13 +685,13 @@ How strongly panes that are not focused are dimmed, 0-100.
 
 ### `terminal.ignore_bracketed_paste_mode`
 
-Paste as plain keystrokes even when the shell asked for bracketed paste.
+Paste text as if you had typed it, even where a program wants to be told it is a paste. Pasted lines then run at once.
 
 **Type:** boolean · **Default:** `false`
 
 ### `terminal.minimum_contrast_ratio`
 
-Raise text contrast until at least this ratio is met; 1 disables the correction.
+Adjust text colors until they stand out from their background by at least this ratio; 1 changes nothing.
 
 **Type:** number · **Default:** `4`
 
@@ -725,45 +725,57 @@ Show the progress bar in the terminal header.
 
 **Type:** boolean · **Default:** `true`
 
+### `terminal.images.enabled`
+
+Show images that programs print into the terminal (sixel and iTerm2's OSC 1337).
+
+**Type:** boolean · **Default:** `false`
+
+### `terminal.images.storage_limit_mb`
+
+Megabytes of images each terminal keeps; when it is full the oldest images are replaced by a placeholder.
+
+**Type:** number 1-1000 · **Default:** `32`
+
 ### `terminal.history.max_entries`
 
-Maximum number of commands to keep per shell context in the command history log, or `unlimited`. Older entries beyond this count are pruned; 0 keeps none.
+How many commands the history keeps per shell, or `unlimited`; the oldest go first. 0 keeps none.
 
 **Type:** `unlimited` | integer ≥ 0 · **Default:** `unlimited`
 
 ### `terminal.history.ignore_commands_with_leading_space`
 
-Don't add a command to history if it was typed with a leading space, matching the HISTCONTROL=ignorespace convention used by bash/zsh.
+Keep a command out of the history when you type a space in front of it, as bash and zsh do.
 
 **Type:** boolean · **Default:** `false`
 
 ### `terminal.history.import_shell_history`
 
-On first launch with an empty history, import commands from the native shell history file (bash/gitbash: ~/.bash_history, zsh: ~/.zsh_history, powershell: PSReadLine ConsoleHost_history.txt).
+Fill an empty history from your shell's own history file the first time Cogno starts (bash, zsh, PowerShell).
 
 **Type:** boolean · **Default:** `false`
 
 ### `terminal.history.auto_execute`
 
-When enabled, selecting a history entry immediately executes the command. When disabled (default), the entry is written to the input line and must be confirmed with Enter.
+Run a command as soon as you pick it from the history. Off puts it on the input line and waits for Enter.
 
 **Type:** boolean · **Default:** `false`
 
 ### `terminal.restore.enabled`
 
-Restore workspaces, tabs, panes and terminal scrollback on the next launch, auto-saved on idle, workspace switch and exit. When off, nothing is persisted and each launch starts fresh; the explicit workspace save controls apply instead.
+Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.
 
 **Type:** boolean · **Default:** `true`
 
 ### `terminal.restore.scrollback`
 
-Include the terminal scrollback in the restored session, above a separator line. When off, the layout is restored but terminals start empty.
+Bring back what the terminals showed, above a separator line. Off restores the layout with empty terminals.
 
 **Type:** boolean · **Default:** `true`
 
 ### `terminal.restore.max_lines`
 
-Maximum scrollback lines captured per terminal for restore. Caps the stored size; 0 means no scrollback.
+How many lines of output are kept per terminal for the next start; 0 keeps none.
 
 **Type:** integer ≥ 0 · **Default:** `1000`
 
@@ -773,19 +785,19 @@ Command autocomplete behaviour.
 
 ### `autocomplete.provider.timeout_ms`
 
-Maximum time in milliseconds for one dynamic autocomplete provider.
+How long autocomplete waits, in milliseconds, for suggestions it has to look up (branches, containers) before it shows the rest.
 
 **Type:** integer ≥ 1 · **Default:** `160`
 
 ### `autocomplete.allowed_return_codes`
 
-Return codes a command may exit with to be suggested by autocomplete, e.g. `[0]` to suggest only successful commands. Empty (default) suggests every command the shell found. The history keeps every command regardless. A command's own list under `allowed_return_codes_by_command` wins.
+Exit codes a command may end with to be suggested; `[0]` suggests only successful commands, empty suggests all.
 
 **Type:** integer[] · **Default:** `[]`
 
 ### `autocomplete.allowed_return_codes_by_command.<name>`
 
-Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.
+Exit codes for one command, named by its first word, instead of `allowed_return_codes`; e.g. `allowed_return_codes_by_command.grep = [0,1]`.
 
 **Type:** integer[]
 
@@ -819,7 +831,7 @@ Mark the tab of the terminal a notification belongs to while that terminal isn't
 
 ### `notification.source.terminal.osc9.enabled`
 
-Notify when a program sends a notification via the OSC 9 escape sequence.
+Notify when a program in the terminal sends a message (OSC 9 or OSC 777).
 
 **Type:** boolean · **Default:** `false`
 
@@ -837,13 +849,13 @@ Notify only when a command ran for at least this many seconds.
 
 ### `notification.source.errors.handled.enabled`
 
-Notify about handled exceptions reported through the central error reporter.
+Notify when Cogno ran into an error and carried on.
 
 **Type:** boolean · **Default:** `false`
 
 ### `notification.source.errors.unhandled.enabled`
 
-Notify about unhandled renderer exceptions caught by the global error reporter.
+Notify when Cogno ran into an unexpected error.
 
 **Type:** boolean · **Default:** `false`
 
@@ -861,7 +873,7 @@ Notify when an agent has a question and needs input.
 
 ### `notification.source.coding_agents.ready.enabled`
 
-Notify when an agent becomes ready/idle.
+Notify when an agent has finished and waits for you.
 
 **Type:** boolean · **Default:** `false`
 
@@ -877,13 +889,13 @@ Local HTTP server used by the CLI.
 
 ### `http_server.enabled`
 
-Run the local HTTP server that the `cogno` CLI talks to.
+Let the `cogno` command and the coding-agent hooks reach this app through a local server.
 
 **Type:** boolean · **Default:** `true`
 
 ### `http_server.port`
 
-Port of the local HTTP server.
+Port the local server listens on.
 
 **Type:** integer 1-65535 · **Default:** `9000`
 
@@ -915,7 +927,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.workspace.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `10`
 
@@ -927,7 +939,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.notification_overview.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `20`
 
@@ -945,7 +957,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.command_palette.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `30`
 
@@ -957,7 +969,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.search.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `40`
 
@@ -969,7 +981,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.git.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `50`
 
@@ -981,7 +993,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.process_info.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `80`
 
@@ -993,6 +1005,6 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.coding_agents.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `65`

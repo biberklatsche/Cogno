@@ -39,6 +39,9 @@ export function toTerminalMachineOptions(config: Config): TerminalMachineOptions
     cursorBlink: config.cursor?.blink,
     cursorStyle: config.cursor?.style,
     cursorInactiveStyle: config.cursor?.inactive_style,
+    images: config.terminal?.images?.enabled,
+    imageStorageLimitMb: config.terminal?.images?.storage_limit_mb,
+
     theme: toTerminalTheme(config),
   };
 }

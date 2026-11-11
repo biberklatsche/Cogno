@@ -59,12 +59,17 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="search">
+    <div class="top">
       <app-side-menu-search-input
+        class="search"
         placeholder="Search settings"
         [value]="query()"
         (query)="query.set($event)"
       ></app-side-menu-search-input>
+      <button type="button" class="button small file-link" (click)="openConfigFile()">
+        <app-icon name="mdiOpenInNew"></app-icon>
+        Edit in settings file
+      </button>
     </div>
 
     <div class="body">
@@ -90,100 +95,122 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
       </select>
 
       <div class="rows">
+        @if (!view().searching) {
+          <h2 class="title">{{ activeSection() }}</h2>
+        }
         @if (view().rows.length === 0) {
           <p class="empty">No setting matches.</p>
         }
         @for (row of view().rows; track row.key) {
           @for (heading of row.headings; track heading.key) {
-            <h3 class="group" [class]="'group level-' + heading.level">{{ heading.title }}</h3>
+            <h3 [class]="'group level-' + heading.level">{{ heading.title }}</h3>
             @if (heading.description) {
               <p class="group-description">{{ heading.description }}</p>
             }
           }
-          <section class="row">
-            <header class="row-head">
-              <code class="key">{{ row.key }}</code>
-              <!-- Always in the layout, so a row never changes height when it becomes modified. -->
-              <button
-                type="button"
-                class="button icon-button reset"
-                [class.hidden]="!row.modified"
-                [attr.aria-hidden]="!row.modified"
-                [tabindex]="row.modified ? 0 : -1"
-                appTooltip="Reset to default"
-                (click)="reset(row)"
-              >
-                <app-icon name="mdiUndoVariant"></app-icon>
-              </button>
-            </header>
-            <p class="description">{{ row.description }}</p>
-            @switch (row.control.kind) {
-              @case ("boolean") {
-                <button type="button" class="toggle" (click)="write(row, row.value === 'true' ? 'false' : 'true')">
-                  <app-toggle-switch [checked]="row.value === 'true'"></app-toggle-switch>
-                  <span>{{ row.value === "true" ? "On" : "Off" }}</span>
+          <!-- A short control stands beside the text; one that takes text gets the line below it. -->
+          <section class="row" [class.wide]="isWide(row)">
+            <div class="text">
+              <header class="row-head">
+                <code class="key">{{ row.key }}</code>
+                <!-- Always in the layout, so a row never changes height when it becomes modified. -->
+                <button
+                  type="button"
+                  class="button icon-button reset"
+                  [class.hidden]="!row.modified"
+                  [attr.aria-hidden]="!row.modified"
+                  [tabindex]="row.modified ? 0 : -1"
+                  appTooltip="Reset to default"
+                  (click)="reset(row)"
+                >
+                  <app-icon name="mdiUndoVariant"></app-icon>
                 </button>
-              }
-              @case ("enum") {
-                <select [value]="row.value" (change)="write(row, enumSelect.value)" #enumSelect>
-                  @for (option of row.control.values; track option) {
-                    <option [value]="option">{{ option }}</option>
+              </header>
+              <p class="description">
+                @for (part of row.descriptionParts; track $index) {
+                  @if (part.code) {
+                    <code>{{ part.text }}</code>
+                  } @else {
+                    {{ part.text }}
                   }
-                </select>
+                }
+              </p>
+              @if (errors()[row.key]; as error) {
+                <p class="error">{{ error }}</p>
+              } @else if (row.modified && row.default !== undefined) {
+                <p class="default">Default: <code>{{ row.default === "" ? "(empty)" : row.default }}</code></p>
               }
-              @case ("number") {
-                <input
-                  type="number"
-                  [value]="row.value"
-                  [min]="row.control.min ?? null"
-                  [max]="row.control.max ?? null"
-                  [step]="row.control.integer ? 1 : 'any'"
-                  (change)="write(row, numberInput.value)"
-                  #numberInput
-                />
-              }
-              @case ("string") {
-                @if (row.control.hexColor) {
-                  <app-color-field
+            </div>
+            <div class="control">
+              @switch (row.control.kind) {
+                @case ("boolean") {
+                  <button
+                    type="button"
+                    class="toggle"
+                    role="switch"
+                    [attr.aria-checked]="row.value === 'true'"
+                    [attr.aria-label]="row.key"
+                    (click)="write(row, row.value === 'true' ? 'false' : 'true')"
+                  >
+                    <app-toggle-switch [checked]="row.value === 'true'"></app-toggle-switch>
+                  </button>
+                }
+                @case ("enum") {
+                  <select [value]="row.value" (change)="write(row, enumSelect.value)" #enumSelect>
+                    @for (option of row.control.values; track option) {
+                      <option [value]="option">{{ option }}</option>
+                    }
+                  </select>
+                }
+                @case ("number") {
+                  <input
+                    type="number"
                     [value]="row.value"
-                    [placeholder]="row.default ?? ''"
-                    (valueChange)="write(row, $event)"
-                  ></app-color-field>
-                } @else {
+                    [min]="row.control.min ?? null"
+                    [max]="row.control.max ?? null"
+                    [step]="row.control.integer ? 1 : 'any'"
+                    (change)="write(row, numberInput.value)"
+                    #numberInput
+                  />
+                }
+                @case ("string") {
+                  @if (row.control.hexColor) {
+                    <app-color-field
+                      [value]="row.value"
+                      [placeholder]="row.default ?? ''"
+                      (valueChange)="write(row, $event)"
+                    ></app-color-field>
+                  } @else {
+                    <input
+                      type="text"
+                      spellcheck="false"
+                      autocomplete="off"
+                      [value]="row.value"
+                      [placeholder]="row.default ?? ''"
+                      (change)="write(row, stringInput.value)"
+                      #stringInput
+                    />
+                  }
+                }
+                @case ("file-only") {
+                  <button type="button" class="button small" (click)="openConfigFile()">
+                    <app-icon name="mdiOpenInNew"></app-icon>
+                    Edit in settings file
+                  </button>
+                }
+                @default {
                   <input
                     type="text"
                     spellcheck="false"
                     autocomplete="off"
                     [value]="row.value"
                     [placeholder]="row.default ?? ''"
-                    (change)="write(row, stringInput.value)"
-                    #stringInput
+                    (change)="write(row, textInput.value)"
+                    #textInput
                   />
                 }
               }
-              @case ("file-only") {
-                <button type="button" class="button small" (click)="openConfigFile()">
-                  <app-icon name="mdiOpenInNew"></app-icon>
-                  Edit in settings file
-                </button>
-              }
-              @default {
-                <input
-                  type="text"
-                  spellcheck="false"
-                  autocomplete="off"
-                  [value]="row.value"
-                  [placeholder]="row.default ?? ''"
-                  (change)="write(row, textInput.value)"
-                  #textInput
-                />
-              }
-            }
-            @if (errors()[row.key]; as error) {
-              <p class="error">{{ error }}</p>
-            } @else if (row.default !== undefined && row.control.kind !== "file-only") {
-              <p class="default">Default: <code>{{ row.default === "" ? "(empty)" : row.default }}</code></p>
-            }
+            </div>
           </section>
         }
       </div>
@@ -192,16 +219,28 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
   styles: [
     `
       :host {
+        --settings-rule: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
         display: flex;
         flex-direction: column;
         height: 100%;
         min-height: 0;
-        gap: 0.5rem;
+        gap: 0.75rem;
         font-size: var(--panel-font-size);
         container-type: inline-size;
       }
-      .search {
+      .top {
         flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .search {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .file-link {
+        flex: 0 0 auto;
+        white-space: nowrap;
       }
       .body {
         flex: 1 1 auto;
@@ -225,6 +264,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
       @container (min-width: 520px) {
         .body {
           flex-direction: row;
+          gap: 1.5rem;
         }
         .sections {
           display: flex;
@@ -237,15 +277,15 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         display: flex;
         justify-content: space-between;
         gap: 0.5rem;
-        padding: 0.35rem 0.5rem;
+        padding: 0.45rem 0.6rem;
         border: 0;
-        border-radius: 4px;
+        border-radius: 6px;
         background: transparent;
         color: inherit;
         font: inherit;
         text-align: left;
         cursor: pointer;
-        opacity: 0.8;
+        opacity: 0.75;
       }
       .section:hover,
       .section.active {
@@ -262,64 +302,95 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         overflow: auto;
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
-        padding-right: 0.25rem;
+        padding-right: 0.5rem;
       }
-      /* Headings step down with depth: section, group, subgroup, and anything deeper. */
-      .group {
-        margin: 1rem 0 0.2rem;
-        font-weight: 600;
-        line-height: 1.2;
+      /* The section's name heads the page; while searching each section heads its own rows. */
+      .title,
+      .group.level-0 {
+        margin: 0 0 0.25rem;
+        font-size: 1.3em;
+        font-weight: 500;
+        line-height: 1.3;
       }
       .group.level-0 {
-        font-size: 1rem;
-        margin-top: 1.4rem;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+        margin-top: 2rem;
       }
-      .group.level-1 {
-        font-size: 0.85rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        opacity: 0.85;
+      /* A group is named in the terminal's font, quietly, above a rule that opens its rows. */
+      .group {
+        margin: 1.75rem 0 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--settings-rule);
+        font-family: var(--terminal-font-family, monospace);
+        font-size: 0.9em;
+        font-weight: 400;
+        line-height: 1.3;
+        opacity: 0.65;
       }
+      .group.level-0 {
+        padding-bottom: 0;
+        border-bottom: 0;
+        font-family: inherit;
+        opacity: 1;
+      }
+      /* Deeper groups step in instead of growing quieter. */
       .group.level-2 {
-        font-size: 0.8rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        opacity: 0.6;
-        margin-top: 0.8rem;
+        margin-top: 1.25rem;
       }
       .group.level-3,
       .group.level-4,
       .group.level-5 {
-        font-size: 0.8rem;
-        font-weight: 500;
-        opacity: 0.7;
-        margin: 0.5rem 0 0.1rem 0.6rem;
+        margin-top: 1rem;
+        padding-left: 0.6rem;
       }
       .rows > .group:first-child {
         margin-top: 0;
       }
       .group-description {
-        margin: 0 0 0.3rem;
-        font-size: 0.8em;
-        opacity: 0.6;
+        margin: 0.5rem 0 0;
+        font-size: 0.9em;
+        line-height: 1.45;
+        opacity: 0.65;
       }
       .row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.5rem 1.5rem;
+        padding: 1rem 0;
+      }
+      /* A rule between two rows; a heading already draws the one above its first row. */
+      .row + .row {
+        border-top: 1px solid var(--settings-rule);
+      }
+      .text {
         display: flex;
         flex-direction: column;
-        gap: 0.3rem;
-        padding: 0.5rem 0.6rem;
-        border-radius: 4px;
+        gap: 0.25rem;
+        min-width: 0;
       }
-      .row:hover {
-        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+      .control {
+        display: flex;
+        justify-content: flex-end;
+        min-width: 0;
+      }
+      .row.wide {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .row.wide .control {
+        justify-content: flex-start;
+      }
+      /* With room to spare, a text field stands beside its description like every other control. */
+      @container (min-width: 820px) {
+        .row.wide {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+        }
+        .row.wide .control {
+          justify-content: flex-end;
+        }
       }
       .row-head {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 0.5rem;
         /* The reset button's height, whether it is shown or not. */
         min-height: 26px;
@@ -328,23 +399,26 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         visibility: hidden;
         pointer-events: none;
       }
-      /* The key is what the file says, so it leads the row: larger than the description. */
+      /* The key is what the file says, so it names the row. */
       .key {
         font-family: var(--terminal-font-family, monospace);
-        font-size: 1.1em;
-        font-weight: 600;
+        font-size: 1.05em;
+        font-weight: 500;
         overflow-wrap: anywhere;
+      }
+      .description code {
+        font-family: var(--terminal-font-family, monospace);
+        font-size: 0.95em;
       }
       .description {
         margin: 0;
-        opacity: 0.8;
-        line-height: 1.4;
+        font-size: 0.92em;
+        line-height: 1.45;
+        opacity: 0.7;
       }
       .toggle {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        align-self: flex-start;
         padding: 0.2rem 0;
         border: 0;
         background: transparent;
@@ -352,25 +426,34 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         font: inherit;
         cursor: pointer;
       }
-      .row input,
-      .row select,
-      .row app-color-field {
+      .control input,
+      .control select,
+      .control app-color-field {
+        width: 100%;
         max-width: 24rem;
         font-size: inherit;
+      }
+      .control select {
+        width: auto;
+      }
+      .control input[type="number"] {
+        width: 7rem;
       }
       .default,
       .error,
       .empty {
         margin: 0;
-        font-size: 0.8em;
-        opacity: 0.6;
+        font-size: 0.85em;
+        opacity: 0.55;
+      }
+      .empty {
+        padding: 1rem 0;
       }
       .error {
         opacity: 1;
         color: var(--color-red, inherit);
       }
       .button.small {
-        align-self: flex-start;
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
@@ -444,6 +527,12 @@ export class SettingsPanelComponent {
           [row.key]: error instanceof Error ? error.message : String(error),
         })),
       );
+  }
+
+  /** A control that takes text needs the row's width; a switch, a choice or a number does not. */
+  isWide(row: SettingRow): boolean {
+    const kind = row.control.kind;
+    return kind !== "boolean" && kind !== "enum" && kind !== "number";
   }
 
   /** Takes the key out of the file; the default applies again. */

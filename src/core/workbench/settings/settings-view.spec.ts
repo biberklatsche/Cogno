@@ -8,6 +8,7 @@ import {
   SettingRowsInput,
   SettingsViewFilter,
   sectionOfKey,
+  splitAtBackticks,
 } from "./settings-view";
 
 const descriptor = (partial: Partial<SettingDescriptor> & { key: string }): SettingDescriptor => ({
@@ -207,5 +208,21 @@ describe("sectionOfKey", () => {
   it("finds the section of a top-level key, and none for a key no setting has", () => {
     expect(sectionOfKey(descriptors, "font")).toBe("Font");
     expect(sectionOfKey(descriptors, "fon")).toBeUndefined();
+  });
+});
+
+describe("splitAtBackticks", () => {
+  it("sets the text between backticks apart as code", () => {
+    expect(splitAtBackticks("Use `ask` or `deny`.")).toEqual([
+      { text: "Use ", code: false },
+      { text: "ask", code: true },
+      { text: " or ", code: false },
+      { text: "deny", code: true },
+      { text: ".", code: false },
+    ]);
+  });
+
+  it("leaves an unpaired backtick as text", () => {
+    expect(splitAtBackticks("a ` b")).toEqual([{ text: "a ` b", code: false }]);
   });
 });

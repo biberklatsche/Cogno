@@ -22,8 +22,15 @@ export type SessionFact =
   | { readonly type: "filterBlockRequested"; readonly range: CommandMenuBlockRange }
   /** A program set the terminal title (OSC 0 / OSC 2), or cleared it (`undefined`). */
   | { readonly type: "titleChanged"; readonly title: string | undefined }
-  /** A program asked for the user's attention (OSC 9). */
-  | { readonly type: "notificationRequested"; readonly message: string }
+  /** A program asked for the user's attention (OSC 9, or OSC 777 with a title of its own). */
+  | { readonly type: "notificationRequested"; readonly message: string; readonly title?: string }
+  /** The user clicked a link in the output and its target is in the clipboard now. */
+  | { readonly type: "linkCopied"; readonly target: string }
+  /**
+   * A program asked to read the clipboard (OSC 52) and the user is to decide.
+   * The program waits until the session is told with `answerClipboardRead`.
+   */
+  | { readonly type: "clipboardReadRequested" }
   /** A full-screen program took over the terminal, or gave it back. */
   | { readonly type: "fullScreenChanged"; readonly active: boolean }
   /** The padding around the terminal was removed or restored; the usable area changed. */
