@@ -677,12 +677,12 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "clap",
+ "cogno-host",
  "dirs 6.0.0",
  "hex",
  "libc",
  "log",
  "notify-rust",
- "portable-pty",
  "reqwest 0.12.28",
  "ring 0.16.20",
  "rusqlite",
@@ -703,6 +703,21 @@ dependencies = [
  "tauri-plugin-window-state",
  "tauri-winrt-notification",
  "tokio",
+ "uuid",
+ "winapi",
+]
+
+[[package]]
+name = "cogno-host"
+version = "0.5.0"
+dependencies = [
+ "dirs 6.0.0",
+ "libc",
+ "log",
+ "portable-pty",
+ "serde",
+ "serde_json",
+ "sysinfo",
  "uuid",
  "which",
  "winapi",

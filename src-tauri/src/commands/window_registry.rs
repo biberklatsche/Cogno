@@ -4,12 +4,13 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
 
-use super::pty::PtyState;
+use crate::host::HostState;
 
 /// Emit `event` to the window that owns `terminal_id` (or the last-focused
 /// window when no terminal is given or known), falling back to a broadcast
 /// when no target window is known yet. A terminal's window is known by its
-/// PTY alone, which carries the window that spawned it (ARCHITECTURE.md 2.6).
+/// session in the host alone, which carries the window that spawned it as its
+/// owner (ARCHITECTURE.md 2.6).
 /// Everything that resolves a target window goes through here; code that
 /// already holds its window's label (a session's exit, a quit request) emits
 /// to it directly.
@@ -20,7 +21,7 @@ pub fn route<P: Serialize + Clone>(
     terminal_id: Option<&str>,
 ) {
     let target = terminal_id
-        .and_then(|id| app.state::<PtyState>().window_of(id))
+        .and_then(|id| app.state::<HostState>().window_of(id))
         .or_else(|| app.state::<WindowRegistry>().last_focused());
     match target {
         Some(label) => {
