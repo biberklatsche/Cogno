@@ -126,7 +126,9 @@ Datenbank-Bridge und Migrations-Runner mit Checksummen, Recovery,
 WAL-Checkpoint, Fehlerbehandlung und Logging, Pfade (exe, home, config, db,
 log), Keybind-Parser und Tastaturlayouts (die Ausführung ist Workbench),
 dazu `ActionKeybindingPort`: Session und Workbench zeigen Tastenkürzel an,
-kennen tut sie nur die Workbench, die ihn implementiert.
+kennen tut sie nur die Workbench, die ihn implementiert; und der
+`ProcessPromptDispatcher`, der Fragen von Prozessen ohne Terminal ihrem
+Starter zustellt (siehe unten).
 Der App-Bus gehört nicht dazu: ihn benutzt nur die Workbench, deshalb liegt
 er in `core/workbench/bus/`. Nicht drin: `command-log/` (Produktdaten mit eigenem Schema; es
 *benutzt* die DB-Bridge) und Feature-Tabellen/-Migrationen (gehören dem
@@ -281,7 +283,13 @@ Lauf und öffnet nur `/askpass` für diese Sitzung — nicht das Launch-Token,
 denn Hooks und Helper, die git startet, erben die Umgebung des Laufs. Die
 Sitzungs-ID vergibt der Aufrufer je Lauf (`CommandRunnerHostService`); das
 Event trägt sie, und so
-landet der Prompt beim **Lauf, der ihn ausgelöst hat**: `run` nimmt einen
+landet der Prompt beim **Lauf, der ihn ausgelöst hat**. Das Zuordnen
+übernimmt `ProcessPromptDispatcher`
+(`core/infrastructure/process-prompt/`): wer einen Prozess ohne Terminal
+startet, meldet dort unter seiner Sitzungs-ID einen Handler an, und eine
+Anfrage, für die niemand angemeldet ist, wird abgelehnt. Er liegt in der
+Infrastructure, weil nicht nur Läufe einer Sitzung fragen — auch das `ssh`
+einer Host-Verbindung, das die Workbench startet (2.7). Für einen Lauf gilt: `run` nimmt einen
 `onPrompt`-Handler, und das Feature, das git gestartet hat, beantwortet die
 Frage mit seinem eigenen Dialog und seinem eigenen Wissen (das Git-Feature
 liest aus dem Prompt-Text, ob Name, Passwort, Passphrase oder Host-Key
