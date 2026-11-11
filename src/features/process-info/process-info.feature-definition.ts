@@ -9,7 +9,7 @@ const processInfoFeatureId = "process-info";
 const processInfoSideMenuFeatureDefinition = {
   id: processInfoFeatureId,
   title: "Process Info",
-  icon: "mdiInformation",
+  icon: "mdiListBox",
   order: 80,
   actionName: "open_process_info",
   configPath: "feature.process_info",

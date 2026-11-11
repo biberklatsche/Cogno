@@ -3,7 +3,6 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import type { AppWindow } from "@cogno/platform/window";
@@ -16,7 +15,6 @@ import {
   getConfigService,
   getDestroyRef,
   getGridListService,
-  getSideMenuService,
   getTabListService,
 } from "../../../__test__/test-factory";
 import type { DiscardSessionMarker } from "./discard-session.marker";
@@ -26,7 +24,6 @@ import { WorkspaceHostApplicationService } from "./workspace-host-application.se
 
 describe("WorkspaceHostApplicationService", () => {
   let bus: AppBus;
-  let sideMenuService: SideMenuService;
   let gridListService: GridListService;
   let tabListService: TabListService;
   let workspaceRepository: WorkspaceRepository;
@@ -48,7 +45,6 @@ describe("WorkspaceHostApplicationService", () => {
 
   beforeEach(() => {
     bus = getAppBus();
-    sideMenuService = getSideMenuService();
     gridListService = getGridListService();
     tabListService = getTabListService();
     getConfigService().setConfig({
@@ -94,7 +90,6 @@ describe("WorkspaceHostApplicationService", () => {
     };
     service = new WorkspaceHostApplicationService(
       bus,
-      sideMenuService,
       workspaceRepository,
       gridListService,
       tabListService,
@@ -132,15 +127,6 @@ describe("WorkspaceHostApplicationService", () => {
     emitSessionFact(terminalId, { type: "titleChanged", title: "pwsh" });
 
     expect(entry("WS-1")?.isDirty).toBe(false);
-  });
-
-  it("colours the side menu dot with the theme colour of the active workspace", async () => {
-    const updateBadgeColor = vi.spyOn(sideMenuService, "updateBadgeColor");
-    bus.publish({ type: "DBInitialized" });
-
-    await vi.waitFor(() => {
-      expect(updateBadgeColor).toHaveBeenLastCalledWith("Workspace", "var(--color-blue)");
-    });
   });
 
   it("flags and reports a failed autosave, without throwing, until the next one succeeds", async () => {

@@ -30,18 +30,18 @@ describe("UpdaterPanelService", () => {
     return { state, sideMenu, handlers, updater };
   }
 
-  it("puts the updates at the bottom of the side menu, starts checking and toggles on open_updater", () => {
+  it("puts About Cogno at the bottom of the side menu, starts checking and toggles on open_about", () => {
     const { sideMenu, handlers, updater } = create();
 
     expect(sideMenu.addMenuItem).toHaveBeenCalledWith(
       expect.objectContaining({
         label: UPDATER_PANEL_LABEL,
         bottom: true,
-        actionName: "open_updater",
+        actionName: "open_about",
       }),
     );
     expect(updater.start).toHaveBeenCalled();
-    handlers.get("open_updater")?.();
+    handlers.get("open_about")?.();
     expect(sideMenu.toggle).toHaveBeenCalledWith(UPDATER_PANEL_LABEL);
   });
 
@@ -53,7 +53,7 @@ describe("UpdaterPanelService", () => {
     TestBed.flushEffects();
     expect(sideMenu.updateBadgeColor).toHaveBeenLastCalledWith(
       UPDATER_PANEL_LABEL,
-      "var(--color-green)",
+      "var(--highlight-color)",
     );
 
     state.set({ phase: "idle" } as UpdaterState);

@@ -221,11 +221,6 @@ export const coreActionCatalog = [
     },
   }),
   defineAction({
-    name: "open_updater",
-    label: "Updates",
-    description: "Open the Updates panel",
-  }),
-  defineAction({
     name: "open_config",
     label: "Open Settings File",
     description: "Open the settings file in the default editor",
@@ -416,7 +411,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "open_about",
     label: "About Cogno",
-    description: "Show the About dialog",
+    description: "Open the About Cogno panel with version and updates",
   }),
 ] as const;
 

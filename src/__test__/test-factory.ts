@@ -9,7 +9,6 @@ import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
-import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
@@ -23,7 +22,6 @@ import { vi } from "vitest";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
 
 let appBus: AppBus | undefined;
-let sideMenuService: SideMenuService | undefined;
 let configService: ConfigServiceMock | undefined;
 let gridListService: GridListService | undefined;
 let terminalSessionRegistry: TerminalSessionRegistry | undefined;
@@ -43,11 +41,6 @@ export function getAppBus(): AppBus {
 export function getMachineState(): MachineState {
   if (!machineState) machineState = new MachineState();
   return machineState;
-}
-
-export function getSideMenuService(): SideMenuService {
-  if (!sideMenuService) sideMenuService = new SideMenuService(getAppBus());
-  return sideMenuService;
 }
 
 export function getConfigService(): ConfigServiceMock {
@@ -179,7 +172,6 @@ export function getSelectionHandler(_terminalId: TerminalId): SelectionHandler {
 
 export function clear() {
   appBus = undefined;
-  sideMenuService = undefined;
   configService = undefined;
   gridListService = undefined;
   terminalSessionRegistry = undefined;

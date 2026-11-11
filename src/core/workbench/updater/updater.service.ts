@@ -78,8 +78,8 @@ export class UpdaterService {
     this.notificationCenter.dispatch({
       header: `Cogno ${state.version} is ${state.phase === "ready" ? "ready" : "available"}`,
       body: state.installable
-        ? "Open Updates in the side menu to install it."
-        : "Open Updates in the side menu to download it.",
+        ? "Open About Cogno in the side menu to install it."
+        : "Open About Cogno in the side menu to download it.",
       type: "info",
       timestamp: new Date(),
     });

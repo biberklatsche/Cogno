@@ -122,7 +122,7 @@ export function isSelectedSideMenuItem(
             display: flex;
             flex-direction: column;
             gap: 4px;
-            margin: 2px 4px 0 2px;
+            margin: 2px 4px 4px 2px;
             padding: 0;
             z-index: 3;
             &.hidden {

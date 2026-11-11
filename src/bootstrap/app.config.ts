@@ -28,7 +28,6 @@ import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
-import { AboutDialogAdapterService } from "@cogno/core/workbench/about/about-dialog.adapter.service";
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
@@ -152,7 +151,6 @@ export const appConfig: ApplicationConfig = {
         eager(TerminalSearchApiService);
         eager(WorkspaceShortcutActionService);
 
-        eager(AboutDialogAdapterService);
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).
         eager(TabListService);

@@ -119,7 +119,6 @@ Every action, its description and default keybinding. `-` means no default keybi
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
 | `open_settings` | Open the settings panel | Ctrl+, | Command+, |
-| `open_updater` | Open the Updates panel | - | - |
 | `open_workspace` | Open the Workspace panel | Ctrl+Alt+W | Command+Control+W |
 | `open_coding_agents` | Open the Coding Agents panel | Ctrl+Alt+R | Command+Control+R |
 | `open_command_palette` | Open the Command Palette panel | Ctrl+P | Command+P |
@@ -145,4 +144,4 @@ Every action, its description and default keybinding. `-` means no default keybi
 | `load_config` | Reload the settings file without restarting | - | - |
 | `clear_restore_data` | Delete the saved session so that the next launch starts fresh | - | - |
 | `open_documentation` | Open the Cogno documentation | - | - |
-| `open_about` | Show the About dialog | - | - |
+| `open_about` | Open the About Cogno panel with version and updates | - | - |
