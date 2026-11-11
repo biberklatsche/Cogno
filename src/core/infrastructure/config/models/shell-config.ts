@@ -22,12 +22,19 @@ const ShellProfileSchema = z
     inject_cogno_cli: z
       .boolean()
       .default(true)
-      .describe("Put the `cogno` CLI on the shell's PATH."),
+      .describe("Make the `cogno` command available in this shell."),
     enable_shell_integration: z
       .boolean()
       .default(true)
-      .describe("Load Cogno's shell integration (prompt markers, command status, cwd tracking)."),
-    load_user_rc: z.boolean().default(true).describe("Also load your own shell rc/profile files."),
+      .describe(
+        "Let Cogno follow this shell: which commands run, how they end and the current directory. Without it, history and command status stay empty.",
+      ),
+    load_user_rc: z
+      .boolean()
+      .default(true)
+      .describe(
+        "Also load your own shell startup files (`.zshrc`, `.bashrc`, the PowerShell profile).",
+      ),
   })
   .describe("One shell profile: which shell to start and how.");
 

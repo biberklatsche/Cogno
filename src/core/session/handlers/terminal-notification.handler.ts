@@ -5,10 +5,23 @@ import { Terminal } from "@xterm/xterm";
 import { SessionModel } from "../model/session-model";
 
 /**
- * OSC 9: a program reports progress (`9;4;state;value`) or asks for
- * attention with a message. Progress is a fact about the terminal and goes
- * to the machine state; the message is stated as a fact - whether it
- * becomes a notification, and through which channel, is decided elsewhere.
+ * ConEmu gave OSC 9 numbered sub-commands (`9;1;…` to `9;12`): sleep, tab
+ * title, progress, working directory (`9;9;path`, which prompts written for
+ * Windows Terminal send on every line) and more. They are not messages.
+ */
+const CONEMU_COMMAND = /^\s*(\d{1,2})(?:;|\s*$)/;
+const CONEMU_PROGRESS = 4;
+const CONEMU_LAST_COMMAND = 12;
+
+const OSC777_NOTIFY_PREFIX = "notify;";
+
+/**
+ * A program asks for attention with a message - OSC 9 (`9;message`) or
+ * OSC 777 (`777;notify;title;message`) - or reports progress
+ * (`9;4;state;value`). Progress is a fact about the terminal and goes to the
+ * machine state; the message is stated as a fact - whether it becomes a
+ * notification, and through which channel, is decided elsewhere. Every other
+ * ConEmu sub-command of OSC 9 is consumed without a fact.
  */
 export class TerminalNotificationHandler implements ITerminalHandler {
   private _disposables?: IDisposable[] = undefined;
@@ -22,14 +35,33 @@ export class TerminalNotificationHandler implements ITerminalHandler {
     this._disposables = [];
     this._disposables.push(
       terminal.parser.registerOscHandler(9, (data: string) => {
-        if (this.tryHandleProgress(data)) {
+        const conEmuCommand = conEmuCommandOf(data);
+        if (conEmuCommand === CONEMU_PROGRESS) {
+          this.tryHandleProgress(data);
           return true;
         }
+        if (conEmuCommand !== undefined) return true;
 
-        const message = (data ?? "").replace(/\r/g, "").replace(/\n+/g, " ").trim();
-        if (!message) return true;
-
-        this.model.report({ type: "notificationRequested", message });
+        const message = singleLine(data);
+        if (message) this.model.report({ type: "notificationRequested", message });
+        return true;
+      }),
+      terminal.parser.registerOscHandler(777, (data: string) => {
+        // Only `notify` is a message; other 777 commands mean nothing here.
+        if (!data?.startsWith(OSC777_NOTIFY_PREFIX)) return true;
+        const payload = data.slice(OSC777_NOTIFY_PREFIX.length);
+        const separator = payload.indexOf(";");
+        const title = singleLine(separator === -1 ? payload : payload.slice(0, separator));
+        const message = singleLine(separator === -1 ? "" : payload.slice(separator + 1));
+        if (message) {
+          this.model.report({
+            type: "notificationRequested",
+            message,
+            ...(title ? { title } : {}),
+          });
+        } else if (title) {
+          this.model.report({ type: "notificationRequested", message: title });
+        }
         return true;
       }),
     );
@@ -74,4 +106,15 @@ export class TerminalNotificationHandler implements ITerminalHandler {
       this._disposables = undefined;
     }
   }
+}
+
+function conEmuCommandOf(data: string | undefined): number | undefined {
+  const match = CONEMU_COMMAND.exec(data ?? "");
+  if (!match) return undefined;
+  const command = Number.parseInt(match[1], 10);
+  return command >= 1 && command <= CONEMU_LAST_COMMAND ? command : undefined;
+}
+
+function singleLine(text: string | undefined): string {
+  return (text ?? "").replace(/\r/g, "").replace(/\n+/g, " ").trim();
 }

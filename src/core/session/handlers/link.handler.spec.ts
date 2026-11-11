@@ -78,6 +78,24 @@ describe("LinkHandler", () => {
     expect(openUrlSpy).toHaveBeenCalledWith("https://example.com/docs");
   });
 
+  it("says that a recognised link was copied on a plain click", async () => {
+    createScenario("Bash", "linux", "/home/lars");
+    const line = TerminalMockFactory.createLine("Docs: https://example.com/docs.");
+    vi.mocked(terminal.buffer.active.getLine).mockReturnValue(line);
+    const facts: unknown[] = [];
+    stateManager.facts$.subscribe((fact) => facts.push(fact));
+
+    let links: any[] | undefined;
+    provider.provideLinks(1, (result: any[] | undefined) => {
+      links = result;
+    });
+    links?.[0].activate(new MouseEvent("click"), links?.[0].text);
+
+    await vi.waitFor(() =>
+      expect(facts).toContainEqual({ type: "linkCopied", target: "https://example.com/docs" }),
+    );
+  });
+
   it("opens web links only on cmd+click on macOS", () => {
     createScenario("ZSH", "macos", "/Users/lars/work");
     const line = TerminalMockFactory.createLine("Docs: https://example.com/docs.");
@@ -359,6 +377,91 @@ describe("LinkHandler", () => {
       );
 
       expect(provideLinks(1)?.map((link) => link.text)).toEqual(["/home/lars/proj"]);
+    });
+  });
+
+  describe("OSC 8 hyperlinks", () => {
+    function hyperlinks() {
+      const linkHandler = terminal.options.linkHandler;
+      if (!linkHandler) throw new Error("No link handler set.");
+      return linkHandler;
+    }
+    const range = { start: { x: 1, y: 1 }, end: { x: 4, y: 1 } };
+
+    it("copies the target on a plain click and opens it with the modifier", () => {
+      createScenario("ZSH", "macos", "/Users/lars/work");
+
+      hyperlinks().activate(new MouseEvent("click"), "https://example.com/a", range);
+      expect(clipboardStub.writeText).toHaveBeenCalledWith("https://example.com/a");
+      expect(openUrlSpy).not.toHaveBeenCalled();
+
+      hyperlinks().activate(
+        new MouseEvent("click", { metaKey: true }),
+        "https://example.com/a",
+        range,
+      );
+      expect(openUrlSpy).toHaveBeenCalledWith("https://example.com/a");
+    });
+
+    it("says that the target was copied", async () => {
+      createScenario("Bash", "linux", "/home/lars");
+      const facts: unknown[] = [];
+      stateManager.facts$.subscribe((fact) => facts.push(fact));
+
+      hyperlinks().activate(new MouseEvent("click"), "https://example.com/a", range);
+
+      await vi.waitFor(() =>
+        expect(facts).toContainEqual({ type: "linkCopied", target: "https://example.com/a" }),
+      );
+    });
+
+    it("says nothing was copied when the link is opened", async () => {
+      createScenario("Bash", "linux", "/home/lars");
+      const facts: unknown[] = [];
+      stateManager.facts$.subscribe((fact) => facts.push(fact));
+
+      hyperlinks().activate(
+        new MouseEvent("click", { ctrlKey: true }),
+        "https://example.com/a",
+        range,
+      );
+      await Promise.resolve();
+
+      expect(facts).toEqual([]);
+    });
+
+    it("opens a file link as a path of the session", () => {
+      createScenario("Bash", "linux", "/home/lars");
+
+      hyperlinks().activate(
+        new MouseEvent("click", { ctrlKey: true }),
+        "file://host/home/lars/my%20notes.txt",
+        range,
+      );
+
+      expect(openPathSpy).toHaveBeenCalledWith("/home/lars/my notes.txt");
+      expect(openUrlSpy).not.toHaveBeenCalled();
+    });
+
+    it("does not open other protocols", () => {
+      createScenario("Bash", "linux", "/home/lars");
+
+      for (const uri of ["javascript:alert(1)", "ssh://host/x", "not a url"]) {
+        hyperlinks().activate(new MouseEvent("click", { ctrlKey: true }), uri, range);
+      }
+
+      expect(openUrlSpy).not.toHaveBeenCalled();
+      expect(openPathSpy).not.toHaveBeenCalled();
+    });
+
+    it("shows where the link leads while hovering", () => {
+      createScenario("Bash", "linux", "/home/lars");
+
+      hyperlinks().hover?.(new MouseEvent("mousemove"), "https://example.com/a", range);
+      expect(terminal.element?.getAttribute("title")).toContain("https://example.com/a");
+
+      hyperlinks().leave?.(new MouseEvent("mousemove"), "https://example.com/a", range);
+      expect(terminal.element?.hasAttribute("title")).toBe(false);
     });
   });
 });

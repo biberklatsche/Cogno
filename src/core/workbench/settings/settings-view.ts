@@ -19,6 +19,8 @@ export type SettingRow = {
   /** Headings above the row, outermost first; the panel prints those that changed since the previous row. */
   readonly groups: ReadonlyArray<SettingGroup>;
   readonly description: string;
+  /** The description cut at its backticks, so the panel can set `code` apart instead of printing the ticks. */
+  readonly descriptionParts: ReadonlyArray<DescriptionPart>;
   readonly control: SettingControl;
   /** The effective value as the file would spell it; "" when there is none. */
   readonly value: string;
@@ -29,6 +31,8 @@ export type SettingRow = {
   /** Key, description, section and group descriptions, lowercased once for the search. */
   readonly searchText: string;
 };
+
+export type DescriptionPart = { readonly text: string; readonly code: boolean };
 
 /** A row as the panel shows it, with the headings it opens. */
 export type ShownSettingRow = SettingRow & { readonly headings: ReadonlyArray<SettingHeading> };
@@ -130,6 +134,7 @@ function toRow(descriptor: SettingDescriptor, input: SettingRowsInput): SettingR
     section: descriptor.section,
     groups: descriptor.groups,
     description: descriptor.description,
+    descriptionParts: splitAtBackticks(descriptor.description),
     control: descriptor.control,
     value,
     default: fallback,
@@ -146,6 +151,19 @@ function toRow(descriptor: SettingDescriptor, input: SettingRowsInput): SettingR
       .join(" ")
       .toLowerCase(),
   };
+}
+
+/** "Use `a` or `b`" -> text, code, text, code. An unpaired backtick stays text. */
+export function splitAtBackticks(text: string): DescriptionPart[] {
+  const parts: DescriptionPart[] = [];
+  let last = 0;
+  for (const match of text.matchAll(/`([^`]+)`/g)) {
+    if (match.index > last) parts.push({ text: text.slice(last, match.index), code: false });
+    parts.push({ text: match[1], code: true });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last), code: false });
+  return parts;
 }
 
 /** Whether a value and a default mean the same thing; a list reads `[a,b]` in the defaults. */

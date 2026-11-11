@@ -75,9 +75,7 @@ function sourceSchema(sources: ReadonlyArray<NotificationSourceContract>) {
     .describe("Which events of which source notify you.");
 }
 
-export function createNotificationSettingsSchema(
-  sources: ReadonlyArray<NotificationSourceContract>,
-) {
+export function createNotificationConfigSchema(sources: ReadonlyArray<NotificationSourceContract>) {
   return z.strictObject({
     channel: channelSchema,
     source: sourceSchema(sources),
@@ -87,9 +85,9 @@ export function createNotificationSettingsSchema(
 /**
  * The static shape, for the `Config` type only: `source` is open here because
  * the sources are known at runtime, not at compile time. The schema the
- * config is read with comes from `createNotificationSettingsSchema`.
+ * config is read with comes from `createNotificationConfigSchema`.
  */
-export const NotificationSettingsSchema = z.strictObject({
+export const NotificationConfigSchema = z.strictObject({
   channel: channelSchema,
   source: z
     .record(z.string(), z.record(z.string(), z.looseObject({ enabled: z.boolean().optional() })))

@@ -197,7 +197,7 @@ autocomplete may suggest (`autocomplete.allowed_return_codes*`). Settings: link 
 - `src/features/notification-overview/notification.feature-definition.ts`
 
 **Required sections:** event types (long-running commands, handled and unhandled
-exceptions, OSC 9 messages); the unread badge; delivery channels (in-app toast,
+exceptions, OSC 9 and OSC 777 messages); the unread badge; delivery channels (in-app toast,
 OS notification). Settings: the generated `notification.*`,
 `terminal.notifications.*` and `feature.notification_overview.*` rows.
 Action: `open_notification`.
@@ -321,6 +321,24 @@ on the name selects the last-used member, the head's menu (rename, color, unstac
 close), that a stack dissolves with one member left, that stacks are saved with
 the workspace. No settings of their own; name the actions to rebind.
 
+### Page 13 — Escape sequences
+
+**Write to:** `../meetcogno/src/content/docs/escape-sequences.md`
+
+**Sources:**
+- `src/core/session/handlers/terminal-title.handler.ts` — OSC 0 / 2
+- `src/core/session/handlers/terminal-notification.handler.ts` — OSC 9, 9;4, 777 and the ignored ConEmu sub-commands
+- `src/core/session/handlers/link.handler.ts` — OSC 8: click, modifier click, which protocols open
+- `src/core/session/handlers/clipboard.handler.ts` — OSC 52 and `clipboard.read` / `clipboard.write`
+- `node_modules/@xterm/xterm/src/common/InputHandler.ts` — the sequences the terminal handles itself (colors)
+- `src/core/terminal/renderer.ts` (`applyImages`) — images: sixel and OSC 1337 through `@xterm/addon-image`
+
+**Required sections:** one table of every supported OSC sequence; hyperlinks (how
+they behave, that the tooltip shows the target, what opens); notifications and
+progress with `printf` examples; the clipboard and why reading asks first, that
+pasting is not affected; images (off by default, the storage limit). Settings: `clipboard.*`, `terminal.images.*`,
+`notification.source.terminal.osc9.enabled`, `terminal.progress_bar.*`.
+
 ---
 
 ## Sidebar (`../meetcogno/astro.config.mjs`)
@@ -334,6 +352,7 @@ Features        Coding Agents · Workspaces · Tabs & Stacks · Autocomplete & H
                 · Command Palette · Search · Notifications · Git · Process Info
 Configuration   Overview · Shell profiles · Prompt · Keybindings · All settings · All actions
 CLI
+Escape sequences
 Help            Logging & troubleshooting
 ```
 

@@ -23,6 +23,7 @@ import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { TerminalId } from "@cogno/shared/domain";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
+import { SessionClipboardPrompt } from "../../terminal/+state/session-clipboard-prompt";
 import { SessionKeybindings } from "../../terminal/+state/session-keybindings";
 import { SessionMenus } from "../../terminal/+state/session-menus";
 import { SessionNotifications } from "../../terminal/+state/session-notifications";
@@ -62,6 +63,7 @@ type SessionEntry = {
   readonly host: SessionHost;
   readonly keybindings: SessionKeybindings;
   readonly notifications: SessionNotifications;
+  readonly clipboardPrompt: SessionClipboardPrompt;
   /** The pane's view; exists only once the pane was on screen. */
   componentRef?: ComponentRef<TerminalComponent>;
 };
@@ -114,6 +116,7 @@ export class SessionHostFactory {
         },
         SessionKeybindings,
         SessionNotifications,
+        SessionClipboardPrompt,
         SessionMenus,
         TerminalAutocompleteService,
         TerminalComposerService,
@@ -130,10 +133,11 @@ export class SessionHostFactory {
     // before it starts so its facts$ carries every fact from the first one.
     this.sessionRegistry.register(terminalId, shellProfile, host);
     keybindings.start(terminalId, shellProfile);
-    // The composer, notifications and menus listen from the start; the view
-    // comes later.
+    // The composer, notifications, clipboard prompt and menus listen from the
+    // start; the view comes later.
     injector.get(TerminalComposerService);
     const notifications = injector.get(SessionNotifications);
+    const clipboardPrompt = injector.get(SessionClipboardPrompt);
     injector.get(SessionMenus);
     // Session restore: stash the saved scrollback before start() so
     // the host defers the shell spawn; the replay happens on the first attach,
@@ -144,7 +148,7 @@ export class SessionHostFactory {
     }
     host.start();
 
-    const entry: SessionEntry = { injector, host, keybindings, notifications };
+    const entry: SessionEntry = { injector, host, keybindings, notifications, clipboardPrompt };
     this.sessions.set(terminalId, entry);
     return entry;
   }
@@ -189,6 +193,7 @@ export class SessionHostFactory {
       entry.componentRef?.destroy();
       entry.keybindings.dispose();
       entry.notifications.dispose();
+      entry.clipboardPrompt.dispose();
       // The app hears TerminalRemoved before the machine goes, as it always did.
       this.sessionRegistry.unregister(terminalId);
       this.bus.publish({ type: "TerminalRemoved", payload: terminalId });

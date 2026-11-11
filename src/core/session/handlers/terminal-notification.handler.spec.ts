@@ -32,12 +32,12 @@ describe("TerminalNotificationHandler", () => {
   let machine: MachineState;
   let facts: SessionFact[];
 
-  function oscHandler(): (data: string) => boolean | Promise<boolean> {
+  function oscHandler(code = 9): (data: string) => boolean | Promise<boolean> {
     handler.registerTerminal(mockTerminal);
     const registered = vi
       .mocked(mockTerminal.parser.registerOscHandler)
-      .mock.calls.find((call) => call[0] === 9)?.[1];
-    if (!registered) throw new Error("No OSC 9 handler registered.");
+      .mock.calls.find((call) => call[0] === code)?.[1];
+    if (!registered) throw new Error(`No OSC ${code} handler registered.`);
     return registered;
   }
 
@@ -87,6 +87,52 @@ describe("TerminalNotificationHandler", () => {
     expect(machine.setProgress).toHaveBeenCalledWith("hidden", 0);
   });
 
+  it.each([
+    ["9;C:\\Users\\lars", "working directory"],
+    ['9;"C:\\Users\\lars"', "quoted working directory"],
+    ["1;500", "sleep"],
+    ["3;my tab", "tab title"],
+    ["12", "prompt start"],
+    ["4;9;50", "progress with an unknown state"],
+  ])("consumes the ConEmu sub-command %s (%s) without a notification", (payload) => {
+    const result = oscHandler()(payload);
+
+    expect(result).toBe(true);
+    expect(facts).toEqual([]);
+  });
+
+  it("still takes a message that merely starts with a number", () => {
+    oscHandler()("42 tests passed");
+    oscHandler()("13;not a ConEmu command");
+
+    expect(facts).toEqual([
+      { type: "notificationRequested", message: "42 tests passed" },
+      { type: "notificationRequested", message: "13;not a ConEmu command" },
+    ]);
+  });
+
+  it("states a notification request with its title for OSC 777 notify", () => {
+    const result = oscHandler(777)("notify;Build;done; 3 warnings");
+
+    expect(result).toBe(true);
+    expect(facts).toEqual([
+      { type: "notificationRequested", message: "done; 3 warnings", title: "Build" },
+    ]);
+  });
+
+  it("takes an OSC 777 notify without a body as the message", () => {
+    oscHandler(777)("notify;Build done");
+
+    expect(facts).toEqual([{ type: "notificationRequested", message: "Build done" }]);
+  });
+
+  it("ignores other OSC 777 commands", () => {
+    const result = oscHandler(777)("precmd");
+
+    expect(result).toBe(true);
+    expect(facts).toEqual([]);
+  });
+
   it("disposes registered handlers", () => {
     const disposeSpy = vi.fn();
     vi.mocked(mockTerminal.parser.registerOscHandler).mockReturnValue({ dispose: disposeSpy });
@@ -94,6 +140,6 @@ describe("TerminalNotificationHandler", () => {
 
     handler.dispose();
 
-    expect(disposeSpy).toHaveBeenCalledTimes(1);
+    expect(disposeSpy).toHaveBeenCalledTimes(2);
   });
 });

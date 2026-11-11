@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AutocompleteSettingsSchema } from "./autocomplete-settings";
+import { AutocompleteConfigSchema } from "./autocomplete-config";
 import { ClipboardConfigSchema } from "./clipboard-config";
 import { Color, ColorSchema } from "./color-config";
 import { CursorSchema } from "./cursor-config";
@@ -7,14 +7,14 @@ import { FontSchema } from "./font-config";
 import { ImageSchema } from "./image-config";
 import { KeybindsSchema } from "./keybind-config";
 import { MenuSchema } from "./menu-config";
-import { NotificationSettingsSchema } from "./notification-settings";
+import { NotificationConfigSchema } from "./notification-config";
 import { PaddingSchema } from "./padding-config";
 import { PromptConfigSchema } from "./prompt-config";
 import { ScrollbarSchema } from "./scrollbar-config";
 import { SelectionSchema } from "./selection-config";
 import { ShellConfigSchema, ShellType } from "./shell-config";
-import { TerminalSettingsSchema } from "./terminal-settings";
-import { UpdaterSettingsSchema } from "./updater-settings";
+import { TerminalConfigSchema } from "./terminal-config";
+import { UpdaterConfigSchema } from "./updater-config";
 
 export { Color, ShellType };
 
@@ -22,8 +22,10 @@ const HttpServerSchema = z.strictObject({
   enabled: z
     .boolean()
     .optional()
-    .describe("Run the local HTTP server that the `cogno` CLI talks to."),
-  port: z.number().int().min(1).max(65535).optional().describe("Port of the local HTTP server."),
+    .describe(
+      "Let the `cogno` command and the coding-agent hooks reach this app through a local server.",
+    ),
+  port: z.number().int().min(1).max(65535).optional().describe("Port the local server listens on."),
   auto_next_port: z
     .boolean()
     .optional()
@@ -58,15 +60,15 @@ export const baseConfigSchemaShape = {
     "The configurable prompt rendered by Cogno. `<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.",
   ),
   keybind: KeybindsSchema.optional().describe(
-    "One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`. Lines add to the defaults; the last line that names an action sets its key.",
+    "A key for an action, one per line, e.g. `keybind = Command+T=new_tab`. Your lines add to the defaults; the last line for an action wins.",
   ),
-  terminal: TerminalSettingsSchema.optional().describe("Terminal rendering and behaviour."),
-  autocomplete: AutocompleteSettingsSchema.optional().describe("Command autocomplete behaviour."),
-  notification: NotificationSettingsSchema.optional().describe("Which events notify you, and how."),
+  terminal: TerminalConfigSchema.optional().describe("Terminal rendering and behaviour."),
+  autocomplete: AutocompleteConfigSchema.optional().describe("Command autocomplete behaviour."),
+  notification: NotificationConfigSchema.optional().describe("Which events notify you, and how."),
   http_server: HttpServerSchema.meta({ title: "HTTP server" })
     .optional()
     .describe("Local HTTP server used by the CLI."),
-  updater: UpdaterSettingsSchema.optional().describe("How Cogno keeps itself up to date."),
+  updater: UpdaterConfigSchema.optional().describe("How Cogno keeps itself up to date."),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z

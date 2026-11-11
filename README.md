@@ -22,7 +22,10 @@ Zsh.
 - Live detection and status of running coding agents (Claude Code, Codex,
   Gemini, and more) shown in the tab and side panel, with notifications
 - Reusable workspaces with saved tabs, panes, and project layouts
-- Notifications for long-running commands, including OSC 9 support
+- Notifications for long-running commands, including OSC 9 and OSC 777 support
+- OSC 8 hyperlinks and OSC 52 clipboard access, with a prompt before a program
+  reads the clipboard
+- Optional inline images (sixel and iTerm2's OSC 1337)
 - Search and filtering for the current command output or the full terminal
   buffer
 - Fast command palette for actions

@@ -1,6 +1,7 @@
 import { OsType } from "@cogno/platform/os";
 import { IDisposable } from "@cogno/shared/support";
 import { FitAddon } from "@xterm/addon-fit";
+import type { ImageAddon } from "@xterm/addon-image";
 import type { LigaturesAddon } from "@xterm/addon-ligatures";
 import { SearchAddon } from "@xterm/addon-search";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
@@ -110,6 +111,10 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
   private _unicodeAddon = new Unicode11Addon();
   private _ligaturesAddon: LigaturesAddon | undefined = undefined;
   private _webglAddon: WebglAddon | undefined = undefined;
+  /** Inline images (sixel, OSC 1337); loaded only when asked for. */
+  private _imageAddon: ImageAddon | undefined = undefined;
+  private _imagesEnabled = false;
+  private _imageStorageLimitMb: number | undefined = undefined;
   private _webglContextLossDisposable: IDisposable | undefined = undefined;
   private _webglRestoreTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   private _webglRestoreAttempt = 0;
@@ -167,6 +172,7 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     this._terminal.loadAddon(this._searchAddon);
     this._terminal.loadAddon(this._unicodeAddon);
     this._terminal.unicode.activeVersion = "11";
+    this.applyImages(options);
   }
 
   register(handler: ITerminalHandler | IFitHandler | ISearchHandler): IDisposable {
@@ -201,6 +207,38 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     if (options.theme) {
       target.theme = options.theme;
     }
+    this.applyImages(options);
+  }
+
+  /**
+   * Images are off unless asked for: the addon is fetched and loaded on the
+   * first "on", dropped with everything it stored on "off".
+   */
+  private applyImages(options: TerminalMachineOptions): void {
+    this._imagesEnabled = options.images ?? false;
+    this._imageStorageLimitMb = options.imageStorageLimitMb;
+    if (!this._imagesEnabled) {
+      this._imageAddon?.dispose();
+      this._imageAddon = undefined;
+      return;
+    }
+    if (this._imageAddon) {
+      if (this._imageStorageLimitMb !== undefined) {
+        this._imageAddon.storageLimit = this._imageStorageLimitMb;
+      }
+      return;
+    }
+    void this.useImages();
+  }
+
+  private async useImages() {
+    const { ImageAddon } = await import("@xterm/addon-image");
+    // The options may have changed, or the terminal gone, while the addon was fetched.
+    if (this._disposed || !this._imagesEnabled || this._imageAddon) return;
+    this._imageAddon = new ImageAddon(
+      this._imageStorageLimitMb === undefined ? {} : { storageLimit: this._imageStorageLimitMb },
+    );
+    this._terminal.loadAddon(this._imageAddon);
   }
 
   /** Re-applies the cursor colour after something else overwrote it. */

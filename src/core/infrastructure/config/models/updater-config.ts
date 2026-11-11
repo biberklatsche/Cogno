@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const UpdaterSettingsSchema = z.strictObject({
+export const UpdaterConfigSchema = z.strictObject({
   install: z
     .enum(["background", "ask"])
     .optional()

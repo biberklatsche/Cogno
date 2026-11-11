@@ -21,7 +21,7 @@ export const CODING_AGENT_NOTIFICATION_SOURCE: NotificationSourceContract = {
     {
       id: "ready" satisfies AgentStatus,
       label: "Agent becomes ready",
-      description: "Notify when an agent becomes ready/idle.",
+      description: "Notify when an agent has finished and waits for you.",
     },
     {
       id: "error" satisfies AgentStatus,

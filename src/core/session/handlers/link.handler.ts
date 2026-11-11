@@ -19,6 +19,17 @@ type RowSegment = { row: number; start: number; end: number };
 
 type LogicalLine = { text: string; segments: RowSegment[] };
 
+/**
+ * What an OSC 8 hyperlink may point to. Its text hides the target, so only
+ * these are opened; anything else is still copied on a plain click.
+ */
+const HYPERLINK_URL_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+
+/**
+ * Recognises links in the output - URLs and paths by their text, and the
+ * hyperlinks a program marks with OSC 8 - and gives them one behaviour: a
+ * click copies the target, a click with the open modifier opens it.
+ */
 export class LinkHandler implements ITerminalHandler {
   private static readonly URL_PATTERN = /\bhttps?:\/\/[^\s<>"'`]+/gi;
   private static readonly PATH_PATTERN =
@@ -61,6 +72,26 @@ export class LinkHandler implements ITerminalHandler {
   registerTerminal(terminal: Terminal): IDisposable {
     this._linkProviderDisposable?.dispose();
     this._terminal = terminal;
+    // OSC 8: the terminal finds the hyperlinks itself and asks what a click does.
+    terminal.options.linkHandler = {
+      // The terminal would drop everything but http(s); `openHyperlink` decides instead.
+      allowNonHttpProtocols: true,
+      activate: (event, uri) => {
+        event.preventDefault();
+        if (this.isOpenModifierPressed(event)) {
+          this.openHyperlink(uri);
+        } else {
+          void this.copy(uri);
+        }
+      },
+      // The link's text says nothing about where it leads; the hint does.
+      hover: (_event, uri) => {
+        this._terminal?.element?.setAttribute("title", `${uri}\n${this.hoverHint}`);
+      },
+      leave: () => {
+        this._terminal?.element?.removeAttribute("title");
+      },
+    };
     this._linkProviderDisposable = terminal.registerLinkProvider({
       provideLinks: (bufferLineNumber, callback) => {
         const logicalLine = this.readLogicalLine(bufferLineNumber);
@@ -102,7 +133,7 @@ export class LinkHandler implements ITerminalHandler {
                 if (!backendPath) return;
                 void this._opener.openPath(backendPath);
               } else {
-                void this._clipboard.writeText(text);
+                void this.copy(text);
               }
             },
           })),
@@ -116,7 +147,46 @@ export class LinkHandler implements ITerminalHandler {
     this._linkProviderDisposable?.dispose();
     this._linkProviderDisposable = undefined;
     this._terminal?.element?.removeAttribute("title");
+    if (this._terminal) this._terminal.options.linkHandler = null;
     this._terminal = undefined;
+  }
+
+  /** Copies a link's target and says so: a click on a link shows nothing by itself. */
+  private async copy(target: string): Promise<void> {
+    await this._clipboard.writeText(target);
+    this._model.report({ type: "linkCopied", target });
+  }
+
+  /**
+   * Opens the target of an OSC 8 hyperlink: web and mail addresses as they
+   * are, a `file:` link as a path of this session (`ls --hyperlink`), so it
+   * goes through the same translation as a path printed in the output.
+   */
+  private openHyperlink(uri: string): void {
+    let url: URL;
+    try {
+      url = new URL(uri);
+    } catch {
+      return;
+    }
+    if (HYPERLINK_URL_PROTOCOLS.has(url.protocol)) {
+      void this._opener.openUrl(uri);
+      return;
+    }
+    if (url.protocol !== "file:") return;
+    let path: string;
+    try {
+      path = decodeURIComponent(url.pathname);
+    } catch {
+      return;
+    }
+    const backendPath = this._pathResolver.resolvePathForOpen(
+      path,
+      this._model.state.cwd,
+      this._model.pathAdapter,
+    );
+    if (!backendPath) return;
+    void this._opener.openPath(backendPath);
   }
 
   /**
