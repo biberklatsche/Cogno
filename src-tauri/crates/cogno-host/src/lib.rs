@@ -14,7 +14,10 @@ pub mod process_job;
 mod processes;
 pub mod protocol;
 mod pty;
+mod server;
 mod shell_spawner;
 mod shells;
+pub mod wire;
 
 pub use host::{EventSink, Host};
+pub use server::serve;

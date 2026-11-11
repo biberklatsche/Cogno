@@ -1,10 +1,10 @@
 //! The shells installed on this machine, offered as profiles on first start.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-#[derive(Serialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ShellInfo {
     pub name: String,
     pub path: String,

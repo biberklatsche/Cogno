@@ -5,7 +5,9 @@ pub use crate::processes::{ProcessDetails, ProcessTreeSnapshot, TerminalProcess}
 pub use crate::pty::{PtySpawnResult, SpawnOptions};
 pub use crate::shell_spawner::ShellProfile;
 pub use crate::shells::ShellInfo;
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
     PtySpawn {
         options: SpawnOptions,
@@ -56,6 +58,27 @@ pub enum Request {
     ListShells,
 }
 
+impl Request {
+    /// Whether answering can take a while (starting a shell, closing a
+    /// ConPTY, walking the machine's processes).
+    pub fn may_block(&self) -> bool {
+        match self {
+            Request::PtySpawn { .. }
+            | Request::PtyKill { .. }
+            | Request::ProcessTree { .. }
+            | Request::TerminalProcesses
+            | Request::TerminateProcess { .. }
+            | Request::ListShells => true,
+            Request::PtyWrite { .. }
+            | Request::PtyLineEditorAction { .. }
+            | Request::PtyResize { .. }
+            | Request::PtyAck { .. }
+            | Request::ReleaseOwner { .. } => false,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Response {
     Done,
     Spawned(PtySpawnResult),
@@ -66,8 +89,11 @@ pub enum Response {
 
 pub type Reply = Result<Response, String>;
 
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     /// One framed chunk of a session's output (sequence number, then bytes).
+    /// On the wire it is a binary frame of its own, never part of a message.
+    #[serde(skip)]
     PtyData { stream: u64, frame: Vec<u8> },
     /// Nothing more comes under this stream.
     PtyStreamEnded { stream: u64 },

@@ -981,7 +981,26 @@ Der Host hat genau einen Eingang und einen Ausgang (`protocol.rs`):
   `emit_to` an das Fenster (`src-tauri/src/host.rs`).
 
 Auch lokal läuft damit jeder Aufruf über Anfrage und Ereignis — derselbe Weg,
-den ein Host auf einem anderen Rechner hätte.
+den ein Host auf einem anderen Rechner hat.
+
+**Der Host hinter einem Datenstrom.** `cogno server --stdio` startet kein
+Fenster, sondern nur den Host hinter stdin und stdout (`server.rs`,
+abgezweigt in `main.rs` wie Askpass und CLI). Gedacht ist er als Gegenstelle
+eines `ssh`-Aufrufs: Erreichbarkeit, Anmeldung und Verschlüsselung sind
+Sache von `ssh`, Cogno öffnet keinen Port. Die Rahmung steht in `wire.rs`:
+
+- Der Host beginnt mit einer **Kennung** und einem `Hello` (Protokollversion,
+  Betriebssystem). Die Gegenseite überspringt, was ein Login davor ausgibt.
+  Die Version muss gleich sein; verhandelt wird nicht.
+- Danach laufen in beide Richtungen **Frames** aus Länge, Art und Inhalt.
+  Anfragen (mit ID), Antworten (mit derselben ID) und Ereignisse sind JSON;
+  die Ausgabe einer Sitzung ist ein eigener, binärer Frame.
+- **Endet der Eingabestrom, endet der Host und mit ihm jede Shell.** Eine
+  verlorene Verbindung lässt keinen Prozess zurück.
+
+Anfragen, die dauern können (`Request::may_block`), beantwortet der Server
+auf einem eigenen Thread, damit Eingabe und Quittungen der übrigen Sitzungen
+nicht warten.
 
 Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
 

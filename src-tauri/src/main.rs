@@ -20,6 +20,13 @@ fn main() {
 
     let cli = Cli::parse();
 
+    // Started through ssh by a Cogno on another machine: no window, only the
+    // host behind stdin and stdout, until that Cogno hangs up.
+    if let Some(CliCommand::Server { .. }) = &cli.command {
+        let served = cogno_host::serve(std::io::stdin().lock(), std::io::stdout());
+        std::process::exit(if served.is_ok() { 0 } else { 1 });
+    }
+
     if let Err(error_message) = apply_cli_environment(&cli) {
         eprintln!("{}", error_message);
         std::process::exit(1);
