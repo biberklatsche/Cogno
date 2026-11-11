@@ -1,44 +1,32 @@
-import { DestroyRef, Injectable } from "@angular/core";
+import { Injectable } from "@angular/core";
 import {
   CommandRunner as CommandRunnerPort,
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
-  ProcessPromptHandler,
 } from "@cogno/core/api/command-runner-port";
-import { AskpassRequest, AskpassRequests } from "@cogno/platform/askpass";
+import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
 import { CommandRunner } from "@cogno/platform/command-runner";
 import { createPathAdapter } from "../shells/shell-definitions";
 
 /**
- * Runs commands in the backend and hands each prompt a process raises (git
- * credentials, an ssh passphrase, a host key - ARCHITECTURE.md 2.1) to the
- * handler of the run that caused it. A run without a handler refuses its
- * prompts: the process sees a failed read instead of a dialog nobody asked for.
+ * Runs commands in the backend. What a run's process asks without a terminal
+ * (git credentials, an ssh passphrase, a host key - ARCHITECTURE.md 2.1)
+ * goes to the run's own handler; a run without one refuses its prompts.
  */
 @Injectable({ providedIn: "root" })
 export class CommandRunnerHostService extends CommandRunnerPort {
-  /** Prompt session of a running command -> its handler. */
-  private readonly handlers = new Map<string, ProcessPromptHandler>();
-  /** Open prompts, so the process ending can close them. */
-  private readonly open = new Map<string, AbortController>();
-
   constructor(
     private readonly commandRunner: CommandRunner,
-    private readonly askpass: AskpassRequests,
-    destroyRef: DestroyRef,
+    private readonly prompts: ProcessPromptDispatcher,
   ) {
     super();
-    void askpass
-      .onRequest((request) => void this.answer(request))
-      .then((unlisten) => destroyRef.onDestroy(unlisten));
-    void askpass
-      .onClosed((requestId) => this.open.get(requestId)?.abort())
-      .then((unlisten) => destroyRef.onDestroy(unlisten));
   }
 
   async run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract> {
     const promptSession = crypto.randomUUID();
-    if (request.onPrompt) this.handlers.set(promptSession, request.onPrompt);
+    const forgetHandler = request.onPrompt
+      ? this.prompts.register(promptSession, request.onPrompt)
+      : undefined;
     try {
       const adapter = createPathAdapter(request.shellContext);
       const normalizedCwd = adapter.normalize(request.cwd);
@@ -62,26 +50,7 @@ export class CommandRunnerHostService extends CommandRunnerPort {
         exitCode: 1,
       };
     } finally {
-      this.handlers.delete(promptSession);
+      forgetHandler?.();
     }
-  }
-
-  private async answer(request: AskpassRequest): Promise<void> {
-    const handler = this.handlers.get(request.sessionId);
-    if (!handler) {
-      await this.askpass.answer(request.requestId, null);
-      return;
-    }
-    const closed = new AbortController();
-    this.open.set(request.requestId, closed);
-    let answer: string | null = null;
-    try {
-      answer = await handler({ text: request.prompt, closed: closed.signal });
-    } catch {
-      answer = null;
-    } finally {
-      this.open.delete(request.requestId);
-    }
-    if (!closed.signal.aborted) await this.askpass.answer(request.requestId, answer);
   }
 }
