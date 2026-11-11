@@ -57,6 +57,7 @@ import { CommandRecorder } from "../recorder/command-recorder";
 import { SessionFact } from "../session-facts";
 import { shellDefinitions } from "../shells/shell-definitions";
 import { serializeScrollback } from "./scrollback-serializer";
+import { SessionBackend } from "./session-backend";
 import {
   type CommandSnapshot,
   SESSION_SNAPSHOT_VERSION,
@@ -202,6 +203,7 @@ export class SessionHost {
   private handshakeTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
+    /** The window's operating system: which key opens a link. */
     private readonly os: OsPlatform,
     environment: Environment,
     private readonly clipboard: ClipboardAccess,
@@ -211,12 +213,13 @@ export class SessionHost {
     ptyTransport: PtyTransport,
     historyStore: TerminalCommandHistoryStore,
     recorder: CommandRecorder,
+    private readonly backend: SessionBackend,
   ) {
-    this.model = new SessionModel(this.os.platform(), historyStore, recorder);
-    this.pty = new Pty(ptyTransport, environment.isDevMode());
+    this.model = new SessionModel(this.backend.os, historyStore, recorder);
+    this.pty = new Pty(ptyTransport, environment.isDevMode(), this.backend.host);
     this.renderer = new Renderer(
       toTerminalMachineOptions(this.configService.config),
-      this.os.platform(),
+      this.backend.os,
     );
     // The machine reports faults, it does not handle them: the host decides
     // who hears about it (ARCHITECTURE.md 2.1, boundary decision 2).
@@ -328,7 +331,7 @@ export class SessionHost {
     }
     this._terminalId = terminalId;
     this._shellProfile = shellProfile;
-    this.model.initialize(terminalId, shellProfile.shell_type, shellProfile, this.os.platform());
+    this.model.initialize(terminalId, shellProfile.shell_type, shellProfile, this.backend.os);
   }
 
   /**
@@ -793,7 +796,7 @@ export class SessionHost {
     terminal.write(`\r\n\x1b[8m${RESTORE_BOUNDARY_SENTINEL}\x1b[0m`, () =>
       this.renderRestoreBoundary(terminal),
     );
-    const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
+    const trailer = this.backend.os === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
       // xterm may call back after the session closed.
       if (this.isEnding) return;

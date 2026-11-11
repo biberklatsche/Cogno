@@ -127,6 +127,7 @@ describe("SessionHost snapshot/restore", () => {
         onCwdChanged: vi.fn(),
         onCommandExecuted: vi.fn(),
       } as unknown as CommandRecorder,
+      { os: "linux" },
     );
     host.initialize("t1", bashProfile);
   });
@@ -346,6 +347,7 @@ describe("SessionHost snapshot/restore", () => {
       {} as never,
       new TerminalCommandHistoryStore(),
       { initialize: vi.fn(), onCwdChanged: vi.fn(), onCommandExecuted: vi.fn() } as never,
+      { os: "windows" },
     );
     windowsHost.initialize("t2", bashProfile);
     windowsHost.restore({

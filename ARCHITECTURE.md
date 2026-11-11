@@ -1010,6 +1010,37 @@ Anfragen, die dauern können (`Request::may_block`), beantwortet der Server
 auf einem eigenen Thread, damit Eingabe und Quittungen der übrigen Sitzungen
 nicht warten.
 
+**Eine Sitzung läuft auf einem Host.** Das ist dieser Rechner oder einer aus
+`remote.hosts`; ein Shell-Profil nennt ihn mit `host`
+(`shell.profiles.<name>.host`). Tabs, Tastenkürzel und Wiederherstellung
+laufen weiter über den Profilnamen, der Host kommt mit dem Profil. Die
+Zuständigkeiten:
+
+- **App (Rust, `host.rs`, `remote.rs`):** `host_connect` startet
+  `ssh <ziel> cogno server --stdio` und hält die Verbindung unter dem Namen
+  des Hosts. Ein Terminal, das dort gestartet wurde, steht in einer Tabelle
+  Terminal → Host; jede Anfrage mit Terminal-ID geht darüber an den richtigen
+  Host, ohne dass das Frontend ihn nennt. Getipptes, Größenänderungen und
+  Quittungen werden gesendet, ohne auf die Antwort zu warten. Bricht die
+  Verbindung ab, enden die Terminals dieses Hosts (`pty-exit`), und alle
+  Fenster hören `host-disconnected`. Den HTTP-Server dieser App bekommt eine
+  entfernte Shell nicht (`COGNO_PORT` fehlt dort).
+- **`platform/hosts.ts`:** `connect` und `onDisconnected`, sonst nichts.
+- **Workbench (`core/workbench/remote/`):** `RemoteHostsService` verbindet
+  beim ersten Bedarf, einmal je Host, und zeigt, was `ssh` dabei fragt, mit
+  dem nackten Prompt-Dialog (2.1). Die Sitzungsfabrik wartet: ein Pane, dessen
+  Host noch nicht verbunden ist, hat **keine Sitzung**, sondern zeigt
+  „verbinde" oder den Fehler mit Retry (`HostConnectionComponent`). Die
+  Sitzung entsteht erst, wenn die Verbindung steht.
+- **Session:** bekommt als Wert, wo ihre Shell läuft (`SessionBackend`: Host
+  und dessen Betriebssystem). Daraus leiten sich Shell-Kontext,
+  Pfadadapter und das ConPTY-Verhalten des Renderers ab — nicht aus dem
+  Betriebssystem des Fensters. `OsPlatform` braucht die Sitzung nur noch für
+  das, was das Fenster betrifft (welche Taste einen Link öffnet).
+
+Warum die Sitzung warten muss: Sie braucht das Betriebssystem ihrer Shell
+schon beim Entstehen, und das sagt erst der verbundene Host.
+
 Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
 
 - **Den Besitzer einer Sitzung.** Für den Host ist er ein Name ohne
@@ -1680,4 +1711,4 @@ erreicht, ohne sie zu importieren.
 - Umbenennung bestehender DB-Tabellen
 - Protokoll-Operationen ohne Konsumenten
 - Pane in ein anderes Fenster verschieben: von 2.6 getragen (Snapshot + PTY-Übernahme), aber nicht gebaut
-- Feature-Funktionen in Remote-Sitzungen (SSH): `boundSession.run` gibt es dort nicht, also kein Git-Panel, keine Prozess-Info, keine Agent-Erkennung. Manches geht in SSH einfach nicht; ein Cogno-Agent auf dem Host wäre ein eigenes Vorhaben.
+- Feature-Funktionen in einer Sitzung, in der der Nutzer selbst `ssh` tippt: `boundSession.run` gibt es dort nicht, also kein Git-Panel, keine Prozess-Info, keine Agent-Erkennung. Dafür gibt es Sitzungen auf einem Host (2.7).

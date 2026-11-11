@@ -15,10 +15,17 @@ import { SessionCommandLog } from "@cogno/core/session/command-log/session-comma
 import { TerminalComposerService } from "@cogno/core/session/composer/terminal-composer.service";
 import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
 import { PendingSessionSnapshots } from "@cogno/core/session/host/pending-session-snapshots";
+import { SessionBackend } from "@cogno/core/session/host/session-backend";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
+import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import {
+  HostConnectionComponent,
+  HostConnectionState,
+} from "@cogno/core/workbench/remote/host-connection.component";
+import { RemoteHostsService } from "@cogno/core/workbench/remote/remote-hosts.service";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { TerminalId } from "@cogno/shared/domain";
@@ -31,29 +38,34 @@ import { TerminalComponent } from "../../terminal/terminal.component";
 import { TerminalFileDropService } from "../../terminal/terminal-file-drop.service";
 import { Pane } from "../+model/model";
 
-/** The host is a plain class; Angular only wires its sources. */
-function createSessionHost(
-  os: OsPlatform,
-  environment: Environment,
-  clipboard: ClipboardAccess,
-  configService: ConfigService,
-  opener: Opener,
-  contextMenuOverlay: ContextMenuOverlayService,
-  ptyTransport: PtyTransport,
-  historyStore: TerminalCommandHistoryStore,
-  recorder: CommandRecorder,
-): SessionHost {
-  return new SessionHost(
-    os,
-    environment,
-    clipboard,
-    configService,
-    opener,
-    contextMenuOverlay,
-    ptyTransport,
-    historyStore,
-    recorder,
-  );
+/**
+ * The host is a plain class; Angular only wires its sources. Where its shell
+ * runs is the session's own, not something to inject.
+ */
+function createSessionHost(backend: SessionBackend) {
+  return (
+    os: OsPlatform,
+    environment: Environment,
+    clipboard: ClipboardAccess,
+    configService: ConfigService,
+    opener: Opener,
+    contextMenuOverlay: ContextMenuOverlayService,
+    ptyTransport: PtyTransport,
+    historyStore: TerminalCommandHistoryStore,
+    recorder: CommandRecorder,
+  ): SessionHost =>
+    new SessionHost(
+      os,
+      environment,
+      clipboard,
+      configService,
+      opener,
+      contextMenuOverlay,
+      ptyTransport,
+      historyStore,
+      recorder,
+      backend,
+    );
 }
 
 type SessionEntry = {
@@ -67,14 +79,32 @@ type SessionEntry = {
 };
 
 /**
+ * A pane whose shell runs on a machine that is not connected (yet). It has no
+ * session: a session needs to know the operating system its shell runs on,
+ * and only the connected machine says that.
+ */
+type WaitingPane = {
+  readonly pane: Pane;
+  readonly host: string;
+  state: HostConnectionState;
+  /** Where the pane is on screen, once it was. */
+  dock?: HTMLElement;
+  view?: ComponentRef<HostConnectionComponent>;
+};
+
+/**
  * Owns the sessions: one host per terminal id, started as soon as the pane
  * exists in the layout - visible or not - and closed only on an explicit
  * destroy. The view is created lazily on the first attach and reparented
  * afterwards; destroying a view never ends a session (ARCHITECTURE.md 2.3).
+ *
+ * A pane of a machine that is not connected waits: its session starts once
+ * the connection stands, and until then the pane shows how far that is.
  */
 @Injectable({ providedIn: "root" })
 export class SessionHostFactory {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
+  private readonly waiting = new Map<TerminalId, WaitingPane>();
 
   constructor(
     private readonly env: EnvironmentInjector,
@@ -83,14 +113,26 @@ export class SessionHostFactory {
     private readonly bus: AppBus,
     private readonly sessionRegistry: TerminalSessionRegistry,
     private readonly pendingSnapshots: PendingSessionSnapshots,
+    private readonly os: OsPlatform,
+    private readonly remoteHosts: RemoteHostsService,
   ) {}
 
-  /** Makes sure the pane's session exists and runs; a no-op once it does. */
+  /**
+   * Makes sure the pane's session exists and runs; a no-op once it does.
+   * Returns nothing for a pane that waits for its machine.
+   */
   ensureSession(pane: Pane): SessionEntry | undefined {
     const terminalId = pane.terminalId;
     if (!terminalId) return undefined;
     const existing = this.sessions.get(terminalId);
     if (existing) return existing;
+
+    const shellProfile = this.shellProfileFor(pane);
+    const backend = this.backendOf(shellProfile);
+    if (!backend) {
+      this.waitForHost(pane, terminalId, shellProfile.host as string);
+      return undefined;
+    }
 
     const injector = createEnvironmentInjector(
       [
@@ -99,7 +141,7 @@ export class SessionHostFactory {
         CommandRecorder,
         {
           provide: SessionHost,
-          useFactory: createSessionHost,
+          useFactory: createSessionHost(backend),
           deps: [
             OsPlatform,
             Environment,
@@ -122,7 +164,6 @@ export class SessionHostFactory {
       ],
       this.env,
     );
-    const shellProfile = this.shellProfileFor(pane);
     const host = injector.get(SessionHost);
     const keybindings = injector.get(SessionKeybindings);
     host.initialize(terminalId, shellProfile);
@@ -167,7 +208,10 @@ export class SessionHostFactory {
 
   attach(pane: Pane, hostElement: HTMLElement): void {
     const entry = this.ensureSession(pane);
-    if (!entry) return;
+    if (!entry) {
+      this.showWaiting(pane.terminalId, hostElement);
+      return;
+    }
     if (!entry.componentRef) {
       const ref = createComponent(TerminalComponent as Type<TerminalComponent>, {
         environmentInjector: entry.injector,
@@ -183,6 +227,12 @@ export class SessionHostFactory {
   /** Final close (pane removed): the view, the session and everything bound to it. */
   destroy(terminalId?: TerminalId): void {
     if (!terminalId) return;
+    const waiting = this.waiting.get(terminalId);
+    if (waiting) {
+      // A connection that still comes finds the pane gone and starts nothing.
+      this.waiting.delete(terminalId);
+      this.removeWaitingView(waiting);
+    }
     const entry = this.sessions.get(terminalId);
     if (!entry) return;
     try {
@@ -197,6 +247,73 @@ export class SessionHostFactory {
     } finally {
       this.sessions.delete(terminalId);
     }
+  }
+
+  /** Where the profile's shell runs; nothing while its machine is not connected. */
+  private backendOf(shellProfile: ShellProfile): SessionBackend | undefined {
+    if (!shellProfile.host) return { os: this.os.platform() };
+    const info = this.remoteHosts.info(shellProfile.host);
+    return info && { host: shellProfile.host, os: info.os };
+  }
+
+  private waitForHost(pane: Pane, terminalId: TerminalId, host: string): void {
+    if (this.waiting.has(terminalId)) return;
+    const waiting: WaitingPane = { pane, host, state: { status: "connecting" } };
+    this.waiting.set(terminalId, waiting);
+    this.connect(terminalId, waiting);
+  }
+
+  private connect(terminalId: TerminalId, waiting: WaitingPane): void {
+    this.setWaitingState(waiting, { status: "connecting" });
+    this.remoteHosts.connect(waiting.host).then(
+      () => {
+        // Closed in the meantime: nothing to start.
+        if (this.waiting.get(terminalId) !== waiting) return;
+        this.waiting.delete(terminalId);
+        this.removeWaitingView(waiting);
+        if (waiting.dock) {
+          this.attach(waiting.pane, waiting.dock);
+        } else {
+          this.ensureSession(waiting.pane);
+        }
+      },
+      (error: Error) => {
+        if (this.waiting.get(terminalId) !== waiting) return;
+        this.setWaitingState(waiting, { status: "failed", reason: error.message });
+      },
+    );
+  }
+
+  /** Puts the connection's progress where the pane's terminal will be. */
+  private showWaiting(terminalId: TerminalId | undefined, hostElement: HTMLElement): void {
+    const waiting = terminalId && this.waiting.get(terminalId);
+    if (!terminalId || !waiting) return;
+    waiting.dock = hostElement;
+    if (!waiting.view) {
+      const view = createComponent(HostConnectionComponent, { environmentInjector: this.env });
+      view.setInput("host", waiting.host);
+      view.setInput("state", waiting.state);
+      view.instance.retry.subscribe(() => this.connect(terminalId, waiting));
+      view.instance.closePane.subscribe(() =>
+        this.bus.publish(ActionFired.create("close_terminal", undefined, undefined, terminalId)),
+      );
+      this.appRef.attachView(view.hostView);
+      waiting.view = view;
+    }
+    hostElement.appendChild(waiting.view.location.nativeElement);
+    waiting.view.changeDetectorRef.detectChanges();
+  }
+
+  private setWaitingState(waiting: WaitingPane, state: HostConnectionState): void {
+    waiting.state = state;
+    waiting.view?.setInput("state", state);
+    waiting.view?.changeDetectorRef.detectChanges();
+  }
+
+  private removeWaitingView(waiting: WaitingPane): void {
+    waiting.view?.location.nativeElement.remove();
+    waiting.view?.destroy();
+    waiting.view = undefined;
   }
 
   private shellProfileFor(pane: Pane): ShellProfile {

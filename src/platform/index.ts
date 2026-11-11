@@ -9,6 +9,7 @@ export * from "./database";
 export * from "./default-config";
 export * from "./folder-picker";
 export * from "./fs";
+export * from "./hosts";
 export * from "./http-server";
 export * from "./keyboard-layout";
 export * from "./logger";

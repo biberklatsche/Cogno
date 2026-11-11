@@ -469,6 +469,12 @@ Directory the shell starts in.
 
 **Type:** string
 
+### `shell.profiles.<name>.host`
+
+Name of a machine in `remote.hosts` the shell runs on. Leave it out for this machine. `path` is then a path on that machine.
+
+**Type:** string
+
 ### `shell.profiles.<name>.inject_cogno_cli`
 
 Put the `cogno` CLI on the shell's PATH.
@@ -486,6 +492,22 @@ Load Cogno's shell integration (prompt markers, command status, cwd tracking).
 Also load your own shell rc/profile files.
 
 **Type:** boolean
+
+## Remote
+
+Other machines whose shells Cogno runs, reached over ssh. `<name>` is a host name you choose.
+
+### `remote.hosts.<name>.destination`
+
+Where ssh connects: a host name, `user@host` or an alias from your ssh config. The machine must be reachable by ssh and have Cogno installed.
+
+**Type:** string
+
+### `remote.hosts.<name>.command`
+
+Command that starts Cogno on that machine. Set it when `cogno` is not on the PATH of an ssh session there. Default: `cogno server --stdio`.
+
+**Type:** string
 
 ## Prompt
 
