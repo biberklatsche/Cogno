@@ -234,4 +234,131 @@ describe("LinkHandler", () => {
     links?.[0].leave?.(new MouseEvent("mouseleave"), links?.[0].text);
     expect(terminal.element?.hasAttribute("title")).toBe(false);
   });
+
+  function provideLinks(bufferLineNumber: number): any[] | undefined {
+    let links: any[] | undefined;
+    provider.provideLinks(bufferLineNumber, (result: any[] | undefined) => {
+      links = result;
+    });
+    return links;
+  }
+
+  /** Screen rows of one line the terminal wrapped: every row after the first is a continuation. */
+  function mockWrappedLine(...rows: string[]): void {
+    const lines = rows.map((row, index) => {
+      const line = TerminalMockFactory.createLine(row);
+      (line as { isWrapped: boolean }).isWrapped = index > 0;
+      return line;
+    });
+    vi.mocked(terminal.buffer.active.getLine).mockImplementation((row: number) => lines[row]);
+  }
+
+  describe("quoted paths", () => {
+    it("links a quoted path with spaces without its quotes", () => {
+      createScenario("PowerShell", "windows", "C:\\work");
+      const text = 'Open "C:\\_dev\\My Folder\\file.txt" now';
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(
+        TerminalMockFactory.createLine(text),
+      );
+
+      const links = provideLinks(1);
+
+      expect(links).toHaveLength(1);
+      expect(links?.[0].text).toBe("C:\\_dev\\My Folder\\file.txt");
+      expect(links?.[0].range).toEqual({
+        start: { x: text.indexOf("C:") + 1, y: 1 },
+        end: { x: text.indexOf('" now'), y: 1 },
+      });
+      links?.[0].activate(new MouseEvent("click", { ctrlKey: true }), links?.[0].text);
+      expect(openPathSpy).toHaveBeenCalledWith("C:\\_dev\\My Folder\\file.txt");
+    });
+
+    it("links a single-quoted relative path with spaces", () => {
+      createScenario("Bash", "linux", "/home/lars");
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(
+        TerminalMockFactory.createLine("wrote './build output/app.log'"),
+      );
+
+      const links = provideLinks(1);
+
+      expect(links?.map((link) => link.text)).toEqual(["./build output/app.log"]);
+    });
+
+    it("does not link quoted prose", () => {
+      createScenario("Bash", "linux", "/home/lars");
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(
+        TerminalMockFactory.createLine('error: "file not found" while reading'),
+      );
+
+      expect(provideLinks(1)).toBeUndefined();
+    });
+
+    it("links only the path inside quoted prose", () => {
+      createScenario("Bash", "linux", "/home/lars");
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(
+        TerminalMockFactory.createLine('hint: "see /tmp/log.txt for details"'),
+      );
+
+      expect(provideLinks(1)?.map((link) => link.text)).toEqual(["/tmp/log.txt"]);
+    });
+
+    it("does not take apostrophes for quotes", () => {
+      createScenario("Bash", "linux", "/home/lars");
+      vi.mocked(terminal.buffer.active.getLine).mockReturnValue(
+        TerminalMockFactory.createLine("don't touch /etc/hosts, it isn't yours"),
+      );
+
+      expect(provideLinks(1)?.map((link) => link.text)).toEqual(["/etc/hosts"]);
+    });
+  });
+
+  describe("wrapped lines", () => {
+    it("links a path that runs across two screen rows, from either row", () => {
+      createScenario("Bash", "linux", "/home/lars");
+      mockWrappedLine("see /home/lars/proj", "ect/src/main.ts for more");
+
+      for (const bufferLineNumber of [1, 2]) {
+        const links = provideLinks(bufferLineNumber);
+
+        expect(links).toHaveLength(1);
+        expect(links?.[0].text).toBe("/home/lars/project/src/main.ts");
+        expect(links?.[0].range).toEqual({
+          start: { x: 5, y: 1 },
+          end: { x: "ect/src/main.ts".length, y: 2 },
+        });
+      }
+    });
+
+    it("keeps a space that falls on the wrap point", () => {
+      createScenario("PowerShell", "windows", "C:\\work");
+      mockWrappedLine('"C:\\_dev\\My ', 'Folder\\file.txt"');
+
+      const links = provideLinks(2);
+
+      expect(links?.map((link) => link.text)).toEqual(["C:\\_dev\\My Folder\\file.txt"]);
+    });
+
+    it("starts a link at the first column of a continuation row", () => {
+      createScenario("Bash", "linux", "/home/lars");
+      mockWrappedLine("open ", "/tmp/a.txt");
+
+      const links = provideLinks(2);
+
+      expect(links?.[0].range).toEqual({
+        start: { x: 1, y: 2 },
+        end: { x: "/tmp/a.txt".length, y: 2 },
+      });
+    });
+
+    it("does not join rows of different lines", () => {
+      createScenario("Bash", "linux", "/home/lars");
+      const first = TerminalMockFactory.createLine("see /home/lars/proj");
+      const second = TerminalMockFactory.createLine("ect/src/main.ts");
+      vi.mocked(terminal.buffer.active.getLine).mockImplementation(
+        (row: number) => [first, second][row],
+      );
+
+      expect(provideLinks(1)?.map((link) => link.text)).toEqual(["/home/lars/proj"]);
+    });
+  });
 });

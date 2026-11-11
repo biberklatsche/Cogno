@@ -14,10 +14,24 @@ type LinkMatch = {
   kind: "url" | "path";
 };
 
+/** One screen row of a line that the terminal wrapped, and where its text sits in the joined line. */
+type RowSegment = { row: number; start: number; end: number };
+
+type LogicalLine = { text: string; segments: RowSegment[] };
+
 export class LinkHandler implements ITerminalHandler {
   private static readonly URL_PATTERN = /\bhttps?:\/\/[^\s<>"'`]+/gi;
   private static readonly PATH_PATTERN =
     /(?:[A-Za-z]:(?:\\|\/)[^\s<>"'`]+|(?:\\\\|\/\/)[^\s<>"'`]+|\/[A-Za-z]:(?:\/[^\n<>"'`]+)+|\/[^\s<>"'`]+|(?:\.\.?(?:\\|\/))[^\s<>"'`]+|(?:[^/\\\s<>"'`:()[\]{},;=]+(?:[\\/][^\s<>"'`:()[\]{},;=]+)+))/g;
+  /** A path with spaces is only recognisable by its quotes. */
+  private static readonly QUOTED_PATTERN = /(["'`])([^"'`]*\s[^"'`]*)\1/g;
+  /**
+   * Quoted text counts as a path only if it starts like one. Prose that merely
+   * contains a slash ("see /tmp for details") must not become one long link.
+   */
+  private static readonly QUOTED_PATH_START = /^(?:[A-Za-z]:[\\/]|\\\\|\/|\.\.?[\\/]|~[\\/])/;
+  /** How many screen rows of one wrapped line are joined at most. */
+  private static readonly MAX_WRAPPED_ROWS = 50;
   private static readonly LEADING_STRIP = new Set(["'", '"', "`", "(", "["]);
   private static readonly TRAILING_STRIP = new Set([
     ".",
@@ -49,12 +63,12 @@ export class LinkHandler implements ITerminalHandler {
     this._terminal = terminal;
     this._linkProviderDisposable = terminal.registerLinkProvider({
       provideLinks: (bufferLineNumber, callback) => {
-        const lineText = this.readBufferLineText(bufferLineNumber);
-        if (!lineText) {
+        const logicalLine = this.readLogicalLine(bufferLineNumber);
+        if (!logicalLine?.text) {
           callback(undefined);
           return;
         }
-        const matches = this.extractMatches(lineText);
+        const matches = this.extractMatches(logicalLine.text);
         if (matches.length === 0) {
           callback(undefined);
           return;
@@ -62,8 +76,8 @@ export class LinkHandler implements ITerminalHandler {
         callback(
           matches.map((match) => ({
             range: {
-              start: { x: match.startIndex + 1, y: bufferLineNumber },
-              end: { x: match.endIndexExclusive, y: bufferLineNumber },
+              start: this.positionOf(match.startIndex, logicalLine.segments),
+              end: this.positionOf(match.endIndexExclusive - 1, logicalLine.segments),
             },
             text: match.text,
             decorations: { underline: true, pointerCursor: true },
@@ -105,9 +119,42 @@ export class LinkHandler implements ITerminalHandler {
     this._terminal = undefined;
   }
 
-  private readBufferLineText(bufferLineNumber: number): string {
-    const line = this._terminal?.buffer.active.getLine(bufferLineNumber - 1);
-    return line?.translateToString(true) ?? "";
+  /**
+   * The whole line a screen row belongs to: a line longer than the terminal is
+   * wide is wrapped onto several rows, and a path can run across them.
+   */
+  private readLogicalLine(bufferLineNumber: number): LogicalLine | undefined {
+    const buffer = this._terminal?.buffer.active;
+    if (!buffer) return undefined;
+
+    let row = bufferLineNumber - 1;
+    for (let steps = 0; steps < LinkHandler.MAX_WRAPPED_ROWS && row > 0; steps++) {
+      if (!buffer.getLine(row)?.isWrapped) break;
+      row--;
+    }
+
+    const segments: RowSegment[] = [];
+    let text = "";
+    for (let count = 0; count < LinkHandler.MAX_WRAPPED_ROWS; count++) {
+      const line = buffer.getLine(row);
+      if (!line) break;
+      const continues = buffer.getLine(row + 1)?.isWrapped === true;
+      // Only the last row is trimmed: a space at the wrap point belongs to the text.
+      const rowText = line.translateToString(!continues);
+      segments.push({ row, start: text.length, end: text.length + rowText.length });
+      text += rowText;
+      if (!continues) break;
+      row++;
+    }
+
+    return segments.length > 0 ? { text, segments } : undefined;
+  }
+
+  /** The 1-based terminal position of the character at `index` of the joined line. */
+  private positionOf(index: number, segments: RowSegment[]): { x: number; y: number } {
+    const segment =
+      segments.find((candidate) => index < candidate.end) ?? segments[segments.length - 1];
+    return { x: index - segment.start + 1, y: segment.row + 1 };
   }
 
   private extractMatches(lineText: string): LinkMatch[] {
@@ -116,7 +163,11 @@ export class LinkHandler implements ITerminalHandler {
       matches.push(candidate);
     }
 
-    for (const candidate of this.collect(LinkHandler.PATH_PATTERN, lineText, "path")) {
+    const pathCandidates = [
+      ...this.collectQuotedPaths(lineText),
+      ...this.collect(LinkHandler.PATH_PATTERN, lineText, "path"),
+    ];
+    for (const candidate of pathCandidates) {
       if (matches.some((existing) => this.overlaps(existing, candidate))) continue;
       if (
         !this._pathResolver.resolvePathForOpen(
@@ -130,6 +181,33 @@ export class LinkHandler implements ITerminalHandler {
     }
 
     return matches.sort((a, b) => a.startIndex - b.startIndex);
+  }
+
+  /** Quoted paths with spaces, without their quotes. */
+  private collectQuotedPaths(lineText: string): LinkMatch[] {
+    const out: LinkMatch[] = [];
+    const pattern = new RegExp(LinkHandler.QUOTED_PATTERN);
+    for (let raw = pattern.exec(lineText); raw; raw = pattern.exec(lineText)) {
+      const start = raw.index;
+      const end = start + raw[0].length;
+      const text = raw[2];
+      // A quote inside a word is an apostrophe ("don't"), and it may be the closing quote of a
+      // pair that starts right here: look again from the next character.
+      if (
+        LinkHandler.isWordCharacter(lineText[start - 1]) ||
+        LinkHandler.isWordCharacter(lineText[end]) ||
+        !LinkHandler.QUOTED_PATH_START.test(text)
+      ) {
+        pattern.lastIndex = start + 1;
+        continue;
+      }
+      out.push({ kind: "path", text, startIndex: start + 1, endIndexExclusive: end - 1 });
+    }
+    return out;
+  }
+
+  private static isWordCharacter(character: string | undefined): boolean {
+    return character !== undefined && /[A-Za-z0-9_]/.test(character);
   }
 
   private collect(pattern: RegExp, lineText: string, kind: "url" | "path"): LinkMatch[] {
