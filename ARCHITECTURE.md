@@ -869,7 +869,7 @@ Ein Tauri-Fenster ist eine eigene Webview mit eigener Angular-Instanz. Zwei
 Fenster teilen keinen JS-Zustand: jedes hat seine eigene Workbench, eigene
 Session-Hosts, einen eigenen Feature-Host. Geteilt ist nur der Rust-Prozess —
 und der ist fensterunabhängig: alle PTYs in einer Map
-`terminalId → Session` (`pty.rs`), eine Datenbank, ein HTTP-Server.
+`terminalId → Session` (im Host, 2.7), eine Datenbank, ein HTTP-Server.
 Nachrichten an die Fenster routet `window_registry.rs` (Entscheidung 2),
 statt sie per `app.emit` an *alle* Fenster zu senden.
 
@@ -884,7 +884,8 @@ Entscheidungen:
    Selbst-Update (`updater.rs`: ein Prüf-, Download- und Installationszustand
    für die ganze App). Welches Fenster zu einem Terminal gehört, weiß
    allein sein PTY: der Spawn kommt immer aus einem Fenster, und dessen
-   Label trägt die Session in `pty.rs` (keine zweite Tabelle). Rust routet:
+   Label trägt die Session im Host als ihren Besitzer (2.7; keine zweite
+   Tabelle). Rust routet:
    Nachricht mit `terminalId` → `emit_to` an das Fenster dieses PTY; globale Aktion ohne Ziel → das fokussierte Fenster;
    Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
    Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
@@ -958,6 +959,39 @@ Entscheidungen:
    (`windowId` als Spalte, „letztes Fenster" als Default beim Start).
 
 ---
+
+### 2.7 Der Host (Rust)
+
+Der Rust-Teil besteht aus zwei Crates. **`cogno-host`**
+(`src-tauri/crates/cogno-host/`) ist alles, was auf dem Rechner laufen muss,
+auf dem die Shell läuft: PTYs mit Flow-Control, Shell-Start und Umgebung,
+Login-Umgebung, Line-Editor-Kanal, die Prozesse unter einer Shell, die
+installierten Shells. Es importiert kein Tauri und kennt weder Fenster noch
+Webview. Die **App** (`src-tauri/src/`) ist der Rest: Fenster, Datenbank,
+Config, HTTP-Server, Askpass, Command-Runner, Updater.
+
+Der Host hat genau einen Eingang und einen Ausgang (`protocol.rs`):
+
+- **`Host::handle(Request) -> Reply`** beantwortet eine Anfrage (PTY starten,
+  schreiben, Größe, beenden, quittieren; Prozessbaum; Shells auflisten). Die
+  Tauri-Kommandos der App sind nur noch Hüllen, die eine Anfrage bauen.
+- **`EventSink`** nimmt, was der Host meldet: Ausgabe einer Sitzung unter dem
+  Strom, den der Aufrufer beim Start genannt hat, und ihr Ende. Die App
+  reicht die Ausgabe an den Webview-Channel dieses Stroms und das Ende per
+  `emit_to` an das Fenster (`src-tauri/src/host.rs`).
+
+Auch lokal läuft damit jeder Aufruf über Anfrage und Ereignis — derselbe Weg,
+den ein Host auf einem anderen Rechner hätte.
+
+Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
+
+- **Den Besitzer einer Sitzung.** Für den Host ist er ein Name ohne
+  Bedeutung; die App nennt das Fenster. Er steht an der Sitzung selbst, damit
+  Spawn und Aufräumen eines Besitzers unter einem Lock entscheiden (2.6,
+  Entscheidung 3 und 4). `ReleaseOwner` beendet alle Sitzungen eines Besitzers.
+- **`COGNO_PORT` und `COGNO_TOKEN`.** Der HTTP-Server gehört der App; sie
+  reicht beide als zusätzliche Umgebung in den Spawn. Der Host setzt sie nach
+  der Umgebung des Profils, ein Profil überschreibt sie also nicht.
 
 ## 3. Das Protokoll (`core/api/`)
 

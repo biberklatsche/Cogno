@@ -1,4 +1,4 @@
-use crate::app_identity::TERM_PROGRAM_NAME;
+use crate::identity::TERM_PROGRAM_NAME;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
@@ -11,7 +11,6 @@ pub struct ShellEnvironment {
 pub struct EnvironmentBuilder {
     env: HashMap<String, String>,
     integration_root: PathBuf,
-    session_id: String,
 }
 
 impl EnvironmentBuilder {
@@ -53,7 +52,6 @@ impl EnvironmentBuilder {
         Self {
             env,
             integration_root,
-            session_id,
         }
     }
 
@@ -180,10 +178,6 @@ impl EnvironmentBuilder {
 
     pub fn build(self) -> ShellEnvironment {
         ShellEnvironment { env: self.env }
-    }
-
-    pub fn session_id(&self) -> &str {
-        &self.session_id
     }
 }
 

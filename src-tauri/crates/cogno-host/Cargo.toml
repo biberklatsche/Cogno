@@ -1,0 +1,23 @@
+[package]
+name = "cogno-host"
+version = "0.5.0"
+description = "What Cogno runs on the machine where the shell runs"
+authors = ["Lars Wolfram"]
+edition = "2021"
+license = "MPL-2.0"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+portable-pty = "0.8"
+which = "5"
+dirs = "6.0.0"
+uuid = { version = "1.11", features = ["v4"] }
+sysinfo = "0.33"
+log = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["jobapi2", "handleapi", "processthreadsapi", "winnt", "minwindef"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

@@ -121,8 +121,8 @@ value, unknown key at top level vs. nested, unknown action); `--config` / `--set
 **1b. Shell profiles — write to:** `.../docs/config/shell-profiles.md`
 
 **Sources:** `src/core/infrastructure/config/models/shell-config.ts`,
-`src/core/session/shells/` (detection, default args), `src-tauri/src/commands/shells.rs`,
-`src-tauri/src/commands/shell_spawner.rs` (effective defaults), `getOrderedShellProfiles`
+`src/core/session/shells/` (detection, default args), `src-tauri/crates/cogno-host/src/shells.rs`,
+`src-tauri/crates/cogno-host/src/shell_spawner.rs` (effective defaults), `getOrderedShellProfiles`
 in `config.service.ts`.
 
 **Required sections:** profiles are auto-created on first launch (which shells per

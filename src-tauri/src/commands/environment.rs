@@ -1,4 +1,5 @@
-use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME, LOG_FILE_STEM};
+use crate::app_identity::LOG_FILE_STEM;
+use cogno_host::identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
 use std::path::PathBuf;
 
 /// The Cogno home's name under the user's home: `.cogno`, or `.cogno-dev` in

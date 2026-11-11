@@ -5,14 +5,16 @@ pub mod cli;
 pub mod commands;
 mod db;
 mod endpoint;
+mod host;
 mod http_server;
 mod updater;
 
 use app_identity::LOG_FILE_STEM;
 use cli::Cli;
-use commands::pty::PtyState;
+use cogno_host::protocol::Request;
 use commands::window_registry::{route, WindowRegistry};
 use db::Db;
+use host::HostState;
 use http_server::{HttpServerState, RunnableActionsState};
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
@@ -26,7 +28,7 @@ const LOG_MAX_FILE_SIZE: u128 = 5 * 1024 * 1024;
 pub fn run(cli: Cli) {
     // Capture the user's login-shell environment in the background so the
     // first terminal spawn does not pay the login-shell startup cost.
-    crate::commands::login_environment::prefetch_login_environment();
+    cogno_host::login_environment::prefetch_login_environment();
 
     Builder::default()
         .plugin(tauri_plugin_os::init())
@@ -86,7 +88,6 @@ pub fn run(cli: Cli) {
                 let _ = window.set_focus();
             }
         }))
-        .manage(PtyState::new())
         .manage(crate::commands::window::QuitState::default())
         .manage(HttpServerState::new())
         .manage(RunnableActionsState::new())
@@ -104,7 +105,11 @@ pub fn run(cli: Cli) {
                 let app = window.app_handle();
                 app.state::<crate::commands::window::QuitState>()
                     .cancel_window(window.label());
-                app.state::<PtyState>().release_window(window.label());
+                // Returns at once: the host releases the sessions on a thread
+                // of its own.
+                let _ = app.state::<HostState>().handle(Request::ReleaseOwner {
+                    owner: window.label().to_string(),
+                });
                 app.state::<WindowRegistry>().on_destroyed(window.label());
             }
             _ => {}
@@ -149,6 +154,8 @@ pub fn run(cli: Cli) {
             crate::updater::updater_install
         ])
         .setup(move |app| {
+            // Before the first window: its webview spawns the first shells.
+            app.manage(HostState::new(app.handle().clone()));
             crate::updater::manage(app.handle());
             std::thread::spawn(crate::commands::clipboard_image::remove_leftover_paste_files);
 
@@ -187,7 +194,10 @@ pub fn run(cli: Cli) {
             if let RunEvent::Exit = event {
                 // Shells first, so none outlives the app (SIGHUP lets them
                 // write their history on the way out).
-                app.state::<PtyState>().release_all();
+                // A start that failed in `setup` never got a host.
+                if let Some(host) = app.try_state::<HostState>() {
+                    host.release_all();
+                }
                 // No process must find this instance's port once it is gone.
                 app.state::<HttpServerState>().remove_endpoint();
                 // Fold the WAL back into the main file so the database is a
