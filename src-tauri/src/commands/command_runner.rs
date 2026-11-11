@@ -190,21 +190,14 @@ fn run(
     let status = match timeout_ms.filter(|value| *value > 0) {
         None => Some(child.wait()?),
         Some(timeout_ms) => {
-            let timeout = Duration::from_millis(timeout_ms);
-            let mut deadline = Instant::now() + timeout;
-            let mut seen = 0;
+            let mut idle =
+                IdleDeadline::starting(Instant::now(), Duration::from_millis(timeout_ms));
             loop {
                 if let Some(status) = child.try_wait()? {
                     break Some(status);
                 }
-                // Neither time the user spends on a prompt nor time the
-                // command spends talking counts: only silence does.
                 let received = stdout.received() + stderr.received();
-                if prompt_pending() || received != seen {
-                    seen = received;
-                    deadline = Instant::now() + timeout;
-                }
-                if Instant::now() >= deadline {
+                if idle.expired(Instant::now(), received, prompt_pending()) {
                     // The group's id is the child's (process_group(0)).
                     #[cfg(unix)]
                     unsafe {
@@ -245,6 +238,36 @@ fn run(
             exit_code: 124,
         },
     })
+}
+
+/// When a silent command is ended. Neither time the user spends on a prompt
+/// nor time the command spends talking counts: only silence does. The caller
+/// says what time it is, so the rule holds without a clock.
+struct IdleDeadline {
+    timeout: Duration,
+    deadline: Instant,
+    /// Bytes the command had produced when it was last heard from.
+    seen: u64,
+}
+
+impl IdleDeadline {
+    fn starting(now: Instant, timeout: Duration) -> Self {
+        Self {
+            timeout,
+            deadline: now + timeout,
+            seen: 0,
+        }
+    }
+
+    /// Whether the command has been silent for the whole timeout at `now`.
+    /// `received` is every byte it has produced so far.
+    fn expired(&mut self, now: Instant, received: u64, prompt_pending: bool) -> bool {
+        if prompt_pending || received != self.seen {
+            self.seen = received;
+            self.deadline = now + self.timeout;
+        }
+        now >= self.deadline
+    }
 }
 
 /// A pipe being read on its own thread, so a chatty child never blocks on a
@@ -305,6 +328,58 @@ fn drain<R: Read + Send + 'static>(pipe: Option<R>) -> Drain {
     }
 }
 
+#[cfg(test)]
+mod idle_deadline_tests {
+    use super::*;
+
+    const TIMEOUT: Duration = Duration::from_millis(300);
+
+    fn after(start: Instant, millis: u64) -> Instant {
+        start + Duration::from_millis(millis)
+    }
+
+    #[test]
+    fn a_silent_command_expires_once_the_timeout_has_passed() {
+        let start = Instant::now();
+        let mut idle = IdleDeadline::starting(start, TIMEOUT);
+
+        assert!(!idle.expired(after(start, 299), 0, false));
+        assert!(idle.expired(after(start, 300), 0, false));
+    }
+
+    #[test]
+    fn output_starts_the_wait_anew() {
+        let start = Instant::now();
+        let mut idle = IdleDeadline::starting(start, TIMEOUT);
+
+        assert!(!idle.expired(after(start, 250), 10, false));
+        // Past the first deadline, but not yet silent for the whole timeout.
+        assert!(!idle.expired(after(start, 549), 10, false));
+        assert!(idle.expired(after(start, 550), 10, false));
+    }
+
+    #[test]
+    fn steady_output_keeps_a_command_alive_far_past_the_timeout() {
+        let start = Instant::now();
+        let mut idle = IdleDeadline::starting(start, TIMEOUT);
+
+        for step in 1..=100 {
+            assert!(!idle.expired(after(start, step * 200), step, false));
+        }
+    }
+
+    #[test]
+    fn an_open_prompt_starts_the_wait_anew_without_output() {
+        let start = Instant::now();
+        let mut idle = IdleDeadline::starting(start, TIMEOUT);
+
+        assert!(!idle.expired(after(start, 10_000), 0, true));
+        // The answer is in: from here on silence counts again.
+        assert!(!idle.expired(after(start, 10_299), 0, false));
+        assert!(idle.expired(after(start, 10_300), 0, false));
+    }
+}
+
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;
@@ -345,15 +420,10 @@ mod tests {
     }
 
     #[test]
-    fn output_keeps_a_command_alive_past_the_timeout() {
-        let result = run(
-            shell("for i in 1 2 3 4 5 6; do echo $i; sleep 0.1; done"),
-            Some(300),
-        )
-        .unwrap();
+    fn an_open_prompt_keeps_a_silent_command_alive_past_the_timeout() {
+        let result = super::run(shell("sleep 0.3"), Some(50), None, &|| true).unwrap();
 
         assert_eq!(result.exit_code, 0);
-        assert_eq!(result.stdout, "1\n2\n3\n4\n5\n6\n");
     }
 
     #[test]
