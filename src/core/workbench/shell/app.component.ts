@@ -55,6 +55,9 @@ import { OsPlatform, OsType } from "@cogno/platform/os";
 
             header.space-left-window-buttons {
                 padding-left: 70px;
+                /* No window buttons on the right here, so the workspace
+                   select would sit flush against the window edge. */
+                padding-right: 6px;
             }
 
             main {
