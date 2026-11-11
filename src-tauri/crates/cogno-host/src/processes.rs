@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use sysinfo::Signal;
 use sysinfo::{
@@ -9,7 +9,7 @@ use sysinfo::{
 };
 /// What the process-info panel shows about one process - nothing more, so a
 /// snapshot does not read every process's environment or command line.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessDetails {
     pub process_id: u32,
@@ -21,7 +21,7 @@ pub struct ProcessDetails {
     pub memory_bytes: u64,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessTreeSnapshot {
     pub root_process_id: u32,
@@ -32,7 +32,7 @@ pub struct ProcessTreeSnapshot {
 /// A process under one terminal's shell, as the coding-agents feature matches
 /// an agent's session to its terminal (ARCHITECTURE.md 3.2): name and cwd to
 /// find candidates, the start time to tell two apart.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TerminalProcess {
     pub terminal_id: String,

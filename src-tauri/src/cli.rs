@@ -30,6 +30,12 @@ pub enum CliCommand {
         #[command(subcommand)]
         command: ConfigCommand,
     },
+    /// Serve this machine's shells to a Cogno on another machine
+    Server {
+        /// Talk over stdin and stdout (what ssh connects)
+        #[arg(long, required = true)]
+        stdio: bool,
+    },
 }
 
 #[derive(Subcommand, Debug, Clone)]
