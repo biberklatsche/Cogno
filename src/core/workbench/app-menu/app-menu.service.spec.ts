@@ -34,6 +34,16 @@ describe("AppMenuService", () => {
       },
       load: () => Promise.resolve(),
       reload: () => Promise.resolve(),
+      update: () => Promise.resolve(),
+      get schema(): never {
+        throw new Error("not implemented");
+      },
+      get userKeys$(): never {
+        throw new Error("not implemented");
+      },
+      get defaultSettings(): never {
+        throw new Error("not implemented");
+      },
       getShellProfileOrDefault: vi.fn(),
       getOrderedShellProfiles: vi.fn().mockReturnValue([
         {
@@ -57,15 +67,11 @@ describe("AppMenuService", () => {
   it("builds terminal items, separator and default actions", () => {
     const menu = service.buildMenu();
 
-    expect(menu).toHaveLength(8);
+    expect(menu).toHaveLength(4);
     expect(menu[0]).toEqual(expect.objectContaining({ label: "zsh" }));
     expect(menu[1]).toEqual(expect.objectContaining({ label: "bash" }));
     expect(menu[2]).toEqual({ separator: true });
     expect(menu[3]).toEqual(expect.objectContaining({ label: "New Window" }));
-    expect(menu[4]).toEqual(expect.objectContaining({ label: "Settings" }));
-    expect(menu[5]).toEqual({ separator: true });
-    expect(menu[6]).toEqual(expect.objectContaining({ label: "Open Documentation" }));
-    expect(menu[7]).toEqual(expect.objectContaining({ label: "About Cogno" }));
   });
 
   it("publishes direct shell actions and action-definition-based items", () => {
@@ -88,12 +94,8 @@ describe("AppMenuService", () => {
 
     const menu = service.buildMenu();
 
-    expect(menu).toHaveLength(5);
+    expect(menu).toHaveLength(1);
     expect(menu[0]).toEqual(expect.objectContaining({ label: "New Window" }));
-    expect(menu[1]).toEqual(expect.objectContaining({ label: "Settings" }));
-    expect(menu[2]).toEqual({ separator: true });
-    expect(menu[3]).toEqual(expect.objectContaining({ label: "Open Documentation" }));
-    expect(menu[4]).toEqual(expect.objectContaining({ label: "About Cogno" }));
   });
 
   it("throws when a standard menu item lacks an action definition", () => {

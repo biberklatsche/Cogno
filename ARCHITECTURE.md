@@ -33,7 +33,18 @@ Der Code liegt vollständig unter `shared/`, `platform/`, `core/`,
    Tabellen. Siehe 2.4.
 7. **Notification-Dispatch ist Core (Workbench)**, die Übersicht ist ein
    Feature. Der Dispatch braucht Layout-Identität, Fokus und Seitenleiste —
-   er ist deshalb Workbench, nicht `core/infrastructure/`.
+   er ist deshalb Workbench, nicht `core/infrastructure/`. Eine Meldung hat
+   eine **Quelle** (Terminal, Coding-Agents, Fehler) mit **Ereignissen** und
+   geht an **Kanäle** (App-Toast, OS, Tab-Badge). Welche Ereignisse melden,
+   steht je Quelle in der Config (`notification.source.<quelle>.<ereignis>.enabled`);
+   wohin, steht einmal global (`notification.channel.<kanal>.enabled`). Eine
+   Quelle nennt nie einen Kanal. Quellen sind Contributions
+   (`notificationSources`, Abschnitt 6): Core setzt Schema, Defaults, Doku
+   und die Settings-Seite daraus zusammen und kennt kein Ereignis selbst;
+   Terminal und Fehler melden sich als Core-Quellen auf demselben Weg an.
+   Bedient wird das wie jede andere Einstellung im Settings-Panel der
+   Workbench (5), das in die Config schreibt; kein Feature hat eigene
+   Notification-Schalter.
 8. **Toter Code raus.** Code ohne Konsumenten wird entfernt, nicht
    für später aufbewahrt.
 9. Nightly-Kanal: nicht Teil dieser Architektur.
@@ -238,13 +249,26 @@ OSC 9 Nachricht, 9;4 Fortschritt) bleiben ohne Token — sie ändern kein
 Modell, nur Anzeige.
 
 **Der lokale HTTP-Server ist ebenso geschützt.** Über ihn melden
-Coding-Agent-Hooks ihren Status und löst `cogno action run` Aktionen aus.
+Coding-Agent-Hooks ihre Ereignisse und löst `cogno action run` Aktionen aus.
 Rust erzeugt je Start ein Geheimnis `COGNO_TOKEN` und gibt es jeder Shell mit
 (neben `COGNO_PORT`); jede Anfrage muss es im Header `X-Cogno-Token` tragen
 und die Loopback-Adresse (`127.0.0.1:<port>`, `localhost:<port>`) als Host
 nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
 wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
 DNS-Rebinding auf 127.0.0.1 umbiegt.
+
+Prozesse außerhalb jedes Cogno-Terminals haben einen eigenen Schlüssel —
+etwa der Hintergrunddienst eines Coding-Agents (3.2). Für sie schreibt der
+Server beim Start eine Endpoint-Datei `~/.cogno/endpoint.json` (Port
+und ein **externes Token**, nur für den Nutzer lesbar) und löscht sie beim
+Beenden. Rust kennt dabei keinen Konsumenten: das externe Token öffnet
+ausschließlich `POST /action`, das eine Nachricht an die Webview reicht;
+`/action/run` (Aktionen auslösen) und `/askpass` bleiben beim Launch- bzw.
+Lauf-Token. Ein lokaler Prozess, der die Datei liest, kann damit nur
+Nachrichten schicken. Heute liest sie allein das Coding-Agents-Feature, das
+Schlimmste ist eine falsche Agent-Karte. **Wer künftig `/action`-Nachrichten
+mit Wirkung verarbeitet, muss davon ausgehen, dass sie von außen kommen
+können.**
 
 **Prozesse ohne Terminal fragen über denselben Server.** Was `run` startet
 (2.2), hat keine PTY; git und ssh würden Zugangsdaten, Passphrasen und
@@ -310,11 +334,12 @@ Workbench abonniert das und entscheidet selbst: Tab-Titel und Busy-Indikator
 aktualisieren, bei Prozessende Pane und — wenn es das letzte Pane war — Tab
 entfernen. Auch Benachrichtigungen entstehen so: die Session meldet „Kommando
 endete nach 90 s" oder „OSC 9 kam", der Notification-Dispatch der Workbench
-entscheidet Schwelle, Kanal und Unread-Badge (für lange Kommandos
+entscheidet Schwelle und Kanäle (für lange Kommandos
 `completed-command-notification.handler` in `core/workbench/terminal/`).
-Das Ungelesen-Abzeichen setzt die Workbench; es liegt aber im
-Sitzungsmodell, weil die Session es selbst löscht — bei Eingabe und bei
-Fokus — und es mit ihr stirbt. Welches Pane maximiert ist, ist dagegen
+Das Ungelesen-Abzeichen ist ein Kanal (`badge`) wie Toast und OS-Meldung; er
+setzt es über die Session-Registry auf dem Modell der Session, zu der die
+Meldung gehört. Es liegt im Sitzungsmodell, weil die Session es selbst
+löscht — bei Eingabe und bei Fokus — und es mit ihr stirbt. Welches Pane maximiert ist, ist dagegen
 reiner Workbench-Zustand und liegt im `GridListService`.
 PTY-Exit meldet die Session als Fakt `exited` (siehe 2.3), nicht als Befehl
 `RemovePane` an das Layout. Die Session kennt keinen Bus: sie veröffentlicht
@@ -353,7 +378,7 @@ features/            Git, Coding-Agents, Palette, …
     │  benutzen Ports, erfüllen Contributions
     ▼
 core/api/            nur Verträge: SessionApi, TerminalMonitor, TerminalNavigator,
-    ▲                TerminalPlacement, Ports (Config, Actions, Dateisystem, …), contributions/
+    ▲                TerminalPlacement, TerminalProcesses, Ports (Config, Actions, …), contributions/
     │  implementieren Ports, lesen Contributions
     ├────────  core/workbench/   Fokus, Layout-Identität, Reveal, Feature-Host, api-adapters/
     │                 │  besitzt
@@ -537,7 +562,10 @@ Konkret: Prozess-Info ist ein **Panel in der Seitenleiste** — ein
 sitzungsgebundenes Feature wie Git, das `boundSession$` folgt und den
 Prozessbaum daraus liest. Einen Dialog im Kontextmenü und einen Menüeintrag
 „Process Info" gibt es nicht; der Baum ist kein Modell-Fakt, sondern wird über `boundSession.processTree()` bei
-jedem Aufruf frisch ermittelt. Git bleibt eine vollständige
+jedem Aufruf frisch ermittelt. `boundSession.terminateProcess(processId)` beendet
+einen Prozess dieses Baums samt allem, was er gestartet hat: mit Identitäts-Check
+wie `run`, und das Backend nimmt nur Nachfahren der Shell dieses Terminals an —
+nie die Shell selbst, nie eine fremde PID. Git bleibt eine vollständige
 Scheibe — Ermittlung über `boundSession.run({ executable: "git", args: ["status", "--porcelain"], contextRevision })`, Tabellen, UI,
 Settings — und
 `mode: off` heißt: alles weg. Coding-Agents bleiben ein Ganzes, inklusive
@@ -683,15 +711,19 @@ setzt eigene SELECTs ab. Drei Rollen, drei Orte:
 Der Recorder liegt in `core/session/recorder/`, die Abfrage-API in
 `core/command-log/command-log.api.ts` (sitzungsgebunden erreichbar über
 `core/session/command-log/`). Die
-Rückkehrcode-Regel ist Recorder-Konfiguration und kommt aus der Config:
-`terminal.history.allowed_return_codes` (leer = kein Filter, der
-Auslieferungszustand; `[0]` = nur erfolgreiche Kommandos) und
-`allowed_return_codes_by_command.<kommando>` als Ausnahme je erstem Wort
-(`grep = [0,1]`, weil Exit 1 dort „nichts gefunden" heißt). Sie greift erst
-nach der ersten Hürde: ein Kommando, das die Shell nicht gefunden hat
-(`commandExists`), wird nie gespeichert, ein Tippfehler im Namen also auch bei
-leerer Liste nicht. Der Recorder liest die Config bei jeder Entscheidung, ein
-Reload wirkt sofort.
+History speichert jedes Kommando, auch Tippfehler — dort sucht man sie, um sie
+zu korrigieren. Das Autocomplete bekommt nur, was es vorschlagen darf: der
+Recorder schreibt dann zusätzlich die Ranking-Zeile (`command_stat`) und den
+Übergang, sonst nur die Log-Zeile (`appendCommandExecution`). Nicht
+vorgeschlagen wird ein Kommando, das die Shell nicht gefunden hat
+(`commandExists`). Das meldet die Shell selbst nach der Ausführung — bash und
+zsh über Exit 126/127, PowerShell über eine neue `CommandNotFoundException` —,
+nicht eine nachträgliche Prüfung des ersten Worts. Danach greift die
+Rückkehrcode-Regel aus der Config: `autocomplete.allowed_return_codes` (leer =
+kein Filter, der Auslieferungszustand; `[0]` = nur erfolgreiche Kommandos) und
+`autocomplete.allowed_return_codes_by_command.<kommando>` als Ausnahme je
+erstem Wort (`grep = [0,1]`, weil Exit 1 dort „nichts gefunden" heißt). Der
+Recorder liest die Config bei jeder Entscheidung, ein Reload wirkt sofort.
 Der Degradationspfad „DB fehlt" liegt einmal in `command-log/`; jede Sicht sieht
 dann eine leere, aber gültige Datenquelle.
 
@@ -856,7 +888,8 @@ Entscheidungen:
    Nachricht mit `terminalId` → `emit_to` an das Fenster dieses PTY; globale Aktion ohne Ziel → das fokussierte Fenster;
    Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
    Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
-   Das Feature `updater` fragt aus jedem Fenster nach Prüfungen; Rust
+   Der Updater (`core/workbench/updater/`, Workbench und kein Feature: die
+   Anwendung aktuell zu halten hat keinen Modus) fragt aus jedem Fenster nach Prüfungen; Rust
    beantwortet dicht aufeinanderfolgende aus dem letzten Ergebnis und lädt
    nie doppelt. Die Ankündigung einer neuen Version ist eine globale Aktion
    ohne Ziel: einmal je App und Version, an das fokussierte Fenster.
@@ -935,9 +968,9 @@ beitragen kann. Es lebt in `core/api/`, dem einzigen Ordner in `core/`, den
 Features importieren, und besteht **nur aus Verträgen**:
 
 - **Ports** (Core → Feature): `SessionApi`, `TerminalMonitorPort`,
-  `TerminalNavigator`, `TerminalPlacementPort`, `TerminalIpcPort`,
-  `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
-  `NotificationChannelsPort`, `ApplicationConfigurationPort`,
+  `ApplicationConfigurationPort`,
+  `TerminalIpcPort`, `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
+  `TerminalNavigator`, `TerminalPlacementPort`, `TerminalProcessesPort`,
   `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
   `FeatureDefinition`, Side-Menu-Features, Feature-Settings,
@@ -1047,6 +1080,78 @@ Für Ports und Schnittstellen gelten drei Regeln:
    Contributions-Liste, die Plattform-Provider und jeden Port aus
    `core/api/` an seine Implementierung (`provide: Port, useExisting:
    Adapter`).
+
+### 3.2 Coding-Agents: Sitzung des Agenten als Schlüssel
+
+Die Coding-Agents waren zuerst **terminalgeschlüsselt**: der Hook eines
+Agenten erbte `COGNO_PORT`, `COGNO_TOKEN` und `COGNO_TERMINAL_ID` aus der
+Shell, meldete sich damit, und das Feature führte je Terminal einen
+Agenten. Das trägt nicht mehr: Codex (ab 0.157) und OpenCode (ab 2.x) lassen
+Hooks und Plugins in einem zentralen Hintergrunddienst laufen, der die
+Umgebung der Shell hat, die ihn zuerst gestartet hat — oder gar keine. Dort
+gibt es weder Port noch Terminal. Cogno zwingt die Agenten nicht in einen
+Betrieb ohne Dienst (`--no-daemon`, `daemon_auto_start = false`): das ist
+ein Eingriff in fremde Befehle und Konfiguration, und der Modus fällt
+absehbar weg.
+
+Deshalb gilt:
+
+1. **Der Schlüssel ist die Sitzung des Agenten**, die er selbst kennt und in
+   jedem Ereignis nennt (`session_id` bei Codex und Claude Code, die
+   Session-ID bei OpenCode). Das Terminal ist ein Attribut der Sitzung, das
+   Cogno ermittelt, nicht die Identität.
+2. **Hooks finden Cogno ohne Umgebung.** Das Feature legt je Shell ein
+   stabiles Hook-Skript unter `~/.cogno/coding-agents/` ab (sh und
+   PowerShell; geschrieben über `platform/`, wenn ein Adapter es zum ersten
+   Mal braucht, inhaltsgleich bleibt unberührt). Das Skript liest den Payload
+   von stdin, nimmt Port, Token und Terminal aus der Umgebung, wenn sie da
+   ist, sonst Port und externes Token aus der Endpoint-Datei (2.1), und
+   sendet die Nachricht `coding_agent_hook` mit `[provider, sentAt, event]`
+   an `POST /action`. Das Protokoll kennt nur das Feature; Rust reicht die
+   Nachricht weiter wie jede andere. In der Agenten-Config steht nur
+   `<skript> <provider> <event>`:
+   der Befehl ändert sich nie, auch wenn das Protokoll sich ändert. Das
+   zählt, weil Codex jeden geänderten Hook-Befehl bis zur erneuten Freigabe
+   im Terminal (`/hooks`, `trusted_hash`) stillschweigend nicht ausführt;
+   ändert sich die Hooks-Datei doch, sagt der Codex-Adapter das per
+   Benachrichtigung. Ein Hook gilt nur als aktuell, wenn genau die Hooks
+   dieser Fassung da sind: ein älterer Cogno-Hook daneben liefe doppelt und
+   wird beim nächsten Abgleich entfernt.
+   Mehrere Cogno-Instanzen teilen eine Datei; die zuletzt gestartete gewinnt.
+   Rust routet einen Hook mit Terminal an dessen Fenster, einen ohne an das
+   zuletzt fokussierte (2.6); bei mehreren Fenstern kann die Zuordnung dort
+   fehlschlagen, die Karte erscheint dann ohne Platzierung.
+3. **Der Adapter besitzt seinen Transport.** Die Adapter-Schnittstelle
+   (`ICodingAgentProvider`, intern im Feature) liefert `install`, `remove`,
+   `state` wie bisher — Konfigurationsformat, Feature-Flags und Trust-Hinweise
+   sind Sache des Adapters — und dazu `events$`: normierte Ereignisse je
+   `sessionId` (Status, Details, Sitzungsgrenze, Subagent) mit dem, was der
+   Agent über die Sitzung weiß: `terminalId`, wenn der Hook sie noch hatte,
+   `cwd`, Startzeit. Woher die Ereignisse kommen — Hook-Payloads über
+   `/action`, ein Plugin, später ein App-Server-Protokoll — entscheidet der
+   Adapter; das Feature sieht nur `events$`. Der Status steht nicht mehr im
+   Hook-Befehl, sondern wird im Adapter aus dem Ereignis gelesen. OpenCode
+   ist der Plugin-Fall: ein Ordner von Cogno unter
+   `~/.config/opencode/plugins/`, der im Hintergrunddienst läuft, Cogno über
+   die Endpoint-Datei findet, nie ein Terminal nennt (die Umgebung des
+   Dienstes ist die des ersten Starters) und Kind-Sitzungen (`parentID`) als
+   Subagenten der Eltern-Sitzung meldet.
+4. **Die Zuordnung zum Terminal ist generisch.** Ein Binder im Feature nimmt
+   `terminalId`, wenn das Ereignis eine nennt (Claude Code: exakt wie
+   bisher). Sonst gleicht er `cwd` und Startzeit der Sitzung gegen die
+   Prozesse der Terminals ab, mit den Prozessnamen, die der Adapter als Daten
+   nennt (`processNames`). Dafür bekommt das Protokoll
+   `TerminalProcessesPort` (Prozesse je Terminal: Name, cwd, Startzeit) —
+   die Daten gibt es (`pty_get_process_tree_by_terminal_id`), bisher nur
+   für die gebundene Sitzung. Kein Adapter und kein Service unterscheidet
+   Agenten per `if`/`switch`; ein neuer Agent ist ein neuer Adapter und ein
+   Eintrag in der Registry.
+5. **Lebenszyklus je Sitzung.** Der Status-Service führt Sitzungen, nicht
+   Terminals. Eine Sitzung endet mit ihrem Ende-Ereignis oder wenn ihr
+   Prozess aus den Terminals verschwindet; ein Terminal, das endet, nimmt die
+   Sitzungen mit, die ihm zugeordnet waren. Eine Sitzung ohne eindeutiges
+   Terminal (zwei Instanzen im selben Ordner, gleiches Zeitfenster) wird
+   gezeigt, ohne Platzierung — der Fall wird sichtbar statt still verloren.
 
 ---
 
@@ -1230,6 +1335,45 @@ Feature-Liste aus `bootstrap/`, kennt also auch Feature-Aktionen. CI prüft,
 dass die generierten Dateien aktuell sind — sonst driftet es doch, nur auf
 andere Art.
 
+**Schreiben.** Die Datei ist die Wahrheit, auch für das, was die Oberfläche
+umschaltet. Dafür gibt es genau einen Weg: `ConfigService.update(entries)`.
+Er nimmt Dot-Pfade mit Werten, prüft jeden gegen dasselbe Zod-Schema, mit dem gelesen wird —
+unbekannter Schlüssel oder falscher Typ lehnt den ganzen Aufruf ab, nichts
+wird geschrieben — und ändert dann **nur die betroffenen Zeilen**
+(`config-line-editor.ts`): eine vorhandene Zeile wird ersetzt, eine neue
+neben ihre nächsten Verwandten gesetzt, Kommentare und Reihenfolge bleiben.
+Danach liest er neu. Es schreibt nur das Settings-Panel; Features lesen die
+Config über `ApplicationConfigurationPort` und schreiben sie nicht. Eine
+zweite Wahrheit neben der Datei (ein Schalter im Speicher, der beim
+Neustart vergisst) gibt es nicht mehr. CLI-Overrides
+(`--config-set`) wirken nur beim Lesen und werden nie persistiert.
+
+**Das Settings-Panel** (`core/workbench/settings/`) ist die Oberfläche
+dazu: ein Eintrag unten in der Seitenleiste, Workbench und kein Feature,
+Aktion `open_settings` (`Cmd+,`). Mit einem Top-Level-Schlüssel als Argument
+(`open_settings notification`) öffnet die Aktion das Panel im Abschnitt
+dieses Schlüssels; so springt ein Feature über den `ActionDispatcher` zu
+seinen Einstellungen, statt eine zweite Oberfläche dafür zu bauen (das
+Zahnrad der Benachrichtigungsübersicht). Es rendert sich vollständig aus dem
+Schema: `config-schema-walker.ts` liest je Setting Schlüssel, Abschnitt,
+Beschreibung (`.describe()`), Steuerelement (aus der Zod-Definition) und
+Default (aus `composeDefaultSettings`, 5.1); der Doku-Generator liest
+dieselben Descriptoren. Abschnitte folgen einer Konvention statt einer
+Liste: Jeder Top-Level-Schlüssel, der Gruppe, Map oder Liste ist, ist ein
+Abschnitt mit dem Namen seines Schlüssels (`.meta({ title })` nur, wo der
+Name falsch läse, etwa „HTTP server"), in der Reihenfolge des Schemas;
+einzelne Werte stehen unter „General". Ein neues Setting oder ein neuer
+Top-Level-Schlüssel, auch eines Features, erscheint damit im Panel und in
+der Referenz, ohne dass jemand eines von beiden anfasst. Was das Panel
+nicht editiert — Maps mit frei gewählten Namen (Shell- und Prompt-Profile)
+und additive Listen wie `keybind` — zeigt es als eine Zeile mit „Edit in
+config file" (`open_config`). Additiv ist eine Liste durch die Markierung
+`ADDITIVE_LIST` an ihrem Schema; der Leser hängt ihre Zeilen dann an die
+Defaults an, statt sie zu ersetzen, ohne den Schlüssel beim Namen zu
+kennen. Die Werte kommen aus `config$`,
+„geändert" aus den Schlüsseln der Nutzerdatei (`userKeys$`), Reset nimmt
+die Zeile wieder heraus.
+
 ### 5.1 Die Default-Konfiguration
 
 Die Defaults haben drei Teile — Werte, Beschreibungen, Keybindings — und
@@ -1240,8 +1384,12 @@ jede Datei könnte für sich abdriften.
 Regel: **Quelle ist Code, Sicht ist eine vollständige generierte Datei pro
 OS.**
 
-- Settings: die Beschreibung in Zod (`.describe(…)`), der Wert an einer
-  Stelle, `default-config-values.ts`, auch wo er vom OS abhängt (Abschnitt 6).
+- Settings: die Beschreibung in Zod (`.describe(…)`), der Wert aus einer
+  Komposition, `composeDefaultSettings`: was Core besitzt, steht in
+  `default-config-values.ts`, auch wo es vom OS abhängt; was eine
+  Notification-Quelle deklariert, bringt sie selbst mit (Abschnitt 6).
+  Generierte Default-Config, Referenz und Settings-Panel lesen dieselbe
+  Komposition.
 - Keybindings: Core-Aktionen in ihrer Katalogdefinition, pro OS
   (`defaultKeys`); Feature-Aktionen in `featureKeybinds`
   (`default-config-values.ts`). Eine Aktion ohne Default-Keybinding ist
@@ -1280,6 +1428,7 @@ Feature = {
   target: "session" | "workbench"        // Achse 1: worauf es zeigt; Lebensdauer ist immer Anwendung
   actions?                               // Deklaration known, Handler erst bei Aktivierung (5)
   settings?, migrations?                 // Deklaration: immer registriert (6.1)
+  notificationSources?                   // Deklaration: Quellen und Ereignisse für notification.source.<id>
   sideMenu?, notificationChannels?, suggestors? // Aktivierung: nur bei mode: on
   mode: "on" | "off"                      // jedes Feature; Default "on"
 }
@@ -1303,11 +1452,26 @@ Ein Feature besitzt seine Einstellungen (eigenes Zod-Schema — kein zentraler
 Sammelpunkt, keine Kopie im statischen `Config`-Typ), seine Tabellen
 und Migrationen, seine Contributions und seine UI. Die `settings`-Contribution
 ist genau dieses Schema (`schemaShape`) und nichts weiter: **Default-Werte
-gehören nicht dazu.** Sie stehen an einer Stelle, `default-config-values.ts`,
-aus der die Default-Konfiguration generiert wird (5.1); ein zweiter Satz
-Defaults am Feature würde von ihr ohnehin überschrieben und kann ihr nur
-widersprechen. Ein Top-Level-Schlüssel hat genau einen Besitzer — deshalb
-teilen sich alle Features eine Extension für `feature.*`.
+gehören nicht dazu.** Sie stehen in `default-config-values.ts`, aus der die
+Default-Konfiguration generiert wird (5.1); ein zweiter Satz Defaults am
+Feature würde von ihr ohnehin überschrieben und kann ihr nur widersprechen. Ein Top-Level-Schlüssel hat genau einen Besitzer — deshalb
+teilen sich alle Features eine Extension für `feature.*`. Die eine
+Ausnahme von „Feature-Einstellungen stehen unter `feature.<id>`" sind die
+Ereignisse einer Notification-Quelle: Sie stehen unter
+`notification.source.<id>`, weil `notification` Core gehört und die
+Quellen darunter **zusammengesetzt** sind, nicht gewusst — Core baut das
+Schema aus den deklarierten Quellen (`createNotificationSettingsSchema`),
+die Doku-Generatoren tun dasselbe, und ein Ereignis einer nicht deklarierten
+Quelle ist ein unbekannter Schlüssel wie jeder Tippfehler. Auch ihre
+Defaults sind zusammengesetzt, nicht gewusst: Per Konvention ist jedes
+Ereignis aus, bis der Nutzer es einschaltet; eigene Einstellungen eines
+Ereignisses deklarieren Schema und Default zusammen
+(`NotificationEventSettingContract`), sodass keines ohne Default sein kann.
+
+Ob eine Meldung erscheint, entscheidet eine Stelle: Eine Meldung trägt ihr
+Ereignis als Daten (`event: { source, id }`), der Dispatch prüft dessen
+Schalter und gibt nur Durchgelassenes an Kanäle und Übersicht weiter. Kein
+Sender liest Schalter; eine Meldung ohne Ereignis erscheint immer.
 
 `requires` gibt es, weil ausdrücklich gewünscht — mit der ehrlichen Anmerkung,
 dass der reale Baum null Kanten hat. Der Feature-Host löst es trotzdem auf (6.1), damit die erste echte

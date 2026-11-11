@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
-import { ClipboardAccess, Opener } from "@cogno/platform";
+import { ClipboardAccess, FolderPicker, Opener } from "@cogno/platform";
+import { isWslShellContext } from "@cogno/shared/domain";
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -65,6 +66,7 @@ export class GitUiActions {
     private readonly clipboard: ClipboardAccess,
     private readonly opener: Opener,
     private readonly access: GitRemoteAccessService,
+    private readonly folders: FolderPicker,
   ) {}
 
   // Several branches
@@ -154,9 +156,10 @@ export class GitUiActions {
   }
 
   async clone(): Promise<void> {
+    const session = this.repository.currentSession();
+    // The picker names a folder of this machine, which a WSL shell cannot use as it is.
+    const canBrowse = !!session && !isWslShellContext(session.shellContext);
     const result = await this.prompt("Clone a repository", {
-      message:
-        "The repository is cloned into the folder below, relative to the terminal's current directory.",
       fields: [
         {
           key: "url",
@@ -164,14 +167,28 @@ export class GitUiActions {
           placeholder: "https://github.com/user/repo.git",
           required: true,
         },
-        { key: "directory", label: "Folder" },
+        {
+          key: "parent",
+          label: "Where to clone to",
+          value: session ? session.fs.displayPath(session.cwd) : "",
+          ...(canBrowse
+            ? {
+                browse: async (current: string) => {
+                  const picked = await this.folders.pick(current || undefined);
+                  return picked === null ? null : session.fs.displayPath(picked);
+                },
+              }
+            : {}),
+        },
+        { key: "directory", label: "Folder name" },
       ],
       confirmLabel: "Clone",
       derive: (key, values): Record<string, string> =>
         key === "url" ? { directory: cloneDirectoryName(values["url"] ?? "") } : {},
     });
     if (!result) return;
-    void this.operations.clone(result.values["url"] ?? "", result.values["directory"] ?? "");
+    const { url = "", parent = "", directory = "" } = result.values;
+    void this.operations.clone(url, parent, directory);
   }
 
   init(): void {

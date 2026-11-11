@@ -9,11 +9,13 @@ export interface HttpServerConfig {
 
 @Injectable({ providedIn: "root" })
 export class HttpServer {
-  start(config: HttpServerConfig): Promise<number> {
+  /** `devMode` picks the Cogno home the agent hook files go to (`.cogno-dev` in development). */
+  start(config: HttpServerConfig, devMode: boolean): Promise<number> {
     return invoke<number>("start_http_server", {
       enabled: config.enabled,
       port: config.port,
       autoNextPort: config.autoNextPort,
+      devMode,
     });
   }
 

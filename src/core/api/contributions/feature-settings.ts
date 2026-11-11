@@ -68,50 +68,7 @@ export const FeatureProcessInfoSchema = z.strictObject({
   order: featureOrderSchema,
 });
 
-export const FeatureUpdaterSchema = z.strictObject({
-  mode: featureModeSchema
-    .optional()
-    .describe(
-      "Turn the feature on or off. Off removes it entirely, including its side-menu entry, and Cogno no longer asks for updates.",
-    ),
-  order: featureOrderSchema,
-  install: z
-    .enum(["background", "ask"])
-    .optional()
-    .describe(
-      "`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.",
-    ),
-});
-
 export const FeatureCodingAgentsSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
-  notifications: z
-    .strictObject({
-      working: z
-        .strictObject({
-          enabled: z.boolean().optional().describe("Notify when an agent starts working."),
-        })
-        .optional(),
-      question: z
-        .strictObject({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Notify when an agent has a question and needs input."),
-        })
-        .optional(),
-      ready: z
-        .strictObject({
-          enabled: z.boolean().optional().describe("Notify when an agent becomes ready/idle."),
-        })
-        .optional(),
-      error: z
-        .strictObject({
-          enabled: z.boolean().optional().describe("Notify when an agent reports an error."),
-        })
-        .optional(),
-    })
-    .optional()
-    .describe("Which coding-agent state changes raise a notification."),
 });

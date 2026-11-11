@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { Config } from "@cogno/core/infrastructure/config/models/config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { NotificationChannelRegistry } from "@cogno/core/workbench/notification/+state/notification-channel-registry";
@@ -8,19 +9,35 @@ import {
   NotificationChannelContract,
   NotificationChannelSettingsContract,
   NotificationChannelsContract,
+  NotificationEventRefContract,
   NotificationReplyChannelContract,
   NotificationTargetContract,
 } from "@cogno/shared/domain";
+import { Observable, Subject } from "rxjs";
 
+/**
+ * The one gate every notification passes: a notification of a declared event
+ * goes on only when `notification.source.<source>.<event>.enabled` says so,
+ * one without an event always. What passes goes to the enabled channels and
+ * to `delivered$`, which the notification overview reads; nobody else listens
+ * to the bus, so a switched-off event is nowhere to be seen.
+ */
 @Injectable({ providedIn: "root" })
 export class NotificationDispatchService {
+  private readonly deliveredSubject = new Subject<NotificationPayload>();
+  /** Every notification that passed the gate, before the channels run. */
+  readonly delivered$: Observable<NotificationPayload> = this.deliveredSubject.asObservable();
+  /** The loaded config; undefined until the file was read, and then no event is on yet. */
+  private config: Config | undefined;
+
   constructor(
     private readonly appBus: AppBus,
     private readonly notificationChannelRegistry: NotificationChannelRegistry,
     private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
-    this.configService.config$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+    this.configService.config$.pipe(takeUntilDestroyed(destroyRef)).subscribe((config) => {
+      this.config = config;
       void this.reconcileReplyChannels();
     });
 
@@ -39,6 +56,10 @@ export class NotificationDispatchService {
     if (!isNotificationPayload(notificationPayload)) {
       return;
     }
+    if (notificationPayload.event && !this.isEventEnabled(notificationPayload.event)) {
+      return;
+    }
+    this.deliveredSubject.next(notificationPayload);
 
     for (const notificationChannel of this.notificationChannelRegistry.getChannels()) {
       if (!this.isNotificationChannelEnabled(notificationChannel, notificationPayload.channels)) {
@@ -72,6 +93,11 @@ export class NotificationDispatchService {
     }
   }
 
+  /** Off until the config says otherwise: an event nobody configured, or a config not loaded yet, does not notify. */
+  private isEventEnabled(event: NotificationEventRefContract): boolean {
+    return this.config?.notification?.source?.[event.source]?.[event.id]?.enabled === true;
+  }
+
   private isNotificationChannelEnabled(
     notificationChannel: NotificationChannelContract,
     notificationChannels: Partial<NotificationChannelsContract> | undefined,
@@ -80,16 +106,11 @@ export class NotificationDispatchService {
       return false;
     }
 
-    const notificationChannelSettings = this.getNotificationChannelSettings(notificationChannel.id);
-    const channelAvailable = notificationChannelSettings.available ?? true;
-    const channelEnabled = notificationChannelSettings.enabled ?? false;
-    const eventChannelEnabled = notificationChannels?.[notificationChannel.id];
-
-    if (!channelAvailable) {
-      return false;
-    }
-
-    return eventChannelEnabled ?? channelEnabled;
+    // A notification may name its channels itself (a warning that must reach
+    // the app whatever the switch says); otherwise the channel's switch decides.
+    const channelEnabled =
+      this.getNotificationChannelSettings(notificationChannel.id).enabled ?? false;
+    return notificationChannels?.[notificationChannel.id] ?? channelEnabled;
   }
 
   private getNotificationChannelSettings(
@@ -114,10 +135,7 @@ export class NotificationDispatchService {
       const notificationChannelSettings = this.getNotificationChannelSettings(
         notificationChannel.id,
       );
-      const channelAvailable = notificationChannelSettings.available ?? true;
-      const channelEnabled = notificationChannelSettings.enabled ?? false;
-
-      if (channelAvailable && channelEnabled) {
+      if (notificationChannelSettings.enabled ?? false) {
         await notificationChannel.startReceivingReplies?.(notificationChannelSettings);
         continue;
       }
@@ -152,9 +170,10 @@ function hasStringHeader(
   return typeof notificationPayloadCandidate.header === "string";
 }
 
-type NotificationPayload = {
+export type NotificationPayload = {
   readonly body?: string;
   readonly channels?: Partial<NotificationChannelsContract>;
+  readonly event?: NotificationEventRefContract;
   readonly header: string;
   readonly source?: string;
   readonly target?: NotificationTargetContract;

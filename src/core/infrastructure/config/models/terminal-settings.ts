@@ -56,41 +56,6 @@ export const TerminalSettingsSchema = z.strictObject({
     })
     .optional()
     .describe("The OSC 9;4 progress bar in the terminal header."),
-  notifications: z
-    .strictObject({
-      unread_badge: z
-        .boolean()
-        .optional()
-        .describe(
-          "Show an unread badge on a terminal's tab when a notification-worthy event occurs while it isn't focused.",
-        ),
-      osc9: z
-        .strictObject({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Allow OSC9 terminal notifications to trigger a notification."),
-        })
-        .optional()
-        .describe("Notifications a program sends itself via the OSC 9 escape sequence."),
-      long_running_command: z
-        .strictObject({
-          enabled: z
-            .boolean()
-            .optional()
-            .describe("Show a notification after a long-running command has finished."),
-          minimum_duration_seconds: z
-            .number()
-            .int()
-            .min(0)
-            .optional()
-            .describe("Notify only when a command ran for at least this many seconds."),
-        })
-        .optional()
-        .describe("Notification when a command that ran for a while finishes."),
-    })
-    .optional()
-    .describe("Which terminal events raise a notification."),
   history: z
     .strictObject({
       max_entries: limitSchema
@@ -115,18 +80,6 @@ export const TerminalSettingsSchema = z.strictObject({
         .optional()
         .describe(
           "When enabled, selecting a history entry immediately executes the command. When disabled (default), the entry is written to the input line and must be confirmed with Enter.",
-        ),
-      allowed_return_codes: z
-        .array(z.number().int())
-        .optional()
-        .describe(
-          "Return codes a command may exit with to be added to the history, e.g. `[0]` to keep only successful commands. Empty (default) keeps every command that exists. A command's own list under `allowed_return_codes_by_command` wins.",
-        ),
-      allowed_return_codes_by_command: z
-        .record(z.string(), z.array(z.number().int()))
-        .optional()
-        .describe(
-          'Return codes allowed for one command, matched by its first word, e.g. `allowed_return_codes_by_command.grep = [0,1]` because exit 1 means "no match". Overrides `allowed_return_codes` for that command.',
         ),
     })
     .optional()

@@ -17,10 +17,11 @@ import {
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 /**
- * The repositories of all open terminals, one tile per terminal, grouped by
- * workspace in tab order. A tile names the tab, the branch and how many files
- * are new, changed and gone; clicking it focuses the terminal, and the panel
- * follows the focus to that repository.
+ * The repositories of all open terminals, grouped by workspace in tab order;
+ * terminals of one workspace in the same repository share a tile. A tile names
+ * the tab, the branch and how many files are new, changed and gone; clicking
+ * it focuses its first terminal (or keeps the focused one, if it is among
+ * them), and the panel follows the focus to that repository.
  */
 @Component({
   selector: "app-git-repositories-panel",
@@ -43,19 +44,20 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         <div class="empty">No open repositories</div>
       }
       @for (group of groups(); track group.workspaceId) {
+        <section class="group" [class.unnamed]="!group.workspaceName">
         @if (group.workspaceName) {
           <app-workspace-group-header
-            class="group"
+            class="group-header"
             [name]="group.workspaceName"
             [color]="group.workspaceColor ?? ''"
           ></app-workspace-group-header>
         }
-        @for (tile of group.items; track tile.terminalId) {
+        @for (tile of group.items; track tile.root) {
           <button
             type="button"
             appTile
             class="tile"
-            [focused]="tile.terminalId === focusedTerminalId()"
+            [focused]="isFocused(tile)"
             (click)="open(tile)"
           >
             <app-tab-chip
@@ -75,6 +77,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
             </span>
           </button>
         }
+        </section>
       }
     </div>
   `,
@@ -91,14 +94,24 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       .list {
         display: flex;
         flex-direction: column;
-        gap: 0.4rem;
+        gap: 0.2rem;
         flex: 1;
         min-height: 0;
         overflow-y: auto;
-        padding: var(--git-gutter);
+        padding: 0 var(--git-gutter) var(--git-gutter);
       }
-      .group { margin-top: 0.6rem; }
-      .group:first-child { margin-top: 0; }
+      /* Each workspace is its own section, so its sticky header stays on top
+         while its tiles scroll by and is pushed away by the next one. */
+      .group { display: flex; flex-direction: column; gap: 0.4rem; }
+      .group.unnamed { padding-top: var(--git-gutter); }
+      .group-header {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: var(--git-gutter) 0 0.2rem;
+        /* The side menu's own surface, so the header looks like part of the list. */
+        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+      }
       .tile { width: 100%; gap: 0.25rem; padding: 0.5rem 0.65rem; }
       .tab { align-self: flex-start; max-width: 100%; font-size: var(--git-font-small); }
       .branch {
@@ -143,8 +156,15 @@ export class GitRepositoriesPanelComponent {
     return tile.sha ? `HEAD ${tile.sha.slice(0, 7)}` : "No commits";
   }
 
+  isFocused(tile: GitRepositoryTile): boolean {
+    const focused = this.focusedTerminalId();
+    return focused !== undefined && tile.terminalIds.includes(focused);
+  }
+
   open(tile: GitRepositoryTile): void {
-    this.navigator.navigateToTerminal(tile.terminalId).catch((error: unknown) => {
+    const target = this.isFocused(tile) ? this.focusedTerminalId() : tile.terminalIds[0];
+    if (!target) return;
+    this.navigator.navigateToTerminal(target).catch((error: unknown) => {
       console.error("[git-repositories] Failed to navigate to terminal:", error);
     });
   }

@@ -159,22 +159,11 @@ export const defaultSettings = {
     progress_bar: {
       enabled: "true",
     },
-    notifications: {
-      unread_badge: "true",
-      osc9: {
-        enabled: "true",
-      },
-      long_running_command: {
-        enabled: "false",
-        minimum_duration_seconds: "10",
-      },
-    },
     history: {
       max_entries: "unlimited",
       ignore_commands_with_leading_space: "false",
       import_shell_history: "false",
       auto_execute: "false",
-      allowed_return_codes: "[]",
     },
     restore: {
       enabled: "true",
@@ -198,25 +187,19 @@ export const defaultSettings = {
     provider: {
       timeout_ms: "160",
     },
+    allowed_return_codes: "[]",
   },
   notification: {
     channel: {
       app: {
-        available: "true",
         enabled: "true",
         duration_seconds: "5",
       },
       os: {
-        available: "true",
         enabled: "false",
       },
-    },
-    exception: {
-      handled: {
-        enabled: "false",
-      },
-      unhandled: {
-        enabled: "false",
+      badge: {
+        enabled: "true",
       },
     },
   },
@@ -251,26 +234,10 @@ export const defaultSettings = {
     coding_agents: {
       mode: "on",
       order: "65",
-      notifications: {
-        working: {
-          enabled: "false",
-        },
-        question: {
-          enabled: "false",
-        },
-        ready: {
-          enabled: "false",
-        },
-        error: {
-          enabled: "false",
-        },
-      },
     },
-    updater: {
-      mode: "on",
-      order: "90",
-      install: "background",
-    },
+  },
+  updater: {
+    install: "background",
   },
   clipboard: {
     read: "allow",

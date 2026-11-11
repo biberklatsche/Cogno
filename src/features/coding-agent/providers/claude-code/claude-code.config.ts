@@ -29,6 +29,8 @@ export const CLAUDE_CODE_CONFIG = {
   name: "Claude Code",
   configSubDir: ".claude",
   configFileName: "settings.json",
+  /** Its hooks run inside the agent in its terminal and always name it: nothing to look for. */
+  processNames: [],
   hookEvents: [
     { eventName: CLAUDE_STYLE_HOOK_EVENT.userPromptSubmit, status: "working" as AgentStatus },
     { eventName: CLAUDE_STYLE_HOOK_EVENT.sessionStart, status: "ready" as AgentStatus },

@@ -24,6 +24,11 @@ export class Paths {
     return invoke<string>("get_cogno_home_dir", { devMode });
   }
 
+  /** The endpoint file through which a process outside Cogno's terminals reaches Cogno. */
+  cognoEndpointFilePath(devMode: boolean): Promise<string> {
+    return invoke<string>("get_cogno_endpoint_file_path", { devMode });
+  }
+
   cognoConfigFilePath(devMode: boolean): Promise<string> {
     return invoke<string>("get_cogno_config_file_path", { devMode });
   }

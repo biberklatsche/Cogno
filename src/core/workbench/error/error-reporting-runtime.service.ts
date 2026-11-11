@@ -1,5 +1,4 @@
 import { Injectable } from "@angular/core";
-import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import {
   buildLogMessage,
   ErrorReporter,
@@ -10,6 +9,11 @@ import {
 } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { Logger } from "@cogno/platform/logger";
+import {
+  ERROR_NOTIFICATION_SOURCE_ID,
+  HANDLED_EXCEPTION_EVENT_ID,
+  UNHANDLED_EXCEPTION_EVENT_ID,
+} from "./error-notification-source";
 
 const DEDUPLICATION_WINDOW_MS = 1000;
 const MAX_NOTIFICATION_BODY_LENGTH = 2000;
@@ -19,10 +23,7 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
   private readonly recentFingerprintTimestamps = new Map<string, number>();
   private isInitialized = false;
 
-  constructor(
-    private readonly appBus: AppBus,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly appBus: AppBus) {}
 
   initialize(): void {
     if (this.isInitialized) {
@@ -44,13 +45,17 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
 
       Logger.error(buildLogMessage(report));
 
-      if (!this.shouldNotifyForException(report)) {
+      if (report.notify === false) {
         return;
       }
 
       this.appBus.publish({
         type: "Notification",
         payload: {
+          event: {
+            source: ERROR_NOTIFICATION_SOURCE_ID,
+            id: report.handled ? HANDLED_EXCEPTION_EVENT_ID : UNHANDLED_EXCEPTION_EVENT_ID,
+          },
           body: this.buildNotificationBody(report),
           header: report.handled ? "Handled exception" : "Unhandled exception",
           source: report.source ?? "ErrorReporting",
@@ -115,34 +120,6 @@ export class ErrorReportingRuntimeService implements ErrorReporterRuntime {
       source: "window.onunhandledrejection",
     });
   };
-
-  private shouldNotifyForException(report: ExceptionReport): boolean {
-    if (report.notify === false) {
-      return false;
-    }
-
-    const notificationConfig = this.readExceptionNotificationConfiguration();
-    return report.handled ? notificationConfig.handledEnabled : notificationConfig.unhandledEnabled;
-  }
-
-  private readExceptionNotificationConfiguration(): {
-    readonly handledEnabled: boolean;
-    readonly unhandledEnabled: boolean;
-  } {
-    try {
-      const exceptionsConfiguration = this.configService.config.notification?.exception;
-
-      return {
-        handledEnabled: exceptionsConfiguration?.handled?.enabled ?? false,
-        unhandledEnabled: exceptionsConfiguration?.unhandled?.enabled ?? false,
-      };
-    } catch {
-      return {
-        handledEnabled: false,
-        unhandledEnabled: false,
-      };
-    }
-  }
 
   private buildNotificationBody(report: ExceptionReport): string {
     const bodyParts: string[] = [];

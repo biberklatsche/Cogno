@@ -7,6 +7,8 @@ export type GitPromptField = {
   readonly value?: string;
   readonly placeholder?: string;
   readonly required?: boolean;
+  /** Offers a Browse button that picks the value, starting from the current one; null keeps it. */
+  readonly browse?: (current: string) => Promise<string | null>;
 };
 
 export type GitPromptDialogData = {
@@ -34,15 +36,20 @@ export type GitPromptResult = {
       @for (field of data.fields; track field.key; let first = $first) {
         <label class="field">
           <span>{{ field.label }}</span>
-          <input
-            type="text"
-            spellcheck="false"
-            autocomplete="off"
-            [attr.data-autofocus]="first ? '' : null"
-            [placeholder]="field.placeholder ?? ''"
-            [value]="fieldValue(field.key)"
-            (input)="onInput(field.key, $event)"
-          />
+          <div class="input-row">
+            <input
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              [attr.data-autofocus]="first ? '' : null"
+              [placeholder]="field.placeholder ?? ''"
+              [value]="fieldValue(field.key)"
+              (input)="onInput(field.key, $event)"
+            />
+            @if (field.browse) {
+              <button type="button" class="button" (click)="browse(field)">Browse</button>
+            }
+          </div>
         </label>
       }
       <div class="actions">
@@ -71,7 +78,13 @@ export type GitPromptResult = {
       .field span {
         opacity: 0.7;
       }
+      .input-row {
+        display: flex;
+        gap: 0.5rem;
+      }
       .field input {
+        flex: 1;
+        min-width: 0;
         background: var(--background-color);
         color: var(--foreground-color);
         border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
@@ -114,7 +127,15 @@ export class GitPromptDialogComponent {
   }
 
   onInput(key: string, event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
+    this.setValue(key, (event.target as HTMLInputElement).value);
+  }
+
+  async browse(field: GitPromptField): Promise<void> {
+    const picked = await field.browse?.(this.fieldValue(field.key));
+    if (picked !== null && picked !== undefined) this.setValue(field.key, picked);
+  }
+
+  private setValue(key: string, value: string): void {
     const next = { ...this.values(), [key]: value };
     this.values.set({ ...next, ...(this.data.derive?.(key, next) ?? {}) });
   }

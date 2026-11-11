@@ -34,6 +34,8 @@ export const CURSOR_CONFIG = {
   configSubDir: ".cursor",
   configFileName: "hooks.json",
   fileVersion: 1,
+  /** Its hooks run inside the agent in its terminal and always name it: nothing to look for. */
+  processNames: [],
   // Only observing events are hooked. Cursor's permission hooks (preToolUse,
   // beforeShellExecution, beforeMCPExecution, beforeReadFile, subagentStart)
   // read a decision from stdout; a status reporter must not take part in that.

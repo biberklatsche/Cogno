@@ -1,17 +1,35 @@
 use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME, LOG_FILE_STEM};
 use std::path::PathBuf;
 
-/// Returns the Cogno home directory path based on the active mode.
-#[tauri::command]
-pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
-    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let dir_name = if dev_mode {
+/// The Cogno home's name under the user's home: `.cogno`, or `.cogno-dev` in
+/// development.
+fn home_dir_name(dev_mode: bool) -> &'static str {
+    if dev_mode {
         DEVELOPMENT_HOME_DIRECTORY_NAME
     } else {
         HOME_DIRECTORY_NAME
-    };
-    let cogno_home = home.join(dir_name);
-    Ok(cogno_home.display().to_string())
+    }
+}
+
+/// The Cogno home directory for the active mode.
+pub fn cogno_home(dev_mode: bool) -> Result<PathBuf, String> {
+    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
+    Ok(home.join(home_dir_name(dev_mode)))
+}
+
+/// Returns the Cogno home directory path based on the active mode.
+#[tauri::command]
+pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
+    Ok(cogno_home(dev_mode)?.display().to_string())
+}
+
+/// The endpoint file Cogno's HTTP server writes for processes outside its
+/// terminals; whoever points such a process at Cogno names this path.
+#[tauri::command]
+pub fn get_cogno_endpoint_file_path(dev_mode: bool) -> Result<String, String> {
+    Ok(crate::endpoint::endpoint_path(&cogno_home(dev_mode)?)
+        .display()
+        .to_string())
 }
 
 /// Returns the cogno config file path

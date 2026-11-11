@@ -131,6 +131,28 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     maxEntries?: number,
     details: CommandExecutionDetails = {},
   ): Promise<void> {
+    await this.writeCommandExecution(commandRaw, cwdRaw, groupId, maxEntries, details, true);
+  }
+
+  async appendCommandExecution(
+    commandRaw: string,
+    cwdRaw: string,
+    groupId?: string,
+    maxEntries?: number,
+    details: CommandExecutionDetails = {},
+  ): Promise<void> {
+    await this.writeCommandExecution(commandRaw, cwdRaw, groupId, maxEntries, details, false);
+  }
+
+  /** The log row always; the ranking row only when the execution is `ranked`. */
+  private async writeCommandExecution(
+    commandRaw: string,
+    cwdRaw: string,
+    groupId: string | undefined,
+    maxEntries: number | undefined,
+    details: CommandExecutionDetails,
+    ranked: boolean,
+  ): Promise<void> {
     const command = commandRaw.trim();
     if (!command) return;
     const cwd = safeNormalize(this.adapter, cwdRaw);
@@ -140,28 +162,30 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
     const statements: DatabaseStatement[] = [
       ...this.ensurePathStatements(cwd),
       this.ensureCommandStatement(command, ts),
-      {
+    ];
+    if (ranked) {
+      statements.push({
         sql: `INSERT INTO command_stat (context_id, cwd_path_id, command_id, exec_count, last_exec_at)
               VALUES (?, ${PATH_ID}, ${COMMAND_ID}, 1, ?)
               ON CONFLICT (context_id, cwd_path_id, command_id) DO UPDATE SET
                   exec_count = command_stat.exec_count + 1,
                   last_exec_at = excluded.last_exec_at`,
         params: [this.contextId, cwd, command, ts],
-      },
-      {
-        sql: `INSERT INTO command_log (context_id, session_id, cwd_path_id, command_id, executed_at, duration_ms, return_code)
+      });
+    }
+    statements.push({
+      sql: `INSERT INTO command_log (context_id, session_id, cwd_path_id, command_id, executed_at, duration_ms, return_code)
               VALUES (?, ?, ${PATH_ID}, ${COMMAND_ID}, ?, ?, ?)`,
-        params: [
-          this.contextId,
-          groupId ?? null,
-          cwd,
-          command,
-          ts,
-          details.durationMs ?? null,
-          details.returnCode ?? null,
-        ],
-      },
-    ];
+      params: [
+        this.contextId,
+        groupId ?? null,
+        cwd,
+        command,
+        ts,
+        details.durationMs ?? null,
+        details.returnCode ?? null,
+      ],
+    });
 
     // `undefined` is "no limit"; a count is literal, so 0 keeps nothing.
     if (maxEntries !== undefined) {
@@ -301,25 +325,6 @@ export class CommandLogRepository implements CommandLogWriter, CommandLogReader 
                   transition_count = command_transition_stat.transition_count + 1,
                   last_transition_at = excluded.last_transition_at`,
         params: [this.contextId, previousCommand, nextCommand, ts],
-      },
-    ]);
-  }
-
-  /** Forgets a command at a directory: its ranking row and its log entries. */
-  async deleteCommandExecution(commandRaw: string, cwdRaw: string): Promise<void> {
-    const command = commandRaw.trim();
-    if (!command) return;
-    const cwd = safeNormalize(this.adapter, cwdRaw);
-    if (!cwd) return;
-
-    await this.database.batch([
-      {
-        sql: `DELETE FROM command_stat WHERE context_id = ? AND cwd_path_id = ${PATH_ID} AND command_id = ${COMMAND_ID}`,
-        params: [this.contextId, cwd, command],
-      },
-      {
-        sql: `DELETE FROM command_log WHERE context_id = ? AND cwd_path_id = ${PATH_ID} AND command_id = ${COMMAND_ID}`,
-        params: [this.contextId, cwd, command],
       },
     ]);
   }

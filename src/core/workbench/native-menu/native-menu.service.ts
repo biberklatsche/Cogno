@@ -48,6 +48,7 @@ export class NativeMenuService {
       items: [
         await this.buildMenuItem("open_about"),
         await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
+        await this.buildMenuItem("open_settings"),
         await this.buildMenuItem("open_config"),
         await this.buildMenuItem("load_config"),
         await this.tauriMenu.newPredefinedItem({ item: "Separator" }),

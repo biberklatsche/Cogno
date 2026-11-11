@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RECORD_OF_VARIABLES } from "../zod-def";
 
 const ShellTypeEnum = z.enum(["PowerShell", "ZSH", "Bash"]);
 
@@ -14,6 +15,7 @@ const ShellProfileSchema = z
     args: z.array(z.string()).optional().describe("Extra launch arguments for the shell."),
     env: z
       .record(z.string(), z.string())
+      .meta(RECORD_OF_VARIABLES)
       .optional()
       .describe("Environment variables added to the shell process."),
     working_dir: z.string().optional().describe("Directory the shell starts in."),

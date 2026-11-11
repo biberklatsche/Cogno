@@ -9,8 +9,19 @@ export interface NotificationTargetContract {
   readonly label?: string;
 }
 
+/**
+ * The declared event a notification belongs to: `ready` of `coding_agents`.
+ * Whether it is shown is decided in one place, by its switch; a notification
+ * without an event is always shown.
+ */
+export interface NotificationEventRefContract {
+  readonly source: string;
+  readonly id: string;
+}
+
 export interface NotificationEventPayloadContract {
   readonly header: string;
+  readonly event?: NotificationEventRefContract;
   readonly body?: string;
   readonly source?: string;
   readonly terminalId?: string;
@@ -21,7 +32,6 @@ export interface NotificationEventPayloadContract {
 }
 
 export interface NotificationChannelSettingsContract {
-  readonly available?: boolean;
   readonly enabled?: boolean;
 }
 
@@ -43,10 +53,4 @@ export interface NotificationChannelContract {
 export interface NotificationReplyChannelContract extends NotificationChannelContract {
   startReceivingReplies?(settings: Readonly<Record<string, unknown>>): Promise<void> | void;
   stopReceivingReplies?(): Promise<void> | void;
-}
-
-export interface NotificationDefinitionContract {
-  readonly id: string;
-  readonly label: string;
-  readonly defaultEnabled?: boolean;
 }

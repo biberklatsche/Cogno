@@ -193,20 +193,22 @@ const WIP_ROW: TreeRow = { kind: "wip" };
                 <line [attr.x1]="laneX(headLane() ?? 0)" y1="0" [attr.x2]="laneX(headLane() ?? 0)"
                       [attr.y2]="link === 'end' ? rowHeight / 2 : rowHeight" class="wip-link"></line>
               }
-              @if (item.commit.parents.length > 1) {
-                <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" r="3"
-                        [attr.fill]="color(item.row.color)"></circle>
-              } @else if (avatars.url(item.commit.email); as avatar) {
-                <image [attr.href]="avatar" clip-path="url(#git-avatar-clip)"
-                       [attr.x]="laneX(item.row.lane) - avatarRadius" [attr.y]="rowHeight / 2 - avatarRadius"
-                       [attr.width]="avatarRadius * 2" [attr.height]="avatarRadius * 2"
-                       (error)="avatars.markFailed(item.commit.email)"></image>
-                <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1"
-                        [attr.stroke]="color(item.row.color)" class="avatar-ring"></circle>
-              } @else {
-                <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" r="5"
-                        [attr.fill]="color(item.row.color)"></circle>
-              }
+              <g [appTooltip]="item.commit.author + ' <' + item.commit.email + '>'">
+                @if (item.commit.parents.length > 1) {
+                  <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" r="3"
+                          [attr.fill]="color(item.row.color)"></circle>
+                } @else if (avatars.url(item.commit.email); as avatar) {
+                  <image [attr.href]="avatar" clip-path="url(#git-avatar-clip)"
+                         [attr.x]="laneX(item.row.lane) - avatarRadius" [attr.y]="rowHeight / 2 - avatarRadius"
+                         [attr.width]="avatarRadius * 2" [attr.height]="avatarRadius * 2"
+                         (error)="avatars.markFailed(item.commit.email)"></image>
+                  <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1"
+                          [attr.stroke]="color(item.row.color)" class="avatar-ring"></circle>
+                } @else {
+                  <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" r="5"
+                          [attr.fill]="color(item.row.color)"></circle>
+                }
+              </g>
             </svg>
           </span>
         }

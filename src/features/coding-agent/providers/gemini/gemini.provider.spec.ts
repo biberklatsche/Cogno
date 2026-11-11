@@ -1,6 +1,9 @@
+import type { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
+import { EMPTY } from "rxjs";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { ConfigFileService } from "../_shared/config-file.service";
-import { isCognoHookCommand } from "../_shared/hook-command.builder";
+import { isCognoHookCommand } from "../_shared/hook-command";
+import type { HookScriptPathsService } from "../_shared/hook-script-paths.service";
 import { GEMINI_CONFIG, type GeminiSettings } from "./gemini.config";
 import { GeminiProvider } from "./gemini.provider";
 
@@ -23,6 +26,15 @@ function inMemoryConfigFiles(initial: Record<string, unknown> = {}) {
   return { service, files };
 }
 
+const scripts = {
+  shell: () => "sh",
+  get: async () => ({
+    bash: "/cogno/hooks/cogno-agent-hook.sh",
+    powershell: "C:cognohookscogno-agent-hook.ps1",
+  }),
+} as unknown as HookScriptPathsService;
+const ipc = { messages$: EMPTY } as unknown as TerminalIpcPort;
+
 const SETTINGS = "/home/.gemini/settings.json";
 const foreignHook = { type: "command" as const, command: "echo foreign" };
 const cognoHooksIn = (settings: GeminiSettings) =>
@@ -40,13 +52,13 @@ describe("GeminiProvider", () => {
       [SETTINGS]: { theme: "dark", hooks: { BeforeAgent: [{ hooks: [foreignHook] }] } },
     });
     files = memory.files;
-    provider = new GeminiProvider(memory.service);
+    provider = new GeminiProvider(memory.service, scripts, ipc);
   });
 
   it("is missing its hook until installed, then current", async () => {
     expect(await provider.hookState()).toBe("missing");
 
-    await provider.installHook("Bash");
+    await provider.installHook();
 
     const settings = files.get(SETTINGS) as GeminiSettings;
     expect(settings["theme"]).toBe("dark");
@@ -56,8 +68,8 @@ describe("GeminiProvider", () => {
   });
 
   it("installs idempotently", async () => {
-    await provider.installHook("Bash");
-    await provider.installHook("Bash");
+    await provider.installHook();
+    await provider.installHook();
 
     expect(cognoHooksIn(files.get(SETTINGS) as GeminiSettings)).toHaveLength(
       GEMINI_CONFIG.hookEvents.length,
@@ -65,15 +77,15 @@ describe("GeminiProvider", () => {
   });
 
   it("reads a Cogno hook in an older form as outdated", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook();
     const hook = (files.get(SETTINGS) as GeminiSettings).hooks?.["AfterAgent"]?.[0]?.hooks[0];
-    if (hook) hook.command = hook.command.replace('"ready"', '"working"');
+    if (hook) hook.command = hook.command.replace("cogno-agent-hook", "cogno-agent-hook-old");
 
     expect(await provider.hookState()).toBe("outdated");
   });
 
   it("removes only the Cogno hooks", async () => {
-    await provider.installHook("Bash");
+    await provider.installHook();
 
     await provider.removeHook();
 

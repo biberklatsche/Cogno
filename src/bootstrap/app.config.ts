@@ -11,13 +11,13 @@ import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-
 import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
-import { NotificationChannelsPort } from "@cogno/core/api/notification-channels-port";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
 import { TerminalMonitorPort } from "@cogno/core/api/terminal-monitor-port";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
 import { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
+import { TerminalProcessesPort } from "@cogno/core/api/terminal-processes-port";
 import { TerminalSearchApi } from "@cogno/core/api/terminal-search-api";
 import { ApplicationConfigurationPortAdapterService } from "@cogno/core/infrastructure/config/application-configuration-port.adapter.service";
 import { ConfigService, RealConfigService } from "@cogno/core/infrastructure/config/config.service";
@@ -28,7 +28,6 @@ import { StyleService } from "@cogno/core/infrastructure/theme/style.service";
 import { CommandRunnerHostService } from "@cogno/core/session/exec/command-runner-host.service";
 import { Filesystem } from "@cogno/core/session/exec/filesystem";
 import { FilesystemHostService } from "@cogno/core/session/exec/filesystem-host.service";
-import { AboutDialogAdapterService } from "@cogno/core/workbench/about/about-dialog.adapter.service";
 import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/action-catalog.adapter.service";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
@@ -39,6 +38,7 @@ import { TerminalIpcAdapterService } from "@cogno/core/workbench/api-adapters/te
 import { TerminalMonitorAdapterService } from "@cogno/core/workbench/api-adapters/terminal-monitor.adapter.service";
 import { TerminalNavigatorAdapterService } from "@cogno/core/workbench/api-adapters/terminal-navigator.adapter.service";
 import { TerminalPlacementAdapterService } from "@cogno/core/workbench/api-adapters/terminal-placement.adapter.service";
+import { TerminalProcessesAdapterService } from "@cogno/core/workbench/api-adapters/terminal-processes.adapter.service";
 import { TerminalSearchApiService } from "@cogno/core/workbench/api-adapters/terminal-search-api.service";
 import { ConfigBootstrapAdapter } from "@cogno/core/workbench/config-bootstrap/config-bootstrap.adapter";
 import { ErrorReportingRuntimeService } from "@cogno/core/workbench/error/error-reporting-runtime.service";
@@ -52,15 +52,16 @@ import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-la
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu.service";
-import { NotificationChannelsPortAdapterService } from "@cogno/core/workbench/notification/+state/notification-channels-port.adapter.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
+import { SettingsPanelService } from "@cogno/core/workbench/settings/settings-panel.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { AutocompleteIssueNotifier } from "@cogno/core/workbench/terminal/+state/autocomplete-issue-notifier";
 import { TerminalActionHandlers } from "@cogno/core/workbench/terminal/+state/keybind/terminal-action-handlers";
 import { SessionActionHandlers } from "@cogno/core/workbench/terminal/+state/session-action-handlers";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
+import { UpdaterPanelService } from "@cogno/core/workbench/updater/updater-panel.service";
 import { WindowService } from "@cogno/core/workbench/window/window.service";
 import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
 import { WorkspaceShortcutActionService } from "@cogno/core/workbench/workspace/workspace-shortcut-action.service";
@@ -83,7 +84,6 @@ export const appConfig: ApplicationConfig = {
     },
     { provide: FEATURE_DEFINITIONS, useValue: features },
     { provide: NotificationCenterPort, useExisting: NotificationCenterPortAdapterService },
-    { provide: NotificationChannelsPort, useExisting: NotificationChannelsPortAdapterService },
     { provide: SessionApi, useExisting: TerminalGatewayService },
     { provide: TerminalSearchApi, useExisting: TerminalSearchApiService },
     { provide: PaneLayoutLookup, useExisting: GridListService },
@@ -91,6 +91,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalAnimationPort, useExisting: TerminalAnimationAdapterService },
     { provide: TerminalNavigator, useExisting: TerminalNavigatorAdapterService },
     { provide: TerminalPlacementPort, useExisting: TerminalPlacementAdapterService },
+    { provide: TerminalProcessesPort, useExisting: TerminalProcessesAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
@@ -143,12 +144,13 @@ export const appConfig: ApplicationConfig = {
         eager(HttpMessageAdapterService);
         eager(RunnableActionsPublisher);
         eager(NativeMenuService);
+        eager(SettingsPanelService);
+        eager(UpdaterPanelService);
         eager(WindowService);
         eager(SideMenuStatePersistenceService);
         eager(TerminalSearchApiService);
         eager(WorkspaceShortcutActionService);
 
-        eager(AboutDialogAdapterService);
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).
         eager(TabListService);

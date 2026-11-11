@@ -1,8 +1,6 @@
 import { Injectable, Signal, signal } from "@angular/core";
-import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { ICodingAgentProvider } from "@cogno/features/coding-agent/ports";
-import { OsPlatform } from "@cogno/platform";
 import { ConfirmDialogComponent, ConfirmDialogData, DialogService } from "@cogno/shared/ui";
 import { CodingAgentProviderRegistry } from "./coding-agent-provider-registry.service";
 
@@ -37,8 +35,6 @@ export class CodingAgentStartupService {
   constructor(
     private readonly registry: CodingAgentProviderRegistry,
     private readonly dialogs: DialogService,
-    private readonly configPort: ApplicationConfigurationPort,
-    private readonly osPort: OsPlatform,
     private readonly notificationCenterPort: NotificationCenterPort,
   ) {}
 
@@ -90,7 +86,7 @@ export class CodingAgentStartupService {
   /** Installs the hook from the panel; a "no" or a removal from before no longer counts. */
   async installHook(provider: ICodingAgentProvider): Promise<void> {
     await this.changeHook(provider, "install", async () => {
-      await provider.installHook(this.resolveDefaultShellType());
+      await provider.installHook();
       this.rememberDecision(provider, undefined);
     });
   }
@@ -109,7 +105,7 @@ export class CodingAgentStartupService {
    */
   private async updateHook(provider: ICodingAgentProvider): Promise<boolean> {
     try {
-      await provider.installHook(this.resolveDefaultShellType());
+      await provider.installHook();
       return true;
     } catch (error) {
       this.reportProblem(provider, `Could not update the ${provider.name} hook`, error);
@@ -164,10 +160,9 @@ export class CodingAgentStartupService {
       return;
     }
 
-    const shellType = this.resolveDefaultShellType();
     for (const provider of needsHooks) {
       try {
-        await provider.installHook(shellType);
+        await provider.installHook();
       } catch (error) {
         this.notifyFailure(`Could not install the ${provider.name} hook`, error);
       }
@@ -207,16 +202,5 @@ export class CodingAgentStartupService {
     } catch {
       return {};
     }
-  }
-
-  private resolveDefaultShellType(): string {
-    const config = this.configPort.getConfiguration();
-    const shell = config?.["shell"] as
-      | { default?: string; profiles?: Record<string, { shell_type?: string }> }
-      | undefined;
-    const defaultName = shell?.default;
-    const configured = defaultName ? shell?.profiles?.[defaultName]?.shell_type : undefined;
-    if (configured) return configured;
-    return this.osPort.platform() === "windows" ? "PowerShell" : "Bash";
   }
 }
