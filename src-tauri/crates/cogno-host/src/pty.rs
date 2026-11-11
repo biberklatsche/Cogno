@@ -259,16 +259,7 @@ impl PtyState {
         let line_editor_pipe_name = env.get("COGNO_LINE_EDITOR_PIPE_NAME").cloned();
         let line_editor_channel = create_line_editor_channel(&options.profile.shell_type, &env);
 
-        let pty_system = native_pty_system();
-
-        let pair = pty_system
-            .openpty(PtySize {
-                rows: options.rows,
-                cols: options.cols,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .map_err(|e| format!("Failed to open PTY: {}", e))?;
+        let pair = open_pty(options.rows, options.cols)?;
 
         let mut cmd = CommandBuilder::new(&program);
         cmd.args(&args);
@@ -433,6 +424,34 @@ impl PtyState {
         }
         Ok(PtySpawnResult { shell_process_id })
     }
+}
+
+/// Held while a PTY is opened.
+///
+/// On Windows a pseudo console is a console host process that is handed the
+/// PTY's pipes, and for the moment it is started those pipe handles are
+/// inheritable. A process started in that moment with handle inheritance
+/// on - a second console host, any `std::process::Command` - inherits them
+/// too and keeps the PTY's output pipe open for as long as it lives: the
+/// PTY's reader then sees no end when its console is closed, only when that
+/// other process is gone. Under this lock no second PTY is opened in that
+/// moment; a test that starts a long-lived process takes it for the start.
+pub(crate) fn handle_inheritance_lock() -> std::sync::MutexGuard<'static, ()> {
+    static LOCK: Mutex<()> = Mutex::new(());
+    LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// Opens a PTY, one at a time across the process (`handle_inheritance_lock`).
+fn open_pty(rows: u16, cols: u16) -> Result<portable_pty::PtyPair, String> {
+    let _one_at_a_time = handle_inheritance_lock();
+    native_pty_system()
+        .openpty(PtySize {
+            rows,
+            cols,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
+        .map_err(|e| format!("Failed to open PTY: {}", e))
 }
 
 /// Reads PTY output and hands it to `deliver` as framed chunks under flow
@@ -712,14 +731,7 @@ mod test_support {
     /// A session of window "test" with a running shell, as a spawn leaves it.
     #[cfg(unix)]
     pub fn live_session() -> TestSession {
-        let pair = native_pty_system()
-            .openpty(PtySize {
-                rows: 24,
-                cols: 80,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .unwrap();
+        let pair = open_pty(24, 80).unwrap();
         let mut cmd = CommandBuilder::new("sh");
         cmd.arg("-i");
         cmd.env("PS1", "$ ");
@@ -759,14 +771,7 @@ mod test_support {
         Box<dyn portable_pty::Child + Send + Sync>,
         std::thread::JoinHandle<()>,
     ) {
-        let pair = native_pty_system()
-            .openpty(PtySize {
-                rows: 24,
-                cols: 80,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .unwrap();
+        let pair = open_pty(24, 80).unwrap();
         let mut cmd = CommandBuilder::new("cmd");
         cmd.args([
             "/C",
@@ -954,14 +959,7 @@ mod unix_tests {
         ));
         let _ = std::fs::remove_file(&marker);
 
-        let pair = native_pty_system()
-            .openpty(PtySize {
-                rows: 24,
-                cols: 80,
-                pixel_width: 0,
-                pixel_height: 0,
-            })
-            .unwrap();
+        let pair = open_pty(24, 80).unwrap();
         let mut cmd = CommandBuilder::new("sh");
         cmd.arg("-i");
         cmd.env("PS1", "$ ");
