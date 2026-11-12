@@ -1,5 +1,6 @@
-//! `cogno server --stdio`, spoken to the way a Cogno on another machine does
-//! through ssh: the real binary behind two pipes.
+//! `cogno daemon` and `cogno server --stdio`, spoken to the way a Cogno on
+//! another machine does through ssh: a real daemon process, and the real
+//! binary as the bridge to it behind two pipes.
 
 use cogno_host::protocol::{Event, Request, Response, ShellProfile, SpawnOptions};
 use cogno_host::wire::{self, HostMessage, RequestEnvelope, PROTOCOL_VERSION};
@@ -8,8 +9,14 @@ use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant};
 
 const PATIENCE: Duration = Duration::from_secs(20);
+/// Tells the endpoint files of one test run apart.
+static NEXT_ENDPOINT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
 struct Server {
+    /// The daemon that holds the shells, with an endpoint of this test's own.
+    daemon: Child,
+    endpoint: std::path::PathBuf,
+    /// The bridge to it: what ssh starts.
     process: Child,
     stdin: Option<ChildStdin>,
     messages: Receiver<HostMessage>,
@@ -21,18 +28,46 @@ struct Server {
 /// ssh connection instead of two pipes: `ssh -T <arguments> <command>`. The
 /// destination must reach this machine.
 const SSH_ARGUMENTS: &str = "COGNO_TEST_SSH";
-/// What ssh runs on the other side, with `{binary}` for this build's binary.
-/// For a server whose default shell needs the command written its own way.
+/// What ssh runs on the other side, with `{binary}` for this build's binary
+/// and `{endpoint}` for the test daemon's endpoint file. For a server whose
+/// default shell needs the command written its own way.
 const SSH_COMMAND: &str = "COGNO_TEST_SSH_COMMAND";
 
 impl Server {
-    fn command() -> Command {
+    /// A daemon of this test's own; returns once it answers.
+    fn start_daemon() -> (Child, std::path::PathBuf) {
+        let endpoint = std::env::temp_dir().join(format!(
+            "cogno-server-test-{}-{}.json",
+            std::process::id(),
+            NEXT_ENDPOINT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        let _ = std::fs::remove_file(&endpoint);
+        let daemon = Command::new(env!("CARGO_BIN_EXE_cogno"))
+            .arg("daemon")
+            .arg("--endpoint")
+            .arg(&endpoint)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        let started = Instant::now();
+        while cogno_host::daemon::connect(&endpoint).is_err() {
+            assert!(started.elapsed() < PATIENCE, "the daemon never answered");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        (daemon, endpoint)
+    }
+
+    fn command(endpoint: &std::path::Path) -> Command {
         let binary = env!("CARGO_BIN_EXE_cogno");
+        let endpoint = endpoint.display().to_string();
         match std::env::var(SSH_ARGUMENTS) {
             Ok(arguments) => {
                 let command = std::env::var(SSH_COMMAND)
-                    .unwrap_or_else(|_| "{binary} server --stdio".to_string())
-                    .replace("{binary}", binary);
+                    .unwrap_or_else(|_| "{binary} server --stdio --endpoint {endpoint}".to_string())
+                    .replace("{binary}", binary)
+                    .replace("{endpoint}", &endpoint);
                 let mut ssh = Command::new("ssh");
                 ssh.arg("-T")
                     .args(arguments.split_whitespace())
@@ -41,15 +76,16 @@ impl Server {
             }
             Err(_) => {
                 let mut server = Command::new(binary);
-                server.args(["server", "--stdio"]);
+                server.args(["server", "--stdio", "--endpoint", &endpoint]);
                 server
             }
         }
     }
 
-    /// Starts the server and reads up to its hello.
+    /// Starts a daemon and the bridge to it, and reads up to the hello.
     fn start() -> (Self, HostMessage) {
-        let mut process = Self::command()
+        let (daemon, endpoint) = Self::start_daemon();
+        let mut process = Self::command(&endpoint)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -69,6 +105,8 @@ impl Server {
             }
         });
         let mut server = Self {
+            daemon,
+            endpoint,
             process,
             stdin,
             messages,
@@ -124,6 +162,9 @@ impl Server {
 impl Drop for Server {
     fn drop(&mut self) {
         let _ = self.process.kill();
+        let _ = self.daemon.kill();
+        let _ = self.daemon.wait();
+        let _ = std::fs::remove_file(&self.endpoint);
     }
 }
 

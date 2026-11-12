@@ -110,6 +110,11 @@ impl Host {
         }
     }
 
+    /// How many sessions run.
+    pub fn session_count(&self) -> usize {
+        self.pty.session_count()
+    }
+
     /// The client is gone, for whatever reason. Its sessions end with it,
     /// except those started to go on without one.
     pub fn client_gone(&self, client: u64) {

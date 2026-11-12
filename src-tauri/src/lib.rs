@@ -6,8 +6,8 @@ pub mod commands;
 mod db;
 mod endpoint;
 mod host;
+mod host_connection;
 mod http_server;
-mod remote;
 mod updater;
 
 use app_identity::LOG_FILE_STEM;

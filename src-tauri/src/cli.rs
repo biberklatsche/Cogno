@@ -30,11 +30,20 @@ pub enum CliCommand {
         #[command(subcommand)]
         command: ConfigCommand,
     },
-    /// Serve this machine's shells to a Cogno on another machine
+    /// Connect a Cogno on another machine to the shells of this one
     Server {
         /// Talk over stdin and stdout (what ssh connects)
         #[arg(long, required = true)]
         stdio: bool,
+        /// The endpoint file of the daemon to reach, instead of the user's
+        #[arg(long, hide = true, value_name = "path")]
+        endpoint: Option<std::path::PathBuf>,
+    },
+    /// Run the process that holds this machine's shells (started by Cogno)
+    Daemon {
+        /// The endpoint file to announce itself in, instead of the user's
+        #[arg(long, hide = true, value_name = "path")]
+        endpoint: Option<std::path::PathBuf>,
     },
 }
 

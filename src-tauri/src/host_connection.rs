@@ -1,7 +1,8 @@
-//! A host on another machine: `cogno server --stdio` behind a process this
-//! app starts (ssh), spoken to in the host's wire format. Requests go out
-//! with an id and their replies come back under it; events go to the same
-//! sink the embedded host reports to.
+//! A connection to a host, spoken in the host's wire format: to this
+//! machine's daemon directly, or to another machine's through a process this
+//! app starts (ssh, with `cogno server --stdio` at the other end). Requests
+//! go out with an id and their replies come back under it; events go to the
+//! sink the connection was given.
 
 use cogno_host::protocol::{Reply, Request};
 use cogno_host::wire::{self, HostMessage, RequestEnvelope, PROTOCOL_VERSION};
@@ -24,16 +25,17 @@ struct Waiting {
     lost: bool,
 }
 
-pub struct RemoteHost {
+pub struct HostConnection {
     writer: Mutex<Box<dyn Write + Send>>,
     waiting: Arc<Mutex<Waiting>>,
     next_id: AtomicU64,
     os: String,
-    /// The process the streams belong to; ended with the connection.
+    /// The process the streams belong to, if this app started one; ended
+    /// with the connection.
     process: Mutex<Option<Child>>,
 }
 
-impl RemoteHost {
+impl HostConnection {
     /// Starts `command` and talks to the host it reaches. Returns once the
     /// host has introduced itself, which can take as long as the user needs
     /// to answer what the process asks (a password, a host key).
@@ -67,7 +69,7 @@ impl RemoteHost {
             });
         }
 
-        match Self::attach(stdout, stdin, sink, on_lost) {
+        match Self::over(stdout, stdin, sink, on_lost) {
             Ok(mut host) => {
                 host.process = Mutex::new(Some(process));
                 Ok(host)
@@ -89,25 +91,24 @@ impl RemoteHost {
         }
     }
 
-    /// Talks to the host behind the two streams. `on_lost` runs once, when
-    /// the host's stream ends.
-    fn attach(
+    /// Talks to the host behind the two streams. Returns once the host has
+    /// introduced itself; `on_lost` runs once, when the host's stream ends.
+    pub fn over(
         mut reader: impl Read + Send + 'static,
         writer: impl Write + Send + 'static,
         sink: Arc<dyn EventSink>,
         on_lost: impl FnOnce() + Send + 'static,
     ) -> Result<Self, String> {
-        wire::skip_to_preamble(&mut reader)
-            .map_err(|_| "No Cogno answered on the other machine".to_string())?;
+        wire::skip_to_preamble(&mut reader).map_err(|_| "No Cogno host answered".to_string())?;
         let os = match wire::read_host_message(&mut reader) {
             Ok(Some(HostMessage::Hello { protocol, os })) if protocol == PROTOCOL_VERSION => os,
             Ok(Some(HostMessage::Hello { protocol, .. })) => {
                 return Err(format!(
-                    "The Cogno on the other machine speaks protocol {protocol}, this one \
+                    "The Cogno host speaks protocol {protocol}, this Cogno \
                      {PROTOCOL_VERSION}: both need the same version"
                 ))
             }
-            _ => return Err("The Cogno on the other machine did not introduce itself".to_string()),
+            _ => return Err("The Cogno host did not introduce itself".to_string()),
         };
 
         let waiting = Arc::new(Mutex::new(Waiting::default()));
@@ -189,7 +190,7 @@ impl RemoteHost {
     }
 }
 
-impl Drop for RemoteHost {
+impl Drop for HostConnection {
     fn drop(&mut self) {
         // The host ends with its input; the process is not left to notice.
         if let Some(mut process) = self.process.lock().unwrap().take() {
@@ -213,14 +214,30 @@ mod tests {
         }
     }
 
-    /// A host serving one end of two pipes, and the connection at the other.
-    fn connected(on_lost: impl FnOnce() + Send + 'static) -> RemoteHost {
-        let (to_host, from_client) = std::io::pipe().unwrap();
-        let (to_client, from_host) = std::io::pipe().unwrap();
-        // The pipe's writer goes first: the server's output must be `Write`.
-        let (host_input, host_output) = (to_host, from_host);
-        std::thread::spawn(move || cogno_host::serve(host_input, host_output));
-        RemoteHost::attach(to_client, from_client, Arc::new(NoEvents), on_lost).unwrap()
+    /// A daemon of this test's own, and a connection to it.
+    fn connected(on_lost: impl FnOnce() + Send + 'static) -> HostConnection {
+        let endpoint = std::env::temp_dir().join(format!(
+            "cogno-connection-test-{}.json",
+            uuid::Uuid::new_v4().simple()
+        ));
+        {
+            let endpoint = endpoint.clone();
+            std::thread::spawn(move || {
+                cogno_host::daemon::run(&endpoint, cogno_host::daemon::Patience::default())
+            });
+        }
+        let started = Instant::now();
+        let stream = loop {
+            match cogno_host::daemon::connect(&endpoint) {
+                Ok(stream) => break stream,
+                Err(_) => {
+                    assert!(started.elapsed() < Duration::from_secs(10));
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+            }
+        };
+        let reader = stream.try_clone().unwrap();
+        HostConnection::over(reader, stream, Arc::new(NoEvents), on_lost).unwrap()
     }
 
     #[test]
@@ -254,11 +271,8 @@ mod tests {
             .write_all(b"bash: cogno: command not found\n")
             .unwrap();
         drop(writer);
-        let refused = RemoteHost::attach(reader, std::io::sink(), Arc::new(NoEvents), || {});
-        assert_eq!(
-            refused.err().unwrap(),
-            "No Cogno answered on the other machine"
-        );
+        let refused = HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), || {});
+        assert_eq!(refused.err().unwrap(), "No Cogno host answered");
     }
 
     #[test]
@@ -273,7 +287,7 @@ mod tests {
         let hello = String::from_utf8_lossy(&hello).replace(&current, &later);
         writer.write_all(hello.as_bytes()).unwrap();
 
-        let refused = RemoteHost::attach(reader, std::io::sink(), Arc::new(NoEvents), || {});
+        let refused = HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), || {});
         let error = refused.err().unwrap();
         assert!(error.contains(&format!("protocol {}", PROTOCOL_VERSION + 1)));
     }
@@ -286,7 +300,7 @@ mod tests {
         let lost = Arc::new(AtomicBool::new(false));
         let host = {
             let lost = lost.clone();
-            RemoteHost::attach(to_client, from_client, Arc::new(NoEvents), move || {
+            HostConnection::over(to_client, from_client, Arc::new(NoEvents), move || {
                 lost.store(true, Ordering::SeqCst)
             })
             .unwrap()

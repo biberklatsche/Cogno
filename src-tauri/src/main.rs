@@ -20,11 +20,25 @@ fn main() {
 
     let cli = Cli::parse();
 
-    // Started through ssh by a Cogno on another machine: no window, only the
-    // host behind stdin and stdout, until that Cogno hangs up.
-    if let Some(CliCommand::Server { .. }) = &cli.command {
-        let served = cogno_host::serve(std::io::stdin().lock(), std::io::stdout());
-        std::process::exit(if served.is_ok() { 0 } else { 1 });
+    // The two roles without a window. `daemon` holds this machine's shells;
+    // `server --stdio`, started through ssh by a Cogno on another machine,
+    // passes that Cogno's bytes to the daemon until it hangs up.
+    match &cli.command {
+        Some(CliCommand::Daemon { endpoint }) => {
+            let ran = host_endpoint(endpoint).and_then(|endpoint| {
+                cogno_host::daemon::run(&endpoint, Default::default())
+                    .map_err(|error| error.to_string())
+            });
+            std::process::exit(exit_code_of(ran));
+        }
+        Some(CliCommand::Server { endpoint, .. }) => {
+            let passed = host_endpoint(endpoint).and_then(|endpoint| {
+                cogno_host::daemon::bridge(&endpoint, std::io::stdin(), std::io::stdout())
+                    .map_err(|_| "No Cogno is running on this machine".to_string())
+            });
+            std::process::exit(exit_code_of(passed));
+        }
+        _ => {}
     }
 
     if let Err(error_message) = apply_cli_environment(&cli) {
@@ -46,6 +60,26 @@ fn main() {
 
     // Start Tauri App
     cogno_lib::run(cli);
+}
+
+/// The endpoint file a windowless role works with: the one it was given, or
+/// this user's.
+fn host_endpoint(given: &Option<std::path::PathBuf>) -> Result<std::path::PathBuf, String> {
+    match given {
+        Some(path) => Ok(path.clone()),
+        None => cogno_host::daemon::endpoint_path(cfg!(debug_assertions)),
+    }
+}
+
+/// Says on stderr why a windowless role failed; stdout is the connection.
+fn exit_code_of(outcome: Result<(), String>) -> i32 {
+    match outcome {
+        Ok(()) => 0,
+        Err(reason) => {
+            eprintln!("{reason}");
+            1
+        }
+    }
 }
 
 fn apply_cli_environment(cli: &Cli) -> Result<(), String> {

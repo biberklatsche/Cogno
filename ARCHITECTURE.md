@@ -876,8 +876,8 @@ Stellen halten das:
 Ein Tauri-Fenster ist eine eigene Webview mit eigener Angular-Instanz. Zwei
 Fenster teilen keinen JS-Zustand: jedes hat seine eigene Workbench, eigene
 Session-Hosts, einen eigenen Feature-Host. Geteilt ist nur der Rust-Prozess —
-und der ist fensterunabhängig: alle PTYs in einer Map
-`terminalId → Session` (im Host, 2.7), eine Datenbank, ein HTTP-Server.
+und der ist fensterunabhängig: eine Verbindung zum Dienst, der alle PTYs
+hält (2.7), eine Datenbank, ein HTTP-Server.
 Nachrichten an die Fenster routet `window_registry.rs` (Entscheidung 2),
 statt sie per `app.emit` an *alle* Fenster zu senden.
 
@@ -890,10 +890,13 @@ Entscheidungen:
    die alle Fenster kennt: PTYs, Datenbank, HTTP-Server, CLI-Empfang,
    Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks,
    Selbst-Update (`updater.rs`: ein Prüf-, Download- und Installationszustand
-   für die ganze App). Welches Fenster zu einem Terminal gehört, weiß
-   allein sein PTY: der Spawn kommt immer aus einem Fenster, und dessen
-   Label trägt die Session im Host als ihren Besitzer (2.7; keine zweite
-   Tabelle). Rust routet:
+   für die ganze App). Welches Fenster zu einem Terminal gehört, steht
+   an zwei Stellen, weil die PTYs im Dienst leben und nicht mehr im Prozess
+   der App: Die App führt eine Tabelle Terminal → Fenster und Host
+   (`host.rs`), aus der sie Nachrichten zustellt, und die Session im Dienst
+   trägt das Label als ihren Besitzer (2.7), damit er sie beim Verschwinden
+   des Fensters freigibt. Beide entstehen beim Spawn und vergehen mit der
+   Sitzung. Rust routet:
    Nachricht mit `terminalId` → `emit_to` an das Fenster dieses PTY; globale Aktion ohne Ziel → das fokussierte Fenster;
    Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
    Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
@@ -926,11 +929,11 @@ Entscheidungen:
    viele Fenster es gibt — sie sieht nur Nachrichten für sich.
 3. **Eine Session gehört dem Fenster, dessen Webview ihren xterm-Core
    hält.** Der PTY-Prozess lebt in Rust; nur der Buffer ist im JS-Heap.
-   Rust merkt sich am PTY das Fenster, das ihn gestartet hat: daraus routet
-   es seine Nachrichten (Entscheidung 2), und damit gibt es ihn frei, wenn
-   dieses Fenster verschwindet (Entscheidung 4). Weil das Fenster nur am
-   PTY steht, entscheidet das Aufräumen unter demselben Lock wie der Spawn,
-   welche Sessions dem Fenster gehören. „Pane in anderes Fenster" ist damit kein Umhängen,
+   Der Dienst merkt sich am PTY das Fenster, das ihn gestartet hat (als
+   Besitzer, je Client), und gibt ihn damit frei, wenn die App meldet, dass
+   dieses Fenster verschwunden ist (Entscheidung 4). Weil der Besitzer am
+   PTY steht, entscheidet das Aufräumen im Dienst unter demselben Lock wie
+   der Spawn, welche Sessions dem Fenster gehören. „Pane in anderes Fenster" ist damit kein Umhängen,
    sondern ein Restore (2.5): Snapshot im Quellfenster, neuer Core im
    Zielfenster, Übernahme derselben PTY über `terminalId` – dabei zieht
    das gemerkte Fenster des PTY mit um. Die Architektur trägt das; geplant
@@ -978,6 +981,13 @@ installierten Shells. Es importiert kein Tauri und kennt weder Fenster noch
 Webview. Die **App** (`src-tauri/src/`) ist der Rest: Fenster, Datenbank,
 Config, HTTP-Server, Askpass, Command-Runner, Updater.
 
+**Der Host läuft als eigener Prozess, der Dienst** (`cogno daemon`,
+`daemon.rs`): einer je Nutzer und Rechner. Seine Sitzungen gehören keinem
+Fenster und keiner Verbindung. Die App ist einer seiner Clients, auch auf
+demselben Rechner; ein Cogno auf einem anderen Rechner ist ein weiterer. Es
+bleibt ein Binary: der Dienst ist eine Rolle von `cogno`, wie App, CLI und
+Askpass-Helfer.
+
 Der Host hat genau einen Eingang und einen Ausgang (`protocol.rs`):
 
 - **`Host::handle(client, Request) -> Reply`** beantwortet eine Anfrage (PTY
@@ -991,8 +1001,9 @@ Der Host hat genau einen Eingang und einen Ausgang (`protocol.rs`):
   übernommen hat. Die App reicht die Ausgabe an den Webview-Channel dieses
   Stroms und das Ende per `emit_to` an das Fenster (`src-tauri/src/host.rs`).
 
-Auch lokal läuft damit jeder Aufruf über Anfrage und Ereignis — derselbe Weg,
-den ein Host auf einem anderen Rechner hat.
+Lokal wie entfernt läuft damit jeder Aufruf über Anfrage und Ereignis, über
+dieselbe Verbindung (`host_connection.rs` in der App). Einen in die App
+eingebetteten Host gibt es nicht.
 
 **Eine Sitzung lebt unabhängig davon, wer sie zeigt.** Im Host ist eine
 Sitzung eine Shell mit ihrer PTY; ein Client ist höchstens *angedockt*.
@@ -1027,22 +1038,50 @@ zeichnen, sehen nach dem Andocken kurz unordentlich aus, bis sie neu malen;
 unter Windows liefert ConPTY sein eigenes, für die alte Breite umbrochenes
 Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
 
-**Der Host hinter einem Datenstrom.** `cogno server --stdio` startet kein
-Fenster, sondern nur den Host hinter stdin und stdout (`server.rs`,
-abgezweigt in `main.rs` wie Askpass und CLI). Gedacht ist er als Gegenstelle
-eines `ssh`-Aufrufs: Erreichbarkeit, Anmeldung und Verschlüsselung sind
-Sache von `ssh`, Cogno öffnet keinen Port. Die Rahmung steht in `wire.rs`:
+**Wie man den Dienst erreicht.**
+
+- **Lokal: TCP auf der Loopback-Schnittstelle, mit Token.** Der Dienst
+  schreibt Port und ein Geheimnis in `~/.cogno/host.json`; jede Verbindung
+  beginnt mit diesem Token. Die Datei darf nur ihr Eigentümer lesen (Unix
+  `0600`; unter Windows eine eigene Zugriffsliste ohne Vererbung, weil ein
+  Profil anderen Lesezugriff vererben kann). Das ist dasselbe Muster wie
+  beim HTTP-Server der App (2.1) und auf allen Systemen derselbe Code.
+- **Von einem anderen Rechner: `ssh` und eine Brücke.**
+  `cogno server --stdio`, über `ssh` gestartet, reicht nur Bytes zwischen
+  stdin/stdout und dem Dienst durch (`daemon::bridge`). Erreichbarkeit,
+  Anmeldung und Verschlüsselung sind Sache von `ssh`; Cogno öffnet nach
+  außen keinen Port. Für den Dienst ist ein solcher Client von einem lokalen
+  nicht zu unterscheiden. Läuft kein Dienst, sagt die Brücke das und endet;
+  sie startet keinen.
+- **Der Starter.** Gestartet wird über `".cogno/bin/cogno" server --stdio`:
+  eine kleine Datei, die die App beim Start des Dienstes in ihr Cogno-Home
+  legt und die auf das Binary des Dienstes zeigt. Eine `ssh`-Sitzung beginnt
+  im Home-Verzeichnis, so wird Cogno unabhängig vom Installationsort
+  gefunden. Die Schreibweise nehmen `cmd` und `sh`; ein SSH-Server mit
+  PowerShell als Standard-Shell braucht `remote.hosts.<name>.command`.
+
+**Lebenslauf des Dienstes.** Die App sucht ihn über die Endpoint-Datei und
+startet ihn abgekoppelt, wenn keiner antwortet (`daemon_start.rs`). Er
+beendet sich selbst, wenn er eine Weile weder Client noch Sitzung hat, und
+nimmt seine Endpoint-Datei mit. Unter Windows läuft er aus einer Kopie des
+Binarys (`~/.cogno/host/<version>-<bauzeit>/`): Die Datei eines laufenden
+Programms lässt sich dort nicht ersetzen, und der Dienst überlebt die App —
+ein Update würde sonst an ihm scheitern oder ihn samt allen Shells beenden.
+Bricht die Verbindung der App zum Dienst ab, enden ihre lokalen Terminals;
+beim nächsten Start einer Shell verbindet sie neu und startet ihn bei Bedarf.
+
+**Die Rahmung** (`wire.rs`) ist für beide Wege dieselbe:
 
 - Der Host beginnt mit einer **Kennung** und einem `Hello` (Protokollversion,
   Betriebssystem). Die Gegenseite überspringt, was ein Login davor ausgibt.
-  Die Version muss gleich sein; verhandelt wird nicht.
+  Die Version muss gleich sein; verhandelt wird noch nicht.
 - Danach laufen in beide Richtungen **Frames** aus Länge, Art und Inhalt.
   Anfragen (mit ID), Antworten (mit derselben ID) und Ereignisse sind JSON;
   die Ausgabe einer Sitzung ist ein eigener, binärer Frame.
-- **Endet der Eingabestrom, endet der Host und mit ihm jede Shell.** Eine
-  verlorene Verbindung lässt keinen Prozess zurück.
+- **Endet der Strom eines Clients, ist dieser Client weg** — was aus seinen
+  Sitzungen wird, hat ihr Start entschieden (`survives_client`, oben).
 
-Anfragen, die dauern können (`Request::may_block`), beantwortet der Server
+Anfragen, die dauern können (`Request::may_block`), beantwortet der Dienst
 auf einem eigenen Thread, damit Eingabe und Quittungen der übrigen Sitzungen
 nicht warten.
 
@@ -1052,11 +1091,13 @@ nicht warten.
 laufen weiter über den Profilnamen, der Host kommt mit dem Profil. Die
 Zuständigkeiten:
 
-- **App (Rust, `host.rs`, `remote.rs`):** `host_connect` startet
-  `ssh <ziel> cogno server --stdio` und hält die Verbindung unter dem Namen
-  des Hosts. Ein Terminal, das dort gestartet wurde, steht in einer Tabelle
-  Terminal → Host; jede Anfrage mit Terminal-ID geht darüber an den richtigen
-  Host, ohne dass das Frontend ihn nennt. Getipptes, Größenänderungen und
+- **App (Rust, `host.rs`, `host_connection.rs`):** `host_connect` startet
+  `ssh <ziel> ".cogno/bin/cogno" server --stdio` und hält die Verbindung
+  unter dem Namen des Hosts; die Verbindung zum eigenen Dienst hält sie
+  ebenso. Jedes Terminal der App steht in einer Tabelle Terminal → Host und
+  Fenster; jede Anfrage mit Terminal-ID geht darüber an den richtigen Host,
+  ohne dass das Frontend ihn nennt, und jede Nachricht an das richtige
+  Fenster (2.6). Getipptes, Größenänderungen und
   Quittungen werden gesendet, ohne auf die Antwort zu warten. Bricht die
   Verbindung ab, enden die Terminals dieses Hosts (`pty-exit`), und alle
   Fenster hören `host-disconnected`. Den HTTP-Server dieser App bekommt eine

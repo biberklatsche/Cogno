@@ -1,22 +1,27 @@
-//! The hosts this app talks to (`cogno-host`): the one it embeds for this
-//! machine's shells, and those on other machines it is connected to
-//! (`remote`). The commands turn what the webview asks into requests; what a
-//! host reports goes back to the webview from here.
+//! The hosts this app talks to (`cogno-host`): this machine's daemon, which
+//! holds its shells, and those of other machines it is connected to. The
+//! commands turn what the webview asks into requests; what a host reports
+//! goes back to the webview from here.
 
 use cogno_host::protocol::{Event, PtySpawnResult, Reply, Request, Response, SpawnOptions};
-use cogno_host::{Client, EventSink, Host};
+use cogno_host::EventSink;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Emitter};
 
-use crate::remote::RemoteHost;
+use crate::host_connection::HostConnection;
 
 /// Event to every window: the connection to a host on another machine ended.
 const DISCONNECTED_EVENT: &str = "host-disconnected";
+/// How long this machine's daemon may take to introduce itself. It answers
+/// at once; this only keeps a stale endpoint, whose port something else has
+/// taken, from holding up the app.
+const LOCAL_HELLO_PATIENCE: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Serialize)]
 struct HostDisconnected {
@@ -50,17 +55,18 @@ impl Streams {
     }
 }
 
-/// A terminal whose shell runs on another machine.
-struct RemoteTerminal {
-    host: String,
-    /// The window that spawned it: where its end is reported.
+/// A terminal of this app: where its shell runs and which window shows it.
+struct Terminal {
+    /// The host on another machine; `None` for this machine's daemon.
+    host: Option<String>,
+    /// The window that spawned it: where its messages and its end go.
     window: String,
     stream: u64,
 }
 
-/// By terminal id. The terminals of this machine are not in here: the
-/// embedded host knows them itself.
-type RemoteTerminals = Arc<Mutex<HashMap<String, RemoteTerminal>>>;
+/// By terminal id. A request about a terminal finds its host here, so the
+/// webview never has to name it.
+type Terminals = Arc<Mutex<HashMap<String, Terminal>>>;
 
 fn emit_exit(app: &AppHandle, window: &str, terminal_id: &str, exit_code: i32) -> bool {
     app.emit_to(
@@ -71,11 +77,11 @@ fn emit_exit(app: &AppHandle, window: &str, terminal_id: &str, exit_code: i32) -
     .is_ok()
 }
 
-/// Where every host's events go, the embedded one's and the remote ones'.
+/// Where every host's events go.
 struct WebviewSink {
     app: AppHandle,
     streams: Arc<Streams>,
-    remote_terminals: RemoteTerminals,
+    terminals: Terminals,
 }
 
 impl EventSink for WebviewSink {
@@ -92,7 +98,7 @@ impl EventSink for WebviewSink {
                 owner,
                 exit_code,
             } => {
-                self.remote_terminals.lock().unwrap().remove(&terminal_id);
+                self.terminals.lock().unwrap().remove(&terminal_id);
                 emit_exit(&self.app, &owner, &terminal_id, exit_code)
             }
             // Nothing of this app attaches to a running session yet, so
@@ -104,14 +110,13 @@ impl EventSink for WebviewSink {
 
 struct Hosts {
     app: AppHandle,
-    local: Host,
-    /// This app, as the embedded host knows it.
-    app_client: Client,
     sink: Arc<WebviewSink>,
     streams: Arc<Streams>,
-    /// By the name the config gives the host.
-    remotes: Mutex<HashMap<String, Arc<RemoteHost>>>,
-    remote_terminals: RemoteTerminals,
+    /// The connection to this machine's daemon, once there was one.
+    local: Mutex<Option<Arc<HostConnection>>>,
+    /// The connections to other machines, by the name the config gives them.
+    remotes: Mutex<HashMap<String, Arc<HostConnection>>>,
+    terminals: Terminals,
     /// One connection is set up at a time: two panes of one host restored
     /// together share a connection instead of each starting one, and the
     /// user is asked one password at a time.
@@ -119,7 +124,42 @@ struct Hosts {
 }
 
 impl Hosts {
-    fn remote(&self, name: &str) -> Result<Arc<RemoteHost>, String> {
+    /// The connection to this machine's daemon. It is set up when first
+    /// needed and again after it was lost; the daemon is started if none runs.
+    fn local(self: &Arc<Self>) -> Result<Arc<HostConnection>, String> {
+        let _one_at_a_time = self.connecting.lock().unwrap();
+        if let Some(connected) = self
+            .local
+            .lock()
+            .unwrap()
+            .as_ref()
+            .filter(|connection| !connection.is_lost())
+        {
+            return Ok(connected.clone());
+        }
+        let stream = cogno_host::daemon_start::connect_or_start(
+            cfg!(debug_assertions),
+            env!("CARGO_PKG_VERSION"),
+        )?;
+        let reader = stream.try_clone().map_err(|error| error.to_string())?;
+        let timed = stream.try_clone().map_err(|error| error.to_string())?;
+        let _ = timed.set_read_timeout(Some(LOCAL_HELLO_PATIENCE));
+        let on_lost = {
+            let hosts = Arc::downgrade(self);
+            move || {
+                if let Some(hosts) = hosts.upgrade() {
+                    hosts.lost(None);
+                }
+            }
+        };
+        let connection = HostConnection::over(reader, stream, self.sink.clone(), on_lost);
+        let _ = timed.set_read_timeout(None);
+        let connection = Arc::new(connection?);
+        *self.local.lock().unwrap() = Some(connection.clone());
+        Ok(connection)
+    }
+
+    fn remote(&self, name: &str) -> Result<Arc<HostConnection>, String> {
         self.remotes
             .lock()
             .unwrap()
@@ -129,76 +169,96 @@ impl Hosts {
             .ok_or_else(|| format!("Not connected to the host {name}"))
     }
 
-    /// The host a terminal runs on, if that is another machine.
-    fn remote_of(&self, terminal_id: &str) -> Option<Arc<RemoteHost>> {
-        let name = self
-            .remote_terminals
+    /// The connection to `host`, this machine's daemon when `None`.
+    fn connection(self: &Arc<Self>, host: Option<&str>) -> Result<Arc<HostConnection>, String> {
+        match host {
+            None => self.local(),
+            Some(name) => self.remote(name),
+        }
+    }
+
+    /// The connection to the host a terminal of this app runs on.
+    fn connection_of(self: &Arc<Self>, terminal_id: &str) -> Result<Arc<HostConnection>, String> {
+        let host = self
+            .terminals
             .lock()
             .unwrap()
             .get(terminal_id)
-            .map(|terminal| terminal.host.clone())?;
-        self.remotes.lock().unwrap().get(&name).cloned()
+            .map(|terminal| terminal.host.clone())
+            .ok_or_else(|| format!("Session not found: {terminal_id}"))?;
+        self.connection(host.as_deref())
     }
 
-    /// The connection to `name` ended: its terminals end with it.
-    fn lost(&self, name: &str) {
-        {
-            let mut remotes = self.remotes.lock().unwrap();
-            if remotes.get(name).is_some_and(|remote| remote.is_lost()) {
-                remotes.remove(name);
+    /// The connection to a host ended: its terminals end with it. `None` is
+    /// this machine's daemon.
+    fn lost(&self, host: Option<&str>) {
+        match host {
+            None => {
+                let mut local = self.local.lock().unwrap();
+                if local
+                    .as_ref()
+                    .is_some_and(|connection| connection.is_lost())
+                {
+                    *local = None;
+                }
+            }
+            Some(name) => {
+                let mut remotes = self.remotes.lock().unwrap();
+                if remotes.get(name).is_some_and(|remote| remote.is_lost()) {
+                    remotes.remove(name);
+                }
             }
         }
-        let ended: Vec<(String, RemoteTerminal)> = self
-            .remote_terminals
+        let ended: Vec<(String, Terminal)> = self
+            .terminals
             .lock()
             .unwrap()
-            .extract_if(|_, terminal| terminal.host == name)
+            .extract_if(|_, terminal| terminal.host.as_deref() == host)
             .collect();
         for (terminal_id, terminal) in ended {
             self.streams.close(terminal.stream);
             emit_exit(&self.app, &terminal.window, &terminal_id, -1);
         }
-        let _ = self.app.emit(
-            DISCONNECTED_EVENT,
-            HostDisconnected {
-                host: name.to_string(),
-            },
-        );
+        match host {
+            Some(name) => {
+                let _ = self.app.emit(
+                    DISCONNECTED_EVENT,
+                    HostDisconnected {
+                        host: name.to_string(),
+                    },
+                );
+            }
+            None => log::error!(target: "host", "the connection to this machine's host was lost"),
+        }
     }
 
     /// Answers a request that may take a while.
-    fn answer(&self, request: Request) -> Reply {
+    fn answer(self: &Arc<Self>, request: Request) -> Reply {
         if let Request::TerminalProcesses = request {
             return self.terminal_processes();
         }
         let Some(terminal_id) = request.terminal_id().map(str::to_string) else {
-            return self.local.handle(&self.app_client, request);
+            return self.local()?.request(request);
         };
-        let Some(remote) = self.remote_of(&terminal_id) else {
-            return self.local.handle(&self.app_client, request);
-        };
+        let connection = self.connection_of(&terminal_id)?;
         let killed = matches!(request, Request::PtyKill { .. });
-        let reply = remote.request(request);
+        let reply = connection.request(request);
         if killed {
-            self.remote_terminals.lock().unwrap().remove(&terminal_id);
+            self.terminals.lock().unwrap().remove(&terminal_id);
         }
         reply
     }
 
     /// The processes under every terminal's shell, on every machine.
-    fn terminal_processes(&self) -> Reply {
-        let Response::TerminalProcesses(mut processes) = self
-            .local
-            .handle(&self.app_client, Request::TerminalProcesses)?
-        else {
-            return Err("The host answered something else".to_string());
-        };
-        let remotes: Vec<Arc<RemoteHost>> =
+    fn terminal_processes(self: &Arc<Self>) -> Reply {
+        let mut connections: Vec<Arc<HostConnection>> =
             self.remotes.lock().unwrap().values().cloned().collect();
-        for remote in remotes {
+        connections.extend(self.local.lock().unwrap().clone());
+        let mut processes = Vec::new();
+        for connection in connections {
             // A host that does not answer has no processes to show.
             if let Ok(Response::TerminalProcesses(theirs)) =
-                remote.request(Request::TerminalProcesses)
+                connection.request(Request::TerminalProcesses)
             {
                 processes.extend(theirs);
             }
@@ -212,23 +272,19 @@ pub struct HostState(Arc<Hosts>);
 impl HostState {
     pub fn new(app: AppHandle) -> Self {
         let streams = Arc::new(Streams::default());
-        let remote_terminals = RemoteTerminals::default();
+        let terminals = Terminals::default();
         let sink = Arc::new(WebviewSink {
             app: app.clone(),
             streams: streams.clone(),
-            remote_terminals: remote_terminals.clone(),
+            terminals: terminals.clone(),
         });
         Self(Arc::new(Hosts {
             app,
-            local: Host::new(),
-            app_client: Client {
-                id: 0,
-                sink: sink.clone(),
-            },
             sink,
             streams,
+            local: Mutex::new(None),
             remotes: Mutex::new(HashMap::new()),
-            remote_terminals,
+            terminals,
             connecting: Mutex::new(()),
         }))
     }
@@ -246,11 +302,11 @@ impl HostState {
             let name = name.to_string();
             move || {
                 if let Some(hosts) = hosts.upgrade() {
-                    hosts.lost(&name);
+                    hosts.lost(Some(&name));
                 }
             }
         };
-        let remote = RemoteHost::connect(command, self.0.sink.clone(), on_lost)?;
+        let remote = HostConnection::connect(command, self.0.sink.clone(), on_lost)?;
         let os = remote.os().to_string();
         self.0
             .remotes
@@ -274,6 +330,7 @@ impl HostState {
         let stream = hosts.streams.open(on_data);
         let spawned = tauri::async_runtime::spawn_blocking(move || {
             let terminal_id = options.name.clone();
+            let connection = hosts.connection(host.as_deref())?;
             let request = Request::PtySpawn {
                 options,
                 owner: window.clone(),
@@ -282,23 +339,19 @@ impl HostState {
                 // Until a setting says otherwise, a shell ends with Cogno.
                 survives_client: false,
             };
-            let Some(name) = host else {
-                return hosts.local.handle(&hosts.app_client, request);
-            };
-            let remote = hosts.remote(&name)?;
             // Known before the request goes out: the shell's first output
             // and its end can overtake the reply.
-            hosts.remote_terminals.lock().unwrap().insert(
+            hosts.terminals.lock().unwrap().insert(
                 terminal_id.clone(),
-                RemoteTerminal {
-                    host: name,
+                Terminal {
+                    host,
                     window,
                     stream,
                 },
             );
-            let reply = remote.request(request);
+            let reply = connection.request(request);
             if reply.is_err() {
-                hosts.remote_terminals.lock().unwrap().remove(&terminal_id);
+                hosts.terminals.lock().unwrap().remove(&terminal_id);
             }
             reply
         })
@@ -323,22 +376,30 @@ impl HostState {
     /// `host` is asked, this machine when `None`. On a blocking worker.
     pub async fn request_on(&self, host: Option<String>, request: Request) -> Reply {
         let hosts = self.0.clone();
-        tauri::async_runtime::spawn_blocking(move || match host {
-            None => hosts.local.handle(&hosts.app_client, request),
-            Some(name) => hosts.remote(&name)?.request(request),
+        tauri::async_runtime::spawn_blocking(move || {
+            hosts.connection(host.as_deref())?.request(request)
         })
         .await
         .map_err(|error| error.to_string())?
     }
 
-    /// Answers on the calling thread: only for requests about one terminal
-    /// that never block. On another machine the request is sent and not
-    /// waited for.
-    pub fn handle(&self, request: Request) -> Reply {
-        match request.terminal_id().and_then(|id| self.0.remote_of(id)) {
-            Some(remote) => remote.post(request).map(|_| Response::Done),
-            None => self.0.local.handle(&self.0.app_client, request),
-        }
+    /// For requests about one terminal that need no answer (what is typed,
+    /// resized, acknowledged): sent and not waited for, so the calling
+    /// thread is never held up by the host.
+    pub fn post(&self, request: Request) -> Result<(), String> {
+        let terminal_id = request
+            .terminal_id()
+            .ok_or("Not a request about a terminal")?;
+        self.0.connection_of(terminal_id)?.post(request)
+    }
+
+    /// Asks about one terminal and waits for the answer on the calling
+    /// thread: only for what the host answers at once.
+    pub fn ask(&self, request: Request) -> Reply {
+        let terminal_id = request
+            .terminal_id()
+            .ok_or("Not a request about a terminal")?;
+        self.0.connection_of(terminal_id)?.request(request)
     }
 
     /// Answers on a blocking worker, never on the thread that drives the UI.
@@ -351,19 +412,19 @@ impl HostState {
 
     /// The window that spawned the terminal: where its messages go.
     pub fn window_of(&self, terminal_id: &str) -> Option<String> {
-        self.0.local.owner_of(terminal_id)
+        self.0
+            .terminals
+            .lock()
+            .unwrap()
+            .get(terminal_id)
+            .map(|terminal| terminal.window.clone())
     }
 
     /// The window is gone: its shells end, on every machine. Returns at once.
     pub fn release_window(&self, label: &str) {
-        let release = || Request::ReleaseOwner {
-            owner: label.to_string(),
-        };
-        // The embedded host releases on a thread of its own.
-        let _ = self.0.local.handle(&self.0.app_client, release());
-        let ended: Vec<RemoteTerminal> = self
+        let ended: Vec<Terminal> = self
             .0
-            .remote_terminals
+            .terminals
             .lock()
             .unwrap()
             .extract_if(|_, terminal| terminal.window == label)
@@ -372,17 +433,22 @@ impl HostState {
         for terminal in &ended {
             self.0.streams.close(terminal.stream);
         }
-        let remotes: Vec<Arc<RemoteHost>> =
+        let mut connections: Vec<Arc<HostConnection>> =
             self.0.remotes.lock().unwrap().values().cloned().collect();
-        for remote in remotes {
-            let _ = remote.post(release());
+        connections.extend(self.0.local.lock().unwrap().clone());
+        for connection in connections {
+            // Every host is told, also one without a terminal of this
+            // window: a spawn may still be on its way there.
+            let _ = connection.post(Request::ReleaseOwner {
+                owner: label.to_string(),
+            });
         }
     }
 
-    /// Ends every shell and every connection: what the app does on its way out.
+    /// Hangs up on every host: what the app does on its way out. A host ends
+    /// the shells that were not started to go on without their client.
     pub fn release_all(&self) {
-        self.0.local.release_all();
-        // A host on another machine ends its shells when its connection does.
         self.0.remotes.lock().unwrap().clear();
+        *self.0.local.lock().unwrap() = None;
     }
 }

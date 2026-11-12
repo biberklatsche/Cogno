@@ -499,13 +499,13 @@ Other machines whose shells Cogno runs, reached over ssh. `<name>` is a host nam
 
 ### `remote.hosts.<name>.destination`
 
-Where ssh connects: a host name, `user@host` or an alias from your ssh config. The machine must be reachable by ssh and have Cogno installed.
+Where ssh connects: a host name, `user@host` or an alias from your ssh config. The machine must be reachable by ssh and have Cogno running.
 
 **Type:** string
 
 ### `remote.hosts.<name>.command`
 
-Command that starts Cogno on that machine. Set it when `cogno` is not on the PATH of an ssh session there. Default: `cogno server --stdio`.
+Command ssh runs on that machine to reach the Cogno there. Set it when the ssh server there starts commands in PowerShell: `& ".cogno/bin/cogno" server --stdio`. Default: `".cogno/bin/cogno" server --stdio`.
 
 **Type:** string
 

@@ -1,5 +1,5 @@
-//! A host behind a byte stream: requests come in, replies and events go out
-//! (`wire`). The stream's end is the client's end, and with it every shell's.
+//! One client of a host behind a byte stream: requests come in, replies and
+//! events go out (`wire`). The stream's end is the client's end.
 
 use std::io::{self, Read, Write};
 use std::sync::{Arc, Mutex};
@@ -23,14 +23,18 @@ impl<W: Write + Send + 'static> EventSink for Output<W> {
     }
 }
 
-/// Serves one client until `input` ends, then ends every shell.
-pub fn serve<W: Write + Send + 'static>(mut input: impl Read, output: W) -> io::Result<()> {
+/// Serves one client of `host` until `input` ends. What becomes of the
+/// client's sessions then is theirs to say (`Host::client_gone`).
+pub(crate) fn serve_client<W: Write + Send + 'static>(
+    host: &Arc<Host>,
+    client_id: u64,
+    mut input: impl Read,
+    output: W,
+) -> io::Result<()> {
     let output = Arc::new(Output(Mutex::new(output)));
     wire::write_hello(&mut *output.0.lock().unwrap())?;
-    let host = Arc::new(Host::new());
-    // The one client this server has: whoever is at the other end.
     let client = Client {
-        id: 1,
+        id: client_id,
         sink: output.clone(),
     };
 
@@ -55,6 +59,6 @@ pub fn serve<W: Write + Send + 'static>(mut input: impl Read, output: W) -> io::
             output.send(HostMessage::Reply { id, reply });
         }
     };
-    host.release_all();
+    host.client_gone(client_id);
     served
 }

@@ -432,6 +432,10 @@ impl PtyState {
             .map(|session| session.owner.label.clone())
     }
 
+    pub fn session_count(&self) -> usize {
+        self.sessions.lock().unwrap().live.len()
+    }
+
     /// The sessions that run, for a client that wants to attach to one.
     pub fn list(&self) -> Vec<SessionInfo> {
         let sessions = self.sessions.lock().unwrap();
