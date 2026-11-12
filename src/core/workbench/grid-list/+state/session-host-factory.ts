@@ -22,7 +22,6 @@ import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-h
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { IdCreator } from "@cogno/core/workbench/id-creator";
 import {
   HostConnectionComponent,
   HostConnectionState,
@@ -99,10 +98,10 @@ type SessionEntry = {
 };
 
 /**
- * A pane whose shell runs on a machine that is not connected (yet), or that
- * asks what to do with the shells already running there. It has no session:
- * a session needs to know the operating system its shell runs on, and only
- * the connected machine says that.
+ * A pane whose shell runs on a machine that is not connected (yet), or whose
+ * shell could not be shown. It has no session: a session needs to know the
+ * operating system its shell runs on, and only the connected machine says
+ * that.
  */
 type WaitingPane = {
   readonly pane: Pane;
@@ -119,19 +118,18 @@ type WaitingPane = {
  * destroy. The view is created lazily on the first attach and reparented
  * afterwards; destroying a view never ends a session (ARCHITECTURE.md 2.3).
  *
- * A pane of a machine that is not connected waits: its session starts once
- * the connection stands, and until then the pane shows how far that is.
- *
  * A pane whose shell already runs - Cogno was closed and the shell went on,
  * or another Cogno started it - gets a session that shows that shell instead
  * of starting one.
+ *
+ * A pane of another machine (`Pane.host`) only ever shows a shell that runs
+ * there. While that machine is not connected it waits, and shows how far the
+ * connection is; when its shell is gone it says so and starts none.
  */
 @Injectable({ providedIn: "root" })
 export class SessionHostFactory {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
   private readonly waiting = new Map<TerminalId, WaitingPane>();
-  /** The hosts whose running shells the user was asked about and answered. */
-  private readonly answeredHosts = new Set<string>();
 
   constructor(
     private readonly env: EnvironmentInjector,
@@ -162,25 +160,25 @@ export class SessionHostFactory {
     if (existing) return existing;
 
     const shellProfile = this.shellProfileFor(pane);
-    const backend = this.backendOf(shellProfile);
+    const backend = this.backendOf(pane);
     if (!backend) {
-      this.waitForHost(pane, terminalId, shellProfile.host as string);
+      this.waitForHost(pane, terminalId, pane.host as string);
       return undefined;
     }
-    const running = this.runningSessions.take(shellProfile.host, terminalId);
-    if (!running && shellProfile.host) {
-      if (!this.runningSessions.isFresh(shellProfile.host)) {
+    const running = this.runningSessions.take(pane.host, terminalId);
+    if (!running && pane.host) {
+      if (!this.runningSessions.isFresh(pane.host)) {
         // What runs there was last heard when the host connected, which may
         // be hours ago.
-        this.askAgain(pane, terminalId, shellProfile.host);
+        this.askAgain(pane, terminalId, pane.host);
         return undefined;
       }
-      if (this.hasSessionsToOffer(shellProfile.host)) {
-        // Shells run there that nothing here shows: starting one more may
-        // not be what the user came for.
-        this.offerSessions(pane, terminalId, shellProfile.host);
-        return undefined;
-      }
+      this.waiting.set(terminalId, {
+        pane,
+        host: pane.host,
+        state: { status: "failed", reason: "The shell does not run there any more." },
+      });
+      return undefined;
     }
     const sessionProfile = running ? profileOfRunning(shellProfile, running) : shellProfile;
 
@@ -304,11 +302,11 @@ export class SessionHostFactory {
     }
   }
 
-  /** Where the profile's shell runs; nothing while its machine is not connected. */
-  private backendOf(shellProfile: ShellProfile): SessionBackend | undefined {
-    if (!shellProfile.host) return { os: this.os.platform() };
-    const info = this.remoteHosts.info(shellProfile.host);
-    return info && { host: shellProfile.host, os: info.os };
+  /** Where the pane's shell runs; nothing while its machine is not connected. */
+  private backendOf(pane: Pane): SessionBackend | undefined {
+    if (!pane.host) return { os: this.os.platform() };
+    const info = this.remoteHosts.info(pane.host);
+    return info && { host: pane.host, os: info.os };
   }
 
   private waitForHost(pane: Pane, terminalId: TerminalId, host: string): void {
@@ -325,51 +323,6 @@ export class SessionHostFactory {
     this.waiting.set(terminalId, waiting);
     // Never rejects: a host that does not answer has nothing to go on with.
     void this.runningSessions.refresh(host).then(() => this.proceed(terminalId, waiting));
-  }
-
-  /**
-   * The shells that run on the host and that this window does not show. A
-   * host can be this very machine, reached the long way round: its shells
-   * that a pane here shows already are nothing to go on with.
-   */
-  private sessionsToOffer(host: string): RunningSession[] {
-    return this.runningSessions
-      .unclaimed(host)
-      .filter((session) => !this.sessions.has(session.terminalId));
-  }
-
-  private hasSessionsToOffer(host: string): boolean {
-    return !this.answeredHosts.has(host) && this.sessionsToOffer(host).length > 0;
-  }
-
-  /** The pane asks instead of starting a shell; see `HostConnectionComponent`. */
-  private offerSessions(pane: Pane, terminalId: TerminalId, host: string): void {
-    if (this.waiting.has(terminalId)) return;
-    const count = this.sessionsToOffer(host).length;
-    this.waiting.set(terminalId, { pane, host, state: { status: "sessions", count } });
-  }
-
-  /**
-   * Every shell that runs on the host gets a tab of its own, which shows it;
-   * the pane that asked has done its part and goes.
-   */
-  private goOnWithSessions(terminalId: TerminalId, waiting: WaitingPane): void {
-    const sessions = this.sessionsToOffer(waiting.host);
-    // Answered, whatever becomes of the tabs: a tab that cannot show its
-    // shell after all must not ask the same question again.
-    this.answeredHosts.add(waiting.host);
-    sessions.forEach((session, index) => {
-      this.bus.publish({
-        type: "CreateTab",
-        payload: {
-          tabId: IdCreator.newTabId(),
-          shellName: waiting.pane.shellName,
-          terminalId: session.terminalId,
-          isActive: index === 0,
-        },
-      });
-    });
-    this.bus.publish(ActionFired.create("close_terminal", undefined, undefined, terminalId));
   }
 
   /** The pane stops waiting and gets its session (or waits for the next thing). */
@@ -393,7 +346,7 @@ export class SessionHostFactory {
     const entry = this.sessions.get(terminalId);
     if (!entry || entry.host.runtime.status !== "takenOver") return;
     const dock = entry.componentRef?.location.nativeElement.parentElement ?? undefined;
-    await this.runningSessions.refresh(this.shellProfileFor(entry.pane).host);
+    await this.runningSessions.refresh(entry.pane.host);
     if (this.sessions.get(terminalId) !== entry) return;
     this.destroy(terminalId);
     if (dock) {
@@ -429,11 +382,6 @@ export class SessionHostFactory {
       view.instance.closePane.subscribe(() =>
         this.bus.publish(ActionFired.create("close_terminal", undefined, undefined, terminalId)),
       );
-      view.instance.takeOver.subscribe(() => this.goOnWithSessions(terminalId, waiting));
-      view.instance.startNew.subscribe(() => {
-        this.answeredHosts.add(waiting.host);
-        this.proceed(terminalId, waiting);
-      });
       this.appRef.attachView(view.hostView);
       waiting.view = view;
     }

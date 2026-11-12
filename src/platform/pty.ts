@@ -30,6 +30,14 @@ export type PtySpawnOptionsContract = {
   survivesClient: boolean;
 };
 
+/** Where a shell sits in the Cogno it belongs to. */
+export type PtyLabelContract = {
+  workspace?: string;
+  tab?: string;
+  title?: string;
+  directory?: string;
+};
+
 /** A shell that already runs, and where. */
 export type PtyAttachOptionsContract = {
   terminalId: string;
@@ -278,9 +286,19 @@ export class PtyTransport {
     };
   }
 
-  /** Another Cogno attached to the shell: it runs on, shown there. */
-  onTakenOver(terminalId: string, listener: () => void): Promise<() => void> {
-    return listen(`pty-taken-over:${terminalId}`, () => listener());
+  /**
+   * Another Cogno attached to the shell: it runs on, shown there. `by` is
+   * what that Cogno's machine is called, when it said.
+   */
+  onTakenOver(terminalId: string, listener: (by?: string) => void): Promise<() => void> {
+    return listen<{ by?: string | null }>(`pty-taken-over:${terminalId}`, ({ payload }) =>
+      listener(payload?.by ?? undefined),
+    );
+  }
+
+  /** Says where the shell sits in this Cogno, for another Cogno to find it by. */
+  label(terminalId: string, label: PtyLabelContract): Promise<void> {
+    return invoke("pty_label", { terminalId, label });
   }
 
   ack(terminalId: string, seq: number): Promise<void> {

@@ -14,7 +14,9 @@
     @if (runtime(); as runtime) {
         @if (runtime.status === 'takenOver') {
             <div class="start-failed-overlay">
-                <div class="start-failed-title">This shell is shown in another Cogno</div>
+                <div class="start-failed-title">
+                    This shell is shown {{ runtime.takenBy ? 'on ' + runtime.takenBy : 'in another Cogno' }}
+                </div>
                 <div class="start-failed-reason">It keeps running there.</div>
                 <div class="start-failed-actions">
                     <button type="button" class="button" (click)="takeBack()">Show it here</button>

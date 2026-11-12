@@ -6,19 +6,34 @@ import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integra
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
+import { BehaviorSubject, Observable } from "rxjs";
 import { RunningSessionsService } from "./running-sessions.service";
+
+/** How far the connection to a host is; a host without an entry is not connected. */
+export type RemoteHostConnection =
+  | { readonly status: "connecting" }
+  | { readonly status: "connected" }
+  | { readonly status: "failed"; readonly reason: string };
 
 /**
  * The connections to the machines of `remote.hosts`. A connection is set up
- * when the first shell on that machine is wanted and stands until it breaks
- * or Cogno ends; what ssh asks on the way (a password, a host key) is shown
- * with the workbench's plain prompt dialog. A host counts as connected once
- * it has this Cogno's shell integration, so a shell started there finds it.
+ * when it is asked for - by the user, or by a pane that shows a shell of
+ * that machine - and stands until it breaks, is hung up or Cogno ends; what
+ * ssh asks on the way (a password, a host key) is shown with the workbench's
+ * plain prompt dialog. A host counts as connected once it has this Cogno's
+ * shell integration.
  */
 @Injectable({ providedIn: "root" })
 export class RemoteHostsService {
   private readonly connected = new Map<string, HostInfo>();
   private readonly connecting = new Map<string, Promise<HostInfo>>();
+  private readonly connections = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(
+    new Map(),
+  );
+
+  /** How far each host's connection is, by host name; the current state first. */
+  readonly connections$: Observable<ReadonlyMap<string, RemoteHostConnection>> =
+    this.connections.asObservable();
 
   constructor(
     private readonly hosts: Hosts,
@@ -57,29 +72,53 @@ export class RemoteHostsService {
     );
     const connecting = this.hosts
       .connect(name, host.destination, host.command, promptSession)
-      .then(
-        async (info) => {
-          await this.shellIntegration.ensure(this.featureHost.getShellSupportDefinitions(), name);
-          await this.runningSessions.refresh(name);
-          this.connected.set(name, info);
-          return info;
-        },
+      .then(async (info) => {
+        await this.shellIntegration.ensure(this.featureHost.getShellSupportDefinitions(), name);
+        await this.runningSessions.refresh(name);
+        this.connected.set(name, info);
+        this.setConnection(name, { status: "connected" });
+        return info;
+      })
+      .catch((error) => {
         // The backend rejects with a plain text.
-        (error) => {
-          throw error instanceof Error ? error : new Error(String(error));
-        },
-      )
+        const failure = error instanceof Error ? error : new Error(String(error));
+        this.setConnection(name, { status: "failed", reason: failure.message });
+        throw failure;
+      })
       .finally(() => {
         forgetPrompts();
         this.connecting.delete(name);
       });
     this.connecting.set(name, connecting);
+    this.setConnection(name, { status: "connecting" });
     return connecting;
+  }
+
+  /**
+   * Hangs up on the host. The panes that show its shells end here; the
+   * shells themselves run on.
+   */
+  async disconnect(name: string): Promise<void> {
+    // Asked for: nothing was lost, so nothing is warned about.
+    this.connected.delete(name);
+    this.setConnection(name, undefined);
+    await this.hosts.disconnect(name);
+  }
+
+  private setConnection(name: string, connection: RemoteHostConnection | undefined): void {
+    const next = new Map(this.connections.value);
+    if (connection) {
+      next.set(name, connection);
+    } else {
+      next.delete(name);
+    }
+    this.connections.next(next);
   }
 
   private onDisconnected(name: string): void {
     // Every window hears of it; only one that used the host has lost panes.
     if (!this.connected.delete(name)) return;
+    this.setConnection(name, undefined);
     ErrorReporter.reportWarning({
       message: `The connection to ${name} was lost. Its terminals were closed.`,
       notify: true,

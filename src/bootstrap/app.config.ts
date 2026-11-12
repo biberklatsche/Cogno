@@ -12,6 +12,7 @@ import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-
 import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import { RemoteShellsPort } from "@cogno/core/api/remote-shells-port";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
 import { TerminalIpcPort } from "@cogno/core/api/terminal-ipc-port";
@@ -33,6 +34,7 @@ import { ActionCatalogAdapterService } from "@cogno/core/workbench/actions/actio
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ConfigActionsHandler } from "@cogno/core/workbench/actions/config-actions.handler";
 import { NotificationCenterPortAdapterService } from "@cogno/core/workbench/api-adapters/notification-center-port.adapter.service";
+import { RemoteShellsAdapterService } from "@cogno/core/workbench/api-adapters/remote-shells.adapter.service";
 import { TerminalAnimationAdapterService } from "@cogno/core/workbench/api-adapters/terminal-animation.adapter.service";
 import { TerminalGatewayService } from "@cogno/core/workbench/api-adapters/terminal-gateway.service";
 import { TerminalIpcAdapterService } from "@cogno/core/workbench/api-adapters/terminal-ipc.adapter.service";
@@ -56,6 +58,7 @@ import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
 import { RunningSessionsService } from "@cogno/core/workbench/remote/running-sessions.service";
+import { SessionLabelPublisher } from "@cogno/core/workbench/remote/session-label.publisher";
 import { SettingsPanelService } from "@cogno/core/workbench/settings/settings-panel.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
@@ -95,6 +98,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalPlacementPort, useExisting: TerminalPlacementAdapterService },
     { provide: TerminalProcessesPort, useExisting: TerminalProcessesAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
+    { provide: RemoteShellsPort, useExisting: RemoteShellsAdapterService },
     provideZonelessChangeDetection(),
     // The shells that still run on this machine must be known before the
     // first pane is restored: a pane whose shell runs shows it, it does not
@@ -156,6 +160,7 @@ export const appConfig: ApplicationConfig = {
         eager(SideMenuStatePersistenceService);
         eager(TerminalSearchApiService);
         eager(WorkspaceShortcutActionService);
+        eager(SessionLabelPublisher);
 
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).

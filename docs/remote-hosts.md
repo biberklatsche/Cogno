@@ -1,8 +1,10 @@
 # Remote hosts
 
-Cogno can run a shell on another machine and show it in a tab like a local
-one, with prompt markers, working directory and history. The other machine is
-reached over ssh; Cogno opens no port of its own and has no login of its own.
+Cogno can show the shells that run in the Cogno of another machine, each in
+a tab like a local one, with prompt markers, working directory and history:
+you leave the office, open the laptop and go on in the same shells. The other
+machine is reached over ssh; Cogno opens no port of its own and has no login
+of its own.
 
 This page covers what both machines need, how to set up the ssh server on
 Windows (including its **default shell**, which decides how the start command
@@ -21,22 +23,46 @@ fails with a message naming both versions; update the older one.
 
 ## The config
 
-A host gets a name, and a shell profile points at it:
+A remote is a name and where ssh connects. Add it in the **Remote** panel of
+the side menu (the `+` button), or write it into the config yourself, which
+is where the panel puts it:
 
 ```
 remote.hosts.office.destination = lars@office-pc
-
-shell.profiles.office-pwsh.host = office
-shell.profiles.office-pwsh.shell_type = PowerShell
-shell.profiles.office-pwsh.path = C:\Program Files\PowerShell\7\pwsh.exe
 ```
 
+- The name consists of letters, digits, `-` and `_`.
 - `destination` is what you would type after `ssh`: a host name, `user@host`,
   or an alias from `~/.ssh/config` (ports, jump hosts and keys belong there).
-- `path` of the profile is a path **on the other machine**.
-- The profile appears next to your local shells. Opening it connects; the
-  pane shows `Connecting to office…` until the connection stands, or the
-  reason it failed with a Retry button.
+
+## The Remote panel
+
+The panel lists this machine first, then every remote. Under a machine are
+the shells that run there, sorted the way the Cogno they belong to shows
+them: workspace, tab, shell.
+
+- **Connect** sets up the ssh connection; what ssh asks (a password, a new
+  host key) appears in a dialog. The dot in front of the name says how far
+  that is: grey, yellow while connecting, green, red with the reason below.
+- **Click a shell** to show it here. It gets a tab of its own; a shell this
+  window shows already is brought to the front instead.
+- **Disconnect** hangs up. The tabs that show shells of that machine close;
+  the shells run on there.
+- A shell marked **On <machine>** is shown by another Cogno right now.
+  Clicking it takes it over.
+- Under **This machine**, *Bring all back* shows every shell here again that
+  another Cogno took over.
+- **Not shown in any window** (this machine only) are shells that kept
+  running and that no tab shows any more. Click one to get it back, or end it
+  with the `x`; the second click confirms.
+- The pencil changes a remote, the bin removes it (second click confirms).
+  The panel reads the shells when it opens and when you press Refresh.
+
+Closing such a tab ends its shell, as closing any tab does. To leave the
+shells running, disconnect instead (or just close Cogno).
+
+The tabs you open this way are saved with the workspace. When you start Cogno
+again they connect by themselves, and say so if their shell is gone.
 
 ### The start command
 
@@ -182,9 +208,8 @@ What it means for Cogno:
 
 - It decides whether `remote.hosts.<name>.command` is needed (table above):
   with PowerShell as the default shell, the quoted path needs a leading `&`.
-- It does **not** decide which shell your tab runs. That is the profile's
-  `path`: a profile can start PowerShell on a machine whose ssh server uses
-  `cmd`, and the other way round.
+- It has nothing to do with the shells you see: those were started by the
+  Cogno on that machine, with its own shell profiles.
 
 The same host, once for each default shell:
 
@@ -244,12 +269,14 @@ to shells started after the change; closing a tab still ends its shell.
 
 - **Next start on the same machine:** the tabs come back showing the same
   shells, with what they printed in the meantime.
-- **From another machine:** open a tab with a profile of that host. When
-  shells are running there, the tab asks: *Go on with them* opens a tab for
-  each, *Start a new shell* does what it says.
+- **From another machine:** connect to that machine in the Remote panel and
+  click the shells you want to go on with.
 - **One Cogno at a time shows a shell.** When you go on with it elsewhere,
-  the Cogno that showed it before says *This shell is shown in another
-  Cogno*. *Show it here* takes it back.
+  the Cogno that showed it before says *This shell is shown on <machine>*.
+  *Show it here* takes it back, and so does the Remote panel.
+- **A shell that was taken over never ends with the Cogno that took it.**
+  Closing the laptop leaves the office shells running, whatever
+  `terminal.keep_shells_running` says there.
 
 What you get when you go on with a shell is what it printed last (about the
 last megabyte), not a picture of the old window:
@@ -278,7 +305,8 @@ last megabyte), not a picture of the old window:
 | `No Cogno host answered`, followed by something else ssh or the shell printed | The start command did not work. Usually the ssh server starts commands in PowerShell and `command` is missing its `&`, or Cogno never ran on that machine. Run the check by hand. |
 | `Permission denied (publickey,…)` | The ssh server does not accept your key. See *Allow your key*; on the machine you connect from, see the note on key permissions. |
 | `… speaks protocol N, this one M` | The two Cognos are too far apart in version. Update the older one. |
-| `Host '…' is not defined in remote.hosts` | The profile's `host` names a host the config does not have. |
+| `Host '…' is not defined in remote.hosts` | A saved tab shows a shell of a remote that was removed from the config. |
+| `The shell does not run there any more` | A saved tab shows a shell that has ended since. Close the tab. |
 
 ## What has been tested
 

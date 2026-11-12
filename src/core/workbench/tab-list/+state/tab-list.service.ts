@@ -103,6 +103,7 @@ export class TabListService {
             shellName,
             workingDir: event.payload.workingDir,
             terminalId: event.payload.terminalId,
+            host: event.payload.host,
           },
         );
       });
@@ -202,7 +203,10 @@ export class TabListService {
   }
 
   /** Adds a copy of `tab` as the last slot of the shown workspace; the caller keeps its own object. */
-  addTab(tab: Tab, paneConfig?: { shellName?: string; workingDir?: string; terminalId?: string }) {
+  addTab(
+    tab: Tab,
+    paneConfig?: { shellName?: string; workingDir?: string; terminalId?: string; host?: string },
+  ) {
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
     const slots = this.activeSlots();
     if (this.activeTabs().some((s) => s.id === tab?.id)) return;
@@ -218,6 +222,7 @@ export class TabListService {
         shellName: paneConfig?.shellName,
         workingDir: paneConfig?.workingDir,
         terminalId: paneConfig?.terminalId,
+        host: paneConfig?.host,
       },
     });
   }

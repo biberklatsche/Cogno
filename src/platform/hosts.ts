@@ -12,6 +12,13 @@ export type HostInfo = { os: OsType };
  */
 export type RunningSession = {
   terminalId: string;
+  /** Where it sits in the Cogno it belongs to, in that Cogno's words. */
+  label: {
+    workspace?: string | null;
+    tab?: string | null;
+    title?: string | null;
+    directory?: string | null;
+  };
   profile: {
     shell_type: string;
     env?: Record<string, string> | null;
@@ -21,6 +28,10 @@ export type RunningSession = {
   rows: number;
   /** Whether a Cogno shows it right now. */
   attached: boolean;
+  /** Whether that Cogno is this one. */
+  shownHere: boolean;
+  /** What the machine of the Cogno that shows it is called, when it said. */
+  shownBy?: string | null;
 };
 
 /**
@@ -73,6 +84,19 @@ export class Hosts {
    */
   sessions(host: string | undefined): Promise<RunningSession[]> {
     return invoke<RunningSession[]>("host_sessions", { host: host ?? null });
+  }
+
+  /**
+   * Ends a shell on `host`, this machine when none is named - also one that
+   * no window of this Cogno shows.
+   */
+  endSession(host: string | undefined, terminalId: string): Promise<void> {
+    return invoke("host_end_session", { host: host ?? null, terminalId });
+  }
+
+  /** Hangs up on the host `name`; `onDisconnected` follows. */
+  disconnect(name: string): Promise<void> {
+    return invoke("host_disconnect", { name });
   }
 
   /** The connection to a host ended; its terminals ended with it. */

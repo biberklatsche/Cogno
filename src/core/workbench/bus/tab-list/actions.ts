@@ -14,5 +14,7 @@ export type CreateTabAction = ActionBase<
     workingDir?: string;
     /** The terminal the tab's pane shows: a shell that already runs. */
     terminalId?: TerminalId;
+    /** The machine from `remote.hosts` that shell runs on. */
+    host?: string;
   }
 >;

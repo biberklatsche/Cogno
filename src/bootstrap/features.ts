@@ -8,6 +8,7 @@ import { featureSettingsFeature } from "@cogno/features/feature-settings-extensi
 import { gitFeature } from "@cogno/features/git";
 import { notificationFeature } from "@cogno/features/notification-overview";
 import { processInfoFeature } from "@cogno/features/process-info";
+import { remoteFeature } from "@cogno/features/remote";
 import { terminalSearchFeature } from "@cogno/features/terminal-search";
 
 /**
@@ -24,5 +25,6 @@ export const features = [
   terminalSearchFeature,
   gitFeature,
   processInfoFeature,
+  remoteFeature,
   codingAgentsFeature,
 ] as const satisfies readonly FeatureDefinition<ActionName>[];

@@ -3,7 +3,7 @@ import {
   NotificationSourceContract,
 } from "@cogno/core/api/contributions";
 import { ZodRawShape, z } from "zod";
-import { baseConfigSchemaShape, checkProfileHosts } from "./models/config";
+import { baseConfigSchemaShape } from "./models/config";
 import { createNotificationSettingsSchema } from "./models/notification-settings";
 
 /**
@@ -30,5 +30,5 @@ export function createConfigSchema(
       schemaShape[settingsKey] = settingsSchema;
     }
   }
-  return z.object(schemaShape).strict().superRefine(checkProfileHosts);
+  return z.object(schemaShape).strict();
 }

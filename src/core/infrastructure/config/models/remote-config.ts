@@ -22,7 +22,7 @@ export const RemoteConfigSchema = z.strictObject({
   hosts: z
     .record(z.string().min(1), RemoteHostSchema)
     .optional()
-    .describe("Named machines a shell profile can run on (`shell.profiles.<name>.host`)."),
+    .describe("Named machines whose running shells the Remote panel shows."),
 });
 
 export type RemoteHostConfig = z.infer<typeof RemoteHostSchema>;

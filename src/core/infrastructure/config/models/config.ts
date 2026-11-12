@@ -56,7 +56,7 @@ export const baseConfigSchemaShape = {
     "Shell profiles and which one starts by default. `<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.",
   ),
   remote: RemoteConfigSchema.optional().describe(
-    "Other machines whose shells Cogno runs, reached over ssh. `<name>` is a host name you choose.",
+    "Other machines whose shells Cogno can show, reached over ssh. `<name>` is a host name you choose.",
   ),
   prompt: PromptConfigSchema.optional().describe(
     "The configurable prompt rendered by Cogno. `<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.",
@@ -73,29 +73,10 @@ export const baseConfigSchemaShape = {
   updater: UpdaterSettingsSchema.optional().describe("How Cogno keeps itself up to date."),
 } satisfies z.ZodRawShape;
 
-/**
- * A shell profile may only name a host that `remote.hosts` defines: two
- * sections, so the check sits on the whole config.
- */
-export function checkProfileHosts(config: Record<string, unknown>, ctx: z.RefinementCtx): void {
-  const profiles = (config as Config).shell?.profiles ?? {};
-  const hosts = (config as Config).remote?.hosts ?? {};
-  for (const [name, profile] of Object.entries(profiles)) {
-    if (profile.host !== undefined && !(profile.host in hosts)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["shell", "profiles", name, "host"],
-        message: `Host '${profile.host}' of shell profile '${name}' is not defined in remote.hosts.`,
-      });
-    }
-  }
-}
-
 export const ConfigSchema = z
   .object({
     ...baseConfigSchemaShape,
   })
-  .strict()
-  .superRefine(checkProfileHosts);
+  .strict();
 
 export type Config = z.infer<typeof ConfigSchema> & Record<string, unknown>;

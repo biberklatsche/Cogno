@@ -231,6 +231,10 @@ export const defaultSettings = {
       mode: "on",
       order: "80",
     },
+    remote: {
+      mode: "on",
+      order: "90",
+    },
     coding_agents: {
       mode: "on",
       order: "65",

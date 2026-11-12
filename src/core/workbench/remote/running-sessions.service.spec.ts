@@ -6,10 +6,12 @@ import { RunningSessionsService } from "./running-sessions.service";
 function session(terminalId: string): RunningSession {
   return {
     terminalId,
+    label: {},
     profile: { shell_type: "Bash", env: { COGNO_SESSION_TOKEN: `token-of-${terminalId}` } },
     cols: 80,
     rows: 24,
     attached: false,
+    shownHere: false,
   };
 }
 
@@ -26,7 +28,7 @@ describe("RunningSessionsService", () => {
 
   it("knows nothing of a host it has not asked", () => {
     expect(service.take(undefined, "t1")).toBeUndefined();
-    expect(service.unclaimed("office")).toEqual([]);
+    expect(service.take("office", "t1")).toBeUndefined();
   });
 
   it("hands a pane the running shell of its terminal, once", async () => {
@@ -37,7 +39,7 @@ describe("RunningSessionsService", () => {
     expect(service.take(undefined, "t1")).toEqual(session("t1"));
     // The pane shows it now: a second pane of that id would start its own.
     expect(service.take(undefined, "t1")).toBeUndefined();
-    expect(service.unclaimed(undefined)).toEqual([session("t2")]);
+    expect(service.take(undefined, "t2")).toEqual(session("t2"));
   });
 
   it("keeps the shells of each host apart", async () => {
@@ -49,8 +51,8 @@ describe("RunningSessionsService", () => {
 
     expect(service.take("office", "local-1")).toBeUndefined();
     expect(service.take(undefined, "office-1")).toBeUndefined();
-    expect(service.unclaimed("office")).toEqual([session("office-1")]);
-    expect(service.unclaimed(undefined)).toEqual([session("local-1")]);
+    expect(service.take("office", "office-1")).toEqual(session("office-1"));
+    expect(service.take(undefined, "local-1")).toEqual(session("local-1"));
   });
 
   it("replaces what it knew of a host when asked again", async () => {
@@ -59,7 +61,8 @@ describe("RunningSessionsService", () => {
     sessions.mockResolvedValueOnce([session("t2")]);
     await service.refresh("office");
 
-    expect(service.unclaimed("office")).toEqual([session("t2")]);
+    expect(service.take("office", "t1")).toBeUndefined();
+    expect(service.take("office", "t2")).toEqual(session("t2"));
   });
 
   it("counts what a host said as current for a moment only", async () => {
@@ -89,7 +92,7 @@ describe("RunningSessionsService", () => {
     // Not thrown: the app's start must not hang on it.
     await expect(service.refresh()).resolves.toBeUndefined();
 
-    expect(service.unclaimed(undefined)).toEqual([]);
+    expect(service.take(undefined, "t1")).toBeUndefined();
     expect(reported).toHaveBeenCalledWith(expect.objectContaining({ error, handled: true }));
   });
 });

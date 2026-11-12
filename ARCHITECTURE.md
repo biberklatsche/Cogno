@@ -1027,8 +1027,16 @@ Daraus folgt:
   Verlauf. Ein andockender Client wird nur in den Alt-Screen gesetzt; das
   Programm zeichnet neu, wenn er seine Größe setzt.
 - **Ein Client je Sitzung.** Dockt ein zweiter an, endet der Strom des ersten
-  und er bekommt `PtyTakenOver`. `PtyDetach` hängt den Client ab, die Sitzung
-  läuft weiter.
+  und er bekommt `PtyTakenOver` mit dem Namen des neuen (unten). `PtyDetach`
+  hängt den Client ab, die Sitzung läuft weiter. Eine übernommene Sitzung
+  endet nie mit dem, der sie übernommen hat: sie überlebt von da an jeden
+  Client.
+- **Der Host kennt zu jeder Sitzung ein Etikett** (`SessionLabel`: Workspace,
+  Tab, Titel, Verzeichnis) und zu jedem Client einen Namen (`Introduce`, der
+  Rechnername). Beides sind Worte des Clients, die der Host nur aufhebt und
+  mit `ListSessions` weitergibt, zusammen mit „wird gezeigt", „vom Fragenden"
+  und „von wem". Daran findet ein anderes Cogno eine Shell, und dieses eine,
+  die kein Fenster mehr zeigt.
 - **Was beim Verschwinden eines Clients geschieht, entscheidet der Start**
   (`survives_client`): Die Sitzung läuft ohne Client weiter, oder sie endet
   mit ihm. Dasselbe gilt, wenn ihr Besitzer (das Fenster) freigegeben wird.
@@ -1056,13 +1064,20 @@ dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
   ist neuer) und mit dem Shell-Typ der laufenden Shell. Das ist der dritte
   Weg neben Start und Wiederherstellung (2.5), und er gilt auch nach einem
   Neuladen der Webview.
-- Laufen auf einem entfernten Host Sitzungen, die hier nichts zeigt, **fragt**
-  das Pane, statt eine weitere Shell zu starten: weiterführen (je Sitzung ein
-  Tab) oder neu starten. Das Layout des anderen Fensters wandert nicht mit.
+- Ein Pane eines anderen Rechners (`Pane.host`, unten) dockt **nur** an: Es
+  zeigt eine Shell, die dort läuft, und startet nie eine. Läuft sie nicht
+  mehr, sagt es das. Das Layout des anderen Fensters wandert nicht mit; jede
+  Shell bekommt hier einen eigenen Tab.
 - Übernimmt ein anderes Cogno eine Sitzung, wird sie hier `takenOver`
-  (Runtime-Achse, 2.3): die Shell läuft weiter, gehört aber nicht mehr
-  dieser App — ihr Schließen beendet nichts. „Hier zeigen" verwirft die
-  Sitzung und dockt mit einer neuen an (`RetakeTerminal` auf dem Bus).
+  (Runtime-Achse, 2.3) und nennt, wo sie jetzt gezeigt wird: die Shell läuft
+  weiter, gehört aber nicht mehr dieser App — ihr Schließen beendet nichts.
+  „Hier zeigen" verwirft die Sitzung und dockt mit einer neuen an
+  (`RetakeTerminal` auf dem Bus).
+- **Die Etiketten pflegt die Workbench** (`SessionLabelPublisher`): Für jede
+  laufende Shell dieses Rechners sagt sie dem Host, wo sie sitzt, und wieder,
+  wenn sich Workspace, Tab, Titel oder Verzeichnis ändern. Eine Shell eines
+  anderen Rechners, die hier gezeigt wird, behält das Etikett des Cognos, zu
+  dem sie gehört.
 
 Grenze: Das Sitzungsmodell entsteht beim Andocken aus dem Behalt neu. Was
 vor dessen Anfang lag, kennt es nicht — etwa eine vor langer Zeit gestartete
@@ -1116,10 +1131,10 @@ auf einem eigenen Thread, damit Eingabe und Quittungen der übrigen Sitzungen
 nicht warten.
 
 **Eine Sitzung läuft auf einem Host.** Das ist dieser Rechner oder einer aus
-`remote.hosts`; ein Shell-Profil nennt ihn mit `host`
-(`shell.profiles.<name>.host`). Tabs, Tastenkürzel und Wiederherstellung
-laufen weiter über den Profilnamen, der Host kommt mit dem Profil. Die
-Zuständigkeiten:
+`remote.hosts`. Den Host nennt das **Pane** (`Pane.host`, mit dem Layout
+gespeichert), nicht das Shell-Profil: Ein anderer Rechner wird ferngesteuert
+— Cogno zeigt Shells, die dort schon laufen, und startet dort keine. Ein
+solches Pane kommt aus dem Remote-Panel (unten). Die Zuständigkeiten:
 
 - **App (Rust, `host.rs`, `host_connection.rs`):** `host_connect` startet
   `ssh <ziel> ".cogno/bin/cogno" server --stdio` und hält die Verbindung
@@ -1132,13 +1147,25 @@ Zuständigkeiten:
   Verbindung ab, enden die Terminals dieses Hosts (`pty-exit`), und alle
   Fenster hören `host-disconnected`. Den HTTP-Server dieser App bekommt eine
   entfernte Shell nicht (`COGNO_PORT` fehlt dort).
-- **`platform/hosts.ts`:** `connect` und `onDisconnected`, sonst nichts.
-- **Workbench (`core/workbench/remote/`):** `RemoteHostsService` verbindet
-  beim ersten Bedarf, einmal je Host, und zeigt, was `ssh` dabei fragt, mit
-  dem nackten Prompt-Dialog (2.1). Die Sitzungsfabrik wartet: ein Pane, dessen
-  Host noch nicht verbunden ist, hat **keine Sitzung**, sondern zeigt
+- **`platform/hosts.ts`:** verbinden, auflegen, Sitzungen eines Hosts
+  auflisten und beenden, Shell-Integration ablegen, `onDisconnected`.
+- **Workbench (`core/workbench/remote/`):** `RemoteHostsService` verbindet,
+  wenn der Nutzer es verlangt oder ein Pane den Host braucht, einmal je Host,
+  führt den Stand je Host (`connections$`) und zeigt, was `ssh` dabei fragt,
+  mit dem nackten Prompt-Dialog (2.1). Die Sitzungsfabrik wartet: ein Pane,
+  dessen Host noch nicht verbunden ist, hat **keine Sitzung**, sondern zeigt
   „verbinde" oder den Fehler mit Retry (`HostConnectionComponent`). Die
   Sitzung entsteht erst, wenn die Verbindung steht.
+- **Vertrag und Feature:** `RemoteShellsPort` (`core/api/`, Adapter in
+  `core/workbench/api-adapters/`) gibt einem Feature die Rechner der Config
+  mit ihrem Verbindungsstand, das Pflegen von `remote.hosts`, Verbinden und
+  Auflegen, die Shells eines Rechners und drei Dinge mit einer Shell: hier
+  zeigen (zum Pane gehen, zurückholen oder einen Tab öffnen), beenden.
+  `features/remote` ist das Panel dazu: ein Baum Rechner → Workspace → Tab →
+  Shell, mit diesem Rechner als erstem Knoten. Dessen Shells, die kein
+  Fenster mehr zeigt, stehen dort eigens und lassen sich beenden; Shells, die
+  ein anderes Cogno zeigt, lassen sich zurückholen. Verbindung und Sitzungen
+  bleiben Core — das Feature ist nur die Ansicht.
 - **Session:** bekommt als Wert, wo ihre Shell läuft (`SessionBackend`: Host
   und dessen Betriebssystem). Daraus leiten sich Shell-Kontext,
   Pfadadapter und das ConPTY-Verhalten des Renderers ab — nicht aus dem
@@ -1203,6 +1230,7 @@ Features importieren, und besteht **nur aus Verträgen**:
   `ApplicationConfigurationPort`,
   `TerminalIpcPort`, `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
   `TerminalNavigator`, `TerminalPlacementPort`, `TerminalProcessesPort`,
+  `RemoteShellsPort`,
   `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
   `FeatureDefinition`, Side-Menu-Features, Feature-Settings,

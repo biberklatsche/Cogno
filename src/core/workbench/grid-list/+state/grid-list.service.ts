@@ -144,6 +144,7 @@ export class GridListService implements PaneLayoutLookup {
             workingDir: payload.workingDir,
             shellName: payload.shellName,
             terminalId: payload.terminalId,
+            host: payload.host,
           },
         });
         if (payload.isActive) {
@@ -432,6 +433,7 @@ export class GridListService implements PaneLayoutLookup {
         workingDir: nodeConfig.workingDir,
         title: nodeConfig.title,
         terminalId,
+        host: nodeConfig.host,
       };
     }
   }
@@ -446,6 +448,7 @@ export class GridListService implements PaneLayoutLookup {
         // Persisted so a restored pane keeps its terminal id and its scrollback
         // snapshot (keyed by it) can be replayed.
         terminalId: node.data?.terminalId,
+        host: node.data?.host,
       };
     }
     // Split node

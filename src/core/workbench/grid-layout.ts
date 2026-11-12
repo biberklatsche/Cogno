@@ -13,6 +13,7 @@ export interface PersistedPaneConfigurationContract {
   workingDir?: string;
   title?: string;
   terminalId?: string;
+  host?: string;
 }
 
 export interface PersistedTabConfigurationContract {

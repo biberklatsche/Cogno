@@ -68,6 +68,11 @@ export const FeatureProcessInfoSchema = z.strictObject({
   order: featureOrderSchema,
 });
 
+export const FeatureRemoteSchema = z.strictObject({
+  mode: featureModeSchema.optional().describe(featureModeDescription),
+  order: featureOrderSchema,
+});
+
 export const FeatureCodingAgentsSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,

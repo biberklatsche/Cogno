@@ -1,0 +1,64 @@
+import { RemoteShell } from "@cogno/core/api/remote-shells-port";
+import { describe, expect, it } from "vitest";
+import { groupShells, shellName } from "./remote-shell-tree";
+
+function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): RemoteShell {
+  return { terminalId, shown: true, shownHere: false, ...overrides };
+}
+
+describe("shellName", () => {
+  it("is the title, else the last folder, else the tab, else the id", () => {
+    expect(shellName(shell("t1", { title: "vim", directory: "/home/lars" }))).toBe("vim");
+    expect(shellName(shell("t1", { directory: "C:\\dev\\cogno\\" }))).toBe("cogno");
+    expect(shellName(shell("t1", { directory: "/" }))).toBe("/");
+    expect(shellName(shell("t1", { tab: "build" }))).toBe("build");
+    expect(shellName(shell("t1"))).toBe("t1");
+  });
+});
+
+describe("groupShells", () => {
+  it("sorts shells into workspace and tab, by name", () => {
+    const groups = groupShells(
+      [
+        shell("t3", { workspace: "Site", tab: "dev", title: "pnpm" }),
+        shell("t1", { workspace: "Cogno", tab: "build", title: "cargo" }),
+        shell("t2", { workspace: "Cogno", tab: "build", title: "bash" }),
+        shell("t4", { workspace: "Cogno", tab: "agent", title: "claude" }),
+      ],
+      false,
+    );
+
+    expect(groups.map((group) => group.name)).toEqual(["Cogno", "Site"]);
+    expect(groups[0]?.tabs.map((tab) => tab.name)).toEqual(["agent", "build"]);
+    expect(groups[0]?.tabs[1]?.shells.map((each) => each.terminalId)).toEqual(["t2", "t1"]);
+    expect(groups.every((group) => !group.orphaned)).toBe(true);
+  });
+
+  it("keeps shells that said no workspace together", () => {
+    const groups = groupShells([shell("t1"), shell("t2", { workspace: "Cogno" })], false);
+
+    expect(groups.map((group) => group.name)).toEqual(["Cogno", "No workspace"]);
+  });
+
+  it("sets apart the shells of this machine that nothing shows, last", () => {
+    const groups = groupShells(
+      [
+        shell("t1", { workspace: "Cogno", tab: "build", shown: false }),
+        shell("t2", { workspace: "Cogno", tab: "build" }),
+      ],
+      true,
+    );
+
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toMatchObject({ name: "Cogno", orphaned: false });
+    expect(groups[1]?.orphaned).toBe(true);
+    expect(groups[1]?.tabs[0]?.shells.map((each) => each.terminalId)).toEqual(["t1"]);
+  });
+
+  it("leaves a shell of another machine in its workspace when its Cogno is closed", () => {
+    const groups = groupShells([shell("t1", { workspace: "Cogno", shown: false })], false);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toMatchObject({ name: "Cogno", orphaned: false });
+  });
+});
