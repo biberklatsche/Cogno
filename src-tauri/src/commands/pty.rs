@@ -1,4 +1,4 @@
-use cogno_host::protocol::{PtySpawnResult, Request, Response, SpawnOptions};
+use cogno_host::protocol::{PtySpawnResult, Request, Response, SessionLabel, SpawnOptions};
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Manager, State};
 
@@ -74,6 +74,17 @@ async fn http_server_environment(app: &AppHandle) -> Vec<(String, String)> {
     })
     .await
     .unwrap_or_default()
+}
+
+/// Says where the shell sits in this Cogno (workspace, tab, title,
+/// directory), for another Cogno to find it by.
+#[tauri::command]
+pub fn pty_label(
+    host: State<'_, HostState>,
+    terminal_id: String,
+    label: SessionLabel,
+) -> Result<(), String> {
+    host.post(Request::PtyLabel { terminal_id, label })
 }
 
 #[tauri::command]

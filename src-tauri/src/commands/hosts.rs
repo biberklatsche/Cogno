@@ -107,6 +107,23 @@ pub async fn host_sessions(
     }
 }
 
+/// Ends a shell on a host, this machine when none is named - also one that
+/// no window of this Cogno shows.
+#[tauri::command]
+pub async fn host_end_session(
+    hosts: State<'_, HostState>,
+    host: Option<String>,
+    terminal_id: String,
+) -> Result<(), String> {
+    hosts.end_session(host, terminal_id).await
+}
+
+/// Hangs up on a host on another machine.
+#[tauri::command]
+pub fn host_disconnect(hosts: State<'_, HostState>, name: String) {
+    hosts.disconnect(&name);
+}
+
 /// Makes sure the shell integration scripts of `version` lie on a host, this
 /// machine when none is named. The scripts are this Cogno's: a host on
 /// another machine gets them from here, so both sides agree on them.
