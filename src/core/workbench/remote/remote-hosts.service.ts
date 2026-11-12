@@ -69,10 +69,13 @@ export class RemoteHostsService {
     const forgetPrompts = this.prompts.register(promptSession, (prompt) =>
       this.promptDialog.ask(prompt),
     );
-    const connecting = this.hosts
+    // Hung up in the meantime: what comes of this connection is no news.
+    const isCurrent = () => this.connecting.get(name) === connecting;
+    const connecting: Promise<HostInfo> = this.hosts
       .connect(name, host.destination, host.command, promptSession)
       .then(async (info) => {
         await this.runningSessions.refresh(name);
+        if (!isCurrent()) throw new Error(`The connection to ${name} was hung up.`);
         this.connected.set(name, info);
         this.setConnection(name, { status: "connected" });
         return info;
@@ -80,12 +83,12 @@ export class RemoteHostsService {
       .catch((error) => {
         // The backend rejects with a plain text.
         const failure = error instanceof Error ? error : new Error(String(error));
-        this.setConnection(name, { status: "failed", reason: failure.message });
+        if (isCurrent()) this.setConnection(name, { status: "failed", reason: failure.message });
         throw failure;
       })
       .finally(() => {
         forgetPrompts();
-        this.connecting.delete(name);
+        if (isCurrent()) this.connecting.delete(name);
       });
     this.connecting.set(name, connecting);
     this.setConnection(name, { status: "connecting" });
@@ -98,6 +101,7 @@ export class RemoteHostsService {
    */
   async disconnect(name: string): Promise<void> {
     // Asked for: nothing was lost, so nothing is warned about.
+    this.connecting.delete(name);
     this.connected.delete(name);
     this.setConnection(name, undefined);
     await this.hosts.disconnect(name);

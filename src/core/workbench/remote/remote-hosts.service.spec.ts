@@ -193,6 +193,19 @@ describe("RemoteHostsService", () => {
       expect(warned).not.toHaveBeenCalled();
     });
 
+    it("stays hung up when the connection it hung up on comes through after all", async () => {
+      let finish!: (info: HostInfo) => void;
+      connect.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+      const connecting = service.connect("mac");
+
+      await service.disconnect("mac");
+      finish({ os: "macos" });
+
+      await expect(connecting).rejects.toThrow("hung up");
+      expect(service.info("mac")).toBeUndefined();
+      expect(seen.get("mac")).toBeUndefined();
+    });
+
     it("forgets a connection that was lost", async () => {
       connect.mockResolvedValue({ os: "macos" });
       await service.connect("mac");

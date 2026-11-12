@@ -103,13 +103,14 @@ describe("SessionHostFactory, waiting for a host", () => {
 
     expect(connected.getSessionHost("t1")).toBeUndefined();
     expect(connect).not.toHaveBeenCalled();
-    expect(inner.waiting.get("t1")).toMatchObject({ host: "mac", state: { status: "failed" } });
+    expect(inner.waiting.get("t1")).toMatchObject({ host: "mac", state: { status: "gone" } });
   });
 
   it("asks a host that connected long ago what runs there now, before it gives up", async () => {
     let fresh = false;
     const refresh = vi.fn(async () => {
       fresh = true;
+      return true;
     });
     const { connected, inner } = connectedTo({
       take: () => undefined,
@@ -118,14 +119,28 @@ describe("SessionHostFactory, waiting for a host", () => {
     });
 
     expect(connected.ensureSession(pane)).toBeUndefined();
-    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "connecting" } });
+    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "looking" } });
     await Promise.resolve();
     await Promise.resolve();
 
     // Asked once, and the answer stands: the shell does not run there.
     expect(refresh).toHaveBeenCalledOnce();
     expect(refresh).toHaveBeenCalledWith("mac");
-    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "failed" } });
+    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "gone" } });
+  });
+
+  it("says that a host that does not answer could not be reached, not that the shell is gone", async () => {
+    const { connected, inner } = connectedTo({
+      take: () => undefined,
+      isFresh: () => false,
+      refresh: vi.fn(async () => false),
+    });
+
+    connected.ensureSession(pane);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "unreachable" } });
   });
 
   it("shows a shell again by itself once the Cogno that took it let it go", () => {

@@ -26,11 +26,13 @@ export class RunningSessionsService {
   constructor(private readonly hosts: Hosts) {}
 
   /**
-   * Asks `host` (this machine when left out) which shells run there. A host
-   * that does not answer has none to go on with: the failure is reported,
-   * not thrown, so a start is never held up by it.
+   * Asks `host` (this machine when left out) which shells run there, and
+   * says whether it answered. A host that does not answer has none to go on
+   * with: the failure is reported, not thrown, so a start is never held up
+   * by it.
    */
-  async refresh(host?: string): Promise<void> {
+  async refresh(host?: string): Promise<boolean> {
+    let answered = true;
     try {
       const sessions = await this.hosts.sessions(host);
       this.byHost.set(
@@ -38,6 +40,7 @@ export class RunningSessionsService {
         new Map(sessions.map((session) => [session.terminalId, session])),
       );
     } catch (error) {
+      answered = false;
       this.byHost.delete(host ?? THIS_MACHINE);
       ErrorReporter.reportException({
         error,
@@ -48,11 +51,12 @@ export class RunningSessionsService {
     }
     // Asked, whatever the answer: asking again at once would say the same.
     this.askedAt.set(host ?? THIS_MACHINE, Date.now());
+    return answered;
   }
 
   /** Whether `host` was asked so recently that its list still holds. */
-  isFresh(host: string | undefined): boolean {
-    const askedAt = this.askedAt.get(host ?? THIS_MACHINE);
+  isFresh(host: string): boolean {
+    const askedAt = this.askedAt.get(host);
     return askedAt !== undefined && Date.now() - askedAt < FRESH_FOR_MS;
   }
 
@@ -60,10 +64,8 @@ export class RunningSessionsService {
    * The shells of this machine that no Cogno shows, as last heard: what the
    * start of the app gives a tab when no workspace has a pane for it.
    */
-  unshownHere(): RunningSession[] {
-    return [...(this.byHost.get(THIS_MACHINE)?.values() ?? [])].filter(
-      (session) => !session.attached,
-    );
+  unshownLocalShells(): RunningSession[] {
+    return [...(this.byHost.get(THIS_MACHINE)?.values() ?? [])].filter((session) => !session.shown);
   }
 
   /** The running shell of `terminalId` on `host`, which a pane now shows. */

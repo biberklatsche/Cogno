@@ -1,5 +1,5 @@
-//! What a host is asked and what it reports: the one way in and out, whether
-//! the host runs inside the app or somewhere else.
+//! What a host is asked and what it reports: the one way in and out, for the
+//! app on this machine as for one on another.
 
 pub use crate::processes::{ProcessDetails, ProcessTreeSnapshot, TerminalProcess};
 pub use crate::pty::{PtySpawnResult, SpawnOptions};
@@ -33,7 +33,7 @@ pub struct SessionInfo {
     pub cols: u16,
     pub rows: u16,
     /// Whether a client shows it right now.
-    pub attached: bool,
+    pub shown: bool,
     /// Whether that client is the one that asks.
     pub shown_here: bool,
     /// The name the client that shows it gave itself, if it gave one.

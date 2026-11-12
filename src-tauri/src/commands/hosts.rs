@@ -81,14 +81,10 @@ pub async fn host_connect(
     Ok(HostInfo { os })
 }
 
-/// The shells installed on a host, this machine when none is named: offered
-/// as profiles on first start.
+/// The shells installed on this machine: offered as profiles on first start.
 #[tauri::command]
-pub async fn list_shells(
-    hosts: State<'_, HostState>,
-    host: Option<String>,
-) -> Result<Vec<ShellInfo>, String> {
-    match hosts.request_on(host, Request::ListShells).await? {
+pub async fn list_shells(hosts: State<'_, HostState>) -> Result<Vec<ShellInfo>, String> {
+    match hosts.request_on(None, Request::ListShells).await? {
         Response::Shells(shells) => Ok(shells),
         _ => Err("The host answered something else".to_string()),
     }
@@ -107,12 +103,12 @@ pub async fn host_sessions(
     }
 }
 
-/// Ends a shell on a host, this machine when none is named - also one that
-/// no window of this Cogno shows.
+/// Ends a shell on a host on another machine - also one that no window of
+/// this Cogno shows.
 #[tauri::command]
 pub async fn host_end_session(
     hosts: State<'_, HostState>,
-    host: Option<String>,
+    host: String,
     terminal_id: String,
 ) -> Result<(), String> {
     hosts.end_session(host, terminal_id).await

@@ -231,7 +231,7 @@ export class WorkspaceHostApplicationService {
     return WorkspaceStateUseCase.adoptLeftOverShells(
       workspaces,
       this.defaultWorkspace,
-      this.runningSessions.unshownHere().map((session) => session.terminalId),
+      this.runningSessions.unshownLocalShells().map((session) => session.terminalId),
       () => IdCreator.newTabId(),
     );
   }

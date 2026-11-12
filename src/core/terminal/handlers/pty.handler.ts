@@ -68,11 +68,12 @@ export class PtyHandler implements ITerminalHandler {
   }
 
   /**
-   * Tries again after a failure; the terminal stays registered. A shell that
-   * was not there to attach to is started.
+   * Tries again after a failure; the terminal stays registered. `how` says
+   * whether a new shell is started or the running one is attached to again:
+   * a shell of another machine is never started from here.
    */
-  restart(): void {
-    this._attach = false;
+  restart(how: "start" | "attach"): void {
+    this._attach = how === "attach";
     void this.start();
   }
 

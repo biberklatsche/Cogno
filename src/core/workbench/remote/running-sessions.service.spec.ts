@@ -8,9 +8,7 @@ function session(terminalId: string): RunningSession {
     terminalId,
     label: {},
     profile: { shell_type: "Bash", env: { COGNO_SESSION_TOKEN: `token-of-${terminalId}` } },
-    cols: 80,
-    rows: 24,
-    attached: false,
+    shown: false,
     shownHere: false,
   };
 }
@@ -46,14 +44,14 @@ describe("RunningSessionsService", () => {
     sessions.mockImplementation(async (host?: string) =>
       host === "office"
         ? [session("office-1")]
-        : [session("left"), { ...session("shown"), attached: true }],
+        : [session("left"), { ...session("shown"), shown: true }],
     );
-    expect(service.unshownHere()).toEqual([]);
+    expect(service.unshownLocalShells()).toEqual([]);
 
     await service.refresh();
     await service.refresh("office");
 
-    expect(service.unshownHere()).toEqual([session("left")]);
+    expect(service.unshownLocalShells()).toEqual([session("left")]);
   });
 
   it("keeps the shells of each host apart", async () => {
@@ -87,7 +85,7 @@ describe("RunningSessionsService", () => {
 
       await service.refresh("office");
       expect(service.isFresh("office")).toBe(true);
-      expect(service.isFresh(undefined)).toBe(false);
+      expect(service.isFresh("mac")).toBe(false);
 
       vi.advanceTimersByTime(5000);
       expect(service.isFresh("office")).toBe(false);
@@ -104,7 +102,7 @@ describe("RunningSessionsService", () => {
     const reported = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => undefined);
 
     // Not thrown: the app's start must not hang on it.
-    await expect(service.refresh()).resolves.toBeUndefined();
+    await expect(service.refresh()).resolves.toBe(false);
 
     expect(service.take(undefined, "t1")).toBeUndefined();
     expect(reported).toHaveBeenCalledWith(expect.objectContaining({ error, handled: true }));

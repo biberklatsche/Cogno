@@ -24,8 +24,6 @@ export type PtySpawnOptionsContract = {
   rows: number;
   profile: PtyShellProfileContract;
   devMode: boolean;
-  /** The connected host the shell runs on; left out for this machine. */
-  host?: string;
   /** Whether the shell goes on when Cogno is gone, to be attached to again. */
   survivesClient: boolean;
 };
@@ -52,10 +50,6 @@ export type PtyLabelContract = {
 export type PtyAttachOptionsContract = {
   terminalId: string;
   host?: string;
-};
-
-type PtySpawnResultContract = {
-  shellProcessId: number | null;
 };
 
 /** One chunk of raw PTY output. `seq` numbers the chunks of a spawn from 0 up. */
@@ -255,7 +249,7 @@ export class PtyTransport {
     const channel = new PtyDataChannel();
     channel.onmessage = (chunk) => output.onChunk(chunk);
     channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
-    const ready = invoke<PtySpawnResultContract>("pty_spawn", {
+    const ready = invoke("pty_spawn", {
       options: {
         name: options.terminalId,
         cols: options.cols,
@@ -263,7 +257,6 @@ export class PtyTransport {
         profile: options.profile,
         dev_mode: options.devMode,
       },
-      host: options.host ?? null,
       survivesClient: options.survivesClient,
       onData: channel,
     });

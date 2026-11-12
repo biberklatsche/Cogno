@@ -8,7 +8,7 @@ export type HostInfo = { os: OsType };
 
 /**
  * A shell that runs on a host, as it was started: the profile's wire form
- * (its environment holds the session's token) and its size.
+ * (its environment holds the session's token), and who shows it.
  */
 export type RunningSession = {
   terminalId: string;
@@ -24,10 +24,8 @@ export type RunningSession = {
     env?: Record<string, string> | null;
     enable_shell_integration?: boolean | null;
   };
-  cols: number;
-  rows: number;
   /** Whether a Cogno shows it right now. */
-  attached: boolean;
+  shown: boolean;
   /** Whether that Cogno is this one. */
   shownHere: boolean;
   /** What the machine of the Cogno that shows it is called, when it said. */
@@ -35,7 +33,7 @@ export type RunningSession = {
 };
 
 /**
- * The machines whose shells Cogno runs: this one, and others reached over
+ * The machines whose shells Cogno shows: this one, and others reached over
  * ssh with a Cogno there as the other end.
  */
 @Injectable({ providedIn: "root" })
@@ -84,12 +82,9 @@ export class Hosts {
     return invoke<RunningSession[]>("host_sessions", { host: host ?? null });
   }
 
-  /**
-   * Ends a shell on `host`, this machine when none is named - also one that
-   * no window of this Cogno shows.
-   */
-  endSession(host: string | undefined, terminalId: string): Promise<void> {
-    return invoke("host_end_session", { host: host ?? null, terminalId });
+  /** Ends a shell on the host `host` on another machine, whoever shows it. */
+  endSession(host: string, terminalId: string): Promise<void> {
+    return invoke("host_end_session", { host, terminalId });
   }
 
   /** Hangs up on the host `name`; `onDisconnected` follows. */

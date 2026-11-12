@@ -37,7 +37,7 @@ function toRemoteShell(session: RunningSession): RemoteShell {
     tab: session.label.tab ?? undefined,
     title: session.label.title ?? undefined,
     directory: session.label.directory ?? undefined,
-    shown: session.attached,
+    shown: session.shown,
     shownHere: session.shownHere,
     shownBy: session.shownBy ?? undefined,
   };
