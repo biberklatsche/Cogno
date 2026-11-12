@@ -1269,6 +1269,11 @@ Aktion etwas getan hat); `default` gilt für Windows und Linux, `macos`
 Ob eine Aktion ein Zielterminal braucht, steht nicht in der Definition,
 sondern im Handler (siehe unten).
 
+Eine `keybind`-Zeile hat die Form `[trigger:]*combo[>combo...]=action[:arg...]`.
+Das Argument reicht bis zum Zeilenende und darf jedes Zeichen enthalten
+(`send_text:FOO=1 npm test\r`); Zeilen derselben Aktion mit verschiedenen
+Argumenten sind eigene Bindings.
+
 Zwei Quellen, ein Katalog:
 
 - **Core-Aktionen** definiert die Workbench mit `defineAction` in
@@ -1325,9 +1330,13 @@ zum Terminal durchfällt.
 
 Eine Aktion, die ein Terminal braucht, läuft auf dem, das sie **nennt**
 (`ActionFired.terminalId` — das Kontextmenü eines Panes, HTTP), sonst auf dem
-fokussierten. Layout-Aktionen (Split, Pane-Wechsel, Maximieren) werden
+fokussierten. Ein Keybinding kann das Ziel weiten: `broadcast:` trifft jede
+lebende Sitzung des Fensters, `workspace:` jedes Terminal des angezeigten
+Workspace. Layout-Aktionen (Split, Pane-Wechsel, Maximieren) werden
 abgelehnt, wenn das Pane nicht im sichtbaren Tab liegt; Sitzungs-Aktionen
-(Paste, Clear, Editor-Aktionen, Copy/Cut) brauchen nur eine lebende Sitzung.
+(Paste, Clear, Editor-Aktionen, Copy/Cut) brauchen nur eine lebende Sitzung;
+Aktionen auf der Shell selbst (`send_text`, `terminate_processes`) brauchen
+eine laufende — ein wiederhergestelltes Pane hat bis zum ersten Anzeigen keine.
 Das Kontextmenü ist damit ein Auslöser wie jeder andere und kennt keine
 eigenen Nachrichten.
 

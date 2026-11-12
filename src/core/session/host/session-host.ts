@@ -889,6 +889,15 @@ export class SessionHost {
     return TauriPty.terminateProcess(terminalId, processId);
   }
 
+  /** Ends everything the session's shell is running; the shell itself stays. */
+  terminateProcesses(): Promise<void> {
+    const terminalId = this.terminalId;
+    if (!terminalId) {
+      return Promise.reject(new Error("Session has no terminal id yet."));
+    }
+    return TauriPty.terminateProcesses(terminalId);
+  }
+
   /** The marker menu for the first command scrolled out of view; empty when there is none. */
   buildCommandOutOfViewMenu(): ContextMenuItem[] {
     const commandOutOfView = this.model.commands.find(

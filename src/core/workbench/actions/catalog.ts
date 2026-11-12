@@ -162,6 +162,18 @@ export const coreActionCatalog = [
     defaultKeys: { default: [{ combo: "Ctrl+Alt+C" }], macos: [{ combo: "Command+Alt+C" }] },
   }),
   defineAction({
+    name: "send_text",
+    label: "Send Text",
+    description:
+      "Write the text after `send_text:` to the terminal as if typed. Escapes: `\\xHH` " +
+      "(a byte, `\\x03` is Ctrl+C), `\\e` (escape), `\\r` (enter), `\\n`, `\\t`, `\\\\`",
+  }),
+  defineAction({
+    name: "terminate_processes",
+    label: "Terminate Processes",
+    description: "End everything the terminal's shell is running; the shell itself stays",
+  }),
+  defineAction({
     name: "close_other_tabs",
     label: "Close Other Tabs",
     description: "Close all tabs except the current one",

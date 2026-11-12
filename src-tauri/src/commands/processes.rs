@@ -222,8 +222,6 @@ pub async fn pty_terminate_process(
     .map_err(|error| error.to_string())?
 }
 
-/// On Unix the tree is asked to end (SIGTERM) and killed (SIGKILL) only where
-/// it has not after the grace period; Windows has no polite way and kills at once.
 fn terminate_process_tree(root_process_id: u32, target_process_id: u32) -> Result<(), String> {
     let mut system = System::new();
     system.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
@@ -238,30 +236,10 @@ fn terminate_process_tree(root_process_id: u32, target_process_id: u32) -> Resul
         ));
     }
 
-    let targets: Vec<Target> = std::iter::once(target_pid)
-        .chain(collect_descendant_process_ids(&system, target_pid))
-        .filter_map(|pid| {
-            system
-                .process(pid)
-                .map(|process| (pid, process.start_time()))
-        })
-        .collect();
-
-    #[cfg(unix)]
-    let targets = signal_and_wait(
-        targets,
-        |process| {
-            process.kill_with(Signal::Term);
-        },
-        TERMINATE_GRACE,
-    );
-    let survivors = signal_and_wait(
-        targets,
-        |process| {
-            process.kill();
-        },
-        KILL_SETTLE,
-    );
+    let survivors = terminate(targets_of(
+        &system,
+        std::iter::once(target_pid).chain(collect_descendant_process_ids(&system, target_pid)),
+    ));
 
     if survivors.is_empty() {
         Ok(())
@@ -272,6 +250,77 @@ fn terminate_process_tree(root_process_id: u32, target_process_id: u32) -> Resul
             survivors.len()
         ))
     }
+}
+
+/// Ends everything a terminal's shell is running. The shell itself stays, so
+/// the terminal is back at its prompt.
+#[tauri::command]
+pub async fn pty_terminate_processes(
+    state: State<'_, PtyState>,
+    terminal_id: String,
+) -> Result<(), String> {
+    let shell_process_id = state.get_shell_process_id(&terminal_id).ok_or_else(|| {
+        format!(
+            "No shell process id found for terminal session: {}",
+            terminal_id
+        )
+    })?;
+
+    tauri::async_runtime::spawn_blocking(move || terminate_descendants(shell_process_id))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+fn terminate_descendants(root_process_id: u32) -> Result<(), String> {
+    let mut system = System::new();
+    system.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+
+    let survivors = terminate(targets_of(
+        &system,
+        collect_descendant_process_ids(&system, Pid::from_u32(root_process_id)),
+    ));
+
+    if survivors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Could not terminate the processes under {}: {} process(es) still running",
+            root_process_id,
+            survivors.len()
+        ))
+    }
+}
+
+fn targets_of(system: &System, process_ids: impl IntoIterator<Item = Pid>) -> Vec<Target> {
+    process_ids
+        .into_iter()
+        .filter_map(|pid| {
+            system
+                .process(pid)
+                .map(|process| (pid, process.start_time()))
+        })
+        .collect()
+}
+
+/// On Unix the targets are asked to end (SIGTERM) and killed (SIGKILL) only
+/// where they have not after the grace period; Windows has no polite way and
+/// kills at once. Returns the ones still alive.
+fn terminate(targets: Vec<Target>) -> Vec<Target> {
+    #[cfg(unix)]
+    let targets = signal_and_wait(
+        targets,
+        |process| {
+            process.kill_with(Signal::Term);
+        },
+        TERMINATE_GRACE,
+    );
+    signal_and_wait(
+        targets,
+        |process| {
+            process.kill();
+        },
+        KILL_SETTLE,
+    )
 }
 
 /// Signals every target still alive and waits until all are gone or `patience`
@@ -426,6 +475,20 @@ mod tests {
             terminate_process_tree(std::process::id(), shell.id()),
             Ok(())
         );
+        let _ = shell.wait();
+    }
+
+    #[test]
+    fn ends_everything_under_the_root_but_not_the_root() {
+        let mut shell = shell_with_child("");
+        let tree = tree_of(&shell);
+
+        let result = terminate_descendants(shell.id());
+
+        assert_eq!(result, Ok(()));
+        // The shell is the tree's first entry; only its child was a target.
+        assert!(still_alive(&tree[1..]).1.is_empty());
+        let _ = shell.kill();
         let _ = shell.wait();
     }
 

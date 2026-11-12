@@ -140,9 +140,10 @@ describe("ConfigBootstrapAdapter", () => {
         "Ctrl+Alt+G=open_git",
         "Ctrl+Shift+1=open_shell_1",
         "Ctrl+K=write_text:hello",
+        "workspace:Ctrl+J=send_text:FOO=1 npm test\\r",
       ]);
 
-      // `write_text` is not a declared action, the other three are.
+      // `write_text` is not a declared action, the others are.
       expect(notifications).toHaveLength(1);
       expect(notifications[0].payload.body).toContain('Unknown action "write_text"');
       expect(notifications[0].payload.body).not.toContain("new_tab");

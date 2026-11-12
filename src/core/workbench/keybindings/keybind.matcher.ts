@@ -24,13 +24,22 @@ export class KeybindingMatcher {
     this.currentMatches = [];
     this.keybindings = {};
     this.actions = {};
+    // The last line for an action wins. Lines that differ in their arguments are
+    // bindings of their own (`send_text:a` next to `send_text:b`); the action's
+    // one displayed keybinding is still its last line.
+    const boundActions = new Set<string>();
     for (const binding of bindings.reverse()) {
       const def = KeybindInterpreter.parse(binding);
-      if (!def) return;
+      if (!def) continue;
 
-      if (this.actions[def.actionDefinition.actionName]) continue;
-      this.actions[def.actionDefinition.actionName] = def.actionDefinition;
-      this.keybindings[def.actionDefinition.actionName] = def.shortcutDefinition;
+      const { actionName, args } = def.actionDefinition;
+      const boundAction = [actionName, ...(args ?? [])].join(":");
+      if (boundActions.has(boundAction)) continue;
+      boundActions.add(boundAction);
+      if (!this.actions[actionName]) {
+        this.actions[actionName] = def.actionDefinition;
+        this.keybindings[actionName] = def.shortcutDefinition;
+      }
 
       this.sequences.push({
         steps: def.shortcutDefinition.steps,

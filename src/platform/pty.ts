@@ -297,4 +297,8 @@ export const TauriPty = {
   terminateProcess(terminalId: string, processId: number) {
     return invoke<void>("pty_terminate_process", { terminalId, processId });
   },
+  /** Ends everything the terminal's shell is running; the shell itself stays. */
+  terminateProcesses(terminalId: string) {
+    return invoke<void>("pty_terminate_processes", { terminalId });
+  },
 };
