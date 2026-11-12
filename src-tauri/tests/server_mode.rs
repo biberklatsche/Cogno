@@ -228,7 +228,7 @@ fn the_server_introduces_itself_and_answers_requests() {
     let (mut server, hello) = Server::start();
     assert!(matches!(
         hello,
-        HostMessage::Hello { protocol: PROTOCOL_VERSION, os } if os == std::env::consts::OS
+        HostMessage::Hello { protocol: PROTOCOL_VERSION, os, .. } if os == std::env::consts::OS
     ));
 
     let shells = server.request(Request::ListShells, |_| {});
