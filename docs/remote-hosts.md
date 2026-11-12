@@ -32,6 +32,9 @@ remote.hosts.office.destination = lars@office-pc
 ```
 
 - The name consists of letters, digits, `-` and `_`.
+- The command field starts with the default start command (below); change
+  it only when the other machine needs another one. Left as it is, the
+  remote names no command and follows the default.
 - `destination` is what you would type after `ssh`: a host name, `user@host`,
   or an alias from `~/.ssh/config` (ports, jump hosts and keys belong there).
 

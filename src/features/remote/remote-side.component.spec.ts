@@ -11,6 +11,7 @@ describe("RemoteSideComponent", () => {
     hosts: ReturnType<typeof signal<readonly RemoteHost[]>>;
     shells: ReturnType<typeof signal<ReadonlyMap<string, HostShells>>>;
     failure: ReturnType<typeof signal<string | undefined>>;
+    saveHost: ReturnType<typeof vi.fn>;
   };
   let component: RemoteSideComponent;
   const shell: RemoteShell = { terminalId: "t1", shown: "nowhere" };
@@ -20,6 +21,7 @@ describe("RemoteSideComponent", () => {
       hosts: signal<readonly RemoteHost[]>([]),
       shells: signal<ReadonlyMap<string, HostShells>>(new Map()),
       failure: signal<string | undefined>(undefined),
+      saveHost: vi.fn().mockResolvedValue(undefined),
     };
     component = new RemoteSideComponent(
       panel as unknown as RemotePanelService,
@@ -48,10 +50,39 @@ describe("RemoteSideComponent", () => {
       previousName: "office",
       name: "office",
       destination: "lars@office-2",
-      command: "",
+      command: '".cogno/bin/cogno" server --stdio',
       saving: false,
       error: undefined,
     });
     expect(component.fields.map((field) => field.key)).toEqual(["name", "destination", "command"]);
+  });
+
+  it("starts a new remote with the command ssh runs, and saves it only when changed", async () => {
+    component.add();
+    expect(component.form()?.command).toBe('".cogno/bin/cogno" server --stdio');
+    const type = (field: "name" | "destination" | "command", value: string) =>
+      component.setField(field, { target: { value } } as unknown as Event);
+    type("name", "office");
+    type("destination", "lars@office");
+
+    await component.save(new Event("submit"));
+    expect(panel.saveHost).toHaveBeenLastCalledWith(
+      { name: "office", destination: "lars@office", command: undefined },
+      undefined,
+    );
+
+    component.add();
+    type("name", "office");
+    type("destination", "lars@office");
+    type("command", '& ".cogno/bin/cogno" server --stdio');
+    await component.save(new Event("submit"));
+    expect(panel.saveHost).toHaveBeenLastCalledWith(
+      {
+        name: "office",
+        destination: "lars@office",
+        command: '& ".cogno/bin/cogno" server --stdio',
+      },
+      undefined,
+    );
   });
 });
