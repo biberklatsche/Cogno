@@ -77,6 +77,14 @@ fn emit_exit(app: &AppHandle, window: &str, terminal_id: &str, exit_code: i32) -
     .is_ok()
 }
 
+/// Tells a host what this Cogno is called, for whoever finds one of its
+/// shells shown here.
+fn introduce(connection: &HostConnection) {
+    if let Some(name) = cogno_host::identity::machine_name() {
+        let _ = connection.post(Request::Introduce { name });
+    }
+}
+
 /// Where every host's events go.
 struct WebviewSink {
     app: AppHandle,
@@ -103,13 +111,17 @@ impl EventSink for WebviewSink {
             }
             // Another Cogno shows the session now: it is not this app's any
             // more, and the window that showed it is told.
-            Event::PtyTakenOver { terminal_id, owner } => {
+            Event::PtyTakenOver {
+                terminal_id,
+                owner,
+                by,
+            } => {
                 self.terminals.lock().unwrap().remove(&terminal_id);
                 self.app
                     .emit_to(
                         owner.as_str(),
                         &format!("pty-taken-over:{}", terminal_id),
-                        (),
+                        serde_json::json!({ "by": by }),
                     )
                     .is_ok()
             }
@@ -164,6 +176,7 @@ impl Hosts {
         let connection = HostConnection::over(reader, stream, self.sink.clone(), on_lost);
         let _ = timed.set_read_timeout(None);
         let connection = Arc::new(connection?);
+        introduce(&connection);
         *self.local.lock().unwrap() = Some(connection.clone());
         Ok(connection)
     }
@@ -316,6 +329,7 @@ impl HostState {
             }
         };
         let remote = HostConnection::connect(command, self.0.sink.clone(), on_lost)?;
+        introduce(&remote);
         let os = remote.os().to_string();
         self.0
             .remotes
@@ -432,6 +446,27 @@ impl HostState {
         })
         .await
         .map_err(|error| error.to_string())?
+    }
+
+    /// Ends the shell `terminal_id` on `host` (this machine when `None`),
+    /// whether this app shows it or not.
+    pub async fn end_session(
+        &self,
+        host: Option<String>,
+        terminal_id: String,
+    ) -> Result<(), String> {
+        if let Some(shown) = self.0.terminals.lock().unwrap().remove(&terminal_id) {
+            self.0.streams.close(shown.stream);
+        }
+        self.request_on(host, Request::PtyKill { terminal_id })
+            .await
+            .map(|_| ())
+    }
+
+    /// Hangs up on the host `name`. Its shells that this app shows end here
+    /// (`host-disconnected` follows); whether they run on is theirs to say.
+    pub fn disconnect(&self, name: &str) {
+        self.0.remotes.lock().unwrap().remove(name);
     }
 
     /// For requests about one terminal that need no answer (what is typed,

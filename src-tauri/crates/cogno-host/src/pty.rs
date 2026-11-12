@@ -16,7 +16,7 @@ use crate::line_editor::{
 
 #[cfg(windows)]
 use crate::process_job::ProcessJob;
-use crate::protocol::{Event, SessionInfo};
+use crate::protocol::{Event, SessionInfo, SessionLabel};
 use crate::shell_spawner::{ShellProfile, ShellSpawner};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -208,6 +208,8 @@ struct Session {
     survives_client: bool,
     /// What it was started with, for a client that attaches later.
     profile: ShellProfile,
+    /// Where it sits in the Cogno it belongs to, as that Cogno last said.
+    label: SessionLabel,
     cols: u16,
     rows: u16,
     master: Box<dyn portable_pty::MasterPty + Send>,
@@ -451,18 +453,25 @@ impl PtyState {
         self.sessions.lock().unwrap().live.len()
     }
 
-    /// The sessions that run, for a client that wants to attach to one.
-    pub fn list(&self) -> Vec<SessionInfo> {
+    /// The sessions that run, as `client` sees them. `name_of` gives the
+    /// name a client gave itself.
+    pub fn list(&self, client: u64, name_of: impl Fn(u64) -> Option<String>) -> Vec<SessionInfo> {
         let sessions = self.sessions.lock().unwrap();
         let mut list: Vec<SessionInfo> = sessions
             .live
             .iter()
-            .map(|(terminal_id, session)| SessionInfo {
-                terminal_id: terminal_id.clone(),
-                profile: session.profile.clone(),
-                cols: session.cols,
-                rows: session.rows,
-                attached: session.output.attached().is_some(),
+            .map(|(terminal_id, session)| {
+                let shown_to = session.output.attached().map(|attached| attached.client);
+                SessionInfo {
+                    terminal_id: terminal_id.clone(),
+                    label: session.label.clone(),
+                    profile: session.profile.clone(),
+                    cols: session.cols,
+                    rows: session.rows,
+                    attached: shown_to.is_some(),
+                    shown_here: shown_to == Some(client),
+                    shown_by: shown_to.and_then(&name_of),
+                }
             })
             .collect();
         list.sort_by(|a, b| a.terminal_id.cmp(&b.terminal_id));
@@ -472,9 +481,14 @@ impl PtyState {
     /// Puts `client` on a running session: it gets what was kept of the
     /// output under `stream`, then what comes. A client that showed the
     /// session before is told that it was taken over.
+    ///
+    /// A session that passes to another client goes on without clients from
+    /// then on: it must not end with one that only came to look, while the
+    /// Cogno it was started in may still be there to take it back.
     pub fn attach(
         &self,
         client: &Client,
+        client_name: Option<String>,
         terminal_id: &str,
         owner: String,
         stream: u64,
@@ -488,6 +502,9 @@ impl PtyState {
                 label: owner,
             };
             let previous_owner = std::mem::replace(&mut session.owner, owner);
+            if previous_owner.client != client.id {
+                session.survives_client = true;
+            }
             (session.output.clone(), previous_owner)
         };
         let attachment = Attachment::new(client, stream, FlowControl::new());
@@ -500,10 +517,19 @@ impl PtyState {
                 previous.sink.emit(Event::PtyTakenOver {
                     terminal_id: terminal_id.to_string(),
                     owner: previous_owner.label,
+                    by: client_name,
                 });
             }
         }
         Ok(())
+    }
+
+    /// Notes where the session sits in its Cogno. A session that has ended
+    /// has nothing to note it on; that is not an error.
+    pub fn label(&self, terminal_id: &str, label: SessionLabel) {
+        if let Some(session) = self.sessions.lock().unwrap().live.get_mut(terminal_id) {
+            session.label = label;
+        }
     }
 
     /// Takes the client off a session, which goes on without one.
@@ -652,6 +678,7 @@ impl PtyState {
             },
             survives_client,
             profile: options.profile.clone(),
+            label: SessionLabel::default(),
             cols: options.cols,
             rows: options.rows,
             master: pair.master,
@@ -1104,6 +1131,7 @@ mod test_support {
             owner: owner("test"),
             survives_client: false,
             profile: profile("Bash"),
+            label: SessionLabel::default(),
             cols: 80,
             rows: 24,
             master: pair.master,
@@ -1163,6 +1191,7 @@ mod test_support {
             owner: owner("test"),
             survives_client: false,
             profile: profile("PowerShell"),
+            label: SessionLabel::default(),
             cols: 80,
             rows: 24,
             master: pair.master,
@@ -1362,6 +1391,7 @@ mod unix_tests {
             owner: super::test_support::owner("test"),
             survives_client: false,
             profile: super::test_support::profile("Bash"),
+            label: SessionLabel::default(),
             cols: 80,
             rows: 24,
             master: pair.master,

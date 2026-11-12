@@ -8,17 +8,36 @@ pub use crate::shell_spawner::ShellProfile;
 pub use crate::shells::ShellInfo;
 use serde::{Deserialize, Serialize};
 
-/// A running session, as a client needs it to attach: the profile it was
-/// started with (its environment holds the session's token) and its size.
+/// Where a session sits in the Cogno it belongs to, in that Cogno's words.
+/// The host only keeps it, for another client to find the session by.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionLabel {
+    pub workspace: Option<String>,
+    pub tab: Option<String>,
+    /// What the session's pane is called.
+    pub title: Option<String>,
+    /// Where its shell is.
+    pub directory: Option<String>,
+}
+
+/// A running session, as a client needs it to find and attach to: where it
+/// sits, the profile it was started with (its environment holds the
+/// session's token) and its size.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionInfo {
     pub terminal_id: String,
+    pub label: SessionLabel,
     pub profile: ShellProfile,
     pub cols: u16,
     pub rows: u16,
     /// Whether a client shows it right now.
     pub attached: bool,
+    /// Whether that client is the one that asks.
+    pub shown_here: bool,
+    /// The name the client that shows it gave itself, if it gave one.
+    pub shown_by: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -49,6 +68,16 @@ pub enum Request {
     /// Stops showing a session, which goes on.
     PtyDetach {
         terminal_id: String,
+    },
+    /// Says where a session sits in the caller's Cogno, for others to see.
+    PtyLabel {
+        terminal_id: String,
+        label: SessionLabel,
+    },
+    /// Says what the caller is called: the machine its Cogno runs on. Shown
+    /// to a client whose session the caller shows.
+    Introduce {
+        name: String,
     },
     /// The sessions that run on the host.
     ListSessions,
@@ -104,6 +133,7 @@ impl Request {
             Request::PtySpawn { options, .. } => Some(&options.name),
             Request::PtyAttach { terminal_id, .. }
             | Request::PtyDetach { terminal_id }
+            | Request::PtyLabel { terminal_id, .. }
             | Request::PtyWrite { terminal_id, .. }
             | Request::PtyLineEditorAction { terminal_id, .. }
             | Request::PtyResize { terminal_id, .. }
@@ -112,6 +142,7 @@ impl Request {
             | Request::ProcessTree { terminal_id }
             | Request::TerminateProcess { terminal_id, .. } => Some(terminal_id),
             Request::ReleaseOwner { .. }
+            | Request::Introduce { .. }
             | Request::ListSessions
             | Request::TerminalProcesses
             | Request::ListShells
@@ -136,6 +167,8 @@ impl Request {
             | Request::PtyResize { .. }
             | Request::PtyAck { .. }
             | Request::PtyDetach { .. }
+            | Request::PtyLabel { .. }
+            | Request::Introduce { .. }
             | Request::ListSessions
             | Request::ReleaseOwner { .. } => false,
         }
@@ -163,7 +196,12 @@ pub enum Event {
     /// Nothing more comes under this stream.
     PtyStreamEnded { stream: u64 },
     /// Another client attached to the session: it runs on, shown elsewhere.
-    PtyTakenOver { terminal_id: String, owner: String },
+    PtyTakenOver {
+        terminal_id: String,
+        owner: String,
+        /// What the client that shows it now is called, if it said.
+        by: Option<String>,
+    },
     /// The session ended on its own; a killed or replaced one reports nothing.
     PtyExit {
         terminal_id: String,

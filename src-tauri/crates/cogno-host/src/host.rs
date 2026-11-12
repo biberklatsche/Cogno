@@ -1,4 +1,5 @@
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use crate::processes::{
     get_process_tree_snapshot, list_terminal_processes, terminate_process_tree,
@@ -27,6 +28,8 @@ pub struct Client {
 #[derive(Default)]
 pub struct Host {
     pty: PtyState,
+    /// What each client called itself (`Introduce`).
+    names: Mutex<HashMap<u64, String>>,
 }
 
 impl Host {
@@ -55,12 +58,22 @@ impl Host {
                 stream,
             } => self
                 .pty
-                .attach(client, &terminal_id, owner, stream)
+                .attach(client, self.name_of(client.id), &terminal_id, owner, stream)
                 .map(|_| Response::Done),
             Request::PtyDetach { terminal_id } => {
                 self.pty.detach(&terminal_id).map(|_| Response::Done)
             }
-            Request::ListSessions => Ok(Response::Sessions(self.pty.list())),
+            Request::PtyLabel { terminal_id, label } => {
+                self.pty.label(&terminal_id, label);
+                Ok(Response::Done)
+            }
+            Request::Introduce { name } => {
+                self.names.lock().unwrap().insert(client.id, name);
+                Ok(Response::Done)
+            }
+            Request::ListSessions => Ok(Response::Sessions(
+                self.pty.list(client.id, |other| self.name_of(other)),
+            )),
             Request::PtyWrite { terminal_id, data } => {
                 self.pty.write(&terminal_id, data).map(|_| Response::Done)
             }
@@ -119,6 +132,11 @@ impl Host {
     /// except those started to go on without one.
     pub fn client_gone(&self, client: u64) {
         self.pty.client_gone(client);
+        self.names.lock().unwrap().remove(&client);
+    }
+
+    fn name_of(&self, client: u64) -> Option<String> {
+        self.names.lock().unwrap().get(&client).cloned()
     }
 
     /// Whom the terminal belongs to, as its spawn named it.
@@ -155,8 +173,8 @@ mod tests {
         ended_streams: Vec<u64>,
         /// Terminal id and owner of every reported exit.
         exits: Vec<(String, String)>,
-        /// Terminal id and owner of every session taken over.
-        taken_over: Vec<(String, String)>,
+        /// Terminal id, owner and taker's name of every session taken over.
+        taken_over: Vec<(String, String, Option<String>)>,
     }
 
     #[derive(Default)]
@@ -173,9 +191,11 @@ mod tests {
                 Event::PtyExit {
                     terminal_id, owner, ..
                 } => recorded.exits.push((terminal_id, owner)),
-                Event::PtyTakenOver { terminal_id, owner } => {
-                    recorded.taken_over.push((terminal_id, owner))
-                }
+                Event::PtyTakenOver {
+                    terminal_id,
+                    owner,
+                    by,
+                } => recorded.taken_over.push((terminal_id, owner, by)),
             }
             true
         }
@@ -388,7 +408,7 @@ mod tests {
         assert_eq!(at_the_office.ended_streams(), [1]);
         assert_eq!(
             at_the_office.0.lock().unwrap().taken_over,
-            [("t1".to_string(), "window-1".to_string())]
+            [("t1".to_string(), "window-1".to_string(), None)]
         );
         // It is the laptop's now: the office going away changes nothing.
         host.client_gone(office.id);
@@ -422,6 +442,103 @@ mod tests {
         });
         // Nobody was taken over: the session had no client.
         assert!(sink.0.lock().unwrap().taken_over.is_empty());
+        host.release_all();
+    }
+
+    #[test]
+    fn a_session_says_where_it_sits_and_who_shows_it() {
+        let (office, _) = client(1);
+        let (laptop, on_the_laptop) = client(2);
+        let host = Host::new();
+        host.handle(&office, spawn_request("t1", 1, WAITING, false))
+            .unwrap();
+        let label = crate::protocol::SessionLabel {
+            workspace: Some("Backend".to_string()),
+            tab: Some("api".to_string()),
+            title: Some("npm run dev".to_string()),
+            directory: Some("C:\\dev\\api".to_string()),
+        };
+        host.handle(
+            &office,
+            Request::PtyLabel {
+                terminal_id: "t1".to_string(),
+                label: label.clone(),
+            },
+        )
+        .unwrap();
+        for (who, name) in [(&office, "office-pc"), (&laptop, "lars-laptop")] {
+            host.handle(
+                who,
+                Request::Introduce {
+                    name: name.to_string(),
+                },
+            )
+            .unwrap();
+        }
+        let listed = |asker: &Client| match host.handle(asker, Request::ListSessions) {
+            Ok(Response::Sessions(mut sessions)) => sessions.remove(0),
+            other => panic!("no session list: {other:?}"),
+        };
+
+        // The laptop finds it by its place, shown at the office.
+        let seen = listed(&laptop);
+        assert_eq!(seen.label, label);
+        assert_eq!(
+            (seen.shown_here, seen.shown_by.as_deref()),
+            (false, Some("office-pc"))
+        );
+
+        // It takes it over: the office is told by whom.
+        host.handle(&laptop, attach_request("t1", 9)).unwrap();
+        wait_until("the laptop has the output", || {
+            on_the_laptop.output_of(9).contains("port=4711")
+        });
+        let seen = listed(&office);
+        assert_eq!(
+            (seen.shown_here, seen.shown_by.as_deref()),
+            (false, Some("lars-laptop"))
+        );
+        assert!(listed(&laptop).shown_here);
+        host.release_all();
+    }
+
+    #[test]
+    fn a_session_that_was_taken_over_does_not_end_with_the_client_that_took_it() {
+        let (office, at_the_office) = client(1);
+        let (laptop, on_the_laptop) = client(2);
+        let host = Host::new();
+        // Started to end with its client, as every shell is by default.
+        host.handle(&office, spawn_request("t1", 1, WAITING, false))
+            .unwrap();
+        host.handle(
+            &laptop,
+            Request::Introduce {
+                name: "lars-laptop".to_string(),
+            },
+        )
+        .unwrap();
+        host.handle(&laptop, attach_request("t1", 5)).unwrap();
+        wait_until("the laptop has the output", || {
+            on_the_laptop.output_of(5).contains("port=4711")
+        });
+        assert_eq!(
+            at_the_office.0.lock().unwrap().taken_over,
+            [(
+                "t1".to_string(),
+                "window-1".to_string(),
+                Some("lars-laptop".to_string())
+            )]
+        );
+
+        // The laptop is closed without a word.
+        host.client_gone(laptop.id);
+
+        // The shell is still there for the office to take back.
+        assert_eq!(sessions_of(&host, &office), [("t1".to_string(), false)]);
+        host.handle(&office, attach_request("t1", 2)).unwrap();
+        wait_until("the office has it back", || {
+            at_the_office.output_of(2).contains("port=4711")
+        });
         host.release_all();
     }
 
