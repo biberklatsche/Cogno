@@ -179,6 +179,9 @@ impl Request {
 pub enum Response {
     Done,
     Spawned(PtySpawnResult),
+    /// A `PtySpawn` was not carried out: a shell already runs under its
+    /// terminal id, and is left running. The client attaches to it instead.
+    ShellAlreadyRuns,
     Sessions(Vec<SessionInfo>),
     ProcessTree(ProcessTreeSnapshot),
     TerminalProcesses(Vec<TerminalProcess>),
@@ -186,11 +189,6 @@ pub enum Response {
 }
 
 pub type Reply = Result<Response, String>;
-
-/// How a refused `PtySpawn` begins when a shell already runs under the
-/// terminal id: the client attaches to that one instead. Clients match the
-/// text, so it never changes.
-pub const SHELL_ALREADY_RUNS: &str = "A shell already runs as terminal";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {

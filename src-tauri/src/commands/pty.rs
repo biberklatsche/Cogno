@@ -2,7 +2,7 @@ use cogno_host::protocol::{PtySpawnResult, Request, Response, SessionLabel, Spaw
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Manager, State};
 
-use crate::host::HostState;
+use crate::host::{HostState, SpawnError};
 use crate::http_server::HttpServerState;
 
 /// What a request without a result of its own answers.
@@ -21,7 +21,7 @@ pub async fn pty_spawn(
     options: SpawnOptions,
     survives_client: bool,
     on_data: Channel<InvokeResponseBody>,
-) -> Result<PtySpawnResult, String> {
+) -> Result<PtySpawnResult, SpawnError> {
     let env = http_server_environment(&app).await;
     hosts
         .spawn(
