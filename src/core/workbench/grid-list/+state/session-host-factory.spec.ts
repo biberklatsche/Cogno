@@ -2,6 +2,7 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { RemoteHostsService } from "@cogno/core/workbench/remote/remote-hosts.service";
 import { OsPlatform } from "@cogno/platform";
 import { HostInfo } from "@cogno/platform/hosts";
+import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Pane } from "../+model/model";
 import { SessionHostFactory } from "./session-host-factory";
@@ -28,11 +29,13 @@ describe("SessionHostFactory, waiting for a host", () => {
       {} as never,
       {} as never,
       { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
-      { publish: vi.fn() } as never,
+      { publish: vi.fn(), on$: () => new Subject() } as never,
       {} as never,
       { take: vi.fn() } as never,
       { platform: () => "windows" } as unknown as OsPlatform,
       remoteHosts,
+      { take: () => undefined, unclaimed: () => [] } as never,
+      { onDestroy: vi.fn() } as never,
     );
   });
 
@@ -70,6 +73,28 @@ describe("SessionHostFactory, waiting for a host", () => {
 
     expect(profileLookups).toHaveBeenCalledTimes(lookupsBeforeClose);
     expect(connect).toHaveBeenCalledOnce();
+  });
+
+  it("asks instead of starting a shell when shells already run on the host", () => {
+    const sessions = [{ terminalId: "office-1" }, { terminalId: "office-2" }];
+    const connected = new SessionHostFactory(
+      {} as never,
+      {} as never,
+      { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
+      { publish: vi.fn(), on$: () => new Subject() } as never,
+      {} as never,
+      { take: vi.fn() } as never,
+      { platform: () => "windows" } as unknown as OsPlatform,
+      { info: () => ({ os: "windows" }), connect } as unknown as RemoteHostsService,
+      // The pane's own terminal is not among them: it is a new tab.
+      { take: () => undefined, unclaimed: () => sessions } as never,
+      { onDestroy: vi.fn() } as never,
+    );
+
+    // No session, and nothing to connect: the pane waits for the answer.
+    expect(connected.ensureSession(pane)).toBeUndefined();
+    expect(connected.getSessionHost("t1")).toBeUndefined();
+    expect(connect).not.toHaveBeenCalled();
   });
 
   it("keeps a pane whose host could not be connected, without a session", async () => {

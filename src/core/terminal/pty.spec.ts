@@ -71,7 +71,15 @@ describe("Pty", () => {
   it("should spawn through the transport with profile, dimensions and dev mode", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     expect(transport.spawn).toHaveBeenCalledWith(
-      { terminalId, cols: 80, rows: 24, profile: shellConfig, devMode: false },
+      {
+        terminalId,
+        cols: 80,
+        rows: 24,
+        profile: shellConfig,
+        devMode: false,
+        host: undefined,
+        survivesClient: false,
+      },
       expect.objectContaining({
         onChunk: expect.any(Function),
         onChunksLost: expect.any(Function),
@@ -280,5 +288,63 @@ describe("Pty", () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.dispose();
     expect(transport.kill).toHaveBeenCalledWith(terminalId);
+  });
+
+  describe("a shell that already runs", () => {
+    /** The listener `Pty` registered for the shell being taken over. */
+    function takenOverListener(): () => void {
+      return vi.mocked(transport.onTakenOver).mock.calls[0][1] as () => void;
+    }
+
+    it("is attached to through the transport instead of started", async () => {
+      await pty.attach(terminalId, noopListener);
+
+      expect(transport.attach).toHaveBeenCalledWith(
+        { terminalId, host: undefined },
+        expect.objectContaining({ onChunk: expect.any(Function) }),
+      );
+      expect(transport.spawn).not.toHaveBeenCalled();
+      // From here it is a shell like any other.
+      pty.resize({ cols: 100, rows: 30 });
+      expect(transport.resize).toHaveBeenCalledWith(terminalId, 100, 30);
+    });
+
+    it("names the host it runs on, and whether a new one goes on without Cogno", async () => {
+      const remote = new Pty(transport as unknown as PtyTransport, false, "office", true);
+
+      await remote.attach(terminalId, noopListener);
+      expect(transport.attach).toHaveBeenCalledWith(
+        { terminalId, host: "office" },
+        expect.anything(),
+      );
+
+      await remote.spawn(terminalId, shellConfig, dimensions, noopListener);
+      expect(transport.spawn).toHaveBeenCalledWith(
+        expect.objectContaining({ host: "office", survivesClient: true }),
+        expect.anything(),
+      );
+    });
+
+    it("tells its listeners when another Cogno takes it over", async () => {
+      const takenOver = vi.fn();
+      pty.onTakenOver(takenOver);
+      await pty.attach(terminalId, noopListener);
+
+      takenOverListener()();
+
+      expect(takenOver).toHaveBeenCalledOnce();
+    });
+
+    it("is not killed on dispose once another Cogno has taken it over", async () => {
+      await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+      const handle = vi.mocked(transport.spawn).mock.results[0].value;
+
+      takenOverListener()();
+      pty.dispose();
+
+      // It runs on, shown elsewhere: nothing of it is this Cogno's to end.
+      expect(transport.kill).not.toHaveBeenCalled();
+      expect(handle.closeOutput).toHaveBeenCalled();
+    });
   });
 });

@@ -657,6 +657,12 @@ A key for an action, one per line, e.g. `keybind = Command+T=new_tab`. Your line
 
 Terminal rendering and behaviour.
 
+### `terminal.keep_shells_running`
+
+Keep the shells running when Cogno closes, and go on with them at the next start - on this machine, or from another one through `remote.hosts`. Closing a tab still ends its shell. Applies to shells started after the change.
+
+**Type:** boolean
+
 ### `terminal.webgl`
 
 Draw the terminal with the graphics card, which is faster. Turn it off if text looks broken.

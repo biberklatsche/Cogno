@@ -36,6 +36,8 @@ vi.mock("@cogno/core/terminal/pty", () => {
     write = vi.fn();
     spawn = vi.fn().mockResolvedValue(undefined);
     onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    attach = vi.fn().mockResolvedValue(undefined);
     kill = vi.fn();
     faults$ = new Subject();
   }
@@ -325,7 +327,12 @@ async function settle(): Promise<void> {
 function ptyOf(host: SessionHost) {
   return (
     host as unknown as {
-      pty: { spawn: ReturnType<typeof vi.fn>; onExit: ReturnType<typeof vi.fn> };
+      pty: {
+        spawn: ReturnType<typeof vi.fn>;
+        attach: ReturnType<typeof vi.fn>;
+        onExit: ReturnType<typeof vi.fn>;
+        onTakenOver: ReturnType<typeof vi.fn>;
+      };
     }
   ).pty;
 }
@@ -362,6 +369,31 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     await settle();
 
     expect(host.runtime.status).toBe("running");
+  });
+
+  it("shows a shell that already runs instead of starting one, with the secret it was started with", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.resume("the-running-shells-token");
+
+    host.start();
+    await settle();
+
+    expect(ptyOf(host).attach).toHaveBeenCalledWith("terminal-1", expect.any(Function));
+    expect(ptyOf(host).spawn).not.toHaveBeenCalled();
+    expect(host.model.sessionToken).toBe("the-running-shells-token");
+    expect(host.runtime.status).toBe("running");
+  });
+
+  it("is taken over when another Cogno attaches to its shell", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+    await settle();
+
+    (ptyOf(host).onTakenOver.mock.calls[0][0] as () => void)();
+
+    expect(host.runtime.status).toBe("takenOver");
   });
 
   it("keeps running while detached and only moves the element on a second attach", async () => {

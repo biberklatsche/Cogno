@@ -11,6 +11,8 @@ fn done(reply: Result<Response, String>) -> Result<(), String> {
 }
 
 /// Starts a shell on `host`, this machine when none is named.
+/// `survives_client`: whether it goes on when Cogno is gone, to be attached
+/// to again.
 #[tauri::command]
 pub async fn pty_spawn(
     app: AppHandle,
@@ -18,6 +20,7 @@ pub async fn pty_spawn(
     hosts: State<'_, HostState>,
     options: SpawnOptions,
     host: Option<String>,
+    survives_client: bool,
     on_data: Channel<InvokeResponseBody>,
 ) -> Result<PtySpawnResult, String> {
     // This app's HTTP server is of no use to a shell on another machine.
@@ -26,7 +29,30 @@ pub async fn pty_spawn(
         None => http_server_environment(&app).await,
     };
     hosts
-        .spawn(host, options, window.label().to_string(), env, on_data)
+        .spawn(
+            host,
+            options,
+            window.label().to_string(),
+            env,
+            survives_client,
+            on_data,
+        )
+        .await
+}
+
+/// Shows a shell that already runs on `host` in the calling window: what the
+/// host kept of its output comes first, then what the shell writes. Whoever
+/// showed it before is told that it was taken over.
+#[tauri::command]
+pub async fn pty_attach(
+    window: tauri::WebviewWindow,
+    hosts: State<'_, HostState>,
+    terminal_id: String,
+    host: Option<String>,
+    on_data: Channel<InvokeResponseBody>,
+) -> Result<(), String> {
+    hosts
+        .attach(host, terminal_id, window.label().to_string(), on_data)
         .await
 }
 

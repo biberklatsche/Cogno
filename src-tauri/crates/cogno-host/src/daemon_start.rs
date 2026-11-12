@@ -24,6 +24,10 @@ pub fn connect_or_start(
     if let Ok(stream) = daemon::connect(&endpoint) {
         return Ok(stream);
     }
+    // Nothing answers there: what the file names is gone. Without it, the
+    // waiting below sees the new daemon's endpoint as soon as it is written
+    // instead of knocking on the old one's port.
+    let _ = std::fs::remove_file(&endpoint);
     let binary = daemon_binary(&endpoint, build)?;
     put_down_starter(&endpoint, &binary);
     start(&binary, bootstrap_log_dir)?;

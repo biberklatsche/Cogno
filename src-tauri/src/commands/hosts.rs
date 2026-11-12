@@ -1,4 +1,4 @@
-use cogno_host::protocol::{IntegrationFile, Request, Response, ShellInfo};
+use cogno_host::protocol::{IntegrationFile, Request, Response, SessionInfo, ShellInfo};
 use serde::Serialize;
 use std::process::Command;
 use tauri::{AppHandle, Manager, State};
@@ -90,6 +90,19 @@ pub async fn list_shells(
 ) -> Result<Vec<ShellInfo>, String> {
     match hosts.request_on(host, Request::ListShells).await? {
         Response::Shells(shells) => Ok(shells),
+        _ => Err("The host answered something else".to_string()),
+    }
+}
+
+/// The shells that run on a host, this machine when none is named: what a
+/// Cogno that starts or connects can go on with.
+#[tauri::command]
+pub async fn host_sessions(
+    hosts: State<'_, HostState>,
+    host: Option<String>,
+) -> Result<Vec<SessionInfo>, String> {
+    match hosts.request_on(host, Request::ListSessions).await? {
+        Response::Sessions(sessions) => Ok(sessions),
         _ => Err("The host answered something else".to_string()),
     }
 }

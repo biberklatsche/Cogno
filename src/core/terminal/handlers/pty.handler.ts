@@ -21,8 +21,10 @@ export const HIDDEN_UNPARSED_BUDGET_BYTES = 16 * 1024 * 1024;
  * and workbench work (ARCHITECTURE.md 2.1).
  */
 export type PtyHandlerListener = {
-  /** The shell process is up; nothing has been parsed yet. */
+  /** The shell process is up (or shown here); nothing has been parsed yet. */
   readonly onSpawned?: () => void;
+  /** Another Cogno took the shell over; it runs on, but not here. */
+  readonly onTakenOver?: () => void;
   /** The shell could not be started. */
   readonly onFailed?: (error: unknown) => void;
   /** The shell process ended. */
@@ -46,6 +48,8 @@ export class PtyHandler implements ITerminalHandler {
     private _shellProfile: PtyShellProfileContract,
     private _listener: PtyHandlerListener = {},
     private _isWindowHidden: () => boolean = () => document.visibilityState === "hidden",
+    /** The shell already runs: show it instead of starting one. */
+    private _attach = false,
   ) {}
 
   dispose(): void {
@@ -61,8 +65,12 @@ export class PtyHandler implements ITerminalHandler {
     return this;
   }
 
-  /** Tries the spawn again after a failure; the terminal stays registered. */
+  /**
+   * Tries again after a failure; the terminal stays registered. A shell that
+   * was not there to attach to is started.
+   */
   restart(): void {
+    this._attach = false;
     void this.start();
   }
 
@@ -83,6 +91,7 @@ export class PtyHandler implements ITerminalHandler {
         this._listener.onExited?.(event.exitCode);
       }),
     );
+    this._disposables.push(this._pty.onTakenOver(() => this._listener.onTakenOver?.()));
   }
 
   private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract): void {
@@ -119,6 +128,9 @@ export class PtyHandler implements ITerminalHandler {
   }
 
   private spawnPty(terminalId: TerminalId, terminal: Terminal) {
+    if (this._attach) {
+      return this._pty.attach(terminalId, (chunk) => this.onPtyChunk(terminal, chunk));
+    }
     return this._pty.spawn(
       terminalId,
       this._shellProfile,

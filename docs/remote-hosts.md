@@ -230,13 +230,45 @@ icacls $env:USERPROFILE\.ssh\id_rsa /inheritance:r /grant:r "$(whoami):F" /grant
   desktop, and running; a build for servers without a display does not exist
   yet.
 
+## Going on with your shells from another machine
+
+By default a shell ends when Cogno closes. Turn this on, on the machine
+whose shells you want to keep:
+
+```
+terminal.keep_shells_running = true
+```
+
+From then on, shells you start keep running when you close Cogno. It applies
+to shells started after the change; closing a tab still ends its shell.
+
+- **Next start on the same machine:** the tabs come back showing the same
+  shells, with what they printed in the meantime.
+- **From another machine:** open a tab with a profile of that host. When
+  shells are running there, the tab asks: *Go on with them* opens a tab for
+  each, *Start a new shell* does what it says.
+- **One Cogno at a time shows a shell.** When you go on with it elsewhere,
+  the Cogno that showed it before says *This shell is shown in another
+  Cogno*. *Show it here* takes it back.
+
+What you get when you go on with a shell is what it printed last (about the
+last megabyte), not a picture of the old window:
+
+- A full-screen program (vim, less) redraws itself for the new window size.
+- A program that draws over several lines without switching to the full
+  screen may look untidy until it draws again.
+- The tabs and splits of the other machine do not come along: each shell
+  gets a tab of its own.
+- The other machine must stay on and you must stay logged in there. Locking
+  the screen is fine.
+
 ## What works in a remote tab
 
 | | |
 |---|---|
 | Works | The terminal itself, prompt markers, working directory, command history (kept apart per machine), autocomplete from history, the process panel |
 | Not yet | The Git panel, path completion from the file system, coding-agent status, `cogno action run` typed in that shell |
-| When the connection breaks | The host's tabs close and Cogno tells you. No shell is left running on the other machine. |
+| When the connection breaks | The host's tabs close and Cogno tells you. Their shells end, unless they were started with `terminal.keep_shells_running`: then they run on and you can go on with them after connecting again. |
 
 ## When connecting fails
 

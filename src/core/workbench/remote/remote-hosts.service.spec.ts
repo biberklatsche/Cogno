@@ -16,6 +16,7 @@ describe("RemoteHostsService", () => {
   let forgetPrompts: ReturnType<typeof vi.fn>;
   let ask: ReturnType<typeof vi.fn>;
   let ensureIntegration: ReturnType<typeof vi.fn>;
+  let refreshRunning: ReturnType<typeof vi.fn>;
   let service: RemoteHostsService;
   const shellSupport = [{ shellType: "ZSH", integrationFiles: [] }];
 
@@ -25,6 +26,7 @@ describe("RemoteHostsService", () => {
     register = vi.fn().mockReturnValue(forgetPrompts);
     ask = vi.fn().mockResolvedValue("secret");
     ensureIntegration = vi.fn().mockResolvedValue(undefined);
+    refreshRunning = vi.fn().mockResolvedValue(undefined);
     const hosts = {
       connect,
       onDisconnected: vi.fn((listener) => {
@@ -49,6 +51,7 @@ describe("RemoteHostsService", () => {
       { ask } as unknown as ProcessPromptService,
       { ensure: ensureIntegration } as unknown as ShellIntegrationWriter,
       { getShellSupportDefinitions: () => shellSupport } as unknown as FeatureHost,
+      { refresh: refreshRunning } as never,
       { onDestroy: vi.fn() } as never,
     );
   });
@@ -83,6 +86,8 @@ describe("RemoteHostsService", () => {
     installed();
     await connecting;
     expect(service.info("mac")).toEqual({ os: "macos" });
+    // And what runs there is known by then: a pane may go on with it.
+    expect(refreshRunning).toHaveBeenCalledWith("mac");
   });
 
   it("does not count a host as connected whose shell integration could not be written", async () => {

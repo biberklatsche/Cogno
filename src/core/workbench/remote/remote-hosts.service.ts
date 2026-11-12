@@ -6,6 +6,7 @@ import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integra
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
+import { RunningSessionsService } from "./running-sessions.service";
 
 /**
  * The connections to the machines of `remote.hosts`. A connection is set up
@@ -26,6 +27,7 @@ export class RemoteHostsService {
     private readonly promptDialog: ProcessPromptService,
     private readonly shellIntegration: ShellIntegrationWriter,
     private readonly featureHost: FeatureHost,
+    private readonly runningSessions: RunningSessionsService,
     destroyRef: DestroyRef,
   ) {
     void hosts
@@ -58,6 +60,7 @@ export class RemoteHostsService {
       .then(
         async (info) => {
           await this.shellIntegration.ensure(this.featureHost.getShellSupportDefinitions(), name);
+          await this.runningSessions.refresh(name);
           this.connected.set(name, info);
           return info;
         },

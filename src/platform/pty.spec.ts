@@ -195,6 +195,7 @@ describe("PtyTransport", () => {
           load_user_rc: true,
         },
         devMode: true,
+        survivesClient: false,
       },
       output,
     );

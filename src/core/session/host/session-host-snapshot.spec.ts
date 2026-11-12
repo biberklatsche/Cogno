@@ -89,6 +89,8 @@ vi.mock("@cogno/core/terminal/pty", () => {
     write = vi.fn();
     spawn = vi.fn().mockResolvedValue(undefined);
     onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    attach = vi.fn().mockResolvedValue(undefined);
     kill = vi.fn();
     faults$ = new Subject();
   }

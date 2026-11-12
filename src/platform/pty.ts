@@ -26,6 +26,14 @@ export type PtySpawnOptionsContract = {
   devMode: boolean;
   /** The connected host the shell runs on; left out for this machine. */
   host?: string;
+  /** Whether the shell goes on when Cogno is gone, to be attached to again. */
+  survivesClient: boolean;
+};
+
+/** A shell that already runs, and where. */
+export type PtyAttachOptionsContract = {
+  terminalId: string;
+  host?: string;
 };
 
 type PtySpawnResultContract = {
@@ -45,8 +53,11 @@ export interface PtyOutputListenerContract {
 }
 
 export interface PtySpawnHandleContract {
-  /** Resolves once the shell runs, rejects when it could not be spawned. */
-  readonly ready: Promise<PtySpawnResultContract>;
+  /**
+   * Resolves once the shell runs (or, for an attach, once it is shown here),
+   * rejects when it could not be spawned or is not there to attach to.
+   */
+  readonly ready: Promise<unknown>;
   /**
    * Stops output delivery for good. Safe to call before `ready` settles;
    * the backend session (if it comes into existence) still has to be killed.
@@ -235,12 +246,41 @@ export class PtyTransport {
         dev_mode: options.devMode,
       },
       host: options.host ?? null,
+      survivesClient: options.survivesClient,
       onData: channel,
     });
     return {
       ready,
       closeOutput: () => channel.close(),
     };
+  }
+
+  /**
+   * Shows a shell that already runs. What its host kept of the output comes
+   * first, then what the shell writes; whoever showed it before is told that
+   * it was taken over.
+   */
+  attach(
+    options: PtyAttachOptionsContract,
+    output: PtyOutputListenerContract,
+  ): PtySpawnHandleContract {
+    const channel = new PtyDataChannel();
+    channel.onmessage = (chunk) => output.onChunk(chunk);
+    channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
+    const ready = invoke<void>("pty_attach", {
+      terminalId: options.terminalId,
+      host: options.host ?? null,
+      onData: channel,
+    });
+    return {
+      ready,
+      closeOutput: () => channel.close(),
+    };
+  }
+
+  /** Another Cogno attached to the shell: it runs on, shown there. */
+  onTakenOver(terminalId: string, listener: () => void): Promise<() => void> {
+    return listen(`pty-taken-over:${terminalId}`, () => listener());
   }
 
   ack(terminalId: string, seq: number): Promise<void> {
