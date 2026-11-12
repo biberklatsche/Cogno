@@ -38,7 +38,6 @@ describe("ShellIntegrationWriter", () => {
     await writer.ensure(definitions);
 
     expect(installShellIntegration).toHaveBeenCalledWith(
-      undefined,
       "1.3.0",
       [
         { relativePath: "common/base.sh", content: "base" },
@@ -49,18 +48,12 @@ describe("ShellIntegrationWriter", () => {
     );
   });
 
-  it("hands a connected host the same scripts", async () => {
-    await writer.ensure(definitions, "mac");
-
-    expect(installShellIntegration).toHaveBeenCalledWith("mac", "1.3.0", expect.any(Array), true);
-  });
-
   it("reports and rethrows when the scripts could not be laid down", async () => {
     const error = new Error("Permission denied");
     installShellIntegration.mockRejectedValue(error);
     const reported = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => undefined);
 
-    await expect(writer.ensure(definitions, "mac")).rejects.toBe(error);
+    await expect(writer.ensure(definitions)).rejects.toBe(error);
 
     expect(reported).toHaveBeenCalledWith(
       expect.objectContaining({ error, handled: true, source: "ShellIntegrationWriter" }),

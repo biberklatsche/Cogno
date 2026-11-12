@@ -60,18 +60,16 @@ export class Hosts {
   }
 
   /**
-   * Makes sure the shell integration scripts of `version` lie on `host`, this
-   * machine when none is named: in `shell-integration` of the Cogno home
-   * there. Scripts that are there in this version are left alone.
+   * Makes sure the shell integration scripts of `version` lie in
+   * `shell-integration` of this machine's Cogno home. Scripts that are there
+   * in this version are left alone.
    */
   installShellIntegration(
-    host: string | undefined,
     version: string,
     files: ReadonlyArray<{ relativePath: string; content: string }>,
     devMode: boolean,
   ): Promise<void> {
     return invoke("host_install_shell_integration", {
-      host: host ?? null,
       version,
       files,
       devMode,

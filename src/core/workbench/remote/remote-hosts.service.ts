@@ -2,9 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
-import { ShellIntegrationWriter } from "@cogno/core/session/shells/shell-integration.writer";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
-import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { BehaviorSubject, Observable } from "rxjs";
 import { RunningSessionsService } from "./running-sessions.service";
@@ -20,8 +18,11 @@ export type RemoteHostConnection =
  * when it is asked for - by the user, or by a pane that shows a shell of
  * that machine - and stands until it breaks, is hung up or Cogno ends; what
  * ssh asks on the way (a password, a host key) is shown with the workbench's
- * plain prompt dialog. A host counts as connected once it has this Cogno's
- * shell integration.
+ * plain prompt dialog. A host counts as connected once it said which shells
+ * run there.
+ *
+ * Nothing is installed there: Cogno only shows shells that run on the other
+ * machine, started by the Cogno there with its own shell integration.
  */
 @Injectable({ providedIn: "root" })
 export class RemoteHostsService {
@@ -40,8 +41,6 @@ export class RemoteHostsService {
     private readonly configService: ConfigService,
     private readonly prompts: ProcessPromptDispatcher,
     private readonly promptDialog: ProcessPromptService,
-    private readonly shellIntegration: ShellIntegrationWriter,
-    private readonly featureHost: FeatureHost,
     private readonly runningSessions: RunningSessionsService,
     destroyRef: DestroyRef,
   ) {
@@ -73,7 +72,6 @@ export class RemoteHostsService {
     const connecting = this.hosts
       .connect(name, host.destination, host.command, promptSession)
       .then(async (info) => {
-        await this.shellIntegration.ensure(this.featureHost.getShellSupportDefinitions(), name);
         await this.runningSessions.refresh(name);
         this.connected.set(name, info);
         this.setConnection(name, { status: "connected" });

@@ -1214,18 +1214,15 @@ Daran hängen zwei Dinge:
   Schlüssel (2.4), Kommandos und Verzeichnisse zweier Rechner mischen sich
   nicht.
 
-**Die Shell-Integration gehört dem Cogno, das die Sitzung zeigt, und liegt
-auf dem Rechner, auf dem die Shell läuft.** Die Skripte stehen in
-`core/session/shells/`; `ShellIntegrationWriter` reicht sie mit ihrer Version
-an den Host (`InstallShellIntegration`), und der legt sie unter seinem
-`~/.cogno/shell-integration` ab, wenn die Version abweicht oder eine Datei
-fehlt. Lokal geschieht das beim Laden der Config, für einen entfernten Host
-beim Verbinden — er gilt erst als verbunden, wenn die Skripte liegen, damit
-keine Shell ohne sie startet. So passen Skripte und Auswertung immer
-zusammen, auch wenn auf dem anderen Rechner ein älteres Cogno installiert
-ist; nur die Protokollversion muss gleich sein. Die Pfade kommen über die
-Leitung: der Host nimmt nur relative Pfade unterhalb seines
-Integrationsverzeichnisses an.
+**Die Shell-Integration gehört dem Cogno, das die Shell startet.** Die
+Skripte stehen in `core/session/shells/`; `ShellIntegrationWriter` reicht sie
+beim Laden der Config mit ihrer Version an den Dienst dieses Rechners
+(`InstallShellIntegration`), und der legt sie unter `~/.cogno/shell-integration`
+ab, wenn die Version abweicht oder eine Datei fehlt. Die Pfade kommen über
+die Leitung: der Dienst nimmt nur relative Pfade unterhalb seines
+Integrationsverzeichnisses an. Auf einen anderen Rechner wird nichts gelegt:
+Cogno startet dort keine Shell, es zeigt nur, was das Cogno dort mit seinen
+eigenen Skripten gestartet hat.
 
 Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
 

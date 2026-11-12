@@ -11,10 +11,9 @@ const INTEGRATION_VERSION = "1.3.0";
 
 /**
  * Puts the shell integration scripts where a shell started with integration
- * sources them: `shell-integration` in the Cogno home of the machine the
- * shell runs on. The scripts are this Cogno's; the machine - this one or a
- * connected host - only lays them down, and leaves them alone when they are
- * there in this version already.
+ * sources them: `shell-integration` in the Cogno home of this machine. The
+ * scripts are this Cogno's; the host only lays them down, and leaves them
+ * alone when they are there in this version already.
  */
 @Injectable({ providedIn: "root" })
 export class ShellIntegrationWriter {
@@ -24,17 +23,15 @@ export class ShellIntegrationWriter {
   ) {}
 
   /**
-   * Makes sure the scripts of every supported shell are installed and current
-   * on `host`, this machine when none is named. Which shells exist there does
-   * not matter: a script for a shell that is not installed is a small file.
+   * Makes sure the scripts of every supported shell are installed and
+   * current. Which shells exist here does not matter: a script for a shell
+   * that is not installed is a small file.
    */
   async ensure(
     shellSupportDefinitions: ReadonlyArray<ShellSupportDefinitionContract>,
-    host?: string,
   ): Promise<void> {
     try {
       await this.hosts.installShellIntegration(
-        host,
         INTEGRATION_VERSION,
         this.filesOf(shellSupportDefinitions),
         this.environment.isDevMode(),
@@ -44,7 +41,7 @@ export class ShellIntegrationWriter {
         error,
         handled: true,
         source: "ShellIntegrationWriter",
-        context: { operation: "ensure", host },
+        context: { operation: "ensure" },
       });
       throw error;
     }
