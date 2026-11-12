@@ -62,6 +62,23 @@ describe("RunningSessionsService", () => {
     expect(service.unclaimed("office")).toEqual([session("t2")]);
   });
 
+  it("counts what a host said as current for a moment only", async () => {
+    vi.useFakeTimers();
+    try {
+      sessions.mockResolvedValue([]);
+      expect(service.isFresh("office")).toBe(false);
+
+      await service.refresh("office");
+      expect(service.isFresh("office")).toBe(true);
+      expect(service.isFresh(undefined)).toBe(false);
+
+      vi.advanceTimersByTime(5000);
+      expect(service.isFresh("office")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("has nothing to go on with when the host does not answer, and reports it", async () => {
     sessions.mockResolvedValueOnce([session("t1")]);
     await service.refresh();

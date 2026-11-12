@@ -130,8 +130,8 @@ type WaitingPane = {
 export class SessionHostFactory {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
   private readonly waiting = new Map<TerminalId, WaitingPane>();
-  /** The hosts whose running shells the user chose not to go on with. */
-  private readonly declinedHosts = new Set<string>();
+  /** The hosts whose running shells the user was asked about and answered. */
+  private readonly answeredHosts = new Set<string>();
 
   constructor(
     private readonly env: EnvironmentInjector,
@@ -168,11 +168,19 @@ export class SessionHostFactory {
       return undefined;
     }
     const running = this.runningSessions.take(shellProfile.host, terminalId);
-    if (!running && shellProfile.host && this.hasSessionsToOffer(shellProfile.host)) {
-      // Shells run there that nothing here shows: starting one more may not
-      // be what the user came for.
-      this.offerSessions(pane, terminalId, shellProfile.host);
-      return undefined;
+    if (!running && shellProfile.host) {
+      if (!this.runningSessions.isFresh(shellProfile.host)) {
+        // What runs there was last heard when the host connected, which may
+        // be hours ago.
+        this.askAgain(pane, terminalId, shellProfile.host);
+        return undefined;
+      }
+      if (this.hasSessionsToOffer(shellProfile.host)) {
+        // Shells run there that nothing here shows: starting one more may
+        // not be what the user came for.
+        this.offerSessions(pane, terminalId, shellProfile.host);
+        return undefined;
+      }
     }
     const sessionProfile = running ? profileOfRunning(shellProfile, running) : shellProfile;
 
@@ -310,14 +318,34 @@ export class SessionHostFactory {
     this.connect(terminalId, waiting);
   }
 
+  /** Asks the host what runs there now, then lets the pane decide again. */
+  private askAgain(pane: Pane, terminalId: TerminalId, host: string): void {
+    if (this.waiting.has(terminalId)) return;
+    const waiting: WaitingPane = { pane, host, state: { status: "connecting" } };
+    this.waiting.set(terminalId, waiting);
+    // Never rejects: a host that does not answer has nothing to go on with.
+    void this.runningSessions.refresh(host).then(() => this.proceed(terminalId, waiting));
+  }
+
+  /**
+   * The shells that run on the host and that this window does not show. A
+   * host can be this very machine, reached the long way round: its shells
+   * that a pane here shows already are nothing to go on with.
+   */
+  private sessionsToOffer(host: string): RunningSession[] {
+    return this.runningSessions
+      .unclaimed(host)
+      .filter((session) => !this.sessions.has(session.terminalId));
+  }
+
   private hasSessionsToOffer(host: string): boolean {
-    return !this.declinedHosts.has(host) && this.runningSessions.unclaimed(host).length > 0;
+    return !this.answeredHosts.has(host) && this.sessionsToOffer(host).length > 0;
   }
 
   /** The pane asks instead of starting a shell; see `HostConnectionComponent`. */
   private offerSessions(pane: Pane, terminalId: TerminalId, host: string): void {
     if (this.waiting.has(terminalId)) return;
-    const count = this.runningSessions.unclaimed(host).length;
+    const count = this.sessionsToOffer(host).length;
     this.waiting.set(terminalId, { pane, host, state: { status: "sessions", count } });
   }
 
@@ -326,7 +354,11 @@ export class SessionHostFactory {
    * the pane that asked has done its part and goes.
    */
   private goOnWithSessions(terminalId: TerminalId, waiting: WaitingPane): void {
-    this.runningSessions.unclaimed(waiting.host).forEach((session, index) => {
+    const sessions = this.sessionsToOffer(waiting.host);
+    // Answered, whatever becomes of the tabs: a tab that cannot show its
+    // shell after all must not ask the same question again.
+    this.answeredHosts.add(waiting.host);
+    sessions.forEach((session, index) => {
       this.bus.publish({
         type: "CreateTab",
         payload: {
@@ -399,7 +431,7 @@ export class SessionHostFactory {
       );
       view.instance.takeOver.subscribe(() => this.goOnWithSessions(terminalId, waiting));
       view.instance.startNew.subscribe(() => {
-        this.declinedHosts.add(waiting.host);
+        this.answeredHosts.add(waiting.host);
         this.proceed(terminalId, waiting);
       });
       this.appRef.attachView(view.hostView);
