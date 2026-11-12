@@ -5,6 +5,8 @@ import { TerminalId } from "@cogno/shared/domain";
 
 /** The key of this machine among the hosts. */
 const THIS_MACHINE = "";
+/** How long what a host said counts as what runs there now. */
+const FRESH_FOR_MS = 2000;
 
 /**
  * The shells that already run on a host and that no pane of this window
@@ -13,11 +15,13 @@ const THIS_MACHINE = "";
  * instead of starting one, and takes it off the list.
  *
  * The list of a host is as old as the last `refresh`: read when the app
- * starts (this machine) or connects (another one).
+ * starts (this machine) or connects (another one), and again before a new
+ * tab on a connected host decides what to do (`isFresh`).
  */
 @Injectable({ providedIn: "root" })
 export class RunningSessionsService {
   private readonly byHost = new Map<string, Map<TerminalId, RunningSession>>();
+  private readonly askedAt = new Map<string, number>();
 
   constructor(private readonly hosts: Hosts) {}
 
@@ -42,6 +46,14 @@ export class RunningSessionsService {
         context: { operation: "refresh", host },
       });
     }
+    // Asked, whatever the answer: asking again at once would say the same.
+    this.askedAt.set(host ?? THIS_MACHINE, Date.now());
+  }
+
+  /** Whether `host` was asked so recently that its list still holds. */
+  isFresh(host: string | undefined): boolean {
+    const askedAt = this.askedAt.get(host ?? THIS_MACHINE);
+    return askedAt !== undefined && Date.now() - askedAt < FRESH_FOR_MS;
   }
 
   /** The running shell of `terminalId` on `host`, which a pane now shows. */
