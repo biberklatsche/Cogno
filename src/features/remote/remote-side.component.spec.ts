@@ -2,24 +2,25 @@ import { signal } from "@angular/core";
 import type { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import type { Opener } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MachineShells, RemotePanelService } from "./remote-panel.service";
+import type { RemotePanelService } from "./remote-panel.service";
+import type { HostShells } from "./remote-shell-tree";
 import { RemoteSideComponent } from "./remote-side.component";
 
 describe("RemoteSideComponent", () => {
   let panel: {
     hosts: ReturnType<typeof signal<readonly RemoteHost[]>>;
-    shells: ReturnType<typeof signal<ReadonlyMap<string, MachineShells>>>;
+    shells: ReturnType<typeof signal<ReadonlyMap<string, HostShells>>>;
     failure: ReturnType<typeof signal<string | undefined>>;
     end: ReturnType<typeof vi.fn>;
     removeHost: ReturnType<typeof vi.fn>;
   };
   let component: RemoteSideComponent;
-  const shell: RemoteShell = { terminalId: "t1", shown: false, shownHere: false };
+  const shell: RemoteShell = { terminalId: "t1", shown: "nowhere" };
 
   beforeEach(() => {
     panel = {
       hosts: signal<readonly RemoteHost[]>([]),
-      shells: signal<ReadonlyMap<string, MachineShells>>(new Map()),
+      shells: signal<ReadonlyMap<string, HostShells>>(new Map()),
       failure: signal<string | undefined>(undefined),
       end: vi.fn().mockResolvedValue(undefined),
       removeHost: vi.fn().mockResolvedValue(undefined),
@@ -36,7 +37,7 @@ describe("RemoteSideComponent", () => {
 
     const [machine] = component.nodes();
 
-    expect(machine).toMatchObject({ kind: "machine", host: { name: "office" } });
+    expect(machine).toMatchObject({ kind: "host", host: { name: "office" } });
     expect(component.childrenOf(machine as never)).toHaveLength(1);
     expect(component.keyOf(machine as never)).toBe(machine?.key);
   });

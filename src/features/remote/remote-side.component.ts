@@ -3,11 +3,11 @@ import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import { Opener } from "@cogno/platform";
 import { IconComponent, TooltipDirective, TreeComponent, TreeRowDirective } from "@cogno/shared/ui";
 import { RemotePanelService } from "./remote-panel.service";
-import { machineNodes, RemoteTreeNode, shellName } from "./remote-shell-tree";
+import { hostNodes, RemoteTreeNode } from "./remote-shell-tree";
 
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
 
-/** The machine a form is about; `previousName` is set while one is changed. */
+/** The host a form is about; `previousName` is set while one is changed. */
 type HostForm = {
   readonly previousName?: string;
   readonly name: string;
@@ -95,18 +95,18 @@ type HostForm = {
         </form>
       }
 
-      @if (hosts().length === 0) {
+      @if (nodes().length === 0) {
         <div class="status">
           No remotes yet. Add the machine whose shells you want to go on with from here.
         </div>
       }
 
-      <!-- Machine, workspace, tab, shell. -->
-      <app-tree class="machines" [nodes]="nodes()" [childrenOf]="childrenOf" [keyOf]="keyOf">
+      <!-- Host, workspace, tab, shell. -->
+      <app-tree class="hosts" [nodes]="nodes()" [childrenOf]="childrenOf" [keyOf]="keyOf">
         <ng-template appTreeRow let-node let-toggle="toggle" let-open="open">
           @switch (node.kind) {
-            @case ("machine") {
-              <div class="machine-row" (mouseleave)="disarm()">
+            @case ("host") {
+              <div class="host-row" (mouseleave)="disarm()">
                 <span class="connection" [class]="node.host.connection"></span>
                 <span class="name" [appTooltip]="node.host.destination">{{ node.host.name }}</span>
                 @if (node.host.connection === "connected") {
@@ -166,23 +166,23 @@ type HostForm = {
                   type="button"
                   class="shell"
                   [appTooltip]="node.shell.directory ?? ''"
-                  (click)="show(node.host, node.shell)"
+                  (click)="show(node.hostName, node.shell)"
                 >
                   <app-icon class="shell-icon" name="mdiConsole"></app-icon>
-                  <span class="name">{{ nameOf(node.shell) }}</span>
-                  @if (node.shell.shownHere) {
+                  <span class="name">{{ node.name }}</span>
+                  @if (node.shell.shown === "here") {
                     <span class="shown here">Here</span>
-                  } @else if (node.shell.shown) {
+                  } @else if (node.shell.shown === "elsewhere") {
                     <span class="shown">On {{ node.shell.shownBy ?? "another Cogno" }}</span>
                   }
                 </button>
-                @if (!node.shell.shown) {
+                @if (node.shell.shown === "nowhere") {
                   <button
                     type="button"
                     class="button icon-button row-action danger"
                     [class.armed]="isArmed('end', node.shell.terminalId)"
                     [appTooltip]="isArmed('end', node.shell.terminalId) ? 'Click again to end it' : 'End the shell'"
-                    (click)="end(node.host, node.shell)"
+                    (click)="end(node.hostName, node.shell)"
                   >
                     <app-icon name="mdiClose"></app-icon>
                   </button>
@@ -270,8 +270,8 @@ type HostForm = {
       gap: 6px;
     }
 
-    /* Only the machines scroll; header and form stay in place. */
-    .machines {
+    /* Only the hosts scroll; header and form stay in place. */
+    .hosts {
       flex: 1;
       min-height: 0;
       overflow-x: hidden;
@@ -279,7 +279,7 @@ type HostForm = {
     }
 
     /* A line fills what the tree leaves next to its arrow. */
-    .machine-row,
+    .host-row,
     .shell-row {
       flex: 1;
       min-width: 0;
@@ -289,7 +289,7 @@ type HostForm = {
       min-height: 26px;
     }
 
-    .machine-row > .name {
+    .host-row > .name {
       font-weight: 600;
     }
 
@@ -350,8 +350,8 @@ type HostForm = {
       height: 14px;
     }
 
-    .machine-row:hover > .row-action,
-    .machine-row:focus-within > .row-action,
+    .host-row:hover > .row-action,
+    .host-row:focus-within > .row-action,
     .shell-row:hover > .row-action,
     .shell-row:focus-within > .row-action,
     .row-action.armed {
@@ -416,15 +416,14 @@ type HostForm = {
   `,
 })
 export class RemoteSideComponent {
-  readonly hosts = this.panel.hosts;
   readonly failure = this.panel.failure;
   readonly form = signal<HostForm | null>(null);
 
   /** The action that the next click on the same button carries out. */
   private readonly armed = signal<string | null>(null);
 
-  /** The tree the panel shows: the machines with what runs on them. */
-  readonly nodes = computed(() => machineNodes(this.panel.hosts(), this.panel.shells()));
+  /** The tree the panel shows: the hosts with what runs on them. */
+  readonly nodes = computed(() => hostNodes(this.panel.hosts(), this.panel.shells()));
   readonly childrenOf = (node: RemoteTreeNode): readonly RemoteTreeNode[] => node.children;
   readonly keyOf = (node: RemoteTreeNode): string => node.key;
 
@@ -432,10 +431,6 @@ export class RemoteSideComponent {
     private readonly panel: RemotePanelService,
     private readonly opener: Opener,
   ) {}
-
-  nameOf(shell: RemoteShell): string {
-    return shellName(shell);
-  }
 
   isArmed(action: string, target: string): boolean {
     return this.armed() === `${action}:${target}`;

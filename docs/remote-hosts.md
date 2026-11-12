@@ -53,7 +53,8 @@ shell. Each level folds away with its arrow.
 - A shell without a mark is shown by nobody right now. It can be ended with
   the `x` next to it; the second click confirms.
 - The pencil changes a remote, the bin removes it (second click confirms).
-  The panel reads the shells when it opens and when you press Refresh.
+  The panel reads the shells when it opens, when a remote connects and when
+  you press Refresh.
 
 Closing such a tab only lets the shell go: it runs on in the Cogno it belongs
 to, and you can show it here again from the panel. To end a shell of another
@@ -306,7 +307,7 @@ last megabyte), not a picture of the old window:
 |---|---|
 | Works | The terminal itself, prompt markers, working directory, command history (kept apart per machine), autocomplete from history, the process panel |
 | Not yet | The Git panel, path completion from the file system, coding-agent status, `cogno action run` typed in that shell |
-| When the connection breaks | The host's tabs close and Cogno tells you. Their shells end, unless they were started with `terminal.keep_shells_running`: then they run on and you can go on with them after connecting again. |
+| When the connection breaks | The host's tabs close and Cogno tells you. The shells run on there, whatever `terminal.keep_shells_running` says on either machine: a shell shown from another machine never ends with it. Connect again to go on with them; a Cogno there that showed one gets it back by itself. |
 
 ## When connecting fails
 
@@ -323,6 +324,6 @@ last megabyte), not a picture of the old window:
 
 | | |
 |---|---|
-| Windows as the other machine, ssh server with `cmd.exe` as default shell | Tested: connection through the starter, shell start, input, output, end, and that hanging up ends the shell |
+| Windows as the other machine, ssh server with `cmd.exe` as default shell | Tested: connection through the starter, showing and taking over a shell, input, output, and that hanging up leaves the shell running and gives it back to the Cogno that showed it |
 | The start command run through Windows PowerShell and PowerShell 7 | Tested, by starting it through `powershell -c` and `pwsh -c` over ssh. Not tested with the registry setting itself. |
 | macOS or Linux as the other machine | Not tested yet |

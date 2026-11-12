@@ -9,7 +9,7 @@ function host(name: string, connection: RemoteHost["connection"]): RemoteHost {
 }
 
 function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): RemoteShell {
-  return { terminalId, shown: true, shownHere: false, ...overrides };
+  return { terminalId, shown: "elsewhere", ...overrides };
 }
 
 /** Lets what was answered arrive. */
@@ -22,7 +22,7 @@ describe("RemotePanelService", () => {
   let port: {
     [K in
       | "shells"
-      | "open"
+      | "show"
       | "end"
       | "connect"
       | "disconnect"
@@ -35,7 +35,7 @@ describe("RemotePanelService", () => {
     hosts$ = new BehaviorSubject<readonly RemoteHost[]>([host("office", "disconnected")]);
     port = {
       shells: vi.fn().mockResolvedValue([]),
-      open: vi.fn().mockResolvedValue(undefined),
+      show: vi.fn().mockResolvedValue(undefined),
       end: vi.fn().mockResolvedValue(undefined),
       connect: vi.fn().mockResolvedValue(undefined),
       disconnect: vi.fn().mockResolvedValue(undefined),
@@ -112,6 +112,51 @@ describe("RemotePanelService", () => {
       expect(service.shells().size).toBe(0);
     });
 
+    it("takes only the newest answer, also when an older one comes last", async () => {
+      const answers: ((shells: RemoteShell[]) => void)[] = [];
+      port.shells.mockImplementation(() => new Promise((resolve) => answers.push(resolve)));
+      service.open();
+      service.refresh();
+
+      answers[1]?.([shell("new")]);
+      await settled();
+      answers[0]?.([shell("old")]);
+      await settled();
+
+      expect(service.shells().get("office")).toEqual({ status: "loaded", shells: [shell("new")] });
+    });
+
+    it("does not take an answer asked before the panel closed", async () => {
+      const answers: ((shells: RemoteShell[]) => void)[] = [];
+      port.shells.mockImplementation(() => new Promise((resolve) => answers.push(resolve)));
+      service.open();
+      service.close();
+      service.open();
+
+      answers[0]?.([shell("before")]);
+      await settled();
+
+      expect(service.shells().get("office")).toEqual({ status: "loading" });
+    });
+
+    it("keeps a shell shown here that an answer from before showing it would undo", async () => {
+      port.shells.mockResolvedValueOnce([shell("t1")]);
+      service.open();
+      await settled();
+      let stale!: (shells: RemoteShell[]) => void;
+      port.shells.mockReturnValueOnce(new Promise((resolve) => (stale = resolve)));
+      service.refresh();
+
+      await service.show("office", shell("t1"));
+      stale([shell("t1")]);
+      await settled();
+
+      expect(service.shells().get("office")).toEqual({
+        status: "loaded",
+        shells: [shell("t1", { shown: "here", shownBy: undefined })],
+      });
+    });
+
     it("marks a shell as shown here once it was opened", async () => {
       port.shells.mockResolvedValue([shell("t1", { shownBy: "office-pc" }), shell("t2")]);
       service.open();
@@ -119,10 +164,10 @@ describe("RemotePanelService", () => {
 
       await service.show("office", shell("t1"));
 
-      expect(port.open).toHaveBeenCalledWith("office", "t1");
+      expect(port.show).toHaveBeenCalledWith("office", "t1");
       expect(service.shells().get("office")).toEqual({
         status: "loaded",
-        shells: [shell("t1", { shownHere: true, shownBy: undefined }), shell("t2")],
+        shells: [shell("t1", { shown: "here", shownBy: undefined }), shell("t2")],
       });
     });
 

@@ -1,17 +1,30 @@
 import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
-import { MachineShells } from "./remote-panel.service";
 
-/** The shells of one tab, as the Cogno they belong to calls it. */
-export type ShellTab = {
-  readonly name: string;
-  readonly shells: readonly RemoteShell[];
-};
+/** What is known of the shells of one host. */
+export type HostShells =
+  | { readonly status: "loading" }
+  | { readonly status: "loaded"; readonly shells: readonly RemoteShell[] }
+  | { readonly status: "failed"; readonly reason: string };
 
-/** The tabs of one workspace. */
-export type ShellGroup = {
-  readonly name: string;
-  readonly tabs: readonly ShellTab[];
-};
+/**
+ * A line of the panel's tree: a host, under it its workspaces, their tabs
+ * and the shells - or a line that says why there is nothing to show yet.
+ */
+export type RemoteTreeNode = {
+  readonly key: string;
+  readonly children: readonly RemoteTreeNode[];
+} & (
+  | { readonly kind: "host"; readonly host: RemoteHost }
+  | { readonly kind: "workspace" | "tab"; readonly name: string }
+  | {
+      readonly kind: "shell";
+      readonly hostName: string;
+      readonly shell: RemoteShell;
+      /** What the shell is called in the tree. */
+      readonly name: string;
+    }
+  | { readonly kind: "status"; readonly text: string; readonly failure: boolean }
+);
 
 const NO_WORKSPACE = "No workspace";
 
@@ -25,79 +38,21 @@ function lastSegment(directory: string | undefined): string | undefined {
   return segments?.at(-1) ?? directory;
 }
 
-/**
- * Sorts a machine's shells into workspace, tab and shell, the way the Cogno
- * they belong to shows them. A shell that nothing shows right now stays where
- * it was: its Cogno is closed, or it let the shell go.
- */
-export function groupShells(shells: readonly RemoteShell[]): ShellGroup[] {
-  const workspaces = new Map<string, Map<string, RemoteShell[]>>();
-  for (const shell of shells) {
-    const tabs = getOrAdd(workspaces, shell.workspace ?? NO_WORKSPACE, () => new Map());
-    getOrAdd(tabs, shell.tab ?? "", () => []).push(shell);
-  }
-  return sortedByName(workspaces).map(([name, tabs]) => ({
-    name,
-    tabs: sortedByName(tabs).map(([tabName, tabShells]) => ({
-      name: tabName,
-      shells: sortedShells(tabShells),
-    })),
-  }));
-}
-
-function getOrAdd<K, V>(map: Map<K, V>, key: K, create: () => V): V {
-  let value = map.get(key);
-  if (value === undefined) {
-    value = create();
-    map.set(key, value);
-  }
-  return value;
-}
-
-function sortedByName<V>(map: Map<string, V>): [string, V][] {
-  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-}
-
-function sortedShells(shells: readonly RemoteShell[]): RemoteShell[] {
-  return [...shells].sort(
-    (a, b) => shellName(a).localeCompare(shellName(b)) || a.terminalId.localeCompare(b.terminalId),
-  );
-}
-
-/**
- * A line of the panel's tree: a machine, under it its workspaces, their tabs
- * and the shells - or a line that says why there is nothing to show yet.
- */
-export type RemoteTreeNode = {
-  readonly key: string;
-  readonly children: readonly RemoteTreeNode[];
-} & (
-  | { readonly kind: "machine"; readonly host: RemoteHost }
-  | { readonly kind: "workspace" | "tab"; readonly name: string }
-  | { readonly kind: "shell"; readonly host: string; readonly shell: RemoteShell }
-  | { readonly kind: "status"; readonly text: string; readonly failure: boolean }
-);
-
-function keyOf(...path: string[]): string {
-  return JSON.stringify(path);
-}
-
-function status(host: string, text: string, failure = false): RemoteTreeNode {
-  return { kind: "status", key: keyOf("status", host), text, failure, children: [] };
-}
-
-function shellNodes(host: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
-  return shells.map((shell) => ({
-    kind: "shell",
-    key: keyOf("shell", host, shell.terminalId),
+/** The panel's tree: every host of the config, with what is known of its shells. */
+export function hostNodes(
+  hosts: readonly RemoteHost[],
+  shells: ReadonlyMap<string, HostShells>,
+): RemoteTreeNode[] {
+  return hosts.map((host) => ({
+    kind: "host",
+    key: keyOf("host", host.name),
     host,
-    shell,
-    children: [],
+    children: underHost(host, shells.get(host.name)),
   }));
 }
 
-/** What stands under a machine: its shells, or how far getting them is. */
-function underMachine(host: RemoteHost, shells: MachineShells | undefined): RemoteTreeNode[] {
+/** What stands under a host: its shells, or how far getting them is. */
+function underHost(host: RemoteHost, shells: HostShells | undefined): RemoteTreeNode[] {
   switch (host.connection) {
     case "disconnected":
       return [];
@@ -115,35 +70,74 @@ function underMachine(host: RemoteHost, shells: MachineShells | undefined): Remo
   if (shells.shells.length === 0) {
     return [status(host.name, "No shells are running.")];
   }
-  return groupShells(shells.shells).map((group) => ({
+  return workspaceNodes(host.name, shells.shells);
+}
+
+/**
+ * A host's shells under workspace and tab, the way the Cogno they belong to
+ * shows them, each level sorted by name. A shell that said no tab stands
+ * under its workspace directly. A shell that nothing shows right now stays
+ * where it was: its Cogno is closed, or it let the shell go.
+ */
+function workspaceNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
+  const workspaces = new Map<string, Map<string, RemoteShell[]>>();
+  for (const shell of shells) {
+    const tabs = getOrAdd(workspaces, shell.workspace ?? NO_WORKSPACE, () => new Map());
+    getOrAdd(tabs, shell.tab ?? "", () => []).push(shell);
+  }
+  return sortedByName(workspaces).map(([workspace, tabs]) => ({
     kind: "workspace",
-    key: keyOf("workspace", host.name, group.name),
-    name: group.name,
-    // Shells that said no tab stand under their workspace directly.
-    children: group.tabs.flatMap((tab): RemoteTreeNode[] =>
-      tab.name === ""
-        ? shellNodes(host.name, tab.shells)
+    key: keyOf("workspace", hostName, workspace),
+    name: workspace,
+    children: sortedByName(tabs).flatMap(([tab, tabShells]): RemoteTreeNode[] =>
+      tab === ""
+        ? shellNodes(hostName, tabShells)
         : [
             {
               kind: "tab",
-              key: keyOf("tab", host.name, group.name, tab.name),
-              name: tab.name,
-              children: shellNodes(host.name, tab.shells),
+              key: keyOf("tab", hostName, workspace, tab),
+              name: tab,
+              children: shellNodes(hostName, tabShells),
             },
           ],
     ),
   }));
 }
 
-/** The panel's tree: every machine of the config, with what is known of its shells. */
-export function machineNodes(
-  hosts: readonly RemoteHost[],
-  shells: ReadonlyMap<string, MachineShells>,
-): RemoteTreeNode[] {
-  return hosts.map((host) => ({
-    kind: "machine",
-    key: keyOf("machine", host.name),
-    host,
-    children: underMachine(host, shells.get(host.name)),
-  }));
+function shellNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
+  return shells
+    .map((shell) => ({ shell, name: shellName(shell) }))
+    .sort(
+      (a, b) =>
+        a.name.localeCompare(b.name) || a.shell.terminalId.localeCompare(b.shell.terminalId),
+    )
+    .map(({ shell, name }) => ({
+      kind: "shell",
+      key: keyOf("shell", hostName, shell.terminalId),
+      hostName,
+      shell,
+      name,
+      children: [],
+    }));
+}
+
+function status(hostName: string, text: string, failure = false): RemoteTreeNode {
+  return { kind: "status", key: keyOf("status", hostName), text, failure, children: [] };
+}
+
+function keyOf(...path: string[]): string {
+  return JSON.stringify(path);
+}
+
+function getOrAdd<K, V>(map: Map<K, V>, key: K, create: () => V): V {
+  let value = map.get(key);
+  if (value === undefined) {
+    value = create();
+    map.set(key, value);
+  }
+  return value;
+}
+
+function sortedByName<V>(map: Map<string, V>): [string, V][] {
+  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
