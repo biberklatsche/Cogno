@@ -14,7 +14,7 @@ import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { TerminalInputWriter } from "../editor/input-writer";
 import { CommandLineBuffer } from "../model/command-line.buffer";
 import type { SessionModel, TerminalInput } from "../model/session-model";
-import { ClipboardHandler } from "./clipboard.handler";
+import { CLIPBOARD_ANSWER_WINDOW_MS, ClipboardHandler } from "./clipboard.handler";
 
 function makeConfigService(
   overrides: {
@@ -436,6 +436,34 @@ describe("ClipboardHandler", () => {
           await vi.waitFor(() => expect(mockPty.write).toHaveBeenCalledWith("\x1b]52;c;\x07"));
 
           expect(mockStateManager.report).toHaveBeenCalledTimes(1);
+        });
+
+        it("lets the question expire: a late answer writes nothing", async () => {
+          vi.useFakeTimers();
+          try {
+            triggerOsc52("c;?");
+            vi.advanceTimersByTime(CLIPBOARD_ANSWER_WINDOW_MS);
+
+            expect(mockStateManager.report).toHaveBeenLastCalledWith({
+              type: "clipboardReadExpired",
+            });
+            await handler.answerClipboardRead(true);
+            expect(clipboardStub.readText).not.toHaveBeenCalled();
+            expect(mockPty.write).not.toHaveBeenCalled();
+          } finally {
+            vi.useRealTimers();
+          }
+        });
+
+        it("writes nothing once the command that asked has ended", async () => {
+          mockStateManager.isCommandRunning = true;
+          triggerOsc52("c;?");
+          mockStateManager.isCommandRunning = false;
+
+          await handler.answerClipboardRead(true);
+
+          expect(clipboardStub.readText).not.toHaveBeenCalled();
+          expect(mockPty.write).not.toHaveBeenCalled();
         });
 
         it("ignores an answer nobody asked for", async () => {

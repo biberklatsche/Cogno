@@ -297,7 +297,10 @@ export const TauriPty = {
   terminateProcess(terminalId: string, processId: number) {
     return invoke<void>("pty_terminate_process", { terminalId, processId });
   },
-  /** Ends everything the terminal's shell is running; the shell itself stays. */
+  /**
+   * Ends what runs in the foreground of the terminal; the shell and its
+   * background jobs stay. On Windows everything under the shell ends.
+   */
   terminateProcesses(terminalId: string) {
     return invoke<void>("pty_terminate_processes", { terminalId });
   },

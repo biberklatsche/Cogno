@@ -889,7 +889,7 @@ export class SessionHost {
     return TauriPty.terminateProcess(terminalId, processId);
   }
 
-  /** Ends everything the session's shell is running; the shell itself stays. */
+  /** Ends what runs in the foreground of the session; the shell and its background jobs stay. */
   terminateProcesses(): Promise<void> {
     const terminalId = this.terminalId;
     if (!terminalId) {

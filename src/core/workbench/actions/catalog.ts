@@ -166,12 +166,13 @@ export const coreActionCatalog = [
     label: "Send Text",
     description:
       "Write the text after `send_text:` to the terminal as if typed. Escapes: `\\xHH` " +
-      "(a byte, `\\x03` is Ctrl+C), `\\e` (escape), `\\r` (enter), `\\n`, `\\t`, `\\\\`",
+      "(an ASCII character, `\\x03` is Ctrl+C), `\\e` (escape), `\\r` (enter), `\\n`, `\\t`, `\\\\`",
   }),
   defineAction({
     name: "terminate_processes",
     label: "Terminate Processes",
-    description: "End everything the terminal's shell is running; the shell itself stays",
+    description:
+      "End what runs in the foreground of the terminal; the shell and its background jobs stay",
   }),
   defineAction({
     name: "close_other_tabs",

@@ -79,7 +79,7 @@ export class LinkHandler implements ITerminalHandler {
       activate: (event, uri) => {
         event.preventDefault();
         if (this.isOpenModifierPressed(event)) {
-          this.openHyperlink(uri);
+          void this.openHyperlink(uri);
         } else {
           void this.copy(uri);
         }
@@ -160,9 +160,11 @@ export class LinkHandler implements ITerminalHandler {
   /**
    * Opens the target of an OSC 8 hyperlink: web and mail addresses as they
    * are, a `file:` link as a path of this session (`ls --hyperlink`), so it
-   * goes through the same translation as a path printed in the output.
+   * goes through the same translation as a path printed in the output. A
+   * `file:` link names the machine the file is on; one from another machine
+   * (an SSH session) is not opened - the same path here is a different file.
    */
-  private openHyperlink(uri: string): void {
+  private async openHyperlink(uri: string): Promise<void> {
     let url: URL;
     try {
       url = new URL(uri);
@@ -170,13 +172,14 @@ export class LinkHandler implements ITerminalHandler {
       return;
     }
     if (HYPERLINK_URL_PROTOCOLS.has(url.protocol)) {
-      void this._opener.openUrl(uri);
+      await this._opener.openUrl(uri).catch(() => undefined);
       return;
     }
-    if (url.protocol !== "file:") return;
+    if (url.protocol !== "file:" || !(await this.isThisMachine(url.hostname))) return;
     let path: string;
     try {
-      path = decodeURIComponent(url.pathname);
+      // `file:///C:/dir` has the path `/C:/dir`: the drive is not below a root.
+      path = decodeURIComponent(url.pathname).replace(/^\/(?=[A-Za-z]:)/, "");
     } catch {
       return;
     }
@@ -186,7 +189,12 @@ export class LinkHandler implements ITerminalHandler {
       this._model.pathAdapter,
     );
     if (!backendPath) return;
-    void this._opener.openPath(backendPath);
+    await this._opener.openPath(backendPath).catch(() => undefined);
+  }
+
+  private async isThisMachine(host: string): Promise<boolean> {
+    if (host === "" || host === "localhost") return true;
+    return (await this._os.hostname())?.toLowerCase() === host.toLowerCase();
   }
 
   /**

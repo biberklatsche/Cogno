@@ -126,15 +126,8 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
                   <app-icon name="mdiUndoVariant"></app-icon>
                 </button>
               </header>
-              <p class="description">
-                @for (part of row.descriptionParts; track $index) {
-                  @if (part.code) {
-                    <code>{{ part.text }}</code>
-                  } @else {
-                    {{ part.text }}
-                  }
-                }
-              </p>
+              <!-- On one line: a line break between the parts would show as a space around every code span. -->
+              <p class="description">@for (part of row.descriptionParts; track $index) {@if (part.code) {<code>{{ part.text }}</code>} @else {<span>{{ part.text }}</span>}}</p>
               @if (errors()[row.key]; as error) {
                 <p class="error">{{ error }}</p>
               } @else if (row.modified && row.default !== undefined) {

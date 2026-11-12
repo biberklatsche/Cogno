@@ -37,8 +37,8 @@ Every action, its description and default keybinding. `-` means no default keybi
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
 | `clear_buffer` | Clear the terminal scrollback buffer | Ctrl+Alt+C | Command+Alt+C |
-| `send_text` | Write the text after `send_text:` to the terminal as if typed. Escapes: `\xHH` (a byte, `\x03` is Ctrl+C), `\e` (escape), `\r` (enter), `\n`, `\t`, `\\` | - | - |
-| `terminate_processes` | End everything the terminal's shell is running; the shell itself stays | - | - |
+| `send_text` | Write the text after `send_text:` to the terminal as if typed. Escapes: `\xHH` (an ASCII character, `\x03` is Ctrl+C), `\e` (escape), `\r` (enter), `\n`, `\t`, `\\` | - | - |
+| `terminate_processes` | End what runs in the foreground of the terminal; the shell and its background jobs stay | - | - |
 | `clear_line` | Clear the current input line | Ctrl+Y | Command+Y |
 | `clear_line_to_end` | Delete from the cursor to the end of the line | Ctrl+K | Command+K |
 | `clear_line_to_start` | Delete from the cursor to the start of the line | Ctrl+L | Command+L |

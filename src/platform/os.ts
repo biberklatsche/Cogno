@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { type as tauriType } from "@tauri-apps/plugin-os";
+import { hostname as tauriHostname, type as tauriType } from "@tauri-apps/plugin-os";
 
 export type OsType = "linux" | "windows" | "macos";
 
@@ -47,6 +47,15 @@ export class OsPlatform {
       throw Error(`Unknown OS type: ${rawPlatform}`);
     } catch {
       return getFallbackPlatform();
+    }
+  }
+
+  /** This machine's host name; undefined when the system does not tell. */
+  async hostname(): Promise<string | undefined> {
+    try {
+      return (await tauriHostname()) ?? undefined;
+    } catch {
+      return undefined;
     }
   }
 }

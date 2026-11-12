@@ -23,4 +23,8 @@ describe("decodeSendTextEscapes", () => {
   it("leaves an unknown or incomplete escape as written", () => {
     expect(decodeSendTextEscapes("C:\\dir \\x4 \\q")).toBe("C:\\dir \\x4 \\q");
   });
+
+  it("leaves a code above ASCII as written: it would not arrive as one byte", () => {
+    expect(decodeSendTextEscapes("\\x7f\\x80\\xff")).toBe("\x7f\\x80\\xff");
+  });
 });
