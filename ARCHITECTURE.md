@@ -1070,7 +1070,9 @@ dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
   Neuladen der Webview.
 - Ein Pane eines anderen Rechners (`Pane.host`, unten) dockt **nur** an: Es
   zeigt eine Shell, die dort läuft, und startet nie eine. Läuft sie nicht
-  mehr, sagt es das. Das Layout des anderen Fensters wandert nicht mit; jede
+  mehr, sagt es das. Wird es geschlossen, lässt es die Shell nur los
+  (`PtyDetach`): Sie gehört dem Cogno dort. Die Regel „ein geschlossener Tab
+  beendet seine Shell" gilt für die Shells dieses Rechners. Das Layout des anderen Fensters wandert nicht mit; jede
   Shell bekommt hier einen eigenen Tab.
 - Übernimmt ein anderes Cogno eine Sitzung, wird sie hier `takenOver`
   (Runtime-Achse, 2.3) und nennt, wo sie jetzt gezeigt wird: die Shell läuft

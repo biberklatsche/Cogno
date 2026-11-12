@@ -276,9 +276,10 @@ impl Hosts {
             return self.local()?.request(request);
         };
         let connection = self.connection_of(&terminal_id)?;
-        let killed = matches!(request, Request::PtyKill { .. });
+        // Ended or let go: either way this app no longer shows it.
+        let gone = matches!(request, Request::PtyKill { .. } | Request::PtyDetach { .. });
         let reply = connection.request(request);
-        if killed {
+        if gone {
             self.terminals.lock().unwrap().remove(&terminal_id);
         }
         reply

@@ -134,6 +134,7 @@ pub fn run(cli: Cli) {
             crate::commands::pty::pty_write,
             crate::commands::pty::pty_execute_line_editor_action,
             crate::commands::pty::pty_resize,
+            crate::commands::pty::pty_detach,
             crate::commands::pty::pty_kill,
             crate::commands::pty::pty_ack,
             crate::commands::processes::pty_get_process_tree_by_terminal_id,

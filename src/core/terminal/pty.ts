@@ -171,7 +171,7 @@ export class Pty implements IPty {
       // id replaced it backend-side already.)
       spawn.closeOutput();
       if (this._disposed || this._terminalId !== terminalId) {
-        this.killSession(terminalId);
+        this.endSession(terminalId);
       }
       return;
     }
@@ -203,6 +203,21 @@ export class Pty implements IPty {
   kill(signal?: string): void {
     if (!this._terminalId) return;
     this.killSession(this._terminalId, signal);
+  }
+
+  /**
+   * This terminal is done with the session. A shell of this machine ends
+   * with its terminal. One of another machine belongs to the Cogno there
+   * and is only let go: it runs on, for that Cogno or this one to show again.
+   */
+  private endSession(terminalId: string): void {
+    if (this._host === undefined) {
+      this.killSession(terminalId);
+      return;
+    }
+    this._transport
+      .detach(terminalId)
+      .catch((error) => this.reportFault({ operation: "detach", error, context: { terminalId } }));
   }
 
   private killSession(terminalId: string, signal?: string): void {
@@ -279,9 +294,9 @@ export class Pty implements IPty {
 
   dispose(): void {
     this._disposed = true;
-    // While a spawn is still in flight there is no session to kill yet; the
-    // spawn continuation kills it as soon as it exists.
-    if (this._spawned) this.kill();
+    // While a spawn is still in flight there is no session to end yet; the
+    // spawn continuation ends it as soon as it exists.
+    if (this._spawned && this._terminalId) this.endSession(this._terminalId);
     this._spawned = false;
     this._pendingResize = undefined;
     this._spawn?.closeOutput();

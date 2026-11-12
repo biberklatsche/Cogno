@@ -9,7 +9,7 @@ const remoteFeatureId = "remote";
 const remoteSideMenuFeatureDefinition = {
   id: remoteFeatureId,
   title: "Remote",
-  icon: "mdiLaptop",
+  icon: "mdiConnection",
   order: 90,
   actionName: "open_remote",
   configPath: "feature.remote",
