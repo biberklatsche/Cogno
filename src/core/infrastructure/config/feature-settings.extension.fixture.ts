@@ -5,6 +5,7 @@ import {
   FeatureGitSchema,
   FeatureNotificationOverviewSchema,
   FeatureProcessInfoSchema,
+  FeatureRemoteSchema,
   FeatureSearchSchema,
   FeatureWorkspaceSchema,
 } from "@cogno/core/api/contributions";
@@ -27,6 +28,7 @@ export const featureSettingsExtensionFixture = {
         search: FeatureSearchSchema.optional(),
         git: FeatureGitSchema.optional(),
         process_info: FeatureProcessInfoSchema.optional(),
+        remote: FeatureRemoteSchema.optional(),
         coding_agents: FeatureCodingAgentsSchema.optional(),
       })
       .optional(),
