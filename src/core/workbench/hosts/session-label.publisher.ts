@@ -3,7 +3,7 @@ import { TerminalPlacementPort } from "@cogno/core/api/terminal-placement-port";
 import { PtyTransport } from "@cogno/platform";
 import { PtyLabelContract } from "@cogno/platform/pty";
 import { TerminalId } from "@cogno/shared/domain";
-import { debounceTime, filter, merge, Subject, Subscription } from "rxjs";
+import { debounceTime, merge, Subject, Subscription } from "rxjs";
 import { TerminalSessionRegistry } from "../terminal/+state/terminal-session.registry";
 
 /** A label changes in bursts (a workspace is restored, a prompt returns). */
@@ -35,6 +35,12 @@ export class SessionLabelPublisher {
       .pipe(debounceTime(SETTLE_MS))
       .subscribe(() => this.publish());
     subscription.add(this.sessions.changes$.subscribe(() => this.watchSessions()));
+    subscription.add(
+      this.sessions.facts$.subscribe(({ terminalId, fact }) => {
+        if (fact.type === "titleChanged") this.titles.set(terminalId, fact.title);
+        if (fact.type === "titleChanged" || fact.type === "cwdReported") this.changed.next();
+      }),
+    );
     destroyRef.onDestroy(() => {
       subscription.unsubscribe();
       for (const watching of this.watched.values()) watching.unsubscribe();
@@ -53,16 +59,11 @@ export class SessionLabelPublisher {
     }
     for (const { terminalId, host } of this.sessions.entries) {
       if (this.watched.has(terminalId)) continue;
-      const watching = host.runtime$.subscribe(() => this.changed.next());
-      watching.add(
-        host.facts$
-          .pipe(filter((fact) => fact.type === "titleChanged" || fact.type === "cwdReported"))
-          .subscribe((fact) => {
-            if (fact.type === "titleChanged") this.titles.set(terminalId, fact.title);
-            this.changed.next();
-          }),
+      // A shell is labelled once it runs; the runtime is no fact.
+      this.watched.set(
+        terminalId,
+        host.runtime$.subscribe(() => this.changed.next()),
       );
-      this.watched.set(terminalId, watching);
     }
   }
 

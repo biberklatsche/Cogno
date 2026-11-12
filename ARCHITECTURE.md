@@ -1072,7 +1072,9 @@ Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
 
 **Andocken im Frontend.** Die Workbench fragt einen Host, welche Sitzungen
 dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
-(App-Initializer in `bootstrap/`), einen entfernten beim Verbinden.
+(beim Start der Workspaces, nicht vor dem ersten Bild: den Dienst zu starten
+kann dauern), einen entfernten beim Verbinden. Wer fragt, während eine
+Antwort unterwegs ist, bekommt dieselbe.
 
 - Ein Pane, dessen Terminal-ID darunter ist, bekommt eine Sitzung, die
   **andockt statt startet** (`SessionHost.resume`): mit dem Token, mit dem die

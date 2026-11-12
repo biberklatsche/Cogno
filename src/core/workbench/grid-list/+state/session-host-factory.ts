@@ -172,19 +172,18 @@ export class SessionHostFactory {
     const shellProfile = this.shellProfileFor(pane);
     const remote = pane.host === undefined ? undefined : this.remoteHosts.info(pane.host);
     if (pane.host !== undefined && !remote) {
-      this.waitFor(pane, terminalId, pane.host, "connect");
+      this.waitFor(pane, terminalId, pane.host, (waiting) => this.connect(terminalId, waiting));
       return undefined;
     }
-    const backend: SessionBackend =
-      pane.host !== undefined && remote
-        ? { host: pane.host, os: remote.os }
-        : { os: this.os.platform() };
+    const backend: SessionBackend = remote
+      ? { host: pane.host, os: remote.os }
+      : { os: this.os.platform() };
     const running = this.runningSessions.take(pane.host, terminalId);
     if (!running && pane.host !== undefined) {
       if (!this.runningSessions.isFresh(pane.host)) {
         // What runs there was last heard when the host connected, which may
         // be hours ago.
-        this.waitFor(pane, terminalId, pane.host, "look");
+        this.waitFor(pane, terminalId, pane.host, (waiting) => this.lookAgain(terminalId, waiting));
         return undefined;
       }
       this.waiting.set(terminalId, { pane, host: pane.host, state: { status: "gone" } });
@@ -253,7 +252,6 @@ export class SessionHostFactory {
     return entry;
   }
 
-  /** Puts the pane's view into `hostElement`, creating it the first time. */
   /** The keybindings of the session `terminalId`, for central action dispatch. */
   getSessionKeybindings(terminalId: TerminalId): SessionKeybindings | undefined {
     return this.sessions.get(terminalId)?.keybindings;
@@ -328,20 +326,13 @@ export class SessionHostFactory {
     pane: Pane,
     terminalId: TerminalId,
     host: string,
-    first: "connect" | "look",
+    start: (waiting: WaitingPane) => void,
   ): void {
     if (this.waiting.has(terminalId)) return;
-    const waiting: WaitingPane = {
-      pane,
-      host,
-      state: { status: first === "connect" ? "connecting" : "looking" },
-    };
+    // `start` says what it waits for first.
+    const waiting: WaitingPane = { pane, host, state: { status: "connecting" } };
     this.waiting.set(terminalId, waiting);
-    if (first === "connect") {
-      this.connect(terminalId, waiting);
-    } else {
-      this.lookAgain(terminalId, waiting);
-    }
+    start(waiting);
   }
 
   private lookAgain(terminalId: TerminalId, waiting: WaitingPane): void {
@@ -364,10 +355,15 @@ export class SessionHostFactory {
     if (this.waiting.get(terminalId) !== waiting) return;
     this.waiting.delete(terminalId);
     this.removeWaitingView(waiting);
-    if (waiting.dock) {
-      this.attach(waiting.pane, waiting.dock);
+    this.reopen(waiting.pane, waiting.dock);
+  }
+
+  /** The pane gets its session again: on screen where it was, if it was. */
+  private reopen(pane: Pane, dock: HTMLElement | undefined): void {
+    if (dock) {
+      this.attach(pane, dock);
     } else {
-      this.ensureSession(waiting.pane);
+      this.ensureSession(pane);
     }
   }
 
@@ -388,11 +384,7 @@ export class SessionHostFactory {
     if (this.sessions.get(terminalId) !== entry) return;
     // The terminal stays: features must not hear that it went.
     this.endSession(terminalId, false);
-    if (dock) {
-      this.attach(entry.pane, dock);
-    } else {
-      this.ensureSession(entry.pane);
-    }
+    this.reopen(entry.pane, dock);
   }
 
   private connect(terminalId: TerminalId, waiting: WaitingPane): void {

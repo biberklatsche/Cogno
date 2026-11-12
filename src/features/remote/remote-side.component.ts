@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
-import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
+import { RemoteHost } from "@cogno/core/api/remote-shells-port";
 import { Opener } from "@cogno/platform";
-import { IconComponent, TooltipDirective, TreeComponent, TreeRowDirective } from "@cogno/shared/ui";
+import {
+  CopyEditDeleteComponent,
+  IconComponent,
+  TooltipDirective,
+  TreeComponent,
+  TreeRowDirective,
+} from "@cogno/shared/ui";
 import { RemotePanelService } from "./remote-panel.service";
 import { hostNodes, RemoteTreeNode } from "./remote-shell-tree";
 
@@ -17,10 +23,27 @@ type HostForm = {
   readonly error?: string;
 };
 
+/** The form's fields, in the order they are shown. */
+const HOST_FIELDS = [
+  { key: "name", label: "Name", placeholder: "office" },
+  { key: "destination", label: "Destination", placeholder: "user@host or an ssh alias" },
+  {
+    key: "command",
+    label: "Command (optional)",
+    placeholder: '".cogno/bin/cogno" server --stdio',
+  },
+] as const;
+
 @Component({
   selector: "app-remote-side",
   standalone: true,
-  imports: [IconComponent, TooltipDirective, TreeComponent, TreeRowDirective],
+  imports: [
+    CopyEditDeleteComponent,
+    IconComponent,
+    TooltipDirective,
+    TreeComponent,
+    TreeRowDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="remote-panel">
@@ -33,7 +56,7 @@ type HostForm = {
         >
           <app-icon name="mdiTooltipQuestion"></app-icon>
         </button>
-        <button type="button" class="button icon-button" appTooltip="Refresh" (click)="refresh()">
+        <button type="button" class="button icon-button" appTooltip="Refresh" (click)="panel.refresh()">
           <app-icon name="mdiRefresh"></app-icon>
         </button>
         <button type="button" class="button icon-button" appTooltip="Add a remote" (click)="add()">
@@ -47,42 +70,20 @@ type HostForm = {
 
       @if (form(); as edited) {
         <form class="host-form" (submit)="save($event)">
-          <label>
-            <span>Name</span>
-            <input
-              type="text"
-              spellcheck="false"
-              autocomplete="off"
-              placeholder="office"
-              [value]="edited.name"
-              [disabled]="edited.saving"
-              (input)="setField('name', $event)"
-            />
-          </label>
-          <label>
-            <span>Destination</span>
-            <input
-              type="text"
-              spellcheck="false"
-              autocomplete="off"
-              placeholder="user@host or an ssh alias"
-              [value]="edited.destination"
-              [disabled]="edited.saving"
-              (input)="setField('destination', $event)"
-            />
-          </label>
-          <label>
-            <span>Command (optional)</span>
-            <input
-              type="text"
-              spellcheck="false"
-              autocomplete="off"
-              placeholder='".cogno/bin/cogno" server --stdio'
-              [value]="edited.command"
-              [disabled]="edited.saving"
-              (input)="setField('command', $event)"
-            />
-          </label>
+          @for (field of fields; track field.key) {
+            <label>
+              <span>{{ field.label }}</span>
+              <input
+                type="text"
+                spellcheck="false"
+                autocomplete="off"
+                [placeholder]="field.placeholder"
+                [value]="edited[field.key]"
+                [disabled]="edited.saving"
+                (input)="setField(field.key, $event)"
+              />
+            </label>
+          }
           @if (edited.error) {
             <div class="status failure">{{ edited.error }}</div>
           }
@@ -106,7 +107,7 @@ type HostForm = {
         <ng-template appTreeRow let-node let-toggle="toggle" let-open="open">
           @switch (node.kind) {
             @case ("host") {
-              <div class="host-row" (mouseleave)="disarm()">
+              <div class="host-row">
                 <span class="connection" [class]="node.host.connection"></span>
                 <span class="name" [appTooltip]="node.host.destination">{{ node.host.name }}</span>
                 @if (node.host.connection === "connected") {
@@ -114,32 +115,24 @@ type HostForm = {
                     type="button"
                     class="button text-button"
                     appTooltip="Its shells run on; the ones shown here close"
-                    (click)="disconnect(node.host)"
+                    (click)="panel.disconnect(node.host.name)"
                   >
                     Disconnect
                   </button>
                 } @else if (node.host.connection !== "connecting") {
-                  <button type="button" class="button text-button" (click)="connect(node.host)">
+                  <button
+                    type="button"
+                    class="button text-button"
+                    (click)="panel.connect(node.host.name)"
+                  >
                     Connect
                   </button>
                 }
-                <button
-                  type="button"
-                  class="button icon-button row-action"
-                  appTooltip="Change"
-                  (click)="edit(node.host)"
-                >
-                  <app-icon name="mdiPencil"></app-icon>
-                </button>
-                <button
-                  type="button"
-                  class="button icon-button row-action danger"
-                  [class.armed]="isArmed('remove', node.host.name)"
-                  [appTooltip]="isArmed('remove', node.host.name) ? 'Click again to remove it' : 'Remove'"
-                  (click)="remove(node.host)"
-                >
-                  <app-icon name="mdiTrashCanOutline"></app-icon>
-                </button>
+                <!-- Removing asks once more, as everywhere in the side panels. -->
+                <app-copy-edit-delete
+                  class="row-action"
+                  (onEvent)="$event === 'edit' ? edit(node.host) : panel.removeHost(node.host.name)"
+                ></app-copy-edit-delete>
               </div>
             }
             @case ("workspace") {
@@ -161,12 +154,12 @@ type HostForm = {
               <div class="status" [class.failure]="node.failure">{{ node.text }}</div>
             }
             @case ("shell") {
-              <div class="shell-row" (mouseleave)="disarm()">
+              <div class="shell-row">
                 <button
                   type="button"
                   class="shell"
                   [appTooltip]="node.shell.directory ?? ''"
-                  (click)="show(node.hostName, node.shell)"
+                  (click)="panel.show(node.hostName, node.shell)"
                 >
                   <app-icon class="shell-icon" name="mdiConsole"></app-icon>
                   <span class="name">{{ node.name }}</span>
@@ -177,15 +170,12 @@ type HostForm = {
                   }
                 </button>
                 @if (node.shell.shown === "nowhere") {
-                  <button
-                    type="button"
-                    class="button icon-button row-action danger"
-                    [class.armed]="isArmed('end', node.shell.terminalId)"
-                    [appTooltip]="isArmed('end', node.shell.terminalId) ? 'Click again to end it' : 'End the shell'"
-                    (click)="end(node.hostName, node.shell)"
-                  >
-                    <app-icon name="mdiClose"></app-icon>
-                  </button>
+                  <!-- Ends the shell and what runs in it; asks once more. -->
+                  <app-copy-edit-delete
+                    class="row-action"
+                    [enableEdit]="false"
+                    (onEvent)="$event === 'delete' && panel.end(node.hostName, node.shell)"
+                  ></app-copy-edit-delete>
                 }
               </div>
             }
@@ -339,30 +329,14 @@ type HostForm = {
 
     .row-action {
       flex: none;
-      width: 20px;
-      height: 20px;
-      padding: 2px;
       visibility: hidden;
-    }
-
-    .row-action app-icon {
-      width: 14px;
-      height: 14px;
     }
 
     .host-row:hover > .row-action,
     .host-row:focus-within > .row-action,
     .shell-row:hover > .row-action,
-    .shell-row:focus-within > .row-action,
-    .row-action.armed {
+    .shell-row:focus-within > .row-action {
       visibility: visible;
-    }
-
-    /* Red only under the pointer or once armed, like the git panel's discard. */
-    .row-action.danger:hover,
-    .row-action.danger.armed {
-      color: var(--color-red);
-      background: color-mix(in srgb, var(--color-red) 12%, var(--background-color));
     }
 
     /* A workspace or a tab: its name opens and closes what is under it. */
@@ -418,9 +392,7 @@ type HostForm = {
 export class RemoteSideComponent {
   readonly failure = this.panel.failure;
   readonly form = signal<HostForm | null>(null);
-
-  /** The action that the next click on the same button carries out. */
-  private readonly armed = signal<string | null>(null);
+  readonly fields = HOST_FIELDS;
 
   /** The tree the panel shows: the hosts with what runs on them. */
   readonly nodes = computed(() => hostNodes(this.panel.hosts(), this.panel.shells()));
@@ -428,21 +400,9 @@ export class RemoteSideComponent {
   readonly keyOf = (node: RemoteTreeNode): string => node.key;
 
   constructor(
-    private readonly panel: RemotePanelService,
+    protected readonly panel: RemotePanelService,
     private readonly opener: Opener,
   ) {}
-
-  isArmed(action: string, target: string): boolean {
-    return this.armed() === `${action}:${target}`;
-  }
-
-  disarm(): void {
-    this.armed.set(null);
-  }
-
-  refresh(): void {
-    this.panel.refresh();
-  }
 
   openDocumentation(): void {
     void this.opener.openUrl(DOCUMENTATION_URL);
@@ -462,7 +422,7 @@ export class RemoteSideComponent {
     });
   }
 
-  setField(field: "name" | "destination" | "command", event: Event): void {
+  setField(field: (typeof HOST_FIELDS)[number]["key"], event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.form.update((edited) => edited && { ...edited, [field]: value, error: undefined });
   }
@@ -477,40 +437,5 @@ export class RemoteSideComponent {
       edited.previousName,
     );
     this.form.set(error === undefined ? null : { ...edited, saving: false, error });
-  }
-
-  connect(host: RemoteHost): void {
-    this.panel.connect(host.name);
-  }
-
-  disconnect(host: RemoteHost): void {
-    void this.panel.disconnect(host.name);
-  }
-
-  /** Asks once more before the machine leaves the config. */
-  remove(host: RemoteHost): void {
-    if (!this.confirmed("remove", host.name)) return;
-    void this.panel.removeHost(host.name);
-  }
-
-  show(host: string, shell: RemoteShell): void {
-    void this.panel.show(host, shell);
-  }
-
-  /** Asks once more before the shell and what runs in it end. */
-  end(host: string, shell: RemoteShell): void {
-    if (!this.confirmed("end", shell.terminalId)) return;
-    void this.panel.end(host, shell);
-  }
-
-  /** The first click arms the action, the second one confirms it. */
-  private confirmed(action: string, target: string): boolean {
-    const key = `${action}:${target}`;
-    if (this.armed() !== key) {
-      this.armed.set(key);
-      return false;
-    }
-    this.armed.set(null);
-    return true;
   }
 }

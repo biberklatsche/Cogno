@@ -66,6 +66,21 @@ function spawnFailure(error: unknown, terminalId: string): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
 
+/**
+ * Opens the channel a shell's output comes through, then the shell (`open`
+ * starts or attaches it). The channel exists before the host sends, so no
+ * output is lost between the call and the listener.
+ */
+function openOutput(
+  output: PtyOutputListenerContract,
+  open: (onData: PtyDataChannel) => Promise<unknown>,
+): PtySpawnHandleContract {
+  const channel = new PtyDataChannel();
+  channel.onmessage = (chunk) => output.onChunk(chunk);
+  channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
+  return { ready: open(channel), closeOutput: () => channel.close() };
+}
+
 /** Where a shell sits in the Cogno it belongs to. */
 export type PtyLabelContract = {
   workspace?: string;
@@ -272,28 +287,21 @@ export class PtyTransport {
     options: PtySpawnOptionsContract,
     output: PtyOutputListenerContract,
   ): PtySpawnHandleContract {
-    // The channel exists before the reader thread starts, so no output can be
-    // lost between spawn and listener registration.
-    const channel = new PtyDataChannel();
-    channel.onmessage = (chunk) => output.onChunk(chunk);
-    channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
-    const ready = invoke("pty_spawn", {
-      options: {
-        name: options.terminalId,
-        cols: options.cols,
-        rows: options.rows,
-        profile: options.profile,
-        dev_mode: options.devMode,
-      },
-      survivesClient: options.survivesClient,
-      onData: channel,
-    }).catch((error: unknown) => {
-      throw spawnFailure(error, options.terminalId);
-    });
-    return {
-      ready,
-      closeOutput: () => channel.close(),
-    };
+    return openOutput(output, (onData) =>
+      invoke("pty_spawn", {
+        options: {
+          name: options.terminalId,
+          cols: options.cols,
+          rows: options.rows,
+          profile: options.profile,
+          dev_mode: options.devMode,
+        },
+        survivesClient: options.survivesClient,
+        onData,
+      }).catch((error: unknown) => {
+        throw spawnFailure(error, options.terminalId);
+      }),
+    );
   }
 
   /**
@@ -305,18 +313,13 @@ export class PtyTransport {
     options: PtyAttachOptionsContract,
     output: PtyOutputListenerContract,
   ): PtySpawnHandleContract {
-    const channel = new PtyDataChannel();
-    channel.onmessage = (chunk) => output.onChunk(chunk);
-    channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
-    const ready = invoke<void>("pty_attach", {
-      terminalId: options.terminalId,
-      host: options.host ?? null,
-      onData: channel,
-    });
-    return {
-      ready,
-      closeOutput: () => channel.close(),
-    };
+    return openOutput(output, (onData) =>
+      invoke<void>("pty_attach", {
+        terminalId: options.terminalId,
+        host: options.host ?? null,
+        onData,
+      }),
+    );
   }
 
   /**

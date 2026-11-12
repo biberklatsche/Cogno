@@ -27,7 +27,7 @@ export function deriveShellContext(
     return base;
   }
 
-  return { ...base, backendOs, wslDistroName: distro };
+  return { ...base, wslDistroName: distro };
 }
 
 /** A context of this machine carries no `host` key at all. */

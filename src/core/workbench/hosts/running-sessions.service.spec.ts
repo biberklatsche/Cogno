@@ -54,6 +54,22 @@ describe("RunningSessionsService", () => {
     expect(service.unshownLocalShells()).toEqual([session("left")]);
   });
 
+  it("asks a host once for everyone who asks while the answer is on its way", async () => {
+    let answer!: (sessions: RunningSession[]) => void;
+    sessions.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)));
+
+    const first = service.refresh("office");
+    const second = service.refresh("office");
+    answer([session("t1")]);
+
+    await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
+    expect(sessions).toHaveBeenCalledOnce();
+    // Once answered, the next question goes out again.
+    sessions.mockResolvedValueOnce([]);
+    await service.refresh("office");
+    expect(sessions).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps the shells of each host apart", async () => {
     sessions.mockImplementation(async (host?: string) =>
       host === "office" ? [session("office-1")] : [session("local-1")],

@@ -166,7 +166,7 @@ describe("RemoteHostsService", () => {
 
       finish({ os: "macos" });
       await connecting;
-      expect(seen.get("mac")).toEqual({ status: "connected" });
+      expect(seen.get("mac")).toEqual({ status: "connected", info: { os: "macos" } });
     });
 
     it("says why a connection failed", async () => {
