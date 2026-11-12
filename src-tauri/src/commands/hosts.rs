@@ -124,20 +124,19 @@ pub fn host_disconnect(hosts: State<'_, HostState>, name: String) {
     hosts.disconnect(&name);
 }
 
-/// Makes sure the shell integration scripts of `version` lie on a host, this
-/// machine when none is named. The scripts are this Cogno's: a host on
-/// another machine gets them from here, so both sides agree on them.
+/// Makes sure the shell integration scripts of `version` lie in this
+/// machine's Cogno home. The scripts are this Cogno's, so they and what it
+/// reads from the shells always agree.
 #[tauri::command]
 pub async fn host_install_shell_integration(
     hosts: State<'_, HostState>,
-    host: Option<String>,
     version: String,
     files: Vec<IntegrationFile>,
     dev_mode: bool,
 ) -> Result<(), String> {
     hosts
         .request_on(
-            host,
+            None,
             Request::InstallShellIntegration {
                 dev_mode,
                 version,
