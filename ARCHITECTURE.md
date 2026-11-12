@@ -1184,7 +1184,8 @@ solches Pane kommt aus dem Remote-Panel (unten). Die Zuständigkeiten:
   die Terminals hier nicht auf.
 - **`platform/hosts.ts`:** verbinden, auflegen, Sitzungen eines Hosts
   auflisten und beenden, Shell-Integration ablegen, `onDisconnected`.
-- **Workbench (`core/workbench/remote/`):** `RemoteHostsService` verbindet,
+- **Workbench (`core/workbench/hosts/`):** Alles zu Hosts, dem Dienst dieses
+  Rechners wie den entfernten. `RemoteHostsService` verbindet,
   wenn der Nutzer es verlangt oder ein Pane den Host braucht, einmal je Host,
   führt den Stand je Host (`connections$`) und zeigt, was `ssh` dabei fragt,
   mit dem nackten Prompt-Dialog (2.1). Die Sitzungsfabrik wartet: ein Pane,

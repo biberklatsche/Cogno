@@ -25,9 +25,9 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import {
   HostConnectionComponent,
   HostConnectionState,
-} from "@cogno/core/workbench/remote/host-connection.component";
-import { RemoteHostsService } from "@cogno/core/workbench/remote/remote-hosts.service";
-import { RunningSessionsService } from "@cogno/core/workbench/remote/running-sessions.service";
+} from "@cogno/core/workbench/hosts/host-connection.component";
+import { RemoteHostsService } from "@cogno/core/workbench/hosts/remote-hosts.service";
+import { RunningSessionsService } from "@cogno/core/workbench/hosts/running-sessions.service";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { RunningSession } from "@cogno/platform/hosts";

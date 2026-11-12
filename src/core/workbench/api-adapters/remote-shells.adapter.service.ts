@@ -8,12 +8,12 @@ import {
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { IdCreator } from "@cogno/core/workbench/id-creator";
 import {
   RemoteHostConnection,
   RemoteHostsService,
-} from "@cogno/core/workbench/remote/remote-hosts.service";
-import { RunningSessionsService } from "@cogno/core/workbench/remote/running-sessions.service";
+} from "@cogno/core/workbench/hosts/remote-hosts.service";
+import { RunningSessionsService } from "@cogno/core/workbench/hosts/running-sessions.service";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { Hosts, RunningSession } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
