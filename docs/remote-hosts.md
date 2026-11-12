@@ -37,9 +37,9 @@ remote.hosts.office.destination = lars@office-pc
 
 ## The Remote panel
 
-The panel lists this machine first, then every remote. Under a machine are
-the shells that run there, sorted the way the Cogno they belong to shows
-them: workspace, tab, shell.
+The panel lists your remotes. Under a connected one are the shells that run
+there, sorted the way the Cogno they belong to shows them: workspace, tab,
+shell. Each level folds away with its arrow.
 
 - **Connect** sets up the ssh connection; what ssh asks (a password, a new
   host key) appears in a dialog. The dot in front of the name says how far
@@ -50,11 +50,8 @@ them: workspace, tab, shell.
   the shells run on there.
 - A shell marked **On <machine>** is shown by another Cogno right now.
   Clicking it takes it over.
-- Under **This machine**, *Bring all back* shows every shell here again that
-  another Cogno took over.
-- **Not shown in any window** (this machine only) are shells that kept
-  running and that no tab shows any more. Click one to get it back, or end it
-  with the `x`; the second click confirms.
+- A shell without a mark is shown by nobody right now. It can be ended with
+  the `x` next to it; the second click confirms.
 - The pencil changes a remote, the bin removes it (second click confirms).
   The panel reads the shells when it opens and when you press Refresh.
 
@@ -284,6 +281,13 @@ to shells started after the change; closing a tab still ends its shell.
 - **A shell that was taken over never ends with the Cogno that took it.**
   Closing the laptop leaves the office shells running, whatever
   `terminal.keep_shells_running` says there.
+
+**No shell is left without a tab.** A shell can run on with nothing showing
+it: Cogno crashed, or you closed its tab while another machine showed it.
+When Cogno starts, every such shell of this machine gets a tab in the
+Default Workspace, and a notification says so. Shells that belong to one of
+your workspaces are not touched: they come back in that workspace when it
+opens.
 
 What you get when you go on with a shell is what it printed last (about the
 last megabyte), not a picture of the old window:

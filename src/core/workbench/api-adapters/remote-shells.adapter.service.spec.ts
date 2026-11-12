@@ -180,7 +180,7 @@ describe("RemoteShellsAdapterService", () => {
       shownSession.mockReturnValue({ host: { runtime: { status: "running" } } });
       findTab.mockReturnValue("tab-1");
 
-      await adapter.open(undefined, "t1");
+      await adapter.open("office", "t1");
 
       expect(navigate).toHaveBeenCalledWith("t1");
       expect(publish).not.toHaveBeenCalled();
@@ -190,7 +190,7 @@ describe("RemoteShellsAdapterService", () => {
       shownSession.mockReturnValue({ host: { runtime: { status: "takenOver" } } });
       findTab.mockReturnValue("tab-1");
 
-      await adapter.open(undefined, "t1");
+      await adapter.open("office", "t1");
 
       expect(publish).toHaveBeenCalledWith({ type: "RetakeTerminal", payload: "t1" });
       expect(navigate).not.toHaveBeenCalled();
@@ -198,8 +198,8 @@ describe("RemoteShellsAdapterService", () => {
   });
 
   it("ends a shell on its machine", async () => {
-    await adapter.end(undefined, "t1");
+    await adapter.end("office", "t1");
 
-    expect(endSession).toHaveBeenCalledWith(undefined, "t1");
+    expect(endSession).toHaveBeenCalledWith("office", "t1");
   });
 });

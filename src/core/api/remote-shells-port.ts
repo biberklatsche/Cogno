@@ -33,9 +33,8 @@ export type RemoteShell = {
 };
 
 /**
- * The machines whose shells Cogno can show, and the shells that run on them
- * and on this one. A machine is named as in `remote.hosts`; this machine is
- * the one without a name.
+ * The machines whose shells Cogno can show, and the shells that run on them.
+ * A machine is named as in `remote.hosts`.
  */
 export abstract class RemoteShellsPort {
   /** The machines of `remote.hosts`, again whenever one of them changes. */
@@ -55,12 +54,12 @@ export abstract class RemoteShellsPort {
   abstract disconnect(name: string): Promise<void>;
 
   /** The shells that run on `host` now; a machine not connected rejects. */
-  abstract shells(host: string | undefined): Promise<readonly RemoteShell[]>;
+  abstract shells(host: string): Promise<readonly RemoteShell[]>;
   /**
    * Shows the shell in this window: goes to the pane that shows it, takes it
    * back from another Cogno, or opens a tab for it.
    */
-  abstract open(host: string | undefined, terminalId: TerminalId): Promise<void>;
+  abstract open(host: string, terminalId: TerminalId): Promise<void>;
   /** Ends the shell, whoever shows it. */
-  abstract end(host: string | undefined, terminalId: TerminalId): Promise<void>;
+  abstract end(host: string, terminalId: TerminalId): Promise<void>;
 }

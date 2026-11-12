@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/c
 import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import { Opener } from "@cogno/platform";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
-import { RemotePanelService, shownElsewhere } from "./remote-panel.service";
+import { RemotePanelService } from "./remote-panel.service";
 import { groupShells, ShellGroup, shellName } from "./remote-shell-tree";
 
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
@@ -103,36 +103,6 @@ type MachineTree =
       }
 
       <div class="machines">
-        <section class="machine">
-          <div class="machine-row">
-            <button
-              type="button"
-              class="node-toggle"
-              [attr.aria-label]="isOpen('') ? 'Collapse' : 'Expand'"
-              (click)="toggle('')"
-            >
-              <app-icon [name]="isOpen('') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-            </button>
-            <app-icon class="machine-icon" name="mdiLaptop"></app-icon>
-            <span class="name">This machine</span>
-            @if (hasShellsShownElsewhere()) {
-              <button
-                type="button"
-                class="button text-button"
-                appTooltip="Show every shell here again that another Cogno shows"
-                (click)="bringAllBack()"
-              >
-                Bring all back
-              </button>
-            }
-          </div>
-          @if (isOpen("")) {
-            <ng-container
-              *ngTemplateOutlet="treeTemplate; context: { $implicit: tree(''), host: '' }"
-            ></ng-container>
-          }
-        </section>
-
         @for (host of hosts(); track host.name) {
           <section class="machine" (mouseleave)="disarm()">
             <div class="machine-row">
@@ -202,7 +172,7 @@ type MachineTree =
       </div>
     </div>
 
-    <!-- The shells of one machine ("" is this one): workspace, tab, shell. -->
+    <!-- The shells of one machine: workspace, tab, shell. -->
     <ng-template #treeTemplate let-machine let-host="host">
       @if (!machine || machine.status === "loading") {
         <div class="status">Looking for shells...</div>
@@ -217,7 +187,6 @@ type MachineTree =
               <button
                 type="button"
                 class="branch group-name"
-                [class.orphaned]="group.orphaned"
                 [attr.aria-expanded]="isOpen(host, group.name)"
                 (click)="toggle(host, group.name)"
               >
@@ -253,7 +222,7 @@ type MachineTree =
                             type="button"
                             class="shell"
                             [appTooltip]="shell.directory ?? ''"
-                            (click)="show(host || undefined, shell)"
+                            (click)="show(host, shell)"
                           >
                             <app-icon class="shell-icon" name="mdiConsole"></app-icon>
                             <span class="name">{{ nameOf(shell) }}</span>
@@ -269,7 +238,7 @@ type MachineTree =
                               class="button icon-button row-action danger"
                               [class.armed]="isArmed('end', shell.terminalId)"
                               [appTooltip]="isArmed('end', shell.terminalId) ? 'Click again to end it' : 'End the shell'"
-                              (click)="end(host || undefined, shell)"
+                              (click)="end(host, shell)"
                             >
                               <app-icon name="mdiClose"></app-icon>
                             </button>
@@ -403,7 +372,6 @@ type MachineTree =
       text-align: left;
     }
 
-    .machine-icon,
     .shell-icon {
       flex: none;
       width: 16px;
@@ -535,11 +503,6 @@ type MachineTree =
       opacity: 0.7;
     }
 
-    .group-name.orphaned {
-      opacity: 1;
-      color: var(--color-yellow);
-    }
-
     .tab-name {
       padding: 2px 0;
     }
@@ -598,16 +561,11 @@ export class RemoteSideComponent {
       trees.set(
         name,
         machine.status === "loaded"
-          ? { status: "loaded", groups: groupShells(machine.shells, name === "") }
+          ? { status: "loaded", groups: groupShells(machine.shells) }
           : machine,
       );
     }
     return trees;
-  });
-
-  readonly hasShellsShownElsewhere = computed(() => {
-    const local = this.panel.shells().get("");
-    return local?.status === "loaded" && local.shells.some(shownElsewhere);
   });
 
   constructor(
@@ -698,16 +656,12 @@ export class RemoteSideComponent {
     void this.panel.removeHost(host.name);
   }
 
-  show(host: string | undefined, shell: RemoteShell): void {
+  show(host: string, shell: RemoteShell): void {
     void this.panel.show(host, shell);
   }
 
-  bringAllBack(): void {
-    void this.panel.bringAllBack();
-  }
-
   /** Asks once more before the shell and what runs in it end. */
-  end(host: string | undefined, shell: RemoteShell): void {
+  end(host: string, shell: RemoteShell): void {
     if (!this.confirmed("end", shell.terminalId)) return;
     void this.panel.end(host, shell);
   }

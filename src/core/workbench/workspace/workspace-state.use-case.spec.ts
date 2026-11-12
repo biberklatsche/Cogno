@@ -106,4 +106,79 @@ describe("WorkspaceStateUseCase", () => {
       "WS-2",
     ]);
   });
+
+  describe("adoptLeftOverShells", () => {
+    const tabIds = () => {
+      let next = 0;
+      return () => `TB-NEW-${++next}`;
+    };
+
+    it("changes nothing when every running shell has a pane somewhere", () => {
+      const placed = {
+        ...persistedWorkspace,
+        grids: [{ tabId: "TB-1", pane: { leftChild: { terminalId: "a" }, rightChild: {} } }],
+      };
+
+      const plan = WorkspaceStateUseCase.adoptLeftOverShells(
+        [placed],
+        defaultWorkspace,
+        ["a"],
+        tabIds(),
+      );
+
+      expect(plan).toEqual({ workspaces: [placed], adoptedTabIds: [] });
+    });
+
+    it("gives a shell without a pane a tab in the default workspace, which it opens", () => {
+      const plan = WorkspaceStateUseCase.adoptLeftOverShells(
+        [persistedWorkspace],
+        defaultWorkspace,
+        ["a", "b"],
+        tabIds(),
+      );
+
+      expect(plan.adoptedTabIds).toEqual(["TB-NEW-1", "TB-NEW-2"]);
+      expect(plan.workspaces).toEqual([
+        {
+          ...defaultWorkspace,
+          isOpen: true,
+          tabs: [{ tabId: "TB-DEFAULT" }, { tabId: "TB-NEW-1" }, { tabId: "TB-NEW-2" }],
+          grids: [
+            { tabId: "TB-DEFAULT", pane: {} },
+            { tabId: "TB-NEW-1", pane: { terminalId: "a" } },
+            { tabId: "TB-NEW-2", pane: { terminalId: "b" } },
+          ],
+        },
+        // Untouched.
+        persistedWorkspace,
+      ]);
+    });
+
+    it("adds to the default workspace as it was saved, keeping what it had", () => {
+      const savedDefault = {
+        ...defaultWorkspace,
+        isActive: true,
+        tabs: [{ tabId: "TB-OLD" }],
+        grids: [{ tabId: "TB-OLD", pane: { terminalId: "mine" } }],
+      };
+
+      const plan = WorkspaceStateUseCase.adoptLeftOverShells(
+        [persistedWorkspace, savedDefault],
+        defaultWorkspace,
+        ["mine", "left"],
+        tabIds(),
+      );
+
+      expect(plan.adoptedTabIds).toEqual(["TB-NEW-1"]);
+      expect(plan.workspaces[0]).toMatchObject({
+        isActive: true,
+        tabs: [{ tabId: "TB-OLD" }, { tabId: "TB-NEW-1" }],
+        grids: [
+          { tabId: "TB-OLD", pane: { terminalId: "mine" } },
+          { tabId: "TB-NEW-1", pane: { terminalId: "left" } },
+        ],
+      });
+      expect(plan.workspaces).toHaveLength(2);
+    });
+  });
 });

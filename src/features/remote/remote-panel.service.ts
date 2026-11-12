@@ -7,9 +7,6 @@ import {
   RemoteShellsPort,
 } from "@cogno/core/api/remote-shells-port";
 
-/** The key of this machine among the machines. */
-const THIS_MACHINE = "";
-
 /** What is known of the shells of one machine. */
 export type MachineShells =
   | { readonly status: "loading" }
@@ -22,7 +19,7 @@ function messageOf(error: unknown): string {
 
 /**
  * What the Remote panel shows: the machines of the config, and the shells
- * that run on this machine and on every connected one. The shells are read
+ * that run on every connected one. The shells are read
  * while the panel is open - when it opens, when a machine connects and when
  * the user asks - not watched.
  */
@@ -34,7 +31,7 @@ export class RemotePanelService {
   private opened = false;
 
   readonly hosts = this.hostsSignal.asReadonly();
-  /** The shells by machine name; this machine is `""`. */
+  /** The shells by machine name. */
   readonly shells = this.shellsSignal.asReadonly();
   /** Why the last thing the user asked for did not work. */
   readonly failure = this.failureSignal.asReadonly();
@@ -60,9 +57,8 @@ export class RemotePanelService {
     this.failureSignal.set(undefined);
   }
 
-  /** Asks this machine and every connected one what runs there now. */
+  /** Asks every connected machine what runs there now. */
   refresh(): void {
-    void this.load(undefined);
     for (const host of this.hosts()) {
       if (host.connection === "connected") void this.load(host.name);
     }
@@ -92,7 +88,7 @@ export class RemotePanelService {
   }
 
   /** Shows the shell in this window. */
-  show(host: string | undefined, shell: RemoteShell): Promise<void> {
+  show(host: string, shell: RemoteShell): Promise<void> {
     return this.attempt(async () => {
       await this.port.open(host, shell.terminalId);
       this.patch(host, (shells) =>
@@ -105,16 +101,7 @@ export class RemotePanelService {
     });
   }
 
-  /** Shows every shell of this machine here again that another Cogno shows. */
-  async bringAllBack(): Promise<void> {
-    const local = this.shells().get(THIS_MACHINE);
-    if (local?.status !== "loaded") return;
-    for (const shell of local.shells.filter(shownElsewhere)) {
-      await this.show(undefined, shell);
-    }
-  }
-
-  end(host: string | undefined, shell: RemoteShell): Promise<void> {
+  end(host: string, shell: RemoteShell): Promise<void> {
     return this.attempt(async () => {
       await this.port.end(host, shell.terminalId);
       this.patch(host, (shells) => shells.filter((other) => other.terminalId !== shell.terminalId));
@@ -129,18 +116,15 @@ export class RemotePanelService {
         .map((host) => host.name),
     );
     const known = this.shells();
-    const kept = new Map(
-      [...known].filter(([name]) => name === THIS_MACHINE || connected.has(name)),
-    );
+    const kept = new Map([...known].filter(([name]) => connected.has(name)));
     if (kept.size !== known.size) this.shellsSignal.set(kept);
     for (const name of connected) {
       if (!known.has(name)) void this.load(name);
     }
   }
 
-  private async load(host: string | undefined): Promise<void> {
-    const key = host ?? THIS_MACHINE;
-    if (!this.shells().has(key)) this.set(key, { status: "loading" });
+  private async load(host: string): Promise<void> {
+    if (!this.shells().has(host)) this.set(host, { status: "loading" });
     let loaded: MachineShells;
     try {
       loaded = { status: "loaded", shells: await this.port.shells(host) };
@@ -148,17 +132,16 @@ export class RemotePanelService {
       loaded = { status: "failed", reason: messageOf(error) };
     }
     // Closed or hung up in the meantime: nobody waits for the answer.
-    if (this.shells().has(key)) this.set(key, loaded);
+    if (this.shells().has(host)) this.set(host, loaded);
   }
 
   private patch(
-    host: string | undefined,
+    host: string,
     change: (shells: readonly RemoteShell[]) => readonly RemoteShell[],
   ): void {
-    const key = host ?? THIS_MACHINE;
-    const known = this.shells().get(key);
+    const known = this.shells().get(host);
     if (known?.status === "loaded")
-      this.set(key, { status: "loaded", shells: change(known.shells) });
+      this.set(host, { status: "loaded", shells: change(known.shells) });
   }
 
   private set(key: string, shells: MachineShells): void {
@@ -173,9 +156,4 @@ export class RemotePanelService {
       this.failureSignal.set(messageOf(error));
     }
   }
-}
-
-/** Whether another Cogno shows the shell right now. */
-export function shownElsewhere(shell: RemoteShell): boolean {
-  return shell.shown && !shell.shownHere;
 }

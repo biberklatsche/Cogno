@@ -18,47 +18,32 @@ describe("shellName", () => {
 
 describe("groupShells", () => {
   it("sorts shells into workspace and tab, by name", () => {
-    const groups = groupShells(
-      [
-        shell("t3", { workspace: "Site", tab: "dev", title: "pnpm" }),
-        shell("t1", { workspace: "Cogno", tab: "build", title: "cargo" }),
-        shell("t2", { workspace: "Cogno", tab: "build", title: "bash" }),
-        shell("t4", { workspace: "Cogno", tab: "agent", title: "claude" }),
-      ],
-      false,
-    );
+    const groups = groupShells([
+      shell("t3", { workspace: "Site", tab: "dev", title: "pnpm" }),
+      shell("t1", { workspace: "Cogno", tab: "build", title: "cargo" }),
+      shell("t2", { workspace: "Cogno", tab: "build", title: "bash" }),
+      shell("t4", { workspace: "Cogno", tab: "agent", title: "claude" }),
+    ]);
 
     expect(groups.map((group) => group.name)).toEqual(["Cogno", "Site"]);
     expect(groups[0]?.tabs.map((tab) => tab.name)).toEqual(["agent", "build"]);
     expect(groups[0]?.tabs[1]?.shells.map((each) => each.terminalId)).toEqual(["t2", "t1"]);
-    expect(groups.every((group) => !group.orphaned)).toBe(true);
   });
 
   it("keeps shells that said no workspace together", () => {
-    const groups = groupShells([shell("t1"), shell("t2", { workspace: "Cogno" })], false);
+    const groups = groupShells([shell("t1"), shell("t2", { workspace: "Cogno" })]);
 
     expect(groups.map((group) => group.name)).toEqual(["Cogno", "No workspace"]);
   });
 
-  it("sets apart the shells of this machine that nothing shows, last", () => {
-    const groups = groupShells(
-      [
-        shell("t1", { workspace: "Cogno", tab: "build", shown: false }),
-        shell("t2", { workspace: "Cogno", tab: "build" }),
-      ],
-      true,
-    );
+  it("leaves a shell in its workspace that nothing shows right now", () => {
+    const groups = groupShells([shell("t1", { workspace: "Cogno", tab: "build", shown: false })]);
 
-    expect(groups).toHaveLength(2);
-    expect(groups[0]).toMatchObject({ name: "Cogno", orphaned: false });
-    expect(groups[1]?.orphaned).toBe(true);
-    expect(groups[1]?.tabs[0]?.shells.map((each) => each.terminalId)).toEqual(["t1"]);
-  });
-
-  it("leaves a shell of another machine in its workspace when its Cogno is closed", () => {
-    const groups = groupShells([shell("t1", { workspace: "Cogno", shown: false })], false);
-
-    expect(groups).toHaveLength(1);
-    expect(groups[0]).toMatchObject({ name: "Cogno", orphaned: false });
+    expect(groups).toEqual([
+      {
+        name: "Cogno",
+        tabs: [{ name: "build", shells: [expect.objectContaining({ terminalId: "t1" })] }],
+      },
+    ]);
   });
 });
