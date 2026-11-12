@@ -52,13 +52,13 @@ import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
+import { RunningSessionsService } from "@cogno/core/workbench/hosts/running-sessions.service";
+import { SessionLabelPublisher } from "@cogno/core/workbench/hosts/session-label.publisher";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
-import { RunningSessionsService } from "@cogno/core/workbench/remote/running-sessions.service";
-import { SessionLabelPublisher } from "@cogno/core/workbench/remote/session-label.publisher";
 import { SettingsPanelService } from "@cogno/core/workbench/settings/settings-panel.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";

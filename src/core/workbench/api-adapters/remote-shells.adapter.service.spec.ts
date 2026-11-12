@@ -1,5 +1,5 @@
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
-import { RemoteHostConnection } from "@cogno/core/workbench/remote/remote-hosts.service";
+import { RemoteHostConnection } from "@cogno/core/workbench/hosts/remote-hosts.service";
 import { RunningSession } from "@cogno/platform/hosts";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";

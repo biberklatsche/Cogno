@@ -1,5 +1,5 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { RemoteHostsService } from "@cogno/core/workbench/remote/remote-hosts.service";
+import { RemoteHostsService } from "@cogno/core/workbench/hosts/remote-hosts.service";
 import { OsPlatform } from "@cogno/platform";
 import { HostInfo } from "@cogno/platform/hosts";
 import { Subject } from "rxjs";

@@ -1,6 +1,7 @@
-// Looks at and drives the window of a running dev Cogno, over the DevTools
-// protocol of its webview: screenshots, clicks, typing and the console. For
-// checking by hand, or by an agent, what only shows in the window.
+// Remote-controls the window of a running dev Cogno (`pnpm dev`) on Windows,
+// over the DevTools protocol of its webview: screenshots, clicks, typing and
+// the console. For checking by hand, or by an agent, what only shows in the
+// window.
 //
 // Windows only: WebView2 is Chromium and offers the protocol; the webviews of
 // macOS and Linux do not. Start the app with the port open (it listens on
@@ -9,15 +10,15 @@
 //   PowerShell:  $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9222"; pnpm dev
 //   Git Bash:    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222 pnpm dev
 //
-//   node scripts/drive-webview.mjs shot <file.png>
-//   node scripts/drive-webview.mjs eval "<javascript>"
-//   node scripts/drive-webview.mjs click <css> [text]      real mouse click on the first match
-//   node scripts/drive-webview.mjs clickat <x> <y>
-//   node scripts/drive-webview.mjs hover <css> [text]
-//   node scripts/drive-webview.mjs type "<text>"           into the focused element
-//   node scripts/drive-webview.mjs key <Enter|Escape|Tab|Ctrl+N>
-//   node scripts/drive-webview.mjs pages                   the windows; COGNO_PAGE=<n> picks one
-//   node scripts/drive-webview.mjs console [seconds]       what the console said, and says meanwhile
+//   node scripts/drive-cogno-dev-on-windows.mjs shot <file.png>
+//   node scripts/drive-cogno-dev-on-windows.mjs eval "<javascript>"
+//   node scripts/drive-cogno-dev-on-windows.mjs click <css> [text]      real mouse click on the first match
+//   node scripts/drive-cogno-dev-on-windows.mjs clickat <x> <y>
+//   node scripts/drive-cogno-dev-on-windows.mjs hover <css> [text]
+//   node scripts/drive-cogno-dev-on-windows.mjs type "<text>"           into the focused element
+//   node scripts/drive-cogno-dev-on-windows.mjs key <Enter|Escape|Tab|Ctrl+N>
+//   node scripts/drive-cogno-dev-on-windows.mjs pages                   the windows; COGNO_PAGE=<n> picks one
+//   node scripts/drive-cogno-dev-on-windows.mjs console [seconds]       what the console said, and says meanwhile
 import { writeFileSync } from "node:fs";
 
 const port = process.env.COGNO_DEBUG_PORT ?? "9222";
