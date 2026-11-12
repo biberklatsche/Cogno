@@ -116,6 +116,11 @@ pub enum Request {
         terminal_id: String,
         process_id: u32,
     },
+    /// Ends what runs in the foreground of the terminal; the shell and its
+    /// background jobs stay. On Windows everything under the shell ends.
+    TerminateForegroundJob {
+        terminal_id: String,
+    },
     ListShells,
     /// Lays the shell integration scripts of `version` down, unless they are
     /// there already. `dev_mode` as in a spawn: which Cogno home is meant.
@@ -140,7 +145,8 @@ impl Request {
             | Request::PtyKill { terminal_id }
             | Request::PtyAck { terminal_id, .. }
             | Request::ProcessTree { terminal_id }
-            | Request::TerminateProcess { terminal_id, .. } => Some(terminal_id),
+            | Request::TerminateProcess { terminal_id, .. }
+            | Request::TerminateForegroundJob { terminal_id } => Some(terminal_id),
             Request::ReleaseOwner { .. }
             | Request::Introduce { .. }
             | Request::ListSessions
@@ -160,6 +166,7 @@ impl Request {
             | Request::ProcessTree { .. }
             | Request::TerminalProcesses
             | Request::TerminateProcess { .. }
+            | Request::TerminateForegroundJob { .. }
             | Request::ListShells
             | Request::InstallShellIntegration { .. } => true,
             Request::PtyWrite { .. }

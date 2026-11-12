@@ -50,3 +50,19 @@ pub async fn pty_terminate_process(
     .await
     .map(|_| ())
 }
+
+/// Ends what runs in the foreground of a terminal; the shell and its
+/// background jobs stay. On Windows everything under the shell ends.
+#[tauri::command]
+pub async fn pty_terminate_processes(
+    window: tauri::WebviewWindow,
+    host: State<'_, HostState>,
+    terminal_id: String,
+) -> Result<(), String> {
+    host.request(
+        window.label().to_string(),
+        Request::TerminateForegroundJob { terminal_id },
+    )
+    .await
+    .map(|_| ())
+}

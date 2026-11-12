@@ -175,14 +175,11 @@ type Target = (Pid, u64);
 /// itself (closing the terminal ends it) and never a process outside the tree,
 /// so the webview cannot end arbitrary processes.
 ///
-/// On Unix the tree is asked to end (SIGTERM) and killed (SIGKILL) only where
-/// it has not after the grace period; Windows has no polite way and kills at once.
 pub(crate) fn terminate_process_tree(
     root_process_id: u32,
     target_process_id: u32,
 ) -> Result<(), String> {
-    let mut system = System::new();
-    system.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+    let system = all_processes();
 
     let target_pid = Pid::from_u32(target_process_id);
     if !collect_descendant_process_ids(&system, Pid::from_u32(root_process_id))
@@ -194,15 +191,106 @@ pub(crate) fn terminate_process_tree(
         ));
     }
 
-    let targets: Vec<Target> = std::iter::once(target_pid)
-        .chain(collect_descendant_process_ids(&system, target_pid))
+    end(
+        &system,
+        std::iter::once(target_pid).chain(collect_descendant_process_ids(&system, target_pid)),
+        &format!("process {}", target_process_id),
+    )
+}
+
+/// Ends what runs in the foreground of a terminal - the job the user would
+/// stop with Ctrl+C, also where it ignores that. The shell stays, and so does
+/// what it keeps beside the job: background jobs and the helpers of a prompt.
+/// Windows has no foreground job; there everything under the shell ends.
+///
+/// `foreground_group` is the process group that has the terminal (Unix only).
+pub(crate) fn terminate_foreground_job(
+    shell_process_id: u32,
+    #[cfg_attr(windows, allow(unused_variables))] foreground_group: Option<i32>,
+    terminal_id: &str,
+) -> Result<(), String> {
+    let system = all_processes();
+    let shell_pid = Pid::from_u32(shell_process_id);
+    #[cfg(unix)]
+    let targets = foreground_job(
+        &system,
+        shell_pid,
+        foreground_group.ok_or_else(|| {
+            format!("No foreground job known for terminal session: {terminal_id}")
+        })?,
+    );
+    #[cfg(windows)]
+    let targets = collect_descendant_process_ids(&system, shell_pid);
+    end(
+        &system,
+        targets,
+        &format!("the processes of terminal {terminal_id}"),
+    )
+}
+
+/// The processes under the shell that belong to the terminal's foreground
+/// process group, each with everything it started. Empty while the shell
+/// itself is in the foreground: it sits at its prompt.
+#[cfg(unix)]
+fn foreground_job(system: &System, shell_pid: Pid, foreground_group: i32) -> Vec<Pid> {
+    let mut job: Vec<Pid> = Vec::new();
+    for pid in collect_descendant_process_ids(system, shell_pid) {
+        if job.contains(&pid) || process_group_of(pid) != Some(foreground_group) {
+            continue;
+        }
+        job.push(pid);
+        for descendant in collect_descendant_process_ids(system, pid) {
+            if !job.contains(&descendant) {
+                job.push(descendant);
+            }
+        }
+    }
+    job
+}
+
+#[cfg(unix)]
+fn process_group_of(pid: Pid) -> Option<i32> {
+    // SAFETY: `getpgid` only reads the process table; a pid that is gone gives -1.
+    let group = unsafe { libc::getpgid(pid.as_u32() as libc::pid_t) };
+    (group >= 0).then_some(group)
+}
+
+fn all_processes() -> System {
+    let mut system = System::new();
+    system.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+    system
+}
+
+/// Ends the processes and says how many would not go.
+fn end(
+    system: &System,
+    process_ids: impl IntoIterator<Item = Pid>,
+    what: &str,
+) -> Result<(), String> {
+    let targets = process_ids
+        .into_iter()
         .filter_map(|pid| {
             system
                 .process(pid)
                 .map(|process| (pid, process.start_time()))
         })
         .collect();
+    let survivors = terminate(targets);
+    if survivors.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Could not terminate {}: {} process(es) still running",
+            what,
+            survivors.len()
+        ))
+    }
+}
 
+/// On Unix the targets are asked to end (SIGTERM) and killed (SIGKILL) only
+/// where they have not after the grace period; Windows has no polite way and
+/// kills at once. Returns the ones still alive.
+fn terminate(targets: Vec<Target>) -> Vec<Target> {
     #[cfg(unix)]
     let targets = signal_and_wait(
         targets,
@@ -211,23 +299,13 @@ pub(crate) fn terminate_process_tree(
         },
         TERMINATE_GRACE,
     );
-    let survivors = signal_and_wait(
+    signal_and_wait(
         targets,
         |process| {
             process.kill();
         },
         KILL_SETTLE,
-    );
-
-    if survivors.is_empty() {
-        Ok(())
-    } else {
-        Err(format!(
-            "Could not terminate process {}: {} process(es) still running",
-            target_process_id,
-            survivors.len()
-        ))
-    }
+    )
 }
 
 /// Signals every target still alive and waits until all are gone or `patience`
@@ -386,6 +464,35 @@ mod tests {
             Ok(())
         );
         let _ = shell.wait();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn takes_only_the_foreground_group_as_the_job() {
+        use std::os::unix::process::CommandExt;
+        // A group of its own, as a shell gives each job.
+        let mut job = Command::new("sh")
+            .args(["-c", "sleep 100 & wait"])
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        let tree = tree_of(&job);
+        let system = all_processes();
+        let root = Pid::from_u32(std::process::id());
+        let job_group = job.id() as i32;
+
+        let mut found = foreground_job(&system, root, job_group);
+        found.sort();
+        let mut expected: Vec<Pid> = tree.iter().map(|(pid, _)| *pid).collect();
+        expected.sort();
+        assert_eq!(found, expected);
+        // With the test process's own group in the foreground the job is not part of it.
+        let own_group = process_group_of(root).unwrap();
+        assert!(!foreground_job(&system, root, own_group).contains(&Pid::from_u32(job.id())));
+
+        let _ = job.kill();
+        let _ = job.wait();
+        let _ = terminate(tree);
     }
 
     #[cfg(unix)]

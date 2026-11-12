@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use crate::processes::{
-    get_process_tree_snapshot, list_terminal_processes, terminate_process_tree,
+    get_process_tree_snapshot, list_terminal_processes, terminate_foreground_job,
+    terminate_process_tree,
 };
 use crate::protocol::{Event, Reply, Request, Response};
 use crate::pty::{PtyState, Spawned};
@@ -129,6 +130,18 @@ impl Host {
                 process_id,
             } => terminate_process_tree(self.shell_process_id(&terminal_id)?, process_id)
                 .map(|_| Response::Done),
+            Request::TerminateForegroundJob { terminal_id } => {
+                #[cfg(unix)]
+                let foreground_group = self.pty.foreground_process_group(&terminal_id);
+                #[cfg(windows)]
+                let foreground_group = None;
+                terminate_foreground_job(
+                    self.shell_process_id(&terminal_id)?,
+                    foreground_group,
+                    &terminal_id,
+                )
+                .map(|_| Response::Done)
+            }
             Request::ListShells => Ok(Response::Shells(detect_shells())),
             Request::InstallShellIntegration {
                 dev_mode,

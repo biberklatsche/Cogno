@@ -1027,7 +1027,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 ### `feature.remote.order`
 
-Override the side-menu display position for this feature. Lower numbers appear first.
+Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `90`
 
