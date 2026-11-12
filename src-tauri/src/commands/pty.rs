@@ -56,7 +56,7 @@ pub fn pty_write(
     terminal_id: String,
     data: String,
 ) -> Result<(), String> {
-    done(host.handle(Request::PtyWrite { terminal_id, data }))
+    host.post(Request::PtyWrite { terminal_id, data })
 }
 
 #[tauri::command]
@@ -66,7 +66,9 @@ pub fn pty_execute_line_editor_action(
     action: String,
     payload_json: Option<String>,
 ) -> Result<(), String> {
-    done(host.handle(Request::PtyLineEditorAction {
+    // Waited for, on this thread: the caller wants to know that the shell
+    // has no line editor to act on, and what it types next must come after.
+    done(host.ask(Request::PtyLineEditorAction {
         terminal_id,
         action,
         payload_json,
@@ -80,11 +82,11 @@ pub fn pty_resize(
     cols: u16,
     rows: u16,
 ) -> Result<(), String> {
-    done(host.handle(Request::PtyResize {
+    host.post(Request::PtyResize {
         terminal_id,
         cols,
         rows,
-    }))
+    })
 }
 
 /// Releasing a session can block (closing a ConPTY waits for its output pipe).
@@ -97,5 +99,5 @@ pub async fn pty_kill(host: State<'_, HostState>, terminal_id: String) -> Result
 /// including `seq`.
 #[tauri::command]
 pub fn pty_ack(host: State<'_, HostState>, terminal_id: String, seq: u32) -> Result<(), String> {
-    done(host.handle(Request::PtyAck { terminal_id, seq }))
+    host.post(Request::PtyAck { terminal_id, seq })
 }

@@ -7,9 +7,11 @@ use crate::commands::askpass::{point_ssh_at_helper, AskpassState};
 use crate::host::HostState;
 use crate::http_server::HttpServerState;
 
-/// What a Cogno on the other machine is started with when the host's config
-/// names nothing else.
-const DEFAULT_REMOTE_COMMAND: &str = "cogno server --stdio";
+/// What is started on the other machine when the host's config names
+/// nothing else: the starter the Cogno there puts into its home, which is
+/// where an ssh session begins. Written so that `cmd` and `sh` both take it:
+/// a quoted path with forward slashes, without extension.
+const DEFAULT_REMOTE_COMMAND: &str = "\".cogno/bin/cogno\" server --stdio";
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -132,7 +134,7 @@ mod tests {
             .collect();
         assert_eq!(
             &args[args.len() - 3..],
-            ["--", "lars@macbook", "cogno server --stdio"]
+            ["--", "lars@macbook", "\".cogno/bin/cogno\" server --stdio"]
         );
     }
 }

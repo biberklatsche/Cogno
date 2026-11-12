@@ -129,7 +129,12 @@ mod tests {
         std::fs::create_dir_all(root.join("logs")).unwrap();
         std::fs::write(root.join("logs").join("shell-bootstrap-a.log"), "start").unwrap();
 
-        install_into(&root, "1.3.1", &[file("bash/bootstrap.bash", "# bootstrap")]).unwrap();
+        install_into(
+            &root,
+            "1.3.1",
+            &[file("bash/bootstrap.bash", "# bootstrap")],
+        )
+        .unwrap();
 
         assert!(!root.join("logs").exists());
         std::fs::remove_dir_all(root).unwrap();

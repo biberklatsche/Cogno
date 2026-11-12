@@ -3,6 +3,8 @@
 //! window and no webview: whoever embeds it sends requests and takes events
 //! (`protocol`).
 
+pub mod daemon;
+pub mod daemon_start;
 mod environment_builder;
 mod flow_control;
 mod host;
@@ -22,4 +24,3 @@ mod shells;
 pub mod wire;
 
 pub use host::{Client, EventSink, Host};
-pub use server::serve;

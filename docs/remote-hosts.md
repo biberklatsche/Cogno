@@ -12,7 +12,7 @@ has to be written), and the config.
 
 | | |
 |---|---|
-| On the other machine | Cogno installed, and an ssh server you can log in to |
+| On the other machine | Cogno **running**, and an ssh server you can log in to |
 | On this machine | An `ssh` client (part of Windows 10/11, macOS and Linux) and Cogno |
 | Between them | The other machine reachable by ssh: same network or a VPN |
 
@@ -40,27 +40,32 @@ shell.profiles.office-pwsh.path = C:\Program Files\PowerShell\7\pwsh.exe
 
 ### The start command
 
-Cogno runs `cogno server --stdio` on the other machine. That only works if
-`cogno` is on the `PATH` of an ssh session there, which it usually is not
-after a normal install. Name the binary yourself with `command`:
+The shells of a machine are held by a background process of Cogno that runs
+while Cogno is open there. Through ssh, this machine starts a small bridge
+to it:
 
 ```
-remote.hosts.office.command = C:\Tools\Cogno\cogno.exe server --stdio
+".cogno/bin/cogno" server --stdio
 ```
 
-How the command has to be written depends on the shell the ssh server starts
-it in. See [the default shell](#the-default-shell-of-the-windows-ssh-server)
-below; these are the forms for each:
+`.cogno/bin/cogno` is a starter the Cogno on the other machine puts into its
+home directory, which is where an ssh session begins. So it is found wherever
+Cogno is installed, and you normally set nothing.
 
-| Shell on the other machine | `command` |
+The one case that needs `command` is an ssh server that starts commands in
+**PowerShell** (see [the default shell](#the-default-shell-of-the-windows-ssh-server)
+below). PowerShell takes a quoted path for a string unless `&` stands in
+front of it:
+
+```
+remote.hosts.office.command = & ".cogno/bin/cogno" server --stdio
+```
+
+| Shell the ssh server starts commands in | `command` |
 |---|---|
-| `cmd` (Windows default), path without spaces | `C:\Tools\Cogno\cogno.exe server --stdio` |
-| `cmd`, path with spaces | `"C:\Program Files\Cogno\cogno.exe" server --stdio` |
-| PowerShell (Windows PowerShell or PowerShell 7) | `& "C:\Program Files\Cogno\cogno.exe" server --stdio` |
-| `sh`, `bash`, `zsh` (macOS, Linux) | `/path/to/cogno server --stdio` |
-
-In PowerShell the `&` is required whenever the path is quoted: without it
-PowerShell takes the quoted path for a string and reports a syntax error.
+| `cmd` (Windows default) | not needed |
+| `sh`, `bash`, `zsh` (macOS, Linux) | not needed |
+| PowerShell (Windows PowerShell or PowerShell 7) | `& ".cogno/bin/cogno" server --stdio` |
 
 The value is written into the config as it is. Backslashes need no escaping,
 and quotes inside the value are kept (only a value that both starts and ends
@@ -68,16 +73,19 @@ with a quote loses that outer pair).
 
 ### Check it by hand first
 
-Before you open a tab, run the same command through `ssh` with `--version`
-instead of `server --stdio`. It must print the version and nothing else:
+Before you open a tab, run the starter through `ssh` with `--version`. It
+must print the version and nothing else:
 
 ```
-ssh lars@office-pc "C:\Tools\Cogno\cogno.exe --version"
+ssh lars@office-pc '".cogno/bin/cogno" --version'
 cogno 0.5.0
 ```
 
 If this asks for a password, prints an error, or prints nothing, Cogno will
 not get through either. Fix it here, where you see what ssh says.
+
+`No Cogno is running on this machine` from the real command means exactly
+that: open Cogno on the other machine.
 
 ## Setting up the ssh server on Windows
 
@@ -172,8 +180,8 @@ The setting applies to connections made after the change.
 
 What it means for Cogno:
 
-- It decides how `remote.hosts.<name>.command` must be written (table above).
-  With PowerShell as the default shell, a quoted path needs the leading `&`.
+- It decides whether `remote.hosts.<name>.command` is needed (table above):
+  with PowerShell as the default shell, the quoted path needs a leading `&`.
 - It does **not** decide which shell your tab runs. That is the profile's
   `path`: a profile can start PowerShell on a machine whose ssh server uses
   `cmd`, and the other way round.
@@ -183,17 +191,16 @@ The same host, once for each default shell:
 ```
 # ssh server with cmd.exe as its default shell
 remote.hosts.office.destination = lars@office-pc
-remote.hosts.office.command = "C:\Program Files\Cogno\cogno.exe" server --stdio
 
 # ssh server with PowerShell as its default shell
 remote.hosts.office.destination = lars@office-pc
-remote.hosts.office.command = & "C:\Program Files\Cogno\cogno.exe" server --stdio
+remote.hosts.office.command = & ".cogno/bin/cogno" server --stdio
 ```
 
-And the check by hand for the PowerShell case, from a Windows machine:
+And the check by hand for the PowerShell case:
 
-```powershell
-ssh lars@office-pc '& "C:\Program Files\Cogno\cogno.exe" --version'
+```
+ssh lars@office-pc '& ".cogno/bin/cogno" --version'
 ```
 
 ## On the machine you connect from (Windows)
@@ -217,12 +224,11 @@ icacls $env:USERPROFILE\.ssh\id_rsa /inheritance:r /grant:r "$(whoami):F" /grant
 ## macOS and Linux as the other machine
 
 - **macOS:** turn on *Remote Login* (System Settings → General → Sharing), and
-  put your public key into `~/.ssh/authorized_keys`. The binary is inside the
-  app bundle; find it with `ls /Applications/Cogno.app/Contents/MacOS/` and
-  use that path in `command`.
+  put your public key into `~/.ssh/authorized_keys`.
 - **Linux:** an ssh server (`openssh-server`) and your key in
   `~/.ssh/authorized_keys`. The machine needs Cogno as it is installed on a
-  desktop; a build for servers without a display does not exist yet.
+  desktop, and running; a build for servers without a display does not exist
+  yet.
 
 ## What works in a remote tab
 
@@ -236,7 +242,8 @@ icacls $env:USERPROFILE\.ssh\id_rsa /inheritance:r /grant:r "$(whoami):F" /grant
 
 | The pane says | What it means |
 |---|---|
-| `No Cogno answered on the other machine`, followed by what ssh or the shell printed | The start command did not start Cogno. Usually the path in `command` is wrong, or it is written for the other default shell. Run the check by hand. |
+| `No Cogno host answered: No Cogno is running on this machine` | Cogno is not open on the other machine. |
+| `No Cogno host answered`, followed by something else ssh or the shell printed | The start command did not work. Usually the ssh server starts commands in PowerShell and `command` is missing its `&`, or Cogno never ran on that machine. Run the check by hand. |
 | `Permission denied (publickey,…)` | The ssh server does not accept your key. See *Allow your key*; on the machine you connect from, see the note on key permissions. |
 | `… speaks protocol N, this one M` | The two Cognos are too far apart in version. Update the older one. |
 | `Host '…' is not defined in remote.hosts` | The profile's `host` names a host the config does not have. |
@@ -245,6 +252,6 @@ icacls $env:USERPROFILE\.ssh\id_rsa /inheritance:r /grant:r "$(whoami):F" /grant
 
 | | |
 |---|---|
-| Windows as the other machine, ssh server with `cmd.exe` as default shell | Tested: connection, shell start, input, output, end, and that hanging up ends the shell |
+| Windows as the other machine, ssh server with `cmd.exe` as default shell | Tested: connection through the starter, shell start, input, output, end, and that hanging up ends the shell |
 | The start command run through Windows PowerShell and PowerShell 7 | Tested, by starting it through `powershell -c` and `pwsh -c` over ssh. Not tested with the registry setting itself. |
 | macOS or Linux as the other machine | Not tested yet |
