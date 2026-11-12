@@ -1,10 +1,9 @@
-import { CommonModule } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
 import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import { Opener } from "@cogno/platform";
-import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import { IconComponent, TooltipDirective, TreeComponent, TreeRowDirective } from "@cogno/shared/ui";
 import { RemotePanelService } from "./remote-panel.service";
-import { groupShells, ShellGroup, shellName } from "./remote-shell-tree";
+import { machineNodes, RemoteTreeNode, shellName } from "./remote-shell-tree";
 
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
 
@@ -18,16 +17,10 @@ type HostForm = {
   readonly error?: string;
 };
 
-/** What the tree of one machine shows. */
-type MachineTree =
-  | { readonly status: "loading" }
-  | { readonly status: "failed"; readonly reason: string }
-  | { readonly status: "loaded"; readonly groups: readonly ShellGroup[] };
-
 @Component({
   selector: "app-remote-side",
   standalone: true,
-  imports: [CommonModule, IconComponent, TooltipDirective],
+  imports: [IconComponent, TooltipDirective, TreeComponent, TreeRowDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="remote-panel">
@@ -102,160 +95,104 @@ type MachineTree =
         </form>
       }
 
-      <div class="machines">
-        @for (host of hosts(); track host.name) {
-          <section class="machine" (mouseleave)="disarm()">
-            <div class="machine-row">
-              @if (host.connection === "disconnected") {
-                <span class="node-toggle"></span>
-              } @else {
-                <button
-                  type="button"
-                  class="node-toggle"
-                  [attr.aria-label]="isOpen(host.name) ? 'Collapse' : 'Expand'"
-                  (click)="toggle(host.name)"
-                >
-                  <app-icon [name]="isOpen(host.name) ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-                </button>
-              }
-              <span class="connection" [class]="host.connection"></span>
-              <span class="name" [appTooltip]="host.destination">{{ host.name }}</span>
-              @if (host.connection === "connected") {
-                <button
-                  type="button"
-                  class="button text-button"
-                  appTooltip="Its shells run on; the ones shown here close"
-                  (click)="disconnect(host)"
-                >
-                  Disconnect
-                </button>
-              } @else if (host.connection !== "connecting") {
-                <button type="button" class="button text-button" (click)="connect(host)">
-                  Connect
-                </button>
-              }
-              <button
-                type="button"
-                class="button icon-button row-action"
-                appTooltip="Change"
-                (click)="edit(host)"
-              >
-                <app-icon name="mdiPencil"></app-icon>
-              </button>
-              <button
-                type="button"
-                class="button icon-button row-action danger"
-                [class.armed]="isArmed('remove', host.name)"
-                [appTooltip]="isArmed('remove', host.name) ? 'Click again to remove it' : 'Remove'"
-                (click)="remove(host)"
-              >
-                <app-icon name="mdiTrashCanOutline"></app-icon>
-              </button>
-            </div>
-            @if (isOpen(host.name)) {
-              @if (host.connection === "connecting") {
-                <div class="status">Connecting to {{ host.destination }}...</div>
-              } @else if (host.connection === "failed") {
-                <div class="status failure">{{ host.failure }}</div>
-              } @else if (host.connection === "connected") {
-                <ng-container
-                  *ngTemplateOutlet="treeTemplate; context: { $implicit: tree(host.name), host: host.name }"
-                ></ng-container>
-              }
-            }
-          </section>
-        } @empty {
-          <div class="status">
-            No remotes yet. Add the machine whose shells you want to go on with from here.
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- The shells of one machine: workspace, tab, shell. -->
-    <ng-template #treeTemplate let-machine let-host="host">
-      @if (!machine || machine.status === "loading") {
-        <div class="status">Looking for shells...</div>
-      } @else if (machine.status === "failed") {
-        <div class="status failure">{{ machine.reason }}</div>
-      } @else if (machine.groups.length === 0) {
-        <div class="status">No shells are running.</div>
-      } @else {
-        <ul class="tree">
-          @for (group of machine.groups; track group.name) {
-            <li>
-              <button
-                type="button"
-                class="branch group-name"
-                [attr.aria-expanded]="isOpen(host, group.name)"
-                (click)="toggle(host, group.name)"
-              >
-                <app-icon
-                  class="node-toggle"
-                  [name]="isOpen(host, group.name) ? 'mdiChevronDown' : 'mdiChevronRight'"
-                ></app-icon>
-                <span class="name">{{ group.name }}</span>
-              </button>
-              @if (isOpen(host, group.name)) {
-              <ul class="tree">
-                @for (tab of group.tabs; track tab.name) {
-                  <li>
-                    @if (tab.name) {
-                      <button
-                        type="button"
-                        class="branch tab-name"
-                        [attr.aria-expanded]="isOpen(host, group.name, tab.name)"
-                        (click)="toggle(host, group.name, tab.name)"
-                      >
-                        <app-icon
-                          class="node-toggle"
-                          [name]="isOpen(host, group.name, tab.name) ? 'mdiChevronDown' : 'mdiChevronRight'"
-                        ></app-icon>
-                        <span class="name">{{ tab.name }}</span>
-                      </button>
-                    }
-                    @if (isOpen(host, group.name, tab.name)) {
-                    <ul class="tree shells">
-                      @for (shell of tab.shells; track shell.terminalId) {
-                        <li class="shell-row" (mouseleave)="disarm()">
-                          <button
-                            type="button"
-                            class="shell"
-                            [appTooltip]="shell.directory ?? ''"
-                            (click)="show(host, shell)"
-                          >
-                            <app-icon class="shell-icon" name="mdiConsole"></app-icon>
-                            <span class="name">{{ nameOf(shell) }}</span>
-                            @if (shell.shownHere) {
-                              <span class="shown here">Here</span>
-                            } @else if (shell.shown) {
-                              <span class="shown">On {{ shell.shownBy ?? "another Cogno" }}</span>
-                            }
-                          </button>
-                          @if (!shell.shown) {
-                            <button
-                              type="button"
-                              class="button icon-button row-action danger"
-                              [class.armed]="isArmed('end', shell.terminalId)"
-                              [appTooltip]="isArmed('end', shell.terminalId) ? 'Click again to end it' : 'End the shell'"
-                              (click)="end(host, shell)"
-                            >
-                              <app-icon name="mdiClose"></app-icon>
-                            </button>
-                          }
-                        </li>
-                      }
-                    </ul>
-                    }
-                  </li>
-                }
-              </ul>
-              }
-            </li>
-          }
-        </ul>
+      @if (hosts().length === 0) {
+        <div class="status">
+          No remotes yet. Add the machine whose shells you want to go on with from here.
+        </div>
       }
-    </ng-template>
+
+      <!-- Machine, workspace, tab, shell. -->
+      <app-tree class="machines" [nodes]="nodes()" [childrenOf]="childrenOf" [keyOf]="keyOf">
+        <ng-template appTreeRow let-node let-toggle="toggle" let-open="open">
+          @switch (node.kind) {
+            @case ("machine") {
+              <div class="machine-row" (mouseleave)="disarm()">
+                <span class="connection" [class]="node.host.connection"></span>
+                <span class="name" [appTooltip]="node.host.destination">{{ node.host.name }}</span>
+                @if (node.host.connection === "connected") {
+                  <button
+                    type="button"
+                    class="button text-button"
+                    appTooltip="Its shells run on; the ones shown here close"
+                    (click)="disconnect(node.host)"
+                  >
+                    Disconnect
+                  </button>
+                } @else if (node.host.connection !== "connecting") {
+                  <button type="button" class="button text-button" (click)="connect(node.host)">
+                    Connect
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="button icon-button row-action"
+                  appTooltip="Change"
+                  (click)="edit(node.host)"
+                >
+                  <app-icon name="mdiPencil"></app-icon>
+                </button>
+                <button
+                  type="button"
+                  class="button icon-button row-action danger"
+                  [class.armed]="isArmed('remove', node.host.name)"
+                  [appTooltip]="isArmed('remove', node.host.name) ? 'Click again to remove it' : 'Remove'"
+                  (click)="remove(node.host)"
+                >
+                  <app-icon name="mdiTrashCanOutline"></app-icon>
+                </button>
+              </div>
+            }
+            @case ("workspace") {
+              <button
+                type="button"
+                class="branch workspace-name"
+                [attr.aria-expanded]="open"
+                (click)="toggle()"
+              >
+                {{ node.name }}
+              </button>
+            }
+            @case ("tab") {
+              <button type="button" class="branch" [attr.aria-expanded]="open" (click)="toggle()">
+                {{ node.name }}
+              </button>
+            }
+            @case ("status") {
+              <div class="status" [class.failure]="node.failure">{{ node.text }}</div>
+            }
+            @case ("shell") {
+              <div class="shell-row" (mouseleave)="disarm()">
+                <button
+                  type="button"
+                  class="shell"
+                  [appTooltip]="node.shell.directory ?? ''"
+                  (click)="show(node.host, node.shell)"
+                >
+                  <app-icon class="shell-icon" name="mdiConsole"></app-icon>
+                  <span class="name">{{ nameOf(node.shell) }}</span>
+                  @if (node.shell.shownHere) {
+                    <span class="shown here">Here</span>
+                  } @else if (node.shell.shown) {
+                    <span class="shown">On {{ node.shell.shownBy ?? "another Cogno" }}</span>
+                  }
+                </button>
+                @if (!node.shell.shown) {
+                  <button
+                    type="button"
+                    class="button icon-button row-action danger"
+                    [class.armed]="isArmed('end', node.shell.terminalId)"
+                    [appTooltip]="isArmed('end', node.shell.terminalId) ? 'Click again to end it' : 'End the shell'"
+                    (click)="end(node.host, node.shell)"
+                  >
+                    <app-icon name="mdiClose"></app-icon>
+                  </button>
+                }
+              </div>
+            }
+          }
+        </ng-template>
+      </app-tree>
+    </div>
   `,
   styles: `
     :host {
@@ -341,18 +278,11 @@ type MachineTree =
       overflow-y: auto;
     }
 
-    .machine {
-      padding-bottom: 6px;
-      margin-bottom: 6px;
-      border-bottom: 1px solid color-mix(in srgb, var(--foreground-color) 15%, transparent);
-    }
-
-    .machine:last-child {
-      border-bottom: 0;
-    }
-
+    /* A line fills what the tree leaves next to its arrow. */
     .machine-row,
     .shell-row {
+      flex: 1;
+      min-width: 0;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -435,84 +365,25 @@ type MachineTree =
       background: color-mix(in srgb, var(--color-red) 12%, var(--background-color));
     }
 
-    .tree {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* What runs on a machine is set in under its name. */
-    .machine > .tree,
-    .machine > .status {
-      padding-left: 20px;
-    }
-
-    .tree .tree {
-      padding-left: 12px;
-    }
-
-    /* A shell has no arrow: it lines up with the names above it. */
-    .tree.shells {
-      padding-left: 20px;
-    }
-
-    /* A workspace or a tab: one line that opens and closes what is under it. */
+    /* A workspace or a tab: its name opens and closes what is under it. */
     button.branch {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      width: 100%;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: left;
       border: 0;
       background: transparent;
       color: inherit;
       font: inherit;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    button.branch:hover {
-      background: color-mix(in srgb, var(--foreground-color) 6%, transparent);
-    }
-
-    .node-toggle {
-      flex: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      border: 0;
-      background: transparent;
-      color: inherit;
-      padding: 0;
-      opacity: 0.7;
-    }
-
-    button.node-toggle {
+      padding: 2px 0;
       cursor: pointer;
     }
 
-    .node-toggle app-icon {
-      width: 16px;
-      height: 16px;
-    }
-
-    .group-name {
-      padding: 4px 0 2px;
+    button.branch.workspace-name {
       font-size: 0.85rem;
       opacity: 0.7;
-    }
-
-    .tab-name {
-      padding: 2px 0;
-    }
-
-    .shell-row {
-      border-radius: 4px;
-    }
-
-    .shell-row:hover {
-      background: color-mix(in srgb, var(--foreground-color) 6%, transparent);
     }
 
     button.shell {
@@ -549,50 +420,21 @@ export class RemoteSideComponent {
   readonly failure = this.panel.failure;
   readonly form = signal<HostForm | null>(null);
 
-  /** The machines, workspaces and tabs that are folded away; all are open at first. */
-  private readonly collapsed = signal<ReadonlySet<string>>(new Set());
-
   /** The action that the next click on the same button carries out. */
   private readonly armed = signal<string | null>(null);
 
-  private readonly trees = computed<ReadonlyMap<string, MachineTree>>(() => {
-    const trees = new Map<string, MachineTree>();
-    for (const [name, machine] of this.panel.shells()) {
-      trees.set(
-        name,
-        machine.status === "loaded"
-          ? { status: "loaded", groups: groupShells(machine.shells) }
-          : machine,
-      );
-    }
-    return trees;
-  });
+  /** The tree the panel shows: the machines with what runs on them. */
+  readonly nodes = computed(() => machineNodes(this.panel.hosts(), this.panel.shells()));
+  readonly childrenOf = (node: RemoteTreeNode): readonly RemoteTreeNode[] => node.children;
+  readonly keyOf = (node: RemoteTreeNode): string => node.key;
 
   constructor(
     private readonly panel: RemotePanelService,
     private readonly opener: Opener,
   ) {}
 
-  tree(machine: string): MachineTree | undefined {
-    return this.trees().get(machine);
-  }
-
   nameOf(shell: RemoteShell): string {
     return shellName(shell);
-  }
-
-  /** Whether the branch at `path` (machine, workspace, tab) shows what is under it. */
-  isOpen(...path: string[]): boolean {
-    return !this.collapsed().has(JSON.stringify(path));
-  }
-
-  toggle(...path: string[]): void {
-    const key = JSON.stringify(path);
-    this.collapsed.update((collapsed) => {
-      const next = new Set(collapsed);
-      if (!next.delete(key)) next.add(key);
-      return next;
-    });
   }
 
   isArmed(action: string, target: string): boolean {
