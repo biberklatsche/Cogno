@@ -38,6 +38,19 @@ function listenInThisWindow<T>(event: string, listener: (payload: T) => void): P
   return getCurrentWebviewWindow().listen<T>(event, ({ payload }) => listener(payload));
 }
 
+/**
+ * How the host's refusal begins when a shell already runs under the terminal
+ * id a start asked for (`SHELL_ALREADY_RUNS` in the host's protocol). The
+ * running shell is never ended for it; the caller can attach to it instead.
+ */
+const SHELL_ALREADY_RUNS = "A shell already runs as terminal";
+
+/** Whether a start failed because a shell already runs under its terminal id. */
+export function isShellAlreadyRunning(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.startsWith(SHELL_ALREADY_RUNS);
+}
+
 /** Where a shell sits in the Cogno it belongs to. */
 export type PtyLabelContract = {
   workspace?: string;

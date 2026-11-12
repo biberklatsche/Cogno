@@ -187,6 +187,11 @@ pub enum Response {
 
 pub type Reply = Result<Response, String>;
 
+/// How a refused `PtySpawn` begins when a shell already runs under the
+/// terminal id: the client attaches to that one instead. Clients match the
+/// text, so it never changes.
+pub const SHELL_ALREADY_RUNS: &str = "A shell already runs as terminal";
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     /// One framed chunk of a session's output (sequence number, then bytes).
@@ -205,7 +210,7 @@ pub enum Event {
     /// The client that took a session over let it go, or is gone: nobody
     /// shows it now, and `owner`, who showed it before, may again.
     PtyReleased { terminal_id: String, owner: String },
-    /// The session ended on its own; a killed or replaced one reports nothing.
+    /// The session ended: on its own, or ended by another client.
     PtyExit {
         terminal_id: String,
         owner: String,

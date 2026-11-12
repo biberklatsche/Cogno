@@ -162,6 +162,23 @@ describe("SessionHostFactory, waiting for a host", () => {
     expect(refresh).toHaveBeenCalledExactlyOnceWith("mac");
   });
 
+  it("shows the shell that already ran when a pane wanted to start one", () => {
+    const refresh = vi.fn(() => new Promise<boolean>(() => undefined));
+    const { inner } = connectedTo({ take: () => undefined, isFresh: () => true, refresh });
+    const local = { terminalId: "t1", shellName: "zsh" } as Pane;
+    const session = (status: string) => ({ pane: local, host: { runtime: { status } } });
+
+    // A start that failed for another reason stays as it is.
+    inner.sessions.set("t1", session("running"));
+    sessionFacts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
+    expect(refresh).not.toHaveBeenCalled();
+
+    inner.sessions.set("t1", session("failed"));
+    sessionFacts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
+    // This machine is asked what runs, to attach to it.
+    expect(refresh).toHaveBeenCalledExactlyOnceWith(undefined);
+  });
+
   it("keeps a pane whose host could not be connected, without a session", async () => {
     connect.mockRejectedValue(new Error("Permission denied (publickey)."));
 
