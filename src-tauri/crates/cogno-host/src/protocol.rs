@@ -8,6 +8,19 @@ pub use crate::shell_spawner::ShellProfile;
 pub use crate::shells::ShellInfo;
 use serde::{Deserialize, Serialize};
 
+/// A running session, as a client needs it to attach: the profile it was
+/// started with (its environment holds the session's token) and its size.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SessionInfo {
+    pub terminal_id: String,
+    pub profile: ShellProfile,
+    pub cols: u16,
+    pub rows: u16,
+    /// Whether a client shows it right now.
+    pub attached: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Request {
     PtySpawn {
@@ -20,7 +33,25 @@ pub enum Request {
         /// Set after the profile's own environment, so a profile cannot
         /// override it.
         env: Vec<(String, String)>,
+        /// Whether the session goes on when its client is gone, for another
+        /// client to attach to. Otherwise it ends with its client.
+        survives_client: bool,
     },
+    /// Shows a running session to the caller: what was kept of its output
+    /// comes under `stream`, then what the shell writes from now on. A client
+    /// that showed it before gets `PtyTakenOver`.
+    PtyAttach {
+        terminal_id: String,
+        /// As in `PtySpawn`: the session is the caller's from now on.
+        owner: String,
+        stream: u64,
+    },
+    /// Stops showing a session, which goes on.
+    PtyDetach {
+        terminal_id: String,
+    },
+    /// The sessions that run on the host.
+    ListSessions,
     PtyWrite {
         terminal_id: String,
         data: String,
@@ -71,7 +102,9 @@ impl Request {
     pub fn terminal_id(&self) -> Option<&str> {
         match self {
             Request::PtySpawn { options, .. } => Some(&options.name),
-            Request::PtyWrite { terminal_id, .. }
+            Request::PtyAttach { terminal_id, .. }
+            | Request::PtyDetach { terminal_id }
+            | Request::PtyWrite { terminal_id, .. }
             | Request::PtyLineEditorAction { terminal_id, .. }
             | Request::PtyResize { terminal_id, .. }
             | Request::PtyKill { terminal_id }
@@ -79,6 +112,7 @@ impl Request {
             | Request::ProcessTree { terminal_id }
             | Request::TerminateProcess { terminal_id, .. } => Some(terminal_id),
             Request::ReleaseOwner { .. }
+            | Request::ListSessions
             | Request::TerminalProcesses
             | Request::ListShells
             | Request::InstallShellIntegration { .. } => None,
@@ -90,6 +124,7 @@ impl Request {
     pub fn may_block(&self) -> bool {
         match self {
             Request::PtySpawn { .. }
+            | Request::PtyAttach { .. }
             | Request::PtyKill { .. }
             | Request::ProcessTree { .. }
             | Request::TerminalProcesses
@@ -100,6 +135,8 @@ impl Request {
             | Request::PtyLineEditorAction { .. }
             | Request::PtyResize { .. }
             | Request::PtyAck { .. }
+            | Request::PtyDetach { .. }
+            | Request::ListSessions
             | Request::ReleaseOwner { .. } => false,
         }
     }
@@ -109,6 +146,7 @@ impl Request {
 pub enum Response {
     Done,
     Spawned(PtySpawnResult),
+    Sessions(Vec<SessionInfo>),
     ProcessTree(ProcessTreeSnapshot),
     TerminalProcesses(Vec<TerminalProcess>),
     Shells(Vec<ShellInfo>),
@@ -124,6 +162,8 @@ pub enum Event {
     PtyData { stream: u64, frame: Vec<u8> },
     /// Nothing more comes under this stream.
     PtyStreamEnded { stream: u64 },
+    /// Another client attached to the session: it runs on, shown elsewhere.
+    PtyTakenOver { terminal_id: String, owner: String },
     /// The session ended on its own; a killed or replaced one reports nothing.
     PtyExit {
         terminal_id: String,
