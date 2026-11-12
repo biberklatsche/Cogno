@@ -16,11 +16,35 @@ struct Server {
     next_id: u64,
 }
 
+/// Set to ssh arguments ending in the destination (`localhost`, or
+/// `-o UserKnownHostsFile=... user@host`) to run these tests through a real
+/// ssh connection instead of two pipes: `ssh -T <arguments> <binary> server
+/// --stdio`. The destination must reach this machine, the binary is this
+/// build's.
+const SSH_ARGUMENTS: &str = "COGNO_TEST_SSH";
+
 impl Server {
+    fn command() -> Command {
+        let binary = env!("CARGO_BIN_EXE_cogno");
+        match std::env::var(SSH_ARGUMENTS) {
+            Ok(arguments) => {
+                let mut ssh = Command::new("ssh");
+                ssh.arg("-T")
+                    .args(arguments.split_whitespace())
+                    .arg(format!("{binary} server --stdio"));
+                ssh
+            }
+            Err(_) => {
+                let mut server = Command::new(binary);
+                server.args(["server", "--stdio"]);
+                server
+            }
+        }
+    }
+
     /// Starts the server and reads up to its hello.
     fn start() -> (Self, HostMessage) {
-        let mut process = Command::new(env!("CARGO_BIN_EXE_cogno"))
-            .args(["server", "--stdio"])
+        let mut process = Self::command()
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
