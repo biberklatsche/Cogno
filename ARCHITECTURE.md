@@ -1035,6 +1035,12 @@ Daraus folgt:
   Meldung erneut an (Neuladen). Darum hört ein Fenster `pty-exit` und
   `pty-taken-over` nur für sich (`platform/pty.ts`); ein gewöhnliches
   `listen` hörte auch, was dem Fenster gesagt wird, das die Shell verlor.
+- **Wer eine Sitzung verlor, bekommt sie zurück, wenn der Übernehmer sie
+  loslässt.** Der Host merkt sich an der Sitzung, wem sie zuletzt genommen
+  wurde. Hängt der Übernehmer ab (`PtyDetach`), schließt sein Fenster oder
+  verschwindet seine Verbindung, bekommt jener `PtyReleased`. Eine Sitzung,
+  die niemand zeigte, wurde niemandem genommen; und für einen Client, der
+  selbst gegangen ist, wartet nichts mehr.
 - **Der Host kennt zu jeder Sitzung ein Etikett** (`SessionLabel`: Workspace,
   Tab, Titel, Verzeichnis) und zu jedem Client einen Namen (`Introduce`, der
   Rechnername). Beides sind Worte des Clients, die der Host nur aufhebt und
@@ -1078,7 +1084,9 @@ dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
   (Runtime-Achse, 2.3) und nennt, wo sie jetzt gezeigt wird: die Shell läuft
   weiter, gehört aber nicht mehr dieser App — ihr Schließen beendet nichts.
   „Hier zeigen" verwirft die Sitzung und dockt mit einer neuen an
-  (`RetakeTerminal` auf dem Bus).
+  (`RetakeTerminal` auf dem Bus). Dasselbe geschieht von selbst, wenn der
+  Host meldet, dass die Shell wieder frei ist: Die Sitzung, die noch wartet,
+  nennt das als Fakt (`releasedElsewhere`), die Sitzungsfabrik dockt neu an.
 - **Die Etiketten pflegt die Workbench** (`SessionLabelPublisher`): Für jede
   laufende Shell dieses Rechners sagt sie dem Host, wo sie sitzt, und wieder,
   wenn sich Workspace, Tab, Titel oder Verzeichnis ändern. Eine Shell eines

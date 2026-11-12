@@ -146,6 +146,13 @@ export class SessionHostFactory {
     const retakes = this.bus
       .on$("RetakeTerminal")
       .subscribe((action) => action.payload && void this.retake(action.payload));
+    // A shell that another Cogno took and let go again comes back by itself,
+    // into the pane that still says where it went.
+    retakes.add(
+      this.sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
+        if (fact.type === "releasedElsewhere") void this.retake(terminalId);
+      }),
+    );
     destroyRef.onDestroy(() => retakes.unsubscribe());
   }
 
@@ -338,7 +345,8 @@ export class SessionHostFactory {
   }
 
   /**
-   * Another Cogno took the pane's shell over; it is shown here again. The
+   * Another Cogno took the pane's shell over; it is shown here again - the
+   * user asked for it, or that Cogno let the shell go. The
    * session that lost it is of no use any more: a new one attaches to the
    * shell and gets its output from the host afresh.
    */

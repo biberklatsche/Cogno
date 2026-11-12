@@ -38,6 +38,8 @@ export interface IPty extends IDisposable {
   attach(terminalId: string, onData: PtyChunkListener): Promise<void>;
   /** Another Cogno took the shell over: it runs on, but not here any more. */
   onTakenOver(listener: (by?: string) => void): IDisposable;
+  /** The Cogno that took the shell over let it go: it can be shown here again. */
+  onReleased(listener: () => void): IDisposable;
   resize(dimensions: TerminalDimensions): void;
   /** Flow control: the terminal has parsed every chunk up to and including `seq`. */
   ack(seq: number): void;
@@ -75,6 +77,7 @@ export class Pty implements IPty {
   private _exit: PtyExitEventContract | undefined = undefined;
   private readonly _exitListeners = new Set<PtyExitListener>();
   private readonly _takenOverListeners = new Set<(by?: string) => void>();
+  private readonly _releasedListeners = new Set<() => void>();
 
   constructor(
     private readonly _transport: PtyTransport,
@@ -137,13 +140,17 @@ export class Pty implements IPty {
     // before the spawn call even returns.
     this._exitUnlisten?.();
     this._exitUnlisten = undefined;
-    const [unlistenExit, unlistenTakenOver] = await Promise.all([
+    const [unlistenExit, unlistenTakenOver, unlistenReleased] = await Promise.all([
       this._transport.onExit(terminalId, (exit) => this.notifyExit(exit)),
       this._transport.onTakenOver(terminalId, (by) => this.notifyTakenOver(by)),
+      this._transport.onReleased(terminalId, () => {
+        for (const listener of this._releasedListeners) listener();
+      }),
     ]);
     const unlisten = () => {
       unlistenExit();
       unlistenTakenOver();
+      unlistenReleased();
     };
     if (this._disposed || this._terminalId !== terminalId) {
       unlisten();
@@ -280,6 +287,11 @@ export class Pty implements IPty {
     return { dispose: () => this._takenOverListeners.delete(listener) };
   }
 
+  onReleased(listener: () => void): IDisposable {
+    this._releasedListeners.add(listener);
+    return { dispose: () => this._releasedListeners.delete(listener) };
+  }
+
   /**
    * The shell is another Cogno's now. Nothing of it is this machine's to
    * touch any more: disposing must not kill what runs on elsewhere.
@@ -305,6 +317,7 @@ export class Pty implements IPty {
     this._exitUnlisten = undefined;
     this._exitListeners.clear();
     this._takenOverListeners.clear();
+    this._releasedListeners.clear();
     this._terminalId = undefined;
   }
 

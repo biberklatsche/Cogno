@@ -37,6 +37,7 @@ vi.mock("@cogno/core/terminal/pty", () => {
     spawn = vi.fn().mockResolvedValue(undefined);
     onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
     onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    onReleased = vi.fn().mockReturnValue({ dispose: vi.fn() });
     attach = vi.fn().mockResolvedValue(undefined);
     kill = vi.fn();
     faults$ = new Subject();
@@ -332,6 +333,7 @@ function ptyOf(host: SessionHost) {
         attach: ReturnType<typeof vi.fn>;
         onExit: ReturnType<typeof vi.fn>;
         onTakenOver: ReturnType<typeof vi.fn>;
+        onReleased: ReturnType<typeof vi.fn>;
       };
     }
   ).pty;
@@ -394,6 +396,24 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     (ptyOf(host).onTakenOver.mock.calls[0][0] as () => void)();
 
     expect(host.runtime.status).toBe("takenOver");
+  });
+
+  it("says when the Cogno that took its shell let it go, while it still waits for it", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+    await settle();
+    const facts: string[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact.type));
+    const released = ptyOf(host).onReleased.mock.calls[0][0] as () => void;
+
+    // It shows its shell: there is nothing to come back.
+    released();
+    expect(facts).not.toContain("releasedElsewhere");
+
+    (ptyOf(host).onTakenOver.mock.calls[0][0] as () => void)();
+    released();
+    expect(facts.filter((type) => type === "releasedElsewhere")).toHaveLength(1);
   });
 
   it("keeps running while detached and only moves the element on a second attach", async () => {

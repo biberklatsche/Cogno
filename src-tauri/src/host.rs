@@ -122,6 +122,12 @@ impl EventSink for WebviewSink {
                 self.terminals.lock().unwrap().remove(&terminal_id);
                 emit_exit(&self.app, &owner, &terminal_id, exit_code)
             }
+            // The Cogno that took the session let it go: the window that
+            // showed it before may show it again.
+            Event::PtyReleased { terminal_id, owner } => self
+                .app
+                .emit_to(owner.as_str(), &format!("pty-released:{}", terminal_id), ())
+                .is_ok(),
             // Another Cogno shows the session now: it is not this app's any
             // more, and the window that showed it is told.
             Event::PtyTakenOver {

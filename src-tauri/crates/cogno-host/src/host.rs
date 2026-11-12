@@ -175,6 +175,8 @@ mod tests {
         exits: Vec<(String, String)>,
         /// Terminal id, owner and taker's name of every session taken over.
         taken_over: Vec<(String, String, Option<String>)>,
+        /// Terminal id and owner of every session that came free again.
+        released: Vec<(String, String)>,
     }
 
     #[derive(Default)]
@@ -196,6 +198,9 @@ mod tests {
                     owner,
                     by,
                 } => recorded.taken_over.push((terminal_id, owner, by)),
+                Event::PtyReleased { terminal_id, owner } => {
+                    recorded.released.push((terminal_id, owner))
+                }
             }
             true
         }
@@ -565,6 +570,148 @@ mod tests {
         });
         assert_eq!(sink.ended_streams(), [1]);
         assert!(sink.0.lock().unwrap().taken_over.is_empty());
+        host.release_all();
+    }
+
+    /// The office started `t1`; the laptop has taken it over.
+    struct TakenOver {
+        host: Host,
+        office: Client,
+        at_the_office: Arc<RecordingSink>,
+        laptop: Client,
+        on_the_laptop: Arc<RecordingSink>,
+    }
+
+    fn taken_over_by_the_laptop() -> TakenOver {
+        let (office, at_the_office) = client(1);
+        let (laptop, on_the_laptop) = client(2);
+        let host = Host::new();
+        host.handle(&office, spawn_request("t1", 1, WAITING, false))
+            .unwrap();
+        host.handle(&laptop, attach_request("t1", 5)).unwrap();
+        wait_until("the laptop has the output", || {
+            on_the_laptop.output_of(5).contains("port=4711")
+        });
+        TakenOver {
+            host,
+            office,
+            at_the_office,
+            laptop,
+            on_the_laptop,
+        }
+    }
+
+    fn detach_request(terminal_id: &str) -> Request {
+        Request::PtyDetach {
+            terminal_id: terminal_id.to_string(),
+        }
+    }
+
+    fn released(sink: &RecordingSink) -> Vec<(String, String)> {
+        sink.0.lock().unwrap().released.clone()
+    }
+
+    fn t1_of_window_1() -> Vec<(String, String)> {
+        vec![("t1".to_string(), "window-1".to_string())]
+    }
+
+    #[test]
+    fn whoever_lost_a_session_hears_when_it_is_let_go() {
+        let taken = taken_over_by_the_laptop();
+        assert!(released(&taken.at_the_office).is_empty());
+
+        taken
+            .host
+            .handle(&taken.laptop, detach_request("t1"))
+            .unwrap();
+
+        assert_eq!(released(&taken.at_the_office), t1_of_window_1());
+        // The one that let it go knows that already.
+        assert!(released(&taken.on_the_laptop).is_empty());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn whoever_lost_a_session_hears_when_its_taker_is_gone() {
+        let taken = taken_over_by_the_laptop();
+
+        // The laptop is closed without a word.
+        taken.host.client_gone(taken.laptop.id);
+
+        assert_eq!(released(&taken.at_the_office), t1_of_window_1());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn whoever_lost_a_session_hears_when_the_takers_window_closes() {
+        let taken = taken_over_by_the_laptop();
+
+        taken
+            .host
+            .handle(
+                &taken.laptop,
+                Request::ReleaseOwner {
+                    owner: "window-1".to_string(),
+                },
+            )
+            .unwrap();
+
+        assert_eq!(released(&taken.at_the_office), t1_of_window_1());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn a_session_is_let_go_to_whoever_lost_it_last_and_only_once() {
+        let taken = taken_over_by_the_laptop();
+
+        // The office takes it back, then lets it go itself - twice over.
+        taken
+            .host
+            .handle(&taken.office, attach_request("t1", 2))
+            .unwrap();
+        for _ in 0..2 {
+            taken
+                .host
+                .handle(&taken.office, detach_request("t1"))
+                .unwrap();
+        }
+
+        // The laptop lost it last, so the laptop may have it again.
+        assert_eq!(released(&taken.on_the_laptop), t1_of_window_1());
+        assert!(released(&taken.at_the_office).is_empty());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn nobody_waits_for_a_session_on_behalf_of_a_client_that_is_gone() {
+        let taken = taken_over_by_the_laptop();
+
+        // The office closes while the laptop shows its shell.
+        taken.host.client_gone(taken.office.id);
+        taken
+            .host
+            .handle(&taken.laptop, detach_request("t1"))
+            .unwrap();
+
+        assert!(released(&taken.at_the_office).is_empty());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn nobody_hears_of_a_session_that_was_taken_from_nobody() {
+        let (me, sink) = client(1);
+        let (other, elsewhere) = client(2);
+        let host = Host::new();
+        host.handle(&me, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+        // Its client goes; the session runs on with nobody showing it.
+        host.client_gone(me.id);
+
+        host.handle(&other, attach_request("t1", 5)).unwrap();
+        host.handle(&other, detach_request("t1")).unwrap();
+
+        assert!(released(&sink).is_empty());
+        assert!(released(&elsewhere).is_empty());
         host.release_all();
     }
 

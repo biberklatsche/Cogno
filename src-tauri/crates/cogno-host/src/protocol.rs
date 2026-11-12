@@ -202,6 +202,9 @@ pub enum Event {
         /// What the client that shows it now is called, if it said.
         by: Option<String>,
     },
+    /// The client that took a session over let it go, or is gone: nobody
+    /// shows it now, and `owner`, who showed it before, may again.
+    PtyReleased { terminal_id: String, owner: String },
     /// The session ended on its own; a killed or replaced one reports nothing.
     PtyExit {
         terminal_id: String,

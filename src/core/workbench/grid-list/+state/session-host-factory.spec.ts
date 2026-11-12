@@ -16,8 +16,10 @@ describe("SessionHostFactory, waiting for a host", () => {
   let connect: ReturnType<typeof vi.fn>;
   let profileLookups: ReturnType<typeof vi.fn>;
   let factory: SessionHostFactory;
+  let sessionFacts: Subject<{ terminalId: string; fact: { type: string } }>;
 
   beforeEach(() => {
+    sessionFacts = new Subject();
     connect = vi.fn();
     profileLookups = vi.fn(() => ({ shell_type: "ZSH", path: "/bin/zsh" }));
     const remoteHosts = {
@@ -30,7 +32,7 @@ describe("SessionHostFactory, waiting for a host", () => {
       {} as never,
       { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
       { publish: vi.fn(), on$: () => new Subject() } as never,
-      {} as never,
+      { facts$: sessionFacts } as never,
       { take: vi.fn() } as never,
       { platform: () => "windows" } as unknown as OsPlatform,
       remoteHosts,
@@ -76,7 +78,7 @@ describe("SessionHostFactory, waiting for a host", () => {
   });
 
   /** The factory's inner state, where only a pane's view could reach it. */
-  type Inner = { waiting: Map<string, unknown> };
+  type Inner = { waiting: Map<string, unknown>; sessions: Map<string, unknown> };
 
   function connectedTo(runningSessions: object) {
     const connected = new SessionHostFactory(
@@ -84,7 +86,7 @@ describe("SessionHostFactory, waiting for a host", () => {
       {} as never,
       { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
       { publish: vi.fn(), on$: () => new Subject() } as never,
-      {} as never,
+      { facts$: sessionFacts } as never,
       { take: vi.fn() } as never,
       { platform: () => "windows" } as unknown as OsPlatform,
       { info: () => ({ os: "windows" }), connect } as unknown as RemoteHostsService,
@@ -124,6 +126,25 @@ describe("SessionHostFactory, waiting for a host", () => {
     expect(refresh).toHaveBeenCalledOnce();
     expect(refresh).toHaveBeenCalledWith("mac");
     expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "failed" } });
+  });
+
+  it("shows a shell again by itself once the Cogno that took it let it go", () => {
+    const refresh = vi.fn(() => new Promise<void>(() => undefined));
+    const { inner } = connectedTo({ take: () => undefined, isFresh: () => true, refresh });
+    const lost = (status: string) => ({ pane, host: { runtime: { status } } });
+
+    // Still shown here, or not a pane of this window: nothing to do.
+    inner.sessions.set("t1", lost("running"));
+    sessionFacts.next({ terminalId: "t1", fact: { type: "releasedElsewhere" } });
+    sessionFacts.next({ terminalId: "unknown", fact: { type: "releasedElsewhere" } });
+    expect(refresh).not.toHaveBeenCalled();
+
+    // Lost to another Cogno: it asks the host afresh, to attach to what runs.
+    inner.sessions.set("t1", lost("takenOver"));
+    sessionFacts.next({ terminalId: "t1", fact: { type: "outputReceived" } });
+    expect(refresh).not.toHaveBeenCalled();
+    sessionFacts.next({ terminalId: "t1", fact: { type: "releasedElsewhere" } });
+    expect(refresh).toHaveBeenCalledExactlyOnceWith("mac");
   });
 
   it("keeps a pane whose host could not be connected, without a session", async () => {

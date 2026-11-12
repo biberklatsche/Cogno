@@ -406,6 +406,12 @@ export class SessionHost {
         this.stopWatchingForHandshake();
         this.setRuntime({ status: "takenOver", takenBy: by });
       },
+      onReleased: () => {
+        // Only a session that still waits for its shell has use for it.
+        if (this.runtime.status === "takenOver") {
+          this.hostFacts.next({ type: "releasedElsewhere" });
+        }
+      },
       onFailed: (error) => this.onStartFailed(error),
       onExited: (exitCode) => {
         this.stopWatchingForHandshake();

@@ -46,6 +46,7 @@ describe("PtyHandler", () => {
       write: vi.fn(),
       onExit: vi.fn().mockReturnValue({ dispose: vi.fn() }),
       onTakenOver: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+      onReleased: vi.fn().mockReturnValue({ dispose: vi.fn() }),
       attach: vi.fn().mockResolvedValue(undefined),
       resize: vi.fn().mockResolvedValue(undefined),
       ack: vi.fn(),

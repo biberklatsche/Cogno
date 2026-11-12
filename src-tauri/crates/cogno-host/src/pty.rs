@@ -200,9 +200,50 @@ impl Output {
     }
 }
 
+/// Who showed a session until another client took it over: told when that
+/// one lets it go, so it can show the session again.
+struct TakenFrom {
+    owner: Owner,
+    sink: Arc<dyn EventSink>,
+}
+
+impl TakenFrom {
+    fn tell_released(self, terminal_id: &str) {
+        self.sink.emit(Event::PtyReleased {
+            terminal_id: terminal_id.to_string(),
+            owner: self.owner.label,
+        });
+    }
+}
+
+/// A session whose owner is gone and that runs on with nobody showing it.
+struct LeftRunning {
+    terminal_id: String,
+    output: Arc<Output>,
+    taken_from: Option<TakenFrom>,
+}
+
+impl LeftRunning {
+    fn of((terminal_id, session): (&String, &mut Session)) -> Self {
+        Self {
+            terminal_id: terminal_id.clone(),
+            output: session.output.clone(),
+            taken_from: session.taken_from.take(),
+        }
+    }
+
+    fn tell_released(self) {
+        if let Some(taken_from) = self.taken_from {
+            taken_from.tell_released(&self.terminal_id);
+        }
+    }
+}
+
 struct Session {
     /// The app names the window that spawned or attached it.
     owner: Owner,
+    /// Whom the owner took the session from, while that still matters.
+    taken_from: Option<TakenFrom>,
     /// Whether the session goes on without its client; otherwise it ends
     /// when the client is gone.
     survives_client: bool,
@@ -379,18 +420,19 @@ impl PtyState {
                 .extract_if(|_, session| session.owner == owner && !session.survives_client)
                 .map(|(_, session)| session)
                 .collect();
-            let left: Vec<Arc<Output>> = sessions
+            let left: Vec<LeftRunning> = sessions
                 .live
-                .values()
-                .filter(|session| session.owner == owner)
-                .map(|session| session.output.clone())
+                .iter_mut()
+                .filter(|(_, session)| session.owner == owner)
+                .map(LeftRunning::of)
                 .collect();
             (ended, left)
         };
-        for output in left {
-            if let Some(attached) = output.detach() {
+        for left in left {
+            if let Some(attached) = left.output.detach() {
                 attached.end();
             }
+            left.tell_released();
         }
         self.release_apart(ended);
     }
@@ -412,30 +454,43 @@ impl PtyState {
     /// The client is gone. Its sessions that go on without one are left
     /// running with nobody attached; the others end with it.
     pub fn client_gone(&self, client: u64) {
-        let (ended, left): (Vec<Session>, Vec<Arc<Output>>) = {
+        let (ended, left): (Vec<Session>, Vec<LeftRunning>) = {
             let mut sessions = self.sessions.lock().unwrap();
             let ended = sessions
                 .live
                 .extract_if(|_, session| session.owner.client == client && !session.survives_client)
                 .map(|(_, session)| session)
                 .collect();
+            // Nothing waits for a session any more on the client's behalf.
+            for session in sessions.live.values_mut() {
+                if session
+                    .taken_from
+                    .as_ref()
+                    .is_some_and(|taken_from| taken_from.owner.client == client)
+                {
+                    session.taken_from = None;
+                }
+            }
             let left = sessions
                 .live
-                .values()
-                .filter(|session| session.owner.client == client)
-                .map(|session| session.output.clone())
+                .iter_mut()
+                .filter(|(_, session)| session.owner.client == client)
+                .map(LeftRunning::of)
                 .collect();
             (ended, left)
         };
-        for output in left {
-            // Nobody is there to be told: the reader just stops sending.
-            if let Some(attached) = output
+        for left in left {
+            // The client is not there to be told: the reader just stops
+            // sending.
+            if let Some(attached) = left
+                .output
                 .attached()
                 .filter(|attached| attached.client == client)
             {
                 attached.flow.close();
-                output.forget(&attached);
+                left.output.forget(&attached);
             }
+            left.tell_released();
         }
         self.release_apart(ended);
     }
@@ -510,6 +565,14 @@ impl PtyState {
             if previous_owner.client != client.id {
                 session.survives_client = true;
             }
+            if passed_on {
+                // Whoever shows it now is the one to get it back; a session
+                // nobody showed was taken from nobody.
+                session.taken_from = session.output.attached().map(|showed| TakenFrom {
+                    owner: previous_owner.clone(),
+                    sink: showed.sink,
+                });
+            }
             (session.output.clone(), previous_owner, passed_on)
         };
         let attachment = Attachment::new(client, stream, FlowControl::new());
@@ -535,18 +598,22 @@ impl PtyState {
         }
     }
 
-    /// Takes the client off a session, which goes on without one.
+    /// Takes the client off a session, which goes on without one. Whoever
+    /// it was taken from is told that it is free again.
     pub fn detach(&self, terminal_id: &str) -> Result<(), String> {
-        let output = {
-            let sessions = self.sessions.lock().unwrap();
+        let (output, taken_from) = {
+            let mut sessions = self.sessions.lock().unwrap();
             sessions
                 .live
-                .get(terminal_id)
-                .map(|session| session.output.clone())
+                .get_mut(terminal_id)
+                .map(|session| (session.output.clone(), session.taken_from.take()))
                 .ok_or_else(|| format!("Session not found: {}", terminal_id))?
         };
         if let Some(attached) = output.detach() {
             attached.end();
+        }
+        if let Some(taken_from) = taken_from {
+            taken_from.tell_released(terminal_id);
         }
         Ok(())
     }
@@ -679,6 +746,7 @@ impl PtyState {
                 client: client.id,
                 label: owner,
             },
+            taken_from: None,
             survives_client,
             profile: options.profile.clone(),
             label: SessionLabel::default(),
@@ -1132,6 +1200,7 @@ mod test_support {
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
             owner: owner("test"),
+            taken_from: None,
             survives_client: false,
             profile: profile("Bash"),
             label: SessionLabel::default(),
@@ -1192,6 +1261,7 @@ mod test_support {
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
             owner: owner("test"),
+            taken_from: None,
             survives_client: false,
             profile: profile("PowerShell"),
             label: SessionLabel::default(),
@@ -1392,6 +1462,7 @@ mod unix_tests {
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
             owner: super::test_support::owner("test"),
+            taken_from: None,
             survives_client: false,
             profile: super::test_support::profile("Bash"),
             label: SessionLabel::default(),

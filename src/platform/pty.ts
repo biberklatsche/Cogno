@@ -306,6 +306,14 @@ export class PtyTransport {
     );
   }
 
+  /**
+   * The Cogno that took the shell over let it go, or is gone: nobody shows
+   * it now, and this window, which showed it before, may again.
+   */
+  onReleased(terminalId: string, listener: () => void): Promise<() => void> {
+    return listenInThisWindow<void>(`pty-released:${terminalId}`, () => listener());
+  }
+
   /** Says where the shell sits in this Cogno, for another Cogno to find it by. */
   label(terminalId: string, label: PtyLabelContract): Promise<void> {
     return invoke("pty_label", { terminalId, label });

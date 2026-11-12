@@ -36,6 +36,11 @@ export type SessionFact =
   | { readonly type: "searchResult"; readonly result: TerminalSearchResultContract }
   /** The shell process ended. */
   | { readonly type: "exited"; readonly exitCode: number }
+  /**
+   * The Cogno that had taken the shell over let it go: nobody shows it now,
+   * and this session, which lost it, could be replaced by one that does.
+   */
+  | { readonly type: "releasedElsewhere" }
   /** Output arrived from the shell. */
   | { readonly type: "outputReceived" }
   /** The terminal gained or lost the keyboard. */
