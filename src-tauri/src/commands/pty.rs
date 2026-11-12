@@ -74,24 +74,27 @@ async fn http_server_environment(app: &AppHandle) -> Vec<(String, String)> {
 /// directory), for another Cogno to find it by.
 #[tauri::command]
 pub fn pty_label(
+    window: tauri::WebviewWindow,
     host: State<'_, HostState>,
     terminal_id: String,
     label: SessionLabel,
 ) -> Result<(), String> {
-    host.post(Request::PtyLabel { terminal_id, label })
+    host.post(window.label(), Request::PtyLabel { terminal_id, label })
 }
 
 #[tauri::command]
 pub fn pty_write(
+    window: tauri::WebviewWindow,
     host: State<'_, HostState>,
     terminal_id: String,
     data: String,
 ) -> Result<(), String> {
-    host.post(Request::PtyWrite { terminal_id, data })
+    host.post(window.label(), Request::PtyWrite { terminal_id, data })
 }
 
 #[tauri::command]
 pub fn pty_execute_line_editor_action(
+    window: tauri::WebviewWindow,
     host: State<'_, HostState>,
     terminal_id: String,
     action: String,
@@ -99,43 +102,72 @@ pub fn pty_execute_line_editor_action(
 ) -> Result<(), String> {
     // Waited for, on this thread: the caller wants to know that the shell
     // has no line editor to act on, and what it types next must come after.
-    done(host.ask(Request::PtyLineEditorAction {
-        terminal_id,
-        action,
-        payload_json,
-    }))
+    done(host.ask(
+        window.label(),
+        Request::PtyLineEditorAction {
+            terminal_id,
+            action,
+            payload_json,
+        },
+    ))
 }
 
 #[tauri::command]
 pub fn pty_resize(
+    window: tauri::WebviewWindow,
     host: State<'_, HostState>,
     terminal_id: String,
     cols: u16,
     rows: u16,
 ) -> Result<(), String> {
-    host.post(Request::PtyResize {
-        terminal_id,
-        cols,
-        rows,
-    })
+    host.post(
+        window.label(),
+        Request::PtyResize {
+            terminal_id,
+            cols,
+            rows,
+        },
+    )
 }
 
 /// Stops showing a shell, which runs on: for one that belongs to the Cogno of
 /// another machine.
 #[tauri::command]
-pub async fn pty_detach(host: State<'_, HostState>, terminal_id: String) -> Result<(), String> {
-    done(host.request(Request::PtyDetach { terminal_id }).await)
+pub async fn pty_detach(
+    window: tauri::WebviewWindow,
+    host: State<'_, HostState>,
+    terminal_id: String,
+) -> Result<(), String> {
+    done(
+        host.request(
+            window.label().to_string(),
+            Request::PtyDetach { terminal_id },
+        )
+        .await,
+    )
 }
 
 /// Releasing a session can block (closing a ConPTY waits for its output pipe).
 #[tauri::command]
-pub async fn pty_kill(host: State<'_, HostState>, terminal_id: String) -> Result<(), String> {
-    done(host.request(Request::PtyKill { terminal_id }).await)
+pub async fn pty_kill(
+    window: tauri::WebviewWindow,
+    host: State<'_, HostState>,
+    terminal_id: String,
+) -> Result<(), String> {
+    done(
+        host.request(window.label().to_string(), Request::PtyKill { terminal_id })
+            .await,
+    )
 }
 
 /// Frontend acknowledgement that xterm has parsed every chunk up to and
 /// including `seq`.
 #[tauri::command]
-pub fn pty_ack(host: State<'_, HostState>, terminal_id: String, seq: u32) -> Result<(), String> {
-    host.post(Request::PtyAck { terminal_id, seq })
+pub fn pty_ack(
+    window: tauri::WebviewWindow,
+    host: State<'_, HostState>,
+    terminal_id: String,
+    seq: u32,
+) -> Result<(), String> {
+    host.post(window.label(), Request::PtyAck { terminal_id, seq })
 }

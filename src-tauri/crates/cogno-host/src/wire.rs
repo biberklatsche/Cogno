@@ -151,17 +151,20 @@ pub fn write_host_message(writer: &mut impl Write, message: HostMessage) -> io::
     }
 }
 
+/// The id of a request nobody waits for (what is typed, resized,
+/// acknowledged): the host does not answer it.
+pub const NO_REPLY: u64 = 0;
+
 pub fn read_host_message(reader: &mut impl Read) -> io::Result<Option<HostMessage>> {
     match read_frame(reader)? {
         None => Ok(None),
         Some((KIND_MESSAGE, body)) => parse_json(&body).map(Some),
-        Some((KIND_PTY_DATA, body)) if body.len() >= STREAM_ID_LEN => {
-            let (stream, frame) = body.split_at(STREAM_ID_LEN);
-            let stream = u64::from_le_bytes(stream.try_into().expect("eight bytes"));
-            Ok(Some(HostMessage::Event(Event::PtyData {
-                stream,
-                frame: frame.to_vec(),
-            })))
+        Some((KIND_PTY_DATA, mut frame)) if frame.len() >= STREAM_ID_LEN => {
+            let stream =
+                u64::from_le_bytes(frame[..STREAM_ID_LEN].try_into().expect("eight bytes"));
+            // In place: the output itself is not copied again.
+            frame.drain(..STREAM_ID_LEN);
+            Ok(Some(HostMessage::Event(Event::PtyData { stream, frame })))
         }
         Some((kind, _)) => Err(invalid(format!("frame kind {kind} from the host"))),
     }

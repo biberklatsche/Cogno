@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 
 use crate::host::Host;
-use crate::identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
+use crate::identity::cogno_home;
 use crate::server::serve_client;
 
 const ENDPOINT_FILE_NAME: &str = "host.json";
@@ -53,13 +53,7 @@ impl Default for Patience {
 
 /// Where the daemon of this user says how to reach it.
 pub fn endpoint_path(dev_mode: bool) -> Result<PathBuf, String> {
-    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let directory = if dev_mode {
-        DEVELOPMENT_HOME_DIRECTORY_NAME
-    } else {
-        HOME_DIRECTORY_NAME
-    };
-    Ok(home.join(directory).join(ENDPOINT_FILE_NAME))
+    Ok(cogno_home(dev_mode)?.join(ENDPOINT_FILE_NAME))
 }
 
 fn invalid(message: &str) -> io::Error {

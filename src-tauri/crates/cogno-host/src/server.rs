@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::host::{Client, EventSink, Host};
 use crate::protocol::Event;
-use crate::wire::{self, HostMessage, RequestEnvelope};
+use crate::wire::{self, HostMessage, RequestEnvelope, NO_REPLY};
 
 struct Output<W>(Mutex<W>);
 
@@ -14,6 +14,13 @@ impl<W: Write> Output<W> {
     /// False when the client is gone.
     fn send(&self, message: HostMessage) -> bool {
         wire::write_host_message(&mut *self.0.lock().unwrap(), message).is_ok()
+    }
+
+    /// Replies, unless nobody waits for it.
+    fn answer(&self, id: u64, reply: crate::protocol::Reply) {
+        if id != NO_REPLY {
+            self.send(HostMessage::Reply { id, reply });
+        }
     }
 }
 
@@ -52,11 +59,11 @@ pub(crate) fn serve_client<W: Write + Send + 'static>(
             let output = output.clone();
             std::thread::spawn(move || {
                 let reply = host.handle(&client, request);
-                output.send(HostMessage::Reply { id, reply });
+                output.answer(id, reply);
             });
         } else {
             let reply = host.handle(&client, request);
-            output.send(HostMessage::Reply { id, reply });
+            output.answer(id, reply);
         }
     };
     host.client_gone(client_id);

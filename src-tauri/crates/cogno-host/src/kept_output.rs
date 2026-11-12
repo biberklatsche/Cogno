@@ -17,6 +17,9 @@
 
 use std::collections::VecDeque;
 
+/// How far past the bytes that must go the cut looks for a line end.
+const LINE_END_REACH: usize = 4096;
+
 /// How much output a session keeps. Enough for a long scroll back, and no
 /// more than a client may be behind in any case (the flow control's high
 /// watermark): playing it back on attach is one burst the client can take.
@@ -248,11 +251,13 @@ impl KeptOutput {
             return;
         };
         // Cut behind a line end, so the tail does not begin inside a line or
-        // a sequence. Without one in reach, the bytes go as they are.
+        // a sequence. Without one in reach, the bytes go as they are: output
+        // without line ends must not be searched in full on every read.
         let cut = self
             .tail
             .iter()
             .skip(excess)
+            .take(LINE_END_REACH)
             .position(|byte| *byte == b'\n')
             .map_or(excess + 1, |line_end| excess + line_end + 1);
         let cut = cut.min(self.tail.len());

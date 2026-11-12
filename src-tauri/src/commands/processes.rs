@@ -10,18 +10,22 @@ const UNEXPECTED: &str = "The host answered something else";
 pub async fn pty_list_terminal_processes(
     host: State<'_, HostState>,
 ) -> Result<Vec<TerminalProcess>, String> {
-    match host.request(Request::TerminalProcesses).await? {
-        Response::TerminalProcesses(processes) => Ok(processes),
-        _ => Err(UNEXPECTED.to_string()),
-    }
+    host.terminal_processes().await
 }
 
 #[tauri::command]
 pub async fn pty_get_process_tree_by_terminal_id(
+    window: tauri::WebviewWindow,
     host: State<'_, HostState>,
     terminal_id: String,
 ) -> Result<ProcessTreeSnapshot, String> {
-    match host.request(Request::ProcessTree { terminal_id }).await? {
+    match host
+        .request(
+            window.label().to_string(),
+            Request::ProcessTree { terminal_id },
+        )
+        .await?
+    {
         Response::ProcessTree(snapshot) => Ok(snapshot),
         _ => Err(UNEXPECTED.to_string()),
     }
@@ -31,14 +35,18 @@ pub async fn pty_get_process_tree_by_terminal_id(
 /// started.
 #[tauri::command]
 pub async fn pty_terminate_process(
+    window: tauri::WebviewWindow,
     host: State<'_, HostState>,
     terminal_id: String,
     process_id: u32,
 ) -> Result<(), String> {
-    host.request(Request::TerminateProcess {
-        terminal_id,
-        process_id,
-    })
+    host.request(
+        window.label().to_string(),
+        Request::TerminateProcess {
+            terminal_id,
+            process_id,
+        },
+    )
     .await
     .map(|_| ())
 }
