@@ -30,20 +30,15 @@ describe("RemoteSideComponent", () => {
     );
   });
 
-  it("shows every branch at first and folds each one on its own", () => {
-    expect(component.isOpen("")).toBe(true);
-    expect(component.isOpen("office", "Cogno", "build")).toBe(true);
+  it("shows the machines of the config as a tree, with what is known of their shells", () => {
+    panel.hosts.set([{ name: "office", destination: "lars@office", connection: "connected" }]);
+    panel.shells.set(new Map([["office", { status: "loaded", shells: [shell] }]]));
 
-    component.toggle("office", "Cogno");
+    const [machine] = component.nodes();
 
-    expect(component.isOpen("office", "Cogno")).toBe(false);
-    // The same workspace name on another machine, and what is around it.
-    expect(component.isOpen("", "Cogno")).toBe(true);
-    expect(component.isOpen("office")).toBe(true);
-    expect(component.isOpen("office", "Cogno", "build")).toBe(true);
-
-    component.toggle("office", "Cogno");
-    expect(component.isOpen("office", "Cogno")).toBe(true);
+    expect(machine).toMatchObject({ kind: "machine", host: { name: "office" } });
+    expect(component.childrenOf(machine as never)).toHaveLength(1);
+    expect(component.keyOf(machine as never)).toBe(machine?.key);
   });
 
   it("ends a shell only on the second click", () => {

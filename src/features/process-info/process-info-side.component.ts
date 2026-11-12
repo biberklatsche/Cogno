@@ -1,7 +1,13 @@
-import { CommonModule } from "@angular/common";
 import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
 import { ProcessDetails, ProcessTreeSnapshot } from "@cogno/platform/pty";
-import { IconComponent, SideMenuSearchInputComponent, TooltipDirective } from "@cogno/shared/ui";
+import {
+  IconComponent,
+  SideMenuSearchInputComponent,
+  TooltipDirective,
+  TreeComponent,
+  TreeDetailDirective,
+  TreeRowDirective,
+} from "@cogno/shared/ui";
 import { ProcessInfoService } from "./process-info.service";
 
 export type ProcessTreeNode = {
@@ -12,7 +18,14 @@ export type ProcessTreeNode = {
 @Component({
   selector: "app-process-info-side",
   standalone: true,
-  imports: [CommonModule, IconComponent, SideMenuSearchInputComponent, TooltipDirective],
+  imports: [
+    IconComponent,
+    SideMenuSearchInputComponent,
+    TooltipDirective,
+    TreeComponent,
+    TreeRowDirective,
+    TreeDetailDirective,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="process-panel">
@@ -81,79 +94,58 @@ export type ProcessTreeNode = {
         @if (rootChildProcessNodes().length === 0) {
           <div class="status">{{ filtering() ? "No matching processes." : "No child processes." }}</div>
         } @else {
-          <ul class="process-tree scrolling">
-            @for (processTreeNode of rootChildProcessNodes(); track processTreeNode.processDetails.processId) {
-              <ng-container
-                *ngTemplateOutlet="processTreeNodeTemplate; context: { $implicit: processTreeNode }"
-              ></ng-container>
-            }
-          </ul>
+          <!-- One child process: a line with its name; the rest opens on a click on the name. -->
+          <app-tree
+            class="scrolling"
+            [nodes]="rootChildProcessNodes()"
+            [childrenOf]="childrenOf"
+            [keyOf]="keyOf"
+            [expandAll]="filtering()"
+          >
+            <ng-template appTreeRow let-processTreeNode>
+              <div class="process-row process-node-row">
+                <button
+                  type="button"
+                  class="name"
+                  [attr.aria-expanded]="showsDetails(processTreeNode)"
+                  [appTooltip]="processTreeNode.processDetails.name"
+                  (click)="toggleDetails(processTreeNode)"
+                >
+                  {{ processTreeNode.processDetails.name }}
+                </button>
+                @if (noticeableStatus(processTreeNode.processDetails.status); as status) {
+                  <span class="status-flag">{{ status }}</span>
+                }
+                <span class="memory">{{ formatBytes(processTreeNode.processDetails.memoryBytes) }}</span>
+                <button
+                  type="button"
+                  class="button icon-button terminate"
+                  appTooltip="Terminate process and its children"
+                  [disabled]="terminating().has(processTreeNode.processDetails.processId)"
+                  (click)="terminate(processTreeNode)"
+                >
+                  <app-icon name="mdiClose"></app-icon>
+                </button>
+              </div>
+            </ng-template>
+            <ng-template appTreeDetail let-processTreeNode>
+              @if (showsDetails(processTreeNode)) {
+                <dl class="details">
+                  <dt>PID</dt>
+                  <dd>{{ processTreeNode.processDetails.processId }}</dd>
+                  <dt>Status</dt>
+                  <dd>{{ processTreeNode.processDetails.status }}</dd>
+                  <dt>Runtime</dt>
+                  <dd>{{ formatSeconds(processTreeNode.processDetails.runTimeSeconds) }}</dd>
+                  <dt>CWD</dt>
+                  <dd>{{ processTreeNode.processDetails.currentWorkingDirectory ?? "-" }}</dd>
+                </dl>
+              }
+            </ng-template>
+          </app-tree>
         }
       }
     </div>
-
-    <!-- One child process: a line with its name; the rest opens on a click on the name. -->
-    <ng-template #processTreeNodeTemplate let-processTreeNode>
-      <li class="process-node">
-        <div class="process-row">
-          @if (hasChildren(processTreeNode)) {
-            <button
-              type="button"
-              class="node-toggle"
-              (click)="toggleExpanded(processTreeNode)"
-              [attr.aria-label]="isExpanded(processTreeNode) ? 'Collapse child processes' : 'Expand child processes'"
-            >
-              <app-icon [name]="isExpanded(processTreeNode) ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-            </button>
-          } @else {
-            <span class="node-toggle"></span>
-          }
-          <button
-            type="button"
-            class="name"
-            [attr.aria-expanded]="showsDetails(processTreeNode)"
-            [appTooltip]="processTreeNode.processDetails.name"
-            (click)="toggleDetails(processTreeNode)"
-          >
-            {{ processTreeNode.processDetails.name }}
-          </button>
-          @if (noticeableStatus(processTreeNode.processDetails.status); as status) {
-            <span class="status-flag">{{ status }}</span>
-          }
-          <span class="memory">{{ formatBytes(processTreeNode.processDetails.memoryBytes) }}</span>
-          <button
-            type="button"
-            class="button icon-button terminate"
-            appTooltip="Terminate process and its children"
-            [disabled]="terminating().has(processTreeNode.processDetails.processId)"
-            (click)="terminate(processTreeNode)"
-          >
-            <app-icon name="mdiClose"></app-icon>
-          </button>
-        </div>
-        @if (showsDetails(processTreeNode)) {
-          <dl class="details">
-            <dt>PID</dt>
-            <dd>{{ processTreeNode.processDetails.processId }}</dd>
-            <dt>Status</dt>
-            <dd>{{ processTreeNode.processDetails.status }}</dd>
-            <dt>Runtime</dt>
-            <dd>{{ formatSeconds(processTreeNode.processDetails.runTimeSeconds) }}</dd>
-            <dt>CWD</dt>
-            <dd>{{ processTreeNode.processDetails.currentWorkingDirectory ?? "-" }}</dd>
-          </dl>
-        }
-        @if (hasChildren(processTreeNode) && isExpanded(processTreeNode)) {
-          <ul class="process-tree">
-            @for (childProcessTreeNode of processTreeNode.childProcessNodes; track childProcessTreeNode.processDetails.processId) {
-              <ng-container
-                *ngTemplateOutlet="processTreeNodeTemplate; context: { $implicit: childProcessTreeNode }"
-              ></ng-container>
-            }
-          </ul>
-        }
-      </li>
-    </ng-template>
   `,
   styles: `
     :host {
@@ -208,8 +200,10 @@ export type ProcessTreeNode = {
       border-radius: 4px;
     }
 
-    .process-node > .process-row:hover {
-      background: color-mix(in srgb, var(--foreground-color) 6%, transparent);
+    /* A process's line fills what the tree leaves next to its arrow. */
+    .process-node-row {
+      flex: 1;
+      min-width: 0;
     }
 
     .name {
@@ -245,29 +239,6 @@ export type ProcessTreeNode = {
       border-radius: 999px;
       color: var(--color-yellow);
       background: color-mix(in srgb, var(--color-yellow) 14%, transparent);
-    }
-
-    .node-toggle {
-      flex: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      border: 0;
-      background: transparent;
-      color: inherit;
-      padding: 0;
-      opacity: 0.7;
-    }
-
-    button.node-toggle {
-      cursor: pointer;
-    }
-
-    .node-toggle app-icon {
-      width: 16px;
-      height: 16px;
     }
 
     /* The shell's line keeps the slot free, so the memory column lines up. */
@@ -308,10 +279,6 @@ export type ProcessTreeNode = {
       font-size: 0.85rem;
     }
 
-    .process-node > .details {
-      margin-left: 22px;
-    }
-
     .details dt {
       opacity: 0.7;
     }
@@ -321,23 +288,13 @@ export type ProcessTreeNode = {
       word-break: break-word;
     }
 
-    .process-tree {
-      list-style: none;
-      margin: 0;
-      padding-left: 0;
-    }
-
     /* Only the child processes scroll; the shell above stays in place. */
-    .process-tree.scrolling {
+    app-tree.scrolling {
       flex: 1;
       min-height: 0;
       /* Never sideways: the name gives way, memory and the terminate button stay in view. */
       overflow-x: hidden;
       overflow-y: auto;
-    }
-
-    .process-node > .process-tree {
-      margin-left: 8px;
     }
   `,
 })
@@ -354,7 +311,6 @@ export class ProcessInfoSideComponent {
   readonly filter = signal("");
   readonly filtering = computed(() => this.filter().trim() !== "");
 
-  private readonly collapsedProcessIdentifiers = signal<Set<number>>(new Set<number>());
   private readonly detailedProcessIdentifiers = signal<Set<number>>(new Set<number>());
 
   readonly rootChildProcessNodes = computed<ProcessTreeNode[]>(() => {
@@ -406,24 +362,11 @@ export class ProcessInfoSideComponent {
     return `${secs}s`;
   }
 
-  hasChildren(processTreeNode: ProcessTreeNode): boolean {
-    return processTreeNode.childProcessNodes.length > 0;
-  }
-
-  /** While filtering every branch is open: a match must not hide in a collapsed one. */
-  isExpanded(processTreeNode: ProcessTreeNode): boolean {
-    if (this.filtering()) return true;
-    return !this.collapsedProcessIdentifiers().has(processTreeNode.processDetails.processId);
-  }
-
-  toggleExpanded(processTreeNode: ProcessTreeNode): void {
-    if (!this.hasChildren(processTreeNode)) {
-      return;
-    }
-    this.collapsedProcessIdentifiers.update((collapsed) =>
-      toggled(collapsed, processTreeNode.processDetails.processId),
-    );
-  }
+  /** How the tree reads a process: what it started, and what tells it apart. */
+  readonly childrenOf = (processTreeNode: ProcessTreeNode): ProcessTreeNode[] =>
+    processTreeNode.childProcessNodes;
+  readonly keyOf = (processTreeNode: ProcessTreeNode): number =>
+    processTreeNode.processDetails.processId;
 
   showsDetails(processTreeNode: ProcessTreeNode): boolean {
     return this.detailedProcessIdentifiers().has(processTreeNode.processDetails.processId);
