@@ -12,6 +12,12 @@ import { RemotePanelService } from "./remote-panel.service";
 import { hostNodes, RemoteTreeNode } from "./remote-shell-tree";
 
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
+/**
+ * What ssh runs on the other machine when a remote names no command
+ * (`DEFAULT_REMOTE_COMMAND` in the app). The form starts with it, so it can
+ * be copied or changed; saved unchanged, the remote names none.
+ */
+const DEFAULT_COMMAND = '".cogno/bin/cogno" server --stdio';
 
 /** The host a form is about; `previousName` is set while one is changed. */
 type HostForm = {
@@ -27,11 +33,7 @@ type HostForm = {
 const HOST_FIELDS = [
   { key: "name", label: "Name", placeholder: "office" },
   { key: "destination", label: "Destination", placeholder: "user@host or an ssh alias" },
-  {
-    key: "command",
-    label: "Command (optional)",
-    placeholder: '".cogno/bin/cogno" server --stdio',
-  },
+  { key: "command", label: "Command", placeholder: DEFAULT_COMMAND },
 ] as const;
 
 @Component({
@@ -57,7 +59,7 @@ const HOST_FIELDS = [
           <app-icon name="mdiTooltipQuestion"></app-icon>
         </button>
         <button type="button" class="button icon-button" appTooltip="Refresh" (click)="panel.refresh()">
-          <app-icon name="mdiRefresh"></app-icon>
+          <app-icon name="mdiRefresh" [class.spinning]="panel.refreshing()"></app-icon>
         </button>
         <button type="button" class="button icon-button" appTooltip="Add a remote" (click)="add()">
           <app-icon name="mdiPlus"></app-icon>
@@ -110,6 +112,11 @@ const HOST_FIELDS = [
               <div class="host-row">
                 <span class="connection" [class]="node.host.connection"></span>
                 <span class="name" [appTooltip]="node.host.destination">{{ node.host.name }}</span>
+                <!-- Removing asks once more, as everywhere in the side panels. -->
+                <app-copy-edit-delete
+                  class="row-action"
+                  (onEvent)="$event === 'edit' ? edit(node.host) : panel.removeHost(node.host.name)"
+                ></app-copy-edit-delete>
                 @if (node.host.connection === "connected") {
                   <button
                     type="button"
@@ -128,11 +135,6 @@ const HOST_FIELDS = [
                     Connect
                   </button>
                 }
-                <!-- Removing asks once more, as everywhere in the side panels. -->
-                <app-copy-edit-delete
-                  class="row-action"
-                  (onEvent)="$event === 'edit' ? edit(node.host) : panel.removeHost(node.host.name)"
-                ></app-copy-edit-delete>
               </div>
             }
             @case ("workspace") {
@@ -383,6 +385,19 @@ const HOST_FIELDS = [
       background: color-mix(in srgb, var(--color-yellow) 14%, transparent);
     }
 
+    .spinning {
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .shown.here {
       color: inherit;
       background: color-mix(in srgb, var(--foreground-color) 10%, transparent);
@@ -409,7 +424,7 @@ export class RemoteSideComponent {
   }
 
   add(): void {
-    this.form.set({ name: "", destination: "", command: "", saving: false });
+    this.form.set({ name: "", destination: "", command: DEFAULT_COMMAND, saving: false });
   }
 
   edit(host: RemoteHost): void {
@@ -417,7 +432,7 @@ export class RemoteSideComponent {
       previousName: host.name,
       name: host.name,
       destination: host.destination,
-      command: host.command ?? "",
+      command: host.command ?? DEFAULT_COMMAND,
       saving: false,
     });
   }
@@ -432,8 +447,13 @@ export class RemoteSideComponent {
     const edited = this.form();
     if (!edited || edited.saving) return;
     this.form.set({ ...edited, saving: true, error: undefined });
+    const command = edited.command.trim();
     const error = await this.panel.saveHost(
-      { name: edited.name, destination: edited.destination, command: edited.command || undefined },
+      {
+        name: edited.name,
+        destination: edited.destination,
+        command: command === "" || command === DEFAULT_COMMAND ? undefined : command,
+      },
       edited.previousName,
     );
     this.form.set(error === undefined ? null : { ...edited, saving: false, error });

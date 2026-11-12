@@ -48,6 +48,36 @@ describe("RemotePanelService", () => {
     );
   });
 
+  it("says it refreshes until the hosts answered, and at least for a moment", async () => {
+    vi.useFakeTimers();
+    try {
+      hosts$.next([host("office", "connected")]);
+      let answer!: (shells: RemoteShell[]) => void;
+      port.shells.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+
+      const refreshed = service.refresh();
+      expect(service.refreshing()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      // Still waiting for the host.
+      expect(service.refreshing()).toBe(true);
+
+      answer([]);
+      await refreshed;
+      expect(service.refreshing()).toBe(false);
+
+      // An answer that comes at once is still seen.
+      port.shells.mockResolvedValue([]);
+      const quick = service.refresh();
+      await vi.advanceTimersByTimeAsync(100);
+      expect(service.refreshing()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      await quick;
+      expect(service.refreshing()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("asks nothing while the panel is closed", async () => {
     hosts$.next([host("office", "connected")]);
     await settled();

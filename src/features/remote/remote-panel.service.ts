@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, signal } from "@angular/core";
+import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   RemoteHost,
@@ -7,6 +7,9 @@ import {
   RemoteShellsPort,
 } from "@cogno/core/api/remote-shells-port";
 import { HostShells } from "./remote-shell-tree";
+
+/** How long a refresh is shown at least. */
+const REFRESH_SHOWN_FOR_MS = 600;
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -28,11 +31,14 @@ export class RemotePanelService {
    */
   private readonly questions = new Map<string, number>();
   private readonly failureSignal = signal<string | undefined>(undefined);
+  private readonly refreshesSignal = signal(0);
   private opened = false;
 
   readonly hosts = this.hostsSignal.asReadonly();
   /** The shells by host name. */
   readonly shells = this.shellsSignal.asReadonly();
+  /** Whether the hosts are being asked what runs there, after a refresh. */
+  readonly refreshing = computed(() => this.refreshesSignal() > 0);
   /** Why the last thing the user asked for did not work. */
   readonly failure = this.failureSignal.asReadonly();
 
@@ -48,7 +54,7 @@ export class RemotePanelService {
 
   open(): void {
     this.opened = true;
-    this.refresh();
+    void this.refresh();
   }
 
   close(): void {
@@ -57,11 +63,23 @@ export class RemotePanelService {
     this.failureSignal.set(undefined);
   }
 
-  /** Asks every connected host what runs there now. */
-  refresh(): void {
+  /**
+   * Asks every connected host what runs there now. Counts as refreshing for
+   * at least a moment, so a click on Refresh is seen even when the answers
+   * come at once.
+   */
+  async refresh(): Promise<void> {
     this.failureSignal.set(undefined);
-    for (const host of this.hosts()) {
-      if (host.connection === "connected") void this.load(host.name);
+    this.refreshesSignal.update((refreshes) => refreshes + 1);
+    try {
+      await Promise.all([
+        ...this.hosts()
+          .filter((host) => host.connection === "connected")
+          .map((host) => this.load(host.name)),
+        new Promise((resolve) => setTimeout(resolve, REFRESH_SHOWN_FOR_MS)),
+      ]);
+    } finally {
+      this.refreshesSignal.update((refreshes) => refreshes - 1);
     }
   }
 
