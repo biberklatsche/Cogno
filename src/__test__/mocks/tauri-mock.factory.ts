@@ -17,6 +17,7 @@ export class TauriMockFactory {
       onTakenOver: vi.fn().mockResolvedValue(() => {}),
       ack: vi.fn().mockResolvedValue(undefined),
       kill: vi.fn().mockResolvedValue(undefined),
+      detach: vi.fn().mockResolvedValue(undefined),
       resize: vi.fn().mockResolvedValue(undefined),
       onExit: vi.fn().mockResolvedValue(() => {}),
       write: vi.fn().mockResolvedValue(undefined),

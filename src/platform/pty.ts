@@ -319,6 +319,11 @@ export class PtyTransport {
     return invoke("pty_kill", { terminalId });
   }
 
+  /** Stops showing the shell; it runs on, for whoever shows it next. */
+  detach(terminalId: string): Promise<void> {
+    return invoke("pty_detach", { terminalId });
+  }
+
   resize(terminalId: string, cols: number, rows: number): Promise<void> {
     return invoke("pty_resize", { terminalId, cols, rows });
   }

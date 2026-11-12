@@ -335,6 +335,35 @@ describe("Pty", () => {
       expect(takenOver).toHaveBeenCalledOnce();
     });
 
+    it("is let go, not ended, when it runs on another machine", async () => {
+      const remote = new Pty(transport as unknown as PtyTransport, false, "office");
+      await remote.attach(terminalId, noopListener);
+
+      remote.dispose();
+
+      // It belongs to the Cogno there: closing the tab here ends nothing.
+      expect(transport.detach).toHaveBeenCalledWith(terminalId);
+      expect(transport.kill).not.toHaveBeenCalled();
+    });
+
+    it("is let go as well when its terminal closed while it was still attaching", async () => {
+      let attached!: () => void;
+      vi.mocked(transport.attach).mockImplementationOnce(() => ({
+        ready: new Promise<void>((resolve) => (attached = resolve)),
+        closeOutput: vi.fn(),
+      }));
+      const remote = new Pty(transport as unknown as PtyTransport, false, "office");
+      const attaching = remote.attach(terminalId, noopListener);
+      await vi.waitFor(() => expect(transport.attach).toHaveBeenCalled());
+
+      remote.dispose();
+      attached();
+      await attaching;
+
+      expect(transport.detach).toHaveBeenCalledWith(terminalId);
+      expect(transport.kill).not.toHaveBeenCalled();
+    });
+
     it("is not killed on dispose once another Cogno has taken it over", async () => {
       await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
       const handle = vi.mocked(transport.spawn).mock.results[0].value;

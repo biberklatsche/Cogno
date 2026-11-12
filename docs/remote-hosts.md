@@ -58,8 +58,9 @@ them: workspace, tab, shell.
 - The pencil changes a remote, the bin removes it (second click confirms).
   The panel reads the shells when it opens and when you press Refresh.
 
-Closing such a tab ends its shell, as closing any tab does. To leave the
-shells running, disconnect instead (or just close Cogno).
+Closing such a tab only lets the shell go: it runs on in the Cogno it belongs
+to, and you can show it here again from the panel. To end a shell of another
+machine, let it go and use the `x` next to it in the panel, or end it there.
 
 The tabs you open this way are saved with the workspace. When you start Cogno
 again they connect by themselves, and say so if their shell is gone.

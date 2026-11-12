@@ -126,6 +126,13 @@ pub fn pty_resize(
     })
 }
 
+/// Stops showing a shell, which runs on: for one that belongs to the Cogno of
+/// another machine.
+#[tauri::command]
+pub async fn pty_detach(host: State<'_, HostState>, terminal_id: String) -> Result<(), String> {
+    done(host.request(Request::PtyDetach { terminal_id }).await)
+}
+
 /// Releasing a session can block (closing a ConPTY waits for its output pipe).
 #[tauri::command]
 pub async fn pty_kill(host: State<'_, HostState>, terminal_id: String) -> Result<(), String> {
