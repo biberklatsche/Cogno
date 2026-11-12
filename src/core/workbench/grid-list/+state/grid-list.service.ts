@@ -77,6 +77,13 @@ export class GridListService implements PaneLayoutLookup {
     return Object.values(grids).flatMap((grid) => this.leafTerminalIds(grid));
   }
 
+  /** Every terminal id laid out in the workspace that is showing. */
+  terminalIdsInActiveWorkspace(): TerminalId[] {
+    return this.activeWorkspaceIdentifier
+      ? this.terminalIdsForWorkspace(this.activeWorkspaceIdentifier)
+      : [];
+  }
+
   findWorkspaceIdentifierByTerminalId(terminalId: TerminalId): string | undefined {
     return this.locate(terminalId)?.workspaceIdentifier;
   }

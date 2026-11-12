@@ -17,19 +17,31 @@ function base64ToText(base64: string): string {
 const OSC52_EMPTY_REPLY = "\x1b]52;c;\x07";
 
 /**
+ * How long a program is taken to wait for the clipboard. A reply after it gave
+ * up is not an answer any more: it arrives as keystrokes in whatever runs then.
+ */
+export const CLIPBOARD_ANSWER_WINDOW_MS = 10_000;
+
+/**
  * Copy, paste and OSC 52 for one session. `paste()` and `copy()` are asked
  * for; what they do with the input line is decided here.
  *
  * A program reading the clipboard over OSC 52 is not the user pasting:
  * anything in the output can send the request - a `cat` of a prepared file,
  * an SSH host. With `clipboard.read = ask` the session states the request
- * and holds the answer back until `answerClipboardRead`.
+ * and holds the answer back until `answerClipboardRead`. The question stays
+ * open only while the program can still be waiting for it; after that it
+ * expires and nothing is written.
  */
 export class ClipboardHandler implements ITerminalHandler {
   private _terminal?: Terminal;
   private osc52Disposable?: IDisposable;
   /** A read the user has been asked about and not answered yet. */
-  private isReadAwaitingAnswer = false;
+  private readAwaitingAnswer?: {
+    readonly expiry: ReturnType<typeof setTimeout>;
+    /** Whether a command ran when the program asked: once that changes, the program is gone. */
+    readonly wasCommandRunning: boolean;
+  };
 
   constructor(
     private readonly _clipboard: ClipboardAccess,
@@ -44,13 +56,21 @@ export class ClipboardHandler implements ITerminalHandler {
   dispose(): void {
     this.osc52Disposable?.dispose();
     this.osc52Disposable = undefined;
-    this.isReadAwaitingAnswer = false;
+    this.closeReadQuestion();
+  }
+
+  /** Forgets the open question; true when its program can still be waiting for the answer. */
+  private closeReadQuestion(): boolean {
+    const question = this.readAwaitingAnswer;
+    if (!question) return false;
+    clearTimeout(question.expiry);
+    this.readAwaitingAnswer = undefined;
+    return question.wasCommandRunning === this.model.isCommandRunning;
   }
 
   /** The user's answer to `clipboardReadRequested`. Without an open request it does nothing. */
   async answerClipboardRead(allowed: boolean): Promise<void> {
-    if (!this.isReadAwaitingAnswer) return;
-    this.isReadAwaitingAnswer = false;
+    if (!this.closeReadQuestion()) return;
     if (allowed) {
       await this.replyWithClipboard();
     } else {
@@ -151,11 +171,17 @@ export class ClipboardHandler implements ITerminalHandler {
       return;
     }
     // One question at a time: a request while one is open is refused, not queued.
-    if (access === "deny" || this.isReadAwaitingAnswer) {
+    if (access === "deny" || this.readAwaitingAnswer) {
       this.pty.write(OSC52_EMPTY_REPLY);
       return;
     }
-    this.isReadAwaitingAnswer = true;
+    this.readAwaitingAnswer = {
+      wasCommandRunning: this.model.isCommandRunning,
+      expiry: setTimeout(() => {
+        this.closeReadQuestion();
+        this.model.report({ type: "clipboardReadExpired" });
+      }, CLIPBOARD_ANSWER_WINDOW_MS),
+    };
     this.model.report({ type: "clipboardReadRequested" });
   }
 

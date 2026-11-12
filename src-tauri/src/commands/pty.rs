@@ -220,6 +220,17 @@ impl PtyState {
             .and_then(|session| session.shell_process_id)
     }
 
+    /// The process group that has the terminal: the job in the foreground, or
+    /// the shell's own group while it sits at its prompt.
+    #[cfg(unix)]
+    pub fn foreground_process_group(&self, terminal_id: &str) -> Option<i32> {
+        let sessions = self.sessions.lock().unwrap();
+        sessions
+            .live
+            .get(terminal_id)
+            .and_then(|session| session.master.process_group_leader())
+    }
+
     /// Every session's shell process, for one pass over the machine's processes.
     pub fn shell_process_ids(&self) -> Vec<(String, u32)> {
         let Ok(sessions) = self.sessions.lock() else {

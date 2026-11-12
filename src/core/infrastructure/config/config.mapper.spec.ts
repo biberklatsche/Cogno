@@ -127,6 +127,14 @@ describe("ConfigMapper", () => {
     expect(DEFAULTS.terminal?.history?.max_entries).toBe("unlimited");
   });
 
+  it("accepts a keybind whose argument holds any character", () => {
+    const line = "workspace:always:Ctrl+5=send_text:FOO=1 npm run a:b\\r";
+    const { config, diagnostics } = read(`keybind = ${line}`);
+
+    expect(diagnostics).toEqual([]);
+    expect(config.keybind?.at(-1)).toBe(line);
+  });
+
   it("keybind array is concatenated with defaults (defaults first, then user values)", () => {
     const text = `
       keybind=Ctrl+5=custom1

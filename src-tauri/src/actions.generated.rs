@@ -20,6 +20,8 @@ pub const COGNO_ACTIONS: &[(&str, &str)] = &[
     ("minimize_pane", "Restore a maximized pane"),
     ("close_terminal", "Close the active terminal pane"),
     ("clear_buffer", "Clear the terminal scrollback buffer"),
+    ("send_text", "Write the text after `send_text:` to the terminal as if typed. Escapes: `\\xHH` (an ASCII character, `\\x03` is Ctrl+C), `\\e` (escape), `\\r` (enter), `\\n`, `\\t`, `\\\\`"),
+    ("terminate_processes", "End what runs in the foreground of the terminal; the shell and its background jobs stay"),
     ("close_other_tabs", "Close all tabs except the current one"),
     ("close_all_tabs", "Close all tabs"),
     ("quit", "Quit Cogno"),

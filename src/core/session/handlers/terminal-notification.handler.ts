@@ -7,11 +7,15 @@ import { SessionModel } from "../model/session-model";
 /**
  * ConEmu gave OSC 9 numbered sub-commands (`9;1;…` to `9;12`): sleep, tab
  * title, progress, working directory (`9;9;path`, which prompts written for
- * Windows Terminal send on every line) and more. They are not messages.
+ * Windows Terminal send on every line) and more. They are not messages. A
+ * number alone is one only where the command takes no argument; any other
+ * number alone is a message (`9;3` says "3").
  */
-const CONEMU_COMMAND = /^\s*(\d{1,2})(?:;|\s*$)/;
+const CONEMU_COMMAND = /^\s*(\d{1,2})(;|\s*$)/;
 const CONEMU_PROGRESS = 4;
 const CONEMU_LAST_COMMAND = 12;
+/** Wait for Enter (`9;5`) and the prompt mark (`9;12`). */
+const CONEMU_COMMANDS_WITHOUT_ARGUMENT = new Set([5, 12]);
 
 const OSC777_NOTIFY_PREFIX = "notify;";
 
@@ -112,7 +116,9 @@ function conEmuCommandOf(data: string | undefined): number | undefined {
   const match = CONEMU_COMMAND.exec(data ?? "");
   if (!match) return undefined;
   const command = Number.parseInt(match[1], 10);
-  return command >= 1 && command <= CONEMU_LAST_COMMAND ? command : undefined;
+  if (command < 1 || command > CONEMU_LAST_COMMAND) return undefined;
+  const hasArgument = match[2] === ";";
+  return hasArgument || CONEMU_COMMANDS_WITHOUT_ARGUMENT.has(command) ? command : undefined;
 }
 
 function singleLine(text: string | undefined): string {

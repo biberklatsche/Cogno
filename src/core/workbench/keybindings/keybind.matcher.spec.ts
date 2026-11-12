@@ -297,4 +297,47 @@ describe("KeybindingMatcher (macos)", () => {
     expect(matcher.match(eventA)?.event.payload).toEqual("doA");
     expect(matcher.match(eventB)?.event.payload).toBeUndefined();
   });
+
+  it("supports workspace: prefix on keybind side", () => {
+    matcher.initBindings(["workspace:Alt+Ctrl+A=doA"]);
+
+    const action = matcher.match(
+      makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true }),
+    );
+
+    expect(action?.event.trigger?.workspace).toBe(true);
+    expect(action?.event.trigger?.broadcast).toBe(false);
+  });
+
+  it("keeps every character of an argument, also = and spaces", () => {
+    matcher.initBindings(["Alt+Ctrl+A=send_text:FOO=1 npm run a:b"]);
+
+    const action = matcher.match(
+      makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true }),
+    );
+
+    expect(action?.event.args?.join(":")).toBe("FOO=1 npm run a:b");
+  });
+
+  it("binds the same action twice when the arguments differ", () => {
+    matcher.initBindings(["Alt+Ctrl+A=send_text:a", "Alt+Ctrl+K=send_text:b"]);
+
+    const first = matcher.match(makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true }));
+    const second = matcher.match(
+      makeEvent({ key: "k", code: "KeyK", ctrlKey: true, altKey: true }),
+    );
+
+    expect(first?.event.args).toEqual(["a"]);
+    expect(second?.event.args).toEqual(["b"]);
+  });
+
+  it("goes on after a line it cannot read", () => {
+    matcher.initBindings(["Alt+Ctrl+A=doA", "broken"]);
+
+    const action = matcher.match(
+      makeEvent({ key: "a", code: "KeyA", ctrlKey: true, altKey: true }),
+    );
+
+    expect(action?.event.payload).toBe("doA");
+  });
 });

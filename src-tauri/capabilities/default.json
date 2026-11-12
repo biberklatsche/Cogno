@@ -49,6 +49,7 @@
       ]
     },
     "os:default",
+    "os:allow-hostname",
     "core:window:default",
     "core:window:allow-start-dragging",
     "core:window:allow-maximize",
@@ -69,6 +70,12 @@
       "allow": [
         {
           "url": "https://*"
+        },
+        {
+          "url": "http://*"
+        },
+        {
+          "url": "mailto:*"
         }
       ]
     },

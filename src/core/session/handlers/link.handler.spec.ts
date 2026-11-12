@@ -25,7 +25,8 @@ function createModel(
 
 import { LinkHandler } from "./link.handler";
 
-const osFor = (platform: OsType) => ({ platform: () => platform }) as OsPlatform;
+const osFor = (platform: OsType) =>
+  ({ platform: () => platform, hostname: async () => "host" }) as OsPlatform;
 
 const clipboardStub = {
   writeText: vi.fn(async () => undefined),
@@ -430,7 +431,7 @@ describe("LinkHandler", () => {
       expect(facts).toEqual([]);
     });
 
-    it("opens a file link as a path of the session", () => {
+    it("opens a file link as a path of the session", async () => {
       createScenario("Bash", "linux", "/home/lars");
 
       hyperlinks().activate(
@@ -439,8 +440,34 @@ describe("LinkHandler", () => {
         range,
       );
 
-      expect(openPathSpy).toHaveBeenCalledWith("/home/lars/my notes.txt");
+      await vi.waitFor(() => expect(openPathSpy).toHaveBeenCalledWith("/home/lars/my notes.txt"));
       expect(openUrlSpy).not.toHaveBeenCalled();
+    });
+
+    it("opens a file link without a host, and one of a Windows drive", async () => {
+      createScenario("PowerShell", "windows", "C:\\work");
+
+      hyperlinks().activate(
+        new MouseEvent("click", { ctrlKey: true }),
+        "file:///C:/Users/lars/a.txt",
+        range,
+      );
+
+      await vi.waitFor(() => expect(openPathSpy).toHaveBeenCalledTimes(1));
+      expect(openPathSpy.mock.calls[0][0]).toMatch(/^C:[\\/]Users[\\/]lars[\\/]a\.txt$/);
+    });
+
+    it("does not open a file link of another machine", async () => {
+      createScenario("Bash", "linux", "/home/lars");
+
+      hyperlinks().activate(
+        new MouseEvent("click", { ctrlKey: true }),
+        "file://server/etc/hosts",
+        range,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(openPathSpy).not.toHaveBeenCalled();
     });
 
     it("does not open other protocols", () => {

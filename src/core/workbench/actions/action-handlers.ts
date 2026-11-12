@@ -55,11 +55,16 @@ export class ActionHandlers {
   }
 
   private applyPerformed(
-    event: { performed?: boolean; defaultPrevented?: boolean; trigger?: { broadcast: boolean } },
+    event: {
+      performed?: boolean;
+      defaultPrevented?: boolean;
+      trigger?: { broadcast: boolean; workspace: boolean };
+    },
     // biome-ignore lint/suspicious/noConfusingVoidType: A handler's void result means the action was performed.
     result: boolean | void,
   ): void {
-    event.performed = result === false ? false : !event.trigger?.broadcast;
+    const reachesManyTerminals = event.trigger?.broadcast || event.trigger?.workspace;
+    event.performed = result === false ? false : !reachesManyTerminals;
     if (event.performed) {
       event.defaultPrevented = true;
     }

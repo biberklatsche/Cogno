@@ -1,5 +1,8 @@
 export interface ActionTriggerContract {
+  /** Reaches every terminal of the window instead of the focused one. */
   readonly broadcast: boolean;
+  /** Reaches every terminal of the workspace that is showing. */
+  readonly workspace: boolean;
   readonly unconsumed: boolean;
   readonly performable: boolean;
   readonly always: boolean;

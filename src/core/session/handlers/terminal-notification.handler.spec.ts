@@ -104,10 +104,13 @@ describe("TerminalNotificationHandler", () => {
   it("still takes a message that merely starts with a number", () => {
     oscHandler()("42 tests passed");
     oscHandler()("13;not a ConEmu command");
+    // A ConEmu command that takes an argument, without one.
+    oscHandler()("3");
 
     expect(facts).toEqual([
       { type: "notificationRequested", message: "42 tests passed" },
       { type: "notificationRequested", message: "13;not a ConEmu command" },
+      { type: "notificationRequested", message: "3" },
     ]);
   });
 

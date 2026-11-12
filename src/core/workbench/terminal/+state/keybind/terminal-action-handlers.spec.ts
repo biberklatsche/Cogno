@@ -22,7 +22,13 @@ import {
 } from "../../../../../__test__/test-factory";
 import { TerminalActionHandlers } from "./terminal-action-handlers";
 
-const performable = { broadcast: false, unconsumed: false, performable: true, always: true };
+const performable = {
+  broadcast: false,
+  workspace: false,
+  unconsumed: false,
+  performable: true,
+  always: true,
+};
 
 function hostStub() {
   return {
@@ -36,6 +42,9 @@ function hostStub() {
     copy: vi.fn(async () => undefined),
     cut: vi.fn(),
     runEditorAction: vi.fn(),
+    runtime: { status: "running" },
+    writeRaw: vi.fn(),
+    terminateProcesses: vi.fn(async () => undefined),
   };
 }
 
@@ -59,8 +68,13 @@ describe("terminal actions, from ActionFired to their effect", () => {
     hosts[terminalId].facts$.next({ type: "focusChanged", focused: true });
   }
 
-  function fire(actionName: string, trigger?: typeof performable, terminalId?: string) {
-    return bus.publish(ActionFired.create(actionName, trigger, undefined, terminalId));
+  function fire(
+    actionName: string,
+    trigger?: typeof performable,
+    terminalId?: string,
+    args?: string[],
+  ) {
+    return bus.publish(ActionFired.create(actionName, trigger, args, terminalId));
   }
 
   function currentGrid(): Grid {
@@ -207,7 +221,13 @@ describe("terminal actions, from ActionFired to their effect", () => {
   });
 
   describe("a broadcast keybinding", () => {
-    const broadcast = { broadcast: true, unconsumed: false, performable: false, always: false };
+    const broadcast = {
+      broadcast: true,
+      workspace: false,
+      unconsumed: false,
+      performable: false,
+      always: false,
+    };
 
     it("reaches every session, not only the focused one", () => {
       splitIntoTwoPanes();
@@ -235,6 +255,86 @@ describe("terminal actions, from ActionFired to their effect", () => {
 
       expect(hosts["term-1"].copy).not.toHaveBeenCalled();
       expect(hosts["term-2"].copy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("a workspace keybinding", () => {
+    const workspace = {
+      broadcast: false,
+      workspace: true,
+      unconsumed: false,
+      performable: false,
+      always: false,
+    };
+
+    it("reaches every terminal of the workspace that is showing and no other", () => {
+      splitIntoTwoPanes();
+      // A live session that is not laid out in the workspace that is showing.
+      addSession("term-elsewhere");
+
+      fire("clear_line", workspace);
+
+      expect(hosts["term-1"].runEditorAction).toHaveBeenCalledExactlyOnceWith("clearLine");
+      expect(hosts["term-2"].runEditorAction).toHaveBeenCalledExactlyOnceWith("clearLine");
+      expect(hosts["term-elsewhere"].runEditorAction).not.toHaveBeenCalled();
+    });
+
+    it("does not consume the key", () => {
+      expect(fire("clear_line", workspace).performed).toBe(false);
+    });
+  });
+
+  describe("send_text", () => {
+    it("writes its text to the focused terminal, escapes decoded", () => {
+      const result = fire("send_text", undefined, undefined, ["npm test\\r"]);
+
+      expect(result.performed).toBe(true);
+      expect(hosts["term-1"].writeRaw).toHaveBeenCalledExactlyOnceWith("npm test\r");
+    });
+
+    it("puts the colons back that split its argument", () => {
+      fire("send_text", undefined, undefined, ["echo a", "b\\x03"]);
+
+      expect(hosts["term-1"].writeRaw).toHaveBeenCalledExactlyOnceWith("echo a:b\x03");
+    });
+
+    it("does not perform without text", () => {
+      expect(fire("send_text").performed).toBe(false);
+      expect(hosts["term-1"].writeRaw).not.toHaveBeenCalled();
+    });
+
+    it("skips a session whose shell does not run", () => {
+      splitIntoTwoPanes();
+      hosts["term-2"].runtime = { status: "allocated" };
+      const broadcast = { ...performable, broadcast: true, performable: false };
+
+      fire("send_text", broadcast, undefined, ["\\x03"]);
+
+      expect(hosts["term-1"].writeRaw).toHaveBeenCalledExactlyOnceWith("\x03");
+      expect(hosts["term-2"].writeRaw).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("terminate_processes", () => {
+    it("ends what the focused terminal's shell is running", () => {
+      splitIntoTwoPanes();
+
+      const result = fire("terminate_processes");
+
+      expect(result.performed).toBe(true);
+      expect(hosts["term-1"].terminateProcesses).toHaveBeenCalledTimes(1);
+      expect(hosts["term-2"].terminateProcesses).not.toHaveBeenCalled();
+    });
+
+    it("goes on with the other terminals when one fails", async () => {
+      splitIntoTwoPanes();
+      hosts["term-1"].terminateProcesses.mockRejectedValue(new Error("gone"));
+      const broadcast = { ...performable, broadcast: true, performable: false };
+
+      fire("terminate_processes", broadcast);
+      await Promise.resolve();
+
+      expect(hosts["term-2"].terminateProcesses).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -31,6 +31,8 @@ export type SessionFact =
    * The program waits until the session is told with `answerClipboardRead`.
    */
   | { readonly type: "clipboardReadRequested" }
+  /** The program that asked for the clipboard waits no longer; the question is void. */
+  | { readonly type: "clipboardReadExpired" }
   /** A full-screen program took over the terminal, or gave it back. */
   | { readonly type: "fullScreenChanged"; readonly active: boolean }
   /** The padding around the terminal was removed or restored; the usable area changed. */

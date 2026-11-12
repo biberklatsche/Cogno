@@ -5,7 +5,7 @@ import { Modifier } from "./modifier";
 // workbench bus where the ActionName alias lives (rule t5).
 export type ActionDefinition = {
   actionName: string;
-  trigger?: { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
+  trigger?: Trigger;
   args?: string[];
 };
 export type ShortcutDefinition = { shortcut: string; steps: string[] };
@@ -15,23 +15,36 @@ export type KeybindDefinition = {
   shortcutDefinition: ShortcutDefinition;
 };
 
-type Trigger = { broadcast: boolean; unconsumed: boolean; performable: boolean; always: boolean };
+type Trigger = {
+  broadcast: boolean;
+  workspace: boolean;
+  unconsumed: boolean;
+  performable: boolean;
+  always: boolean;
+};
+
+const noTrigger = (): Trigger => ({
+  broadcast: false,
+  workspace: false,
+  unconsumed: false,
+  performable: false,
+  always: false,
+});
 
 export const KeybindInterpreter = {
   parse(binding: string): KeybindDefinition | undefined {
-    const [keybindingDef, actionDef] = binding.split("=");
+    // Only the first `=` separates combo and action: an argument may hold more.
+    const separatorIndex = binding.indexOf("=");
+    if (separatorIndex < 0) return;
+    const keybindingDef = binding.slice(0, separatorIndex);
+    const actionDef = binding.slice(separatorIndex + 1);
     if (!keybindingDef || !actionDef) return;
 
     const { cleanKeybind, keybindTrigger } = this.parsePrefixes(keybindingDef);
     const action = KeybindActionInterpreter.parse(actionDef);
 
     if (keybindTrigger) {
-      if (!action.trigger)
-        action.trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
-      if (keybindTrigger.broadcast) action.trigger.broadcast = true;
-      if (keybindTrigger.unconsumed) action.trigger.unconsumed = true;
-      if (keybindTrigger.performable) action.trigger.performable = true;
-      if (keybindTrigger.always) action.trigger.always = true;
+      action.trigger = keybindTrigger;
     }
 
     // Supports sequences using '>'
@@ -50,10 +63,9 @@ export const KeybindInterpreter = {
     let trigger: Trigger | undefined;
 
     for (;;) {
-      const match = remaining.match(/^(broadcast|unconsumed|performable|always):/);
+      const match = remaining.match(/^(broadcast|workspace|unconsumed|performable|always):/);
       if (!match) break;
-      if (!trigger)
-        trigger = { broadcast: false, unconsumed: false, performable: false, always: false };
+      if (!trigger) trigger = noTrigger();
       trigger[match[1] as keyof Trigger] = true;
       remaining = remaining.slice(match[0].length);
     }

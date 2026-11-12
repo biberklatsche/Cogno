@@ -4,7 +4,9 @@ import { ActionHandler, ActionHandlers } from "@cogno/core/workbench/actions/act
 import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
+import { Logger } from "@cogno/platform/logger";
 import { TerminalId } from "@cogno/shared/domain";
+import { decodeSendTextEscapes } from "./send-text-escapes";
 
 /** The line-editor action each of these terminal actions runs. */
 const EDITOR_ACTIONS = [
@@ -32,7 +34,8 @@ type TargetContext = Parameters<ActionHandler>[0];
  * Every terminal action, handled centrally (ARCHITECTURE.md 5) - the successor
  * of the per-session KeybindExecutor. An action runs on the terminal it names
  * (the context menu, HTTP) or else on the focused one - a `broadcast` keybinding
- * reaches every session instead; with no target it reports unperformed so the
+ * reaches every session instead, a `workspace` keybinding every terminal of the
+ * workspace that is showing; with no target it reports unperformed so the
  * keybinding falls through. `copy`/`cut` only fire (and only
  * consume) when a `performable` trigger has a selection.
  */
@@ -97,6 +100,22 @@ export class TerminalActionHandlers {
         this.onSession((id) => this.hostOf(id)?.runEditorAction(editorAction)),
       );
     }
+    // An argument is split at its colons on the way here; the text has them back.
+    actions.handle("send_text", (context) => {
+      const text = decodeSendTextEscapes((context.args ?? []).join(":"));
+      if (text === "") {
+        return false;
+      }
+      return this.onRunningSession((id) => this.hostOf(id)?.writeRaw(text))(context);
+    });
+    actions.handle(
+      "terminate_processes",
+      this.onRunningSession((id) => {
+        this.hostOf(id)
+          ?.terminateProcesses()
+          .catch((error) => Logger.error(`Could not terminate the processes of ${id}: ${error}`));
+      }),
+    );
     actions.handle(
       "copy",
       this.onSelection((id) => void this.hostOf(id)?.copy()),
@@ -109,7 +128,8 @@ export class TerminalActionHandlers {
 
   /**
    * Runs on the terminal the action names, else on the focused one - or, for a
-   * `broadcast` keybinding, on every live session. Unperformed when no target
+   * `broadcast` keybinding, on every live session and for a `workspace` one on
+   * every terminal of the workspace that is showing. Unperformed when no target
    * accepts it.
    */
   private onTerminal(
@@ -131,6 +151,14 @@ export class TerminalActionHandlers {
   /** An action on a session: it has to be a live one. */
   private onSession(run: (terminalId: TerminalId) => void): ActionHandler {
     return this.onTerminal(run, (id) => this.terminalSessionRegistry.has(id));
+  }
+
+  /**
+   * An action on the shell itself: it has to run. A restored pane has a session
+   * but no shell until it is first shown.
+   */
+  private onRunningSession(run: (terminalId: TerminalId) => void): ActionHandler {
+    return this.onTerminal(run, (id) => this.hostOf(id)?.runtime.status === "running");
   }
 
   /** A layout action: its pane has to be in the tab that is showing. */
@@ -157,6 +185,9 @@ export class TerminalActionHandlers {
     }
     if (context.trigger?.broadcast) {
       return this.terminalSessionRegistry.entries.map((entry) => entry.terminalId);
+    }
+    if (context.trigger?.workspace) {
+      return this.gridListService.terminalIdsInActiveWorkspace();
     }
     const focusedTerminalId = this.gridListService.getFocusedTerminalId();
     return focusedTerminalId ? [focusedTerminalId] : [];
