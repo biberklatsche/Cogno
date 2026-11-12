@@ -1080,6 +1080,12 @@ dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
   ist neuer) und mit dem Shell-Typ der laufenden Shell. Das ist der dritte
   Weg neben Start und Wiederherstellung (2.5), und er gilt auch nach einem
   Neuladen der Webview.
+- **Eine laufende Shell wird nie für einen Start beendet.** Wollte ein Pane
+  starten, weil Cogno die Shell unter seiner ID nicht kannte (der Dienst
+  antwortete beim Start nicht), lehnt der Dienst den Start ab
+  (`SHELL_ALREADY_RUNS`). Die Sitzung nennt das als Fakt (`shellAlreadyRuns`),
+  und die Sitzungsfabrik dockt an, wie beim normalen Start, auch wenn ein
+  anderes Cogno die Shell gerade zeigt.
 - Ein Pane eines anderen Rechners (`Pane.host`, unten) dockt **nur** an: Es
   zeigt eine Shell, die dort läuft, und startet nie eine. Läuft sie nicht
   mehr, sagt es das. Wird es geschlossen, lässt es die Shell nur los

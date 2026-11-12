@@ -143,17 +143,20 @@ export class SessionHostFactory {
     private readonly runningSessions: RunningSessionsService,
     destroyRef: DestroyRef,
   ) {
-    const retakes = this.bus
+    const reattachments = this.bus
       .on$("RetakeTerminal")
-      .subscribe((action) => action.payload && void this.retake(action.payload));
+      .subscribe((action) => action.payload && void this.reattach(action.payload, "takenOver"));
     // A shell that another Cogno took and let go again comes back by itself,
     // into the pane that still says where it went.
-    retakes.add(
+    // And a shell that already ran when the pane wanted to start one -
+    // Cogno did not know it was there - is shown instead.
+    reattachments.add(
       this.sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
-        if (fact.type === "releasedElsewhere") void this.retake(terminalId);
+        if (fact.type === "releasedElsewhere") void this.reattach(terminalId, "takenOver");
+        if (fact.type === "shellAlreadyRuns") void this.reattach(terminalId, "failed");
       }),
     );
-    destroyRef.onDestroy(() => retakes.unsubscribe());
+    destroyRef.onDestroy(() => reattachments.unsubscribe());
   }
 
   /**
@@ -369,14 +372,15 @@ export class SessionHostFactory {
   }
 
   /**
-   * Another Cogno took the pane's shell over; it is shown here again - the
-   * user asked for it, or that Cogno let the shell go. The
-   * session that lost it is of no use any more: a new one attaches to the
-   * shell and gets its output from the host afresh.
+   * The pane's session does not show its shell, which runs: another Cogno
+   * took it over (`takenOver`; the user asks for it back, or that Cogno let
+   * it go), or a start found it already running (`failed`). That session is
+   * of no use any more: a new one attaches to the shell and gets its output
+   * from the host afresh.
    */
-  private async retake(terminalId: TerminalId): Promise<void> {
+  private async reattach(terminalId: TerminalId, from: "takenOver" | "failed"): Promise<void> {
     const entry = this.sessions.get(terminalId);
-    if (!entry || entry.host.runtime.status !== "takenOver") return;
+    if (!entry || entry.host.runtime.status !== from) return;
     const dock = entry.componentRef?.location.nativeElement.parentElement ?? undefined;
     // Without an answer the new session would take the shell for gone - or,
     // on this machine, start another one under its id.

@@ -387,6 +387,25 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     expect(host.runtime.status).toBe("running");
   });
 
+  it("says so when its shell could not start because one already runs under its id", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    const facts: string[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact.type));
+    vi.mocked(ptyOf(host).spawn).mockRejectedValueOnce(
+      "A shell already runs as terminal terminal-1.",
+    );
+    const reported = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => undefined);
+
+    host.start();
+    await settle();
+
+    expect(host.runtime.status).toBe("failed");
+    expect(facts).toContain("shellAlreadyRuns");
+    // Nothing went wrong: the shell is there.
+    expect(reported).not.toHaveBeenCalled();
+  });
+
   it("is taken over when another Cogno attaches to its shell", async () => {
     const host = createHost();
     host.initialize("terminal-1", bashProfile);

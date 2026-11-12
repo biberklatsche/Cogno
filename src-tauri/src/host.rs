@@ -407,7 +407,7 @@ impl HostState {
             };
             // Known before the request goes out: the shell's first output
             // and its end can overtake the reply.
-            hosts.terminals.lock().unwrap().insert(
+            let before = hosts.terminals.lock().unwrap().insert(
                 terminal_id.clone(),
                 Terminal {
                     host: None,
@@ -417,7 +417,13 @@ impl HostState {
             );
             let reply = connection.request(request);
             if reply.is_err() {
-                hosts.terminals.lock().unwrap().remove(&terminal_id);
+                // Refused: what showed the id before (a shell that already
+                // runs under it) still does.
+                let mut terminals = hosts.terminals.lock().unwrap();
+                match before {
+                    Some(before) => terminals.insert(terminal_id, before),
+                    None => terminals.remove(&terminal_id),
+                };
             }
             reply
         })

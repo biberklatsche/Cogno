@@ -16,7 +16,7 @@ use crate::line_editor::{
 
 #[cfg(windows)]
 use crate::process_job::ProcessJob;
-use crate::protocol::{Event, SessionInfo, SessionLabel};
+use crate::protocol::{Event, SessionInfo, SessionLabel, SHELL_ALREADY_RUNS};
 use crate::shell_spawner::{ShellProfile, ShellSpawner};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -113,7 +113,7 @@ struct OutputState {
 /// one. Its `Arc` identifies one spawn (terminal ids can be reused).
 pub(crate) struct Output {
     state: Mutex<OutputState>,
-    /// The session has ended (kill, exit, respawn): nothing is kept or sent
+    /// The session has ended (kill or exit): nothing is kept or sent
     /// any more.
     closed: AtomicBool,
 }
@@ -304,20 +304,27 @@ const ENDED_BY_ANOTHER: i32 = -1;
 
 /// What became of a spawned session.
 enum Registered {
-    /// It is live; with it comes the session whose id it took over, if any.
-    Live(Option<Session>),
+    Live,
     /// Its owner was released while the shell was starting: it comes back.
     OwnerGone(Session),
+    /// Another shell runs under its id: it comes back, the other runs on.
+    IdTaken(Session),
 }
 
 impl SessionTable {
-    /// Registers a spawned session, unless its owner is gone: a late spawn
-    /// from a closed window must never replace a reopened workspace's session.
+    /// Registers a spawned session, unless its owner is gone (a late spawn
+    /// from a closed window must never replace a reopened workspace's
+    /// session) or a shell runs under its id: a running shell is never ended
+    /// to make room.
     fn insert(&mut self, terminal_id: &str, session: Session) -> Registered {
         if self.gone_owners.contains(&session.owner) {
             return Registered::OwnerGone(session);
         }
-        Registered::Live(self.live.insert(terminal_id.to_string(), session))
+        if self.live.contains_key(terminal_id) {
+            return Registered::IdTaken(session);
+        }
+        self.live.insert(terminal_id.to_string(), session);
+        Registered::Live
     }
 }
 
@@ -341,7 +348,7 @@ fn release_session(mut session: Session) {
 /// Ends the spawn identified by `output`, from whichever thread notices
 /// first: removes its map entry (only if the id still belongs to this spawn),
 /// releases it, and reports `PtyExit` to the client that shows it. A spawn
-/// whose entry is already gone was killed or replaced on purpose, so it
+/// whose entry is already gone was killed on purpose, so it
 /// reports nothing. Idempotent.
 fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exit_code: i32) {
     // Whom to tell, looked up before the entry goes: the reader takes the
@@ -376,6 +383,10 @@ fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exi
     if let Some(taken_from) = taken_from {
         taken_from.tell_exit(terminal_id, exit_code);
     }
+}
+
+fn already_runs(terminal_id: &str) -> String {
+    format!("{SHELL_ALREADY_RUNS} {terminal_id}.")
 }
 
 pub(crate) struct PtyState {
@@ -721,6 +732,17 @@ impl PtyState {
     ) -> Result<PtySpawnResult, String> {
         let state = self;
         let terminal_id = options.name.clone();
+        // Checked again when the session is registered: two spawns of one id
+        // may start at once.
+        if state
+            .sessions
+            .lock()
+            .unwrap()
+            .live
+            .contains_key(&terminal_id)
+        {
+            return Err(already_runs(&terminal_id));
+        }
 
         // Prepare shell spawn with integration
         let dev_mode = options.dev_mode.unwrap_or(false);
@@ -822,22 +844,15 @@ impl PtyState {
             line_editor_channel,
         };
 
-        let (replaced, abandoned) =
-            match state.sessions.lock().unwrap().insert(&terminal_id, session) {
-                Registered::Live(replaced) => (replaced, None),
-                Registered::OwnerGone(session) => (None, Some(session)),
-            };
-        if let Some(old_session) = replaced {
-            // The id is reused (e.g. webview reload re-spawning a persisted
-            // layout). The old spawn's threads only ever touch their own entry, so
-            // ending it here cannot disturb the new session.
-            log::warn!(
-                target: "pty",
-                "terminal_id={} respawned while a session was still alive; replacing it",
-                terminal_id
-            );
-            release_session(old_session);
-        }
+        let registered = state.sessions.lock().unwrap().insert(&terminal_id, session);
+        let abandoned = match registered {
+            Registered::Live => None,
+            Registered::OwnerGone(session) => Some(session),
+            Registered::IdTaken(session) => {
+                release_session(session);
+                return Err(already_runs(&terminal_id));
+            }
+        };
 
         // Thread that writes PTY input. Blocking writes happen here, never inside a
         // command holding `sessions`. Ends when the session (and its sender) drops.
@@ -881,7 +896,7 @@ impl PtyState {
                 pump_pty_output(reader, &output);
 
                 // EOF or a read error: the PTY is unusable. If the session
-                // was killed or replaced instead, the entry is already gone
+                // was killed instead, the entry is already gone
                 // and this is a no-op.
                 end_session(&sessions, &terminal_id, &output, -1);
                 if let Some(attached) = output.detach() {
@@ -933,7 +948,7 @@ fn open_pty(rows: u16, cols: u16) -> Result<portable_pty::PtyPair, String> {
 /// that shows the session, waiting for that client when it is behind. Without
 /// a client nothing waits; the shell runs on and the output is only kept.
 ///
-/// Once the output is closed (kill, exit, respawn) nothing is kept or sent
+/// Once the output is closed (kill or exit) nothing is kept or sent
 /// any more, but reading goes on until the PTY ends: a reader that stops
 /// while the pipe is full leaves the shell blocked on its write, and before
 /// Windows 11 24H2 `ClosePseudoConsole` then waits for that pipe forever.
@@ -1435,7 +1450,7 @@ mod window_tests {
         state.release_all();
         assert_finishes(new_pump, "reopened reader");
         assert!(emptied);
-        assert!(matches!(replaced, Registered::Live(None)));
+        assert!(matches!(replaced, Registered::Live));
         assert!(survived);
         assert!(still_open);
     }
@@ -1467,7 +1482,7 @@ mod window_tests {
         assert_finishes(late_pump, "late reader");
         assert_finishes(other_pump, "other reader");
         assert!(handed_back);
-        assert!(matches!(other, Registered::Live(None)));
+        assert!(matches!(other, Registered::Live));
         assert_eq!(registered, ["t2"]);
     }
 }

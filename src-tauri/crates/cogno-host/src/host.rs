@@ -796,6 +796,27 @@ mod tests {
     }
 
     #[test]
+    fn a_shell_that_runs_is_never_ended_to_start_another_under_its_id() {
+        let (me, sink) = client(1);
+        let host = Host::new();
+        host.handle(&me, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+        wait_until("the shell runs", || sink.output_of(1).contains("port=4711"));
+
+        let refused = host.handle(&me, spawn_request("t1", 2, WAITING, true));
+
+        let reason = refused.err().unwrap_or_default();
+        assert!(
+            reason.starts_with(crate::protocol::SHELL_ALREADY_RUNS),
+            "{reason}"
+        );
+        assert_eq!(sessions_of(&host, &me), [("t1".to_string(), true)]);
+        // The first one still writes to its client.
+        assert!(sink.ended_streams().is_empty());
+        host.release_all();
+    }
+
+    #[test]
     fn nobody_hears_of_a_session_that_was_taken_from_nobody() {
         let (me, sink) = client(1);
         let (other, elsewhere) = client(2);

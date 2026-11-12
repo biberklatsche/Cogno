@@ -41,6 +41,12 @@ export type SessionFact =
    * and this session, which lost it, could be replaced by one that does.
    */
   | { readonly type: "releasedElsewhere" }
+  /**
+   * The shell could not be started: one already runs under this terminal id
+   * (Cogno did not know it was there). This session could be replaced by one
+   * that shows it.
+   */
+  | { readonly type: "shellAlreadyRuns" }
   /** Output arrived from the shell. */
   | { readonly type: "outputReceived" }
   /** The terminal gained or lost the keyboard. */
