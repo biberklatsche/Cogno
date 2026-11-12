@@ -5,7 +5,7 @@
 //! sink the connection was given.
 
 use cogno_host::protocol::{Reply, Request};
-use cogno_host::wire::{self, HostMessage, RequestEnvelope, NO_REPLY, PROTOCOL_VERSION};
+use cogno_host::wire::{self, HostMessage, RequestEnvelope, VersionMismatch, NO_REPLY};
 use cogno_host::EventSink;
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Write};
@@ -111,13 +111,23 @@ impl HostConnection {
         let id = NEXT_CONNECTION.fetch_add(1, Ordering::Relaxed);
         wire::skip_to_preamble(&mut reader).map_err(|_| "No Cogno host answered".to_string())?;
         let os = match wire::read_host_message(&mut reader) {
-            Ok(Some(HostMessage::Hello { protocol, os })) if protocol == PROTOCOL_VERSION => os,
-            Ok(Some(HostMessage::Hello { protocol, .. })) => {
-                return Err(format!(
-                    "The Cogno host speaks protocol {protocol}, this Cogno \
-                     {PROTOCOL_VERSION}: both need the same version"
-                ))
-            }
+            Ok(Some(HostMessage::Hello {
+                protocol,
+                oldest,
+                os,
+            })) => match wire::check_versions(protocol, oldest) {
+                Ok(_) => os,
+                Err(VersionMismatch::ThisIsOlder) => {
+                    return Err("The Cogno host is newer than this Cogno can talk to: \
+                         update this Cogno"
+                        .to_string())
+                }
+                Err(VersionMismatch::TheyAreOlder) => {
+                    return Err("The Cogno host is older than this Cogno can talk to: \
+                         update the Cogno there"
+                        .to_string())
+                }
+            },
             _ => return Err("The Cogno host did not introduce itself".to_string()),
         };
 
@@ -220,6 +230,7 @@ impl Drop for HostConnection {
 mod tests {
     use super::*;
     use cogno_host::protocol::{Event, Response};
+    use cogno_host::wire::{OLDEST_PROTOCOL_VERSION, PROTOCOL_VERSION};
     use std::sync::atomic::AtomicBool;
     use std::time::{Duration, Instant};
 
@@ -291,21 +302,37 @@ mod tests {
         assert_eq!(refused.err().unwrap(), "No Cogno host answered");
     }
 
-    #[test]
-    fn another_protocol_version_is_refused_with_both_versions() {
+    /// A connection to a host that says it speaks `oldest` up to `newest`.
+    fn over_a_host_speaking(newest: u32, oldest: u32) -> Result<HostConnection, String> {
         let (reader, mut writer) = std::io::pipe().unwrap();
-        // A hello as `wire` writes it, with the version of a later Cogno.
+        // A hello as `wire` writes it, with the versions of another Cogno.
         let mut hello = Vec::new();
         wire::write_hello(&mut hello).unwrap();
-        let current = format!("\"protocol\":{PROTOCOL_VERSION}");
-        let later = format!("\"protocol\":{}", PROTOCOL_VERSION + 1);
-        assert_eq!(current.len(), later.len());
-        let hello = String::from_utf8_lossy(&hello).replace(&current, &later);
-        writer.write_all(hello.as_bytes()).unwrap();
+        let ours = format!("\"protocol\":{PROTOCOL_VERSION},\"oldest\":{OLDEST_PROTOCOL_VERSION}");
+        let theirs = format!("\"protocol\":{newest},\"oldest\":{oldest}");
+        // The frame keeps its length.
+        assert_eq!(ours.len(), theirs.len());
+        let changed = String::from_utf8_lossy(&hello).replace(&ours, &theirs);
+        assert_ne!(
+            changed.as_bytes(),
+            &hello[..],
+            "the hello names both versions"
+        );
+        writer.write_all(changed.as_bytes()).unwrap();
+        HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), |_| {})
+    }
 
-        let refused = HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), |_| {});
-        let error = refused.err().unwrap();
-        assert!(error.contains(&format!("protocol {}", PROTOCOL_VERSION + 1)));
+    #[test]
+    fn a_later_host_that_still_speaks_this_version_is_talked_to() {
+        assert!(over_a_host_speaking(PROTOCOL_VERSION + 1, PROTOCOL_VERSION).is_ok());
+    }
+
+    #[test]
+    fn a_host_without_a_version_in_common_is_refused_naming_what_to_update() {
+        let error = over_a_host_speaking(PROTOCOL_VERSION + 2, PROTOCOL_VERSION + 1)
+            .err()
+            .unwrap();
+        assert!(error.ends_with("update this Cogno"), "{error}");
     }
 
     #[test]

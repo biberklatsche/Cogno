@@ -18,8 +18,9 @@ has to be written), and the config.
 | On this machine | An `ssh` client (part of Windows 10/11, macOS and Linux) and Cogno |
 | Between them | The other machine reachable by ssh: same network or a VPN |
 
-Both Cognos must speak the same protocol version. If they do not, connecting
-fails with a message naming both versions; update the older one.
+The two Cognos need not be the same version: a Cogno still talks to older
+and newer ones as long as they understand each other. When they are too far
+apart, connecting fails with a message that says which of the two to update.
 
 ## The config
 
@@ -319,7 +320,7 @@ last megabyte), not a picture of the old window:
 | `No Cogno host answered: No Cogno is running on this machine` | Cogno is not open on the other machine. |
 | `No Cogno host answered`, followed by something else ssh or the shell printed | The start command did not work. Usually the ssh server starts commands in PowerShell and `command` is missing its `&`, or Cogno never ran on that machine. Run the check by hand. |
 | `Permission denied (publickey,…)` | The ssh server does not accept your key. See *Allow your key*; on the machine you connect from, see the note on key permissions. |
-| `… speaks protocol N, this one M` | The two Cognos are too far apart in version. Update the older one. |
+| `The Cogno host is older than this Cogno can talk to` or `… newer than …` | The two Cognos are too far apart in version. Update the one the message names. |
 | `Host '…' is not defined in remote.hosts` | A saved tab shows a shell of a remote that was removed from the config. |
 | `The shell does not run there any more` | A saved tab shows a shell that has ended since. Close the tab. |
 

@@ -1160,9 +1160,18 @@ beim nächsten Start einer Shell verbindet sie neu und startet ihn bei Bedarf.
 
 **Die Rahmung** (`wire.rs`) ist für beide Wege dieselbe:
 
-- Der Host beginnt mit einer **Kennung** und einem `Hello` (Protokollversion,
-  Betriebssystem). Die Gegenseite überspringt, was ein Login davor ausgibt.
-  Die Version muss gleich sein; verhandelt wird noch nicht.
+- Der Host beginnt mit einer **Kennung** und einem `Hello` (Bereich der
+  Protokollversionen, die er spricht, und Betriebssystem). Die Gegenseite
+  überspringt, was ein Login davor ausgibt.
+- **Versionsbereich:** Laptop und Büro-Rechner werden nie gleichzeitig
+  aktualisiert. Jeder Build spricht `OLDEST_PROTOCOL_VERSION` bis
+  `PROTOCOL_VERSION`; der Client verbindet sich, wenn sich die Bereiche
+  treffen (`check_versions`), sonst nennt der Fehler, welche Seite zu alt ist.
+  Gesprochen wird die neueste gemeinsame Version. Ein Client nennt seine
+  noch nicht: er spricht Version 1, bis eine spätere Version ihm einen Weg
+  gibt, sie zu nennen. Eine neue Version ergänzt das Protokoll und wird nur
+  genutzt, wo beide Seiten sie kennen; `OLDEST_PROTOCOL_VERSION` steigt nur,
+  wenn sie aufgibt, was ältere brauchen.
 - Danach laufen in beide Richtungen **Frames** aus Länge, Art und Inhalt.
   Anfragen (mit ID), Antworten (mit derselben ID) und Ereignisse sind JSON;
   die Ausgabe einer Sitzung ist ein eigener, binärer Frame.

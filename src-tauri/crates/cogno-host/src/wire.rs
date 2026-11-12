@@ -14,8 +14,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::protocol::{Event, Reply, Request};
 
-/// Both ends must speak the same version; there is no negotiation.
+/// The newest version of this protocol this build speaks.
+///
+/// Laptop and office machine are never updated at once, so both ends speak a
+/// range of versions, from `OLDEST_PROTOCOL_VERSION` up to this one. Two
+/// ends talk when their ranges meet (`check_versions`), in the newest version
+/// both speak. A later version
+/// adds to the protocol and is spoken only where both ends know it; it raises
+/// `OLDEST_PROTOCOL_VERSION` only where it gives up what older ones need.
+///
+/// The host says its range in the hello; a client says nothing. Until a
+/// version adds a way for it to, a client speaks version 1.
 pub const PROTOCOL_VERSION: u32 = 1;
+/// The oldest version this build still speaks.
+pub const OLDEST_PROTOCOL_VERSION: u32 = 1;
 
 /// Control characters around the name: no banner prints this by accident.
 const PREAMBLE: &[u8] = b"\x02COGNO-HOST\x03";
@@ -39,7 +51,10 @@ pub struct RequestEnvelope {
 pub enum HostMessage {
     /// The first message after the preamble.
     Hello {
+        /// The newest version the host speaks.
         protocol: u32,
+        /// The oldest version the host still speaks.
+        oldest: u32,
         /// `std::env::consts::OS` of the host: "windows", "macos", "linux".
         os: String,
     },
@@ -105,9 +120,31 @@ pub fn write_hello(writer: &mut impl Write) -> io::Result<()> {
         writer,
         HostMessage::Hello {
             protocol: PROTOCOL_VERSION,
+            oldest: OLDEST_PROTOCOL_VERSION,
             os: std::env::consts::OS.to_string(),
         },
     )
+}
+
+/// Why two ends have no version in common: which of them has to be updated.
+#[derive(Debug, PartialEq, Eq)]
+pub enum VersionMismatch {
+    /// The other end only speaks versions newer than this build knows.
+    ThisIsOlder,
+    /// This build no longer speaks the versions the other end knows.
+    TheyAreOlder,
+}
+
+/// Whether this build and an end that speaks `their_oldest` up to
+/// `their_newest` have a version in common.
+pub fn check_versions(their_newest: u32, their_oldest: u32) -> Result<(), VersionMismatch> {
+    if their_oldest > PROTOCOL_VERSION {
+        Err(VersionMismatch::ThisIsOlder)
+    } else if their_newest < OLDEST_PROTOCOL_VERSION {
+        Err(VersionMismatch::TheyAreOlder)
+    } else {
+        Ok(())
+    }
 }
 
 /// Reads up to and including the preamble, past whatever came before it.
@@ -263,8 +300,34 @@ mod tests {
         skip_to_preamble(&mut reader).unwrap();
         assert!(matches!(
             read_host_message(&mut reader).unwrap(),
-            Some(HostMessage::Hello { protocol: PROTOCOL_VERSION, os }) if os == std::env::consts::OS
+            Some(HostMessage::Hello { protocol: PROTOCOL_VERSION, oldest: OLDEST_PROTOCOL_VERSION, os })
+                if os == std::env::consts::OS
         ));
+    }
+
+    #[test]
+    fn ends_whose_versions_meet_talk() {
+        assert_eq!(
+            check_versions(PROTOCOL_VERSION, OLDEST_PROTOCOL_VERSION),
+            Ok(())
+        );
+        // A later build that still speaks this one's version.
+        assert_eq!(
+            check_versions(PROTOCOL_VERSION + 1, PROTOCOL_VERSION),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn without_a_version_in_common_the_older_end_is_named() {
+        assert_eq!(
+            check_versions(PROTOCOL_VERSION + 2, PROTOCOL_VERSION + 1),
+            Err(VersionMismatch::ThisIsOlder)
+        );
+        assert_eq!(
+            check_versions(OLDEST_PROTOCOL_VERSION - 1, 0),
+            Err(VersionMismatch::TheyAreOlder)
+        );
     }
 
     #[test]
