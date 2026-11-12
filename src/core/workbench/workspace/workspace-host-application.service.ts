@@ -5,6 +5,7 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
+import { RunningSessionsService } from "@cogno/core/workbench/remote/running-sessions.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { AppWindow } from "@cogno/platform/window";
@@ -15,7 +16,7 @@ import { SessionPersistenceService } from "./session-persistence.service";
 import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
 import { WorkspaceRepository } from "./workspace.repository";
 import { defaultWorkspaceIdContract, WorkspaceEntryContract } from "./workspace-entry";
-import { WorkspaceStateUseCase } from "./workspace-state.use-case";
+import { ShellAdoptionPlan, WorkspaceStateUseCase } from "./workspace-state.use-case";
 
 const DEFAULT_WORKSPACE_ID = defaultWorkspaceIdContract;
 
@@ -102,26 +103,27 @@ export class WorkspaceHostApplicationService {
     private readonly sessionPersistence: SessionPersistenceService,
     private readonly appWindow: AppWindow,
     private readonly discardSessionMarker: DiscardSessionMarker,
+    private readonly runningSessions: RunningSessionsService,
     sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
     this.bus.once$("DBInitialized").subscribe(async () => {
       await this.discardSessionIfMarked();
-      const workspaces = this.workspacesToStartWith(
+      const savedWorkspaces = this.workspacesToStartWith(
         await this.workspaceRepository.getAllWorkspaces(),
       );
-      await this.repairDuplicateIds(workspaces);
-      const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
-        workspaces,
-        this.defaultWorkspace,
-      );
-
-      for (const workspace of workspaces) {
+      await this.repairDuplicateIds(savedWorkspaces);
+      for (const workspace of savedWorkspaces) {
         this.persistedWorkspaceRuntimeSignatureById.set(
           workspace.id,
           this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.stacks, workspace.grids),
         );
       }
+      const { workspaces, adoptedTabIds } = this.adoptLeftOverShells(savedWorkspaces);
+      const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
+        workspaces,
+        this.defaultWorkspace,
+      );
 
       this._workspaceList.set(workspaceList);
 
@@ -147,6 +149,7 @@ export class WorkspaceHostApplicationService {
       if (activeWorkspace) {
         await this.activateWorkspace(activeWorkspace);
       }
+      this.tellOfAdoptedShells(adoptedTabIds);
     });
 
     merge(this.tabListService.slots$, this.gridListService.grids$)
@@ -196,6 +199,44 @@ export class WorkspaceHostApplicationService {
         entry.id === workspace.id ? { ...entry, isOpen: true } : entry,
       ),
     );
+  }
+
+  /**
+   * Shells can run on that nothing shows any more: Cogno crashed, or a tab
+   * was closed while another machine showed its shell. The window the app
+   * started with gives each of them a tab in the default workspace, so no
+   * shell is left that cannot be reached. Shells that have a pane in a saved
+   * workspace belong there and are left alone.
+   */
+  private adoptLeftOverShells(workspaces: WorkspaceConfiguration[]): ShellAdoptionPlan {
+    if (!this.appWindow.isMain) {
+      return { workspaces, adoptedTabIds: [] };
+    }
+    return WorkspaceStateUseCase.adoptLeftOverShells(
+      workspaces,
+      this.defaultWorkspace,
+      this.runningSessions.unshownHere().map((session) => session.terminalId),
+      () => IdCreator.newTabId(),
+    );
+  }
+
+  private tellOfAdoptedShells(adoptedTabIds: string[]): void {
+    const [firstTabId] = adoptedTabIds;
+    if (!firstTabId) return;
+    const count = adoptedTabIds.length;
+    this.bus.publish({
+      type: "Notification",
+      payload: {
+        header: count === 1 ? "A shell was still running" : `${count} shells were still running`,
+        body: `No tab showed ${count === 1 ? "it" : "them"} any more. ${
+          count === 1 ? "It is" : "They are"
+        } in the ${this.defaultWorkspace.name} now.`,
+        source: "Workspace",
+        target: { workspaceId: DEFAULT_WORKSPACE_ID, tabId: firstTabId },
+        timestamp: new Date(),
+        type: "info",
+      },
+    });
   }
 
   private get isRestoreEnabled(): boolean {

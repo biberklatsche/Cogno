@@ -1,4 +1,4 @@
-import { GridConfig, TabConfig } from "@cogno/core/workbench/grid-layout";
+import { GridConfig, PaneConfig, TabConfig } from "@cogno/core/workbench/grid-layout";
 import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
 import { defaultWorkspaceIdContract } from "./workspace-entry";
 
@@ -27,7 +27,67 @@ export interface WorkspaceUpsertPlan {
   readonly workspaceList: WorkspaceState[];
 }
 
+export interface ShellAdoptionPlan {
+  /** The workspaces to start with, the default one among them when it took shells in. */
+  readonly workspaces: WorkspaceConfiguration[];
+  /** The tabs the default workspace got, one per shell; empty when no shell was left over. */
+  readonly adoptedTabIds: string[];
+}
+
+function terminalIdsOf(pane: PaneConfig | undefined): string[] {
+  if (!pane) return [];
+  return [
+    ...(pane.terminalId ? [pane.terminalId] : []),
+    ...terminalIdsOf(pane.leftChild),
+    ...terminalIdsOf(pane.rightChild),
+  ];
+}
+
 export class WorkspaceStateUseCase {
+  /**
+   * Gives every running shell that no saved workspace has a pane for a tab in
+   * the default workspace, so it can be reached again. A shell that belongs
+   * to a workspace is left to that workspace, open or not: its pane shows it
+   * once the workspace is opened. The other workspaces are never touched.
+   */
+  static adoptLeftOverShells(
+    workspaces: ReadonlyArray<WorkspaceConfiguration>,
+    defaultWorkspace: WorkspaceConfiguration,
+    runningTerminalIds: ReadonlyArray<string>,
+    newTabId: () => string,
+  ): ShellAdoptionPlan {
+    const placed = new Set(
+      workspaces.flatMap((workspace) =>
+        workspace.grids.flatMap((grid) => terminalIdsOf(grid.pane)),
+      ),
+    );
+    const leftOver = runningTerminalIds.filter((terminalId) => !placed.has(terminalId));
+    if (leftOver.length === 0) {
+      return { workspaces: [...workspaces], adoptedTabIds: [] };
+    }
+    const adopted = leftOver.map((terminalId) => ({ tabId: newTabId(), terminalId }));
+    const adopting =
+      workspaces.find((workspace) => workspace.id === defaultWorkspace.id) ?? defaultWorkspace;
+    const withShells: WorkspaceConfiguration = {
+      ...adopting,
+      tabs: [...adopting.tabs, ...adopted.map(({ tabId }) => ({ tabId }))],
+      grids: [
+        ...adopting.grids,
+        ...adopted.map(({ tabId, terminalId }) => ({ tabId, pane: { terminalId } })),
+      ],
+      // Its panes have to exist for the shells to be shown, whichever
+      // workspace is in front.
+      isOpen: true,
+    };
+    return {
+      workspaces: [
+        withShells,
+        ...workspaces.filter((workspace) => workspace.id !== defaultWorkspace.id),
+      ],
+      adoptedTabIds: adopted.map(({ tabId }) => tabId),
+    };
+  }
+
   static createDefaultWorkspace(defaultWorkspaceId: string, tabId: string): WorkspaceConfiguration {
     return {
       id: defaultWorkspaceId,

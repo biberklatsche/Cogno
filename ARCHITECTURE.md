@@ -1087,6 +1087,14 @@ dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
   (`RetakeTerminal` auf dem Bus). Dasselbe geschieht von selbst, wenn der
   Host meldet, dass die Shell wieder frei ist: Die Sitzung, die noch wartet,
   nennt das als Fakt (`releasedElsewhere`), die Sitzungsfabrik dockt neu an.
+- **Keine Shell bleibt ohne Tab.** Eine Shell kann weiterlaufen, ohne dass
+  ein Pane sie zeigt (Absturz; ein geschlossener Tab, während ein anderes
+  Cogno sie zeigte). Beim Start gibt das Fenster, mit dem die App startete,
+  jeder Shell dieses Rechners, die niemand zeigt und für die **kein
+  gespeicherter Workspace** ein Pane hat, einen Tab im Default-Workspace
+  (`WorkspaceStateUseCase.adoptLeftOverShells`) und meldet das. Shells mit
+  Pane in einem Workspace gehören dorthin, auch wenn er nicht offen ist; die
+  übrigen Workspaces werden nie verändert.
 - **Die Etiketten pflegt die Workbench** (`SessionLabelPublisher`): Für jede
   laufende Shell dieses Rechners sagt sie dem Host, wo sie sitzt, und wieder,
   wenn sich Workspace, Tab, Titel oder Verzeichnis ändern. Eine Shell eines
@@ -1176,9 +1184,8 @@ solches Pane kommt aus dem Remote-Panel (unten). Die Zuständigkeiten:
   Auflegen, die Shells eines Rechners und drei Dinge mit einer Shell: hier
   zeigen (zum Pane gehen, zurückholen oder einen Tab öffnen), beenden.
   `features/remote` ist das Panel dazu: ein Baum Rechner → Workspace → Tab →
-  Shell, mit diesem Rechner als erstem Knoten. Dessen Shells, die kein
-  Fenster mehr zeigt, stehen dort eigens und lassen sich beenden; Shells, die
-  ein anderes Cogno zeigt, lassen sich zurückholen. Verbindung und Sitzungen
+  Shell, nur für die Rechner aus `remote.hosts`. Dieser Rechner steht dort
+  nicht: Was auf ihm läuft, zeigen seine Tabs. Verbindung und Sitzungen
   bleiben Core — das Feature ist nur die Ansicht.
 - **Session:** bekommt als Wert, wo ihre Shell läuft (`SessionBackend`: Host
   und dessen Betriebssystem). Daraus leiten sich Shell-Kontext,

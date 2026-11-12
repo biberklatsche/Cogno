@@ -6,16 +6,13 @@ export type ShellTab = {
   readonly shells: readonly RemoteShell[];
 };
 
-/** The tabs of one workspace - or the shells that no window shows any more. */
+/** The tabs of one workspace. */
 export type ShellGroup = {
   readonly name: string;
-  /** Shells of this machine that no Cogno shows: they only take up room. */
-  readonly orphaned: boolean;
   readonly tabs: readonly ShellTab[];
 };
 
 const NO_WORKSPACE = "No workspace";
-const ORPHANED = "Not shown in any window";
 
 /** What a shell is called in the tree: its title, else where it is, else its id. */
 export function shellName(shell: RemoteShell): string {
@@ -28,36 +25,23 @@ function lastSegment(directory: string | undefined): string | undefined {
 }
 
 /**
- * Sorts a machine's shells into workspace, tab and shell. On this machine a
- * shell that nothing shows has no place in a workspace any more; on another
- * one that only means its Cogno is closed, and the shell stays where it was.
+ * Sorts a machine's shells into workspace, tab and shell, the way the Cogno
+ * they belong to shows them. A shell that nothing shows right now stays where
+ * it was: its Cogno is closed, or it let the shell go.
  */
-export function groupShells(shells: readonly RemoteShell[], thisMachine: boolean): ShellGroup[] {
-  const orphaned = thisMachine ? shells.filter((shell) => !shell.shown) : [];
-  const placed = shells.filter((shell) => !orphaned.includes(shell));
-
+export function groupShells(shells: readonly RemoteShell[]): ShellGroup[] {
   const workspaces = new Map<string, Map<string, RemoteShell[]>>();
-  for (const shell of placed) {
+  for (const shell of shells) {
     const tabs = getOrAdd(workspaces, shell.workspace ?? NO_WORKSPACE, () => new Map());
     getOrAdd(tabs, shell.tab ?? "", () => []).push(shell);
   }
-
-  const groups: ShellGroup[] = sortedByName(workspaces).map(([name, tabs]) => ({
+  return sortedByName(workspaces).map(([name, tabs]) => ({
     name,
-    orphaned: false,
     tabs: sortedByName(tabs).map(([tabName, tabShells]) => ({
       name: tabName,
       shells: sortedShells(tabShells),
     })),
   }));
-  if (orphaned.length > 0) {
-    groups.push({
-      name: ORPHANED,
-      orphaned: true,
-      tabs: [{ name: "", shells: sortedShells(orphaned) }],
-    });
-  }
-  return groups;
 }
 
 function getOrAdd<K, V>(map: Map<K, V>, key: K, create: () => V): V {

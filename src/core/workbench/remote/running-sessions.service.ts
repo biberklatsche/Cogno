@@ -56,6 +56,16 @@ export class RunningSessionsService {
     return askedAt !== undefined && Date.now() - askedAt < FRESH_FOR_MS;
   }
 
+  /**
+   * The shells of this machine that no Cogno shows, as last heard: what the
+   * start of the app gives a tab when no workspace has a pane for it.
+   */
+  unshownHere(): RunningSession[] {
+    return [...(this.byHost.get(THIS_MACHINE)?.values() ?? [])].filter(
+      (session) => !session.attached,
+    );
+  }
+
   /** The running shell of `terminalId` on `host`, which a pane now shows. */
   take(host: string | undefined, terminalId: TerminalId): RunningSession | undefined {
     const sessions = this.byHost.get(host ?? THIS_MACHINE);

@@ -29,6 +29,8 @@ describe("WorkspaceHostApplicationService", () => {
   let workspaceRepository: WorkspaceRepository;
   let service: WorkspaceHostApplicationService;
   let restoreSettings: { enabled: boolean };
+  /** The shells of this machine that no Cogno shows when the app starts. */
+  let unshownShells: { terminalId: string }[];
   let clearRestoreDataInDb: ReturnType<typeof vi.fn>;
   let forgetPendingSnapshots: ReturnType<typeof vi.fn>;
   let persistWorkspaceSnapshots: ReturnType<typeof vi.fn>;
@@ -44,6 +46,7 @@ describe("WorkspaceHostApplicationService", () => {
   };
 
   beforeEach(() => {
+    unshownShells = [];
     bus = getAppBus();
     gridListService = getGridListService();
     tabListService = getTabListService();
@@ -101,6 +104,7 @@ describe("WorkspaceHostApplicationService", () => {
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       discardSessionMarker as unknown as DiscardSessionMarker,
+      { unshownHere: () => unshownShells } as never,
       { facts$: new Subject() } as unknown as TerminalSessionRegistry,
       getDestroyRef(),
     );
@@ -595,6 +599,84 @@ describe("WorkspaceHostApplicationService", () => {
       await service.persistOpenWorkspaces();
 
       expect(persistWorkspace.mock.calls.map((call) => call[0]).sort()).toEqual(["WS-1", "WS-2"]);
+    });
+  });
+
+  describe("shells that run on without a tab", () => {
+    function started(): Promise<void> {
+      bus.publish({ type: "DBInitialized" });
+      return vi.waitFor(() => expect(service.getActiveWorkspace()?.id).toBe("WS-1"));
+    }
+
+    it("get a tab each in the default workspace, which opens behind the active one", async () => {
+      unshownShells = [{ terminalId: "left-1" }, { terminalId: "left-2" }];
+      const notified = vi.fn();
+      bus.on$("Notification").subscribe((message) => notified(message.payload));
+
+      await started();
+
+      expect(service.getWorkspaceById("WS-DEFAULT")?.isOpen).toBe(true);
+      expect(gridListService.terminalIdsForWorkspace("WS-DEFAULT")).toEqual(
+        expect.arrayContaining(["left-1", "left-2"]),
+      );
+      // The workspace the user works in is as it was saved.
+      expect(gridListService.terminalIdsForWorkspace("WS-1")).toHaveLength(1);
+      expect(tabListService.getTabConfigs("WS-1").map((tab) => tab.tabId)).toEqual(["T-1"]);
+      // And the user is told where to find them.
+      const adoptedTabId = tabListService.getTabConfigs("WS-DEFAULT")[1]?.tabId;
+      expect(notified).toHaveBeenCalledWith(
+        expect.objectContaining({
+          header: "2 shells were still running",
+          target: { workspaceId: "WS-DEFAULT", tabId: adoptedTabId },
+        }),
+      );
+    });
+
+    it("stay with the workspace that has a pane for them, also one that is not open", async () => {
+      (workspaceRepository.getAllWorkspaces as ReturnType<typeof vi.fn>).mockResolvedValue([
+        {
+          id: "WS-1",
+          name: "Workspace One",
+          isActive: true,
+          tabs: [{ tabId: "T-1", isActive: true }],
+          stacks: [],
+          grids: [{ tabId: "T-1", pane: {} }],
+        },
+        {
+          id: "WS-2",
+          name: "Closed",
+          tabs: [{ tabId: "T-2" }],
+          stacks: [],
+          grids: [
+            {
+              tabId: "T-2",
+              pane: { leftChild: { terminalId: "kept-1" }, rightChild: { terminalId: "kept-2" } },
+            },
+          ],
+        },
+      ]);
+      unshownShells = [{ terminalId: "kept-1" }, { terminalId: "kept-2" }];
+      const notified = vi.fn();
+      bus.on$("Notification").subscribe((message) => notified(message.payload));
+
+      await started();
+
+      expect(service.getWorkspaceById("WS-DEFAULT")?.isOpen).toBe(false);
+      expect(gridListService.terminalIdsForWorkspace("WS-DEFAULT")).toEqual([]);
+      expect(notified).not.toHaveBeenCalled();
+    });
+
+    it("are left to the window the app started with", async () => {
+      appWindow.isMain = false;
+      unshownShells = [{ terminalId: "left-1" }];
+
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => expect(service.getActiveWorkspace()).toBeDefined());
+
+      const shown = service
+        .workspaceList()
+        .flatMap((workspace) => gridListService.terminalIdsForWorkspace(workspace.id));
+      expect(shown).not.toContain("left-1");
     });
   });
 

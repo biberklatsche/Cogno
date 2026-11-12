@@ -118,11 +118,11 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     return this.remoteHosts.disconnect(name);
   }
 
-  async shells(host: string | undefined): Promise<readonly RemoteShell[]> {
+  async shells(host: string): Promise<readonly RemoteShell[]> {
     return (await this.hosts.sessions(host)).map(toRemoteShell);
   }
 
-  async open(host: string | undefined, terminalId: TerminalId): Promise<void> {
+  async open(host: string, terminalId: TerminalId): Promise<void> {
     if (this.sessions.get(terminalId)?.host.runtime.status === "takenOver") {
       this.bus.publish({ type: "RetakeTerminal", payload: terminalId });
       return;
@@ -140,7 +140,7 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     });
   }
 
-  end(host: string | undefined, terminalId: TerminalId): Promise<void> {
+  end(host: string, terminalId: TerminalId): Promise<void> {
     return this.hosts.endSession(host, terminalId);
   }
 }

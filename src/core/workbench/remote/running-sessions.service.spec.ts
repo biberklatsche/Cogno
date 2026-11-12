@@ -42,6 +42,20 @@ describe("RunningSessionsService", () => {
     expect(service.take(undefined, "t2")).toEqual(session("t2"));
   });
 
+  it("names the shells of this machine that no Cogno shows", async () => {
+    sessions.mockImplementation(async (host?: string) =>
+      host === "office"
+        ? [session("office-1")]
+        : [session("left"), { ...session("shown"), attached: true }],
+    );
+    expect(service.unshownHere()).toEqual([]);
+
+    await service.refresh();
+    await service.refresh("office");
+
+    expect(service.unshownHere()).toEqual([session("left")]);
+  });
+
   it("keeps the shells of each host apart", async () => {
     sessions.mockImplementation(async (host?: string) =>
       host === "office" ? [session("office-1")] : [session("local-1")],
