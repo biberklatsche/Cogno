@@ -335,6 +335,17 @@ describe("Pty", () => {
       expect(takenOver).toHaveBeenCalledOnce();
     });
 
+    it("tells its listeners when the Cogno that took it over let it go", async () => {
+      const released = vi.fn();
+      pty.onReleased(released);
+      await pty.attach(terminalId, noopListener);
+      takenOverListener()();
+
+      (vi.mocked(transport.onReleased).mock.calls[0][1] as () => void)();
+
+      expect(released).toHaveBeenCalledOnce();
+    });
+
     it("is let go, not ended, when it runs on another machine", async () => {
       const remote = new Pty(transport as unknown as PtyTransport, false, "office");
       await remote.attach(terminalId, noopListener);

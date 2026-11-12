@@ -275,6 +275,12 @@ to shells started after the change; closing a tab still ends its shell.
 - **One Cogno at a time shows a shell.** When you go on with it elsewhere,
   the Cogno that showed it before says *This shell is shown on <machine>*.
   *Show it here* takes it back, and so does the Remote panel.
+- **A shell comes back by itself** when the Cogno that took it lets it go:
+  you close its tab there, disconnect, or close that Cogno. The tab that
+  said *This shell is shown on <machine>* shows the shell again, with what
+  happened in the meantime. When the connection just breaks (the laptop
+  goes to sleep), that happens once ssh on the machine notices, which can
+  take a while.
 - **A shell that was taken over never ends with the Cogno that took it.**
   Closing the laptop leaves the office shells running, whatever
   `terminal.keep_shells_running` says there.

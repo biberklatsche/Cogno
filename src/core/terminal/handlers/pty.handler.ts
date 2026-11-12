@@ -25,6 +25,8 @@ export type PtyHandlerListener = {
   readonly onSpawned?: () => void;
   /** Another Cogno took the shell over; it runs on, but not here. */
   readonly onTakenOver?: (by?: string) => void;
+  /** The Cogno that took the shell over let it go. */
+  readonly onReleased?: () => void;
   /** The shell could not be started. */
   readonly onFailed?: (error: unknown) => void;
   /** The shell process ended. */
@@ -92,6 +94,7 @@ export class PtyHandler implements ITerminalHandler {
       }),
     );
     this._disposables.push(this._pty.onTakenOver((by) => this._listener.onTakenOver?.(by)));
+    this._disposables.push(this._pty.onReleased(() => this._listener.onReleased?.()));
   }
 
   private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract): void {

@@ -268,6 +268,17 @@ describe("PtyTransport", () => {
       expect(ended).toHaveBeenCalledWith({ exitCode: 3 });
     });
 
+    it("hears only this window's shell coming free again", async () => {
+      const released = vi.fn();
+
+      await transport.onReleased("t1", released);
+
+      const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
+      expect(event).toBe("pty-released:t1");
+      handler({ payload: null });
+      expect(released).toHaveBeenCalledOnce();
+    });
+
     it("hears only this window's loss of a shell, and who shows it now", async () => {
       const takenOver = vi.fn();
 

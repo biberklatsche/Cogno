@@ -15,6 +15,7 @@ export class TauriMockFactory {
       spawn: vi.fn(() => TauriMockFactory.createPtySpawnHandle()),
       attach: vi.fn(() => TauriMockFactory.createPtySpawnHandle()),
       onTakenOver: vi.fn().mockResolvedValue(() => {}),
+      onReleased: vi.fn().mockResolvedValue(() => {}),
       ack: vi.fn().mockResolvedValue(undefined),
       kill: vi.fn().mockResolvedValue(undefined),
       detach: vi.fn().mockResolvedValue(undefined),
