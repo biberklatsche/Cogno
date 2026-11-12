@@ -5,10 +5,10 @@
 //! sink the connection was given.
 
 use cogno_host::protocol::{Reply, Request};
-use cogno_host::wire::{self, HostMessage, RequestEnvelope, PROTOCOL_VERSION};
+use cogno_host::wire::{self, HostMessage, RequestEnvelope, NO_REPLY, PROTOCOL_VERSION};
 use cogno_host::EventSink;
 use std::collections::HashMap;
-use std::io::{Read, Write};
+use std::io::{BufReader, Read, Write};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
@@ -25,7 +25,12 @@ struct Waiting {
     lost: bool,
 }
 
+/// Tells connections apart, also two to the same host one after the other.
+static NEXT_CONNECTION: AtomicU64 = AtomicU64::new(1);
+
 pub struct HostConnection {
+    /// Unique among the connections of this app.
+    id: u64,
     writer: Mutex<Box<dyn Write + Send>>,
     waiting: Arc<Mutex<Waiting>>,
     next_id: AtomicU64,
@@ -42,7 +47,7 @@ impl HostConnection {
     pub fn connect(
         mut command: Command,
         sink: Arc<dyn EventSink>,
-        on_lost: impl FnOnce() + Send + 'static,
+        on_lost: impl FnOnce(u64) + Send + 'static,
     ) -> Result<Self, String> {
         let mut process = command
             .stdin(Stdio::piped())
@@ -92,13 +97,18 @@ impl HostConnection {
     }
 
     /// Talks to the host behind the two streams. Returns once the host has
-    /// introduced itself; `on_lost` runs once, when the host's stream ends.
+    /// introduced itself; `on_lost` runs once, with the connection's id, when
+    /// the host's stream ends.
     pub fn over(
-        mut reader: impl Read + Send + 'static,
+        reader: impl Read + Send + 'static,
         writer: impl Write + Send + 'static,
         sink: Arc<dyn EventSink>,
-        on_lost: impl FnOnce() + Send + 'static,
+        on_lost: impl FnOnce(u64) + Send + 'static,
     ) -> Result<Self, String> {
+        // Every frame is read in pieces (its header, then its body): from a
+        // buffer, not one system call each.
+        let mut reader = BufReader::with_capacity(64 * 1024, reader);
+        let id = NEXT_CONNECTION.fetch_add(1, Ordering::Relaxed);
         wire::skip_to_preamble(&mut reader).map_err(|_| "No Cogno host answered".to_string())?;
         let os = match wire::read_host_message(&mut reader) {
             Ok(Some(HostMessage::Hello { protocol, os })) if protocol == PROTOCOL_VERSION => os,
@@ -135,16 +145,21 @@ impl HostConnection {
                     // Dropping the senders fails every request still waiting.
                     waiting.replies.clear();
                 }
-                on_lost();
+                on_lost(id);
             });
         }
         Ok(Self {
+            id,
             writer: Mutex::new(Box::new(writer)),
             waiting,
             next_id: AtomicU64::new(1),
             os,
             process: Mutex::new(None),
         })
+    }
+
+    pub fn id(&self) -> u64 {
+        self.id
     }
 
     pub fn is_lost(&self) -> bool {
@@ -186,7 +201,8 @@ impl HostConnection {
     /// Sends a request without waiting for its reply: for what is typed,
     /// resized and acknowledged, where the round trip would only add delay.
     pub fn post(&self, request: Request) -> Result<(), String> {
-        self.send(self.next_id.fetch_add(1, Ordering::Relaxed), request)
+        // The host does not answer it: nobody would read the answer.
+        self.send(NO_REPLY, request)
     }
 }
 
@@ -237,7 +253,7 @@ mod tests {
             }
         };
         let reader = stream.try_clone().unwrap();
-        HostConnection::over(reader, stream, Arc::new(NoEvents), on_lost).unwrap()
+        HostConnection::over(reader, stream, Arc::new(NoEvents), move |_| on_lost()).unwrap()
     }
 
     #[test]
@@ -271,7 +287,7 @@ mod tests {
             .write_all(b"bash: cogno: command not found\n")
             .unwrap();
         drop(writer);
-        let refused = HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), || {});
+        let refused = HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), |_| {});
         assert_eq!(refused.err().unwrap(), "No Cogno host answered");
     }
 
@@ -287,7 +303,7 @@ mod tests {
         let hello = String::from_utf8_lossy(&hello).replace(&current, &later);
         writer.write_all(hello.as_bytes()).unwrap();
 
-        let refused = HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), || {});
+        let refused = HostConnection::over(reader, std::io::sink(), Arc::new(NoEvents), |_| {});
         let error = refused.err().unwrap();
         assert!(error.contains(&format!("protocol {}", PROTOCOL_VERSION + 1)));
     }
@@ -300,7 +316,7 @@ mod tests {
         let lost = Arc::new(AtomicBool::new(false));
         let host = {
             let lost = lost.clone();
-            HostConnection::over(to_client, from_client, Arc::new(NoEvents), move || {
+            HostConnection::over(to_client, from_client, Arc::new(NoEvents), move |_| {
                 lost.store(true, Ordering::SeqCst)
             })
             .unwrap()

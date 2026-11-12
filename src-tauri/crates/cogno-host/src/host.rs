@@ -78,16 +78,22 @@ impl Host {
             Request::ListSessions => Ok(Response::Sessions(
                 self.pty.list(client.id, |other| self.name_of(other)),
             )),
-            Request::PtyWrite { terminal_id, data } => {
-                self.pty.write(&terminal_id, data).map(|_| Response::Done)
-            }
+            Request::PtyWrite { terminal_id, data } => self
+                .pty
+                .write(client.id, &terminal_id, data)
+                .map(|_| Response::Done),
             Request::PtyLineEditorAction {
                 terminal_id,
                 action,
                 payload_json,
             } => self
                 .pty
-                .execute_line_editor_action(&terminal_id, &action, payload_json.as_deref())
+                .execute_line_editor_action(
+                    client.id,
+                    &terminal_id,
+                    &action,
+                    payload_json.as_deref(),
+                )
                 .map(|_| Response::Done),
             Request::PtyResize {
                 terminal_id,
@@ -95,7 +101,7 @@ impl Host {
                 rows,
             } => self
                 .pty
-                .resize(&terminal_id, cols, rows)
+                .resize(client.id, &terminal_id, cols, rows)
                 .map(|_| Response::Done),
             Request::PtyKill { terminal_id } => self
                 .pty
@@ -796,6 +802,40 @@ mod tests {
         assert_eq!(sessions_of(&host, &me), [("t1".to_string(), false)]);
         assert_eq!(released(&sink), t1_of_window_1());
         host.release_all();
+    }
+
+    #[test]
+    fn only_the_client_that_shows_a_session_types_into_it_or_sizes_it() {
+        let taken = taken_over_by_the_laptop();
+
+        // The office's typing crossed the takeover.
+        let typed = taken.host.handle(
+            &taken.office,
+            Request::PtyWrite {
+                terminal_id: "t1".to_string(),
+                data: "echo typed by the office".to_string(),
+            },
+        );
+        let sized = taken.host.handle(
+            &taken.office,
+            Request::PtyResize {
+                terminal_id: "t1".to_string(),
+                cols: 20,
+                rows: 5,
+            },
+        );
+
+        assert!(typed.is_err());
+        assert!(sized.is_err());
+        let by_the_laptop = taken.host.handle(
+            &taken.laptop,
+            Request::PtyWrite {
+                terminal_id: "t1".to_string(),
+                data: "echo typed by the laptop".to_string(),
+            },
+        );
+        assert!(by_the_laptop.is_ok());
+        taken.host.release_all();
     }
 
     #[test]

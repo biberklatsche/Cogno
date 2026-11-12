@@ -1,4 +1,4 @@
-use crate::identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
+use crate::identity::cogno_home;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -28,13 +28,7 @@ pub type PreparedSpawn = (String, Vec<String>, HashMap<String, String>, String);
 
 /// Where the shell integration scripts of this machine lie.
 pub(crate) fn integration_root(dev_mode: bool) -> Result<PathBuf, String> {
-    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    let dir_name = if dev_mode {
-        DEVELOPMENT_HOME_DIRECTORY_NAME
-    } else {
-        HOME_DIRECTORY_NAME
-    };
-    Ok(home.join(dir_name).join("shell-integration"))
+    Ok(cogno_home(dev_mode)?.join("shell-integration"))
 }
 
 impl ShellSpawner {

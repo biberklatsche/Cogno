@@ -3,7 +3,9 @@
 //! commands turn what the webview asks into requests; what a host reports
 //! goes back to the webview from here.
 
-use cogno_host::protocol::{Event, PtySpawnResult, Reply, Request, Response, SpawnOptions};
+use cogno_host::protocol::{
+    Event, PtySpawnResult, Reply, Request, Response, SpawnOptions, TerminalProcess,
+};
 use cogno_host::EventSink;
 use serde::Serialize;
 use std::collections::HashMap;
@@ -69,6 +71,9 @@ impl Streams {
 struct Terminal {
     /// The host on another machine; `None` for this machine's daemon.
     host: Option<String>,
+    /// The connection it came through (`HostConnection::id`): it ends with
+    /// that one, not with a newer connection to the same host.
+    connection: u64,
     /// The window that spawned or attached it: where its messages and its
     /// end go.
     window: String,
@@ -206,9 +211,9 @@ impl Hosts {
         let _ = timed.set_read_timeout(Some(LOCAL_HELLO_PATIENCE));
         let on_lost = {
             let hosts = Arc::downgrade(self);
-            move || {
+            move |connection| {
                 if let Some(hosts) = hosts.upgrade() {
-                    hosts.lost(None);
+                    hosts.lost(None, connection);
                 }
             }
         };
@@ -238,60 +243,83 @@ impl Hosts {
         }
     }
 
-    /// The connection to the host a terminal of this app runs on.
-    fn connection_of(self: &Arc<Self>, terminal_id: &str) -> Result<Arc<HostConnection>, String> {
+    /// The connection to the host a terminal of this app runs on, for the
+    /// window that shows it: a window that lost the terminal to another one
+    /// reaches it no more.
+    fn connection_of(
+        self: &Arc<Self>,
+        terminal_id: &str,
+        window: &str,
+    ) -> Result<Arc<HostConnection>, String> {
         let host = self
             .terminals
             .lock()
             .unwrap()
             .get(terminal_id)
+            .filter(|terminal| terminal.window == window)
             .map(|terminal| terminal.host.clone())
             .ok_or_else(|| format!("Session not found: {terminal_id}"))?;
         self.connection(host.as_deref())
     }
 
-    /// The connection to a host ended: its terminals end with it. `None` is
-    /// this machine's daemon.
-    fn lost(&self, host: Option<&str>) {
-        // A connection that was hung up and set up again: what ends is the
-        // old one, whose reader only now noticed. The terminals belong to the
-        // new one.
-        let replaced = match host {
+    /// The connection a request about a terminal of `window` goes through.
+    fn connection_for(
+        self: &Arc<Self>,
+        request: &Request,
+        window: &str,
+    ) -> Result<Arc<HostConnection>, String> {
+        let terminal_id = request
+            .terminal_id()
+            .ok_or("Not a request about a terminal")?;
+        self.connection_of(terminal_id, window)
+    }
+
+    /// Every connection that stands, this machine's included.
+    fn all_connections(&self) -> Vec<Arc<HostConnection>> {
+        let mut connections: Vec<Arc<HostConnection>> =
+            self.remotes.lock().unwrap().values().cloned().collect();
+        connections.extend(self.local.lock().unwrap().clone());
+        connections
+    }
+
+    /// The connection `connection` to a host ended (`None` is this machine's
+    /// daemon): the terminals that came through it end with it. A newer
+    /// connection to the same host - it was hung up and set up again - and
+    /// its terminals stay.
+    fn lost(&self, host: Option<&str>, connection: u64) {
+        let is_it = |slot: Option<&Arc<HostConnection>>| slot.is_some_and(|c| c.id() == connection);
+        let was_current = match host {
             None => {
                 let mut local = self.local.lock().unwrap();
-                match local.as_ref() {
-                    Some(connection) if connection.is_lost() => {
-                        *local = None;
-                        false
-                    }
-                    Some(_) => true,
-                    None => false,
+                let was_current = is_it(local.as_ref());
+                if was_current {
+                    *local = None;
                 }
+                was_current
             }
             Some(name) => {
                 let mut remotes = self.remotes.lock().unwrap();
-                match remotes.get(name) {
-                    Some(remote) if remote.is_lost() => {
-                        remotes.remove(name);
-                        false
-                    }
-                    Some(_) => true,
-                    None => false,
+                let was_current = is_it(remotes.get(name));
+                if was_current {
+                    remotes.remove(name);
                 }
+                // Hung up on: it is gone from the map already, and nothing
+                // newer stands in its place.
+                was_current || !remotes.contains_key(name)
             }
         };
-        if replaced {
-            return;
-        }
         let ended: Vec<(String, Terminal)> = self
             .terminals
             .lock()
             .unwrap()
-            .extract_if(|_, terminal| terminal.host.as_deref() == host)
+            .extract_if(|_, terminal| terminal.connection == connection)
             .collect();
         for (terminal_id, terminal) in ended {
             self.streams.close(terminal.stream);
             emit_exit(&self.app, &terminal.window, &terminal_id, -1);
+        }
+        if !was_current {
+            return;
         }
         match host {
             Some(name) => {
@@ -306,15 +334,13 @@ impl Hosts {
         }
     }
 
-    /// Answers a request that may take a while.
-    fn answer(self: &Arc<Self>, request: Request) -> Reply {
-        if let Request::TerminalProcesses = request {
-            return self.terminal_processes();
-        }
-        let Some(terminal_id) = request.terminal_id().map(str::to_string) else {
-            return self.local()?.request(request);
-        };
-        let connection = self.connection_of(&terminal_id)?;
+    /// Answers a request about a terminal of `window` that may take a while.
+    fn answer(self: &Arc<Self>, window: &str, request: Request) -> Reply {
+        let terminal_id = request
+            .terminal_id()
+            .ok_or("Not a request about a terminal")?
+            .to_string();
+        let connection = self.connection_of(&terminal_id, window)?;
         // Ended or let go: either way this app no longer shows it.
         let gone = matches!(request, Request::PtyKill { .. } | Request::PtyDetach { .. });
         let reply = connection.request(request);
@@ -324,21 +350,25 @@ impl Hosts {
         reply
     }
 
-    /// The processes under every terminal's shell, on every machine.
-    fn terminal_processes(self: &Arc<Self>) -> Reply {
-        let mut connections: Vec<Arc<HostConnection>> =
-            self.remotes.lock().unwrap().values().cloned().collect();
-        connections.extend(self.local.lock().unwrap().clone());
-        let mut processes = Vec::new();
-        for connection in connections {
-            // A host that does not answer has no processes to show.
-            if let Ok(Response::TerminalProcesses(theirs)) =
-                connection.request(Request::TerminalProcesses)
-            {
-                processes.extend(theirs);
-            }
-        }
-        Ok(Response::TerminalProcesses(processes))
+    /// The processes under every terminal's shell, on every machine, every
+    /// host asked at once: a slow one must not hold up the others.
+    fn terminal_processes(&self) -> Vec<TerminalProcess> {
+        let connections = self.all_connections();
+        std::thread::scope(|scope| {
+            let asked: Vec<_> = connections
+                .iter()
+                .map(|connection| scope.spawn(|| connection.request(Request::TerminalProcesses)))
+                .collect();
+            asked
+                .into_iter()
+                // A host that does not answer has no processes to show.
+                .filter_map(|answer| match answer.join() {
+                    Ok(Ok(Response::TerminalProcesses(theirs))) => Some(theirs),
+                    _ => None,
+                })
+                .flatten()
+                .collect()
+        })
     }
 }
 
@@ -376,9 +406,9 @@ impl HostState {
         let on_lost = {
             let hosts = Arc::downgrade(&self.0);
             let name = name.to_string();
-            move || {
+            move |connection| {
                 if let Some(hosts) = hosts.upgrade() {
-                    hosts.lost(Some(&name));
+                    hosts.lost(Some(&name), connection);
                 }
             }
         };
@@ -421,6 +451,7 @@ impl HostState {
                 terminal_id.clone(),
                 Terminal {
                     host: None,
+                    connection: connection.id(),
                     window,
                     stream,
                 },
@@ -473,6 +504,7 @@ impl HostState {
                 terminal_id.clone(),
                 Terminal {
                     host,
+                    connection: connection.id(),
                     window: window.clone(),
                     stream,
                 },
@@ -527,28 +559,31 @@ impl HostState {
     /// For requests about one terminal that need no answer (what is typed,
     /// resized, acknowledged): sent and not waited for, so the calling
     /// thread is never held up by the host.
-    pub fn post(&self, request: Request) -> Result<(), String> {
-        let terminal_id = request
-            .terminal_id()
-            .ok_or("Not a request about a terminal")?;
-        self.0.connection_of(terminal_id)?.post(request)
+    pub fn post(&self, window: &str, request: Request) -> Result<(), String> {
+        self.0.connection_for(&request, window)?.post(request)
     }
 
     /// Asks about one terminal and waits for the answer on the calling
     /// thread: only for what the host answers at once.
-    pub fn ask(&self, request: Request) -> Reply {
-        let terminal_id = request
-            .terminal_id()
-            .ok_or("Not a request about a terminal")?;
-        self.0.connection_of(terminal_id)?.request(request)
+    pub fn ask(&self, window: &str, request: Request) -> Reply {
+        self.0.connection_for(&request, window)?.request(request)
     }
 
-    /// Answers on a blocking worker, never on the thread that drives the UI.
-    pub async fn request(&self, request: Request) -> Reply {
+    /// Answers a request about a terminal of `window` on a blocking worker,
+    /// never on the thread that drives the UI.
+    pub async fn request(&self, window: String, request: Request) -> Reply {
         let hosts = self.0.clone();
-        tauri::async_runtime::spawn_blocking(move || hosts.answer(request))
+        tauri::async_runtime::spawn_blocking(move || hosts.answer(&window, request))
             .await
             .map_err(|error| error.to_string())?
+    }
+
+    /// The processes under every terminal's shell, on every machine.
+    pub async fn terminal_processes(&self) -> Result<Vec<TerminalProcess>, String> {
+        let hosts = self.0.clone();
+        tauri::async_runtime::spawn_blocking(move || hosts.terminal_processes())
+            .await
+            .map_err(|error| error.to_string())
     }
 
     /// The window that spawned the terminal: where its messages go.
@@ -574,10 +609,7 @@ impl HostState {
         for terminal in &ended {
             self.0.streams.close(terminal.stream);
         }
-        let mut connections: Vec<Arc<HostConnection>> =
-            self.0.remotes.lock().unwrap().values().cloned().collect();
-        connections.extend(self.0.local.lock().unwrap().clone());
-        for connection in connections {
+        for connection in self.0.all_connections() {
             // Every host is told, also one without a terminal of this
             // window: a spawn may still be on its way there.
             let _ = connection.post(Request::ReleaseOwner {
@@ -603,6 +635,7 @@ mod tests {
             "t1".to_string(),
             Terminal {
                 host: None,
+                connection: 1,
                 window: window.to_string(),
                 stream: 1,
             },

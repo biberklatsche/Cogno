@@ -1,22 +1,6 @@
 use crate::app_identity::LOG_FILE_STEM;
-use cogno_host::identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
+pub use cogno_host::identity::cogno_home;
 use std::path::PathBuf;
-
-/// The Cogno home's name under the user's home: `.cogno`, or `.cogno-dev` in
-/// development.
-fn home_dir_name(dev_mode: bool) -> &'static str {
-    if dev_mode {
-        DEVELOPMENT_HOME_DIRECTORY_NAME
-    } else {
-        HOME_DIRECTORY_NAME
-    }
-}
-
-/// The Cogno home directory for the active mode.
-pub fn cogno_home(dev_mode: bool) -> Result<PathBuf, String> {
-    let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-    Ok(home.join(home_dir_name(dev_mode)))
-}
 
 /// Returns the Cogno home directory path based on the active mode.
 #[tauri::command]

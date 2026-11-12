@@ -2,7 +2,7 @@ use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, Pt
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use crate::flow_control::{frame_chunk, FlowControl, MAX_CHUNK_SIZE};
@@ -116,17 +116,30 @@ pub(crate) struct Output {
     /// The session has ended (kill or exit): nothing is kept or sent
     /// any more.
     closed: AtomicBool,
+    /// The client that shows the session, `NOBODY` if none: readable while
+    /// the lock is held for a replay, which over a slow link takes a while.
+    shown_to: AtomicU64,
 }
+
+/// No client shows the session.
+const NOBODY: u64 = u64::MAX;
 
 impl Output {
     fn new(attached: Option<Attachment>) -> Arc<Self> {
+        let shown_to = attached.as_ref().map_or(NOBODY, |attached| attached.client);
         Arc::new(Self {
             state: Mutex::new(OutputState {
                 kept: KeptOutput::new(),
                 attached,
             }),
             closed: AtomicBool::new(false),
+            shown_to: AtomicU64::new(shown_to),
         })
+    }
+
+    /// The client that shows the session now, if any.
+    fn shown_to(&self) -> Option<u64> {
+        Some(self.shown_to.load(Ordering::Acquire)).filter(|client| *client != NOBODY)
     }
 
     fn is_closed(&self) -> bool {
@@ -156,7 +169,9 @@ impl Output {
 
     /// Takes the client off, whoever it is.
     fn detach(&self) -> Option<Attachment> {
-        self.state.lock().unwrap().attached.take()
+        let mut state = self.state.lock().unwrap();
+        self.shown_to.store(NOBODY, Ordering::Release);
+        state.attached.take()
     }
 
     /// Takes `attachment` off, unless another one has taken its place.
@@ -168,6 +183,7 @@ impl Output {
             .is_some_and(|attached| attached.is(attachment))
         {
             state.attached = None;
+            self.shown_to.store(NOBODY, Ordering::Release);
         }
     }
 
@@ -188,6 +204,9 @@ impl Output {
             // Wakes the reader if it waits for the old client.
             previous.flow.close();
         }
+        // Known as the one that shows it before the replay: what it types
+        // meanwhile is its own.
+        self.shown_to.store(attachment.client, Ordering::Release);
         attachment.send(&state.kept.replay(), false);
         state.attached = Some(attachment);
         Ok(previous)
@@ -196,6 +215,10 @@ impl Output {
     /// Only the client that shows the session paces it: a late ack from one
     /// that lost it must not hand its successor credit.
     fn ack(&self, client: u64, seq: u32) {
+        // A client that does not show the session does not wait for the lock.
+        if self.shown_to() != Some(client) {
+            return;
+        }
         if let Some(attached) = self.attached().filter(|attached| attached.client == client) {
             attached.flow.ack_through(seq);
         }
@@ -369,12 +392,22 @@ fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exi
         return;
     };
     // The session is out of the map: its owner comes from the session itself.
+    release_and_tell(session, terminal_id, attached, exit_code);
+}
+
+/// Releases an ended session, then tells `shown` (the client that showed it,
+/// if it is to hear of it) and whom it was taken from.
+fn release_and_tell(
+    mut session: Session,
+    terminal_id: &str,
+    shown: Option<Attachment>,
+    exit_code: i32,
+) {
     let owner = session.owner.label.clone();
-    let mut session = session;
     let taken_from = session.taken_from.take();
     release_session(session);
-    if let Some(attached) = attached {
-        attached.sink.emit(Event::PtyExit {
+    if let Some(shown) = shown {
+        shown.sink.emit(Event::PtyExit {
             terminal_id: terminal_id.to_string(),
             owner,
             exit_code,
@@ -383,6 +416,25 @@ fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exi
     if let Some(taken_from) = taken_from {
         taken_from.tell_exit(terminal_id, exit_code);
     }
+}
+
+/// The session `terminal_id`, if `client` shows it: only that one types
+/// into it or sizes it, also when another one's request crossed a takeover.
+fn shown_by<'a>(
+    sessions: &'a SessionTable,
+    client: u64,
+    terminal_id: &str,
+) -> Result<&'a Session, String> {
+    let session = sessions
+        .live
+        .get(terminal_id)
+        .ok_or_else(|| format!("Session not found: {}", terminal_id))?;
+    if session.output.shown_to() != Some(client) {
+        return Err(format!(
+            "The session {terminal_id} is shown by another client"
+        ));
+    }
+    Ok(session)
 }
 
 /// What became of a `spawn`.
@@ -545,40 +597,22 @@ impl PtyState {
 
     /// The sessions that run, as `client` sees them. `name_of` gives the
     /// name a client gave itself.
-    ///
-    /// Who shows a session is asked after `sessions` is let go: an output's
-    /// lock is held while a client is played what was kept, which over a slow
-    /// link takes a while, and every other session must not wait for that.
     pub fn list(&self, client: u64, name_of: impl Fn(u64) -> Option<String>) -> Vec<SessionInfo> {
-        let running: Vec<(SessionInfo, Arc<Output>)> = {
-            let sessions = self.sessions.lock().unwrap();
-            sessions
-                .live
-                .iter()
-                .map(|(terminal_id, session)| {
-                    let info = SessionInfo {
-                        terminal_id: terminal_id.clone(),
-                        label: session.label.clone(),
-                        profile: session.profile.clone(),
-                        cols: session.cols,
-                        rows: session.rows,
-                        shown: false,
-                        shown_here: false,
-                        shown_by: None,
-                    };
-                    (info, session.output.clone())
-                })
-                .collect()
-        };
-        let mut list: Vec<SessionInfo> = running
-            .into_iter()
-            .map(|(info, output)| {
-                let shown_to = output.attached().map(|attached| attached.client);
+        let sessions = self.sessions.lock().unwrap();
+        let mut list: Vec<SessionInfo> = sessions
+            .live
+            .iter()
+            .map(|(terminal_id, session)| {
+                let shown_to = session.output.shown_to();
                 SessionInfo {
+                    terminal_id: terminal_id.clone(),
+                    label: session.label.clone(),
+                    profile: session.profile.clone(),
+                    cols: session.cols,
+                    rows: session.rows,
                     shown: shown_to.is_some(),
                     shown_here: shown_to == Some(client),
                     shown_by: shown_to.and_then(&name_of),
-                    ..info
                 }
             })
             .collect();
@@ -612,8 +646,7 @@ impl PtyState {
             // An owner that attaches again (its window was reloaded) has not
             // lost the session to anybody. Another window of the same client
             // has taken it like any other Cogno.
-            let passed_on =
-                session.owner.client != owner.client || session.owner.label != owner.label;
+            let passed_on = session.owner != owner;
             let previous_owner = std::mem::replace(&mut session.owner, owner);
             if passed_on {
                 // Also between two windows of one app: the window that took
@@ -1053,16 +1086,15 @@ fn queue_pty_input(
 }
 
 impl PtyState {
-    pub fn write(&self, terminal_id: &str, data: String) -> Result<(), String> {
+    pub fn write(&self, client: u64, terminal_id: &str, data: String) -> Result<(), String> {
         let sessions = self.sessions.lock().unwrap();
-        let Some(session) = sessions.live.get(terminal_id) else {
-            return Err(format!("Session not found: {}", terminal_id));
-        };
+        let session = shown_by(&sessions, client, terminal_id)?;
         queue_pty_input(&session.input_tx, terminal_id, data.into_bytes())
     }
 
     pub fn execute_line_editor_action(
         &self,
+        client: u64,
         terminal_id: &str,
         action: &str,
         payload_json: Option<&str>,
@@ -1075,9 +1107,7 @@ impl PtyState {
         // first: they can block, and nothing may block while holding `sessions`.
         let (shell_type, line_editor_pipe_name, line_editor_channel, input_tx) = {
             let sessions = state.sessions.lock().unwrap();
-            let Some(session) = sessions.live.get(terminal_id) else {
-                return Err(format!("Session not found: {}", terminal_id));
-            };
+            let session = shown_by(&sessions, client, terminal_id)?;
             (
                 session.shell_type.clone(),
                 session.line_editor_pipe_name.clone(),
@@ -1136,26 +1166,28 @@ impl PtyState {
         Ok(())
     }
 
-    pub fn resize(&self, terminal_id: &str, cols: u16, rows: u16) -> Result<(), String> {
+    pub fn resize(
+        &self,
+        client: u64,
+        terminal_id: &str,
+        cols: u16,
+        rows: u16,
+    ) -> Result<(), String> {
         let mut sessions = self.sessions.lock().unwrap();
-
-        if let Some(session) = sessions.live.get_mut(terminal_id) {
-            session
-                .master
-                .resize(PtySize {
-                    rows,
-                    cols,
-                    pixel_width: 0,
-                    pixel_height: 0,
-                })
-                .map_err(|e| format!("Failed to resize PTY: {}", e))?;
-            session.cols = cols;
-            session.rows = rows;
-
-            Ok(())
-        } else {
-            Err(format!("Session not found: {}", terminal_id))
-        }
+        shown_by(&sessions, client, terminal_id)?;
+        let session = sessions.live.get_mut(terminal_id).expect("checked above");
+        session
+            .master
+            .resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .map_err(|e| format!("Failed to resize PTY: {}", e))?;
+        session.cols = cols;
+        session.rows = rows;
+        Ok(())
     }
 
     /// Ends the session at `client`'s request. The client that asked closed
@@ -1169,26 +1201,14 @@ impl PtyState {
             let mut sessions = self.sessions.lock().unwrap();
             sessions.live.remove(terminal_id)
         };
-        let Some(mut session) = removed else {
+        let Some(session) = removed else {
             return Err(format!("Session not found: {}", terminal_id));
         };
         let shown_elsewhere = session
             .output
             .attached()
-            .filter(|attached| attached.client != client)
-            .map(|attached| (attached, session.owner.label.clone()));
-        let taken_from = session.taken_from.take();
-        release_session(session);
-        if let Some((attached, owner)) = shown_elsewhere {
-            attached.sink.emit(Event::PtyExit {
-                terminal_id: terminal_id.to_string(),
-                owner,
-                exit_code: ENDED_BY_ANOTHER,
-            });
-        }
-        if let Some(taken_from) = taken_from {
-            taken_from.tell_exit(terminal_id, ENDED_BY_ANOTHER);
-        }
+            .filter(|attached| attached.client != client);
+        release_and_tell(session, terminal_id, shown_elsewhere, ENDED_BY_ANOTHER);
         Ok(())
     }
 
