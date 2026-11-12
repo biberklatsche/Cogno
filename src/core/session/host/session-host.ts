@@ -150,6 +150,8 @@ export type SessionRuntime = {
   readonly reason?: string;
   /** How the shell ended; only from `exited` on. */
   readonly exitCode?: number;
+  /** What the machine is called that shows the shell; only while `takenOver`. */
+  readonly takenBy?: string;
 };
 
 /** Axis B - display: whether the machine is in the DOM right now. */
@@ -400,9 +402,9 @@ export class SessionHost {
         // plays it back with the output it kept.
         if (!resumed) this.watchForHandshake(spawnProfile);
       },
-      onTakenOver: () => {
+      onTakenOver: (by) => {
         this.stopWatchingForHandshake();
-        this.setRuntime({ status: "takenOver" });
+        this.setRuntime({ status: "takenOver", takenBy: by });
       },
       onFailed: (error) => this.onStartFailed(error),
       onExited: (exitCode) => {

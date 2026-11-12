@@ -469,12 +469,6 @@ Directory the shell starts in.
 
 **Type:** string
 
-### `shell.profiles.<name>.host`
-
-Name of a machine in `remote.hosts` the shell runs on. Leave it out for this machine. `path` is then a path on that machine.
-
-**Type:** string
-
 ### `shell.profiles.<name>.inject_cogno_cli`
 
 Make the `cogno` command available in this shell.
@@ -495,7 +489,7 @@ Also load your own shell startup files (`.zshrc`, `.bashrc`, the PowerShell prof
 
 ## Remote
 
-Other machines whose shells Cogno runs, reached over ssh. `<name>` is a host name you choose.
+Other machines whose shells Cogno can show, reached over ssh. `<name>` is a host name you choose.
 
 ### `remote.hosts.<name>.destination`
 
@@ -1024,6 +1018,18 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `80`
+
+### `feature.remote.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.remote.order`
+
+Override the side-menu display position for this feature. Lower numbers appear first.
+
+**Type:** integer · **Default:** `90`
 
 ### `feature.coding_agents.mode`
 

@@ -24,7 +24,7 @@ export type PtyHandlerListener = {
   /** The shell process is up (or shown here); nothing has been parsed yet. */
   readonly onSpawned?: () => void;
   /** Another Cogno took the shell over; it runs on, but not here. */
-  readonly onTakenOver?: () => void;
+  readonly onTakenOver?: (by?: string) => void;
   /** The shell could not be started. */
   readonly onFailed?: (error: unknown) => void;
   /** The shell process ended. */
@@ -91,7 +91,7 @@ export class PtyHandler implements ITerminalHandler {
         this._listener.onExited?.(event.exitCode);
       }),
     );
-    this._disposables.push(this._pty.onTakenOver(() => this._listener.onTakenOver?.()));
+    this._disposables.push(this._pty.onTakenOver((by) => this._listener.onTakenOver?.(by)));
   }
 
   private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract): void {

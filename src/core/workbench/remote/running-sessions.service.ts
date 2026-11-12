@@ -15,8 +15,8 @@ const FRESH_FOR_MS = 2000;
  * instead of starting one, and takes it off the list.
  *
  * The list of a host is as old as the last `refresh`: read when the app
- * starts (this machine) or connects (another one), and again before a new
- * tab on a connected host decides what to do (`isFresh`).
+ * starts (this machine) or connects (another one), and again before a pane
+ * of a connected host looks for its shell (`isFresh`).
  */
 @Injectable({ providedIn: "root" })
 export class RunningSessionsService {
@@ -62,10 +62,5 @@ export class RunningSessionsService {
     const running = sessions?.get(terminalId);
     sessions?.delete(terminalId);
     return running;
-  }
-
-  /** The shells that run on `host` and that no pane has taken. */
-  unclaimed(host: string | undefined): RunningSession[] {
-    return [...(this.byHost.get(host ?? THIS_MACHINE)?.values() ?? [])];
   }
 }

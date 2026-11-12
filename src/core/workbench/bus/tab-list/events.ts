@@ -10,6 +10,7 @@ export type TabAddedEvent = MessageBase<
     shellName?: string;
     workingDir?: string;
     terminalId?: TerminalId;
+    host?: string;
   }
 >;
 export type TabRemovedEvent = MessageBase<"TabRemoved", TabId>;

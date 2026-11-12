@@ -7,10 +7,11 @@ import { ProcessPromptService } from "@cogno/core/workbench/external/process-pro
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RemoteHostsService } from "./remote-hosts.service";
+import { RemoteHostConnection, RemoteHostsService } from "./remote-hosts.service";
 
 describe("RemoteHostsService", () => {
   let connect: ReturnType<typeof vi.fn>;
+  let hangUp: ReturnType<typeof vi.fn>;
   let disconnected: (name: string) => void;
   let register: ReturnType<typeof vi.fn>;
   let forgetPrompts: ReturnType<typeof vi.fn>;
@@ -22,6 +23,7 @@ describe("RemoteHostsService", () => {
 
   beforeEach(() => {
     connect = vi.fn();
+    hangUp = vi.fn().mockResolvedValue(undefined);
     forgetPrompts = vi.fn();
     register = vi.fn().mockReturnValue(forgetPrompts);
     ask = vi.fn().mockResolvedValue("secret");
@@ -29,6 +31,7 @@ describe("RemoteHostsService", () => {
     refreshRunning = vi.fn().mockResolvedValue(undefined);
     const hosts = {
       connect,
+      disconnect: hangUp,
       onDisconnected: vi.fn((listener) => {
         disconnected = listener;
         return Promise.resolve(() => undefined);
@@ -161,5 +164,65 @@ describe("RemoteHostsService", () => {
     expect(warned).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining("mac"), notify: true }),
     );
+  });
+
+  describe("how far a connection is", () => {
+    let seen: ReadonlyMap<string, RemoteHostConnection>;
+
+    beforeEach(() => {
+      service.connections$.subscribe((connections) => (seen = connections));
+    });
+
+    it("says connecting, then connected", async () => {
+      let finish!: (info: HostInfo) => void;
+      connect.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+      expect(seen.get("mac")).toBeUndefined();
+
+      const connecting = service.connect("mac");
+      expect(seen.get("mac")).toEqual({ status: "connecting" });
+
+      finish({ os: "macos" });
+      await connecting;
+      expect(seen.get("mac")).toEqual({ status: "connected" });
+    });
+
+    it("says why a connection failed, also when the host could not be prepared", async () => {
+      connect.mockRejectedValueOnce("Permission denied (publickey).");
+      await expect(service.connect("mac")).rejects.toThrow();
+      expect(seen.get("mac")).toEqual({
+        status: "failed",
+        reason: "Permission denied (publickey).",
+      });
+
+      connect.mockResolvedValue({ os: "macos" });
+      ensureIntegration.mockRejectedValue(new Error("Disk full"));
+      await expect(service.connect("mac")).rejects.toThrow();
+      expect(seen.get("mac")).toEqual({ status: "failed", reason: "Disk full" });
+    });
+
+    it("hangs up when asked, without calling it a loss", async () => {
+      connect.mockResolvedValue({ os: "macos" });
+      await service.connect("mac");
+      const warned = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
+
+      await service.disconnect("mac");
+      // The backend says so too, as for every connection that ends.
+      disconnected("mac");
+
+      expect(hangUp).toHaveBeenCalledWith("mac");
+      expect(service.info("mac")).toBeUndefined();
+      expect(seen.get("mac")).toBeUndefined();
+      expect(warned).not.toHaveBeenCalled();
+    });
+
+    it("forgets a connection that was lost", async () => {
+      connect.mockResolvedValue({ os: "macos" });
+      await service.connect("mac");
+      vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
+
+      disconnected("mac");
+
+      expect(seen.get("mac")).toBeUndefined();
+    });
   });
 });

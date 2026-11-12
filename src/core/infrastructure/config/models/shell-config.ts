@@ -19,13 +19,6 @@ const ShellProfileSchema = z
       .optional()
       .describe("Environment variables added to the shell process."),
     working_dir: z.string().optional().describe("Directory the shell starts in."),
-    host: z
-      .string()
-      .min(1)
-      .optional()
-      .describe(
-        "Name of a machine in `remote.hosts` the shell runs on. Leave it out for this machine. `path` is then a path on that machine.",
-      ),
     inject_cogno_cli: z
       .boolean()
       .default(true)

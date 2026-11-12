@@ -65,6 +65,7 @@ const DIRTY_TRACKED_KEYS = [
   "rightChild",
   "shellName",
   "workingDir",
+  "host",
 ];
 
 @Injectable({ providedIn: "root" })

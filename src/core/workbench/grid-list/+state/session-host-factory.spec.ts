@@ -8,18 +8,18 @@ import { Pane } from "../+model/model";
 import { SessionHostFactory } from "./session-host-factory";
 
 /**
- * A pane whose shell runs on another machine, before that machine is
- * connected. (What happens once a session exists is the session's own tests'.)
+ * A pane that shows a shell of another machine, before a session exists.
+ * (What happens once one does is the session's own tests'.)
  */
 describe("SessionHostFactory, waiting for a host", () => {
-  const pane = { terminalId: "t1", shellName: "mac-zsh" } as Pane;
+  const pane = { terminalId: "t1", shellName: "zsh", host: "mac" } as Pane;
   let connect: ReturnType<typeof vi.fn>;
   let profileLookups: ReturnType<typeof vi.fn>;
   let factory: SessionHostFactory;
 
   beforeEach(() => {
     connect = vi.fn();
-    profileLookups = vi.fn(() => ({ shell_type: "ZSH", path: "/bin/zsh", host: "mac" }));
+    profileLookups = vi.fn(() => ({ shell_type: "ZSH", path: "/bin/zsh" }));
     const remoteHosts = {
       // Never connected in these tests: no session is ever built.
       info: () => undefined,
@@ -34,7 +34,7 @@ describe("SessionHostFactory, waiting for a host", () => {
       { take: vi.fn() } as never,
       { platform: () => "windows" } as unknown as OsPlatform,
       remoteHosts,
-      { take: () => undefined, unclaimed: () => [], isFresh: () => true } as never,
+      { take: () => undefined, isFresh: () => true } as never,
       { onDestroy: vi.fn() } as never,
     );
   });
@@ -75,8 +75,10 @@ describe("SessionHostFactory, waiting for a host", () => {
     expect(connect).toHaveBeenCalledOnce();
   });
 
-  it("asks instead of starting a shell when shells already run on the host", () => {
-    const sessions = [{ terminalId: "office-1" }, { terminalId: "office-2" }];
+  /** The factory's inner state, where only a pane's view could reach it. */
+  type Inner = { waiting: Map<string, unknown> };
+
+  function connectedTo(runningSessions: object) {
     const connected = new SessionHostFactory(
       {} as never,
       {} as never,
@@ -86,110 +88,42 @@ describe("SessionHostFactory, waiting for a host", () => {
       { take: vi.fn() } as never,
       { platform: () => "windows" } as unknown as OsPlatform,
       { info: () => ({ os: "windows" }), connect } as unknown as RemoteHostsService,
-      // The pane's own terminal is not among them: it is a new tab.
-      { take: () => undefined, unclaimed: () => sessions, isFresh: () => true } as never,
+      runningSessions as never,
       { onDestroy: vi.fn() } as never,
     );
-
-    // No session, and nothing to connect: the pane waits for the answer.
-    expect(connected.ensureSession(pane)).toBeUndefined();
-    expect(connected.getSessionHost("t1")).toBeUndefined();
-    expect(connect).not.toHaveBeenCalled();
-  });
-
-  /** The factory's inner state, where only a pane's view could reach it. */
-  type Inner = {
-    sessions: Map<string, unknown>;
-    waiting: Map<string, unknown>;
-    goOnWithSessions(terminalId: string, waiting: unknown): void;
-  };
-
-  function connectedTo(sessions: { terminalId: string }[], publish = vi.fn()) {
-    const connected = new SessionHostFactory(
-      {} as never,
-      {} as never,
-      { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
-      { publish, on$: () => new Subject() } as never,
-      {} as never,
-      { take: vi.fn() } as never,
-      { platform: () => "windows" } as unknown as OsPlatform,
-      { info: () => ({ os: "windows" }), connect } as unknown as RemoteHostsService,
-      { take: () => undefined, unclaimed: () => sessions, isFresh: () => true } as never,
-      { onDestroy: vi.fn() } as never,
-    );
-    return { connected, inner: connected as unknown as Inner, publish };
+    return { connected, inner: connected as unknown as Inner };
   }
 
-  it("opens a tab for every shell the user goes on with, and closes the one that asked", () => {
-    const { connected, inner, publish } = connectedTo([
-      { terminalId: "office-1" },
-      { terminalId: "office-2" },
-    ]);
-    connected.ensureSession(pane);
-
-    inner.goOnWithSessions("t1", inner.waiting.get("t1"));
-
-    const created = publish.mock.calls
-      .map(([message]) => message)
-      .filter((message) => message.type === "CreateTab")
-      .map((message) => message.payload);
-    expect(created).toEqual([
-      expect.objectContaining({ terminalId: "office-1", shellName: "mac-zsh", isActive: true }),
-      expect.objectContaining({ terminalId: "office-2", shellName: "mac-zsh", isActive: false }),
-    ]);
-    expect(publish).toHaveBeenLastCalledWith(
-      expect.objectContaining({ type: "ActionFired", terminalId: "t1" }),
-    );
-  });
-
-  it("asks a host that connected long ago what runs there now, before a new tab decides", async () => {
-    let fresh = false;
-    const sessions: { terminalId: string }[] = [];
-    const refresh = vi.fn(async () => {
-      // A shell was started there since the host connected.
-      sessions.push({ terminalId: "office-9" });
-      fresh = true;
-    });
-    const connected = new SessionHostFactory(
-      {} as never,
-      {} as never,
-      { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
-      { publish: vi.fn(), on$: () => new Subject() } as never,
-      {} as never,
-      { take: vi.fn() } as never,
-      { platform: () => "windows" } as unknown as OsPlatform,
-      { info: () => ({ os: "windows" }), connect } as unknown as RemoteHostsService,
-      {
-        take: () => undefined,
-        unclaimed: () => sessions,
-        isFresh: () => fresh,
-        refresh,
-      } as never,
-      { onDestroy: vi.fn() } as never,
-    );
-    const inner = connected as unknown as Inner;
+  it("says that the shell is gone, and starts none in its place", () => {
+    const { connected, inner } = connectedTo({ take: () => undefined, isFresh: () => true });
 
     expect(connected.ensureSession(pane)).toBeUndefined();
-    expect(refresh).toHaveBeenCalledWith("mac");
-    await Promise.resolve();
-    await Promise.resolve();
 
-    // Asked once, and the answer is offered: the pane still waits, now for
-    // the user.
-    expect(refresh).toHaveBeenCalledOnce();
-    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "sessions", count: 1 } });
+    expect(connected.getSessionHost("t1")).toBeUndefined();
+    expect(connect).not.toHaveBeenCalled();
+    expect(inner.waiting.get("t1")).toMatchObject({ host: "mac", state: { status: "failed" } });
   });
 
-  it("does not offer a shell this window shows already", () => {
-    // The host is this very machine, reached through ssh: its one shell is
-    // the one a pane here shows.
-    const { connected, inner } = connectedTo([{ terminalId: "shown-here" }]);
-    inner.sessions.set("shown-here", {});
+  it("asks a host that connected long ago what runs there now, before it gives up", async () => {
+    let fresh = false;
+    const refresh = vi.fn(async () => {
+      fresh = true;
+    });
+    const { connected, inner } = connectedTo({
+      take: () => undefined,
+      isFresh: () => fresh,
+      refresh,
+    });
 
-    // Nothing to ask about: the pane goes straight on to its own session
-    // (which this test's empty injector cannot build).
-    expect(() => connected.ensureSession(pane)).toThrow();
-    expect(inner.waiting.has("t1")).toBe(false);
+    expect(connected.ensureSession(pane)).toBeUndefined();
+    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "connecting" } });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // Asked once, and the answer stands: the shell does not run there.
+    expect(refresh).toHaveBeenCalledOnce();
+    expect(refresh).toHaveBeenCalledWith("mac");
+    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "failed" } });
   });
 
   it("keeps a pane whose host could not be connected, without a session", async () => {

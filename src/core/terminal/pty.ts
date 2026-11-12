@@ -37,7 +37,7 @@ export interface IPty extends IDisposable {
    */
   attach(terminalId: string, onData: PtyChunkListener): Promise<void>;
   /** Another Cogno took the shell over: it runs on, but not here any more. */
-  onTakenOver(listener: () => void): IDisposable;
+  onTakenOver(listener: (by?: string) => void): IDisposable;
   resize(dimensions: TerminalDimensions): void;
   /** Flow control: the terminal has parsed every chunk up to and including `seq`. */
   ack(seq: number): void;
@@ -74,7 +74,7 @@ export class Pty implements IPty {
   private _exitUnlisten: (() => void) | undefined = undefined;
   private _exit: PtyExitEventContract | undefined = undefined;
   private readonly _exitListeners = new Set<PtyExitListener>();
-  private readonly _takenOverListeners = new Set<() => void>();
+  private readonly _takenOverListeners = new Set<(by?: string) => void>();
 
   constructor(
     private readonly _transport: PtyTransport,
@@ -139,7 +139,7 @@ export class Pty implements IPty {
     this._exitUnlisten = undefined;
     const [unlistenExit, unlistenTakenOver] = await Promise.all([
       this._transport.onExit(terminalId, (exit) => this.notifyExit(exit)),
-      this._transport.onTakenOver(terminalId, () => this.notifyTakenOver()),
+      this._transport.onTakenOver(terminalId, (by) => this.notifyTakenOver(by)),
     ]);
     const unlisten = () => {
       unlistenExit();
@@ -260,7 +260,7 @@ export class Pty implements IPty {
     for (const listener of this._exitListeners) listener(exit);
   }
 
-  onTakenOver(listener: () => void): IDisposable {
+  onTakenOver(listener: (by?: string) => void): IDisposable {
     this._takenOverListeners.add(listener);
     return { dispose: () => this._takenOverListeners.delete(listener) };
   }
@@ -269,12 +269,12 @@ export class Pty implements IPty {
    * The shell is another Cogno's now. Nothing of it is this machine's to
    * touch any more: disposing must not kill what runs on elsewhere.
    */
-  private notifyTakenOver(): void {
+  private notifyTakenOver(by?: string): void {
     this._spawned = false;
     this._pendingResize = undefined;
     this._spawn?.closeOutput();
     this._spawn = undefined;
-    for (const listener of this._takenOverListeners) listener();
+    for (const listener of this._takenOverListeners) listener(by);
   }
 
   dispose(): void {
