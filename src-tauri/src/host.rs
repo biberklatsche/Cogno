@@ -16,6 +16,16 @@ use tauri::{AppHandle, Emitter};
 
 use crate::host_connection::HostConnection;
 
+/// Why a shell was not started, as the webview receives it: `{ "code": … }`.
+#[derive(Debug, Serialize)]
+#[serde(tag = "code", rename_all = "camelCase")]
+pub enum SpawnError {
+    /// A shell already runs under the terminal id; it was left running.
+    ShellAlreadyRuns,
+    /// Anything else, with its reason.
+    Failed { message: String },
+}
+
 /// Event to every window: the connection to a host on another machine ended.
 const DISCONNECTED_EVENT: &str = "host-disconnected";
 /// How long this machine's daemon may take to introduce itself. It answers
@@ -383,8 +393,8 @@ impl HostState {
         Ok(os)
     }
 
-    /// Starts a shell on `host` (this machine when `None`) for `window`; its
-    /// output goes to `on_data`.
+    /// Starts a shell on this machine for `window`; its output goes to
+    /// `on_data`.
     pub async fn spawn(
         &self,
         options: SpawnOptions,
@@ -392,7 +402,7 @@ impl HostState {
         env: Vec<(String, String)>,
         survives_client: bool,
         on_data: Channel<InvokeResponseBody>,
-    ) -> Result<PtySpawnResult, String> {
+    ) -> Result<PtySpawnResult, SpawnError> {
         let hosts = self.0.clone();
         let stream = hosts.streams.open(on_data);
         let spawned = tauri::async_runtime::spawn_blocking(move || {
@@ -416,9 +426,9 @@ impl HostState {
                 },
             );
             let reply = connection.request(request);
-            if reply.is_err() {
-                // Refused: what showed the id before (a shell that already
-                // runs under it) still does.
+            if !matches!(reply, Ok(Response::Spawned(_))) {
+                // Not started: what showed the id before (a shell that
+                // already runs under it) still does.
                 let mut terminals = hosts.terminals.lock().unwrap();
                 match before {
                     Some(before) => terminals.insert(terminal_id, before),
@@ -430,18 +440,18 @@ impl HostState {
         .await
         .map_err(|error| error.to_string())
         .and_then(|reply| reply);
-        match spawned {
-            Ok(Response::Spawned(result)) => Ok(result),
-            Ok(_) => {
-                self.0.streams.close(stream);
-                Err("The host did not answer the spawn".to_string())
-            }
-            // No output will end the stream of a spawn that failed.
-            Err(error) => {
-                self.0.streams.close(stream);
-                Err(error)
-            }
+        if let Ok(Response::Spawned(result)) = spawned {
+            return Ok(result);
         }
+        // No output will end the stream of a spawn that did not start.
+        self.0.streams.close(stream);
+        Err(match spawned {
+            Ok(Response::ShellAlreadyRuns) => SpawnError::ShellAlreadyRuns,
+            Ok(_) => SpawnError::Failed {
+                message: "The host did not answer the spawn".to_string(),
+            },
+            Err(message) => SpawnError::Failed { message },
+        })
     }
 
     /// Attaches `window` to the shell `terminal_id` that runs on `host` (this

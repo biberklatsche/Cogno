@@ -13,7 +13,7 @@ import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handle
 import { MachineState, MachineStateSnapshot } from "@cogno/core/terminal/machine-state";
 import { IPty, Pty } from "@cogno/core/terminal/pty";
 import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
-import { isShellAlreadyRunning, Opener, OsPlatform, PtyTransport } from "@cogno/platform";
+import { Opener, OsPlatform, PtyTransport, ShellAlreadyRunsError } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
 import {
@@ -996,7 +996,7 @@ export class SessionHost {
   private onStartFailed(error: unknown): void {
     const reason = error instanceof Error ? error.message : String(error);
     this.setRuntime({ status: "failed", reason });
-    if (isShellAlreadyRunning(error)) {
+    if (error instanceof ShellAlreadyRunsError) {
       // Nothing is wrong: the shell is there, it only has to be shown.
       this.hostFacts.next({ type: "shellAlreadyRuns" });
       return;

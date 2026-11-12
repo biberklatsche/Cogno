@@ -16,7 +16,7 @@ use crate::line_editor::{
 
 #[cfg(windows)]
 use crate::process_job::ProcessJob;
-use crate::protocol::{Event, SessionInfo, SessionLabel, SHELL_ALREADY_RUNS};
+use crate::protocol::{Event, SessionInfo, SessionLabel};
 use crate::shell_spawner::{ShellProfile, ShellSpawner};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -385,8 +385,12 @@ fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exi
     }
 }
 
-fn already_runs(terminal_id: &str) -> String {
-    format!("{SHELL_ALREADY_RUNS} {terminal_id}.")
+/// What became of a `spawn`.
+pub enum Spawned {
+    Started(PtySpawnResult),
+    /// A shell already runs under the terminal id: nothing was started, and
+    /// that shell runs on.
+    ShellAlreadyRuns,
 }
 
 pub(crate) struct PtyState {
@@ -729,7 +733,7 @@ impl PtyState {
         stream: u64,
         extra_env: Vec<(String, String)>,
         survives_client: bool,
-    ) -> Result<PtySpawnResult, String> {
+    ) -> Result<Spawned, String> {
         let state = self;
         let terminal_id = options.name.clone();
         // Checked again when the session is registered: two spawns of one id
@@ -741,7 +745,7 @@ impl PtyState {
             .live
             .contains_key(&terminal_id)
         {
-            return Err(already_runs(&terminal_id));
+            return Ok(Spawned::ShellAlreadyRuns);
         }
 
         // Prepare shell spawn with integration
@@ -850,7 +854,7 @@ impl PtyState {
             Registered::OwnerGone(session) => Some(session),
             Registered::IdTaken(session) => {
                 release_session(session);
-                return Err(already_runs(&terminal_id));
+                return Ok(Spawned::ShellAlreadyRuns);
             }
         };
 
@@ -912,7 +916,7 @@ impl PtyState {
             release_session(session);
             return Err("Window closed while starting the shell".to_string());
         }
-        Ok(PtySpawnResult { shell_process_id })
+        Ok(Spawned::Started(PtySpawnResult { shell_process_id }))
     }
 }
 

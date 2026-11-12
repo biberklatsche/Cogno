@@ -1083,7 +1083,10 @@ dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
 - **Eine laufende Shell wird nie für einen Start beendet.** Wollte ein Pane
   starten, weil Cogno die Shell unter seiner ID nicht kannte (der Dienst
   antwortete beim Start nicht), lehnt der Dienst den Start ab
-  (`SHELL_ALREADY_RUNS`). Die Sitzung nennt das als Fakt (`shellAlreadyRuns`),
+  mit einer eigenen Antwort (`Response::ShellAlreadyRuns`, im Webview der
+  Fehlercode `shellAlreadyRuns`, in `platform/` die Klasse
+  `ShellAlreadyRunsError`); erkannt wird sie nie am Text. Die Sitzung nennt
+  das als Fakt (`shellAlreadyRuns`),
   und die Sitzungsfabrik dockt an, wie beim normalen Start, auch wenn ein
   anderes Cogno die Shell gerade zeigt.
 - Ein Pane eines anderen Rechners (`Pane.host`, unten) dockt **nur** an: Es

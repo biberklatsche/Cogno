@@ -6,6 +6,7 @@ import {
   PtyDataChannel,
   type PtyOutputListenerContract,
   PtyTransport,
+  ShellAlreadyRunsError,
 } from "./pty";
 
 type RawMessage = { message: ArrayBuffer; index: number } | { end: true; index: number };
@@ -221,6 +222,18 @@ describe("PtyTransport", () => {
     expect(output.onChunk).toHaveBeenCalledWith(expect.objectContaining({ seq: 0 }));
 
     await expect(handle.ready).resolves.toEqual({ shellProcessId: 4711 });
+  });
+
+  it("tells a shell that already runs apart from any other failure, by its code", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce({ code: "shellAlreadyRuns" });
+    const refused = spawn().ready;
+    await expect(refused).rejects.toBeInstanceOf(ShellAlreadyRunsError);
+    await expect(refused).rejects.toMatchObject({ terminalId: "t1" });
+
+    vi.mocked(invoke).mockRejectedValueOnce({ code: "failed", message: "No such shell" });
+    const failed = spawn().ready;
+    await expect(failed).rejects.not.toBeInstanceOf(ShellAlreadyRunsError);
+    await expect(failed).rejects.toThrow("No such shell");
   });
 
   it("should close the channel through the spawn handle", () => {

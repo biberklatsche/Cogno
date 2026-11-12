@@ -5,7 +5,7 @@ use crate::processes::{
     get_process_tree_snapshot, list_terminal_processes, terminate_process_tree,
 };
 use crate::protocol::{Event, Reply, Request, Response};
-use crate::pty::PtyState;
+use crate::pty::{PtyState, Spawned};
 use crate::shell_integration;
 use crate::shells::detect_shells;
 
@@ -51,7 +51,10 @@ impl Host {
             } => self
                 .pty
                 .spawn(client, options, owner, stream, env, survives_client)
-                .map(Response::Spawned),
+                .map(|spawned| match spawned {
+                    Spawned::Started(result) => Response::Spawned(result),
+                    Spawned::ShellAlreadyRuns => Response::ShellAlreadyRuns,
+                }),
             Request::PtyAttach {
                 terminal_id,
                 owner,
@@ -805,11 +808,7 @@ mod tests {
 
         let refused = host.handle(&me, spawn_request("t1", 2, WAITING, true));
 
-        let reason = refused.err().unwrap_or_default();
-        assert!(
-            reason.starts_with(crate::protocol::SHELL_ALREADY_RUNS),
-            "{reason}"
-        );
+        assert!(matches!(refused, Ok(Response::ShellAlreadyRuns)));
         assert_eq!(sessions_of(&host, &me), [("t1".to_string(), true)]);
         // The first one still writes to its client.
         assert!(sink.ended_streams().is_empty());

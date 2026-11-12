@@ -39,16 +39,31 @@ function listenInThisWindow<T>(event: string, listener: (payload: T) => void): P
 }
 
 /**
- * How the host's refusal begins when a shell already runs under the terminal
- * id a start asked for (`SHELL_ALREADY_RUNS` in the host's protocol). The
- * running shell is never ended for it; the caller can attach to it instead.
+ * A shell was not started because one already runs under its terminal id.
+ * That one is never ended for it; the caller can attach to it instead.
  */
-const SHELL_ALREADY_RUNS = "A shell already runs as terminal";
+export class ShellAlreadyRunsError extends Error {
+  constructor(readonly terminalId: string) {
+    super(`A shell already runs as terminal ${terminalId}.`);
+    this.name = "ShellAlreadyRunsError";
+  }
+}
 
-/** Whether a start failed because a shell already runs under its terminal id. */
-export function isShellAlreadyRunning(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.startsWith(SHELL_ALREADY_RUNS);
+/** Why `pty_spawn` did not start a shell (`SpawnError` in the app). */
+type SpawnErrorContract = { code: "shellAlreadyRuns" } | { code: "failed"; message: string };
+
+function isSpawnError(error: unknown): error is SpawnErrorContract {
+  return typeof error === "object" && error !== null && "code" in error;
+}
+
+/** The backend's answer to a start that failed, as an error the caller can tell apart. */
+function spawnFailure(error: unknown, terminalId: string): Error {
+  if (isSpawnError(error)) {
+    return error.code === "shellAlreadyRuns"
+      ? new ShellAlreadyRunsError(terminalId)
+      : new Error(error.message);
+  }
+  return error instanceof Error ? error : new Error(String(error));
 }
 
 /** Where a shell sits in the Cogno it belongs to. */
@@ -272,6 +287,8 @@ export class PtyTransport {
       },
       survivesClient: options.survivesClient,
       onData: channel,
+    }).catch((error: unknown) => {
+      throw spawnFailure(error, options.terminalId);
     });
     return {
       ready,
