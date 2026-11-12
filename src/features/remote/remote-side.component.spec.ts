@@ -11,8 +11,6 @@ describe("RemoteSideComponent", () => {
     hosts: ReturnType<typeof signal<readonly RemoteHost[]>>;
     shells: ReturnType<typeof signal<ReadonlyMap<string, HostShells>>>;
     failure: ReturnType<typeof signal<string | undefined>>;
-    end: ReturnType<typeof vi.fn>;
-    removeHost: ReturnType<typeof vi.fn>;
   };
   let component: RemoteSideComponent;
   const shell: RemoteShell = { terminalId: "t1", shown: "nowhere" };
@@ -22,8 +20,6 @@ describe("RemoteSideComponent", () => {
       hosts: signal<readonly RemoteHost[]>([]),
       shells: signal<ReadonlyMap<string, HostShells>>(new Map()),
       failure: signal<string | undefined>(undefined),
-      end: vi.fn().mockResolvedValue(undefined),
-      removeHost: vi.fn().mockResolvedValue(undefined),
     };
     component = new RemoteSideComponent(
       panel as unknown as RemotePanelService,
@@ -42,23 +38,20 @@ describe("RemoteSideComponent", () => {
     expect(component.keyOf(machine as never)).toBe(machine?.key);
   });
 
-  it("ends a shell only on the second click", () => {
-    component.end("office", shell);
-    expect(panel.end).not.toHaveBeenCalled();
-    expect(component.isArmed("end", "t1")).toBe(true);
+  it("opens the form with what a host is, and lets the user change it field by field", () => {
+    component.edit({ name: "office", destination: "lars@office", connection: "connected" });
+    const input = { value: "lars@office-2" } as HTMLInputElement;
 
-    component.end("office", shell);
-    expect(panel.end).toHaveBeenCalledWith("office", shell);
-    expect(component.isArmed("end", "t1")).toBe(false);
-  });
+    component.setField("destination", { target: input } as unknown as Event);
 
-  it("forgets the first click once the pointer has left", () => {
-    const host: RemoteHost = { name: "office", destination: "office", connection: "connected" };
-    component.remove(host);
-    component.disarm();
-
-    component.remove(host);
-
-    expect(panel.removeHost).not.toHaveBeenCalled();
+    expect(component.form()).toEqual({
+      previousName: "office",
+      name: "office",
+      destination: "lars@office-2",
+      command: "",
+      saving: false,
+      error: undefined,
+    });
+    expect(component.fields.map((field) => field.key)).toEqual(["name", "destination", "command"]);
   });
 });

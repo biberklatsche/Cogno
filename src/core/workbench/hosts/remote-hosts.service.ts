@@ -10,7 +10,7 @@ import { RunningSessionsService } from "./running-sessions.service";
 /** How far the connection to a host is; a host without an entry is not connected. */
 export type RemoteHostConnection =
   | { readonly status: "connecting" }
-  | { readonly status: "connected" }
+  | { readonly status: "connected"; readonly info: HostInfo }
   | { readonly status: "failed"; readonly reason: string };
 
 /**
@@ -26,7 +26,6 @@ export type RemoteHostConnection =
  */
 @Injectable({ providedIn: "root" })
 export class RemoteHostsService {
-  private readonly connected = new Map<string, HostInfo>();
   private readonly connecting = new Map<string, Promise<HostInfo>>();
   private readonly connections = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(
     new Map(),
@@ -51,12 +50,13 @@ export class RemoteHostsService {
 
   /** What a host said about itself, while its connection stands. */
   info(name: string): HostInfo | undefined {
-    return this.connected.get(name);
+    const connection = this.connections.value.get(name);
+    return connection?.status === "connected" ? connection.info : undefined;
   }
 
   /** Connects to the host unless the connection stands or is being set up. */
   connect(name: string): Promise<HostInfo> {
-    const known = this.connected.get(name);
+    const known = this.info(name);
     if (known) return Promise.resolve(known);
     const underway = this.connecting.get(name);
     if (underway) return underway;
@@ -76,8 +76,7 @@ export class RemoteHostsService {
       .then(async (info) => {
         await this.runningSessions.refresh(name);
         if (!isCurrent()) throw new Error(`The connection to ${name} was hung up.`);
-        this.connected.set(name, info);
-        this.setConnection(name, { status: "connected" });
+        this.setConnection(name, { status: "connected", info });
         return info;
       })
       .catch((error) => {
@@ -102,7 +101,6 @@ export class RemoteHostsService {
   async disconnect(name: string): Promise<void> {
     // Asked for: nothing was lost, so nothing is warned about.
     this.connecting.delete(name);
-    this.connected.delete(name);
     this.setConnection(name, undefined);
     await this.hosts.disconnect(name);
   }
@@ -119,7 +117,7 @@ export class RemoteHostsService {
 
   private onDisconnected(name: string): void {
     // Every window hears of it; only one that used the host has lost panes.
-    if (!this.connected.delete(name)) return;
+    if (!this.info(name)) return;
     this.setConnection(name, undefined);
     ErrorReporter.reportWarning({
       message: `The connection to ${name} was lost. Its terminals were closed.`,

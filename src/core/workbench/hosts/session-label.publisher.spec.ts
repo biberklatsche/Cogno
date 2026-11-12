@@ -32,6 +32,7 @@ function fakeSession(terminalId: string, remoteHost?: string): FakeSession {
 describe("SessionLabelPublisher", () => {
   let entries: FakeSession[];
   let registryChanges: Subject<void>;
+  let registryFacts: Subject<{ terminalId: string; fact: SessionFact }>;
   let placementChanges: Subject<void>;
   let placement: Partial<TerminalPlacement> | undefined;
   let label: ReturnType<typeof vi.fn>;
@@ -43,6 +44,7 @@ describe("SessionLabelPublisher", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     entries = [];
+    registryFacts = new Subject();
     registryChanges = new Subject();
     placementChanges = new Subject();
     placement = { workspaceName: "Cogno", tabTitle: "build" };
@@ -54,6 +56,7 @@ describe("SessionLabelPublisher", () => {
         },
         has: (terminalId: string) => entries.some((entry) => entry.terminalId === terminalId),
         changes$: registryChanges,
+        facts$: registryFacts,
       } as never,
       { getPlacement: () => placement, changes$: placementChanges } as never,
       { label } as never,
@@ -92,12 +95,12 @@ describe("SessionLabelPublisher", () => {
     vi.advanceTimersByTime(1000);
     label.mockClear();
 
-    session.host.facts$.next({ type: "titleChanged", title: "vim" });
+    registryFacts.next({ terminalId: "t1", fact: { type: "titleChanged", title: "vim" } });
     vi.advanceTimersByTime(1000);
     expect(label).toHaveBeenLastCalledWith("t1", expect.objectContaining({ title: "vim" }));
 
     session.host.state.cwd = "/tmp";
-    session.host.facts$.next({ type: "cwdReported", cwd: "/tmp" });
+    registryFacts.next({ terminalId: "t1", fact: { type: "cwdReported", cwd: "/tmp" } });
     vi.advanceTimersByTime(1000);
     expect(label).toHaveBeenLastCalledWith("t1", expect.objectContaining({ directory: "/tmp" }));
 
@@ -139,10 +142,10 @@ describe("SessionLabelPublisher", () => {
 
     entries = [];
     registryChanges.next();
-    session.host.facts$.next({ type: "titleChanged", title: "late" });
+    registryFacts.next({ terminalId: "t1", fact: { type: "titleChanged", title: "late" } });
     vi.advanceTimersByTime(1000);
 
-    expect(session.host.facts$.observed).toBe(false);
+    expect(session.host.runtime$.observed).toBe(false);
     expect(label).not.toHaveBeenCalled();
   });
 });

@@ -8,6 +8,13 @@ const THIS_MACHINE = "";
 /** How long what a host said counts as what runs there now. */
 const FRESH_FOR_MS = 2000;
 
+/** What a host said last, and when. */
+type Answer = {
+  readonly at: number;
+  /** Empty when the host did not answer: then nothing is known to go on with. */
+  readonly sessions: Map<TerminalId, RunningSession>;
+};
+
 /**
  * The shells that already run on a host and that no pane of this window
  * shows yet: what Cogno left running when it closed, or what another Cogno
@@ -20,8 +27,9 @@ const FRESH_FOR_MS = 2000;
  */
 @Injectable({ providedIn: "root" })
 export class RunningSessionsService {
-  private readonly byHost = new Map<string, Map<TerminalId, RunningSession>>();
-  private readonly askedAt = new Map<string, number>();
+  private readonly answers = new Map<string, Answer>();
+  /** A question still on its way: whoever asks meanwhile shares it. */
+  private readonly asking = new Map<string, Promise<boolean>>();
 
   constructor(private readonly hosts: Hosts) {}
 
@@ -31,33 +39,19 @@ export class RunningSessionsService {
    * with: the failure is reported, not thrown, so a start is never held up
    * by it.
    */
-  async refresh(host?: string): Promise<boolean> {
-    let answered = true;
-    try {
-      const sessions = await this.hosts.sessions(host);
-      this.byHost.set(
-        host ?? THIS_MACHINE,
-        new Map(sessions.map((session) => [session.terminalId, session])),
-      );
-    } catch (error) {
-      answered = false;
-      this.byHost.delete(host ?? THIS_MACHINE);
-      ErrorReporter.reportException({
-        error,
-        handled: true,
-        source: "RunningSessions",
-        context: { operation: "refresh", host },
-      });
-    }
-    // Asked, whatever the answer: asking again at once would say the same.
-    this.askedAt.set(host ?? THIS_MACHINE, Date.now());
-    return answered;
+  refresh(host?: string): Promise<boolean> {
+    const key = host ?? THIS_MACHINE;
+    const underway = this.asking.get(key);
+    if (underway) return underway;
+    const asking = this.ask(host).finally(() => this.asking.delete(key));
+    this.asking.set(key, asking);
+    return asking;
   }
 
   /** Whether `host` was asked so recently that its list still holds. */
   isFresh(host: string): boolean {
-    const askedAt = this.askedAt.get(host);
-    return askedAt !== undefined && Date.now() - askedAt < FRESH_FOR_MS;
+    const answer = this.answers.get(host);
+    return answer !== undefined && Date.now() - answer.at < FRESH_FOR_MS;
   }
 
   /**
@@ -65,14 +59,38 @@ export class RunningSessionsService {
    * start of the app gives a tab when no workspace has a pane for it.
    */
   unshownLocalShells(): RunningSession[] {
-    return [...(this.byHost.get(THIS_MACHINE)?.values() ?? [])].filter((session) => !session.shown);
+    return [...(this.answers.get(THIS_MACHINE)?.sessions.values() ?? [])].filter(
+      (session) => !session.shown,
+    );
   }
 
   /** The running shell of `terminalId` on `host`, which a pane now shows. */
   take(host: string | undefined, terminalId: TerminalId): RunningSession | undefined {
-    const sessions = this.byHost.get(host ?? THIS_MACHINE);
+    const sessions = this.answers.get(host ?? THIS_MACHINE)?.sessions;
     const running = sessions?.get(terminalId);
     sessions?.delete(terminalId);
     return running;
+  }
+
+  private async ask(host: string | undefined): Promise<boolean> {
+    try {
+      const sessions = await this.hosts.sessions(host);
+      this.remember(host, new Map(sessions.map((session) => [session.terminalId, session])));
+      return true;
+    } catch (error) {
+      // Asked, whatever the answer: asking again at once would say the same.
+      this.remember(host, new Map());
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "RunningSessions",
+        context: { operation: "refresh", host },
+      });
+      return false;
+    }
+  }
+
+  private remember(host: string | undefined, sessions: Map<TerminalId, RunningSession>): void {
+    this.answers.set(host ?? THIS_MACHINE, { at: Date.now(), sessions });
   }
 }
