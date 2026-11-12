@@ -494,26 +494,29 @@ impl PtyState {
         stream: u64,
     ) -> Result<(), String> {
         let not_found = || format!("Session not found: {}", terminal_id);
-        let (output, previous_owner) = {
+        let (output, previous_owner, passed_on) = {
             let mut sessions = self.sessions.lock().unwrap();
             let session = sessions.live.get_mut(terminal_id).ok_or_else(not_found)?;
             let owner = Owner {
                 client: client.id,
                 label: owner,
             };
+            // An owner that attaches again (its window was reloaded) has not
+            // lost the session to anybody. Another window of the same client
+            // has taken it like any other Cogno.
+            let passed_on =
+                session.owner.client != owner.client || session.owner.label != owner.label;
             let previous_owner = std::mem::replace(&mut session.owner, owner);
             if previous_owner.client != client.id {
                 session.survives_client = true;
             }
-            (session.output.clone(), previous_owner)
+            (session.output.clone(), previous_owner, passed_on)
         };
         let attachment = Attachment::new(client, stream, FlowControl::new());
         let previous = output.attach(attachment).map_err(|_| not_found())?;
         if let Some(previous) = previous {
             previous.end();
-            // A client that attaches again (its window was reloaded) has not
-            // lost the session to anybody.
-            if previous.client != client.id {
+            if passed_on {
                 previous.sink.emit(Event::PtyTakenOver {
                     terminal_id: terminal_id.to_string(),
                     owner: previous_owner.label,

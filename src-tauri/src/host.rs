@@ -68,6 +68,19 @@ struct Terminal {
 /// webview never has to name it.
 type Terminals = Arc<Mutex<HashMap<String, Terminal>>>;
 
+/// The window `owner` lost the terminal to another Cogno. That other one may
+/// be a window of this very app, which has put itself into the table by
+/// then: its entry stays.
+fn forget_taken_over(terminals: &Terminals, terminal_id: &str, owner: &str) {
+    let mut terminals = terminals.lock().unwrap();
+    if terminals
+        .get(terminal_id)
+        .is_some_and(|terminal| terminal.window == owner)
+    {
+        terminals.remove(terminal_id);
+    }
+}
+
 fn emit_exit(app: &AppHandle, window: &str, terminal_id: &str, exit_code: i32) -> bool {
     app.emit_to(
         window,
@@ -116,7 +129,7 @@ impl EventSink for WebviewSink {
                 owner,
                 by,
             } => {
-                self.terminals.lock().unwrap().remove(&terminal_id);
+                forget_taken_over(&self.terminals, &terminal_id, &owner);
                 self.app
                     .emit_to(
                         owner.as_str(),
@@ -536,5 +549,40 @@ impl HostState {
     pub fn release_all(&self) {
         self.0.remotes.lock().unwrap().clear();
         *self.0.local.lock().unwrap() = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn shown_in(window: &str) -> Terminals {
+        Arc::new(Mutex::new(HashMap::from([(
+            "t1".to_string(),
+            Terminal {
+                host: None,
+                window: window.to_string(),
+                stream: 1,
+            },
+        )])))
+    }
+
+    #[test]
+    fn a_window_that_lost_its_terminal_is_no_longer_where_requests_go() {
+        let terminals = shown_in("main");
+
+        forget_taken_over(&terminals, "t1", "main");
+
+        assert!(terminals.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn the_window_of_this_app_that_took_a_terminal_over_keeps_it() {
+        // The other window attached first; then the old one hears of it.
+        let terminals = shown_in("window-2");
+
+        forget_taken_over(&terminals, "t1", "main");
+
+        assert!(terminals.lock().unwrap().contains_key("t1"));
     }
 }

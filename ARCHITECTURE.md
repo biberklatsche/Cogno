@@ -1030,7 +1030,11 @@ Daraus folgt:
   und er bekommt `PtyTakenOver` mit dem Namen des neuen (unten). `PtyDetach`
   hängt den Client ab, die Sitzung läuft weiter. Eine übernommene Sitzung
   endet nie mit dem, der sie übernommen hat: sie überlebt von da an jeden
-  Client.
+  Client. Übernommen wird auch zwischen zwei Fenstern derselben App: Der
+  Besitzer ist Client **und** Fenster, nur derselbe Besitzer dockt ohne
+  Meldung erneut an (Neuladen). Darum hört ein Fenster `pty-exit` und
+  `pty-taken-over` nur für sich (`platform/pty.ts`); ein gewöhnliches
+  `listen` hörte auch, was dem Fenster gesagt wird, das die Shell verlor.
 - **Der Host kennt zu jeder Sitzung ein Etikett** (`SessionLabel`: Workspace,
   Tab, Titel, Verzeichnis) und zu jedem Client einen Namen (`Introduce`, der
   Rechnername). Beides sind Worte des Clients, die der Host nur aufhebt und

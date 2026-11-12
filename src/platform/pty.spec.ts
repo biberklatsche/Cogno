@@ -25,7 +25,11 @@ vi.mock("@tauri-apps/api/core", () => ({
   },
 }));
 
-vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
+const thisWindow = vi.hoisted(() => ({ listen: vi.fn() }));
+
+vi.mock("@tauri-apps/api/webviewWindow", () => ({
+  getCurrentWebviewWindow: () => thisWindow,
+}));
 
 /** Frames a chunk the way the Rust reader thread does: u32 LE seq + payload. */
 function frame(seq: number, text: string): ArrayBuffer {
@@ -242,5 +246,38 @@ describe("PtyTransport", () => {
         { terminalId: "t1", action: "clearLine", payloadJson: JSON.stringify({ start: 0 }) },
       ],
     ]);
+  });
+
+  describe("what the backend says about a terminal", () => {
+    type Handler = (event: { payload: unknown }) => void;
+
+    beforeEach(() => {
+      thisWindow.listen.mockReset().mockResolvedValue(() => undefined);
+    });
+
+    // Another window of this app can show the same terminal, having taken
+    // it over: each hears only what is said to itself.
+    it("hears only this window's end of a shell", async () => {
+      const ended = vi.fn();
+
+      await transport.onExit("t1", ended);
+
+      const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
+      expect(event).toBe("pty-exit:t1");
+      handler({ payload: { exitCode: 3 } });
+      expect(ended).toHaveBeenCalledWith({ exitCode: 3 });
+    });
+
+    it("hears only this window's loss of a shell, and who shows it now", async () => {
+      const takenOver = vi.fn();
+
+      await transport.onTakenOver("t1", takenOver);
+
+      const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
+      expect(event).toBe("pty-taken-over:t1");
+      handler({ payload: { by: "lars-laptop" } });
+      handler({ payload: { by: null } });
+      expect(takenOver.mock.calls).toEqual([["lars-laptop"], [undefined]]);
+    });
   });
 });

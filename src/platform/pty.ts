@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { ShellTypeContract } from "@cogno/shared/domain";
 import { invoke, SERIALIZE_TO_IPC_FN, transformCallback } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
  * Shell profile as the backend's spawner expects it (wire format, hence the
@@ -29,6 +29,16 @@ export type PtySpawnOptionsContract = {
   /** Whether the shell goes on when Cogno is gone, to be attached to again. */
   survivesClient: boolean;
 };
+
+/**
+ * Hears what the backend says to this window only. A plain `listen` hears
+ * what is said to any window, and another window of this app can show the
+ * same terminal: it took the shell over, and what the window that lost it is
+ * told must not reach the one that has it now.
+ */
+function listenInThisWindow<T>(event: string, listener: (payload: T) => void): Promise<() => void> {
+  return getCurrentWebviewWindow().listen<T>(event, ({ payload }) => listener(payload));
+}
 
 /** Where a shell sits in the Cogno it belongs to. */
 export type PtyLabelContract = {
@@ -291,7 +301,7 @@ export class PtyTransport {
    * what that Cogno's machine is called, when it said.
    */
   onTakenOver(terminalId: string, listener: (by?: string) => void): Promise<() => void> {
-    return listen<{ by?: string | null }>(`pty-taken-over:${terminalId}`, ({ payload }) =>
+    return listenInThisWindow<{ by?: string | null }>(`pty-taken-over:${terminalId}`, (payload) =>
       listener(payload?.by ?? undefined),
     );
   }
@@ -314,9 +324,7 @@ export class PtyTransport {
   }
 
   onExit(terminalId: string, listener: (event: PtyExitEventContract) => void): Promise<() => void> {
-    return listen<PtyExitEventContract>(`pty-exit:${terminalId}`, (event) => {
-      listener(event.payload);
-    });
+    return listenInThisWindow<PtyExitEventContract>(`pty-exit:${terminalId}`, listener);
   }
 
   write(terminalId: string, data: string): Promise<void> {

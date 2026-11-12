@@ -569,6 +569,45 @@ mod tests {
     }
 
     #[test]
+    fn another_window_of_the_same_client_takes_a_session_over_too() {
+        let (me, sink) = client(1);
+        let host = Host::new();
+        host.handle(&me, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+        host.handle(
+            &me,
+            Request::Introduce {
+                name: "office-pc".to_string(),
+            },
+        )
+        .unwrap();
+
+        host.handle(
+            &me,
+            Request::PtyAttach {
+                terminal_id: "t1".to_string(),
+                owner: "window-2".to_string(),
+                stream: 2,
+            },
+        )
+        .unwrap();
+
+        wait_until("the other window has the output", || {
+            sink.output_of(2).contains("port=4711")
+        });
+        // The window that showed it must hear that it no longer does.
+        assert_eq!(
+            sink.0.lock().unwrap().taken_over,
+            [(
+                "t1".to_string(),
+                "window-1".to_string(),
+                Some("office-pc".to_string())
+            )]
+        );
+        host.release_all();
+    }
+
+    #[test]
     fn releasing_an_owner_ends_its_sessions_except_those_that_go_on() {
         let (me, sink) = client(1);
         let host = Host::new();
