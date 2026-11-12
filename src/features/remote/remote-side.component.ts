@@ -105,6 +105,14 @@ type MachineTree =
       <div class="machines">
         <section class="machine">
           <div class="machine-row">
+            <button
+              type="button"
+              class="node-toggle"
+              [attr.aria-label]="isOpen('') ? 'Collapse' : 'Expand'"
+              (click)="toggle('')"
+            >
+              <app-icon [name]="isOpen('') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
+            </button>
             <app-icon class="machine-icon" name="mdiLaptop"></app-icon>
             <span class="name">This machine</span>
             @if (hasShellsShownElsewhere()) {
@@ -118,14 +126,28 @@ type MachineTree =
               </button>
             }
           </div>
-          <ng-container
-            *ngTemplateOutlet="treeTemplate; context: { $implicit: tree(''), host: undefined }"
-          ></ng-container>
+          @if (isOpen("")) {
+            <ng-container
+              *ngTemplateOutlet="treeTemplate; context: { $implicit: tree(''), host: '' }"
+            ></ng-container>
+          }
         </section>
 
         @for (host of hosts(); track host.name) {
           <section class="machine" (mouseleave)="disarm()">
             <div class="machine-row">
+              @if (host.connection === "disconnected") {
+                <span class="node-toggle"></span>
+              } @else {
+                <button
+                  type="button"
+                  class="node-toggle"
+                  [attr.aria-label]="isOpen(host.name) ? 'Collapse' : 'Expand'"
+                  (click)="toggle(host.name)"
+                >
+                  <app-icon [name]="isOpen(host.name) ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
+                </button>
+              }
               <span class="connection" [class]="host.connection"></span>
               <span class="name" [appTooltip]="host.destination">{{ host.name }}</span>
               @if (host.connection === "connected") {
@@ -160,14 +182,16 @@ type MachineTree =
                 <app-icon name="mdiTrashCanOutline"></app-icon>
               </button>
             </div>
-            @if (host.connection === "connecting") {
-              <div class="status">Connecting to {{ host.destination }}...</div>
-            } @else if (host.connection === "failed") {
-              <div class="status failure">{{ host.failure }}</div>
-            } @else if (host.connection === "connected") {
-              <ng-container
-                *ngTemplateOutlet="treeTemplate; context: { $implicit: tree(host.name), host: host.name }"
-              ></ng-container>
+            @if (isOpen(host.name)) {
+              @if (host.connection === "connecting") {
+                <div class="status">Connecting to {{ host.destination }}...</div>
+              } @else if (host.connection === "failed") {
+                <div class="status failure">{{ host.failure }}</div>
+              } @else if (host.connection === "connected") {
+                <ng-container
+                  *ngTemplateOutlet="treeTemplate; context: { $implicit: tree(host.name), host: host.name }"
+                ></ng-container>
+              }
             }
           </section>
         } @empty {
@@ -178,7 +202,7 @@ type MachineTree =
       </div>
     </div>
 
-    <!-- The shells of one machine: workspace, tab, shell. -->
+    <!-- The shells of one machine ("" is this one): workspace, tab, shell. -->
     <ng-template #treeTemplate let-machine let-host="host">
       @if (!machine || machine.status === "loading") {
         <div class="status">Looking for shells...</div>
@@ -190,13 +214,38 @@ type MachineTree =
         <ul class="tree">
           @for (group of machine.groups; track group.name) {
             <li>
-              <div class="group-name" [class.orphaned]="group.orphaned">{{ group.name }}</div>
+              <button
+                type="button"
+                class="branch group-name"
+                [class.orphaned]="group.orphaned"
+                [attr.aria-expanded]="isOpen(host, group.name)"
+                (click)="toggle(host, group.name)"
+              >
+                <app-icon
+                  class="node-toggle"
+                  [name]="isOpen(host, group.name) ? 'mdiChevronDown' : 'mdiChevronRight'"
+                ></app-icon>
+                <span class="name">{{ group.name }}</span>
+              </button>
+              @if (isOpen(host, group.name)) {
               <ul class="tree">
                 @for (tab of group.tabs; track tab.name) {
                   <li>
                     @if (tab.name) {
-                      <div class="tab-name">{{ tab.name }}</div>
+                      <button
+                        type="button"
+                        class="branch tab-name"
+                        [attr.aria-expanded]="isOpen(host, group.name, tab.name)"
+                        (click)="toggle(host, group.name, tab.name)"
+                      >
+                        <app-icon
+                          class="node-toggle"
+                          [name]="isOpen(host, group.name, tab.name) ? 'mdiChevronDown' : 'mdiChevronRight'"
+                        ></app-icon>
+                        <span class="name">{{ tab.name }}</span>
+                      </button>
                     }
+                    @if (isOpen(host, group.name, tab.name)) {
                     <ul class="tree shells">
                       @for (shell of tab.shells; track shell.terminalId) {
                         <li class="shell-row" (mouseleave)="disarm()">
@@ -204,7 +253,7 @@ type MachineTree =
                             type="button"
                             class="shell"
                             [appTooltip]="shell.directory ?? ''"
-                            (click)="show(host, shell)"
+                            (click)="show(host || undefined, shell)"
                           >
                             <app-icon class="shell-icon" name="mdiConsole"></app-icon>
                             <span class="name">{{ nameOf(shell) }}</span>
@@ -220,7 +269,7 @@ type MachineTree =
                               class="button icon-button row-action danger"
                               [class.armed]="isArmed('end', shell.terminalId)"
                               [appTooltip]="isArmed('end', shell.terminalId) ? 'Click again to end it' : 'End the shell'"
-                              (click)="end(host, shell)"
+                              (click)="end(host || undefined, shell)"
                             >
                               <app-icon name="mdiClose"></app-icon>
                             </button>
@@ -228,9 +277,11 @@ type MachineTree =
                         </li>
                       }
                     </ul>
+                    }
                   </li>
                 }
               </ul>
+              }
             </li>
           }
         </ul>
@@ -422,8 +473,60 @@ type MachineTree =
       padding: 0;
     }
 
+    /* What runs on a machine is set in under its name. */
+    .machine > .tree,
+    .machine > .status {
+      padding-left: 20px;
+    }
+
     .tree .tree {
-      padding-left: 10px;
+      padding-left: 12px;
+    }
+
+    /* A shell has no arrow: it lines up with the names above it. */
+    .tree.shells {
+      padding-left: 20px;
+    }
+
+    /* A workspace or a tab: one line that opens and closes what is under it. */
+    button.branch {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    button.branch:hover {
+      background: color-mix(in srgb, var(--foreground-color) 6%, transparent);
+    }
+
+    .node-toggle {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      opacity: 0.7;
+    }
+
+    button.node-toggle {
+      cursor: pointer;
+    }
+
+    .node-toggle app-icon {
+      width: 16px;
+      height: 16px;
     }
 
     .group-name {
@@ -483,6 +586,9 @@ export class RemoteSideComponent {
   readonly failure = this.panel.failure;
   readonly form = signal<HostForm | null>(null);
 
+  /** The machines, workspaces and tabs that are folded away; all are open at first. */
+  private readonly collapsed = signal<ReadonlySet<string>>(new Set());
+
   /** The action that the next click on the same button carries out. */
   private readonly armed = signal<string | null>(null);
 
@@ -515,6 +621,20 @@ export class RemoteSideComponent {
 
   nameOf(shell: RemoteShell): string {
     return shellName(shell);
+  }
+
+  /** Whether the branch at `path` (machine, workspace, tab) shows what is under it. */
+  isOpen(...path: string[]): boolean {
+    return !this.collapsed().has(JSON.stringify(path));
+  }
+
+  toggle(...path: string[]): void {
+    const key = JSON.stringify(path);
+    this.collapsed.update((collapsed) => {
+      const next = new Set(collapsed);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
   }
 
   isArmed(action: string, target: string): boolean {
