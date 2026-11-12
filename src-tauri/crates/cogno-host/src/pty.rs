@@ -2,10 +2,12 @@ use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, MasterPty, Pt
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
 use crate::flow_control::{frame_chunk, FlowControl, MAX_CHUNK_SIZE};
-use crate::host::EventSink;
+use crate::host::{Client, EventSink};
+use crate::kept_output::KeptOutput;
 use crate::line_editor::{
     build_line_editor_message, create_line_editor_channel, is_line_editor_action_name,
     remove_line_editor_channel, write_message_to_fifo, write_message_to_trigger_file,
@@ -14,7 +16,7 @@ use crate::line_editor::{
 
 #[cfg(windows)]
 use crate::process_job::ProcessJob;
-use crate::protocol::Event;
+use crate::protocol::{Event, SessionInfo};
 use crate::shell_spawner::{ShellProfile, ShellSpawner};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,9 +33,183 @@ pub struct SpawnOptions {
 /// messages without any extra batching thread.
 const READ_BUF_SIZE: usize = 64 * 1024;
 
+/// Whom a session belongs to: a name its client gave (the app names the
+/// window), and the client. Two clients may use the same name.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+struct Owner {
+    client: u64,
+    label: String,
+}
+
+/// A client that shows a session: where its output goes, under which stream,
+/// and how much of it the client has not taken in yet.
+#[derive(Clone)]
+struct Attachment {
+    client: u64,
+    stream: u64,
+    sink: Arc<dyn EventSink>,
+    /// One per attachment; its `Arc` is the attachment's identity.
+    flow: Arc<FlowControl>,
+    next_seq: Arc<AtomicU32>,
+}
+
+impl Attachment {
+    fn new(client: &Client, stream: u64, flow: FlowControl) -> Self {
+        Self {
+            client: client.id,
+            stream,
+            sink: client.sink.clone(),
+            flow: Arc::new(flow),
+            next_seq: Arc::new(AtomicU32::new(0)),
+        }
+    }
+
+    fn is(&self, other: &Attachment) -> bool {
+        Arc::ptr_eq(&self.flow, &other.flow)
+    }
+
+    /// Sends output as framed chunks. `metered` output counts against the
+    /// flow control and waits for the client when it is behind. False once
+    /// the attachment is over: closed, or the client is gone.
+    ///
+    /// Chunks stay under `MAX_CHUNK_SIZE`: a read can be up to
+    /// `READ_BUF_SIZE`, far past the size that keeps every message on the
+    /// webview channel's reliable delivery path. xterm's parser is stateful
+    /// across writes, so splitting mid-sequence is fine.
+    fn send(&self, output: &[u8], metered: bool) -> bool {
+        for chunk in output.chunks(MAX_CHUNK_SIZE) {
+            let seq = self.next_seq.load(Ordering::Relaxed);
+            if metered && !self.flow.acquire(seq, chunk.len()) {
+                return false;
+            }
+            let delivered = self.sink.emit(Event::PtyData {
+                stream: self.stream,
+                frame: frame_chunk(seq, chunk),
+            });
+            if !delivered {
+                return false;
+            }
+            self.next_seq.store(seq.wrapping_add(1), Ordering::Relaxed);
+        }
+        true
+    }
+
+    /// Nothing more comes under this stream.
+    fn end(&self) {
+        self.flow.close();
+        self.sink.emit(Event::PtyStreamEnded {
+            stream: self.stream,
+        });
+    }
+}
+
+struct OutputState {
+    kept: KeptOutput,
+    attached: Option<Attachment>,
+}
+
+/// Where a session's output goes: always into what is kept for a client that
+/// attaches later, and to the client that shows the session now, if there is
+/// one. Its `Arc` identifies one spawn (terminal ids can be reused).
+pub(crate) struct Output {
+    state: Mutex<OutputState>,
+    /// The session has ended (kill, exit, respawn): nothing is kept or sent
+    /// any more.
+    closed: AtomicBool,
+}
+
+impl Output {
+    fn new(attached: Option<Attachment>) -> Arc<Self> {
+        Arc::new(Self {
+            state: Mutex::new(OutputState {
+                kept: KeptOutput::new(),
+                attached,
+            }),
+            closed: AtomicBool::new(false),
+        })
+    }
+
+    fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
+    }
+
+    /// The session ends: a reader waiting for its client is woken, and no
+    /// client can attach any more.
+    fn close(&self) {
+        let state = self.state.lock().unwrap();
+        self.closed.store(true, Ordering::Release);
+        if let Some(attached) = &state.attached {
+            attached.flow.close();
+        }
+    }
+
+    /// Keeps the next piece of output and says who is to get it now.
+    fn take_in(&self, output: &[u8]) -> Option<Attachment> {
+        let mut state = self.state.lock().unwrap();
+        state.kept.push(output);
+        state.attached.clone()
+    }
+
+    fn attached(&self) -> Option<Attachment> {
+        self.state.lock().unwrap().attached.clone()
+    }
+
+    /// Takes the client off, whoever it is.
+    fn detach(&self) -> Option<Attachment> {
+        self.state.lock().unwrap().attached.take()
+    }
+
+    /// Takes `attachment` off, unless another one has taken its place.
+    fn forget(&self, attachment: &Attachment) {
+        let mut state = self.state.lock().unwrap();
+        if state
+            .attached
+            .as_ref()
+            .is_some_and(|attached| attached.is(attachment))
+        {
+            state.attached = None;
+        }
+    }
+
+    /// Puts `attachment` on and plays it what was kept. Returns the client
+    /// that was on before, or `Err` for a session that has ended.
+    ///
+    /// The lock is held over the replay, so the reader's next piece comes
+    /// after it. The replay is not metered: no more is kept than a client
+    /// may be behind anyway, and waiting for its acknowledgement here would
+    /// hold the lock the acknowledgement needs.
+    fn attach(&self, attachment: Attachment) -> Result<Option<Attachment>, ()> {
+        let mut state = self.state.lock().unwrap();
+        if self.is_closed() {
+            return Err(());
+        }
+        let previous = state.attached.take();
+        if let Some(previous) = &previous {
+            // Wakes the reader if it waits for the old client.
+            previous.flow.close();
+        }
+        attachment.send(&state.kept.replay(), false);
+        state.attached = Some(attachment);
+        Ok(previous)
+    }
+
+    fn ack(&self, seq: u32) {
+        if let Some(attached) = self.attached() {
+            attached.flow.ack_through(seq);
+        }
+    }
+}
+
 struct Session {
-    /// Whom the session belongs to; the app names the window that spawned it.
-    owner: String,
+    /// The app names the window that spawned or attached it.
+    owner: Owner,
+    /// Whether the session goes on without its client; otherwise it ends
+    /// when the client is gone.
+    survives_client: bool,
+    /// What it was started with, for a client that attaches later.
+    profile: ShellProfile,
+    cols: u16,
+    rows: u16,
     master: Box<dyn portable_pty::MasterPty + Send>,
     /// Ordered, non-blocking hand-off to the per-session writer thread. PTY
     /// writes can block (the child stops reading stdin while it is blocked on
@@ -41,7 +217,7 @@ struct Session {
     /// holding `sessions`. Dropping the session drops the sender, which ends
     /// the writer thread.
     input_tx: std::sync::mpsc::Sender<Vec<u8>>,
-    flow: Arc<FlowControl>,
+    output: Arc<Output>,
     /// Ends the shell when the session is released: SIGHUP on Unix (what a
     /// closing terminal sends; the shell saves its history and hangs up its
     /// jobs), `TerminateProcess` on Windows (ConPTY does not end its clients
@@ -66,7 +242,7 @@ struct SessionTable {
     live: HashMap<String, Session>,
     /// An owner is never named again once released (the app's window labels
     /// are not reused), so this only grows by one per released owner.
-    gone_owners: HashSet<String>,
+    gone_owners: HashSet<Owner>,
 }
 
 /// What became of a spawned session.
@@ -89,10 +265,10 @@ impl SessionTable {
 
     /// Takes the owner's sessions out and marks the owner gone, so a spawn
     /// from it that has not inserted yet never will.
-    fn remove_owner(&mut self, label: &str) -> Vec<Session> {
-        self.gone_owners.insert(label.to_string());
+    fn remove_owner(&mut self, owner: &Owner) -> Vec<Session> {
+        self.gone_owners.insert(owner.clone());
         self.live
-            .extract_if(|_, session| session.owner == label)
+            .extract_if(|_, session| session.owner == *owner)
             .map(|(_, session)| session)
             .collect()
     }
@@ -105,7 +281,7 @@ type Sessions = Arc<Mutex<SessionTable>>;
 /// the input sender (ends the writer thread). Must be called without holding
 /// `sessions`: closing a ConPTY can block until its output pipe is drained.
 fn release_session(mut session: Session) {
-    session.flow.close();
+    session.output.close();
     remove_line_editor_channel(&session.line_editor_channel);
     if let Err(e) = session.child_killer.kill() {
         // Already gone (the wait thread ends the entry in that case) or not
@@ -115,36 +291,39 @@ fn release_session(mut session: Session) {
     drop(session);
 }
 
-/// Ends the spawn identified by `flow`, from whichever thread notices first:
-/// removes its map entry (only if the id still belongs to this spawn), releases
-/// it, and reports `PtyExit` for it. A spawn whose entry is already gone was
-/// killed or replaced on purpose, so it emits nothing. Idempotent.
-fn end_session(
-    sessions: &Sessions,
-    terminal_id: &str,
-    flow: &Arc<FlowControl>,
-    sink: &dyn EventSink,
-    exit_code: i32,
-) {
+/// Ends the spawn identified by `output`, from whichever thread notices
+/// first: removes its map entry (only if the id still belongs to this spawn),
+/// releases it, and reports `PtyExit` to the client that shows it. A spawn
+/// whose entry is already gone was killed or replaced on purpose, so it
+/// reports nothing. Idempotent.
+fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exit_code: i32) {
+    // Whom to tell, looked up before the entry goes: the reader takes the
+    // client off when the stream ends, and it knows that the session ended
+    // only by finding the entry gone.
+    let attached = output.attached();
     let removed = {
         let mut sessions = sessions.lock().unwrap();
         match sessions.live.get(terminal_id) {
-            Some(session) if Arc::ptr_eq(&session.flow, flow) => sessions.live.remove(terminal_id),
+            Some(session) if Arc::ptr_eq(&session.output, output) => {
+                sessions.live.remove(terminal_id)
+            }
             _ => None,
         }
     };
-    flow.close();
+    output.close();
     let Some(session) = removed else {
         return;
     };
     // The session is out of the map: its owner comes from the session itself.
-    let owner = session.owner.clone();
+    let owner = session.owner.label.clone();
     release_session(session);
-    sink.emit(Event::PtyExit {
-        terminal_id: terminal_id.to_string(),
-        owner,
-        exit_code,
-    });
+    if let Some(attached) = attached {
+        attached.sink.emit(Event::PtyExit {
+            terminal_id: terminal_id.to_string(),
+            owner,
+            exit_code,
+        });
+    }
 }
 
 pub(crate) struct PtyState {
@@ -154,12 +333,19 @@ pub(crate) struct PtyState {
     releases: Mutex<Vec<std::thread::JoinHandle<()>>>,
 }
 
-impl PtyState {
-    pub fn new() -> Self {
+impl Default for PtyState {
+    fn default() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(SessionTable::default())),
             releases: Mutex::new(Vec::new()),
         }
+    }
+}
+
+impl PtyState {
+    #[cfg(test)]
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Ends every shell, so no shell (or, on Windows, grandchild) is left
@@ -183,8 +369,16 @@ impl PtyState {
     /// of their own: closing a ConPTY can block until its output is drained,
     /// and the other owners must not wait for that. The release never looks
     /// ids up again, so a reopened workspace cannot lose its new shells.
-    pub fn release_owner(&self, label: &str) {
-        let removed = self.sessions.lock().unwrap().remove_owner(label);
+    pub fn release_owner(&self, client: u64, label: &str) {
+        let owner = Owner {
+            client,
+            label: label.to_string(),
+        };
+        let removed = self.sessions.lock().unwrap().remove_owner(&owner);
+        self.release_apart(removed);
+    }
+
+    fn release_apart(&self, removed: Vec<Session>) {
         if removed.is_empty() {
             return;
         }
@@ -198,13 +392,111 @@ impl PtyState {
         releases.push(release);
     }
 
-    /// Whom the terminal belongs to, as its spawn named it.
+    /// The client is gone. Its sessions that go on without one are left
+    /// running with nobody attached; the others end with it.
+    pub fn client_gone(&self, client: u64) {
+        let (ended, left): (Vec<Session>, Vec<Arc<Output>>) = {
+            let mut sessions = self.sessions.lock().unwrap();
+            let ended = sessions
+                .live
+                .extract_if(|_, session| session.owner.client == client && !session.survives_client)
+                .map(|(_, session)| session)
+                .collect();
+            let left = sessions
+                .live
+                .values()
+                .filter(|session| session.owner.client == client)
+                .map(|session| session.output.clone())
+                .collect();
+            (ended, left)
+        };
+        for output in left {
+            // Nobody is there to be told: the reader just stops sending.
+            if let Some(attached) = output
+                .attached()
+                .filter(|attached| attached.client == client)
+            {
+                attached.flow.close();
+                output.forget(&attached);
+            }
+        }
+        self.release_apart(ended);
+    }
+
+    /// The name the terminal's owner goes by, as its client gave it.
     pub fn owner_of(&self, terminal_id: &str) -> Option<String> {
         let sessions = self.sessions.lock().unwrap();
         sessions
             .live
             .get(terminal_id)
-            .map(|session| session.owner.clone())
+            .map(|session| session.owner.label.clone())
+    }
+
+    /// The sessions that run, for a client that wants to attach to one.
+    pub fn list(&self) -> Vec<SessionInfo> {
+        let sessions = self.sessions.lock().unwrap();
+        let mut list: Vec<SessionInfo> = sessions
+            .live
+            .iter()
+            .map(|(terminal_id, session)| SessionInfo {
+                terminal_id: terminal_id.clone(),
+                profile: session.profile.clone(),
+                cols: session.cols,
+                rows: session.rows,
+                attached: session.output.attached().is_some(),
+            })
+            .collect();
+        list.sort_by(|a, b| a.terminal_id.cmp(&b.terminal_id));
+        list
+    }
+
+    /// Puts `client` on a running session: it gets what was kept of the
+    /// output under `stream`, then what comes. A client that showed the
+    /// session before is told that it was taken over.
+    pub fn attach(
+        &self,
+        client: &Client,
+        terminal_id: &str,
+        owner: String,
+        stream: u64,
+    ) -> Result<(), String> {
+        let not_found = || format!("Session not found: {}", terminal_id);
+        let (output, previous_owner) = {
+            let mut sessions = self.sessions.lock().unwrap();
+            let session = sessions.live.get_mut(terminal_id).ok_or_else(not_found)?;
+            let owner = Owner {
+                client: client.id,
+                label: owner,
+            };
+            let previous_owner = std::mem::replace(&mut session.owner, owner);
+            (session.output.clone(), previous_owner)
+        };
+        let attachment = Attachment::new(client, stream, FlowControl::new());
+        let previous = output.attach(attachment).map_err(|_| not_found())?;
+        if let Some(previous) = previous {
+            previous.end();
+            previous.sink.emit(Event::PtyTakenOver {
+                terminal_id: terminal_id.to_string(),
+                owner: previous_owner.label,
+            });
+        }
+        Ok(())
+    }
+
+    /// Takes the client off a session, which goes on without one.
+    pub fn detach(&self, terminal_id: &str) -> Result<(), String> {
+        let output = {
+            let sessions = self.sessions.lock().unwrap();
+            sessions
+                .live
+                .get(terminal_id)
+                .map(|session| session.output.clone())
+                .ok_or_else(|| format!("Session not found: {}", terminal_id))?
+        };
+        if let Some(attached) = output.detach() {
+            attached.end();
+        }
+        Ok(())
     }
 
     pub fn get_shell_process_id(&self, terminal_id: &str) -> Option<u32> {
@@ -239,15 +531,16 @@ pub struct PtySpawnResult {
 }
 
 impl PtyState {
-    /// Starts the shell of `options` in a PTY of its own. Its output goes to
-    /// `sink` under `stream`, its end as `PtyExit`.
+    /// Starts the shell of `options` in a PTY of its own, with `client`
+    /// attached: its output goes there under `stream`, its end as `PtyExit`.
     pub fn spawn(
         &self,
+        client: &Client,
         options: SpawnOptions,
         owner: String,
         stream: u64,
         extra_env: Vec<(String, String)>,
-        sink: Arc<dyn EventSink>,
+        survives_client: bool,
     ) -> Result<PtySpawnResult, String> {
         let state = self;
         let terminal_id = options.name.clone();
@@ -326,14 +619,21 @@ impl PtyState {
 
         let writer = master_writer(&*pair.master)?;
 
-        let flow = Arc::new(FlowControl::new());
+        let output = Output::new(Some(Attachment::new(client, stream, FlowControl::new())));
         let (input_tx, input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
 
         let session = Session {
-            owner,
+            owner: Owner {
+                client: client.id,
+                label: owner,
+            },
+            survives_client,
+            profile: options.profile.clone(),
+            cols: options.cols,
+            rows: options.rows,
             master: pair.master,
             input_tx,
-            flow: flow.clone(),
+            output: output.clone(),
             child_killer: child.clone_killer(),
             #[cfg(windows)]
             _job: job,
@@ -366,17 +666,15 @@ impl PtyState {
             writer,
             input_rx,
             terminal_id.clone(),
-            sink.clone(),
             state.sessions.clone(),
-            flow.clone(),
+            output.clone(),
         );
 
         // Thread that waits for the child process to end
         {
             let terminal_id = terminal_id.clone();
-            let sink = sink.clone();
             let sessions = state.sessions.clone();
-            let flow = flow.clone();
+            let output = output.clone();
             std::thread::spawn(move || {
                 let exit_code = match child.wait() {
                     Ok(status) => status.exit_code() as i32,
@@ -392,26 +690,24 @@ impl PtyState {
                 // The pane goes away with the exit event; this also stops the
                 // reader, even if a grandchild still holds the slave side and
                 // keeps producing output.
-                end_session(&sessions, &terminal_id, &flow, &*sink, exit_code);
+                end_session(&sessions, &terminal_id, &output, exit_code);
             });
         }
 
         // Thread that reads PTY output
         {
             let terminal_id = terminal_id.clone();
-            let sink = sink.clone();
             let sessions = state.sessions.clone();
-            let flow = flow.clone();
             std::thread::spawn(move || {
-                pump_pty_output(reader, &flow, |frame| {
-                    sink.emit(Event::PtyData { stream, frame })
-                });
-                sink.emit(Event::PtyStreamEnded { stream });
+                pump_pty_output(reader, &output);
 
-                // EOF, read error or a lost receiver: the PTY is unusable. If the
-                // session was killed or replaced instead, the entry is already
-                // gone and this is a no-op.
-                end_session(&sessions, &terminal_id, &flow, &*sink, -1);
+                // EOF or a read error: the PTY is unusable. If the session
+                // was killed or replaced instead, the entry is already gone
+                // and this is a no-op.
+                end_session(&sessions, &terminal_id, &output, -1);
+                if let Some(attached) = output.detach() {
+                    attached.end();
+                }
             });
         }
 
@@ -454,46 +750,35 @@ fn open_pty(rows: u16, cols: u16) -> Result<portable_pty::PtyPair, String> {
         .map_err(|e| format!("Failed to open PTY: {}", e))
 }
 
-/// Reads PTY output and hands it to `deliver` as framed chunks under flow
-/// control, until the PTY ends or `deliver` returns false (the receiver is
-/// gone). Once the flow is closed (kill, exit, respawn) nothing is delivered
+/// Reads PTY output until the PTY ends: keeps it, and sends it to the client
+/// that shows the session, waiting for that client when it is behind. Without
+/// a client nothing waits; the shell runs on and the output is only kept.
+///
+/// Once the output is closed (kill, exit, respawn) nothing is kept or sent
 /// any more, but reading goes on until the PTY ends: a reader that stops
 /// while the pipe is full leaves the shell blocked on its write, and before
 /// Windows 11 24H2 `ClosePseudoConsole` then waits for that pipe forever.
-fn pump_pty_output(
-    mut reader: Box<dyn std::io::Read + Send>,
-    flow: &FlowControl,
-    mut deliver: impl FnMut(Vec<u8>) -> bool,
-) {
+fn pump_pty_output(mut reader: Box<dyn std::io::Read + Send>, output: &Output) {
     // Raw bytes go straight to xterm, whose UTF-8 decoder is stateful
     // across writes; splitting a multi-byte sequence between two reads
     // is fine.
     let mut buf = vec![0u8; READ_BUF_SIZE];
-    let mut seq: u32 = 0;
 
-    'reader: loop {
+    loop {
         let n = match reader.read(&mut buf) {
             Ok(0) | Err(_) => break,
             Ok(n) => n,
         };
-        if flow.is_closed() {
+        if output.is_closed() {
             continue;
         }
-        // Split into pieces under MAX_CHUNK_SIZE: a read can be up to
-        // READ_BUF_SIZE, far past the size that keeps every message on
-        // the webview channel's reliable delivery path (see
-        // MAX_CHUNK_SIZE). xterm's parser is stateful across writes,
-        // so splitting mid-sequence is fine, same as splitting across
-        // reads already was.
-        for sub_chunk in buf[..n].chunks(MAX_CHUNK_SIZE) {
-            if !flow.acquire(seq, sub_chunk.len()) {
-                // Closed while waiting for capacity: drain from here on.
-                continue 'reader;
-            }
-            if !deliver(frame_chunk(seq, sub_chunk)) {
-                break 'reader;
-            }
-            seq = seq.wrapping_add(1);
+        let Some(attached) = output.take_in(&buf[..n]) else {
+            continue;
+        };
+        if !attached.send(&buf[..n], true) {
+            // Detached, taken over, or its client is gone. The piece is
+            // kept, so whoever attaches next gets it.
+            output.forget(&attached);
         }
     }
 }
@@ -537,9 +822,8 @@ fn spawn_input_writer_thread(
     mut writer: Box<dyn Write + Send>,
     input_rx: std::sync::mpsc::Receiver<Vec<u8>>,
     terminal_id: String,
-    sink: Arc<dyn EventSink>,
     sessions: Sessions,
-    flow: Arc<FlowControl>,
+    output: Arc<Output>,
 ) {
     std::thread::spawn(move || {
         while let Ok(data) = input_rx.recv() {
@@ -553,7 +837,7 @@ fn spawn_input_writer_thread(
                 terminal_id,
                 e
             );
-            end_session(&sessions, &terminal_id, &flow, &*sink, -1);
+            end_session(&sessions, &terminal_id, &output, -1);
             break;
         }
     });
@@ -667,6 +951,8 @@ impl PtyState {
                     pixel_height: 0,
                 })
                 .map_err(|e| format!("Failed to resize PTY: {}", e))?;
+            session.cols = cols;
+            session.rows = rows;
 
             Ok(())
         } else {
@@ -695,15 +981,15 @@ impl PtyState {
     /// including `seq`. Acks for sessions that already ended are expected (data
     /// was still in the pipeline) and silently accepted.
     pub fn ack(&self, terminal_id: &str, seq: u32) {
-        let flow = {
+        let output = {
             let sessions = self.sessions.lock().unwrap();
             sessions
                 .live
                 .get(terminal_id)
-                .map(|session| session.flow.clone())
+                .map(|session| session.output.clone())
         };
-        if let Some(flow) = flow {
-            flow.ack_through(seq);
+        if let Some(output) = output {
+            output.ack(seq);
         }
     }
 }
@@ -713,6 +999,52 @@ impl PtyState {
 mod test_support {
     use super::*;
     use std::time::{Duration, Instant};
+
+    struct TakesEverything;
+    impl EventSink for TakesEverything {
+        fn emit(&self, _event: Event) -> bool {
+            true
+        }
+    }
+
+    /// The owner "test" of the one client these tests have.
+    pub fn owner(label: &str) -> Owner {
+        Owner {
+            client: 1,
+            label: label.to_string(),
+        }
+    }
+
+    /// An output with a client attached that takes everything and
+    /// acknowledges nothing.
+    pub fn attached_output(flow: FlowControl) -> Arc<Output> {
+        let client = Client {
+            id: 1,
+            sink: Arc::new(TakesEverything),
+        };
+        Output::new(Some(Attachment::new(&client, 0, flow)))
+    }
+
+    /// Only the stalled reader of the Windows tests is measured.
+    #[cfg(windows)]
+    pub fn in_flight(output: &Output) -> usize {
+        output
+            .attached()
+            .map_or(0, |attached| attached.flow.in_flight())
+    }
+
+    pub fn profile(shell_type: &str) -> ShellProfile {
+        ShellProfile {
+            shell_type: shell_type.to_string(),
+            path: None,
+            args: None,
+            env: None,
+            working_dir: None,
+            enable_shell_integration: None,
+            inject_cogno_cli: None,
+            load_user_rc: None,
+        }
+    }
 
     /// A session, its shell and the thread reading its output.
     pub type TestSession = (
@@ -738,18 +1070,22 @@ mod test_support {
         let child = pair.slave.spawn_command(cmd).unwrap();
         drop(pair.slave);
 
-        let flow = Arc::new(FlowControl::new());
+        let output = attached_output(FlowControl::new());
         let reader = pair.master.try_clone_reader().unwrap();
         let pump = {
-            let flow = flow.clone();
-            std::thread::spawn(move || pump_pty_output(reader, &flow, |_frame| true))
+            let output = output.clone();
+            std::thread::spawn(move || pump_pty_output(reader, &output))
         };
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
-            owner: "test".to_string(),
+            owner: owner("test"),
+            survives_client: false,
+            profile: profile("Bash"),
+            cols: 80,
+            rows: 24,
             master: pair.master,
             input_tx,
-            flow,
+            output,
             child_killer: child.clone_killer(),
             shell_process_id: child.process_id(),
             shell_type: "Bash".to_string(),
@@ -780,17 +1116,17 @@ mod test_support {
         let child = pair.slave.spawn_command(cmd).unwrap();
         drop(pair.slave);
 
-        let flow = Arc::new(FlowControl::with_watermarks(
+        let output = attached_output(FlowControl::with_watermarks(
             4 * MAX_CHUNK_SIZE,
             MAX_CHUNK_SIZE,
         ));
         let reader = pair.master.try_clone_reader().unwrap();
         let pump = {
-            let flow = flow.clone();
-            std::thread::spawn(move || pump_pty_output(reader, &flow, |_frame| true))
+            let output = output.clone();
+            std::thread::spawn(move || pump_pty_output(reader, &output))
         };
         let started = Instant::now();
-        while flow.in_flight() <= 4 * MAX_CHUNK_SIZE {
+        while in_flight(&output) <= 4 * MAX_CHUNK_SIZE {
             assert!(
                 started.elapsed() < Duration::from_secs(10),
                 "reader never reached the high watermark"
@@ -801,10 +1137,14 @@ mod test_support {
 
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
-            owner: "test".to_string(),
+            owner: owner("test"),
+            survives_client: false,
+            profile: profile("PowerShell"),
+            cols: 80,
+            rows: 24,
             master: pair.master,
             input_tx,
-            flow,
+            output,
             child_killer: child.clone_killer(),
             _job: None,
             shell_process_id: child.process_id(),
@@ -831,7 +1171,7 @@ mod test_support {
 /// A window's sessions: who they belong to, and what its closing takes along.
 #[cfg(test)]
 mod window_tests {
-    use super::test_support::{assert_finishes, live_session};
+    use super::test_support::{assert_finishes, live_session, owner};
     use super::*;
 
     #[test]
@@ -852,18 +1192,18 @@ mod window_tests {
     fn closing_a_window_releases_its_sessions_and_leaves_the_others() {
         let (first, _first_child, first_pump) = live_session();
         let (mut second, _second_child, second_pump) = live_session();
-        second.owner = "other".into();
-        let first_flow = first.flow.clone();
-        let second_flow = second.flow.clone();
+        second.owner = owner("other");
+        let first_output = first.output.clone();
+        let second_output = second.output.clone();
         let state = PtyState::new();
         state.sessions.lock().unwrap().insert("first", first);
         state.sessions.lock().unwrap().insert("second", second);
 
-        state.release_owner("test");
+        state.release_owner(1, "test");
         assert_finishes(first_pump, "first reader");
         let remaining = state.sessions.lock().unwrap().live.contains_key("second");
-        let first_closed = first_flow.is_closed();
-        let second_closed = second_flow.is_closed();
+        let first_closed = first_output.is_closed();
+        let second_closed = second_output.is_closed();
         state.release_all();
         assert_finishes(second_pump, "second reader");
         assert!(remaining);
@@ -875,12 +1215,12 @@ mod window_tests {
     fn a_closed_windows_cleanup_does_not_remove_a_reopened_terminal() {
         let (old, _old_child, old_pump) = live_session();
         let (mut reopened, _new_child, new_pump) = live_session();
-        reopened.owner = "new-window".into();
-        let new_flow = reopened.flow.clone();
+        reopened.owner = owner("new-window");
+        let new_output = reopened.output.clone();
         let state = PtyState::new();
         state.sessions.lock().unwrap().insert("same-id", old);
 
-        state.release_owner("test");
+        state.release_owner(1, "test");
         let emptied = state.sessions.lock().unwrap().live.is_empty();
         let replaced = state.sessions.lock().unwrap().insert("same-id", reopened);
         assert_finishes(old_pump, "old reader");
@@ -890,8 +1230,8 @@ mod window_tests {
             .unwrap()
             .live
             .get("same-id")
-            .is_some_and(|session| Arc::ptr_eq(&session.flow, &new_flow));
-        let still_open = !new_flow.is_closed();
+            .is_some_and(|session| Arc::ptr_eq(&session.output, &new_output));
+        let still_open = !new_output.is_closed();
         state.release_all();
         assert_finishes(new_pump, "reopened reader");
         assert!(emptied);
@@ -904,10 +1244,10 @@ mod window_tests {
     fn a_spawn_that_finishes_after_its_window_closed_is_handed_back() {
         let (late, _late_child, late_pump) = live_session();
         let (mut other, _other_child, other_pump) = live_session();
-        other.owner = "other".into();
+        other.owner = owner("other");
         let state = PtyState::new();
 
-        state.release_owner("test");
+        state.release_owner(1, "test");
         let late = state.sessions.lock().unwrap().insert("t1", late);
         let other = state.sessions.lock().unwrap().insert("t2", other);
         let registered: Vec<String> = state
@@ -996,10 +1336,14 @@ mod unix_tests {
 
         let (input_tx, _input_rx) = std::sync::mpsc::channel::<Vec<u8>>();
         let session = Session {
-            owner: "test".to_string(),
+            owner: super::test_support::owner("test"),
+            survives_client: false,
+            profile: super::test_support::profile("Bash"),
+            cols: 80,
+            rows: 24,
             master: pair.master,
             input_tx,
-            flow: Arc::new(FlowControl::new()),
+            output: Output::new(None),
             child_killer: child.clone_killer(),
             shell_process_id: child.process_id(),
             shell_type: "Bash".to_string(),
@@ -1057,5 +1401,56 @@ mod windows_tests {
         let release = std::thread::spawn(move || release_session(session));
         assert_finishes(release, "release_session");
         assert_finishes(pump, "reader thread");
+    }
+}
+
+/// Output and who gets it, without a shell.
+#[cfg(test)]
+mod output_tests {
+    use super::test_support::attached_output;
+    use super::*;
+
+    #[test]
+    fn output_nobody_shows_is_kept_without_waiting_for_anyone() {
+        let output = Output::new(None);
+        // Far more than any client may be behind, ending in a line to find.
+        let mut written = vec![b'x'; 5 * 1024 * 1024];
+        written.extend_from_slice(b"\nthe end\n");
+
+        pump_pty_output(Box::new(std::io::Cursor::new(written)), &output);
+
+        let kept = output.state.lock().unwrap().kept.replay();
+        assert!(kept.ends_with(b"the end\n"));
+        assert!(kept.len() <= 1024 * 1024);
+    }
+
+    #[test]
+    fn a_client_that_attaches_gets_what_was_kept_before_what_comes() {
+        let output = attached_output(FlowControl::new());
+        pump_pty_output(
+            Box::new(std::io::Cursor::new(b"before\n".to_vec())),
+            &output,
+        );
+        let first = output.detach().unwrap();
+        // The first client got it live, as chunk 0.
+        assert_eq!(first.next_seq.load(Ordering::Relaxed), 1);
+
+        let second = attached_output(FlowControl::new()).detach().unwrap();
+        let previous = output.attach(second.clone()).unwrap();
+        assert!(previous.is_none());
+        // The replay took the new client's first sequence number; what the
+        // shell writes now follows it.
+        assert_eq!(second.next_seq.load(Ordering::Relaxed), 1);
+        pump_pty_output(Box::new(std::io::Cursor::new(b"after\n".to_vec())), &output);
+        assert_eq!(second.next_seq.load(Ordering::Relaxed), 2);
+    }
+
+    #[test]
+    fn a_session_that_has_ended_takes_no_client() {
+        let output = Output::new(None);
+        output.close();
+
+        let late = attached_output(FlowControl::new()).detach().unwrap();
+        assert!(output.attach(late).is_err());
     }
 }

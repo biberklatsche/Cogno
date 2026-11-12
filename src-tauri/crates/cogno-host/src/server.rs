@@ -4,7 +4,7 @@
 use std::io::{self, Read, Write};
 use std::sync::{Arc, Mutex};
 
-use crate::host::{EventSink, Host};
+use crate::host::{Client, EventSink, Host};
 use crate::protocol::Event;
 use crate::wire::{self, HostMessage, RequestEnvelope};
 
@@ -27,7 +27,12 @@ impl<W: Write + Send + 'static> EventSink for Output<W> {
 pub fn serve<W: Write + Send + 'static>(mut input: impl Read, output: W) -> io::Result<()> {
     let output = Arc::new(Output(Mutex::new(output)));
     wire::write_hello(&mut *output.0.lock().unwrap())?;
-    let host = Arc::new(Host::new(output.clone()));
+    let host = Arc::new(Host::new());
+    // The one client this server has: whoever is at the other end.
+    let client = Client {
+        id: 1,
+        sink: output.clone(),
+    };
 
     let served = loop {
         let RequestEnvelope { id, request } = match wire::read_request(&mut input) {
@@ -39,13 +44,14 @@ pub fn serve<W: Write + Send + 'static>(mut input: impl Read, output: W) -> io::
             // Off the reading thread: the other sessions' input and
             // acknowledgements must not wait for it.
             let host = host.clone();
+            let client = client.clone();
             let output = output.clone();
             std::thread::spawn(move || {
-                let reply = host.handle(request);
+                let reply = host.handle(&client, request);
                 output.send(HostMessage::Reply { id, reply });
             });
         } else {
-            let reply = host.handle(request);
+            let reply = host.handle(&client, request);
             output.send(HostMessage::Reply { id, reply });
         }
     };

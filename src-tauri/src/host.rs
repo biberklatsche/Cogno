@@ -4,7 +4,7 @@
 //! host reports goes back to the webview from here.
 
 use cogno_host::protocol::{Event, PtySpawnResult, Reply, Request, Response, SpawnOptions};
-use cogno_host::{EventSink, Host};
+use cogno_host::{Client, EventSink, Host};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::process::Command;
@@ -95,6 +95,9 @@ impl EventSink for WebviewSink {
                 self.remote_terminals.lock().unwrap().remove(&terminal_id);
                 emit_exit(&self.app, &owner, &terminal_id, exit_code)
             }
+            // Nothing of this app attaches to a running session yet, so
+            // nothing of it can be taken over.
+            Event::PtyTakenOver { .. } => true,
         }
     }
 }
@@ -102,6 +105,8 @@ impl EventSink for WebviewSink {
 struct Hosts {
     app: AppHandle,
     local: Host,
+    /// This app, as the embedded host knows it.
+    app_client: Client,
     sink: Arc<WebviewSink>,
     streams: Arc<Streams>,
     /// By the name the config gives the host.
@@ -167,10 +172,10 @@ impl Hosts {
             return self.terminal_processes();
         }
         let Some(terminal_id) = request.terminal_id().map(str::to_string) else {
-            return self.local.handle(request);
+            return self.local.handle(&self.app_client, request);
         };
         let Some(remote) = self.remote_of(&terminal_id) else {
-            return self.local.handle(request);
+            return self.local.handle(&self.app_client, request);
         };
         let killed = matches!(request, Request::PtyKill { .. });
         let reply = remote.request(request);
@@ -182,8 +187,9 @@ impl Hosts {
 
     /// The processes under every terminal's shell, on every machine.
     fn terminal_processes(&self) -> Reply {
-        let Response::TerminalProcesses(mut processes) =
-            self.local.handle(Request::TerminalProcesses)?
+        let Response::TerminalProcesses(mut processes) = self
+            .local
+            .handle(&self.app_client, Request::TerminalProcesses)?
         else {
             return Err("The host answered something else".to_string());
         };
@@ -214,7 +220,11 @@ impl HostState {
         });
         Self(Arc::new(Hosts {
             app,
-            local: Host::new(sink.clone()),
+            local: Host::new(),
+            app_client: Client {
+                id: 0,
+                sink: sink.clone(),
+            },
             sink,
             streams,
             remotes: Mutex::new(HashMap::new()),
@@ -269,9 +279,11 @@ impl HostState {
                 owner: window.clone(),
                 stream,
                 env,
+                // Until a setting says otherwise, a shell ends with Cogno.
+                survives_client: false,
             };
             let Some(name) = host else {
-                return hosts.local.handle(request);
+                return hosts.local.handle(&hosts.app_client, request);
             };
             let remote = hosts.remote(&name)?;
             // Known before the request goes out: the shell's first output
@@ -312,7 +324,7 @@ impl HostState {
     pub async fn request_on(&self, host: Option<String>, request: Request) -> Reply {
         let hosts = self.0.clone();
         tauri::async_runtime::spawn_blocking(move || match host {
-            None => hosts.local.handle(request),
+            None => hosts.local.handle(&hosts.app_client, request),
             Some(name) => hosts.remote(&name)?.request(request),
         })
         .await
@@ -325,7 +337,7 @@ impl HostState {
     pub fn handle(&self, request: Request) -> Reply {
         match request.terminal_id().and_then(|id| self.0.remote_of(id)) {
             Some(remote) => remote.post(request).map(|_| Response::Done),
-            None => self.0.local.handle(request),
+            None => self.0.local.handle(&self.0.app_client, request),
         }
     }
 
@@ -348,7 +360,7 @@ impl HostState {
             owner: label.to_string(),
         };
         // The embedded host releases on a thread of its own.
-        let _ = self.0.local.handle(release());
+        let _ = self.0.local.handle(&self.0.app_client, release());
         let ended: Vec<RemoteTerminal> = self
             .0
             .remote_terminals

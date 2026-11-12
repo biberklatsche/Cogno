@@ -980,16 +980,52 @@ Config, HTTP-Server, Askpass, Command-Runner, Updater.
 
 Der Host hat genau einen Eingang und einen Ausgang (`protocol.rs`):
 
-- **`Host::handle(Request) -> Reply`** beantwortet eine Anfrage (PTY starten,
-  schreiben, Größe, beenden, quittieren; Prozessbaum; Shells auflisten). Die
-  Tauri-Kommandos der App sind nur noch Hüllen, die eine Anfrage bauen.
-- **`EventSink`** nimmt, was der Host meldet: Ausgabe einer Sitzung unter dem
-  Strom, den der Aufrufer beim Start genannt hat, und ihr Ende. Die App
-  reicht die Ausgabe an den Webview-Channel dieses Stroms und das Ende per
-  `emit_to` an das Fenster (`src-tauri/src/host.rs`).
+- **`Host::handle(client, Request) -> Reply`** beantwortet eine Anfrage (PTY
+  starten, schreiben, Größe, beenden, quittieren; andocken, trennen,
+  Sitzungen auflisten; Prozessbaum; Shells auflisten). Die Tauri-Kommandos
+  der App sind nur noch Hüllen, die eine Anfrage bauen.
+- **Ein `Client`** ist, wer mit dem Host spricht: eine Verbindung oder die
+  App, die ihn einbettet. Er hat eine ID und einen **`EventSink`**, der nimmt,
+  was der Host für ihn meldet: Ausgabe einer Sitzung unter dem Strom, den er
+  beim Start oder Andocken genannt hat, ihr Ende, und dass ein anderer sie
+  übernommen hat. Die App reicht die Ausgabe an den Webview-Channel dieses
+  Stroms und das Ende per `emit_to` an das Fenster (`src-tauri/src/host.rs`).
 
 Auch lokal läuft damit jeder Aufruf über Anfrage und Ereignis — derselbe Weg,
 den ein Host auf einem anderen Rechner hat.
+
+**Eine Sitzung lebt unabhängig davon, wer sie zeigt.** Im Host ist eine
+Sitzung eine Shell mit ihrer PTY; ein Client ist höchstens *angedockt*.
+Daraus folgt:
+
+- **Ausgabe geht immer in den Behalt** (`kept_output.rs`): das Ende des
+  Byte-Stroms, wie die Shell ihn schrieb, begrenzt auf die Menge, um die ein
+  Client ohnehin zurückliegen darf, gekürzt an einer Zeilengrenze. Ist ein
+  Client angedockt, geht sie zusätzlich an ihn, unter Flusskontrolle. Ohne
+  Client wartet nichts: die Shell läuft weiter.
+- **Andocken** (`PtyAttach`) spielt zuerst den Behalt ab, dann kommt, was die
+  Shell schreibt. Der Host ist dabei kein Terminal-Emulator. Er liest im
+  Strom nur die Sequenzen mit, die einen Modus schalten (Alt-Screen, Maus,
+  Bracketed Paste, Cursor, Tastaturmodi), und nennt die eingeschalteten nach
+  dem Abspielen, auch wenn ihre Einschalt-Sequenz längst aus dem Behalt
+  gefallen ist. Prompt-Marker, cwd und Kommando-Grenzen entstehen im Frontend
+  beim Abspielen von selbst neu; das Sitzungsmodell bleibt dort.
+- **Der Alt-Screen wird nicht behalten.** Was ein Vollbildprogramm gezeichnet
+  hat, galt der alten Größe, und ein Terminal führt davon auch keinen
+  Verlauf. Ein andockender Client wird nur in den Alt-Screen gesetzt; das
+  Programm zeichnet neu, wenn er seine Größe setzt.
+- **Ein Client je Sitzung.** Dockt ein zweiter an, endet der Strom des ersten
+  und er bekommt `PtyTakenOver`. `PtyDetach` hängt den Client ab, die Sitzung
+  läuft weiter.
+- **Was beim Verschwinden eines Clients geschieht, entscheidet der Start**
+  (`survives_client`): Die Sitzung läuft ohne Client weiter, oder sie endet
+  mit ihm. Die App startet heute alles mit „endet mit dem Client", wie es
+  vor diesem Schritt immer war.
+
+Bekannte Grenzen: Programme, die ohne Alt-Screen über mehrere Zeilen
+zeichnen, sehen nach dem Andocken kurz unordentlich aus, bis sie neu malen;
+unter Windows liefert ConPTY sein eigenes, für die alte Breite umbrochenes
+Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
 
 **Der Host hinter einem Datenstrom.** `cogno server --stdio` startet kein
 Fenster, sondern nur den Host hinter stdin und stdout (`server.rs`,
@@ -1077,7 +1113,9 @@ Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
 - **Den Besitzer einer Sitzung.** Für den Host ist er ein Name ohne
   Bedeutung; die App nennt das Fenster. Er steht an der Sitzung selbst, damit
   Spawn und Aufräumen eines Besitzers unter einem Lock entscheiden (2.6,
-  Entscheidung 3 und 4). `ReleaseOwner` beendet alle Sitzungen eines Besitzers.
+  Entscheidung 3 und 4). `ReleaseOwner` beendet alle Sitzungen eines
+  Besitzers. Der Name gilt je Client: zwei Apps, deren Fenster beide `main`
+  heißen, sind zwei Besitzer.
 - **`COGNO_PORT` und `COGNO_TOKEN`.** Der HTTP-Server gehört der App; sie
   reicht beide als zusätzliche Umgebung in den Spawn. Der Host setzt sie nach
   der Umgebung des Profils, ein Profil überschreibt sie also nicht.

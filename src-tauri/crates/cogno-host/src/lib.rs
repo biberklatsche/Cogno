@@ -7,6 +7,7 @@ mod environment_builder;
 mod flow_control;
 mod host;
 pub mod identity;
+mod kept_output;
 mod line_editor;
 pub mod login_environment;
 #[cfg(windows)]
@@ -20,5 +21,5 @@ mod shell_spawner;
 mod shells;
 pub mod wire;
 
-pub use host::{EventSink, Host};
+pub use host::{Client, EventSink, Host};
 pub use server::serve;

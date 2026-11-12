@@ -153,6 +153,7 @@ fn waiting_shell(terminal_id: &str, stream: u64) -> Request {
         owner: "window-1".to_string(),
         stream,
         env: Vec::new(),
+        survives_client: false,
     }
 }
 
