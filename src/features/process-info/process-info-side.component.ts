@@ -197,7 +197,6 @@ export type ProcessTreeNode = {
       align-items: center;
       gap: 6px;
       min-height: 24px;
-      border-radius: 4px;
     }
 
     /* A process's line fills what the tree leaves next to its arrow. */

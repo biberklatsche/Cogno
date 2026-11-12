@@ -6,12 +6,7 @@ import {
   RemoteShell,
   RemoteShellsPort,
 } from "@cogno/core/api/remote-shells-port";
-
-/** What is known of the shells of one machine. */
-export type MachineShells =
-  | { readonly status: "loading" }
-  | { readonly status: "loaded"; readonly shells: readonly RemoteShell[] }
-  | { readonly status: "failed"; readonly reason: string };
+import { HostShells } from "./remote-shell-tree";
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -26,12 +21,17 @@ function messageOf(error: unknown): string {
 @Injectable({ providedIn: "root" })
 export class RemotePanelService {
   private readonly hostsSignal = signal<readonly RemoteHost[]>([]);
-  private readonly shellsSignal = signal<ReadonlyMap<string, MachineShells>>(new Map());
+  private readonly shellsSignal = signal<ReadonlyMap<string, HostShells>>(new Map());
+  /**
+   * The newest question to each host. An answer to an older one - asked
+   * before the panel closed, or before a shell was shown - is no news.
+   */
+  private readonly questions = new Map<string, number>();
   private readonly failureSignal = signal<string | undefined>(undefined);
   private opened = false;
 
   readonly hosts = this.hostsSignal.asReadonly();
-  /** The shells by machine name. */
+  /** The shells by host name. */
   readonly shells = this.shellsSignal.asReadonly();
   /** Why the last thing the user asked for did not work. */
   readonly failure = this.failureSignal.asReadonly();
@@ -57,20 +57,22 @@ export class RemotePanelService {
     this.failureSignal.set(undefined);
   }
 
-  /** Asks every connected machine what runs there now. */
+  /** Asks every connected host what runs there now. */
   refresh(): void {
+    this.failureSignal.set(undefined);
     for (const host of this.hosts()) {
       if (host.connection === "connected") void this.load(host.name);
     }
   }
 
-  connect(name: string): void {
+  connect(host: string): void {
+    this.failureSignal.set(undefined);
     // How it fails shows on the host itself.
-    this.port.connect(name).catch(() => undefined);
+    this.port.connect(host).catch(() => undefined);
   }
 
-  disconnect(name: string): Promise<void> {
-    return this.attempt(() => this.port.disconnect(name));
+  disconnect(host: string): Promise<void> {
+    return this.attempt(() => this.port.disconnect(host));
   }
 
   /** Writes a machine to the config; resolves with why not, if it did not. */
@@ -83,18 +85,18 @@ export class RemotePanelService {
     }
   }
 
-  removeHost(name: string): Promise<void> {
-    return this.attempt(() => this.port.removeHost(name));
+  removeHost(host: string): Promise<void> {
+    return this.attempt(() => this.port.removeHost(host));
   }
 
   /** Shows the shell in this window. */
   show(host: string, shell: RemoteShell): Promise<void> {
     return this.attempt(async () => {
-      await this.port.open(host, shell.terminalId);
+      await this.port.show(host, shell.terminalId);
       this.patch(host, (shells) =>
         shells.map((other) =>
           other.terminalId === shell.terminalId
-            ? { ...other, shown: true, shownHere: true, shownBy: undefined }
+            ? { ...other, shown: "here", shownBy: undefined }
             : other,
         ),
       );
@@ -124,15 +126,25 @@ export class RemotePanelService {
   }
 
   private async load(host: string): Promise<void> {
+    const question = this.ask(host);
     if (!this.shells().has(host)) this.set(host, { status: "loading" });
-    let loaded: MachineShells;
+    let loaded: HostShells;
     try {
       loaded = { status: "loaded", shells: await this.port.shells(host) };
     } catch (error) {
       loaded = { status: "failed", reason: messageOf(error) };
     }
-    // Closed or hung up in the meantime: nobody waits for the answer.
-    if (this.shells().has(host)) this.set(host, loaded);
+    // Closed, hung up or asked again in the meantime: nobody waits for it.
+    if (this.questions.get(host) === question && this.shells().has(host)) {
+      this.set(host, loaded);
+    }
+  }
+
+  /** A new question to `host`; whatever it was asked before is no news any more. */
+  private ask(host: string): number {
+    const question = (this.questions.get(host) ?? 0) + 1;
+    this.questions.set(host, question);
+    return question;
   }
 
   private patch(
@@ -140,12 +152,14 @@ export class RemotePanelService {
     change: (shells: readonly RemoteShell[]) => readonly RemoteShell[],
   ): void {
     const known = this.shells().get(host);
-    if (known?.status === "loaded")
-      this.set(host, { status: "loaded", shells: change(known.shells) });
+    if (known?.status !== "loaded") return;
+    // An answer still on its way was given before this change.
+    this.ask(host);
+    this.set(host, { status: "loaded", shells: change(known.shells) });
   }
 
-  private set(key: string, shells: MachineShells): void {
-    this.shellsSignal.update((known) => new Map(known).set(key, shells));
+  private set(host: string, shells: HostShells): void {
+    this.shellsSignal.update((known) => new Map(known).set(host, shells));
   }
 
   private async attempt(action: () => Promise<void>): Promise<void> {

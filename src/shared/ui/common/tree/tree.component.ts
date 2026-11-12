@@ -13,8 +13,6 @@ import { IconComponent } from "../../icons/icon/icon.component";
 /** What a row's template gets besides the node itself. */
 export type TreeRowContext<T> = {
   readonly $implicit: T;
-  /** How deep the node sits; the roots are at 0. */
-  readonly level: number;
   /** Whether what is under the node is shown. */
   readonly open: boolean;
   /** Folds the node away or opens it: for a row that toggles on its name. */
@@ -38,6 +36,9 @@ export class TreeDetailDirective {}
  * Inputs and queries are decorators, not signals: the component is rendered
  * in tests without the compiler that signal inputs need.
  *
+ * It is a list that folds, not an ARIA tree: each line keeps its own buttons
+ * in the tab order, and the arrow says whether its branch is open.
+ *
  * Every branch is open at first. A node keeps its state by its key, so the
  * tree can be rebuilt from new data without folding or opening anything.
  */
@@ -52,17 +53,15 @@ export class TreeDetailDirective {}
     ></ng-container>
 
     <ng-template #branch let-siblings let-level="level">
-      <ul class="tree" [class.nested]="level > 0" [attr.role]="level === 0 ? 'tree' : 'group'">
+      <ul class="tree" [class.nested]="level > 0">
         @for (node of siblings; track keyOf(node)) {
-          <li
-            role="treeitem"
-            [attr.aria-expanded]="hasChildren(node) ? isOpen(node) : null"
-          >
+          <li>
             <div class="tree-row">
               @if (hasChildren(node)) {
                 <button
                   type="button"
                   class="tree-toggle"
+                  [attr.aria-expanded]="isOpen(node)"
                   [attr.aria-label]="isOpen(node) ? 'Collapse' : 'Expand'"
                   (click)="toggle(node)"
                 >
@@ -72,13 +71,13 @@ export class TreeDetailDirective {}
                 <span class="tree-toggle"></span>
               }
               <ng-container
-                *ngTemplateOutlet="rowTemplate ?? null; context: contextOf(node, level)"
+                *ngTemplateOutlet="rowTemplate ?? null; context: contextOf(node)"
               ></ng-container>
             </div>
             @if (detailTemplate; as detail) {
               <div class="tree-detail">
                 <ng-container
-                  *ngTemplateOutlet="detail; context: contextOf(node, level)"
+                  *ngTemplateOutlet="detail; context: contextOf(node)"
                 ></ng-container>
               </div>
             }
@@ -188,10 +187,9 @@ export class TreeComponent<T> {
     });
   }
 
-  protected contextOf(node: T, level: number): TreeRowContext<T> {
+  protected contextOf(node: T): TreeRowContext<T> {
     return {
       $implicit: node,
-      level,
       open: this.isOpen(node),
       toggle: () => this.toggle(node),
     };

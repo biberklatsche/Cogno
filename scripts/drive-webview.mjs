@@ -6,7 +6,8 @@
 // macOS and Linux do not. Start the app with the port open (it listens on
 // localhost only):
 //
-//   WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222 pnpm dev
+//   PowerShell:  $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9222"; pnpm dev
+//   Git Bash:    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222 pnpm dev
 //
 //   node scripts/drive-webview.mjs shot <file.png>
 //   node scripts/drive-webview.mjs eval "<javascript>"
@@ -136,7 +137,7 @@ switch (command) {
         ? { key: name, code: name, windowsVirtualKeyCode: named[name] }
         : {
             key: name.toLowerCase(),
-            code: `Key${name.toUpperCase()}`,
+            code: /^[0-9]$/.test(name) ? `Digit${name}` : `Key${name.toUpperCase()}`,
             windowsVirtualKeyCode: name.toUpperCase().charCodeAt(0),
           };
     await send("Input.dispatchKeyEvent", { type: "keyDown", modifiers, ...key });

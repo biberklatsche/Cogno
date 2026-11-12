@@ -13,8 +13,8 @@ type Node = { name: string; children?: Node[] };
   imports: [TreeComponent, TreeRowDirective, TreeDetailDirective],
   template: `
     <app-tree [nodes]="nodes()" [childrenOf]="childrenOf" [keyOf]="keyOf" [expandAll]="expandAll()">
-      <ng-template appTreeRow let-node let-level="level" let-open="open" let-toggle="toggle">
-        <button class="name" [attr.data-level]="level" [attr.data-open]="open" (click)="toggle()">
+      <ng-template appTreeRow let-node let-open="open" let-toggle="toggle">
+        <button class="name" [attr.data-open]="open" (click)="toggle()">
           {{ node.name }}
         </button>
       </ng-template>
@@ -62,12 +62,11 @@ describe("TreeComponent", () => {
 
   it("shows every node at first, each line as the caller draws it", () => {
     expect(names()).toEqual(["src", "app", "main.ts", "README.md"]);
-    expect(rowOf("main.ts").querySelector(".name")?.getAttribute("data-level")).toBe("2");
     expect(element.querySelector(".detail")?.textContent).toBe("3 files");
   });
 
-  it("gives an arrow only to a node that has something under it", () => {
-    expect(arrowOf("src")).not.toBeNull();
+  it("gives an arrow only to a node that has something under it, and says if it is open", () => {
+    expect(arrowOf("src")?.getAttribute("aria-expanded")).toBe("true");
     expect(arrowOf("README.md")).toBeNull();
     expect(arrowOf("main.ts")).toBeNull();
   });

@@ -37,9 +37,8 @@ function toRemoteShell(session: RunningSession): RemoteShell {
     tab: session.label.tab ?? undefined,
     title: session.label.title ?? undefined,
     directory: session.label.directory ?? undefined,
-    shown: session.shown,
-    shownHere: session.shownHere,
-    shownBy: session.shownBy ?? undefined,
+    shown: !session.shown ? "nowhere" : session.shownHere ? "here" : "elsewhere",
+    shownBy: (session.shown && !session.shownHere && session.shownBy) || undefined,
   };
 }
 
@@ -104,25 +103,25 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     }
   }
 
-  async removeHost(name: string): Promise<void> {
-    const keys = hostKeys(name);
+  async removeHost(host: string): Promise<void> {
+    const keys = hostKeys(host);
     await this.configService.update({ [keys.destination]: undefined, [keys.command]: undefined });
-    await this.remoteHosts.disconnect(name);
+    await this.remoteHosts.disconnect(host);
   }
 
-  async connect(name: string): Promise<void> {
-    await this.remoteHosts.connect(name);
+  async connect(host: string): Promise<void> {
+    await this.remoteHosts.connect(host);
   }
 
-  disconnect(name: string): Promise<void> {
-    return this.remoteHosts.disconnect(name);
+  disconnect(host: string): Promise<void> {
+    return this.remoteHosts.disconnect(host);
   }
 
   async shells(host: string): Promise<readonly RemoteShell[]> {
     return (await this.hosts.sessions(host)).map(toRemoteShell);
   }
 
-  async open(host: string, terminalId: TerminalId): Promise<void> {
+  async show(host: string, terminalId: TerminalId): Promise<void> {
     if (this.sessions.get(terminalId)?.host.runtime.status === "takenOver") {
       this.bus.publish({ type: "RetakeTerminal", payload: terminalId });
       return;

@@ -1,10 +1,36 @@
 import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import { describe, expect, it } from "vitest";
-import { MachineShells } from "./remote-panel.service";
-import { groupShells, machineNodes, RemoteTreeNode, shellName } from "./remote-shell-tree";
+import { HostShells, hostNodes, RemoteTreeNode, shellName } from "./remote-shell-tree";
 
 function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): RemoteShell {
-  return { terminalId, shown: true, shownHere: false, ...overrides };
+  return { terminalId, shown: "elsewhere", ...overrides };
+}
+
+function host(name: string, connection: RemoteHost["connection"], failure?: string): RemoteHost {
+  return { name, destination: `lars@${name}`, connection, failure };
+}
+
+/** The tree as nested names, to read a test by. */
+function outline(nodes: readonly RemoteTreeNode[]): unknown[] {
+  return nodes.map((node) => {
+    const name =
+      node.kind === "host"
+        ? node.host.name
+        : node.kind === "shell"
+          ? node.shell.terminalId
+          : node.kind === "status"
+            ? `(${node.text})`
+            : node.name;
+    return node.children.length > 0 ? [name, outline(node.children)] : name;
+  });
+}
+
+/** The tree of one connected host with these shells. */
+function treeOf(...shells: RemoteShell[]): RemoteTreeNode[] {
+  return hostNodes(
+    [host("office", "connected")],
+    new Map<string, HostShells>([["office", { status: "loaded", shells }]]),
+  );
 }
 
 describe("shellName", () => {
@@ -17,60 +43,9 @@ describe("shellName", () => {
   });
 });
 
-describe("groupShells", () => {
-  it("sorts shells into workspace and tab, by name", () => {
-    const groups = groupShells([
-      shell("t3", { workspace: "Site", tab: "dev", title: "pnpm" }),
-      shell("t1", { workspace: "Cogno", tab: "build", title: "cargo" }),
-      shell("t2", { workspace: "Cogno", tab: "build", title: "bash" }),
-      shell("t4", { workspace: "Cogno", tab: "agent", title: "claude" }),
-    ]);
-
-    expect(groups.map((group) => group.name)).toEqual(["Cogno", "Site"]);
-    expect(groups[0]?.tabs.map((tab) => tab.name)).toEqual(["agent", "build"]);
-    expect(groups[0]?.tabs[1]?.shells.map((each) => each.terminalId)).toEqual(["t2", "t1"]);
-  });
-
-  it("keeps shells that said no workspace together", () => {
-    const groups = groupShells([shell("t1"), shell("t2", { workspace: "Cogno" })]);
-
-    expect(groups.map((group) => group.name)).toEqual(["Cogno", "No workspace"]);
-  });
-
-  it("leaves a shell in its workspace that nothing shows right now", () => {
-    const groups = groupShells([shell("t1", { workspace: "Cogno", tab: "build", shown: false })]);
-
-    expect(groups).toEqual([
-      {
-        name: "Cogno",
-        tabs: [{ name: "build", shells: [expect.objectContaining({ terminalId: "t1" })] }],
-      },
-    ]);
-  });
-});
-
-describe("machineNodes", () => {
-  function host(name: string, connection: RemoteHost["connection"], failure?: string): RemoteHost {
-    return { name, destination: `lars@${name}`, connection, failure };
-  }
-
-  /** The tree as nested names, to read a test by. */
-  function outline(nodes: readonly RemoteTreeNode[]): unknown[] {
-    return nodes.map((node) => {
-      const name =
-        node.kind === "machine"
-          ? node.host.name
-          : node.kind === "shell"
-            ? node.shell.terminalId
-            : node.kind === "status"
-              ? `(${node.text})`
-              : node.name;
-      return node.children.length > 0 ? [name, outline(node.children)] : name;
-    });
-  }
-
-  it("says how far each machine is before its shells are known", () => {
-    const nodes = machineNodes(
+describe("hostNodes", () => {
+  it("says how far each host is before its shells are known", () => {
+    const nodes = hostNodes(
       [
         host("off", "disconnected"),
         host("dialing", "connecting"),
@@ -79,7 +54,7 @@ describe("machineNodes", () => {
         host("empty", "connected"),
         host("silent", "connected"),
       ],
-      new Map<string, MachineShells>([
+      new Map<string, HostShells>([
         ["asking", { status: "loading" }],
         ["empty", { status: "loaded", shells: [] }],
         ["silent", { status: "failed", reason: "The connection was lost" }],
@@ -98,34 +73,68 @@ describe("machineNodes", () => {
     expect(nodes[3]?.children[0]).toMatchObject({ kind: "status", failure: false });
   });
 
-  it("sets a machine's shells under workspace and tab, and tabless ones under the workspace", () => {
-    const nodes = machineNodes(
-      [host("office", "connected")],
-      new Map<string, MachineShells>([
-        [
-          "office",
-          {
-            status: "loaded",
-            shells: [
-              shell("t1", { workspace: "Cogno", tab: "build" }),
-              shell("t2", { workspace: "Cogno" }),
-            ],
-          },
-        ],
-      ]),
+  it("sorts shells into workspace and tab, each by name", () => {
+    const nodes = treeOf(
+      shell("t3", { workspace: "Site", tab: "dev", title: "pnpm" }),
+      shell("t1", { workspace: "Cogno", tab: "build", title: "cargo" }),
+      shell("t2", { workspace: "Cogno", tab: "build", title: "bash" }),
+      shell("t4", { workspace: "Cogno", tab: "agent", title: "claude" }),
     );
 
-    expect(outline(nodes)).toEqual([["office", [["Cogno", ["t2", ["build", ["t1"]]]]]]]);
-    const shellNode = nodes[0]?.children[0]?.children[0];
-    expect(shellNode).toMatchObject({ kind: "shell", host: "office" });
+    expect(outline(nodes)).toEqual([
+      [
+        "office",
+        [
+          [
+            "Cogno",
+            [
+              ["agent", ["t4"]],
+              ["build", ["t2", "t1"]],
+            ],
+          ],
+          ["Site", [["dev", ["t3"]]]],
+        ],
+      ],
+    ]);
   });
 
-  it("tells every line from every other, also the same names on two machines", () => {
-    const shells: MachineShells = {
+  it("names each shell and knows its host", () => {
+    const shellNode = treeOf(shell("t1", { workspace: "Cogno", title: "vim" }))[0]?.children[0]
+      ?.children[0];
+
+    expect(shellNode).toMatchObject({ kind: "shell", hostName: "office", name: "vim" });
+  });
+
+  it("puts shells without a tab under their workspace, and without one under 'No workspace'", () => {
+    const nodes = treeOf(
+      shell("t1", { workspace: "Cogno", tab: "build" }),
+      shell("t2", { workspace: "Cogno" }),
+      shell("t3"),
+    );
+
+    expect(outline(nodes)).toEqual([
+      [
+        "office",
+        [
+          ["Cogno", ["t2", ["build", ["t1"]]]],
+          ["No workspace", ["t3"]],
+        ],
+      ],
+    ]);
+  });
+
+  it("leaves a shell in its workspace that nothing shows right now", () => {
+    const nodes = treeOf(shell("t1", { workspace: "Cogno", tab: "build", shown: "nowhere" }));
+
+    expect(outline(nodes)).toEqual([["office", [["Cogno", [["build", ["t1"]]]]]]]);
+  });
+
+  it("tells every line from every other, also the same names on two hosts", () => {
+    const shells: HostShells = {
       status: "loaded",
       shells: [shell("t1", { workspace: "Cogno", tab: "Cogno" })],
     };
-    const nodes = machineNodes(
+    const nodes = hostNodes(
       [host("office", "connected"), host("Cogno", "connected")],
       new Map([
         ["office", shells],

@@ -152,8 +152,7 @@ describe("RemoteShellsAdapterService", () => {
         tab: "build",
         title: undefined,
         directory: "C:\\dev",
-        shown: true,
-        shownHere: false,
+        shown: "elsewhere",
         shownBy: "lars-laptop",
       },
     ]);
@@ -162,7 +161,7 @@ describe("RemoteShellsAdapterService", () => {
 
   describe("showing a shell here", () => {
     it("opens a tab for a shell no pane here shows, once the host said what runs now", async () => {
-      await adapter.open("office", "t1");
+      await adapter.show("office", "t1");
 
       expect(refresh).toHaveBeenCalledWith("office");
       expect(refresh.mock.invocationCallOrder[0]).toBeLessThan(
@@ -178,7 +177,7 @@ describe("RemoteShellsAdapterService", () => {
       shownSession.mockReturnValue({ host: { runtime: { status: "running" } } });
       findTab.mockReturnValue("tab-1");
 
-      await adapter.open("office", "t1");
+      await adapter.show("office", "t1");
 
       expect(navigate).toHaveBeenCalledWith("t1");
       expect(publish).not.toHaveBeenCalled();
@@ -188,7 +187,7 @@ describe("RemoteShellsAdapterService", () => {
       shownSession.mockReturnValue({ host: { runtime: { status: "takenOver" } } });
       findTab.mockReturnValue("tab-1");
 
-      await adapter.open("office", "t1");
+      await adapter.show("office", "t1");
 
       expect(publish).toHaveBeenCalledWith({ type: "RetakeTerminal", payload: "t1" });
       expect(navigate).not.toHaveBeenCalled();

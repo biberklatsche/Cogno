@@ -24,11 +24,9 @@ export type RemoteShell = {
   readonly tab?: string;
   readonly title?: string;
   readonly directory?: string;
-  /** Whether a Cogno shows it right now. */
-  readonly shown: boolean;
-  /** Whether that Cogno is this one. */
-  readonly shownHere: boolean;
-  /** What the machine of the Cogno that shows it is called, when it said. */
+  /** Which Cogno shows it right now: none, this one or another. */
+  readonly shown: "nowhere" | "here" | "elsewhere";
+  /** What the machine of the other Cogno is called, when it said; only `elsewhere`. */
   readonly shownBy?: string;
 };
 
@@ -46,12 +44,12 @@ export abstract class RemoteShellsPort {
    */
   abstract saveHost(host: RemoteHostSettings, previousName?: string): Promise<void>;
   /** Takes a machine out of the config and hangs up on it. */
-  abstract removeHost(name: string): Promise<void>;
+  abstract removeHost(host: string): Promise<void>;
 
   /** Settles once the connection stands; how it fails shows on `hosts$`. */
-  abstract connect(name: string): Promise<void>;
+  abstract connect(host: string): Promise<void>;
   /** Hangs up. The machine's shells shown here close; they run on there. */
-  abstract disconnect(name: string): Promise<void>;
+  abstract disconnect(host: string): Promise<void>;
 
   /** The shells that run on `host` now; a machine not connected rejects. */
   abstract shells(host: string): Promise<readonly RemoteShell[]>;
@@ -59,7 +57,7 @@ export abstract class RemoteShellsPort {
    * Shows the shell in this window: goes to the pane that shows it, takes it
    * back from another Cogno, or opens a tab for it.
    */
-  abstract open(host: string, terminalId: TerminalId): Promise<void>;
+  abstract show(host: string, terminalId: TerminalId): Promise<void>;
   /** Ends the shell, whoever shows it. */
   abstract end(host: string, terminalId: TerminalId): Promise<void>;
 }
