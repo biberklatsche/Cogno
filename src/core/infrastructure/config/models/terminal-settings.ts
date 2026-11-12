@@ -10,6 +10,12 @@ const decorationColorSchema = z.strictObject({
 });
 
 export const TerminalSettingsSchema = z.strictObject({
+  keep_shells_running: z
+    .boolean()
+    .optional()
+    .describe(
+      "Keep the shells running when Cogno closes, and go on with them at the next start - on this machine, or from another one through `remote.hosts`. Closing a tab still ends its shell. Applies to shells started after the change.",
+    ),
   webgl: z
     .boolean()
     .optional()

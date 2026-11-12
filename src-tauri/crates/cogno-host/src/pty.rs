@@ -262,16 +262,6 @@ impl SessionTable {
         }
         Registered::Live(self.live.insert(terminal_id.to_string(), session))
     }
-
-    /// Takes the owner's sessions out and marks the owner gone, so a spawn
-    /// from it that has not inserted yet never will.
-    fn remove_owner(&mut self, owner: &Owner) -> Vec<Session> {
-        self.gone_owners.insert(owner.clone());
-        self.live
-            .extract_if(|_, session| session.owner == *owner)
-            .map(|(_, session)| session)
-            .collect()
-    }
 }
 
 type Sessions = Arc<Mutex<SessionTable>>;
@@ -369,13 +359,38 @@ impl PtyState {
     /// of their own: closing a ConPTY can block until its output is drained,
     /// and the other owners must not wait for that. The release never looks
     /// ids up again, so a reopened workspace cannot lose its new shells.
+    ///
+    /// A session that goes on without its client goes on without its owner
+    /// too: it is left running with nobody attached.
     pub fn release_owner(&self, client: u64, label: &str) {
         let owner = Owner {
             client,
             label: label.to_string(),
         };
-        let removed = self.sessions.lock().unwrap().remove_owner(&owner);
-        self.release_apart(removed);
+        let (ended, left) = {
+            let mut sessions = self.sessions.lock().unwrap();
+            // Gone for good: a spawn of it that has not registered yet never
+            // will.
+            sessions.gone_owners.insert(owner.clone());
+            let ended: Vec<Session> = sessions
+                .live
+                .extract_if(|_, session| session.owner == owner && !session.survives_client)
+                .map(|(_, session)| session)
+                .collect();
+            let left: Vec<Arc<Output>> = sessions
+                .live
+                .values()
+                .filter(|session| session.owner == owner)
+                .map(|session| session.output.clone())
+                .collect();
+            (ended, left)
+        };
+        for output in left {
+            if let Some(attached) = output.detach() {
+                attached.end();
+            }
+        }
+        self.release_apart(ended);
     }
 
     fn release_apart(&self, removed: Vec<Session>) {
@@ -479,10 +494,14 @@ impl PtyState {
         let previous = output.attach(attachment).map_err(|_| not_found())?;
         if let Some(previous) = previous {
             previous.end();
-            previous.sink.emit(Event::PtyTakenOver {
-                terminal_id: terminal_id.to_string(),
-                owner: previous_owner.label,
-            });
+            // A client that attaches again (its window was reloaded) has not
+            // lost the session to anybody.
+            if previous.client != client.id {
+                previous.sink.emit(Event::PtyTakenOver {
+                    terminal_id: terminal_id.to_string(),
+                    owner: previous_owner.label,
+                });
+            }
         }
         Ok(())
     }

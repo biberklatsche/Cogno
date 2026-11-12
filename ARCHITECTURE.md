@@ -628,6 +628,7 @@ allocated -> starting -> running          (PTY läuft, Core parst, Modell lebt)
                      \-> failed
 running   -> exited  -> closed            (Prozess endete; Exit-Code im Zustand)
 running   -> closing -> closed            (expliziter Close durch die Workbench)
+running   -> takenOver                    (ein anderes Cogno zeigt die Shell, 2.7)
 ```
 
 **Achse B — Darstellung** (steuert die Workbench über den Host):
@@ -1030,13 +1031,42 @@ Daraus folgt:
   läuft weiter.
 - **Was beim Verschwinden eines Clients geschieht, entscheidet der Start**
   (`survives_client`): Die Sitzung läuft ohne Client weiter, oder sie endet
-  mit ihm. Die App startet heute alles mit „endet mit dem Client", wie es
-  vor diesem Schritt immer war.
+  mit ihm. Dasselbe gilt, wenn ihr Besitzer (das Fenster) freigegeben wird.
+  Die App setzt es aus `terminal.keep_shells_running` (Standard: endet mit
+  dem Client, wie es vor diesem Schritt immer war). Ein ausdrücklich
+  geschlossener Tab beendet seine Shell in jedem Fall.
+- **Der Handshake der Shell-Integration wird eigens behalten.** Er kommt
+  einmal, beim Start der Shell, und ohne ihn kennt ein Client weder Shell noch
+  Fähigkeiten. Ist er aus dem Behalt gefallen, steht er beim Abspielen vorn.
+  Das ist die eine Stelle, an der der Host eine Cogno-Sequenz kennt; ihren
+  Inhalt liest er nicht.
 
 Bekannte Grenzen: Programme, die ohne Alt-Screen über mehrere Zeilen
 zeichnen, sehen nach dem Andocken kurz unordentlich aus, bis sie neu malen;
 unter Windows liefert ConPTY sein eigenes, für die alte Breite umbrochenes
 Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
+
+**Andocken im Frontend.** Die Workbench fragt einen Host, welche Sitzungen
+dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
+(App-Initializer in `bootstrap/`), einen entfernten beim Verbinden.
+
+- Ein Pane, dessen Terminal-ID darunter ist, bekommt eine Sitzung, die
+  **andockt statt startet** (`SessionHost.resume`): mit dem Token, mit dem die
+  Shell gestartet wurde, ohne gespeicherten Scrollback (der Behalt des Hosts
+  ist neuer) und mit dem Shell-Typ der laufenden Shell. Das ist der dritte
+  Weg neben Start und Wiederherstellung (2.5), und er gilt auch nach einem
+  Neuladen der Webview.
+- Laufen auf einem entfernten Host Sitzungen, die hier nichts zeigt, **fragt**
+  das Pane, statt eine weitere Shell zu starten: weiterführen (je Sitzung ein
+  Tab) oder neu starten. Das Layout des anderen Fensters wandert nicht mit.
+- Übernimmt ein anderes Cogno eine Sitzung, wird sie hier `takenOver`
+  (Runtime-Achse, 2.3): die Shell läuft weiter, gehört aber nicht mehr
+  dieser App — ihr Schließen beendet nichts. „Hier zeigen" verwirft die
+  Sitzung und dockt mit einer neuen an (`RetakeTerminal` auf dem Bus).
+
+Grenze: Das Sitzungsmodell entsteht beim Andocken aus dem Behalt neu. Was
+vor dessen Anfang lag, kennt es nicht — etwa eine vor langer Zeit gestartete
+innere Shell (`wsl`, `ssh`), in der die Sitzung noch steckt.
 
 **Wie man den Dienst erreicht.**
 

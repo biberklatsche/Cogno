@@ -2,7 +2,12 @@
 //! tail of the byte stream as the shell wrote it, and the terminal modes that
 //! are on. Played back into a fresh terminal, the two bring it to where the
 //! session is. There is no terminal emulator here: the stream is only read
-//! for the handful of sequences that switch a mode.
+//! for the handful of sequences that switch a mode, and for the handshake of
+//! the shell integration.
+//!
+//! The handshake is the one thing a shell says once, when it starts, that a
+//! client cannot do without: what the shell is and what it can do. It is kept
+//! apart, so a client that attaches after it has left the tail still gets it.
 //!
 //! The alternate screen (vim, less, a full-screen agent) is left out of the
 //! tail on purpose. A terminal keeps no history of it either, and what a
@@ -20,7 +25,13 @@ const KEPT_BYTES: usize = 1024 * 1024;
 /// passed on as ordinary output.
 const MAX_SEQUENCE_LEN: usize = 64;
 
+/// An operating system command longer than this is passed on unread.
+const MAX_OSC_LEN: usize = 4096;
+
 const ESC: u8 = 0x1b;
+const BEL: u8 = 0x07;
+/// How the shell integration's handshake begins (`ARCHITECTURE.md` 2.1).
+const HANDSHAKE_PREFIX: &[u8] = b"\x1b]733;COGNO:CAPS;";
 
 /// The private modes (`ESC [ ? n h` / `l`) a fresh terminal has to be told
 /// about, in the order they are replayed. All of them are off in a fresh
@@ -48,6 +59,16 @@ enum Parser {
     Escape,
     /// After `ESC [`; the bytes so far are in `pending`.
     Csi,
+    /// After `ESC ]`, up to BEL or `ESC \\`.
+    Osc,
+}
+
+/// The shell's last handshake, and where in the stream it stood.
+struct Handshake {
+    sequence: Vec<u8>,
+    /// How many bytes had gone into the tail before it; `None` when it was
+    /// not kept at all (written on the alternate screen).
+    kept_before: Option<u64>,
 }
 
 pub(crate) struct KeptOutput {
@@ -60,6 +81,10 @@ pub(crate) struct KeptOutput {
     modes: [bool; TRACKED_MODES.len()],
     application_keypad: bool,
     alternate_screen: bool,
+    handshake: Option<Handshake>,
+    /// Bytes that ever went into the tail, and how many of them left it.
+    kept: u64,
+    dropped: u64,
 }
 
 impl KeptOutput {
@@ -81,6 +106,9 @@ impl KeptOutput {
             modes,
             application_keypad: false,
             alternate_screen: false,
+            handshake: None,
+            kept: 0,
+            dropped: 0,
         }
     }
 
@@ -108,6 +136,7 @@ impl KeptOutput {
                     self.pending.push(byte);
                     match byte {
                         b'[' => self.parser = Parser::Csi,
+                        b']' => self.parser = Parser::Osc,
                         b'=' | b'>' => {
                             self.application_keypad = byte == b'=';
                             self.pass_pending();
@@ -137,8 +166,31 @@ impl KeptOutput {
                         self.pass_pending();
                     }
                 }
+                Parser::Osc => {
+                    let byte = output[0];
+                    output = &output[1..];
+                    let after_escape = self.pending.last() == Some(&ESC);
+                    self.pending.push(byte);
+                    if byte == BEL || (byte == b'\\' && after_escape) {
+                        self.end_osc();
+                    } else if self.pending.len() > MAX_OSC_LEN {
+                        self.pass_pending();
+                    }
+                }
             }
         }
+    }
+
+    /// A complete `ESC ] ... terminator`: remembered if it is the handshake,
+    /// and ordinary output either way.
+    fn end_osc(&mut self) {
+        if self.pending.starts_with(HANDSHAKE_PREFIX) {
+            self.handshake = Some(Handshake {
+                sequence: self.pending.clone(),
+                kept_before: (!self.alternate_screen).then_some(self.kept),
+            });
+        }
+        self.pass_pending();
     }
 
     /// A complete `ESC [ ... final`: read it if it sets private modes.
@@ -191,6 +243,7 @@ impl KeptOutput {
             return;
         }
         self.tail.extend(output);
+        self.kept += output.len() as u64;
         let Some(excess) = self.tail.len().checked_sub(self.capacity + 1) else {
             return;
         };
@@ -202,14 +255,25 @@ impl KeptOutput {
             .skip(excess)
             .position(|byte| *byte == b'\n')
             .map_or(excess + 1, |line_end| excess + line_end + 1);
-        self.tail.drain(..cut.min(self.tail.len()));
+        let cut = cut.min(self.tail.len());
+        self.tail.drain(..cut);
+        self.dropped += cut as u64;
     }
 
-    /// What brings a fresh terminal to where the session is: the kept output,
-    /// then the modes as they are now. The modes come last because the output
-    /// before them switches them back and forth on its way.
+    /// What brings a fresh terminal to where the session is: the handshake if
+    /// it is no longer in the tail, the kept output, then the modes as they
+    /// are now. The modes come last because the output before them switches
+    /// them back and forth on its way.
     pub(crate) fn replay(&self) -> Vec<u8> {
-        let mut replay = Vec::with_capacity(self.tail.len() + 128);
+        let mut replay = Vec::with_capacity(self.tail.len() + 512);
+        if let Some(handshake) = &self.handshake {
+            let still_in_tail = handshake
+                .kept_before
+                .is_some_and(|kept_before| kept_before >= self.dropped);
+            if !still_in_tail {
+                replay.extend_from_slice(&handshake.sequence);
+            }
+        }
         let (front, back) = self.tail.as_slices();
         replay.extend_from_slice(front);
         replay.extend_from_slice(back);
@@ -312,6 +376,48 @@ mod tests {
         assert_eq!(replay_of(&[other]).as_bytes(), other);
         // A CSI far longer than any real one is not held back for ever.
         let endless = [b"\x1b[".as_slice(), &[b'1'; 200], b"m"].concat();
+        assert_eq!(replay_of(&[&endless]).as_bytes(), endless);
+    }
+
+    const HANDSHAKE: &[u8] = b"\x1b]733;COGNO:CAPS;token=abc;shell=bash;os=linux;\x1b\\";
+
+    #[test]
+    fn the_handshake_comes_once_while_it_is_still_in_the_tail() {
+        let mut kept = KeptOutput::new();
+        kept.push(HANDSHAKE);
+        kept.push(b"$ ls\r\n");
+
+        assert_eq!(kept.replay(), [HANDSHAKE, b"$ ls\r\n"].concat());
+    }
+
+    #[test]
+    fn the_handshake_is_kept_when_it_has_left_the_tail() {
+        let mut kept = KeptOutput::with_capacity(16);
+        // Split between two reads, like any other sequence may be.
+        kept.push(&HANDSHAKE[..10]);
+        kept.push(&HANDSHAKE[10..]);
+        kept.push(b"a long line of output\nand another one\nlast\n");
+
+        assert_eq!(kept.replay(), [HANDSHAKE, b"last\n"].concat());
+    }
+
+    #[test]
+    fn the_last_handshake_is_the_one_that_counts() {
+        let inner = b"\x1b]733;COGNO:CAPS;token=abc;shell=zsh;os=linux;\x07";
+        let mut kept = KeptOutput::with_capacity(16);
+        kept.push(HANDSHAKE);
+        kept.push(b"$ zsh\n");
+        kept.push(inner);
+        kept.push(b"a long line of output\nlast\n");
+
+        assert_eq!(kept.replay(), [inner.as_slice(), b"last\n"].concat());
+    }
+
+    #[test]
+    fn other_operating_system_commands_pass_and_an_endless_one_is_not_held_back() {
+        let title = b"\x1b]0;my title\x07after";
+        assert_eq!(replay_of(&[title]).as_bytes(), title);
+        let endless = [b"\x1b]52;c;".as_slice(), &[b'A'; 6000]].concat();
         assert_eq!(replay_of(&[&endless]).as_bytes(), endless);
     }
 

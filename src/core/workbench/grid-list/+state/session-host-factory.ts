@@ -3,6 +3,7 @@ import {
   ComponentRef,
   createComponent,
   createEnvironmentInjector,
+  DestroyRef,
   EnvironmentInjector,
   Injectable,
   Type,
@@ -21,13 +22,16 @@ import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-h
 import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { IdCreator } from "@cogno/core/workbench/id-creator";
 import {
   HostConnectionComponent,
   HostConnectionState,
 } from "@cogno/core/workbench/remote/host-connection.component";
 import { RemoteHostsService } from "@cogno/core/workbench/remote/remote-hosts.service";
+import { RunningSessionsService } from "@cogno/core/workbench/remote/running-sessions.service";
 import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
+import { RunningSession } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
 import { ContextMenuOverlayService } from "@cogno/shared/ui";
 import { SessionKeybindings } from "../../terminal/+state/session-keybindings";
@@ -37,6 +41,20 @@ import { TerminalSessionRegistry } from "../../terminal/+state/terminal-session.
 import { TerminalComponent } from "../../terminal/terminal.component";
 import { TerminalFileDropService } from "../../terminal/terminal-file-drop.service";
 import { Pane } from "../+model/model";
+
+/**
+ * The profile a session of a shell that already runs works with: what kind
+ * of shell it is comes from the shell itself, not from what the profile of
+ * that name says today.
+ */
+function profileOfRunning(configured: ShellProfile, running: RunningSession): ShellProfile {
+  return {
+    ...configured,
+    shell_type: running.profile.shell_type as ShellProfile["shell_type"],
+    enable_shell_integration:
+      running.profile.enable_shell_integration ?? configured.enable_shell_integration,
+  };
+}
 
 /**
  * The host is a plain class; Angular only wires its sources. Where its shell
@@ -69,6 +87,8 @@ function createSessionHost(backend: SessionBackend) {
 }
 
 type SessionEntry = {
+  /** The pane the session was made for. */
+  readonly pane: Pane;
   /** Everything that lives and dies with the session (ARCHITECTURE.md 2.2, axis 2). */
   readonly injector: EnvironmentInjector;
   readonly host: SessionHost;
@@ -79,9 +99,10 @@ type SessionEntry = {
 };
 
 /**
- * A pane whose shell runs on a machine that is not connected (yet). It has no
- * session: a session needs to know the operating system its shell runs on,
- * and only the connected machine says that.
+ * A pane whose shell runs on a machine that is not connected (yet), or that
+ * asks what to do with the shells already running there. It has no session:
+ * a session needs to know the operating system its shell runs on, and only
+ * the connected machine says that.
  */
 type WaitingPane = {
   readonly pane: Pane;
@@ -100,11 +121,17 @@ type WaitingPane = {
  *
  * A pane of a machine that is not connected waits: its session starts once
  * the connection stands, and until then the pane shows how far that is.
+ *
+ * A pane whose shell already runs - Cogno was closed and the shell went on,
+ * or another Cogno started it - gets a session that shows that shell instead
+ * of starting one.
  */
 @Injectable({ providedIn: "root" })
 export class SessionHostFactory {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
   private readonly waiting = new Map<TerminalId, WaitingPane>();
+  /** The hosts whose running shells the user chose not to go on with. */
+  private readonly declinedHosts = new Set<string>();
 
   constructor(
     private readonly env: EnvironmentInjector,
@@ -115,7 +142,14 @@ export class SessionHostFactory {
     private readonly pendingSnapshots: PendingSessionSnapshots,
     private readonly os: OsPlatform,
     private readonly remoteHosts: RemoteHostsService,
-  ) {}
+    private readonly runningSessions: RunningSessionsService,
+    destroyRef: DestroyRef,
+  ) {
+    const retakes = this.bus
+      .on$("RetakeTerminal")
+      .subscribe((action) => action.payload && void this.retake(action.payload));
+    destroyRef.onDestroy(() => retakes.unsubscribe());
+  }
 
   /**
    * Makes sure the pane's session exists and runs; a no-op once it does.
@@ -133,6 +167,14 @@ export class SessionHostFactory {
       this.waitForHost(pane, terminalId, shellProfile.host as string);
       return undefined;
     }
+    const running = this.runningSessions.take(shellProfile.host, terminalId);
+    if (!running && shellProfile.host && this.hasSessionsToOffer(shellProfile.host)) {
+      // Shells run there that nothing here shows: starting one more may not
+      // be what the user came for.
+      this.offerSessions(pane, terminalId, shellProfile.host);
+      return undefined;
+    }
+    const sessionProfile = running ? profileOfRunning(shellProfile, running) : shellProfile;
 
     const injector = createEnvironmentInjector(
       [
@@ -166,11 +208,11 @@ export class SessionHostFactory {
     );
     const host = injector.get(SessionHost);
     const keybindings = injector.get(SessionKeybindings);
-    host.initialize(terminalId, shellProfile);
+    host.initialize(terminalId, sessionProfile);
     // The registry owns the session's lifecycle now: it must know the host
     // before it starts so its facts$ carries every fact from the first one.
-    this.sessionRegistry.register(terminalId, shellProfile, host);
-    keybindings.start(terminalId, shellProfile);
+    this.sessionRegistry.register(terminalId, sessionProfile, host);
+    keybindings.start(terminalId, sessionProfile);
     // The composer, notifications and menus listen from the start; the view
     // comes later.
     injector.get(TerminalComposerService);
@@ -180,12 +222,17 @@ export class SessionHostFactory {
     // the host defers the shell spawn; the replay happens on the first attach,
     // into an open, final-sized terminal.
     const snapshot = this.pendingSnapshots.take(terminalId);
-    if (snapshot) {
+    if (running) {
+      // The shell runs: its host plays back what it kept, which is newer
+      // than the snapshot, and the session takes the secret it was started
+      // with.
+      host.resume(running.profile.env?.["COGNO_SESSION_TOKEN"] ?? "");
+    } else if (snapshot) {
       host.restore(snapshot);
     }
     host.start();
 
-    const entry: SessionEntry = { injector, host, keybindings, notifications };
+    const entry: SessionEntry = { pane, injector, host, keybindings, notifications };
     this.sessions.set(terminalId, entry);
     return entry;
   }
@@ -263,20 +310,73 @@ export class SessionHostFactory {
     this.connect(terminalId, waiting);
   }
 
+  private hasSessionsToOffer(host: string): boolean {
+    return !this.declinedHosts.has(host) && this.runningSessions.unclaimed(host).length > 0;
+  }
+
+  /** The pane asks instead of starting a shell; see `HostConnectionComponent`. */
+  private offerSessions(pane: Pane, terminalId: TerminalId, host: string): void {
+    if (this.waiting.has(terminalId)) return;
+    const count = this.runningSessions.unclaimed(host).length;
+    this.waiting.set(terminalId, { pane, host, state: { status: "sessions", count } });
+  }
+
+  /**
+   * Every shell that runs on the host gets a tab of its own, which shows it;
+   * the pane that asked has done its part and goes.
+   */
+  private goOnWithSessions(terminalId: TerminalId, waiting: WaitingPane): void {
+    this.runningSessions.unclaimed(waiting.host).forEach((session, index) => {
+      this.bus.publish({
+        type: "CreateTab",
+        payload: {
+          tabId: IdCreator.newTabId(),
+          shellName: waiting.pane.shellName,
+          terminalId: session.terminalId,
+          isActive: index === 0,
+        },
+      });
+    });
+    this.bus.publish(ActionFired.create("close_terminal", undefined, undefined, terminalId));
+  }
+
+  /** The pane stops waiting and gets its session (or waits for the next thing). */
+  private proceed(terminalId: TerminalId, waiting: WaitingPane): void {
+    if (this.waiting.get(terminalId) !== waiting) return;
+    this.waiting.delete(terminalId);
+    this.removeWaitingView(waiting);
+    if (waiting.dock) {
+      this.attach(waiting.pane, waiting.dock);
+    } else {
+      this.ensureSession(waiting.pane);
+    }
+  }
+
+  /**
+   * Another Cogno took the pane's shell over; it is shown here again. The
+   * session that lost it is of no use any more: a new one attaches to the
+   * shell and gets its output from the host afresh.
+   */
+  private async retake(terminalId: TerminalId): Promise<void> {
+    const entry = this.sessions.get(terminalId);
+    if (!entry || entry.host.runtime.status !== "takenOver") return;
+    const dock = entry.componentRef?.location.nativeElement.parentElement ?? undefined;
+    await this.runningSessions.refresh(this.shellProfileFor(entry.pane).host);
+    if (this.sessions.get(terminalId) !== entry) return;
+    this.destroy(terminalId);
+    if (dock) {
+      this.attach(entry.pane, dock);
+    } else {
+      this.ensureSession(entry.pane);
+    }
+  }
+
   private connect(terminalId: TerminalId, waiting: WaitingPane): void {
     this.setWaitingState(waiting, { status: "connecting" });
     this.remoteHosts.connect(waiting.host).then(
-      () => {
-        // Closed in the meantime: nothing to start.
-        if (this.waiting.get(terminalId) !== waiting) return;
-        this.waiting.delete(terminalId);
-        this.removeWaitingView(waiting);
-        if (waiting.dock) {
-          this.attach(waiting.pane, waiting.dock);
-        } else {
-          this.ensureSession(waiting.pane);
-        }
-      },
+      // Closed in the meantime: `proceed` finds the pane gone and starts
+      // nothing.
+      () => this.proceed(terminalId, waiting),
       (error: Error) => {
         if (this.waiting.get(terminalId) !== waiting) return;
         this.setWaitingState(waiting, { status: "failed", reason: error.message });
@@ -297,6 +397,11 @@ export class SessionHostFactory {
       view.instance.closePane.subscribe(() =>
         this.bus.publish(ActionFired.create("close_terminal", undefined, undefined, terminalId)),
       );
+      view.instance.takeOver.subscribe(() => this.goOnWithSessions(terminalId, waiting));
+      view.instance.startNew.subscribe(() => {
+        this.declinedHosts.add(waiting.host);
+        this.proceed(terminalId, waiting);
+      });
       this.appRef.attachView(view.hostView);
       waiting.view = view;
     }

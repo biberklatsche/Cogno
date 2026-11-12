@@ -13,6 +13,8 @@ export class TauriMockFactory {
   static createPtyTransport() {
     return {
       spawn: vi.fn(() => TauriMockFactory.createPtySpawnHandle()),
+      attach: vi.fn(() => TauriMockFactory.createPtySpawnHandle()),
+      onTakenOver: vi.fn().mockResolvedValue(() => {}),
       ack: vi.fn().mockResolvedValue(undefined),
       kill: vi.fn().mockResolvedValue(undefined),
       resize: vi.fn().mockResolvedValue(undefined),

@@ -101,9 +101,18 @@ impl EventSink for WebviewSink {
                 self.terminals.lock().unwrap().remove(&terminal_id);
                 emit_exit(&self.app, &owner, &terminal_id, exit_code)
             }
-            // Nothing of this app attaches to a running session yet, so
-            // nothing of it can be taken over.
-            Event::PtyTakenOver { .. } => true,
+            // Another Cogno shows the session now: it is not this app's any
+            // more, and the window that showed it is told.
+            Event::PtyTakenOver { terminal_id, owner } => {
+                self.terminals.lock().unwrap().remove(&terminal_id);
+                self.app
+                    .emit_to(
+                        owner.as_str(),
+                        &format!("pty-taken-over:{}", terminal_id),
+                        (),
+                    )
+                    .is_ok()
+            }
         }
     }
 }
@@ -324,6 +333,7 @@ impl HostState {
         options: SpawnOptions,
         window: String,
         env: Vec<(String, String)>,
+        survives_client: bool,
         on_data: Channel<InvokeResponseBody>,
     ) -> Result<PtySpawnResult, String> {
         let hosts = self.0.clone();
@@ -336,8 +346,7 @@ impl HostState {
                 owner: window.clone(),
                 stream,
                 env,
-                // Until a setting says otherwise, a shell ends with Cogno.
-                survives_client: false,
+                survives_client,
             };
             // Known before the request goes out: the shell's first output
             // and its end can overtake the reply.
@@ -370,6 +379,48 @@ impl HostState {
                 Err(error)
             }
         }
+    }
+
+    /// Attaches `window` to the shell `terminal_id` that runs on `host` (this
+    /// machine when `None`); its output goes to `on_data`.
+    pub async fn attach(
+        &self,
+        host: Option<String>,
+        terminal_id: String,
+        window: String,
+        on_data: Channel<InvokeResponseBody>,
+    ) -> Result<(), String> {
+        let hosts = self.0.clone();
+        let stream = hosts.streams.open(on_data);
+        let attached = tauri::async_runtime::spawn_blocking(move || {
+            let connection = hosts.connection(host.as_deref())?;
+            // Known before the request goes out: what the host kept comes
+            // before its reply.
+            hosts.terminals.lock().unwrap().insert(
+                terminal_id.clone(),
+                Terminal {
+                    host,
+                    window: window.clone(),
+                    stream,
+                },
+            );
+            let reply = connection.request(Request::PtyAttach {
+                terminal_id: terminal_id.clone(),
+                owner: window,
+                stream,
+            });
+            if reply.is_err() {
+                hosts.terminals.lock().unwrap().remove(&terminal_id);
+            }
+            reply
+        })
+        .await
+        .map_err(|error| error.to_string())
+        .and_then(|reply| reply);
+        if attached.is_err() {
+            self.0.streams.close(stream);
+        }
+        attached.map(|_| ())
     }
 
     /// Answers a request about a host as a whole, not about one terminal:

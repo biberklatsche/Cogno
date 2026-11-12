@@ -99,7 +99,11 @@ export class TabListService {
             activeShellType: configService.getShellProfileOrDefault(shellName).shell_type,
             isActive: event.payload.isActive ?? true,
           },
-          { shellName, workingDir: event.payload.workingDir },
+          {
+            shellName,
+            workingDir: event.payload.workingDir,
+            terminalId: event.payload.terminalId,
+          },
         );
       });
     this.bus
@@ -198,7 +202,7 @@ export class TabListService {
   }
 
   /** Adds a copy of `tab` as the last slot of the shown workspace; the caller keeps its own object. */
-  addTab(tab: Tab, paneConfig?: { shellName?: string; workingDir?: string }) {
+  addTab(tab: Tab, paneConfig?: { shellName?: string; workingDir?: string; terminalId?: string }) {
     const workspaceIdentifier = this.getRequiredActiveWorkspaceIdentifier();
     const slots = this.activeSlots();
     if (this.activeTabs().some((s) => s.id === tab?.id)) return;
@@ -213,6 +217,7 @@ export class TabListService {
         isActive: tab.isActive,
         shellName: paneConfig?.shellName,
         workingDir: paneConfig?.workingDir,
+        terminalId: paneConfig?.terminalId,
       },
     });
   }

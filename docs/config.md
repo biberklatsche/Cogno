@@ -657,6 +657,12 @@ One keybinding per line: `keybind = [trigger:]combo[>combo...]=action[:arg...]`.
 
 Terminal rendering and behaviour.
 
+### `terminal.keep_shells_running`
+
+Keep the shells running when Cogno closes, and go on with them at the next start - on this machine, or from another one through `remote.hosts`. Closing a tab still ends its shell. Applies to shells started after the change.
+
+**Type:** boolean
+
 ### `terminal.webgl`
 
 Render the terminal with the WebGL renderer instead of the canvas one.

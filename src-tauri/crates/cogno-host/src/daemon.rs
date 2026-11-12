@@ -21,6 +21,8 @@ use crate::identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
 use crate::server::serve_client;
 
 const ENDPOINT_FILE_NAME: &str = "host.json";
+/// How long a connection to the daemon may take to come about.
+const CONNECT_PATIENCE: Duration = Duration::from_millis(300);
 /// How long a connection may take to present its token.
 const TOKEN_PATIENCE: Duration = Duration::from_secs(5);
 const TOKEN_LEN: usize = 32;
@@ -144,7 +146,11 @@ fn create_private(path: &Path) -> io::Result<std::fs::File> {
 /// stream of a host: its preamble first (`wire`).
 pub fn connect(endpoint: &Path) -> io::Result<TcpStream> {
     let Endpoint { port, token } = read_endpoint(endpoint)?;
-    let mut stream = TcpStream::connect((Ipv4Addr::LOCALHOST, port))?;
+    // A daemon on this machine answers at once. Without the limit, Windows
+    // spends seconds on a port nobody listens on - the port of a daemon
+    // that was killed and left its endpoint file behind.
+    let address = std::net::SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    let mut stream = TcpStream::connect_timeout(&address, CONNECT_PATIENCE)?;
     // What is typed must not wait for more to fill a packet.
     stream.set_nodelay(true)?;
     stream.write_all(format!("{token}\n").as_bytes())?;

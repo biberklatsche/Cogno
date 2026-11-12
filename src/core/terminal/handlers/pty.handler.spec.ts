@@ -45,6 +45,8 @@ describe("PtyHandler", () => {
       spawn: vi.fn().mockResolvedValue(undefined),
       write: vi.fn(),
       onExit: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+      onTakenOver: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+      attach: vi.fn().mockResolvedValue(undefined),
       resize: vi.fn().mockResolvedValue(undefined),
       ack: vi.fn(),
       kill: vi.fn(),
@@ -249,6 +251,60 @@ describe("PtyHandler", () => {
 
       expect(terminalDataDispose).toHaveBeenCalled();
       expect(ptyExitDispose).toHaveBeenCalled();
+    });
+  });
+
+  describe("a shell that already runs", () => {
+    let onSpawned: ReturnType<typeof vi.fn<() => void>>;
+    let onFailed: ReturnType<typeof vi.fn<(error: unknown) => void>>;
+
+    beforeEach(() => {
+      onSpawned = vi.fn<() => void>();
+      onFailed = vi.fn<(error: unknown) => void>();
+      handler = new PtyHandler(
+        terminalId,
+        mockPty,
+        shellConfig,
+        { ...listener, onSpawned, onFailed },
+        () => windowHidden,
+        true,
+      );
+    });
+
+    it("is attached to instead of started, and its output is written like any other", async () => {
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(onSpawned).toHaveBeenCalled());
+
+      expect(mockPty.attach).toHaveBeenCalledWith(terminalId, expect.any(Function));
+      expect(mockPty.spawn).not.toHaveBeenCalled();
+      const onData = vi.mocked(mockPty.attach).mock.calls[0][1];
+      onData({ seq: 0, data: new TextEncoder().encode("kept output") });
+      expect(mockTerminal.write).toHaveBeenCalledWith(
+        new TextEncoder().encode("kept output"),
+        expect.any(Function),
+      );
+    });
+
+    it("is started after all when it was not there to attach to and the user retries", async () => {
+      vi.mocked(mockPty.attach).mockRejectedValueOnce(new Error("Session not found: t1"));
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(onFailed).toHaveBeenCalled());
+
+      handler.restart();
+
+      await vi.waitFor(() => expect(mockPty.spawn).toHaveBeenCalled());
+      expect(mockPty.attach).toHaveBeenCalledOnce();
+    });
+
+    it("passes on that another Cogno took the shell over", async () => {
+      const onTakenOver = vi.fn();
+      handler = new PtyHandler(terminalId, mockPty, shellConfig, { ...listener, onTakenOver });
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(mockPty.onTakenOver).toHaveBeenCalled());
+
+      (vi.mocked(mockPty.onTakenOver).mock.calls[0][0] as () => void)();
+
+      expect(onTakenOver).toHaveBeenCalledOnce();
     });
   });
 });

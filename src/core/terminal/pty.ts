@@ -1,6 +1,7 @@
 import {
   PtyChunkContract,
   PtyExitEventContract,
+  PtyOutputListenerContract,
   PtyShellProfileContract,
   PtySpawnHandleContract,
   PtyTransport,
@@ -30,6 +31,13 @@ export interface IPty extends IDisposable {
     dimensions: TerminalDimensions,
     onData: PtyChunkListener,
   ): Promise<void>;
+  /**
+   * Shows a shell that already runs under `terminalId` instead of starting
+   * one. `onData` first receives what its host kept of the output.
+   */
+  attach(terminalId: string, onData: PtyChunkListener): Promise<void>;
+  /** Another Cogno took the shell over: it runs on, but not here any more. */
+  onTakenOver(listener: () => void): IDisposable;
   resize(dimensions: TerminalDimensions): void;
   /** Flow control: the terminal has parsed every chunk up to and including `seq`. */
   ack(seq: number): void;
@@ -66,18 +74,58 @@ export class Pty implements IPty {
   private _exitUnlisten: (() => void) | undefined = undefined;
   private _exit: PtyExitEventContract | undefined = undefined;
   private readonly _exitListeners = new Set<PtyExitListener>();
+  private readonly _takenOverListeners = new Set<() => void>();
 
   constructor(
     private readonly _transport: PtyTransport,
     private readonly _devMode: boolean,
     /** The connected host the shell runs on; left out for this machine. */
     private readonly _host?: string,
+    /** Whether a shell started here goes on when Cogno is gone. */
+    private readonly _survivesClient = false,
   ) {}
 
-  async spawn(
+  spawn(
     terminalId: string,
     shellProfile: PtyShellProfileContract,
     dimensions: TerminalDimensions,
+    onData: PtyChunkListener,
+  ): Promise<void> {
+    return this.open(
+      terminalId,
+      (output) =>
+        this._transport.spawn(
+          {
+            terminalId,
+            cols: dimensions.cols,
+            rows: dimensions.rows,
+            profile: shellProfile,
+            devMode: this._devMode,
+            host: this._host,
+            survivesClient: this._survivesClient,
+          },
+          output,
+        ),
+      onData,
+    );
+  }
+
+  attach(terminalId: string, onData: PtyChunkListener): Promise<void> {
+    return this.open(
+      terminalId,
+      (output) => this._transport.attach({ terminalId, host: this._host }, output),
+      onData,
+    );
+  }
+
+  /**
+   * Starts or attaches (`start`), with everything around it that both need:
+   * the listeners that must exist before the first byte, and the cleanup of
+   * a session that is no longer wanted when it comes into being.
+   */
+  private async open(
+    terminalId: string,
+    start: (output: PtyOutputListenerContract) => PtySpawnHandleContract,
     onData: PtyChunkListener,
   ): Promise<void> {
     this._spawn?.closeOutput();
@@ -89,26 +137,23 @@ export class Pty implements IPty {
     // before the spawn call even returns.
     this._exitUnlisten?.();
     this._exitUnlisten = undefined;
-    const unlisten = await this._transport.onExit(terminalId, (exit) => this.notifyExit(exit));
+    const [unlistenExit, unlistenTakenOver] = await Promise.all([
+      this._transport.onExit(terminalId, (exit) => this.notifyExit(exit)),
+      this._transport.onTakenOver(terminalId, () => this.notifyTakenOver()),
+    ]);
+    const unlisten = () => {
+      unlistenExit();
+      unlistenTakenOver();
+    };
     if (this._disposed || this._terminalId !== terminalId) {
       unlisten();
       return;
     }
     this._exitUnlisten = unlisten;
-    const spawn = this._transport.spawn(
-      {
-        terminalId,
-        cols: dimensions.cols,
-        rows: dimensions.rows,
-        profile: shellProfile,
-        devMode: this._devMode,
-        host: this._host,
-      },
-      {
-        onChunk: onData,
-        onChunksLost: (fromSeq, toSeq) => this.reportLostChunks(terminalId, fromSeq, toSeq),
-      },
-    );
+    const spawn = start({
+      onChunk: onData,
+      onChunksLost: (fromSeq, toSeq) => this.reportLostChunks(terminalId, fromSeq, toSeq),
+    });
     this._spawn = spawn;
     try {
       await spawn.ready;
@@ -215,6 +260,23 @@ export class Pty implements IPty {
     for (const listener of this._exitListeners) listener(exit);
   }
 
+  onTakenOver(listener: () => void): IDisposable {
+    this._takenOverListeners.add(listener);
+    return { dispose: () => this._takenOverListeners.delete(listener) };
+  }
+
+  /**
+   * The shell is another Cogno's now. Nothing of it is this machine's to
+   * touch any more: disposing must not kill what runs on elsewhere.
+   */
+  private notifyTakenOver(): void {
+    this._spawned = false;
+    this._pendingResize = undefined;
+    this._spawn?.closeOutput();
+    this._spawn = undefined;
+    for (const listener of this._takenOverListeners) listener();
+  }
+
   dispose(): void {
     this._disposed = true;
     // While a spawn is still in flight there is no session to kill yet; the
@@ -227,6 +289,7 @@ export class Pty implements IPty {
     this._exitUnlisten?.();
     this._exitUnlisten = undefined;
     this._exitListeners.clear();
+    this._takenOverListeners.clear();
     this._terminalId = undefined;
   }
 

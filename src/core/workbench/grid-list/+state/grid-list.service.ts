@@ -140,7 +140,11 @@ export class GridListService implements PaneLayoutLookup {
         if (!payload) return;
         this.restoreGrid({
           tabId: payload.tabId,
-          pane: { workingDir: payload.workingDir, shellName: payload.shellName },
+          pane: {
+            workingDir: payload.workingDir,
+            shellName: payload.shellName,
+            terminalId: payload.terminalId,
+          },
         });
         if (payload.isActive) {
           this.selectGrid(payload.tabId);

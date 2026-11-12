@@ -4,3 +4,5 @@ import { TerminalId } from "@cogno/shared/domain";
 export type FocusTerminalAction = ActionBase<"FocusTerminal", TerminalId>;
 export type TerminalRemovedAction = ActionBase<"TerminalRemoved", TerminalId>;
 export type BlurTerminalAction = ActionBase<"BlurTerminal", TerminalId>;
+/** Show a shell here again that another Cogno took over. */
+export type RetakeTerminalAction = ActionBase<"RetakeTerminal", TerminalId>;

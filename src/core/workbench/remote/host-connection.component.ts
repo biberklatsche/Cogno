@@ -3,11 +3,13 @@ import { ChangeDetectionStrategy, Component, input, output } from "@angular/core
 /** How far the connection a pane waits for has come. */
 export type HostConnectionState =
   | { readonly status: "connecting" }
-  | { readonly status: "failed"; readonly reason: string };
+  | { readonly status: "failed"; readonly reason: string }
+  /** Connected, and shells already run there that nothing here shows. */
+  | { readonly status: "sessions"; readonly count: number };
 
 /**
  * What a pane shows instead of a terminal while the machine its shell runs
- * on is not connected yet, or could not be.
+ * on is not connected yet, could not be, or has shells running to go on with.
  */
 @Component({
   selector: "app-host-connection",
@@ -17,6 +19,15 @@ export type HostConnectionState =
     @if (state(); as state) {
       @if (state.status === "connecting") {
         <div class="host-connection-title">Connecting to {{ host() }}…</div>
+      } @else if (state.status === "sessions") {
+        <div class="host-connection-title">
+          {{ state.count === 1 ? "A shell is" : state.count + " shells are" }} running on
+          {{ host() }}
+        </div>
+        <div class="host-connection-actions">
+          <button type="button" class="button" (click)="takeOver.emit()">Go on with them</button>
+          <button type="button" class="button" (click)="startNew.emit()">Start a new shell</button>
+        </div>
       } @else {
         <div class="host-connection-title">Could not connect to {{ host() }}</div>
         <div class="host-connection-reason">{{ state.reason }}</div>
@@ -62,4 +73,6 @@ export class HostConnectionComponent {
   state = input.required<HostConnectionState>();
   retry = output<void>();
   closePane = output<void>();
+  takeOver = output<void>();
+  startNew = output<void>();
 }

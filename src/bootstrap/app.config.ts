@@ -4,6 +4,7 @@ import {
   Injector,
   inject,
   ProviderToken,
+  provideAppInitializer,
   provideEnvironmentInitializer,
   provideZonelessChangeDetection,
 } from "@angular/core";
@@ -54,6 +55,7 @@ import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.servic
 import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu.service";
 import { NotificationDispatchService } from "@cogno/core/workbench/notification/+state/notification-dispatch.service";
 import { NotificationTargetRuntimeService } from "@cogno/core/workbench/notification/+state/notification-target-runtime.service";
+import { RunningSessionsService } from "@cogno/core/workbench/remote/running-sessions.service";
 import { SettingsPanelService } from "@cogno/core/workbench/settings/settings-panel.service";
 import { SideMenuStatePersistenceService } from "@cogno/core/workbench/side-menu/side-menu-state-persistence.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
@@ -94,6 +96,10 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalProcessesPort, useExisting: TerminalProcessesAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
     provideZonelessChangeDetection(),
+    // The shells that still run on this machine must be known before the
+    // first pane is restored: a pane whose shell runs shows it, it does not
+    // start another.
+    provideAppInitializer(() => inject(RunningSessionsService).refresh()),
     provideEnvironmentInitializer(() => {
       void Logger.initialize();
       inject(StyleService);

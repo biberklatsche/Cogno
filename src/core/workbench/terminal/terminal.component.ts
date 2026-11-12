@@ -114,7 +114,14 @@ export class TerminalComponent implements AfterViewInit {
     this.host.retry();
   }
 
-  /** The shell did not start: give the pane up. */
+  /** Another Cogno shows the shell: show it here again. */
+  takeBack(): void {
+    const terminalId = this.host.terminalId;
+    if (!terminalId) return;
+    this.bus.publish({ type: "RetakeTerminal", payload: terminalId });
+  }
+
+  /** The shell did not start, or is shown elsewhere: give the pane up. */
   closeAfterFailure(): void {
     const terminalId = this.host.terminalId;
     if (!terminalId) return;

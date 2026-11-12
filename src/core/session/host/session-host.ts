@@ -6,7 +6,7 @@ import { ShellLineEditorActionContract } from "@cogno/core/session/shells/shell-
 import { CursorHandler } from "@cogno/core/terminal/handlers/cursor.handler";
 import { FocusHandler } from "@cogno/core/terminal/handlers/focus.handler";
 import { MouseHandler } from "@cogno/core/terminal/handlers/mouse.handler";
-import { PtyHandler } from "@cogno/core/terminal/handlers/pty.handler";
+import { PtyHandler, PtyHandlerListener } from "@cogno/core/terminal/handlers/pty.handler";
 import { ResizeHandler } from "@cogno/core/terminal/handlers/resize.handler";
 import { ScrollStateHandler } from "@cogno/core/terminal/handlers/scroll-state.handler";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
@@ -139,6 +139,8 @@ type SessionRuntimeStatus =
   | "running"
   | "failed"
   | "exited"
+  /** Another Cogno shows the shell now; it runs on, but not here. */
+  | "takenOver"
   | "closing"
   | "closed";
 
@@ -199,6 +201,8 @@ export class SessionHost {
   private promptMarkerRegistry?: PromptMarkerRegistry;
   /** A snapshot waiting to be replayed on the first attach. */
   private _pendingRestore?: SessionSnapshot;
+  /** The token of a shell that already runs; see `resume`. */
+  private _resumeToken?: string;
   private _restoreScheduled = false;
   private handshakeTimeout?: ReturnType<typeof setTimeout>;
 
@@ -216,7 +220,12 @@ export class SessionHost {
     private readonly backend: SessionBackend,
   ) {
     this.model = new SessionModel(this.backend.os, historyStore, recorder);
-    this.pty = new Pty(ptyTransport, environment.isDevMode(), this.backend.host);
+    this.pty = new Pty(
+      ptyTransport,
+      environment.isDevMode(),
+      this.backend.host,
+      this.configService.config.terminal?.keep_shells_running ?? false,
+    );
     this.renderer = new Renderer(
       toTerminalMachineOptions(this.configService.config),
       this.backend.os,
@@ -355,8 +364,14 @@ export class SessionHost {
 
     // The session's secret: the integration scripts echo it back in every
     // model-changing OSC sequence, so output content cannot impersonate
-    // them. Created here, before the first byte can arrive.
-    const sessionToken = createSessionToken();
+    // them. Created here, before the first byte can arrive - or, for a
+    // shell that already runs, the one it was started with.
+    const resumed = this._resumeToken !== undefined;
+    const sessionToken = this._resumeToken ?? createSessionToken();
+    if (resumed) {
+      // The host plays back what it kept, which is newer than any snapshot.
+      this._pendingRestore = undefined;
+    }
     this.model.setSessionToken(sessionToken);
     const spawnProfile: ShellProfile = {
       ...shellProfile,
@@ -378,10 +393,16 @@ export class SessionHost {
       }),
     );
 
-    this.ptyHandler = new PtyHandler(terminalId, this.pty, spawnProfile, {
+    const listener: PtyHandlerListener = {
       onSpawned: () => {
         this.setRuntime({ status: "running" });
-        this.watchForHandshake(spawnProfile);
+        // A shell that already runs made its handshake long ago; the host
+        // plays it back with the output it kept.
+        if (!resumed) this.watchForHandshake(spawnProfile);
+      },
+      onTakenOver: () => {
+        this.stopWatchingForHandshake();
+        this.setRuntime({ status: "takenOver" });
       },
       onFailed: (error) => this.onStartFailed(error),
       onExited: (exitCode) => {
@@ -390,7 +411,15 @@ export class SessionHost {
         this.hostFacts.next({ type: "exited", exitCode });
       },
       onOutput: () => this.hostFacts.next({ type: "outputReceived" }),
-    });
+    };
+    this.ptyHandler = new PtyHandler(
+      terminalId,
+      this.pty,
+      spawnProfile,
+      listener,
+      undefined,
+      resumed,
+    );
     // A restored session defers the shell spawn to its first attach: the saved
     // scrollback must be written into an open, final-sized terminal before the
     // shell (ConPTY on Windows especially) paints, so it paints below the
@@ -741,6 +770,15 @@ export class SessionHost {
    * input mirror until the writes are parsed. A snapshot of a different version
    * or without scrollback is ignored.
    */
+  /**
+   * The session's shell already runs (Cogno was closed and it went on, or
+   * another Cogno started it): `start()` shows it instead of starting one.
+   * `sessionToken` is the secret it was started with. Called before start().
+   */
+  resume(sessionToken: string): void {
+    this._resumeToken = sessionToken;
+  }
+
   restore(snapshot: SessionSnapshot): void {
     if (snapshot.version !== SESSION_SNAPSHOT_VERSION || !snapshot.scrollback) {
       return;

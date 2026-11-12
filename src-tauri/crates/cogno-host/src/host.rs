@@ -435,6 +435,52 @@ mod tests {
     }
 
     #[test]
+    fn a_client_that_attaches_again_has_not_been_taken_over() {
+        let (me, sink) = client(1);
+        let host = Host::new();
+        host.handle(&me, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+
+        host.handle(&me, attach_request("t1", 2)).unwrap();
+
+        wait_until("the output came again", || {
+            sink.output_of(2).contains("port=4711")
+        });
+        assert_eq!(sink.ended_streams(), [1]);
+        assert!(sink.0.lock().unwrap().taken_over.is_empty());
+        host.release_all();
+    }
+
+    #[test]
+    fn releasing_an_owner_ends_its_sessions_except_those_that_go_on() {
+        let (me, sink) = client(1);
+        let host = Host::new();
+        host.handle(&me, spawn_request("stays", 1, WAITING, true))
+            .unwrap();
+        host.handle(&me, spawn_request("ends", 2, WAITING, false))
+            .unwrap();
+
+        // The window both belong to is closed.
+        host.handle(
+            &me,
+            Request::ReleaseOwner {
+                owner: "window-1".to_string(),
+            },
+        )
+        .unwrap();
+
+        // The one that goes on is left running, with nobody attached and
+        // its stream ended; the other one is gone.
+        assert_eq!(sessions_of(&host, &me), [("stays".to_string(), false)]);
+        wait_until("both streams ended", || {
+            let mut ended = sink.ended_streams();
+            ended.sort();
+            ended == [1, 2]
+        });
+        host.release_all();
+    }
+
+    #[test]
     fn two_clients_can_name_their_owners_alike() {
         let (first, _) = client(1);
         let (second, _) = client(2);
