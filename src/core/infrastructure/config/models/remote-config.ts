@@ -24,5 +24,3 @@ export const RemoteConfigSchema = z.strictObject({
     .optional()
     .describe("Named machines whose running shells the Remote panel shows."),
 });
-
-export type RemoteHostConfig = z.infer<typeof RemoteHostSchema>;

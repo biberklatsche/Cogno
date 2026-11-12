@@ -1035,6 +1035,12 @@ Daraus folgt:
   Meldung erneut an (Neuladen). Darum hört ein Fenster `pty-exit` und
   `pty-taken-over` nur für sich (`platform/pty.ts`); ein gewöhnliches
   `listen` hörte auch, was dem Fenster gesagt wird, das die Shell verlor.
+- **Wer eine Sitzung beendet, sagt es den anderen.** Beendet ein Client eine
+  Sitzung (`PtyKill`), hört nur er nichts: wer sie zeigt und wem sie genommen
+  wurde, bekommt `PtyExit`. `PtyDetach` und Quittungen wirken nur für den
+  Client, der die Sitzung gerade zeigt; eine Anfrage, die eine Übernahme
+  kreuzt, ändert nichts. Wer gerade einem Client eine Sitzung abspielt, hält
+  dabei nur deren Ausgabe-Sperre, nie die Tabelle aller Sitzungen.
 - **Wer eine Sitzung verlor, bekommt sie zurück, wenn der Übernehmer sie
   loslässt.** Der Host merkt sich an der Sitzung, wem sie zuletzt genommen
   wurde. Hängt der Übernehmer ab (`PtyDetach`), schließt sein Fenster oder
@@ -1084,9 +1090,13 @@ dort laufen (`RunningSessionsService`): diesen Rechner vor dem ersten Pane
   (Runtime-Achse, 2.3) und nennt, wo sie jetzt gezeigt wird: die Shell läuft
   weiter, gehört aber nicht mehr dieser App — ihr Schließen beendet nichts.
   „Hier zeigen" verwirft die Sitzung und dockt mit einer neuen an
-  (`RetakeTerminal` auf dem Bus). Dasselbe geschieht von selbst, wenn der
+  (`RetakeTerminal` auf dem Bus); das Terminal bleibt dabei, Features hören
+  kein `TerminalRemoved`. Was hier getippt wird, geht nach der Übernahme
+  nirgends mehr hin. Das Andocken geschieht auch von selbst, wenn der
   Host meldet, dass die Shell wieder frei ist: Die Sitzung, die noch wartet,
-  nennt das als Fakt (`releasedElsewhere`), die Sitzungsfabrik dockt neu an.
+  nennt das als Fakt (`releasedElsewhere`), die Sitzungsfabrik dockt neu an. Ein Retry nach einem
+  Fehler startet eine Shell nur auf diesem Rechner; auf einem anderen dockt
+  er erneut an.
 - **Keine Shell bleibt ohne Tab.** Eine Shell kann weiterlaufen, ohne dass
   ein Pane sie zeigt (Absturz; ein geschlossener Tab, während ein anderes
   Cogno sie zeigte). Beim Start gibt das Fenster, mit dem die App startete,
@@ -1167,8 +1177,11 @@ solches Pane kommt aus dem Remote-Panel (unten). Die Zuständigkeiten:
   Fenster (2.6). Getipptes, Größenänderungen und
   Quittungen werden gesendet, ohne auf die Antwort zu warten. Bricht die
   Verbindung ab, enden die Terminals dieses Hosts (`pty-exit`), und alle
-  Fenster hören `host-disconnected`. Den HTTP-Server dieser App bekommt eine
-  entfernte Shell nicht (`COGNO_PORT` fehlt dort).
+  Fenster hören `host-disconnected`. Gestartet wird nur auf dem Dienst dieses
+  Rechners (`pty_spawn` kennt keinen Host); an eine Shell eines anderen
+  Rechners wird nur angedockt (`pty_attach`). Eine Verbindung zum eigenen
+  Dienst wird für sich aufgebaut: ein Passwort, auf das `ssh` wartet, hält
+  die Terminals hier nicht auf.
 - **`platform/hosts.ts`:** verbinden, auflegen, Sitzungen eines Hosts
   auflisten und beenden, Shell-Integration ablegen, `onDisconnected`.
 - **Workbench (`core/workbench/remote/`):** `RemoteHostsService` verbindet,
@@ -1181,7 +1194,7 @@ solches Pane kommt aus dem Remote-Panel (unten). Die Zuständigkeiten:
 - **Vertrag und Feature:** `RemoteShellsPort` (`core/api/`, Adapter in
   `core/workbench/api-adapters/`) gibt einem Feature die Rechner der Config
   mit ihrem Verbindungsstand, das Pflegen von `remote.hosts`, Verbinden und
-  Auflegen, die Shells eines Rechners und drei Dinge mit einer Shell: hier
+  Auflegen, die Shells eines Rechners und zwei Dinge mit einer Shell: hier
   zeigen (zum Pane gehen, zurückholen oder einen Tab öffnen), beenden.
   `features/remote` ist das Panel dazu: ein Baum Rechner → Workspace → Tab →
   Shell, nur für die Rechner aus `remote.hosts`. Dieser Rechner steht dort

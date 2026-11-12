@@ -16,7 +16,7 @@ pub trait EventSink: Send + Sync + 'static {
     fn emit(&self, event: Event) -> bool;
 }
 
-/// Who talks to the host: one connection, or the app that embeds it.
+/// Who talks to the host: one connection to the daemon.
 #[derive(Clone)]
 pub struct Client {
     /// Tells the host's clients apart; never used again for another one.
@@ -60,9 +60,10 @@ impl Host {
                 .pty
                 .attach(client, self.name_of(client.id), &terminal_id, owner, stream)
                 .map(|_| Response::Done),
-            Request::PtyDetach { terminal_id } => {
-                self.pty.detach(&terminal_id).map(|_| Response::Done)
-            }
+            Request::PtyDetach { terminal_id } => self
+                .pty
+                .detach(client.id, &terminal_id)
+                .map(|_| Response::Done),
             Request::PtyLabel { terminal_id, label } => {
                 self.pty.label(&terminal_id, label);
                 Ok(Response::Done)
@@ -93,9 +94,12 @@ impl Host {
                 .pty
                 .resize(&terminal_id, cols, rows)
                 .map(|_| Response::Done),
-            Request::PtyKill { terminal_id } => self.pty.kill(&terminal_id).map(|_| Response::Done),
+            Request::PtyKill { terminal_id } => self
+                .pty
+                .kill(client.id, &terminal_id)
+                .map(|_| Response::Done),
             Request::PtyAck { terminal_id, seq } => {
-                self.pty.ack(&terminal_id, seq);
+                self.pty.ack(client.id, &terminal_id, seq);
                 Ok(Response::Done)
             }
             Request::ReleaseOwner { owner } => {
@@ -140,11 +144,12 @@ impl Host {
     }
 
     /// Whom the terminal belongs to, as its spawn named it.
+    #[cfg(test)]
     pub fn owner_of(&self, terminal_id: &str) -> Option<String> {
         self.pty.owner_of(terminal_id)
     }
 
-    /// Ends every shell: what the embedding process does on its way out.
+    /// Ends every shell: what the daemon does on its way out.
     pub fn release_all(&self) {
         self.pty.release_all();
     }
@@ -304,7 +309,7 @@ mod tests {
         match host.handle(client, Request::ListSessions) {
             Ok(Response::Sessions(sessions)) => sessions
                 .into_iter()
-                .map(|session| (session.terminal_id, session.attached))
+                .map(|session| (session.terminal_id, session.shown))
                 .collect(),
             other => panic!("no session list: {other:?}"),
         }
@@ -695,6 +700,99 @@ mod tests {
 
         assert!(released(&taken.at_the_office).is_empty());
         taken.host.release_all();
+    }
+
+    fn exits(sink: &RecordingSink) -> Vec<(String, String)> {
+        sink.0.lock().unwrap().exits.clone()
+    }
+
+    #[test]
+    fn whoever_shows_or_waits_for_a_session_hears_when_another_ends_it() {
+        let taken = taken_over_by_the_laptop();
+        let (panel, _) = client(3);
+
+        // A third Cogno ends it from its Remote panel.
+        taken
+            .host
+            .handle(
+                &panel,
+                Request::PtyKill {
+                    terminal_id: "t1".to_string(),
+                },
+            )
+            .unwrap();
+
+        assert_eq!(exits(&taken.on_the_laptop), t1_of_window_1());
+        // The office waited for it to come back; it will not.
+        assert_eq!(exits(&taken.at_the_office), t1_of_window_1());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn a_client_that_ends_its_own_session_hears_nothing_back() {
+        let taken = taken_over_by_the_laptop();
+
+        taken
+            .host
+            .handle(
+                &taken.laptop,
+                Request::PtyKill {
+                    terminal_id: "t1".to_string(),
+                },
+            )
+            .unwrap();
+
+        assert!(exits(&taken.on_the_laptop).is_empty());
+        assert_eq!(exits(&taken.at_the_office), t1_of_window_1());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn a_client_that_no_longer_shows_a_session_cannot_let_it_go() {
+        let taken = taken_over_by_the_laptop();
+
+        // The office's request crossed the takeover.
+        taken
+            .host
+            .handle(&taken.office, detach_request("t1"))
+            .unwrap();
+
+        assert_eq!(
+            sessions_of(&taken.host, &taken.office),
+            [("t1".to_string(), true)]
+        );
+        assert!(released(&taken.at_the_office).is_empty());
+        taken.host.release_all();
+    }
+
+    #[test]
+    fn a_session_taken_by_another_window_of_the_same_client_survives_that_window() {
+        let (me, sink) = client(1);
+        let host = Host::new();
+        // Started to end with its window.
+        host.handle(&me, spawn_request("t1", 1, WAITING, false))
+            .unwrap();
+        host.handle(
+            &me,
+            Request::PtyAttach {
+                terminal_id: "t1".to_string(),
+                owner: "window-2".to_string(),
+                stream: 2,
+            },
+        )
+        .unwrap();
+
+        host.handle(
+            &me,
+            Request::ReleaseOwner {
+                owner: "window-2".to_string(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(sessions_of(&host, &me), [("t1".to_string(), false)]);
+        assert_eq!(released(&sink), t1_of_window_1());
+        host.release_all();
     }
 
     #[test]

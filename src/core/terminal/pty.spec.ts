@@ -309,8 +309,8 @@ describe("Pty", () => {
       expect(transport.resize).toHaveBeenCalledWith(terminalId, 100, 30);
     });
 
-    it("names the host it runs on, and whether a new one goes on without Cogno", async () => {
-      const remote = new Pty(transport as unknown as PtyTransport, false, "office", true);
+    it("names the host it runs on when it attaches, and never starts a shell there", async () => {
+      const remote = new Pty(transport as unknown as PtyTransport, false, "office");
 
       await remote.attach(terminalId, noopListener);
       expect(transport.attach).toHaveBeenCalledWith(
@@ -318,11 +318,32 @@ describe("Pty", () => {
         expect.anything(),
       );
 
-      await remote.spawn(terminalId, shellConfig, dimensions, noopListener);
+      await expect(remote.spawn(terminalId, shellConfig, dimensions, noopListener)).rejects.toThrow(
+        "never started",
+      );
+      expect(transport.spawn).not.toHaveBeenCalled();
+    });
+
+    it("says whether a shell started here goes on without Cogno", async () => {
+      const kept = new Pty(transport as unknown as PtyTransport, false, undefined, true);
+
+      await kept.spawn(terminalId, shellConfig, dimensions, noopListener);
+
       expect(transport.spawn).toHaveBeenCalledWith(
-        expect.objectContaining({ host: "office", survivesClient: true }),
+        expect.objectContaining({ survivesClient: true }),
         expect.anything(),
       );
+    });
+
+    it("sends nothing to a shell another Cogno took over", async () => {
+      await pty.attach(terminalId, noopListener);
+      takenOverListener()();
+
+      pty.write("ls\r");
+      pty.executeLineEditorAction("clearLine");
+
+      expect(transport.write).not.toHaveBeenCalled();
+      expect(transport.executeLineEditorAction).not.toHaveBeenCalled();
     });
 
     it("tells its listeners when another Cogno takes it over", async () => {

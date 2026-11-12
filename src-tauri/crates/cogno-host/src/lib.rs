@@ -1,7 +1,7 @@
 //! The host: everything Cogno runs on the machine where the shell runs -
-//! PTYs, the processes under them, the shells installed there. It knows no
-//! window and no webview: whoever embeds it sends requests and takes events
-//! (`protocol`).
+//! PTYs, the processes under them, the shells installed there. It runs as a
+//! daemon of its own and knows no window and no webview: its clients send
+//! requests and take events (`protocol`).
 
 pub mod daemon;
 pub mod daemon_start;
@@ -23,4 +23,4 @@ mod shell_spawner;
 mod shells;
 pub mod wire;
 
-pub use host::{Client, EventSink, Host};
+pub use host::EventSink;

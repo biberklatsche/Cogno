@@ -99,7 +99,7 @@ type SessionEntry = {
 
 /**
  * A pane whose shell runs on a machine that is not connected (yet), or whose
- * shell could not be shown. It has no session: a session needs to know the
+ * shell is not there. It has no session: a session needs to know the
  * operating system its shell runs on, and only the connected machine says
  * that.
  */
@@ -167,24 +167,24 @@ export class SessionHostFactory {
     if (existing) return existing;
 
     const shellProfile = this.shellProfileFor(pane);
-    const backend = this.backendOf(pane);
-    if (!backend) {
-      this.waitForHost(pane, terminalId, pane.host as string);
+    const remote = pane.host === undefined ? undefined : this.remoteHosts.info(pane.host);
+    if (pane.host !== undefined && !remote) {
+      this.waitFor(pane, terminalId, pane.host, "connect");
       return undefined;
     }
+    const backend: SessionBackend =
+      pane.host !== undefined && remote
+        ? { host: pane.host, os: remote.os }
+        : { os: this.os.platform() };
     const running = this.runningSessions.take(pane.host, terminalId);
-    if (!running && pane.host) {
+    if (!running && pane.host !== undefined) {
       if (!this.runningSessions.isFresh(pane.host)) {
         // What runs there was last heard when the host connected, which may
         // be hours ago.
-        this.askAgain(pane, terminalId, pane.host);
+        this.waitFor(pane, terminalId, pane.host, "look");
         return undefined;
       }
-      this.waiting.set(terminalId, {
-        pane,
-        host: pane.host,
-        state: { status: "failed", reason: "The shell does not run there any more." },
-      });
+      this.waiting.set(terminalId, { pane, host: pane.host, state: { status: "gone" } });
       return undefined;
     }
     const sessionProfile = running ? profileOfRunning(shellProfile, running) : shellProfile;
@@ -293,15 +293,23 @@ export class SessionHostFactory {
       this.waiting.delete(terminalId);
       this.removeWaitingView(waiting);
     }
+    this.endSession(terminalId, true);
+  }
+
+  /**
+   * Ends the pane's session here. `removed`: the terminal goes for good, and
+   * the app hears TerminalRemoved before the machine goes, as it always did.
+   * A session that is only replaced by another for the same shell is not.
+   */
+  private endSession(terminalId: TerminalId, removed: boolean): void {
     const entry = this.sessions.get(terminalId);
     if (!entry) return;
     try {
       entry.componentRef?.destroy();
       entry.keybindings.dispose();
       entry.notifications.dispose();
-      // The app hears TerminalRemoved before the machine goes, as it always did.
       this.sessionRegistry.unregister(terminalId);
-      this.bus.publish({ type: "TerminalRemoved", payload: terminalId });
+      if (removed) this.bus.publish({ type: "TerminalRemoved", payload: terminalId });
       entry.host.close();
       entry.injector.destroy();
     } finally {
@@ -309,27 +317,43 @@ export class SessionHostFactory {
     }
   }
 
-  /** Where the pane's shell runs; nothing while its machine is not connected. */
-  private backendOf(pane: Pane): SessionBackend | undefined {
-    if (!pane.host) return { os: this.os.platform() };
-    const info = this.remoteHosts.info(pane.host);
-    return info && { host: pane.host, os: info.os };
+  /**
+   * The pane waits for its machine: until it is connected, or until it said
+   * what runs there now. Then the pane decides again.
+   */
+  private waitFor(
+    pane: Pane,
+    terminalId: TerminalId,
+    host: string,
+    first: "connect" | "look",
+  ): void {
+    if (this.waiting.has(terminalId)) return;
+    const waiting: WaitingPane = {
+      pane,
+      host,
+      state: { status: first === "connect" ? "connecting" : "looking" },
+    };
+    this.waiting.set(terminalId, waiting);
+    if (first === "connect") {
+      this.connect(terminalId, waiting);
+    } else {
+      this.lookAgain(terminalId, waiting);
+    }
   }
 
-  private waitForHost(pane: Pane, terminalId: TerminalId, host: string): void {
-    if (this.waiting.has(terminalId)) return;
-    const waiting: WaitingPane = { pane, host, state: { status: "connecting" } };
-    this.waiting.set(terminalId, waiting);
-    this.connect(terminalId, waiting);
-  }
-
-  /** Asks the host what runs there now, then lets the pane decide again. */
-  private askAgain(pane: Pane, terminalId: TerminalId, host: string): void {
-    if (this.waiting.has(terminalId)) return;
-    const waiting: WaitingPane = { pane, host, state: { status: "connecting" } };
-    this.waiting.set(terminalId, waiting);
-    // Never rejects: a host that does not answer has nothing to go on with.
-    void this.runningSessions.refresh(host).then(() => this.proceed(terminalId, waiting));
+  private lookAgain(terminalId: TerminalId, waiting: WaitingPane): void {
+    this.setWaitingState(waiting, { status: "looking" });
+    void this.runningSessions.refresh(waiting.host).then((answered) => {
+      if (this.waiting.get(terminalId) !== waiting) return;
+      if (answered) {
+        this.proceed(terminalId, waiting);
+      } else {
+        this.setWaitingState(waiting, {
+          status: "unreachable",
+          reason: "It did not say which shells run there.",
+        });
+      }
+    });
   }
 
   /** The pane stops waiting and gets its session (or waits for the next thing). */
@@ -354,9 +378,12 @@ export class SessionHostFactory {
     const entry = this.sessions.get(terminalId);
     if (!entry || entry.host.runtime.status !== "takenOver") return;
     const dock = entry.componentRef?.location.nativeElement.parentElement ?? undefined;
-    await this.runningSessions.refresh(entry.pane.host);
+    // Without an answer the new session would take the shell for gone - or,
+    // on this machine, start another one under its id.
+    if (!(await this.runningSessions.refresh(entry.pane.host))) return;
     if (this.sessions.get(terminalId) !== entry) return;
-    this.destroy(terminalId);
+    // The terminal stays: features must not hear that it went.
+    this.endSession(terminalId, false);
     if (dock) {
       this.attach(entry.pane, dock);
     } else {
@@ -372,7 +399,7 @@ export class SessionHostFactory {
       () => this.proceed(terminalId, waiting),
       (error: Error) => {
         if (this.waiting.get(terminalId) !== waiting) return;
-        this.setWaitingState(waiting, { status: "failed", reason: error.message });
+        this.setWaitingState(waiting, { status: "unreachable", reason: error.message });
       },
     );
   }

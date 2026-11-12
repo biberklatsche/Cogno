@@ -104,7 +104,7 @@ describe("WorkspaceHostApplicationService", () => {
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       discardSessionMarker as unknown as DiscardSessionMarker,
-      { unshownHere: () => unshownShells } as never,
+      { unshownLocalShells: () => unshownShells } as never,
       { facts$: new Subject() } as unknown as TerminalSessionRegistry,
       getDestroyRef(),
     );

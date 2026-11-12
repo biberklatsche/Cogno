@@ -1,13 +1,19 @@
 import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
 
-/** How far the connection a pane waits for has come. */
+/** Why a pane of another machine shows no terminal (yet). */
 export type HostConnectionState =
+  /** The machine is being connected. */
   | { readonly status: "connecting" }
-  | { readonly status: "failed"; readonly reason: string };
+  /** The machine is asked what runs there now. */
+  | { readonly status: "looking" }
+  /** The machine could not be reached, or did not answer. */
+  | { readonly status: "unreachable"; readonly reason: string }
+  /** The machine answered: the pane's shell does not run there any more. */
+  | { readonly status: "gone" };
 
 /**
  * What a pane shows instead of a terminal while the machine its shell runs
- * on is not connected yet, or the shell could not be shown.
+ * on is not connected yet, or the shell is not there.
  */
 @Component({
   selector: "app-host-connection",
@@ -17,9 +23,15 @@ export type HostConnectionState =
     @if (state(); as state) {
       @if (state.status === "connecting") {
         <div class="host-connection-title">Connecting to {{ host() }}…</div>
+      } @else if (state.status === "looking") {
+        <div class="host-connection-title">Looking for the shell on {{ host() }}…</div>
       } @else {
-        <div class="host-connection-title">Could not show the shell on {{ host() }}</div>
-        <div class="host-connection-reason">{{ state.reason }}</div>
+        @if (state.status === "unreachable") {
+          <div class="host-connection-title">Could not connect to {{ host() }}</div>
+          <div class="host-connection-reason">{{ state.reason }}</div>
+        } @else {
+          <div class="host-connection-title">The shell no longer runs on {{ host() }}</div>
+        }
         <div class="host-connection-actions">
           <button type="button" class="button" (click)="retry.emit()">Retry</button>
           <button type="button" class="button" (click)="closePane.emit()">Close</button>
@@ -62,6 +74,4 @@ export class HostConnectionComponent {
   state = input.required<HostConnectionState>();
   retry = output<void>();
   closePane = output<void>();
-  takeOver = output<void>();
-  startNew = output<void>();
 }

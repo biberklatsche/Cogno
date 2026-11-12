@@ -291,10 +291,21 @@ describe("PtyHandler", () => {
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(onFailed).toHaveBeenCalled());
 
-      handler.restart();
+      handler.restart("start");
 
       await vi.waitFor(() => expect(mockPty.spawn).toHaveBeenCalled());
       expect(mockPty.attach).toHaveBeenCalledOnce();
+    });
+
+    it("is attached to again, not started, when asked so", async () => {
+      vi.mocked(mockPty.attach).mockRejectedValueOnce(new Error("The connection was lost"));
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(onFailed).toHaveBeenCalled());
+
+      handler.restart("attach");
+
+      await vi.waitFor(() => expect(mockPty.attach).toHaveBeenCalledTimes(2));
+      expect(mockPty.spawn).not.toHaveBeenCalled();
     });
 
     it("passes on that another Cogno took the shell over", async () => {

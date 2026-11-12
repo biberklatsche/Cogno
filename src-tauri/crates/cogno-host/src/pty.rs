@@ -193,8 +193,10 @@ impl Output {
         Ok(previous)
     }
 
-    fn ack(&self, seq: u32) {
-        if let Some(attached) = self.attached() {
+    /// Only the client that shows the session paces it: a late ack from one
+    /// that lost it must not hand its successor credit.
+    fn ack(&self, client: u64, seq: u32) {
+        if let Some(attached) = self.attached().filter(|attached| attached.client == client) {
             attached.flow.ack_through(seq);
         }
     }
@@ -208,6 +210,15 @@ struct TakenFrom {
 }
 
 impl TakenFrom {
+    /// The pane that waits for the session learns that it will not come back.
+    fn tell_exit(self, terminal_id: &str, exit_code: i32) {
+        self.sink.emit(Event::PtyExit {
+            terminal_id: terminal_id.to_string(),
+            owner: self.owner.label,
+            exit_code,
+        });
+    }
+
     fn tell_released(self, terminal_id: &str) {
         self.sink.emit(Event::PtyReleased {
             terminal_id: terminal_id.to_string(),
@@ -256,7 +267,7 @@ struct Session {
     master: Box<dyn portable_pty::MasterPty + Send>,
     /// Ordered, non-blocking hand-off to the per-session writer thread. PTY
     /// writes can block (the child stops reading stdin while it is blocked on
-    /// stdout during flow control), and a Tauri command must never block while
+    /// stdout during flow control), and a request must never block while
     /// holding `sessions`. Dropping the session drops the sender, which ends
     /// the writer thread.
     input_tx: std::sync::mpsc::Sender<Vec<u8>>,
@@ -287,6 +298,9 @@ struct SessionTable {
     /// are not reused), so this only grows by one per released owner.
     gone_owners: HashSet<Owner>,
 }
+
+/// The exit code reported for a shell that another client ended.
+const ENDED_BY_ANOTHER: i32 = -1;
 
 /// What became of a spawned session.
 enum Registered {
@@ -349,6 +363,8 @@ fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exi
     };
     // The session is out of the map: its owner comes from the session itself.
     let owner = session.owner.label.clone();
+    let mut session = session;
+    let taken_from = session.taken_from.take();
     release_session(session);
     if let Some(attached) = attached {
         attached.sink.emit(Event::PtyExit {
@@ -356,6 +372,9 @@ fn end_session(sessions: &Sessions, terminal_id: &str, output: &Arc<Output>, exi
             owner,
             exit_code,
         });
+    }
+    if let Some(taken_from) = taken_from {
+        taken_from.tell_exit(terminal_id, exit_code);
     }
 }
 
@@ -382,7 +401,7 @@ impl PtyState {
     }
 
     /// Ends every shell, so no shell (or, on Windows, grandchild) is left
-    /// running after the process that embeds the host is gone.
+    /// running after the daemon is gone.
     pub fn release_all(&self) {
         // An owner released just before the exit may still be releasing.
         let releases = std::mem::take(&mut *self.releases.lock().unwrap());
@@ -496,6 +515,7 @@ impl PtyState {
     }
 
     /// The name the terminal's owner goes by, as its client gave it.
+    #[cfg(test)]
     pub fn owner_of(&self, terminal_id: &str) -> Option<String> {
         let sessions = self.sessions.lock().unwrap();
         sessions
@@ -510,22 +530,40 @@ impl PtyState {
 
     /// The sessions that run, as `client` sees them. `name_of` gives the
     /// name a client gave itself.
+    ///
+    /// Who shows a session is asked after `sessions` is let go: an output's
+    /// lock is held while a client is played what was kept, which over a slow
+    /// link takes a while, and every other session must not wait for that.
     pub fn list(&self, client: u64, name_of: impl Fn(u64) -> Option<String>) -> Vec<SessionInfo> {
-        let sessions = self.sessions.lock().unwrap();
-        let mut list: Vec<SessionInfo> = sessions
-            .live
-            .iter()
-            .map(|(terminal_id, session)| {
-                let shown_to = session.output.attached().map(|attached| attached.client);
+        let running: Vec<(SessionInfo, Arc<Output>)> = {
+            let sessions = self.sessions.lock().unwrap();
+            sessions
+                .live
+                .iter()
+                .map(|(terminal_id, session)| {
+                    let info = SessionInfo {
+                        terminal_id: terminal_id.clone(),
+                        label: session.label.clone(),
+                        profile: session.profile.clone(),
+                        cols: session.cols,
+                        rows: session.rows,
+                        shown: false,
+                        shown_here: false,
+                        shown_by: None,
+                    };
+                    (info, session.output.clone())
+                })
+                .collect()
+        };
+        let mut list: Vec<SessionInfo> = running
+            .into_iter()
+            .map(|(info, output)| {
+                let shown_to = output.attached().map(|attached| attached.client);
                 SessionInfo {
-                    terminal_id: terminal_id.clone(),
-                    label: session.label.clone(),
-                    profile: session.profile.clone(),
-                    cols: session.cols,
-                    rows: session.rows,
-                    attached: shown_to.is_some(),
+                    shown: shown_to.is_some(),
                     shown_here: shown_to == Some(client),
                     shown_by: shown_to.and_then(&name_of),
+                    ..info
                 }
             })
             .collect();
@@ -562,21 +600,28 @@ impl PtyState {
             let passed_on =
                 session.owner.client != owner.client || session.owner.label != owner.label;
             let previous_owner = std::mem::replace(&mut session.owner, owner);
-            if previous_owner.client != client.id {
-                session.survives_client = true;
-            }
             if passed_on {
-                // Whoever shows it now is the one to get it back; a session
-                // nobody showed was taken from nobody.
-                session.taken_from = session.output.attached().map(|showed| TakenFrom {
-                    owner: previous_owner.clone(),
-                    sink: showed.sink,
-                });
+                // Also between two windows of one app: the window that took
+                // it may close, the one it was taken from may still be there.
+                session.survives_client = true;
             }
             (session.output.clone(), previous_owner, passed_on)
         };
         let attachment = Attachment::new(client, stream, FlowControl::new());
         let previous = output.attach(attachment).map_err(|_| not_found())?;
+        if passed_on {
+            // Whoever showed it gets it back once it is let go; a session
+            // nobody showed was taken from nobody.
+            let taken_from = previous.as_ref().map(|showed| TakenFrom {
+                owner: previous_owner.clone(),
+                sink: showed.sink.clone(),
+            });
+            if let Some(session) = self.sessions.lock().unwrap().live.get_mut(terminal_id) {
+                if Arc::ptr_eq(&session.output, &output) {
+                    session.taken_from = taken_from;
+                }
+            }
+        }
         if let Some(previous) = previous {
             previous.end();
             if passed_on {
@@ -598,20 +643,33 @@ impl PtyState {
         }
     }
 
-    /// Takes the client off a session, which goes on without one. Whoever
-    /// it was taken from is told that it is free again.
-    pub fn detach(&self, terminal_id: &str) -> Result<(), String> {
-        let (output, taken_from) = {
-            let mut sessions = self.sessions.lock().unwrap();
+    /// Takes `client` off a session, which goes on without one. Whoever it
+    /// was taken from is told that it is free again. A client that no longer
+    /// shows it (another took it in the meantime) changes nothing.
+    pub fn detach(&self, client: u64, terminal_id: &str) -> Result<(), String> {
+        let output = {
+            let sessions = self.sessions.lock().unwrap();
             sessions
                 .live
-                .get_mut(terminal_id)
-                .map(|session| (session.output.clone(), session.taken_from.take()))
+                .get(terminal_id)
+                .map(|session| session.output.clone())
                 .ok_or_else(|| format!("Session not found: {}", terminal_id))?
         };
-        if let Some(attached) = output.detach() {
-            attached.end();
-        }
+        let Some(attached) = output
+            .attached()
+            .filter(|attached| attached.client == client)
+        else {
+            return Ok(());
+        };
+        output.forget(&attached);
+        attached.end();
+        let taken_from = self
+            .sessions
+            .lock()
+            .unwrap()
+            .live
+            .get_mut(terminal_id)
+            .and_then(|session| session.taken_from.take());
         if let Some(taken_from) = taken_from {
             taken_from.tell_released(terminal_id);
         }
@@ -1081,27 +1139,44 @@ impl PtyState {
         }
     }
 
+    /// Ends the session at `client`'s request. The client that asked closed
+    /// its pane and hears nothing; another one that shows the session, or
+    /// waits for it to be let go, hears that it ended.
+    ///
     /// Releasing a session can block (closing a ConPTY waits for its output
     /// pipe): never call this on the thread that drives the UI.
-    pub fn kill(&self, terminal_id: &str) -> Result<(), String> {
+    pub fn kill(&self, client: u64, terminal_id: &str) -> Result<(), String> {
         let removed = {
             let mut sessions = self.sessions.lock().unwrap();
             sessions.live.remove(terminal_id)
         };
-        match removed {
-            // Intentional kill: the frontend already dropped the pane, no exit event.
-            Some(session) => {
-                release_session(session);
-                Ok(())
-            }
-            None => Err(format!("Session not found: {}", terminal_id)),
+        let Some(mut session) = removed else {
+            return Err(format!("Session not found: {}", terminal_id));
+        };
+        let shown_elsewhere = session
+            .output
+            .attached()
+            .filter(|attached| attached.client != client)
+            .map(|attached| (attached, session.owner.label.clone()));
+        let taken_from = session.taken_from.take();
+        release_session(session);
+        if let Some((attached, owner)) = shown_elsewhere {
+            attached.sink.emit(Event::PtyExit {
+                terminal_id: terminal_id.to_string(),
+                owner,
+                exit_code: ENDED_BY_ANOTHER,
+            });
         }
+        if let Some(taken_from) = taken_from {
+            taken_from.tell_exit(terminal_id, ENDED_BY_ANOTHER);
+        }
+        Ok(())
     }
 
     /// The receiver's acknowledgement that it has parsed every chunk up to and
     /// including `seq`. Acks for sessions that already ended are expected (data
     /// was still in the pipeline) and silently accepted.
-    pub fn ack(&self, terminal_id: &str, seq: u32) {
+    pub fn ack(&self, client: u64, terminal_id: &str, seq: u32) {
         let output = {
             let sessions = self.sessions.lock().unwrap();
             sessions
@@ -1110,7 +1185,7 @@ impl PtyState {
                 .map(|session| session.output.clone())
         };
         if let Some(output) = output {
-            output.ack(seq);
+            output.ack(client, seq);
         }
     }
 }

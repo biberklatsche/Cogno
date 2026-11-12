@@ -78,11 +78,16 @@ export class Pty implements IPty {
   private readonly _exitListeners = new Set<PtyExitListener>();
   private readonly _takenOverListeners = new Set<(by?: string) => void>();
   private readonly _releasedListeners = new Set<() => void>();
+  /** Another Cogno shows the shell: what is typed here must not reach it. */
+  private _takenOver = false;
 
   constructor(
     private readonly _transport: PtyTransport,
     private readonly _devMode: boolean,
-    /** The connected host the shell runs on; left out for this machine. */
+    /**
+     * The connected host on another machine the shell runs on; left out for
+     * this one. A shell there is only ever attached to, never started.
+     */
     private readonly _host?: string,
     /** Whether a shell started here goes on when Cogno is gone. */
     private readonly _survivesClient = false,
@@ -94,6 +99,9 @@ export class Pty implements IPty {
     dimensions: TerminalDimensions,
     onData: PtyChunkListener,
   ): Promise<void> {
+    if (this._host !== undefined) {
+      return Promise.reject(new Error("A shell on another machine is never started from here."));
+    }
     return this.open(
       terminalId,
       (output) =>
@@ -104,7 +112,6 @@ export class Pty implements IPty {
             rows: dimensions.rows,
             profile: shellProfile,
             devMode: this._devMode,
-            host: this._host,
             survivesClient: this._survivesClient,
           },
           output,
@@ -134,6 +141,7 @@ export class Pty implements IPty {
     this._spawn?.closeOutput();
     this._terminalId = terminalId;
     this._spawned = false;
+    this._takenOver = false;
     this._pendingResize = undefined;
     this._exit = undefined;
     // Listen before the shell exists: a shell that dies at once emits its exit
@@ -253,6 +261,7 @@ export class Pty implements IPty {
 
   write(data: string) {
     if (!this._terminalId) throw Error("Please spawn Pty before write to it.");
+    if (this._takenOver) return;
     this._transport
       .write(this._terminalId, data)
       .catch((error) =>
@@ -262,6 +271,7 @@ export class Pty implements IPty {
 
   executeLineEditorAction(action: string, payload?: object) {
     if (!this._terminalId) throw Error("Please spawn Pty before executing line editor actions.");
+    if (this._takenOver) return;
     this._transport.executeLineEditorAction(this._terminalId, action, payload).catch((error) =>
       this.reportFault({
         operation: "executeLineEditorAction",
@@ -297,6 +307,7 @@ export class Pty implements IPty {
    * touch any more: disposing must not kill what runs on elsewhere.
    */
   private notifyTakenOver(by?: string): void {
+    this._takenOver = true;
     this._spawned = false;
     this._pendingResize = undefined;
     this._spawn?.closeOutput();

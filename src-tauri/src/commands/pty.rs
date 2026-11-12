@@ -10,27 +10,21 @@ fn done(reply: Result<Response, String>) -> Result<(), String> {
     reply.map(|_| ())
 }
 
-/// Starts a shell on `host`, this machine when none is named.
-/// `survives_client`: whether it goes on when Cogno is gone, to be attached
-/// to again.
+/// Starts a shell on this machine; on another one, Cogno only shows what
+/// runs there. `survives_client`: whether it goes on when Cogno is gone, to
+/// be attached to again.
 #[tauri::command]
 pub async fn pty_spawn(
     app: AppHandle,
     window: tauri::WebviewWindow,
     hosts: State<'_, HostState>,
     options: SpawnOptions,
-    host: Option<String>,
     survives_client: bool,
     on_data: Channel<InvokeResponseBody>,
 ) -> Result<PtySpawnResult, String> {
-    // This app's HTTP server is of no use to a shell on another machine.
-    let env = match host {
-        Some(_) => Vec::new(),
-        None => http_server_environment(&app).await,
-    };
+    let env = http_server_environment(&app).await;
     hosts
         .spawn(
-            host,
             options,
             window.label().to_string(),
             env,

@@ -520,11 +520,14 @@ export class SessionHost {
     }
   }
 
-  /** Tries the shell again after a failed start. */
+  /**
+   * Tries the shell again after a failed start. On this machine that starts a
+   * new one; on another, Cogno attaches again to the shell that runs there.
+   */
   retry(): void {
     if (this.runtime.status !== "failed" || !this.ptyHandler) return;
     this.setRuntime({ status: "starting" });
-    this.ptyHandler.restart();
+    this.ptyHandler.restart(this.backend.host === undefined ? "start" : "attach");
   }
 
   /** Ends the session for good: the workbench decided so. Idempotent. */
@@ -771,14 +774,6 @@ export class SessionHost {
   }
 
   /**
-   * Replay a snapshot's scrollback into the buffer, above a separator line, then
-   * re-anchor its markers and seed their command metadata so the decorations
-   * render. The replay is dead scrollback - the live prompt runs below it - so
-   * the model must not read it as input: `beginRestore` gates the observer's
-   * input mirror until the writes are parsed. A snapshot of a different version
-   * or without scrollback is ignored.
-   */
-  /**
    * The session's shell already runs (Cogno was closed and it went on, or
    * another Cogno started it): `start()` shows it instead of starting one.
    * `sessionToken` is the secret it was started with. Called before start().
@@ -787,6 +782,14 @@ export class SessionHost {
     this._resumeToken = sessionToken;
   }
 
+  /**
+   * Replay a snapshot's scrollback into the buffer, above a separator line, then
+   * re-anchor its markers and seed their command metadata so the decorations
+   * render. The replay is dead scrollback - the live prompt runs below it - so
+   * the model must not read it as input: `beginRestore` gates the observer's
+   * input mirror until the writes are parsed. A snapshot of a different version
+   * or without scrollback is ignored.
+   */
   restore(snapshot: SessionSnapshot): void {
     if (snapshot.version !== SESSION_SNAPSHOT_VERSION || !snapshot.scrollback) {
       return;

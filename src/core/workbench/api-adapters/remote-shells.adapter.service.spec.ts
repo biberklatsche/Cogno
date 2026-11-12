@@ -139,9 +139,7 @@ describe("RemoteShellsAdapterService", () => {
       terminalId: "t1",
       label: { workspace: "Cogno", tab: "build", title: null, directory: "C:\\dev" },
       profile: { shell_type: "PowerShell" },
-      cols: 80,
-      rows: 24,
-      attached: true,
+      shown: true,
       shownHere: false,
       shownBy: "lars-laptop",
     };

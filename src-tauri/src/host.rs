@@ -59,7 +59,8 @@ impl Streams {
 struct Terminal {
     /// The host on another machine; `None` for this machine's daemon.
     host: Option<String>,
-    /// The window that spawned it: where its messages and its end go.
+    /// The window that spawned or attached it: where its messages and its
+    /// end go.
     window: String,
     stream: u64,
 }
@@ -113,7 +114,7 @@ impl EventSink for WebviewSink {
                 self.streams.close(stream);
                 true
             }
-            // The owner is the window that spawned the session.
+            // The owner is the window that spawned or attached the session.
             Event::PtyExit {
                 terminal_id,
                 owner,
@@ -157,25 +158,34 @@ struct Hosts {
     /// The connections to other machines, by the name the config gives them.
     remotes: Mutex<HashMap<String, Arc<HostConnection>>>,
     terminals: Terminals,
-    /// One connection is set up at a time: two panes of one host restored
-    /// together share a connection instead of each starting one, and the
-    /// user is asked one password at a time.
+    /// One connection to another machine is set up at a time: two panes of
+    /// one host restored together share a connection instead of each starting
+    /// one, and the user is asked one password at a time.
     connecting: Mutex<()>,
+    /// The same for this machine's daemon, apart from the other machines: a
+    /// password ssh waits for must not hold up the terminals here.
+    connecting_local: Mutex<()>,
 }
 
 impl Hosts {
-    /// The connection to this machine's daemon. It is set up when first
-    /// needed and again after it was lost; the daemon is started if none runs.
-    fn local(self: &Arc<Self>) -> Result<Arc<HostConnection>, String> {
-        let _one_at_a_time = self.connecting.lock().unwrap();
-        if let Some(connected) = self
-            .local
+    fn live_local(&self) -> Option<Arc<HostConnection>> {
+        self.local
             .lock()
             .unwrap()
             .as_ref()
             .filter(|connection| !connection.is_lost())
-        {
-            return Ok(connected.clone());
+            .cloned()
+    }
+
+    /// The connection to this machine's daemon. It is set up when first
+    /// needed and again after it was lost; the daemon is started if none runs.
+    fn local(self: &Arc<Self>) -> Result<Arc<HostConnection>, String> {
+        if let Some(connected) = self.live_local() {
+            return Ok(connected);
+        }
+        let _one_at_a_time = self.connecting_local.lock().unwrap();
+        if let Some(connected) = self.live_local() {
+            return Ok(connected);
         }
         let stream = cogno_host::daemon_start::connect_or_start(
             cfg!(debug_assertions),
@@ -233,22 +243,35 @@ impl Hosts {
     /// The connection to a host ended: its terminals end with it. `None` is
     /// this machine's daemon.
     fn lost(&self, host: Option<&str>) {
-        match host {
+        // A connection that was hung up and set up again: what ends is the
+        // old one, whose reader only now noticed. The terminals belong to the
+        // new one.
+        let replaced = match host {
             None => {
                 let mut local = self.local.lock().unwrap();
-                if local
-                    .as_ref()
-                    .is_some_and(|connection| connection.is_lost())
-                {
-                    *local = None;
+                match local.as_ref() {
+                    Some(connection) if connection.is_lost() => {
+                        *local = None;
+                        false
+                    }
+                    Some(_) => true,
+                    None => false,
                 }
             }
             Some(name) => {
                 let mut remotes = self.remotes.lock().unwrap();
-                if remotes.get(name).is_some_and(|remote| remote.is_lost()) {
-                    remotes.remove(name);
+                match remotes.get(name) {
+                    Some(remote) if remote.is_lost() => {
+                        remotes.remove(name);
+                        false
+                    }
+                    Some(_) => true,
+                    None => false,
                 }
             }
+        };
+        if replaced {
+            return;
         }
         let ended: Vec<(String, Terminal)> = self
             .terminals
@@ -328,6 +351,7 @@ impl HostState {
             remotes: Mutex::new(HashMap::new()),
             terminals,
             connecting: Mutex::new(()),
+            connecting_local: Mutex::new(()),
         }))
     }
 
@@ -363,7 +387,6 @@ impl HostState {
     /// output goes to `on_data`.
     pub async fn spawn(
         &self,
-        host: Option<String>,
         options: SpawnOptions,
         window: String,
         env: Vec<(String, String)>,
@@ -374,7 +397,7 @@ impl HostState {
         let stream = hosts.streams.open(on_data);
         let spawned = tauri::async_runtime::spawn_blocking(move || {
             let terminal_id = options.name.clone();
-            let connection = hosts.connection(host.as_deref())?;
+            let connection = hosts.local()?;
             let request = Request::PtySpawn {
                 options,
                 owner: window.clone(),
@@ -387,7 +410,7 @@ impl HostState {
             hosts.terminals.lock().unwrap().insert(
                 terminal_id.clone(),
                 Terminal {
-                    host,
+                    host: None,
                     window,
                     stream,
                 },
@@ -468,17 +491,13 @@ impl HostState {
         .map_err(|error| error.to_string())?
     }
 
-    /// Ends the shell `terminal_id` on `host` (this machine when `None`),
-    /// whether this app shows it or not.
-    pub async fn end_session(
-        &self,
-        host: Option<String>,
-        terminal_id: String,
-    ) -> Result<(), String> {
+    /// Ends the shell `terminal_id` on the host `name`, whether this app
+    /// shows it or not.
+    pub async fn end_session(&self, name: String, terminal_id: String) -> Result<(), String> {
         if let Some(shown) = self.0.terminals.lock().unwrap().remove(&terminal_id) {
             self.0.streams.close(shown.stream);
         }
-        self.request_on(host, Request::PtyKill { terminal_id })
+        self.request_on(Some(name), Request::PtyKill { terminal_id })
             .await
             .map(|_| ())
     }
