@@ -61,6 +61,8 @@ pub enum TerminalExit {
     PtyFailed,
     /// The connection to the host broke; the shell may run on there.
     ConnectionLost,
+    /// The user hung up on the host; the shell runs on there.
+    HungUp,
 }
 
 impl From<ExitReason> for TerminalExit {
@@ -68,7 +70,8 @@ impl From<ExitReason> for TerminalExit {
         match reason {
             ExitReason::Exited { code } => TerminalExit::Exited { code },
             ExitReason::KilledByAnotherClient => TerminalExit::KilledByAnotherClient,
-            ExitReason::PtyFailed => TerminalExit::PtyFailed,
+            // A reason of a later host: ended, and not by the shell itself.
+            ExitReason::PtyFailed | ExitReason::Unknown => TerminalExit::PtyFailed,
         }
     }
 }
@@ -195,14 +198,12 @@ impl WebviewEvents {
     }
 
     /// Tells `window` that its terminal ended.
-    pub fn exit(&self, window: &str, terminal_id: &str, reason: TerminalExit) -> bool {
-        self.app
-            .emit_to(
-                window,
-                &terminal_event(PTY_EXIT_EVENT, terminal_id),
-                ExitPayload { reason },
-            )
-            .is_ok()
+    pub fn exit(&self, window: &str, terminal_id: &str, reason: TerminalExit) {
+        let _ = self.app.emit_to(
+            window,
+            &terminal_event(PTY_EXIT_EVENT, terminal_id),
+            ExitPayload { reason },
+        );
     }
 
     /// Tells every window that the connection to `host` ended.
@@ -217,33 +218,29 @@ impl WebviewEvents {
 }
 
 impl EventSink for WebviewEvents {
-    fn event(&self, event: Event) -> bool {
+    fn event(&self, event: Event) {
         match event {
-            Event::PtyStreamEnded { stream } => {
-                self.streams.close(stream);
-                true
-            }
+            Event::PtyStreamEnded { stream } => self.streams.close(stream),
             Event::PtyExit {
                 terminal_id,
                 window,
                 reason,
             } => {
                 self.routes.remove(&terminal_id);
-                self.exit(&window, &terminal_id, reason.into())
+                self.exit(&window, &terminal_id, reason.into());
             }
             // The Cogno that took the session let it go: the window that
             // showed it before may show it again.
             Event::PtyHandedBack {
                 terminal_id,
                 window,
-            } => self
-                .app
-                .emit_to(
+            } => {
+                let _ = self.app.emit_to(
                     window.as_str(),
                     &terminal_event(PTY_HANDED_BACK_EVENT, &terminal_id),
                     (),
-                )
-                .is_ok(),
+                );
+            }
             // Another Cogno shows the session now: it is not this window's
             // any more, and the window is told.
             Event::PtyTakenOver {
@@ -252,16 +249,14 @@ impl EventSink for WebviewEvents {
                 by,
             } => {
                 self.routes.remove_of_window(&terminal_id, &window);
-                self.app
-                    .emit_to(
-                        window.as_str(),
-                        &terminal_event(PTY_TAKEN_OVER_EVENT, &terminal_id),
-                        TakenOverPayload { by },
-                    )
-                    .is_ok()
+                let _ = self.app.emit_to(
+                    window.as_str(),
+                    &terminal_event(PTY_TAKEN_OVER_EVENT, &terminal_id),
+                    TakenOverPayload { by },
+                );
             }
             // Something a later host reports: nothing here to do with it.
-            Event::Unknown => true,
+            Event::Unknown => {}
         }
     }
 

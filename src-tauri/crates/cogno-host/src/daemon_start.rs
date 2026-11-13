@@ -11,8 +11,8 @@ use std::time::{Duration, Instant};
 
 /// How long a daemon that was just started may take to answer.
 const START_PATIENCE: Duration = Duration::from_secs(15);
-/// How long a daemon that runs may take to answer. It is never replaced, so
-/// a busy one is waited for.
+/// How long a daemon whose process runs may take to answer before another
+/// one is started.
 const BUSY_PATIENCE: Duration = Duration::from_secs(5);
 /// How often a starting or busy daemon is knocked on.
 const KNOCK_INTERVAL: Duration = Duration::from_millis(50);
@@ -35,49 +35,57 @@ pub const STARTER_NAME: &str = "cogno";
 pub const BRIDGE_ARGUMENTS: &str = "server --stdio";
 
 /// A connection to this user's daemon, which is started from the calling
-/// binary if none runs. `build` names that binary's build (its version).
+/// binary if none answers. `build` names that binary's build (its version).
 ///
-/// A daemon that runs but is slow to answer is waited for, never replaced:
-/// replacing it would leave its shells running where nobody can reach them.
+/// A daemon whose process runs is given time to answer before another one
+/// is started; that one takes over only if it still does not answer then
+/// (`daemon::run`).
 pub fn connect_or_start(dev_mode: bool, build: &str) -> Result<TcpStream, String> {
     let endpoint = daemon::endpoint_path(dev_mode)?;
     if let Ok(stream) = daemon::connect(&endpoint) {
         return Ok(stream);
     }
     let _one_start = take_start_lock(home_of(&endpoint)?)?;
-    if let Some(token) = daemon::running_daemon(&endpoint) {
-        return knock(&endpoint, |current| current == token, BUSY_PATIENCE)
-            .ok_or_else(|| "The Cogno host runs but does not answer".to_string());
+    // Started by another Cogno meanwhile, or only slow to answer.
+    let patience = if daemon::endpoint_process_runs(&endpoint) {
+        BUSY_PATIENCE
+    } else {
+        Duration::ZERO
+    };
+    if let Some(stream) = knock(&endpoint, patience) {
+        return Ok(stream);
     }
-    // What the file names now is gone. The new daemon is the one whose token
-    // is another.
-    let stale = daemon::endpoint_token(&endpoint);
     let binary = daemon_binary(&endpoint, build)?;
     put_down_starter(&endpoint, &binary);
     start(&binary)?;
-    knock(
-        &endpoint,
-        |current| Some(current) != stale.as_deref(),
-        START_PATIENCE,
-    )
-    .ok_or_else(|| "The Cogno host did not start".to_string())
+    knock(&endpoint, START_PATIENCE).ok_or_else(|| "The Cogno host did not start".to_string())
 }
 
-/// Connects to the daemon the endpoint file names once its token is a
-/// `wanted` one, trying until `patience` is used up.
-fn knock(endpoint: &Path, wanted: impl Fn(&str) -> bool, patience: Duration) -> Option<TcpStream> {
+/// Connects to the daemon the endpoint file names, trying until `patience`
+/// is used up; at least once.
+fn knock(endpoint: &Path, patience: Duration) -> Option<TcpStream> {
     let started = Instant::now();
     loop {
-        if daemon::endpoint_token(endpoint).is_some_and(|token| wanted(&token)) {
-            if let Ok(stream) = daemon::connect(endpoint) {
-                return Some(stream);
-            }
+        if let Ok(stream) = daemon::connect(endpoint) {
+            return Some(stream);
         }
         if started.elapsed() >= patience {
             return None;
         }
         std::thread::sleep(KNOCK_INTERVAL);
     }
+}
+
+/// Ends this user's daemon of `dev_mode` and the shells in it, whatever its
+/// version: for one this Cogno cannot talk to. A daemon that is gone already
+/// is no failure; a process that does not answer as the daemon is never
+/// touched.
+pub fn end_running_daemon(dev_mode: bool) -> Result<(), String> {
+    let endpoint = daemon::endpoint_path(dev_mode)?;
+    // Not while another Cogno starts one.
+    let _one_start = take_start_lock(home_of(&endpoint)?)?;
+    daemon::end_daemon(&endpoint)
+        .map_err(|error| format!("The Cogno host could not be ended: {error}"))
 }
 
 /// Waits for the start lock of the Cogno home `home` and holds it until the

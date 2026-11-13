@@ -327,11 +327,14 @@ impl Sessions {
         window: WindowLabel,
         stream: StreamId,
     ) -> Result<SessionInfo, HostError> {
-        let shared = {
+        // Under the table's lock from the check to the attach: a departure of
+        // the client comes before it, and the check sees it, or after it, and
+        // finds the session the client now owns. Attaching only queues.
+        let attached = {
             let table = self.table();
             let owner = Owner {
                 client: client.id,
-                window: window.clone(),
+                window,
             };
             // A client that left while this was on its way attaches nothing.
             if table.is_gone(&owner) {
@@ -340,11 +343,19 @@ impl Sessions {
                     "The window closed meanwhile",
                 ));
             }
-            table.get(terminal_id)?.shared.clone()
+            let session = table.get(terminal_id)?;
+            let attached = session
+                .shared
+                .attach(terminal_id, Attachment::new(client, stream), owner.window)
+                .ok_or_else(|| HostError::session_not_found(terminal_id))?;
+            if attached.in_alternate_screen {
+                // After the replay: what the program draws comes behind it.
+                if let Err(error) = session.shell.ask_for_redraw(attached.info.size) {
+                    log::debug!(target: "pty", "terminal_id={terminal_id}: {error}");
+                }
+            }
+            attached
         };
-        let attached = shared
-            .attach(terminal_id, Attachment::new(client, stream), window)
-            .ok_or_else(|| HostError::session_not_found(terminal_id))?;
         if let Some(previous) = attached.previous {
             previous.end();
             if attached.passed_on {
@@ -716,9 +727,7 @@ pub(crate) mod test_support {
 
     pub struct TakesEverything;
     impl EventSink for TakesEverything {
-        fn event(&self, _event: Event) -> bool {
-            true
-        }
+        fn event(&self, _event: Event) {}
         fn output(&self, _output: Output) -> bool {
             true
         }

@@ -7,8 +7,8 @@ use std::sync::mpsc;
 use std::sync::Arc;
 
 use crate::host::{Client, ClientId, EventSink, Host};
-use crate::protocol::{Event, Reply};
-use crate::wire::{self, ClientMessage, HostMessage, Output};
+use crate::protocol::{Event, HostError, HostErrorCode, Reply};
+use crate::wire::{self, ClientFrame, ClientMessage, HostMessage, Output};
 
 /// What goes to the client, written by a thread of its own: whoever sends
 /// only queues, so a client that is slow to read never holds up the host -
@@ -41,8 +41,8 @@ impl ClientWriter {
 }
 
 impl EventSink for ClientWriter {
-    fn event(&self, event: Event) -> bool {
-        self.send(HostMessage::Event(event))
+    fn event(&self, event: Event) {
+        self.send(HostMessage::Event(event));
     }
 
     fn output(&self, output: Output) -> bool {
@@ -71,12 +71,30 @@ pub(crate) fn serve_client<W: Write + Send + 'static>(
         name: hello.name,
         sink: writer.clone(),
     };
+    // Also when handling a request panics on this thread: the client's
+    // sessions must not stay attached to a client nobody serves.
+    let _gone = ClientGone {
+        host,
+        client: client_id,
+    };
 
-    let served = loop {
-        let message = match wire::read_client_message(&mut input) {
-            Ok(Some(message)) => message,
-            Ok(None) => break Ok(()),
-            Err(error) => break Err(error),
+    loop {
+        let message = match wire::read_client_message(&mut input)? {
+            Some(ClientFrame::Message(message)) => message,
+            Some(ClientFrame::Unreadable { id, reason }) => {
+                match id {
+                    Some(id) => writer.answer(
+                        id,
+                        Err(HostError::new(
+                            HostErrorCode::InvalidRequest,
+                            format!("The request could not be read: {reason}"),
+                        )),
+                    ),
+                    None => log::warn!(target: "host", "a post could not be read: {reason}"),
+                }
+                continue;
+            }
+            None => return Ok(()),
         };
         let (id, request) = match message {
             ClientMessage::Request { id, request } => (Some(id), request),
@@ -108,7 +126,18 @@ pub(crate) fn serve_client<W: Write + Send + 'static>(
         } else {
             answer();
         }
-    };
-    host.client_gone(client_id);
-    served
+    }
+}
+
+/// Tells the host that its client is gone when serving it ends, however it
+/// ends.
+struct ClientGone<'a> {
+    host: &'a Host,
+    client: ClientId,
+}
+
+impl Drop for ClientGone<'_> {
+    fn drop(&mut self) {
+        self.host.client_gone(self.client);
+    }
 }

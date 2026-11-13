@@ -12,8 +12,8 @@
 //! The alternate screen (vim, less, a full-screen agent) is left out of the
 //! tail on purpose. A terminal keeps no history of it either, and what a
 //! program drew there was laid out for the old size: a client that attaches
-//! is put into the alternate screen and the program redraws when the client
-//! sets its size.
+//! is put into the alternate screen and the program is asked to draw again
+//! (`ShellProcess::ask_for_redraw`).
 
 use std::collections::VecDeque;
 
@@ -52,9 +52,24 @@ const TRACKED_MODES: [u16; 11] = [
     1016, // mouse encoding: SGR pixels
     2004, // bracketed paste
 ];
+const APPLICATION_CURSOR_KEYS: u16 = 1;
 const CURSOR_VISIBLE: u16 = 25;
 /// The modes that switch to the alternate screen.
 const ALTERNATE_SCREEN_MODES: [u16; 3] = [47, 1047, 1049];
+
+fn mode_index(mode: u16) -> usize {
+    TRACKED_MODES
+        .iter()
+        .position(|tracked| *tracked == mode)
+        .expect("tracked")
+}
+
+/// The tracked modes of a fresh terminal: all off but the cursor.
+fn fresh_modes() -> [bool; TRACKED_MODES.len()] {
+    let mut modes = [false; TRACKED_MODES.len()];
+    modes[mode_index(CURSOR_VISIBLE)] = true;
+    modes
+}
 
 enum Parser {
     Ground,
@@ -96,17 +111,12 @@ impl KeptOutput {
     }
 
     fn with_capacity(capacity: usize) -> Self {
-        let mut modes = [false; TRACKED_MODES.len()];
-        modes[TRACKED_MODES
-            .iter()
-            .position(|mode| *mode == CURSOR_VISIBLE)
-            .expect("tracked")] = true;
         Self {
             tail: VecDeque::new(),
             capacity,
             parser: Parser::Ground,
             pending: Vec::new(),
-            modes,
+            modes: fresh_modes(),
             application_keypad: false,
             alternate_screen: false,
             handshake: None,
@@ -142,6 +152,13 @@ impl KeptOutput {
                         b']' => self.parser = Parser::Osc,
                         b'=' | b'>' => {
                             self.application_keypad = byte == b'=';
+                            self.pass_pending();
+                        }
+                        // RIS (`reset`): everything as in a fresh terminal,
+                        // the normal screen too. Kept, as the terminal took it.
+                        b'c' => {
+                            self.reset_modes();
+                            self.alternate_screen = false;
                             self.pass_pending();
                         }
                         // Another ESC starts over; anything else is a
@@ -196,9 +213,17 @@ impl KeptOutput {
         self.pass_pending();
     }
 
-    /// A complete `ESC [ ... final`: read it if it sets private modes.
+    /// A complete `ESC [ ... final`: read it if it sets private modes or
+    /// resets them.
     fn end_csi(&mut self, last: u8) {
         let parameters = &self.pending[2..self.pending.len() - 1];
+        if last == b'p' && parameters == b"!" {
+            // DECSTR, the soft reset: cursor keys, keypad and cursor as in a
+            // fresh terminal. Mouse, paste and the screen stay as they are.
+            self.reset_soft_modes();
+            self.pass_pending();
+            return;
+        }
         let sets = match last {
             b'h' => Some(true),
             b'l' => Some(false),
@@ -232,6 +257,29 @@ impl KeptOutput {
         } else {
             self.pass_pending();
         }
+    }
+
+    /// Every tracked mode and the keypad as a fresh terminal has them.
+    fn reset_modes(&mut self) {
+        self.modes = fresh_modes();
+        self.application_keypad = false;
+    }
+
+    /// What a soft reset (DECSTR) puts back: the cursor keys, the cursor and
+    /// the keypad.
+    fn reset_soft_modes(&mut self) {
+        let fresh = fresh_modes();
+        for mode in [APPLICATION_CURSOR_KEYS, CURSOR_VISIBLE] {
+            let index = mode_index(mode);
+            self.modes[index] = fresh[index];
+        }
+        self.application_keypad = false;
+    }
+
+    /// Whether a full-screen program is drawing: what was kept leaves its
+    /// screen out, so it has to draw again for a client that attaches.
+    pub(crate) fn in_alternate_screen(&self) -> bool {
+        self.alternate_screen
     }
 
     /// The pending bytes turned out to be ordinary output.
@@ -366,6 +414,22 @@ mod tests {
     fn modes_a_full_screen_program_switched_are_kept_while_it_runs() {
         let replay = replay_of(&[b"$ \x1b[?1049h\x1b[?1h\x1b=\x1b[?25l"]);
         assert_eq!(replay, "$ \x1b[?1049h\x1b[?1h\x1b[?25l\x1b=");
+    }
+
+    #[test]
+    fn a_reset_puts_every_mode_back_and_leaves_the_full_screen_program() {
+        let replay = replay_of(&[b"\x1b[?1000;1006h\x1b[?1049h\x1b[?1h\x1b=", b"\x1bc$ "]);
+        // Played back as it came, and nothing switched on after it.
+        assert_eq!(replay, "\x1b[?1000;1006h\x1bc$ ");
+    }
+
+    #[test]
+    fn a_soft_reset_puts_back_cursor_keys_cursor_and_keypad_only() {
+        let replay = replay_of(&[b"\x1b[?2004h\x1b[?1h\x1b[?25l\x1b=$ ", b"\x1b[!p"]);
+        assert_eq!(
+            replay,
+            "\x1b[?2004h\x1b[?1h\x1b[?25l\x1b=$ \x1b[!p\x1b[?2004h"
+        );
     }
 
     #[test]

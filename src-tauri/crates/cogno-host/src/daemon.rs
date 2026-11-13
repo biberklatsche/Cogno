@@ -20,10 +20,17 @@ use serde::{Deserialize, Serialize};
 use crate::host::{ClientId, Host};
 use crate::identity::cogno_home;
 use crate::server::serve_client;
+use crate::wire;
 
 const ENDPOINT_FILE_NAME: &str = "host.json";
 /// How long a connection to the daemon may take to come about.
 const CONNECT_PATIENCE: Duration = Duration::from_millis(300);
+/// How long the daemon may take to answer a connection that presented its
+/// token. It answers from a thread of its own at once; one that does not
+/// within this is taken for gone.
+const ANSWER_PATIENCE: Duration = Duration::from_secs(2);
+/// How often a partial answer is looked at again.
+const ANSWER_POLL_INTERVAL: Duration = Duration::from_millis(5);
 /// How long a connection may take to present its token.
 const TOKEN_PATIENCE: Duration = Duration::from_secs(5);
 const TOKEN_LEN: usize = 32;
@@ -31,27 +38,24 @@ const TOKEN_LEN: usize = 32;
 const IDLE_CHECK_INTERVAL: Duration = Duration::from_millis(100);
 /// What is passed between the bridge's two streams in one go.
 const BRIDGE_BUFFER_LEN: usize = 16 * 1024;
+/// How long an ended daemon may take to be gone.
+const END_PATIENCE: Duration = Duration::from_secs(5);
 
+/// How the daemon is reached. The token line and the host's preamble
+/// (`wire`) come before any version is spoken: they stay as they are, so a
+/// Cogno of any version can tell a daemon of any other one.
 #[derive(Debug, Serialize, Deserialize)]
 struct Endpoint {
     port: u16,
     token: String,
-    /// The daemon's process, and when it started: a daemon that is slow to
-    /// answer is told from one that is gone by them, not by a timeout.
+    /// The daemon's process: a file whose process is gone is not knocked
+    /// on, and a daemon this Cogno cannot talk to is ended by it.
     pid: u32,
-    started_at: u64,
 }
 
-impl Endpoint {
-    /// Whether the daemon that wrote it still runs. Its process id may have
-    /// been handed to another process since; the start time tells.
-    fn daemon_runs(&self) -> bool {
-        start_time_of(self.pid) == Some(self.started_at)
-    }
-}
-
-/// When the process `pid` started, in seconds since the epoch.
-fn start_time_of(pid: u32) -> Option<u64> {
+/// Whether a process runs under `pid`: the daemon's, or one that was given
+/// its id since. Only reaching it tells which.
+fn process_runs(pid: u32) -> bool {
     let pid = sysinfo::Pid::from_u32(pid);
     let mut system = sysinfo::System::new();
     system.refresh_processes_specifics(
@@ -59,20 +63,17 @@ fn start_time_of(pid: u32) -> Option<u64> {
         true,
         sysinfo::ProcessRefreshKind::nothing(),
     );
-    system.process(pid).map(|process| process.start_time())
+    system.process(pid).is_some()
 }
 
-/// Whether the endpoint file names a daemon that runs, whether or not it
-/// answers right now. Its token tells it from a later one.
-pub fn running_daemon(endpoint: &Path) -> Option<String> {
-    read_endpoint(endpoint)
-        .ok()
-        .filter(Endpoint::daemon_runs)
-        .map(|running| running.token)
+/// Whether the process the endpoint file names runs, whether or not it
+/// answers: a daemon that is slow to answer is waited for.
+pub fn endpoint_process_runs(endpoint: &Path) -> bool {
+    read_endpoint(endpoint).is_ok_and(|written| process_runs(written.pid))
 }
 
 /// The token of the daemon the endpoint file names, running or not.
-pub fn endpoint_token(endpoint: &Path) -> Option<String> {
+fn endpoint_token(endpoint: &Path) -> Option<String> {
     read_endpoint(endpoint).ok().map(|written| written.token)
 }
 
@@ -179,29 +180,124 @@ fn create_private(path: &Path) -> io::Result<std::fs::File> {
     Ok(file)
 }
 
-/// Connects to the daemon the endpoint file names, if it runs. What comes
+/// Connects to the daemon the endpoint file names, if it answers. What comes
 /// back is the stream of a host: its preamble first (`wire`).
-///
-/// A daemon that was killed leaves its endpoint file behind, and another
-/// program may listen on its port by now: one that never says hello would
-/// keep the caller waiting. So the daemon's process is checked first.
 pub fn connect(endpoint: &Path) -> io::Result<TcpStream> {
     let written = read_endpoint(endpoint)?;
-    if !written.daemon_runs() {
+    // A daemon that was killed leaves its file behind: not knocked on.
+    if !process_runs(written.pid) {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
             "the Cogno host of the endpoint file does not run",
         ));
     }
-    let Endpoint { port, token, .. } = written;
+    reach(&written)
+}
+
+/// Connects to the daemon `endpoint` names and makes sure it is one: it
+/// takes the token and begins as a host does, in time. Another program may
+/// listen on the port of a daemon that is gone, and one that never says
+/// hello would keep the caller waiting. What the daemon said stays in the
+/// stream for the caller to read.
+fn reach(endpoint: &Endpoint) -> io::Result<TcpStream> {
     // A daemon on this machine answers at once. Without the limit, Windows
     // spends seconds on a port nobody listens on.
-    let address = std::net::SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+    let address = std::net::SocketAddr::from((Ipv4Addr::LOCALHOST, endpoint.port));
     let mut stream = TcpStream::connect_timeout(&address, CONNECT_PATIENCE)?;
     // What is typed must not wait for more to fill a packet.
     stream.set_nodelay(true)?;
-    stream.write_all(format!("{token}\n").as_bytes())?;
-    Ok(stream)
+    stream.set_write_timeout(Some(ANSWER_PATIENCE))?;
+    stream.set_read_timeout(Some(ANSWER_PATIENCE))?;
+    let answered = stream
+        .write_all(format!("{}\n", endpoint.token).as_bytes())
+        .and_then(|_| wait_for_preamble(&stream));
+    stream.set_write_timeout(None)?;
+    stream.set_read_timeout(None)?;
+    answered.map(|_| stream)
+}
+
+/// Waits until the stream begins with the host's preamble, without taking
+/// it out of the stream.
+fn wait_for_preamble(stream: &TcpStream) -> io::Result<()> {
+    let not_a_host = || invalid("what answers on the port is no Cogno host");
+    let deadline = Instant::now() + ANSWER_PATIENCE;
+    let mut begun = [0u8; wire::PREAMBLE.len()];
+    loop {
+        // Waits up to the read timeout for the first byte; returns at once
+        // with what is there after that.
+        let seen = stream.peek(&mut begun)?;
+        if seen == 0 || !wire::PREAMBLE.starts_with(&begun[..seen]) {
+            return Err(not_a_host());
+        }
+        if seen == begun.len() {
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "the Cogno host did not finish its answer",
+            ));
+        }
+        std::thread::sleep(ANSWER_POLL_INTERVAL);
+    }
+}
+
+/// Ends the daemon the endpoint file names, and the shells in it with it:
+/// for a daemon this Cogno cannot talk to, one of an older version. No
+/// version is spoken with it. That it takes the token and begins as a host
+/// shows that the process the file names is the daemon (its id cannot be
+/// another's while it runs); a process that does not is never touched. A
+/// file whose process is gone only goes itself.
+pub fn end_daemon(endpoint: &Path) -> io::Result<()> {
+    let written = match read_endpoint(endpoint) {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
+        read => read?,
+    };
+    if process_runs(written.pid) {
+        drop(reach(&written)?);
+        end_process(written.pid)?;
+        let asked = Instant::now();
+        while process_runs(written.pid) {
+            if asked.elapsed() >= END_PATIENCE {
+                return Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    "the Cogno host did not end",
+                ));
+            }
+            std::thread::sleep(IDLE_CHECK_INTERVAL);
+        }
+    }
+    remove_own_endpoint(endpoint, &written.token);
+    Ok(())
+}
+
+/// Ends the process `pid`. Its shells end with it: on Unix the PTYs it held
+/// close and hang their shells up, on Windows the job of each shell kills
+/// the shell's tree when its handle closes (`process_job`).
+fn end_process(pid: u32) -> io::Result<()> {
+    let pid = sysinfo::Pid::from_u32(pid);
+    let mut system = sysinfo::System::new();
+    system.refresh_processes_specifics(
+        sysinfo::ProcessesToUpdate::Some(&[pid]),
+        true,
+        sysinfo::ProcessRefreshKind::nothing(),
+    );
+    let Some(process) = system.process(pid) else {
+        return Ok(());
+    };
+    // Terminate where there is a choice: what the daemon cannot catch is no
+    // different, and a signal it may one day handle is the polite one.
+    let ended = process
+        .kill_with(sysinfo::Signal::Term)
+        .unwrap_or_else(|| process.kill());
+    if ended {
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "the Cogno host could not be ended",
+        ))
+    }
 }
 
 /// Passes bytes between the two streams and the daemon the endpoint file
@@ -291,10 +387,10 @@ fn presents_token(stream: &mut TcpStream, token: &str) -> bool {
 
 /// Runs the daemon until it has had no client and no session for a while,
 /// then ends every shell that is left and returns. Fails at once when the
-/// endpoint file already names a daemon that runs: its sessions must never
+/// endpoint file already names a daemon that answers: its sessions must never
 /// be cut off by a second one taking its endpoint.
 pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
-    if running_daemon(endpoint).is_some() {
+    if connect(endpoint).is_ok() {
         return Err(io::Error::new(
             io::ErrorKind::AlreadyExists,
             "a Cogno host already runs for this user",
@@ -305,7 +401,6 @@ pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
         .ok_or_else(|| invalid("the endpoint file lies in no directory"))?
         .to_path_buf();
     let pid = std::process::id();
-    let started_at = start_time_of(pid).ok_or_else(|| invalid("this process has no start time"))?;
     // The user's login-shell environment, captured in the background so the
     // first shell does not pay for it.
     crate::login_environment::prefetch_login_environment();
@@ -318,7 +413,6 @@ pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
             port,
             token: token.clone(),
             pid,
-            started_at,
         },
     )?;
 
@@ -354,13 +448,14 @@ pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
                 .expect("client ids start at 1"),
         );
         let host = host.clone();
-        let clients = clients.clone();
         let had_a_client = had_a_client.clone();
         let token = token.clone();
         // Counted before its thread runs: a client that is on its way in
         // must keep the daemon from calling itself idle.
-        clients.fetch_add(1, Ordering::AcqRel);
+        let counted = Counted::new(clients.clone());
         std::thread::spawn(move || {
+            // Uncounted however serving ends, a panic included.
+            let _counted = counted;
             if presents_token(&mut stream, &token) && stream.set_nodelay(true).is_ok() {
                 // Noted here, not by the idle watch: it only looks now and
                 // then and would miss a client that came and went between.
@@ -371,13 +466,28 @@ pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
             } else {
                 let _ = stream.shutdown(Shutdown::Both);
             }
-            clients.fetch_sub(1, Ordering::AcqRel);
         });
     }
 
     remove_own_endpoint(endpoint, &token);
     host.shut_down_all();
     Ok(())
+}
+
+/// One client in the daemon's count, for as long as it lives.
+struct Counted(Arc<AtomicUsize>);
+
+impl Counted {
+    fn new(count: Arc<AtomicUsize>) -> Self {
+        count.fetch_add(1, Ordering::AcqRel);
+        Self(count)
+    }
+}
+
+impl Drop for Counted {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::AcqRel);
+    }
 }
 
 /// Removes the endpoint file if it is still this daemon's: another one may
@@ -575,21 +685,117 @@ mod tests {
         assert!(finishes(daemon).is_ok());
     }
 
+    /// An endpoint file whose process runs - this one - and whose port
+    /// belongs to a program that takes connections and never answers.
+    fn endpoint_of_a_silent_program() -> (PathBuf, TcpListener) {
+        let silent = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+        let endpoint = std::env::temp_dir().join(format!(
+            "cogno-daemon-test-{}.json",
+            uuid::Uuid::new_v4().simple()
+        ));
+        write_endpoint(
+            &endpoint,
+            &Endpoint {
+                port: silent.local_addr().unwrap().port(),
+                token: "a".repeat(TOKEN_LEN),
+                pid: std::process::id(),
+            },
+        )
+        .unwrap();
+        (endpoint, silent)
+    }
+
     #[test]
-    fn a_daemon_that_is_slow_to_answer_is_not_taken_for_gone() {
-        let (endpoint, daemon) = start(QUICK);
-        let held = client(&endpoint);
+    fn a_program_that_does_not_answer_like_a_host_is_no_daemon() {
+        let (endpoint, _silent) = endpoint_of_a_silent_program();
 
-        // Its endpoint names a process that runs: whatever a connection says,
-        // nobody may take its place.
-        assert!(running_daemon(&endpoint).is_some());
-        let mut written = read_endpoint(&endpoint).unwrap();
-        written.started_at += 1;
-        assert!(!written.daemon_runs(), "another process under the same id");
+        let started = Instant::now();
+        assert!(connect(&endpoint).is_err());
+        // Given up in time, not waited for for ever.
+        assert!(started.elapsed() < ANSWER_PATIENCE * 2);
 
-        drop(held);
+        // A daemon that starts takes its place.
+        let daemon = {
+            let endpoint = endpoint.clone();
+            std::thread::spawn(move || run(&endpoint, QUICK))
+        };
+        let reached = Instant::now();
+        while connect(&endpoint).is_err() {
+            assert!(
+                reached.elapsed() < Duration::from_secs(10),
+                "no daemon came"
+            );
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        drop(client(&endpoint));
         assert!(finishes(daemon).is_ok());
-        assert!(running_daemon(&endpoint).is_none());
+    }
+
+    #[test]
+    fn ending_a_daemon_touches_no_process_that_is_not_one() {
+        let (endpoint, _silent) = endpoint_of_a_silent_program();
+
+        // This process runs, but it is not the daemon: it lives on, and so
+        // does the file.
+        assert!(end_daemon(&endpoint).is_err());
+        assert!(endpoint.exists());
+        let _ = std::fs::remove_file(&endpoint);
+    }
+
+    #[test]
+    fn ending_a_daemon_that_is_gone_only_removes_its_file() {
+        let endpoint = std::env::temp_dir().join(format!(
+            "cogno-daemon-test-{}.json",
+            uuid::Uuid::new_v4().simple()
+        ));
+        write_endpoint(
+            &endpoint,
+            &Endpoint {
+                port: 1,
+                token: "a".repeat(TOKEN_LEN),
+                // No process has this id: ids are multiples of four on
+                // Windows, and far below this elsewhere.
+                pid: u32::MAX - 2,
+            },
+        )
+        .unwrap();
+
+        assert!(end_daemon(&endpoint).is_ok());
+        assert!(!endpoint.exists());
+        // Nothing to end at all is no failure either.
+        assert!(end_daemon(&endpoint).is_ok());
+    }
+
+    #[test]
+    fn a_request_of_a_later_client_fails_alone_and_the_connection_goes_on() {
+        let (endpoint, daemon) = start(QUICK);
+        let mut stream = client(&endpoint);
+        // A spawn with a shell type this build does not know, framed by hand.
+        let body = br#"{"type":"request","id":5,"request":{"type":"ptySpawn","options":{"terminal_id":"t1","size":{"cols":80,"rows":24},"profile":{"shell_type":"Fish"},"integration_version":"9"},"window":"main","stream":1,"env":[],"lifetime":"endsWithClient"}}"#;
+        let mut frame = (body.len() as u32).to_le_bytes().to_vec();
+        frame.push(1);
+        frame.extend_from_slice(body);
+        stream.write_all(&frame).unwrap();
+
+        loop {
+            if let Some(HostMessage::Reply { id, reply }) =
+                wire::read_host_message(&mut stream).unwrap()
+            {
+                assert_eq!(id, 5);
+                assert_eq!(
+                    reply.unwrap_err().code,
+                    crate::protocol::HostErrorCode::InvalidRequest
+                );
+                break;
+            }
+        }
+        assert!(matches!(
+            ask(&mut stream, 6, Request::ListSessions),
+            Ok(Response::Sessions { .. })
+        ));
+
+        drop(stream);
+        assert!(finishes(daemon).is_ok());
     }
 
     #[test]

@@ -37,9 +37,13 @@ fn remote_home_directory_name() -> &'static str {
 /// ssh to `destination`, running `remote_command` there with stdin and stdout
 /// as the connection.
 fn ssh_command(destination: &str, remote_command: &str) -> CommandResult<Command> {
-    // A destination is a host, `user@host` or an ssh config alias - never an
-    // option: "-oProxyCommand=..." would run a program on this machine.
-    if destination.is_empty() || destination.starts_with('-') {
+    // A destination is a host, `user@host` or an ssh config alias: one word,
+    // and never an option - "-oProxyCommand=..." would run a program on this
+    // machine.
+    if destination.is_empty()
+        || destination.starts_with('-')
+        || destination.contains(char::is_whitespace)
+    {
         return Err(CommandError::new(
             AppErrorCode::InvalidDestination,
             format!("Not an ssh destination: {destination:?}"),
@@ -148,10 +152,18 @@ pub async fn host_kill_session(
     hosts.kill_session(host, terminal_id).await
 }
 
-/// Hangs up on a host on another machine.
+/// Hangs up on a host on another machine, or gives up connecting to it.
 #[tauri::command]
 pub fn host_disconnect(hosts: State<'_, HostState>, name: String) {
     hosts.disconnect(&name);
+}
+
+/// Ends this machine's host, whatever its version, and the shells in it: for
+/// one from an older Cogno that this one cannot talk to. The next terminal
+/// starts a host of this Cogno.
+#[tauri::command]
+pub async fn host_end_local(hosts: State<'_, HostState>) -> CommandResult<()> {
+    hosts.end_local_host().await
 }
 
 /// Makes sure the shell integration scripts of `version` lie in this
@@ -176,7 +188,7 @@ mod tests {
     #[test]
     fn a_destination_is_never_taken_for_an_option() {
         let command = host_default_command();
-        for not_a_destination in ["-oProxyCommand=calc", ""] {
+        for not_a_destination in ["-oProxyCommand=calc", "", "mac extra"] {
             let refused = ssh_command(not_a_destination, &command).unwrap_err();
             assert!(refused.is(AppErrorCode::InvalidDestination));
         }

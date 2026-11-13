@@ -7,19 +7,19 @@ mod connections;
 mod routes;
 mod webview;
 
-use std::net::Shutdown;
 use std::process::Command;
 use std::sync::Arc;
+use std::time::Duration;
 
 use cogno_host::protocol::{
-    Request, Response, SessionInfo, SessionLifetime, SpawnOptions, TerminalId, TerminalProcess,
-    WindowLabel,
+    HostErrorCode, Request, Response, SessionInfo, SessionLifetime, SpawnOptions, StreamId,
+    TerminalId, TerminalProcess, WindowLabel,
 };
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::AppHandle;
 
-use crate::command_error::{AppErrorCode, CommandError, CommandResult};
-use crate::host_connection::{HostConnection, Reaching};
+use crate::command_error::{AppErrorCode, CommandError, CommandResult, ErrorCode};
+use crate::host_connection::{Ending, HostConnection, OnLost, Starting};
 use connections::{Connections, Lost};
 use routes::{Route, TerminalRoutes};
 use webview::{TerminalExit, WebviewEvents};
@@ -40,6 +40,10 @@ pub struct Spawned {
     pub shell_process_id: Option<u32>,
 }
 
+/// How long a host is given to say which processes run under its shells: the
+/// ones that answer are shown without waiting for one that does not.
+const PROCESSES_PATIENCE: Duration = Duration::from_secs(2);
+
 /// Runs `work` on a blocking worker, never on the thread that drives the UI.
 async fn blocking<T: Send + 'static>(
     work: impl FnOnce() -> CommandResult<T> + Send + 'static,
@@ -56,14 +60,14 @@ struct Hosts {
 }
 
 impl Hosts {
-    /// What runs when the connection `connection` to `host` ends.
-    fn on_lost(self: &Arc<Self>, host: Option<String>) -> impl FnOnce(u64) + Send + 'static {
+    /// What runs when a connection to `host` ends.
+    fn on_lost(self: &Arc<Self>, host: Option<String>) -> OnLost {
         let hosts = Arc::downgrade(self);
-        move |connection| {
+        Box::new(move |connection, ending| {
             if let Some(hosts) = hosts.upgrade() {
-                hosts.lost(host.as_deref(), connection);
+                hosts.lost(host.as_deref(), connection, ending);
             }
-        }
+        })
     }
 
     /// The connection to this machine's daemon, which is started if none
@@ -75,20 +79,7 @@ impl Hosts {
                 env!("CARGO_PKG_VERSION"),
             )
             .map_err(|message| CommandError::new(AppErrorCode::HostNotStarted, message))?;
-            let reader = stream.try_clone().map_err(CommandError::internal)?;
-            let closer = stream.try_clone().map_err(CommandError::internal)?;
-            HostConnection::over(
-                reader,
-                stream,
-                Reaching::ThisMachine,
-                self.events.clone(),
-                self.on_lost(None),
-                // The daemon learns at once that this app is gone, also while
-                // a clone of the socket still reads.
-                Box::new(move || {
-                    let _ = closer.shutdown(Shutdown::Both);
-                }),
-            )
+            HostConnection::to_this_machine(stream, self.events.clone(), self.on_lost(None))
         })
     }
 
@@ -100,14 +91,18 @@ impl Hosts {
         }
     }
 
-    /// The route and the connection of a terminal of `window`.
+    /// The route of a terminal of `window`, and the connection it came
+    /// through - never another one, and never one set up for the asking: what
+    /// is typed into a terminal whose connection is gone goes nowhere.
     fn route(
-        self: &Arc<Self>,
+        &self,
         terminal_id: &str,
         window: &str,
     ) -> CommandResult<(Route, Arc<HostConnection>)> {
         let route = self.routes.of_window(terminal_id, window)?;
-        let connection = self.connection(route.host.as_deref())?;
+        let connection = self
+            .connections
+            .current(route.host.as_deref(), route.connection)?;
         Ok((route, connection))
     }
 
@@ -115,41 +110,90 @@ impl Hosts {
     /// daemon): the terminals that came through it end with it. A newer
     /// connection to the same host - it was hung up and set up again - and
     /// its terminals stay.
-    fn lost(&self, host: Option<&str>, connection: u64) {
+    fn lost(&self, host: Option<&str>, connection: u64, ending: Ending) {
         let lost = self.connections.forget(host, connection);
+        let exit = match ending {
+            Ending::HungUp => TerminalExit::HungUp,
+            Ending::Lost => TerminalExit::ConnectionLost,
+        };
         for (terminal_id, route) in self.routes.drain_connection(connection) {
             self.events.streams.close(route.stream);
-            self.events
-                .exit(&route.window, &terminal_id, TerminalExit::ConnectionLost);
+            self.events.exit(&route.window, &terminal_id, exit);
         }
-        match (lost, host) {
-            (Lost::Replaced, _) => {}
-            (Lost::HostGone, Some(name)) => self.events.disconnected(name),
-            (Lost::HostGone, None) => {
-                log::error!(target: "host", "the connection to this machine's host was lost")
-            }
+        // Hung up on: nothing was lost. Replaced: the host is still there.
+        if ending == Ending::HungUp || lost == Lost::Replaced {
+            return;
+        }
+        match host {
+            Some(name) => self.events.disconnected(name),
+            None => log::error!(target: "host", "the connection to this machine's host was lost"),
         }
     }
 
     /// The processes under every terminal's shell, on every machine, every
-    /// host asked at once: a slow one must not hold up the others.
+    /// host asked at once: a slow one must not hold up the others, and one
+    /// that does not answer in time has none to show.
     fn terminal_processes(&self) -> Vec<TerminalProcess> {
         let connections = self.connections.all();
         std::thread::scope(|scope| {
             let asked: Vec<_> = connections
                 .iter()
-                .map(|connection| scope.spawn(|| connection.request(Request::TerminalProcesses)))
+                .map(|connection| {
+                    scope.spawn(|| {
+                        connection.request_within(Request::TerminalProcesses, PROCESSES_PATIENCE)
+                    })
+                })
                 .collect();
             asked
                 .into_iter()
-                // A host that does not answer has no processes to show.
                 .filter_map(|answer| match answer.join() {
-                    Ok(Ok(Response::TerminalProcesses { processes })) => Some(processes),
+                    Ok(Some(Ok(Response::TerminalProcesses { processes }))) => Some(processes),
                     _ => None,
                 })
                 .flatten()
                 .collect()
         })
+    }
+
+    /// Opens the output stream of the terminal `terminal_id` of `window` on
+    /// `host` (this machine when `None`) and asks the host for it: `ask`
+    /// makes the request for the stream, `accept` reads the answer. The
+    /// route stands from before the request - output may come first - and
+    /// stays only when the answer is taken.
+    async fn open_terminal<T: Send + 'static>(
+        self: &Arc<Self>,
+        host: Option<String>,
+        terminal_id: TerminalId,
+        window: WindowLabel,
+        on_data: Channel<InvokeResponseBody>,
+        ask: impl FnOnce(StreamId) -> Request + Send + 'static,
+        accept: impl FnOnce(&TerminalId, Response) -> CommandResult<T> + Send + 'static,
+    ) -> CommandResult<T> {
+        let stream = self.events.streams.open(on_data);
+        let opened = blocking({
+            let hosts = self.clone();
+            move || {
+                let connection = hosts.connection(host.as_deref())?;
+                let route = hosts.routes.register(
+                    &terminal_id,
+                    Route {
+                        host,
+                        connection: connection.id(),
+                        window,
+                        stream,
+                    },
+                );
+                let opened = accept(&terminal_id, connection.request(ask(stream))?)?;
+                route.commit();
+                Ok(opened)
+            }
+        })
+        .await;
+        if opened.is_err() {
+            // No output will end the stream of a terminal that did not open.
+            self.events.streams.close(stream);
+        }
+        opened
     }
 }
 
@@ -171,61 +215,53 @@ impl HostState {
     /// for as long as the user needs to answer what ssh asks.
     pub fn connect(&self, name: &str, command: Command) -> CommandResult<String> {
         let hosts = &self.0;
-        let connection = hosts.connections.connect_remote(name, || {
-            HostConnection::connect(
-                command,
-                Reaching::Remote(name),
-                hosts.events.clone(),
-                hosts.on_lost(Some(name.to_string())),
-            )
-        })?;
+        let connection = hosts.connections.connect_remote(
+            name,
+            || Starting::spawn(command),
+            |starting| {
+                starting.introduce(
+                    name,
+                    hosts.events.clone(),
+                    hosts.on_lost(Some(name.to_string())),
+                )
+            },
+        )?;
         Ok(connection.os().to_string())
     }
 
     /// Starts a shell on this machine for `request.window`.
     pub async fn spawn(&self, request: SpawnRequest) -> CommandResult<Spawned> {
-        let hosts = self.0.clone();
-        let stream = hosts.events.streams.open(request.on_data);
-        let spawned = blocking({
-            let hosts = hosts.clone();
-            move || {
-                let connection = hosts.local()?;
-                let terminal_id = request.options.terminal_id.clone();
-                let route = hosts.routes.register(
-                    &terminal_id,
-                    Route {
-                        host: None,
-                        connection: connection.id(),
-                        window: request.window.clone(),
-                        stream,
-                    },
-                );
-                let reply = connection.request(Request::PtySpawn {
-                    options: request.options,
-                    window: request.window,
+        let SpawnRequest {
+            options,
+            window,
+            env,
+            lifetime,
+            on_data,
+        } = request;
+        let terminal_id = options.terminal_id.clone();
+        self.0
+            .open_terminal(
+                None,
+                terminal_id,
+                window.clone(),
+                on_data,
+                move |stream| Request::PtySpawn {
+                    options,
+                    window,
                     stream,
-                    env: request.env,
-                    lifetime: request.lifetime,
-                })?;
-                match reply {
-                    Response::Spawned { shell_process_id } => {
-                        route.commit();
-                        Ok(Spawned { shell_process_id })
-                    }
+                    env,
+                    lifetime,
+                },
+                |terminal_id, reply| match reply {
+                    Response::Spawned { shell_process_id } => Ok(Spawned { shell_process_id }),
                     Response::ShellAlreadyRuns => Err(CommandError::new(
                         AppErrorCode::ShellAlreadyRuns,
                         format!("A shell already runs under {terminal_id}"),
                     )),
                     _ => Err(CommandError::unexpected_reply()),
-                }
-            }
-        })
-        .await;
-        if spawned.is_err() {
-            // No output will end the stream of a start that did not happen.
-            hosts.events.streams.close(stream);
-        }
-        spawned
+                },
+            )
+            .await
     }
 
     /// Attaches `window` to the shell `terminal_id` that runs on `host` (this
@@ -237,39 +273,24 @@ impl HostState {
         window: WindowLabel,
         on_data: Channel<InvokeResponseBody>,
     ) -> CommandResult<SessionInfo> {
-        let hosts = self.0.clone();
-        let stream = hosts.events.streams.open(on_data);
-        let attached = blocking({
-            let hosts = hosts.clone();
-            move || {
-                let connection = hosts.connection(host.as_deref())?;
-                let route = hosts.routes.register(
-                    &terminal_id,
-                    Route {
-                        host,
-                        connection: connection.id(),
-                        window: window.clone(),
-                        stream,
-                    },
-                );
-                match connection.request(Request::PtyAttach {
-                    terminal_id,
+        let asked_for = terminal_id.clone();
+        self.0
+            .open_terminal(
+                host,
+                terminal_id,
+                window.clone(),
+                on_data,
+                move |stream| Request::PtyAttach {
+                    terminal_id: asked_for,
                     window,
                     stream,
-                })? {
-                    Response::Attached { session } => {
-                        route.commit();
-                        Ok(*session)
-                    }
+                },
+                |_, reply| match reply {
+                    Response::Attached { session } => Ok(*session),
                     _ => Err(CommandError::unexpected_reply()),
-                }
-            }
-        })
-        .await;
-        if attached.is_err() {
-            hosts.events.streams.close(stream);
-        }
-        attached
+                },
+            )
+            .await
     }
 
     /// Asks `host` (this machine when `None`) about itself, not about one
@@ -285,9 +306,8 @@ impl HostState {
 
     /// Ends the shell `terminal_id` on the host `name`, whether this app
     /// shows it or not. A window of this app that shows it learns that it
-    /// ended: the host tells only other clients.
+    /// ended - the host tells only other clients - once it did.
     pub async fn kill_session(&self, name: String, terminal_id: TerminalId) -> CommandResult<()> {
-        let shown_here = self.0.routes.remove(&terminal_id);
         let killed = self
             .request_on(
                 Some(name),
@@ -296,19 +316,25 @@ impl HostState {
                 },
             )
             .await;
-        if let Some(route) = shown_here {
-            self.0.events.streams.close(route.stream);
-            self.0.events.exit(
-                &route.window,
-                &terminal_id,
-                TerminalExit::KilledByAnotherClient,
-            );
+        let ended = match &killed {
+            Ok(_) => true,
+            Err(error) => error.code == ErrorCode::Host(HostErrorCode::SessionNotFound),
+        };
+        if ended {
+            if let Some(route) = self.0.routes.remove(&terminal_id) {
+                self.0.events.streams.close(route.stream);
+                self.0.events.exit(
+                    &route.window,
+                    &terminal_id,
+                    TerminalExit::KilledByAnotherClient,
+                );
+            }
         }
         killed.map(|_| ())
     }
 
-    /// Hangs up on the host `name`. Its shells that this app shows end here
-    /// (`host-disconnected` follows); whether they run on is theirs to say.
+    /// Hangs up on the host `name`, or gives up connecting to it. Its shells
+    /// that this app shows end here, as hung up on; they run on there.
     pub fn disconnect(&self, name: &str) {
         self.0.connections.disconnect(name);
     }
@@ -380,6 +406,15 @@ impl HostState {
                 window: window.to_string(),
             });
         }
+    }
+
+    /// Ends this machine's daemon and the shells in it, whatever its version.
+    pub async fn end_local_host(&self) -> CommandResult<()> {
+        blocking(|| {
+            cogno_host::daemon_start::end_running_daemon(cfg!(debug_assertions))
+                .map_err(CommandError::internal)
+        })
+        .await
     }
 
     /// Hangs up on every host: what the app does on its way out. A host ends

@@ -19,8 +19,7 @@ use crate::wire::Output;
 
 /// Where what a host tells one client goes.
 pub trait EventSink: Send + Sync + 'static {
-    /// False when nobody takes it any more.
-    fn event(&self, event: Event) -> bool;
+    fn event(&self, event: Event);
     /// A piece of a session's output. False when nobody takes it any more: a
     /// session's output then stops being sent there.
     fn output(&self, output: Output) -> bool;
@@ -254,7 +253,7 @@ mod tests {
     struct RecordingSink(Mutex<Recorded>);
 
     impl EventSink for RecordingSink {
-        fn event(&self, event: Event) -> bool {
+        fn event(&self, event: Event) {
             let mut recorded = self.0.lock().unwrap();
             match event {
                 Event::PtyStreamEnded { stream } => recorded.ended_streams.push(stream),
@@ -277,7 +276,6 @@ mod tests {
                 } => recorded.handed_back.push((terminal_id, window)),
                 Event::Unknown => {}
             }
-            true
         }
 
         fn output(&self, output: Output) -> bool {
@@ -560,7 +558,7 @@ mod tests {
 
         assert!(matches!(
             attached,
-            Ok(Response::Attached { session }) if session.attached == Attached::Here
+            Ok(Response::Attached { session }) if session.attached == Attached::ThisClient
         ));
         wait_until("the laptop has the output so far", || {
             on_the_laptop.output_of(5).contains("port=4711")
@@ -630,7 +628,7 @@ mod tests {
         assert_eq!(seen.placement, placement);
         assert_eq!(
             seen.attached,
-            Attached::Elsewhere {
+            Attached::OtherClient {
                 by: Some("office-pc".to_string())
             }
         );
@@ -642,11 +640,11 @@ mod tests {
         });
         assert_eq!(
             listed(&office).attached,
-            Attached::Elsewhere {
+            Attached::OtherClient {
                 by: Some("lars-laptop".to_string())
             }
         );
-        assert_eq!(listed(&laptop).attached, Attached::Here);
+        assert_eq!(listed(&laptop).attached, Attached::ThisClient);
 
         // The office's placement crossed the takeover: it changes nothing.
         let crossed = host.handle(

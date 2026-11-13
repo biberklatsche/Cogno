@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use cogno_host::sync::lock;
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
-use crate::host_connection::HostConnection;
+use crate::host_connection::{HangUp, HostConnection, Starting};
 
 #[derive(Default)]
 pub struct Connections {
@@ -19,6 +19,9 @@ pub struct Connections {
     /// one host restored together share a connection instead of each starting
     /// one, and the user is asked one password at a time.
     connecting_remote: Mutex<()>,
+    /// The connection to another machine being set up, by the host's name,
+    /// and what gives up on it.
+    setting_up: Mutex<Option<(String, HangUp)>>,
     /// The same for this machine's daemon, apart from the other machines: a
     /// password ssh waits for must not hold up the terminals here.
     connecting_local: Mutex<()>,
@@ -73,18 +76,45 @@ impl Connections {
             })
     }
 
-    /// The connection to the host `name`, set up by `open` unless one
-    /// stands.
+    /// The connection `id` to `host` (`None` is this machine's daemon), while
+    /// it stands: never another one, and never one set up for the asking.
+    pub fn current(&self, host: Option<&str>, id: u64) -> CommandResult<Arc<HostConnection>> {
+        let connection = match host {
+            None => lock(&self.local).clone(),
+            Some(name) => lock(&self.remotes).get(name).cloned(),
+        };
+        connection
+            .filter(|connection| connection.id() == id && !connection.is_lost())
+            .ok_or_else(CommandError::connection_lost)
+    }
+
+    /// The connection to the host `name`: `start` starts its process unless
+    /// one stands, and `introduce` waits for the host there. Hanging up on
+    /// `name` meanwhile gives up on it.
     pub fn connect_remote(
         &self,
         name: &str,
-        open: impl FnOnce() -> CommandResult<HostConnection>,
+        start: impl FnOnce() -> CommandResult<Starting>,
+        introduce: impl FnOnce(Starting) -> CommandResult<HostConnection>,
     ) -> CommandResult<Arc<HostConnection>> {
         let _one_at_a_time = lock(&self.connecting_remote);
         if let Ok(connected) = self.remote(name) {
             return Ok(connected);
         }
-        let connection = Arc::new(open()?);
+        let starting = start()?;
+        *lock(&self.setting_up) = Some((name.to_string(), starting.ender()));
+        let introduced = introduce(starting);
+        let given_up = lock(&self.setting_up).take().is_none();
+        if given_up {
+            if let Ok(connection) = introduced {
+                connection.hang_up();
+            }
+            return Err(CommandError::new(
+                AppErrorCode::ConnectionLost,
+                format!("The connection to {name} was hung up"),
+            ));
+        }
+        let connection = Arc::new(introduced?);
         lock(&self.remotes).insert(name.to_string(), connection.clone());
         // Lost before it was put in its place: its end found nothing to take
         // out, so it is taken out here.
@@ -126,9 +156,23 @@ impl Connections {
         }
     }
 
-    /// Hangs up on the host `name`.
+    /// Hangs up on the host `name`, and gives up on a connection to it that
+    /// is being set up.
     pub fn disconnect(&self, name: &str) {
-        lock(&self.remotes).remove(name);
+        let standing = lock(&self.remotes).remove(name);
+        if let Some(connection) = standing {
+            connection.hang_up();
+        }
+        let setting_up = {
+            let mut setting_up = lock(&self.setting_up);
+            match setting_up.as_ref() {
+                Some((host, _)) if host == name => setting_up.take(),
+                _ => None,
+            }
+        };
+        if let Some((_, give_up)) = setting_up {
+            give_up();
+        }
     }
 
     /// Every connection that stands, this machine's included.
@@ -139,9 +183,15 @@ impl Connections {
         connections
     }
 
-    /// Hangs up on every host.
+    /// Hangs up on every host, and gives up on a connection being set up.
     pub fn clear(&self) {
-        lock(&self.remotes).clear();
-        *lock(&self.local) = None;
+        let remotes: Vec<_> = lock(&self.remotes).drain().map(|(_, c)| c).collect();
+        let local = lock(&self.local).take();
+        for connection in remotes.into_iter().chain(local) {
+            connection.hang_up();
+        }
+        if let Some((_, give_up)) = lock(&self.setting_up).take() {
+            give_up();
+        }
     }
 }

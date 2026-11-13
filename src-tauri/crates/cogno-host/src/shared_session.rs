@@ -71,6 +71,9 @@ pub(crate) struct AttachedNow {
     pub previous_owner: Owner,
     /// Whether it passed to another window; not when a window attaches again.
     pub passed_on: bool,
+    /// Whether a full-screen program is drawing: the replay left its screen
+    /// out, so it has to draw again.
+    pub in_alternate_screen: bool,
 }
 
 /// What ending took off the session.
@@ -226,6 +229,7 @@ impl SharedSession {
             previous,
             previous_owner,
             passed_on,
+            in_alternate_screen: state.kept.in_alternate_screen(),
         })
     }
 
@@ -319,8 +323,8 @@ impl SharedSession {
     ) -> SessionInfo {
         let attached = match &state.attached {
             None => Attached::Nowhere,
-            Some(attachment) if attachment.client == client => Attached::Here,
-            Some(attachment) => Attached::Elsewhere {
+            Some(attachment) if attachment.client == client => Attached::ThisClient,
+            Some(attachment) => Attached::OtherClient {
                 by: attachment.client_name.clone(),
             },
         };

@@ -8,6 +8,9 @@
 //! The tagged enums carry an `Unknown` variant. A host and a client of
 //! different versions talk to each other (`wire::check_versions`); whatever
 //! one of them adds is `Unknown` to the other, never a broken connection.
+//! Where a value of a later version cannot be `Unknown` (a shell type a
+//! request must name exactly), the one message fails, not the connection
+//! (`wire`).
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -98,17 +101,22 @@ pub struct SessionPlacement {
     pub directory: Option<String>,
 }
 
-/// Which client a session is attached to, as the asking client sees it.
+/// Which client a session is attached to, as the asking client sees it. A
+/// client is a whole Cogno, all its windows: which window shows the session
+/// is the client's to know.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "to", rename_all = "camelCase")]
 pub enum Attached {
     Nowhere,
     /// To the client that asks.
-    Here,
+    ThisClient,
     /// To another client, by the name it gave itself (`ClientHello::name`).
-    Elsewhere {
+    OtherClient {
         by: Option<String>,
     },
+    /// What a later version says and this one does not know.
+    #[serde(other)]
+    Unknown,
 }
 
 /// A running session, as a client needs it to find and attach to: where it
@@ -394,7 +402,8 @@ pub enum HostErrorCode {
     /// The shell could not be started.
     SpawnFailed,
     /// The request names something that does not exist (a line editor
-    /// action, a path outside the shell integration).
+    /// action, a path outside the shell integration), or holds a value this
+    /// host does not know (a later client's).
     InvalidRequest,
     /// The request is one this host does not know (a later client's).
     UnknownRequest,
@@ -461,6 +470,9 @@ pub enum ExitReason {
     KilledByAnotherClient,
     /// Reading or writing the PTY failed; the shell is ended with it.
     PtyFailed,
+    /// A reason of a later version: the session ended all the same.
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -539,5 +551,24 @@ mod tests {
         assert_eq!(error.code, HostErrorCode::Unknown);
         let status: ProcessStatus = serde_json::from_str(r#""Hibernating""#).unwrap();
         assert_eq!(status, ProcessStatus::Other);
+        let attached: Attached = serde_json::from_str(r#"{"to":"twoClients"}"#).unwrap();
+        assert_eq!(attached, Attached::Unknown);
+        let reason: ExitReason = serde_json::from_str(r#"{"kind":"evicted"}"#).unwrap();
+        assert_eq!(reason, ExitReason::Unknown);
+    }
+
+    #[test]
+    fn whom_a_session_is_attached_to_is_said_from_the_asking_client() {
+        assert_eq!(
+            serde_json::to_string(&Attached::ThisClient).unwrap(),
+            r#"{"to":"thisClient"}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Attached::OtherClient {
+                by: Some("laptop".into())
+            })
+            .unwrap(),
+            r#"{"to":"otherClient","by":"laptop"}"#
+        );
     }
 }

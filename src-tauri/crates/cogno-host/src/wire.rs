@@ -6,14 +6,17 @@
 //! be told apart and skipped, then says hello. The client answers with its own
 //! hello. After that both directions are frames: length, kind, body. Messages
 //! are JSON; a session's output is binary, because it is most of the traffic.
-//! A frame of a kind this build does not know is skipped.
+//! A frame of a kind this build does not know is skipped. A message whose
+//! body names something this build does not know fails alone: a request is
+//! answered as such, a reply arrives as a failure, anything else is skipped.
+//! Only a stream that is not frames of JSON any more ends the connection.
 
 use std::io::{self, Read, Write};
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::protocol::{Event, Reply, Request, StreamId};
+use crate::protocol::{Event, HostError, HostErrorCode, Reply, Request, StreamId};
 
 /// The newest version of this protocol this build speaks.
 ///
@@ -29,7 +32,9 @@ pub const PROTOCOL_VERSION: u32 = 1;
 pub const OLDEST_PROTOCOL_VERSION: u32 = 1;
 
 /// Control characters around the name: no banner prints this by accident.
-const PREAMBLE: &[u8] = b"\x02COGNO-HOST\x03";
+/// It comes before any version is spoken and never changes: a Cogno of any
+/// version tells a host by it (`daemon`).
+pub(crate) const PREAMBLE: &[u8] = b"\x02COGNO-HOST\x03";
 /// How much a login may print before the preamble.
 const MAX_NOISE_BEFORE_PREAMBLE: usize = 64 * 1024;
 
@@ -104,6 +109,35 @@ pub enum ClientMessage {
     /// round trip would only add delay. A failure is the host's to log.
     Post { request: Request },
 }
+
+/// What the host reads from a client.
+// One at a time and taken apart at once: boxing every message - every key
+// typed - would cost an allocation for nothing.
+#[allow(clippy::large_enum_variant)]
+#[derive(Debug)]
+pub enum ClientFrame {
+    Message(ClientMessage),
+    /// A message whose body names something this build does not know: a
+    /// later client's. `id` is the request's, for the host to answer; `None`
+    /// for a post, which nobody waits for.
+    Unreadable {
+        id: Option<u64>,
+        reason: String,
+    },
+}
+
+/// What every JSON frame has, whatever else it holds: enough to answer a
+/// message that cannot be read in full.
+#[derive(Deserialize)]
+struct Envelope {
+    #[serde(rename = "type")]
+    kind: String,
+    id: Option<u64>,
+}
+
+/// The kinds of `ClientJson` and `HostJson` that are answered by id.
+const REQUEST_KIND: &str = "request";
+const REPLY_KIND: &str = "reply";
 
 /// The JSON frames of each direction; output travels in frames of its own.
 #[derive(Serialize, Deserialize)]
@@ -208,16 +242,29 @@ fn parse_json<T: DeserializeOwned>(body: &[u8]) -> io::Result<T> {
     serde_json::from_slice(body).map_err(|error| invalid(error.to_string()))
 }
 
-/// The next JSON frame, past frames of kinds this build does not know.
-/// `None` when the stream ended.
-fn read_json<T: DeserializeOwned>(reader: &mut impl Read) -> io::Result<Option<T>> {
+/// The body of the next JSON frame, past frames of kinds this build does not
+/// know. `None` when the stream ended.
+fn read_message_body(reader: &mut impl Read) -> io::Result<Option<Vec<u8>>> {
     loop {
         match read_frame(reader)? {
             None => return Ok(None),
-            Some((KIND_MESSAGE, body)) => return parse_json(&body).map(Some),
+            Some((KIND_MESSAGE, body)) => return Ok(Some(body)),
             Some(_) => continue,
         }
     }
+}
+
+/// The next JSON frame. `None` when the stream ended.
+fn read_json<T: DeserializeOwned>(reader: &mut impl Read) -> io::Result<Option<T>> {
+    read_message_body(reader)?
+        .map(|body| parse_json(&body))
+        .transpose()
+}
+
+/// The envelope of a message that did not decode in full. A body without
+/// one is no message at all: the stream is broken.
+fn envelope_of(body: &[u8]) -> io::Result<Envelope> {
+    parse_json(body)
 }
 
 /// What a host sends first.
@@ -282,17 +329,26 @@ pub fn write_client_message(writer: &mut impl Write, message: ClientMessage) -> 
 }
 
 /// The next message of the client, `None` when it hung up. Messages of kinds
-/// this build does not know are skipped.
-pub fn read_client_message(reader: &mut impl Read) -> io::Result<Option<ClientMessage>> {
+/// this build does not know are skipped; one whose body it cannot read comes
+/// as `Unreadable`.
+pub fn read_client_message(reader: &mut impl Read) -> io::Result<Option<ClientFrame>> {
     loop {
-        match read_json(reader)? {
-            None => return Ok(None),
-            Some(ClientJson::Request { id, request }) => {
-                return Ok(Some(ClientMessage::Request { id, request }))
+        let Some(body) = read_message_body(reader)? else {
+            return Ok(None);
+        };
+        let message = match serde_json::from_slice(&body) {
+            Ok(ClientJson::Request { id, request }) => ClientMessage::Request { id, request },
+            Ok(ClientJson::Post { request }) => ClientMessage::Post { request },
+            Ok(ClientJson::Hello(_) | ClientJson::Unknown) => continue,
+            Err(error) => {
+                let envelope = envelope_of(&body)?;
+                return Ok(Some(ClientFrame::Unreadable {
+                    id: envelope.id.filter(|_| envelope.kind == REQUEST_KIND),
+                    reason: error.to_string(),
+                }));
             }
-            Some(ClientJson::Post { request }) => return Ok(Some(ClientMessage::Post { request })),
-            Some(ClientJson::Hello(_)) | Some(ClientJson::Unknown) => continue,
-        }
+        };
+        return Ok(Some(ClientFrame::Message(message)));
     }
 }
 
@@ -310,16 +366,31 @@ pub fn write_host_message(writer: &mut impl Write, message: HostMessage) -> io::
 }
 
 /// The next message of the host, `None` when it hung up. Messages of kinds
-/// this build does not know are skipped.
+/// this build does not know are skipped. A reply whose body it cannot read
+/// arrives as a failure of its request; an event it cannot read is skipped.
 pub fn read_host_message(reader: &mut impl Read) -> io::Result<Option<HostMessage>> {
     loop {
         let message = match read_frame(reader)? {
             None => return Ok(None),
-            Some((KIND_MESSAGE, body)) => match parse_json(&body)? {
-                HostJson::Hello(hello) => HostMessage::Hello(hello),
-                HostJson::Reply { id, reply } => HostMessage::Reply { id, reply },
-                HostJson::Event { event } => HostMessage::Event(event),
-                HostJson::Unknown => continue,
+            Some((KIND_MESSAGE, body)) => match serde_json::from_slice(&body) {
+                Ok(HostJson::Hello(hello)) => HostMessage::Hello(hello),
+                Ok(HostJson::Reply { id, reply }) => HostMessage::Reply { id, reply },
+                Ok(HostJson::Event { event }) => HostMessage::Event(event),
+                Ok(HostJson::Unknown) => continue,
+                Err(error) => match envelope_of(&body)? {
+                    Envelope { kind, id: Some(id) } if kind == REPLY_KIND => HostMessage::Reply {
+                        id,
+                        reply: Err(HostError::new(
+                            // Whatever it says is of a later version.
+                            HostErrorCode::Unknown,
+                            format!("The host's answer could not be read: {error}"),
+                        )),
+                    },
+                    Envelope { kind, .. } => {
+                        log::warn!(target: "host", "skipped a {kind} that could not be read: {error}");
+                        continue;
+                    }
+                },
             },
             Some((KIND_OUTPUT, body)) => HostMessage::Output(parse_output(body)?),
             Some(_) => continue,
@@ -383,16 +454,16 @@ mod tests {
         let mut reader = bytes.as_slice();
         assert!(matches!(
             read_client_message(&mut reader).unwrap(),
-            Some(ClientMessage::Request {
+            Some(ClientFrame::Message(ClientMessage::Request {
                 id: 7,
                 request: Request::PtyResize { terminal_id, size: TerminalSize { cols: 120, rows: 40 } },
-            }) if terminal_id == "t1"
+            })) if terminal_id == "t1"
         ));
         assert!(matches!(
             read_client_message(&mut reader).unwrap(),
-            Some(ClientMessage::Post {
+            Some(ClientFrame::Message(ClientMessage::Post {
                 request: Request::PtyAck { seq: 3, .. }
-            })
+            }))
         ));
         // The stream ended between two frames.
         assert!(read_client_message(&mut reader).unwrap().is_none());
@@ -472,6 +543,98 @@ mod tests {
             read_host_message(&mut bytes.as_slice()).unwrap(),
             Some(HostMessage::Reply { id: 1, .. })
         ));
+    }
+
+    /// A spawn of a later client: a shell type this build does not know.
+    const SPAWN_OF_A_LATER_SHELL: &[u8] = br#"{"type":"request","id":5,"request":{"type":"ptySpawn","options":{"terminal_id":"t1","size":{"cols":80,"rows":24},"profile":{"shell_type":"Fish"},"integration_version":"9"},"window":"main","stream":1,"env":[],"lifetime":"endsWithClient"}}"#;
+
+    #[test]
+    fn a_request_that_cannot_be_read_comes_with_its_id_and_the_next_one_follows() {
+        let mut bytes = Vec::new();
+        write_frame(&mut bytes, KIND_MESSAGE, &[SPAWN_OF_A_LATER_SHELL]).unwrap();
+        write_frame(
+            &mut bytes,
+            KIND_MESSAGE,
+            &[br#"{"type":"post","request":{"type":"ptyWrite","terminal_id":"t1","data":7}}"#],
+        )
+        .unwrap();
+        write_client_message(
+            &mut bytes,
+            ClientMessage::Request {
+                id: 6,
+                request: Request::ListSessions,
+            },
+        )
+        .unwrap();
+
+        let mut reader = bytes.as_slice();
+        assert!(matches!(
+            read_client_message(&mut reader).unwrap(),
+            Some(ClientFrame::Unreadable { id: Some(5), .. })
+        ));
+        assert!(matches!(
+            read_client_message(&mut reader).unwrap(),
+            Some(ClientFrame::Unreadable { id: None, .. })
+        ));
+        assert!(matches!(
+            read_client_message(&mut reader).unwrap(),
+            Some(ClientFrame::Message(ClientMessage::Request {
+                id: 6,
+                request: Request::ListSessions
+            }))
+        ));
+    }
+
+    #[test]
+    fn a_reply_that_cannot_be_read_fails_its_request_and_an_event_is_skipped() {
+        let mut bytes = Vec::new();
+        write_frame(
+            &mut bytes,
+            KIND_MESSAGE,
+            &[br#"{"type":"reply","id":3,"reply":{"Ok":{"type":"shells","shells":[{"name":"fish","path":"/bin/fish","shell_type":"Fish"}]}}}"#],
+        )
+        .unwrap();
+        write_frame(
+            &mut bytes,
+            KIND_MESSAGE,
+            &[br#"{"type":"event","event":{"type":"ptyExit","terminal_id":"t1","window":7}}"#],
+        )
+        .unwrap();
+        write_host_message(
+            &mut bytes,
+            HostMessage::Reply {
+                id: 4,
+                reply: Ok(Response::Done),
+            },
+        )
+        .unwrap();
+
+        let mut reader = bytes.as_slice();
+        assert!(matches!(
+            read_host_message(&mut reader).unwrap(),
+            Some(HostMessage::Reply {
+                id: 3,
+                reply: Err(HostError {
+                    code: HostErrorCode::Unknown,
+                    ..
+                })
+            })
+        ));
+        assert!(matches!(
+            read_host_message(&mut reader).unwrap(),
+            Some(HostMessage::Reply {
+                id: 4,
+                reply: Ok(Response::Done)
+            })
+        ));
+    }
+
+    #[test]
+    fn a_frame_that_is_no_message_at_all_is_a_broken_stream() {
+        let mut bytes = Vec::new();
+        write_frame(&mut bytes, KIND_MESSAGE, &[b"not json"]).unwrap();
+        assert!(read_client_message(&mut bytes.as_slice()).is_err());
+        assert!(read_host_message(&mut bytes.as_slice()).is_err());
     }
 
     #[test]

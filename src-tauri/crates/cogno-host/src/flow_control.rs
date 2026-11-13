@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Condvar, Mutex};
+use std::sync::{Condvar, Mutex, PoisonError};
+
+use crate::sync::lock;
 
 /// Bytes sent to a client but not yet acknowledged before the reader thread
 /// stops reading (and thereby blocks the shell on stdout, like a real
@@ -60,10 +62,13 @@ impl FlowControl {
     /// than the high watermark is unparsed, for as long as it takes (real
     /// backpressure). Returns false once the flow is closed.
     pub(super) fn acquire(&self, seq: u32, bytes: usize) -> bool {
-        let mut state = self.state.lock().unwrap();
+        let mut state = lock(&self.state);
         if state.in_flight_bytes > self.high_watermark {
             while !self.is_closed() && state.in_flight_bytes >= self.low_watermark {
-                state = self.capacity_available.wait(state).unwrap();
+                state = self
+                    .capacity_available
+                    .wait(state)
+                    .unwrap_or_else(PoisonError::into_inner);
             }
         }
         if self.is_closed() {
@@ -78,7 +83,7 @@ impl FlowControl {
     /// those bytes, including the bytes of chunks lost in transit before
     /// `seq`, which the frontend skipped.
     pub(super) fn ack_through(&self, seq: u32) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = lock(&self.state);
         while state
             .sent
             .front()
@@ -95,14 +100,14 @@ impl FlowControl {
     pub(super) fn close(&self) {
         // Set under the lock so a reader that checks `closed` while holding
         // the state lock can never miss the notification.
-        let _state = self.state.lock().unwrap();
+        let _state = lock(&self.state);
         self.closed.store(true, Ordering::Release);
         self.capacity_available.notify_all();
     }
 
     #[cfg(test)]
     pub(super) fn in_flight(&self) -> usize {
-        self.state.lock().unwrap().in_flight_bytes
+        lock(&self.state).in_flight_bytes
     }
 }
 

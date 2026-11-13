@@ -133,6 +133,42 @@ impl ShellProcess {
         self.master.process_group_leader()
     }
 
+    /// Makes the program in the foreground draw its screen again. Setting a
+    /// size that did not change tells it nothing, so a client that attaches
+    /// to a full-screen program at the session's size would see an empty
+    /// screen until the next key. On Unix the program is told that the size
+    /// changed (SIGWINCH).
+    #[cfg(unix)]
+    pub fn ask_for_redraw(&self, _size: TerminalSize) -> Result<(), HostError> {
+        let Some(group) = self.foreground_process_group() else {
+            return Ok(());
+        };
+        // SAFETY: `killpg` takes plain integers and touches no memory.
+        if unsafe { libc::killpg(group, libc::SIGWINCH) } != 0 {
+            return Err(HostError::io(
+                "The program could not be asked to draw again",
+                std::io::Error::last_os_error(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Windows has no SIGWINCH: the console is made one row smaller and
+    /// sized back, which the program hears as two size changes.
+    #[cfg(windows)]
+    pub fn ask_for_redraw(&self, size: TerminalSize) -> Result<(), HostError> {
+        let nudged = TerminalSize {
+            rows: if size.rows > 1 {
+                size.rows - 1
+            } else {
+                size.rows + 1
+            },
+            ..size
+        };
+        self.resize(nudged)?;
+        self.resize(size)
+    }
+
     /// Ends the shell and closes its PTY. Can block until the PTY's output
     /// is drained (closing a ConPTY): never call this while holding a lock.
     pub fn shut_down(mut self) {
