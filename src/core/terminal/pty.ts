@@ -7,7 +7,6 @@ import {
   PtyOutputListenerContract,
   PtyShellProfileContract,
   PtyTransport,
-  SessionInfoContract,
   SessionLifetimeContract,
 } from "@cogno/platform";
 import { IDisposable } from "@cogno/shared/support";
@@ -37,7 +36,7 @@ export type PtyOptions = {
 export interface IPty extends IDisposable {
   /** Things the machine could not do; the host decides who is told. */
   readonly faults$: Observable<TerminalMachineFault>;
-  /** Whether the shell is shown here: started or attached, and not taken over. */
+  /** Whether the shell is shown here: started or attached, not taken over and not ended. */
   readonly isLive: boolean;
 
   /**
@@ -54,7 +53,7 @@ export interface IPty extends IDisposable {
    * Shows a shell that already runs under `terminalId` instead of starting
    * one. `onData` first receives what its host kept of the output.
    */
-  attach(terminalId: string, onData: PtyChunkListener): Promise<SessionInfoContract>;
+  attach(terminalId: string, onData: PtyChunkListener): Promise<void>;
   /**
    * Another Cogno took the shell over: it runs on, but not here any more.
    * A listener that subscribes afterwards is told at once.
@@ -126,7 +125,7 @@ export class Pty implements IPty {
   }
 
   get isLive(): boolean {
-    return this.state.kind === "live";
+    return this.state.kind === "live" && this._exit === undefined;
   }
 
   /** The terminal the PTY belongs to, while it has one. */
@@ -160,10 +159,10 @@ export class Pty implements IPty {
         },
         output,
       ),
-    ).then(() => undefined);
+    );
   }
 
-  attach(terminalId: string, onData: PtyChunkListener): Promise<SessionInfoContract> {
+  attach(terminalId: string, onData: PtyChunkListener): Promise<void> {
     return this.open(terminalId, onData, (output) =>
       this._transport.attach({ terminalId, host: this._options.host }, output),
     );
@@ -174,11 +173,11 @@ export class Pty implements IPty {
    * the listeners that must exist before the first byte, and the cleanup of
    * a session that is no longer wanted when it comes into being.
    */
-  private async open<T>(
+  private async open(
     terminalId: string,
     onData: PtyChunkListener,
-    start: (output: PtyOutputListenerContract) => PtyOpenHandleContract<T>,
-  ): Promise<T> {
+    start: (output: PtyOutputListenerContract) => OpenOutput,
+  ): Promise<void> {
     if (this.state.kind === "disposed") throw new Error("The PTY is disposed.");
     this.closeOutput();
     this.state = { kind: "opening", terminalId };
@@ -206,9 +205,8 @@ export class Pty implements IPty {
       onChunksLost: (fromSeq, toSeq) => this.reportLostChunks(terminalId, fromSeq, toSeq),
     });
     this.state = { kind: "opening", terminalId, output };
-    let opened: T;
     try {
-      opened = await output.ready;
+      await output.ready;
     } catch (error) {
       // A rejected open must not leave the channel's callback registration
       // behind: closing the output releases it (see PtyDataChannel.close).
@@ -220,11 +218,18 @@ export class Pty implements IPty {
       // Disposed, opened anew or taken over while the host was still at it.
       output.closeOutput();
       if (this.isDisposed()) this.letGo(terminalId);
-      return opened;
+      return;
     }
     this.state = { kind: "live", terminalId, output };
     this.flushPendingResize();
-    return opened;
+  }
+
+  /** The terminal whose output is open: the host knows it, answered or not. */
+  private withOutput(): string | undefined {
+    const state = this.state;
+    if (state.kind === "live") return state.terminalId;
+    if (state.kind === "opening" && state.output !== undefined) return state.terminalId;
+    return undefined;
   }
 
   private isDisposed(): boolean {
@@ -239,9 +244,14 @@ export class Pty implements IPty {
     );
   }
 
+  /**
+   * Acknowledges as soon as there is output to acknowledge: a host sends
+   * what it kept of an attached shell before it answers, and a reader that
+   * waits for acks must not wait for that answer.
+   */
   ack(seq: number): void {
-    if (this.state.kind !== "live") return;
-    const terminalId = this.state.terminalId;
+    const terminalId = this.withOutput();
+    if (terminalId === undefined) return;
     this._transport
       .ack(terminalId, seq)
       .catch((error) =>

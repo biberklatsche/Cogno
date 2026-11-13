@@ -211,6 +211,16 @@ describe("Pty", () => {
     expect(faults[0].operation).toBe("resize");
   });
 
+  it("acks output that arrives before the host answered, so its reader is not held back", async () => {
+    const resolveSpawn = holdNextSpawn();
+    await spawnInFlight();
+
+    pty.ack(7);
+
+    expect(transport.ack).toHaveBeenCalledWith(terminalId, 7);
+    resolveSpawn();
+  });
+
   it("should not ack after dispose", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.dispose();
@@ -265,6 +275,17 @@ describe("Pty", () => {
     pty.onExit(listener);
 
     expect(listener).toHaveBeenCalledWith({ reason: { kind: "exited", code: 3 } });
+  });
+
+  it("is not live when its shell ended before the host answered", async () => {
+    const resolveSpawn = holdNextSpawn();
+    const { settled: spawnPromise } = await spawnInFlight();
+
+    backendExit()({ reason: { kind: "exited", code: 1 } });
+    resolveSpawn();
+    await spawnPromise;
+
+    expect(pty.isLive).toBe(false);
   });
 
   it("stops telling a listener once it is disposed", async () => {
@@ -323,10 +344,9 @@ describe("Pty", () => {
       return vi.mocked(transport.onHandedBack).mock.calls[0][1] as () => void;
     }
 
-    it("is attached to through the transport instead of started, and says what it is", async () => {
-      const session = await pty.attach(terminalId, noopListener);
+    it("is attached to through the transport instead of started", async () => {
+      await pty.attach(terminalId, noopListener);
 
-      expect(session).toEqual(TauriMockFactory.createSessionInfo());
       expect(transport.attach).toHaveBeenCalledWith(
         { terminalId, host: undefined },
         expect.objectContaining({ onChunk: expect.any(Function) }),

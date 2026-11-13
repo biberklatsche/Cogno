@@ -332,21 +332,6 @@ describe("PtyHandler", () => {
       expect(onTakenOver).toHaveBeenCalledOnce();
     });
 
-    it("says what its host told of the shell before it calls it running", async () => {
-      const onAttached = vi.fn();
-      handler = new PtyHandler(terminalId, mockPty, shellConfig, {
-        mode: "attach",
-        listener: { ...listener, onAttached, onSpawned },
-      });
-      handler.registerTerminal(mockTerminal);
-      await vi.waitFor(() => expect(onSpawned).toHaveBeenCalled());
-
-      expect(onAttached).toHaveBeenCalledWith(TauriMockFactory.createSessionInfo());
-      expect(onAttached.mock.invocationCallOrder[0]).toBeLessThan(
-        onSpawned.mock.invocationCallOrder[0],
-      );
-    });
-
     it("does not call a shell running that was taken over while it attached", async () => {
       (mockPty as { isLive: boolean }).isLive = false;
       handler.registerTerminal(mockTerminal);

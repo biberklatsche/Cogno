@@ -535,6 +535,15 @@ export class SessionHost {
     this.ptyHandler.restart(this.backend.host === undefined ? "spawn" : "attach");
   }
 
+  /**
+   * The start found its shell running (`shellAlreadyRuns`), but it cannot be
+   * shown: the start failed after all, and Retry tries again.
+   */
+  failStart(error: unknown): void {
+    if (this.runtime.status !== "starting") return;
+    this.fail(error);
+  }
+
   /** Ends the session for good: the workbench decided so. Idempotent. */
   close(): void {
     if (this.isEnding) return;
@@ -1026,6 +1035,10 @@ export class SessionHost {
       this.hostFacts.next({ type: "shellGone" });
       return;
     }
+    this.fail(error);
+  }
+
+  private fail(error: unknown): void {
     const reason = error instanceof Error ? error.message : String(error);
     this.setRuntime({ status: "failed", reason });
     ErrorReporter.reportException({

@@ -15,7 +15,7 @@ describe("RemoteHostFormComponent", () => {
     form.host = host;
     form.defaultCommand = DEFAULT_COMMAND;
     form.closed.subscribe(closed);
-    form.ngOnInit();
+    form.ngOnChanges();
   }
 
   const type = (field: "name" | "destination" | "command", value: string) =>
@@ -56,6 +56,20 @@ describe("RemoteHostFormComponent", () => {
     expect(saveHost).toHaveBeenLastCalledWith(
       { name: "office", destination: "lars@office", command: `& ${DEFAULT_COMMAND}` },
       undefined,
+    );
+  });
+
+  it("shows the other remote when the panel switches to it while it is open", async () => {
+    open({ name: "office", destination: "lars@office", connection: "connected" });
+    type("destination", "changed@office");
+
+    form.host = { name: "home", destination: "lars@home", connection: "disconnected" };
+    form.ngOnChanges();
+    await form.save(new Event("submit"));
+
+    expect(saveHost).toHaveBeenCalledWith(
+      { name: "home", destination: "lars@home", command: undefined },
+      "home",
     );
   });
 

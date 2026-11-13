@@ -258,6 +258,9 @@ impl Sessions {
             Registered::Live => None,
             Registered::OwnerGone(session) => Some(session),
             Registered::IdTaken(session) => {
+                // Nobody shows this shell, but its output must still be read
+                // before it is shut down: closing a ConPTY waits for its pipe.
+                std::thread::spawn(move || drain(output));
                 session.shut_down();
                 return Ok(Spawned::ShellAlreadyRuns);
             }
@@ -693,6 +696,12 @@ fn pump_output(mut reader: Box<dyn Read + Send>, shared: &SharedSession) {
             shared.forget(&attachment);
         }
     }
+}
+
+/// Reads the output of a shell nobody shows until its PTY ends, for the
+/// same reason `pump_output` reads on after the end.
+fn drain(mut reader: Box<dyn Read + Send>) {
+    let _ = std::io::copy(&mut reader, &mut std::io::sink());
 }
 
 /// Spare parts for the tests of the sessions and the host.

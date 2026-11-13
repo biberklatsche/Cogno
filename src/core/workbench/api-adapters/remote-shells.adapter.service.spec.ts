@@ -19,6 +19,10 @@ describe("RemoteShellsAdapterService", () => {
   let takeBack: ReturnType<typeof vi.fn>;
   let sessionChanges: Subject<void>;
   let sessionRuntimes: Subject<{ terminalId: string; runtime: { status: string } }>;
+  let sessionEntries: {
+    terminalId: string;
+    host: { state: { shellContext: { host?: string } } };
+  }[];
   let findTab: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
   let publish: ReturnType<typeof vi.fn>;
@@ -36,6 +40,7 @@ describe("RemoteShellsAdapterService", () => {
     takeBack = vi.fn().mockResolvedValue(false);
     sessionChanges = new Subject();
     sessionRuntimes = new Subject();
+    sessionEntries = [];
     findTab = vi.fn();
     navigate = vi.fn().mockResolvedValue(undefined);
     publish = vi.fn();
@@ -50,7 +55,15 @@ describe("RemoteShellsAdapterService", () => {
       { connections$, connect: vi.fn(), disconnect } as never,
       { sessions, killSession } as never,
       { takeBack } as never,
-      { changes$: sessionChanges, runtimes$: sessionRuntimes } as never,
+      {
+        changes$: sessionChanges,
+        runtimes$: sessionRuntimes,
+        get entries() {
+          return sessionEntries;
+        },
+        get: (terminalId: string) =>
+          sessionEntries.find((entry) => entry.terminalId === terminalId),
+      } as never,
       { findTabIdByTerminalId: findTab } as never,
       { navigateToTerminal: navigate } as never,
       { publish } as never,
@@ -203,17 +216,41 @@ describe("RemoteShellsAdapterService", () => {
     });
   });
 
-  it("says when this window began or stopped showing a shell, and only then", () => {
+  /** Registers a session, as the registry does, of `host` or of this machine. */
+  function register(terminalId: string, host?: string): void {
+    sessionEntries.push({ terminalId, host: { state: { shellContext: { host } } } });
+    sessionChanges.next();
+  }
+
+  function unregister(terminalId: string): void {
+    sessionEntries = sessionEntries.filter((entry) => entry.terminalId !== terminalId);
+    sessionChanges.next();
+  }
+
+  it("says when this window began or stopped showing a shell of another machine", () => {
     let told = 0;
     adapter.shownHereChanged$.subscribe(() => told++);
 
-    sessionChanges.next();
+    register("t1", "office");
     sessionRuntimes.next({ terminalId: "t1", runtime: { status: "starting" } });
     sessionRuntimes.next({ terminalId: "t1", runtime: { status: "running" } });
     sessionRuntimes.next({ terminalId: "t1", runtime: { status: "running" } });
     sessionRuntimes.next({ terminalId: "t1", runtime: { status: "takenOver" } });
+    expect(told).toBe(2);
 
+    unregister("t1");
     expect(told).toBe(3);
+  });
+
+  it("says nothing when a shell of this machine comes or goes", () => {
+    let told = 0;
+    adapter.shownHereChanged$.subscribe(() => told++);
+
+    register("t1");
+    sessionRuntimes.next({ terminalId: "t1", runtime: { status: "running" } });
+    unregister("t1");
+
+    expect(told).toBe(0);
   });
 
   it("ends a shell on its machine", async () => {

@@ -169,6 +169,8 @@ export class SessionHostFactory {
       if (this.sessions.get(terminalId) !== entry) return false;
       if (isHostError(error, "sessionNotFound")) {
         this.onShellGone(terminalId);
+      } else if (entry.session.runtime.status === "starting") {
+        entry.session.failStart(error);
       } else {
         ErrorReporter.reportException({
           error,

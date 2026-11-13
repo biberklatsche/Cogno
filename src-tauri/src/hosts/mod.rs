@@ -339,7 +339,8 @@ impl HostState {
 
     /// Asks about a terminal of `window` and waits for the answer on a
     /// blocking worker. A terminal that is killed or let go is no longer
-    /// this app's afterwards, whatever the answer.
+    /// this window's afterwards, whatever the answer; another window of this
+    /// app that showed it meanwhile keeps its route.
     pub async fn request(&self, window: WindowLabel, request: Request) -> CommandResult<Response> {
         let hosts = self.0.clone();
         blocking(move || {
@@ -348,7 +349,7 @@ impl HostState {
             let gone = matches!(request, Request::PtyKill { .. } | Request::PtyDetach { .. });
             let reply = connection.request(request);
             if gone {
-                hosts.routes.remove(&terminal_id);
+                hosts.routes.remove_of_window(&terminal_id, &window);
             }
             reply
         })

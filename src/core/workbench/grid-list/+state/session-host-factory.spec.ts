@@ -68,7 +68,7 @@ describe("SessionHostFactory", () => {
           const entry = {
             pane,
             backend,
-            session: { runtime: { status: "starting" } },
+            session: { runtime: { status: "starting" }, failStart: vi.fn() },
             keybindings: {},
             view: {
               location: { nativeElement: document.createElement("div") },
@@ -146,6 +146,21 @@ describe("SessionHostFactory", () => {
       expect(session).toHaveBeenCalledExactlyOnceWith(undefined, "t1");
       expect(closed).toEqual([{ terminalId: "t1", removed: false }]);
       expect(opened[1]?.start.kind).toBe("showRunning");
+    });
+
+    it("fails its start when the shell it found running cannot be asked for", async () => {
+      const lost = new HostError("connectionLost", "lost");
+      session.mockRejectedValueOnce(lost);
+      factory.ensureSession(localPane);
+
+      facts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
+      await settle();
+
+      const started = entries.get("t1")?.session as unknown as {
+        failStart: ReturnType<typeof vi.fn>;
+      };
+      expect(started.failStart).toHaveBeenCalledExactlyOnceWith(lost);
+      expect(opened).toHaveLength(1);
     });
 
     it("starts a shell after all when the one it was to show had ended", () => {

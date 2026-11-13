@@ -1,9 +1,4 @@
-import {
-  PtyChunkContract,
-  PtyShellProfileContract,
-  SessionInfoContract,
-  TerminalExitContract,
-} from "@cogno/platform";
+import { PtyChunkContract, PtyShellProfileContract, TerminalExitContract } from "@cogno/platform";
 import { TerminalId } from "@cogno/shared/domain";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
@@ -31,8 +26,6 @@ export type PtyOpenMode = "spawn" | "attach";
 export type PtyHandlerListener = {
   /** The shell process is up (or shown here); nothing has been parsed yet. */
   readonly onSpawned?: () => void;
-  /** An already running shell is shown here; this is what its host says of it. */
-  readonly onAttached?: (session: SessionInfoContract) => void;
   /** Another Cogno took the shell over; it runs on, but not here. */
   readonly onTakenOver?: (by?: string) => void;
   /** The Cogno that took the shell over let it go. */
@@ -112,9 +105,7 @@ export class PtyHandler implements ITerminalHandler {
     const onData = (chunk: PtyChunkContract) => this.onPtyChunk(terminal, chunk);
     try {
       if (mode === "attach") {
-        const session = await this._pty.attach(this._terminalId, onData);
-        if (!this.isCurrent(start)) return;
-        this._listener.onAttached?.(session);
+        await this._pty.attach(this._terminalId, onData);
       } else {
         await this._pty.spawn(
           this._terminalId,
@@ -127,7 +118,7 @@ export class PtyHandler implements ITerminalHandler {
       if (this.isCurrent(start)) this._listener.onFailed?.(error);
       return;
     }
-    // Taken over while it opened: the listener heard that instead.
+    // Taken over or ended while it opened: the listener heard that instead.
     if (this.isCurrent(start) && this._pty.isLive) this._listener.onSpawned?.();
   }
 

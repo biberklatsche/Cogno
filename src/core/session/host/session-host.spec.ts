@@ -406,6 +406,21 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     expect(reported).not.toHaveBeenCalled();
   });
 
+  it("fails its start when the shell it found running cannot be shown after all", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    vi.mocked(ptyOf(host).spawn).mockRejectedValueOnce(
+      new HostError("shellAlreadyRuns", "A shell already runs under terminal-1"),
+    );
+    vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => undefined);
+    host.start();
+    await settle();
+
+    host.failStart(new HostError("connectionLost", "The connection is gone"));
+
+    expect(host.runtime).toEqual({ status: "failed", reason: "The connection is gone" });
+  });
+
   it("says so when the running shell it was to show had ended by then", async () => {
     const host = createHost();
     host.initialize("terminal-1", bashProfile);

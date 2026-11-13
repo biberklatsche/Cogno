@@ -6,7 +6,7 @@ import {
   RemoteShellsPort,
 } from "@cogno/core/api/remote-shells-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { SessionRuntime } from "@cogno/core/session/host/session-host";
+import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
@@ -19,7 +19,7 @@ import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/t
 import { isHostError, SessionInfoContract } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
-import { combineLatest, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
+import { combineLatest, defer, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
 import { TerminalNavigatorAdapterService } from "./terminal-navigator.adapter.service";
 
 /** A host name is a segment of a config key (`remote.hosts.<name>.…`). */
@@ -30,6 +30,27 @@ function hostKeys(name: string): { destination: string; command: string } {
     destination: `remote.hosts.${name}.destination`,
     command: `remote.hosts.${name}.command`,
   };
+}
+
+/** Whether a session shows a shell of another machine. */
+function isRemote(entry: { readonly host: SessionHost } | undefined): boolean {
+  return entry?.host.state.shellContext.host !== undefined;
+}
+
+/** Fires whenever a session that showed a shell of another machine is gone. */
+function remoteSessionsGone(sessions: TerminalSessionRegistry): Observable<void> {
+  const remoteIds = () =>
+    new Set(sessions.entries.filter(isRemote).map(({ terminalId }) => terminalId));
+  return defer(() => {
+    let remote = remoteIds();
+    return sessions.changes$.pipe(
+      filter(() => {
+        const before = remote;
+        remote = remoteIds();
+        return [...before].some((terminalId) => !remote.has(terminalId));
+      }),
+    );
+  });
 }
 
 /** The runtimes at which a window begins or stops showing a shell it has a session for. */
@@ -86,18 +107,22 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
         ),
       ),
     );
-    // A shell is shown here once its session runs, and no longer once it is
-    // taken over or its session is gone.
+    // A shell of another machine is shown here once its session runs, and
+    // no longer once it is taken over or its session is gone. Shells of this
+    // machine change nothing another machine says.
     this.shownHereChanged$ = merge(
-      sessions.changes$,
       sessions.runtimes$.pipe(
-        filter(({ runtime }) => SHOWING_CHANGES.includes(runtime.status)),
+        filter(
+          ({ terminalId, runtime }) =>
+            SHOWING_CHANGES.includes(runtime.status) && isRemote(sessions.get(terminalId)),
+        ),
         distinctUntilChanged(
           (before, after) =>
             before.terminalId === after.terminalId &&
             before.runtime.status === after.runtime.status,
         ),
       ),
+      remoteSessionsGone(sessions),
     ).pipe(map(() => undefined));
   }
 

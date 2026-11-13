@@ -46,10 +46,11 @@ export class SessionPlacementPublisher {
 
   /** Lets go of what was said about sessions that are gone. */
   private forgetGoneSessions(): void {
-    for (const terminalId of this.published.keys()) {
-      if (this.sessions.has(terminalId)) continue;
-      this.titles.delete(terminalId);
-      this.published.delete(terminalId);
+    // A title is kept for every session, also one that is never placed.
+    for (const known of [this.titles, this.published]) {
+      for (const terminalId of known.keys()) {
+        if (!this.sessions.has(terminalId)) known.delete(terminalId);
+      }
     }
   }
 

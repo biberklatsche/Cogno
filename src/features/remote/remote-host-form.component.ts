@@ -3,7 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
-  OnInit,
+  OnChanges,
   Output,
   signal,
 } from "@angular/core";
@@ -106,7 +106,7 @@ type FormValues = Record<FieldKey, string>;
     }
   `,
 })
-export class RemoteHostFormComponent implements OnInit {
+export class RemoteHostFormComponent implements OnChanges {
   /** The remote to change; left out to add one. */
   @Input() host?: RemoteHost;
   /** What ssh runs when the remote names no command. */
@@ -121,7 +121,9 @@ export class RemoteHostFormComponent implements OnInit {
 
   constructor(private readonly panel: RemotePanelService) {}
 
-  ngOnInit(): void {
+  /** The panel may switch the form to another remote while it is open. */
+  ngOnChanges(): void {
+    this.error.set(undefined);
     this.values.set({
       name: this.host?.name ?? "",
       destination: this.host?.destination ?? "",
