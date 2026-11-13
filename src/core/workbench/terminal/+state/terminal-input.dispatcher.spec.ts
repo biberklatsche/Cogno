@@ -10,6 +10,7 @@ import { TerminalSessionRegistry } from "./terminal-session.registry";
 function hostStub() {
   return {
     facts$: EMPTY,
+    runtime$: EMPTY,
     focus: vi.fn(),
     blur: vi.fn(),
     setVisible: vi.fn(),

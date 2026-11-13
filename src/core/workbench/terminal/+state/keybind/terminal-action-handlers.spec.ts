@@ -10,7 +10,7 @@ import type { GridListService } from "@cogno/core/workbench/grid-list/+state/gri
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalInputDispatcher } from "@cogno/core/workbench/terminal/+state/terminal-input.dispatcher";
 import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { Subject } from "rxjs";
+import { NEVER, Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
@@ -33,6 +33,7 @@ const performable = {
 function hostStub() {
   return {
     facts$: new Subject<SessionFact>(),
+    runtime$: NEVER,
     hasSelection: false,
     focus: vi.fn(),
     blur: vi.fn(),
@@ -44,7 +45,7 @@ function hostStub() {
     runEditorAction: vi.fn(),
     runtime: { status: "running" },
     writeRaw: vi.fn(),
-    terminateProcesses: vi.fn(async () => undefined),
+    terminateForegroundJob: vi.fn(async () => undefined),
   };
 }
 
@@ -322,19 +323,19 @@ describe("terminal actions, from ActionFired to their effect", () => {
       const result = fire("terminate_processes");
 
       expect(result.performed).toBe(true);
-      expect(hosts["term-1"].terminateProcesses).toHaveBeenCalledTimes(1);
-      expect(hosts["term-2"].terminateProcesses).not.toHaveBeenCalled();
+      expect(hosts["term-1"].terminateForegroundJob).toHaveBeenCalledTimes(1);
+      expect(hosts["term-2"].terminateForegroundJob).not.toHaveBeenCalled();
     });
 
     it("goes on with the other terminals when one fails", async () => {
       splitIntoTwoPanes();
-      hosts["term-1"].terminateProcesses.mockRejectedValue(new Error("gone"));
+      hosts["term-1"].terminateForegroundJob.mockRejectedValue(new Error("gone"));
       const broadcast = { ...performable, broadcast: true, performable: false };
 
       fire("terminate_processes", broadcast);
       await Promise.resolve();
 
-      expect(hosts["term-2"].terminateProcesses).toHaveBeenCalledTimes(1);
+      expect(hosts["term-2"].terminateForegroundJob).toHaveBeenCalledTimes(1);
     });
   });
 

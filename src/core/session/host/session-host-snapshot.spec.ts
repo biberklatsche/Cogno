@@ -90,7 +90,7 @@ vi.mock("@cogno/core/terminal/pty", () => {
     spawn = vi.fn().mockResolvedValue(undefined);
     onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
     onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
-    onReleased = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    onHandedBack = vi.fn().mockReturnValue({ dispose: vi.fn() });
     attach = vi.fn().mockResolvedValue(undefined);
     kill = vi.fn();
     faults$ = new Subject();
@@ -118,7 +118,6 @@ describe("SessionHost snapshot/restore", () => {
     configService.setConfig({ font: { enable_ligatures: false } } as never);
     host = new SessionHost(
       osStub,
-      { isDevMode: () => false } as never,
       { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess,
       configService as unknown as ConfigService,
       {} as never,
@@ -342,7 +341,6 @@ describe("SessionHost snapshot/restore", () => {
     windowsConfig.setConfig({ font: { enable_ligatures: false } } as never);
     const windowsHost = new SessionHost(
       { platform: () => "windows" } as unknown as OsPlatform,
-      { isDevMode: () => false } as never,
       { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess,
       windowsConfig as unknown as ConfigService,
       {} as never,

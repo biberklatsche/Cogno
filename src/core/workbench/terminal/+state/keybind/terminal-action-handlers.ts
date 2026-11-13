@@ -112,7 +112,7 @@ export class TerminalActionHandlers {
       "terminate_processes",
       this.onRunningSession((id) => {
         this.hostOf(id)
-          ?.terminateProcesses()
+          ?.terminateForegroundJob()
           .catch((error) => Logger.error(`Could not terminate the processes of ${id}: ${error}`));
       }),
     );

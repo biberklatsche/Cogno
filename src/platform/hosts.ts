@@ -1,40 +1,18 @@
 import { Injectable } from "@angular/core";
-import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { invokeHost } from "./host-error";
 import { OsType } from "./os";
+import { SessionInfoContract } from "./session-contracts";
 
 /** What a connected host on another machine says about itself. */
 export type HostInfo = { os: OsType };
 
-/**
- * A shell that runs on a host, as it was started: the profile's wire form
- * (its environment holds the session's token), and who shows it.
- */
-export type RunningSession = {
-  terminalId: string;
-  /** Where it sits in the Cogno it belongs to, in that Cogno's words. */
-  label: {
-    workspace?: string | null;
-    tab?: string | null;
-    title?: string | null;
-    directory?: string | null;
-  };
-  profile: {
-    shell_type: string;
-    env?: Record<string, string> | null;
-    enable_shell_integration?: boolean | null;
-  };
-  /** Whether a Cogno shows it right now. */
-  shown: boolean;
-  /** Whether that Cogno is this one. */
-  shownHere: boolean;
-  /** What the machine of the Cogno that shows it is called, when it said. */
-  shownBy?: string | null;
-};
+/** To every window: the connection to a host on another machine ended. */
+const HOST_DISCONNECTED_EVENT = "host-disconnected";
 
 /**
  * The machines whose shells Cogno shows: this one, and others reached over
- * ssh with a Cogno there as the other end.
+ * ssh with a Cogno there as the other end. Every failure is a `HostError`.
  */
 @Injectable({ providedIn: "root" })
 export class Hosts {
@@ -49,12 +27,17 @@ export class Hosts {
     command: string | undefined,
     promptSession: string,
   ): Promise<HostInfo> {
-    return invoke<HostInfo>("host_connect", {
+    return invokeHost<HostInfo>("host_connect", {
       name,
       destination,
       command: command ?? null,
       promptSession,
     });
+  }
+
+  /** What ssh runs on the other machine when a remote names no command. */
+  defaultCommand(): Promise<string> {
+    return invokeHost<string>("host_default_command");
   }
 
   /**
@@ -65,35 +48,43 @@ export class Hosts {
   installShellIntegration(
     version: string,
     files: ReadonlyArray<{ relativePath: string; content: string }>,
-    devMode: boolean,
   ): Promise<void> {
-    return invoke("host_install_shell_integration", {
-      version,
-      files,
-      devMode,
-    });
+    return invokeHost("host_install_shell_integration", { version, files });
   }
 
   /**
    * The shells that run on `host`, this machine when none is named. Asking
    * this machine starts its background process if none runs.
    */
-  sessions(host: string | undefined): Promise<RunningSession[]> {
-    return invoke<RunningSession[]>("host_sessions", { host: host ?? null });
+  sessions(host: string | undefined): Promise<SessionInfoContract[]> {
+    return invokeHost<SessionInfoContract[]>("host_sessions", { host: host ?? null });
+  }
+
+  /**
+   * The shell `terminalId` on `host`, this machine when none is named.
+   * Rejects with `sessionNotFound` when it does not run there.
+   */
+  session(host: string | undefined, terminalId: string): Promise<SessionInfoContract> {
+    return invokeHost<SessionInfoContract>("host_session", {
+      host: host ?? null,
+      terminalId,
+    });
   }
 
   /** Ends a shell on the host `host` on another machine, whoever shows it. */
-  endSession(host: string, terminalId: string): Promise<void> {
-    return invoke("host_end_session", { host, terminalId });
+  killSession(host: string, terminalId: string): Promise<void> {
+    return invokeHost("host_kill_session", { host, terminalId });
   }
 
   /** Hangs up on the host `name`; `onDisconnected` follows. */
   disconnect(name: string): Promise<void> {
-    return invoke("host_disconnect", { name });
+    return invokeHost("host_disconnect", { name });
   }
 
   /** The connection to a host ended; its terminals ended with it. */
   onDisconnected(listener: (name: string) => void): Promise<UnlistenFn> {
-    return listen<{ host: string }>("host-disconnected", ({ payload }) => listener(payload.host));
+    return listen<{ host: string }>(HOST_DISCONNECTED_EVENT, ({ payload }) =>
+      listener(payload.host),
+    );
   }
 }

@@ -1,7 +1,7 @@
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
 import { RemoteHostConnection } from "@cogno/core/workbench/hosts/remote-hosts.service";
-import { RunningSession } from "@cogno/platform/hosts";
-import { BehaviorSubject } from "rxjs";
+import { HostError, SessionInfoContract } from "@cogno/platform";
+import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteShellsAdapterService } from "./remote-shells.adapter.service";
 
@@ -14,10 +14,11 @@ describe("RemoteShellsAdapterService", () => {
   let connections$: BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>;
   let update: ReturnType<typeof vi.fn>;
   let disconnect: ReturnType<typeof vi.fn>;
-  let refresh: ReturnType<typeof vi.fn>;
   let sessions: ReturnType<typeof vi.fn>;
-  let endSession: ReturnType<typeof vi.fn>;
-  let shownSession: ReturnType<typeof vi.fn>;
+  let killSession: ReturnType<typeof vi.fn>;
+  let takeBack: ReturnType<typeof vi.fn>;
+  let sessionChanges: Subject<void>;
+  let sessionRuntimes: Subject<{ terminalId: string; runtime: { status: string } }>;
   let findTab: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
   let publish: ReturnType<typeof vi.fn>;
@@ -30,10 +31,11 @@ describe("RemoteShellsAdapterService", () => {
     connections$ = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(new Map());
     update = vi.fn().mockResolvedValue(undefined);
     disconnect = vi.fn().mockResolvedValue(undefined);
-    refresh = vi.fn().mockResolvedValue(undefined);
     sessions = vi.fn().mockResolvedValue([]);
-    endSession = vi.fn().mockResolvedValue(undefined);
-    shownSession = vi.fn();
+    killSession = vi.fn().mockResolvedValue(undefined);
+    takeBack = vi.fn().mockResolvedValue(false);
+    sessionChanges = new Subject();
+    sessionRuntimes = new Subject();
     findTab = vi.fn();
     navigate = vi.fn().mockResolvedValue(undefined);
     publish = vi.fn();
@@ -46,9 +48,9 @@ describe("RemoteShellsAdapterService", () => {
         update,
       } as never,
       { connections$, connect: vi.fn(), disconnect } as never,
-      { refresh } as never,
-      { sessions, endSession } as never,
-      { get: shownSession } as never,
+      { sessions, killSession } as never,
+      { takeBack } as never,
+      { changes$: sessionChanges, runtimes$: sessionRuntimes } as never,
       { findTabIdByTerminalId: findTab } as never,
       { navigateToTerminal: navigate } as never,
       { publish } as never,
@@ -68,7 +70,14 @@ describe("RemoteShellsAdapterService", () => {
       },
     ]);
 
-    connections$.next(new Map([["office", { status: "failed", reason: "No route to host" }]]));
+    connections$.next(
+      new Map([
+        [
+          "office",
+          { status: "failed", failure: { code: "connectFailed", message: "No route to host" } },
+        ],
+      ]),
+    );
     expect(hosts[0]).toMatchObject({ connection: "failed", failure: "No route to host" });
 
     config$.next({});
@@ -135,13 +144,17 @@ describe("RemoteShellsAdapterService", () => {
   });
 
   it("says what runs on a machine, in the words of the Cogno it belongs to", async () => {
-    const session: RunningSession = {
+    const session: SessionInfoContract = {
       terminalId: "t1",
-      label: { workspace: "Cogno", tab: "build", title: null, directory: "C:\\dev" },
-      profile: { shell_type: "PowerShell" },
-      shown: true,
-      shownHere: false,
-      shownBy: "lars-laptop",
+      placement: { workspace: "Cogno", tab: "build", title: null, directory: "C:\\dev" },
+      profile: {
+        shell_type: "PowerShell",
+        inject_cogno_cli: true,
+        enable_shell_integration: true,
+        load_user_rc: true,
+      },
+      size: { cols: 80, rows: 24 },
+      attached: { to: "elsewhere", by: "lars-laptop" },
     };
     sessions.mockResolvedValue([session]);
 
@@ -160,13 +173,9 @@ describe("RemoteShellsAdapterService", () => {
   });
 
   describe("showing a shell here", () => {
-    it("opens a tab for a shell no pane here shows, once the host said what runs now", async () => {
+    it("opens a tab for a shell no pane here shows; the pane asks for it itself", async () => {
       await adapter.show("office", "t1");
 
-      expect(refresh).toHaveBeenCalledWith("office");
-      expect(refresh.mock.invocationCallOrder[0]).toBeLessThan(
-        publish.mock.invocationCallOrder[0] as number,
-      );
       expect(publish).toHaveBeenCalledWith({
         type: "CreateTab",
         payload: expect.objectContaining({ terminalId: "t1", host: "office", isActive: true }),
@@ -174,7 +183,6 @@ describe("RemoteShellsAdapterService", () => {
     });
 
     it("goes to the pane that shows it already", async () => {
-      shownSession.mockReturnValue({ host: { runtime: { status: "running" } } });
       findTab.mockReturnValue("tab-1");
 
       await adapter.show("office", "t1");
@@ -183,20 +191,42 @@ describe("RemoteShellsAdapterService", () => {
       expect(publish).not.toHaveBeenCalled();
     });
 
-    it("takes a shell back that another Cogno shows", async () => {
-      shownSession.mockReturnValue({ host: { runtime: { status: "takenOver" } } });
+    it("takes a shell back that another Cogno shows, and waits until it is here", async () => {
+      takeBack.mockResolvedValue(true);
       findTab.mockReturnValue("tab-1");
 
       await adapter.show("office", "t1");
 
-      expect(publish).toHaveBeenCalledWith({ type: "RetakeTerminal", payload: "t1" });
+      expect(takeBack).toHaveBeenCalledWith("t1");
       expect(navigate).not.toHaveBeenCalled();
+      expect(publish).not.toHaveBeenCalled();
     });
+  });
+
+  it("says when this window began or stopped showing a shell, and only then", () => {
+    let told = 0;
+    adapter.shownHereChanged$.subscribe(() => told++);
+
+    sessionChanges.next();
+    sessionRuntimes.next({ terminalId: "t1", runtime: { status: "starting" } });
+    sessionRuntimes.next({ terminalId: "t1", runtime: { status: "running" } });
+    sessionRuntimes.next({ terminalId: "t1", runtime: { status: "running" } });
+    sessionRuntimes.next({ terminalId: "t1", runtime: { status: "takenOver" } });
+
+    expect(told).toBe(3);
   });
 
   it("ends a shell on its machine", async () => {
     await adapter.end("office", "t1");
 
-    expect(endSession).toHaveBeenCalledWith("office", "t1");
+    expect(killSession).toHaveBeenCalledWith("office", "t1");
+  });
+
+  it("takes a shell that ended already as ended, and any other failure as one", async () => {
+    killSession.mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
+    await expect(adapter.end("office", "t1")).resolves.toBeUndefined();
+
+    killSession.mockRejectedValueOnce(new HostError("notConnected", "not connected"));
+    await expect(adapter.end("office", "t1")).rejects.toMatchObject({ code: "notConnected" });
   });
 });

@@ -4,7 +4,7 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { RunningSessionsService } from "@cogno/core/workbench/hosts/running-sessions.service";
+import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-start.service";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
@@ -107,7 +107,7 @@ export class WorkspaceHostApplicationService {
     private readonly sessionPersistence: SessionPersistenceService,
     private readonly appWindow: AppWindow,
     private readonly discardSessionMarker: DiscardSessionMarker,
-    private readonly runningSessions: RunningSessionsService,
+    private readonly shellsFoundAtStart: ShellsFoundAtStart,
     sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
@@ -116,7 +116,7 @@ export class WorkspaceHostApplicationService {
       // first pane is restored: a pane whose shell runs shows it, it does not
       // start another. Asked here, not before the window is drawn: starting
       // the daemon can take a moment.
-      const asked = this.runningSessions.refresh();
+      const asked = this.shellsFoundAtStart.find();
       await this.discardSessionIfMarked();
       const savedWorkspaces = this.workspacesToStartWith(
         await this.workspaceRepository.getAllWorkspaces(),
@@ -237,7 +237,7 @@ export class WorkspaceHostApplicationService {
     return WorkspaceStateUseCase.adoptLeftOverShells(
       workspaces,
       this.defaultWorkspace,
-      this.runningSessions.unshownLocalShells().map((session) => session.terminalId),
+      this.shellsFoundAtStart.unshown(),
       () => IdCreator.newTabId(),
     );
   }

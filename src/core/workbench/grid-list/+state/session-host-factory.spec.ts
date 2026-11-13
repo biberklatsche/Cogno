@@ -1,193 +1,258 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { RemoteHostsService } from "@cogno/core/workbench/hosts/remote-hosts.service";
-import { OsPlatform } from "@cogno/platform";
-import { HostInfo } from "@cogno/platform/hosts";
+import { SessionBackend } from "@cogno/core/session/host/session-backend";
+import { HostError, OsPlatform, SessionInfoContract } from "@cogno/platform";
+import { Hosts } from "@cogno/platform/hosts";
 import { Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
 import { Pane } from "../+model/model";
 import { SessionHostFactory } from "./session-host-factory";
+import { SessionEntry, SessionStart } from "./session-scope.builder";
+import { FoundShell } from "./waiting-panes";
 
-/**
- * A pane that shows a shell of another machine, before a session exists.
- * (What happens once one does is the session's own tests'.)
- */
-describe("SessionHostFactory, waiting for a host", () => {
-  const pane = { terminalId: "t1", shellName: "zsh", host: "mac" } as Pane;
-  let connect: ReturnType<typeof vi.fn>;
-  let profileLookups: ReturnType<typeof vi.fn>;
+type Fact = { terminalId: string; fact: { type: string } };
+
+/** What the factory decides for a pane, seen from what it asks of its helpers. */
+describe("SessionHostFactory", () => {
+  const localPane = { terminalId: "t1", shellName: "zsh" } as Pane;
+  const remotePane = { terminalId: "t2", shellName: "zsh", host: "office" } as Pane;
+  let opened: { terminalId: string; backend: SessionBackend; start: SessionStart }[];
+  let closed: { terminalId: string; removed: boolean }[];
+  let entries: Map<string, SessionEntry>;
+  let waiting: Set<string>;
+  let onFound: Map<string, (found: FoundShell) => void>;
+  let waitingPanes: {
+    isWaiting: ReturnType<typeof vi.fn>;
+    wait: ReturnType<typeof vi.fn>;
+    stop: ReturnType<typeof vi.fn>;
+    showGone: ReturnType<typeof vi.fn>;
+    mount: ReturnType<typeof vi.fn>;
+  };
+  let session: ReturnType<typeof vi.fn>;
+  let claimed: SessionInfoContract | undefined;
+  let facts: Subject<Fact>;
+  let reattachments: Subject<{ type: string; payload?: string }>;
   let factory: SessionHostFactory;
-  let sessionFacts: Subject<{ terminalId: string; fact: { type: string } }>;
+
+  const settle = () => new Promise((resolve) => setTimeout(resolve));
 
   beforeEach(() => {
-    sessionFacts = new Subject();
-    connect = vi.fn();
-    profileLookups = vi.fn(() => ({ shell_type: "ZSH", path: "/bin/zsh" }));
-    const remoteHosts = {
-      // Never connected in these tests: no session is ever built.
-      info: () => undefined,
-      connect,
-    } as unknown as RemoteHostsService;
+    opened = [];
+    closed = [];
+    entries = new Map();
+    waiting = new Set();
+    onFound = new Map();
+    facts = new Subject();
+    reattachments = new Subject();
+    claimed = undefined;
+    session = vi.fn(async (_host: string | undefined, terminalId: string) =>
+      TauriMockFactory.createSessionInfo(terminalId),
+    );
+    waitingPanes = {
+      isWaiting: vi.fn((terminalId: string) => waiting.has(terminalId)),
+      wait: vi.fn((pane: Pane, found: (shell: FoundShell) => void) => {
+        waiting.add(pane.terminalId as string);
+        onFound.set(pane.terminalId as string, (shell) => {
+          waiting.delete(pane.terminalId as string);
+          found(shell);
+        });
+      }),
+      stop: vi.fn((terminalId: string) => waiting.delete(terminalId)),
+      showGone: vi.fn((pane: Pane) => waiting.add(pane.terminalId as string)),
+      mount: vi.fn(),
+    };
+    const scopes = {
+      open: vi.fn(
+        (terminalId: string, pane: Pane, backend: SessionBackend, start: SessionStart) => {
+          opened.push({ terminalId, backend, start });
+          const entry = {
+            pane,
+            backend,
+            session: { runtime: { status: "starting" } },
+            keybindings: {},
+            view: {
+              location: { nativeElement: document.createElement("div") },
+              changeDetectorRef: { detectChanges: vi.fn() },
+            },
+          } as unknown as SessionEntry;
+          entries.set(terminalId, entry);
+          return entry;
+        },
+      ),
+      close: vi.fn((terminalId: string, _entry: SessionEntry, removed: boolean) =>
+        closed.push({ terminalId, removed }),
+      ),
+    };
     factory = new SessionHostFactory(
       {} as never,
-      {} as never,
-      { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
-      { publish: vi.fn(), on$: () => new Subject() } as never,
-      { facts$: sessionFacts } as never,
-      { take: vi.fn() } as never,
-      { platform: () => "windows" } as unknown as OsPlatform,
-      remoteHosts,
-      { take: () => undefined, isFresh: () => true } as never,
+      {
+        getShellProfileOrDefault: () => ({ shell_type: "ZSH", path: "/bin/zsh" }),
+      } as unknown as ConfigService,
+      { on$: () => reattachments } as never,
+      { facts$: facts } as never,
+      { platform: () => "linux" } as unknown as OsPlatform,
+      { session } as unknown as Hosts,
+      { claim: () => claimed } as never,
+      scopes as never,
+      waitingPanes as never,
       { onDestroy: vi.fn() } as never,
     );
   });
 
-  it("starts no session and connects once, however often the pane is asked for", () => {
-    connect.mockReturnValue(new Promise(() => undefined));
-
-    expect(factory.ensureSession(pane)).toBeUndefined();
-    expect(factory.ensureSession(pane)).toBeUndefined();
-
-    expect(connect).toHaveBeenCalledOnce();
-    expect(connect).toHaveBeenCalledWith("mac");
-    expect(factory.getSessionHost("t1")).toBeUndefined();
-  });
-
-  it("looks at the pane again once the connection stands", async () => {
-    let finish!: (info: HostInfo) => void;
-    connect.mockReturnValueOnce(new Promise((resolve) => (finish = resolve)));
-    connect.mockReturnValue(new Promise(() => undefined));
-    factory.ensureSession(pane);
-
-    finish({ os: "macos" });
-    await vi.waitFor(() => expect(connect).toHaveBeenCalledTimes(2));
-  });
-
-  it("starts nothing for a pane that was closed while its host connected", async () => {
-    let finish!: (info: HostInfo) => void;
-    connect.mockReturnValue(new Promise((resolve) => (finish = resolve)));
-    factory.ensureSession(pane);
-    const lookupsBeforeClose = profileLookups.mock.calls.length;
-
-    factory.destroy("t1");
-    finish({ os: "macos" });
-    await Promise.resolve();
-    await Promise.resolve();
-
-    expect(profileLookups).toHaveBeenCalledTimes(lookupsBeforeClose);
-    expect(connect).toHaveBeenCalledOnce();
-  });
-
-  /** The factory's inner state, where only a pane's view could reach it. */
-  type Inner = { waiting: Map<string, unknown>; sessions: Map<string, unknown> };
-
-  function connectedTo(runningSessions: object) {
-    const connected = new SessionHostFactory(
-      {} as never,
-      {} as never,
-      { getShellProfileOrDefault: profileLookups } as unknown as ConfigService,
-      { publish: vi.fn(), on$: () => new Subject() } as never,
-      { facts$: sessionFacts } as never,
-      { take: vi.fn() } as never,
-      { platform: () => "windows" } as unknown as OsPlatform,
-      { info: () => ({ os: "windows" }), connect } as unknown as RemoteHostsService,
-      runningSessions as never,
-      { onDestroy: vi.fn() } as never,
-    );
-    return { connected, inner: connected as unknown as Inner };
+  /** Says what the session `terminalId` does now. */
+  function runtimeOf(terminalId: string, status: string): void {
+    (entries.get(terminalId)?.session as unknown as { runtime: { status: string } }).runtime = {
+      status,
+    };
   }
 
-  it("says that the shell is gone, and starts none in its place", () => {
-    const { connected, inner } = connectedTo({ take: () => undefined, isFresh: () => true });
+  describe("a pane of this machine", () => {
+    it("starts a shell of its profile", () => {
+      factory.ensureSession(localPane);
 
-    expect(connected.ensureSession(pane)).toBeUndefined();
-
-    expect(connected.getSessionHost("t1")).toBeUndefined();
-    expect(connect).not.toHaveBeenCalled();
-    expect(inner.waiting.get("t1")).toMatchObject({ host: "mac", state: { status: "gone" } });
-  });
-
-  it("asks a host that connected long ago what runs there now, before it gives up", async () => {
-    let fresh = false;
-    const refresh = vi.fn(async () => {
-      fresh = true;
-      return true;
-    });
-    const { connected, inner } = connectedTo({
-      take: () => undefined,
-      isFresh: () => fresh,
-      refresh,
+      expect(opened).toEqual([
+        {
+          terminalId: "t1",
+          backend: { os: "linux" },
+          start: { kind: "spawn", profile: { shell_type: "ZSH", path: "/bin/zsh" } },
+        },
+      ]);
     });
 
-    expect(connected.ensureSession(pane)).toBeUndefined();
-    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "looking" } });
-    await Promise.resolve();
-    await Promise.resolve();
+    it("shows the shell that ran when the window started instead of starting one", () => {
+      claimed = TauriMockFactory.createSessionInfo("t1");
 
-    // Asked once, and the answer stands: the shell does not run there.
-    expect(refresh).toHaveBeenCalledOnce();
-    expect(refresh).toHaveBeenCalledWith("mac");
-    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "gone" } });
-  });
+      factory.ensureSession(localPane);
 
-  it("says that a host that does not answer could not be reached, not that the shell is gone", async () => {
-    const { connected, inner } = connectedTo({
-      take: () => undefined,
-      isFresh: () => false,
-      refresh: vi.fn(async () => false),
+      expect(opened[0]?.start).toMatchObject({
+        kind: "showRunning",
+        shell: { profile: { shell_type: "Bash" }, sessionToken: "running-token" },
+      });
     });
 
-    connected.ensureSession(pane);
-    await Promise.resolve();
-    await Promise.resolve();
+    it("is a no-op once its session exists", () => {
+      factory.ensureSession(localPane);
+      factory.ensureSession(localPane);
 
-    expect(inner.waiting.get("t1")).toMatchObject({ state: { status: "unreachable" } });
+      expect(opened).toHaveLength(1);
+    });
+
+    it("shows the shell its start found running, asked for afresh", async () => {
+      factory.ensureSession(localPane);
+
+      facts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
+      await settle();
+
+      expect(session).toHaveBeenCalledExactlyOnceWith(undefined, "t1");
+      expect(closed).toEqual([{ terminalId: "t1", removed: false }]);
+      expect(opened[1]?.start.kind).toBe("showRunning");
+    });
+
+    it("starts a shell after all when the one it was to show had ended", () => {
+      claimed = TauriMockFactory.createSessionInfo("t1");
+      factory.ensureSession(localPane);
+
+      facts.next({ terminalId: "t1", fact: { type: "shellGone" } });
+
+      expect(closed).toEqual([{ terminalId: "t1", removed: false }]);
+      expect(opened[1]?.start.kind).toBe("spawn");
+    });
   });
 
-  it("shows a shell again by itself once the Cogno that took it let it go", () => {
-    const refresh = vi.fn(() => new Promise<void>(() => undefined));
-    const { inner } = connectedTo({ take: () => undefined, isFresh: () => true, refresh });
-    const lost = (status: string) => ({ pane, host: { runtime: { status } } });
+  describe("a pane of another machine", () => {
+    it("has no session while it waits for its machine and its shell", () => {
+      expect(factory.ensureSession(remotePane)).toBeUndefined();
+      expect(factory.ensureSession(remotePane)).toBeUndefined();
 
-    // Still shown here, or not a pane of this window: nothing to do.
-    inner.sessions.set("t1", lost("running"));
-    sessionFacts.next({ terminalId: "t1", fact: { type: "releasedElsewhere" } });
-    sessionFacts.next({ terminalId: "unknown", fact: { type: "releasedElsewhere" } });
-    expect(refresh).not.toHaveBeenCalled();
+      expect(waitingPanes.wait).toHaveBeenCalledOnce();
+      expect(opened).toEqual([]);
+    });
 
-    // Lost to another Cogno: it asks the host afresh, to attach to what runs.
-    inner.sessions.set("t1", lost("takenOver"));
-    sessionFacts.next({ terminalId: "t1", fact: { type: "outputReceived" } });
-    expect(refresh).not.toHaveBeenCalled();
-    sessionFacts.next({ terminalId: "t1", fact: { type: "releasedElsewhere" } });
-    expect(refresh).toHaveBeenCalledExactlyOnceWith("mac");
+    it("gets a session that shows the shell it found, on the machine's system", () => {
+      factory.ensureSession(remotePane);
+
+      onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "windows" });
+
+      expect(opened).toHaveLength(1);
+      expect(opened[0]?.backend).toEqual({ host: "office", os: "windows" });
+      expect(opened[0]?.start.kind).toBe("showRunning");
+    });
+
+    it("puts its terminal where the pane is once the shell is found", () => {
+      const mountPoint = document.createElement("div");
+      factory.mount(remotePane, mountPoint);
+      expect(waitingPanes.mount).toHaveBeenCalledWith("t2", mountPoint);
+
+      onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
+
+      expect(mountPoint.childElementCount).toBe(1);
+    });
+
+    it("says the shell is gone when it ended before the session attached", () => {
+      const mountPoint = document.createElement("div");
+      factory.mount(remotePane, mountPoint);
+      onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
+
+      facts.next({ terminalId: "t2", fact: { type: "shellGone" } });
+
+      // The terminal stays: features must not hear that it went.
+      expect(closed).toEqual([{ terminalId: "t2", removed: false }]);
+      expect(waitingPanes.showGone).toHaveBeenCalledWith(remotePane);
+      expect(waitingPanes.mount).toHaveBeenLastCalledWith("t2", mountPoint);
+      expect(opened).toHaveLength(1);
+    });
   });
 
-  it("shows the shell that already ran when a pane wanted to start one", () => {
-    const refresh = vi.fn(() => new Promise<boolean>(() => undefined));
-    const { inner } = connectedTo({ take: () => undefined, isFresh: () => true, refresh });
-    const local = { terminalId: "t1", shellName: "zsh" } as Pane;
-    const session = (status: string) => ({ pane: local, host: { runtime: { status } } });
+  describe("a shell another Cogno took over", () => {
+    beforeEach(() => {
+      factory.ensureSession(localPane);
+      runtimeOf("t1", "takenOver");
+    });
 
-    // A start that failed for another reason stays as it is.
-    inner.sessions.set("t1", session("running"));
-    sessionFacts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
-    expect(refresh).not.toHaveBeenCalled();
+    it("is shown here again when the user asks, with what its host says of it now", async () => {
+      await expect(factory.takeBack("t1")).resolves.toBe(true);
 
-    inner.sessions.set("t1", session("failed"));
-    sessionFacts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
-    // This machine is asked what runs, to attach to it.
-    expect(refresh).toHaveBeenCalledExactlyOnceWith(undefined);
+      expect(session).toHaveBeenCalledExactlyOnceWith(undefined, "t1");
+      expect(opened[1]?.start.kind).toBe("showRunning");
+    });
+
+    it("comes back by itself when that Cogno lets it go", async () => {
+      facts.next({ terminalId: "t1", fact: { type: "handedBack" } });
+      await settle();
+
+      expect(opened).toHaveLength(2);
+    });
+
+    it("comes back when a pane asks for it on the bus", async () => {
+      reattachments.next({ type: "ReattachTerminal", payload: "t1" });
+      await settle();
+
+      expect(opened).toHaveLength(2);
+    });
+
+    it("is not taken back while it runs here", async () => {
+      runtimeOf("t1", "running");
+
+      await expect(factory.takeBack("t1")).resolves.toBe(false);
+      expect(session).not.toHaveBeenCalled();
+    });
+
+    it("starts a new shell here when it ended meanwhile", async () => {
+      session.mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
+
+      await expect(factory.takeBack("t1")).resolves.toBe(false);
+
+      expect(opened[1]?.start.kind).toBe("spawn");
+    });
   });
 
-  it("keeps a pane whose host could not be connected, without a session", async () => {
-    connect.mockRejectedValue(new Error("Permission denied (publickey)."));
+  it("closes a pane for good: what waits stops, and the app hears the terminal went", () => {
+    factory.ensureSession(localPane);
 
-    factory.ensureSession(pane);
-    await Promise.resolve();
-    await Promise.resolve();
+    factory.destroy("t1");
 
-    // Still waiting: asking again does not connect behind the user's back.
-    expect(factory.ensureSession(pane)).toBeUndefined();
-    expect(connect).toHaveBeenCalledOnce();
+    expect(waitingPanes.stop).toHaveBeenCalledWith("t1");
+    expect(closed).toEqual([{ terminalId: "t1", removed: true }]);
+    expect(factory.getSessionHost("t1")).toBeUndefined();
   });
 });

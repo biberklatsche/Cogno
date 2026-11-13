@@ -1,6 +1,6 @@
 import type { DestroyRef } from "@angular/core";
 import type { RemoteHost, RemoteShell, RemoteShellsPort } from "@cogno/core/api/remote-shells-port";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemotePanelService } from "./remote-panel.service";
 
@@ -19,6 +19,7 @@ async function settled(): Promise<void> {
 
 describe("RemotePanelService", () => {
   let hosts$: BehaviorSubject<readonly RemoteHost[]>;
+  let shownHereChanged$: Subject<void>;
   let port: {
     [K in
       | "shells"
@@ -33,6 +34,7 @@ describe("RemotePanelService", () => {
 
   beforeEach(() => {
     hosts$ = new BehaviorSubject<readonly RemoteHost[]>([host("office", "disconnected")]);
+    shownHereChanged$ = new Subject<void>();
     port = {
       shells: vi.fn().mockResolvedValue([]),
       show: vi.fn().mockResolvedValue(undefined),
@@ -43,7 +45,7 @@ describe("RemotePanelService", () => {
       removeHost: vi.fn().mockResolvedValue(undefined),
     };
     service = new RemotePanelService(
-      { hosts$, ...port } as unknown as RemoteShellsPort,
+      { hosts$, shownHereChanged$, ...port } as unknown as RemoteShellsPort,
       { onDestroy: vi.fn() } as unknown as DestroyRef,
     );
   });
@@ -169,42 +171,48 @@ describe("RemotePanelService", () => {
       expect(service.shells().get("office")).toEqual({ status: "loading" });
     });
 
-    it("keeps a shell shown here that an answer from before showing it would undo", async () => {
+    it("keeps what the host says after showing a shell over an answer from before", async () => {
       port.shells.mockResolvedValueOnce([shell("t1")]);
       service.open();
       await settled();
       let stale!: (shells: RemoteShell[]) => void;
       port.shells.mockReturnValueOnce(new Promise((resolve) => (stale = resolve)));
       service.refresh();
+      port.shells.mockResolvedValueOnce([shell("t1", { shown: "here" })]);
 
       await service.show("office", shell("t1"));
+      shownHereChanged$.next();
       stale([shell("t1")]);
       await settled();
 
       expect(service.shells().get("office")).toEqual({
         status: "loaded",
-        shells: [shell("t1", { shown: "here", shownBy: undefined })],
+        shells: [shell("t1", { shown: "here" })],
       });
     });
 
-    it("marks a shell as shown here once it was opened", async () => {
-      port.shells.mockResolvedValue([shell("t1", { shownBy: "office-pc" }), shell("t2")]);
+    it("reads the host's shells again once this window shows one, instead of guessing", async () => {
+      port.shells.mockResolvedValueOnce([shell("t1"), shell("t2")]);
       service.open();
       await settled();
+      port.shells.mockResolvedValueOnce([shell("t1", { shown: "here" }), shell("t2")]);
 
       await service.show("office", shell("t1"));
+      shownHereChanged$.next();
+      await settled();
 
       expect(port.show).toHaveBeenCalledWith("office", "t1");
       expect(service.shells().get("office")).toEqual({
         status: "loaded",
-        shells: [shell("t1", { shown: "here", shownBy: undefined }), shell("t2")],
+        shells: [shell("t1", { shown: "here" }), shell("t2")],
       });
     });
 
-    it("takes an ended shell off the list", async () => {
-      port.shells.mockResolvedValue([shell("t1"), shell("t2")]);
+    it("reads the host's shells again once one was ended", async () => {
+      port.shells.mockResolvedValueOnce([shell("t1"), shell("t2")]);
       service.open();
       await settled();
+      port.shells.mockResolvedValueOnce([shell("t2")]);
 
       await service.end("office", shell("t1"));
 

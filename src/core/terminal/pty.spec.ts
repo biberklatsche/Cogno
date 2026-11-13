@@ -1,11 +1,12 @@
-import type {
-  PtyOutputListenerContract,
-  PtyShellProfileContract,
-  PtyTransport,
+import {
+  HostError,
+  type PtyOutputListenerContract,
+  type PtyShellProfileContract,
+  type PtyTransport,
 } from "@cogno/platform";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TauriMockFactory } from "../../__test__/mocks/tauri-mock.factory";
-import { Pty } from "./pty";
+import { Pty, PtyOptions } from "./pty";
 import type { TerminalMachineFault } from "./terminal-machine.events";
 
 vi.mock("@cogno/platform/logger", () => ({
@@ -27,9 +28,15 @@ describe("Pty", () => {
   const dimensions = { cols: 80, rows: 24 };
   const noopListener = () => {};
 
+  const options: PtyOptions = { lifetime: "endsWithClient", integrationVersion: "1.3.0" };
+
+  function ptyWith(more: Partial<PtyOptions>): Pty {
+    return new Pty(transport as unknown as PtyTransport, { ...options, ...more });
+  }
+
   beforeEach(() => {
     transport = TauriMockFactory.createPtyTransport();
-    pty = new Pty(transport as unknown as PtyTransport, false);
+    pty = ptyWith({});
   });
 
   /** The n-th spawn handle the transport handed out. */
@@ -68,17 +75,15 @@ describe("Pty", () => {
     return { seq, data: new TextEncoder().encode(text) };
   }
 
-  it("should spawn through the transport with profile, dimensions and dev mode", async () => {
+  it("should spawn through the transport with profile, size, integration and lifetime", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     expect(transport.spawn).toHaveBeenCalledWith(
       {
         terminalId,
-        cols: 80,
-        rows: 24,
+        size: { cols: 80, rows: 24 },
         profile: shellConfig,
-        devMode: false,
-        host: undefined,
-        survivesClient: false,
+        integrationVersion: "1.3.0",
+        lifetime: "endsWithClient",
       },
       expect.objectContaining({
         onChunk: expect.any(Function),
@@ -87,14 +92,15 @@ describe("Pty", () => {
     );
   });
 
-  it("should throw error if resize is called before spawn", () => {
-    expect(() => pty.resize(dimensions)).toThrow("Please spawn Pty before resize.");
+  it("sends no resize before it opened", () => {
+    pty.resize(dimensions);
+    expect(transport.resize).not.toHaveBeenCalled();
   });
 
   it("should resize pty if spawned", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.resize({ cols: 100, rows: 30 });
-    expect(transport.resize).toHaveBeenCalledWith(terminalId, 100, 30);
+    expect(transport.resize).toHaveBeenCalledWith(terminalId, { cols: 100, rows: 30 });
   });
 
   it("should ignore invalid resize dimensions", async () => {
@@ -113,7 +119,7 @@ describe("Pty", () => {
     resolveSpawn();
     await spawnPromise;
 
-    expect(transport.resize).toHaveBeenCalledWith(terminalId, 120, 40);
+    expect(transport.resize).toHaveBeenCalledWith(terminalId, { cols: 120, rows: 40 });
   });
 
   it("should discard invalid buffered resize dimensions", async () => {
@@ -189,6 +195,22 @@ describe("Pty", () => {
     expect(transport.ack).toHaveBeenCalledWith(terminalId, 42);
   });
 
+  it("reports a failure that only raced the end of its session as nothing", async () => {
+    const faults: TerminalMachineFault[] = [];
+    pty.faults$.subscribe((fault) => faults.push(fault));
+    await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+    vi.mocked(transport.ack).mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
+    vi.mocked(transport.write).mockRejectedValueOnce(new HostError("attachedElsewhere", "taken"));
+    vi.mocked(transport.resize).mockRejectedValueOnce(new HostError("io", "broken"));
+
+    pty.ack(1);
+    pty.write("x");
+    pty.resize({ cols: 90, rows: 30 });
+    await vi.waitFor(() => expect(faults).toHaveLength(1));
+
+    expect(faults[0].operation).toBe("resize");
+  });
+
   it("should not ack after dispose", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.dispose();
@@ -219,7 +241,7 @@ describe("Pty", () => {
   });
 
   /** The exit listener `Pty` passed to the n-th `transport.onExit`. */
-  function backendExit(index = 0): (exit: { exitCode: number }) => void {
+  function backendExit(index = 0): (exit: { reason: { kind: "exited"; code: number } }) => void {
     return vi.mocked(transport.onExit).mock.calls[index][1];
   }
 
@@ -236,13 +258,13 @@ describe("Pty", () => {
     const resolveSpawn = holdNextSpawn();
     const { settled: spawnPromise } = await spawnInFlight();
 
-    backendExit()({ exitCode: 3 });
+    backendExit()({ reason: { kind: "exited", code: 3 } });
     resolveSpawn();
     await spawnPromise;
     const listener = vi.fn();
     pty.onExit(listener);
 
-    expect(listener).toHaveBeenCalledWith({ exitCode: 3 });
+    expect(listener).toHaveBeenCalledWith({ reason: { kind: "exited", code: 3 } });
   });
 
   it("stops telling a listener once it is disposed", async () => {
@@ -250,7 +272,7 @@ describe("Pty", () => {
     const listener = vi.fn();
     pty.onExit(listener).dispose();
 
-    backendExit()({ exitCode: 0 });
+    backendExit()({ reason: { kind: "exited", code: 0 } });
 
     expect(listener).not.toHaveBeenCalled();
   });
@@ -268,7 +290,7 @@ describe("Pty", () => {
 
     pty.dispose();
     registerListener();
-    await spawnPromise;
+    await expect(spawnPromise).rejects.toThrow("closed while it opened");
 
     expect(unlisten).toHaveBeenCalled();
     expect(transport.spawn).not.toHaveBeenCalled();
@@ -292,13 +314,19 @@ describe("Pty", () => {
 
   describe("a shell that already runs", () => {
     /** The listener `Pty` registered for the shell being taken over. */
-    function takenOverListener(): () => void {
-      return vi.mocked(transport.onTakenOver).mock.calls[0][1] as () => void;
+    function takenOverListener(): (by?: string) => void {
+      return vi.mocked(transport.onTakenOver).mock.calls[0][1] as (by?: string) => void;
     }
 
-    it("is attached to through the transport instead of started", async () => {
-      await pty.attach(terminalId, noopListener);
+    /** The listener `Pty` registered for the shell being handed back. */
+    function handedBackListener(): () => void {
+      return vi.mocked(transport.onHandedBack).mock.calls[0][1] as () => void;
+    }
 
+    it("is attached to through the transport instead of started, and says what it is", async () => {
+      const session = await pty.attach(terminalId, noopListener);
+
+      expect(session).toEqual(TauriMockFactory.createSessionInfo());
       expect(transport.attach).toHaveBeenCalledWith(
         { terminalId, host: undefined },
         expect.objectContaining({ onChunk: expect.any(Function) }),
@@ -306,11 +334,11 @@ describe("Pty", () => {
       expect(transport.spawn).not.toHaveBeenCalled();
       // From here it is a shell like any other.
       pty.resize({ cols: 100, rows: 30 });
-      expect(transport.resize).toHaveBeenCalledWith(terminalId, 100, 30);
+      expect(transport.resize).toHaveBeenCalledWith(terminalId, { cols: 100, rows: 30 });
     });
 
     it("names the host it runs on when it attaches, and never starts a shell there", async () => {
-      const remote = new Pty(transport as unknown as PtyTransport, false, "office");
+      const remote = ptyWith({ host: "office" });
 
       await remote.attach(terminalId, noopListener);
       expect(transport.attach).toHaveBeenCalledWith(
@@ -325,12 +353,12 @@ describe("Pty", () => {
     });
 
     it("says whether a shell started here goes on without Cogno", async () => {
-      const kept = new Pty(transport as unknown as PtyTransport, false, undefined, true);
+      const kept = ptyWith({ lifetime: "survivesClient" });
 
       await kept.spawn(terminalId, shellConfig, dimensions, noopListener);
 
       expect(transport.spawn).toHaveBeenCalledWith(
-        expect.objectContaining({ survivesClient: true }),
+        expect.objectContaining({ lifetime: "survivesClient" }),
         expect.anything(),
       );
     });
@@ -351,24 +379,51 @@ describe("Pty", () => {
       pty.onTakenOver(takenOver);
       await pty.attach(terminalId, noopListener);
 
-      takenOverListener()();
+      takenOverListener()("laptop");
 
-      expect(takenOver).toHaveBeenCalledOnce();
+      expect(takenOver).toHaveBeenCalledExactlyOnceWith("laptop");
+      expect(pty.isLive).toBe(false);
+    });
+
+    it("tells a listener that subscribes later that it was taken over meanwhile", async () => {
+      let attached!: () => void;
+      vi.mocked(transport.attach).mockImplementationOnce(() => ({
+        ready: new Promise(
+          (resolve) => (attached = () => resolve(TauriMockFactory.createSessionInfo())),
+        ),
+        closeOutput: vi.fn(),
+      }));
+      const attaching = pty.attach(terminalId, noopListener);
+      await vi.waitFor(() => expect(transport.attach).toHaveBeenCalled());
+
+      // The takeover crosses the attach.
+      takenOverListener()("laptop");
+      attached();
+      await attaching;
+      const takenOver = vi.fn();
+      pty.onTakenOver(takenOver);
+
+      expect(pty.isLive).toBe(false);
+      expect(takenOver).toHaveBeenCalledExactlyOnceWith("laptop");
     });
 
     it("tells its listeners when the Cogno that took it over let it go", async () => {
-      const released = vi.fn();
-      pty.onReleased(released);
+      const handedBack = vi.fn();
+      pty.onHandedBack(handedBack);
       await pty.attach(terminalId, noopListener);
       takenOverListener()();
 
-      (vi.mocked(transport.onReleased).mock.calls[0][1] as () => void)();
+      handedBackListener()();
 
-      expect(released).toHaveBeenCalledOnce();
+      expect(handedBack).toHaveBeenCalledOnce();
+      // So is one that comes later.
+      const later = vi.fn();
+      pty.onHandedBack(later);
+      expect(later).toHaveBeenCalledOnce();
     });
 
     it("is let go, not ended, when it runs on another machine", async () => {
-      const remote = new Pty(transport as unknown as PtyTransport, false, "office");
+      const remote = ptyWith({ host: "office" });
       await remote.attach(terminalId, noopListener);
 
       remote.dispose();
@@ -381,10 +436,12 @@ describe("Pty", () => {
     it("is let go as well when its terminal closed while it was still attaching", async () => {
       let attached!: () => void;
       vi.mocked(transport.attach).mockImplementationOnce(() => ({
-        ready: new Promise<void>((resolve) => (attached = resolve)),
+        ready: new Promise(
+          (resolve) => (attached = () => resolve(TauriMockFactory.createSessionInfo())),
+        ),
         closeOutput: vi.fn(),
       }));
-      const remote = new Pty(transport as unknown as PtyTransport, false, "office");
+      const remote = ptyWith({ host: "office" });
       const attaching = remote.attach(terminalId, noopListener);
       await vi.waitFor(() => expect(transport.attach).toHaveBeenCalled());
 

@@ -17,7 +17,7 @@ import { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace
 import { AppWindow } from "@cogno/platform/window";
 import { WindowCore } from "@cogno/platform/window-core";
 import { TerminalId } from "@cogno/shared/domain";
-import { Subject } from "rxjs";
+import { NEVER, Subject } from "rxjs";
 import { vi } from "vitest";
 import { ConfigServiceMock } from "./mocks/config-service.mock";
 
@@ -89,6 +89,7 @@ export function emitSessionFact(terminalId: TerminalId, fact: SessionFact): void
       {} as ShellProfile,
       {
         facts$: subject.asObservable(),
+        runtime$: NEVER,
       } as unknown as SessionHost,
     );
   }

@@ -1,12 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HostError } from "./host-error";
 import {
   PTY_CHUNK_GAP_TIMEOUT_MS,
   type PtyChunkContract,
   PtyDataChannel,
   type PtyOutputListenerContract,
   PtyTransport,
-  ShellAlreadyRunsError,
 } from "./pty";
 
 type RawMessage = { message: ArrayBuffer; index: number } | { end: true; index: number };
@@ -191,16 +191,15 @@ describe("PtyTransport", () => {
     return transport.spawn(
       {
         terminalId: "t1",
-        cols: 80,
-        rows: 24,
+        size: { cols: 80, rows: 24 },
         profile: {
           shell_type: "Bash",
           inject_cogno_cli: true,
           enable_shell_integration: true,
           load_user_rc: true,
         },
-        devMode: true,
-        survivesClient: false,
+        integrationVersion: "1.3.0",
+        lifetime: "endsWithClient",
       },
       output,
     );
@@ -211,12 +210,12 @@ describe("PtyTransport", () => {
     const [command, args] = vi.mocked(invoke).mock.calls[0] as [string, any];
     expect(command).toBe("pty_spawn");
     expect(args.options).toEqual({
-      name: "t1",
-      cols: 80,
-      rows: 24,
+      terminal_id: "t1",
+      size: { cols: 80, rows: 24 },
       profile: expect.objectContaining({ shell_type: "Bash" }),
-      dev_mode: true,
+      integration_version: "1.3.0",
     });
+    expect(args.lifetime).toBe("endsWithClient");
     const channel: PtyDataChannel = args.onData;
     registry.callbacks.get(channel.id)!({ message: frame(0, "hi"), index: 0 });
     expect(output.onChunk).toHaveBeenCalledWith(expect.objectContaining({ seq: 0 }));
@@ -224,16 +223,15 @@ describe("PtyTransport", () => {
     await expect(handle.ready).resolves.toEqual({ shellProcessId: 4711 });
   });
 
-  it("tells a shell that already runs apart from any other failure, by its code", async () => {
-    vi.mocked(invoke).mockRejectedValueOnce({ code: "shellAlreadyRuns" });
+  it("tells failures apart by their code, never by their text", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce({ code: "shellAlreadyRuns", message: "runs" });
     const refused = spawn().ready;
-    await expect(refused).rejects.toBeInstanceOf(ShellAlreadyRunsError);
-    await expect(refused).rejects.toMatchObject({ terminalId: "t1" });
+    await expect(refused).rejects.toBeInstanceOf(HostError);
+    await expect(refused).rejects.toMatchObject({ code: "shellAlreadyRuns" });
 
-    vi.mocked(invoke).mockRejectedValueOnce({ code: "failed", message: "No such shell" });
+    vi.mocked(invoke).mockRejectedValueOnce({ code: "spawnFailed", message: "No such shell" });
     const failed = spawn().ready;
-    await expect(failed).rejects.not.toBeInstanceOf(ShellAlreadyRunsError);
-    await expect(failed).rejects.toThrow("No such shell");
+    await expect(failed).rejects.toMatchObject({ code: "spawnFailed", message: "No such shell" });
   });
 
   it("should close the channel through the spawn handle", () => {
@@ -246,13 +244,13 @@ describe("PtyTransport", () => {
   it("should map the remaining commands one to one", async () => {
     await transport.ack("t1", 7);
     await transport.write("t1", "ls");
-    await transport.resize("t1", 100, 30);
+    await transport.resize("t1", { cols: 100, rows: 30 });
     await transport.kill("t1");
     await transport.executeLineEditorAction("t1", "clearLine", { start: 0 });
     expect(vi.mocked(invoke).mock.calls).toEqual([
       ["pty_ack", { terminalId: "t1", seq: 7 }],
       ["pty_write", { terminalId: "t1", data: "ls" }],
-      ["pty_resize", { terminalId: "t1", cols: 100, rows: 30 }],
+      ["pty_resize", { terminalId: "t1", size: { cols: 100, rows: 30 } }],
       ["pty_kill", { terminalId: "t1" }],
       [
         "pty_execute_line_editor_action",
@@ -277,19 +275,19 @@ describe("PtyTransport", () => {
 
       const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
       expect(event).toBe("pty-exit:t1");
-      handler({ payload: { exitCode: 3 } });
-      expect(ended).toHaveBeenCalledWith({ exitCode: 3 });
+      handler({ payload: { reason: { kind: "exited", code: 3 } } });
+      expect(ended).toHaveBeenCalledWith({ reason: { kind: "exited", code: 3 } });
     });
 
     it("hears only this window's shell coming free again", async () => {
-      const released = vi.fn();
+      const handedBack = vi.fn();
 
-      await transport.onReleased("t1", released);
+      await transport.onHandedBack("t1", handedBack);
 
       const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
-      expect(event).toBe("pty-released:t1");
+      expect(event).toBe("pty-handed-back:t1");
       handler({ payload: null });
-      expect(released).toHaveBeenCalledOnce();
+      expect(handedBack).toHaveBeenCalledOnce();
     });
 
     it("hears only this window's loss of a shell, and who shows it now", async () => {

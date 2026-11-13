@@ -6,18 +6,20 @@ import {
   RemoteShellsPort,
 } from "@cogno/core/api/remote-shells-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { SessionRuntime } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import {
   RemoteHostConnection,
   RemoteHostsService,
 } from "@cogno/core/workbench/hosts/remote-hosts.service";
-import { RunningSessionsService } from "@cogno/core/workbench/hosts/running-sessions.service";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { Hosts, RunningSession } from "@cogno/platform/hosts";
+import { isHostError, SessionInfoContract } from "@cogno/platform";
+import { Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
-import { combineLatest, map, Observable } from "rxjs";
+import { combineLatest, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
 import { TerminalNavigatorAdapterService } from "./terminal-navigator.adapter.service";
 
 /** A host name is a segment of a config key (`remote.hosts.<name>.…`). */
@@ -30,28 +32,48 @@ function hostKeys(name: string): { destination: string; command: string } {
   };
 }
 
-function toRemoteShell(session: RunningSession): RemoteShell {
+/** The runtimes at which a window begins or stops showing a shell it has a session for. */
+const SHOWING_CHANGES: readonly SessionRuntime["status"][] = ["running", "takenOver"];
+
+function toRemoteShell(session: SessionInfoContract): RemoteShell {
+  const { placement, attached } = session;
   return {
     terminalId: session.terminalId,
-    workspace: session.label.workspace ?? undefined,
-    tab: session.label.tab ?? undefined,
-    title: session.label.title ?? undefined,
-    directory: session.label.directory ?? undefined,
-    shown: !session.shown ? "nowhere" : session.shownHere ? "here" : "elsewhere",
-    shownBy: (session.shown && !session.shownHere && session.shownBy) || undefined,
+    workspace: placement.workspace ?? undefined,
+    tab: placement.tab ?? undefined,
+    title: placement.title ?? undefined,
+    directory: placement.directory ?? undefined,
+    shown: attached.to,
+    shownBy: attached.to === "elsewhere" ? (attached.by ?? undefined) : undefined,
+  };
+}
+
+function toRemoteHost(
+  name: string,
+  destination: string,
+  command: string | undefined,
+  connection: RemoteHostConnection | undefined,
+): RemoteHost {
+  return {
+    name,
+    destination,
+    command,
+    connection: connection?.status ?? "disconnected",
+    failure: connection?.status === "failed" ? connection.failure.message : undefined,
   };
 }
 
 @Injectable({ providedIn: "root" })
 export class RemoteShellsAdapterService extends RemoteShellsPort {
   readonly hosts$: Observable<readonly RemoteHost[]>;
+  readonly shownHereChanged$: Observable<void>;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly remoteHosts: RemoteHostsService,
-    private readonly runningSessions: RunningSessionsService,
     private readonly hosts: Hosts,
-    private readonly sessions: TerminalSessionRegistry,
+    private readonly sessionFactory: SessionHostFactory,
+    sessions: TerminalSessionRegistry,
     private readonly gridList: GridListService,
     private readonly navigator: TerminalNavigatorAdapterService,
     private readonly bus: AppBus,
@@ -64,6 +86,19 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
         ),
       ),
     );
+    // A shell is shown here once its session runs, and no longer once it is
+    // taken over or its session is gone.
+    this.shownHereChanged$ = merge(
+      sessions.changes$,
+      sessions.runtimes$.pipe(
+        filter(({ runtime }) => SHOWING_CHANGES.includes(runtime.status)),
+        distinctUntilChanged(
+          (before, after) =>
+            before.terminalId === after.terminalId &&
+            before.runtime.status === after.runtime.status,
+        ),
+      ),
+    ).pipe(map(() => undefined));
   }
 
   async saveHost(host: RemoteHostSettings, previousName?: string): Promise<void> {
@@ -109,6 +144,10 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     await this.remoteHosts.disconnect(host);
   }
 
+  defaultCommand(): Promise<string> {
+    return this.hosts.defaultCommand();
+  }
+
   async connect(host: string): Promise<void> {
     await this.remoteHosts.connect(host);
   }
@@ -122,39 +161,24 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
   }
 
   async show(host: string, terminalId: TerminalId): Promise<void> {
-    if (this.sessions.get(terminalId)?.host.runtime.status === "takenOver") {
-      this.bus.publish({ type: "RetakeTerminal", payload: terminalId });
-      return;
-    }
+    if (await this.sessionFactory.takeBack(terminalId)) return;
     if (this.gridList.findTabIdByTerminalId(terminalId)) {
       await this.navigator.navigateToTerminal(terminalId);
       return;
     }
-    // The new pane takes its shell from what the host says runs there: that
-    // has to be what runs now, not what ran when the host was last asked.
-    await this.runningSessions.refresh(host);
+    // The new pane asks the host for its shell itself.
     this.bus.publish({
       type: "CreateTab",
       payload: { tabId: IdCreator.newTabId(), terminalId, host, isActive: true },
     });
   }
 
-  end(host: string, terminalId: TerminalId): Promise<void> {
-    return this.hosts.endSession(host, terminalId);
+  async end(host: string, terminalId: TerminalId): Promise<void> {
+    try {
+      await this.hosts.killSession(host, terminalId);
+    } catch (error) {
+      // Ended already: what was asked for is done.
+      if (!isHostError(error, "sessionNotFound")) throw error;
+    }
   }
-}
-
-function toRemoteHost(
-  name: string,
-  destination: string,
-  command: string | undefined,
-  connection: RemoteHostConnection | undefined,
-): RemoteHost {
-  return {
-    name,
-    destination,
-    command,
-    connection: connection?.status ?? "disconnected",
-    failure: connection?.status === "failed" ? connection.reason : undefined,
-  };
 }

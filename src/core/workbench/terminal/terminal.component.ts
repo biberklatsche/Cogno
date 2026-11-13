@@ -115,10 +115,10 @@ export class TerminalComponent implements AfterViewInit {
   }
 
   /** Another Cogno shows the shell: show it here again. */
-  retake(): void {
+  reattach(): void {
     const terminalId = this.host.terminalId;
     if (!terminalId) return;
-    this.bus.publish({ type: "RetakeTerminal", payload: terminalId });
+    this.bus.publish({ type: "ReattachTerminal", payload: terminalId });
   }
 
   /** The shell did not start, or is shown elsewhere: give the pane up. */

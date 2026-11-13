@@ -51,7 +51,7 @@ import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
-import { SessionLabelPublisher } from "@cogno/core/workbench/hosts/session-label.publisher";
+import { SessionPlacementPublisher } from "@cogno/core/workbench/hosts/session-placement.publisher";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { NativeMenuService } from "@cogno/core/workbench/native-menu/native-menu.service";
@@ -154,7 +154,7 @@ export const appConfig: ApplicationConfig = {
         eager(SideMenuStatePersistenceService);
         eager(TerminalSearchApiService);
         eager(WorkspaceShortcutActionService);
-        eager(SessionLabelPublisher);
+        eager(SessionPlacementPublisher);
 
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).

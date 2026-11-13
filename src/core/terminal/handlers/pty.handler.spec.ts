@@ -1,7 +1,12 @@
 import type { IPty } from "@cogno/core/terminal/pty";
-import type { PtyShellProfileContract } from "@cogno/platform";
+import {
+  HostError,
+  type PtyShellProfileContract,
+  type TerminalExitContract,
+} from "@cogno/platform";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
+import { TauriMockFactory } from "../../../__test__/mocks/tauri-mock.factory";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { HIDDEN_UNPARSED_BUDGET_BYTES, PtyHandler } from "./pty.handler";
 
@@ -21,7 +26,7 @@ describe("PtyHandler", () => {
   let handler: PtyHandler;
   let mockTerminal: Terminal;
   let listener: {
-    onExited: Mock<(exitCode: number) => void>;
+    onExited: Mock<(reason: TerminalExitContract) => void>;
     onOutput: Mock<() => void>;
   };
   let mockPty: IPty;
@@ -37,7 +42,7 @@ describe("PtyHandler", () => {
 
   beforeEach(() => {
     listener = {
-      onExited: vi.fn<(exitCode: number) => void>(),
+      onExited: vi.fn<(reason: TerminalExitContract) => void>(),
       onOutput: vi.fn<() => void>(),
     };
     windowHidden = false;
@@ -46,14 +51,19 @@ describe("PtyHandler", () => {
       write: vi.fn(),
       onExit: vi.fn().mockReturnValue({ dispose: vi.fn() }),
       onTakenOver: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-      onReleased: vi.fn().mockReturnValue({ dispose: vi.fn() }),
-      attach: vi.fn().mockResolvedValue(undefined),
+      onHandedBack: vi.fn().mockReturnValue({ dispose: vi.fn() }),
+      attach: vi.fn().mockResolvedValue(TauriMockFactory.createSessionInfo()),
       resize: vi.fn().mockResolvedValue(undefined),
       ack: vi.fn(),
       kill: vi.fn(),
+      isLive: true,
     } as unknown as IPty;
 
-    handler = new PtyHandler(terminalId, mockPty, shellConfig, listener, () => windowHidden);
+    handler = new PtyHandler(terminalId, mockPty, shellConfig, {
+      mode: "spawn",
+      listener,
+      isWindowHidden: () => windowHidden,
+    });
     mockTerminal = TerminalMockFactory.createTerminal({ cols: 80, rows: 24 });
   });
 
@@ -211,9 +221,9 @@ describe("PtyHandler", () => {
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
 
       const onExitCallback = vi.mocked(mockPty.onExit).mock.calls[0][0];
-      onExitCallback({ exitCode: 0 });
+      onExitCallback({ reason: { kind: "exited", code: 0 } });
 
-      expect(listener.onExited).toHaveBeenCalled();
+      expect(listener.onExited).toHaveBeenCalledWith({ kind: "exited", code: 0 });
     });
 
     it("reports the exit when PowerShell ends abnormally", async () => {
@@ -224,13 +234,16 @@ describe("PtyHandler", () => {
         enable_shell_integration: false,
         load_user_rc: true,
       };
-      handler = new PtyHandler(terminalId, mockPty, powerPtyShellProfileContract, listener);
+      handler = new PtyHandler(terminalId, mockPty, powerPtyShellProfileContract, {
+        mode: "spawn",
+        listener,
+      });
 
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onExit).toHaveBeenCalled());
 
       const onExitCallback = vi.mocked(mockPty.onExit).mock.calls[0][0];
-      onExitCallback({ exitCode: -2146232797 });
+      onExitCallback({ reason: { kind: "exited", code: -2146232797 } });
 
       expect(listener.onExited).toHaveBeenCalled();
       expect(mockPty.spawn).toHaveBeenCalledTimes(1);
@@ -262,14 +275,11 @@ describe("PtyHandler", () => {
     beforeEach(() => {
       onSpawned = vi.fn<() => void>();
       onFailed = vi.fn<(error: unknown) => void>();
-      handler = new PtyHandler(
-        terminalId,
-        mockPty,
-        shellConfig,
-        { ...listener, onSpawned, onFailed },
-        () => windowHidden,
-        true,
-      );
+      handler = new PtyHandler(terminalId, mockPty, shellConfig, {
+        mode: "attach",
+        listener: { ...listener, onSpawned, onFailed },
+        isWindowHidden: () => windowHidden,
+      });
     });
 
     it("is attached to instead of started, and its output is written like any other", async () => {
@@ -287,18 +297,18 @@ describe("PtyHandler", () => {
     });
 
     it("is started after all when it was not there to attach to and the user retries", async () => {
-      vi.mocked(mockPty.attach).mockRejectedValueOnce(new Error("Session not found: t1"));
+      vi.mocked(mockPty.attach).mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(onFailed).toHaveBeenCalled());
 
-      handler.restart("start");
+      handler.restart("spawn");
 
       await vi.waitFor(() => expect(mockPty.spawn).toHaveBeenCalled());
       expect(mockPty.attach).toHaveBeenCalledOnce();
     });
 
     it("is attached to again, not started, when asked so", async () => {
-      vi.mocked(mockPty.attach).mockRejectedValueOnce(new Error("The connection was lost"));
+      vi.mocked(mockPty.attach).mockRejectedValueOnce(new HostError("connectionLost", "lost"));
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(onFailed).toHaveBeenCalled());
 
@@ -310,13 +320,57 @@ describe("PtyHandler", () => {
 
     it("passes on that another Cogno took the shell over", async () => {
       const onTakenOver = vi.fn();
-      handler = new PtyHandler(terminalId, mockPty, shellConfig, { ...listener, onTakenOver });
+      handler = new PtyHandler(terminalId, mockPty, shellConfig, {
+        mode: "attach",
+        listener: { ...listener, onTakenOver },
+      });
       handler.registerTerminal(mockTerminal);
       await vi.waitFor(() => expect(mockPty.onTakenOver).toHaveBeenCalled());
 
       (vi.mocked(mockPty.onTakenOver).mock.calls[0][0] as () => void)();
 
       expect(onTakenOver).toHaveBeenCalledOnce();
+    });
+
+    it("says what its host told of the shell before it calls it running", async () => {
+      const onAttached = vi.fn();
+      handler = new PtyHandler(terminalId, mockPty, shellConfig, {
+        mode: "attach",
+        listener: { ...listener, onAttached, onSpawned },
+      });
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(onSpawned).toHaveBeenCalled());
+
+      expect(onAttached).toHaveBeenCalledWith(TauriMockFactory.createSessionInfo());
+      expect(onAttached.mock.invocationCallOrder[0]).toBeLessThan(
+        onSpawned.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("does not call a shell running that was taken over while it attached", async () => {
+      (mockPty as { isLive: boolean }).isLive = false;
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(mockPty.attach).toHaveBeenCalled());
+      await flushMicrotasks();
+
+      expect(onSpawned).not.toHaveBeenCalled();
+      expect(onFailed).not.toHaveBeenCalled();
+    });
+
+    it("counts the output of a new attach from the start again", async () => {
+      vi.mocked(mockPty.attach).mockRejectedValueOnce(new HostError("connectionLost", "lost"));
+      handler.registerTerminal(mockTerminal);
+      await vi.waitFor(() => expect(onFailed).toHaveBeenCalled());
+      handler.restart("attach");
+      await vi.waitFor(() => expect(onSpawned).toHaveBeenCalled());
+      const onData = vi.mocked(mockPty.attach).mock.calls[1][1];
+
+      onData({ seq: 0, data: new TextEncoder().encode("again") });
+      const parsed = vi.mocked(mockTerminal.write).mock.calls[0][1] as () => void;
+      parsed();
+      await flushMicrotasks();
+
+      expect(mockPty.ack).toHaveBeenCalledWith(0);
     });
   });
 });

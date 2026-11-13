@@ -1,5 +1,4 @@
 import { Injectable } from "@angular/core";
-import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import {
   ShellIntegrationFileContract,
@@ -7,7 +6,11 @@ import {
 } from "@cogno/core/session/shells/shell-support";
 import { Hosts } from "@cogno/platform/hosts";
 
-const INTEGRATION_VERSION = "1.3.1";
+/**
+ * The version of the scripts below. A host keeps each version apart, and a
+ * shell sources the version it was started with.
+ */
+export const INTEGRATION_VERSION = "1.3.1";
 
 /**
  * Puts the shell integration scripts where a shell started with integration
@@ -17,10 +20,7 @@ const INTEGRATION_VERSION = "1.3.1";
  */
 @Injectable({ providedIn: "root" })
 export class ShellIntegrationWriter {
-  constructor(
-    private readonly hosts: Hosts,
-    private readonly environment: Environment,
-  ) {}
+  constructor(private readonly hosts: Hosts) {}
 
   /**
    * Makes sure the scripts of every supported shell are installed and
@@ -34,7 +34,6 @@ export class ShellIntegrationWriter {
       await this.hosts.installShellIntegration(
         INTEGRATION_VERSION,
         this.filesOf(shellSupportDefinitions),
-        this.environment.isDevMode(),
       );
     } catch (error) {
       ErrorReporter.reportException({

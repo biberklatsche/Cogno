@@ -3,9 +3,15 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
+import { HostError } from "@cogno/platform";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { RemoteHostConnection, RemoteHostsService } from "./remote-hosts.service";
+import {
+  ConnectError,
+  isWorthRetrying,
+  RemoteHostConnection,
+  RemoteHostsService,
+} from "./remote-hosts.service";
 
 describe("RemoteHostsService", () => {
   let connect: ReturnType<typeof vi.fn>;
@@ -14,7 +20,6 @@ describe("RemoteHostsService", () => {
   let register: ReturnType<typeof vi.fn>;
   let forgetPrompts: ReturnType<typeof vi.fn>;
   let ask: ReturnType<typeof vi.fn>;
-  let refreshRunning: ReturnType<typeof vi.fn>;
   let service: RemoteHostsService;
 
   beforeEach(() => {
@@ -23,7 +28,6 @@ describe("RemoteHostsService", () => {
     forgetPrompts = vi.fn();
     register = vi.fn().mockReturnValue(forgetPrompts);
     ask = vi.fn().mockResolvedValue("secret");
-    refreshRunning = vi.fn().mockResolvedValue(undefined);
     const hosts = {
       connect,
       disconnect: hangUp,
@@ -47,7 +51,6 @@ describe("RemoteHostsService", () => {
       config,
       { register } as unknown as ProcessPromptDispatcher,
       { ask } as unknown as ProcessPromptService,
-      { refresh: refreshRunning } as never,
       { onDestroy: vi.fn() } as never,
     );
   });
@@ -67,21 +70,6 @@ describe("RemoteHostsService", () => {
       expect.any(String),
     );
     expect(service.info("box")).toEqual({ os: "linux" });
-  });
-
-  it("knows what runs on a host before it counts as connected", async () => {
-    connect.mockResolvedValue({ os: "macos" });
-    let answered!: () => void;
-    refreshRunning.mockReturnValue(new Promise<void>((resolve) => (answered = resolve)));
-
-    const connecting = service.connect("mac");
-    await vi.waitFor(() => expect(refreshRunning).toHaveBeenCalledWith("mac"));
-    // A pane must find its shell among what the host said.
-    expect(service.info("mac")).toBeUndefined();
-
-    answered();
-    await connecting;
-    expect(service.info("mac")).toEqual({ os: "macos" });
   });
 
   it("sets a connection up once, however many panes ask for it", async () => {
@@ -115,10 +103,14 @@ describe("RemoteHostsService", () => {
     expect(forgetPrompts).toHaveBeenCalledOnce();
   });
 
-  it("fails with the backend's reason and can be tried again", async () => {
-    connect.mockRejectedValueOnce("No Cogno answered on the other machine");
+  it("fails with the backend's code and reason and can be tried again", async () => {
+    connect.mockRejectedValueOnce(new HostError("noCognoThere", "No Cogno host answered"));
 
-    await expect(service.connect("mac")).rejects.toThrow("No Cogno answered on the other machine");
+    const failed = service.connect("mac");
+    await expect(failed).rejects.toBeInstanceOf(ConnectError);
+    await expect(failed).rejects.toMatchObject({
+      failure: { code: "noCognoThere", message: "No Cogno host answered" },
+    });
     expect(service.info("mac")).toBeUndefined();
     expect(forgetPrompts).toHaveBeenCalledOnce();
 
@@ -126,11 +118,20 @@ describe("RemoteHostsService", () => {
     await expect(service.connect("mac")).resolves.toEqual({ os: "macos" });
   });
 
-  it("refuses a host the config does not define", async () => {
-    await expect(service.connect("nowhere")).rejects.toThrow(
-      "Host 'nowhere' is not defined in remote.hosts.",
-    );
+  it("refuses a host the config does not define, as nothing worth retrying", async () => {
+    const refused = service.connect("nowhere");
+
+    await expect(refused).rejects.toMatchObject({ failure: { code: "notConfigured" } });
     expect(connect).not.toHaveBeenCalled();
+    const { failure } = (await refused.catch((error: ConnectError) => error)) as ConnectError;
+    expect(isWorthRetrying(failure)).toBe(false);
+  });
+
+  it("calls a failure worth retrying unless something has to change first", () => {
+    expect(isWorthRetrying({ code: "connectFailed", message: "" })).toBe(true);
+    expect(isWorthRetrying({ code: "noCognoThere", message: "" })).toBe(true);
+    expect(isWorthRetrying({ code: "hostTooOld", message: "" })).toBe(false);
+    expect(isWorthRetrying({ code: "invalidDestination", message: "" })).toBe(false);
   });
 
   it("forgets a lost connection and tells the user, in the window that used it", async () => {
@@ -170,11 +171,13 @@ describe("RemoteHostsService", () => {
     });
 
     it("says why a connection failed", async () => {
-      connect.mockRejectedValueOnce("Permission denied (publickey).");
+      connect.mockRejectedValueOnce(
+        new HostError("connectFailed", "Permission denied (publickey)."),
+      );
       await expect(service.connect("mac")).rejects.toThrow();
       expect(seen.get("mac")).toEqual({
         status: "failed",
-        reason: "Permission denied (publickey).",
+        failure: { code: "connectFailed", message: "Permission denied (publickey)." },
       });
     });
 

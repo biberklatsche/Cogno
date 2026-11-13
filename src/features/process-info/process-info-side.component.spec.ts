@@ -8,13 +8,13 @@ import {
 describe("noticeableStatus", () => {
   it("names a process that has ended or is halted", () => {
     expect(noticeableStatus("Zombie")).toBe("Zombie");
-    expect(noticeableStatus("Stop")).toBe("Stop");
+    expect(noticeableStatus("Stopped")).toBe("Stopped");
   });
 
   it("stays silent for a process that runs or waits", () => {
-    expect(noticeableStatus("Run")).toBeNull();
-    expect(noticeableStatus("Sleep")).toBeNull();
-    expect(noticeableStatus("UninterruptibleDiskSleep")).toBeNull();
+    expect(noticeableStatus("Running")).toBeNull();
+    expect(noticeableStatus("Sleeping")).toBeNull();
+    expect(noticeableStatus("Idle")).toBeNull();
   });
 });
 
@@ -29,7 +29,7 @@ describe("filterProcessNodes", () => {
       parentProcessId: null,
       name,
       currentWorkingDirectory: null,
-      status: "Run",
+      status: "Running",
       runTimeSeconds: 0,
       memoryBytes: 0,
     },

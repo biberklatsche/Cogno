@@ -8,33 +8,14 @@ import {
   TreeComponent,
   TreeRowDirective,
 } from "@cogno/shared/ui";
+import { RemoteHostFormComponent } from "./remote-host-form.component";
 import { RemotePanelService } from "./remote-panel.service";
 import { hostNodes, RemoteTreeNode } from "./remote-shell-tree";
 
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
-/**
- * What ssh runs on the other machine when a remote names no command
- * (`DEFAULT_REMOTE_COMMAND` in the app). The form starts with it, so it can
- * be copied or changed; saved unchanged, the remote names none.
- */
-const DEFAULT_COMMAND = '".cogno/bin/cogno" server --stdio';
 
-/** The host a form is about; `previousName` is set while one is changed. */
-type HostForm = {
-  readonly previousName?: string;
-  readonly name: string;
-  readonly destination: string;
-  readonly command: string;
-  readonly saving: boolean;
-  readonly error?: string;
-};
-
-/** The form's fields, in the order they are shown. */
-const HOST_FIELDS = [
-  { key: "name", label: "Name", placeholder: "office" },
-  { key: "destination", label: "Destination", placeholder: "user@host or an ssh alias" },
-  { key: "command", label: "Command", placeholder: DEFAULT_COMMAND },
-] as const;
+/** The form that is open: one to add a remote, or one to change `host`. */
+type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
 
 @Component({
   selector: "app-remote-side",
@@ -42,6 +23,7 @@ const HOST_FIELDS = [
   imports: [
     CopyEditDeleteComponent,
     IconComponent,
+    RemoteHostFormComponent,
     TooltipDirective,
     TreeComponent,
     TreeRowDirective,
@@ -70,32 +52,12 @@ const HOST_FIELDS = [
         <div class="status failure">{{ reason }}</div>
       }
 
-      @if (form(); as edited) {
-        <form class="host-form" (submit)="save($event)">
-          @for (field of fields; track field.key) {
-            <label>
-              <span>{{ field.label }}</span>
-              <input
-                type="text"
-                spellcheck="false"
-                autocomplete="off"
-                [placeholder]="field.placeholder"
-                [value]="edited[field.key]"
-                [disabled]="edited.saving"
-                (input)="setField(field.key, $event)"
-              />
-            </label>
-          }
-          @if (edited.error) {
-            <div class="status failure">{{ edited.error }}</div>
-          }
-          <div class="form-actions">
-            <button type="button" class="button" [disabled]="edited.saving" (click)="form.set(null)">
-              Cancel
-            </button>
-            <button type="submit" class="button" [disabled]="edited.saving">Save</button>
-          </div>
-        </form>
+      @if (form(); as open) {
+        <app-remote-host-form
+          [host]="open.host"
+          [defaultCommand]="open.defaultCommand"
+          (closed)="form.set(null)"
+        ></app-remote-host-form>
       }
 
       @if (nodes().length === 0) {
@@ -218,48 +180,6 @@ const HOST_FIELDS = [
     .status.failure {
       opacity: 1;
       color: var(--color-red);
-    }
-
-    .host-form {
-      flex: none;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding-bottom: 8px;
-      margin-bottom: 6px;
-      border-bottom: 1px solid color-mix(in srgb, var(--foreground-color) 15%, transparent);
-    }
-
-    .host-form label {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .host-form label span {
-      font-size: 0.85rem;
-      opacity: 0.7;
-    }
-
-    .host-form input {
-      min-width: 0;
-      background: var(--background-color);
-      color: var(--foreground-color);
-      border: 1px solid color-mix(in srgb, var(--foreground-color) 20%, transparent);
-      border-radius: var(--button-border-radius);
-      padding: 0.3rem 0.4rem;
-      font: inherit;
-    }
-
-    .host-form input:focus {
-      outline: none;
-      border-color: var(--highlight-color);
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
     }
 
     /* Only the hosts scroll; header and form stay in place. */
@@ -406,8 +326,7 @@ const HOST_FIELDS = [
 })
 export class RemoteSideComponent {
   readonly failure = this.panel.failure;
-  readonly form = signal<HostForm | null>(null);
-  readonly fields = HOST_FIELDS;
+  readonly form = signal<OpenForm | null>(null);
 
   /** The tree the panel shows: the hosts with what runs on them. */
   readonly nodes = computed(() => hostNodes(this.panel.hosts(), this.panel.shells()));
@@ -423,39 +342,15 @@ export class RemoteSideComponent {
     void this.opener.openUrl(DOCUMENTATION_URL);
   }
 
-  add(): void {
-    this.form.set({ name: "", destination: "", command: DEFAULT_COMMAND, saving: false });
+  add(): Promise<void> {
+    return this.openForm(undefined);
   }
 
-  edit(host: RemoteHost): void {
-    this.form.set({
-      previousName: host.name,
-      name: host.name,
-      destination: host.destination,
-      command: host.command ?? DEFAULT_COMMAND,
-      saving: false,
-    });
+  edit(host: RemoteHost): Promise<void> {
+    return this.openForm(host);
   }
 
-  setField(field: (typeof HOST_FIELDS)[number]["key"], event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.form.update((edited) => edited && { ...edited, [field]: value, error: undefined });
-  }
-
-  async save(event: Event): Promise<void> {
-    event.preventDefault();
-    const edited = this.form();
-    if (!edited || edited.saving) return;
-    this.form.set({ ...edited, saving: true, error: undefined });
-    const command = edited.command.trim();
-    const error = await this.panel.saveHost(
-      {
-        name: edited.name,
-        destination: edited.destination,
-        command: command === "" || command === DEFAULT_COMMAND ? undefined : command,
-      },
-      edited.previousName,
-    );
-    this.form.set(error === undefined ? null : { ...edited, saving: false, error });
+  private async openForm(host: RemoteHost | undefined): Promise<void> {
+    this.form.set({ host, defaultCommand: await this.panel.defaultCommand() });
   }
 }

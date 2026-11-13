@@ -28,24 +28,17 @@ describe("ShellIntegrationWriter", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     installShellIntegration = vi.fn().mockResolvedValue(undefined);
-    writer = new ShellIntegrationWriter(
-      { installShellIntegration } as unknown as Hosts,
-      { isDevMode: () => true } as never,
-    );
+    writer = new ShellIntegrationWriter({ installShellIntegration } as unknown as Hosts);
   });
 
   it("hands this machine the scripts of every supported shell, a shared one once", async () => {
     await writer.ensure(definitions);
 
-    expect(installShellIntegration).toHaveBeenCalledWith(
-      "1.3.1",
-      [
-        { relativePath: "common/base.sh", content: "base" },
-        { relativePath: "bash/bootstrap.bash", content: "bash" },
-        { relativePath: "zsh/.zshrc", content: "zsh" },
-      ],
-      true,
-    );
+    expect(installShellIntegration).toHaveBeenCalledWith("1.3.1", [
+      { relativePath: "common/base.sh", content: "base" },
+      { relativePath: "bash/bootstrap.bash", content: "bash" },
+      { relativePath: "zsh/.zshrc", content: "zsh" },
+    ]);
   });
 
   it("reports and rethrows when the scripts could not be laid down", async () => {

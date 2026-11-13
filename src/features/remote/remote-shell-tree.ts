@@ -26,7 +26,8 @@ export type RemoteTreeNode = {
   | { readonly kind: "status"; readonly text: string; readonly failure: boolean }
 );
 
-const NO_WORKSPACE = "No workspace";
+/** What a workspace is called that a shell's Cogno did not name. */
+const UNNAMED_WORKSPACE = "No workspace";
 
 /** What a shell is called in the tree: its title, else where it is, else its id. */
 export function shellName(shell: RemoteShell): string {
@@ -57,18 +58,18 @@ function underHost(host: RemoteHost, shells: HostShells | undefined): RemoteTree
     case "disconnected":
       return [];
     case "connecting":
-      return [status(host.name, `Connecting to ${host.destination}...`)];
+      return [statusNode(host.name, `Connecting to ${host.destination}...`)];
     case "failed":
-      return [status(host.name, host.failure ?? "Could not connect.", true)];
+      return [failureNode(host.name, host.failure ?? "Could not connect.")];
   }
   if (!shells || shells.status === "loading") {
-    return [status(host.name, "Looking for shells...")];
+    return [statusNode(host.name, "Looking for shells...")];
   }
   if (shells.status === "failed") {
-    return [status(host.name, shells.reason, true)];
+    return [failureNode(host.name, shells.reason)];
   }
   if (shells.shells.length === 0) {
-    return [status(host.name, "No shells are running.")];
+    return [statusNode(host.name, "No shells are running.")];
   }
   return workspaceNodes(host.name, shells.shells);
 }
@@ -80,17 +81,17 @@ function underHost(host: RemoteHost, shells: HostShells | undefined): RemoteTree
  * where it was: its Cogno is closed, or it let the shell go.
  */
 function workspaceNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
-  const workspaces = new Map<string, Map<string, RemoteShell[]>>();
+  const workspaces = new Map<string | undefined, Map<string | undefined, RemoteShell[]>>();
   for (const shell of shells) {
-    const tabs = getOrAdd(workspaces, shell.workspace ?? NO_WORKSPACE, () => new Map());
-    getOrAdd(tabs, shell.tab ?? "", () => []).push(shell);
+    const tabs = getOrAdd(workspaces, shell.workspace, () => new Map());
+    getOrAdd(tabs, shell.tab, () => []).push(shell);
   }
-  return sortedByName(workspaces).map(([workspace, tabs]) => ({
+  return sortedByName(workspaces, "unnamedLast").map(([workspace, tabs]) => ({
     kind: "workspace",
     key: keyOf("workspace", hostName, workspace),
-    name: workspace,
-    children: sortedByName(tabs).flatMap(([tab, tabShells]): RemoteTreeNode[] =>
-      tab === ""
+    name: workspace ?? UNNAMED_WORKSPACE,
+    children: sortedByName(tabs, "unnamedFirst").flatMap(([tab, tabShells]): RemoteTreeNode[] =>
+      tab === undefined
         ? shellNodes(hostName, tabShells)
         : [
             {
@@ -121,12 +122,19 @@ function shellNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTre
     }));
 }
 
-function status(hostName: string, text: string, failure = false): RemoteTreeNode {
-  return { kind: "status", key: keyOf("status", hostName), text, failure, children: [] };
+/** A line that says how far getting the host's shells is. */
+function statusNode(hostName: string, text: string): RemoteTreeNode {
+  return { kind: "status", key: keyOf("status", hostName), text, failure: false, children: [] };
 }
 
-function keyOf(...path: string[]): string {
-  return JSON.stringify(path);
+/** A line that says why the host's shells cannot be shown. */
+function failureNode(hostName: string, text: string): RemoteTreeNode {
+  return { kind: "status", key: keyOf("status", hostName), text, failure: true, children: [] };
+}
+
+/** A path of names; one that is not given stays apart from every name. */
+function keyOf(...path: (string | undefined)[]): string {
+  return JSON.stringify(path.map((segment) => segment ?? null));
 }
 
 function getOrAdd<K, V>(map: Map<K, V>, key: K, create: () => V): V {
@@ -138,6 +146,20 @@ function getOrAdd<K, V>(map: Map<K, V>, key: K, create: () => V): V {
   return value;
 }
 
-function sortedByName<V>(map: Map<string, V>): [string, V][] {
-  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
+/**
+ * By name. What has no name stands apart: last among workspaces (the shells
+ * no workspace claims), first among the tabs of one (the shells right under
+ * it).
+ */
+function sortedByName<V>(
+  map: Map<string | undefined, V>,
+  unnamed: "unnamedFirst" | "unnamedLast",
+): [string | undefined, V][] {
+  const unnamedOrder = unnamed === "unnamedFirst" ? -1 : 1;
+  return [...map.entries()].sort(([a], [b]) => {
+    if (a === b) return 0;
+    if (a === undefined) return unnamedOrder;
+    if (b === undefined) return -unnamedOrder;
+    return a.localeCompare(b);
+  });
 }

@@ -50,6 +50,10 @@ export class RemotePanelService {
       this.hostsSignal.set(hosts);
       if (this.opened) this.followConnections();
     });
+    // What this window shows is part of what the panel says of each shell.
+    this.port.shownHereChanged$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      if (this.opened) void this.loadConnected();
+    });
   }
 
   open(): void {
@@ -73,9 +77,7 @@ export class RemotePanelService {
     this.refreshesSignal.update((refreshes) => refreshes + 1);
     try {
       await Promise.all([
-        ...this.hosts()
-          .filter((host) => host.connection === "connected")
-          .map((host) => this.load(host.name)),
+        this.loadConnected(),
         new Promise((resolve) => setTimeout(resolve, REFRESH_SHOWN_FOR_MS)),
       ]);
     } finally {
@@ -107,25 +109,34 @@ export class RemotePanelService {
     return this.attempt(() => this.port.removeHost(host));
   }
 
-  /** Shows the shell in this window. */
-  show(host: string, shell: RemoteShell): Promise<void> {
-    return this.attempt(async () => {
-      await this.port.show(host, shell.terminalId);
-      this.patch(host, (shells) =>
-        shells.map((other) =>
-          other.terminalId === shell.terminalId
-            ? { ...other, shown: "here", shownBy: undefined }
-            : other,
-        ),
-      );
-    });
+  /** What ssh runs on a machine whose settings name no command. */
+  defaultCommand(): Promise<string> {
+    return this.port.defaultCommand();
   }
 
+  /**
+   * Shows the shell in this window. The host's shells are read again once it
+   * is shown here (`shownHereChanged$`).
+   */
+  show(host: string, shell: RemoteShell): Promise<void> {
+    return this.attempt(() => this.port.show(host, shell.terminalId));
+  }
+
+  /** Ends the shell; the host's shells are read again after. */
   end(host: string, shell: RemoteShell): Promise<void> {
     return this.attempt(async () => {
       await this.port.end(host, shell.terminalId);
-      this.patch(host, (shells) => shells.filter((other) => other.terminalId !== shell.terminalId));
+      await this.load(host);
     });
+  }
+
+  /** Reads the shells of every connected host. */
+  private async loadConnected(): Promise<void> {
+    await Promise.all(
+      this.hosts()
+        .filter((host) => host.connection === "connected")
+        .map((host) => this.load(host.name)),
+    );
   }
 
   /** A machine that connected gets its shells read; one that is gone loses them. */
@@ -163,17 +174,6 @@ export class RemotePanelService {
     const question = (this.questions.get(host) ?? 0) + 1;
     this.questions.set(host, question);
     return question;
-  }
-
-  private patch(
-    host: string,
-    change: (shells: readonly RemoteShell[]) => readonly RemoteShell[],
-  ): void {
-    const known = this.shells().get(host);
-    if (known?.status !== "loaded") return;
-    // An answer still on its way was given before this change.
-    this.ask(host);
-    this.set(host, { status: "loaded", shells: change(known.shells) });
   }
 
   private set(host: string, shells: HostShells): void {

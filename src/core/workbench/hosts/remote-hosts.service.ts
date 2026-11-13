@@ -3,23 +3,57 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
+import { HostError, HostErrorCode, toHostError } from "@cogno/platform";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { BehaviorSubject, Observable } from "rxjs";
-import { RunningSessionsService } from "./running-sessions.service";
+
+/**
+ * Why a connection failed: a host's or the app's code, or `notConfigured`
+ * for a name that `remote.hosts` does not define.
+ */
+export type ConnectFailureCode = HostErrorCode | "notConfigured";
+
+export type ConnectFailure = {
+  readonly code: ConnectFailureCode;
+  readonly message: string;
+};
+
+/**
+ * Failures that trying again cannot mend: something has to change first -
+ * the config, or one of the two Cognos.
+ */
+const LASTING_FAILURES: readonly ConnectFailureCode[] = [
+  "notConfigured",
+  "invalidDestination",
+  "thisCognoTooOld",
+  "hostTooOld",
+];
+
+/** Whether connecting again could work after `failure`. */
+export function isWorthRetrying(failure: ConnectFailure): boolean {
+  return !LASTING_FAILURES.includes(failure.code);
+}
 
 /** How far the connection to a host is; a host without an entry is not connected. */
 export type RemoteHostConnection =
   | { readonly status: "connecting" }
   | { readonly status: "connected"; readonly info: HostInfo }
-  | { readonly status: "failed"; readonly reason: string };
+  | { readonly status: "failed"; readonly failure: ConnectFailure };
+
+/** `connect` failed; `failure` says why. */
+export class ConnectError extends Error {
+  constructor(readonly failure: ConnectFailure) {
+    super(failure.message);
+    this.name = "ConnectError";
+  }
+}
 
 /**
  * The connections to the machines of `remote.hosts`. A connection is set up
  * when it is asked for - by the user, or by a pane that shows a shell of
  * that machine - and stands until it breaks, is hung up or Cogno ends; what
  * ssh asks on the way (a password, a host key) is shown with the workbench's
- * plain prompt dialog. A host counts as connected once it said which shells
- * run there.
+ * plain prompt dialog.
  *
  * Nothing is installed there: Cogno only shows shells that run on the other
  * machine, started by the Cogno there with its own shell integration.
@@ -40,7 +74,6 @@ export class RemoteHostsService {
     private readonly configService: ConfigService,
     private readonly prompts: ProcessPromptDispatcher,
     private readonly promptDialog: ProcessPromptService,
-    private readonly runningSessions: RunningSessionsService,
     destroyRef: DestroyRef,
   ) {
     void hosts
@@ -54,7 +87,10 @@ export class RemoteHostsService {
     return connection?.status === "connected" ? connection.info : undefined;
   }
 
-  /** Connects to the host unless the connection stands or is being set up. */
+  /**
+   * Connects to the host unless the connection stands or is being set up.
+   * Rejects with a `ConnectError`.
+   */
   connect(name: string): Promise<HostInfo> {
     const known = this.info(name);
     if (known) return Promise.resolve(known);
@@ -63,7 +99,12 @@ export class RemoteHostsService {
 
     const host = this.configService.config.remote?.hosts?.[name];
     if (!host) {
-      return Promise.reject(new Error(`Host '${name}' is not defined in remote.hosts.`));
+      const failure: ConnectFailure = {
+        code: "notConfigured",
+        message: `Host '${name}' is not defined in remote.hosts.`,
+      };
+      this.setConnection(name, { status: "failed", failure });
+      return Promise.reject(new ConnectError(failure));
     }
     const promptSession = crypto.randomUUID();
     const forgetPrompts = this.prompts.register(promptSession, (prompt) =>
@@ -73,17 +114,18 @@ export class RemoteHostsService {
     const isCurrent = () => this.connecting.get(name) === connecting;
     const connecting: Promise<HostInfo> = this.hosts
       .connect(name, host.destination, host.command, promptSession)
-      .then(async (info) => {
-        await this.runningSessions.refresh(name);
-        if (!isCurrent()) throw new Error(`The connection to ${name} was hung up.`);
+      .then((info) => {
+        if (!isCurrent()) {
+          throw new HostError("connectionLost", `The connection to ${name} was hung up.`);
+        }
         this.setConnection(name, { status: "connected", info });
         return info;
       })
-      .catch((error) => {
-        // The backend rejects with a plain text.
-        const failure = error instanceof Error ? error : new Error(String(error));
-        if (isCurrent()) this.setConnection(name, { status: "failed", reason: failure.message });
-        throw failure;
+      .catch((rejection: unknown) => {
+        const error = toHostError(rejection);
+        const failure: ConnectFailure = { code: error.code, message: error.message };
+        if (isCurrent()) this.setConnection(name, { status: "failed", failure });
+        throw new ConnectError(failure);
       })
       .finally(() => {
         forgetPrompts();

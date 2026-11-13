@@ -103,7 +103,10 @@ describe("WorkspaceHostApplicationService", () => {
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       discardSessionMarker as unknown as DiscardSessionMarker,
-      { refresh: async () => true, unshownLocalShells: () => unshownShells } as never,
+      {
+        find: async () => undefined,
+        unshown: () => unshownShells.map((shell) => shell.terminalId),
+      } as never,
       getTerminalSessionRegistry(),
       getDestroyRef(),
     );

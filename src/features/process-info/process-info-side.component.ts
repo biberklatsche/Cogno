@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
-import { ProcessDetails, ProcessTreeSnapshot } from "@cogno/platform/pty";
+import { ProcessDetails, ProcessStatusContract, ProcessTreeSnapshot } from "@cogno/platform/pty";
 import {
   IconComponent,
   SideMenuSearchInputComponent,
@@ -377,7 +377,7 @@ export class ProcessInfoSideComponent {
     );
   }
 
-  noticeableStatus(status: string): string | null {
+  noticeableStatus(status: ProcessStatusContract): ProcessStatusContract | null {
     return noticeableStatus(status);
   }
 }
@@ -390,11 +390,15 @@ function toggled(processIdentifiers: Set<number>, processIdentifier: number): Se
   return next;
 }
 
-/** The states worth a look, as the backend names them: ended but not collected, or halted. */
-const NOTICEABLE_STATUSES = new Set(["Zombie", "Dead", "Stop", "Tracing"]);
+/** The states worth a look: ended but not collected, or halted. */
+const NOTICEABLE_STATUSES: ReadonlySet<ProcessStatusContract> = new Set([
+  "Zombie",
+  "Dead",
+  "Stopped",
+]);
 
 /** The status to show in a process's line: only one that is out of the ordinary. */
-export function noticeableStatus(status: string): string | null {
+export function noticeableStatus(status: ProcessStatusContract): ProcessStatusContract | null {
   return NOTICEABLE_STATUSES.has(status) ? status : null;
 }
 

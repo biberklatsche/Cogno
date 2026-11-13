@@ -37,6 +37,12 @@ export type RemoteShell = {
 export abstract class RemoteShellsPort {
   /** The machines of `remote.hosts`, again whenever one of them changes. */
   abstract readonly hosts$: Observable<readonly RemoteHost[]>;
+  /**
+   * Which shells this window shows changed: it began or stopped showing one,
+   * or lost one to another Cogno. What a machine says of its shells is worth
+   * reading again then.
+   */
+  abstract readonly shownHereChanged$: Observable<void>;
 
   /**
    * Writes a machine to the config. `previousName` is what it was called
@@ -45,6 +51,8 @@ export abstract class RemoteShellsPort {
   abstract saveHost(host: RemoteHostSettings, previousName?: string): Promise<void>;
   /** Takes a machine out of the config and hangs up on it. */
   abstract removeHost(host: string): Promise<void>;
+  /** What ssh runs on a machine whose settings name no command. */
+  abstract defaultCommand(): Promise<string>;
 
   /** Settles once the connection stands; how it fails shows on `hosts$`. */
   abstract connect(host: string): Promise<void>;
@@ -58,6 +66,6 @@ export abstract class RemoteShellsPort {
    * back from another Cogno, or opens a tab for it.
    */
   abstract show(host: string, terminalId: TerminalId): Promise<void>;
-  /** Ends the shell, whoever shows it. */
+  /** Ends the shell, whoever shows it. A shell that ended already is no failure. */
   abstract end(host: string, terminalId: TerminalId): Promise<void>;
 }

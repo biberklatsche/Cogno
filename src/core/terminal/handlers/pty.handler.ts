@@ -1,4 +1,9 @@
-import { PtyChunkContract, PtyShellProfileContract } from "@cogno/platform";
+import {
+  PtyChunkContract,
+  PtyShellProfileContract,
+  SessionInfoContract,
+  TerminalExitContract,
+} from "@cogno/platform";
 import { TerminalId } from "@cogno/shared/domain";
 import { IDisposable } from "@cogno/shared/support";
 import { Terminal } from "@xterm/xterm";
@@ -15,6 +20,9 @@ import { ITerminalHandler } from "../terminal-handler";
  */
 export const HIDDEN_UNPARSED_BUDGET_BYTES = 16 * 1024 * 1024;
 
+/** Whether the shell is started here or an already running one is shown. */
+export type PtyOpenMode = "spawn" | "attach";
+
 /**
  * What the shell did, told to whoever is listening. The machine reports;
  * turning these into notifications, panes or activity indicators is session
@@ -23,16 +31,24 @@ export const HIDDEN_UNPARSED_BUDGET_BYTES = 16 * 1024 * 1024;
 export type PtyHandlerListener = {
   /** The shell process is up (or shown here); nothing has been parsed yet. */
   readonly onSpawned?: () => void;
+  /** An already running shell is shown here; this is what its host says of it. */
+  readonly onAttached?: (session: SessionInfoContract) => void;
   /** Another Cogno took the shell over; it runs on, but not here. */
   readonly onTakenOver?: (by?: string) => void;
   /** The Cogno that took the shell over let it go. */
-  readonly onReleased?: () => void;
-  /** The shell could not be started. */
+  readonly onHandedBack?: () => void;
+  /** The shell could not be started or shown. */
   readonly onFailed?: (error: unknown) => void;
-  /** The shell process ended. */
-  readonly onExited?: (exitCode: number) => void;
+  /** The shell ended. */
+  readonly onExited?: (reason: TerminalExitContract) => void;
   /** Output arrived - before it is parsed. */
   readonly onOutput?: () => void;
+};
+
+export type PtyHandlerOptions = {
+  readonly mode: PtyOpenMode;
+  readonly listener?: PtyHandlerListener;
+  readonly isWindowHidden?: () => boolean;
 };
 
 export class PtyHandler implements ITerminalHandler {
@@ -42,60 +58,81 @@ export class PtyHandler implements ITerminalHandler {
   private _lastParsedSeq = -1;
   private _lastAckedSeq = -1;
   private _ackScheduled = false;
+  /** Counts the starts; a start that was replaced reports nothing. */
+  private _starts = 0;
   private readonly _disposables: IDisposable[] = [];
+  private readonly _listener: PtyHandlerListener;
+  private readonly _isWindowHidden: () => boolean;
 
   constructor(
-    private _terminalId: TerminalId,
-    private _pty: IPty,
-    private _shellProfile: PtyShellProfileContract,
-    private _listener: PtyHandlerListener = {},
-    private _isWindowHidden: () => boolean = () => document.visibilityState === "hidden",
-    /** The shell already runs: show it instead of starting one. */
-    private _attach = false,
-  ) {}
+    private readonly _terminalId: TerminalId,
+    private readonly _pty: IPty,
+    private readonly _shellProfile: PtyShellProfileContract,
+    private readonly _options: PtyHandlerOptions,
+  ) {
+    this._listener = _options.listener ?? {};
+    this._isWindowHidden = _options.isWindowHidden ?? (() => document.visibilityState === "hidden");
+  }
 
   dispose(): void {
     this._disposed = true;
-    this._disposables.forEach((disposable) => {
-      disposable?.dispose();
-    });
+    for (const disposable of this._disposables) disposable.dispose();
   }
 
   registerTerminal(terminal: Terminal): IDisposable {
     this._terminal = terminal;
-    void this.start();
+    // Once, before the first start: what the shell does from its first
+    // moment on - a takeover that crosses the attach included - is heard.
+    this._disposables.push(
+      terminal.onData((data) => this._pty.write(data)),
+      this._pty.onExit((event) => this._listener.onExited?.(event.reason)),
+      this._pty.onTakenOver((by) => this._listener.onTakenOver?.(by)),
+      this._pty.onHandedBack(() => this._listener.onHandedBack?.()),
+    );
+    void this.start(this._options.mode);
     return this;
   }
 
   /**
-   * Tries again after a failure; the terminal stays registered. `how` says
-   * whether a new shell is started or the running one is attached to again:
-   * a shell of another machine is never started from here.
+   * Tries again after a failure; the terminal stays registered. A shell of
+   * another machine is attached to again, never started from here.
    */
-  restart(how: "start" | "attach"): void {
-    this._attach = how === "attach";
-    void this.start();
+  restart(mode: PtyOpenMode): void {
+    void this.start(mode);
   }
 
-  private async start(): Promise<void> {
+  private async start(mode: PtyOpenMode): Promise<void> {
     const terminal = this._terminal;
     if (!terminal) return;
+    const start = ++this._starts;
+    // A new output stream counts its chunks from 0 again.
+    this._lastParsedSeq = -1;
+    this._lastAckedSeq = -1;
+    this._unparsedBytes = 0;
+    const onData = (chunk: PtyChunkContract) => this.onPtyChunk(terminal, chunk);
     try {
-      await this.spawnPty(this._terminalId, terminal);
+      if (mode === "attach") {
+        const session = await this._pty.attach(this._terminalId, onData);
+        if (!this.isCurrent(start)) return;
+        this._listener.onAttached?.(session);
+      } else {
+        await this._pty.spawn(
+          this._terminalId,
+          this._shellProfile,
+          { cols: terminal.cols, rows: terminal.rows },
+          onData,
+        );
+      }
     } catch (error) {
-      if (!this._disposed) this._listener.onFailed?.(error);
+      if (this.isCurrent(start)) this._listener.onFailed?.(error);
       return;
     }
-    if (this._disposed) return;
-    this._listener.onSpawned?.();
-    this._disposables.push(terminal.onData((data) => this._pty?.write(data)));
-    this._disposables.push(
-      this._pty?.onExit((event) => {
-        this._listener.onExited?.(event.exitCode);
-      }),
-    );
-    this._disposables.push(this._pty.onTakenOver((by) => this._listener.onTakenOver?.(by)));
-    this._disposables.push(this._pty.onReleased(() => this._listener.onReleased?.()));
+    // Taken over while it opened: the listener heard that instead.
+    if (this.isCurrent(start) && this._pty.isLive) this._listener.onSpawned?.();
+  }
+
+  private isCurrent(start: number): boolean {
+    return !this._disposed && start === this._starts;
   }
 
   private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract): void {
@@ -129,20 +166,5 @@ export class PtyHandler implements ITerminalHandler {
       this._lastAckedSeq = this._lastParsedSeq;
       this._pty.ack(this._lastAckedSeq);
     });
-  }
-
-  private spawnPty(terminalId: TerminalId, terminal: Terminal) {
-    if (this._attach) {
-      return this._pty.attach(terminalId, (chunk) => this.onPtyChunk(terminal, chunk));
-    }
-    return this._pty.spawn(
-      terminalId,
-      this._shellProfile,
-      {
-        cols: terminal.cols,
-        rows: terminal.rows,
-      },
-      (chunk) => this.onPtyChunk(terminal, chunk),
-    );
   }
 }
