@@ -20,6 +20,7 @@ use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use cogno_host::daemon::NO_DAEMON_EXIT_CODE;
 use cogno_host::sync::lock;
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
@@ -157,12 +158,22 @@ fn explain_failure(
     stderr: Stderr,
 ) -> CommandError {
     let status = end_within(&mut lock(process), FAILED_PROCESS_PATIENCE);
-    // ssh's own failure ("Permission denied", "Could not resolve hostname")
-    // ended its output before any Cogno could answer: it never got that far.
-    if error.is(AppErrorCode::NoCognoThere)
-        && status.and_then(|status| status.code()) == Some(SSH_FAILED)
-    {
-        error = CommandError::new(AppErrorCode::ConnectFailed, "Could not connect");
+    if error.is(AppErrorCode::NoCognoThere) {
+        match status.and_then(|status| status.code()) {
+            // ssh's own failure ("Permission denied", "Could not resolve
+            // hostname") ended its output before any Cogno could answer.
+            Some(SSH_FAILED) => {
+                error = CommandError::new(AppErrorCode::ConnectFailed, "Could not connect");
+            }
+            // The bridge there said why itself, and the code says it all.
+            Some(NO_DAEMON_EXIT_CODE) => {
+                return CommandError::new(
+                    AppErrorCode::CognoNotRunning,
+                    "Cogno does not run on that machine: open it there",
+                );
+            }
+            _ => {}
+        }
     }
     // What the process said is the better explanation; it has said all of
     // it once it ended.
@@ -617,6 +628,15 @@ mod tests {
             "{}",
             error.message
         );
+    }
+
+    #[test]
+    fn a_machine_where_cogno_does_not_run_is_told_apart_from_one_without_cogno() {
+        let error = introduced(failing_process(
+            "No Cogno is running on this machine",
+            NO_DAEMON_EXIT_CODE,
+        ));
+        assert!(error.is(AppErrorCode::CognoNotRunning));
     }
 
     #[test]

@@ -20,6 +20,7 @@ describe("RemoteHostsService", () => {
   let register: ReturnType<typeof vi.fn>;
   let forgetPrompts: ReturnType<typeof vi.fn>;
   let ask: ReturnType<typeof vi.fn>;
+  let updateConfig: ReturnType<typeof vi.fn>;
   let service: RemoteHostsService;
 
   beforeEach(() => {
@@ -28,6 +29,7 @@ describe("RemoteHostsService", () => {
     forgetPrompts = vi.fn();
     register = vi.fn().mockReturnValue(forgetPrompts);
     ask = vi.fn().mockResolvedValue("secret");
+    updateConfig = vi.fn().mockResolvedValue(undefined);
     const hosts = {
       connect,
       disconnect: hangUp,
@@ -37,6 +39,7 @@ describe("RemoteHostsService", () => {
       }),
     } as unknown as Hosts;
     const config = {
+      update: updateConfig,
       config: {
         remote: {
           hosts: {
@@ -57,11 +60,20 @@ describe("RemoteHostsService", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("keeps the command that reached Cogno when the remote names none", async () => {
+    const forPowerShell = '& ".cogno/bin/cogno" server --stdio';
+    connect.mockResolvedValue({ os: "windows", foundCommand: forPowerShell } satisfies HostInfo);
+
+    await service.connect("mac");
+
+    expect(updateConfig).toHaveBeenCalledWith({ "remote.hosts.mac.command": forPowerShell });
+  });
+
   it("connects with the host's destination and command and remembers what it said", async () => {
-    connect.mockResolvedValue({ os: "linux" } satisfies HostInfo);
+    connect.mockResolvedValue({ os: "linux", foundCommand: null } satisfies HostInfo);
 
     expect(service.info("box")).toBeUndefined();
-    await expect(service.connect("box")).resolves.toEqual({ os: "linux" });
+    await expect(service.connect("box")).resolves.toEqual({ os: "linux", foundCommand: null });
 
     expect(connect).toHaveBeenCalledWith(
       "box",
@@ -69,7 +81,8 @@ describe("RemoteHostsService", () => {
       "/opt/cogno server --stdio",
       expect.any(String),
     );
-    expect(service.info("box")).toEqual({ os: "linux" });
+    expect(service.info("box")).toEqual({ os: "linux", foundCommand: null });
+    expect(updateConfig).not.toHaveBeenCalled();
   });
 
   it("sets a connection up once, however many panes ask for it", async () => {
@@ -78,7 +91,7 @@ describe("RemoteHostsService", () => {
 
     const first = service.connect("mac");
     const second = service.connect("mac");
-    finish({ os: "macos" });
+    finish({ os: "macos", foundCommand: null });
     await Promise.all([first, second]);
     await service.connect("mac");
 
@@ -98,7 +111,7 @@ describe("RemoteHostsService", () => {
     expect(ask).toHaveBeenCalledWith(prompt);
     expect(forgetPrompts).not.toHaveBeenCalled();
 
-    finish({ os: "macos" });
+    finish({ os: "macos", foundCommand: null });
     await connecting;
     expect(forgetPrompts).toHaveBeenCalledOnce();
   });
@@ -114,8 +127,8 @@ describe("RemoteHostsService", () => {
     expect(service.info("mac")).toBeUndefined();
     expect(forgetPrompts).toHaveBeenCalledOnce();
 
-    connect.mockResolvedValue({ os: "macos" });
-    await expect(service.connect("mac")).resolves.toEqual({ os: "macos" });
+    connect.mockResolvedValue({ os: "macos", foundCommand: null });
+    await expect(service.connect("mac")).resolves.toEqual({ os: "macos", foundCommand: null });
   });
 
   it("refuses a host the config does not define, as nothing worth retrying", async () => {
@@ -136,7 +149,7 @@ describe("RemoteHostsService", () => {
 
   it("forgets a lost connection and tells the user, in the window that used it", async () => {
     const warned = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
-    connect.mockResolvedValue({ os: "macos" });
+    connect.mockResolvedValue({ os: "macos", foundCommand: null });
     await service.connect("mac");
 
     // Another window's host: nothing of this window ended.
@@ -165,9 +178,12 @@ describe("RemoteHostsService", () => {
       const connecting = service.connect("mac");
       expect(seen.get("mac")).toEqual({ status: "connecting" });
 
-      finish({ os: "macos" });
+      finish({ os: "macos", foundCommand: null });
       await connecting;
-      expect(seen.get("mac")).toEqual({ status: "connected", info: { os: "macos" } });
+      expect(seen.get("mac")).toEqual({
+        status: "connected",
+        info: { os: "macos", foundCommand: null },
+      });
     });
 
     it("says why a connection failed", async () => {
@@ -182,7 +198,7 @@ describe("RemoteHostsService", () => {
     });
 
     it("hangs up when asked, without calling it a loss", async () => {
-      connect.mockResolvedValue({ os: "macos" });
+      connect.mockResolvedValue({ os: "macos", foundCommand: null });
       await service.connect("mac");
       const warned = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
 
@@ -202,7 +218,7 @@ describe("RemoteHostsService", () => {
       const connecting = service.connect("mac");
 
       await service.disconnect("mac");
-      finish({ os: "macos" });
+      finish({ os: "macos", foundCommand: null });
 
       await expect(connecting).rejects.toThrow("hung up");
       expect(service.info("mac")).toBeUndefined();
@@ -210,7 +226,7 @@ describe("RemoteHostsService", () => {
     });
 
     it("forgets a connection that was lost", async () => {
-      connect.mockResolvedValue({ os: "macos" });
+      connect.mockResolvedValue({ os: "macos", foundCommand: null });
       await service.connect("mac");
       vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
 

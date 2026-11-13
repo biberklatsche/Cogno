@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteHostFormComponent } from "./remote-host-form.component";
 import type { RemotePanelService } from "./remote-panel.service";
 
-const DEFAULT_COMMAND = '".cogno/bin/cogno" server --stdio';
+const FOR_POWERSHELL = '& ".cogno/bin/cogno" server --stdio';
 
 describe("RemoteHostFormComponent", () => {
   let saveHost: ReturnType<typeof vi.fn>;
@@ -13,7 +13,6 @@ describe("RemoteHostFormComponent", () => {
   function open(host?: RemoteHost): void {
     form = new RemoteHostFormComponent({ saveHost } as unknown as RemotePanelService);
     form.host = host;
-    form.defaultCommand = DEFAULT_COMMAND;
     form.closed.subscribe(closed);
     form.ngOnChanges();
   }
@@ -26,17 +25,20 @@ describe("RemoteHostFormComponent", () => {
     closed = vi.fn();
   });
 
-  it("starts with what a host is, and the default command where it names none", () => {
+  it("starts with what a host is; a command only where it names one", () => {
     open({ name: "office", destination: "lars@office", connection: "connected" });
+    expect(form.values()).toEqual({ name: "office", destination: "lars@office", command: "" });
 
-    expect(form.values()).toEqual({
+    open({
       name: "office",
       destination: "lars@office",
-      command: DEFAULT_COMMAND,
+      command: FOR_POWERSHELL,
+      connection: "connected",
     });
+    expect(form.values().command).toBe(FOR_POWERSHELL);
   });
 
-  it("saves the command only when it was changed, and closes", async () => {
+  it("saves no command unless one is given, so Cogno finds it, and closes", async () => {
     open();
     type("name", "office");
     type("destination", "lars@office");
@@ -51,10 +53,10 @@ describe("RemoteHostFormComponent", () => {
     open();
     type("name", "office");
     type("destination", "lars@office");
-    type("command", `& ${DEFAULT_COMMAND}`);
+    type("command", ` ${FOR_POWERSHELL} `);
     await form.save(new Event("submit"));
     expect(saveHost).toHaveBeenLastCalledWith(
-      { name: "office", destination: "lars@office", command: `& ${DEFAULT_COMMAND}` },
+      { name: "office", destination: "lars@office", command: FOR_POWERSHELL },
       undefined,
     );
   });

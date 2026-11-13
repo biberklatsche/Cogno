@@ -32,11 +32,22 @@ fn main() {
             std::process::exit(exit_code_of(ran));
         }
         Some(CliCommand::Server { endpoint, .. }) => {
-            let passed = host_endpoint(endpoint).and_then(|endpoint| {
-                cogno_host::daemon::bridge(&endpoint, std::io::stdin(), std::io::stdout())
-                    .map_err(|error| error.to_string())
-            });
-            std::process::exit(exit_code_of(passed));
+            let endpoint = match host_endpoint(endpoint) {
+                Ok(endpoint) => endpoint,
+                Err(reason) => std::process::exit(exit_code_of(Err(reason))),
+            };
+            match cogno_host::daemon::bridge(&endpoint, std::io::stdin(), std::io::stdout()) {
+                Ok(()) => std::process::exit(0),
+                Err(error) => {
+                    eprintln!("{error}");
+                    std::process::exit(match error {
+                        cogno_host::daemon::BridgeError::NoDaemon(_) => {
+                            cogno_host::daemon::NO_DAEMON_EXIT_CODE
+                        }
+                        cogno_host::daemon::BridgeError::Broken(_) => 1,
+                    });
+                }
+            }
         }
         _ => {}
     }

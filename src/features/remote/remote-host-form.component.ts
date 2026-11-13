@@ -10,21 +10,11 @@ import {
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
 import { RemotePanelService } from "./remote-panel.service";
 
-/** The form's fields, in the order they are shown. */
-const HOST_FIELDS = [
-  { key: "name", label: "Name", placeholder: "office" },
-  { key: "destination", label: "Destination", placeholder: "user@host or an ssh alias" },
-  { key: "command", label: "Command", placeholder: "" },
-] as const;
-
-type FieldKey = (typeof HOST_FIELDS)[number]["key"];
-
-type FormValues = Record<FieldKey, string>;
+type FormValues = { name: string; destination: string; command: string };
 
 /**
- * Adds a remote, or changes one (`host`). The command starts as the default
- * one, so it can be copied or changed; saved unchanged, the remote names
- * none and follows the default.
+ * Adds a remote, or changes one (`host`). The command ssh runs there is
+ * advanced: Cogno finds it by itself when the remote names none.
  */
 @Component({
   selector: "app-remote-host-form",
@@ -32,20 +22,45 @@ type FormValues = Record<FieldKey, string>;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <form class="host-form" (submit)="save($event)">
-      @for (field of fields; track field.key) {
+      <label>
+        <span>Name</span>
+        <input
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="office"
+          [value]="values().name"
+          [disabled]="saving()"
+          (input)="setField('name', $event)"
+        />
+      </label>
+      <label>
+        <span>Destination</span>
+        <input
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="user@host or an ssh alias"
+          [value]="values().destination"
+          [disabled]="saving()"
+          (input)="setField('destination', $event)"
+        />
+      </label>
+      <details class="advanced" [open]="!!host?.command">
+        <summary>Advanced</summary>
         <label>
-          <span>{{ field.label }}</span>
+          <span>Command ssh runs there</span>
           <input
             type="text"
             spellcheck="false"
             autocomplete="off"
-            [placeholder]="field.key === 'command' ? defaultCommand : field.placeholder"
-            [value]="values()[field.key]"
+            placeholder="Found by itself"
+            [value]="values().command"
             [disabled]="saving()"
-            (input)="setField(field.key, $event)"
+            (input)="setField('command', $event)"
           />
         </label>
-      }
+      </details>
       @if (error(); as error) {
         <div class="failure">{{ error }}</div>
       }
@@ -73,9 +88,15 @@ type FormValues = Record<FieldKey, string>;
       gap: 2px;
     }
 
-    label span {
+    label span,
+    summary {
       font-size: 0.85rem;
       opacity: 0.7;
+    }
+
+    summary {
+      cursor: pointer;
+      margin-bottom: 4px;
     }
 
     input {
@@ -109,12 +130,9 @@ type FormValues = Record<FieldKey, string>;
 export class RemoteHostFormComponent implements OnChanges {
   /** The remote to change; left out to add one. */
   @Input() host?: RemoteHost;
-  /** What ssh runs when the remote names no command. */
-  @Input({ required: true }) defaultCommand!: string;
   /** Saved or cancelled. */
   @Output() readonly closed = new EventEmitter<void>();
 
-  readonly fields = HOST_FIELDS;
   readonly values = signal<FormValues>({ name: "", destination: "", command: "" });
   readonly saving = signal(false);
   readonly error = signal<string | undefined>(undefined);
@@ -127,11 +145,11 @@ export class RemoteHostFormComponent implements OnChanges {
     this.values.set({
       name: this.host?.name ?? "",
       destination: this.host?.destination ?? "",
-      command: this.host?.command ?? this.defaultCommand,
+      command: this.host?.command ?? "",
     });
   }
 
-  setField(field: FieldKey, event: Event): void {
+  setField(field: keyof FormValues, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.values.update((values) => ({ ...values, [field]: value }));
     this.error.set(undefined);
@@ -143,13 +161,8 @@ export class RemoteHostFormComponent implements OnChanges {
     this.saving.set(true);
     this.error.set(undefined);
     const { name, destination, command } = this.values();
-    const ownCommand = command.trim();
     const error = await this.panel.saveHost(
-      {
-        name,
-        destination,
-        command: ownCommand === "" || ownCommand === this.defaultCommand ? undefined : ownCommand,
-      },
+      { name, destination, command: command.trim() || undefined },
       this.host?.name,
     );
     this.saving.set(false);

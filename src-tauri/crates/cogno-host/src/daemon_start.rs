@@ -178,6 +178,15 @@ pub fn default_remote_command(home_directory_name: &str) -> String {
     format!("\"{home_directory_name}/{STARTER_DIRECTORY}/{STARTER_NAME}\" {BRIDGE_ARGUMENTS}")
 }
 
+/// What is tried, in this order, when a remote names no command: the default
+/// one, then the same for a Windows ssh server whose default shell is
+/// PowerShell, which takes a quoted path only after its call operator.
+pub fn remote_commands(home_directory_name: &str) -> [String; 2] {
+    let default = default_remote_command(home_directory_name);
+    let for_powershell = format!("& {default}");
+    [default, for_powershell]
+}
+
 /// The starter: a fixed place in the Cogno home under which the daemon's
 /// binary is found, whatever the install directory. A Cogno on another
 /// machine starts it through ssh (`default_remote_command`). Failing to write

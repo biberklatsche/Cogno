@@ -5,7 +5,14 @@ import { OsType } from "./os";
 import { SessionInfoContract } from "./session-contracts";
 
 /** What a connected host on another machine says about itself. */
-export type HostInfo = { os: OsType };
+export type HostInfo = {
+  os: OsType;
+  /**
+   * The command that reached Cogno there, when the remote names none and the
+   * default one did not: worth remembering for the next time.
+   */
+  foundCommand: string | null;
+};
 
 /** To every window: the connection to a host on another machine ended. */
 const HOST_DISCONNECTED_EVENT = "host-disconnected";
@@ -18,8 +25,9 @@ const HOST_DISCONNECTED_EVENT = "host-disconnected";
 export class Hosts {
   /**
    * Connects to the host `name` at the ssh `destination`, unless the
-   * connection already stands. What ssh asks on the way arrives as askpass
-   * prompts of `promptSession`; the promise settles once they are answered.
+   * connection already stands. Without a `command`, the ones Cogno knows are
+   * tried in turn. What ssh asks on the way arrives as askpass prompts of
+   * `promptSession`; the promise settles once they are answered.
    */
   connect(
     name: string,
@@ -33,11 +41,6 @@ export class Hosts {
       command: command ?? null,
       promptSession,
     });
-  }
-
-  /** What ssh runs on the other machine when a remote names no command. */
-  defaultCommand(): Promise<string> {
-    return invokeHost<string>("host_default_command");
   }
 
   /**

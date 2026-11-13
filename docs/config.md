@@ -499,7 +499,7 @@ Where ssh connects: a host name, `user@host` or an alias from your ssh config. T
 
 ### `remote.hosts.<name>.command`
 
-Command ssh runs on that machine to reach the Cogno there. Set it when the ssh server there starts commands in PowerShell: `& ".cogno/bin/cogno" server --stdio`. Default: `".cogno/bin/cogno" server --stdio`.
+Command ssh runs on that machine to reach the Cogno there. Left out, Cogno tries `".cogno/bin/cogno" server --stdio` and, for an ssh server that starts commands in PowerShell, `& ".cogno/bin/cogno" server --stdio`, and keeps the one that worked here.
 
 **Type:** string
 

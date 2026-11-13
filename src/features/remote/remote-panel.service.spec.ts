@@ -28,8 +28,7 @@ describe("RemotePanelService", () => {
       | "connect"
       | "disconnect"
       | "saveHost"
-      | "removeHost"
-      | "defaultCommand"]: ReturnType<typeof vi.fn>;
+      | "removeHost"]: ReturnType<typeof vi.fn>;
   };
   let service: RemotePanelService;
 
@@ -44,30 +43,11 @@ describe("RemotePanelService", () => {
       disconnect: vi.fn().mockResolvedValue(undefined),
       saveHost: vi.fn().mockResolvedValue(undefined),
       removeHost: vi.fn().mockResolvedValue(undefined),
-      defaultCommand: vi.fn().mockResolvedValue('".cogno/bin/cogno" server --stdio'),
     };
     service = new RemotePanelService(
       { hosts$, shownInThisWindowChanged$, ...port } as unknown as RemoteShellsPort,
       { onDestroy: vi.fn() } as unknown as DestroyRef,
     );
-  });
-
-  it("knows the command ssh runs where a machine names none, asked once", async () => {
-    await settled();
-
-    expect(service.defaultCommand()).toBe('".cogno/bin/cogno" server --stdio');
-    expect(port.defaultCommand).toHaveBeenCalledOnce();
-  });
-
-  it("says why it could not learn that command", async () => {
-    port.defaultCommand.mockRejectedValueOnce(new Error("no home directory"));
-    const failing = new RemotePanelService(
-      { hosts$, shownInThisWindowChanged$, ...port } as unknown as RemoteShellsPort,
-      { onDestroy: vi.fn() } as unknown as DestroyRef,
-    );
-    await settled();
-
-    expect(failing.failure()).toBe("no home directory");
   });
 
   it("says it refreshes until the hosts answered, and at least for a moment", async () => {

@@ -6,7 +6,7 @@ export type RemoteHost = {
   readonly name: string;
   /** Where ssh connects. */
   readonly destination: string;
-  /** What ssh runs there to reach the Cogno; the default when left out. */
+  /** What ssh runs there to reach the Cogno; found by itself when left out. */
   readonly command?: string;
   readonly connection: "disconnected" | "connecting" | "connected" | "failed";
   /** Why the connection failed; only while `failed`. */
@@ -58,8 +58,6 @@ export abstract class RemoteShellsPort {
   abstract saveHost(host: RemoteHostSettings, previousName?: string): Promise<void>;
   /** Takes a machine out of the config and hangs up on it. */
   abstract removeHost(host: string): Promise<void>;
-  /** What ssh runs on a machine whose settings name no command. */
-  abstract defaultCommand(): Promise<string>;
 
   /** Settles once the connection stands; how it fails shows on `hosts$`. */
   abstract connect(host: string): Promise<void>;

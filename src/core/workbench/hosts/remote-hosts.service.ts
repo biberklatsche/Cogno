@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { remoteHostKeys } from "@cogno/core/infrastructure/config/models/remote-config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
@@ -119,6 +120,7 @@ export class RemoteHostsService {
           throw new HostError("connectionLost", `The connection to ${name} was hung up.`);
         }
         this.setConnection(name, { status: "connected", info });
+        if (info.foundCommand) this.rememberCommand(name, info.foundCommand);
         return info;
       })
       .catch((rejection: unknown) => {
@@ -145,6 +147,22 @@ export class RemoteHostsService {
     this.connecting.delete(name);
     this.setConnection(name, undefined);
     await this.hosts.disconnect(name);
+  }
+
+  /**
+   * The remote names no command, and the one that reached Cogno there was
+   * not the default: it goes to the config, so the next connection takes it
+   * at once instead of trying - and asking for a password - twice.
+   */
+  private rememberCommand(name: string, command: string): void {
+    this.configService.update({ [remoteHostKeys(name).command]: command }).catch((error) =>
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "RemoteHosts",
+        context: { operation: "rememberCommand", host: name },
+      }),
+    );
   }
 
   private setConnection(name: string, connection: RemoteHostConnection | undefined): void {

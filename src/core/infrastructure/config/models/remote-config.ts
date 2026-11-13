@@ -9,6 +9,14 @@ export function isSshDestination(destination: string): boolean {
   return destination.length > 0 && !destination.startsWith("-") && !/\s/.test(destination);
 }
 
+/** The config keys of the remote `name`. */
+export function remoteHostKeys(name: string): { destination: string; command: string } {
+  return {
+    destination: `remote.hosts.${name}.destination`,
+    command: `remote.hosts.${name}.command`,
+  };
+}
+
 const RemoteHostSchema = z
   .strictObject({
     destination: z
@@ -25,7 +33,7 @@ const RemoteHostSchema = z
       .min(1)
       .optional()
       .describe(
-        'Command ssh runs on that machine to reach the Cogno there. Set it when the ssh server there starts commands in PowerShell: `& ".cogno/bin/cogno" server --stdio`. Default: `".cogno/bin/cogno" server --stdio`.',
+        'Command ssh runs on that machine to reach the Cogno there. Left out, Cogno tries `".cogno/bin/cogno" server --stdio` and, for an ssh server that starts commands in PowerShell, `& ".cogno/bin/cogno" server --stdio`, and keeps the one that worked here.',
       ),
   })
   .describe("One machine reached over ssh.");

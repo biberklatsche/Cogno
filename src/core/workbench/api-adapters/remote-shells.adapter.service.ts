@@ -6,7 +6,10 @@ import {
   RemoteShellsPort,
 } from "@cogno/core/api/remote-shells-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { isSshDestination } from "@cogno/core/infrastructure/config/models/remote-config";
+import {
+  remoteHostKeys as hostKeys,
+  isSshDestination,
+} from "@cogno/core/infrastructure/config/models/remote-config";
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
@@ -26,13 +29,6 @@ import { TerminalNavigatorAdapterService } from "./terminal-navigator.adapter.se
 
 /** A host name is a segment of a config key (`remote.hosts.<name>.…`). */
 const HOST_NAME = /^[A-Za-z0-9_-]+$/;
-
-function hostKeys(name: string): { destination: string; command: string } {
-  return {
-    destination: `remote.hosts.${name}.destination`,
-    command: `remote.hosts.${name}.command`,
-  };
-}
 
 /** Whether a session shows a shell of another machine. */
 function isRemote(entry: { readonly host: SessionHost } | undefined): boolean {
@@ -198,10 +194,6 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     const keys = hostKeys(host);
     await this.configService.update({ [keys.destination]: undefined, [keys.command]: undefined });
     await this.remoteHosts.disconnect(host);
-  }
-
-  defaultCommand(): Promise<string> {
-    return this.hosts.defaultCommand();
   }
 
   async connect(host: string): Promise<void> {

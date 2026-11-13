@@ -61,7 +61,6 @@ type RowAction = "copy" | "edit" | "delete";
       @if (form(); as open) {
         <app-remote-host-form
           [host]="open.host"
-          [defaultCommand]="panel.defaultCommand()"
           (closed)="form.set(null)"
         ></app-remote-host-form>
       }

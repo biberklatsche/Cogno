@@ -39,7 +39,7 @@ describe("WaitingPanes", () => {
     connections = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(new Map());
     info = undefined;
     connect = vi.fn(async () => {
-      info = { os: "linux" };
+      info = { os: "linux", foundCommand: null };
       return info;
     });
     session = vi.fn(async () => TauriMockFactory.createSessionInfo("t1"));
@@ -128,7 +128,7 @@ describe("WaitingPanes", () => {
     expect(found).toEqual([]);
 
     // The user connects from the Remote panel.
-    info = { os: "macos" };
+    info = { os: "macos", foundCommand: null };
     connections.next(new Map([["office", { status: "connected", info }]]));
     await settle();
 

@@ -1,4 +1,4 @@
-use cogno_host::daemon_start::default_remote_command;
+use cogno_host::daemon_start::remote_commands;
 use cogno_host::identity;
 use cogno_host::protocol::{IntegrationFile, Request, Response, SessionInfo, ShellInfo};
 use serde::Serialize;
@@ -22,6 +22,9 @@ const KEEP_ALIVE_MISSES: u32 = 3;
 pub struct HostInfo {
     /// "windows", "macos" or "linux".
     pub os: String,
+    /// The command that reached Cogno there, when the remote names none and
+    /// the default one did not: worth remembering for the next time.
+    pub found_command: Option<String>,
 }
 
 /// The Cogno home on the other machine that the default command starts the
@@ -64,15 +67,13 @@ fn ssh_command(destination: &str, remote_command: &str) -> CommandResult<Command
     Ok(command)
 }
 
-/// What ssh runs on the other machine when a remote names no command.
-#[tauri::command]
-pub fn host_default_command() -> String {
-    default_remote_command(remote_home_directory_name())
-}
-
 /// Connects to the host `name` over ssh, unless the connection already
 /// stands. What ssh asks on the way (a password, a passphrase, a host key)
 /// reaches the calling window as an askpass prompt of `prompt_session`.
+///
+/// A remote that names no command is tried with each of `remote_commands`
+/// in turn, as long as the one before did not reach Cogno: which one the
+/// shell of the ssh server there takes is not known before.
 #[tauri::command]
 pub async fn host_connect(
     app: AppHandle,
@@ -82,24 +83,45 @@ pub async fn host_connect(
     command: Option<String>,
     prompt_session: String,
 ) -> CommandResult<HostInfo> {
-    let remote_command = command.unwrap_or_else(host_default_command);
-    let mut ssh = ssh_command(&destination, &remote_command)?;
+    let candidates = match command {
+        Some(command) => vec![command],
+        None => remote_commands(remote_home_directory_name()).to_vec(),
+    };
     let askpass_token = app
         .state::<AskpassState>()
         .open_session(&prompt_session, window.label());
     let port = app.state::<HttpServerState>().port();
-    point_ssh_at_helper(&mut ssh, port, &prompt_session, &askpass_token);
 
     let connecting = app.clone();
+    let session = prompt_session.clone();
     let connected = tauri::async_runtime::spawn_blocking(move || {
-        connecting.state::<HostState>().connect(&name, ssh)
+        let hosts = connecting.state::<HostState>();
+        let mut first_failure: Option<CommandError> = None;
+        for (index, remote_command) in candidates.iter().enumerate() {
+            let mut ssh = ssh_command(&destination, remote_command)?;
+            point_ssh_at_helper(&mut ssh, port, &session, &askpass_token);
+            match hosts.connect(&name, ssh) {
+                Ok(os) => {
+                    return Ok(HostInfo {
+                        os,
+                        found_command: (index > 0).then(|| remote_command.clone()),
+                    })
+                }
+                // The command did not reach Cogno: the next one may.
+                Err(error) if error.is(AppErrorCode::NoCognoThere) => {
+                    first_failure.get_or_insert(error);
+                }
+                Err(error) => return Err(error),
+            }
+        }
+        // What the default command met says the most.
+        Err(first_failure.unwrap_or_else(|| CommandError::internal("No command to try")))
     })
     .await;
     app.state::<AskpassState>()
         .close_session(&app, &prompt_session);
 
-    let os = connected.map_err(CommandError::internal)??;
-    Ok(HostInfo { os })
+    connected.map_err(CommandError::internal)?
 }
 
 /// The shells installed on this machine: offered as profiles on first start.
@@ -184,10 +206,11 @@ pub async fn host_install_shell_integration(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cogno_host::daemon_start::default_remote_command;
 
     #[test]
     fn a_destination_is_never_taken_for_an_option() {
-        let command = host_default_command();
+        let command = default_remote_command(remote_home_directory_name());
         for not_a_destination in ["-oProxyCommand=calc", "", "mac extra"] {
             let refused = ssh_command(not_a_destination, &command).unwrap_err();
             assert!(refused.is(AppErrorCode::InvalidDestination));
@@ -206,6 +229,17 @@ mod tests {
         assert_eq!(
             default_remote_command(identity::HOME_DIRECTORY_NAME),
             "\".cogno/bin/cogno\" server --stdio"
+        );
+    }
+
+    #[test]
+    fn a_remote_without_a_command_is_tried_for_powershell_too() {
+        assert_eq!(
+            remote_commands(identity::HOME_DIRECTORY_NAME),
+            [
+                "\".cogno/bin/cogno\" server --stdio".to_string(),
+                "& \".cogno/bin/cogno\" server --stdio".to_string(),
+            ]
         );
     }
 }

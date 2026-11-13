@@ -38,6 +38,10 @@ const TOKEN_LEN: usize = 32;
 const IDLE_CHECK_INTERVAL: Duration = Duration::from_millis(100);
 /// What is passed between the bridge's two streams in one go.
 const BRIDGE_BUFFER_LEN: usize = 16 * 1024;
+/// What `cogno server --stdio` exits with when no daemon runs: Cogno was
+/// reached, but is not running there. ssh hands it on, so the Cogno at the
+/// other end tells this apart from a command that did not reach Cogno at all.
+pub const NO_DAEMON_EXIT_CODE: i32 = 69;
 /// How long an ended daemon may take to be gone.
 const END_PATIENCE: Duration = Duration::from_secs(5);
 

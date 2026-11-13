@@ -20,9 +20,12 @@ pub enum AppErrorCode {
     NotConnected,
     /// This machine's host could not be started or reached.
     HostNotStarted,
-    /// No Cogno answered at the other end: it is not running there, or the
-    /// start command does not reach it.
+    /// No Cogno answered at the other end: the start command does not reach
+    /// it (Cogno never ran there, or the shell there cannot run the command).
     NoCognoThere,
+    /// The start command reached Cogno at the other end, but it does not run
+    /// there.
+    CognoNotRunning,
     /// The host speaks only protocol versions newer than this Cogno knows.
     ThisCognoTooOld,
     /// The host speaks only protocol versions older than this Cogno still

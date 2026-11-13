@@ -128,7 +128,6 @@ pub fn run(cli: Cli) {
             crate::commands::hosts::host_sessions,
             crate::commands::hosts::host_session,
             crate::commands::hosts::host_kill_session,
-            crate::commands::hosts::host_default_command,
             crate::commands::hosts::host_disconnect,
             crate::commands::hosts::host_end_local,
             crate::commands::hosts::host_install_shell_integration,

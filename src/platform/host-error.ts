@@ -28,6 +28,7 @@ const HOST_ERROR_CODES = [
   "notConnected",
   "hostNotStarted",
   "noCognoThere",
+  "cognoNotRunning",
   "thisCognoTooOld",
   "hostTooOld",
   "connectFailed",

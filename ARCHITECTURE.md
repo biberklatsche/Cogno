@@ -1141,7 +1141,8 @@ Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
   stdin/stdout und dem Dienst durch (`daemon::bridge`). Erreichbarkeit,
   Anmeldung und Verschlüsselung sind Sache von `ssh`; Cogno öffnet nach
   außen keinen Port. Für den Dienst ist ein solcher Client von einem lokalen
-  nicht zu unterscheiden. Läuft kein Dienst, sagt die Brücke das und endet;
+  nicht zu unterscheiden. Läuft kein Dienst, sagt die Brücke das und endet
+  mit eigenem Code (`NO_DAEMON_EXIT_CODE`, bei der App `cognoNotRunning`);
   sie startet keinen.
 - **Der Starter.** Gestartet wird über `".cogno/bin/cogno" server --stdio`
   (`default_remote_command`, aus denselben Konstanten wie der Starter selbst
@@ -1149,10 +1150,14 @@ Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
   Datei, die die App beim Start des Dienstes in ihr Cogno-Home legt und die
   auf das Binary des Dienstes zeigt. Eine `ssh`-Sitzung beginnt im
   Home-Verzeichnis, so wird Cogno unabhängig vom Installationsort gefunden.
-  Die Schreibweise nehmen `cmd` und `sh`; ein SSH-Server mit PowerShell als
-  Standard-Shell braucht `remote.hosts.<name>.command`. Das Remote-Panel holt
-  den Standardbefehl von der App (`host_default_command`), statt ihn selbst zu
-  kennen.
+  Die Schreibweise nehmen `cmd` und `sh`, PowerShell nur mit `& ` davor.
+  Welche Shell der SSH-Server dort nimmt, weiß die App vorher nicht: Nennt
+  ein Remote keinen Befehl, probiert `host_connect` beide (`remote_commands`),
+  die zweite nur, wenn die erste Cogno nicht erreichte (`noCognoThere`; nicht
+  bei `connectFailed` oder `cognoNotRunning`, die am Exit-Code von `ssh`
+  erkannt werden, nie am Text). Erreichte erst die zweite Cogno, schreibt die
+  Workbench sie nach `remote.hosts.<name>.command`, damit die nächste
+  Verbindung nicht zweimal nach dem Passwort fragt.
 
 **Lebenslauf des Dienstes.** Die App sucht ihn über die Endpoint-Datei und
 startet ihn abgekoppelt, wenn keiner läuft (`daemon_start.rs`). Ob einer
