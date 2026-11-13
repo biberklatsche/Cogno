@@ -137,8 +137,8 @@ export class RemoteHostsService {
   }
 
   /**
-   * Hangs up on the host. The panes that show its shells end here; the
-   * shells themselves run on.
+   * Hangs up on the host, or gives up connecting to it. The panes that show
+   * its shells close here; the shells themselves run on.
    */
   async disconnect(name: string): Promise<void> {
     // Asked for: nothing was lost, so nothing is warned about.
@@ -162,7 +162,7 @@ export class RemoteHostsService {
     if (!this.info(name)) return;
     this.setConnection(name, undefined);
     ErrorReporter.reportWarning({
-      message: `The connection to ${name} was lost. Its terminals were closed.`,
+      message: `The connection to ${name} was lost. Its terminals wait until it is back.`,
       notify: true,
       source: "RemoteHosts",
     });

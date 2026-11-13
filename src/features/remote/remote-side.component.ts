@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
-import { RemoteHost } from "@cogno/core/api/remote-shells-port";
+import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import { Opener } from "@cogno/platform";
 import {
   CopyEditDeleteComponent,
@@ -15,7 +15,13 @@ import { hostNodes, RemoteTreeNode } from "./remote-shell-tree";
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
 
 /** The form that is open: one to add a remote, or one to change `host`. */
-type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
+type OpenForm = { readonly host?: RemoteHost };
+
+/** What the button next to a remote does. */
+type NextStep = "connect" | "cancel" | "disconnect" | "edit";
+
+/** What the action buttons of a line said. */
+type RowAction = "copy" | "edit" | "delete";
 
 @Component({
   selector: "app-remote-side",
@@ -55,7 +61,7 @@ type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
       @if (form(); as open) {
         <app-remote-host-form
           [host]="open.host"
-          [defaultCommand]="open.defaultCommand"
+          [defaultCommand]="panel.defaultCommand()"
           (closed)="form.set(null)"
         ></app-remote-host-form>
       }
@@ -68,7 +74,7 @@ type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
 
       <!-- Host, workspace, tab, shell. -->
       <app-tree class="hosts" [nodes]="nodes()" [childrenOf]="childrenOf" [keyOf]="keyOf">
-        <ng-template appTreeRow let-node let-toggle="toggle" let-open="open">
+        <ng-template appTreeRow [appTreeRowOf]="nodes()" let-node let-toggle="toggle" let-open="open">
           @switch (node.kind) {
             @case ("host") {
               <div class="host-row">
@@ -77,25 +83,43 @@ type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
                 <!-- Removing asks once more, as everywhere in the side panels. -->
                 <app-copy-edit-delete
                   class="row-action"
-                  (onEvent)="$event === 'edit' ? edit(node.host) : panel.removeHost(node.host.name)"
+                  (onEvent)="onHostAction($event, node.host)"
                 ></app-copy-edit-delete>
-                @if (node.host.connection === "connected") {
-                  <button
-                    type="button"
-                    class="button text-button"
-                    appTooltip="Its shells run on; the ones shown here close"
-                    (click)="panel.disconnect(node.host.name)"
-                  >
-                    Disconnect
-                  </button>
-                } @else if (node.host.connection !== "connecting") {
-                  <button
-                    type="button"
-                    class="button text-button"
-                    (click)="panel.connect(node.host.name)"
-                  >
-                    Connect
-                  </button>
+                @switch (nextStep(node.host)) {
+                  @case ("disconnect") {
+                    <button
+                      type="button"
+                      class="button text-button"
+                      appTooltip="Its shells run on; the ones shown here close"
+                      (click)="panel.disconnect(node.host.name)"
+                    >
+                      Disconnect
+                    </button>
+                  }
+                  @case ("cancel") {
+                    <button
+                      type="button"
+                      class="button text-button"
+                      (click)="panel.disconnect(node.host.name)"
+                    >
+                      Cancel
+                    </button>
+                  }
+                  @case ("connect") {
+                    <button
+                      type="button"
+                      class="button text-button"
+                      (click)="panel.connect(node.host.name)"
+                    >
+                      Connect
+                    </button>
+                  }
+                  @case ("edit") {
+                    <!-- Connecting again fails the same way: the settings must change first. -->
+                    <button type="button" class="button text-button" (click)="edit(node.host)">
+                      Edit
+                    </button>
+                  }
                 }
               </div>
             }
@@ -127,10 +151,16 @@ type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
                 >
                   <app-icon class="shell-icon" name="mdiConsole"></app-icon>
                   <span class="name">{{ node.name }}</span>
-                  @if (node.shell.shown === "here") {
-                    <span class="shown here">Here</span>
-                  } @else if (node.shell.shown === "elsewhere") {
-                    <span class="shown">On {{ node.shell.shownBy ?? "another Cogno" }}</span>
+                  @switch (node.shell.shown) {
+                    @case ("thisWindow") {
+                      <span class="shown this-window">This window</span>
+                    }
+                    @case ("otherWindow") {
+                      <span class="shown">Other window</span>
+                    }
+                    @case ("otherCogno") {
+                      <span class="shown">On {{ node.shell.shownBy ?? "another Cogno" }}</span>
+                    }
                   }
                 </button>
                 @if (node.shell.shown === "nowhere") {
@@ -138,7 +168,8 @@ type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
                   <app-copy-edit-delete
                     class="row-action"
                     [enableEdit]="false"
-                    (onEvent)="$event === 'delete' && panel.end(node.hostName, node.shell)"
+                    deleteTooltip="End the shell"
+                    (onEvent)="onShellAction($event, node.hostName, node.shell)"
                   ></app-copy-edit-delete>
                 }
               </div>
@@ -318,7 +349,7 @@ type OpenForm = { readonly host?: RemoteHost; readonly defaultCommand: string };
       }
     }
 
-    .shown.here {
+    .shown.this-window {
       color: inherit;
       background: color-mix(in srgb, var(--foreground-color) 10%, transparent);
     }
@@ -342,15 +373,34 @@ export class RemoteSideComponent {
     void this.opener.openUrl(DOCUMENTATION_URL);
   }
 
-  add(): Promise<void> {
-    return this.openForm(undefined);
+  add(): void {
+    this.form.set({});
   }
 
-  edit(host: RemoteHost): Promise<void> {
-    return this.openForm(host);
+  edit(host: RemoteHost): void {
+    this.form.set({ host });
   }
 
-  private async openForm(host: RemoteHost | undefined): Promise<void> {
-    this.form.set({ host, defaultCommand: await this.panel.defaultCommand() });
+  protected nextStep(host: RemoteHost): NextStep {
+    switch (host.connection) {
+      case "connected":
+        return "disconnect";
+      case "connecting":
+        return "cancel";
+      case "failed":
+        return host.failure?.worthRetrying === false ? "edit" : "connect";
+      default:
+        return "connect";
+    }
+  }
+
+  /** Removing a remote asks once more, as everywhere in the side panels. */
+  protected onHostAction(action: RowAction, host: RemoteHost): void {
+    if (action === "edit") this.edit(host);
+    if (action === "delete") void this.panel.removeHost(host.name);
+  }
+
+  protected onShellAction(action: RowAction, hostName: string, shell: RemoteShell): void {
+    if (action === "delete") void this.panel.end(hostName, shell);
   }
 }

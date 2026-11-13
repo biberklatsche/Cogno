@@ -74,7 +74,6 @@ export interface IPty extends IDisposable {
    * immediately, so an exit racing the spawn is never lost.
    */
   onExit(listener: PtyExitListener): IDisposable;
-  kill(): void;
 }
 
 /**
@@ -269,11 +268,6 @@ export class Pty implements IPty {
     });
   }
 
-  kill(): void {
-    const terminalId = this.terminalId;
-    if (terminalId) this.killSession(terminalId);
-  }
-
   /**
    * This terminal is done with the session. A shell of this machine ends
    * with its terminal. One of another machine belongs to the Cogno there
@@ -403,8 +397,11 @@ export class Pty implements IPty {
 
   dispose(): void {
     // While an open is still in flight there is no session to end yet; the
-    // open's continuation ends it as soon as it exists.
-    if (this.state.kind === "live") this.letGo(this.state.terminalId);
+    // open's continuation ends it as soon as it exists. A shell that was
+    // handed back is this terminal's again, though it is not shown yet.
+    if (this.state.kind === "live" || this.state.kind === "handedBack") {
+      this.letGo(this.state.terminalId);
+    }
     this.closeOutput();
     this.state = { kind: "disposed" };
     this._pendingResize = undefined;

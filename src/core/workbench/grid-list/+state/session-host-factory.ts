@@ -7,7 +7,12 @@ import { SessionHost } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { runningShell } from "@cogno/core/workbench/hosts/running-shell";
 import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-start.service";
-import { isHostError, OsPlatform, SessionInfoContract } from "@cogno/platform";
+import {
+  isHostError,
+  OsPlatform,
+  SessionInfoContract,
+  TerminalExitContract,
+} from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
 import { SessionKeybindings } from "../../terminal/+state/session-keybindings";
@@ -15,7 +20,8 @@ import { TerminalSessionRegistry } from "../../terminal/+state/terminal-session.
 import { TerminalComponent } from "../../terminal/terminal.component";
 import { Pane } from "../+model/model";
 import { SessionEntry, SessionScopeBuilder, SessionStart } from "./session-scope.builder";
-import { WaitingPanes } from "./waiting-panes";
+import { closesPane } from "./shell-end";
+import { FoundShell, WaitingPanes } from "./waiting-panes";
 
 /** A pane whose shell runs on another machine. */
 type RemotePane = Pane & { readonly host: string };
@@ -34,13 +40,18 @@ function isRemote(pane: Pane): pane is RemotePane {
  * (Cogno was closed and it went on, or another Cogno started it), shows it.
  * A pane of another machine (`Pane.host`) only ever shows a shell that runs
  * there: it waits (`WaitingPanes`) until that machine is connected and has
- * said that the shell runs.
+ * said that the shell runs, and again when the connection breaks.
+ *
+ * A pane never takes a shell from another Cogno by itself: one that finds
+ * its shell shown elsewhere says so, and the user decides.
  */
 @Injectable({ providedIn: "root" })
 export class SessionHostFactory {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
   /** Where each pane is on screen, once it was. */
   private readonly mountPoints = new Map<TerminalId, HTMLElement>();
+  /** Panes the user opened to show a shell here, whoever shows it now. */
+  private readonly takingOver = new Set<TerminalId>();
 
   constructor(
     private readonly appRef: ApplicationRef,
@@ -58,6 +69,9 @@ export class SessionHostFactory {
       .on$("ReattachTerminal")
       .subscribe((action) => action.payload && void this.takeBack(action.payload));
     reopenings.add(
+      this.bus.on$("ReplaceOldLocalHost").subscribe(() => void this.replaceOldLocalHost()),
+    );
+    reopenings.add(
       this.sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
         // A shell that another Cogno took and let go again comes back by
         // itself, into the pane that still says where it went.
@@ -67,6 +81,9 @@ export class SessionHostFactory {
         if (fact.type === "shellAlreadyRuns") void this.showRunningShell(terminalId);
         // The shell the pane was to show had ended by then.
         if (fact.type === "shellGone") this.onShellGone(terminalId);
+        if (fact.type === "exited" && !closesPane(fact.exit)) {
+          this.onShellLost(terminalId, fact.exit);
+        }
       }),
     );
     destroyRef.onDestroy(() => reopenings.unsubscribe());
@@ -85,17 +102,23 @@ export class SessionHostFactory {
     if (this.waitingPanes.isWaiting(terminalId)) return undefined;
 
     if (isRemote(pane)) {
-      this.waitingPanes.wait(pane, ({ session, os }) =>
-        this.open(terminalId, pane, { host: pane.host, os }, this.showing(pane, session)),
-      );
+      this.waitForShell(terminalId, pane);
       return undefined;
     }
     const backend: SessionBackend = { os: this.os.platform() };
     const running = this.shellsFoundAtStart.claim(terminalId);
     const start: SessionStart = running
-      ? this.showing(pane, running)
+      ? this.showing(pane, running, this.takingOver.delete(terminalId))
       : { kind: "spawn", profile: this.configuredProfile(pane) };
     return this.open(terminalId, pane, backend, start);
+  }
+
+  /**
+   * The pane about to open for `terminalId` was asked for by the user to
+   * show that shell here: it takes it from whoever shows it.
+   */
+  takeOverWhenOpened(terminalId: TerminalId): void {
+    this.takingOver.add(terminalId);
   }
 
   /** The keybindings of the session `terminalId`, for central action dispatch. */
@@ -132,6 +155,7 @@ export class SessionHostFactory {
     // An answer that still comes finds the pane gone and opens nothing.
     this.waitingPanes.stop(terminalId);
     this.mountPoints.delete(terminalId);
+    this.takingOver.delete(terminalId);
     this.closeSession(terminalId, true);
   }
 
@@ -143,38 +167,87 @@ export class SessionHostFactory {
   async takeBack(terminalId: TerminalId): Promise<boolean> {
     const entry = this.sessions.get(terminalId);
     if (entry?.session.runtime.status !== "takenOver") return false;
-    return this.reopenShowingRunning(terminalId, entry);
+    return this.reopenShowingRunning(terminalId, entry, true);
   }
 
-  /** A pane's start found its shell running already: it is shown instead. */
+  /**
+   * Ends this machine's host from an older Cogno, which this one cannot talk
+   * to, and starts the shells that could not start because of it. The
+   * shells in that host end with it: the user was told so.
+   */
+  private async replaceOldLocalHost(): Promise<void> {
+    try {
+      await this.hosts.endLocalHost();
+    } catch (error) {
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        notify: true,
+        source: "SessionHostFactory",
+        context: { operation: "replaceOldLocalHost" },
+      });
+      return;
+    }
+    for (const { session } of this.sessions.values()) {
+      if (session.runtime.code === "hostTooOld" && session.runsOnThisMachine) session.retry();
+    }
+  }
+
+  /**
+   * The shell ended without the user ending it; the pane stays and says so.
+   * A shell of another machine whose connection broke may run on there: the
+   * pane waits for that machine again.
+   */
+  private onShellLost(terminalId: TerminalId, exit: TerminalExitContract): void {
+    const entry = this.sessions.get(terminalId);
+    if (!entry || !isRemote(entry.pane) || exit.kind !== "connectionLost") return;
+    this.waitAgain(terminalId, entry.pane);
+  }
+
+  /**
+   * A pane's start found its shell running already: it is shown instead -
+   * unless another Cogno shows it.
+   */
   private async showRunningShell(terminalId: TerminalId): Promise<void> {
     const entry = this.sessions.get(terminalId);
     if (entry?.session.runtime.status !== "starting") return;
-    await this.reopenShowingRunning(terminalId, entry);
+    await this.reopenShowingRunning(terminalId, entry, false);
   }
 
   /**
    * The pane's session gives way to one that shows the running shell. The
    * shell is asked for first: the new session needs its profile and secret,
-   * and the shell may have ended meanwhile.
+   * and the shell may have ended meanwhile. `takeOver`: the shell is taken
+   * from whoever shows it.
    */
   private async reopenShowingRunning(
     terminalId: TerminalId,
     entry: SessionEntry,
+    takeOver: boolean,
   ): Promise<boolean> {
+    const pane = entry.pane;
     let running: SessionInfoContract;
     try {
-      running = await this.hosts.session(entry.pane.host, terminalId);
+      running = await this.hosts.session(pane.host, terminalId);
     } catch (error) {
       if (this.sessions.get(terminalId) !== entry) return false;
       if (isHostError(error, "sessionNotFound")) {
         this.onShellGone(terminalId);
-      } else if (entry.session.runtime.status === "starting") {
+        return false;
+      }
+      if (isRemote(pane) && isHostError(error, "notConnected", "connectionLost")) {
+        // The machine has to be connected first; the waiting pane does that.
+        if (takeOver) this.takingOver.add(terminalId);
+        this.waitAgain(terminalId, pane);
+        return true;
+      }
+      if (entry.session.runtime.status === "starting") {
         entry.session.failStart(error);
       } else {
         ErrorReporter.reportException({
           error,
           handled: true,
+          notify: true,
           source: "SessionHostFactory",
           context: { operation: "reopenShowingRunning", terminalId },
         });
@@ -182,7 +255,7 @@ export class SessionHostFactory {
       return false;
     }
     if (this.sessions.get(terminalId) !== entry) return false;
-    this.reopen(terminalId, entry, this.showing(entry.pane, running));
+    this.reopen(terminalId, entry, this.showing(pane, running, takeOver));
     return true;
   }
 
@@ -197,12 +270,34 @@ export class SessionHostFactory {
     if (isRemote(pane)) {
       // The terminal stays: features must not hear that it went.
       this.closeSession(terminalId, false);
-      this.waitingPanes.showGone(pane);
-      const mountPoint = this.mountPoints.get(terminalId);
-      if (mountPoint) this.waitingPanes.mount(terminalId, mountPoint);
+      this.waitingPanes.showGone(pane, (found) => this.openFound(terminalId, pane, found));
+      this.mountWaiting(terminalId);
       return;
     }
     this.reopen(terminalId, entry, { kind: "spawn", profile: this.configuredProfile(pane) });
+  }
+
+  /** The pane of another machine waits for its shell; see `WaitingPanes`. */
+  private waitForShell(terminalId: TerminalId, pane: RemotePane): void {
+    this.waitingPanes.wait(pane, (found) => this.openFound(terminalId, pane, found));
+  }
+
+  /** The pane's session gives way to waiting for its machine again. */
+  private waitAgain(terminalId: TerminalId, pane: RemotePane): void {
+    // The terminal stays: features must not hear that it went.
+    this.closeSession(terminalId, false);
+    this.waitForShell(terminalId, pane);
+    this.mountWaiting(terminalId);
+  }
+
+  private openFound(terminalId: TerminalId, pane: RemotePane, found: FoundShell): void {
+    const start = this.showing(pane, found.session, this.takingOver.delete(terminalId));
+    this.open(terminalId, pane, { host: pane.host, os: found.os }, start);
+  }
+
+  private mountWaiting(terminalId: TerminalId): void {
+    const mountPoint = this.mountPoints.get(terminalId);
+    if (mountPoint) this.waitingPanes.mount(terminalId, mountPoint);
   }
 
   /**
@@ -251,9 +346,19 @@ export class SessionHostFactory {
     entry.view.changeDetectorRef.detectChanges();
   }
 
-  /** How the pane's session shows `running`, a shell that already runs. */
-  private showing(pane: Pane, running: SessionInfoContract): SessionStart {
-    return { kind: "showRunning", shell: runningShell(this.configuredProfile(pane), running) };
+  /**
+   * How the pane's session shows `running`, a shell that already runs. One
+   * that is shown elsewhere is taken from there only when `takeOver`.
+   */
+  private showing(pane: Pane, running: SessionInfoContract, takeOver: boolean): SessionStart {
+    const shell = runningShell(this.configuredProfile(pane), running);
+    const { attached } = running;
+    if (takeOver || attached.to === "nowhere") return { kind: "showRunning", shell };
+    return {
+      kind: "shownElsewhere",
+      shell,
+      by: attached.to === "otherClient" ? (attached.by ?? undefined) : undefined,
+    };
   }
 
   private configuredProfile(pane: Pane): ShellProfile {

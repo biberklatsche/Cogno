@@ -6,17 +6,36 @@ import type { RemotePanelService } from "./remote-panel.service";
 import type { HostShells } from "./remote-shell-tree";
 import { RemoteSideComponent } from "./remote-side.component";
 
-const DEFAULT_COMMAND = '".cogno/bin/cogno" server --stdio';
+/** The component's own decisions, without its template. */
+class TestableRemoteSide extends RemoteSideComponent {
+  override nextStep(host: RemoteHost) {
+    return super.nextStep(host);
+  }
+  override onHostAction(action: "copy" | "edit" | "delete", host: RemoteHost): void {
+    super.onHostAction(action, host);
+  }
+  override onShellAction(
+    action: "copy" | "edit" | "delete",
+    hostName: string,
+    shell: RemoteShell,
+  ): void {
+    super.onShellAction(action, hostName, shell);
+  }
+}
+
+function office(overrides: Partial<RemoteHost> = {}): RemoteHost {
+  return { name: "office", destination: "lars@office", connection: "connected", ...overrides };
+}
 
 describe("RemoteSideComponent", () => {
   let panel: {
     hosts: ReturnType<typeof signal<readonly RemoteHost[]>>;
     shells: ReturnType<typeof signal<ReadonlyMap<string, HostShells>>>;
     failure: ReturnType<typeof signal<string | undefined>>;
-    saveHost: ReturnType<typeof vi.fn>;
-    defaultCommand: ReturnType<typeof vi.fn>;
+    removeHost: ReturnType<typeof vi.fn>;
+    end: ReturnType<typeof vi.fn>;
   };
-  let component: RemoteSideComponent;
+  let component: TestableRemoteSide;
   const shell: RemoteShell = { terminalId: "t1", shown: "nowhere" };
 
   beforeEach(() => {
@@ -24,41 +43,49 @@ describe("RemoteSideComponent", () => {
       hosts: signal<readonly RemoteHost[]>([]),
       shells: signal<ReadonlyMap<string, HostShells>>(new Map()),
       failure: signal<string | undefined>(undefined),
-      saveHost: vi.fn().mockResolvedValue(undefined),
-      defaultCommand: vi.fn().mockResolvedValue(DEFAULT_COMMAND),
+      removeHost: vi.fn().mockResolvedValue(undefined),
+      end: vi.fn().mockResolvedValue(undefined),
     };
-    component = new RemoteSideComponent(
+    component = new TestableRemoteSide(
       panel as unknown as RemotePanelService,
       { openUrl: vi.fn() } as unknown as Opener,
     );
   });
 
-  it("shows the machines of the config as a tree, with what is known of their shells", () => {
-    panel.hosts.set([{ name: "office", destination: "lars@office", connection: "connected" }]);
-    panel.shells.set(new Map([["office", { status: "loaded", shells: [shell] }]]));
-
-    const [machine] = component.nodes();
-
-    expect(machine).toMatchObject({ kind: "host", host: { name: "office" } });
-    expect(component.childrenOf(machine as never)).toHaveLength(1);
-    expect(component.keyOf(machine as never)).toBe(machine?.key);
+  it("offers to cancel a connection that is being set up", () => {
+    expect(component.nextStep(office({ connection: "connecting" }))).toBe("cancel");
+    expect(component.nextStep(office({ connection: "connected" }))).toBe("disconnect");
+    expect(component.nextStep(office({ connection: "disconnected" }))).toBe("connect");
   });
 
-  it("opens the form to change a host with the command ssh runs when it names none", async () => {
-    const office: RemoteHost = {
-      name: "office",
-      destination: "lars@office",
-      connection: "connected",
-    };
+  it("offers to connect again only where that can help, else to change the settings", () => {
+    const failed = (worthRetrying: boolean) =>
+      office({ connection: "failed", failure: { message: "No", worthRetrying } });
 
-    await component.edit(office);
-
-    expect(component.form()).toEqual({ host: office, defaultCommand: DEFAULT_COMMAND });
+    expect(component.nextStep(failed(true))).toBe("connect");
+    expect(component.nextStep(failed(false))).toBe("edit");
   });
 
-  it("opens an empty form to add a host", async () => {
-    await component.add();
+  it("opens the form for a host to edit, and removes one to delete", () => {
+    component.onHostAction("edit", office());
+    expect(component.form()).toEqual({ host: office() });
+    expect(panel.removeHost).not.toHaveBeenCalled();
 
-    expect(component.form()).toEqual({ host: undefined, defaultCommand: DEFAULT_COMMAND });
+    component.onHostAction("delete", office());
+    expect(panel.removeHost).toHaveBeenCalledWith("office");
+  });
+
+  it("ends a shell only when its deletion is confirmed", () => {
+    component.onShellAction("edit", "office", shell);
+    expect(panel.end).not.toHaveBeenCalled();
+
+    component.onShellAction("delete", "office", shell);
+    expect(panel.end).toHaveBeenCalledWith("office", shell);
+  });
+
+  it("opens an empty form to add a host", () => {
+    component.add();
+
+    expect(component.form()).toEqual({});
   });
 });

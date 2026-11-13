@@ -3,11 +3,16 @@ import { describe, expect, it } from "vitest";
 import { HostShells, hostNodes, RemoteTreeNode, shellName } from "./remote-shell-tree";
 
 function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): RemoteShell {
-  return { terminalId, shown: "elsewhere", ...overrides };
+  return { terminalId, shown: "otherCogno", ...overrides };
 }
 
 function host(name: string, connection: RemoteHost["connection"], failure?: string): RemoteHost {
-  return { name, destination: `lars@${name}`, connection, failure };
+  return {
+    name,
+    destination: `lars@${name}`,
+    connection,
+    failure: failure === undefined ? undefined : { message: failure, worthRetrying: true },
+  };
 }
 
 /** The tree as nested names, to read a test by. */

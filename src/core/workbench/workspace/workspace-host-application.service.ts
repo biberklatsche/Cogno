@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { asNewLocalPane } from "@cogno/core/workbench/grid-layout";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-start.service";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
@@ -35,9 +36,9 @@ function mapPaneLeaves(pane: PaneConfig, mapLeaf: (leaf: PaneConfig) => PaneConf
   };
 }
 
-/** The pane tree without its terminal ids: every leaf opens a new shell. */
-function withoutTerminalIds(pane: PaneConfig): PaneConfig {
-  return mapPaneLeaves(pane, ({ terminalId: _terminalId, ...leaf }) => leaf);
+/** The pane tree without its shells: every leaf opens a new one on this machine. */
+function withNewLocalShells(pane: PaneConfig): PaneConfig {
+  return mapPaneLeaves(pane, (leaf) => asNewLocalPane(leaf));
 }
 
 /** Idle time after terminal output before an auto-save of the active workspace. */
@@ -618,7 +619,7 @@ export class WorkspaceHostApplicationService {
             return leaf;
           }
           orphanedTerminalIds.push(leaf.terminalId);
-          return { ...leaf, terminalId: IdCreator.newTerminalId() };
+          return asNewLocalPane(leaf, IdCreator.newTerminalId());
         }),
       }));
 
@@ -682,7 +683,7 @@ export class WorkspaceHostApplicationService {
       }));
       workspace.grids = workspace.grids.map((grid) => ({
         tabId: freshTabIds.get(grid.tabId) ?? grid.tabId,
-        pane: withoutTerminalIds(grid.pane),
+        pane: withNewLocalShells(grid.pane),
       }));
     }
     await this.workspaceRepository.upsertWorkspace(workspace);

@@ -60,7 +60,7 @@ function underHost(host: RemoteHost, shells: HostShells | undefined): RemoteTree
     case "connecting":
       return [statusNode(host.name, `Connecting to ${host.destination}...`)];
     case "failed":
-      return [failureNode(host.name, host.failure ?? "Could not connect.")];
+      return [failureNode(host.name, host.failure?.message ?? "Could not connect.")];
   }
   if (!shells || shells.status === "loading") {
     return [statusNode(host.name, "Looking for shells...")];

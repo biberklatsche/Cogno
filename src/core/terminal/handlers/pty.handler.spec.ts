@@ -55,7 +55,6 @@ describe("PtyHandler", () => {
       attach: vi.fn().mockResolvedValue(TauriMockFactory.createSessionInfo()),
       resize: vi.fn().mockResolvedValue(undefined),
       ack: vi.fn(),
-      kill: vi.fn(),
       isLive: true,
     } as unknown as IPty;
 

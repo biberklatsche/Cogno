@@ -17,11 +17,12 @@ describe("RemoteShellsAdapterService", () => {
   let sessions: ReturnType<typeof vi.fn>;
   let killSession: ReturnType<typeof vi.fn>;
   let takeBack: ReturnType<typeof vi.fn>;
+  let takeOverWhenOpened: ReturnType<typeof vi.fn>;
   let sessionChanges: Subject<void>;
   let sessionRuntimes: Subject<{ terminalId: string; runtime: { status: string } }>;
   let sessionEntries: {
     terminalId: string;
-    host: { state: { shellContext: { host?: string } } };
+    host: { state: { shellContext: { host?: string } }; runtime: { status: string } };
   }[];
   let findTab: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
@@ -38,6 +39,7 @@ describe("RemoteShellsAdapterService", () => {
     sessions = vi.fn().mockResolvedValue([]);
     killSession = vi.fn().mockResolvedValue(undefined);
     takeBack = vi.fn().mockResolvedValue(false);
+    takeOverWhenOpened = vi.fn();
     sessionChanges = new Subject();
     sessionRuntimes = new Subject();
     sessionEntries = [];
@@ -54,7 +56,7 @@ describe("RemoteShellsAdapterService", () => {
       } as never,
       { connections$, connect: vi.fn(), disconnect } as never,
       { sessions, killSession } as never,
-      { takeBack } as never,
+      { takeBack, takeOverWhenOpened } as never,
       {
         changes$: sessionChanges,
         runtimes$: sessionRuntimes,
@@ -91,7 +93,21 @@ describe("RemoteShellsAdapterService", () => {
         ],
       ]),
     );
-    expect(hosts[0]).toMatchObject({ connection: "failed", failure: "No route to host" });
+    expect(hosts[0]).toMatchObject({
+      connection: "failed",
+      failure: { message: "No route to host", worthRetrying: true },
+    });
+
+    connections$.next(
+      new Map([
+        [
+          "office",
+          { status: "failed", failure: { code: "hostTooOld", message: "Update it there" } },
+        ],
+      ]),
+    );
+    // Connecting again fails the same way until that Cogno is updated.
+    expect(hosts[0]).toMatchObject({ failure: { worthRetrying: false } });
 
     config$.next({});
     expect(hosts).toEqual([]);
@@ -112,6 +128,16 @@ describe("RemoteShellsAdapterService", () => {
       await expect(adapter.saveHost({ name: "my.mac", destination: "x" })).rejects.toThrow();
       await expect(adapter.saveHost({ name: "", destination: "x" })).rejects.toThrow();
       await expect(adapter.saveHost({ name: "mac", destination: " " })).rejects.toThrow();
+      expect(update).not.toHaveBeenCalled();
+    });
+
+    it("rejects a destination ssh would take as an option or as more than one word", async () => {
+      await expect(
+        adapter.saveHost({ name: "mac", destination: "-oProxyCommand=calc" }),
+      ).rejects.toThrow("one word");
+      await expect(adapter.saveHost({ name: "mac", destination: "mac extra" })).rejects.toThrow(
+        "one word",
+      );
       expect(update).not.toHaveBeenCalled();
     });
 
@@ -167,7 +193,7 @@ describe("RemoteShellsAdapterService", () => {
         load_user_rc: true,
       },
       size: { cols: 80, rows: 24 },
-      attached: { to: "elsewhere", by: "lars-laptop" },
+      attached: { to: "otherClient", by: "lars-laptop" },
     };
     sessions.mockResolvedValue([session]);
 
@@ -178,17 +204,42 @@ describe("RemoteShellsAdapterService", () => {
         tab: "build",
         title: undefined,
         directory: "C:\\dev",
-        shown: "elsewhere",
+        shown: "otherCogno",
         shownBy: "lars-laptop",
       },
     ]);
     expect(sessions).toHaveBeenCalledWith("office");
   });
 
+  it("tells this window from the other windows of this Cogno", async () => {
+    const shownByThisCogno = (terminalId: string): SessionInfoContract => ({
+      terminalId,
+      placement: {},
+      profile: {
+        shell_type: "Bash",
+        inject_cogno_cli: true,
+        enable_shell_integration: true,
+        load_user_rc: true,
+      },
+      size: { cols: 80, rows: 24 },
+      attached: { to: "thisClient" },
+    });
+    sessions.mockResolvedValue([shownByThisCogno("t1"), shownByThisCogno("t2")]);
+    register("t1", "office", "running");
+    // A pane here whose shell another window took.
+    register("t2", "office", "takenOver");
+
+    const shells = await adapter.shells("office");
+
+    expect(shells.map(({ shown }) => shown)).toEqual(["thisWindow", "otherWindow"]);
+  });
+
   describe("showing a shell here", () => {
     it("opens a tab for a shell no pane here shows; the pane asks for it itself", async () => {
       await adapter.show("office", "t1");
 
+      // The user asked for it here: the new pane takes it from whoever shows it.
+      expect(takeOverWhenOpened).toHaveBeenCalledWith("t1");
       expect(publish).toHaveBeenCalledWith({
         type: "CreateTab",
         payload: expect.objectContaining({ terminalId: "t1", host: "office", isActive: true }),
@@ -217,8 +268,11 @@ describe("RemoteShellsAdapterService", () => {
   });
 
   /** Registers a session, as the registry does, of `host` or of this machine. */
-  function register(terminalId: string, host?: string): void {
-    sessionEntries.push({ terminalId, host: { state: { shellContext: { host } } } });
+  function register(terminalId: string, host?: string, status = "starting"): void {
+    sessionEntries.push({
+      terminalId,
+      host: { state: { shellContext: { host } }, runtime: { status } },
+    });
     sessionChanges.next();
   }
 
@@ -229,7 +283,7 @@ describe("RemoteShellsAdapterService", () => {
 
   it("says when this window began or stopped showing a shell of another machine", () => {
     let told = 0;
-    adapter.shownHereChanged$.subscribe(() => told++);
+    adapter.shownInThisWindowChanged$.subscribe(() => told++);
 
     register("t1", "office");
     sessionRuntimes.next({ terminalId: "t1", runtime: { status: "starting" } });
@@ -244,7 +298,7 @@ describe("RemoteShellsAdapterService", () => {
 
   it("says nothing when a shell of this machine comes or goes", () => {
     let told = 0;
-    adapter.shownHereChanged$.subscribe(() => told++);
+    adapter.shownInThisWindowChanged$.subscribe(() => told++);
 
     register("t1");
     sessionRuntimes.next({ terminalId: "t1", runtime: { status: "running" } });

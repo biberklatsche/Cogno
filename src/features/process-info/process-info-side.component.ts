@@ -102,7 +102,7 @@ export type ProcessTreeNode = {
             [keyOf]="keyOf"
             [expandAll]="filtering()"
           >
-            <ng-template appTreeRow let-processTreeNode>
+            <ng-template appTreeRow [appTreeRowOf]="rootChildProcessNodes()" let-processTreeNode>
               <div class="process-row process-node-row">
                 <button
                   type="button"
@@ -128,7 +128,7 @@ export type ProcessTreeNode = {
                 </button>
               </div>
             </ng-template>
-            <ng-template appTreeDetail let-processTreeNode>
+            <ng-template appTreeDetail [appTreeDetailOf]="rootChildProcessNodes()" let-processTreeNode>
               @if (showsDetails(processTreeNode)) {
                 <dl class="details">
                   <dt>PID</dt>

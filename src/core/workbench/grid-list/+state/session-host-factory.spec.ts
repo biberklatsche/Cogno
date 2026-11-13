@@ -10,7 +10,15 @@ import { SessionHostFactory } from "./session-host-factory";
 import { SessionEntry, SessionStart } from "./session-scope.builder";
 import { FoundShell } from "./waiting-panes";
 
-type Fact = { terminalId: string; fact: { type: string } };
+type Fact = { terminalId: string; fact: { type: string; exit?: { kind: string } } };
+
+/** A shell another Cogno shows right now. */
+function shownByLaptop(terminalId: string): SessionInfoContract {
+  return {
+    ...TauriMockFactory.createSessionInfo(terminalId),
+    attached: { to: "otherClient", by: "laptop" },
+  };
+}
 
 /** What the factory decides for a pane, seen from what it asks of its helpers. */
 describe("SessionHostFactory", () => {
@@ -163,6 +171,35 @@ describe("SessionHostFactory", () => {
       expect(opened).toHaveLength(1);
     });
 
+    it("says a shell another Cogno shows is shown there, and does not take it", () => {
+      claimed = shownByLaptop("t1");
+
+      factory.ensureSession(localPane);
+
+      expect(opened[0]?.start).toMatchObject({ kind: "shownElsewhere", by: "laptop" });
+    });
+
+    it("does not take the shell its start found running when another Cogno shows it", async () => {
+      session.mockResolvedValueOnce(shownByLaptop("t1"));
+      factory.ensureSession(localPane);
+
+      facts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
+      await settle();
+
+      expect(opened[1]?.start.kind).toBe("shownElsewhere");
+    });
+
+    it("stays when its shell ended without the user, and says so itself", () => {
+      factory.ensureSession(localPane);
+
+      for (const kind of ["killedByAnotherClient", "ptyFailed", "connectionLost"]) {
+        facts.next({ terminalId: "t1", fact: { type: "exited", exit: { kind } } });
+      }
+
+      expect(closed).toEqual([]);
+      expect(waitingPanes.wait).not.toHaveBeenCalled();
+    });
+
     it("starts a shell after all when the one it was to show had ended", () => {
       claimed = TauriMockFactory.createSessionInfo("t1");
       factory.ensureSession(localPane);
@@ -203,6 +240,55 @@ describe("SessionHostFactory", () => {
       expect(mountPoint.childElementCount).toBe(1);
     });
 
+    it("says another Cogno shows the shell it found, unless the user opened it to show it", () => {
+      factory.ensureSession(remotePane);
+      onFound.get("t2")?.({ session: shownByLaptop("t2"), os: "linux" });
+      expect(opened[0]?.start.kind).toBe("shownElsewhere");
+
+      factory.destroy("t2");
+      factory.takeOverWhenOpened("t2");
+      factory.ensureSession(remotePane);
+      onFound.get("t2")?.({ session: shownByLaptop("t2"), os: "linux" });
+      expect(opened[1]?.start.kind).toBe("showRunning");
+    });
+
+    it("waits for its machine again when the connection broke; the shell may run on", () => {
+      const mountPoint = document.createElement("div");
+      factory.mount(remotePane, mountPoint);
+      onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
+
+      facts.next({ terminalId: "t2", fact: { type: "exited", exit: { kind: "connectionLost" } } });
+
+      expect(closed).toEqual([{ terminalId: "t2", removed: false }]);
+      expect(waitingPanes.wait).toHaveBeenCalledTimes(2);
+      expect(waitingPanes.mount).toHaveBeenLastCalledWith("t2", mountPoint);
+    });
+
+    it("leaves a pane whose shell the user ended to the workbench", () => {
+      factory.ensureSession(remotePane);
+      onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
+
+      facts.next({ terminalId: "t2", fact: { type: "exited", exit: { kind: "hungUp" } } });
+      facts.next({ terminalId: "t2", fact: { type: "exited", exit: { kind: "exited" } } });
+
+      expect(closed).toEqual([]);
+      expect(waitingPanes.wait).toHaveBeenCalledOnce();
+    });
+
+    it("waits for its machine when the user takes the shell back while it is not connected", async () => {
+      factory.ensureSession(remotePane);
+      onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
+      runtimeOf("t2", "takenOver");
+      session.mockRejectedValueOnce(new HostError("notConnected", "not connected"));
+
+      await expect(factory.takeBack("t2")).resolves.toBe(true);
+      expect(waitingPanes.wait).toHaveBeenCalledTimes(2);
+
+      // Found again: the user asked for it, so it is taken from whoever shows it.
+      onFound.get("t2")?.({ session: shownByLaptop("t2"), os: "linux" });
+      expect(opened.at(-1)?.start.kind).toBe("showRunning");
+    });
+
     it("says the shell is gone when it ended before the session attached", () => {
       const mountPoint = document.createElement("div");
       factory.mount(remotePane, mountPoint);
@@ -212,7 +298,7 @@ describe("SessionHostFactory", () => {
 
       // The terminal stays: features must not hear that it went.
       expect(closed).toEqual([{ terminalId: "t2", removed: false }]);
-      expect(waitingPanes.showGone).toHaveBeenCalledWith(remotePane);
+      expect(waitingPanes.showGone).toHaveBeenCalledWith(remotePane, expect.any(Function));
       expect(waitingPanes.mount).toHaveBeenLastCalledWith("t2", mountPoint);
       expect(opened).toHaveLength(1);
     });
@@ -225,6 +311,8 @@ describe("SessionHostFactory", () => {
     });
 
     it("is shown here again when the user asks, with what its host says of it now", async () => {
+      session.mockResolvedValueOnce(shownByLaptop("t1"));
+
       await expect(factory.takeBack("t1")).resolves.toBe(true);
 
       expect(session).toHaveBeenCalledExactlyOnceWith(undefined, "t1");

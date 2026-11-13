@@ -10,7 +10,14 @@ export type RemoteHost = {
   readonly command?: string;
   readonly connection: "disconnected" | "connecting" | "connected" | "failed";
   /** Why the connection failed; only while `failed`. */
-  readonly failure?: string;
+  readonly failure?: RemoteHostFailure;
+};
+
+/** Why connecting to a machine failed. */
+export type RemoteHostFailure = {
+  readonly message: string;
+  /** Whether connecting again can help; when not, the settings or a Cogno must change first. */
+  readonly worthRetrying: boolean;
 };
 
 /** What the user says about a machine. */
@@ -24,9 +31,9 @@ export type RemoteShell = {
   readonly tab?: string;
   readonly title?: string;
   readonly directory?: string;
-  /** Which Cogno shows it right now: none, this one or another. */
-  readonly shown: "nowhere" | "here" | "elsewhere";
-  /** What the machine of the other Cogno is called, when it said; only `elsewhere`. */
+  /** Who shows it right now: nobody, this window, another window of this Cogno or another Cogno. */
+  readonly shown: "nowhere" | "thisWindow" | "otherWindow" | "otherCogno";
+  /** What the machine of the other Cogno is called, when it said; only `otherCogno`. */
   readonly shownBy?: string;
 };
 
@@ -42,7 +49,7 @@ export abstract class RemoteShellsPort {
    * or lost one to another Cogno. What a machine says of its shells is worth
    * reading again then.
    */
-  abstract readonly shownHereChanged$: Observable<void>;
+  abstract readonly shownInThisWindowChanged$: Observable<void>;
 
   /**
    * Writes a machine to the config. `previousName` is what it was called

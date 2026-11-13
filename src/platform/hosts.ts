@@ -76,12 +76,24 @@ export class Hosts {
     return invokeHost("host_kill_session", { host, terminalId });
   }
 
-  /** Hangs up on the host `name`; `onDisconnected` follows. */
+  /**
+   * Hangs up on the host `name`, or gives up connecting to it. Its terminals
+   * end as hung up on; their shells run on there.
+   */
   disconnect(name: string): Promise<void> {
     return invokeHost("host_disconnect", { name });
   }
 
-  /** The connection to a host ended; its terminals ended with it. */
+  /**
+   * Ends this machine's host and the shells in it, whatever its version: for
+   * one from an older Cogno that this one cannot talk to (`hostTooOld`). The
+   * next terminal starts a host of this Cogno.
+   */
+  endLocalHost(): Promise<void> {
+    return invokeHost("host_end_local");
+  }
+
+  /** The connection to a host broke without this Cogno hanging up. */
   onDisconnected(listener: (name: string) => void): Promise<UnlistenFn> {
     return listen<{ host: string }>(HOST_DISCONNECTED_EVENT, ({ payload }) =>
       listener(payload.host),

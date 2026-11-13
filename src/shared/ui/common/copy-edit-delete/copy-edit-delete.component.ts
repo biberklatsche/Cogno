@@ -54,7 +54,7 @@ import { TooltipDirective } from "../tooltip/tooltip.directive";
           </button>
         }
         @if (enableDelete()) {
-          <button class="button icon-button" [appTooltip]="'Delete'" (click)="isInDeleteMode.set(true); $event.stopPropagation()">
+          <button class="button icon-button" [appTooltip]="deleteTooltip()" (click)="isInDeleteMode.set(true); $event.stopPropagation()">
             <app-icon name="mdiTrashCanOutline"></app-icon>
           </button>
         }
@@ -82,6 +82,8 @@ export class CopyEditDeleteComponent {
   enableDelete = input(true);
   enableEdit = input(true);
   enableCopy = input(false);
+  /** What deleting does, for a line where it is more than deleting. */
+  deleteTooltip = input("Delete");
 
   onEvent = output<"copy" | "edit" | "delete">();
 }

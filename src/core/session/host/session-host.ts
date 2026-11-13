@@ -13,6 +13,8 @@ import { MachineState, MachineStateSnapshot } from "@cogno/core/terminal/machine
 import { IPty, Pty } from "@cogno/core/terminal/pty";
 import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
 import {
+  HostError,
+  HostErrorCode,
   isHostError,
   Opener,
   OsPlatform,
@@ -155,6 +157,8 @@ export type SessionRuntime = {
   readonly status: SessionRuntimeStatus;
   /** Why the start failed; only while `failed`. */
   readonly reason?: string;
+  /** The host's code for why the start failed, when a host said it; only while `failed`. */
+  readonly code?: HostErrorCode;
   /** How the shell ended; only from `exited` on. */
   readonly exit?: TerminalExitContract;
   /** What the machine is called that shows the shell; only while `takenOver`. */
@@ -525,12 +529,18 @@ export class SessionHost {
     }
   }
 
+  /** Whether the shell runs on this machine, where Cogno starts shells. */
+  get runsOnThisMachine(): boolean {
+    return this.backend.host === undefined;
+  }
+
   /**
-   * Tries the shell again after a failed start. On this machine that starts a
-   * new one; on another, Cogno attaches again to the shell that runs there.
+   * Tries the shell again after a failed start, or after it ended without the
+   * user ending it. On this machine that starts a new one - or shows the one
+   * that still runs; on another, Cogno attaches again to the shell there.
    */
   retry(): void {
-    if (this.runtime.status !== "failed" || !this.ptyHandler) return;
+    if (!this.canRetry() || !this.ptyHandler) return;
     this.setRuntime({ status: "starting" });
     this.ptyHandler.restart(this.backend.host === undefined ? "spawn" : "attach");
   }
@@ -804,6 +814,16 @@ export class SessionHost {
   }
 
   /**
+   * The session's shell runs, but another Cogno - or another window of this
+   * one - shows it: instead of `start()`, the session says so and waits.
+   * Taking the shell is the user's to decide; a new session does that.
+   */
+  startShownElsewhere(by: string | undefined): void {
+    if (this.runtime.status !== "allocated") return;
+    this.setRuntime({ status: "takenOver", takenBy: by });
+  }
+
+  /**
    * Replay a snapshot's scrollback into the buffer, above a separator line, then
    * re-anchor its markers and seed their command metadata so the decorations
    * render. The replay is dead scrollback - the live prompt runs below it - so
@@ -1038,9 +1058,15 @@ export class SessionHost {
     this.fail(error);
   }
 
+  private canRetry(): boolean {
+    const { status, exit } = this.runtime;
+    return status === "failed" || (status === "exited" && exit?.kind !== "exited");
+  }
+
   private fail(error: unknown): void {
     const reason = error instanceof Error ? error.message : String(error);
-    this.setRuntime({ status: "failed", reason });
+    const code = error instanceof HostError ? error.code : undefined;
+    this.setRuntime({ status: "failed", reason, code });
     ErrorReporter.reportException({
       error,
       handled: true,

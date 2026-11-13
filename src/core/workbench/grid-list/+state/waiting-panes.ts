@@ -92,8 +92,11 @@ export class WaitingPanes {
     this.findShell(waiting);
   }
 
-  /** The pane's shell is gone; the pane says so until it is closed. */
-  showGone(pane: Pane & { host: string }): void {
+  /**
+   * The pane's shell is gone; the pane says so until it is closed. `onFound`
+   * is told should the shell be found after all.
+   */
+  showGone(pane: Pane & { host: string }, onFound: (found: FoundShell) => void): void {
     const terminalId = pane.terminalId;
     if (!terminalId) return;
     const waiting = this.waiting.get(terminalId);
@@ -105,7 +108,7 @@ export class WaitingPanes {
     this.waiting.set(terminalId, {
       terminalId,
       host: pane.host,
-      onFound: () => {},
+      onFound,
       state: { status: "shellGone" },
       attempt: 0,
     });

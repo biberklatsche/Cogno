@@ -6,11 +6,13 @@ import {
   RemoteShellsPort,
 } from "@cogno/core/api/remote-shells-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { isSshDestination } from "@cogno/core/infrastructure/config/models/remote-config";
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
 import {
+  isWorthRetrying,
   RemoteHostConnection,
   RemoteHostsService,
 } from "@cogno/core/workbench/hosts/remote-hosts.service";
@@ -56,7 +58,30 @@ function remoteSessionsGone(sessions: TerminalSessionRegistry): Observable<void>
 /** The runtimes at which a window begins or stops showing a shell it has a session for. */
 const SHOWING_CHANGES: readonly SessionRuntime["status"][] = ["running", "takenOver"];
 
-function toRemoteShell(session: SessionInfoContract): RemoteShell {
+/**
+ * Where `session` is shown, from this window's side: the host says which
+ * Cogno shows it, this window knows whether it is the one.
+ */
+function shownWhere(
+  session: SessionInfoContract,
+  sessions: TerminalSessionRegistry,
+): RemoteShell["shown"] {
+  switch (session.attached.to) {
+    case "nowhere":
+      return "nowhere";
+    case "thisClient":
+      return sessions.get(session.terminalId)?.host.runtime.status === "running"
+        ? "thisWindow"
+        : "otherWindow";
+    default:
+      return "otherCogno";
+  }
+}
+
+function toRemoteShell(
+  session: SessionInfoContract,
+  sessions: TerminalSessionRegistry,
+): RemoteShell {
   const { placement, attached } = session;
   return {
     terminalId: session.terminalId,
@@ -64,8 +89,8 @@ function toRemoteShell(session: SessionInfoContract): RemoteShell {
     tab: placement.tab ?? undefined,
     title: placement.title ?? undefined,
     directory: placement.directory ?? undefined,
-    shown: attached.to,
-    shownBy: attached.to === "elsewhere" ? (attached.by ?? undefined) : undefined,
+    shown: shownWhere(session, sessions),
+    shownBy: attached.to === "otherClient" ? (attached.by ?? undefined) : undefined,
   };
 }
 
@@ -80,21 +105,27 @@ function toRemoteHost(
     destination,
     command,
     connection: connection?.status ?? "disconnected",
-    failure: connection?.status === "failed" ? connection.failure.message : undefined,
+    failure:
+      connection?.status === "failed"
+        ? {
+            message: connection.failure.message,
+            worthRetrying: isWorthRetrying(connection.failure),
+          }
+        : undefined,
   };
 }
 
 @Injectable({ providedIn: "root" })
 export class RemoteShellsAdapterService extends RemoteShellsPort {
   readonly hosts$: Observable<readonly RemoteHost[]>;
-  readonly shownHereChanged$: Observable<void>;
+  readonly shownInThisWindowChanged$: Observable<void>;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly remoteHosts: RemoteHostsService,
     private readonly hosts: Hosts,
     private readonly sessionFactory: SessionHostFactory,
-    sessions: TerminalSessionRegistry,
+    private readonly sessions: TerminalSessionRegistry,
     private readonly gridList: GridListService,
     private readonly navigator: TerminalNavigatorAdapterService,
     private readonly bus: AppBus,
@@ -110,7 +141,7 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     // A shell of another machine is shown here once its session runs, and
     // no longer once it is taken over or its session is gone. Shells of this
     // machine change nothing another machine says.
-    this.shownHereChanged$ = merge(
+    this.shownInThisWindowChanged$ = merge(
       sessions.runtimes$.pipe(
         filter(
           ({ terminalId, runtime }) =>
@@ -132,8 +163,8 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     if (!HOST_NAME.test(name)) {
       throw new Error("A name consists of letters, digits, '-' and '_'.");
     }
-    if (!destination) {
-      throw new Error("A destination is needed: a host name, user@host or an ssh alias.");
+    if (!isSshDestination(destination)) {
+      throw new Error("The destination is one word: a host name, user@host or an ssh alias.");
     }
     const known = this.configService.config.remote?.hosts ?? {};
     if (name !== previousName && known[name]) {
@@ -182,7 +213,9 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
   }
 
   async shells(host: string): Promise<readonly RemoteShell[]> {
-    return (await this.hosts.sessions(host)).map(toRemoteShell);
+    return (await this.hosts.sessions(host)).map((session) =>
+      toRemoteShell(session, this.sessions),
+    );
   }
 
   async show(host: string, terminalId: TerminalId): Promise<void> {
@@ -191,7 +224,9 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
       await this.navigator.navigateToTerminal(terminalId);
       return;
     }
-    // The new pane asks the host for its shell itself.
+    // The new pane asks the host for its shell itself, and takes it from
+    // whoever shows it: the user asked for it here.
+    this.sessionFactory.takeOverWhenOpened(terminalId);
     this.bus.publish({
       type: "CreateTab",
       payload: { tabId: IdCreator.newTabId(), terminalId, host, isActive: true },

@@ -1,10 +1,22 @@
 import { z } from "zod";
 
+/**
+ * Whether `destination` can be what ssh connects to: a host, `user@host` or
+ * an alias - one word, and never an option ("-oProxyCommand=..." would run a
+ * program on this machine).
+ */
+export function isSshDestination(destination: string): boolean {
+  return destination.length > 0 && !destination.startsWith("-") && !/\s/.test(destination);
+}
+
 const RemoteHostSchema = z
   .strictObject({
     destination: z
       .string()
-      .min(1)
+      .refine(
+        isSshDestination,
+        "One word: a host name, user@host or an ssh alias, never an option.",
+      )
       .describe(
         "Where ssh connects: a host name, `user@host` or an alias from your ssh config. The machine must be reachable by ssh and have Cogno running.",
       ),

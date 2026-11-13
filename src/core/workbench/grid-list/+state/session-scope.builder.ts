@@ -35,7 +35,12 @@ export type SessionStart =
   /** A new shell of the profile; a saved scrollback is replayed first. */
   | { readonly kind: "spawn"; readonly profile: ShellProfile }
   /** A shell that already runs is shown. */
-  | { readonly kind: "showRunning"; readonly shell: RunningShell };
+  | { readonly kind: "showRunning"; readonly shell: RunningShell }
+  /**
+   * A shell that already runs, but another Cogno - or another window of this
+   * one - shows it: `by` names that Cogno's machine when it said.
+   */
+  | { readonly kind: "shownElsewhere"; readonly shell: RunningShell; readonly by?: string };
 
 /** A pane's session, with everything that lives and dies with it. */
 export type SessionEntry = {
@@ -121,12 +126,16 @@ export class SessionScopeBuilder {
     // final-sized terminal. A shell that runs has its host play back what it
     // kept instead, which is newer.
     const snapshot = this.pendingSnapshots.take(terminalId);
-    if (start.kind === "showRunning") {
+    if (start.kind === "spawn") {
+      if (snapshot) session.restore(snapshot);
+    } else {
       session.showRunning(start.shell.sessionToken);
-    } else if (snapshot) {
-      session.restore(snapshot);
     }
-    session.start();
+    if (start.kind === "shownElsewhere") {
+      session.startShownElsewhere(start.by);
+    } else {
+      session.start();
+    }
     return { pane, backend, injector, session, keybindings, notifications, clipboardPrompt };
   }
 
@@ -136,6 +145,9 @@ export class SessionScopeBuilder {
    * session that is only replaced by another for the same shell is not.
    */
   close(terminalId: TerminalId, entry: SessionEntry, removed: boolean): void {
+    // Destroying a view leaves its element where it was mounted; a session
+    // that is replaced in place would otherwise sit above its successor.
+    entry.view?.location.nativeElement.remove();
     entry.view?.destroy();
     entry.keybindings.dispose();
     entry.notifications.dispose();

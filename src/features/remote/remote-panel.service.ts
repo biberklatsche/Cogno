@@ -32,6 +32,7 @@ export class RemotePanelService {
   private readonly questions = new Map<string, number>();
   private readonly failureSignal = signal<string | undefined>(undefined);
   private readonly refreshesSignal = signal(0);
+  private readonly defaultCommandSignal = signal("");
   private opened = false;
 
   readonly hosts = this.hostsSignal.asReadonly();
@@ -41,6 +42,8 @@ export class RemotePanelService {
   readonly refreshing = computed(() => this.refreshesSignal() > 0);
   /** Why the last thing the user asked for did not work. */
   readonly failure = this.failureSignal.asReadonly();
+  /** What ssh runs on a machine whose settings name no command; empty until known. */
+  readonly defaultCommand = this.defaultCommandSignal.asReadonly();
 
   constructor(
     private readonly port: RemoteShellsPort,
@@ -51,9 +54,14 @@ export class RemotePanelService {
       if (this.opened) this.followConnections();
     });
     // What this window shows is part of what the panel says of each shell.
-    this.port.shownHereChanged$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+    this.port.shownInThisWindowChanged$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
       if (this.opened) void this.loadConnected();
     });
+    // The same for every machine and for as long as Cogno runs.
+    this.port.defaultCommand().then(
+      (command) => this.defaultCommandSignal.set(command),
+      (error: unknown) => this.failureSignal.set(messageOf(error)),
+    );
   }
 
   open(): void {
@@ -109,14 +117,9 @@ export class RemotePanelService {
     return this.attempt(() => this.port.removeHost(host));
   }
 
-  /** What ssh runs on a machine whose settings name no command. */
-  defaultCommand(): Promise<string> {
-    return this.port.defaultCommand();
-  }
-
   /**
    * Shows the shell in this window. The host's shells are read again once it
-   * is shown here (`shownHereChanged$`).
+   * is shown here (`shownInThisWindowChanged$`).
    */
   show(host: string, shell: RemoteShell): Promise<void> {
     return this.attempt(() => this.port.show(host, shell.terminalId));

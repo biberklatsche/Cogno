@@ -109,9 +109,17 @@ export class TerminalComponent implements AfterViewInit {
     this.host.scrollToBottom();
   }
 
-  /** The shell did not start: try again with the same profile. */
+  /** Whether the shell runs on this machine, where Cogno can start a new one. */
+  readonly runsOnThisMachine = this.host.runsOnThisMachine;
+
+  /** The shell did not start, or ended without the user: try again with the same profile. */
   retry(): void {
     this.host.retry();
+  }
+
+  /** This machine's host is from an older Cogno: end it, and start the shells again. */
+  replaceOldLocalHost(): void {
+    this.bus.publish({ type: "ReplaceOldLocalHost" });
   }
 
   /** Another Cogno shows the shell: show it here again. */
@@ -121,7 +129,7 @@ export class TerminalComponent implements AfterViewInit {
     this.bus.publish({ type: "ReattachTerminal", payload: terminalId });
   }
 
-  /** The shell did not start, or is shown elsewhere: give the pane up. */
+  /** The shell did not start, ended, or is shown elsewhere: give the pane up. */
   closeAfterFailure(): void {
     const terminalId = this.host.terminalId;
     if (!terminalId) return;

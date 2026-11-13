@@ -6,9 +6,10 @@ import {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
-import { GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
+import { asNewLocalPane, GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { closesPane } from "@cogno/core/workbench/grid-list/+state/shell-end";
 import { BinaryNode, BinaryTree } from "@cogno/core/workbench/grid-list/binary-tree";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
@@ -184,9 +185,10 @@ export class GridListService implements PaneLayoutLookup {
             this.applyPaneCwd(terminalId, fact.cwd);
             break;
           case "exited":
-            // The shell ended: drop its pane (and the tab/session with the last
-            // one). No bus hop - the session reports, the workbench acts.
-            this.removePane(terminalId);
+            // The user ended the shell: drop its pane (and the tab/session with
+            // the last one). Any other end leaves the pane, which says what
+            // happened. No bus hop - the session reports, the workbench acts.
+            if (closesPane(fact.exit)) this.removePane(terminalId);
             break;
           case "focusChanged":
             if (fact.focused) this.applyPaneFocus(terminalId);
@@ -435,17 +437,16 @@ export class GridListService implements PaneLayoutLookup {
           `[grid-list] Terminal ${persistedTerminalId} is laid out twice; the second pane gets a new id.`,
         );
       }
-      const terminalId =
-        persistedTerminalId && !takenTerminalIds.has(persistedTerminalId)
-          ? persistedTerminalId
-          : IdCreator.newTerminalId();
+      const keepsItsShell = !!persistedTerminalId && !takenTerminalIds.has(persistedTerminalId);
+      const terminalId = keepsItsShell ? persistedTerminalId : IdCreator.newTerminalId();
+      const leaf = keepsItsShell ? nodeConfig : asNewLocalPane(nodeConfig, terminalId);
       takenTerminalIds.add(terminalId);
       parent.data = {
-        shellName: nodeConfig.shellName,
-        workingDir: nodeConfig.workingDir,
-        title: nodeConfig.title,
+        shellName: leaf.shellName,
+        workingDir: leaf.workingDir,
+        title: leaf.title,
         terminalId,
-        host: nodeConfig.host,
+        host: leaf.host,
       };
     }
   }

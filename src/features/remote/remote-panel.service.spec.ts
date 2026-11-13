@@ -9,7 +9,7 @@ function host(name: string, connection: RemoteHost["connection"]): RemoteHost {
 }
 
 function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): RemoteShell {
-  return { terminalId, shown: "elsewhere", ...overrides };
+  return { terminalId, shown: "otherCogno", ...overrides };
 }
 
 /** Lets what was answered arrive. */
@@ -19,7 +19,7 @@ async function settled(): Promise<void> {
 
 describe("RemotePanelService", () => {
   let hosts$: BehaviorSubject<readonly RemoteHost[]>;
-  let shownHereChanged$: Subject<void>;
+  let shownInThisWindowChanged$: Subject<void>;
   let port: {
     [K in
       | "shells"
@@ -28,13 +28,14 @@ describe("RemotePanelService", () => {
       | "connect"
       | "disconnect"
       | "saveHost"
-      | "removeHost"]: ReturnType<typeof vi.fn>;
+      | "removeHost"
+      | "defaultCommand"]: ReturnType<typeof vi.fn>;
   };
   let service: RemotePanelService;
 
   beforeEach(() => {
     hosts$ = new BehaviorSubject<readonly RemoteHost[]>([host("office", "disconnected")]);
-    shownHereChanged$ = new Subject<void>();
+    shownInThisWindowChanged$ = new Subject<void>();
     port = {
       shells: vi.fn().mockResolvedValue([]),
       show: vi.fn().mockResolvedValue(undefined),
@@ -43,11 +44,30 @@ describe("RemotePanelService", () => {
       disconnect: vi.fn().mockResolvedValue(undefined),
       saveHost: vi.fn().mockResolvedValue(undefined),
       removeHost: vi.fn().mockResolvedValue(undefined),
+      defaultCommand: vi.fn().mockResolvedValue('".cogno/bin/cogno" server --stdio'),
     };
     service = new RemotePanelService(
-      { hosts$, shownHereChanged$, ...port } as unknown as RemoteShellsPort,
+      { hosts$, shownInThisWindowChanged$, ...port } as unknown as RemoteShellsPort,
       { onDestroy: vi.fn() } as unknown as DestroyRef,
     );
+  });
+
+  it("knows the command ssh runs where a machine names none, asked once", async () => {
+    await settled();
+
+    expect(service.defaultCommand()).toBe('".cogno/bin/cogno" server --stdio');
+    expect(port.defaultCommand).toHaveBeenCalledOnce();
+  });
+
+  it("says why it could not learn that command", async () => {
+    port.defaultCommand.mockRejectedValueOnce(new Error("no home directory"));
+    const failing = new RemotePanelService(
+      { hosts$, shownInThisWindowChanged$, ...port } as unknown as RemoteShellsPort,
+      { onDestroy: vi.fn() } as unknown as DestroyRef,
+    );
+    await settled();
+
+    expect(failing.failure()).toBe("no home directory");
   });
 
   it("says it refreshes until the hosts answered, and at least for a moment", async () => {
@@ -178,16 +198,16 @@ describe("RemotePanelService", () => {
       let stale!: (shells: RemoteShell[]) => void;
       port.shells.mockReturnValueOnce(new Promise((resolve) => (stale = resolve)));
       service.refresh();
-      port.shells.mockResolvedValueOnce([shell("t1", { shown: "here" })]);
+      port.shells.mockResolvedValueOnce([shell("t1", { shown: "thisWindow" })]);
 
       await service.show("office", shell("t1"));
-      shownHereChanged$.next();
+      shownInThisWindowChanged$.next();
       stale([shell("t1")]);
       await settled();
 
       expect(service.shells().get("office")).toEqual({
         status: "loaded",
-        shells: [shell("t1", { shown: "here" })],
+        shells: [shell("t1", { shown: "thisWindow" })],
       });
     });
 
@@ -195,16 +215,16 @@ describe("RemotePanelService", () => {
       port.shells.mockResolvedValueOnce([shell("t1"), shell("t2")]);
       service.open();
       await settled();
-      port.shells.mockResolvedValueOnce([shell("t1", { shown: "here" }), shell("t2")]);
+      port.shells.mockResolvedValueOnce([shell("t1", { shown: "thisWindow" }), shell("t2")]);
 
       await service.show("office", shell("t1"));
-      shownHereChanged$.next();
+      shownInThisWindowChanged$.next();
       await settled();
 
       expect(port.show).toHaveBeenCalledWith("office", "t1");
       expect(service.shells().get("office")).toEqual({
         status: "loaded",
-        shells: [shell("t1", { shown: "here" }), shell("t2")],
+        shells: [shell("t1", { shown: "thisWindow" }), shell("t2")],
       });
     });
 

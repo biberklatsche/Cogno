@@ -28,12 +28,18 @@ export type SessionPlacementContract = {
   directory?: string | null;
 };
 
-/** Which Cogno shows a shell, as the asking one sees it. */
+/**
+ * Which client shows a shell, as the asking one sees it. A client is one
+ * Cogno with all its windows.
+ */
 export type AttachedContract =
   | { to: "nowhere" }
-  | { to: "here" }
+  /** The asking Cogno: one of its windows. */
+  | { to: "thisClient" }
   /** `by` is what the machine of the Cogno that shows it is called, when it said. */
-  | { to: "elsewhere"; by: string | null };
+  | { to: "otherClient"; by: string | null }
+  /** What a later host says: somebody, as far as this Cogno can tell. */
+  | { to: "unknown" };
 
 /**
  * A shell that runs on a host, as it was started: its profile (whose

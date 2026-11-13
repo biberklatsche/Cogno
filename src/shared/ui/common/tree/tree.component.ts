@@ -19,13 +19,37 @@ export type TreeRowContext<T> = {
   readonly toggle: () => void;
 };
 
-/** What a node's line shows, next to the arrow the tree draws. */
+/**
+ * What a node's line shows, next to the arrow the tree draws. `appTreeRowOf`
+ * takes the tree's nodes, so the template knows what a node is.
+ */
 @Directive({ selector: "ng-template[appTreeRow]", standalone: true })
-export class TreeRowDirective {}
+export class TreeRowDirective<T> {
+  @Input({ required: true }) appTreeRowOf!: readonly T[];
 
-/** What stands under a node's line and above its children, if anything. */
+  static ngTemplateContextGuard<T>(
+    _directive: TreeRowDirective<T>,
+    context: unknown,
+  ): context is TreeRowContext<T> {
+    return true;
+  }
+}
+
+/**
+ * What stands under a node's line and above its children, if anything.
+ * `appTreeDetailOf` takes the tree's nodes, as `appTreeRowOf` does.
+ */
 @Directive({ selector: "ng-template[appTreeDetail]", standalone: true })
-export class TreeDetailDirective {}
+export class TreeDetailDirective<T> {
+  @Input({ required: true }) appTreeDetailOf!: readonly T[];
+
+  static ngTemplateContextGuard<T>(
+    _directive: TreeDetailDirective<T>,
+    context: unknown,
+  ): context is TreeRowContext<T> {
+    return true;
+  }
+}
 
 /**
  * A tree whose branches fold away. The tree draws the arrow, sets children in

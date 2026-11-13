@@ -23,7 +23,7 @@ describe("ShellsFoundAtStart", () => {
   it("names the shells no Cogno showed", async () => {
     const shown = {
       ...TauriMockFactory.createSessionInfo("t2"),
-      attached: { to: "here" as const },
+      attached: { to: "thisClient" as const },
     };
     const shells = found(Promise.resolve([TauriMockFactory.createSessionInfo("t1"), shown]));
     await shells.find();

@@ -633,7 +633,9 @@ allocated -> starting -> running          (PTY läuft, Core parst, Modell lebt)
                      \-> failed
 running   -> exited  -> closed            (Prozess endete; Exit-Code im Zustand)
 running   -> closing -> closed            (expliziter Close durch die Workbench)
-running   -> takenOver                    (ein anderes Cogno zeigt die Shell, 2.7)
+running   -> takenOver                    (ein anderes Cogno zeigt die Shell, 2.7.2)
+allocated -> takenOver                    (die gefundene Shell zeigt schon ein anderes)
+exited    -> starting                     (eine neue Shell nach einem Ende ohne den Nutzer)
 ```
 
 **Achse B — Darstellung** (steuert die Workbench über den Host):
@@ -657,10 +659,10 @@ späteren Anzeigen stimmen; `attach` fittet und resized die PTY, xterm
 reflowt.
 
 `exited` ist ein Fakt der Session, `closing` ein Befehl der Workbench. Bei
-`exited` entscheidet die Workbench: Pane entfernen, war es das letzte Pane
-des Tabs auch den Tab — und danach den Host schließen. Ob ein Pane bei
-Exit-Code ≠ 0 stattdessen mit sichtbarem Ergebnis stehen bleibt, ist eine
-Workbench-Option, keine Session-Entscheidung.
+`exited` entscheidet die Workbench am Grund (`closesPane`): Hat der Nutzer
+die Shell beendet (`exit` in der Shell, Auflegen beim Host), entfernt sie das
+Pane, war es das letzte Pane des Tabs auch den Tab — und schließt danach den
+Host. Jedes andere Ende lässt das Pane mit sichtbarem Zustand stehen (2.7.2).
 
 Ein Startfehler lässt das Pane mit sichtbarem Fehlerzustand, Retry und Close
 bestehen. Reparenting, Tab-Wechsel und Workspace-Wechsel verändern nur die
@@ -982,7 +984,7 @@ Entscheidungen:
 
 ---
 
-### 2.7 Der Host (Rust)
+### 2.7 Hosts und Sitzungen
 
 Der Rust-Teil besteht aus zwei Crates. **`cogno-host`**
 (`src-tauri/crates/cogno-host/`) ist alles, was auf dem Rechner laufen muss,
@@ -991,6 +993,33 @@ Login-Umgebung, Line-Editor-Kanal, die Prozesse unter einer Shell, die
 installierten Shells. Es importiert kein Tauri und kennt weder Fenster noch
 Webview. Die **App** (`src-tauri/src/`) ist der Rest: Fenster, Datenbank,
 Config, HTTP-Server, Askpass, Command-Runner, Updater.
+
+Dieser Abschnitt hat zwei Teile: der Dienst und sein Protokoll (2.7.1), und
+wie das Frontend Hosts und Sitzungen führt (2.7.2). Vorab die Begriffe; rund
+um Hosts heißt jede Sache überall gleich, in Rust wie in TypeScript:
+
+| Begriff | Bedeutung | Im Code |
+|---|---|---|
+| Rechner, Remote | Ein Rechner, auf dem Shells laufen. Ein Remote ist ein anderer Rechner aus `remote.hosts`, unter seinem Namen dort | `remote.hosts`, `RemoteHost` |
+| Host | Was auf einem Rechner die Shells hält: der Dienst und darin die Struktur `Host`. Als Feld eines Panes, Backends oder Shell-Kontexts der Name eines Remotes; fehlt er, ist es dieser Rechner | `Host`, `Pane.host`, `SessionBackend.host` |
+| Dienst | Der Prozess des Hosts, einer je Nutzer und Rechner | `cogno daemon`, `daemon.rs` |
+| Sitzung | Eine Shell samt PTY auf einem Host, geschlüsselt nach der Terminal-ID. Im Frontend steuert sie ein `SessionHost`; Variablen, die einen halten, heißen `session` | `Session`, `SharedSession`, `SessionHost`, `TerminalId` |
+| Client | Ein Cogno, das mit einem Host spricht, mit allen seinen Fenstern: eine Verbindung, mit ID und Namen aus ihrem Hello | `Client`, `ClientId`, `ClientHello` |
+| Fenster | Das Fenster eines Clients, dem eine Sitzung gehört; mit dem Client ihr Besitzer | `WindowLabel`, `Owner`, `WindowClosed` |
+| Platz | Wo eine Sitzung im Cogno sitzt, dem sie gehört: Workspace, Tab, Titel, Verzeichnis | `SessionPlacement`, `PtyPlace` |
+| Starten | Eine neue Shell beginnen; nur auf diesem Rechner | `PtySpawn`, `spawn` |
+| Andocken, Abhängen | Ein Client zeigt eine laufende Sitzung, oder nicht mehr; nur im Protokoll. Das Einhängen einer Ansicht ins DOM heißt `mount` | `PtyAttach`, `PtyDetach`, `Attached` |
+| Wer zeigt | Aus Sicht des fragenden Clients: niemand, er selbst, ein anderer. Das Remote-Panel unterscheidet für sich dieses Fenster, ein anderes Fenster dieses Cognos und ein anderes Cogno | `Attached::{Nowhere, ThisClient, OtherClient}`, `RemoteShell.shown` |
+| Zeigen | Was der Nutzer im Remote-Panel will: zum Pane gehen, zurückholen oder einen Tab öffnen | `RemoteShellsPort.show` |
+| Übernommen, zurückgegeben | Ein anderer Client dockte an; der ließ wieder los | `PtyTakenOver`, `PtyHandedBack`, Fakt `handedBack` |
+| Zurückholen | Eine übernommene Sitzung hier wieder zeigen | `takeBack`, `ReattachTerminal` |
+| Beenden | Eine Sitzung auf Wunsch enden lassen | `PtyKill`, `host_kill_session` |
+| Ende | Eine Sitzung endete, mit Grund | `PtyExit`, `ExitReason`, `TerminalExit` |
+| Auflegen | Die App beendet eine Verbindung selbst, auf Wunsch des Nutzers oder beim Beenden | `HostConnection::hang_up`, `Ending::HungUp`, Ende `hungUp` |
+| Lebensdauer | Ob eine Sitzung ihren Client überlebt | `SessionLifetime` |
+| Strom | Der Ausgabekanal eines Andockens | `StreamId` |
+
+#### 2.7.1 Der Dienst und sein Protokoll (Rust)
 
 **Der Host läuft als eigener Prozess, der Dienst** (`cogno daemon`,
 `daemon.rs`): einer je Nutzer und Rechner. Seine Sitzungen gehören keinem
@@ -1005,12 +1034,12 @@ Der Host hat genau einen Eingang und einen Ausgang (`protocol.rs`):
   starten, schreiben, Größe, beenden, quittieren; andocken, trennen,
   Sitzungen auflisten; Prozessbaum; Shells auflisten). Die Tauri-Kommandos
   der App sind nur noch Hüllen, die eine Anfrage bauen.
-- **Ein `Client`** ist, wer mit dem Host spricht: eine Verbindung. Er hat
-  eine ID, den Namen aus seinem Hello und einen **`EventSink`**, der nimmt,
-  was der Host für ihn meldet: Ausgabe einer Sitzung unter dem Strom, den er
-  beim Start oder Andocken genannt hat, ihr Ende, und dass ein anderer sie
-  übernommen hat. Die App reicht die Ausgabe an den Webview-Channel dieses
-  Stroms und das Ende per `emit_to` an das Fenster (`src-tauri/src/hosts/`).
+- **Ein `Client`** hat eine ID, den Namen aus seinem Hello und einen
+  **`EventSink`**, der nimmt, was der Host für ihn meldet: Ausgabe einer
+  Sitzung unter dem Strom, den er beim Start oder Andocken genannt hat, ihr
+  Ende, und dass ein anderer sie übernommen hat. Die App reicht die Ausgabe
+  an den Webview-Channel dieses Stroms und das Ende per `emit_to` an das
+  Fenster (`src-tauri/src/hosts/`).
 
 Lokal wie entfernt läuft damit jeder Aufruf über Anfrage und Ereignis, über
 dieselbe Verbindung (`host_connection.rs` in der App). Einen in die App
@@ -1030,12 +1059,16 @@ Daraus folgt:
   Strom nur die Sequenzen mit, die einen Modus schalten (Alt-Screen, Maus,
   Bracketed Paste, Cursor, Tastaturmodi), und nennt die eingeschalteten nach
   dem Abspielen, auch wenn ihre Einschalt-Sequenz längst aus dem Behalt
-  gefallen ist. Prompt-Marker, cwd und Kommando-Grenzen entstehen im Frontend
-  beim Abspielen von selbst neu; das Sitzungsmodell bleibt dort.
+  gefallen ist. Ein Reset (`ESC c`) setzt alle zurück, ein Soft-Reset
+  (`CSI ! p`) die, die er auch im Terminal zurücksetzt. Prompt-Marker, cwd
+  und Kommando-Grenzen entstehen im Frontend beim Abspielen von selbst neu;
+  das Sitzungsmodell bleibt dort.
 - **Der Alt-Screen wird nicht behalten.** Was ein Vollbildprogramm gezeichnet
   hat, galt der alten Größe, und ein Terminal führt davon auch keinen
-  Verlauf. Ein andockender Client wird nur in den Alt-Screen gesetzt; das
-  Programm zeichnet neu, wenn er seine Größe setzt.
+  Verlauf. Ein andockender Client wird nur in den Alt-Screen gesetzt, und der
+  Host bittet das Programm, neu zu zeichnen (`ask_for_redraw`: unter Unix
+  `SIGWINCH` an die Vordergrund-Prozessgruppe, unter Windows eine Größe hin
+  und zurück) – eine gleich gebliebene Größe allein meldet kein System.
 - **Ein Client je Sitzung.** Dockt ein zweiter an, endet der Strom des ersten
   und er bekommt `PtyTakenOver` mit dem Namen des neuen (unten). `PtyDetach`
   hängt den Client ab, die Sitzung läuft weiter. Eine übernommene Sitzung
@@ -1058,7 +1091,9 @@ Daraus folgt:
   Schritt, zwei gleichzeitige Andockvorgänge lassen die Sitzung nie einem
   gehören und beim anderen hängen. Reihenfolge: erst die Tabelle aller
   Sitzungen, dann die einer Sitzung, nie umgekehrt; unter der Tabelle
-  geschieht nichts, was blockieren kann.
+  geschieht nichts, was blockieren kann. Starten und Andocken prüfen unter
+  der Tabelle, ob ihr Client noch da ist: ein gerade gegangener bekommt keine
+  Sitzung mehr.
 - **Senden blockiert nie.** Jeder Client hat einen Schreib-Thread, der Rest
   des Dienstes reiht nur ein. Ein Client, der langsam liest (ein hängendes
   `ssh`), hält weder die Leser seiner Sitzungen noch die Anfragen eines
@@ -1069,18 +1104,19 @@ Daraus folgt:
   verschwindet seine Verbindung, bekommt jener `PtyHandedBack`. Eine Sitzung,
   die niemand zeigte, wurde niemandem genommen; und für einen Client, der
   selbst gegangen ist, wartet nichts mehr.
-- **Der Host kennt zu jeder Sitzung ihren Platz** (`SessionPlacement`:
-  Workspace, Tab, Titel, Verzeichnis) und zu jedem Client einen Namen (aus
-  seinem Hello, der Rechnername). Beides sind Worte des Clients, die der Host
-  nur aufhebt und mit `ListSessions` und `GetSession` weitergibt, zusammen mit
-  `Attached` (`nowhere`, `here`, `elsewhere` samt Name). Daran findet ein
-  anderes Cogno eine Shell, und dieses eine, die kein Fenster mehr zeigt.
+- **Der Host kennt zu jeder Sitzung ihren Platz** (`SessionPlacement`) und zu
+  jedem Client einen Namen (aus seinem Hello, der Rechnername). Beides sind
+  Worte des Clients, die der Host nur aufhebt und mit `ListSessions` und
+  `GetSession` weitergibt, zusammen mit `Attached` (`nowhere`, `thisClient`,
+  `otherClient` samt Name). Daran findet ein anderes Cogno eine Shell, und
+  dieses eine, die kein Fenster mehr zeigt.
 - **Was beim Verschwinden eines Clients geschieht, entscheidet der Start**
   (`SessionLifetime`): Die Sitzung läuft ohne Client weiter, oder sie endet
   mit ihm. Dasselbe gilt, wenn ihr Besitzer (das Fenster) freigegeben wird.
   Die App setzt es aus `terminal.keep_shells_running` (Standard: endet mit
-  dem Client, wie es vor diesem Schritt immer war). Ein ausdrücklich
-  geschlossener Tab beendet seine Shell in jedem Fall.
+  dem Client). Ein ausdrücklich geschlossener Tab beendet seine Shell in
+  jedem Fall. Das Aufräumen eines gegangenen Clients läuft auch nach einer
+  Panik seines Threads (ein Drop-Wächter).
 - **Der Handshake der Shell-Integration wird eigens behalten.** Er kommt
   einmal, beim Start der Shell, und ohne ihn kennt ein Client weder Shell noch
   Fähigkeiten. Ist er aus dem Behalt gefallen, steht er beim Abspielen vorn.
@@ -1091,86 +1127,6 @@ Bekannte Grenzen: Programme, die ohne Alt-Screen über mehrere Zeilen
 zeichnen, sehen nach dem Andocken kurz unordentlich aus, bis sie neu malen;
 unter Windows liefert ConPTY sein eigenes, für die alte Breite umbrochenes
 Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
-
-**Andocken im Frontend.** Ob eine Shell läuft, entscheidet der Dienst, nie
-ein Stand im Frontend: Eine Sitzung, die eine laufende Shell zeigen soll,
-fragt den Dienst frisch nach genau ihr (`GetSession`: Profil und Token, oder
-`sessionNotFound`) und dockt dann an. Verschwindet die Shell zwischen Frage
-und Andocken, scheitert das Andocken mit `sessionNotFound`. Kein Cache, kein
-Zeitfenster.
-
-- Ein Pane, dessen Shell schon läuft, bekommt eine Sitzung, die **andockt
-  statt startet** (`SessionHost.showRunning`): mit dem Token, mit dem die
-  Shell gestartet wurde, ohne gespeicherten Scrollback (der Behalt des Hosts
-  ist neuer) und mit dem Shell-Typ der laufenden Shell (`runningShell`). Hat
-  der Host keinen Token zu ihr, gilt ihre Integration nicht als
-  vertrauenswürdig und die Sitzung nimmt ein Geheimnis, das niemand
-  zurücksenden kann. Das ist der dritte Weg neben Start und
-  Wiederherstellung (2.5), und er gilt auch nach einem Neuladen der Webview.
-- **Beim Start des Fensters** fragt die Workbench einmal, welche Shells auf
-  diesem Rechner laufen (`ShellsFoundAtStart`), vor dem ersten Pane (nicht
-  vor dem ersten Bild: den Dienst zu starten kann dauern). Das ist nur ein
-  Hinweis, damit ein Pane mit laufender Shell nicht erst seinen Scrollback
-  abspielt und dann startet; jede Shell wird einmal abgeholt. Stimmt der
-  Hinweis nicht mehr, sagen es die Codes: Ein Start unter einer laufenden ID
-  bekommt `shellAlreadyRuns`, ein Andocken an eine beendete `sessionNotFound`.
-- **Eine laufende Shell wird nie für einen Start beendet.** Wollte ein Pane
-  starten, weil Cogno die Shell unter seiner ID nicht kannte, lehnt der
-  Dienst den Start ab (`Response::ShellAlreadyRuns`, im Webview der Code
-  `shellAlreadyRuns`). Die Sitzung bleibt `starting` und nennt das als Fakt
-  (`shellAlreadyRuns`); die Sitzungsfabrik fragt nach der Shell und dockt an,
-  auch wenn ein anderes Cogno sie gerade zeigt. War die Shell, an die eine
-  Sitzung andocken sollte, inzwischen beendet, nennt sie den Fakt
-  `shellGone`: auf diesem Rechner startet die Fabrik eine neue, auf einem
-  anderen sagt das Pane, dass sie fehlt.
-- Ein Pane eines anderen Rechners (`Pane.host`, unten) dockt **nur** an: Es
-  zeigt eine Shell, die dort läuft, und startet nie eine. Bis die Verbindung
-  steht und der Rechner gesagt hat, dass die Shell läuft, hat es **keine
-  Sitzung**; es wartet (`WaitingPanes`) und zeigt, wie weit das ist
-  (`WaitingPaneComponent`: verbinden, nach der Shell fragen, Verbindung
-  gescheitert, keine Antwort, Shell weg). Ein Retry gibt es nur, wo er etwas
-  ändern kann (nicht bei `notConfigured`, `invalidDestination`,
-  `thisCognoTooOld`, `hostTooOld`). Verbindet der Nutzer den Rechner
-  anderswo, fragt das wartende Pane von selbst. Wird es geschlossen, lässt es
-  die Shell nur los (`PtyDetach`): Sie gehört dem Cogno dort. Die Regel „ein
-  geschlossener Tab beendet seine Shell" gilt für die Shells dieses Rechners.
-  Das Layout des anderen Fensters wandert nicht mit; jede Shell bekommt hier
-  einen eigenen Tab.
-- Übernimmt ein anderes Cogno eine Sitzung, wird sie hier `takenOver`
-  (Runtime-Achse, 2.3) und nennt, wo sie jetzt gezeigt wird: die Shell läuft
-  weiter, gehört aber nicht mehr dieser App — ihr Schließen beendet nichts.
-  Die PTY merkt sich die Übernahme, damit auch hört, wer sich erst danach
-  anmeldet (eine Übernahme kann ein Andocken kreuzen). „Hier zeigen"
-  verwirft die Sitzung und dockt mit einer neuen an
-  (`SessionHostFactory.takeBack`, aus dem Pane über `ReattachTerminal` auf dem
-  Bus); das Terminal bleibt dabei, Features hören kein `TerminalRemoved`. Was
-  hier getippt wird, geht nach der Übernahme nirgends mehr hin. Das Andocken
-  geschieht auch von selbst, wenn der Host meldet, dass die Shell wieder frei
-  ist: Die Sitzung, die noch wartet, nennt das als Fakt (`handedBack`), die
-  Sitzungsfabrik dockt neu an. Ein Retry nach einem Fehler startet eine
-  Shell nur auf diesem Rechner; auf einem anderen dockt er erneut an.
-- **Die Sitzungsfabrik** (`grid-list/+state/`) ist in drei Teile geschnitten:
-  `SessionHostFactory` entscheidet, was ein Pane bekommt, und hält die
-  Sitzungen und den Platz jedes Panes auf dem Bildschirm; `SessionScopeBuilder`
-  baut eine Sitzung samt ihrem Injector und baut sie wieder ab;
-  `WaitingPanes` führt die Panes, die auf ihren Rechner warten.
-- **Keine Shell bleibt ohne Tab.** Eine Shell kann weiterlaufen, ohne dass
-  ein Pane sie zeigt (Absturz; ein geschlossener Tab, während ein anderes
-  Cogno sie zeigte). Beim Start gibt das Fenster, mit dem die App startete,
-  jeder Shell dieses Rechners, die niemand zeigt und für die **kein
-  gespeicherter Workspace** ein Pane hat, einen Tab im Default-Workspace
-  (`WorkspaceStateUseCase.adoptLeftOverShells`) und meldet das. Shells mit
-  Pane in einem Workspace gehören dorthin, auch wenn er nicht offen ist; die
-  übrigen Workspaces werden nie verändert.
-- **Die Plätze pflegt die Workbench** (`SessionPlacementPublisher`): Für jede
-  laufende Shell dieses Rechners sagt sie dem Host, wo sie sitzt, und wieder,
-  wenn sich Workspace, Tab, Titel oder Verzeichnis ändern. Eine Shell eines
-  anderen Rechners, die hier gezeigt wird, behält den Platz im Cogno, zu dem
-  sie gehört.
-
-Grenze: Das Sitzungsmodell entsteht beim Andocken aus dem Behalt neu. Was
-vor dessen Anfang lag, kennt es nicht — etwa eine vor langer Zeit gestartete
-innere Shell (`wsl`, `ssh`), in der die Sitzung noch steckt.
 
 **Wie man den Dienst erreicht.**
 
@@ -1200,19 +1156,28 @@ innere Shell (`wsl`, `ssh`), in der die Sitzung noch steckt.
 
 **Lebenslauf des Dienstes.** Die App sucht ihn über die Endpoint-Datei und
 startet ihn abgekoppelt, wenn keiner läuft (`daemon_start.rs`). Ob einer
-läuft, sagen Prozess-ID und Startzeit in der Endpoint-Datei, nicht ein
-Verbindungsversuch: Ein Dienst, der gerade langsam antwortet, wird abgewartet
-und nie ersetzt, sonst liefen seine Shells unerreichbar weiter. Gestartet
-wird unter einer Sperre (`host.lock`, eine Dateisperre des Systems), damit
-zwei Cognos, die zugleich starten, einen Dienst starten. Er beendet sich
-selbst, wenn er eine Weile weder Client noch Sitzung hat, und nimmt seine
+läuft, sagt nur er selbst: Er gilt als da, wenn er auf seinem Port das Token
+annimmt und mit der Kennung des Protokolls antwortet (`reach`, mit
+Zeitlimit). Ein Dienst, der antwortet, wird nie ersetzt, sonst liefen seine
+Shells unerreichbar weiter; einer, dessen Prozess läuft, wird eine Weile
+abgewartet, bevor ein neuer startet. Prozess-ID oder Uhrzeit entscheiden
+nichts – ein Uhrsprung darf keinen zweiten Dienst starten. Gestartet wird
+unter einer Sperre (`host.lock`, eine Dateisperre des Systems), damit zwei
+Cognos, die zugleich starten, einen Dienst starten. Er beendet sich selbst,
+wenn er eine Weile weder Client noch Sitzung hat, und nimmt seine
 Endpoint-Datei mit, bevor er den letzten Client annimmt. Unter Windows läuft
 er aus einer Kopie des Binarys (`~/.cogno/host/<version>-<bauzeit>/`, erst
 daneben kopiert, dann umbenannt): Die Datei eines laufenden Programms lässt
 sich dort nicht ersetzen, und der Dienst überlebt die App — ein Update würde
 sonst an ihm scheitern oder ihn samt allen Shells beenden.
-Bricht die Verbindung der App zum Dienst ab, enden ihre lokalen Terminals;
-beim nächsten Start einer Shell verbindet sie neu und startet ihn bei Bedarf.
+
+**Ein Dienst eines älteren Cognos** (`hostTooOld` auf diesem Rechner) lebt
+weiter, solange er Shells hat, und die neue App kann mit ihm nicht reden. Der
+Nutzer kann ihn beenden (`host_end_local`, im Pane „End old host"): Die App
+prüft über `reach`, dass hinter der Prozess-ID der Dienst steht, beendet den
+Prozess unabhängig von seiner Version (`end_running_daemon`) und startet die
+Panes neu, die an ihm scheiterten. Seine Shells enden mit ihm; das sagt die
+Meldung vorher.
 
 **Die Rahmung** (`wire.rs`) ist für beide Wege dieselbe:
 
@@ -1228,13 +1193,16 @@ beim nächsten Start einer Shell verbindet sie neu und startet ihn bei Bedarf.
   Version. Eine neue Version ergänzt das Protokoll und wird nur genutzt, wo
   beide Seiten sie kennen; `OLDEST_PROTOCOL_VERSION` steigt nur, wenn sie
   aufgibt, was ältere brauchen.
-- **Was eine spätere Version ergänzt, ist der älteren `Unknown`, nie eine
-  kaputte Verbindung.** Anfragen, Antworten, Ereignisse und Fehlercodes sind
-  getaggte Enums mit `#[serde(other)] Unknown`; eine unbekannte Anfrage
-  beantwortet der Host mit `unknownRequest`, unbekannte Frame-Arten werden
-  übersprungen. Die Leitungstypen stehen alle in `protocol.rs`, keine sind
-  von den Modulen geliehen, die die Arbeit tun; ein Test hält das Format von
-  Version 1 fest.
+- **Was eine spätere Version ergänzt, kostet höchstens eine Anfrage, nie die
+  Verbindung.** Anfragen, Antworten, Ereignisse und Fehlercodes sind getaggte
+  Enums mit `#[serde(other)] Unknown`, ebenso `Attached` und `ExitReason`. Ein
+  Frame wird erst als Hülle (`type`, `id`) gelesen: Passt der Inhalt nicht,
+  antwortet der Host dieser einen Anfrage mit `invalidRequest`, eine
+  unbekannte Art beantwortet er mit `unknownRequest`; beim Client wird eine
+  unlesbare Antwort zum Fehler `unknown` dieser Anfrage und ein unlesbares
+  Ereignis übersprungen. Nur was gar kein JSON ist, beendet die Verbindung.
+  Die Leitungstypen stehen alle in `protocol.rs`, keine sind von den Modulen
+  geliehen, die die Arbeit tun; ein Test hält das Format von Version 1 fest.
 - Danach laufen in beide Richtungen **Frames** aus Länge, Art und Inhalt.
   Eine `Request` (mit ID) bekommt eine Antwort mit derselben ID; ein `Post`
   (Getipptes, Größe, Platz, Quittungen) bekommt keine. Ereignisse sind JSON;
@@ -1260,60 +1228,194 @@ Anfragen, die dauern können (`Request::may_block`), beantwortet der Dienst
 auf einem eigenen Thread, damit Eingabe und Quittungen der übrigen Sitzungen
 nicht warten.
 
-**Eine Sitzung läuft auf einem Host.** Das ist dieser Rechner oder einer aus
-`remote.hosts`. Den Host nennt das **Pane** (`Pane.host`, mit dem Layout
+**Die App als Client** (`hosts/`, `host_connection.rs`). Die Verbindungen
+(`connections.rs`), die Tabelle Terminal → Host, Verbindung, Fenster und
+Stream mit einem Wächter, der nach einer gescheiterten Anfrage den alten
+Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
+(`webview.rs`) sind getrennt; `mod.rs` ist die Fassade für die Befehle.
+
+- **Verbinden.** `host_connect` startet `ssh <ziel> ".cogno/bin/cogno"
+  server --stdio` und hält die Verbindung unter dem Namen des Hosts; die
+  Verbindung zum eigenen Dienst hält sie ebenso, für sich aufgebaut: ein
+  Passwort, auf das `ssh` wartet, hält die Terminals hier nicht auf.
+  Entfernte Verbindungen entstehen eine nach der anderen (ein Passwort zur
+  Zeit). Bis der Host sich vorgestellt hat, kann der Nutzer aufgeben
+  (`host_disconnect` während des Verbindens): der `ssh`-Prozess endet. Endet
+  `ssh` mit 255, bevor ein Cogno antwortete, konnte es nicht verbinden
+  (`connectFailed`); sonst antwortete dort keins (`noCognoThere`). Beide
+  Meldungen tragen, was `ssh` auf stderr sagte.
+- **Routen.** Jedes Terminal der App steht in der Tabelle mit der Verbindung,
+  über die es kam; jede Anfrage mit Terminal-ID geht über genau diese, ohne
+  dass das Frontend den Host nennt, und jede Nachricht an das richtige
+  Fenster (2.6). Ist diese Verbindung weg, geht die Anfrage nirgends hin –
+  sie baut keine neue auf. Getipptes, Größenänderungen und Quittungen werden
+  gesendet, ohne auf die Antwort zu warten. Eine Verbindung schreibt über
+  einen eigenen Thread, kein Befehl blockiert auf einem hängenden `ssh`.
+- **Auflegen** (`HostConnection::hang_up`) beendet die Verbindung sofort,
+  auch wenn eine Anfrage sie noch hält, und lässt alles scheitern, was auf
+  eine Antwort wartet. Ihre Terminals enden mit `hungUp`. Bricht die
+  Verbindung dagegen von selbst ab, enden sie mit `connectionLost`, und alle
+  Fenster hören `host-disconnected`.
+- **Wer nicht antwortet, hält nur sich auf.** Die Prozesse unter den Shells
+  (`terminal_processes`) fragt die App bei allen Hosts zugleich und wartet
+  je Host höchstens zwei Sekunden.
+- Gestartet wird nur auf dem Dienst dieses Rechners (`pty_spawn` kennt
+  keinen Host); an eine Shell eines anderen Rechners wird nur angedockt
+  (`pty_attach`).
+
+Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
+
+- **Das Fenster einer Sitzung.** Für den Host ist es ein Name ohne
+  Bedeutung; die App nennt das Fenster, das sie startete oder andockte. Es
+  steht an der Sitzung selbst, damit Spawn und Aufräumen eines Fensters
+  unter einem Lock entscheiden (2.6, Entscheidung 3 und 4). `WindowClosed`
+  beendet alle Sitzungen eines Fensters, außer denen, die ihren Client
+  überleben. Der Name gilt je Client: zwei Apps, deren Fenster beide `main`
+  heißen, sind zwei Besitzer.
+- **`COGNO_PORT` und `COGNO_TOKEN`.** Der HTTP-Server gehört der App; sie
+  reicht beide als zusätzliche Umgebung in den Spawn. Der Host setzt sie nach
+  der Umgebung des Profils, ein Profil überschreibt sie also nicht.
+
+#### 2.7.2 Hosts im Frontend
+
+**Eine Sitzung läuft auf einem Host.** Das ist dieser Rechner oder ein
+Remote. Den Host nennt das **Pane** (`Pane.host`, mit dem Layout
 gespeichert), nicht das Shell-Profil: Ein anderer Rechner wird ferngesteuert
 — Cogno zeigt Shells, die dort schon laufen, und startet dort keine. Ein
-solches Pane kommt aus dem Remote-Panel (unten). Die Zuständigkeiten:
+solches Pane kommt aus dem Remote-Panel (unten). Bekommt ein Pane eine neue
+Terminal-ID (ein kopierter Workspace, eine doppelte ID), zeigt es nicht mehr
+die Shell, mit der es gespeichert wurde: es startet eine neue auf diesem
+Rechner und verliert Host und Verzeichnis des anderen (`asNewLocalPane`).
 
-- **App (Rust, `hosts/`, `host_connection.rs`):** Die Verbindungen
-  (`connections.rs`), die Tabelle Terminal → Host, Verbindung, Fenster und
-  Stream mit einem Wächter, der nach einer gescheiterten Anfrage den alten
-  Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
-  (`webview.rs`) sind getrennt; `mod.rs` ist die Fassade für die Befehle.
-  Eine Verbindung schreibt über einen eigenen Thread, kein Befehl blockiert
-  auf einem hängenden `ssh`. `host_connect` startet
-  `ssh <ziel> ".cogno/bin/cogno" server --stdio` und hält die Verbindung
-  unter dem Namen des Hosts; die Verbindung zum eigenen Dienst hält sie
-  ebenso. Jedes Terminal der App steht in einer Tabelle Terminal → Host und
-  Fenster; jede Anfrage mit Terminal-ID geht darüber an den richtigen Host,
-  ohne dass das Frontend ihn nennt, und jede Nachricht an das richtige
-  Fenster (2.6). Getipptes, Größenänderungen und
-  Quittungen werden gesendet, ohne auf die Antwort zu warten. Bricht die
-  Verbindung ab, enden die Terminals dieses Hosts (`pty-exit`), und alle
-  Fenster hören `host-disconnected`. Gestartet wird nur auf dem Dienst dieses
-  Rechners (`pty_spawn` kennt keinen Host); an eine Shell eines anderen
-  Rechners wird nur angedockt (`pty_attach`). Eine Verbindung zum eigenen
-  Dienst wird für sich aufgebaut: ein Passwort, auf das `ssh` wartet, hält
-  die Terminals hier nicht auf.
+Die Zuständigkeiten:
+
 - **`platform/hosts.ts`:** verbinden, auflegen, Sitzungen eines Hosts
-  auflisten, eine erfragen und beenden, Shell-Integration ablegen,
-  Standardbefehl, `onDisconnected`.
+  auflisten, eine erfragen und beenden, den alten Dienst dieses Rechners
+  beenden, Shell-Integration ablegen, Standardbefehl, `onDisconnected`.
 - **Workbench (`core/workbench/hosts/`):** Alles zu Hosts, dem Dienst dieses
-  Rechners wie den entfernten. `RemoteHostsService` verbindet,
-  wenn der Nutzer es verlangt oder ein Pane den Host braucht, einmal je Host,
-  führt den Stand je Host (`connections$`) und zeigt, was `ssh` dabei fragt,
-  mit dem nackten Prompt-Dialog (2.1). Ein Fehlschlag trägt seinen Code
-  (`ConnectFailure`). Ein Pane, dessen Host noch nicht verbunden ist, wartet
-  (oben, `WaitingPanes`); seine Sitzung entsteht erst, wenn die Verbindung
-  steht und der Host gesagt hat, dass die Shell läuft.
+  Rechners wie den entfernten. `RemoteHostsService` verbindet, wenn der
+  Nutzer es verlangt oder ein Pane den Host braucht, einmal je Host, führt
+  den Stand je Host (`connections$`) und zeigt, was `ssh` dabei fragt, mit
+  dem nackten Prompt-Dialog (2.1). Ein Fehlschlag trägt seinen Code
+  (`ConnectFailure`); ob ein neuer Versuch etwas ändern kann, sagt
+  `isWorthRetrying` (nicht bei `notConfigured`, `invalidDestination`,
+  `thisCognoTooOld`, `hostTooOld`).
 - **Vertrag und Feature:** `RemoteShellsPort` (`core/api/`, Adapter in
-  `core/workbench/api-adapters/`) gibt einem Feature die Rechner der Config
-  mit ihrem Verbindungsstand, das Pflegen von `remote.hosts`, Verbinden und
-  Auflegen, die Shells eines Rechners und zwei Dinge mit einer Shell: hier
-  zeigen (zum Pane gehen, zurückholen oder einen Tab öffnen), beenden.
-  `features/remote` ist das Panel dazu: ein Baum Rechner → Workspace → Tab →
-  Shell, nur für die Rechner aus `remote.hosts`. Dieser Rechner steht dort
-  nicht: Was auf ihm läuft, zeigen seine Tabs. Verbindung und Sitzungen
-  bleiben Core — das Feature ist nur die Ansicht.
+  `core/workbench/api-adapters/`) gibt einem Feature die Remotes der Config
+  mit ihrem Verbindungsstand (bei einem Fehlschlag mit `worthRetrying`), das
+  Pflegen von `remote.hosts` (das Ziel ist ein Wort und nie eine Option,
+  `isSshDestination`, geprüft beim Speichern wie in Rust), Verbinden und
+  Auflegen, die Shells eines Remotes und zwei Dinge mit einer Shell: hier
+  zeigen (zum Pane gehen, zurückholen oder einen Tab öffnen), beenden. Wer
+  eine Shell zeigt, löst der Adapter für das Fenster auf: `thisClient` des
+  Hosts ist dieses Fenster, wenn hier ihre Sitzung läuft, sonst ein anderes.
+  `features/remote` ist das Panel dazu: ein Baum Remote → Workspace → Tab →
+  Shell. Dieser Rechner steht dort nicht: Was auf ihm läuft, zeigen seine
+  Tabs. Verbindung und Sitzungen bleiben Core — das Feature ist nur die
+  Ansicht.
 - **Session:** bekommt als Wert, wo ihre Shell läuft (`SessionBackend`: Host
   und dessen Betriebssystem). Daraus leiten sich Shell-Kontext,
   Pfadadapter und das ConPTY-Verhalten des Renderers ab — nicht aus dem
   Betriebssystem des Fensters. `OsPlatform` braucht die Sitzung nur noch für
   das, was das Fenster betrifft (welche Taste einen Link öffnet).
 
-Warum die Sitzung warten muss: Sie braucht das Betriebssystem ihrer Shell
-schon beim Entstehen, und das sagt erst der verbundene Host.
+**Andocken.** Ob eine Shell läuft, entscheidet der Dienst, nie ein Stand im
+Frontend: Eine Sitzung, die eine laufende Shell zeigen soll, fragt den
+Dienst frisch nach genau ihr (`GetSession`: Profil und Token, oder
+`sessionNotFound`) und dockt dann an. Verschwindet die Shell zwischen Frage
+und Andocken, scheitert das Andocken mit `sessionNotFound`. Kein Cache, kein
+Zeitfenster.
+
+- Ein Pane, dessen Shell schon läuft, bekommt eine Sitzung, die **andockt
+  statt startet** (`SessionHost.showRunning`): mit dem Token, mit dem die
+  Shell gestartet wurde, ohne gespeicherten Scrollback (der Behalt des Hosts
+  ist neuer) und mit dem Shell-Typ der laufenden Shell (`runningShell`). Hat
+  der Host keinen Token zu ihr, gilt ihre Integration nicht als
+  vertrauenswürdig und die Sitzung nimmt ein Geheimnis, das niemand
+  zurücksenden kann. Das ist der dritte Weg neben Start und
+  Wiederherstellung (2.5), und er gilt auch nach einem Neuladen der Webview.
+- **Übernehmen ist Sache des Nutzers.** Zeigt ein anderes Cogno (oder ein
+  anderes Fenster) die Shell, die ein Pane findet, nimmt das Pane sie nicht:
+  seine Sitzung beginnt `takenOver` (`SessionHost.startShownElsewhere`) und
+  sagt, wo sie gezeigt wird. Genommen wird sie, wenn der Nutzer es will:
+  „Show it here" im Pane, oder „zeigen" im Remote-Panel, das den neuen Tab
+  dafür vormerkt (`SessionHostFactory.takeOverWhenOpened`). Das gilt beim
+  Wiederherstellen eines Workspaces wie für ein Pane, dessen Start eine
+  laufende Shell fand.
+- **Beim Start des Fensters** fragt die Workbench einmal, welche Shells auf
+  diesem Rechner laufen (`ShellsFoundAtStart`), vor dem ersten Pane (nicht
+  vor dem ersten Bild: den Dienst zu starten kann dauern). Das ist nur ein
+  Hinweis, damit ein Pane mit laufender Shell nicht erst seinen Scrollback
+  abspielt und dann startet; jede Shell wird einmal abgeholt. Stimmt der
+  Hinweis nicht mehr, sagen es die Codes: Ein Start unter einer laufenden ID
+  bekommt `shellAlreadyRuns`, ein Andocken an eine beendete `sessionNotFound`.
+- **Eine laufende Shell wird nie für einen Start beendet.** Wollte ein Pane
+  starten, weil Cogno die Shell unter seiner ID nicht kannte, lehnt der
+  Dienst den Start ab (`Response::ShellAlreadyRuns`, im Webview der Code
+  `shellAlreadyRuns`). Die Sitzung bleibt `starting` und nennt das als Fakt
+  (`shellAlreadyRuns`); die Sitzungsfabrik fragt nach der Shell und dockt an
+  – oder sagt, wo sie gezeigt wird. War die Shell, an die eine Sitzung
+  andocken sollte, inzwischen beendet, nennt sie den Fakt `shellGone`: auf
+  diesem Rechner startet die Fabrik eine neue, auf einem anderen sagt das
+  Pane, dass sie fehlt.
+- Ein Pane eines anderen Rechners dockt **nur** an: Es zeigt eine Shell, die
+  dort läuft, und startet nie eine. Bis die Verbindung steht und der Rechner
+  gesagt hat, dass die Shell läuft, hat es **keine Sitzung**; es wartet
+  (`WaitingPanes`) und zeigt, wie weit das ist (`WaitingPaneComponent`:
+  verbinden, nach der Shell fragen, Verbindung gescheitert, keine Antwort,
+  Shell weg). Ein Retry gibt es nur, wo er etwas ändern kann. Verbindet der
+  Nutzer den Rechner anderswo, fragt das wartende Pane von selbst. Wird es
+  geschlossen, lässt es die Shell nur los (`PtyDetach`): Sie gehört dem
+  Cogno dort. Die Regel „ein geschlossener Tab beendet seine Shell" gilt für
+  die Shells dieses Rechners. Das Layout des anderen Fensters wandert nicht
+  mit; jede Shell bekommt hier einen eigenen Tab. Warum die Sitzung warten
+  muss: Sie braucht das Betriebssystem ihrer Shell schon beim Entstehen, und
+  das sagt erst der verbundene Host.
+- Übernimmt ein anderes Cogno eine Sitzung, wird sie hier `takenOver`
+  (Runtime-Achse, 2.3) und nennt, wo sie jetzt gezeigt wird: die Shell läuft
+  weiter, gehört aber nicht mehr dieser App — ihr Schließen beendet nichts.
+  Die PTY merkt sich die Übernahme, damit auch hört, wer sich erst danach
+  anmeldet (eine Übernahme kann ein Andocken kreuzen). „Hier zeigen"
+  verwirft die Sitzung und dockt mit einer neuen an
+  (`SessionHostFactory.takeBack`, aus dem Pane über `ReattachTerminal` auf dem
+  Bus); das Terminal bleibt dabei, Features hören kein `TerminalRemoved`. Ist
+  der Rechner dafür nicht verbunden, wartet das Pane wieder auf ihn. Was
+  hier getippt wird, geht nach der Übernahme nirgends mehr hin. Das Andocken
+  geschieht auch von selbst, wenn der Host meldet, dass die Shell wieder frei
+  ist: Die Sitzung, die noch wartet, nennt das als Fakt (`handedBack`), die
+  Sitzungsfabrik dockt neu an. Wird ein Pane geschlossen, dem die Shell
+  gerade zurückgegeben wurde, endet eine Shell dieses Rechners mit ihm.
+- **Ein Pane geht nur, wenn der Nutzer es will** (`closesPane`): wenn die
+  Shell selbst endete (`exit`) oder der Nutzer beim Host auflegte (`hungUp`).
+  Jedes andere Ende lässt das Pane stehen, und es sagt, was geschah. Bricht
+  die Verbindung zu einem anderen Rechner ab, wartet das Pane wieder auf ihn
+  – die Shell läuft dort womöglich weiter. Endet eine Shell dieses Rechners
+  anders (von einem anderen Cogno beendet, PTY kaputt, Verbindung zum Dienst
+  weg), bietet das Pane eine neue an (`SessionHost.retry`; läuft die alte
+  noch, wird sie gezeigt).
+- **Die Sitzungsfabrik** (`grid-list/+state/`) ist in drei Teile geschnitten:
+  `SessionHostFactory` entscheidet, was ein Pane bekommt, und hält die
+  Sitzungen und den Platz jedes Panes auf dem Bildschirm; `SessionScopeBuilder`
+  baut eine Sitzung samt ihrem Injector und baut sie wieder ab – auch ihre
+  Ansicht aus dem DOM, damit eine ersetzte Sitzung keine zurücklässt;
+  `WaitingPanes` führt die Panes, die auf ihren Rechner warten.
+- **Keine Shell bleibt ohne Tab.** Eine Shell kann weiterlaufen, ohne dass
+  ein Pane sie zeigt (Absturz; ein geschlossener Tab, während ein anderes
+  Cogno sie zeigte). Beim Start gibt das Fenster, mit dem die App startete,
+  jeder Shell dieses Rechners, die niemand zeigt und für die **kein
+  gespeicherter Workspace** ein Pane hat, einen Tab im Default-Workspace
+  (`WorkspaceStateUseCase.adoptLeftOverShells`) und meldet das. Shells mit
+  Pane in einem Workspace gehören dorthin, auch wenn er nicht offen ist; die
+  übrigen Workspaces werden nie verändert.
+- **Die Plätze pflegt die Workbench** (`SessionPlacementPublisher`): Für jede
+  laufende Shell dieses Rechners sagt sie dem Host, wo sie sitzt, und wieder,
+  wenn sich Workspace, Tab, Titel oder Verzeichnis ändern. Eine Shell eines
+  anderen Rechners, die hier gezeigt wird, behält den Platz im Cogno, zu dem
+  sie gehört.
+
+Grenze: Das Sitzungsmodell entsteht beim Andocken aus dem Behalt neu. Was
+vor dessen Anfang lag, kennt es nicht — etwa eine vor langer Zeit gestartete
+innere Shell (`wsl`, `ssh`), in der die Sitzung noch steckt.
 
 **Der Host steht im Shell-Kontext** (`host`, fehlt für diesen Rechner). Eine
 Shell, die in einer Sitzung auf einem Host gestartet wird, bleibt auf ihm.
@@ -1346,39 +1448,6 @@ die Leitung: der Dienst nimmt nur relative Pfade unterhalb seines
 Integrationsverzeichnisses an. Auf einen anderen Rechner wird nichts gelegt:
 Cogno startet dort keine Shell, es zeigt nur, was das Cogno dort mit seinen
 eigenen Skripten gestartet hat.
-
-Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
-
-- **Das Fenster einer Sitzung.** Für den Host ist es ein Name ohne
-  Bedeutung; die App nennt das Fenster, das sie startete oder andockte. Es
-  steht an der Sitzung selbst, damit Spawn und Aufräumen eines Fensters
-  unter einem Lock entscheiden (2.6, Entscheidung 3 und 4). `WindowClosed`
-  beendet alle Sitzungen eines Fensters, außer denen, die ihren Client
-  überleben. Der Name gilt je Client: zwei Apps, deren Fenster beide `main`
-  heißen, sind zwei Besitzer.
-- **`COGNO_PORT` und `COGNO_TOKEN`.** Der HTTP-Server gehört der App; sie
-  reicht beide als zusätzliche Umgebung in den Spawn. Der Host setzt sie nach
-  der Umgebung des Profils, ein Profil überschreibt sie also nicht.
-
-**Begriffe.** Rund um Hosts heißt jede Sache überall gleich, in Rust wie in
-TypeScript:
-
-| Begriff | Bedeutung | Im Code |
-|---|---|---|
-| Host | Der Dienst eines Rechners samt seinem `Host`. Als Feld eines Panes, Backends oder Shell-Kontexts der Name eines Rechners aus `remote.hosts`; fehlt er, ist es dieser Rechner | `Host`, `Pane.host`, `SessionBackend.host` |
-| Sitzung | Eine Shell samt PTY auf einem Host, geschlüsselt nach der Terminal-ID. Im Frontend steuert sie ein `SessionHost`; Variablen, die einen halten, heißen `session` | `Session`, `SharedSession`, `SessionHost`, `TerminalId` |
-| Client | Eine Verbindung zu einem Host, mit ID und Namen aus ihrem Hello | `Client`, `ClientId`, `ClientHello` |
-| Fenster | Das Fenster eines Clients, dem eine Sitzung gehört; mit dem Client ihr Besitzer | `WindowLabel`, `Owner`, `WindowClosed` |
-| Platz | Wo eine Sitzung im Cogno sitzt, dem sie gehört: Workspace, Tab, Titel, Verzeichnis | `SessionPlacement`, `PtyPlace` |
-| Starten | Eine neue Shell beginnen; nur auf diesem Rechner | `PtySpawn`, `spawn` |
-| Andocken, Abhängen | Ein Client zeigt eine laufende Sitzung, oder nicht mehr; nur im Protokoll. Das Einhängen einer Ansicht ins DOM heißt `mount` | `PtyAttach`, `PtyDetach`, `Attached` |
-| Zeigen | Was der Nutzer im Remote-Panel will: zum Pane gehen, zurückholen oder einen Tab öffnen | `RemoteShellsPort.show` |
-| Übernommen, zurückgegeben | Ein anderer Client dockte an; der ließ wieder los | `PtyTakenOver`, `PtyHandedBack`, Fakt `handedBack` |
-| Zurückholen | Eine übernommene Sitzung hier wieder zeigen | `takeBack`, `ReattachTerminal` |
-| Beenden | Eine Sitzung auf Wunsch enden lassen | `PtyKill`, `host_kill_session` |
-| Ende | Eine Sitzung endete, mit Grund | `PtyExit`, `ExitReason`, `TerminalExit` |
-| Lebensdauer | Ob eine Sitzung ihren Client überlebt | `SessionLifetime` |
-| Strom | Der Ausgabekanal eines Andockens | `StreamId` |
 
 ## 3. Das Protokoll (`core/api/`)
 

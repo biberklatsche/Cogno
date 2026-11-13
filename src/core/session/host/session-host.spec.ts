@@ -40,7 +40,6 @@ vi.mock("@cogno/core/terminal/pty", () => {
     onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
     onHandedBack = vi.fn().mockReturnValue({ dispose: vi.fn() });
     attach = vi.fn().mockResolvedValue(undefined);
-    kill = vi.fn();
     isLive = true;
     faults$ = new Subject();
   }
@@ -418,7 +417,11 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
 
     host.failStart(new HostError("connectionLost", "The connection is gone"));
 
-    expect(host.runtime).toEqual({ status: "failed", reason: "The connection is gone" });
+    expect(host.runtime).toEqual({
+      status: "failed",
+      reason: "The connection is gone",
+      code: "connectionLost",
+    });
   });
 
   it("says so when the running shell it was to show had ended by then", async () => {

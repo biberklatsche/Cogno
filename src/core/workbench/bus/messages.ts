@@ -29,6 +29,7 @@ import {
   BlurTerminalAction,
   FocusTerminalAction,
   ReattachTerminalAction,
+  ReplaceOldLocalHostAction,
   TerminalRemovedAction,
 } from "@cogno/core/workbench/bus/terminal/actions";
 import {
@@ -55,6 +56,7 @@ export type AppMessage =
   | BlurTerminalAction
   | ActionFiredEvent
   | ReattachTerminalAction
+  | ReplaceOldLocalHostAction
   | TerminalRemovedAction
   | FocusActiveTerminalAction
   | NotificationEvent

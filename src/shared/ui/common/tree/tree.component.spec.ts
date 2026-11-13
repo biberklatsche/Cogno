@@ -13,12 +13,12 @@ type Node = { name: string; children?: Node[] };
   imports: [TreeComponent, TreeRowDirective, TreeDetailDirective],
   template: `
     <app-tree [nodes]="nodes()" [childrenOf]="childrenOf" [keyOf]="keyOf" [expandAll]="expandAll()">
-      <ng-template appTreeRow let-node let-open="open" let-toggle="toggle">
+      <ng-template appTreeRow [appTreeRowOf]="nodes()" let-node let-open="open" let-toggle="toggle">
         <button class="name" [attr.data-open]="open" (click)="toggle()">
           {{ node.name }}
         </button>
       </ng-template>
-      <ng-template appTreeDetail let-node>
+      <ng-template appTreeDetail [appTreeDetailOf]="nodes()" let-node>
         @if (node.name === "src") {
           <span class="detail">3 files</span>
         }

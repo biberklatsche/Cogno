@@ -73,7 +73,9 @@ export type TerminalExitContract =
   /** Reading or writing the PTY failed. */
   | { kind: "ptyFailed" }
   /** The connection to its host broke; the shell may run on there. */
-  | { kind: "connectionLost" };
+  | { kind: "connectionLost" }
+  /** The user hung up on its host; the shell runs on there. */
+  | { kind: "hungUp" };
 
 export type PtyExitEventContract = { reason: TerminalExitContract };
 

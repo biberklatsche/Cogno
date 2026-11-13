@@ -49,3 +49,18 @@ export type TabConfig = PersistedTabConfigurationContract;
 export type TabStackConfig = PersistedTabStackConfigurationContract;
 export type GridConfig = PersistedGridConfigurationContract;
 export type PaneConfig = PersistedPaneConfigurationContract;
+
+/**
+ * A pane leaf that does not show the shell it was saved with: it starts a new
+ * one on this machine, under `terminalId` or one made up when it opens. What
+ * a pane of another machine said about it - the machine, its directory there -
+ * means nothing for that shell.
+ */
+export function asNewLocalPane(leaf: PaneConfig, terminalId?: string): PaneConfig {
+  const { terminalId: _savedTerminalId, host, workingDir, ...rest } = leaf;
+  return {
+    ...rest,
+    ...(terminalId === undefined ? {} : { terminalId }),
+    ...(host === undefined && workingDir !== undefined ? { workingDir } : {}),
+  };
+}

@@ -484,5 +484,16 @@ describe("Pty", () => {
       expect(transport.kill).not.toHaveBeenCalled();
       expect(handle.closeOutput).toHaveBeenCalled();
     });
+
+    it("ends a shell of this machine that was handed back when its terminal closes", async () => {
+      await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+      takenOverListener()();
+      handedBackListener()();
+
+      pty.dispose();
+
+      // Nobody shows it any more, and its terminal is gone: it must not run on unseen.
+      expect(transport.kill).toHaveBeenCalledWith(terminalId);
+    });
   });
 });
