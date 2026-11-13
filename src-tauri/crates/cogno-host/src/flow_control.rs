@@ -2,42 +2,13 @@ use std::collections::VecDeque;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Condvar, Mutex};
 
-/// Largest framed chunk ever handed to the webview channel in one message.
-///
-/// Root cause found by direct correlation (per-send logging of size vs. what
-/// the frontend reported lost): Tauri delivers small raw channel payloads via
-/// a synchronous, reliable `webview.eval()`; payloads whose framed size
-/// crosses roughly 1 KiB instead go through an async fetch against a
-/// `ChannelDataIpcQueue`, which silently drops messages under conditions this
-/// investigation could not further characterize (a known class of issue -
-/// see e.g. tauri-apps/tauri#10546 - not something this codebase controls).
-/// PTY reads land suspiciously often at exactly the OS's PTY buffering
-/// granularity (1024 bytes), which combined with the 4-byte seq header
-/// crossed that boundary on nearly every chunk `top` produced - explaining
-/// losses that persisted no matter how send concurrency/pacing was tuned.
-/// Every chunk is now kept comfortably under the boundary so it always takes
-/// the reliable path; this alone eliminated 100% of observed drops.
-pub(super) const MAX_CHUNK_SIZE: usize = 900;
-
-/// Bytes handed to the webview but not yet acknowledged before the reader
-/// thread stops reading (and thereby blocks the shell on stdout, like a real
+/// Bytes sent to a client but not yet acknowledged before the reader thread
+/// stops reading (and thereby blocks the shell on stdout, like a real
 /// terminal would).
-const HIGH_WATERMARK: usize = 1024 * 1024;
+pub(crate) const HIGH_WATERMARK: usize = 1024 * 1024;
 
 /// Reader resumes once unacknowledged bytes drop below this (hysteresis).
 const LOW_WATERMARK: usize = 256 * 1024;
-
-/// Every data message starts with the chunk's sequence number (u32, little
-/// endian). The frontend restores order from it and acknowledges by sequence
-/// number, so a chunk lost in transit costs that chunk, not the session.
-const CHUNK_HEADER_LEN: usize = 4;
-
-pub(super) fn frame_chunk(seq: u32, data: &[u8]) -> Vec<u8> {
-    let mut frame = Vec::with_capacity(CHUNK_HEADER_LEN + data.len());
-    frame.extend_from_slice(&seq.to_le_bytes());
-    frame.extend_from_slice(data);
-    frame
-}
 
 struct FlowState {
     in_flight_bytes: usize,
@@ -46,9 +17,9 @@ struct FlowState {
     sent: VecDeque<(u32, usize)>,
 }
 
-/// Backpressure between the PTY reader thread and the webview: once more
-/// than `high_watermark` bytes are sent but not yet parsed, the reader stops
-/// reading until the frontend's ack brings the backlog below
+/// Backpressure between the PTY reader thread and the client: once more
+/// than `high_watermark` bytes are sent but not yet taken in, the reader stops
+/// reading until the client's ack brings the backlog below
 /// `low_watermark` (hysteresis). A shell that outpaces rendering therefore
 /// genuinely blocks on stdout, like it would on a real terminal.
 ///
@@ -222,12 +193,5 @@ mod tests {
         assert!(start.elapsed() < short());
         assert_eq!(flow.in_flight(), 0);
         flow.close(); // idempotent
-    }
-
-    #[test]
-    fn frame_chunk_prefixes_the_sequence_number_little_endian() {
-        let frame = frame_chunk(0x0102_0304, b"ab");
-        assert_eq!(frame, vec![0x04, 0x03, 0x02, 0x01, b'a', b'b']);
-        assert_eq!(frame.len(), CHUNK_HEADER_LEN + 2);
     }
 }

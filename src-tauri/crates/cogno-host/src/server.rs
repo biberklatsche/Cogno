@@ -1,32 +1,52 @@
-//! One client of a host behind a byte stream: requests come in, replies and
-//! events go out (`wire`). The stream's end is the client's end.
+//! One client of a host behind a byte stream: hellos first, then requests
+//! come in and replies and events go out (`wire`). The stream's end is the
+//! client's end.
 
 use std::io::{self, Read, Write};
-use std::sync::{Arc, Mutex};
+use std::sync::mpsc;
+use std::sync::Arc;
 
-use crate::host::{Client, EventSink, Host};
-use crate::protocol::Event;
-use crate::wire::{self, HostMessage, RequestEnvelope, NO_REPLY};
+use crate::host::{Client, ClientId, EventSink, Host};
+use crate::protocol::{Event, Reply};
+use crate::wire::{self, ClientMessage, HostMessage, Output};
 
-struct Output<W>(Mutex<W>);
+/// What goes to the client, written by a thread of its own: whoever sends
+/// only queues, so a client that is slow to read never holds up the host -
+/// not its sessions' readers, not another client's requests.
+struct ClientWriter(mpsc::Sender<HostMessage>);
 
-impl<W: Write> Output<W> {
-    /// False when the client is gone.
-    fn send(&self, message: HostMessage) -> bool {
-        wire::write_host_message(&mut *self.0.lock().unwrap(), message).is_ok()
+impl ClientWriter {
+    /// Starts the thread that writes to `output`. It ends when the client
+    /// can no longer be written to, or when nothing can send any more.
+    fn start<W: Write + Send + 'static>(mut output: W) -> Self {
+        let (sender, queued) = mpsc::channel::<HostMessage>();
+        std::thread::spawn(move || {
+            for message in queued {
+                if wire::write_host_message(&mut output, message).is_err() {
+                    return;
+                }
+            }
+        });
+        Self(sender)
     }
 
-    /// Replies, unless nobody waits for it.
-    fn answer(&self, id: u64, reply: crate::protocol::Reply) {
-        if id != NO_REPLY {
-            self.send(HostMessage::Reply { id, reply });
-        }
+    /// False when the client is gone.
+    fn send(&self, message: HostMessage) -> bool {
+        self.0.send(message).is_ok()
+    }
+
+    fn answer(&self, id: u64, reply: Reply) {
+        self.send(HostMessage::Reply { id, reply });
     }
 }
 
-impl<W: Write + Send + 'static> EventSink for Output<W> {
-    fn emit(&self, event: Event) -> bool {
+impl EventSink for ClientWriter {
+    fn event(&self, event: Event) -> bool {
         self.send(HostMessage::Event(event))
+    }
+
+    fn output(&self, output: Output) -> bool {
+        self.send(HostMessage::Output(output))
     }
 }
 
@@ -34,36 +54,59 @@ impl<W: Write + Send + 'static> EventSink for Output<W> {
 /// client's sessions then is theirs to say (`Host::client_gone`).
 pub(crate) fn serve_client<W: Write + Send + 'static>(
     host: &Arc<Host>,
-    client_id: u64,
+    client_id: ClientId,
     mut input: impl Read,
-    output: W,
+    mut output: W,
 ) -> io::Result<()> {
-    let output = Arc::new(Output(Mutex::new(output)));
-    wire::write_hello(&mut *output.0.lock().unwrap())?;
+    wire::write_host_hello(&mut output)?;
+    let hello = wire::read_client_hello(&mut input)?;
+    // The client checks the versions the same way and hangs up itself; a
+    // client that does not is not talked to either.
+    if wire::check_versions(hello.protocol, hello.oldest).is_err() {
+        return Ok(());
+    }
+    let writer = Arc::new(ClientWriter::start(output));
     let client = Client {
         id: client_id,
-        sink: output.clone(),
+        name: hello.name,
+        sink: writer.clone(),
     };
 
     let served = loop {
-        let RequestEnvelope { id, request } = match wire::read_request(&mut input) {
-            Ok(Some(envelope)) => envelope,
+        let message = match wire::read_client_message(&mut input) {
+            Ok(Some(message)) => message,
             Ok(None) => break Ok(()),
             Err(error) => break Err(error),
         };
-        if request.may_block() {
-            // Off the reading thread: the other sessions' input and
-            // acknowledgements must not wait for it.
+        let (id, request) = match message {
+            ClientMessage::Request { id, request } => (Some(id), request),
+            ClientMessage::Post { request } => (None, request),
+        };
+        let may_block = request.may_block();
+        let answer = {
             let host = host.clone();
             let client = client.clone();
-            let output = output.clone();
-            std::thread::spawn(move || {
+            let writer = writer.clone();
+            move || {
                 let reply = host.handle(&client, request);
-                output.answer(id, reply);
-            });
+                match id {
+                    Some(id) => writer.answer(id, reply),
+                    None => {
+                        if let Err(error) = reply {
+                            // Nobody waits for it; a typed key that crossed a
+                            // takeover is no news.
+                            log::debug!(target: "host", "a posted request failed: {error}");
+                        }
+                    }
+                }
+            }
+        };
+        if may_block {
+            // Off the reading thread: the other sessions' input and
+            // acknowledgements must not wait for it.
+            std::thread::spawn(answer);
         } else {
-            let reply = host.handle(&client, request);
-            output.answer(id, reply);
+            answer();
         }
     };
     host.client_gone(client_id);

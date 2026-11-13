@@ -44,10 +44,6 @@ pub enum CliCommand {
         /// The endpoint file to announce itself in, instead of the user's
         #[arg(long, hide = true, value_name = "path")]
         endpoint: Option<std::path::PathBuf>,
-        /// Where shells write their start-up log; the app passes it when it
-        /// logs at debug level
-        #[arg(long, hide = true, value_name = "path")]
-        shell_bootstrap_log_dir: Option<std::path::PathBuf>,
     },
 }
 
@@ -143,8 +139,8 @@ pub fn try_run_action_over_http(cli: &Cli) -> Option<i32> {
         _ => return None,
     };
 
-    let port = std::env::var("COGNO_PORT").ok()?;
-    let token = std::env::var("COGNO_TOKEN").unwrap_or_default();
+    let port = std::env::var(cogno_host::env_vars::COGNO_PORT).ok()?;
+    let token = std::env::var(cogno_host::env_vars::COGNO_TOKEN).unwrap_or_default();
     let url = format!("http://127.0.0.1:{}/action/run", port);
     let body = serde_json::json!({ "name": name, "args": args });
 
@@ -185,5 +181,28 @@ pub fn try_run_action_over_http(cli: &Cli) -> Option<i32> {
             eprintln!("Unexpected response for action '{}'.", name);
             Some(1)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+    use cogno_host::daemon_start::{BRIDGE_ARGUMENTS, DAEMON_ARGUMENT};
+
+    /// The host starts the daemon and the starter runs the bridge by these
+    /// arguments: they must be the ones this command line takes.
+    #[test]
+    fn the_arguments_the_host_uses_are_the_ones_parsed_here() {
+        let daemon = Cli::try_parse_from(["cogno", DAEMON_ARGUMENT]).unwrap();
+        assert!(matches!(daemon.command, Some(CliCommand::Daemon { .. })));
+
+        let bridge =
+            Cli::try_parse_from(std::iter::once("cogno").chain(BRIDGE_ARGUMENTS.split(' ')))
+                .unwrap();
+        assert!(matches!(
+            bridge.command,
+            Some(CliCommand::Server { stdio: true, .. })
+        ));
     }
 }

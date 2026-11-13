@@ -21,9 +21,9 @@ use std::collections::VecDeque;
 const LINE_END_REACH: usize = 4096;
 
 /// How much output a session keeps. Enough for a long scroll back, and no
-/// more than a client may be behind in any case (the flow control's high
-/// watermark): playing it back on attach is one burst the client can take.
-const KEPT_BYTES: usize = 1024 * 1024;
+/// more than a client may be behind in any case: playing it back on attach
+/// is one burst the client can take.
+const KEPT_BYTES: usize = crate::flow_control::HIGH_WATERMARK;
 /// A control sequence longer than this is not one this module reads; it is
 /// passed on as ordinary output.
 const MAX_SEQUENCE_LEN: usize = 64;

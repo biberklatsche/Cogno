@@ -2,8 +2,12 @@
 //! another machine does through ssh: a real daemon process, and the real
 //! binary as the bridge to it behind two pipes.
 
-use cogno_host::protocol::{Event, Request, Response, ShellProfile, SpawnOptions};
-use cogno_host::wire::{self, HostMessage, RequestEnvelope, PROTOCOL_VERSION};
+use cogno_host::daemon_start::{BRIDGE_ARGUMENTS, DAEMON_ARGUMENT};
+use cogno_host::protocol::{
+    Event, HostError, HostErrorCode, Request, Response, SessionLifetime, ShellProfile, ShellType,
+    SpawnOptions, StreamId, TerminalSize,
+};
+use cogno_host::wire::{self, ClientHello, ClientMessage, HostMessage, PROTOCOL_VERSION};
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant};
@@ -43,7 +47,7 @@ impl Server {
         ));
         let _ = std::fs::remove_file(&endpoint);
         let daemon = Command::new(env!("CARGO_BIN_EXE_cogno"))
-            .arg("daemon")
+            .arg(DAEMON_ARGUMENT)
             .arg("--endpoint")
             .arg(&endpoint)
             .stdin(Stdio::null())
@@ -65,7 +69,9 @@ impl Server {
         match std::env::var(SSH_ARGUMENTS) {
             Ok(arguments) => {
                 let command = std::env::var(SSH_COMMAND)
-                    .unwrap_or_else(|_| "{binary} server --stdio --endpoint {endpoint}".to_string())
+                    .unwrap_or_else(|_| {
+                        format!("{{binary}} {BRIDGE_ARGUMENTS} --endpoint {{endpoint}}")
+                    })
                     .replace("{binary}", binary)
                     .replace("{endpoint}", &endpoint);
                 let mut ssh = Command::new("ssh");
@@ -76,13 +82,16 @@ impl Server {
             }
             Err(_) => {
                 let mut server = Command::new(binary);
-                server.args(["server", "--stdio", "--endpoint", &endpoint]);
+                server
+                    .args(BRIDGE_ARGUMENTS.split(' '))
+                    .args(["--endpoint", &endpoint]);
                 server
             }
         }
     }
 
-    /// Starts a daemon and the bridge to it, and reads up to the hello.
+    /// Starts a daemon and the bridge to it, reads the host's hello and
+    /// answers it.
     fn start() -> (Self, HostMessage) {
         let (daemon, endpoint) = Self::start_daemon();
         let mut process = Self::command(&endpoint)
@@ -113,6 +122,11 @@ impl Server {
             next_id: 1,
         };
         let hello = server.next_message("the hello");
+        wire::write_client_hello(
+            server.stdin.as_mut().unwrap(),
+            &ClientHello::of_this_build(Some("test".to_string())),
+        )
+        .unwrap();
         (server, hello)
     }
 
@@ -128,12 +142,12 @@ impl Server {
         &mut self,
         request: Request,
         mut other: impl FnMut(HostMessage),
-    ) -> Result<Response, String> {
+    ) -> Result<Response, HostError> {
         let id = self.next_id;
         self.next_id += 1;
-        wire::write_request(
+        wire::write_client_message(
             self.stdin.as_mut().unwrap(),
-            &RequestEnvelope { id, request },
+            ClientMessage::Request { id, request },
         )
         .unwrap();
         loop {
@@ -171,16 +185,19 @@ impl Drop for Server {
 /// The platform's plain shell printing `ready` and then waiting for input.
 fn waiting_shell(terminal_id: &str, stream: u64) -> Request {
     #[cfg(windows)]
-    let (shell_type, path, args) = ("PowerShell", "cmd.exe", ["/C", "echo ready & set /p line="]);
+    let (shell_type, path, args) = (
+        ShellType::PowerShell,
+        "cmd.exe",
+        ["/C", "echo ready & set /p line="],
+    );
     #[cfg(unix)]
-    let (shell_type, path, args) = ("Bash", "/bin/sh", ["-c", "echo ready; read line"]);
+    let (shell_type, path, args) = (ShellType::Bash, "/bin/sh", ["-c", "echo ready; read line"]);
     Request::PtySpawn {
         options: SpawnOptions {
-            name: terminal_id.to_string(),
-            cols: 80,
-            rows: 24,
+            terminal_id: terminal_id.to_string(),
+            size: TerminalSize { cols: 80, rows: 24 },
             profile: ShellProfile {
-                shell_type: shell_type.to_string(),
+                shell_type,
                 path: Some(path.to_string()),
                 args: Some(args.map(str::to_string).to_vec()),
                 env: None,
@@ -189,24 +206,21 @@ fn waiting_shell(terminal_id: &str, stream: u64) -> Request {
                 inject_cogno_cli: Some(false),
                 load_user_rc: None,
             },
-            dev_mode: Some(true),
+            integration_version: "test".to_string(),
         },
-        owner: "window-1".to_string(),
-        stream,
+        window: "window-1".to_string(),
+        stream: StreamId(stream),
         env: Vec::new(),
-        survives_client: false,
+        lifetime: SessionLifetime::EndsWithClient,
     }
 }
 
 /// Reads messages until the output under `stream` contains `text`.
 fn wait_for_output(server: &mut Server, stream: u64, text: &str, mut seen: Vec<u8>) {
     while !String::from_utf8_lossy(&seen).contains(text) {
-        if let HostMessage::Event(Event::PtyData { stream: of, frame }) =
-            server.next_message("the shell's output")
-        {
-            assert_eq!(of, stream);
-            // Past the chunk's sequence number.
-            seen.extend_from_slice(&frame[4..]);
+        if let HostMessage::Output(output) = server.next_message("the shell's output") {
+            assert_eq!(output.stream, StreamId(stream));
+            seen.extend_from_slice(&output.bytes);
         }
     }
 }
@@ -228,20 +242,19 @@ fn the_server_introduces_itself_and_answers_requests() {
     let (mut server, hello) = Server::start();
     assert!(matches!(
         hello,
-        HostMessage::Hello { protocol: PROTOCOL_VERSION, os, .. } if os == std::env::consts::OS
+        HostMessage::Hello(hello) if hello.protocol == PROTOCOL_VERSION && hello.os == std::env::consts::OS
     ));
 
     let shells = server.request(Request::ListShells, |_| {});
-    assert!(matches!(shells, Ok(Response::Shells(_))));
+    assert!(matches!(shells, Ok(Response::Shells { .. })));
     let unknown = server.request(
         Request::PtyResize {
             terminal_id: "nobody".into(),
-            cols: 80,
-            rows: 24,
+            size: TerminalSize { cols: 80, rows: 24 },
         },
         |_| {},
     );
-    assert_eq!(unknown.unwrap_err(), "Session not found: nobody");
+    assert_eq!(unknown.unwrap_err().code, HostErrorCode::SessionNotFound);
 
     assert!(server.hang_up());
 }
@@ -252,11 +265,11 @@ fn a_shell_runs_behind_the_server_takes_input_and_reports_its_end() {
 
     let mut early_output = Vec::new();
     let spawned = server.request(waiting_shell("t1", 5), |message| {
-        if let HostMessage::Event(Event::PtyData { frame, .. }) = message {
-            early_output.extend_from_slice(&frame[4..]);
+        if let HostMessage::Output(output) = message {
+            early_output.extend_from_slice(&output.bytes);
         }
     });
-    assert!(matches!(spawned, Ok(Response::Spawned(_))));
+    assert!(matches!(spawned, Ok(Response::Spawned { .. })));
     wait_for_output(&mut server, 5, "ready", early_output);
 
     // A line ends the wait, and with it the shell. Its exit may overtake
@@ -264,8 +277,10 @@ fn a_shell_runs_behind_the_server_takes_input_and_reports_its_end() {
     fn exit_of(message: HostMessage) -> Option<(String, String)> {
         match message {
             HostMessage::Event(Event::PtyExit {
-                terminal_id, owner, ..
-            }) => Some((terminal_id, owner)),
+                terminal_id,
+                window,
+                ..
+            }) => Some((terminal_id, window)),
             _ => None,
         }
     }
@@ -291,10 +306,10 @@ fn a_client_that_hangs_up_takes_its_shells_along() {
     let (mut server, _hello) = Server::start();
 
     let spawned = server.request(waiting_shell("t1", 1), |_| {});
-    let Ok(Response::Spawned(result)) = spawned else {
+    let Ok(Response::Spawned { shell_process_id }) = spawned else {
         panic!("the shell did not start: {spawned:?}");
     };
-    let shell = result.shell_process_id.unwrap();
+    let shell = shell_process_id.unwrap();
     assert!(is_running(shell));
 
     assert!(server.hang_up());

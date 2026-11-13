@@ -204,8 +204,8 @@ pub fn point_ssh_at_helper(
     command.env("SSH_ASKPASS", &helper);
     command.env("SSH_ASKPASS_REQUIRE", "force");
     command.env(SESSION_ENV, session_id);
-    command.env("COGNO_PORT", port.to_string());
-    command.env("COGNO_TOKEN", token);
+    command.env(cogno_host::env_vars::COGNO_PORT, port.to_string());
+    command.env(cogno_host::env_vars::COGNO_TOKEN, token);
     Some(helper)
 }
 
@@ -223,11 +223,11 @@ pub fn askpass_answer(
 /// Cogno and prints the answer. Exit 1 means "no answer", which the caller
 /// treats as a refused prompt.
 pub fn run_helper(session_id: &str, prompt_args: &[String]) -> i32 {
-    let port = match std::env::var("COGNO_PORT") {
+    let port = match std::env::var(cogno_host::env_vars::COGNO_PORT) {
         Ok(port) => port,
         Err(_) => return 1,
     };
-    let token = std::env::var("COGNO_TOKEN").unwrap_or_default();
+    let token = std::env::var(cogno_host::env_vars::COGNO_TOKEN).unwrap_or_default();
     let prompt = prompt_args.join(" ");
     let body = serde_json::json!({ "session": session_id, "prompt": prompt });
     let client = match reqwest::blocking::Client::builder()

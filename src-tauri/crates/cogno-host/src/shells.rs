@@ -1,15 +1,9 @@
 //! The shells installed on this machine, offered as profiles on first start.
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct ShellInfo {
-    pub name: String,
-    pub path: String,
-    pub shell_type: String,
-}
+use crate::protocol::{ShellInfo, ShellType};
 
 /// One entry per shell binary: the same bash reached by two names is one shell.
 #[derive(Default)]
@@ -19,12 +13,12 @@ struct Shells {
 }
 
 impl Shells {
-    fn add(&mut self, identity: String, name: &str, path: &str, shell_type: &str) {
+    fn add(&mut self, identity: String, name: &str, path: &str, shell_type: ShellType) {
         if self.seen.insert(identity) {
             self.list.push(ShellInfo {
                 name: name.to_string(),
                 path: path.to_string(),
-                shell_type: shell_type.to_string(),
+                shell_type,
             });
         }
     }
@@ -40,13 +34,13 @@ pub(crate) fn detect_shells() -> Vec<ShellInfo> {
         (
             "PowerShell",
             "powershell.exe",
-            "PowerShell",
+            ShellType::PowerShell,
             [r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe"].as_slice(),
         ),
         (
             "PowerShell Core",
             "pwsh.exe",
-            "PowerShell",
+            ShellType::PowerShell,
             [
                 r"C:\Program Files\PowerShell\7\pwsh.exe",
                 r"C:\Program Files\PowerShell\6\pwsh.exe",
@@ -55,7 +49,7 @@ pub(crate) fn detect_shells() -> Vec<ShellInfo> {
         ),
     ];
 
-    fn add(shells: &mut Shells, name: &str, path: &Path, shell_type: &str) {
+    fn add(shells: &mut Shells, name: &str, path: &Path, shell_type: ShellType) {
         let rendered = path.display().to_string();
         shells.add(rendered.to_ascii_lowercase(), name, &rendered, shell_type);
     }
@@ -86,7 +80,7 @@ pub(crate) fn detect_shells() -> Vec<ShellInfo> {
     if let Some(bash) = git_bash(which("git.exe").ok().as_deref(), &install_roots, |p| {
         p.is_file()
     }) {
-        add(&mut shells, "Git Bash", &bash, "Bash");
+        add(&mut shells, "Git Bash", &bash, ShellType::Bash);
     }
 
     shells.list
@@ -136,27 +130,21 @@ fn shells_from_etc_shells(
     is_file: impl Fn(&str) -> bool,
     canonical: impl Fn(&str) -> Option<PathBuf>,
 ) -> Vec<ShellInfo> {
-    // "Bash" or "ZSH" (exactly as written), otherwise None
-    fn detect_shell_label(path: &str) -> Option<&'static str> {
-        let fname = Path::new(path)
+    /// The shell a binary is, by its name; variants like `bash5` or
+    /// `zsh-5.9` included.
+    fn shell_type_of(path: &str) -> Option<ShellType> {
+        let file_name = Path::new(path)
             .file_name()
-            .and_then(|s| s.to_str())
+            .and_then(|name| name.to_str())
             .unwrap_or("")
             .to_ascii_lowercase();
-        if fname == "bash" {
-            return Some("Bash");
+        if file_name.contains("bash") {
+            Some(ShellType::Bash)
+        } else if file_name.contains("zsh") {
+            Some(ShellType::Zsh)
+        } else {
+            None
         }
-        if fname == "zsh" {
-            return Some("ZSH");
-        }
-        // Tolerant for variants like bash5, zsh-5.9
-        if fname.contains("bash") {
-            return Some("Bash");
-        }
-        if fname.contains("zsh") {
-            return Some("ZSH");
-        }
-        None
     }
 
     let mut shells = Shells::default();
@@ -165,7 +153,7 @@ fn shells_from_etc_shells(
         if line.is_empty() || line.starts_with('#') || !line.starts_with('/') {
             continue;
         }
-        let Some(label) = detect_shell_label(line) else {
+        let Some(shell_type) = shell_type_of(line) else {
             continue;
         };
         if !is_file(line) {
@@ -178,7 +166,7 @@ fn shells_from_etc_shells(
             .file_name()
             .and_then(|s| s.to_str())
             .unwrap_or(line);
-        shells.add(identity, name, line, label);
+        shells.add(identity, name, line, shell_type);
     }
     shells.list
 }
@@ -187,11 +175,11 @@ fn shells_from_etc_shells(
 mod tests {
     use super::*;
 
-    fn shell(name: &str, path: &str, shell_type: &str) -> ShellInfo {
+    fn shell(name: &str, path: &str, shell_type: ShellType) -> ShellInfo {
         ShellInfo {
             name: name.to_string(),
             path: path.to_string(),
-            shell_type: shell_type.to_string(),
+            shell_type,
         }
     }
 
@@ -203,7 +191,7 @@ mod tests {
             |path| path == "/bin/bash" || path == "/usr/bin/fish",
             |path| Some(PathBuf::from(path)),
         );
-        assert_eq!(shells, vec![shell("bash", "/bin/bash", "Bash")]);
+        assert_eq!(shells, vec![shell("bash", "/bin/bash", ShellType::Bash)]);
     }
 
     #[test]
@@ -218,8 +206,8 @@ mod tests {
         assert_eq!(
             shells,
             vec![
-                shell("bash", "/bin/bash", "Bash"),
-                shell("zsh", "/bin/zsh", "ZSH"),
+                shell("bash", "/bin/bash", ShellType::Bash),
+                shell("zsh", "/bin/zsh", ShellType::Zsh),
             ]
         );
     }

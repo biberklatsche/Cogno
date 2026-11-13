@@ -1,36 +1,37 @@
-use cogno_host::protocol::{PtySpawnResult, Request, Response, SessionLabel, SpawnOptions};
+use cogno_host::env_vars;
+use cogno_host::protocol::{
+    Request, SessionInfo, SessionLifetime, SessionPlacement, SpawnOptions, TerminalSize,
+};
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Manager, State};
 
-use crate::host::{HostState, SpawnError};
+use crate::command_error::CommandResult;
+use crate::hosts::{HostState, SpawnRequest, Spawned};
 use crate::http_server::HttpServerState;
 
-/// What a request without a result of its own answers.
-fn done(reply: Result<Response, String>) -> Result<(), String> {
-    reply.map(|_| ())
-}
+/// How long a start waits for the HTTP server to decide whether it runs.
+const HTTP_SERVER_PATIENCE: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// Starts a shell on this machine; on another one, Cogno only shows what
-/// runs there. `survives_client`: whether it goes on when Cogno is gone, to
-/// be attached to again.
+/// runs there.
 #[tauri::command]
 pub async fn pty_spawn(
     app: AppHandle,
     window: tauri::WebviewWindow,
     hosts: State<'_, HostState>,
     options: SpawnOptions,
-    survives_client: bool,
+    lifetime: SessionLifetime,
     on_data: Channel<InvokeResponseBody>,
-) -> Result<PtySpawnResult, SpawnError> {
+) -> CommandResult<Spawned> {
     let env = http_server_environment(&app).await;
     hosts
-        .spawn(
+        .spawn(SpawnRequest {
             options,
-            window.label().to_string(),
+            window: window.label().to_string(),
             env,
-            survives_client,
+            lifetime,
             on_data,
-        )
+        })
         .await
 }
 
@@ -44,7 +45,7 @@ pub async fn pty_attach(
     terminal_id: String,
     host: Option<String>,
     on_data: Channel<InvokeResponseBody>,
-) -> Result<(), String> {
+) -> CommandResult<SessionInfo> {
     hosts
         .attach(host, terminal_id, window.label().to_string(), on_data)
         .await
@@ -57,12 +58,15 @@ async fn http_server_environment(app: &AppHandle) -> Vec<(String, String)> {
     let server_state = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let http_server = server_state.state::<HttpServerState>();
-        http_server.wait_for_start_decision(std::time::Duration::from_secs(2));
+        http_server.wait_for_start_decision(HTTP_SERVER_PATIENCE);
         match http_server.port() {
             0 => Vec::new(),
             port => vec![
-                ("COGNO_PORT".to_string(), port.to_string()),
-                ("COGNO_TOKEN".to_string(), http_server.token().to_string()),
+                (env_vars::COGNO_PORT.to_string(), port.to_string()),
+                (
+                    env_vars::COGNO_TOKEN.to_string(),
+                    http_server.token().to_string(),
+                ),
             ],
         }
     })
@@ -73,61 +77,63 @@ async fn http_server_environment(app: &AppHandle) -> Vec<(String, String)> {
 /// Says where the shell sits in this Cogno (workspace, tab, title,
 /// directory), for another Cogno to find it by.
 #[tauri::command]
-pub fn pty_label(
+pub fn pty_place(
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     terminal_id: String,
-    label: SessionLabel,
-) -> Result<(), String> {
-    host.post(window.label(), Request::PtyLabel { terminal_id, label })
+    placement: SessionPlacement,
+) -> CommandResult<()> {
+    hosts.post(
+        window.label(),
+        Request::PtyPlace {
+            terminal_id,
+            placement,
+        },
+    )
 }
 
 #[tauri::command]
 pub fn pty_write(
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     terminal_id: String,
     data: String,
-) -> Result<(), String> {
-    host.post(window.label(), Request::PtyWrite { terminal_id, data })
+) -> CommandResult<()> {
+    hosts.post(window.label(), Request::PtyWrite { terminal_id, data })
 }
 
+/// Waited for: the caller wants to know that the shell has no line editor
+/// to act on, and what it types next must come after. On a blocking worker:
+/// the shell takes the action when it gets to it.
 #[tauri::command]
-pub fn pty_execute_line_editor_action(
+pub async fn pty_execute_line_editor_action(
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     terminal_id: String,
     action: String,
     payload_json: Option<String>,
-) -> Result<(), String> {
-    // Waited for, on this thread: the caller wants to know that the shell
-    // has no line editor to act on, and what it types next must come after.
-    done(host.ask(
-        window.label(),
-        Request::PtyLineEditorAction {
-            terminal_id,
-            action,
-            payload_json,
-        },
-    ))
+) -> CommandResult<()> {
+    hosts
+        .request(
+            window.label().to_string(),
+            Request::PtyLineEditorAction {
+                terminal_id,
+                action,
+                payload_json,
+            },
+        )
+        .await
+        .map(|_| ())
 }
 
 #[tauri::command]
 pub fn pty_resize(
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     terminal_id: String,
-    cols: u16,
-    rows: u16,
-) -> Result<(), String> {
-    host.post(
-        window.label(),
-        Request::PtyResize {
-            terminal_id,
-            cols,
-            rows,
-        },
-    )
+    size: TerminalSize,
+) -> CommandResult<()> {
+    hosts.post(window.label(), Request::PtyResize { terminal_id, size })
 }
 
 /// Stops showing a shell, which runs on: for one that belongs to the Cogno of
@@ -135,39 +141,39 @@ pub fn pty_resize(
 #[tauri::command]
 pub async fn pty_detach(
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     terminal_id: String,
-) -> Result<(), String> {
-    done(
-        host.request(
+) -> CommandResult<()> {
+    hosts
+        .request(
             window.label().to_string(),
             Request::PtyDetach { terminal_id },
         )
-        .await,
-    )
+        .await
+        .map(|_| ())
 }
 
-/// Releasing a session can block (closing a ConPTY waits for its output pipe).
+/// Ending a shell can block (closing a ConPTY waits for its output pipe).
 #[tauri::command]
 pub async fn pty_kill(
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     terminal_id: String,
-) -> Result<(), String> {
-    done(
-        host.request(window.label().to_string(), Request::PtyKill { terminal_id })
-            .await,
-    )
+) -> CommandResult<()> {
+    hosts
+        .request(window.label().to_string(), Request::PtyKill { terminal_id })
+        .await
+        .map(|_| ())
 }
 
-/// Frontend acknowledgement that xterm has parsed every chunk up to and
+/// The webview's acknowledgement that it has taken in every chunk up to and
 /// including `seq`.
 #[tauri::command]
 pub fn pty_ack(
     window: tauri::WebviewWindow,
-    host: State<'_, HostState>,
+    hosts: State<'_, HostState>,
     terminal_id: String,
     seq: u32,
-) -> Result<(), String> {
-    host.post(window.label(), Request::PtyAck { terminal_id, seq })
+) -> CommandResult<()> {
+    hosts.acknowledge(window.label(), terminal_id, seq)
 }

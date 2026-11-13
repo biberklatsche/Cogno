@@ -1,44 +1,56 @@
 //! The shell integration scripts on this machine: what a shell started with
 //! integration sources (`shell_spawner`). The scripts themselves come from
 //! whoever talks to the host - they belong to its version of Cogno - and are
-//! laid down under the integration root.
+//! laid down under that version's integration root.
 
-use serde::{Deserialize, Serialize};
 use std::path::{Component, Path, PathBuf};
 
-use crate::shell_spawner::integration_root;
+use crate::protocol::{HostError, HostErrorCode, IntegrationFile};
+use crate::shell_spawner::{integration_root, LOG_DIRECTORY};
 
+/// Written last: it says that every file of the version is in place.
 const VERSION_FILE: &str = "VERSION";
-/// Shell start-up logs used to pile up here, one per shell and never cleared;
-/// they now go to the app's log folder, at debug level only. The folder is
-/// removed with the update to integration 1.3.1, once per machine.
-const FORMER_LOG_DIRECTORY: &str = "logs";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct IntegrationFile {
-    /// Below the integration root, with `/` between its parts.
-    pub relative_path: String,
-    pub content: String,
+/// Whether `version` names a version and nothing else.
+fn is_version_name(version: &str) -> bool {
+    !version.is_empty()
+        && version != "."
+        && version != ".."
+        && version
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '+' | '_'))
 }
 
-/// Makes sure the scripts of `version` are in place: written when the version
-/// on disk is another one or a file is missing, left alone otherwise.
+/// Where the scripts of `version` lie under the Cogno home `home`. The
+/// version comes over the wire and becomes a directory name: it must be a
+/// plain name.
+pub(crate) fn root(home: &Path, version: &str) -> Result<PathBuf, HostError> {
+    if !is_version_name(version) {
+        return Err(HostError::new(
+            HostErrorCode::InvalidRequest,
+            format!("Not a version of the shell integration: {version:?}"),
+        ));
+    }
+    Ok(integration_root(home, version))
+}
+
+/// Makes sure the scripts of `version` are in place under the Cogno home
+/// `home`: written when one is missing, left alone otherwise.
 pub(crate) fn install(
-    dev_mode: bool,
+    home: &Path,
     version: &str,
     files: &[IntegrationFile],
-) -> Result<(), String> {
-    install_into(&integration_root(dev_mode)?, version, files)
+) -> Result<(), HostError> {
+    install_into(&root(home, version)?, version, files)
 }
 
-fn install_into(root: &Path, version: &str, files: &[IntegrationFile]) -> Result<(), String> {
+fn install_into(root: &Path, version: &str, files: &[IntegrationFile]) -> Result<(), HostError> {
     let targets = files
         .iter()
         .map(|file| Ok((target_of(root, &file.relative_path)?, &file.content)))
-        .collect::<Result<Vec<_>, String>>()?;
+        .collect::<Result<Vec<_>, HostError>>()?;
 
-    // A current version alone is no proof the scripts are there: one may have
+    // A version on disk alone is no proof the scripts are there: one may have
     // been deleted, and a shell that starts without its script runs with no
     // integration at all.
     let installed = std::fs::read_to_string(root.join(VERSION_FILE))
@@ -47,9 +59,10 @@ fn install_into(root: &Path, version: &str, files: &[IntegrationFile]) -> Result
         return Ok(());
     }
 
-    let failed = |what: &Path, error: std::io::Error| format!("{}: {error}", what.display());
-    // Gone already on every update after the first; nothing to report then.
-    let _ = std::fs::remove_dir_all(root.join(FORMER_LOG_DIRECTORY));
+    let failed =
+        |what: &Path, error: std::io::Error| HostError::io(&what.display().to_string(), error);
+    let log_directory = root.join(LOG_DIRECTORY);
+    std::fs::create_dir_all(&log_directory).map_err(|error| failed(&log_directory, error))?;
     for (target, content) in &targets {
         if let Some(directory) = target.parent() {
             std::fs::create_dir_all(directory).map_err(|error| failed(directory, error))?;
@@ -63,7 +76,7 @@ fn install_into(root: &Path, version: &str, files: &[IntegrationFile]) -> Result
 
 /// Where a file goes. Only below the root: the paths come over the wire, and
 /// nothing they say may reach another place on this machine.
-fn target_of(root: &Path, relative_path: &str) -> Result<PathBuf, String> {
+fn target_of(root: &Path, relative_path: &str) -> Result<PathBuf, HostError> {
     let path = Path::new(relative_path);
     let stays_below = !relative_path.is_empty()
         && !relative_path.contains('\\')
@@ -71,8 +84,9 @@ fn target_of(root: &Path, relative_path: &str) -> Result<PathBuf, String> {
             .components()
             .all(|component| matches!(component, Component::Normal(_)));
     if !stays_below {
-        return Err(format!(
-            "Not a path below the shell integration: {relative_path:?}"
+        return Err(HostError::new(
+            HostErrorCode::InvalidRequest,
+            format!("Not a path below the shell integration: {relative_path:?}"),
         ));
     }
     Ok(root.join(path))
@@ -120,23 +134,7 @@ mod tests {
             std::fs::read_to_string(root.join("VERSION")).unwrap(),
             "1.3.0"
         );
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn the_update_removes_the_former_log_folder() {
-        let root = empty_root();
-        std::fs::create_dir_all(root.join("logs")).unwrap();
-        std::fs::write(root.join("logs").join("shell-bootstrap-a.log"), "start").unwrap();
-
-        install_into(
-            &root,
-            "1.3.1",
-            &[file("bash/bootstrap.bash", "# bootstrap")],
-        )
-        .unwrap();
-
-        assert!(!root.join("logs").exists());
+        assert!(root.join("logs").is_dir());
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -155,14 +153,17 @@ mod tests {
         install_into(&root, "1.3.0", &[file("bash/bootstrap.bash", "second")]).unwrap();
         assert_eq!(std::fs::read_to_string(&script).unwrap(), "second");
 
-        // Another version replaces the scripts.
-        install_into(&root, "1.4.0", &[file("bash/bootstrap.bash", "third")]).unwrap();
-        assert_eq!(std::fs::read_to_string(&script).unwrap(), "third");
-        assert_eq!(
-            std::fs::read_to_string(root.join("VERSION")).unwrap(),
-            "1.4.0"
-        );
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_version_must_be_a_plain_name() {
+        for version in ["0.5.0", "1.2.3-beta.1", "2.0.0+build_7"] {
+            assert!(is_version_name(version), "{version:?}");
+        }
+        for version in ["", ".", "..", "../x", "a/b", "a\\b", "1 2"] {
+            assert!(!is_version_name(version), "{version:?}");
+        }
     }
 
     #[test]

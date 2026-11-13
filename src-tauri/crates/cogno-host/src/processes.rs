@@ -1,46 +1,16 @@
+//! The processes under the terminals' shells: what runs there, for the
+//! process panel and the coding agents, and ending them on request.
+
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
-use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use sysinfo::Signal;
-use sysinfo::{
-    Pid, Process, ProcessRefreshKind, ProcessStatus, ProcessesToUpdate, System, UpdateKind,
+use sysinfo::{Pid, Process, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
+
+use crate::protocol::{
+    HostError, HostErrorCode, ProcessDetails, ProcessStatus, ProcessTreeSnapshot, TerminalProcess,
 };
-/// What the process-info panel shows about one process - nothing more, so a
-/// snapshot does not read every process's environment or command line.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessDetails {
-    pub process_id: u32,
-    pub parent_process_id: Option<u32>,
-    pub name: String,
-    pub current_working_directory: Option<String>,
-    pub status: String,
-    pub run_time_seconds: u64,
-    pub memory_bytes: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessTreeSnapshot {
-    pub root_process_id: u32,
-    pub root_process: ProcessDetails,
-    pub descendants: Vec<ProcessDetails>,
-}
-
-/// A process under one terminal's shell, as the coding-agents feature matches
-/// an agent's session to its terminal (ARCHITECTURE.md 3.2): name and cwd to
-/// find candidates, the start time to tell two apart.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TerminalProcess {
-    pub terminal_id: String,
-    pub name: String,
-    pub current_working_directory: Option<String>,
-    /// Unix seconds.
-    pub started_at: u64,
-}
 
 /// The processes under every terminal's shell, in one pass over the machine.
 ///
@@ -95,7 +65,7 @@ pub(crate) fn list_terminal_processes(shells: &[(String, u32)]) -> Vec<TerminalP
 /// thread that drives the UI.
 pub(crate) fn get_process_tree_snapshot(
     root_process_id: u32,
-) -> Result<ProcessTreeSnapshot, String> {
+) -> Result<ProcessTreeSnapshot, HostError> {
     let mut system = System::new();
     // One pass over the processes, reading only what the panel shows. Name,
     // parent, status and run time come with every refresh.
@@ -108,9 +78,12 @@ pub(crate) fn get_process_tree_snapshot(
     );
 
     let root_pid = Pid::from_u32(root_process_id);
-    let root_process = system
-        .process(root_pid)
-        .ok_or_else(|| format!("Process not found for pid {}", root_process_id))?;
+    let root_process = system.process(root_pid).ok_or_else(|| {
+        HostError::new(
+            HostErrorCode::ProcessNotFound,
+            format!("No process runs under the id {root_process_id}"),
+        )
+    })?;
 
     let descendants = collect_descendant_process_ids(&system, root_pid)
         .into_iter()
@@ -173,21 +146,20 @@ type Target = (Pid, u64);
 /// Ends one process under a terminal's shell together with everything it
 /// started. Only descendants of that shell are accepted - never the shell
 /// itself (closing the terminal ends it) and never a process outside the tree,
-/// so the webview cannot end arbitrary processes.
-///
+/// so a client cannot end arbitrary processes.
 pub(crate) fn terminate_process_tree(
     root_process_id: u32,
     target_process_id: u32,
-) -> Result<(), String> {
+) -> Result<(), HostError> {
     let system = all_processes();
 
     let target_pid = Pid::from_u32(target_process_id);
     if !collect_descendant_process_ids(&system, Pid::from_u32(root_process_id))
         .contains(&target_pid)
     {
-        return Err(format!(
-            "Process {} does not run under this terminal's shell",
-            target_process_id
+        return Err(HostError::new(
+            HostErrorCode::NotInTerminalTree,
+            format!("Process {target_process_id} does not run under this terminal's shell"),
         ));
     }
 
@@ -201,29 +173,34 @@ pub(crate) fn terminate_process_tree(
 /// Ends what runs in the foreground of a terminal - the job the user would
 /// stop with Ctrl+C, also where it ignores that. The shell stays, and so does
 /// what it keeps beside the job: background jobs and the helpers of a prompt.
-/// Windows has no foreground job; there everything under the shell ends.
-///
-/// `foreground_group` is the process group that has the terminal (Unix only).
+/// `foreground_group` is the process group that has the terminal.
+#[cfg(unix)]
 pub(crate) fn terminate_foreground_job(
     shell_process_id: u32,
-    #[cfg_attr(windows, allow(unused_variables))] foreground_group: Option<i32>,
+    foreground_group: i32,
     terminal_id: &str,
-) -> Result<(), String> {
+) -> Result<(), HostError> {
     let system = all_processes();
-    let shell_pid = Pid::from_u32(shell_process_id);
-    #[cfg(unix)]
-    let targets = foreground_job(
-        &system,
-        shell_pid,
-        foreground_group.ok_or_else(|| {
-            format!("No foreground job known for terminal session: {terminal_id}")
-        })?,
-    );
-    #[cfg(windows)]
-    let targets = collect_descendant_process_ids(&system, shell_pid);
+    let job = foreground_job(&system, Pid::from_u32(shell_process_id), foreground_group);
     end(
         &system,
-        targets,
+        job,
+        &format!("the processes of terminal {terminal_id}"),
+    )
+}
+
+/// Ends everything under a terminal's shell; the shell stays. What Windows
+/// does in place of ending the foreground job, which it does not have.
+#[cfg(windows)]
+pub(crate) fn terminate_processes_under(
+    shell_process_id: u32,
+    terminal_id: &str,
+) -> Result<(), HostError> {
+    let system = all_processes();
+    let everything = collect_descendant_process_ids(&system, Pid::from_u32(shell_process_id));
+    end(
+        &system,
+        everything,
         &format!("the processes of terminal {terminal_id}"),
     )
 }
@@ -266,7 +243,7 @@ fn end(
     system: &System,
     process_ids: impl IntoIterator<Item = Pid>,
     what: &str,
-) -> Result<(), String> {
+) -> Result<(), HostError> {
     let targets = process_ids
         .into_iter()
         .filter_map(|pid| {
@@ -279,10 +256,12 @@ fn end(
     if survivors.is_empty() {
         Ok(())
     } else {
-        Err(format!(
-            "Could not terminate {}: {} process(es) still running",
-            what,
-            survivors.len()
+        Err(HostError::new(
+            HostErrorCode::ProcessesSurvived,
+            format!(
+                "Could not terminate {what}: {} process(es) still running",
+                survivors.len()
+            ),
         ))
     }
 }
@@ -352,7 +331,7 @@ fn still_alive(targets: &[Target]) -> (System, Vec<Target>) {
                 process.start_time() == *started_at
                     && !matches!(
                         process.status(),
-                        ProcessStatus::Zombie | ProcessStatus::Dead
+                        sysinfo::ProcessStatus::Zombie | sysinfo::ProcessStatus::Dead
                     )
             })
         })
@@ -366,9 +345,23 @@ fn map_process_to_details(process: &Process) -> ProcessDetails {
         parent_process_id: process.parent().map(|parent| parent.as_u32()),
         name: process.name().to_string_lossy().to_string(),
         current_working_directory: process.cwd().map(|path| path.to_string_lossy().to_string()),
-        status: format!("{:?}", process.status()),
+        status: status_of(process.status()),
         run_time_seconds: process.run_time(),
         memory_bytes: process.memory(),
+    }
+}
+
+/// The status as the protocol names it, independent of `sysinfo`'s names.
+fn status_of(status: sysinfo::ProcessStatus) -> ProcessStatus {
+    use sysinfo::ProcessStatus as Sys;
+    match status {
+        Sys::Run => ProcessStatus::Running,
+        Sys::Sleep | Sys::UninterruptibleDiskSleep => ProcessStatus::Sleeping,
+        Sys::Idle => ProcessStatus::Idle,
+        Sys::Stop | Sys::Tracing => ProcessStatus::Stopped,
+        Sys::Zombie => ProcessStatus::Zombie,
+        Sys::Dead => ProcessStatus::Dead,
+        _ => ProcessStatus::Other,
     }
 }
 
@@ -388,16 +381,14 @@ mod tests {
 
     #[cfg(windows)]
     fn shell_with_child(_prelude: &str) -> Child {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
         // Not while another test opens a PTY: this process would inherit its
         // pipe and hold it for the hundred seconds it runs.
-        let _no_pty_opens = crate::pty::handle_inheritance_lock();
-        Command::new("cmd")
-            .args(["/C", "ping -n 100 127.0.0.1 >nul"])
-            .creation_flags(CREATE_NO_WINDOW)
-            .spawn()
-            .unwrap()
+        let _no_pty_opens = crate::shell_process::handle_inheritance_lock();
+        crate::console::without_console_window(
+            Command::new("cmd").args(["/C", "ping -n 100 127.0.0.1 >nul"]),
+        )
+        .spawn()
+        .unwrap()
     }
 
     fn wait_until(limit: Duration, mut condition: impl FnMut() -> bool) -> bool {
@@ -455,8 +446,10 @@ mod tests {
         let tree = tree_of(&shell);
 
         // The root itself, and the test process seen from the shell's tree.
-        assert!(terminate_process_tree(shell.id(), shell.id()).is_err());
-        assert!(terminate_process_tree(shell.id(), std::process::id()).is_err());
+        for outside in [shell.id(), std::process::id()] {
+            let refused = terminate_process_tree(shell.id(), outside).unwrap_err();
+            assert_eq!(refused.code, HostErrorCode::NotInTerminalTree);
+        }
         assert_eq!(still_alive(&tree).1.len(), tree.len());
 
         assert_eq!(

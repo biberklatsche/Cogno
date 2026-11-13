@@ -2,11 +2,12 @@
 pub mod actions_generated;
 mod app_identity;
 pub mod cli;
+mod command_error;
 pub mod commands;
 mod db;
 mod endpoint;
-mod host;
 mod host_connection;
+mod hosts;
 mod http_server;
 mod shell_bootstrap_logs;
 mod updater;
@@ -15,7 +16,7 @@ use app_identity::LOG_FILE_STEM;
 use cli::Cli;
 use commands::window_registry::{route, WindowRegistry};
 use db::Db;
-use host::HostState;
+use hosts::HostState;
 use http_server::{HttpServerState, RunnableActionsState};
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
@@ -106,7 +107,7 @@ pub fn run(cli: Cli) {
                 let app = window.app_handle();
                 app.state::<crate::commands::window::QuitState>()
                     .cancel_window(window.label());
-                app.state::<HostState>().release_window(window.label());
+                app.state::<HostState>().window_closed(window.label());
                 app.state::<WindowRegistry>().on_destroyed(window.label());
             }
             _ => {}
@@ -125,13 +126,15 @@ pub fn run(cli: Cli) {
             crate::commands::hosts::list_shells,
             crate::commands::hosts::host_connect,
             crate::commands::hosts::host_sessions,
-            crate::commands::hosts::host_end_session,
+            crate::commands::hosts::host_session,
+            crate::commands::hosts::host_kill_session,
+            crate::commands::hosts::host_default_command,
             crate::commands::hosts::host_disconnect,
             crate::commands::hosts::host_install_shell_integration,
             crate::commands::keyboard::get_keyboard_layout,
             crate::commands::pty::pty_spawn,
             crate::commands::pty::pty_attach,
-            crate::commands::pty::pty_label,
+            crate::commands::pty::pty_place,
             crate::commands::pty::pty_write,
             crate::commands::pty::pty_execute_line_editor_action,
             crate::commands::pty::pty_resize,
@@ -141,7 +144,7 @@ pub fn run(cli: Cli) {
             crate::commands::processes::pty_get_process_tree_by_terminal_id,
             crate::commands::processes::pty_list_terminal_processes,
             crate::commands::processes::pty_terminate_process,
-            crate::commands::processes::pty_terminate_processes,
+            crate::commands::processes::pty_terminate_foreground_job,
             crate::commands::environment::get_cogno_home_dir,
             crate::commands::environment::get_cogno_endpoint_file_path,
             crate::commands::environment::get_cogno_config_file_path,
@@ -199,11 +202,11 @@ pub fn run(cli: Cli) {
         .expect("error while building tauri application")
         .run(|app, event| {
             if let RunEvent::Exit = event {
-                // Shells first, so none outlives the app (SIGHUP lets them
-                // write their history on the way out).
+                // The hosts learn at once that this app is gone: they end the
+                // shells that were not started to go on without it.
                 // A start that failed in `setup` never got a host.
                 if let Some(host) = app.try_state::<HostState>() {
-                    host.release_all();
+                    host.hang_up_all();
                 }
                 // No process must find this instance's port once it is gone.
                 app.state::<HttpServerState>().remove_endpoint();

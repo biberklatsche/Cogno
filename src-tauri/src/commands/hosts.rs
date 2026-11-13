@@ -1,17 +1,21 @@
+use cogno_host::daemon_start::default_remote_command;
+use cogno_host::identity;
 use cogno_host::protocol::{IntegrationFile, Request, Response, SessionInfo, ShellInfo};
 use serde::Serialize;
 use std::process::Command;
+use std::time::Duration;
 use tauri::{AppHandle, Manager, State};
 
+use crate::command_error::{AppErrorCode, CommandError, CommandResult};
 use crate::commands::askpass::{point_ssh_at_helper, AskpassState};
-use crate::host::HostState;
+use crate::hosts::HostState;
 use crate::http_server::HttpServerState;
 
-/// What is started on the other machine when the host's config names
-/// nothing else: the starter the Cogno there puts into its home, which is
-/// where an ssh session begins. Written so that `cmd` and `sh` both take it:
-/// a quoted path with forward slashes, without extension.
-const DEFAULT_REMOTE_COMMAND: &str = "\".cogno/bin/cogno\" server --stdio";
+/// How often ssh asks the other machine whether it is still there, and how
+/// many unanswered questions end the connection: a dead connection ends
+/// within a minute instead of hanging until the next keystroke.
+const KEEP_ALIVE_INTERVAL: Duration = Duration::from_secs(15);
+const KEEP_ALIVE_MISSES: u32 = 3;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,33 +24,46 @@ pub struct HostInfo {
     pub os: String,
 }
 
+/// The Cogno home on the other machine that the default command starts the
+/// bridge from: a development build talks to development builds.
+fn remote_home_directory_name() -> &'static str {
+    if cfg!(debug_assertions) {
+        identity::DEVELOPMENT_HOME_DIRECTORY_NAME
+    } else {
+        identity::HOME_DIRECTORY_NAME
+    }
+}
+
 /// ssh to `destination`, running `remote_command` there with stdin and stdout
-/// as the connection. The keep-alive makes a dead connection end within a
-/// minute instead of hanging until the next keystroke.
-fn ssh_command(destination: &str, remote_command: &str) -> Result<Command, String> {
+/// as the connection.
+fn ssh_command(destination: &str, remote_command: &str) -> CommandResult<Command> {
     // A destination is a host, `user@host` or an ssh config alias - never an
     // option: "-oProxyCommand=..." would run a program on this machine.
     if destination.is_empty() || destination.starts_with('-') {
-        return Err(format!("Not an ssh destination: {destination:?}"));
+        return Err(CommandError::new(
+            AppErrorCode::InvalidDestination,
+            format!("Not an ssh destination: {destination:?}"),
+        ));
     }
     let mut command = Command::new("ssh");
     command.args([
         "-T",
         "-o",
-        "ServerAliveInterval=15",
+        &format!("ServerAliveInterval={}", KEEP_ALIVE_INTERVAL.as_secs()),
         "-o",
-        "ServerAliveCountMax=3",
+        &format!("ServerAliveCountMax={KEEP_ALIVE_MISSES}"),
         "--",
         destination,
         remote_command,
     ]);
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
+    cogno_host::console::without_console_window(&mut command);
     Ok(command)
+}
+
+/// What ssh runs on the other machine when a remote names no command.
+#[tauri::command]
+pub fn host_default_command() -> String {
+    default_remote_command(remote_home_directory_name())
 }
 
 /// Connects to the host `name` over ssh, unless the connection already
@@ -60,9 +77,9 @@ pub async fn host_connect(
     destination: String,
     command: Option<String>,
     prompt_session: String,
-) -> Result<HostInfo, String> {
-    let remote_command = command.as_deref().unwrap_or(DEFAULT_REMOTE_COMMAND);
-    let mut ssh = ssh_command(&destination, remote_command)?;
+) -> CommandResult<HostInfo> {
+    let remote_command = command.unwrap_or_else(host_default_command);
+    let mut ssh = ssh_command(&destination, &remote_command)?;
     let askpass_token = app
         .state::<AskpassState>()
         .open_session(&prompt_session, window.label());
@@ -77,16 +94,16 @@ pub async fn host_connect(
     app.state::<AskpassState>()
         .close_session(&app, &prompt_session);
 
-    let os = connected.map_err(|error| error.to_string())??;
+    let os = connected.map_err(CommandError::internal)??;
     Ok(HostInfo { os })
 }
 
 /// The shells installed on this machine: offered as profiles on first start.
 #[tauri::command]
-pub async fn list_shells(hosts: State<'_, HostState>) -> Result<Vec<ShellInfo>, String> {
+pub async fn list_shells(hosts: State<'_, HostState>) -> CommandResult<Vec<ShellInfo>> {
     match hosts.request_on(None, Request::ListShells).await? {
-        Response::Shells(shells) => Ok(shells),
-        _ => Err("The host answered something else".to_string()),
+        Response::Shells { shells } => Ok(shells),
+        _ => Err(CommandError::unexpected_reply()),
     }
 }
 
@@ -96,22 +113,39 @@ pub async fn list_shells(hosts: State<'_, HostState>) -> Result<Vec<ShellInfo>, 
 pub async fn host_sessions(
     hosts: State<'_, HostState>,
     host: Option<String>,
-) -> Result<Vec<SessionInfo>, String> {
+) -> CommandResult<Vec<SessionInfo>> {
     match hosts.request_on(host, Request::ListSessions).await? {
-        Response::Sessions(sessions) => Ok(sessions),
-        _ => Err("The host answered something else".to_string()),
+        Response::Sessions { sessions } => Ok(sessions),
+        _ => Err(CommandError::unexpected_reply()),
+    }
+}
+
+/// The shell `terminal_id` that runs on a host, this machine when none is
+/// named: what a pane needs to know of it before it attaches.
+#[tauri::command]
+pub async fn host_session(
+    hosts: State<'_, HostState>,
+    host: Option<String>,
+    terminal_id: String,
+) -> CommandResult<SessionInfo> {
+    match hosts
+        .request_on(host, Request::GetSession { terminal_id })
+        .await?
+    {
+        Response::Session { session } => Ok(*session),
+        _ => Err(CommandError::unexpected_reply()),
     }
 }
 
 /// Ends a shell on a host on another machine - also one that no window of
 /// this Cogno shows.
 #[tauri::command]
-pub async fn host_end_session(
+pub async fn host_kill_session(
     hosts: State<'_, HostState>,
     host: String,
     terminal_id: String,
-) -> Result<(), String> {
-    hosts.end_session(host, terminal_id).await
+) -> CommandResult<()> {
+    hosts.kill_session(host, terminal_id).await
 }
 
 /// Hangs up on a host on another machine.
@@ -128,17 +162,9 @@ pub async fn host_install_shell_integration(
     hosts: State<'_, HostState>,
     version: String,
     files: Vec<IntegrationFile>,
-    dev_mode: bool,
-) -> Result<(), String> {
+) -> CommandResult<()> {
     hosts
-        .request_on(
-            None,
-            Request::InstallShellIntegration {
-                dev_mode,
-                version,
-                files,
-            },
-        )
+        .request_on(None, Request::InstallShellIntegration { version, files })
         .await
         .map(|_| ())
 }
@@ -149,17 +175,25 @@ mod tests {
 
     #[test]
     fn a_destination_is_never_taken_for_an_option() {
-        assert!(ssh_command("-oProxyCommand=calc", DEFAULT_REMOTE_COMMAND).is_err());
-        assert!(ssh_command("", DEFAULT_REMOTE_COMMAND).is_err());
+        let command = host_default_command();
+        for not_a_destination in ["-oProxyCommand=calc", ""] {
+            let refused = ssh_command(not_a_destination, &command).unwrap_err();
+            assert!(refused.is(AppErrorCode::InvalidDestination));
+        }
 
-        let command = ssh_command("lars@macbook", DEFAULT_REMOTE_COMMAND).unwrap();
-        let args: Vec<_> = command
+        let ssh = ssh_command("lars@macbook", &command).unwrap();
+        let args: Vec<_> = ssh
             .get_args()
             .map(|arg| arg.to_string_lossy().to_string())
             .collect();
+        assert_eq!(&args[args.len() - 3..], ["--", "lars@macbook", &command]);
+    }
+
+    #[test]
+    fn the_default_command_starts_the_bridge_through_the_starter() {
         assert_eq!(
-            &args[args.len() - 3..],
-            ["--", "lars@macbook", "\".cogno/bin/cogno\" server --stdio"]
+            default_remote_command(identity::HOME_DIRECTORY_NAME),
+            "\".cogno/bin/cogno\" server --stdio"
         );
     }
 }

@@ -19,11 +19,6 @@ const PIPE_GRACE: Duration = Duration::from_millis(500);
 use cogno_host::process_job::ProcessJob;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
-
-#[cfg(windows)]
-const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -57,9 +52,7 @@ pub async fn command_runner_execute(
 ) -> Result<CommandRunnerResult, String> {
     let mut command = Command::new(program);
     command.current_dir(cwd).args(args);
-
-    #[cfg(windows)]
-    command.creation_flags(CREATE_NO_WINDOW);
+    cogno_host::console::without_console_window(&mut command);
 
     let session_id = prompt_session;
     let askpass_token = app
@@ -123,8 +116,8 @@ fn apply_prompt_environment(
         "GIT_TERMINAL_PROMPT",
         "GIT_OPTIONAL_LOCKS",
         SESSION_ENV,
-        "COGNO_PORT",
-        "COGNO_TOKEN",
+        cogno_host::env_vars::COGNO_PORT,
+        cogno_host::env_vars::COGNO_TOKEN,
     ]
     .join(":");
     let wslenv = match std::env::var("WSLENV") {

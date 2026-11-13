@@ -1,12 +1,12 @@
+use crate::env_vars;
 use crate::identity::TERM_PROGRAM_NAME;
+use crate::protocol::ShellType;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
-pub struct ShellEnvironment {
-    pub env: HashMap<String, String>,
-}
+/// The terminal type every shell is told it runs in.
+const TERMINAL_TYPE: &str = "xterm-256color";
 
 pub struct EnvironmentBuilder {
     env: HashMap<String, String>,
@@ -16,7 +16,7 @@ pub struct EnvironmentBuilder {
 impl EnvironmentBuilder {
     pub fn new(
         integration_root: PathBuf,
-        log_dir: Option<&Path>,
+        log_dir: PathBuf,
         load_user_rc: bool,
         enable_integration: bool,
     ) -> Self {
@@ -25,29 +25,29 @@ impl EnvironmentBuilder {
         let mut env = HashMap::new();
 
         // Mandatory environment variables
-        env.insert("COGNO".to_string(), "1".to_string());
-        env.insert("TERM".to_string(), "xterm-256color".to_string());
-        env.insert("TERM_PROGRAM".to_string(), TERM_PROGRAM_NAME.to_string());
-        env.insert("COGNO_SESSION_ID".to_string(), session_id.clone());
+        env.insert(env_vars::COGNO.to_string(), "1".to_string());
+        env.insert(env_vars::TERM.to_string(), TERMINAL_TYPE.to_string());
+        env.insert(
+            env_vars::TERM_PROGRAM.to_string(),
+            TERM_PROGRAM_NAME.to_string(),
+        );
+        env.insert(env_vars::COGNO_SESSION_ID.to_string(), session_id.clone());
 
         if enable_integration {
             env.insert(
-                "COGNO_INTEGRATION_ROOT".to_string(),
+                env_vars::COGNO_INTEGRATION_ROOT.to_string(),
                 integration_root.to_string_lossy().to_string(),
             );
             env.insert(
-                "COGNO_LINE_EDITOR_PIPE_NAME".to_string(),
+                env_vars::COGNO_LINE_EDITOR_PIPE_NAME.to_string(),
                 format!("cogno-line-editor-{}", session_id.replace('-', "")),
             );
-            // Unset, the bootstrap scripts write no start-up log.
-            if let Some(log_dir) = log_dir {
-                env.insert(
-                    "COGNO_LOG_DIR".to_string(),
-                    log_dir.to_string_lossy().to_string(),
-                );
-            }
             env.insert(
-                "COGNO_ALLOW_USER_RC".to_string(),
+                env_vars::COGNO_LOG_DIR.to_string(),
+                log_dir.to_string_lossy().to_string(),
+            );
+            env.insert(
+                env_vars::COGNO_ALLOW_USER_RC.to_string(),
                 if load_user_rc { "1" } else { "0" }.to_string(),
             );
         }
@@ -74,16 +74,14 @@ impl EnvironmentBuilder {
     ) -> Self {
         if let Some(path) = login_path {
             self.env
-                .insert("COGNO_LOGIN_PATH".to_string(), path.clone());
-
-            let has_integration = self.env.contains_key("COGNO_INTEGRATION_ROOT");
-            if !has_integration {
-                self.env.insert("PATH".to_string(), path);
+                .insert(env_vars::COGNO_LOGIN_PATH.to_string(), path.clone());
+            if !self.has_integration() {
+                self.env.insert(env_vars::PATH.to_string(), path);
             }
         }
 
         if let Some(lang) = lang {
-            self.env.insert("LANG".to_string(), lang);
+            self.env.insert(env_vars::LANG.to_string(), lang);
         }
 
         self
@@ -93,30 +91,25 @@ impl EnvironmentBuilder {
         mut self,
         inject_path: bool,
         cogno_paths: Vec<PathBuf>,
-        shell_type: &str,
+        shell_type: ShellType,
     ) -> Self {
         if inject_path && !cogno_paths.is_empty() {
-            let separator = if cfg!(windows) && shell_type == "PowerShell" {
-                ";"
-            } else {
-                ":"
-            };
+            let windows_powershell = cfg!(windows) && shell_type == ShellType::PowerShell;
+            let separator = if windows_powershell { ";" } else { ":" };
 
             let path_prefix = cogno_paths
                 .iter()
-                .map(|p| Self::format_path_for_shell(p, shell_type))
+                .map(|path| path.to_string_lossy().to_string())
                 .collect::<Vec<_>>()
                 .join(separator);
 
             self.env
-                .insert("COGNO_PATH_PREFIX".to_string(), path_prefix.clone());
+                .insert(env_vars::COGNO_PATH_PREFIX.to_string(), path_prefix.clone());
 
             // Only set PATH directly when shell integration is disabled.
             // With integration enabled, bootstrap scripts apply COGNO_PATH_PREFIX.
             // Setting both would prepend the same prefix twice.
-            let has_integration = self.env.contains_key("COGNO_INTEGRATION_ROOT");
-            let should_set_path_directly =
-                !has_integration || (cfg!(windows) && shell_type == "PowerShell");
+            let should_set_path_directly = !self.has_integration() || windows_powershell;
 
             if should_set_path_directly {
                 // Prefer the PATH already staged by with_login_environment
@@ -124,13 +117,13 @@ impl EnvironmentBuilder {
                 // is minimal when the app was launched by launchd/systemd.
                 let base_path = self
                     .env
-                    .get("PATH")
+                    .get(env_vars::PATH)
                     .cloned()
-                    .or_else(|| std::env::var("PATH").ok());
+                    .or_else(|| std::env::var(env_vars::PATH).ok());
 
                 if let Some(base_path) = base_path {
                     let new_path = format!("{}{}{}", path_prefix, separator, base_path);
-                    self.env.insert("PATH".to_string(), new_path);
+                    self.env.insert(env_vars::PATH.to_string(), new_path);
                 }
             }
         }
@@ -138,36 +131,31 @@ impl EnvironmentBuilder {
         self
     }
 
-    fn format_path_for_shell(path: &Path, _shell_type: &str) -> String {
-        path.to_string_lossy().to_string()
+    fn has_integration(&self) -> bool {
+        self.env.contains_key(env_vars::COGNO_INTEGRATION_ROOT)
     }
 
     pub fn with_shell_specific_env(
         mut self,
-        shell_type: &str,
+        shell_type: ShellType,
         working_dir: &str,
         enable_integration: bool,
     ) -> Self {
-        if enable_integration {
-            match shell_type {
-                "Bash" => {
-                    // Note: BASH_ENV is not used for interactive shells with --rcfile
-                    // We keep it for compatibility but shells are started with --rcfile in shell_spawner
-                }
-                "ZSH" => {
-                    // ZSH looks for .zshrc in ZDOTDIR
-                    // Point ZDOTDIR to our zsh directory
-                    let zsh_dir = self.integration_root.join("zsh");
-                    self.env
-                        .insert("ZDOTDIR".to_string(), zsh_dir.to_string_lossy().to_string());
-                }
-                _ => {}
-            }
+        // Bash and PowerShell get their integration through their arguments
+        // (`shell_spawner`); zsh finds its `.zshrc` through ZDOTDIR.
+        if enable_integration && shell_type == ShellType::Zsh {
+            let zsh_dir = self.integration_root.join("zsh");
+            self.env.insert(
+                env_vars::ZDOTDIR.to_string(),
+                zsh_dir.to_string_lossy().to_string(),
+            );
         }
 
         // Set working directory in env for reference
-        self.env
-            .insert("COGNO_WORKING_DIR".to_string(), working_dir.to_string());
+        self.env.insert(
+            env_vars::COGNO_WORKING_DIR.to_string(),
+            working_dir.to_string(),
+        );
 
         self
     }
@@ -179,8 +167,8 @@ impl EnvironmentBuilder {
         self
     }
 
-    pub fn build(self) -> ShellEnvironment {
-        ShellEnvironment { env: self.env }
+    pub fn build(self) -> HashMap<String, String> {
+        self.env
     }
 }
 
@@ -189,15 +177,14 @@ mod tests {
     use super::*;
 
     fn builder() -> EnvironmentBuilder {
-        EnvironmentBuilder::new(PathBuf::from("/root"), None, true, true)
+        EnvironmentBuilder::new(PathBuf::from("/root"), PathBuf::from("/logs"), true, true)
     }
 
     #[test]
     fn fallback_lang_is_set_without_login_path() {
         let env = builder()
             .with_login_environment(None, Some("de_DE.UTF-8".to_string()))
-            .build()
-            .env;
+            .build();
         assert_eq!(env.get("LANG").map(String::as_str), Some("de_DE.UTF-8"));
     }
 
@@ -205,8 +192,7 @@ mod tests {
     fn lang_is_left_to_the_process_when_no_fallback_is_needed() {
         let env = builder()
             .with_login_environment(Some("/usr/bin".to_string()), None)
-            .build()
-            .env;
+            .build();
         assert!(!env.contains_key("LANG"));
     }
 
@@ -216,8 +202,7 @@ mod tests {
         let env = builder()
             .with_login_environment(None, Some("de_DE.UTF-8".to_string()))
             .with_custom_env(custom)
-            .build()
-            .env;
+            .build();
         assert_eq!(env.get("LANG").map(String::as_str), Some("fr_FR.UTF-8"));
     }
 }
