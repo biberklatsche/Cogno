@@ -139,7 +139,6 @@ type WholeFileAction = { readonly label: string; readonly take: GitConflictTake 
         display: flex;
         flex-direction: column;
         min-height: 0;
-        font-size: 12px;
       }
       .grow { flex: 1; }
       .prompt {
@@ -177,12 +176,12 @@ type WholeFileAction = { readonly label: string; readonly take: GitConflictTake 
       .ours .badge, .ours .name { color: var(--conflict-ours); }
       .theirs .badge, .theirs .name { color: var(--conflict-theirs); }
       .pane-body { flex: 1 1 auto; overflow: auto; min-height: 0; }
-      .row { display: flex; align-items: center; min-height: 20px; white-space: pre; width: max-content; min-width: 100%; }
+      /* Sizes follow the app font size the user set: the code is .mono (0.85em of the panel). */
+      .row { display: flex; align-items: center; min-height: 1.45em; white-space: pre; width: max-content; min-width: 100%; }
       .check { flex: 0 0 1.4rem; display: flex; justify-content: center; }
       .check input { margin: 0; }
-      /* The code as large as in the output editor and the hunk view, not the small .mono. */
-      .gutter { flex: 0 0 3.2em; padding-right: 0.6em; text-align: right; color: var(--git-subtle); user-select: none; font-size: inherit; }
-      .text { flex: 1 1 auto; padding-right: 1rem; font-size: inherit; }
+      .gutter { flex: 0 0 3.2em; padding-right: 0.6em; text-align: right; color: var(--git-subtle); user-select: none; }
+      .text { flex: 1 1 auto; padding-right: 1rem; }
       .ours .row.conflict { background: color-mix(in srgb, var(--conflict-ours) 10%, transparent); }
       .theirs .row.conflict { background: color-mix(in srgb, var(--conflict-theirs) 10%, transparent); }
       .ours .row.taken { background: color-mix(in srgb, var(--conflict-ours) 28%, transparent); }

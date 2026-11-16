@@ -19,7 +19,8 @@ import { GitDiffMode } from "../git-view-state.service";
 const cognoTheme = EditorView.theme(
   {
     "&": {
-      fontSize: "12px",
+      // As the code in the hunk and conflict views: 0.85 of the app font size the user set.
+      fontSize: "0.85rem",
       fontFamily: "var(--font-mono, monospace)",
       background: "var(--background-color)",
       color: "var(--foreground-color)",
