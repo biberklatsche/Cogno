@@ -17,8 +17,10 @@ export type GitConflict = {
 
 export type GitConflictSegment = { readonly kind: "text"; readonly text: string } | GitConflict;
 
-/** What to keep of one conflict; `both` is the current side, then the incoming one. */
-export type GitConflictChoice = "ours" | "theirs" | "both";
+export type GitConflictSide = "ours" | "theirs";
+
+/** The sides taken for one conflict, in the order they were taken; empty while undecided. */
+export type GitConflictPick = ReadonlyArray<GitConflictSide>;
 
 type Marker = "start" | "base" | "separator" | "end";
 
@@ -108,29 +110,86 @@ export function conflictsOf(segments: ReadonlyArray<GitConflictSegment>): GitCon
   return segments.filter((segment): segment is GitConflict => segment.kind === "conflict");
 }
 
+export type GitConflictResolution = {
+  readonly text: string;
+  /** Where each conflict's taken text starts in `text`, for jumping to it. */
+  readonly starts: ReadonlyArray<number>;
+};
+
 /**
- * The file with each conflict replaced by what was chosen for it; null while
- * a conflict has no choice yet.
+ * The file with each conflict replaced by the sides taken for it, in the
+ * order they were taken; a conflict nothing was taken for leaves nothing.
  */
 export function resolveConflicts(
   segments: ReadonlyArray<GitConflictSegment>,
-  choices: ReadonlyArray<GitConflictChoice | null>,
-): string | null {
-  let result = "";
+  picks: ReadonlyArray<GitConflictPick | undefined>,
+): GitConflictResolution {
+  let text = "";
+  const starts: number[] = [];
   let conflictIndex = 0;
   for (const segment of segments) {
     if (segment.kind === "text") {
-      result += segment.text;
+      text += segment.text;
       continue;
     }
-    const choice = choices[conflictIndex++];
-    if (!choice) return null;
-    result +=
-      choice === "ours"
-        ? segment.ours
-        : choice === "theirs"
-          ? segment.theirs
-          : segment.ours + segment.theirs;
+    starts.push(text.length);
+    for (const side of picks[conflictIndex++] ?? []) text += segment[side];
   }
-  return result;
+  return { text, starts };
+}
+
+/** One line of a side as the conflict view shows it, aligned with the other side. */
+export type GitConflictRow = {
+  /** Empty for a filler that keeps both sides level. */
+  readonly text: string;
+  /** The line number in that side's version; null for a filler. */
+  readonly number: number | null;
+  /** The conflict the line belongs to; null for agreed text. */
+  readonly conflict: number | null;
+  /** The first row of its conflict, which carries the checkbox. */
+  readonly first: boolean;
+};
+
+/**
+ * One side of the file, line by line, each conflict padded with fillers to
+ * the length of the longer side so both sides scroll level. A conflict with
+ * nothing on either side still gets a row, for its checkbox.
+ */
+export function conflictRows(
+  segments: ReadonlyArray<GitConflictSegment>,
+  side: GitConflictSide,
+): GitConflictRow[] {
+  const rows: GitConflictRow[] = [];
+  let number = 1;
+  let conflictIndex = 0;
+  for (const segment of segments) {
+    if (segment.kind === "text") {
+      for (const text of linesOf(segment.text)) {
+        rows.push({ text, number: number++, conflict: null, first: false });
+      }
+      continue;
+    }
+    const own = linesOf(segment[side]);
+    const other = linesOf(segment[side === "ours" ? "theirs" : "ours"]);
+    const height = Math.max(own.length, other.length, 1);
+    for (let index = 0; index < height; index++) {
+      const text = own[index];
+      rows.push({
+        text: text ?? "",
+        number: text === undefined ? null : number++,
+        conflict: conflictIndex,
+        first: index === 0,
+      });
+    }
+    conflictIndex++;
+  }
+  return rows;
+}
+
+/** The lines of a piece of the file, without their endings. */
+function linesOf(text: string): string[] {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/);
+  if (lines[lines.length - 1] === "") lines.pop();
+  return lines;
 }

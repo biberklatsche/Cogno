@@ -19,7 +19,7 @@ describe("GitOperationsService", () => {
   /** Whether the person refused a prompt during the run. */
   let refused: boolean;
   /** The stages `ls-files -u` reports for a conflicted path. */
-  let stages: Map<1 | 2 | 3, string>;
+  let stages: Map<1 | 2 | 3, { mode: string; blob: string }>;
 
   /** The cache helper every network command on macOS and Linux starts with. */
   const CACHE = ["-c", "credential.helper=cache --timeout=3600"];
@@ -78,18 +78,21 @@ describe("GitOperationsService", () => {
   describe("conflicts", () => {
     beforeEach(() => {
       stages = new Map([
-        [1, "100644"],
-        [2, "100755"],
-        [3, "100644"],
+        [1, { mode: "100644", blob: "b1" }],
+        [2, { mode: "100755", blob: "b2" }],
+        [3, { mode: "100644", blob: "b3" }],
       ]);
     });
 
-    it("takes a side by checking it out and staging it", async () => {
+    it("takes a side or the base by putting its version in the index and checking it out", async () => {
       await service.takeConflictSide("a.txt", "theirs");
+      await service.takeConflictSide("a.txt", "base");
 
       expect(run.mock.calls.map((call) => call[0])).toEqual([
-        ["checkout", "--theirs", "--", "a.txt"],
-        ["add", "--", "a.txt"],
+        ["update-index", "--cacheinfo", "100644,b3,a.txt"],
+        ["checkout", "--", "a.txt"],
+        ["update-index", "--cacheinfo", "100644,b1,a.txt"],
+        ["checkout", "--", "a.txt"],
       ]);
     });
 
@@ -99,6 +102,14 @@ describe("GitOperationsService", () => {
       await service.takeConflictSide("a.txt", "theirs");
 
       expect(run.mock.calls.map((call) => call[0])).toEqual([["rm", "-q", "--", "a.txt"]]);
+    });
+
+    it("deletes nothing when git cannot say which versions there are", async () => {
+      stages.clear();
+
+      expect(await service.takeConflictSide("a.txt", "theirs")).toBe("failed");
+
+      expect(run).not.toHaveBeenCalled();
     });
 
     it("writes a resolution as a blob through the file's filters, stages and checks it out", async () => {

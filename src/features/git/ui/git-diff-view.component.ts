@@ -95,15 +95,21 @@ const cognoHighlightStyle = HighlightStyle.define([
   },
 ]);
 
-async function buildExtensions(language: GitDiffLanguageLoader | undefined): Promise<Extension[]> {
+/** How a file looks in the git panel's editors: theme, highlighting, line numbers. */
+export async function gitEditorLook(
+  language: GitDiffLanguageLoader | undefined,
+): Promise<Extension[]> {
   const lang = (await language?.()) ?? null;
   return [
-    EditorState.readOnly.of(true),
     cognoTheme,
     syntaxHighlighting(cognoHighlightStyle),
     lineNumbers(),
     ...(lang ? [lang] : []),
   ];
+}
+
+async function buildExtensions(language: GitDiffLanguageLoader | undefined): Promise<Extension[]> {
+  return [EditorState.readOnly.of(true), ...(await gitEditorLook(language))];
 }
 
 function nextFrame(): Promise<void> {

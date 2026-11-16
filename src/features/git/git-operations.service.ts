@@ -9,6 +9,11 @@ import { isPushRejected } from "./model/git-parsers";
 
 export type GitResetMode = "soft" | "mixed" | "hard";
 
+/** Which version of a conflicted file to keep: the current side, the incoming one or their common base. */
+export type GitConflictTake = "ours" | "theirs" | "base";
+
+const CONFLICT_STAGE = { base: 1, ours: 2, theirs: 3 } as const;
+
 /**
  * What an operation ended in. `rejected` is a refusal the user may override by
  * forcing: a push that is not a fast-forward. It is not toasted; the caller
@@ -129,17 +134,28 @@ export class GitOperationsService {
   }
 
   /**
-   * Resolve a conflicted file as one side has it. A side that deleted the
-   * file has no version to check out (modify/delete); taking it deletes the file.
+   * Resolve a conflicted file as one side or the common base has it: that
+   * version goes into the index in place of the conflict and is checked out.
+   * A side that deleted the file (modify/delete) has no version; taking it
+   * deletes the file.
    */
-  async takeConflictSide(path: string, side: "ours" | "theirs"): Promise<GitOperationOutcome> {
+  async takeConflictSide(path: string, side: GitConflictTake): Promise<GitOperationOutcome> {
     const stages = await this.repository.loadConflictStages(path);
-    if (stages.size > 0 && !stages.has(side === "ours" ? 2 : 3)) {
-      return this.git(["rm", "-q", "--", path], "Resolve failed");
+    // No stages at all: git could not say, or the file is no longer conflicted.
+    // Nothing is deleted on a guess.
+    if (stages.size === 0) {
+      this.toast("Resolve failed", `${path} is not conflicted (any more).`, "error");
+      await this.repository.refresh();
+      return "failed";
     }
-    const outcome = await this.git(["checkout", `--${side}`, "--", path], "Resolve failed");
-    if (outcome !== "ok") return outcome;
-    return this.git(["add", "--", path], "Resolve failed");
+    const version = stages.get(CONFLICT_STAGE[side]);
+    if (!version) return this.git(["rm", "-q", "--", path], "Resolve failed");
+    const staged = await this.git(
+      ["update-index", "--cacheinfo", `${version.mode},${version.blob},${path}`],
+      "Resolve failed",
+    );
+    if (staged !== "ok") return staged;
+    return this.git(["checkout", "--", path], "Resolve failed");
   }
 
   /**
@@ -149,7 +165,7 @@ export class GitOperationsService {
    */
   async resolveConflict(path: string, content: string): Promise<GitOperationOutcome> {
     const stages = await this.repository.loadConflictStages(path);
-    const mode = stages.get(2) ?? stages.get(3) ?? "100644";
+    const mode = (stages.get(2) ?? stages.get(3))?.mode ?? "100644";
     const hashed = await this.repository.run(
       ["hash-object", "-w", "--stdin", `--path=${path}`],
       LOCAL_TIMEOUT_MS,

@@ -141,6 +141,12 @@ const WIP_ROW: TreeRow = { kind: "wip" };
             </svg>
           </span>
         }
+        @if (conflictText(); as text) {
+        <span class="col-message ellipsis wip-conflicts">
+          <app-icon class="small-icon" name="mdiAlert"></app-icon>
+          {{ text }}
+        </span>
+        } @else {
         <span class="col-message ellipsis">
           Work in progress
           <span class="wip-count subtle">
@@ -151,6 +157,7 @@ const WIP_ROW: TreeRow = { kind: "wip" };
             }
           </span>
         </span>
+        }
       </div>
       } @else {
       <div class="columns row" [class.selected]="isSelected(item.commit.sha)"
@@ -340,6 +347,14 @@ const WIP_ROW: TreeRow = { kind: "wip" };
       .wip-node { fill: none; stroke: var(--git-subtle); stroke-width: 2; stroke-dasharray: 3 2; }
       .wip-link { stroke: var(--git-subtle); stroke-width: 2; stroke-dasharray: 3 2; }
       .wip-count { margin-left: var(--git-gutter); font-style: italic; }
+      .wip-conflicts {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding-left: var(--git-gutter);
+        color: var(--background-color);
+        background: color-mix(in srgb, var(--color-yellow) 75%, var(--color-red));
+      }
       .row .col-refs { display: flex; align-items: center; gap: 0.25rem; overflow: hidden; }
       .label {
         display: inline-flex;
@@ -400,6 +415,18 @@ export class GitGraphComponent {
   readonly rowHeight = ROW_HEIGHT;
   readonly avatarRadius = AVATAR_RADIUS;
   private readonly viewport = viewChild(CdkVirtualScrollViewport);
+
+  /** The work in progress row says so when git stopped on conflicts. */
+  readonly conflictText = computed(() => {
+    const count = this.repository.status().conflicted.length;
+    const operation = this.repository.operation();
+    if (count === 0 || !operation) return null;
+    const files = `${count} file conflict${count === 1 ? " was" : "s were"} found`;
+    const branch = this.repository.head().branch;
+    return operation === "merge" && branch
+      ? `${files} when attempting to merge into ${branch}`
+      : `${files} during the ${operation.replace("-", " ")}`;
+  });
 
   /** Index of HEAD among the loaded commits, when the work in progress hangs from it. */
   private readonly headIndex = computed(() => {

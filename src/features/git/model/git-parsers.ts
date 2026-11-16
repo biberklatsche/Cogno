@@ -281,16 +281,29 @@ export function cloneDirectoryName(url: string): string {
   return last.replace(/\.git$/, "");
 }
 
+/** One version of a conflicted file in the index. */
+export type GitConflictStage = { readonly mode: string; readonly blob: string };
+
+/** 1 the common base, 2 the current side, 3 the incoming one. */
+export type GitConflictStages = ReadonlyMap<1 | 2 | 3, GitConflictStage>;
+
 /**
- * Reads `git ls-files -u -z` for one path: the file mode per stage git still
- * holds, 1 the common base, 2 the current side, 3 the incoming one. A side
- * that deleted the file has no stage.
+ * Reads `git ls-files -u -z` for one path: the version per stage git still
+ * holds. A side that deleted the file has no stage.
  */
-export function parseUnmergedStages(raw: string): ReadonlyMap<1 | 2 | 3, string> {
-  const stages = new Map<1 | 2 | 3, string>();
+export function parseUnmergedStages(raw: string): GitConflictStages {
+  const stages = new Map<1 | 2 | 3, GitConflictStage>();
   for (const entry of raw.split("\0")) {
-    const [, mode, stage] = /^(\d+) [0-9a-f]+ ([123])\t/.exec(entry) ?? [];
-    if (mode && stage) stages.set(Number(stage) as 1 | 2 | 3, mode);
+    const [, mode, blob, stage] = /^(\d+) ([0-9a-f]+) ([123])\t/.exec(entry) ?? [];
+    if (mode && blob && stage) stages.set(Number(stage) as 1 | 2 | 3, { mode, blob });
   }
   return stages;
+}
+
+/**
+ * The branch, tag or commit a merge brings in, as `MERGE_MSG` names it
+ * ("Merge branch 'feature'", "Merge remote-tracking branch 'origin/x'").
+ */
+export function mergeSourceOf(message: string): string | null {
+  return /^Merge (?:remote-tracking branch|branch|tag|commit) '([^']+)'/.exec(message)?.[1] ?? null;
 }

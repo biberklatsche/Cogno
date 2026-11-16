@@ -4,6 +4,7 @@ import {
   buildRefLabels,
   cloneDirectoryName,
   isPushRejected,
+  mergeSourceOf,
   parseCommitDetail,
   parseGitStatus,
   parseLog,
@@ -285,20 +286,33 @@ describe("cloneDirectoryName", () => {
 });
 
 describe("parseUnmergedStages", () => {
-  it("maps each stage git holds to its file mode", () => {
+  it("maps each stage git holds to its mode and blob", () => {
     const raw = z(
       "100644 587be6b4c3f93f93c489c0111bba5596147a26cb 1\tdel file.txt",
       "100755 b77b4eb1d946f923f61785536da9ca5af6909f06 2\tdel file.txt",
     );
     expect(parseUnmergedStages(raw)).toEqual(
       new Map([
-        [1, "100644"],
-        [2, "100755"],
+        [1, { mode: "100644", blob: "587be6b4c3f93f93c489c0111bba5596147a26cb" }],
+        [2, { mode: "100755", blob: "b77b4eb1d946f923f61785536da9ca5af6909f06" }],
       ]),
     );
   });
 
   it("reads nothing from an empty answer", () => {
     expect(parseUnmergedStages("").size).toBe(0);
+  });
+});
+
+describe("mergeSourceOf", () => {
+  it("names what the merge brings in", () => {
+    expect(mergeSourceOf("Merge branch 'feature'\n\n# Conflicts:")).toBe("feature");
+    expect(mergeSourceOf("Merge branch 'feature' into develop")).toBe("feature");
+    expect(mergeSourceOf("Merge remote-tracking branch 'origin/x'")).toBe("origin/x");
+    expect(mergeSourceOf("Merge tag 'v1.0'")).toBe("v1.0");
+  });
+
+  it("names nothing in another message", () => {
+    expect(mergeSourceOf('Revert "x"')).toBeNull();
   });
 });

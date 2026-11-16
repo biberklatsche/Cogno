@@ -2,128 +2,127 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   effect,
   input,
+  OnDestroy,
   signal,
   untracked,
+  viewChild,
+  viewChildren,
 } from "@angular/core";
+import { Annotation } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitConflictContent, GitDiffService } from "../git-diff.service";
-import { GitOperationsService } from "../git-operations.service";
+import { detectGitDiffLanguage } from "../git-diff-languages";
+import { GitConflictTake, GitOperationsService } from "../git-operations.service";
 import { GitRepositoryService } from "../git-repository.service";
 import {
+  conflictRows,
   conflictsOf,
-  GitConflictChoice,
+  GitConflictPick,
   GitConflictSegment,
+  GitConflictSide,
   parseConflicts,
   resolveConflicts,
 } from "../model/git-conflict";
+import { gitEditorLook } from "./git-diff-view.component";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
-/** Lines of agreed text shown around a conflict; the rest folds away. */
-const CONTEXT_LINES = 3;
+/** Marks the output changes the view makes itself, as opposed to typing. */
+const fromPicks = Annotation.define<boolean>();
 
-type ConflictBlock =
-  | {
-      readonly kind: "text";
-      readonly head: ReadonlyArray<string>;
-      readonly skipped: number;
-      readonly tail: ReadonlyArray<string>;
-    }
-  | {
-      readonly kind: "conflict";
-      readonly index: number;
-      readonly ours: ReadonlyArray<string>;
-      readonly theirs: ReadonlyArray<string>;
-      readonly oursLabel: string;
-      readonly theirsLabel: string;
-    };
+/** A choice for a file whose conflict cannot be shown line by line. */
+type WholeFileAction = { readonly label: string; readonly take: GitConflictTake | "as-is" };
 
 /**
- * A conflicted file, conflict by conflict: the current and the incoming side
- * next to each other, one of them or both taken per conflict, and the file
- * written and marked resolved once every conflict has its choice. A conflict
- * without markers (one side deleted the file, a binary file) is resolved by
- * taking a side as a whole.
+ * A conflicted file as GitKraken shows it: the current side (A) and the
+ * incoming side (B) above, level line by line, a checkbox per conflict and
+ * per side, and below the output - the file as it will be saved, built from
+ * what is ticked in the order it was ticked, and editable by hand. Saving
+ * writes the output and marks the file resolved. A conflict without markers
+ * (one side deleted the file, a binary file) is resolved as a whole.
  */
 @Component({
   selector: "app-git-conflict-view",
   standalone: true,
+  imports: [IconComponent, TooltipDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (content(); as content) {
-      @if (total() > 0) {
-        <div class="bar">
-          <span class="small subtle">{{ chosenCount() }} of {{ total() }} conflict{{ total() === 1 ? "" : "s" }} resolved</span>
-          <span class="grow"></span>
-          <button type="button" class="button small" (click)="chooseAll('ours')">Take All Current</button>
-          <button type="button" class="button small" (click)="chooseAll('theirs')">Take All Incoming</button>
-          <button type="button" class="button small primary" [disabled]="resolved() === null || saving()" (click)="save()">
-            Save and Mark Resolved
-          </button>
-        </div>
-        <div class="blocks">
-          @for (block of blocks(); track $index) {
-            @if (block.kind === "text") {
-              @for (line of block.head; track $index) {
-                <div class="line mono">{{ line }}</div>
-              }
-              @if (block.skipped > 0) {
-                <div class="line skipped small subtle">⋯ {{ block.skipped }} unchanged line{{ block.skipped === 1 ? "" : "s" }}</div>
-              }
-              @for (line of block.tail; track $index) {
-                <div class="line mono">{{ line }}</div>
-              }
-            } @else {
-              <div class="conflict" [class.chosen]="choices()[block.index]">
-                <div class="conflict-header">
-                  <span class="small subtle">Conflict {{ block.index + 1 }}</span>
-                  <span class="grow"></span>
-                  <button type="button" class="button small" [class.active]="choices()[block.index] === 'ours'"
-                          (click)="choose(block.index, 'ours')">Take Current</button>
-                  <button type="button" class="button small" [class.active]="choices()[block.index] === 'theirs'"
-                          (click)="choose(block.index, 'theirs')">Take Incoming</button>
-                  <button type="button" class="button small" [class.active]="choices()[block.index] === 'both'"
-                          (click)="choose(block.index, 'both')">Take Both</button>
-                </div>
-                <div class="sides">
-                  <div class="side ours" [class.taken]="takes(block.index, 'ours')" [class.dropped]="drops(block.index, 'ours')">
-                    <div class="side-label small subtle ellipsis">Current · {{ block.oursLabel }}</div>
-                    @for (line of block.ours; track $index) {
-                      <div class="line mono">{{ line }}</div>
-                    } @empty {
-                      <div class="line small subtle">(nothing)</div>
-                    }
-                  </div>
-                  <div class="side theirs" [class.taken]="takes(block.index, 'theirs')" [class.dropped]="drops(block.index, 'theirs')">
-                    <div class="side-label small subtle ellipsis">Incoming · {{ block.theirsLabel }}</div>
-                    @for (line of block.theirs; track $index) {
-                      <div class="line mono">{{ line }}</div>
-                    } @empty {
-                      <div class="line small subtle">(nothing)</div>
-                    }
-                  </div>
-                </div>
-              </div>
+      @if (total() === 0) {
+        <div class="prompt">
+          <span>{{ wholeFileText(content) }}</span>
+          <span class="actions">
+            @for (action of wholeFileActions(content); track action.take) {
+              <button type="button" class="button small" [class.primary]="$first" [disabled]="saving()"
+                      (click)="resolveWhole(action.take)">{{ action.label }}</button>
             }
-          }
+          </span>
         </div>
       } @else {
-        <div class="whole">
-          <span>{{ wholeFileText(content) }}</span>
-          <div class="whole-actions">
-            <button type="button" class="button small" [disabled]="saving()" (click)="takeSide('ours')">
-              {{ content.hasOurs ? "Take Current" : "Take Current (delete file)" }}
-            </button>
-            <button type="button" class="button small" [disabled]="saving()" (click)="takeSide('theirs')">
-              {{ content.hasTheirs ? "Take Incoming" : "Take Incoming (delete file)" }}
-            </button>
-            @if (content.hasOurs && content.hasTheirs) {
-              <button type="button" class="button small primary" [disabled]="saving()" (click)="markResolved()">
-                Mark Resolved
-              </button>
-            }
-          </div>
+        <div class="panes">
+          @for (pane of panes(); track pane.side) {
+            <div class="pane" [class]="'pane ' + pane.side">
+              <div class="pane-header">
+                <input type="checkbox" [checked]="takesAll(pane.side)" [indeterminate]="takesSome(pane.side)"
+                       [attr.aria-label]="'Take every conflict from ' + pane.label" (change)="toggleAll(pane.side)" />
+                <span class="badge">{{ pane.side === "ours" ? "A" : "B" }}</span>
+                <span class="ellipsis">
+                  @if (pane.sha) {
+                    Commit {{ pane.sha }}
+                    @if (pane.name) { on <em class="name">{{ pane.name }}</em> }
+                  } @else {
+                    <em class="name">{{ pane.name }}</em>
+                  }
+                </span>
+              </div>
+              <div #paneBody class="pane-body" (scroll)="syncScroll($event)">
+                @for (row of pane.rows; track $index) {
+                  <div class="row"
+                       [class.conflict]="row.conflict !== null"
+                       [class.taken]="row.conflict !== null && takes(row.conflict, pane.side)"
+                       [class.filler]="row.number === null"
+                       [class.current]="row.conflict === current()"
+                       [attr.data-conflict]="row.first ? row.conflict : null">
+                    <span class="check">
+                      @if (row.first && row.conflict !== null) {
+                        <input type="checkbox" [checked]="takes(row.conflict, pane.side)"
+                               [attr.aria-label]="'Take conflict ' + (row.conflict + 1) + ' from ' + pane.label"
+                               (change)="toggle(row.conflict, pane.side)" />
+                      }
+                    </span>
+                    <span class="gutter mono">{{ row.number ?? "" }}</span>
+                    <span class="text mono">{{ row.text }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </div>
+        <div class="output-header">
+          <span class="title">Output</span>
+          @if (edited()) {
+            <span class="small subtle" appTooltip="Ticking a box again rebuilds the output and drops the edits">edited</span>
+          }
+          <span class="grow"></span>
+          <span class="small nav-label">conflict {{ current() + 1 }} of {{ total() }}</span>
+          <button type="button" class="button icon-button" appTooltip="Previous conflict"
+                  [disabled]="current() === 0" (click)="goTo(current() - 1)">
+            <app-icon name="mdiChevronUp"></app-icon>
+          </button>
+          <button type="button" class="button icon-button" appTooltip="Next conflict"
+                  [disabled]="current() >= total() - 1" (click)="goTo(current() + 1)">
+            <app-icon name="mdiChevronDown"></app-icon>
+          </button>
+          <span class="grow"></span>
+          <span class="small subtle">{{ pickedCount() }} of {{ total() }} decided</span>
+          <button type="button" class="button small primary" [disabled]="!canSave() || saving()"
+                  [appTooltip]="canSave() ? 'Save the output and mark the file resolved' : 'Tick a side for every conflict, or edit the output'"
+                  (click)="save()">Save</button>
+        </div>
+        <div #output class="output"></div>
       }
     } @else {
       <div class="empty small subtle">Loading conflict…</div>
@@ -132,69 +131,138 @@ type ConflictBlock =
   styles: [
     GIT_SHARED_STYLES,
     `
-      :host { display: flex; flex-direction: column; height: 100%; min-height: 0; font-size: 12px; }
-      .bar {
+      :host {
+        --conflict-ours: var(--color-cyan);
+        --conflict-theirs: var(--color-yellow);
+        position: absolute;
+        inset: 0;
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        min-height: var(--git-row-height);
-        padding: 0.25rem var(--git-gutter);
-        border-bottom: 1px solid var(--git-border);
+        flex-direction: column;
+        min-height: 0;
+        font-size: 12px;
       }
       .grow { flex: 1; }
-      .small { font-size: var(--git-font-small); }
-      .subtle { color: var(--git-subtle); }
-      .blocks { flex: 1 1 auto; overflow: auto; padding-bottom: 1rem; }
-      .line { min-height: 20px; padding: 0 var(--git-gutter); white-space: pre; }
-      .skipped { display: flex; align-items: center; user-select: none; }
-      .conflict {
-        margin: 0.25rem 0;
-        border-top: 1px solid var(--color-red);
-        border-bottom: 1px solid var(--color-red);
+      .prompt {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.6rem var(--git-gutter);
+        background: var(--git-hover);
+        border-bottom: 1px solid var(--git-border);
       }
-      .conflict.chosen { border-color: var(--git-border); }
-      .conflict-header {
-        position: sticky;
-        top: 0;
-        z-index: 1;
+      .prompt .actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .panes { flex: 1 1 50%; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+      .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+      .pane + .pane { border-left: 1px solid var(--git-border); }
+      .pane-header {
         display: flex;
         align-items: center;
         gap: 0.4rem;
         min-height: var(--git-row-height);
         padding: 0 var(--git-gutter);
-        background: var(--git-hover);
+        border-bottom: 1px solid var(--git-border);
       }
-      .conflict-header .active { outline: 1px solid var(--highlight-color); outline-offset: -1px; }
-      .sides { display: grid; grid-template-columns: 1fr 1fr; }
-      .side { min-width: 0; overflow-x: auto; }
-      .side + .side { border-left: 1px solid var(--git-border); }
-      .side-label { padding: 0.15rem var(--git-gutter); }
-      .side.ours { background: color-mix(in srgb, var(--color-cyan) 8%, transparent); }
-      .side.theirs { background: color-mix(in srgb, var(--color-magenta) 8%, transparent); }
-      .side.taken { background: color-mix(in srgb, var(--color-green) 16%, transparent); }
-      .side.dropped { opacity: 0.45; }
-      .side.dropped .line.mono { text-decoration: line-through; }
-      .whole { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem var(--git-gutter); }
-      .whole-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.2rem;
+        height: 1.2rem;
+        border: 1px solid currentColor;
+        border-radius: 2px;
+        font-weight: bold;
+      }
+      .ours .badge, .ours .name { color: var(--conflict-ours); }
+      .theirs .badge, .theirs .name { color: var(--conflict-theirs); }
+      .pane-body { flex: 1 1 auto; overflow: auto; min-height: 0; }
+      .row { display: flex; align-items: center; min-height: 18px; white-space: pre; width: max-content; min-width: 100%; }
+      .check { flex: 0 0 1.4rem; display: flex; justify-content: center; }
+      .check input { margin: 0; }
+      .gutter { flex: 0 0 2.8em; padding-right: 0.6em; text-align: right; color: var(--git-subtle); user-select: none; }
+      .text { flex: 1 1 auto; padding-right: 1rem; }
+      .ours .row.conflict { background: color-mix(in srgb, var(--conflict-ours) 10%, transparent); }
+      .theirs .row.conflict { background: color-mix(in srgb, var(--conflict-theirs) 10%, transparent); }
+      .ours .row.taken { background: color-mix(in srgb, var(--conflict-ours) 28%, transparent); }
+      .theirs .row.taken { background: color-mix(in srgb, var(--conflict-theirs) 28%, transparent); }
+      .ours .row.current .text { box-shadow: inset 2px 0 var(--conflict-ours); }
+      .theirs .row.current .text { box-shadow: inset 2px 0 var(--conflict-theirs); }
+      .row.filler .text {
+        background: repeating-linear-gradient(135deg, transparent 0 4px, var(--git-border) 4px 5px);
+      }
+      .output-header {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: var(--git-row-height);
+        padding: 0.15rem var(--git-gutter);
+        border-top: 1px solid var(--git-border);
+        border-bottom: 1px solid var(--git-border);
+      }
+      .output-header .title { font-size: 1.1em; }
+      .nav-label { color: var(--highlight-color); }
+      .output { flex: 1 1 40%; min-height: 0; position: relative; }
+      .output ::ng-deep .cm-editor { position: absolute; inset: 0; }
+      .output ::ng-deep .cm-editor.cm-focused { outline: none; }
       .empty { padding: 1rem var(--git-gutter); }
     `,
   ],
 })
-export class GitConflictViewComponent {
+export class GitConflictViewComponent implements OnDestroy {
   /** The conflicted file, repository-relative. */
   readonly path = input.required<string>();
 
   readonly content = signal<GitConflictContent | null>(null);
   readonly saving = signal(false);
-  readonly choices = signal<ReadonlyArray<GitConflictChoice | null>>([]);
+  /** Per conflict, the sides ticked, in the order they were ticked. */
+  readonly picks = signal<ReadonlyArray<GitConflictPick>>([]);
+  /** The conflict the navigation is on. */
+  readonly current = signal(0);
+  /** The output was typed into since the boxes last built it. */
+  readonly edited = signal(false);
 
   private readonly segments = computed<ReadonlyArray<GitConflictSegment>>(() =>
     parseConflicts(this.content()?.text ?? ""),
   );
   readonly total = computed(() => conflictsOf(this.segments()).length);
-  readonly chosenCount = computed(() => this.choices().filter(Boolean).length);
-  readonly resolved = computed(() => resolveConflicts(this.segments(), this.choices()));
-  readonly blocks = computed(() => toBlocks(this.segments()));
+  readonly pickedCount = computed(
+    () => this.picks().filter((pick) => pick && pick.length > 0).length,
+  );
+  readonly canSave = computed(() => this.pickedCount() === this.total() || this.edited());
+  readonly resolution = computed(() => resolveConflicts(this.segments(), this.picks()));
+
+  /** What the sides are called: the commits and branches, or the conflict markers' labels. */
+  private readonly names = computed(() => {
+    const first = conflictsOf(this.segments())[0];
+    const head = this.repository.head();
+    const incoming = this.repository.incoming();
+    return {
+      ours: {
+        sha: head.sha?.slice(0, 7) ?? null,
+        name: head.branch ?? first?.oursLabel ?? "current",
+      },
+      theirs: {
+        sha: incoming?.sha.slice(0, 7) ?? null,
+        name: incoming?.name ?? first?.theirsLabel ?? "incoming",
+      },
+    };
+  });
+  readonly panes = computed(() =>
+    (["ours", "theirs"] as const).map((side) => ({
+      side,
+      ...this.names()[side],
+      label: this.names()[side].name,
+      rows: conflictRows(this.segments(), side),
+    })),
+  );
+
+  private readonly paneBodies = viewChildren<ElementRef<HTMLElement>>("paneBody");
+  private readonly outputHost = viewChild<ElementRef<HTMLElement>>("output");
+  private editor: EditorView | null = null;
+  private editorPath: string | null = null;
+  private building = 0;
+  private syncingScroll = false;
 
   constructor(
     private readonly repository: GitRepositoryService,
@@ -202,54 +270,147 @@ export class GitConflictViewComponent {
     private readonly diffs: GitDiffService,
   ) {
     // Re-read when another file is shown or the repository was re-read: the
-    // file may have been edited elsewhere. Choices stay while the text does.
+    // file may have been edited elsewhere. Ticks stay while the text does.
     effect(() => {
       const path = this.path();
       this.repository.status();
       untracked(() => void this.load(path));
     });
-  }
 
-  choose(index: number, choice: GitConflictChoice): void {
-    this.choices.update((choices) => {
-      const next = [...choices];
-      next[index] = next[index] === choice ? null : choice;
-      return next;
+    // The output editor, built once its host is there, for the file shown.
+    effect(() => {
+      const host = this.outputHost()?.nativeElement;
+      const content = this.content();
+      untracked(() => void this.buildEditor(host, content));
+    });
+
+    // The ticks rebuild the output.
+    effect(() => {
+      const text = this.resolution().text;
+      untracked(() => this.showInOutput(text));
     });
   }
 
-  chooseAll(choice: GitConflictChoice): void {
-    this.choices.set(Array.from({ length: this.total() }, () => choice));
+  ngOnDestroy(): void {
+    this.destroyEditor();
   }
 
-  takes(index: number, side: "ours" | "theirs"): boolean {
-    const choice = this.choices()[index];
-    return choice === side || choice === "both";
+  takes(conflict: number, side: GitConflictSide): boolean {
+    return this.picks()[conflict]?.includes(side) ?? false;
   }
 
-  drops(index: number, side: "ours" | "theirs"): boolean {
-    const choice = this.choices()[index];
-    return !!choice && !this.takes(index, side);
+  takesAll(side: GitConflictSide): boolean {
+    return this.total() > 0 && this.countTaking(side) === this.total();
+  }
+
+  takesSome(side: GitConflictSide): boolean {
+    const count = this.countTaking(side);
+    return count > 0 && count < this.total();
+  }
+
+  toggle(conflict: number, side: GitConflictSide): void {
+    this.picks.update((picks) => {
+      const next = [...picks];
+      const pick = next[conflict] ?? [];
+      next[conflict] = pick.includes(side) ? pick.filter((s) => s !== side) : [...pick, side];
+      return next;
+    });
+    this.current.set(conflict);
+  }
+
+  /** Ticks the side for every conflict, or unticks it where every conflict had it. */
+  toggleAll(side: GitConflictSide): void {
+    const take = !this.takesAll(side);
+    this.picks.update((picks) =>
+      Array.from({ length: this.total() }, (_, index) => {
+        const pick = (picks[index] ?? []).filter((s) => s !== side);
+        return take ? [...pick, side] : pick;
+      }),
+    );
+  }
+
+  goTo(index: number): void {
+    if (index < 0 || index >= this.total()) return;
+    this.current.set(index);
+    const body = this.paneBodies()[0]?.nativeElement;
+    const row = body?.querySelector<HTMLElement>(`[data-conflict="${index}"]`);
+    if (body && row) body.scrollTop = row.offsetTop - body.offsetTop - body.clientHeight / 3;
+    const start = this.resolution().starts[index];
+    if (this.editor && start !== undefined && !this.edited()) {
+      this.editor.dispatch({
+        effects: EditorView.scrollIntoView(start, { y: "start", yMargin: 40 }),
+      });
+    }
+  }
+
+  /** A and B scroll together; their rows are level. */
+  syncScroll(event: Event): void {
+    if (this.syncingScroll) return;
+    const source = event.target as HTMLElement;
+    this.syncingScroll = true;
+    for (const body of this.paneBodies()) {
+      const element = body.nativeElement;
+      if (element === source) continue;
+      element.scrollTop = source.scrollTop;
+      element.scrollLeft = source.scrollLeft;
+    }
+    requestAnimationFrame(() => {
+      this.syncingScroll = false;
+    });
   }
 
   wholeFileText(content: GitConflictContent): string {
-    if (!content.hasOurs) return "Deleted on the current side, changed on the incoming side.";
-    if (!content.hasTheirs) return "Changed on the current side, deleted on the incoming side.";
-    return "No conflict markers in this file (a binary file, or already edited). Take a side, or mark it resolved as it is.";
+    const { ours, theirs } = this.sideNames();
+    const path = this.path();
+    if (!content.hasTheirs)
+      return `${path} has been modified on ${ours}, but deleted on ${theirs}.`;
+    if (!content.hasOurs) return `${path} has been deleted on ${ours}, but modified on ${theirs}.`;
+    return `${path} differs on ${ours} and ${theirs} in a way that cannot be shown line by line (a binary file, or the markers were removed).`;
+  }
+
+  wholeFileActions(content: GitConflictContent): WholeFileAction[] {
+    const { ours, theirs } = this.sideNames();
+    const base: WholeFileAction[] = content.hasBase
+      ? [{ label: "Keep Base Version", take: "base" }]
+      : [];
+    if (!content.hasTheirs || !content.hasOurs) {
+      const modified = content.hasOurs ? "ours" : "theirs";
+      return [
+        { label: "Keep Modified Version", take: modified },
+        { label: "Delete the File", take: modified === "ours" ? "theirs" : "ours" },
+        ...base,
+      ];
+    }
+    return [
+      { label: `Keep ${ours} Version`, take: "ours" },
+      { label: `Keep ${theirs} Version`, take: "theirs" },
+      ...base,
+      { label: "Mark Resolved As It Is", take: "as-is" },
+    ];
+  }
+
+  resolveWhole(take: GitConflictTake | "as-is"): Promise<void> {
+    const path = this.path();
+    return this.whileSaving(() =>
+      take === "as-is"
+        ? this.operations.markResolved(path)
+        : this.operations.takeConflictSide(path, take),
+    );
   }
 
   save(): Promise<void> {
-    const resolved = this.resolved();
-    if (resolved === null) return Promise.resolve();
-    return this.whileSaving(() => this.operations.resolveConflict(this.path(), resolved));
+    if (!this.canSave()) return Promise.resolve();
+    const text = this.editor?.state.doc.toString() ?? this.resolution().text;
+    return this.whileSaving(() => this.operations.resolveConflict(this.path(), text));
   }
 
-  takeSide(side: "ours" | "theirs"): Promise<void> {
-    return this.whileSaving(() => this.operations.takeConflictSide(this.path(), side));
+  private sideNames(): { ours: string; theirs: string } {
+    const names = this.names();
+    return { ours: names.ours.name, theirs: names.theirs.name };
   }
 
-  markResolved(): Promise<void> {
-    return this.whileSaving(() => this.operations.markResolved(this.path()));
+  private countTaking(side: GitConflictSide): number {
+    return this.picks().filter((pick) => pick?.includes(side)).length;
   }
 
   private async whileSaving(action: () => Promise<unknown>): Promise<void> {
@@ -268,49 +429,65 @@ export class GitConflictViewComponent {
     if (path !== this.path()) return;
     if (
       previous?.text === content.text &&
+      previous.hasBase === content.hasBase &&
       previous.hasOurs === content.hasOurs &&
       previous.hasTheirs === content.hasTheirs
     ) {
       return;
     }
     this.content.set(content);
-    this.choices.set([]);
+    this.picks.set([]);
+    this.current.set(0);
+    this.edited.set(false);
   }
-}
 
-/** The file as blocks to show: conflicts whole, agreed text folded to its edges. */
-function toBlocks(segments: ReadonlyArray<GitConflictSegment>): ConflictBlock[] {
-  let conflictIndex = 0;
-  return segments.map((segment, position) => {
-    if (segment.kind === "conflict") {
-      return {
-        kind: "conflict",
-        index: conflictIndex++,
-        ours: linesOf(segment.ours),
-        theirs: linesOf(segment.theirs),
-        oursLabel: segment.oursLabel,
-        theirsLabel: segment.theirsLabel,
-      };
+  private async buildEditor(
+    host: HTMLElement | undefined,
+    content: GitConflictContent | null,
+  ): Promise<void> {
+    const path = this.path();
+    if (!host || !content) {
+      this.destroyEditor();
+      return;
     }
-    const lines = linesOf(segment.text);
-    const before = position > 0 ? CONTEXT_LINES : 0;
-    const after = position < segments.length - 1 ? CONTEXT_LINES : 0;
-    if (lines.length <= before + after + 1) {
-      return { kind: "text", head: lines, skipped: 0, tail: [] };
-    }
-    return {
-      kind: "text",
-      head: lines.slice(0, before),
-      skipped: lines.length - before - after,
-      tail: lines.slice(lines.length - after),
-    };
-  });
-}
+    // The same file in the same host keeps its editor; the ticks update it.
+    if (this.editor && this.editorPath === path && this.editor.dom.parentElement === host) return;
+    this.destroyEditor();
+    const build = ++this.building;
+    const look = await gitEditorLook(detectGitDiffLanguage(path));
+    if (build !== this.building) return;
+    this.editor = new EditorView({
+      parent: host,
+      doc: this.resolution().text,
+      extensions: [
+        ...look,
+        EditorView.updateListener.of((update) => {
+          const typed = update.transactions.some(
+            (transaction) => transaction.docChanged && !transaction.annotation(fromPicks),
+          );
+          if (typed) this.edited.set(true);
+        }),
+      ],
+    });
+    this.editorPath = path;
+  }
 
-/** The lines of a piece of the file, without their endings. */
-function linesOf(text: string): string[] {
-  if (!text) return [];
-  const lines = text.split(/\r?\n/);
-  if (lines[lines.length - 1] === "") lines.pop();
-  return lines;
+  private showInOutput(text: string): void {
+    const editor = this.editor;
+    if (!editor) return;
+    if (editor.state.doc.toString() !== text) {
+      editor.dispatch({
+        changes: { from: 0, to: editor.state.doc.length, insert: text },
+        annotations: fromPicks.of(true),
+      });
+    }
+    this.edited.set(false);
+  }
+
+  private destroyEditor(): void {
+    this.building++;
+    this.editor?.destroy();
+    this.editor = null;
+    this.editorPath = null;
+  }
 }

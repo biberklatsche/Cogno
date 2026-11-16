@@ -14,6 +14,7 @@ export type GitDiffContent = {
 export type GitConflictContent = {
   /** The working file, empty when it is not there. */
   readonly text: string;
+  readonly hasBase: boolean;
   readonly hasOurs: boolean;
   readonly hasTheirs: boolean;
 };
@@ -97,7 +98,7 @@ export class GitDiffService {
       this.readWorkingFile(path),
       this.repository.loadConflictStages(path),
     ]);
-    return { text, hasOurs: stages.has(2), hasTheirs: stages.has(3) };
+    return { text, hasBase: stages.has(1), hasOurs: stages.has(2), hasTheirs: stages.has(3) };
   }
 
   /** A git object read in the bound session; empty when it does not exist. */

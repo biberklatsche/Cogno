@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conflictsOf, parseConflicts, resolveConflicts } from "./git-conflict";
+import { conflictRows, conflictsOf, parseConflicts, resolveConflicts } from "./git-conflict";
 
 const FILE = [
   "line1\n",
@@ -59,17 +59,38 @@ describe("parseConflicts", () => {
 describe("resolveConflicts", () => {
   const segments = parseConflicts(FILE);
 
-  it("writes the chosen side in place of the markers", () => {
-    expect(resolveConflicts(segments, ["ours"])).toBe("line1\nline2-main\nline3\n");
-    expect(resolveConflicts(segments, ["theirs"])).toBe("line1\nline2-feature\nline3\n");
+  it("writes the taken side in place of the markers", () => {
+    expect(resolveConflicts(segments, [["ours"]])).toEqual({
+      text: "line1\nline2-main\nline3\n",
+      starts: [6],
+    });
+    expect(resolveConflicts(segments, [["theirs"]]).text).toBe("line1\nline2-feature\nline3\n");
   });
 
-  it("writes both sides, the current one first", () => {
-    expect(resolveConflicts(segments, ["both"])).toBe("line1\nline2-main\nline2-feature\nline3\n");
+  it("writes both sides in the order they were taken", () => {
+    expect(resolveConflicts(segments, [["theirs", "ours"]]).text).toBe(
+      "line1\nline2-feature\nline2-main\nline3\n",
+    );
   });
 
-  it("has no result while a conflict is open", () => {
-    expect(resolveConflicts(segments, [null])).toBeNull();
-    expect(resolveConflicts(segments, [])).toBeNull();
+  it("leaves nothing for a conflict nothing was taken for", () => {
+    expect(resolveConflicts(segments, []).text).toBe("line1\nline3\n");
+  });
+});
+
+describe("conflictRows", () => {
+  const segments = parseConflicts(
+    "a\n<<<<<<< HEAD\nb\n=======\nc\nd\n>>>>>>> feature\ne\n<<<<<<< HEAD\n=======\n>>>>>>> feature\n",
+  );
+
+  it("pads the shorter side so both stay level, numbering only real lines", () => {
+    expect(conflictRows(segments, "ours")).toEqual([
+      { text: "a", number: 1, conflict: null, first: false },
+      { text: "b", number: 2, conflict: 0, first: true },
+      { text: "", number: null, conflict: 0, first: false },
+      { text: "e", number: 3, conflict: null, first: false },
+      { text: "", number: null, conflict: 1, first: true },
+    ]);
+    expect(conflictRows(segments, "theirs").map((row) => row.number)).toEqual([1, 2, 3, 4, null]);
   });
 });

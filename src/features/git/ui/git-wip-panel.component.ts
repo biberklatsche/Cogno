@@ -23,11 +23,28 @@ import { GIT_SHARED_STYLES } from "./git-styles";
   imports: [IconComponent, TooltipDirective, GitFileListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="panel-header">
-      <span class="ellipsis grow">
-        {{ repository.changeCount() }} file changes on
-        <strong>{{ repository.head().branch ?? "detached HEAD" }}</strong>
-      </span>
+    <header class="panel-header" [class.merging]="merging()">
+      @if (merging()) {
+        <span class="merge-title grow">
+          <span class="merge-state" [class.conflicts]="status().conflicted.length > 0">
+            @if (status().conflicted.length > 0) {
+              <app-icon class="small-icon" name="mdiAlert"></app-icon>
+              Merge conflicts detected
+            } @else {
+              Conflicts resolved - ready to merge
+            }
+          </span>
+          <span class="ellipsis merge-sides">
+            Merging <span class="ref">{{ repository.incoming()?.name ?? repository.incoming()?.sha?.slice(0, 7) ?? "?" }}</span>
+            into <span class="ref">{{ repository.head().branch ?? "detached HEAD" }}</span>
+          </span>
+        </span>
+      } @else {
+        <span class="ellipsis grow">
+          {{ repository.changeCount() }} file changes on
+          <strong>{{ repository.head().branch ?? "detached HEAD" }}</strong>
+        </span>
+      }
       <button type="button" class="button icon-button"
               [appTooltip]="view.fileListMode() === 'tree' ? 'Show as paths' : 'Show as tree'"
               (click)="view.toggleFileListMode()">
@@ -43,6 +60,8 @@ import { GIT_SHARED_STYLES } from "./git-styles";
             <app-icon class="small-icon" [name]="isOpen('conflicted') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
             Conflicted Files ({{ status().conflicted.length }})
           </button>
+          <span class="grow"></span>
+          <button type="button" class="button small" (click)="markAllResolved()">Mark All Resolved</button>
         </div>
         @if (isOpen("conflicted")) {
           <app-git-file-list class="body" kind="conflicted" [files]="status().conflicted" [mode]="view.fileListMode()"
@@ -83,7 +102,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('staged')">
           <app-icon class="small-icon" [name]="isOpen('staged') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-          Staged Files ({{ status().staged.length }})
+          {{ merging() ? "Resolved Files" : "Staged Files" }} ({{ status().staged.length }})
         </button>
         <span class="grow"></span>
         <button type="button" class="button small" [disabled]="status().staged.length === 0" (click)="operations.unstageAll()">
@@ -107,14 +126,20 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         <textarea class="description" placeholder="Description"
                   [value]="description()" (input)="description.set(value($event))"></textarea>
       </div>
-      <button type="submit" class="button commit commit-button" [disabled]="!canCommit() || committing()">
-        @if (committing()) {
-          <app-icon name="mdiLoading" class="spin"></app-icon>
-          Committing…
-        } @else {
-          {{ commitLabel() }}
+      <div class="commit-actions">
+        <button type="submit" class="button commit commit-button" [disabled]="!canCommit() || committing()">
+          @if (committing()) {
+            <app-icon name="mdiLoading" class="spin"></app-icon>
+            Committing…
+          } @else {
+            {{ commitLabel() }}
+          }
+        </button>
+        @if (merging()) {
+          <button type="button" class="button abort-button" [disabled]="committing()"
+                  (click)="operations.abortOperation('merge')">Abort Merge</button>
         }
-      </button>
+      </div>
     </form>
   `,
   styles: [
@@ -169,6 +194,25 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         font-size: var(--git-font-small);
         resize: none;
       }
+      .commit-actions { display: flex; gap: 0.4rem; }
+      .commit-actions .button { flex: 1 1 0; }
+      .abort-button {
+        color: var(--color-red);
+        border-color: color-mix(in srgb, var(--color-red) 60%, transparent);
+      }
+      .abort-button:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--color-red) 14%, var(--background-color));
+      }
+      .panel-header.merging { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+      .merge-title { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+      .merge-state { display: inline-flex; align-items: center; gap: 0.3rem; }
+      .merge-state.conflicts { color: var(--color-yellow); }
+      .merge-sides { font-size: var(--git-font-small); }
+      .ref {
+        padding: 0 0.3rem;
+        border-radius: 2px;
+        background: color-mix(in srgb, var(--highlight-color) 25%, transparent);
+      }
       .commit-button {
         align-self: stretch;
         display: inline-flex;
@@ -188,13 +232,21 @@ export class GitWipPanelComponent {
   readonly description = signal("");
   /** The commit and the re-read after it are running; the button waits for both. */
   readonly committing = signal(false);
+  /** A merge stopped for conflicts or for its commit. */
+  readonly merging = computed(() => this.repository.operation() === "merge");
+  /** A merge commits even with nothing staged: taking the current side everywhere is a merge too. */
   readonly canCommit = computed(
     () =>
       this.summary().trim().length > 0 &&
       this.status().conflicted.length === 0 &&
-      this.status().staged.length > 0,
+      (this.status().staged.length > 0 || this.merging()),
   );
   readonly commitLabel = computed(() => {
+    if (this.merging()) {
+      return this.status().conflicted.length > 0
+        ? "Resolve Conflicts to Merge"
+        : "Commit and Merge";
+    }
     const staged = this.status().staged.length;
     return staged === 0
       ? "Stage Changes to Commit"
@@ -230,6 +282,10 @@ export class GitWipPanelComponent {
 
   openDiff(file: GitFile, kind: "unstaged" | "staged"): void {
     this.actions.showDiff({ kind, file });
+  }
+
+  markAllResolved(): Promise<void> {
+    return this.actions.markResolved(this.status().conflicted.map((file) => file.path));
   }
 
   private async fillPreparedMessage(): Promise<void> {
