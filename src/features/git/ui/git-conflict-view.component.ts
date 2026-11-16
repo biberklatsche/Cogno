@@ -36,6 +36,9 @@ const fromPicks = Annotation.define<boolean>();
 /** A choice for a file whose conflict cannot be shown line by line. */
 type WholeFileAction = { readonly label: string; readonly take: GitConflictTake | "as-is" };
 
+/** A conflict as read, with the file it was read for. */
+type LoadedConflict = GitConflictContent & { readonly path: string };
+
 /**
  * A conflicted file as GitKraken shows it: the current side (A) and the
  * incoming side (B) above, level line by line, a checkbox per conflict and
@@ -213,7 +216,8 @@ export class GitConflictViewComponent implements OnDestroy {
   /** The conflicted file, repository-relative. */
   readonly path = input.required<string>();
 
-  readonly content = signal<GitConflictContent | null>(null);
+  /** The file on screen; null while another one loads. */
+  readonly content = signal<LoadedConflict | null>(null);
   readonly saving = signal(false);
   /** Per conflict, the sides ticked, in the order they were ticked. */
   readonly picks = signal<ReadonlyArray<GitConflictPick>>([]);
@@ -359,20 +363,31 @@ export class GitConflictViewComponent implements OnDestroy {
     });
   }
 
-  wholeFileText(content: GitConflictContent): string {
+  wholeFileText(content: LoadedConflict): string {
     const { ours, theirs } = this.sideNames();
-    const path = this.path();
-    if (!content.hasTheirs)
+    const { path } = content;
+    if (!content.hasBase && !content.hasOurs && !content.hasTheirs) {
+      return `${path} is no longer conflicted.`;
+    }
+    if (!content.hasOurs && !content.hasTheirs) {
+      return `${path} has been deleted on both ${ours} and ${theirs}.`;
+    }
+    if (!content.hasTheirs) {
       return `${path} has been modified on ${ours}, but deleted on ${theirs}.`;
+    }
     if (!content.hasOurs) return `${path} has been deleted on ${ours}, but modified on ${theirs}.`;
     return `${path} differs on ${ours} and ${theirs} in a way that cannot be shown line by line (a binary file, or the markers were removed).`;
   }
 
-  wholeFileActions(content: GitConflictContent): WholeFileAction[] {
+  wholeFileActions(content: LoadedConflict): WholeFileAction[] {
     const { ours, theirs } = this.sideNames();
     const base: WholeFileAction[] = content.hasBase
       ? [{ label: "Keep Base Version", take: "base" }]
       : [];
+    if (!content.hasOurs && !content.hasTheirs) {
+      // Nothing left to resolve, or deleted on both sides: delete it or keep the base.
+      return content.hasBase ? [{ label: "Delete the File", take: "ours" }, ...base] : [];
+    }
     if (!content.hasTheirs || !content.hasOurs) {
       const modified = content.hasOurs ? "ours" : "theirs";
       return [
@@ -389,19 +404,23 @@ export class GitConflictViewComponent implements OnDestroy {
     ];
   }
 
+  /** Acts on the file whose state is on screen, never on one still loading. */
   resolveWhole(take: GitConflictTake | "as-is"): Promise<void> {
-    const path = this.path();
+    const loaded = this.content();
+    if (!loaded) return Promise.resolve();
     return this.whileSaving(() =>
       take === "as-is"
-        ? this.operations.markResolved(path)
-        : this.operations.takeConflictSide(path, take),
+        ? this.operations.markResolved([loaded.path])
+        : this.operations.takeConflictSide(loaded.path, take),
     );
   }
 
+  /** Writes the output to the file it was built from, never to one still loading. */
   save(): Promise<void> {
-    if (!this.canSave()) return Promise.resolve();
+    const loaded = this.content();
+    if (!loaded || !this.canSave()) return Promise.resolve();
     const text = this.editor?.state.doc.toString() ?? this.resolution().text;
-    return this.whileSaving(() => this.operations.resolveConflict(this.path(), text));
+    return this.whileSaving(() => this.operations.resolveConflict(loaded.path, text));
   }
 
   private sideNames(): { ours: string; theirs: string } {
@@ -423,18 +442,30 @@ export class GitConflictViewComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Another file starts blank at once, so nothing of the previous one can be
+   * saved onto it. A re-read of the same file keeps the ticks while its text
+   * and sides are unchanged.
+   */
   private async load(path: string): Promise<void> {
     const previous = this.content();
+    const samePath = previous?.path === path;
+    if (!samePath) this.show(null);
     const content = await this.diffs.loadConflict(path);
     if (path !== this.path()) return;
     if (
-      previous?.text === content.text &&
+      samePath &&
+      previous.text === content.text &&
       previous.hasBase === content.hasBase &&
       previous.hasOurs === content.hasOurs &&
       previous.hasTheirs === content.hasTheirs
     ) {
       return;
     }
+    this.show({ ...content, path });
+  }
+
+  private show(content: LoadedConflict | null): void {
     this.content.set(content);
     this.picks.set([]);
     this.current.set(0);
@@ -443,13 +474,13 @@ export class GitConflictViewComponent implements OnDestroy {
 
   private async buildEditor(
     host: HTMLElement | undefined,
-    content: GitConflictContent | null,
+    content: LoadedConflict | null,
   ): Promise<void> {
-    const path = this.path();
     if (!host || !content) {
       this.destroyEditor();
       return;
     }
+    const { path } = content;
     // The same file in the same host keeps its editor; the ticks update it.
     if (this.editor && this.editorPath === path && this.editor.dom.parentElement === host) return;
     this.destroyEditor();

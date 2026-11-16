@@ -125,6 +125,21 @@ describe("GitOperationsService", () => {
       ]);
     });
 
+    it("writes nothing when the file is no longer conflicted", async () => {
+      stages.clear();
+
+      expect(await service.resolveConflict("a.txt", "merged\n")).toBe("failed");
+
+      expect(run).not.toHaveBeenCalled();
+    });
+
+    it("marks several files resolved in one run", async () => {
+      await service.markResolved(["a.txt", "b.txt"]);
+
+      expect(argsOfLastRun()).toEqual(["add", "--", "a.txt", "b.txt"]);
+      expect(run).toHaveBeenCalledTimes(1);
+    });
+
     it("stages nothing when the blob could not be written", async () => {
       run.mockImplementationOnce(() => Promise.resolve(ran("", 128, "fatal: no space")));
 

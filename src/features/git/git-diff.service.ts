@@ -56,7 +56,7 @@ export class GitDiffService {
       // A conflicted file has no single index entry; it is compared with HEAD.
       const base = file.status === "U" ? `HEAD:${before}` : `:0:${before}`;
       original = added ? "" : await this.readBlob(base);
-      modified = deleted ? "" : await this.readWorkingFile(file.path);
+      modified = deleted ? "" : await this.readWorkingText(file.path);
     } else if (source.kind === "staged") {
       original = file.status === "A" ? "" : await this.readBlob(`HEAD:${before}`);
       modified = deleted ? "" : await this.readBlob(`:0:${file.path}`);
@@ -95,7 +95,7 @@ export class GitDiffService {
    */
   async loadConflict(path: string): Promise<GitConflictContent> {
     const [text, stages] = await Promise.all([
-      this.readWorkingFile(path),
+      this.readWorkingText(path),
       this.repository.loadConflictStages(path),
     ]);
     return { text, hasBase: stages.has(1), hasOurs: stages.has(2), hasTheirs: stages.has(3) };
@@ -107,7 +107,8 @@ export class GitDiffService {
     return result?.exitCode === 0 ? result.stdout : "";
   }
 
-  private async readWorkingFile(path: string): Promise<string> {
+  /** A file as the working tree has it; empty when it is not there. */
+  async readWorkingText(path: string): Promise<string> {
     const session = this.repository.currentSession();
     const root = this.repository.root();
     if (!session || !root) return "";

@@ -5,7 +5,7 @@ import { isWslShellContext } from "@cogno/shared/domain";
 import { GitProcessPromptService, GitRunPrompts } from "./git-process-prompt.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitBranch, GitOperation, GitPullMode, GitRemoteBranch } from "./model/git-model";
-import { isPushRejected } from "./model/git-parsers";
+import { GitConflictStages, isPushRejected } from "./model/git-parsers";
 
 export type GitResetMode = "soft" | "mixed" | "hard";
 
@@ -140,14 +140,8 @@ export class GitOperationsService {
    * deletes the file.
    */
   async takeConflictSide(path: string, side: GitConflictTake): Promise<GitOperationOutcome> {
-    const stages = await this.repository.loadConflictStages(path);
-    // No stages at all: git could not say, or the file is no longer conflicted.
-    // Nothing is deleted on a guess.
-    if (stages.size === 0) {
-      this.toast("Resolve failed", `${path} is not conflicted (any more).`, "error");
-      await this.repository.refresh();
-      return "failed";
-    }
+    const stages = await this.conflictStages(path);
+    if (!stages) return "failed";
     const version = stages.get(CONFLICT_STAGE[side]);
     if (!version) return this.git(["rm", "-q", "--", path], "Resolve failed");
     const staged = await this.git(
@@ -164,8 +158,10 @@ export class GitOperationsService {
    * checked out, so the working tree holds the same text.
    */
   async resolveConflict(path: string, content: string): Promise<GitOperationOutcome> {
-    const stages = await this.repository.loadConflictStages(path);
-    const mode = (stages.get(2) ?? stages.get(3))?.mode ?? "100644";
+    const stages = await this.conflictStages(path);
+    if (!stages) return "failed";
+    // Keep the file's mode (an executable stays executable); a conflict has at least one stage.
+    const mode = (stages.get(2) ?? stages.get(3) ?? stages.get(1))?.mode ?? "100644";
     const hashed = await this.repository.run(
       ["hash-object", "-w", "--stdin", `--path=${path}`],
       LOCAL_TIMEOUT_MS,
@@ -184,8 +180,22 @@ export class GitOperationsService {
     return this.git(["checkout", "--", path], "Resolve failed");
   }
 
-  markResolved(path: string): Promise<GitOperationOutcome> {
-    return this.git(["add", "--", path], "Mark resolved failed");
+  /** Stage conflicted files as they are, in one run. */
+  markResolved(paths: ReadonlyArray<string>): Promise<GitOperationOutcome> {
+    return this.git(["add", "--", ...paths], "Mark resolved failed");
+  }
+
+  /**
+   * The versions of a conflicted file; null, with a toast, when there are
+   * none: git could not say, or the file is no longer conflicted. Nothing is
+   * written or deleted on a guess.
+   */
+  private async conflictStages(path: string): Promise<GitConflictStages | null> {
+    const stages = await this.repository.loadConflictStages(path);
+    if (stages.size > 0) return stages;
+    this.toast("Resolve failed", `${path} is not conflicted (any more).`, "error");
+    await this.repository.refresh();
+    return null;
   }
 
   commit(summary: string, description: string): Promise<GitOperationOutcome> {

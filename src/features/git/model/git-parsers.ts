@@ -301,9 +301,18 @@ export function parseUnmergedStages(raw: string): GitConflictStages {
 }
 
 /**
- * The branch, tag or commit a merge brings in, as `MERGE_MSG` names it
- * ("Merge branch 'feature'", "Merge remote-tracking branch 'origin/x'").
+ * The branches, tag or commit a merge brings in, as `MERGE_MSG` names them
+ * ("Merge branch 'feature'", "Merge remote-tracking branch 'origin/x'",
+ * "Merge branches 'a' and 'b'"); several are listed comma-separated.
  */
 export function mergeSourceOf(message: string): string | null {
-  return /^Merge (?:remote-tracking branch|branch|tag|commit) '([^']+)'/.exec(message)?.[1] ?? null;
+  const firstLine = message.split("\n")[0] ?? "";
+  const kind =
+    /^Merge (?:remote-tracking branches|remote-tracking branch|branches|branch|tags|tag|commits|commit) /;
+  if (!kind.test(firstLine)) return null;
+  // The quoted names, not the branch after " into ".
+  const names = [...firstLine.replace(/ into [^']*$/, "").matchAll(/'([^']+)'/g)].map(
+    (match) => match[1],
+  );
+  return names.length > 0 ? names.join(", ") : null;
 }

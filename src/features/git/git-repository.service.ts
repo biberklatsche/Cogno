@@ -480,7 +480,8 @@ export class GitRepositoryService {
       const content = await read(marker);
       if (content === null) continue;
       if (operation === "rebase") return { operation, incoming: null };
-      const sha = content.trim();
+      // An octopus merge lists one commit per line; the first stands for them.
+      const sha = content.trim().split(/\s+/)[0] ?? "";
       const name = operation === "merge" ? mergeSourceOf((await read("MERGE_MSG")) ?? "") : null;
       return { operation, incoming: sha ? { sha, name } : null };
     }

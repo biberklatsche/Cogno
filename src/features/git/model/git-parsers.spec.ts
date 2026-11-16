@@ -312,6 +312,10 @@ describe("mergeSourceOf", () => {
     expect(mergeSourceOf("Merge tag 'v1.0'")).toBe("v1.0");
   });
 
+  it("lists every branch an octopus merge brings in", () => {
+    expect(mergeSourceOf("Merge branches 'a', 'b' and 'c' into main")).toBe("a, b, c");
+  });
+
   it("names nothing in another message", () => {
     expect(mergeSourceOf('Revert "x"')).toBeNull();
   });

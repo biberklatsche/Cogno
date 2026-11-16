@@ -232,6 +232,9 @@ export class GitWipPanelComponent {
   readonly description = signal("");
   /** The commit and the re-read after it are running; the button waits for both. */
   readonly committing = signal(false);
+  /** The message git prepared, as last put in the form. */
+  private prepared: { readonly summary: string; readonly description: string } | null = null;
+
   /** A merge stopped for conflicts or for its commit. */
   readonly merging = computed(() => this.repository.operation() === "merge");
   /** A merge commits even with nothing staged: taking the current side everywhere is a merge too. */
@@ -260,10 +263,12 @@ export class GitWipPanelComponent {
     readonly view: GitViewState,
   ) {
     // A merge, cherry pick or revert that stopped has its message ready; the
-    // form starts with it, as `git commit` in a terminal would.
+    // form shows it, as `git commit` in a terminal would - again for each
+    // stop (the next commit of a cherry pick), and gone once the operation ends.
     effect(() => {
-      if (!this.repository.operation()) return;
-      untracked(() => void this.fillPreparedMessage());
+      const stopped = this.repository.operation() !== null;
+      this.repository.incoming()?.sha;
+      untracked(() => void this.syncPreparedMessage(stopped));
     });
   }
 
@@ -288,13 +293,24 @@ export class GitWipPanelComponent {
     return this.actions.markResolved(this.status().conflicted.map((file) => file.path));
   }
 
-  private async fillPreparedMessage(): Promise<void> {
-    if (this.summary() || this.description()) return;
-    const message = await this.repository.readMergeMessage();
-    if (!message || this.summary() || this.description()) return;
-    const [summary = "", ...rest] = message.split("\n");
+  /** Puts git's prepared message in the form, or takes it out; what the person typed stays. */
+  private async syncPreparedMessage(stopped: boolean): Promise<void> {
+    if (!this.formIsPrepared()) return;
+    const message = stopped ? await this.repository.readMergeMessage() : null;
+    if (!this.formIsPrepared()) return;
+    const [summary = "", ...rest] = (message ?? "").split("\n");
+    const description = rest.join("\n").trim();
+    this.prepared = message ? { summary, description } : null;
     this.summary.set(summary);
-    this.description.set(rest.join("\n").trim());
+    this.description.set(description);
+  }
+
+  /** The form is empty or still holds the prepared message unchanged. */
+  private formIsPrepared(): boolean {
+    const summary = this.summary();
+    const description = this.description();
+    if (!summary && !description) return true;
+    return this.prepared?.summary === summary && this.prepared.description === description;
   }
 
   async commit(): Promise<void> {

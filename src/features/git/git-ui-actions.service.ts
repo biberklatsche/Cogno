@@ -393,10 +393,8 @@ export class GitUiActions {
     const items: ContextMenuItem[] =
       group === "conflicted"
         ? [
-            item("Take current (ours)", () => this.operations.takeConflictSide(file.path, "ours")),
-            item("Take incoming (theirs)", () =>
-              this.operations.takeConflictSide(file.path, "theirs"),
-            ),
+            item("Take current (ours)", () => this.takeConflictSide(file.path, "ours")),
+            item("Take incoming (theirs)", () => this.takeConflictSide(file.path, "theirs")),
             item("Mark resolved", () => this.markResolved([file.path])),
           ]
         : group === "staged"
@@ -465,11 +463,11 @@ export class GitUiActions {
    * would be committed with them, so that is asked first.
    */
   async markResolved(paths: ReadonlyArray<string>): Promise<void> {
-    const withMarkers: string[] = [];
-    for (const path of paths) {
-      const { text } = await this.diffs.loadConflict(path);
-      if (conflictsOf(parseConflicts(text)).length > 0) withMarkers.push(path);
-    }
+    if (paths.length === 0) return;
+    const texts = await Promise.all(paths.map((path) => this.diffs.readWorkingText(path)));
+    const withMarkers = paths.filter(
+      (_, index) => conflictsOf(parseConflicts(texts[index] ?? "")).length > 0,
+    );
     if (withMarkers.length > 0) {
       const message =
         withMarkers.length === 1
@@ -478,7 +476,26 @@ export class GitUiActions {
       const confirmed = await this.confirm(message, "Mark Resolved");
       if (!confirmed) return;
     }
-    for (const path of paths) await this.operations.markResolved(path);
+    await this.operations.markResolved(paths);
+  }
+
+  /**
+   * Resolve a conflicted file as one side has it. Where that side deleted
+   * the file, taking it deletes the file too - asked first, as the other
+   * side's changes go with it.
+   */
+  async takeConflictSide(path: string, side: "ours" | "theirs"): Promise<void> {
+    const stages = await this.repository.loadConflictStages(path);
+    const deletes = stages.size > 0 && !stages.has(side === "ours" ? 2 : 3);
+    if (deletes) {
+      const which = side === "ours" ? "current" : "incoming";
+      const confirmed = await this.confirm(
+        `The ${which} side deleted ${path}. Delete the file and drop the other side's changes?`,
+        "Delete File",
+      );
+      if (!confirmed) return;
+    }
+    await this.operations.takeConflictSide(path, side);
   }
 
   async discardFile(file: GitFile): Promise<void> {
