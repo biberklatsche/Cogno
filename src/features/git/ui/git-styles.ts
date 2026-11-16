@@ -122,7 +122,8 @@ export const GIT_SHARED_STYLES = `
   .status-edited { color: var(--color-yellow); }
   .status-added { color: var(--color-green); }
   .status-removed { color: var(--color-red); }
-  .status-conflict { color: var(--color-red); }
+  /* Conflicts are a warning, in the same yellow everywhere: files, WIP header, graph row. */
+  .status-conflict { color: var(--color-yellow); }
 
   .text-input {
     width: 100%;
