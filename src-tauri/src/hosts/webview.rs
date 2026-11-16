@@ -1,5 +1,6 @@
 //! What the hosts report, delivered to the webview: a session's output over
-//! its channel, events to the window they concern.
+//! its channel, events to the window they concern, coding agents' hooks as
+//! Cogno messages; what a host passes on to be answered goes to `questions`.
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -8,12 +9,15 @@ use std::sync::{Arc, Mutex};
 use cogno_host::protocol::{Event, ExitReason, StreamId};
 use cogno_host::sync::lock;
 use cogno_host::wire::Output;
-use cogno_host::EventSink;
 use serde::Serialize;
 use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::{AppHandle, Emitter};
 
+use super::questions;
 use super::routes::TerminalRoutes;
+use crate::cogno_message::{CognoMessage, COGNO_MESSAGE_EVENT};
+use crate::commands::window_registry::route;
+use crate::host_connection::{Answers, HostEvents};
 
 /// Largest framed chunk ever handed to the webview channel in one message.
 ///
@@ -217,8 +221,8 @@ impl WebviewEvents {
     }
 }
 
-impl EventSink for WebviewEvents {
-    fn event(&self, event: Event) {
+impl HostEvents for WebviewEvents {
+    fn event(&self, event: Event, answers: &Answers) {
         match event {
             Event::PtyStreamEnded { stream } => self.streams.close(stream),
             Event::PtyExit {
@@ -255,13 +259,27 @@ impl EventSink for WebviewEvents {
                     TakenOverPayload { by },
                 );
             }
+            // A coding agent's hook, in a terminal this app shows - or, naming
+            // none, in whichever terminal its session runs.
+            Event::AgentHook { hook, replayed } => {
+                let terminal_id = hook.terminal_id.clone();
+                route(
+                    &self.app,
+                    COGNO_MESSAGE_EVENT,
+                    CognoMessage::of_agent_hook(hook, replayed),
+                    terminal_id.as_deref(),
+                );
+            }
+            Event::Asked { relay, question } => {
+                questions::answer(&self.app, relay, question, answers);
+            }
             // Something a later host reports: nothing here to do with it.
             Event::Unknown => {}
         }
     }
 
-    fn output(&self, output: Output) -> bool {
-        self.streams.deliver(output)
+    fn output(&self, output: Output) {
+        self.streams.deliver(output);
     }
 }
 

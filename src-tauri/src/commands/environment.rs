@@ -8,13 +8,15 @@ pub fn get_cogno_home_dir(dev_mode: bool) -> Result<String, String> {
     Ok(cogno_home(dev_mode)?.display().to_string())
 }
 
-/// The endpoint file Cogno's HTTP server writes for processes outside its
-/// terminals; whoever points such a process at Cogno names this path.
+/// The starter in the Cogno home: what a coding agent's hook runs to reach
+/// the host of this machine (`cogno hook`).
 #[tauri::command]
-pub fn get_cogno_endpoint_file_path(dev_mode: bool) -> Result<String, String> {
-    Ok(crate::endpoint::endpoint_path(&cogno_home(dev_mode)?)
-        .display()
-        .to_string())
+pub fn get_cogno_starter_path(dev_mode: bool) -> Result<String, String> {
+    Ok(
+        cogno_host::daemon_start::starter_path(&cogno_home(dev_mode)?)
+            .display()
+            .to_string(),
+    )
 }
 
 /// Returns the cogno config file path

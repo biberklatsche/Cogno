@@ -210,7 +210,6 @@ fn waiting_shell(terminal_id: &str, stream: u64) -> Request {
         },
         window: "window-1".to_string(),
         stream: StreamId(stream),
-        env: Vec::new(),
         lifetime: SessionLifetime::EndsWithClient,
     }
 }

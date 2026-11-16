@@ -1,11 +1,12 @@
 //! A client that shows a session, and the windows sessions belong to.
 
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::flow_control::FlowControl;
 use crate::host::{Client, ClientId, EventSink};
-use crate::protocol::{Event, ExitReason, StreamId, TerminalId, WindowLabel};
+use crate::protocol::{AgentHook, Event, ExitReason, StreamId, TerminalId, WindowLabel};
+use crate::sync::lock;
 use crate::wire::Output;
 
 /// Whom a session belongs to: a window of a client. Two clients may name
@@ -29,6 +30,18 @@ pub(crate) struct Attachment {
     /// One per attachment; its `Arc` is the attachment's identity.
     flow: Arc<FlowControl>,
     next_seq: Arc<AtomicU32>,
+    /// Kept hooks that wait until the client has taken in the replay.
+    held_hooks: Arc<Mutex<Option<HeldHooks>>>,
+}
+
+/// What the agent's hooks said before the client attached, held back until
+/// the client has taken in the replayed output: parsing that output, the
+/// client goes through every command that ended back then, and a hook that
+/// came first would end with them.
+struct HeldHooks {
+    /// The replay's sequence number; its acknowledgement releases them.
+    through: u32,
+    hooks: Vec<AgentHook>,
 }
 
 impl Attachment {
@@ -44,6 +57,7 @@ impl Attachment {
             sink: client.sink.clone(),
             flow: Arc::new(flow),
             next_seq: Arc::new(AtomicU32::new(0)),
+            held_hooks: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -61,10 +75,40 @@ impl Attachment {
 
     /// Sends what was kept, without counting it: no more is kept than a
     /// client may be behind anyway, and waiting for its acknowledgement
-    /// would hold the session the acknowledgement needs.
-    pub fn replay(&self, bytes: &[u8]) {
-        if !bytes.is_empty() {
-            self.deliver(self.next_seq.load(Ordering::Relaxed), bytes);
+    /// would hold the session the acknowledgement needs. The replay's
+    /// sequence number, when there was something to send.
+    pub fn replay(&self, bytes: &[u8]) -> Option<u32> {
+        if bytes.is_empty() {
+            return None;
+        }
+        let seq = self.next_seq.load(Ordering::Relaxed);
+        self.deliver(seq, bytes).then_some(seq)
+    }
+
+    /// Plays back what the agent's hooks said before the client attached:
+    /// at once, or - after a replay of the output, `replayed` - once the
+    /// client has taken that in.
+    pub fn replay_hooks(&self, hooks: Vec<AgentHook>, replayed: Option<u32>) {
+        match replayed {
+            Some(through) if !hooks.is_empty() => {
+                *lock(&self.held_hooks) = Some(HeldHooks { through, hooks });
+            }
+            _ => {
+                for hook in hooks {
+                    self.sink.event(Event::AgentHook {
+                        hook,
+                        replayed: true,
+                    });
+                }
+            }
+        }
+    }
+
+    /// Sends the held hooks, if any: what they say comes before anything newer.
+    fn release_hooks(&self) {
+        let held = lock(&self.held_hooks).take();
+        if let Some(held) = held {
+            self.replay_hooks(held.hooks, None);
         }
     }
 
@@ -80,9 +124,16 @@ impl Attachment {
         delivered
     }
 
-    /// The client has taken in everything up to and including `seq`.
+    /// The client has taken in everything up to and including `seq`; the
+    /// replay among it releases the hooks held back for it.
     pub fn acknowledge(&self, seq: u32) {
         self.flow.ack_through(seq);
+        let released = lock(&self.held_hooks)
+            .as_ref()
+            .is_some_and(|held| seq >= held.through);
+        if released {
+            self.release_hooks();
+        }
     }
 
     /// Wakes the reader if it waits for this client, and lets it send no more.
@@ -96,6 +147,15 @@ impl Attachment {
         self.sink.event(Event::PtyStreamEnded {
             stream: self.stream,
         });
+    }
+
+    /// Passes on what the agent in the session's terminal said through its
+    /// hook; `replayed` when it was kept and comes because the client
+    /// attached.
+    pub fn send_hook(&self, hook: AgentHook, replayed: bool) {
+        // Held ones are older: they come first.
+        self.release_hooks();
+        self.sink.event(Event::AgentHook { hook, replayed });
     }
 
     /// Tells the client that the session ended.

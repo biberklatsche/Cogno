@@ -6,10 +6,12 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::attachment::Owner;
+use crate::env_vars;
 use crate::processes::{
     get_process_tree_snapshot, list_terminal_processes, terminate_process_tree,
 };
-use crate::protocol::{Event, HostError, HostErrorCode, Reply, Request, Response};
+use crate::protocol::{Event, HostError, HostErrorCode, Question, Reply, Request, Response};
+use crate::relay::{not_shown, Relay};
 use crate::sessions::{Sessions, SpawnRequest, Spawned};
 use crate::shared_session::Departure;
 use crate::shell_integration;
@@ -20,6 +22,9 @@ use crate::wire::Output;
 /// Where what a host tells one client goes.
 pub trait EventSink: Send + Sync + 'static {
     fn event(&self, event: Event);
+    /// The answer to the client's request `id`, when it comes later than the
+    /// request: a question another client answered.
+    fn reply(&self, id: u64, reply: Reply);
     /// A piece of a session's output. False when nobody takes it any more: a
     /// session's output then stops being sent there.
     fn output(&self, output: Output) -> bool;
@@ -48,15 +53,22 @@ pub struct Client {
 
 pub struct Host {
     sessions: Sessions,
+    /// What the clients have for each other.
+    relay: Relay,
     /// The Cogno home the daemon belongs to.
     home: PathBuf,
+    /// The daemon's endpoint file: its shells learn it (`COGNO_HOST`), so a
+    /// `cogno` of another build typed in one reaches this daemon.
+    endpoint: PathBuf,
 }
 
 impl Host {
-    pub fn new(home: PathBuf) -> Self {
+    pub fn new(home: PathBuf, endpoint: PathBuf) -> Self {
         Self {
             sessions: Sessions::default(),
+            relay: Relay::default(),
             home,
+            endpoint,
         }
     }
 
@@ -70,9 +82,14 @@ impl Host {
                 options,
                 window,
                 stream,
-                env,
                 lifetime,
             } => {
+                // Set after the profile's own environment, so a profile
+                // cannot override it.
+                let env = vec![(
+                    env_vars::COGNO_HOST.to_string(),
+                    self.endpoint.to_string_lossy().into_owned(),
+                )];
                 let integration =
                     shell_integration::root(&self.home, &options.integration_version)?;
                 let spawner = ShellSpawner::new(integration);
@@ -179,6 +196,33 @@ impl Host {
             Request::InstallShellIntegration { version, files } => {
                 shell_integration::install(&self.home, &version, &files).map(done)
             }
+            Request::AgentHook { hook } => {
+                match hook.terminal_id.clone() {
+                    Some(terminal_id) => self.sessions.take_hook(&terminal_id, hook),
+                    // No terminal names whose it is: every Cogno looks.
+                    None => self.relay.broadcast(client.id, || Event::AgentHook {
+                        hook: hook.clone(),
+                        replayed: false,
+                    }),
+                }
+                Ok(Response::Done)
+            }
+            Request::Ask { .. } => Err(HostError::new(
+                HostErrorCode::InvalidRequest,
+                "A question is a request with an id: its answer comes under it",
+            )),
+            Request::Answer { relay, answer } => {
+                self.relay.answer(client.id, relay, answer);
+                Ok(Response::Done)
+            }
+            Request::OwnPrompts { session } => {
+                self.relay.own_prompts(client.id, session);
+                Ok(Response::Done)
+            }
+            Request::DisownPrompts { session } => {
+                self.relay.disown_prompts(client.id, &session);
+                Ok(Response::Done)
+            }
             Request::Unknown => Err(HostError::new(
                 HostErrorCode::UnknownRequest,
                 "A request this host does not know",
@@ -200,6 +244,43 @@ impl Host {
         crate::processes::terminate_processes_under(shell, terminal_id)
     }
 
+    /// Passes `client`'s question, which waits under request `id`, on to
+    /// the client that is to answer it; the answer comes later, under that
+    /// id. Nobody to answer: `NotShown` at once. Never blocks.
+    pub fn ask(&self, client: &Client, id: u64, question: Question) {
+        let answerer = match &question {
+            Question::RunAction { terminal_id, .. } => self.sessions.shown_by(terminal_id),
+            Question::Prompt { session, .. } => self.relay.prompt_owner(session),
+            Question::Unknown => {
+                client.sink.reply(
+                    id,
+                    Err(HostError::new(
+                        HostErrorCode::InvalidRequest,
+                        "A question this host does not know",
+                    )),
+                );
+                return;
+            }
+        };
+        let asked = match answerer {
+            Some(answerer) => self
+                .relay
+                .ask(client.id, id, answerer, |relay| Event::Asked {
+                    relay,
+                    question,
+                }),
+            None => Err(not_shown()),
+        };
+        if let Err(error) = asked {
+            client.sink.reply(id, Err(error));
+        }
+    }
+
+    /// `client` is connected: what others have for it can reach it.
+    pub fn client_came(&self, client: &Client) {
+        self.relay.came(client);
+    }
+
     /// How many sessions run.
     pub fn session_count(&self) -> usize {
         self.sessions.count()
@@ -208,6 +289,7 @@ impl Host {
     /// The client is gone, for whatever reason. Its sessions end with it,
     /// except those started to go on without one.
     pub fn client_gone(&self, client: ClientId) {
+        self.relay.gone(client);
         self.sessions.depart(Departure::Client(client));
     }
 
@@ -229,8 +311,8 @@ impl Host {
 mod tests {
     use super::*;
     use crate::protocol::{
-        Attached, ExitReason, SessionLifetime, SessionPlacement, ShellProfile, ShellType,
-        SpawnOptions, StreamId, TerminalSize,
+        ActionRunStatus, AgentHook, Answer, Attached, ExitReason, RelayId, SessionLifetime,
+        SessionPlacement, ShellProfile, ShellType, SpawnOptions, StreamId, TerminalSize,
     };
     use crate::sessions::test_support::client_id;
     use std::sync::Mutex;
@@ -247,6 +329,13 @@ mod tests {
         taken_over: Vec<(String, String, Option<String>)>,
         /// Terminal id and window of every session that came free again.
         handed_back: Vec<(String, String)>,
+        /// Event and `replayed` of every agent hook passed on.
+        hooks: Vec<(String, bool)>,
+        /// Every question passed on to this client.
+        asked: Vec<(RelayId, Question)>,
+        /// Every reply that came later than its request: what was answered,
+        /// or the error's code.
+        replies: Vec<(u64, Result<Answer, HostErrorCode>)>,
     }
 
     #[derive(Default)]
@@ -274,8 +363,19 @@ mod tests {
                     terminal_id,
                     window,
                 } => recorded.handed_back.push((terminal_id, window)),
+                Event::AgentHook { hook, replayed } => recorded.hooks.push((hook.event, replayed)),
+                Event::Asked { relay, question } => recorded.asked.push((relay, question)),
                 Event::Unknown => {}
             }
+        }
+
+        fn reply(&self, id: u64, reply: Reply) {
+            let reply = match reply {
+                Ok(Response::Answered { answer }) => Ok(answer),
+                Ok(other) => panic!("a later reply that answers nothing: {other:?}"),
+                Err(error) => Err(error.code),
+            };
+            self.0.lock().unwrap().replies.push((id, reply));
         }
 
         fn output(&self, output: Output) -> bool {
@@ -328,7 +428,8 @@ mod tests {
     }
 
     fn host() -> Host {
-        Host::new(std::env::temp_dir().join("cogno-host-test-home"))
+        let home = std::env::temp_dir().join("cogno-host-test-home");
+        Host::new(home.clone(), home.join("host.json"))
     }
 
     /// The shell lives in another process: waits up to ten seconds.
@@ -343,13 +444,13 @@ mod tests {
         }
     }
 
-    /// The shell prints `port=<COGNO_PORT>` and waits for input itself: a
-    /// child process of its own could outlive a kill and keep the console,
-    /// and with it the stream, open.
+    /// The shell prints `ready` and waits for input itself: a child process
+    /// of its own could outlive a kill and keep the console, and with it the
+    /// stream, open.
     #[cfg(windows)]
-    const WAITING: &str = "echo port=%COGNO_PORT% & pause";
+    const WAITING: &str = "echo ready & pause";
     #[cfg(unix)]
-    const WAITING: &str = "echo port=$COGNO_PORT; read line";
+    const WAITING: &str = "echo ready; read line";
 
     /// The shell prints `first`, a moment later `second`, and then waits.
     #[cfg(windows)]
@@ -384,7 +485,6 @@ mod tests {
             },
             window: WINDOW.to_string(),
             stream: StreamId(stream),
-            env: vec![("COGNO_PORT".to_string(), "4711".to_string())],
             lifetime: if survives {
                 SessionLifetime::SurvivesClient
             } else {
@@ -454,10 +554,7 @@ mod tests {
         let spawned = host.handle(&me, spawn_request("t1", 7, WAITING, false));
         assert!(matches!(spawned, Ok(Response::Spawned { .. })));
         assert_eq!(host.window_of("t1").as_deref(), Some(WINDOW));
-        // The caller's environment reached the shell.
-        wait_until("the shell printed the port", || {
-            sink.output_of(7).contains("port=4711")
-        });
+        wait_until("the shell printed", || sink.output_of(7).contains("ready"));
 
         assert!(host.handle(&me, kill_request("t1")).is_ok());
         wait_until("the stream ended", || sink.ended_streams() == [7]);
@@ -551,7 +648,7 @@ mod tests {
         host.handle(&office, spawn_request("t1", 1, WAITING, true))
             .unwrap();
         wait_until("the shell printed the port", || {
-            at_the_office.output_of(1).contains("port=4711")
+            at_the_office.output_of(1).contains("ready")
         });
 
         let attached = host.handle(&laptop, attach_request("t1", 5));
@@ -561,7 +658,7 @@ mod tests {
             Ok(Response::Attached { session }) if session.attached == Attached::ThisClient
         ));
         wait_until("the laptop has the output so far", || {
-            on_the_laptop.output_of(5).contains("port=4711")
+            on_the_laptop.output_of(5).contains("ready")
         });
         assert_eq!(at_the_office.ended_streams(), [1]);
         assert_eq!(
@@ -581,7 +678,7 @@ mod tests {
         host.handle(&me, spawn_request("t1", 1, WAITING, true))
             .unwrap();
         wait_until("the shell printed the port", || {
-            sink.output_of(1).contains("port=4711")
+            sink.output_of(1).contains("ready")
         });
 
         assert!(host.handle(&me, detach_request("t1")).is_ok());
@@ -590,7 +687,7 @@ mod tests {
 
         host.handle(&me, attach_request("t1", 2)).unwrap();
         wait_until("the output came again", || {
-            sink.output_of(2).contains("port=4711")
+            sink.output_of(2).contains("ready")
         });
         // Nobody was taken over: the session had no client.
         assert!(sink.0.lock().unwrap().taken_over.is_empty());
@@ -636,7 +733,7 @@ mod tests {
         // It takes it over: the office is told by whom.
         host.handle(&laptop, attach_request("t1", 9)).unwrap();
         wait_until("the laptop has the output", || {
-            on_the_laptop.output_of(9).contains("port=4711")
+            on_the_laptop.output_of(9).contains("ready")
         });
         assert_eq!(
             listed(&office).attached,
@@ -669,7 +766,7 @@ mod tests {
             .unwrap();
         host.handle(&laptop, attach_request("t1", 5)).unwrap();
         wait_until("the laptop has the output", || {
-            on_the_laptop.output_of(5).contains("port=4711")
+            on_the_laptop.output_of(5).contains("ready")
         });
         assert_eq!(
             at_the_office.0.lock().unwrap().taken_over,
@@ -687,7 +784,7 @@ mod tests {
         assert_eq!(sessions_of(&host, &office), [("t1".to_string(), false)]);
         host.handle(&office, attach_request("t1", 2)).unwrap();
         wait_until("the office has it back", || {
-            at_the_office.output_of(2).contains("port=4711")
+            at_the_office.output_of(2).contains("ready")
         });
         host.shut_down_all();
     }
@@ -747,7 +844,7 @@ mod tests {
         host.handle(&me, attach_request("t1", 2)).unwrap();
 
         wait_until("the output came again", || {
-            sink.output_of(2).contains("port=4711")
+            sink.output_of(2).contains("ready")
         });
         assert_eq!(sink.ended_streams(), [1]);
         assert!(sink.0.lock().unwrap().taken_over.is_empty());
@@ -771,7 +868,7 @@ mod tests {
             .unwrap();
         host.handle(&laptop, attach_request("t1", 5)).unwrap();
         wait_until("the laptop has the output", || {
-            on_the_laptop.output_of(5).contains("port=4711")
+            on_the_laptop.output_of(5).contains("ready")
         });
         TakenOver {
             host,
@@ -965,7 +1062,7 @@ mod tests {
         let host = host();
         host.handle(&me, spawn_request("t1", 1, WAITING, true))
             .unwrap();
-        wait_until("the shell runs", || sink.output_of(1).contains("port=4711"));
+        wait_until("the shell runs", || sink.output_of(1).contains("ready"));
 
         let refused = host.handle(&me, spawn_request("t1", 2, WAITING, true));
 
@@ -1005,7 +1102,7 @@ mod tests {
             .unwrap();
 
         wait_until("the other window has the output", || {
-            sink.output_of(2).contains("port=4711")
+            sink.output_of(2).contains("ready")
         });
         // The window that showed it must hear that it no longer does.
         assert_eq!(
@@ -1056,6 +1153,312 @@ mod tests {
         // The first client's own late spawn is still refused.
         let late = host.handle(&first, spawn_request("t2", 1, WAITING, false));
         assert_eq!(late.unwrap_err().code, HostErrorCode::WindowClosed);
+        host.shut_down_all();
+    }
+
+    fn hook(terminal_id: Option<&str>, event: &str) -> Request {
+        Request::AgentHook {
+            hook: AgentHook {
+                terminal_id: terminal_id.map(str::to_string),
+                provider: "codex".to_string(),
+                event: event.to_string(),
+                sent_at: 1,
+                payload: "{}".to_string(),
+            },
+        }
+    }
+
+    fn hooks_of(sink: &RecordingSink) -> Vec<(String, bool)> {
+        sink.0.lock().unwrap().hooks.clone()
+    }
+
+    fn run_action(terminal_id: &str) -> Question {
+        Question::RunAction {
+            terminal_id: terminal_id.to_string(),
+            name: "new_tab".to_string(),
+            args: vec![],
+        }
+    }
+
+    fn asked_of(sink: &RecordingSink) -> Vec<(RelayId, Question)> {
+        sink.0.lock().unwrap().asked.clone()
+    }
+
+    fn replies_of(sink: &RecordingSink) -> Vec<(u64, Result<Answer, HostErrorCode>)> {
+        sink.0.lock().unwrap().replies.clone()
+    }
+
+    #[test]
+    fn a_hook_goes_to_whoever_shows_its_terminal_and_is_kept_for_whoever_comes_next() {
+        let (office, at_the_office) = client(1);
+        let (laptop, on_the_laptop) = client(2);
+        let (agent, _) = client(3);
+        let host = host();
+        for client in [&office, &laptop, &agent] {
+            host.client_came(client);
+        }
+        host.handle(&office, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+
+        host.handle(&agent, hook(Some("t1"), "UserPromptSubmit"))
+            .unwrap();
+        host.handle(&agent, hook(Some("nowhere"), "Stop")).unwrap();
+
+        assert_eq!(
+            hooks_of(&at_the_office),
+            [("UserPromptSubmit".to_string(), false)]
+        );
+        assert!(hooks_of(&on_the_laptop).is_empty());
+
+        // There is output to play back first.
+        wait_until("the shell printed", || {
+            at_the_office.output_of(1).contains("ready")
+        });
+        host.handle(&laptop, attach_request("t1", 5)).unwrap();
+        // Held until the laptop has taken in the replayed output: parsing it,
+        // it goes through every command that ended back then.
+        assert!(hooks_of(&on_the_laptop).is_empty());
+        host.handle(
+            &laptop,
+            Request::PtyAck {
+                terminal_id: "t1".to_string(),
+                seq: 0,
+            },
+        )
+        .unwrap();
+        // Not news: it was kept, and comes because the laptop attached.
+        assert_eq!(
+            hooks_of(&on_the_laptop),
+            [("UserPromptSubmit".to_string(), true)]
+        );
+        host.handle(&agent, hook(Some("t1"), "Stop")).unwrap();
+        assert_eq!(
+            hooks_of(&on_the_laptop),
+            [
+                ("UserPromptSubmit".to_string(), true),
+                ("Stop".to_string(), false)
+            ]
+        );
+        assert_eq!(hooks_of(&at_the_office).len(), 1);
+        host.shut_down_all();
+    }
+
+    #[test]
+    fn hooks_held_for_a_replay_come_before_a_newer_one() {
+        let (office, at_the_office) = client(1);
+        let (laptop, on_the_laptop) = client(2);
+        let (agent, _) = client(3);
+        let host = host();
+        for client in [&office, &laptop, &agent] {
+            host.client_came(client);
+        }
+        host.handle(&office, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+        host.handle(&agent, hook(Some("t1"), "UserPromptSubmit"))
+            .unwrap();
+        wait_until("the shell printed", || {
+            at_the_office.output_of(1).contains("ready")
+        });
+        host.handle(&laptop, attach_request("t1", 5)).unwrap();
+
+        // No acknowledgement yet, and the agent says something new.
+        host.handle(&agent, hook(Some("t1"), "Stop")).unwrap();
+
+        assert_eq!(
+            hooks_of(&on_the_laptop),
+            [
+                ("UserPromptSubmit".to_string(), true),
+                ("Stop".to_string(), false)
+            ]
+        );
+        host.shut_down_all();
+    }
+
+    #[test]
+    fn a_hook_that_names_no_terminal_goes_to_every_other_client() {
+        let (office, at_the_office) = client(1);
+        let (laptop, on_the_laptop) = client(2);
+        let (agent, from_the_agent) = client(3);
+        let host = host();
+        for client in [&office, &laptop, &agent] {
+            host.client_came(client);
+        }
+
+        host.handle(&agent, hook(None, "session.idle")).unwrap();
+
+        assert_eq!(
+            hooks_of(&at_the_office),
+            [("session.idle".to_string(), false)]
+        );
+        assert_eq!(
+            hooks_of(&on_the_laptop),
+            [("session.idle".to_string(), false)]
+        );
+        assert!(hooks_of(&from_the_agent).is_empty());
+    }
+
+    #[test]
+    fn a_question_about_a_terminal_goes_to_whoever_shows_it_and_the_answer_comes_back() {
+        let (office, at_the_office) = client(1);
+        let (cli, from_the_cli) = client(2);
+        let host = host();
+        host.client_came(&office);
+        host.client_came(&cli);
+        host.handle(&office, spawn_request("t1", 1, WAITING, false))
+            .unwrap();
+
+        host.ask(&cli, 42, run_action("t1"));
+        let asked = asked_of(&at_the_office);
+        assert_eq!(asked.len(), 1);
+        assert_eq!(asked[0].1, run_action("t1"));
+        assert!(replies_of(&from_the_cli).is_empty());
+
+        let status = Answer::ActionRun {
+            status: ActionRunStatus::Dispatched,
+        };
+        // Only the client the question went to answers it.
+        host.handle(
+            &cli,
+            Request::Answer {
+                relay: asked[0].0,
+                answer: status.clone(),
+            },
+        )
+        .unwrap();
+        assert!(replies_of(&from_the_cli).is_empty());
+        host.handle(
+            &office,
+            Request::Answer {
+                relay: asked[0].0,
+                answer: status.clone(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(replies_of(&from_the_cli), [(42, Ok(status))]);
+        host.shut_down_all();
+    }
+
+    #[test]
+    fn a_question_nobody_is_there_to_answer_fails_at_once() {
+        let (office, _) = client(1);
+        let (cli, from_the_cli) = client(2);
+        let host = host();
+        host.client_came(&office);
+        host.client_came(&cli);
+        host.handle(&office, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+        host.handle(&office, detach_request("t1")).unwrap();
+
+        host.ask(&cli, 1, run_action("t1"));
+        host.ask(&cli, 2, run_action("unknown"));
+        host.ask(
+            &cli,
+            3,
+            Question::Prompt {
+                session: "s".to_string(),
+                token: "k".to_string(),
+                prompt: "Password:".to_string(),
+            },
+        );
+
+        assert_eq!(
+            replies_of(&from_the_cli),
+            [
+                (1, Err(HostErrorCode::NotShown)),
+                (2, Err(HostErrorCode::NotShown)),
+                (3, Err(HostErrorCode::NotShown)),
+            ]
+        );
+        host.shut_down_all();
+    }
+
+    #[test]
+    fn a_question_whose_answerer_goes_away_fails_and_one_whose_asker_did_is_forgotten() {
+        let (office, at_the_office) = client(1);
+        let (cli, from_the_cli) = client(2);
+        let (gone_cli, _) = client(3);
+        let host = host();
+        for client in [&office, &cli, &gone_cli] {
+            host.client_came(client);
+        }
+        host.handle(&office, spawn_request("t1", 1, WAITING, true))
+            .unwrap();
+        host.ask(&gone_cli, 9, run_action("t1"));
+        host.client_gone(gone_cli.id);
+        host.ask(&cli, 7, run_action("t1"));
+
+        host.client_gone(office.id);
+
+        assert_eq!(asked_of(&at_the_office).len(), 2);
+        assert_eq!(
+            replies_of(&from_the_cli),
+            [(7, Err(HostErrorCode::NoAnswer))]
+        );
+        host.shut_down_all();
+    }
+
+    #[test]
+    fn a_prompt_goes_to_the_client_that_owns_its_session() {
+        let (first, to_the_first) = client(1);
+        let (second, to_the_second) = client(2);
+        let (helper, from_the_helper) = client(3);
+        let host = host();
+        for client in [&first, &second, &helper] {
+            host.client_came(client);
+        }
+        let own = |session: &str| Request::OwnPrompts {
+            session: session.to_string(),
+        };
+        host.handle(&first, own("ssh-1")).unwrap();
+        host.handle(&second, own("git-1")).unwrap();
+        let prompt = Question::Prompt {
+            session: "git-1".to_string(),
+            token: "k".to_string(),
+            prompt: "Password:".to_string(),
+        };
+
+        host.ask(&helper, 1, prompt.clone());
+
+        assert!(asked_of(&to_the_first).is_empty());
+        assert_eq!(asked_of(&to_the_second)[0].1, prompt);
+        host.handle(
+            &second,
+            Request::DisownPrompts {
+                session: "git-1".to_string(),
+            },
+        )
+        .unwrap();
+        host.ask(&helper, 2, prompt);
+        assert_eq!(
+            replies_of(&from_the_helper),
+            [(2, Err(HostErrorCode::NotShown))]
+        );
+    }
+
+    #[test]
+    fn a_shell_learns_the_endpoint_of_the_host_that_runs_it() {
+        #[cfg(windows)]
+        const SAYS_HOST: &str = "echo host=[%COGNO_HOST%] & pause";
+        #[cfg(unix)]
+        const SAYS_HOST: &str = "echo host=[$COGNO_HOST]; read line";
+        let (me, sink) = client(1);
+        let host = host();
+        let mut request = spawn_request("t1", 1, SAYS_HOST, false);
+        if let Request::PtySpawn { options, .. } = &mut request {
+            // Wide enough that the path is never wrapped.
+            options.size.cols = 400;
+        }
+
+        host.handle(&me, request).unwrap();
+
+        let endpoint = std::env::temp_dir()
+            .join("cogno-host-test-home")
+            .join("host.json");
+        let expected = format!("host=[{}]", endpoint.to_string_lossy());
+        wait_until("the shell printed its host", || {
+            sink.output_of(1).contains(&expected)
+        });
         host.shut_down_all();
     }
 }

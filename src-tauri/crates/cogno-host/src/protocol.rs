@@ -28,6 +28,84 @@ pub type WindowLabel = String;
 #[serde(transparent)]
 pub struct StreamId(pub u64);
 
+/// A question the host passed on to the client that is to answer it: the
+/// answer names it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct RelayId(pub u64);
+
+/// What a coding agent's hook said, on its way to the Cogno that shows the
+/// agent's terminal. The host keeps and passes it on; it never reads it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentHook {
+    /// The terminal the agent runs in, when its hook knew it: an agent with a
+    /// background service of its own may not.
+    pub terminal_id: Option<TerminalId>,
+    /// Which agent: the id of its adapter in the app.
+    pub provider: String,
+    /// The agent's name for what happened.
+    pub event: String,
+    /// When the hook ran, in milliseconds since the epoch.
+    pub sent_at: u64,
+    /// What the agent handed the hook, as the JSON text it was.
+    pub payload: String,
+}
+
+/// What a process asks the Cogno that is to answer it, through the host
+/// (`Request::Ask`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum Question {
+    /// `cogno action run`, typed in a terminal: for the Cogno that shows it.
+    RunAction {
+        terminal_id: TerminalId,
+        name: String,
+        args: Vec<String>,
+    },
+    /// What git or ssh asks (a password, a host key), for the client that
+    /// owns the prompt session (`Request::OwnPrompts`). That client checks
+    /// the token, not the host.
+    Prompt {
+        session: String,
+        token: String,
+        prompt: String,
+    },
+    /// What a later version asks and this one does not know.
+    #[serde(other)]
+    Unknown,
+}
+
+/// What a client answers to a `Question` (`Request::Answer`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum Answer {
+    ActionRun {
+        status: ActionRunStatus,
+    },
+    /// What the user typed; nothing when they declined.
+    Prompt {
+        answer: Option<String>,
+    },
+    /// What a later version answers and this one does not know.
+    #[serde(other)]
+    Unknown,
+}
+
+/// What became of `cogno action run`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ActionRunStatus {
+    /// The action was handed to the window.
+    Dispatched,
+    /// The action exists, but its feature is off.
+    Inactive,
+    /// No action of that name.
+    NotFound,
+    /// A status of a later version.
+    #[serde(other)]
+    Unknown,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TerminalSize {
     pub cols: u16,
@@ -211,9 +289,6 @@ pub enum Request {
         /// all of one window's sessions at once.
         window: WindowLabel,
         stream: StreamId,
-        /// Set after the profile's own environment, so a profile cannot
-        /// override it.
-        env: Vec<(String, String)>,
         lifetime: SessionLifetime,
     },
     /// Attaches the caller to a running session: what was kept of its output
@@ -292,6 +367,31 @@ pub enum Request {
         version: String,
         files: Vec<IntegrationFile>,
     },
+    /// What an agent's hook said (a post): the session of its terminal keeps
+    /// it for whoever attaches later, and the client that shows it gets it
+    /// now. Without a terminal, every other client gets it.
+    AgentHook {
+        hook: AgentHook,
+    },
+    /// A question for another client (a request): the host passes it on and
+    /// answers with `Answered` once that client did. `NotShown` when nobody
+    /// is there to answer, `NoAnswer` when the client went away first.
+    Ask {
+        question: Question,
+    },
+    /// The caller answers a question the host passed on to it (a post).
+    Answer {
+        relay: RelayId,
+        answer: Answer,
+    },
+    /// The caller answers the prompts of `session` from now on (a post).
+    OwnPrompts {
+        session: String,
+    },
+    /// The caller answers the prompts of `session` no more (a post).
+    DisownPrompts {
+        session: String,
+    },
     /// What a later version asks and this one does not know.
     #[serde(other)]
     Unknown,
@@ -319,6 +419,11 @@ impl Request {
             | Request::TerminalProcesses
             | Request::ListShells
             | Request::InstallShellIntegration { .. }
+            | Request::AgentHook { .. }
+            | Request::Ask { .. }
+            | Request::Answer { .. }
+            | Request::OwnPrompts { .. }
+            | Request::DisownPrompts { .. }
             | Request::Unknown => None,
         }
     }
@@ -346,6 +451,11 @@ impl Request {
             | Request::WindowClosed { .. }
             | Request::ListSessions
             | Request::GetSession { .. }
+            | Request::AgentHook { .. }
+            | Request::Ask { .. }
+            | Request::Answer { .. }
+            | Request::OwnPrompts { .. }
+            | Request::DisownPrompts { .. }
             | Request::Unknown => false,
         }
     }
@@ -379,6 +489,10 @@ pub enum Response {
     },
     Shells {
         shells: Vec<ShellInfo>,
+    },
+    /// What the client a question went to answered (`Request::Ask`).
+    Answered {
+        answer: Answer,
     },
     /// What a later version answers and this one does not know.
     #[serde(other)]
@@ -419,6 +533,11 @@ pub enum HostErrorCode {
     ProcessesSurvived,
     /// Reading or writing failed on the host.
     Io,
+    /// Nobody is there to answer a question: no client shows the terminal,
+    /// or owns the prompts.
+    NotShown,
+    /// The client a question went to went away before it answered.
+    NoAnswer,
     /// A code of a later version.
     #[serde(other)]
     Unknown,
@@ -499,6 +618,12 @@ pub enum Event {
         window: WindowLabel,
         reason: ExitReason,
     },
+    /// What an agent's hook said. `replayed`: it was kept, and comes now
+    /// because the client attached - it is not news.
+    AgentHook { hook: AgentHook, replayed: bool },
+    /// A question for this client; it answers with `Request::Answer` under
+    /// `relay`.
+    Asked { relay: RelayId, question: Question },
     /// What a later version reports and this one does not know.
     #[serde(other)]
     Unknown,
@@ -555,6 +680,88 @@ mod tests {
         assert_eq!(attached, Attached::Unknown);
         let reason: ExitReason = serde_json::from_str(r#"{"kind":"evicted"}"#).unwrap();
         assert_eq!(reason, ExitReason::Unknown);
+    }
+
+    #[test]
+    fn what_goes_from_process_to_cogno_has_these_names_on_the_wire() {
+        let hook = AgentHook {
+            terminal_id: Some("t1".into()),
+            provider: "codex".into(),
+            event: "Stop".into(),
+            sent_at: 7,
+            payload: "{}".into(),
+        };
+        assert_eq!(
+            serde_json::to_string(&Request::AgentHook { hook: hook.clone() }).unwrap(),
+            r#"{"type":"agentHook","hook":{"terminal_id":"t1","provider":"codex","event":"Stop","sent_at":7,"payload":"{}"}}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Event::AgentHook {
+                hook,
+                replayed: true
+            })
+            .unwrap(),
+            r#"{"type":"agentHook","hook":{"terminal_id":"t1","provider":"codex","event":"Stop","sent_at":7,"payload":"{}"},"replayed":true}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Request::Ask {
+                question: Question::RunAction {
+                    terminal_id: "t1".into(),
+                    name: "new_tab".into(),
+                    args: vec![],
+                }
+            })
+            .unwrap(),
+            r#"{"type":"ask","question":{"type":"runAction","terminal_id":"t1","name":"new_tab","args":[]}}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Event::Asked {
+                relay: RelayId(3),
+                question: Question::Prompt {
+                    session: "s".into(),
+                    token: "k".into(),
+                    prompt: "Password:".into(),
+                }
+            })
+            .unwrap(),
+            r#"{"type":"asked","relay":3,"question":{"type":"prompt","session":"s","token":"k","prompt":"Password:"}}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Request::Answer {
+                relay: RelayId(3),
+                answer: Answer::ActionRun {
+                    status: ActionRunStatus::NotFound
+                }
+            })
+            .unwrap(),
+            r#"{"type":"answer","relay":3,"answer":{"type":"actionRun","status":"notFound"}}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Response::Answered {
+                answer: Answer::Prompt { answer: None }
+            })
+            .unwrap(),
+            r#"{"type":"answered","answer":{"type":"prompt","answer":null}}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Request::OwnPrompts {
+                session: "s".into()
+            })
+            .unwrap(),
+            r#"{"type":"ownPrompts","session":"s"}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&HostErrorCode::NotShown).unwrap(),
+            r#""notShown""#
+        );
+        assert_eq!(
+            serde_json::to_string(&HostErrorCode::NoAnswer).unwrap(),
+            r#""noAnswer""#
+        );
+        let later: Question = serde_json::from_str(r#"{"type":"teleport"}"#).unwrap();
+        assert_eq!(later, Question::Unknown);
+        let later: ActionRunStatus = serde_json::from_str(r#""queued""#).unwrap();
+        assert_eq!(later, ActionRunStatus::Unknown);
     }
 
     #[test]

@@ -16,8 +16,8 @@ use crate::env_vars;
 use crate::host::{Client, ClientId};
 use crate::line_editor::LineEditorTarget;
 use crate::protocol::{
-    ExitReason, HostError, HostErrorCode, SessionInfo, SessionLifetime, SessionPlacement,
-    SpawnOptions, StreamId, TerminalId, TerminalSize, WindowLabel,
+    AgentHook, ExitReason, HostError, HostErrorCode, SessionInfo, SessionLifetime,
+    SessionPlacement, SpawnOptions, StreamId, TerminalId, TerminalSize, WindowLabel,
 };
 use crate::shared_session::{Departure, Ended, Left, SharedSession};
 use crate::shell_process::{ShellInput, ShellProcess, StartedShell};
@@ -595,6 +595,31 @@ impl Sessions {
         }
     }
 
+    /// Keeps what an agent's hook said in the session of its terminal and
+    /// passes it on to the client that shows that session, if one does. A
+    /// terminal of no session here is not this host's: the hook is dropped.
+    pub fn take_hook(&self, terminal_id: &str, hook: AgentHook) {
+        let Ok(shared) = self
+            .table()
+            .get(terminal_id)
+            .map(|session| session.shared.clone())
+        else {
+            log::debug!(target: "host", "terminal_id={terminal_id}: a hook of no session here");
+            return;
+        };
+        if let Some(attachment) = shared.take_hook(&hook) {
+            attachment.send_hook(hook, false);
+        }
+    }
+
+    /// The client that shows the session of `terminal_id`, if one does.
+    pub fn shown_by(&self, terminal_id: &str) -> Option<ClientId> {
+        self.table()
+            .get(terminal_id)
+            .ok()
+            .and_then(|session| session.shared.attached_client())
+    }
+
     pub fn shell_process_id(&self, terminal_id: &str) -> Result<u32, HostError> {
         self.table().get(terminal_id)?.shell.pid().ok_or_else(|| {
             HostError::new(
@@ -651,6 +676,14 @@ fn shell_command(
 ) -> CommandBuilder {
     let mut command = CommandBuilder::new(&prepared.program);
     command.args(&prepared.args);
+    // A shell starts from the host's own environment. What a Cogno told the
+    // process that started the host - its terminal, its port - is not this
+    // shell's: Cogno's variables come only from here.
+    for (name, _) in std::env::vars_os() {
+        if is_cognos_own(&name) {
+            command.env_remove(name);
+        }
+    }
     for (key, value) in prepared.env {
         command.env(key, value);
     }
@@ -663,6 +696,30 @@ fn shell_command(
     command.env(env_vars::COGNO_TERMINAL_ID, terminal_id);
     command.cwd(expand_home(&prepared.working_dir));
     command
+}
+
+/// Whether an environment variable is one of those Cogno sets for a shell
+/// (`env_vars`): `COGNO` and every `COGNO_*`, in any case (Windows does not
+/// tell them apart).
+fn is_cognos_own(name: &std::ffi::OsStr) -> bool {
+    let name = name.to_string_lossy().to_ascii_uppercase();
+    name == env_vars::COGNO || name.starts_with("COGNO_")
+}
+
+#[cfg(test)]
+mod inherited_environment_tests {
+    use super::is_cognos_own;
+    use std::ffi::OsStr;
+
+    #[test]
+    fn what_a_cogno_set_is_not_inherited_by_a_shell() {
+        for name in ["COGNO", "COGNO_PORT", "cogno_terminal_id", "COGNO_HOST"] {
+            assert!(is_cognos_own(OsStr::new(name)), "{name}");
+        }
+        for name in ["PATH", "COGNOS", "MY_COGNO_X"] {
+            assert!(!is_cognos_own(OsStr::new(name)), "{name}");
+        }
+    }
 }
 
 /// `~` and `~/...` (or `~\...`) below the user's home directory. Another
@@ -727,6 +784,8 @@ pub(crate) mod test_support {
 
     pub struct TakesEverything;
     impl EventSink for TakesEverything {
+        fn reply(&self, _id: u64, _reply: crate::protocol::Reply) {}
+
         fn event(&self, _event: Event) {}
         fn output(&self, _output: Output) -> bool {
             true

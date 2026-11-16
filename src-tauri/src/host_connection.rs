@@ -2,15 +2,15 @@
 //! machine's daemon directly, or to another machine's through a process this
 //! app starts (ssh, with `cogno server --stdio` at the other end). Requests
 //! go out with an id and their replies come back under it; events and
-//! output go to the sink the connection was given.
+//! output go to the `HostEvents` the connection was given, which answers
+//! what the host passes on over the same connection (`Answers`).
 //!
 //! What goes out is written by a thread of the connection's own: sending
 //! never blocks, so a host that is slow to read (a stalled ssh) never holds
 //! up the thread that drives the UI.
 
-use cogno_host::protocol::{Reply, Request, Response};
-use cogno_host::wire::{self, ClientHello, ClientMessage, HostMessage, VersionMismatch};
-use cogno_host::EventSink;
+use cogno_host::protocol::{Answer, Event, RelayId, Reply, Request, Response};
+use cogno_host::wire::{self, ClientHello, ClientMessage, HostMessage, Output, VersionMismatch};
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Write};
 use std::net::{Shutdown, TcpStream};
@@ -76,6 +76,28 @@ pub type HangUp = Box<dyn FnOnce() + Send>;
 /// What runs once a connection ended, with its id.
 pub type OnLost = Box<dyn FnOnce(u64, Ending) + Send>;
 
+/// Where what a host reports goes.
+pub trait HostEvents: Send + Sync + 'static {
+    /// An event; a question the host passed on is answered through `answers`.
+    fn event(&self, event: Event, answers: &Answers);
+    /// A piece of a session's output.
+    fn output(&self, output: Output);
+}
+
+/// Answers what a host passed on (`Event::Asked`), over the connection the
+/// question came through; also later, for a prompt the user takes a while
+/// to answer.
+#[derive(Clone)]
+pub struct Answers(mpsc::Sender<ClientMessage>);
+
+impl Answers {
+    pub fn answer(&self, relay: RelayId, answer: Answer) {
+        let _ = self.0.send(ClientMessage::Post {
+            request: Request::Answer { relay, answer },
+        });
+    }
+}
+
 pub struct HostConnection {
     /// Unique among the connections of this app.
     id: u64,
@@ -135,7 +157,7 @@ impl Starting {
     pub fn introduce(
         self,
         name: &str,
-        sink: Arc<dyn EventSink>,
+        events: Arc<dyn HostEvents>,
         on_lost: OnLost,
     ) -> CommandResult<HostConnection> {
         let ender = self.ender();
@@ -143,7 +165,7 @@ impl Starting {
             self.stdout,
             self.stdin,
             Reaching::Remote(name),
-            sink,
+            events,
             on_lost,
             ender,
         )
@@ -188,7 +210,7 @@ impl HostConnection {
     /// Talks to this machine's daemon over `stream`.
     pub fn to_this_machine(
         stream: TcpStream,
-        sink: Arc<dyn EventSink>,
+        events: Arc<dyn HostEvents>,
         on_lost: OnLost,
     ) -> CommandResult<Self> {
         let reader = stream.try_clone().map_err(CommandError::internal)?;
@@ -197,7 +219,7 @@ impl HostConnection {
             reader,
             stream,
             Reaching::ThisMachine,
-            sink,
+            events,
             on_lost,
             // The daemon learns at once that this app is gone, also while a
             // clone of the socket still reads.
@@ -214,7 +236,7 @@ impl HostConnection {
         reader: impl Read + Send + 'static,
         mut writer: impl Write + Send + 'static,
         reaching: Reaching<'_>,
-        sink: Arc<dyn EventSink>,
+        events: Arc<dyn HostEvents>,
         on_lost: OnLost,
         hang_up: HangUp,
     ) -> CommandResult<Self> {
@@ -235,9 +257,11 @@ impl HostConnection {
 
         let waiting = Arc::new(Mutex::new(Waiting::default()));
         let hung_up = Arc::new(AtomicBool::new(false));
+        let outgoing = spawn_writer(writer);
         {
             let waiting = waiting.clone();
             let hung_up = hung_up.clone();
+            let answers = Answers(outgoing.clone());
             std::thread::spawn(move || {
                 while let Ok(Some(message)) = wire::read_host_message(&mut reader) {
                     match message {
@@ -246,10 +270,8 @@ impl HostConnection {
                                 let _ = waiter.send(reply);
                             }
                         }
-                        HostMessage::Event(event) => sink.event(event),
-                        HostMessage::Output(output) => {
-                            sink.output(output);
-                        }
+                        HostMessage::Event(event) => events.event(event, &answers),
+                        HostMessage::Output(output) => events.output(output),
                         HostMessage::Hello(_) => {}
                     }
                 }
@@ -269,7 +291,7 @@ impl HostConnection {
         }
         Ok(Self {
             id,
-            outgoing: spawn_writer(writer),
+            outgoing,
             waiting,
             next_id: AtomicU64::new(FIRST_REQUEST_ID),
             os: hello.os,
@@ -474,18 +496,16 @@ fn version_error(mismatch: VersionMismatch, reaching: Reaching<'_>) -> CommandEr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cogno_host::protocol::{Event, HostErrorCode, TerminalSize};
-    use cogno_host::wire::{Output, OLDEST_PROTOCOL_VERSION, PROTOCOL_VERSION};
+    use cogno_host::protocol::{HostErrorCode, TerminalSize};
+    use cogno_host::wire::{OLDEST_PROTOCOL_VERSION, PROTOCOL_VERSION};
     use std::io::{PipeReader, PipeWriter};
 
     use crate::command_error::ErrorCode;
 
     struct NoEvents;
-    impl EventSink for NoEvents {
-        fn event(&self, _event: Event) {}
-        fn output(&self, _output: Output) -> bool {
-            true
-        }
+    impl HostEvents for NoEvents {
+        fn event(&self, _event: Event, _answers: &Answers) {}
+        fn output(&self, _output: Output) {}
     }
 
     fn ignored() -> OnLost {

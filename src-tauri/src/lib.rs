@@ -1,14 +1,16 @@
 #[path = "actions.generated.rs"]
 pub mod actions_generated;
+pub mod agent_hook;
 mod app_identity;
 pub mod cli;
+mod cogno_message;
 mod command_error;
 pub mod commands;
 mod db;
-mod endpoint;
 mod host_connection;
+pub mod host_endpoint;
 mod hosts;
-mod http_server;
+mod runnable_actions;
 mod shell_bootstrap_logs;
 mod updater;
 
@@ -17,7 +19,7 @@ use cli::Cli;
 use commands::window_registry::{route, WindowRegistry};
 use db::Db;
 use hosts::HostState;
-use http_server::{HttpServerState, RunnableActionsState};
+use runnable_actions::RunnableActionsState;
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
@@ -91,7 +93,6 @@ pub fn run(cli: Cli) {
             }
         }))
         .manage(crate::commands::window::QuitState::default())
-        .manage(HttpServerState::new())
         .manage(RunnableActionsState::new())
         .manage(Db::new())
         .manage(WindowRegistry::new())
@@ -146,7 +147,7 @@ pub fn run(cli: Cli) {
             crate::commands::processes::pty_terminate_process,
             crate::commands::processes::pty_terminate_foreground_job,
             crate::commands::environment::get_cogno_home_dir,
-            crate::commands::environment::get_cogno_endpoint_file_path,
+            crate::commands::environment::get_cogno_starter_path,
             crate::commands::environment::get_cogno_config_file_path,
             crate::commands::environment::get_cogno_db_file_path,
             crate::commands::environment::get_cogno_log_file_path,
@@ -156,8 +157,7 @@ pub fn run(cli: Cli) {
             crate::commands::window::window_release_workspace,
             crate::commands::notification::send_os_notification,
             crate::commands::clipboard_image::save_clipboard_image_to_file,
-            crate::http_server::start_http_server,
-            crate::http_server::set_runnable_actions,
+            crate::runnable_actions::set_runnable_actions,
             crate::updater::updater_state,
             crate::updater::updater_check,
             crate::updater::updater_install
@@ -208,8 +208,6 @@ pub fn run(cli: Cli) {
                 if let Some(host) = app.try_state::<HostState>() {
                     host.hang_up_all();
                 }
-                // No process must find this instance's port once it is gone.
-                app.state::<HttpServerState>().remove_endpoint();
                 // Fold the WAL back into the main file so the database is a
                 // single, consistent file once the process is gone.
                 app.state::<Db>().close();

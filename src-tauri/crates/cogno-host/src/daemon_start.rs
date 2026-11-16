@@ -195,9 +195,9 @@ fn put_down_starter(endpoint: &Path, binary: &Path) {
     let Ok(home) = home_of(endpoint) else {
         return;
     };
+    let path = starter_path(home);
     let directory = home.join(STARTER_DIRECTORY);
-    let (name, content) = starter(binary);
-    let path = directory.join(name);
+    let content = starter(binary);
     let written = std::fs::create_dir_all(&directory).and_then(|_| std::fs::write(&path, content));
     #[cfg(unix)]
     let written = written.and_then(|_| {
@@ -209,22 +209,27 @@ fn put_down_starter(endpoint: &Path, binary: &Path) {
     }
 }
 
+/// Where the starter lies in the Cogno home `home`: what hooks and plugins
+/// run to reach the host, whichever version of Cogno is installed.
+pub fn starter_path(home: &Path) -> PathBuf {
+    let name = if cfg!(windows) {
+        format!("{STARTER_NAME}.cmd")
+    } else {
+        STARTER_NAME.to_string()
+    };
+    home.join(STARTER_DIRECTORY).join(name)
+}
+
 #[cfg(windows)]
-fn starter(binary: &Path) -> (String, String) {
-    (
-        format!("{STARTER_NAME}.cmd"),
-        format!("@\"{}\" %*\r\n", binary.display()),
-    )
+fn starter(binary: &Path) -> String {
+    format!("@\"{}\" %*\r\n", binary.display())
 }
 
 #[cfg(not(windows))]
-fn starter(binary: &Path) -> (String, String) {
+fn starter(binary: &Path) -> String {
     // Single quotes keep every character of the path but the quote itself.
     let quoted = binary.display().to_string().replace('\'', "'\\''");
-    (
-        STARTER_NAME.to_string(),
-        format!("#!/bin/sh\nexec '{quoted}' \"$@\"\n"),
-    )
+    format!("#!/bin/sh\nexec '{quoted}' \"$@\"\n")
 }
 
 /// Starts the daemon so that it outlives this app.
@@ -275,20 +280,26 @@ mod tests {
     fn the_starter_runs_the_binary_with_what_it_was_given() {
         #[cfg(windows)]
         {
-            let (name, content) = starter(Path::new(r"C:\Users\me\.cogno\host\1\cogno.exe"));
-            assert_eq!(name, "cogno.cmd");
+            let content = starter(Path::new(r"C:\Users\me\.cogno\host\1\cogno.exe"));
             assert_eq!(
                 content,
                 "@\"C:\\Users\\me\\.cogno\\host\\1\\cogno.exe\" %*\r\n"
             );
+            assert_eq!(
+                starter_path(Path::new(r"C:\Users\me\.cogno")),
+                Path::new(r"C:\Users\me\.cogno\bin\cogno.cmd")
+            );
         }
         #[cfg(not(windows))]
         {
-            let (name, content) = starter(Path::new("/opt/it's here/cogno"));
-            assert_eq!(name, "cogno");
+            let content = starter(Path::new("/opt/it's here/cogno"));
             assert_eq!(
                 content,
                 "#!/bin/sh\nexec '/opt/it'\\''s here/cogno' \"$@\"\n"
+            );
+            assert_eq!(
+                starter_path(Path::new("/home/me/.cogno")),
+                Path::new("/home/me/.cogno/bin/cogno")
             );
         }
     }

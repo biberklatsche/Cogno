@@ -4,6 +4,7 @@
 //! goes back to the webview from here.
 
 mod connections;
+mod questions;
 mod routes;
 mod webview;
 
@@ -28,7 +29,6 @@ use webview::{TerminalExit, WebviewEvents};
 pub struct SpawnRequest {
     pub options: SpawnOptions,
     pub window: WindowLabel,
-    pub env: Vec<(String, String)>,
     pub lifetime: SessionLifetime,
     pub on_data: Channel<InvokeResponseBody>,
 }
@@ -234,7 +234,6 @@ impl HostState {
         let SpawnRequest {
             options,
             window,
-            env,
             lifetime,
             on_data,
         } = request;
@@ -249,7 +248,6 @@ impl HostState {
                     options,
                     window,
                     stream,
-                    env,
                     lifetime,
                 },
                 |terminal_id, reply| match reply {
@@ -415,6 +413,23 @@ impl HostState {
                 .map_err(CommandError::internal)
         })
         .await
+    }
+
+    /// The prompts of git and ssh that a run of `session` asks go to this
+    /// app: its host passes them on (`Question::Prompt`).
+    pub fn own_prompts(&self, session: &str) -> CommandResult<()> {
+        self.0.local()?.post(Request::OwnPrompts {
+            session: session.to_string(),
+        })
+    }
+
+    /// The run of `session` ended: its prompts are nobody's any more.
+    pub fn disown_prompts(&self, session: &str) {
+        if let Ok(local) = self.0.local() {
+            let _ = local.post(Request::DisownPrompts {
+                session: session.to_string(),
+            });
+        }
     }
 
     /// Hangs up on every host: what the app does on its way out. A host ends

@@ -7,7 +7,7 @@ use std::sync::mpsc;
 use std::sync::Arc;
 
 use crate::host::{Client, ClientId, EventSink, Host};
-use crate::protocol::{Event, HostError, HostErrorCode, Reply};
+use crate::protocol::{Event, HostError, HostErrorCode, Reply, Request};
 use crate::wire::{self, ClientFrame, ClientMessage, HostMessage, Output};
 
 /// What goes to the client, written by a thread of its own: whoever sends
@@ -34,15 +34,15 @@ impl ClientWriter {
     fn send(&self, message: HostMessage) -> bool {
         self.0.send(message).is_ok()
     }
-
-    fn answer(&self, id: u64, reply: Reply) {
-        self.send(HostMessage::Reply { id, reply });
-    }
 }
 
 impl EventSink for ClientWriter {
     fn event(&self, event: Event) {
         self.send(HostMessage::Event(event));
+    }
+
+    fn reply(&self, id: u64, reply: Reply) {
+        self.send(HostMessage::Reply { id, reply });
     }
 
     fn output(&self, output: Output) -> bool {
@@ -77,13 +77,14 @@ pub(crate) fn serve_client<W: Write + Send + 'static>(
         host,
         client: client_id,
     };
+    host.client_came(&client);
 
     loop {
         let message = match wire::read_client_message(&mut input)? {
             Some(ClientFrame::Message(message)) => message,
             Some(ClientFrame::Unreadable { id, reason }) => {
                 match id {
-                    Some(id) => writer.answer(
+                    Some(id) => writer.reply(
                         id,
                         Err(HostError::new(
                             HostErrorCode::InvalidRequest,
@@ -97,6 +98,14 @@ pub(crate) fn serve_client<W: Write + Send + 'static>(
             None => return Ok(()),
         };
         let (id, request) = match message {
+            // Answered once another client did; asking only passes it on.
+            ClientMessage::Request {
+                id,
+                request: Request::Ask { question },
+            } => {
+                host.ask(&client, id, question);
+                continue;
+            }
             ClientMessage::Request { id, request } => (Some(id), request),
             ClientMessage::Post { request } => (None, request),
         };
@@ -108,7 +117,7 @@ pub(crate) fn serve_client<W: Write + Send + 'static>(
             move || {
                 let reply = host.handle(&client, request);
                 match id {
-                    Some(id) => writer.answer(id, reply),
+                    Some(id) => writer.reply(id, reply),
                     None => {
                         if let Err(error) = reply {
                             // Nobody waits for it; a typed key that crossed a

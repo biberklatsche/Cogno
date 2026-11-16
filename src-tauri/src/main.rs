@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use clap::Parser;
 use cogno_lib::actions_generated::COGNO_ACTIONS;
-use cogno_lib::cli::{try_run_action_over_http, ActionCommand, Cli, CliCommand, ConfigCommand};
+use cogno_lib::cli::{try_run_action_in_terminal, ActionCommand, Cli, CliCommand, ConfigCommand};
 use cogno_lib::commands::config::read_default_config;
 use cogno_lib::commands::environment::get_cogno_config_file_path;
 use std::collections::HashMap;
@@ -49,6 +49,9 @@ fn main() {
                 }
             }
         }
+        Some(CliCommand::Hook { provider, event }) => {
+            std::process::exit(cogno_lib::agent_hook::send(provider.clone(), event.clone()));
+        }
         _ => {}
     }
 
@@ -57,9 +60,9 @@ fn main() {
         std::process::exit(1);
     }
 
-    // Inside a running Cogno terminal, `action run` goes over HTTP and gets a
-    // real reply; otherwise fall back to validation + the single-instance path.
-    if let Some(exit_code) = try_run_action_over_http(&cli) {
+    // Inside a Cogno terminal, `action run` asks the Cogno that shows it and
+    // gets a real reply; otherwise validation + the single-instance path.
+    if let Some(exit_code) = try_run_action_in_terminal(&cli) {
         std::process::exit(exit_code);
     }
 

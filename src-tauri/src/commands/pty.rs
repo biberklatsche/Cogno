@@ -1,34 +1,26 @@
-use cogno_host::env_vars;
 use cogno_host::protocol::{
     Request, SessionInfo, SessionLifetime, SessionPlacement, SpawnOptions, TerminalSize,
 };
 use tauri::ipc::{Channel, InvokeResponseBody};
-use tauri::{AppHandle, Manager, State};
+use tauri::State;
 
 use crate::command_error::CommandResult;
 use crate::hosts::{HostState, SpawnRequest, Spawned};
-use crate::http_server::HttpServerState;
-
-/// How long a start waits for the HTTP server to decide whether it runs.
-const HTTP_SERVER_PATIENCE: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// Starts a shell on this machine; on another one, Cogno only shows what
 /// runs there.
 #[tauri::command]
 pub async fn pty_spawn(
-    app: AppHandle,
     window: tauri::WebviewWindow,
     hosts: State<'_, HostState>,
     options: SpawnOptions,
     lifetime: SessionLifetime,
     on_data: Channel<InvokeResponseBody>,
 ) -> CommandResult<Spawned> {
-    let env = http_server_environment(&app).await;
     hosts
         .spawn(SpawnRequest {
             options,
             window: window.label().to_string(),
-            env,
             lifetime,
             on_data,
         })
@@ -49,29 +41,6 @@ pub async fn pty_attach(
     hosts
         .attach(host, terminal_id, window.label().to_string(), on_data)
         .await
-}
-
-/// HTTP server port and token, so hooks can reach cogno. The webview starts
-/// the server and spawns terminals independently; a short wait for the
-/// server's answer keeps the port out of a race it would lose on a cold start.
-async fn http_server_environment(app: &AppHandle) -> Vec<(String, String)> {
-    let server_state = app.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        let http_server = server_state.state::<HttpServerState>();
-        http_server.wait_for_start_decision(HTTP_SERVER_PATIENCE);
-        match http_server.port() {
-            0 => Vec::new(),
-            port => vec![
-                (env_vars::COGNO_PORT.to_string(), port.to_string()),
-                (
-                    env_vars::COGNO_TOKEN.to_string(),
-                    http_server.token().to_string(),
-                ),
-            ],
-        }
-    })
-    .await
-    .unwrap_or_default()
 }
 
 /// Says where the shell sits in this Cogno (workspace, tab, title,

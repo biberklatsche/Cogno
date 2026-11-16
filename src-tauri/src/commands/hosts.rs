@@ -9,7 +9,6 @@ use tauri::{AppHandle, Manager, State};
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
 use crate::commands::askpass::{point_ssh_at_helper, AskpassState};
 use crate::hosts::HostState;
-use crate::http_server::HttpServerState;
 
 /// How often ssh asks the other machine whether it is still there, and how
 /// many unanswered questions end the connection: a dead connection ends
@@ -90,38 +89,58 @@ pub async fn host_connect(
     let askpass_token = app
         .state::<AskpassState>()
         .open_session(&prompt_session, window.label());
-    let port = app.state::<HttpServerState>().port();
 
     let connecting = app.clone();
     let session = prompt_session.clone();
     let connected = tauri::async_runtime::spawn_blocking(move || {
         let hosts = connecting.state::<HostState>();
-        let mut first_failure: Option<CommandError> = None;
-        for (index, remote_command) in candidates.iter().enumerate() {
-            let mut ssh = ssh_command(&destination, remote_command)?;
-            point_ssh_at_helper(&mut ssh, port, &session, &askpass_token);
-            match hosts.connect(&name, ssh) {
-                Ok(os) => {
-                    return Ok(HostInfo {
-                        os,
-                        found_command: (index > 0).then(|| remote_command.clone()),
-                    })
-                }
-                // The command did not reach Cogno: the next one may.
-                Err(error) if error.is(AppErrorCode::NoCognoThere) => {
-                    first_failure.get_or_insert(error);
-                }
-                Err(error) => return Err(error),
-            }
+        // What ssh asks comes to this app: the host of this machine passes it
+        // on. Without that host nothing can ask; a key still logs in.
+        let owned = hosts.own_prompts(&session).is_ok();
+        let connected = connect_trying(&hosts, &name, &destination, &candidates, |ssh| {
+            point_ssh_at_helper(ssh, &session, &askpass_token);
+        });
+        if owned {
+            hosts.disown_prompts(&session);
         }
-        // What the default command met says the most.
-        Err(first_failure.unwrap_or_else(|| CommandError::internal("No command to try")))
+        connected
     })
     .await;
     app.state::<AskpassState>()
         .close_session(&app, &prompt_session);
 
     connected.map_err(CommandError::internal)?
+}
+
+/// Connects with each of `candidates` in turn, as long as the one before did
+/// not reach Cogno. `prepare` lets ssh ask through the app.
+fn connect_trying(
+    hosts: &HostState,
+    name: &str,
+    destination: &str,
+    candidates: &[String],
+    prepare: impl Fn(&mut Command),
+) -> CommandResult<HostInfo> {
+    let mut first_failure: Option<CommandError> = None;
+    for (index, remote_command) in candidates.iter().enumerate() {
+        let mut ssh = ssh_command(destination, remote_command)?;
+        prepare(&mut ssh);
+        match hosts.connect(name, ssh) {
+            Ok(os) => {
+                return Ok(HostInfo {
+                    os,
+                    found_command: (index > 0).then(|| remote_command.clone()),
+                })
+            }
+            // The command did not reach Cogno: the next one may.
+            Err(error) if error.is(AppErrorCode::NoCognoThere) => {
+                first_failure.get_or_insert(error);
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    // What the default command met says the most.
+    Err(first_failure.unwrap_or_else(|| CommandError::internal("No command to try")))
 }
 
 /// The shells installed on this machine: offered as profiles on first start.

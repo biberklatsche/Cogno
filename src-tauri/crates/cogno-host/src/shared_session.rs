@@ -11,15 +11,18 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::attachment::{Attachment, Owner, TakenFrom};
 use crate::host::ClientId;
+use crate::kept_hooks::KeptHooks;
 use crate::kept_output::KeptOutput;
 use crate::protocol::{
-    Attached, SessionInfo, SessionLifetime, SessionPlacement, ShellProfile, TerminalId,
+    AgentHook, Attached, SessionInfo, SessionLifetime, SessionPlacement, ShellProfile, TerminalId,
     TerminalSize,
 };
 use crate::sync::lock;
 
 struct SessionState {
     kept: KeptOutput,
+    /// What the agent in the terminal last said through its hooks.
+    hooks: KeptHooks,
     attached: Option<Attachment>,
     owner: Owner,
     /// Whom the owner took the session from, while that still matters.
@@ -107,6 +110,7 @@ impl SharedSession {
             profile,
             state: Mutex::new(SessionState {
                 kept: KeptOutput::new(),
+                hooks: KeptHooks::default(),
                 attached: None,
                 owner,
                 taken_from: None,
@@ -169,6 +173,17 @@ impl SharedSession {
         state.attached.clone()
     }
 
+    /// Keeps what an agent's hook said and says who is to get it now. Nobody
+    /// for a session that has ended.
+    pub fn take_hook(&self, hook: &AgentHook) -> Option<Attachment> {
+        let mut state = self.state();
+        if self.is_closed() {
+            return None;
+        }
+        state.hooks.keep(hook);
+        state.attached.clone()
+    }
+
     /// Takes `attachment` off, unless another one has taken its place.
     pub fn forget(&self, attachment: &Attachment) {
         let mut state = self.state();
@@ -181,9 +196,10 @@ impl SharedSession {
         }
     }
 
-    /// Attaches `attachment`, of `window`, and plays it what was kept. The
-    /// replay happens under the lock, so the reader's next piece comes after
-    /// it; sending only queues (`server`), so that is quick.
+    /// Attaches `attachment`, of `window`, and plays it what was kept: the
+    /// output, then what the agent's hooks said. The replay happens under
+    /// the lock, so the reader's next piece comes after it; sending only
+    /// queues (`server`), so that is quick.
     ///
     /// A session that passes to another window goes on without clients from
     /// then on: it must not end with one that only came to look, while the
@@ -221,7 +237,9 @@ impl SharedSession {
                 .as_ref()
                 .map(|showed| TakenFrom::of(previous_owner.clone(), showed));
         }
-        attachment.replay(&state.kept.replay());
+        let replayed = attachment.replay(&state.kept.replay());
+        // After the output, as it was said: what the agent does now.
+        attachment.replay_hooks(state.hooks.iter().cloned().collect(), replayed);
         let client = attachment.client;
         self.put_on(&mut state, attachment);
         Some(AttachedNow {

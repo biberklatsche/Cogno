@@ -420,7 +420,7 @@ pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
         },
     )?;
 
-    let host = Arc::new(Host::new(home));
+    let host = Arc::new(Host::new(home, endpoint.to_path_buf()));
     let clients = Arc::new(AtomicUsize::new(0));
     let had_a_client = Arc::new(AtomicBool::new(false));
     let ending = Arc::new(AtomicBool::new(false));

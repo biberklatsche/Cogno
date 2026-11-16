@@ -12,13 +12,16 @@ mod environment_builder;
 mod flow_control;
 mod host;
 pub mod identity;
+mod kept_hooks;
 mod kept_output;
 mod line_editor;
 pub mod login_environment;
+pub mod once;
 #[cfg(windows)]
 pub mod process_job;
 mod processes;
 pub mod protocol;
+mod relay;
 mod server;
 mod sessions;
 mod shared_session;

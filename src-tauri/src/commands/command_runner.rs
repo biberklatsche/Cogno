@@ -1,5 +1,5 @@
-use crate::commands::askpass::{point_ssh_at_helper, AskpassState, SESSION_ENV};
-use crate::http_server::HttpServerState;
+use crate::commands::askpass::{point_ssh_at_helper, AskpassState, SESSION_ENV, TOKEN_ENV};
+use crate::hosts::HostState;
 use serde::Serialize;
 use std::io::{Read, Write};
 use std::process::{Command, Stdio};
@@ -63,16 +63,28 @@ pub async fn command_runner_execute(
     let login_path =
         cogno_host::login_environment::get_login_environment(Duration::from_secs(2)).path;
     apply_runner_environment(&mut command, login_path);
-    apply_prompt_environment(&mut command, &app, &session_id, &askpass_token);
+    apply_prompt_environment(&mut command, &session_id, &askpass_token);
 
     let pending = {
         let app = app.clone();
         let session_id = session_id.clone();
         move || app.state::<AskpassState>().has_pending(&session_id)
     };
-    let result =
-        tauri::async_runtime::spawn_blocking(move || run(command, timeout_ms, stdin, &pending))
-            .await;
+    let result = tauri::async_runtime::spawn_blocking({
+        let app = app.clone();
+        let session_id = session_id.clone();
+        move || {
+            // Its prompts come to this app; without a host, nothing can ask.
+            let hosts = app.state::<HostState>();
+            let owned = hosts.own_prompts(&session_id).is_ok();
+            let ran = run(command, timeout_ms, stdin, &pending);
+            if owned {
+                hosts.disown_prompts(&session_id);
+            }
+            ran
+        }
+    })
+    .await;
     app.state::<AskpassState>().close_session(&app, &session_id);
 
     result
@@ -95,17 +107,11 @@ fn apply_runner_environment(command: &mut Command, login_path: Option<String>) {
 
 /// Git and ssh ask through this binary instead of a terminal. The variables
 /// also reach a WSL distro, with the helper path translated (`WSLENV` `/p`).
-/// `COGNO_TOKEN` is the run's askpass token, not the launch token: hooks and
-/// helpers git starts inherit this environment (`askpass.rs`).
-fn apply_prompt_environment(
-    command: &mut Command,
-    app: &AppHandle,
-    session_id: &str,
-    askpass_token: &str,
-) {
+/// The token is the run's own: hooks and helpers git starts inherit this
+/// environment (`askpass.rs`).
+fn apply_prompt_environment(command: &mut Command, session_id: &str, askpass_token: &str) {
     command.env("GIT_TERMINAL_PROMPT", "0");
-    let port = app.state::<HttpServerState>().port();
-    let Some(helper) = point_ssh_at_helper(command, port, session_id, askpass_token) else {
+    let Some(helper) = point_ssh_at_helper(command, session_id, askpass_token) else {
         return;
     };
     command.env("GIT_ASKPASS", &helper);
@@ -116,8 +122,10 @@ fn apply_prompt_environment(
         "GIT_TERMINAL_PROMPT",
         "GIT_OPTIONAL_LOCKS",
         SESSION_ENV,
-        cogno_host::env_vars::COGNO_PORT,
-        cogno_host::env_vars::COGNO_TOKEN,
+        TOKEN_ENV,
+        // A path, but of the host on this side: WSL's processes reach it
+        // through the Windows helper, which reads it as it is.
+        cogno_host::env_vars::COGNO_HOST,
     ]
     .join(":");
     let wslenv = match std::env::var("WSLENV") {
