@@ -32,8 +32,8 @@ function inMemoryConfigFiles(initial: Record<string, string> = {}) {
   return { service, files, dirs };
 }
 
-const ENDPOINT = "/home/.cogno/endpoint.json";
-const scripts = { endpointPath: async () => ENDPOINT } as unknown as HookScriptPathsService;
+const STARTER = "/home/.cogno/bin/cogno";
+const scripts = { starterPath: async () => STARTER } as unknown as HookScriptPathsService;
 const ipc = { messages$: EMPTY } as unknown as TerminalIpcPort;
 
 const PLUGIN_DIR = "/home/.config/opencode/plugins/cogno";
@@ -59,13 +59,13 @@ describe("OpenCodeProvider", () => {
     expect(await provider.isAgentInstalled()).toBe(false);
   });
 
-  it("writes the plugin folder with the endpoint file baked in, and leaves other plugins alone", async () => {
+  it("writes the plugin folder with the starter baked in, and leaves other plugins alone", async () => {
     expect(await provider.hookState()).toBe("missing");
 
     await provider.installHook();
 
-    expect(files.get(PLUGIN)).toBe(openCodePlugin(ENDPOINT));
-    expect(files.get(PLUGIN)).toContain(JSON.stringify(ENDPOINT));
+    expect(files.get(PLUGIN)).toBe(openCodePlugin(STARTER));
+    expect(files.get(PLUGIN)).toContain(JSON.stringify(STARTER));
     expect(files.get(FOREIGN)).toBe("export default {}");
     expect(await provider.hookState()).toBe("current");
   });
@@ -78,7 +78,7 @@ describe("OpenCodeProvider", () => {
 
     await provider.installHook();
 
-    expect(files.get(PLUGIN)).toBe(openCodePlugin(ENDPOINT));
+    expect(files.get(PLUGIN)).toBe(openCodePlugin(STARTER));
   });
 
   it("clears the single-file plugin an earlier Cogno wrote, on install and on remove", async () => {
@@ -109,15 +109,15 @@ describe("OpenCodeProvider", () => {
 });
 
 describe("openCodePlugin", () => {
-  it("is a v2 plugin that posts Cogno's hook message without naming a terminal", () => {
-    const source = openCodePlugin("C:\\Users\\me\\.cogno\\endpoint.json");
+  it("is a v2 plugin that hands each event to the starter without naming a terminal", () => {
+    const source = openCodePlugin("C:\\Users\\me\\.cogno\\bin\\cogno.cmd");
 
     expect(source).toContain('id: "cogno"');
     expect(source).toContain("async setup(ctx)");
-    expect(source).toContain('const ENDPOINT = "C:\\\\Users\\\\me\\\\.cogno\\\\endpoint.json"');
-    expect(source).toContain("command: COMMAND");
-    expect(source).toContain('"X-Cogno-Token": target.token');
-    expect(source).not.toContain("terminal_id");
+    expect(source).toContain('const STARTER = "C:\\\\Users\\\\me\\\\.cogno\\\\bin\\\\cogno.cmd"');
+    expect(source).toContain('["hook", PROVIDER, hookEvent]');
+    // The service's environment is its first starter's, not the session's.
+    expect(source).toContain('COGNO_TERMINAL_ID: ""');
     expect(source).toContain("ctx.event.subscribe({ types: EVENTS");
     expect(source).toContain('ctx.session.hook("prompt"');
     expect(source).toContain('ctx.tool.hook("execute.before"');

@@ -32,7 +32,6 @@ describe("describeSettings", () => {
     const sections = describeSections(schema.shape).map((section) => section.title);
     expect(sections[0]).toBe(GENERAL_SECTION);
     expect(sections).toContain("Background image");
-    expect(sections).toContain("HTTP server");
     expect(sections.indexOf("Font")).toBeLessThan(sections.indexOf("Color"));
     expect(setting("enable_watch_config").section).toBe(GENERAL_SECTION);
     expect(setting("shell.default").section).toBe("Shell");

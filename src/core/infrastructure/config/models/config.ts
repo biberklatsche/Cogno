@@ -19,20 +19,6 @@ import { UpdaterConfigSchema } from "./updater-config";
 
 export { Color, ShellType };
 
-const HttpServerSchema = z.strictObject({
-  enabled: z
-    .boolean()
-    .optional()
-    .describe(
-      "Let the `cogno` command and the coding-agent hooks reach this app through a local server.",
-    ),
-  port: z.number().int().min(1).max(65535).optional().describe("Port the local server listens on."),
-  auto_next_port: z
-    .boolean()
-    .optional()
-    .describe("If the port is taken, try the next free one instead of failing."),
-});
-
 /**
  * The top-level keys in the order the settings panel and the reference show
  * them; each group, map or list is a section named after its key, plain values
@@ -69,9 +55,6 @@ export const baseConfigSchemaShape = {
   terminal: TerminalConfigSchema.optional().describe("Terminal rendering and behaviour."),
   autocomplete: AutocompleteConfigSchema.optional().describe("Command autocomplete behaviour."),
   notification: NotificationConfigSchema.optional().describe("Which events notify you, and how."),
-  http_server: HttpServerSchema.meta({ title: "HTTP server" })
-    .optional()
-    .describe("Local HTTP server used by the CLI."),
   updater: UpdaterConfigSchema.optional().describe("How Cogno keeps itself up to date."),
 } satisfies z.ZodRawShape;
 

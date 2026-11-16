@@ -66,6 +66,25 @@ describe("hookSessionEvents$", () => {
       },
     ]);
   });
+
+  it("says when the host played a hook back", () => {
+    const ipc = { messages$: new Subject<TerminalIpcMessage>() } as unknown as TerminalIpcPort;
+    const received: AgentSessionEvent[] = [];
+    hookSessionEvents$(ipc, "codex", reading).subscribe((event) => received.push(event));
+
+    (ipc.messages$ as Subject<TerminalIpcMessage>).next({
+      command: CODING_AGENT_HOOK_COMMAND,
+      args: ["codex", "1", "Stop", "replayed"],
+      payload: { session_id: "s1" },
+    });
+    (ipc.messages$ as Subject<TerminalIpcMessage>).next({
+      command: CODING_AGENT_HOOK_COMMAND,
+      args: ["codex", "2", "Stop"],
+      payload: { session_id: "s1" },
+    });
+
+    expect(received.map((event) => event.replayed)).toEqual([true, undefined]);
+  });
 });
 
 describe("toSessionEvent", () => {

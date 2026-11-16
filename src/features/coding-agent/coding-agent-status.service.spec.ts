@@ -218,6 +218,28 @@ describe("CodingAgentStatusService", () => {
       expect(notificationCenter.dispatch).not.toHaveBeenCalled();
     });
 
+    it("shows what the host played back, without notifying anybody of it", () => {
+      const replay = (status: AgentStatus, hookEvent: string, payload?: unknown) =>
+        claudeEvents.next({
+          sessionId: "s-1",
+          terminalId: "t-1",
+          cwd: "/repo",
+          sentAt: 0,
+          replayed: true,
+          event: interpretClaudeStyleHook(hookEvent, status, payload),
+        });
+      replay("working", "UserPromptSubmit", { prompt: "Write a poem" });
+      replay("ready", "Stop", { last_assistant_message: "Poem done." });
+      vi.advanceTimersByTime(GRACE_MS);
+
+      expect(agent()?.status).toBe("ready");
+      expect(notificationCenter.dispatch).not.toHaveBeenCalled();
+
+      // What happens afterwards is news again.
+      ping("working", "UserPromptSubmit", { prompt: "Write another" });
+      expect(notificationCenter.dispatch).toHaveBeenCalledOnce();
+    });
+
     it("shows a fresh session as ready at once", () => {
       ping("ready", "SessionStart", { source: "startup" });
       expect(agent()?.status).toBe("ready");

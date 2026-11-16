@@ -45,7 +45,7 @@ import { TerminalSearchApiService } from "@cogno/core/workbench/api-adapters/ter
 import { ConfigBootstrapAdapter } from "@cogno/core/workbench/config-bootstrap/config-bootstrap.adapter";
 import { ErrorReportingRuntimeService } from "@cogno/core/workbench/error/error-reporting-runtime.service";
 import { CliActionService } from "@cogno/core/workbench/external/cli-action.service";
-import { HttpMessageAdapterService } from "@cogno/core/workbench/external/http-message-adapter.service";
+import { CognoMessageAdapterService } from "@cogno/core/workbench/external/cogno-message-adapter.service";
 import { RunnableActionsPublisher } from "@cogno/core/workbench/external/runnable-actions-publisher.service";
 import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-definitions.token";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
@@ -145,7 +145,7 @@ export const appConfig: ApplicationConfig = {
         eager(WorkspaceHostApplicationService);
         eager(KeybindService);
         eager(CliActionService);
-        eager(HttpMessageAdapterService);
+        eager(CognoMessageAdapterService);
         eager(RunnableActionsPublisher);
         eager(NativeMenuService);
         eager(SettingsPanelService);

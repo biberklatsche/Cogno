@@ -2,7 +2,6 @@ import type { ApplicationConfigurationPort } from "@cogno/core/api/application-c
 import type { Fs, OsPlatform, Paths } from "@cogno/platform";
 import { describe, expect, it, vi } from "vitest";
 import { ConfigFileService } from "./config-file.service";
-import { CODING_AGENT_HOOK_COMMAND } from "./hook-command";
 import { HookScriptPathsService } from "./hook-script-paths.service";
 import { bashHookScript, powershellHookScript } from "./hook-scripts";
 
@@ -19,9 +18,11 @@ function inMemoryFs(initial: Record<string, string> = {}) {
   return { fs, files };
 }
 
+const STARTER = "C:/home/.cogno/bin/cogno.cmd";
+
 const paths = {
   cognoHomeDir: async () => "C:/home/.cogno",
-  cognoEndpointFilePath: async () => "C:/home/.cogno/endpoint.json",
+  cognoStarterPath: async () => STARTER,
   join: async (...parts: string[]) => parts.join("/"),
 } as unknown as Paths;
 
@@ -29,7 +30,7 @@ const config = { getConfiguration: () => ({}) } as unknown as ApplicationConfigu
 const os = { platform: () => "macos" } as unknown as OsPlatform;
 
 describe("HookScriptPathsService", () => {
-  it("writes both scripts next to the endpoint file and names them", async () => {
+  it("writes both scripts into the Cogno home and names them", async () => {
     const { fs, files } = inMemoryFs();
     const service = new HookScriptPathsService(
       new ConfigFileService(fs as unknown as Fs, paths),
@@ -43,15 +44,13 @@ describe("HookScriptPathsService", () => {
       powershell: "C:/home/.cogno/coding-agents/cogno-agent-hook.ps1",
     });
     expect(files.get("C:/home/.cogno/coding-agents/cogno-agent-hook.sh")).toBe(
-      bashHookScript("C:/home/.cogno/endpoint.json"),
+      bashHookScript(STARTER),
     );
   });
 
   it("leaves a script with the current content alone, and writes once per run", async () => {
     const { fs } = inMemoryFs({
-      "C:/home/.cogno/coding-agents/cogno-agent-hook.sh": bashHookScript(
-        "C:/home/.cogno/endpoint.json",
-      ),
+      "C:/home/.cogno/coding-agents/cogno-agent-hook.sh": bashHookScript(STARTER),
     });
     const service = new HookScriptPathsService(
       new ConfigFileService(fs as unknown as Fs, paths),
@@ -110,16 +109,19 @@ describe("HookScriptPathsService.shell", () => {
 });
 
 describe("hook scripts", () => {
-  it("post the hook as a /action message, from the environment first, else the endpoint file", () => {
-    const bash = bashHookScript("C:\\home\\.cogno\\endpoint.json");
-    expect(bash).toContain(`"command":"${CODING_AGENT_HOOK_COMMAND}"`);
-    expect(bash).toContain("/action");
-    expect(bash).toContain('post "$COGNO_PORT" "$COGNO_TOKEN"');
-    expect(bash).toContain('endpoint="C:/home/.cogno/endpoint.json"');
+  const starter = String.raw`C:\Users\o'neil\.cogno\bin\cogno.cmd`;
 
-    const powershell = powershellHookScript("C:\\home\\.cogno\\endpoint.json");
-    expect(powershell).toContain(`"command":"${CODING_AGENT_HOOK_COMMAND}"`);
-    expect(powershell).toContain("$endpoint = 'C:\\home\\.cogno\\endpoint.json'");
-    expect(powershell).toContain("$e.token");
+  it("hand the payload to the starter's `hook` command, with provider and event (sh)", () => {
+    const bash = bashHookScript(starter);
+    expect(bash).toContain(`"C:/Users/o'neil/.cogno/bin/cogno.cmd" hook "$1" "$2"`);
+    expect(bash).toContain("exit 0");
+  });
+
+  it("hand it on as UTF-8, quoting the path for PowerShell", () => {
+    const powershell = powershellHookScript(starter);
+    expect(powershell).toContain(
+      String.raw`$payload | & 'C:\Users\o''neil\.cogno\bin\cogno.cmd' hook $Provider $HookEvent`,
+    );
+    expect(powershell).toContain("$OutputEncoding = New-Object Text.UTF8Encoding $false");
   });
 });

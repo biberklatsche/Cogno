@@ -231,7 +231,7 @@ die Ausgabe eines SSH-Hosts. Sobald `COGNO:CAPS` und `COGNO:PROMPT`
 Pfadauflösung, Editor-Aktionen und `run` steuern, muss die Session wissen,
 dass die Sequenz von *ihrer* Integration stammt. Dafür erzeugt Rust beim
 Spawn ein zufälliges Sitzungsgeheimnis `COGNO_SESSION_TOKEN` in der
-Umgebung (neben `COGNO_PORT`/`COGNO_TERMINAL_ID`); die Integrationsskripte
+Umgebung (neben `COGNO_TERMINAL_ID` und `COGNO_HOST`); die Integrationsskripte
 senden es in jeder modelländernden Sequenz mit (`COGNO:CAPS;token=…`,
 `COGNO:PROMPT;token=…`). Die Session verwirft Sequenzen ohne passendes
 Token, zählt sie und meldet ab einer Schwelle sichtbar „nicht
@@ -255,37 +255,40 @@ meldet den Fakt `clipboardReadRequested`, die Workbench fragt den Nutzer und
 ruft `answerClipboardRead` auf dem Host. Einfügen durch den Nutzer ist davon
 nicht berührt.
 
-**Der lokale HTTP-Server ist ebenso geschützt.** Über ihn melden
-Coding-Agent-Hooks ihre Ereignisse und löst `cogno action run` Aktionen aus.
-Rust erzeugt je Start ein Geheimnis `COGNO_TOKEN` und gibt es jeder Shell mit
-(neben `COGNO_PORT`); jede Anfrage muss es im Header `X-Cogno-Token` tragen
-und die Loopback-Adresse (`127.0.0.1:<port>`, `localhost:<port>`) als Host
-nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
-wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
-DNS-Rebinding auf 127.0.0.1 umbiegt.
+**Was Prozesse Cogno sagen, geht über den Host ihres Rechners.** Einen
+HTTP-Server hat die App nicht. Drei Dinge kommen von Prozessen, die nicht die
+App sind: die Hooks eines Coding-Agents (3.2), `cogno action run`, in einem
+Terminal getippt, und die Prompts von git und ssh (unten). Alle drei sprechen
+mit dem Dienst ihres Rechners (2.7.1, „Weitergabe"), über dieselbe
+Endpoint-Datei `host.json` und dasselbe Token wie die App; welche Datei, sagt
+`COGNO_HOST`, das der Dienst jeder Shell mitgibt. Der Dienst reicht weiter,
+was er nicht selbst beantwortet: an den Cogno, der das Terminal zeigt - auf
+diesem Rechner oder einem anderen -, oder an die App, die die Prompts einer
+Sitzung angemeldet hat.
 
-Prozesse außerhalb jedes Cogno-Terminals haben einen eigenen Schlüssel —
-etwa der Hintergrunddienst eines Coding-Agents (3.2). Für sie schreibt der
-Server beim Start eine Endpoint-Datei `~/.cogno/endpoint.json` (Port
-und ein **externes Token**, nur für den Nutzer lesbar) und löscht sie beim
-Beenden. Rust kennt dabei keinen Konsumenten: das externe Token öffnet
-ausschließlich `POST /action`, das eine Nachricht an die Webview reicht;
-`/action/run` (Aktionen auslösen) und `/askpass` bleiben beim Launch- bzw.
-Lauf-Token. Ein lokaler Prozess, der die Datei liest, kann damit nur
-Nachrichten schicken. Heute liest sie allein das Coding-Agents-Feature, das
-Schlimmste ist eine falsche Agent-Karte. **Wer künftig `/action`-Nachrichten
-mit Wirkung verarbeitet, muss davon ausgehen, dass sie von außen kommen
-können.**
+Geschützt ist das wie die App selbst: Die Datei darf nur ihr Eigentümer
+lesen, der Dienst hört nur auf Loopback und spricht kein HTTP, eine Webseite
+kann ihn also auch per DNS-Rebinding nicht erreichen. Wer die Datei lesen
+kann, kann ohnehin alles, was der Nutzer kann. Ein Hook, der kein Terminal
+nennt (der Hintergrunddienst eines Agents, 3.2), geht an jeden Cogno des
+Rechners: Das Schlimmste ist eine falsche Agent-Karte. `cogno action run`
+geht nur an den Cogno, der das Terminal zeigt, in dem es getippt wurde; der
+beantwortet es aus den Aktionen, die gerade laufen (`set_runnable_actions`).
+Eine Shell erbt kein `COGNO_*` aus der Umgebung, mit der der Dienst einmal
+gestartet wurde: Diese Variablen setzt nur er selbst.
 
-**Prozesse ohne Terminal fragen über denselben Server.** Was `run` startet
+**Prozesse ohne Terminal fragen über denselben Weg.** Was `run` startet
 (2.2), hat keine PTY; git und ssh würden Zugangsdaten, Passphrasen und
 Host-Keys dort abfragen und ohne Terminal abbrechen. Deshalb setzt der
 Runner `GIT_TERMINAL_PROMPT=0` und zeigt `GIT_ASKPASS`/`SSH_ASKPASS` auf das
 Cogno-Binary selbst: mit `COGNO_ASKPASS_SESSION` in der Umgebung arbeitet
-es als Askpass-Helfer (`commands/askpass.rs`), schickt den Prompt-Text mit
-Token an `POST /askpass` und druckt die Antwort. Das Token ist eines je
-Lauf und öffnet nur `/askpass` für diese Sitzung — nicht das Launch-Token,
-denn Hooks und Helper, die git startet, erben die Umgebung des Laufs. Die
+es als Askpass-Helfer (`commands/askpass.rs`), fragt mit dem Prompt-Text und
+einem Token über den Host seines Rechners (`Question::Prompt`) und druckt die
+Antwort. Solange der Lauf dauert, hat die App die Prompts seiner Sitzung beim
+Host angemeldet (`OwnPrompts`); der Host gibt sie ihr und keinem anderen
+Cogno. Das Token ist eines je Lauf, und die App beantwortet nur Prompts mit
+dem Token ihres Laufs: Hooks und Helper, die git startet, erben die Umgebung
+des Laufs und können damit höchstens das Fenster dieses Laufs fragen. Die
 Sitzungs-ID vergibt der Aufrufer je Lauf (`CommandRunnerHostService`); das
 Event trägt sie, und so
 landet der Prompt beim **Lauf, der ihn ausgelöst hat**. Das Zuordnen
@@ -890,7 +893,7 @@ Ein Tauri-Fenster ist eine eigene Webview mit eigener Angular-Instanz. Zwei
 Fenster teilen keinen JS-Zustand: jedes hat seine eigene Workbench, eigene
 Session-Hosts, einen eigenen Feature-Host. Geteilt ist nur der Rust-Prozess —
 und der ist fensterunabhängig: eine Verbindung zum Dienst, der alle PTYs
-hält (2.7), eine Datenbank, ein HTTP-Server.
+hält (2.7), eine Datenbank.
 Nachrichten an die Fenster routet `window_registry.rs` (Entscheidung 2),
 statt sie per `app.emit` an *alle* Fenster zu senden.
 
@@ -898,9 +901,9 @@ Entscheidungen:
 
 1. **Identität ist vierteilig:** `{windowId, workspaceId, tabId, sessionId}`.
    `windowId` ist das Tauri-Label. Alles, was ein Ziel adressiert
-   (Notifications, `navigateToTerminal`, CLI/HTTP mit `terminalId`), trägt es.
+   (Notifications, `navigateToTerminal`, CLI mit `terminalId`), trägt es.
 2. **Rust ist der Besitzer alles Prozessglobalen** und die einzige Stelle,
-   die alle Fenster kennt: PTYs, Datenbank, HTTP-Server, CLI-Empfang,
+   die alle Fenster kennt: PTYs, Datenbank, CLI-Empfang,
    Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks,
    Selbst-Update (`updater.rs`: ein Prüf-, Download- und Installationszustand
    für die ganze App). Welches Fenster zu einem Terminal gehört, steht
@@ -992,7 +995,7 @@ auf dem die Shell läuft: PTYs mit Flow-Control, Shell-Start und Umgebung,
 Login-Umgebung, Line-Editor-Kanal, die Prozesse unter einer Shell, die
 installierten Shells. Es importiert kein Tauri und kennt weder Fenster noch
 Webview. Die **App** (`src-tauri/src/`) ist der Rest: Fenster, Datenbank,
-Config, HTTP-Server, Askpass, Command-Runner, Updater.
+Config, Askpass, Command-Runner, Updater.
 
 Dieser Abschnitt hat zwei Teile: der Dienst und sein Protokoll (2.7.1), und
 wie das Frontend Hosts und Sitzungen führt (2.7.2). Vorab die Begriffe; rund
@@ -1018,6 +1021,7 @@ um Hosts heißt jede Sache überall gleich, in Rust wie in TypeScript:
 | Auflegen | Die App beendet eine Verbindung selbst, auf Wunsch des Nutzers oder beim Beenden | `HostConnection::hang_up`, `Ending::HungUp`, Ende `hungUp` |
 | Lebensdauer | Ob eine Sitzung ihren Client überlebt | `SessionLifetime` |
 | Strom | Der Ausgabekanal eines Andockens | `StreamId` |
+| Weitergabe | Was ein Prozess eines Rechners einem Cogno sagt, über den Dienst dieses Rechners: ein Hook, eine Frage mit Antwort | `relay.rs`, `AgentHook`, `Ask`/`Asked`/`Answer`, `OwnPrompts`, `once` |
 
 #### 2.7.1 Der Dienst und sein Protokoll (Rust)
 
@@ -1134,8 +1138,9 @@ Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
   schreibt Port und ein Geheimnis in `~/.cogno/host.json`; jede Verbindung
   beginnt mit diesem Token. Die Datei darf nur ihr Eigentümer lesen (Unix
   `0600`; unter Windows eine eigene Zugriffsliste ohne Vererbung, weil ein
-  Profil anderen Lesezugriff vererben kann). Das ist dasselbe Muster wie
-  beim HTTP-Server der App (2.1) und auf allen Systemen derselbe Code.
+  Profil anderen Lesezugriff vererben kann). Auf allen Systemen ist es
+  derselbe Code; auch Hooks, `cogno action run` und Askpass-Helfer kommen
+  so herein (2.1).
 - **Von einem anderen Rechner: `ssh` und eine Brücke.**
   `cogno server --stdio`, über `ssh` gestartet, reicht nur Bytes zwischen
   stdin/stdout und dem Dienst durch (`daemon::bridge`). Erreichbarkeit,
@@ -1268,7 +1273,7 @@ Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
   keinen Host); an eine Shell eines anderen Rechners wird nur angedockt
   (`pty_attach`).
 
-Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
+Eins gibt die App dem Host mit, weil er es nicht kennen soll:
 
 - **Das Fenster einer Sitzung.** Für den Host ist es ein Name ohne
   Bedeutung; die App nennt das Fenster, das sie startete oder andockte. Es
@@ -1277,9 +1282,28 @@ Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
   beendet alle Sitzungen eines Fensters, außer denen, die ihren Client
   überleben. Der Name gilt je Client: zwei Apps, deren Fenster beide `main`
   heißen, sind zwei Besitzer.
-- **`COGNO_PORT` und `COGNO_TOKEN`.** Der HTTP-Server gehört der App; sie
-  reicht beide als zusätzliche Umgebung in den Spawn. Der Host setzt sie nach
-  der Umgebung des Profils, ein Profil überschreibt sie also nicht.
+
+**Weitergabe.** Was ein Prozess eines Rechners einem Cogno zu sagen hat,
+gibt der Dienst dieses Rechners weiter (`relay.rs`). Ein Prozess, der nur eine
+Sache zu sagen hat, spricht ihn kurz an (`once::post`, `once::ask`) - den
+Dienst, den `COGNO_HOST` nennt (jede Shell bekommt es nach der Umgebung ihres
+Profils), sonst den seines Builds:
+
+- **Hooks** (`Request::AgentHook`, ohne Antwort): Nennt der Hook sein
+  Terminal, behält die Sitzung ihn (die letzten 256 KiB, `kept_hooks.rs`) und
+  gibt ihn dem Client, der sie zeigt (`Event::AgentHook`). Wer später
+  andockt, bekommt die behaltenen als `replayed` - erst, wenn er die
+  abgespielte Ausgabe quittiert hat: Beim Parsen geht er durch jeden Befehl,
+  der damals endete, und ein Hook davor endete mit ihnen. Ohne Terminal geht
+  ein Hook an jeden anderen Client.
+- **Fragen mit Antwort** (`Request::Ask`, `Event::Asked`, `Request::Answer`):
+  `RunAction` geht an den Client, der das Terminal zeigt, `Prompt` an den, der
+  die Prompt-Sitzung angemeldet hat (`OwnPrompts`). Nimmt sie niemand, kommt
+  sofort `notShown`; geht der Gefragte, bekommt der Fragende `noAnswer`. Nur
+  der Gefragte kann antworten.
+
+In der App beantwortet `hosts/questions.rs` die Fragen; Hooks gehen als
+Cogno-Nachricht (`cogno_message.rs`) an das Fenster ihres Terminals.
 
 #### 2.7.2 Hosts im Frontend
 
@@ -1583,12 +1607,11 @@ Für Ports und Schnittstellen gelten drei Regeln:
 ### 3.2 Coding-Agents: Sitzung des Agenten als Schlüssel
 
 Die Coding-Agents waren zuerst **terminalgeschlüsselt**: der Hook eines
-Agenten erbte `COGNO_PORT`, `COGNO_TOKEN` und `COGNO_TERMINAL_ID` aus der
-Shell, meldete sich damit, und das Feature führte je Terminal einen
-Agenten. Das trägt nicht mehr: Codex (ab 0.157) und OpenCode (ab 2.x) lassen
-Hooks und Plugins in einem zentralen Hintergrunddienst laufen, der die
-Umgebung der Shell hat, die ihn zuerst gestartet hat — oder gar keine. Dort
-gibt es weder Port noch Terminal. Cogno zwingt die Agenten nicht in einen
+Agenten erbte die Umgebung der Shell, meldete sich mit ihrem Terminal, und
+das Feature führte je Terminal einen Agenten. Das trägt nicht mehr: Codex
+(ab 0.157) und OpenCode (ab 2.x) lassen Hooks und Plugins in einem zentralen
+Hintergrunddienst laufen, der die Umgebung der Shell hat, die ihn zuerst
+gestartet hat — oder gar keine. Dort gibt es oft kein Terminal. Cogno zwingt die Agenten nicht in einen
 Betrieb ohne Dienst (`--no-daemon`, `daemon_auto_start = false`): das ist
 ein Eingriff in fremde Befehle und Konfiguration, und der Modus fällt
 absehbar weg.
@@ -1599,16 +1622,21 @@ Deshalb gilt:
    jedem Ereignis nennt (`session_id` bei Codex und Claude Code, die
    Session-ID bei OpenCode). Das Terminal ist ein Attribut der Sitzung, das
    Cogno ermittelt, nicht die Identität.
-2. **Hooks finden Cogno ohne Umgebung.** Das Feature legt je Shell ein
-   stabiles Hook-Skript unter `~/.cogno/coding-agents/` ab (sh und
+2. **Hooks gehen über den Host ihres Rechners.** Das Feature legt je Shell
+   ein stabiles Hook-Skript unter `~/.cogno/coding-agents/` ab (sh und
    PowerShell; geschrieben über `platform/`, wenn ein Adapter es zum ersten
-   Mal braucht, inhaltsgleich bleibt unberührt). Das Skript liest den Payload
-   von stdin, nimmt Port, Token und Terminal aus der Umgebung, wenn sie da
-   ist, sonst Port und externes Token aus der Endpoint-Datei (2.1), und
-   sendet die Nachricht `coding_agent_hook` mit `[provider, sentAt, event]`
-   an `POST /action`. Das Protokoll kennt nur das Feature; Rust reicht die
-   Nachricht weiter wie jede andere. In der Agenten-Config steht nur
-   `<skript> <provider> <event>`:
+   Mal braucht, inhaltsgleich bleibt unberührt). Das Skript reicht den
+   Payload von stdin an den Starter weiter, `~/.cogno/bin/cogno hook
+   <provider> <event>` (`agent_hook.rs`): Der nimmt das Terminal aus der
+   Umgebung, wenn sie eins nennt, und gibt den Hook dem Dienst des Rechners
+   (2.7.1, „Weitergabe"). Der Dienst gibt ihn dem Cogno, der das Terminal
+   zeigt, auch auf einem anderen Rechner, und spielt die letzten einem
+   Cogno ab, der es später zeigt (`replayed`: ein abgespielter Hook ändert
+   die Karte, benachrichtigt aber niemanden). Einen Hook ohne Terminal
+   bekommt jeder Cogno des Rechners. In der App wird er zur Nachricht
+   `coding_agent_hook` mit `[provider, sentAt, event, replayed?]`; das
+   Protokoll des Payloads kennt nur das Feature. In der Agenten-Config steht
+   nur `<skript> <provider> <event>`:
    der Befehl ändert sich nie, auch wenn das Protokoll sich ändert. Das
    zählt, weil Codex jeden geänderten Hook-Befehl bis zur erneuten Freigabe
    im Terminal (`/hooks`, `trusted_hash`) stillschweigend nicht ausführt;
@@ -1627,14 +1655,15 @@ Deshalb gilt:
    `sessionId` (Status, Details, Sitzungsgrenze, Subagent) mit dem, was der
    Agent über die Sitzung weiß: `terminalId`, wenn der Hook sie noch hatte,
    `cwd`, Startzeit. Woher die Ereignisse kommen — Hook-Payloads über
-   `/action`, ein Plugin, später ein App-Server-Protokoll — entscheidet der
+   den Host, ein Plugin, später ein App-Server-Protokoll — entscheidet der
    Adapter; das Feature sieht nur `events$`. Der Status steht nicht mehr im
    Hook-Befehl, sondern wird im Adapter aus dem Ereignis gelesen. OpenCode
    ist der Plugin-Fall: ein Ordner von Cogno unter
-   `~/.config/opencode/plugins/`, der im Hintergrunddienst läuft, Cogno über
-   die Endpoint-Datei findet, nie ein Terminal nennt (die Umgebung des
-   Dienstes ist die des ersten Starters) und Kind-Sitzungen (`parentID`) als
-   Subagenten der Eltern-Sitzung meldet.
+   `~/.config/opencode/plugins/`, der im Hintergrunddienst läuft, jedes
+   Ereignis dem Starter (`cogno hook`) gibt, dabei nie ein Terminal nennt
+   (die Umgebung des Dienstes ist die des ersten Starters, das Plugin nimmt
+   `COGNO_TERMINAL_ID` und `COGNO_HOST` heraus) und Kind-Sitzungen
+   (`parentID`) als Subagenten der Eltern-Sitzung meldet.
 4. **Die Zuordnung zum Terminal ist generisch.** Ein Binder im Feature nimmt
    `terminalId`, wenn das Ereignis eine nennt (Claude Code: exakt wie
    bisher). Sonst gleicht er `cwd` und Startzeit der Sitzung gegen die
@@ -1793,7 +1822,7 @@ Der Katalog in der Workbench hat zwei Mengen, nicht eine:
   Features steht dort und tut nichts); das native Menü zeigt die Einträge
   ausgeschalteter Features deaktiviert.
 
-Damit antworten CLI und HTTP dreistufig: nicht in `known` → „unbekannte
+Damit antwortet `cogno action run` dreistufig: nicht in `known` → „unbekannte
 Aktion"; in `known`, nicht in `active` → „Feature *x* ist nicht aktiv";
 sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 `known` minus `active` gegen die Menge der ausgeschalteten Features: was
@@ -1810,11 +1839,11 @@ sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 | Default-Keybindings | Teil der generierten Default-Konfiguration, siehe unten |
 | Doku | Codegen → `docs/actions.md`, analog zu Zod `.describe()` bei den Settings |
 | Config-Validierung | das Schema prüft die Form einer `keybind`-Zeile; ob ihr Aktionsname deklariert ist, prüft `ConfigBootstrapAdapter` gegen `known` und meldet es als Config-Warnung mit Zeile und Name. Dort und nicht im Config-Reader, weil `infrastructure/` den Katalog nicht kennen darf |
-| HTTP und CLI | Rust kennt die Mengen `dispatched` und `inactive` (`set_runnable_actions`) und antwortet damit dreistufig |
+| CLI | Rust kennt die Mengen `dispatched` und `inactive` (`set_runnable_actions`) und beantwortet `cogno action run` aus einem Terminal damit dreistufig, über den Host, der das Terminal führt |
 
 **Vom Auslöser zum Handler, vom Handler zur Wirkung.** Alle Auslöser —
-Keybinding, Palette, natives Menü, Hamburger, Kontextmenü eines Terminals, CLI,
-HTTP — feuern dasselbe `ActionFired`; `ActionHandlers` hat darauf das eine Abo
+Keybinding, Palette, natives Menü, Hamburger, Kontextmenü eines Terminals,
+CLI — feuern dasselbe `ActionFired`; `ActionHandlers` hat darauf das eine Abo
 und ruft den registrierten Handler. Das ist der Bus-Teil, weil die Auslöser
 einander und den Handler nicht kennen. Ab dem Handler gibt es keinen Bus mehr:
 er ruft die Workbench oder die Sitzung direkt auf
@@ -1823,7 +1852,7 @@ meldet mit `false`, wenn er nichts getan hat, damit ein `performable`-Keybinding
 zum Terminal durchfällt.
 
 Eine Aktion, die ein Terminal braucht, läuft auf dem, das sie **nennt**
-(`ActionFired.terminalId` — das Kontextmenü eines Panes, HTTP), sonst auf dem
+(`ActionFired.terminalId` — das Kontextmenü eines Panes), sonst auf dem
 fokussierten. Ein Keybinding kann das Ziel weiten: `broadcast:` trifft jede
 lebende Sitzung des Fensters, `workspace:` jedes Terminal des angezeigten
 Workspace. Layout-Aktionen (Split, Pane-Wechsel, Maximieren) werden

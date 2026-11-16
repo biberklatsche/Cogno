@@ -52,22 +52,25 @@ export class HookScriptPathsService {
     return windows ? "powershell" : "pwsh";
   }
 
-  /** The endpoint file the scripts fall back to; an adapter with its own transport (a plugin) reads it the same way. */
-  async endpointPath(): Promise<string> {
-    return this.paths.cognoEndpointFilePath(isDevMode());
+  /**
+   * The starter the scripts run (`cogno hook`); an adapter with its own
+   * transport (a plugin) runs it the same way.
+   */
+  starterPath(): Promise<string> {
+    return this.paths.cognoStarterPath(isDevMode());
   }
 
   private async write(): Promise<HookScriptPaths> {
     const home = await this.paths.cognoHomeDir(isDevMode());
     const dir = await this.paths.join(home, SCRIPTS_DIR);
-    const endpoint = await this.endpointPath();
+    const starter = await this.starterPath();
     const scripts = {
       bash: await this.paths.join(dir, BASH_SCRIPT),
       powershell: await this.paths.join(dir, POWERSHELL_SCRIPT),
     };
     await this.files.ensureDir(dir);
-    await this.files.writeText(scripts.bash, bashHookScript(endpoint));
-    await this.files.writeText(scripts.powershell, powershellHookScript(endpoint));
+    await this.files.writeText(scripts.bash, bashHookScript(starter));
+    await this.files.writeText(scripts.powershell, powershellHookScript(starter));
     return scripts;
   }
 }

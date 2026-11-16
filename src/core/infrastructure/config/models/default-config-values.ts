@@ -252,11 +252,6 @@ export const defaultSettings = {
     write: "allow",
     trim_trailing_spaces: "true",
   },
-  http_server: {
-    enabled: "true",
-    port: "9000",
-    auto_next_port: "true",
-  },
 } as const;
 
 /** Per-OS setting overrides (linux/macos); windows is the base above. */

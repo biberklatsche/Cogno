@@ -63,7 +63,7 @@ export class OpenCodeProvider implements ICodingAgentProvider {
   }
 
   private async pluginSource(): Promise<string> {
-    return openCodePlugin(await this.scripts.endpointPath());
+    return openCodePlugin(await this.scripts.starterPath());
   }
 
   private configDir(): Promise<string> {

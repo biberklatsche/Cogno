@@ -905,28 +905,6 @@ Notify when an agent reports an error.
 
 **Type:** boolean · **Default:** `false`
 
-## HTTP server
-
-Local HTTP server used by the CLI.
-
-### `http_server.enabled`
-
-Let the `cogno` command and the coding-agent hooks reach this app through a local server.
-
-**Type:** boolean · **Default:** `true`
-
-### `http_server.port`
-
-Port the local server listens on.
-
-**Type:** integer 1-65535 · **Default:** `9000`
-
-### `http_server.auto_next_port`
-
-If the port is taken, try the next free one instead of failing.
-
-**Type:** boolean · **Default:** `true`
-
 ## Updater
 
 How Cogno keeps itself up to date.
