@@ -3,6 +3,12 @@ import { z } from "zod";
 import { Config } from "./models/config";
 import { isAdditiveList, unwrapZod, zodDef } from "./zod-def";
 
+/**
+ * Settings Cogno once had and has dropped: a file that still names one is
+ * not warned about something it can no longer change.
+ */
+const RETIRED_SETTINGS: readonly string[] = ["http_server"];
+
 export type ConfigDiagnostic = {
   level: "warning" | "error";
   message: string;
@@ -23,6 +29,7 @@ export class ConfigMapper {
     schema: z.ZodObject<z.ZodRawShape>,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
     const userConfig = ConfigMapper.parseConfigString(userConfigString, schema);
+    for (const retired of RETIRED_SETTINGS) delete userConfig[retired];
     const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString, schema);
     return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform);
   }

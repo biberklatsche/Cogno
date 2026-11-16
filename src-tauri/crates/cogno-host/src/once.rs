@@ -14,6 +14,9 @@ use crate::wire::{self, ClientHello, ClientMessage, HostMessage};
 
 /// How long a post waits for the daemon to take it in before hanging up.
 const POST_PATIENCE: Duration = Duration::from_secs(2);
+/// How long the hellos, and writing what is posted or asked, may take: a
+/// daemon that stalls must not hold up an agent's hook or a prompt.
+const EXCHANGE_PATIENCE: Duration = Duration::from_secs(2);
 /// The id of the one request `ask` makes.
 const QUESTION_ID: u64 = 1;
 
@@ -45,6 +48,9 @@ pub fn post(endpoint: &Path, request: Request) -> io::Result<()> {
 pub enum AskError {
     /// No daemon took the question: nothing was asked.
     Unreached(io::Error),
+    /// A daemon is there, but speaks no version this one does: nothing was
+    /// asked either.
+    Incompatible(io::Error),
     /// Asked, but no answer came - in time, or before the daemon hung up.
     /// The one asked may have acted on it all the same.
     Unanswered(io::Error),
@@ -56,6 +62,7 @@ impl std::fmt::Display for AskError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AskError::Unreached(error) => write!(formatter, "no Cogno host took it: {error}"),
+            AskError::Incompatible(error) => write!(formatter, "{error}"),
             AskError::Unanswered(error) => write!(formatter, "no answer came: {error}"),
             AskError::Refused(error) => formatter.write_str(&error.message),
         }
@@ -71,7 +78,13 @@ pub fn ask(
     question: String,
     deadline: Option<Instant>,
 ) -> Result<String, AskError> {
-    let mut stream = introduced(endpoint).map_err(AskError::Unreached)?;
+    let mut stream = introduced(endpoint).map_err(|error| {
+        if error.kind() == io::ErrorKind::Unsupported {
+            AskError::Incompatible(error)
+        } else {
+            AskError::Unreached(error)
+        }
+    })?;
     wire::write_client_message(
         &mut stream,
         ClientMessage::Request {
@@ -96,6 +109,8 @@ fn answer_within(
     deadline: Option<Instant>,
 ) -> io::Result<Result<Response, HostError>> {
     loop {
+        // Without a deadline, as long as the one asked takes.
+        let mut patience = None;
         if let Some(deadline) = deadline {
             let left = deadline.saturating_duration_since(Instant::now());
             if left.is_zero() {
@@ -104,8 +119,9 @@ fn answer_within(
                     "no answer came in time",
                 ));
             }
-            stream.set_read_timeout(Some(left))?;
+            patience = Some(left);
         }
+        stream.set_read_timeout(patience)?;
         match wire::read_host_message(stream)? {
             Some(HostMessage::Reply { id, reply }) if id == QUESTION_ID => return Ok(reply),
             Some(_) => continue,
@@ -131,6 +147,8 @@ fn is_timeout(error: &io::Error) -> bool {
 /// A connection to the daemon `endpoint` names that has exchanged hellos.
 pub(crate) fn introduced(endpoint: &Path) -> io::Result<TcpStream> {
     let stream = daemon::connect(endpoint)?;
+    stream.set_read_timeout(Some(EXCHANGE_PATIENCE))?;
+    stream.set_write_timeout(Some(EXCHANGE_PATIENCE))?;
     wire::introduce(
         &mut &stream,
         &mut &stream,
@@ -310,6 +328,17 @@ mod tests {
             Some(Instant::now() + Duration::from_millis(300)),
         );
         assert!(matches!(answer, Err(AskError::Unanswered(_))));
+    }
+
+    #[test]
+    fn a_daemon_that_stalls_holds_up_no_hook() {
+        let endpoint = daemon::test_support::endpoint_of_a_stalled_host();
+        let hook = AgentHook::of(None, "Stop");
+
+        let started = Instant::now();
+        assert!(post(&endpoint, Request::AgentHook { hook }).is_err());
+        assert!(started.elapsed() < EXCHANGE_PATIENCE * 3);
+        let _ = std::fs::remove_file(&endpoint);
     }
 
     #[test]

@@ -119,8 +119,18 @@ fn home_of(endpoint: &Path) -> Result<&Path, String> {
 /// belongs to this build, and the installed file stays free.
 #[cfg(not(windows))]
 fn daemon_binary(_endpoint: &Path, _build: &str) -> Result<PathBuf, String> {
+    // An AppImage runs from a mount that goes when the app ends, under
+    // another path each start: the daemon and the starter outlive it, so
+    // they take the AppImage file itself.
+    if let Some(appimage) = std::env::var_os(APPIMAGE).filter(|path| !path.is_empty()) {
+        return Ok(PathBuf::from(appimage));
+    }
     std::env::current_exe().map_err(|error| error.to_string())
 }
+
+/// What an AppImage's runtime names the AppImage file in.
+#[cfg(not(windows))]
+const APPIMAGE: &str = "APPIMAGE";
 
 #[cfg(windows)]
 fn daemon_binary(endpoint: &Path, build: &str) -> Result<PathBuf, String> {

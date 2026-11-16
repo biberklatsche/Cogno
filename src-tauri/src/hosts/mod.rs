@@ -84,6 +84,18 @@ impl Hosts {
         })
     }
 
+    /// The connection to this machine's daemon if one runs; none is started.
+    fn local_if_running(self: &Arc<Self>) -> CommandResult<Arc<HostConnection>> {
+        self.connections.local(|| {
+            let endpoint =
+                crate::host_endpoint::own_host_endpoint().map_err(CommandError::internal)?;
+            let stream = cogno_host::daemon::connect(&endpoint).map_err(|error| {
+                CommandError::new(AppErrorCode::HostNotStarted, error.to_string())
+            })?;
+            HostConnection::to_this_machine(stream, self.events.clone(), self.on_lost(None))
+        })
+    }
+
     /// The connection to `host`, this machine's daemon when `None`.
     fn connection(self: &Arc<Self>, host: Option<&str>) -> CommandResult<Arc<HostConnection>> {
         match host {
@@ -364,10 +376,16 @@ impl HostState {
         &self,
         window: &str,
         terminal_id: TerminalId,
+        channel: u32,
         chunk: u32,
     ) -> CommandResult<()> {
         let (route, connection) = self.0.route(&terminal_id, window)?;
-        match self.0.events.streams.acknowledged(route.stream, chunk) {
+        match self
+            .0
+            .events
+            .streams
+            .acknowledged(route.stream, channel, chunk)
+        {
             Some(seq) => connection.post(Request::PtyAck {
                 terminal_id,
                 stream: route.stream,
@@ -435,9 +453,10 @@ impl HostState {
 
     /// The prompts of git and ssh that a run of `session` asks go to this
     /// app while the returned guard lives: its host passes them on. Waits
-    /// until the host took it on, so the first prompt finds it. Blocks.
+    /// until the host took it on, so the first prompt finds it. Blocks. A
+    /// daemon is not started for it: without one, nothing can ask anyway.
     pub fn own_prompts(&self, session: &str) -> CommandResult<OwnedPrompts> {
-        let local = self.0.local()?;
+        let local = self.0.local_if_running()?;
         local.request(Request::OwnPrompts {
             session: session.to_string(),
         })?;

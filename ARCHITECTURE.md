@@ -287,7 +287,9 @@ einem Token über den Host seines Rechners (`Question::Prompt`) und druckt die
 Antwort. Solange der Lauf dauert, hat die App die Prompts seiner Sitzung beim
 Host angemeldet (`OwnPrompts`, mit Antwort, bevor der Lauf startet; der
 Wächter `OwnedPrompts` meldet sie auf derselben Verbindung wieder ab); der
-Host gibt sie ihr und keinem anderen Cogno. Das Token ist eines je Lauf, und die App beantwortet nur Prompts mit
+Host gibt sie ihr und keinem anderen Cogno. Dafür startet sie keinen Dienst:
+ohne ihn fragt ohnehin niemand. Ein Lauf ohne Prompt-Handler meldet nichts
+an. Das Token ist eines je Lauf, und die App beantwortet nur Prompts mit
 dem Token ihres Laufs: Hooks und Helper, die git startet, erben die Umgebung
 des Laufs und können damit höchstens das Fenster dieses Laufs fragen. Die
 Sitzungs-ID vergibt der Aufrufer je Lauf (`CommandRunnerHostService`); das
@@ -1059,7 +1061,8 @@ Daraus folgt:
   Client ohnehin zurückliegen darf, gekürzt an einer Zeilengrenze. Ist ein
   Client angedockt, geht sie zusätzlich an ihn, unter Flusskontrolle. Ohne
   Client wartet nichts: die Shell läuft weiter. Eine Quittung (`PtyAck`)
-  nennt ihren Strom; die eines früheren Andockens zählt nicht.
+  nennt ihren Strom; die eines früheren Andockens zählt nicht. Ebenso nennt
+  die Quittung des Webviews an die App den Kanal, über den die Ausgabe kam.
 - **Andocken** (`PtyAttach`) spielt zuerst den Behalt ab, dann kommt, was die
   Shell schreibt. Der Host ist dabei kein Terminal-Emulator. Er liest im
   Strom nur die Sequenzen mit, die einen Modus schalten (Alt-Screen, Maus,

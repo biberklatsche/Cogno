@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 import { SERIALIZE_TO_IPC_FN, transformCallback } from "@tauri-apps/api/core";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { invokeHost } from "./host-error";
 import {
   PtyShellProfileContract,
@@ -9,6 +8,7 @@ import {
   SessionPlacementContract,
   TerminalSizeContract,
 } from "./session-contracts";
+import { listenInThisWindow } from "./window-events";
 
 export type PtySpawnOptionsContract = {
   terminalId: string;
@@ -32,16 +32,6 @@ function terminalEvent(name: string, terminalId: string): string {
 }
 
 /**
- * Hears what the backend says to this window only. A plain `listen` hears
- * what is said to any window, and another window of this app can show the
- * same terminal: it took the shell over, and what the window that lost it is
- * told must not reach the one that has it now.
- */
-function listenInThisWindow<T>(event: string, listener: (payload: T) => void): Promise<() => void> {
-  return getCurrentWebviewWindow().listen<T>(event, ({ payload }) => listener(payload));
-}
-
-/**
  * Opens the channel a shell's output comes through, then the shell (`open`
  * starts or attaches it). The channel exists before the host sends, so no
  * output is lost between the call and the listener.
@@ -53,7 +43,7 @@ function openOutput<T>(
   const channel = new PtyDataChannel();
   channel.onmessage = (chunk) => output.onChunk(chunk);
   channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
-  return { ready: open(channel), closeOutput: () => channel.close() };
+  return { ready: open(channel), channel: channel.id, closeOutput: () => channel.close() };
 }
 
 /** A shell that already runs, and where. */
@@ -93,6 +83,11 @@ export interface PtyOpenHandleContract<T> {
    * to attach to.
    */
   readonly ready: Promise<T>;
+  /**
+   * The channel the output comes through. An ack names it: one of an earlier
+   * open of the same terminal counts for nothing.
+   */
+  readonly channel: number;
   /**
    * Stops output delivery for good. Safe to call before `ready` settles;
    * the backend session (if it comes into existence) still has to be killed.
@@ -337,8 +332,9 @@ export class PtyTransport {
     return invokeHost("pty_place", { terminalId, placement });
   }
 
-  ack(terminalId: string, seq: number): Promise<void> {
-    return invokeHost("pty_ack", { terminalId, seq });
+  /** The chunks up to `seq` of the output through `channel` are taken in. */
+  ack(terminalId: string, channel: number, seq: number): Promise<void> {
+    return invokeHost("pty_ack", { terminalId, channel, seq });
   }
 
   kill(terminalId: string): Promise<void> {

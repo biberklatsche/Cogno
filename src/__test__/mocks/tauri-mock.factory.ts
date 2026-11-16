@@ -6,6 +6,7 @@ export class TauriMockFactory {
   static createPtySpawnHandle() {
     return {
       ready: Promise.resolve({ shellProcessId: 1234 }),
+      channel: 1,
       closeOutput: vi.fn(),
     };
   }
@@ -31,6 +32,7 @@ export class TauriMockFactory {
   static createPtyAttachHandle(terminalId = "test-terminal") {
     return {
       ready: Promise.resolve(TauriMockFactory.createSessionInfo(terminalId)),
+      channel: 1,
       closeOutput: vi.fn(),
     };
   }

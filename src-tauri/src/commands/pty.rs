@@ -142,7 +142,8 @@ pub fn pty_ack(
     window: tauri::WebviewWindow,
     hosts: State<'_, HostState>,
     terminal_id: String,
+    channel: u32,
     seq: u32,
 ) -> CommandResult<()> {
-    hosts.acknowledge(window.label(), terminal_id, seq)
+    hosts.acknowledge(window.label(), terminal_id, channel, seq)
 }

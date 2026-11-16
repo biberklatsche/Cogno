@@ -164,9 +164,14 @@ impl Streams {
 
     /// The webview took in every chunk up to and including `chunk`: the
     /// host's sequence number this acknowledges, if it completes a piece.
-    pub fn acknowledged(&self, stream: StreamId, chunk: u32) -> Option<u32> {
+    /// `channel` is the one the webview took the chunks through: an ack of
+    /// an earlier open of the terminal, late, counts for nothing.
+    pub fn acknowledged(&self, stream: StreamId, channel: u32, chunk: u32) -> Option<u32> {
         let mut open = lock(&self.open);
-        let pieces = &mut open.get_mut(&stream)?.pieces;
+        let stream = open
+            .get_mut(&stream)
+            .filter(|open| open.channel.id() == channel)?;
+        let pieces = &mut stream.pieces;
         let mut through = None;
         while let Some(&(last_chunk, seq)) = pieces.front() {
             // Wrapping: the piece's last chunk is at or before `chunk`.
@@ -294,7 +299,7 @@ mod tests {
     use super::*;
 
     /// A stream whose pieces were cut into these many chunks each.
-    fn delivered(pieces: &[usize]) -> (Streams, StreamId) {
+    fn delivered(pieces: &[usize]) -> (Streams, StreamId, u32) {
         let streams = Streams::default();
         let stream = StreamId(7);
         let mut entry = Stream {
@@ -306,20 +311,33 @@ mod tests {
             entry.next_chunk += *chunks as u32;
             entry.pieces.push_back((entry.next_chunk - 1, seq as u32));
         }
+        let channel = entry.channel.id();
         lock(&streams.open).insert(stream, entry);
-        (streams, stream)
+        (streams, stream, channel)
     }
 
     #[test]
     fn a_piece_is_acknowledged_to_the_host_once_its_last_chunk_is() {
         // Pieces 0, 1, 2 of 3, 1 and 2 chunks: chunks 0-2, 3, 4-5.
-        let (streams, stream) = delivered(&[3, 1, 2]);
+        let (streams, stream, channel) = delivered(&[3, 1, 2]);
 
-        assert_eq!(streams.acknowledged(stream, 1), None);
-        assert_eq!(streams.acknowledged(stream, 3), Some(1));
+        assert_eq!(streams.acknowledged(stream, channel, 1), None);
+        assert_eq!(streams.acknowledged(stream, channel, 3), Some(1));
         // Chunks the webview skipped (lost in transit) are covered too.
-        assert_eq!(streams.acknowledged(stream, 9), Some(2));
-        assert_eq!(streams.acknowledged(stream, 9), None);
+        assert_eq!(streams.acknowledged(stream, channel, 9), Some(2));
+        assert_eq!(streams.acknowledged(stream, channel, 9), None);
+    }
+
+    #[test]
+    fn an_ack_through_another_channel_counts_for_nothing() {
+        let (streams, stream, channel) = delivered(&[3, 1, 2]);
+
+        // Late, from an earlier open of the same terminal.
+        assert_eq!(
+            streams.acknowledged(stream, channel.wrapping_add(1), 9),
+            None
+        );
+        assert_eq!(streams.acknowledged(stream, channel, 9), Some(2));
     }
 
     #[test]

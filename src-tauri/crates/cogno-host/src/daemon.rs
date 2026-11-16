@@ -266,6 +266,9 @@ pub fn end_incompatible_daemon(endpoint: &Path) -> io::Result<()> {
     };
     if process_runs(written.pid) {
         let mut stream = reach(&written)?;
+        // Held under the start lock: a daemon that stalls must not hold up
+        // every Cogno that starts a terminal.
+        stream.set_read_timeout(Some(ANSWER_PATIENCE))?;
         match wire::read_compatible_hello(&mut stream) {
             Ok(_) => return Ok(()),
             Err(wire::IntroductionError::Versions(_)) => {}
@@ -607,6 +610,38 @@ pub(crate) mod test_support {
         (endpoint, daemon)
     }
 
+    /// An endpoint file whose process runs - this one - and whose port
+    /// belongs to a program that takes connections and never answers.
+    pub(crate) fn endpoint_of_a_silent_program() -> (PathBuf, TcpListener) {
+        let silent = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+        let endpoint = std::env::temp_dir().join(format!(
+            "cogno-daemon-test-{}.json",
+            uuid::Uuid::new_v4().simple()
+        ));
+        write_endpoint(
+            &endpoint,
+            &Endpoint {
+                port: silent.local_addr().unwrap().port(),
+                token: "a".repeat(TOKEN_LEN),
+                pid: std::process::id(),
+            },
+        )
+        .unwrap();
+        (endpoint, silent)
+    }
+
+    /// An endpoint file of a program that begins as a host does and then says
+    /// nothing more, for as long as the test runs.
+    pub(crate) fn endpoint_of_a_stalled_host() -> PathBuf {
+        let (file, listener) = endpoint_of_a_silent_program();
+        std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream.write_all(wire::PREAMBLE).unwrap();
+            std::thread::sleep(Duration::from_secs(30));
+        });
+        file
+    }
+
     /// Asks `request` under `id` and waits for its reply, past events.
     pub(crate) fn ask(
         stream: &mut TcpStream,
@@ -628,7 +663,9 @@ pub(crate) mod test_support {
 
 #[cfg(test)]
 mod tests {
-    use super::test_support::{ask, start, QUICK};
+    use super::test_support::{
+        ask, endpoint_of_a_silent_program, endpoint_of_a_stalled_host, start, QUICK,
+    };
     use super::*;
     use crate::protocol::{Request, Response};
     use crate::wire::{self, ClientHello, ClientMessage, HostMessage};
@@ -741,26 +778,6 @@ mod tests {
         assert!(finishes(daemon).is_ok());
     }
 
-    /// An endpoint file whose process runs - this one - and whose port
-    /// belongs to a program that takes connections and never answers.
-    fn endpoint_of_a_silent_program() -> (PathBuf, TcpListener) {
-        let silent = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
-        let endpoint = std::env::temp_dir().join(format!(
-            "cogno-daemon-test-{}.json",
-            uuid::Uuid::new_v4().simple()
-        ));
-        write_endpoint(
-            &endpoint,
-            &Endpoint {
-                port: silent.local_addr().unwrap().port(),
-                token: "a".repeat(TOKEN_LEN),
-                pid: std::process::id(),
-            },
-        )
-        .unwrap();
-        (endpoint, silent)
-    }
-
     #[test]
     fn a_program_that_does_not_answer_like_a_host_is_no_daemon() {
         let (endpoint, _silent) = endpoint_of_a_silent_program();
@@ -847,6 +864,16 @@ mod tests {
         });
 
         assert!(reach(&endpoint).is_ok());
+    }
+
+    #[test]
+    fn ending_a_daemon_that_stalls_after_its_preamble_gives_up_in_time() {
+        let endpoint = endpoint_of_a_stalled_host();
+
+        let started = Instant::now();
+        assert!(end_incompatible_daemon(&endpoint).is_err());
+        assert!(started.elapsed() < ANSWER_PATIENCE * 3);
+        let _ = std::fs::remove_file(&endpoint);
     }
 
     #[test]

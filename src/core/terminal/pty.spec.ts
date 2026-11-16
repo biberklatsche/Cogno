@@ -59,6 +59,7 @@ describe("Pty", () => {
       ready: new Promise<{ shellProcessId: number | null }>((resolve) => {
         resolveSpawn = () => resolve({ shellProcessId: 1234 });
       }),
+      channel: 1,
       closeOutput: vi.fn(),
     }));
     return () => resolveSpawn();
@@ -153,6 +154,7 @@ describe("Pty", () => {
     const error = new Error("spawn failed");
     vi.mocked(transport.spawn).mockReturnValueOnce({
       ready: Promise.reject(error),
+      channel: 1,
       closeOutput,
     });
 
@@ -192,7 +194,7 @@ describe("Pty", () => {
   it("should forward acks by sequence number to the backend", async () => {
     await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
     pty.ack(42);
-    expect(transport.ack).toHaveBeenCalledWith(terminalId, 42);
+    expect(transport.ack).toHaveBeenCalledWith(terminalId, 1, 42);
   });
 
   it("reports a failure that only raced the end of its session as nothing", async () => {
@@ -217,7 +219,7 @@ describe("Pty", () => {
 
     pty.ack(7);
 
-    expect(transport.ack).toHaveBeenCalledWith(terminalId, 7);
+    expect(transport.ack).toHaveBeenCalledWith(terminalId, 1, 7);
     resolveSpawn();
   });
 
@@ -411,6 +413,7 @@ describe("Pty", () => {
         ready: new Promise(
           (resolve) => (attached = () => resolve(TauriMockFactory.createSessionInfo())),
         ),
+        channel: 1,
         closeOutput: vi.fn(),
       }));
       const attaching = pty.attach(terminalId, noopListener);
@@ -459,6 +462,7 @@ describe("Pty", () => {
         ready: new Promise(
           (resolve) => (attached = () => resolve(TauriMockFactory.createSessionInfo())),
         ),
+        channel: 1,
         closeOutput: vi.fn(),
       }));
       const remote = ptyWith({ host: "office" });

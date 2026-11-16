@@ -147,6 +147,12 @@ impl Connections {
             }
             let starting = start(command)?;
             self.set_ender(name, Some(starting.ender()));
+            // Hung up on before the ender was there to be called.
+            if given_up() {
+                self.set_ender(name, None);
+                (starting.ender())();
+                return Err(hung_up_on(name));
+            }
             let introduced = introduce(starting);
             self.set_ender(name, None);
             if given_up() {
@@ -309,6 +315,29 @@ mod tests {
 
         assert_eq!(connected.by, Some(1));
         assert!(connections.remote("office").is_ok());
+    }
+
+    #[test]
+    fn a_hang_up_while_the_process_starts_ends_it_before_anything_waits_for_it() {
+        let connections = Connections::default();
+        let mut introduced = false;
+
+        let given_up = connections.connect_remote(
+            "office",
+            &["sh".to_string()],
+            |_| {
+                // Hung up on before its ender was stored.
+                connections.disconnect("office");
+                Starting::spawn(failing_process("", 0))
+            },
+            |_| {
+                introduced = true;
+                Ok(a_standing_connection())
+            },
+        );
+
+        assert!(given_up.err().unwrap().is(AppErrorCode::ConnectionLost));
+        assert!(!introduced);
     }
 
     #[test]

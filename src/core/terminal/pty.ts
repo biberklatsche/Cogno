@@ -230,11 +230,13 @@ export class Pty implements IPty {
     this.flushPendingResize();
   }
 
-  /** The terminal whose output is open: the host knows it, answered or not. */
-  private withOutput(): string | undefined {
+  /** The terminal whose output is open, and that output: the host knows it, answered or not. */
+  private withOutput(): { terminalId: string; output: OpenOutput } | undefined {
     const state = this.state;
-    if (state.kind === "live") return state.terminalId;
-    if (state.kind === "opening" && state.output !== undefined) return state.terminalId;
+    if (state.kind === "live") return state;
+    if (state.kind === "opening" && state.output !== undefined) {
+      return { terminalId: state.terminalId, output: state.output };
+    }
     return undefined;
   }
 
@@ -261,10 +263,11 @@ export class Pty implements IPty {
    * waits for acks must not wait for that answer.
    */
   ack(seq: number): void {
-    const terminalId = this.withOutput();
-    if (terminalId === undefined) return;
+    const open = this.withOutput();
+    if (open === undefined) return;
+    const { terminalId } = open;
     this._transport
-      .ack(terminalId, seq)
+      .ack(terminalId, open.output.channel, seq)
       .catch((error) =>
         this.reportUnlessRaced({ operation: "ack", error, context: { seq, terminalId } }),
       );

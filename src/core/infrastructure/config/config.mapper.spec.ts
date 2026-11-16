@@ -26,6 +26,13 @@ beforeAll(() => {
 });
 
 describe("ConfigMapper", () => {
+  it("drops a setting Cogno no longer has without a warning", () => {
+    const { config, diagnostics } = read("http_server.port = 9001");
+
+    expect(diagnostics).toEqual([]);
+    expect(config).not.toHaveProperty("http_server");
+  });
+
   it("parses booleans, numbers, arrays and merges defaults with user (keybind concatenated)", () => {
     const text = `
       # comment

@@ -237,18 +237,20 @@ describe("PtyTransport", () => {
   it("should close the channel through the spawn handle", () => {
     const handle = spawn();
     const channel: PtyDataChannel = (vi.mocked(invoke).mock.calls[0] as any)[1].onData;
+    // Acks name the channel the output came through.
+    expect(handle.channel).toBe(channel.id);
     handle.closeOutput();
     expect(unregisterCallback).toHaveBeenCalledWith(channel.id);
   });
 
   it("should map the remaining commands one to one", async () => {
-    await transport.ack("t1", 7);
+    await transport.ack("t1", 3, 7);
     await transport.write("t1", "ls");
     await transport.resize("t1", { cols: 100, rows: 30 });
     await transport.kill("t1");
     await transport.executeLineEditorAction("t1", "clearLine", { start: 0 });
     expect(vi.mocked(invoke).mock.calls).toEqual([
-      ["pty_ack", { terminalId: "t1", seq: 7 }],
+      ["pty_ack", { terminalId: "t1", channel: 3, seq: 7 }],
       ["pty_write", { terminalId: "t1", data: "ls" }],
       ["pty_resize", { terminalId: "t1", size: { cols: 100, rows: 30 } }],
       ["pty_kill", { terminalId: "t1" }],
