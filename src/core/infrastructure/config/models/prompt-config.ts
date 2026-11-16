@@ -73,7 +73,6 @@ const SegmentCommonSchema = z
     radius_right: z.number().int().min(0).optional().describe("Corner radius on the right side."),
 
     title: z.string().optional().describe("Tooltip shown when hovering the segment."),
-    className: z.string().optional().describe("Extra CSS class for custom styling."),
 
     format: PromptFormatSchema.optional().describe(
       "How the value is rendered, e.g. `timespan` for a duration.",

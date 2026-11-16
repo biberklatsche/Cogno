@@ -5,9 +5,25 @@ import { isAdditiveList, unwrapZod, zodDef } from "./zod-def";
 
 /**
  * Settings Cogno once had and has dropped: a file that still names one is
- * not warned about something it can no longer change.
+ * not warned about something it can no longer change. `*` stands for any
+ * name, such as a prompt segment's.
  */
-const RETIRED_SETTINGS: readonly string[] = ["http_server"];
+const RETIRED_SETTINGS: readonly string[] = ["http_server", "prompt.segment.*.className"];
+
+/** Removes the setting `path` names from `config`, under every name `*` stands for. */
+function dropRetired(config: Record<string, unknown>, path: readonly string[]): void {
+  const [key, ...rest] = path;
+  if (rest.length === 0) {
+    delete config[key];
+    return;
+  }
+  const children = key === "*" ? Object.values(config) : [config[key]];
+  for (const child of children) {
+    if (typeof child === "object" && child !== null && !Array.isArray(child)) {
+      dropRetired(child as Record<string, unknown>, rest);
+    }
+  }
+}
 
 export type ConfigDiagnostic = {
   level: "warning" | "error";
@@ -29,7 +45,7 @@ export class ConfigMapper {
     schema: z.ZodObject<z.ZodRawShape>,
   ): { config: Config; diagnostics: ConfigDiagnostic[] } {
     const userConfig = ConfigMapper.parseConfigString(userConfigString, schema);
-    for (const retired of RETIRED_SETTINGS) delete userConfig[retired];
+    for (const retired of RETIRED_SETTINGS) dropRetired(userConfig, retired.split("."));
     const defaultConfig = ConfigMapper.parseConfigString(defaultConfigString, schema);
     return ConfigMapper.toConfigWithDiagnostics(defaultConfig, userConfig, schema, platform);
   }

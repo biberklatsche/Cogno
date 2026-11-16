@@ -59,7 +59,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "select_next_tab",
     label: "Select Next Tab",
-    description: "Switch to the next/previous tab",
+    description: "Switch to the next tab",
     defaultKeys: {
       default: [{ combo: "Ctrl+PageDown", always: true }],
       macos: [{ combo: "Command+PageDown", always: true }],
@@ -68,7 +68,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "select_previous_tab",
     label: "Select Previous Tab",
-    description: "Switch to the next/previous tab",
+    description: "Switch to the previous tab",
     defaultKeys: {
       default: [{ combo: "Ctrl+PageUp", always: true }],
       macos: [{ combo: "Command+PageUp", always: true }],
@@ -77,7 +77,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "select_next_pane",
     label: "Select Next Pane",
-    description: "Switch focus between panes",
+    description: "Move the focus to the next pane",
     defaultKeys: {
       default: [{ combo: "Ctrl+Shift+PageDown", always: true }],
       macos: [{ combo: "Command+Shift+PageDown", always: true }],
@@ -86,7 +86,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "select_previous_pane",
     label: "Select Previous Pane",
-    description: "Switch focus between panes",
+    description: "Move the focus to the previous pane",
     defaultKeys: {
       default: [{ combo: "Ctrl+Shift+PageUp", always: true }],
       macos: [{ combo: "Command+Shift+PageUp", always: true }],
@@ -158,7 +158,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "clear_buffer",
     label: "Clear Buffer",
-    description: "Clear the terminal scrollback buffer",
+    description: "Clear the terminal output, including the scrollback",
     defaultKeys: { default: [{ combo: "Ctrl+Alt+C" }], macos: [{ combo: "Command+Alt+C" }] },
   }),
   defineAction({
@@ -172,7 +172,7 @@ export const coreActionCatalog = [
     name: "terminate_processes",
     label: "Terminate Processes",
     description:
-      "End what runs in the foreground of the terminal; the shell and its background jobs stay",
+      "End the program running in the terminal. The shell and its background jobs keep running",
   }),
   defineAction({
     name: "close_other_tabs",
@@ -251,7 +251,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "trigger_autocomplete",
     label: "Trigger Autocomplete",
-    description: "Manually trigger autocomplete suggestions",
+    description: "Show autocomplete suggestions",
     defaultKeys: { default: [{ combo: "Ctrl+Space" }], macos: [{ combo: "Control+Space" }] },
   }),
   defineAction({
@@ -263,7 +263,7 @@ export const coreActionCatalog = [
     name: "cycle_tab",
     label: "Cycle Tab",
     description:
-      "Cycle through available autocomplete modes (or history scope, while that dropdown is open)",
+      "In the autocomplete list, switch between all, history and context suggestions. In the command history, switch between all commands, this directory and this terminal",
     defaultKeys: { default: [{ combo: "Shift+Tab" }] },
   }),
   defineAction({
@@ -335,19 +335,19 @@ export const coreActionCatalog = [
   defineAction({
     name: "select_text_right",
     label: "Select Text Right",
-    description: "Extend the selection one character right/left",
+    description: "Extend the selection one character to the right",
     defaultKeys: { default: [{ combo: "Shift+Right" }] },
   }),
   defineAction({
     name: "select_text_left",
     label: "Select Text Left",
-    description: "Extend the selection one character right/left",
+    description: "Extend the selection one character to the left",
     defaultKeys: { default: [{ combo: "Shift+Left" }] },
   }),
   defineAction({
     name: "select_word_right",
     label: "Select Word Right",
-    description: "Extend the selection one word right/left",
+    description: "Extend the selection one word to the right",
     defaultKeys: {
       default: [{ combo: "Ctrl+Shift+Right" }],
       macos: [{ combo: "Command+Shift+Right" }],
@@ -356,7 +356,7 @@ export const coreActionCatalog = [
   defineAction({
     name: "select_word_left",
     label: "Select Word Left",
-    description: "Extend the selection one word right/left",
+    description: "Extend the selection one word to the left",
     defaultKeys: {
       default: [{ combo: "Ctrl+Shift+Left" }],
       macos: [{ combo: "Command+Shift+Left" }],
@@ -365,13 +365,13 @@ export const coreActionCatalog = [
   defineAction({
     name: "select_text_to_end_of_line",
     label: "Select Text To End Of Line",
-    description: "Extend selection to line boundary",
+    description: "Extend the selection to the end of the line",
     defaultKeys: { default: [{ combo: "Ctrl+Shift+M" }], macos: [{ combo: "Command+Shift+M" }] },
   }),
   defineAction({
     name: "select_text_to_start_of_line",
     label: "Select Text To Start Of Line",
-    description: "Extend selection to line boundary",
+    description: "Extend the selection to the start of the line",
     defaultKeys: { default: [{ combo: "Ctrl+Shift+N" }], macos: [{ combo: "Command+Shift+N" }] },
   }),
   ...SLOTS.map((slot) =>

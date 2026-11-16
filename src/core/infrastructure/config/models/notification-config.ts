@@ -22,7 +22,7 @@ const channelSchema = z
       })
       .meta({ title: "Operating system" })
       .optional()
-      .describe("Desktop notifications handed to the operating system."),
+      .describe("Desktop notifications from the operating system."),
     badge: z
       .strictObject({
         enabled: z

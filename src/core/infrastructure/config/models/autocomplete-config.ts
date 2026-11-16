@@ -17,7 +17,7 @@ export const AutocompleteConfigSchema = z.strictObject({
     .array(z.number().int())
     .optional()
     .describe(
-      "Exit codes a command may end with to be suggested; `[0]` suggests only successful commands, empty suggests all.",
+      "Suggest only commands from your history that ended with one of these exit codes. `[0]` suggests only successful commands; empty suggests all.",
     ),
   allowed_return_codes_by_command: z
     .record(z.string(), z.array(z.number().int()))

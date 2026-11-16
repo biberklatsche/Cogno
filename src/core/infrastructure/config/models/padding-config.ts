@@ -12,7 +12,7 @@ export const PaddingSchema = z.strictObject({
   remove_on_full_screen_app: z
     .boolean()
     .optional()
-    .describe("Drop the padding while a full-screen app (vim, less) owns the screen."),
+    .describe("Remove the padding while a full-screen program such as vim or less is open."),
 });
 
 export type Padding = z.infer<typeof PaddingSchema>;

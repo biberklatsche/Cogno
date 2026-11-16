@@ -26,14 +26,14 @@ const RemoteHostSchema = z
         "One word: a host name, user@host or an ssh alias, never an option.",
       )
       .describe(
-        "Where ssh connects: a host name, `user@host` or an alias from your ssh config. The machine must be reachable by ssh and have Cogno running.",
+        "The machine to connect to: a host name, `user@host` or an alias from your ssh config. Cogno must be running there.",
       ),
     command: z
       .string()
       .min(1)
       .optional()
       .describe(
-        'Command ssh runs on that machine to reach the Cogno there. Left out, Cogno tries `".cogno/bin/cogno" server --stdio` and, for an ssh server that starts commands in PowerShell, `& ".cogno/bin/cogno" server --stdio`, and keeps the one that worked here.',
+        "Command ssh runs on that machine to reach Cogno there. Usually left out: Cogno finds it by itself and may fill this in after the first connection.",
       ),
   })
   .describe("One machine reached over ssh.");

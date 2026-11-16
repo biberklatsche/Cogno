@@ -2,11 +2,9 @@ import { hexColorSchema, limitSchema } from "@cogno/core/api/contributions";
 import { z } from "zod";
 
 const decorationColorSchema = z.strictObject({
-  background: hexColorSchema.optional().describe("Fill color of the decoration."),
-  border: hexColorSchema.optional().describe("Border color of the decoration."),
-  overview_ruler: hexColorSchema
-    .optional()
-    .describe("Marker color in the overview ruler beside the scrollbar."),
+  background: hexColorSchema.optional().describe("Fill color of the highlight."),
+  border: hexColorSchema.optional().describe("Border color of the highlight."),
+  overview_ruler: hexColorSchema.optional().describe("Color of its marker beside the scrollbar."),
 });
 
 export const TerminalConfigSchema = z.strictObject({
@@ -14,7 +12,7 @@ export const TerminalConfigSchema = z.strictObject({
     .boolean()
     .optional()
     .describe(
-      "Keep the shells running when Cogno closes, and go on with them at the next start - on this machine, or from another one through `remote.hosts`. Closing a tab still ends its shell. Applies to shells started after the change.",
+      "Keep your shells running when you quit Cogno. At the next start, your tabs show the same shells again. Meanwhile, Cogno on another machine can still show them (see `remote.hosts`). Closing a tab still ends its shell. Applies to shells started after you change it.",
     ),
   webgl: z
     .boolean()
@@ -24,15 +22,13 @@ export const TerminalConfigSchema = z.strictObject({
     ),
   decoration: z
     .strictObject({
-      color: decorationColorSchema
-        .optional()
-        .describe("Highlight colors for decorated terminal content, e.g. search matches."),
+      color: decorationColorSchema.optional().describe("Colors of all search matches."),
       active_color: decorationColorSchema
         .optional()
-        .describe("Highlight colors for the currently active decorated item."),
+        .describe("Colors of the selected search match."),
     })
     .optional()
-    .describe("Colors of decorated buffer content such as search matches."),
+    .describe("Colors of search matches in the terminal."),
   inactive_overlay_opacity: z
     .number()
     .int()
@@ -44,7 +40,7 @@ export const TerminalConfigSchema = z.strictObject({
     .boolean()
     .optional()
     .describe(
-      "Paste text as if you had typed it, even where a program wants to be told it is a paste. Pasted lines then run at once.",
+      "Paste text as if you had typed it. A line break in pasted text then runs the command at once.",
     ),
   minimum_contrast_ratio: z
     .number()
@@ -52,7 +48,10 @@ export const TerminalConfigSchema = z.strictObject({
     .describe(
       "Adjust text colors until they stand out from their background by at least this ratio; 1 changes nothing.",
     ),
-  screen_reader_mode: z.boolean().optional().describe("Expose terminal output to screen readers."),
+  screen_reader_mode: z
+    .boolean()
+    .optional()
+    .describe("Let screen readers read the terminal output."),
   allow_transparency: z
     .boolean()
     .optional()
@@ -61,13 +60,16 @@ export const TerminalConfigSchema = z.strictObject({
   word_separator: z
     .string()
     .optional()
-    .describe("Characters that end a word for double-click selection and word-wise motion."),
+    .describe("Characters that end a word when you double-click to select it."),
   progress_bar: z
     .strictObject({
-      enabled: z.boolean().optional().describe("Show the progress bar in the terminal header."),
+      enabled: z
+        .boolean()
+        .optional()
+        .describe("Show a progress bar in the terminal header while a program reports progress."),
     })
     .optional()
-    .describe("The OSC 9;4 progress bar in the terminal header."),
+    .describe("Progress that programs report (OSC 9;4), shown in the terminal header."),
   images: z
     .strictObject({
       enabled: z
@@ -104,7 +106,7 @@ export const TerminalConfigSchema = z.strictObject({
         .boolean()
         .optional()
         .describe(
-          "Fill an empty history from your shell's own history file the first time Cogno starts (bash, zsh, PowerShell).",
+          "When the history is empty, fill it from your shell's own history file (bash, zsh, PowerShell).",
         ),
       auto_execute: z
         .boolean()
@@ -114,7 +116,7 @@ export const TerminalConfigSchema = z.strictObject({
         ),
     })
     .optional()
-    .describe("The recorded command history behind autocomplete and the history panel."),
+    .describe("The commands you ran, used by autocomplete and the command history."),
   restore: z
     .strictObject({
       enabled: z

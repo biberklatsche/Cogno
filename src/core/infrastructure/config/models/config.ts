@@ -28,7 +28,7 @@ export const baseConfigSchemaShape = {
   enable_watch_config: z
     .boolean()
     .optional()
-    .describe("Reload the config automatically when the file changes on disk."),
+    .describe("Apply changes to the settings file as soon as it is saved."),
   font: FontSchema.optional().describe("Terminal and app fonts."),
   color: ColorSchema.optional().describe(
     "Terminal color palette. Colors are hex without `#`; 8 digits add alpha.",
@@ -44,7 +44,7 @@ export const baseConfigSchemaShape = {
     "Shell profiles and which one starts by default. `<name>` is a profile name you choose. At most 9 profiles; `shell.default` must name one of them.",
   ),
   remote: RemoteConfigSchema.optional().describe(
-    "Other machines whose shells Cogno can show, reached over ssh. `<name>` is a host name you choose.",
+    "Other machines whose shells Cogno can show, reached over ssh. `<name>` is a name you choose for the machine.",
   ),
   prompt: PromptConfigSchema.optional().describe(
     "The configurable prompt rendered by Cogno. `<name>` is a profile or segment name you choose. A segment sets exactly one of `field` or `text`.",

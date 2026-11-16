@@ -449,9 +449,6 @@ export class PromptMarkerRenderer {
   }
 
   private applyMetadata(element: HTMLElement, segment: PromptSegment): void {
-    if (segment.className) {
-      element.classList.add(segment.className);
-    }
     if (segment.title) {
       element.title = segment.title;
     }

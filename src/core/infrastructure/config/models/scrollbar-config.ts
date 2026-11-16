@@ -37,7 +37,7 @@ export const ScrollbarSchema = z.strictObject({
     .int()
     .min(0, "Scrollbar smooth scroll duration must be at least 0")
     .optional()
-    .describe("Scroll multiplier while the fast-scroll modifier is held."),
+    .describe("How much faster the mouse wheel scrolls while Alt is held."),
   scrollback_lines: z
     .number()
     .int()

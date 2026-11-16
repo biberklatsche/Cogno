@@ -173,7 +173,6 @@ describe("PromptMarkerRenderer", () => {
         padding_left: 5,
         margin_right: 10,
         radius_left: 4,
-        className: "custom-class",
         title: "Hover me",
       },
     ];
@@ -190,7 +189,6 @@ describe("PromptMarkerRenderer", () => {
     expect(span.style.paddingLeft).toBe("5px");
     expect(span.style.marginRight).toBe("10px");
     expect(span.style.borderTopLeftRadius).toBe("4px");
-    expect(span.classList.contains("custom-class")).toBe(true);
     expect(span.title).toBe("Hover me");
   });
 

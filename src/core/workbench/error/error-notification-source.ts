@@ -12,7 +12,7 @@ export const ERROR_NOTIFICATION_SOURCE: NotificationSourceContract = {
     {
       id: HANDLED_EXCEPTION_EVENT_ID,
       label: "A handled error is reported",
-      description: "Notify when Cogno ran into an error and carried on.",
+      description: "Notify about errors Cogno could recover from.",
     },
     {
       id: UNHANDLED_EXCEPTION_EVENT_ID,

@@ -11,7 +11,7 @@ brackets.
 
 ### `enable_watch_config`
 
-Reload the config automatically when the file changes on disk.
+Apply changes to the settings file as soon as it is saved.
 
 **Type:** boolean · **Default:** `true`
 
@@ -273,7 +273,7 @@ Padding between terminal content and bottom edge.
 
 ### `padding.remove_on_full_screen_app`
 
-Drop the padding while a full-screen app (vim, less) owns the screen.
+Remove the padding while a full-screen program such as vim or less is open.
 
 **Type:** boolean · **Default:** `false`
 
@@ -363,7 +363,7 @@ Duration of smooth scrolling in milliseconds; 0 disables it.
 
 ### `scrollbar.fast_scroll_sensitivity`
 
-Scroll multiplier while the fast-scroll modifier is held.
+How much faster the mouse wheel scrolls while Alt is held.
 
 **Type:** integer ≥ 0 · **Default:** `2`
 
@@ -407,7 +407,7 @@ Clipboard access and copy behaviour.
 
 ### `clipboard.read`
 
-Whether programs in the terminal may read your clipboard (OSC 52); `ask` asks each time. Your own pasting always works.
+Whether programs in the terminal may read your clipboard (OSC 52). `ask` asks you each time.
 
 **Type:** `ask` | `allow` | `deny` · **Default:** `ask`
 
@@ -477,7 +477,7 @@ Make the `cogno` command available in this shell.
 
 ### `shell.profiles.<name>.enable_shell_integration`
 
-Let Cogno follow this shell: which commands run, how they end and the current directory. Without it, history and command status stay empty.
+Let Cogno see which commands run in this shell, whether they succeed and the current directory. Off leaves the command history and command status empty.
 
 **Type:** boolean
 
@@ -489,17 +489,17 @@ Also load your own shell startup files (`.zshrc`, `.bashrc`, the PowerShell prof
 
 ## Remote
 
-Other machines whose shells Cogno can show, reached over ssh. `<name>` is a host name you choose.
+Other machines whose shells Cogno can show, reached over ssh. `<name>` is a name you choose for the machine.
 
 ### `remote.hosts.<name>.destination`
 
-Where ssh connects: a host name, `user@host` or an alias from your ssh config. The machine must be reachable by ssh and have Cogno running.
+The machine to connect to: a host name, `user@host` or an alias from your ssh config. Cogno must be running there.
 
 **Type:** string
 
 ### `remote.hosts.<name>.command`
 
-Command ssh runs on that machine to reach the Cogno there. Left out, Cogno tries `".cogno/bin/cogno" server --stdio` and, for an ssh server that starts commands in PowerShell, `& ".cogno/bin/cogno" server --stdio`, and keeps the one that worked here.
+Command ssh runs on that machine to reach Cogno there. Usually left out: Cogno finds it by itself and may fill this in after the first connection.
 
 **Type:** string
 
@@ -609,12 +609,6 @@ Tooltip shown when hovering the segment.
 
 **Type:** string
 
-### `prompt.segment.<name>.className`
-
-Extra CSS class for custom styling.
-
-**Type:** string
-
 ### `prompt.segment.<name>.format`
 
 How the value is rendered, e.g. `timespan` for a duration.
@@ -653,7 +647,7 @@ Terminal rendering and behaviour.
 
 ### `terminal.keep_shells_running`
 
-Keep the shells running when Cogno closes, and go on with them at the next start - on this machine, or from another one through `remote.hosts`. Closing a tab still ends its shell. Applies to shells started after the change.
+Keep your shells running when you quit Cogno. At the next start, your tabs show the same shells again. Meanwhile, Cogno on another machine can still show them (see `remote.hosts`). Closing a tab still ends its shell. Applies to shells started after you change it.
 
 **Type:** boolean
 
@@ -665,37 +659,37 @@ Draw the terminal with the graphics card, which is faster. Turn it off if text l
 
 ### `terminal.decoration.color.background`
 
-Fill color of the decoration.
+Fill color of the highlight.
 
 **Type:** hex color · **Default:** `2f8fda55`
 
 ### `terminal.decoration.color.border`
 
-Border color of the decoration.
+Border color of the highlight.
 
 **Type:** hex color · **Default:** `2f8fda`
 
 ### `terminal.decoration.color.overview_ruler`
 
-Marker color in the overview ruler beside the scrollbar.
+Color of its marker beside the scrollbar.
 
 **Type:** hex color · **Default:** `2f8fda`
 
 ### `terminal.decoration.active_color.background`
 
-Fill color of the decoration.
+Fill color of the highlight.
 
 **Type:** hex color · **Default:** `f5e66399`
 
 ### `terminal.decoration.active_color.border`
 
-Border color of the decoration.
+Border color of the highlight.
 
 **Type:** hex color · **Default:** `f5e663`
 
 ### `terminal.decoration.active_color.overview_ruler`
 
-Marker color in the overview ruler beside the scrollbar.
+Color of its marker beside the scrollbar.
 
 **Type:** hex color · **Default:** `f5e663`
 
@@ -707,7 +701,7 @@ How strongly panes that are not focused are dimmed, 0-100.
 
 ### `terminal.ignore_bracketed_paste_mode`
 
-Paste text as if you had typed it, even where a program wants to be told it is a paste. Pasted lines then run at once.
+Paste text as if you had typed it. A line break in pasted text then runs the command at once.
 
 **Type:** boolean · **Default:** `false`
 
@@ -719,7 +713,7 @@ Adjust text colors until they stand out from their background by at least this r
 
 ### `terminal.screen_reader_mode`
 
-Expose terminal output to screen readers.
+Let screen readers read the terminal output.
 
 **Type:** boolean · **Default:** `false`
 
@@ -737,13 +731,13 @@ Width of a tab character in columns.
 
 ### `terminal.word_separator`
 
-Characters that end a word for double-click selection and word-wise motion.
+Characters that end a word when you double-click to select it.
 
 **Type:** string · **Default:** `` "()[]{}'\"\\,;:/&<>*+=$^!~` " ``
 
 ### `terminal.progress_bar.enabled`
 
-Show the progress bar in the terminal header.
+Show a progress bar in the terminal header while a program reports progress.
 
 **Type:** boolean · **Default:** `true`
 
@@ -773,7 +767,7 @@ Keep a command out of the history when you type a space in front of it, as bash 
 
 ### `terminal.history.import_shell_history`
 
-Fill an empty history from your shell's own history file the first time Cogno starts (bash, zsh, PowerShell).
+When the history is empty, fill it from your shell's own history file (bash, zsh, PowerShell).
 
 **Type:** boolean · **Default:** `false`
 
@@ -813,7 +807,7 @@ How long autocomplete waits, in milliseconds, for suggestions it has to look up 
 
 ### `autocomplete.allowed_return_codes`
 
-Exit codes a command may end with to be suggested; `[0]` suggests only successful commands, empty suggests all.
+Suggest only commands from your history that ended with one of these exit codes. `[0]` suggests only successful commands; empty suggests all.
 
 **Type:** integer[] · **Default:** `[]`
 
@@ -871,7 +865,7 @@ Notify only when a command ran for at least this many seconds.
 
 ### `notification.source.errors.handled.enabled`
 
-Notify when Cogno ran into an error and carried on.
+Notify about errors Cogno could recover from.
 
 **Type:** boolean · **Default:** `false`
 
