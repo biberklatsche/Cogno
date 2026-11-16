@@ -184,7 +184,6 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
         background: color-mix(in srgb, var(--color-yellow) 15%, transparent);
         border-bottom: 1px solid var(--git-border);
       }
-      .banner .grow { flex: 1; }
       .button.small { padding: 0.1rem 0.6rem; font-size: 0.85em; }
       /* The side panels follow the available width until the user drags them. */
       .body {

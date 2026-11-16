@@ -143,7 +143,6 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
         flex-direction: column;
         min-height: 0;
       }
-      .grow { flex: 1; }
       .prompt {
         display: flex;
         flex-wrap: wrap;

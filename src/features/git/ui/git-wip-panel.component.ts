@@ -168,7 +168,6 @@ const OPERATION_NAMES: Record<GitOperation, string> = {
       .section-header { flex: 0 0 auto; border-top: 1px solid var(--git-border); }
       .section:first-child .section-header { border-top: none; }
       .body { flex: 1 1 auto; min-height: 0; overflow: auto; }
-      .grow { flex: 1; }
       .commit {
         flex: 0 0 auto;
         display: flex;

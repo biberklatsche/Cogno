@@ -94,7 +94,6 @@ export type GitHunkSelection = {
       }
       .range { color: var(--color-cyan); white-space: nowrap; }
       .heading { flex: 0 1 auto; }
-      .grow { flex: 1; }
       .line {
         display: flex;
         align-items: stretch;

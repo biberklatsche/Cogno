@@ -41,7 +41,8 @@ export const GIT_SHARED_STYLES = `
     text-transform: uppercase;
     user-select: none;
   }
-  .section-header .grow { flex: 1; }
+  /* Takes the free space of a row, pushing what follows to the end. */
+  .grow { flex: 1; }
 
   .toggle {
     display: inline-flex;
@@ -78,7 +79,6 @@ export const GIT_SHARED_STYLES = `
     padding: 0 var(--git-gutter);
     border-bottom: 1px solid var(--git-border);
   }
-  .panel-header .grow { flex: 1; }
 
   /* Small enough for a section header, with square-ish corners rather than a pill. */
   .button.small {

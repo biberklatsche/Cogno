@@ -203,7 +203,6 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
       }
       .section { display: flex; flex-direction: column; min-height: 0; }
       .body { flex: 1 1 auto; min-height: 0; overflow: auto; }
-      .grow { flex: 1; }
       /* Sections read as blocks: a rule and some air between them, the count in the highlight colour. */
       .section-header { flex: 0 0 auto; border-top: 1px solid var(--git-border); margin-top: 0.35rem; }
       .section:first-child .section-header { border-top: none; margin-top: 0; }
