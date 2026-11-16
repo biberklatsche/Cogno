@@ -1,4 +1,9 @@
 import {
+  CdkFixedSizeVirtualScroll,
+  CdkVirtualForOf,
+  CdkVirtualScrollViewport,
+} from "@angular/cdk/scrolling";
+import {
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -22,6 +27,7 @@ import {
   conflictRows,
   conflictsOf,
   GitConflictPick,
+  GitConflictRow,
   GitConflictSegment,
   GitConflictSide,
   parseConflicts,
@@ -50,7 +56,13 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
 @Component({
   selector: "app-git-conflict-view",
   standalone: true,
-  imports: [IconComponent, TooltipDirective],
+  imports: [
+    IconComponent,
+    TooltipDirective,
+    CdkVirtualScrollViewport,
+    CdkFixedSizeVirtualScroll,
+    CdkVirtualForOf,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (content(); as content) {
@@ -81,26 +93,26 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
                   }
                 </span>
               </div>
-              <div #paneBody class="pane-body">
-                @for (row of pane.rows; track $index) {
-                  <div class="row"
-                       [class.conflict]="row.conflict !== null"
-                       [class.taken]="row.conflict !== null && takes(row.conflict, pane.side)"
-                       [class.filler]="row.number === null"
-                       [class.current]="row.conflict === current()"
-                       [attr.data-conflict]="row.first ? row.conflict : null">
-                    <span class="check">
-                      @if (row.first && row.conflict !== null) {
-                        <input type="checkbox" [checked]="takes(row.conflict, pane.side)"
-                               [attr.aria-label]="'Take conflict ' + (row.conflict + 1) + ' from ' + pane.name"
-                               (change)="toggle(row.conflict, pane.side)" />
-                      }
-                    </span>
-                    <span class="gutter mono">{{ row.number ?? "" }}</span>
-                    <span class="text mono">{{ row.text }}</span>
-                  </div>
-                }
-              </div>
+              <!-- Only the rows in view exist, so a file of any length stays light. -->
+              <cdk-virtual-scroll-viewport class="pane-body" [itemSize]="rowHeight()" [minBufferPx]="400" [maxBufferPx]="800"
+                                           [style.--longest-line]="pane.longest">
+                <div *cdkVirtualFor="let row of pane.rows; trackBy: trackByIndex; templateCacheSize: 0"
+                     class="row"
+                     [class.conflict]="row.conflict !== null"
+                     [class.taken]="row.conflict !== null && taken()[pane.side][row.conflict]"
+                     [class.filler]="row.number === null"
+                     [class.current]="row.conflict === current()">
+                  <span class="check">
+                    @if (row.first && row.conflict !== null) {
+                      <input type="checkbox" [checked]="taken()[pane.side][row.conflict]"
+                             [attr.aria-label]="'Take conflict ' + (row.conflict + 1) + ' from ' + pane.name"
+                             (change)="toggle(row.conflict, pane.side)" />
+                    }
+                  </span>
+                  <span class="gutter mono">{{ row.number ?? "" }}</span>
+                  <span class="text mono">{{ row.text }}</span>
+                </div>
+              </cdk-virtual-scroll-viewport>
             </div>
           }
         </div>
@@ -127,6 +139,8 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
         </div>
         <div #output class="output"></div>
       }
+      <!-- One row, out of sight, to measure how tall rows are at the font size the user set. -->
+      <div #probe class="row probe" aria-hidden="true"><span class="text mono">x</span></div>
     } @else {
       <div class="empty small subtle">Loading conflict…</div>
     }
@@ -177,13 +191,27 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
       }
       .ours .badge, .ours .name { color: var(--conflict-ours); }
       .theirs .badge, .theirs .name { color: var(--conflict-theirs); }
-      .pane-body { flex: 1 1 auto; overflow: auto; min-height: 0; }
-      /* Sizes follow the app font size the user set: the code is .mono (0.85em of the panel). */
-      .row { display: flex; align-items: center; min-height: 1.45em; white-space: pre; width: max-content; min-width: 100%; }
+      .pane-body { flex: 1 1 auto; min-height: 0; }
+      /* The rendered rows set the width; at least the pane's, so short lines still fill it. */
+      .pane-body ::ng-deep .cdk-virtual-scroll-content-wrapper { min-width: 100%; }
+      /* Sizes follow the app font size the user set: the code is .mono (0.85em of the panel).
+         Every row is the same height - the virtual scroll measures it once (the probe). */
+      .row {
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        height: 1.45em;
+        white-space: pre;
+        width: max-content;
+        min-width: 100%;
+      }
+      .probe { position: absolute; visibility: hidden; pointer-events: none; top: 0; left: 0; }
       .check { flex: 0 0 1.4rem; display: flex; justify-content: center; }
       .check input { margin: 0; }
       .gutter { flex: 0 0 3.2em; padding-right: 0.6em; text-align: right; color: var(--git-subtle); user-select: none; }
-      .text { flex: 1 1 auto; padding-right: 1rem; }
+      /* As wide as the longest line, so the width does not jump while scrolling: only
+         the rows in view exist, and they alone would set it. */
+      .text { flex: 1 1 auto; padding-right: 1rem; min-width: calc(var(--longest-line, 0) * 1ch); }
       .ours .row.conflict { background: color-mix(in srgb, var(--conflict-ours) 10%, transparent); }
       .theirs .row.conflict { background: color-mix(in srgb, var(--conflict-theirs) 10%, transparent); }
       .ours .row.taken { background: color-mix(in srgb, var(--conflict-ours) 28%, transparent); }
@@ -228,7 +256,8 @@ export class GitConflictViewComponent implements OnDestroy {
   private readonly segments = computed<ReadonlyArray<GitConflictSegment>>(() =>
     parseConflicts(this.content()?.text ?? ""),
   );
-  readonly total = computed(() => conflictsOf(this.segments()).length);
+  private readonly conflicts = computed(() => conflictsOf(this.segments()));
+  readonly total = computed(() => this.conflicts().length);
   readonly pickedCount = computed(
     () => this.picks().filter((pick) => pick && pick.length > 0).length,
   );
@@ -237,7 +266,7 @@ export class GitConflictViewComponent implements OnDestroy {
 
   /** What the sides are called: the commits and branches, or the conflict markers' labels. */
   private readonly names = computed(() => {
-    const first = conflictsOf(this.segments())[0];
+    const first = this.conflicts()[0];
     const head = this.repository.head();
     const incoming = this.repository.incoming();
     return {
@@ -252,24 +281,50 @@ export class GitConflictViewComponent implements OnDestroy {
     };
   });
   /** Built only when the file changes, not on every refresh that renames nothing. */
-  private readonly rows = computed(() => ({
-    ours: conflictRows(this.segments(), "ours"),
-    theirs: conflictRows(this.segments(), "theirs"),
-  }));
+  private readonly rows = computed(() => {
+    const ours = conflictRows(this.segments(), "ours");
+    const theirs = conflictRows(this.segments(), "theirs");
+    // A and B are level, so the row a conflict starts on is the same in both.
+    const conflictStarts: number[] = [];
+    ours.forEach((row, index) => {
+      if (row.first && row.conflict !== null) conflictStarts[row.conflict] = index;
+    });
+    return {
+      ours,
+      theirs,
+      conflictStarts,
+      longest: { ours: longestLine(ours), theirs: longestLine(theirs) },
+    };
+  });
   readonly panes = computed(() =>
     (["ours", "theirs"] as const).map((side) => ({
       side,
       ...this.names()[side],
       rows: this.rows()[side],
+      longest: this.rows().longest[side],
     })),
   );
+  /** Per side and conflict whether it is ticked: one lookup per row, not a search. */
+  readonly taken = computed(() => {
+    const picks = this.picks();
+    const of = (side: GitConflictSide) =>
+      Array.from({ length: this.total() }, (_, index) => picks[index]?.includes(side) ?? false);
+    return { ours: of("ours"), theirs: of("theirs") };
+  });
+  /** The height of a row in pixels at the current font size, for the virtual scroll. */
+  readonly rowHeight = signal(20);
 
-  private readonly paneBodies = viewChildren<ElementRef<HTMLElement>>("paneBody");
+  private readonly viewports = viewChildren(CdkVirtualScrollViewport);
   private readonly outputHost = viewChild<ElementRef<HTMLElement>>("output");
+  private readonly probe = viewChild<ElementRef<HTMLElement>>("probe");
   private editor: EditorView | null = null;
   private editorPath: string | null = null;
   private building = 0;
   private stopScrollSync: (() => void) | null = null;
+  private readonly probeObserver = new ResizeObserver(([entry]) => {
+    const height = entry?.target.getBoundingClientRect().height ?? 0;
+    if (height > 0 && height !== this.rowHeight()) this.rowHeight.set(height);
+  });
 
   constructor(
     private readonly repository: GitRepositoryService,
@@ -299,20 +354,27 @@ export class GitConflictViewComponent implements OnDestroy {
 
     // A and B scroll together; their rows are level.
     effect(() => {
-      const [a, b] = this.paneBodies().map((body) => body.nativeElement);
+      const [a, b] = this.viewports().map((viewport) => viewport.elementRef.nativeElement);
       this.stopScrollSync?.();
       this.stopScrollSync = a && b ? syncScroll(a, b) : null;
+    });
+
+    // Rows are as tall as the font the user set makes them; measured, and
+    // measured again when that size changes.
+    effect(() => {
+      const probe = this.probe()?.nativeElement;
+      this.probeObserver.disconnect();
+      if (probe) this.probeObserver.observe(probe);
     });
   }
 
   ngOnDestroy(): void {
+    this.probeObserver.disconnect();
     this.stopScrollSync?.();
     this.destroyEditor();
   }
 
-  takes(conflict: number, side: GitConflictSide): boolean {
-    return this.picks()[conflict]?.includes(side) ?? false;
-  }
+  trackByIndex = (index: number) => index;
 
   takesAll(side: GitConflictSide): boolean {
     return this.total() > 0 && this.countTaking(side) === this.total();
@@ -347,9 +409,10 @@ export class GitConflictViewComponent implements OnDestroy {
   goTo(index: number): void {
     if (index < 0 || index >= this.total()) return;
     this.current.set(index);
-    const body = this.paneBodies()[0]?.nativeElement;
-    const row = body?.querySelector<HTMLElement>(`[data-conflict="${index}"]`);
-    if (body && row) body.scrollTop = row.offsetTop - body.offsetTop - body.clientHeight / 3;
+    // The row may not exist yet (only rows in view do): scroll by its index,
+    // a few rows above it for context. B follows through the scroll sync.
+    const row = this.rows().conflictStarts[index];
+    if (row !== undefined) this.viewports()[0]?.scrollToIndex(Math.max(row - 3, 0));
     const start = this.resolution().starts[index];
     if (this.editor && start !== undefined && !this.edited()) {
       this.editor.dispatch({
@@ -513,4 +576,15 @@ export class GitConflictViewComponent implements OnDestroy {
     this.editor = null;
     this.editorPath = null;
   }
+}
+
+/** The longest line of a side in columns (a tab counts as eight), for the rows' width. */
+function longestLine(rows: ReadonlyArray<GitConflictRow>): number {
+  let longest = 0;
+  for (const row of rows) {
+    let length = row.text.length;
+    for (const char of row.text) if (char === "\t") length += 7;
+    if (length > longest) longest = length;
+  }
+  return longest;
 }
