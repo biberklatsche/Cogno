@@ -130,7 +130,8 @@ describe("GitOperationsService", () => {
 
       expect(await service.resolveConflict("a.txt", "merged\n")).toBe("failed");
 
-      expect(run).not.toHaveBeenCalled();
+      // The blob is written alongside the lookup; nothing is staged or checked out.
+      expect(run.mock.calls.map((call) => call[0][0])).toEqual(["hash-object"]);
     });
 
     it("marks several files resolved in one run", async () => {

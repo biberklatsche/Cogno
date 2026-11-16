@@ -4,15 +4,17 @@ import { NotificationCenterPort } from "@cogno/core/api/notification-center-port
 import { isWslShellContext } from "@cogno/shared/domain";
 import { GitProcessPromptService, GitRunPrompts } from "./git-process-prompt.service";
 import { GitRepositoryService } from "./git-repository.service";
+import { GitConflictSide } from "./model/git-conflict";
 import { GitBranch, GitOperation, GitPullMode, GitRemoteBranch } from "./model/git-model";
 import { GitConflictStages, isPushRejected } from "./model/git-parsers";
 
 export type GitResetMode = "soft" | "mixed" | "hard";
 
 /** Which version of a conflicted file to keep: the current side, the incoming one or their common base. */
-export type GitConflictTake = "ours" | "theirs" | "base";
+export type GitConflictTake = GitConflictSide | "base";
 
-const CONFLICT_STAGE = { base: 1, ours: 2, theirs: 3 } as const;
+/** The index stage that holds each version of a conflicted file. */
+export const CONFLICT_STAGE = { base: 1, ours: 2, theirs: 3 } as const;
 
 /**
  * What an operation ended in. `rejected` is a refusal the user may override by
@@ -139,17 +141,17 @@ export class GitOperationsService {
    * A side that deleted the file (modify/delete) has no version; taking it
    * deletes the file.
    */
-  async takeConflictSide(path: string, side: GitConflictTake): Promise<GitOperationOutcome> {
-    const stages = await this.conflictStages(path);
-    if (!stages) return "failed";
+  async takeConflictSide(
+    path: string,
+    side: GitConflictTake,
+    /** The stages, when the caller has read them already (to ask before a delete). */
+    known?: GitConflictStages,
+  ): Promise<GitOperationOutcome> {
+    const stages = known ?? (await this.repository.loadConflictStages(path));
+    if (stages.size === 0) return this.notConflicted(path);
     const version = stages.get(CONFLICT_STAGE[side]);
     if (!version) return this.git(["rm", "-q", "--", path], "Resolve failed");
-    const staged = await this.git(
-      ["update-index", "--cacheinfo", `${version.mode},${version.blob},${path}`],
-      "Resolve failed",
-    );
-    if (staged !== "ok") return staged;
-    return this.git(["checkout", "--", path], "Resolve failed");
+    return this.stageVersion(path, version.mode, version.blob);
   }
 
   /**
@@ -158,26 +160,22 @@ export class GitOperationsService {
    * checked out, so the working tree holds the same text.
    */
   async resolveConflict(path: string, content: string): Promise<GitOperationOutcome> {
-    const stages = await this.conflictStages(path);
-    if (!stages) return "failed";
-    // Keep the file's mode (an executable stays executable); a conflict has at least one stage.
-    const mode = (stages.get(2) ?? stages.get(3) ?? stages.get(1))?.mode ?? "100644";
-    const hashed = await this.repository.run(
-      ["hash-object", "-w", "--stdin", `--path=${path}`],
-      LOCAL_TIMEOUT_MS,
-      content,
-    );
+    const [stages, hashed] = await Promise.all([
+      this.repository.loadConflictStages(path),
+      this.repository.run(
+        ["hash-object", "-w", "--stdin", `--path=${path}`],
+        LOCAL_TIMEOUT_MS,
+        content,
+      ),
+    ]);
+    if (stages.size === 0) return this.notConflicted(path);
     if (!this.report(hashed, "Resolve failed") || !hashed) {
       await this.repository.refresh();
       return "failed";
     }
-    const blob = hashed.stdout.trim();
-    const staged = await this.git(
-      ["update-index", "--cacheinfo", `${mode},${blob},${path}`],
-      "Resolve failed",
-    );
-    if (staged !== "ok") return staged;
-    return this.git(["checkout", "--", path], "Resolve failed");
+    // Keep the file's mode (an executable stays executable).
+    const mode = (stages.get(2) ?? stages.get(3) ?? stages.get(1))?.mode ?? "100644";
+    return this.stageVersion(path, mode, hashed.stdout.trim());
   }
 
   /** Stage conflicted files as they are, in one run. */
@@ -186,16 +184,33 @@ export class GitOperationsService {
   }
 
   /**
-   * The versions of a conflicted file; null, with a toast, when there are
-   * none: git could not say, or the file is no longer conflicted. Nothing is
-   * written or deleted on a guess.
+   * Put a version into the index in place of the conflict and check it out;
+   * the repository is re-read once, at the end.
    */
-  private async conflictStages(path: string): Promise<GitConflictStages | null> {
-    const stages = await this.repository.loadConflictStages(path);
-    if (stages.size > 0) return stages;
+  private async stageVersion(
+    path: string,
+    mode: string,
+    blob: string,
+  ): Promise<GitOperationOutcome> {
+    const staged = await this.repository.run(
+      ["update-index", "--cacheinfo", `${mode},${blob},${path}`],
+      LOCAL_TIMEOUT_MS,
+    );
+    if (!this.report(staged, "Resolve failed")) {
+      await this.repository.refresh();
+      return "failed";
+    }
+    return this.git(["checkout", "--", path], "Resolve failed");
+  }
+
+  /**
+   * No versions at all: git could not say, or the file is no longer
+   * conflicted. Nothing is written or deleted on a guess.
+   */
+  private async notConflicted(path: string): Promise<GitOperationOutcome> {
     this.toast("Resolve failed", `${path} is not conflicted (any more).`, "error");
     await this.repository.refresh();
-    return null;
+    return "failed";
   }
 
   commit(summary: string, description: string): Promise<GitOperationOutcome> {

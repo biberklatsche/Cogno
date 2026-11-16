@@ -353,7 +353,7 @@ const WIP_ROW: TreeRow = { kind: "wip" };
         gap: 0.35rem;
         padding-left: var(--git-gutter);
         color: var(--background-color);
-        background: var(--color-yellow);
+        background: var(--git-conflict);
       }
       .row .col-refs { display: flex; align-items: center; gap: 0.25rem; overflow: hidden; }
       .label {

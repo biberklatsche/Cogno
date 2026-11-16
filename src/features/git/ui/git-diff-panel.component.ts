@@ -173,7 +173,7 @@ export class GitDiffPanelComponent {
   }
 
   hunkActions(source: GitDiffSource): GitHunkActions {
-    if (source.kind === "commit" || source.file.status === "U") return "none";
+    if (source.kind === "commit") return "none";
     return source.kind;
   }
 

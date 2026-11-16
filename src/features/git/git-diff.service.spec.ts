@@ -91,10 +91,4 @@ describe("GitDiffService", () => {
     expect(root.original).toBe("");
     expect(deleted.modified).toBe("");
   });
-
-  it("compares a conflicted file with HEAD, since the index holds several versions", async () => {
-    const diff = await service.loadDiff({ kind: "unstaged", file: file("a.ts", "U") });
-
-    expect(diff.original).toBe("blob HEAD:a.ts");
-  });
 });

@@ -27,7 +27,7 @@ import {
   parseConflicts,
   resolveConflicts,
 } from "../model/git-conflict";
-import { gitEditorLook } from "./git-diff-view.component";
+import { gitEditorLook, syncScroll } from "./git-diff-view.component";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 /** Marks the output changes the view makes itself, as opposed to typing. */
@@ -70,7 +70,7 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
             <div class="pane" [class]="'pane ' + pane.side">
               <div class="pane-header">
                 <input type="checkbox" [checked]="takesAll(pane.side)" [indeterminate]="takesSome(pane.side)"
-                       [attr.aria-label]="'Take every conflict from ' + pane.label" (change)="toggleAll(pane.side)" />
+                       [attr.aria-label]="'Take every conflict from ' + pane.name" (change)="toggleAll(pane.side)" />
                 <span class="badge">{{ pane.side === "ours" ? "A" : "B" }}</span>
                 <span class="ellipsis">
                   @if (pane.sha) {
@@ -81,7 +81,7 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
                   }
                 </span>
               </div>
-              <div #paneBody class="pane-body" (scroll)="syncScroll($event)">
+              <div #paneBody class="pane-body">
                 @for (row of pane.rows; track $index) {
                   <div class="row"
                        [class.conflict]="row.conflict !== null"
@@ -92,7 +92,7 @@ type LoadedConflict = GitConflictContent & { readonly path: string };
                     <span class="check">
                       @if (row.first && row.conflict !== null) {
                         <input type="checkbox" [checked]="takes(row.conflict, pane.side)"
-                               [attr.aria-label]="'Take conflict ' + (row.conflict + 1) + ' from ' + pane.label"
+                               [attr.aria-label]="'Take conflict ' + (row.conflict + 1) + ' from ' + pane.name"
                                (change)="toggle(row.conflict, pane.side)" />
                       }
                     </span>
@@ -252,12 +252,16 @@ export class GitConflictViewComponent implements OnDestroy {
       },
     };
   });
+  /** Built only when the file changes, not on every refresh that renames nothing. */
+  private readonly rows = computed(() => ({
+    ours: conflictRows(this.segments(), "ours"),
+    theirs: conflictRows(this.segments(), "theirs"),
+  }));
   readonly panes = computed(() =>
     (["ours", "theirs"] as const).map((side) => ({
       side,
       ...this.names()[side],
-      label: this.names()[side].name,
-      rows: conflictRows(this.segments(), side),
+      rows: this.rows()[side],
     })),
   );
 
@@ -266,7 +270,7 @@ export class GitConflictViewComponent implements OnDestroy {
   private editor: EditorView | null = null;
   private editorPath: string | null = null;
   private building = 0;
-  private syncingScroll = false;
+  private stopScrollSync: (() => void) | null = null;
 
   constructor(
     private readonly repository: GitRepositoryService,
@@ -293,9 +297,17 @@ export class GitConflictViewComponent implements OnDestroy {
       const text = this.resolution().text;
       untracked(() => this.showInOutput(text));
     });
+
+    // A and B scroll together; their rows are level.
+    effect(() => {
+      const [a, b] = this.paneBodies().map((body) => body.nativeElement);
+      this.stopScrollSync?.();
+      this.stopScrollSync = a && b ? syncScroll(a, b) : null;
+    });
   }
 
   ngOnDestroy(): void {
+    this.stopScrollSync?.();
     this.destroyEditor();
   }
 
@@ -347,24 +359,9 @@ export class GitConflictViewComponent implements OnDestroy {
     }
   }
 
-  /** A and B scroll together; their rows are level. */
-  syncScroll(event: Event): void {
-    if (this.syncingScroll) return;
-    const source = event.target as HTMLElement;
-    this.syncingScroll = true;
-    for (const body of this.paneBodies()) {
-      const element = body.nativeElement;
-      if (element === source) continue;
-      element.scrollTop = source.scrollTop;
-      element.scrollLeft = source.scrollLeft;
-    }
-    requestAnimationFrame(() => {
-      this.syncingScroll = false;
-    });
-  }
-
   wholeFileText(content: LoadedConflict): string {
-    const { ours, theirs } = this.sideNames();
+    const ours = this.names().ours.name;
+    const theirs = this.names().theirs.name;
     const { path } = content;
     if (!content.hasBase && !content.hasOurs && !content.hasTheirs) {
       return `${path} is no longer conflicted.`;
@@ -380,7 +377,8 @@ export class GitConflictViewComponent implements OnDestroy {
   }
 
   wholeFileActions(content: LoadedConflict): WholeFileAction[] {
-    const { ours, theirs } = this.sideNames();
+    const ours = this.names().ours.name;
+    const theirs = this.names().theirs.name;
     const base: WholeFileAction[] = content.hasBase
       ? [{ label: "Keep Base Version", take: "base" }]
       : [];
@@ -421,11 +419,6 @@ export class GitConflictViewComponent implements OnDestroy {
     if (!loaded || !this.canSave()) return Promise.resolve();
     const text = this.editor?.state.doc.toString() ?? this.resolution().text;
     return this.whileSaving(() => this.operations.resolveConflict(loaded.path, text));
-  }
-
-  private sideNames(): { ours: string; theirs: string } {
-    const names = this.names();
-    return { ours: names.ours.name, theirs: names.theirs.name };
   }
 
   private countTaking(side: GitConflictSide): number {

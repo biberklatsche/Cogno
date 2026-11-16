@@ -6,6 +6,8 @@ export const GIT_SHARED_STYLES = `
     --git-hover: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     --git-border: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
     --git-selected: color-mix(in srgb, var(--highlight-color) var(--menu-opacity-ct2), transparent);
+    /* Conflicts are a warning, in one yellow everywhere: files, WIP header, graph row. */
+    --git-conflict: var(--color-yellow);
     /* Two sizes only: the text, and everything secondary (headers, counts, meta). */
     --git-font-small: 0.85em;
     --git-row-height: 26px;
@@ -89,10 +91,16 @@ export const GIT_SHARED_STYLES = `
 
   /* Stage, unstage and discard look alike at rest; discard turns red only under
      the pointer, as it cannot be undone. The commit itself is a filled green button. */
-  .button.discard:hover:not(:disabled) {
+  .button.discard:hover:not(:disabled),
+  .button.danger:hover:not(:disabled) {
     color: var(--color-red);
     border-color: color-mix(in srgb, var(--color-red) 60%, transparent);
     background: color-mix(in srgb, var(--color-red) 12%, var(--background-color));
+  }
+  /* What throws work away for good (Abort Merge) is red at rest too. */
+  .button.danger {
+    color: var(--color-red);
+    border-color: color-mix(in srgb, var(--color-red) 60%, transparent);
   }
   .button.commit {
     color: var(--background-color);
@@ -122,8 +130,7 @@ export const GIT_SHARED_STYLES = `
   .status-edited { color: var(--color-yellow); }
   .status-added { color: var(--color-green); }
   .status-removed { color: var(--color-red); }
-  /* Conflicts are a warning, in the same yellow everywhere: files, WIP header, graph row. */
-  .status-conflict { color: var(--color-yellow); }
+  .status-conflict { color: var(--git-conflict); }
 
   .text-input {
     width: 100%;

@@ -53,9 +53,8 @@ export class GitDiffService {
     let original = "";
     let modified = "";
     if (source.kind === "unstaged") {
-      // A conflicted file has no single index entry; it is compared with HEAD.
-      const base = file.status === "U" ? `HEAD:${before}` : `:0:${before}`;
-      original = added ? "" : await this.readBlob(base);
+      // A conflicted file never comes here: it opens in the conflict view.
+      original = added ? "" : await this.readBlob(`:0:${before}`);
       modified = deleted ? "" : await this.readWorkingText(file.path);
     } else if (source.kind === "staged") {
       original = file.status === "A" ? "" : await this.readBlob(`HEAD:${before}`);

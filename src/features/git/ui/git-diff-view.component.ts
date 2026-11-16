@@ -19,8 +19,8 @@ import { GitDiffMode } from "../git-view-state.service";
 const cognoTheme = EditorView.theme(
   {
     "&": {
-      // As the code in the hunk and conflict views: 0.85 of the app font size the user set.
-      fontSize: "0.85rem",
+      // The panel's small size, as the code in the hunk and conflict views (.mono).
+      fontSize: "var(--git-font-small)",
       fontFamily: "var(--font-mono, monospace)",
       background: "var(--background-color)",
       color: "var(--foreground-color)",
@@ -118,7 +118,7 @@ function nextFrame(): Promise<void> {
 }
 
 /** Keep the two panes of a split view at the same scroll offset. Returns the undo. */
-function syncScroll(scrollA: HTMLElement, scrollB: HTMLElement): () => void {
+export function syncScroll(scrollA: HTMLElement, scrollB: HTMLElement): () => void {
   let syncingA = false;
   let syncingB = false;
 

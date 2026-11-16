@@ -253,25 +253,6 @@ export class GitRepositoryService {
     return parseUnmergedStages(result?.exitCode === 0 ? result.stdout : "");
   }
 
-  /**
-   * The message git prepared for the commit that ends a merge, cherry pick or
-   * revert (`MERGE_MSG`), without its comment lines; null when there is none.
-   */
-  async readMergeMessage(): Promise<string | null> {
-    const session = this.boundSession;
-    const gitDir = this.gitDir;
-    if (!session || !gitDir) return null;
-    const path = session.fs.normalizePath(`${gitDir}/MERGE_MSG`);
-    const text = await session.fs.readTextFile(path).catch(() => null);
-    if (text === null) return null;
-    const message = text
-      .split(/\r?\n/)
-      .filter((line) => !line.startsWith("#"))
-      .join("\n")
-      .trim();
-    return message || null;
-  }
-
   private requestAutomaticRefresh(resolveContext: boolean): void {
     if (!this.active || this.availability.missing) return;
     this.requestRefresh(resolveContext);
@@ -482,8 +463,9 @@ export class GitRepositoryService {
       if (operation === "rebase") return { operation, incoming: null };
       // An octopus merge lists one commit per line; the first stands for them.
       const sha = content.trim().split(/\s+/)[0] ?? "";
-      const name = operation === "merge" ? mergeSourceOf((await read("MERGE_MSG")) ?? "") : null;
-      return { operation, incoming: sha ? { sha, name } : null };
+      const message = withoutComments((await read("MERGE_MSG")) ?? "");
+      const name = operation === "merge" ? mergeSourceOf(message ?? "") : null;
+      return { operation, incoming: sha ? { sha, name, message } : null };
     }
     return null;
   }
@@ -515,6 +497,16 @@ export class GitRepositoryService {
  * worktree would go unseen. Git prints the common dir relative to the cwd
  * only when it is the worktree's own .git, so a relative one adds nothing.
  */
+/** A message git prepared, without the comment lines it adds for the editor; null when empty. */
+function withoutComments(text: string): string | null {
+  const message = text
+    .split(/\r?\n/)
+    .filter((line) => !line.startsWith("#"))
+    .join("\n")
+    .trim();
+  return message || null;
+}
+
 function dirsToWatch(gitDir: string, commonDir: string): string[] {
   const isAbsolute = commonDir.startsWith("/") || /^[A-Za-z]:[\\/]/.test(commonDir);
   if (!isAbsolute || commonDir === gitDir) return [gitDir];

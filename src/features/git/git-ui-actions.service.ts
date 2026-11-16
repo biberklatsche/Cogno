@@ -9,7 +9,12 @@ import {
   DialogService,
 } from "@cogno/shared/ui";
 import { GitDiffService, GitDiffSource } from "./git-diff.service";
-import { GitOperationOutcome, GitOperationsService, GitResetMode } from "./git-operations.service";
+import {
+  CONFLICT_STAGE,
+  GitOperationOutcome,
+  GitOperationsService,
+  GitResetMode,
+} from "./git-operations.service";
 import { GitRemoteAccessService } from "./git-remote-access.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitGraphColumn, GitViewState, GitWipFileGroup } from "./git-view-state.service";
@@ -19,7 +24,7 @@ import {
   keptReason,
   remoteBranchesToDelete,
 } from "./model/git-branch-cleanup";
-import { conflictsOf, parseConflicts } from "./model/git-conflict";
+import { conflictsOf, GitConflictSide, parseConflicts } from "./model/git-conflict";
 import {
   GitBranch,
   GitCommit,
@@ -484,9 +489,9 @@ export class GitUiActions {
    * the file, taking it deletes the file too - asked first, as the other
    * side's changes go with it.
    */
-  async takeConflictSide(path: string, side: "ours" | "theirs"): Promise<void> {
+  async takeConflictSide(path: string, side: GitConflictSide): Promise<void> {
     const stages = await this.repository.loadConflictStages(path);
-    const deletes = stages.size > 0 && !stages.has(side === "ours" ? 2 : 3);
+    const deletes = stages.size > 0 && !stages.has(CONFLICT_STAGE[side]);
     if (deletes) {
       const which = side === "ours" ? "current" : "incoming";
       const confirmed = await this.confirm(
@@ -495,7 +500,7 @@ export class GitUiActions {
       );
       if (!confirmed) return;
     }
-    await this.operations.takeConflictSide(path, side);
+    await this.operations.takeConflictSide(path, side, stages);
   }
 
   async discardFile(file: GitFile): Promise<void> {

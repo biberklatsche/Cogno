@@ -11,10 +11,17 @@ import { GitOperationsService } from "../git-operations.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState, GitWipFileGroup } from "../git-view-state.service";
-import { GitFile } from "../model/git-model";
+import { GitFile, GitOperation } from "../model/git-model";
 import { GitFileListComponent } from "./git-file-list.component";
 import { toggled } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
+
+const OPERATION_NAMES: Record<GitOperation, string> = {
+  merge: "Merge",
+  rebase: "Rebase",
+  "cherry-pick": "Cherry Pick",
+  revert: "Revert",
+};
 
 /** The working tree: conflicts, unstaged and staged files, and the commit form. */
 @Component({
@@ -23,21 +30,23 @@ import { GIT_SHARED_STYLES } from "./git-styles";
   imports: [IconComponent, TooltipDirective, GitFileListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="panel-header" [class.merging]="merging()">
-      @if (merging()) {
+    <header class="panel-header" [class.stopped]="operation()">
+      @if (operation(); as operation) {
         <span class="merge-title grow">
-          <span class="merge-state" [class.conflicts]="status().conflicted.length > 0">
-            @if (status().conflicted.length > 0) {
+          <span class="merge-state" [class.status-conflict]="hasConflicts()">
+            @if (hasConflicts()) {
               <app-icon class="small-icon" name="mdiAlert"></app-icon>
-              Merge conflicts detected
+              {{ operationName() }} conflicts detected
             } @else {
-              Conflicts resolved - ready to merge
+              Conflicts resolved - ready to {{ operation === "merge" ? "merge" : "continue" }}
             }
           </span>
-          <span class="ellipsis merge-sides">
-            Merging <span class="ref">{{ repository.incoming()?.name ?? repository.incoming()?.sha?.slice(0, 7) ?? "?" }}</span>
-            into <span class="ref">{{ repository.head().branch ?? "detached HEAD" }}</span>
-          </span>
+          @if (operation === "merge") {
+            <span class="ellipsis merge-sides">
+              Merging <span class="ref">{{ repository.incoming()?.name ?? repository.incoming()?.sha?.slice(0, 7) ?? "?" }}</span>
+              into <span class="ref">{{ repository.head().branch ?? "detached HEAD" }}</span>
+            </span>
+          }
         </span>
       } @else {
         <span class="ellipsis grow">
@@ -53,7 +62,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
     </header>
 
     <div class="lists">
-      @if (status().conflicted.length > 0) {
+      @if (hasConflicts()) {
         <section class="section" [class.open]="isOpen('conflicted')">
         <div class="section-header">
           <button type="button" class="toggle" (click)="toggle('conflicted')">
@@ -102,7 +111,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('staged')">
           <app-icon class="small-icon" [name]="isOpen('staged') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
-          {{ merging() ? "Resolved Files" : "Staged Files" }} ({{ status().staged.length }})
+          {{ operation() ? "Resolved Files" : "Staged Files" }} ({{ status().staged.length }})
         </button>
         <span class="grow"></span>
         <button type="button" class="button small" [disabled]="status().staged.length === 0" (click)="operations.unstageAll()">
@@ -135,9 +144,9 @@ import { GIT_SHARED_STYLES } from "./git-styles";
             {{ commitLabel() }}
           }
         </button>
-        @if (merging()) {
-          <button type="button" class="button abort-button" [disabled]="committing()"
-                  (click)="operations.abortOperation('merge')">Abort Merge</button>
+        @if (operation(); as operation) {
+          <button type="button" class="button danger" [disabled]="committing()"
+                  (click)="operations.abortOperation(operation)">Abort {{ operationName() }}</button>
         }
       </div>
     </form>
@@ -196,17 +205,9 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       }
       .commit-actions { display: flex; gap: 0.4rem; }
       .commit-actions .button { flex: 1 1 0; }
-      .abort-button {
-        color: var(--color-red);
-        border-color: color-mix(in srgb, var(--color-red) 60%, transparent);
-      }
-      .abort-button:hover:not(:disabled) {
-        background: color-mix(in srgb, var(--color-red) 14%, var(--background-color));
-      }
-      .panel-header.merging { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+      .panel-header.stopped { padding-top: 0.3rem; padding-bottom: 0.3rem; }
       .merge-title { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
       .merge-state { display: inline-flex; align-items: center; gap: 0.3rem; }
-      .merge-state.conflicts { color: var(--color-yellow); }
       .merge-sides { font-size: var(--git-font-small); }
       .ref {
         padding: 0 0.3rem;
@@ -235,21 +236,23 @@ export class GitWipPanelComponent {
   /** The message git prepared, as last put in the form. */
   private prepared: { readonly summary: string; readonly description: string } | null = null;
 
-  /** A merge stopped for conflicts or for its commit. */
-  readonly merging = computed(() => this.repository.operation() === "merge");
+  /** Git's prepared message, compared by text: a refresh with the same message changes nothing. */
+  private readonly preparedMessage = computed(() => this.repository.incoming()?.message ?? null);
+
+  /** The merge, rebase, cherry pick or revert git stopped in. */
+  readonly operation = this.repository.operation;
+  readonly operationName = computed(() => OPERATION_NAMES[this.operation() ?? "merge"]);
+  readonly hasConflicts = computed(() => this.status().conflicted.length > 0);
   /** A merge commits even with nothing staged: taking the current side everywhere is a merge too. */
   readonly canCommit = computed(
     () =>
       this.summary().trim().length > 0 &&
-      this.status().conflicted.length === 0 &&
-      (this.status().staged.length > 0 || this.merging()),
+      !this.hasConflicts() &&
+      (this.status().staged.length > 0 || this.operation() === "merge"),
   );
   readonly commitLabel = computed(() => {
-    if (this.merging()) {
-      return this.status().conflicted.length > 0
-        ? "Resolve Conflicts to Merge"
-        : "Commit and Merge";
-    }
+    if (this.operation() && this.hasConflicts()) return "Resolve Conflicts First";
+    if (this.operation() === "merge") return "Commit and Merge";
     const staged = this.status().staged.length;
     return staged === 0
       ? "Stage Changes to Commit"
@@ -266,9 +269,8 @@ export class GitWipPanelComponent {
     // form shows it, as `git commit` in a terminal would - again for each
     // stop (the next commit of a cherry pick), and gone once the operation ends.
     effect(() => {
-      const stopped = this.repository.operation() !== null;
-      this.repository.incoming()?.sha;
-      untracked(() => void this.syncPreparedMessage(stopped));
+      const message = this.preparedMessage();
+      untracked(() => this.syncPreparedMessage(message));
     });
   }
 
@@ -294,9 +296,7 @@ export class GitWipPanelComponent {
   }
 
   /** Puts git's prepared message in the form, or takes it out; what the person typed stays. */
-  private async syncPreparedMessage(stopped: boolean): Promise<void> {
-    if (!this.formIsPrepared()) return;
-    const message = stopped ? await this.repository.readMergeMessage() : null;
+  private syncPreparedMessage(message: string | null): void {
     if (!this.formIsPrepared()) return;
     const [summary = "", ...rest] = (message ?? "").split("\n");
     const description = rest.join("\n").trim();
