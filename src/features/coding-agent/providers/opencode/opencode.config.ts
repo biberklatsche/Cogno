@@ -72,25 +72,38 @@ const PROVIDER = ${JSON.stringify(OPENCODE_CONFIG.id)};
 const STARTER = ${JSON.stringify(starterPath)};
 const EVENTS = ${JSON.stringify(subscribed)};
 
+// How long one hook may hold up the next: \`cogno hook\` gives up long before.
+const HOOK_PATIENCE_MS = 5000;
+let sending = Promise.resolve();
+
+// One hook after the other: each process ends once the host has its hook, so
+// a later one, however quickly it starts, cannot overtake it.
 function post(hookEvent, payload) {
-  try {
-    const windows = process.platform === "win32";
-    const env = { ...process.env, COGNO_TERMINAL_ID: "", COGNO_HOST: "" };
-    // When it happened, not when its process got going: events follow each
-    // other closely, and a process that starts late must not overtake.
-    const args = ["hook", PROVIDER, hookEvent, "--sent-at", String(Date.now())];
-    // A .cmd starts only through cmd.exe; quoted, its path may hold spaces.
-    const child = spawn(windows ? '"' + STARTER + '"' : STARTER, args, {
-      env,
-      shell: windows,
-      stdio: ["pipe", "ignore", "ignore"],
-      windowsHide: true,
-    });
-    child.on("error", () => {});
-    child.stdin.on("error", () => {});
-    child.stdin.end(JSON.stringify(payload));
-    child.unref();
-  } catch {}
+  sending = sending.then(() => send(hookEvent, payload));
+}
+
+function send(hookEvent, payload) {
+  return new Promise((done) => {
+    try {
+      const windows = process.platform === "win32";
+      const env = { ...process.env, COGNO_TERMINAL_ID: "", COGNO_HOST: "" };
+      // A .cmd starts only through cmd.exe; quoted, its path may hold spaces.
+      const child = spawn(windows ? '"' + STARTER + '"' : STARTER, ["hook", PROVIDER, hookEvent], {
+        env,
+        shell: windows,
+        stdio: ["pipe", "ignore", "ignore"],
+        windowsHide: true,
+      });
+      child.on("error", done);
+      child.on("exit", done);
+      child.stdin.on("error", () => {});
+      child.stdin.end(JSON.stringify(payload));
+      child.unref();
+      setTimeout(done, HOOK_PATIENCE_MS).unref();
+    } catch {
+      done();
+    }
+  });
 }
 
 function promptText(prompt) {

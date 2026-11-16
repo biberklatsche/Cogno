@@ -15,6 +15,9 @@ use crate::wire::{self, ClientFrame, ClientMessage, HostMessage, Output};
 /// to read before more is dropped: output waits for acknowledgements, hooks
 /// do not.
 const MAX_QUEUED_HOOK_BYTES: usize = 4 * 1024 * 1024;
+/// What a hook counts beyond its payload: its frame and names. So a flood of
+/// empty hooks is bounded too.
+const HOOK_FRAME_BYTES: usize = 256;
 
 /// What goes to the client, written by a thread of its own: whoever sends
 /// only queues, so a client that is slow to read never holds up the host -
@@ -38,7 +41,9 @@ impl ClientWriter {
                     if wire::write_host_message(&mut output, message).is_err() {
                         return;
                     }
-                    queued_hook_bytes.fetch_sub(hook_bytes, Ordering::AcqRel);
+                    if hook_bytes > 0 {
+                        queued_hook_bytes.fetch_sub(hook_bytes, Ordering::AcqRel);
+                    }
                 }
             });
         }
@@ -59,8 +64,8 @@ impl EventSink for ClientWriter {
         self.send(HostMessage::Event(event));
     }
 
-    fn agent_hook(&self, hook: AgentHook) {
-        let bytes = hook.payload.len();
+    fn agent_hook(&self, hook: &AgentHook) {
+        let bytes = hook.payload.len() + HOOK_FRAME_BYTES;
         if self.queued_hook_bytes.fetch_add(bytes, Ordering::AcqRel) + bytes > MAX_QUEUED_HOOK_BYTES
         {
             self.queued_hook_bytes.fetch_sub(bytes, Ordering::AcqRel);
@@ -68,7 +73,7 @@ impl EventSink for ClientWriter {
             return;
         }
         let event = Event::AgentHook {
-            hook,
+            hook: hook.clone(),
             replayed: false,
         };
         if self

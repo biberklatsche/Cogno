@@ -251,34 +251,25 @@ fn wait_for_preamble(stream: &TcpStream) -> io::Result<()> {
     }
 }
 
-/// What became of a daemon this Cogno was to end.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Ending {
-    /// No daemon this Cogno cannot talk to is left: it was ended, or none
-    /// ran.
-    Ended,
-    /// The daemon that runs is one this Cogno talks to - another Cogno
-    /// started it meanwhile: left alone, with its shells.
-    Compatible,
-}
-
 /// Ends the daemon the endpoint file names, and the shells in it with it,
-/// if it is one this Cogno cannot talk to. Only its hello is read, which
+/// if it is one this Cogno cannot talk to; one it can talk to - another
+/// Cogno may have started it meanwhile - is left alone. Only its hello is
+/// read, which
 /// every version says alike. That it takes the token and begins as a host
 /// shows that the process the file names is the daemon (its id cannot be
 /// another's while it runs); a process that does not is never touched. A
 /// file whose process is gone only goes itself.
-pub fn end_incompatible_daemon(endpoint: &Path) -> io::Result<Ending> {
+pub fn end_incompatible_daemon(endpoint: &Path) -> io::Result<()> {
     let written = match read_endpoint(endpoint) {
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Ending::Ended),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
         read => read?,
     };
     if process_runs(written.pid) {
         let mut stream = reach(&written)?;
-        wire::skip_to_preamble(&mut stream)?;
-        let hello = wire::read_host_hello(&mut stream)?;
-        if wire::check_versions(hello.protocol, hello.oldest).is_ok() {
-            return Ok(Ending::Compatible);
+        match wire::read_compatible_hello(&mut stream) {
+            Ok(_) => return Ok(()),
+            Err(wire::IntroductionError::Versions(_)) => {}
+            Err(error) => return Err(io::Error::other(error.to_string())),
         }
         drop(stream);
         end_process(written.pid)?;
@@ -294,7 +285,7 @@ pub fn end_incompatible_daemon(endpoint: &Path) -> io::Result<Ending> {
         }
     }
     remove_own_endpoint(endpoint, &written.token);
-    Ok(Ending::Ended)
+    Ok(())
 }
 
 /// Ends the process `pid`. Its shells end with it: on Unix the PTYs it held
@@ -585,6 +576,8 @@ fn wait_until_idle(
 #[cfg(test)]
 pub(crate) mod test_support {
     use super::*;
+    use crate::protocol::{HostError, Request, Response};
+    use crate::wire::{ClientMessage, HostMessage};
 
     /// A daemon that waits long for its first client, and briefly once the
     /// last one left.
@@ -613,13 +606,31 @@ pub(crate) mod test_support {
         }
         (endpoint, daemon)
     }
+
+    /// Asks `request` under `id` and waits for its reply, past events.
+    pub(crate) fn ask(
+        stream: &mut TcpStream,
+        id: u64,
+        request: Request,
+    ) -> Result<Response, HostError> {
+        wire::write_client_message(stream, ClientMessage::Request { id, request }).unwrap();
+        loop {
+            if let Some(HostMessage::Reply { id: replied, reply }) =
+                wire::read_host_message(stream).unwrap()
+            {
+                if replied == id {
+                    return reply;
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::test_support::{start, QUICK};
+    use super::test_support::{ask, start, QUICK};
     use super::*;
-    use crate::protocol::{HostError, Request, Response};
+    use crate::protocol::{Request, Response};
     use crate::wire::{self, ClientHello, ClientMessage, HostMessage};
 
     fn hello() -> ClientHello {
@@ -628,21 +639,7 @@ mod tests {
 
     /// A connection that has exchanged hellos with the host.
     fn client(endpoint: &Path) -> TcpStream {
-        let stream = connect(endpoint).unwrap();
-        wire::introduce(&mut &stream, &mut &stream, &hello()).unwrap();
-        stream
-    }
-
-    fn ask(stream: &mut TcpStream, id: u64, request: Request) -> Result<Response, HostError> {
-        wire::write_client_message(stream, ClientMessage::Request { id, request }).unwrap();
-        loop {
-            if let Some(HostMessage::Reply { id: replied, reply }) =
-                wire::read_host_message(stream).unwrap()
-            {
-                assert_eq!(replied, id);
-                return reply;
-            }
-        }
+        crate::once::introduced(endpoint).unwrap()
     }
 
     fn finishes(daemon: std::thread::JoinHandle<io::Result<()>>) -> io::Result<()> {
@@ -819,20 +816,17 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(end_incompatible_daemon(&endpoint).unwrap(), Ending::Ended);
+        assert!(end_incompatible_daemon(&endpoint).is_ok());
         assert!(!endpoint.exists());
         // Nothing to end at all is no failure either.
-        assert_eq!(end_incompatible_daemon(&endpoint).unwrap(), Ending::Ended);
+        assert!(end_incompatible_daemon(&endpoint).is_ok());
     }
 
     #[test]
     fn a_daemon_this_cogno_talks_to_is_not_ended() {
         let (endpoint, daemon) = start(QUICK);
 
-        assert_eq!(
-            end_incompatible_daemon(&endpoint).unwrap(),
-            Ending::Compatible
-        );
+        assert!(end_incompatible_daemon(&endpoint).is_ok());
         // Still there, and still answers.
         drop(client(&endpoint));
         assert!(finishes(daemon).is_ok());
@@ -840,12 +834,9 @@ mod tests {
 
     #[test]
     fn a_host_that_answers_bit_by_bit_is_waited_for() {
-        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
-        let endpoint = Endpoint {
-            port: listener.local_addr().unwrap().port(),
-            token: "a".repeat(TOKEN_LEN),
-            pid: std::process::id(),
-        };
+        let (file, listener) = endpoint_of_a_silent_program();
+        let endpoint = read_endpoint(&file).unwrap();
+        let _ = std::fs::remove_file(&file);
         std::thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
             let (first, rest) = wire::PREAMBLE.split_at(3);

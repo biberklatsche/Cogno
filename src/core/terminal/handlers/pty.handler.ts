@@ -24,14 +24,17 @@ export type PtyOpenMode = "spawn" | "attach";
  * and workbench work (ARCHITECTURE.md 2.1).
  */
 export type PtyHandlerListener = {
-  /** The shell process is up (or shown here); nothing has been parsed yet. */
-  readonly onSpawned?: () => void;
+  /**
+   * The shell is up: started (`spawn`) or shown here (`attach`); nothing has
+   * been parsed yet.
+   */
+  readonly onSpawned?: (mode: PtyOpenMode) => void;
   /** Another Cogno took the shell over; it runs on, but not here. */
   readonly onTakenOver?: (by?: string) => void;
   /** The Cogno that took the shell over let it go. */
   readonly onHandedBack?: () => void;
-  /** The shell could not be started or shown. */
-  readonly onFailed?: (error: unknown) => void;
+  /** The shell could not be started (`spawn`) or shown (`attach`). */
+  readonly onFailed?: (error: unknown, mode: PtyOpenMode) => void;
   /** The shell ended. */
   readonly onExited?: (reason: TerminalExitContract) => void;
   /** Output arrived - before it is parsed. */
@@ -115,11 +118,11 @@ export class PtyHandler implements ITerminalHandler {
         );
       }
     } catch (error) {
-      if (this.isCurrent(start)) this._listener.onFailed?.(error);
+      if (this.isCurrent(start)) this._listener.onFailed?.(error, mode);
       return;
     }
     // Taken over or ended while it opened: the listener heard that instead.
-    if (this.isCurrent(start) && this._pty.isLive) this._listener.onSpawned?.();
+    if (this.isCurrent(start) && this._pty.isLive) this._listener.onSpawned?.(mode);
   }
 
   private isCurrent(start: number): boolean {

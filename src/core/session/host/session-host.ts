@@ -5,7 +5,11 @@ import { ShellLineEditorActionContract } from "@cogno/core/session/shells/shell-
 import { CursorHandler } from "@cogno/core/terminal/handlers/cursor.handler";
 import { FocusHandler } from "@cogno/core/terminal/handlers/focus.handler";
 import { MouseHandler } from "@cogno/core/terminal/handlers/mouse.handler";
-import { PtyHandler, PtyHandlerListener } from "@cogno/core/terminal/handlers/pty.handler";
+import {
+  PtyHandler,
+  PtyHandlerListener,
+  PtyOpenMode,
+} from "@cogno/core/terminal/handlers/pty.handler";
 import { ResizeHandler } from "@cogno/core/terminal/handlers/resize.handler";
 import { ScrollStateHandler } from "@cogno/core/terminal/handlers/scroll-state.handler";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
@@ -409,12 +413,11 @@ export class SessionHost {
     );
 
     const listener: PtyHandlerListener = {
-      onSpawned: () => {
+      onSpawned: (mode) => {
         this.setRuntime({ status: "running" });
         // A shell that already runs made its handshake long ago; the host
-        // plays it back with the output it kept. A new one - also one a
-        // retry started - makes it now.
-        if (!this._showsRunning) this.watchForHandshake(spawnProfile);
+        // plays it back with the output it kept. A new one makes it now.
+        if (mode === "spawn") this.watchForHandshake(spawnProfile);
       },
       onTakenOver: (by) => {
         this.stopWatchingForHandshake();
@@ -426,7 +429,7 @@ export class SessionHost {
           this.hostFacts.next({ type: "handedBack" });
         }
       },
-      onFailed: (error) => this.onStartFailed(error),
+      onFailed: (error, mode) => this.onStartFailed(error, mode),
       onExited: (exit) => {
         this.stopWatchingForHandshake();
         this.setRuntime({ status: "exited", exit });
@@ -543,9 +546,7 @@ export class SessionHost {
   retry(): void {
     if (!this.canRetry() || !this.ptyHandler) return;
     this.setRuntime({ status: "starting" });
-    const mode = this.backend.host === undefined ? "spawn" : "attach";
-    this._showsRunning = mode === "attach";
-    this.ptyHandler.restart(mode);
+    this.ptyHandler.restart(this.backend.host === undefined ? "spawn" : "attach");
   }
 
   /**
@@ -557,8 +558,12 @@ export class SessionHost {
     this.fail(error);
   }
 
-  /** Ends the session for good: the workbench decided so. Idempotent. */
-  close(): void {
+  /**
+   * Ends the session: the workbench decided so. `endsShell`: the terminal
+   * goes for good; otherwise another session of it takes the shell on.
+   * Idempotent.
+   */
+  close(endsShell: boolean): void {
     if (this.isEnding) return;
     this.setRuntime({ status: "closing" });
     this.stopWatchingForHandshake();
@@ -566,7 +571,8 @@ export class SessionHost {
     this.model.dispose();
     this.hostFacts.complete();
     this.renderer.dispose();
-    this.pty.dispose();
+    if (endsShell) this.pty.dispose();
+    else this.pty.release();
     this.disposables.forEach((disposable) => {
       disposable.dispose();
     });
@@ -1046,14 +1052,14 @@ export class SessionHost {
     this.handshakeTimeout = undefined;
   }
 
-  private onStartFailed(error: unknown): void {
+  private onStartFailed(error: unknown, mode: PtyOpenMode): void {
     if (isHostError(error, "shellAlreadyRuns")) {
       // Nothing is wrong: the shell is there, it only has to be shown. The
       // session stays starting until it is.
       this.hostFacts.next({ type: "shellAlreadyRuns" });
       return;
     }
-    if (this._showsRunning && isHostError(error, "sessionNotFound")) {
+    if (mode === "attach" && isHostError(error, "sessionNotFound")) {
       // The shell ended between being found and being attached to.
       this.hostFacts.next({ type: "shellGone" });
       return;

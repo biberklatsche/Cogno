@@ -50,16 +50,21 @@ describe("SessionScopeBuilder", () => {
   it("takes the view off the pane, so a session that replaces it stands there alone", () => {
     const mountPoint = document.createElement("div");
 
-    builder.close("t1", mountedAt(mountPoint), false);
+    const entry = mountedAt(mountPoint);
+    builder.close("t1", entry, false);
 
     expect(mountPoint.childElementCount).toBe(0);
-    // Replaced, not removed: the app hears nothing of it.
+    // Replaced, not removed: the app hears nothing of it, and the shell is
+    // left to the session that replaces this one.
     expect(publish).not.toHaveBeenCalled();
+    expect(entry.session.close).toHaveBeenCalledWith(false);
   });
 
   it("tells the app when the terminal goes for good", () => {
-    builder.close("t1", mountedAt(document.createElement("div")), true);
+    const entry = mountedAt(document.createElement("div"));
+    builder.close("t1", entry, true);
 
     expect(publish).toHaveBeenCalledWith({ type: "TerminalRemoved", payload: "t1" });
+    expect(entry.session.close).toHaveBeenCalledWith(true);
   });
 });

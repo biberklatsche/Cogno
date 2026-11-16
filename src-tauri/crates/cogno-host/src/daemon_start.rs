@@ -80,7 +80,7 @@ fn knock(endpoint: &Path, patience: Duration) -> Option<TcpStream> {
 /// this Cogno cannot talk to; one it can - another Cogno may have started
 /// it meanwhile - is left alone. A daemon that is gone already is no
 /// failure; a process that does not answer as the daemon is never touched.
-pub fn end_incompatible_daemon(dev_mode: bool) -> Result<daemon::Ending, String> {
+pub fn end_incompatible_daemon(dev_mode: bool) -> Result<(), String> {
     let endpoint = daemon::endpoint_path(dev_mode)?;
     // Not while another Cogno starts one.
     let _one_start = take_start_lock(home_of(&endpoint)?)?;

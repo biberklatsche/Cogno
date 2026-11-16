@@ -47,10 +47,6 @@ pub enum CliCommand {
         provider: String,
         /// The agent's hook event
         event: String,
-        /// When it happened, in milliseconds since the epoch, when the agent
-        /// knows better than this process's start
-        #[arg(long, value_name = "millis")]
-        sent_at: Option<u64>,
     },
     /// Run the process that holds this machine's shells (started by Cogno)
     Daemon {

@@ -171,17 +171,7 @@ mod tests {
     /// Sends `request` and waits for its reply: requests of one client are
     /// taken in order, so what it posted before is in once this returns.
     fn request(stream: &mut TcpStream, id: u64, request: Request) {
-        wire::write_client_message(stream, ClientMessage::Request { id, request }).unwrap();
-        loop {
-            if let Some(HostMessage::Reply { id: replied, reply }) =
-                wire::read_host_message(stream).unwrap()
-            {
-                if replied == id {
-                    reply.unwrap();
-                    return;
-                }
-            }
-        }
+        daemon::test_support::ask(stream, id, request).unwrap();
     }
 
     #[test]
@@ -303,20 +293,13 @@ mod tests {
         let endpoint = daemon();
         // Owns the session, and leaves the question lying.
         let mut app = cogno(&endpoint);
-        wire::write_client_message(
+        request(
             &mut app,
-            ClientMessage::Request {
-                id: 1,
-                request: Request::OwnPrompts {
-                    session: "git-2".into(),
-                },
+            1,
+            Request::OwnPrompts {
+                session: "git-2".into(),
             },
-        )
-        .unwrap();
-        while !matches!(
-            wire::read_host_message(&mut app).unwrap(),
-            Some(HostMessage::Reply { id: 1, .. })
-        ) {}
+        );
 
         let answer = ask(
             &endpoint,
@@ -337,17 +320,16 @@ mod tests {
     }
 
     #[test]
-    fn a_post_the_daemon_is_slow_to_close_on_is_sent_all_the_same() {
+    fn a_post_returns_as_soon_as_the_daemon_has_read_it() {
         let endpoint = daemon();
-        // Holds a session, so the daemon outlives the post's connection.
+        // Holds a session, so the daemon outlives the post's connection, and
+        // runs a shell that could have inherited the post's socket.
         let mut app = cogno(&endpoint);
         request(&mut app, 1, spawn_request("t1", 1, WAITING, false));
 
-        // The daemon reads the post, but its end stays open while the shell
-        // runs: nothing there is to wait for.
         let started = std::time::Instant::now();
         assert!(post(&endpoint, Request::ListSessions).is_ok());
-        assert!(started.elapsed() < POST_PATIENCE * 3);
+        assert!(started.elapsed() < POST_PATIENCE);
         request(
             &mut app,
             2,

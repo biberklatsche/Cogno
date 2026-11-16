@@ -485,15 +485,26 @@ describe("Pty", () => {
       expect(handle.closeOutput).toHaveBeenCalled();
     });
 
-    it("leaves a shell that was handed back running: a new session takes it back", async () => {
+    it("ends a shell of this machine that was handed back when its terminal goes for good", async () => {
       await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
       takenOverListener()();
       handedBackListener()();
 
       pty.dispose();
 
+      // Nobody shows it any more, and its terminal is gone: it must not run on unseen.
+      expect(transport.kill).toHaveBeenCalledWith(terminalId);
+    });
+
+    it("leaves the shell running when released to another session of its terminal", async () => {
+      await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
+      const handle = vi.mocked(transport.spawn).mock.results[0].value;
+
+      pty.release();
+
       expect(transport.kill).not.toHaveBeenCalled();
       expect(transport.detach).not.toHaveBeenCalled();
+      expect(handle.closeOutput).toHaveBeenCalled();
     });
   });
 });

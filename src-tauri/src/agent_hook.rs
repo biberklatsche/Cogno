@@ -17,18 +17,16 @@ use crate::host_endpoint::host_endpoint;
 /// what it hands on, and an agent's tool output can be large.
 const PAYLOAD_MAX_BYTES: usize = 1024 * 1024;
 
-/// Sends the hook; the process exit code, always 0. `sent_at` is when it
-/// happened, if the agent said: one whose hooks each start a process of
-/// their own must not have a later one overtake an earlier.
-pub fn send(provider: String, event: String, sent_at: Option<u64>) -> i32 {
+/// Sends the hook; the process exit code, always 0.
+pub fn send(provider: String, event: String) -> i32 {
     let hook = AgentHook {
         terminal_id: std::env::var(COGNO_TERMINAL_ID)
             .ok()
             .filter(|id| !id.is_empty()),
         provider,
         event,
-        sent_at: sent_at.unwrap_or_else(now_millis),
-        payload: read_stdin(),
+        sent_at: now_millis(),
+        payload: payload_from_stdin(),
     };
     if let Ok(endpoint) = host_endpoint() {
         // No host runs, or it does not answer: there is nobody to tell.
@@ -40,7 +38,7 @@ pub fn send(provider: String, event: String, sent_at: Option<u64>) -> i32 {
 /// The payload of what the agent wrote, unless stdin is the console: an
 /// inherited console never ends and would hold the hook (and the agent) for
 /// ever.
-fn read_stdin() -> String {
+fn payload_from_stdin() -> String {
     let stdin = io::stdin();
     if stdin.is_terminal() {
         return payload_of(io::empty());

@@ -502,60 +502,62 @@ fn version_error(mismatch: VersionMismatch, reaching: Reaching<'_>) -> CommandEr
 #[cfg(test)]
 pub mod test_support {
     use super::*;
+    use std::io::{PipeReader, PipeWriter};
 
-    struct NoEvents;
+    pub struct NoEvents;
     impl HostEvents for NoEvents {
         fn event(&self, _event: Event, _answers: &Answers) {}
         fn output(&self, _output: Output) {}
     }
 
-    /// A process that ends at once: what a connect starts, in a test.
-    pub fn a_process() -> Command {
+    /// A process that says `said` on stderr and exits with `code`, printing
+    /// nothing on stdout: as ssh does when it cannot connect.
+    pub fn failing_process(said: &str, code: i32) -> Command {
         if cfg!(windows) {
             let mut command = Command::new("cmd");
-            command.args(["/C", "exit 0"]);
+            command.args(["/C", &format!("echo {said} 1>&2 & exit {code}")]);
             command
         } else {
             let mut command = Command::new("sh");
-            command.args(["-c", "exit 0"]);
+            command.args(["-c", &format!("echo '{said}' >&2; exit {code}")]);
             command
         }
     }
 
-    /// A connection to a host that introduced itself and stays, answering
-    /// nothing.
-    pub fn a_standing_connection() -> HostConnection {
+    /// A host that introduces itself and then answers nothing, until its
+    /// ends of the two pipes are dropped.
+    pub fn silent_host(on_lost: OnLost) -> (HostConnection, (PipeReader, PipeWriter)) {
         let (from_client, to_host) = std::io::pipe().unwrap();
         let (to_client, mut from_host) = std::io::pipe().unwrap();
         wire::write_host_hello(&mut from_host).unwrap();
-        // The host's ends stay open for as long as the test runs.
-        std::mem::forget((from_client, from_host));
-        HostConnection::over(
+        let host = HostConnection::over(
             to_client,
             to_host,
-            Reaching::Remote("office"),
+            Reaching::ThisMachine,
             Arc::new(NoEvents),
-            Box::new(|_, _| {}),
+            on_lost,
             Box::new(|| {}),
         )
-        .unwrap()
+        .unwrap();
+        (host, (from_client, from_host))
+    }
+
+    /// A connection to a host that stays for as long as the test runs.
+    pub fn a_standing_connection() -> HostConnection {
+        let (connection, host_side) = silent_host(Box::new(|_, _| {}));
+        std::mem::forget(host_side);
+        connection
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::test_support::{failing_process, silent_host, NoEvents};
     use super::*;
     use cogno_host::protocol::{HostErrorCode, StreamId, TerminalSize};
     use cogno_host::wire::{OLDEST_PROTOCOL_VERSION, PROTOCOL_VERSION};
-    use std::io::{PipeReader, PipeWriter};
 
     use crate::command_error::ErrorCode;
-
-    struct NoEvents;
-    impl HostEvents for NoEvents {
-        fn event(&self, _event: Event, _answers: &Answers) {}
-        fn output(&self, _output: Output) {}
-    }
 
     fn ignored() -> OnLost {
         Box::new(|_, _| {})
@@ -668,20 +670,6 @@ mod tests {
         assert!(refused.err().unwrap().is(AppErrorCode::NoCognoThere));
     }
 
-    /// A process that says `said` on stderr and exits with `code`, printing
-    /// nothing on stdout: as ssh does when it cannot connect.
-    fn failing_process(said: &str, code: i32) -> Command {
-        if cfg!(windows) {
-            let mut command = Command::new("cmd");
-            command.args(["/C", &format!("echo {said} 1>&2 & exit {code}")]);
-            command
-        } else {
-            let mut command = Command::new("sh");
-            command.args(["-c", &format!("echo '{said}' >&2; exit {code}")]);
-            command
-        }
-    }
-
     fn introduced(command: Command) -> CommandError {
         Starting::spawn(command)
             .unwrap()
@@ -759,24 +747,6 @@ mod tests {
             .err()
             .unwrap();
         assert!(error.is(AppErrorCode::ThisCognoTooOld));
-    }
-
-    /// A host that introduces itself and then answers nothing, until its
-    /// ends of the two pipes are dropped.
-    fn silent_host(on_lost: OnLost) -> (HostConnection, (PipeReader, PipeWriter)) {
-        let (from_client, to_host) = std::io::pipe().unwrap();
-        let (to_client, mut from_host) = std::io::pipe().unwrap();
-        wire::write_host_hello(&mut from_host).unwrap();
-        let host = HostConnection::over(
-            to_client,
-            to_host,
-            Reaching::ThisMachine,
-            Arc::new(NoEvents),
-            on_lost,
-            Box::new(|| {}),
-        )
-        .unwrap();
-        (host, (from_client, from_host))
     }
 
     #[test]

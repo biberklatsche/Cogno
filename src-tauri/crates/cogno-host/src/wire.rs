@@ -312,7 +312,6 @@ pub fn write_client_hello(writer: &mut impl Write, hello: &ClientHello) -> io::R
     write_json(writer, &ClientJson::Hello(hello.clone()))
 }
 
-/// The client's hello, the first message it sends.
 /// Why a client and a host did not get to talk.
 #[derive(Debug)]
 pub enum IntroductionError {
@@ -358,21 +357,28 @@ impl From<IntroductionError> for io::Error {
     }
 }
 
-/// What a client does first: skips to the host's preamble, takes its hello,
-/// checks that the two share a version and says its own `hello`. The host's
-/// hello comes back.
+/// The hello of the host at the other end: skips to its preamble, takes its
+/// hello and checks that the two share a version.
+pub fn read_compatible_hello(reader: &mut impl Read) -> Result<HostHello, IntroductionError> {
+    skip_to_preamble(reader).map_err(IntroductionError::NoHost)?;
+    let host = read_host_hello(reader).map_err(IntroductionError::NoHello)?;
+    check_versions(host.protocol, host.oldest).map_err(IntroductionError::Versions)?;
+    Ok(host)
+}
+
+/// What a client does first: takes the host's hello (`read_compatible_hello`)
+/// and says its own `hello`. The host's hello comes back.
 pub fn introduce(
     reader: &mut impl Read,
     writer: &mut impl Write,
     hello: &ClientHello,
 ) -> Result<HostHello, IntroductionError> {
-    skip_to_preamble(reader).map_err(IntroductionError::NoHost)?;
-    let host = read_host_hello(reader).map_err(IntroductionError::NoHello)?;
-    check_versions(host.protocol, host.oldest).map_err(IntroductionError::Versions)?;
+    let host = read_compatible_hello(reader)?;
     write_client_hello(writer, hello).map_err(IntroductionError::Broken)?;
     Ok(host)
 }
 
+/// The client's hello, the first message it sends.
 pub fn read_client_hello(reader: &mut impl Read) -> io::Result<ClientHello> {
     match read_json(reader)? {
         Some(ClientJson::Hello(hello)) => Ok(hello),

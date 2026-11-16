@@ -154,7 +154,7 @@ export class SessionScopeBuilder {
     entry.clipboardPrompt.dispose();
     this.sessionRegistry.unregister(terminalId);
     if (removed) this.bus.publish({ type: "TerminalRemoved", payload: terminalId });
-    entry.session.close();
+    entry.session.close(removed);
     entry.injector.destroy();
   }
 

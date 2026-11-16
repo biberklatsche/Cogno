@@ -19,15 +19,21 @@ pub struct Connections {
     /// one host restored together share a connection instead of each starting
     /// one, and the user is asked one password at a time.
     connecting_remote: Mutex<()>,
-    /// The connection to another machine being set up, by the host's name,
-    /// and what gives up on it.
-    setting_up: Mutex<Option<(String, HangUp)>>,
     /// The same for this machine's daemon, apart from the other machines: a
     /// password ssh waits for must not hold up the terminals here.
     connecting_local: Mutex<()>,
-    /// How often each host was hung up on: a connect that waits for its turn,
-    /// or between two commands, sees that it was given up meanwhile.
-    hang_ups: Mutex<HashMap<String, u64>>,
+    /// The connects to other machines, by the host's name.
+    attempts: Mutex<HashMap<String, Attempt>>,
+}
+
+/// How a host's connects are given up: hanging up on the host counts up,
+/// and a connect that sees the count change - while it waits for its turn,
+/// between two commands, or once its process answered - gives up.
+#[derive(Default)]
+struct Attempt {
+    hang_ups: u64,
+    /// Ends the process of the connect in progress.
+    ender: Option<HangUp>,
 }
 
 /// A connection to another machine, and which of the commands tried reached
@@ -99,7 +105,18 @@ impl Connections {
     }
 
     fn hang_ups_of(&self, name: &str) -> u64 {
-        lock(&self.hang_ups).get(name).copied().unwrap_or_default()
+        lock(&self.attempts)
+            .entry(name.to_string())
+            .or_default()
+            .hang_ups
+    }
+
+    /// What ends the process of the connect to `name` in progress.
+    fn set_ender(&self, name: &str, ender: Option<HangUp>) {
+        lock(&self.attempts)
+            .entry(name.to_string())
+            .or_default()
+            .ender = ender;
     }
 
     /// The connection to the host `name`, unless one stands: `start` starts
@@ -107,11 +124,11 @@ impl Connections {
     /// did not reach Cogno (`NoCognoThere`), and `introduce` waits for the
     /// host there. Hanging up on `name` meanwhile gives up on it - also while
     /// it waits for its turn.
-    pub fn connect_remote<C>(
+    pub fn connect_remote(
         &self,
         name: &str,
-        commands: &[C],
-        mut start: impl FnMut(&C) -> CommandResult<Starting>,
+        commands: &[String],
+        mut start: impl FnMut(&str) -> CommandResult<Starting>,
         mut introduce: impl FnMut(Starting) -> CommandResult<HostConnection>,
     ) -> CommandResult<Connected> {
         let hang_ups = self.hang_ups_of(name);
@@ -129,9 +146,10 @@ impl Connections {
                 return Err(hung_up_on(name));
             }
             let starting = start(command)?;
-            *lock(&self.setting_up) = Some((name.to_string(), starting.ender()));
+            self.set_ender(name, Some(starting.ender()));
             let introduced = introduce(starting);
-            if lock(&self.setting_up).take().is_none() {
+            self.set_ender(name, None);
+            if given_up() {
                 if let Ok(connection) = introduced {
                     connection.hang_up();
                 }
@@ -204,24 +222,30 @@ impl Connections {
         }
     }
 
+    /// Gives up the connects to the hosts `which` names; the processes of
+    /// those in progress end.
+    fn give_up(&self, which: impl Fn(&str) -> bool) {
+        let enders: Vec<HangUp> = lock(&self.attempts)
+            .iter_mut()
+            .filter(|(name, _)| which(name))
+            .filter_map(|(_, attempt)| {
+                attempt.hang_ups += 1;
+                attempt.ender.take()
+            })
+            .collect();
+        for end in enders {
+            end();
+        }
+    }
+
     /// Hangs up on the host `name`, and gives up on a connection to it that
     /// is being set up or waits to be.
     pub fn disconnect(&self, name: &str) {
-        *lock(&self.hang_ups).entry(name.to_string()).or_default() += 1;
         let standing = lock(&self.remotes).remove(name);
         if let Some(connection) = standing {
             connection.hang_up();
         }
-        let setting_up = {
-            let mut setting_up = lock(&self.setting_up);
-            match setting_up.as_ref() {
-                Some((host, _)) if host == name => setting_up.take(),
-                _ => None,
-            }
-        };
-        if let Some((_, give_up)) = setting_up {
-            give_up();
-        }
+        self.give_up(|host| host == name);
     }
 
     /// Every connection that stands, this machine's included.
@@ -232,16 +256,15 @@ impl Connections {
         connections
     }
 
-    /// Hangs up on every host, and gives up on a connection being set up.
+    /// Hangs up on every host, and gives up on every connection being set
+    /// up or waiting to be.
     pub fn clear(&self) {
         let remotes: Vec<_> = lock(&self.remotes).drain().map(|(_, c)| c).collect();
         let local = lock(&self.local).take();
         for connection in remotes.into_iter().chain(local) {
             connection.hang_up();
         }
-        if let Some((_, give_up)) = lock(&self.setting_up).take() {
-            give_up();
-        }
+        self.give_up(|_| true);
     }
 }
 
@@ -255,7 +278,7 @@ fn hung_up_on(name: &str) -> CommandError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::host_connection::test_support::{a_process, a_standing_connection};
+    use crate::host_connection::test_support::{a_standing_connection, failing_process};
     use std::sync::mpsc;
     use std::time::Duration;
 
@@ -271,8 +294,8 @@ mod tests {
         let connected = connections
             .connect_remote(
                 "office",
-                &["sh", "pwsh"],
-                |_| Starting::spawn(a_process()),
+                &["sh".to_string(), "pwsh".to_string()],
+                |_| Starting::spawn(failing_process("", 0)),
                 |_| {
                     tried += 1;
                     if tried == 1 {
@@ -295,8 +318,8 @@ mod tests {
 
         let failed = connections.connect_remote(
             "office",
-            &["sh", "pwsh"],
-            |_| Starting::spawn(a_process()),
+            &["sh".to_string(), "pwsh".to_string()],
+            |_| Starting::spawn(failing_process("", 0)),
             |_| {
                 tried += 1;
                 Err(CommandError::new(AppErrorCode::ConnectFailed, "denied"))
@@ -318,8 +341,8 @@ mod tests {
             std::thread::spawn(move || {
                 connections.connect_remote(
                     "home",
-                    &["sh"],
-                    |_| Starting::spawn(a_process()),
+                    &["sh".to_string()],
+                    |_| Starting::spawn(failing_process("", 0)),
                     |_| {
                         entered.send(()).unwrap();
                         released.recv().unwrap();
@@ -334,7 +357,7 @@ mod tests {
             std::thread::spawn(move || {
                 connections.connect_remote(
                     "office",
-                    &["sh"],
+                    &["sh".to_string()],
                     |_| -> CommandResult<Starting> { panic!("started though hung up on") },
                     |_| Ok(a_standing_connection()),
                 )

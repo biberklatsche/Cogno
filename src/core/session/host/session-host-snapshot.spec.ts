@@ -144,7 +144,7 @@ describe("SessionHost snapshot/restore", () => {
       });
       host.start();
       host.attach(document.createElement("div"));
-      host.close();
+      host.close(true);
       writeMock.mockClear();
       vi.advanceTimersByTime(RESTORE_FRAME_FALLBACK_MS);
       expect(writeMock).not.toHaveBeenCalled();

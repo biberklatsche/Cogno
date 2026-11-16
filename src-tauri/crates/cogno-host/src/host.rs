@@ -26,9 +26,9 @@ pub trait EventSink: Send + Sync + 'static {
     /// What an agent's hook said, now. Unlike output it is not paced by the
     /// client's acknowledgements, and anyone on the machine can post hooks:
     /// a sink may drop it while the client is far behind.
-    fn agent_hook(&self, hook: AgentHook) {
+    fn agent_hook(&self, hook: &AgentHook) {
         self.event(Event::AgentHook {
-            hook,
+            hook: hook.clone(),
             replayed: false,
         });
     }
@@ -214,7 +214,7 @@ impl Host {
                         let showing = self.sessions.showing_clients();
                         self.relay.broadcast(
                             |to| to != client.id && showing.contains(&to),
-                            |sink| sink.agent_hook(hook.clone()),
+                            |sink| sink.agent_hook(&hook),
                         );
                     }
                 }

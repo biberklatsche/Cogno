@@ -36,6 +36,7 @@ describe("CommandRunnerHostService", () => {
       ["tag", "--list"],
       "C:\\repo\\project",
       expect.any(String),
+      false,
       undefined,
       undefined,
     );
@@ -51,6 +52,7 @@ describe("CommandRunnerHostService", () => {
     await Promise.resolve();
     // The session the backend was given is the one the handler answers.
     expect(register).toHaveBeenCalledWith(execute.mock.calls[0]?.[3], onPrompt);
+    expect(execute.mock.calls[0]?.[4]).toBe(true);
     expect(forgetHandler).not.toHaveBeenCalled();
 
     finish({ stdout: "", stderr: "", exitCode: 0 });
@@ -64,6 +66,7 @@ describe("CommandRunnerHostService", () => {
     await service.run({ cwd: "/r", shellContext, program: "git" });
 
     expect(register).not.toHaveBeenCalled();
+    expect(execute.mock.calls[0]?.[4]).toBe(false);
   });
 
   it("starts nothing on this machine for a shell on another one", async () => {

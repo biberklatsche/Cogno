@@ -44,16 +44,8 @@ fn main() {
                 }
             }
         }
-        Some(CliCommand::Hook {
-            provider,
-            event,
-            sent_at,
-        }) => {
-            std::process::exit(cogno_lib::agent_hook::send(
-                provider.clone(),
-                event.clone(),
-                *sent_at,
-            ));
+        Some(CliCommand::Hook { provider, event }) => {
+            std::process::exit(cogno_lib::agent_hook::send(provider.clone(), event.clone()));
         }
         _ => {}
     }
@@ -203,7 +195,7 @@ fn execute_config_command(cli: &Cli, command: &ConfigCommand) {
 }
 
 fn resolve_active_config_path() -> String {
-    let dev_mode = cfg!(debug_assertions);
+    let dev_mode = cogno_lib::host_endpoint::DEVELOPMENT_BUILD;
     match get_cogno_config_file_path(dev_mode) {
         Ok(path) => path,
         Err(error) => {

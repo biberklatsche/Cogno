@@ -42,7 +42,9 @@ pub struct CommandRunnerResult {
 /// and closed. The process gets no terminal; whatever it would ask on one
 /// (git credentials, an ssh passphrase, a host key) reaches the window that
 /// started it through the askpass helper instead, tagged with the caller's
-/// `prompt_session` so the window knows which run is asking. `timeout_ms`
+/// `prompt_session` so the window knows which run is asking - when it
+/// `answers_prompts`; otherwise the host refuses them at once, and the run
+/// does not wait for the host to take its prompts on. `timeout_ms`
 /// is idle time: the process is ended once it has neither produced output
 /// nor had a prompt open for that long, so a transfer that reports progress
 /// may take as long as it takes.
@@ -58,6 +60,7 @@ pub async fn command_runner_execute(
     timeout_ms: Option<u64>,
     stdin: Option<String>,
     prompt_session: String,
+    answers_prompts: bool,
 ) -> Result<CommandRunnerResult, String> {
     let mut command = Command::new(program);
     command.current_dir(cwd).args(args);
@@ -84,7 +87,7 @@ pub async fn command_runner_execute(
         let session_id = session_id.clone();
         move || {
             // Its prompts come to this app; without a host, nothing can ask.
-            let _owned = app.state::<HostState>().own_prompts(&session_id);
+            let _owned = answers_prompts.then(|| app.state::<HostState>().own_prompts(&session_id));
             run(command, timeout_ms, stdin, &pending)
         }
     })

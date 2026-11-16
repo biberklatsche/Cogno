@@ -214,11 +214,11 @@ impl HostState {
     /// Connects to the host `name` by starting `command` (ssh), unless the
     /// connection already stands. Returns the host's operating system. Blocks
     /// for as long as the user needs to answer what ssh asks.
-    pub fn connect<C>(
+    pub fn connect(
         &self,
         name: &str,
-        commands: &[C],
-        command: impl Fn(&C) -> CommandResult<Command>,
+        commands: &[String],
+        command: impl Fn(&str) -> CommandResult<Command>,
     ) -> CommandResult<Connected> {
         let hosts = &self.0;
         hosts.connections.connect_remote(
@@ -428,7 +428,6 @@ impl HostState {
     pub async fn end_local_host(&self) -> CommandResult<()> {
         blocking(|| {
             cogno_host::daemon_start::end_incompatible_daemon(DEVELOPMENT_BUILD)
-                .map(|_ended_or_compatible| ())
                 .map_err(CommandError::internal)
         })
         .await

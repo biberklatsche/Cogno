@@ -279,8 +279,8 @@ describe("SessionHost", () => {
     host.initialize("terminal-1", bashProfile);
     host.start();
 
-    host.close();
-    host.close();
+    host.close(true);
+    host.close(true);
 
     expect(lastRenderer().dispose).toHaveBeenCalledTimes(1);
     expect(host.runtime.status).toBe("closed");
@@ -570,8 +570,8 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     const seen: string[] = [];
     host.runtime$.subscribe((runtime) => seen.push(runtime.status));
 
-    host.close();
-    host.close();
+    host.close(true);
+    host.close(true);
 
     expect(seen).toEqual(["running", "closing", "closed"]);
     expect(host.display).toBe("detached");

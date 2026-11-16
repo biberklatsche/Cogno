@@ -98,7 +98,7 @@ pub async fn host_connect(
         // What ssh asks comes to this app: the host of this machine passes it
         // on. Without that host nothing can ask; a key still logs in.
         let _owned = hosts.own_prompts(&session);
-        let connected = hosts.connect(&name, &candidates, |remote_command: &String| {
+        let connected = hosts.connect(&name, &candidates, |remote_command| {
             let mut ssh = ssh_command(&destination, remote_command)?;
             point_ssh_at_helper(&mut ssh, &session, &askpass_token);
             Ok(ssh)

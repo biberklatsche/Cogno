@@ -11,13 +11,15 @@ export type CommandRunnerExecuteResult = {
 export class CommandRunner {
   /**
    * `stdin`, when given, is written to the process and closed. Prompts the
-   * process raises (see `AskpassRequests`) carry `promptSession`.
+   * process raises (see `AskpassRequests`) carry `promptSession`; unless the
+   * caller `answersPrompts`, they are refused without asking anyone.
    */
   execute(
     program: string,
     args: readonly string[],
     cwd: string,
     promptSession: string,
+    answersPrompts: boolean,
     timeoutMs?: number,
     stdin?: string,
   ): Promise<CommandRunnerExecuteResult> {
@@ -26,6 +28,7 @@ export class CommandRunner {
       args: [...args],
       cwd,
       promptSession,
+      answersPrompts,
       timeoutMs,
       stdin,
     });

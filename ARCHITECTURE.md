@@ -1322,10 +1322,9 @@ fragt, und der App, die antwortet. `hosts/questions.rs` beantwortet sie, auch
 eine unbekannte (`Answer::Unknown`), damit niemand vergeblich wartet. Hooks
 gehen als Cogno-Nachricht (`cogno_message.rs`) an das Fenster ihres
 Terminals; ihre Form prüfen App und Feature an derselben Datei
-(`hook-message.contract.json`). Ein Hook nennt den Zeitpunkt, an dem er
-geschah (`cogno hook --sent-at`): OpenCodes Plugin startet je Ereignis
-einen Prozess, und ein später gestarteter darf einen früheren nicht
-überholen.
+(`hook-message.contract.json`). OpenCodes Plugin startet je Ereignis einen
+Prozess, und zwar erst, wenn der vorige seinen Hook abgegeben hat: ein
+später gestarteter kann einen früheren nicht überholen.
 
 #### 2.7.2 Hosts im Frontend
 

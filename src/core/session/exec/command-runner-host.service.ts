@@ -51,6 +51,7 @@ export class CommandRunnerHostService extends CommandRunnerPort {
         request.args ?? [],
         backendPath,
         promptSession,
+        request.onPrompt !== undefined,
         request.timeoutMs,
         request.stdin,
       );

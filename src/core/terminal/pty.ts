@@ -40,6 +40,12 @@ export interface IPty extends IDisposable {
   readonly isLive: boolean;
 
   /**
+   * Gives the shell up without ending it: another session of this terminal
+   * takes it on. `dispose` ends the terminal for good, and the shell with it.
+   */
+  release(): void;
+
+  /**
    * Spawns the shell. `onData` receives raw output chunks in order, from the
    * first byte on (the listener is wired before the shell starts).
    */
@@ -86,7 +92,8 @@ type PtyState =
   | { readonly kind: "live"; readonly terminalId: string; readonly output: OpenOutput }
   | { readonly kind: "takenOver"; readonly terminalId: string; readonly by?: string }
   | { readonly kind: "handedBack"; readonly terminalId: string; readonly by?: string }
-  | { readonly kind: "disposed" };
+  /** `endsShell`: disposed for good, not released to another session. */
+  | { readonly kind: "disposed"; readonly endsShell: boolean };
 
 type OpenOutput = PtyOpenHandleContract<unknown>;
 
@@ -216,7 +223,7 @@ export class Pty implements IPty {
     if (!this.isOpening(terminalId, output)) {
       // Disposed, opened anew or taken over while the host was still at it.
       output.closeOutput();
-      if (this.isDisposed()) this.letGo(terminalId);
+      if (this.disposedForGood()) this.letGo(terminalId);
       return;
     }
     this.state = { kind: "live", terminalId, output };
@@ -233,6 +240,11 @@ export class Pty implements IPty {
 
   private isDisposed(): boolean {
     return this.state.kind === "disposed";
+  }
+
+  /** Disposed, not released: the shell goes with the terminal. */
+  private disposedForGood(): boolean {
+    return this.state.kind === "disposed" && this.state.endsShell;
   }
 
   private isOpening(terminalId: string, output?: OpenOutput): boolean {
@@ -396,13 +408,24 @@ export class Pty implements IPty {
   }
 
   dispose(): void {
+    this.teardown(true);
+  }
+
+  release(): void {
+    this.teardown(false);
+  }
+
+  private teardown(endsShell: boolean): void {
+    if (this.isDisposed()) return;
     // While an open is still in flight there is no session to end yet; the
-    // open's continuation ends it as soon as it exists. A shell that was
-    // taken over or handed back is not shown here: a new session takes it
-    // back, and this one must not end it on its way out.
-    if (this.state.kind === "live") this.letGo(this.state.terminalId);
+    // open's continuation ends it as soon as it exists. A shell taken over
+    // by another Cogno is not this one's to end; one that was handed back is.
+    const state = this.state;
+    if (endsShell && (state.kind === "live" || state.kind === "handedBack")) {
+      this.letGo(state.terminalId);
+    }
     this.closeOutput();
-    this.state = { kind: "disposed" };
+    this.state = { kind: "disposed", endsShell };
     this._pendingResize = undefined;
     this._unlisten?.();
     this._unlisten = undefined;

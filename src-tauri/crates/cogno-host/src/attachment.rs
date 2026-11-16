@@ -110,16 +110,12 @@ impl Attachment {
         }
     }
 
-    /// Sends the held hooks, if any, and then `then` - all under the lock of
-    /// the held ones (the sink only queues): what they say comes before
-    /// anything newer, also when an ack releases them on another thread.
-    fn release_hooks(&self, then: Option<AgentHook>) {
-        let mut held = lock(&self.held_hooks);
+    /// Sends the held hooks, if any. Called under their lock (the sink only
+    /// queues): what they say comes before anything newer, also when an ack
+    /// releases them on another thread.
+    fn send_held(&self, held: &mut Option<HeldHooks>) {
         if let Some(held) = held.take() {
             self.send_replayed(held.hooks);
-        }
-        if let Some(hook) = then {
-            self.sink.agent_hook(hook);
         }
     }
 
@@ -139,11 +135,9 @@ impl Attachment {
     /// replay among it releases the hooks held back for it.
     pub fn acknowledge(&self, seq: u32) {
         self.flow.ack_through(seq);
-        let released = lock(&self.held_hooks)
-            .as_ref()
-            .is_some_and(|held| seq >= held.through);
-        if released {
-            self.release_hooks(None);
+        let mut held = lock(&self.held_hooks);
+        if held.as_ref().is_some_and(|held| seq >= held.through) {
+            self.send_held(&mut held);
         }
     }
 
@@ -164,7 +158,9 @@ impl Attachment {
     /// its hook.
     pub fn send_hook(&self, hook: AgentHook) {
         // Held ones are older: they come first.
-        self.release_hooks(Some(hook));
+        let mut held = lock(&self.held_hooks);
+        self.send_held(&mut held);
+        self.sink.agent_hook(&hook);
     }
 
     /// Tells the client that the session ended.
