@@ -17,8 +17,6 @@ pub const COGNO_TERMINAL_ID: &str = "COGNO_TERMINAL_ID";
 /// The endpoint file of the host that runs the shell: a `cogno` typed in it
 /// reaches that host, whatever build it is.
 pub const COGNO_HOST: &str = "COGNO_HOST";
-/// The secret the shell integration signs what it reports with.
-pub const COGNO_SESSION_TOKEN: &str = "COGNO_SESSION_TOKEN";
 /// Set only with shell integration: where its scripts lie.
 pub const COGNO_INTEGRATION_ROOT: &str = "COGNO_INTEGRATION_ROOT";
 pub const COGNO_LOG_DIR: &str = "COGNO_LOG_DIR";

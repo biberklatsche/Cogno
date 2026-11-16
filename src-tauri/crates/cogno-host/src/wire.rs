@@ -301,7 +301,7 @@ pub fn skip_to_preamble(reader: &mut impl Read) -> io::Result<()> {
 }
 
 /// The host's hello, the first message after the preamble.
-pub fn read_host_hello(reader: &mut impl Read) -> io::Result<HostHello> {
+fn read_host_hello(reader: &mut impl Read) -> io::Result<HostHello> {
     match read_json(reader)? {
         Some(HostJson::Hello(hello)) => Ok(hello),
         _ => Err(invalid("the host did not say hello")),

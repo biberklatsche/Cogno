@@ -431,7 +431,13 @@ fn presents_token(stream: &mut TcpStream, token: &str) -> bool {
             _ => return false,
         }
     }
-    stream.set_read_timeout(None).is_ok() && presented == token.as_bytes()
+    stream.set_read_timeout(None).is_ok() && same_secret(&presented, token.as_bytes())
+}
+
+/// Whether `a` and `b` are equal, in a time that does not tell how much of
+/// them is: a guess at the token learns nothing from how long it took.
+fn same_secret(a: &[u8], b: &[u8]) -> bool {
+    a.len() == b.len() && a.iter().zip(b).fold(0u8, |differ, (x, y)| differ | (x ^ y)) == 0
 }
 
 /// Runs the daemon until it has had no client and no session for a while,
@@ -847,6 +853,13 @@ mod tests {
         // Still there, and still answers.
         drop(client(&endpoint));
         assert!(finishes(daemon).is_ok());
+    }
+
+    #[test]
+    fn a_secret_is_the_same_only_byte_for_byte() {
+        assert!(same_secret(b"abc", b"abc"));
+        assert!(!same_secret(b"abc", b"abd"));
+        assert!(!same_secret(b"abc", b"abcd"));
     }
 
     #[test]

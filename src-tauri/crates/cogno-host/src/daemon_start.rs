@@ -20,7 +20,7 @@ const KNOCK_INTERVAL: Duration = Duration::from_millis(50);
 /// start one.
 const START_LOCK_FILE_NAME: &str = "host.lock";
 /// The directory of the starter in the Cogno home (`put_down_starter`).
-pub const STARTER_DIRECTORY: &str = "bin";
+const STARTER_DIRECTORY: &str = "bin";
 /// The Windows copies of the daemon's binary, one directory per build.
 #[cfg(windows)]
 const BUILDS_DIRECTORY: &str = "host";
@@ -30,7 +30,7 @@ const DAEMON_BINARY_NAME: &str = "cogno.exe";
 pub const DAEMON_ARGUMENT: &str = "daemon";
 /// The starter's name (on Windows with `.cmd`): what a Cogno on another
 /// machine runs through ssh.
-pub const STARTER_NAME: &str = "cogno";
+const STARTER_NAME: &str = "cogno";
 /// What the starter is given to run the bridge to the daemon.
 pub const BRIDGE_ARGUMENTS: &str = "server --stdio";
 

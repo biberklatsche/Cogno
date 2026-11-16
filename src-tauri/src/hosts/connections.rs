@@ -392,7 +392,15 @@ mod tests {
                 )
             })
         };
-        std::thread::sleep(Duration::from_millis(50));
+        // Waits for its turn once it noted how often the host was hung up on.
+        let started = std::time::Instant::now();
+        while !lock(&connections.attempts).contains_key("office") {
+            assert!(
+                started.elapsed() < Duration::from_secs(10),
+                "it never asked"
+            );
+            std::thread::yield_now();
+        }
 
         connections.disconnect("office");
         release.send(()).unwrap();
