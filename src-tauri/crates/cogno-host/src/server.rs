@@ -3,42 +3,81 @@
 //! client's end.
 
 use std::io::{self, Read, Write};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc;
 use std::sync::Arc;
 
 use crate::host::{Client, ClientId, EventSink, Host};
-use crate::protocol::{Event, HostError, HostErrorCode, Reply, Request};
+use crate::protocol::{AgentHook, Event, HostError, HostErrorCode, Reply, Request};
 use crate::wire::{self, ClientFrame, ClientMessage, HostMessage, Output};
+
+/// How much of what agents' hooks said may wait for a client that is slow
+/// to read before more is dropped: output waits for acknowledgements, hooks
+/// do not.
+const MAX_QUEUED_HOOK_BYTES: usize = 4 * 1024 * 1024;
 
 /// What goes to the client, written by a thread of its own: whoever sends
 /// only queues, so a client that is slow to read never holds up the host -
 /// not its sessions' readers, not another client's requests.
-struct ClientWriter(mpsc::Sender<HostMessage>);
+struct ClientWriter {
+    /// Each message with what it counts against `queued_hook_bytes`.
+    sender: mpsc::Sender<(HostMessage, usize)>,
+    queued_hook_bytes: Arc<AtomicUsize>,
+}
 
 impl ClientWriter {
     /// Starts the thread that writes to `output`. It ends when the client
     /// can no longer be written to, or when nothing can send any more.
     fn start<W: Write + Send + 'static>(mut output: W) -> Self {
-        let (sender, queued) = mpsc::channel::<HostMessage>();
-        std::thread::spawn(move || {
-            for message in queued {
-                if wire::write_host_message(&mut output, message).is_err() {
-                    return;
+        let (sender, queued) = mpsc::channel::<(HostMessage, usize)>();
+        let queued_hook_bytes = Arc::new(AtomicUsize::new(0));
+        {
+            let queued_hook_bytes = queued_hook_bytes.clone();
+            std::thread::spawn(move || {
+                for (message, hook_bytes) in queued {
+                    if wire::write_host_message(&mut output, message).is_err() {
+                        return;
+                    }
+                    queued_hook_bytes.fetch_sub(hook_bytes, Ordering::AcqRel);
                 }
-            }
-        });
-        Self(sender)
+            });
+        }
+        Self {
+            sender,
+            queued_hook_bytes,
+        }
     }
 
     /// False when the client is gone.
     fn send(&self, message: HostMessage) -> bool {
-        self.0.send(message).is_ok()
+        self.sender.send((message, 0)).is_ok()
     }
 }
 
 impl EventSink for ClientWriter {
     fn event(&self, event: Event) {
         self.send(HostMessage::Event(event));
+    }
+
+    fn agent_hook(&self, hook: AgentHook) {
+        let bytes = hook.payload.len();
+        if self.queued_hook_bytes.fetch_add(bytes, Ordering::AcqRel) + bytes > MAX_QUEUED_HOOK_BYTES
+        {
+            self.queued_hook_bytes.fetch_sub(bytes, Ordering::AcqRel);
+            log::debug!(target: "host", "a hook was dropped: the client is far behind");
+            return;
+        }
+        let event = Event::AgentHook {
+            hook,
+            replayed: false,
+        };
+        if self
+            .sender
+            .send((HostMessage::Event(event), bytes))
+            .is_err()
+        {
+            self.queued_hook_bytes.fetch_sub(bytes, Ordering::AcqRel);
+        }
     }
 
     fn reply(&self, id: u64, reply: Reply) {
@@ -101,9 +140,9 @@ pub(crate) fn serve_client<W: Write + Send + 'static>(
             // Answered once another client did; asking only passes it on.
             ClientMessage::Request {
                 id,
-                request: Request::Ask { question },
+                request: Request::Ask { to, question },
             } => {
-                host.ask(&client, id, question);
+                host.ask(&client, id, to, question);
                 continue;
             }
             ClientMessage::Request { id, request } => (Some(id), request),

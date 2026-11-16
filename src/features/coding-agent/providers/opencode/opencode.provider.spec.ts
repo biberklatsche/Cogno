@@ -115,7 +115,7 @@ describe("openCodePlugin", () => {
     expect(source).toContain('id: "cogno"');
     expect(source).toContain("async setup(ctx)");
     expect(source).toContain('const STARTER = "C:\\\\Users\\\\me\\\\.cogno\\\\bin\\\\cogno.cmd"');
-    expect(source).toContain('["hook", PROVIDER, hookEvent]');
+    expect(source).toContain('["hook", PROVIDER, hookEvent, "--sent-at", String(Date.now())]');
     // The service's environment is its first starter's, not the session's.
     expect(source).toContain('COGNO_TERMINAL_ID: ""');
     expect(source).toContain("ctx.event.subscribe({ types: EVENTS");

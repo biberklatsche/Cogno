@@ -313,6 +313,66 @@ pub fn write_client_hello(writer: &mut impl Write, hello: &ClientHello) -> io::R
 }
 
 /// The client's hello, the first message it sends.
+/// Why a client and a host did not get to talk.
+#[derive(Debug)]
+pub enum IntroductionError {
+    /// What answered sent no preamble: no Cogno host is there.
+    NoHost(io::Error),
+    /// The host sent its preamble but no hello.
+    NoHello(io::Error),
+    /// The two have no version in common.
+    Versions(VersionMismatch),
+    /// The client's hello could not be written.
+    Broken(io::Error),
+}
+
+impl std::fmt::Display for IntroductionError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IntroductionError::NoHost(error) => {
+                write!(formatter, "no Cogno host answered: {error}")
+            }
+            IntroductionError::NoHello(error) => {
+                write!(formatter, "the Cogno host did not say hello: {error}")
+            }
+            IntroductionError::Versions(_) => {
+                formatter.write_str("the Cogno host speaks no protocol version this Cogno does")
+            }
+            IntroductionError::Broken(error) => {
+                write!(formatter, "the hello could not be sent: {error}")
+            }
+        }
+    }
+}
+
+impl From<IntroductionError> for io::Error {
+    fn from(error: IntroductionError) -> Self {
+        match error {
+            IntroductionError::NoHost(error)
+            | IntroductionError::NoHello(error)
+            | IntroductionError::Broken(error) => error,
+            IntroductionError::Versions(_) => {
+                io::Error::new(io::ErrorKind::Unsupported, error.to_string())
+            }
+        }
+    }
+}
+
+/// What a client does first: skips to the host's preamble, takes its hello,
+/// checks that the two share a version and says its own `hello`. The host's
+/// hello comes back.
+pub fn introduce(
+    reader: &mut impl Read,
+    writer: &mut impl Write,
+    hello: &ClientHello,
+) -> Result<HostHello, IntroductionError> {
+    skip_to_preamble(reader).map_err(IntroductionError::NoHost)?;
+    let host = read_host_hello(reader).map_err(IntroductionError::NoHello)?;
+    check_versions(host.protocol, host.oldest).map_err(IntroductionError::Versions)?;
+    write_client_hello(writer, hello).map_err(IntroductionError::Broken)?;
+    Ok(host)
+}
+
 pub fn read_client_hello(reader: &mut impl Read) -> io::Result<ClientHello> {
     match read_json(reader)? {
         Some(ClientJson::Hello(hello)) => Ok(hello),
@@ -445,6 +505,7 @@ mod tests {
             ClientMessage::Post {
                 request: Request::PtyAck {
                     terminal_id: "t1".into(),
+                    stream: StreamId(2),
                     seq: 3,
                 },
             },
@@ -462,7 +523,11 @@ mod tests {
         assert!(matches!(
             read_client_message(&mut reader).unwrap(),
             Some(ClientFrame::Message(ClientMessage::Post {
-                request: Request::PtyAck { seq: 3, .. }
+                request: Request::PtyAck {
+                    stream: StreamId(2),
+                    seq: 3,
+                    ..
+                }
             }))
         ));
         // The stream ended between two frames.

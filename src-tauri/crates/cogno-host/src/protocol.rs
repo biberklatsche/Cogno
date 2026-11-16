@@ -51,57 +51,31 @@ pub struct AgentHook {
     pub payload: String,
 }
 
-/// What a process asks the Cogno that is to answer it, through the host
-/// (`Request::Ask`).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum Question {
-    /// `cogno action run`, typed in a terminal: for the Cogno that shows it.
-    RunAction {
-        terminal_id: TerminalId,
-        name: String,
-        args: Vec<String>,
-    },
-    /// What git or ssh asks (a password, a host key), for the client that
-    /// owns the prompt session (`Request::OwnPrompts`). That client checks
-    /// the token, not the host.
-    Prompt {
-        session: String,
-        token: String,
-        prompt: String,
-    },
-    /// What a later version asks and this one does not know.
-    #[serde(other)]
-    Unknown,
+#[cfg(test)]
+impl AgentHook {
+    /// A hook of `event`, from Codex, with an empty payload.
+    pub fn of(terminal_id: Option<&str>, event: &str) -> Self {
+        Self {
+            terminal_id: terminal_id.map(str::to_string),
+            provider: "codex".to_string(),
+            event: event.to_string(),
+            sent_at: 1,
+            payload: "{}".to_string(),
+        }
+    }
 }
 
-/// What a client answers to a `Question` (`Request::Answer`).
+/// Which client a process's question goes to (`Request::Ask`). The host
+/// routes by it and nothing else: what is asked and answered is the
+/// business of the process and that client.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
-pub enum Answer {
-    ActionRun {
-        status: ActionRunStatus,
-    },
-    /// What the user typed; nothing when they declined.
-    Prompt {
-        answer: Option<String>,
-    },
-    /// What a later version answers and this one does not know.
-    #[serde(other)]
-    Unknown,
-}
-
-/// What became of `cogno action run`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum ActionRunStatus {
-    /// The action was handed to the window.
-    Dispatched,
-    /// The action exists, but its feature is off.
-    Inactive,
-    /// No action of that name.
-    NotFound,
-    /// A status of a later version.
+pub enum Addressee {
+    /// The client that shows the terminal.
+    Terminal { terminal_id: TerminalId },
+    /// The client that owns the prompt session (`Request::OwnPrompts`).
+    PromptSession { session: String },
+    /// An addressee of a later version.
     #[serde(other)]
     Unknown,
 }
@@ -327,9 +301,12 @@ pub enum Request {
     PtyKill {
         terminal_id: TerminalId,
     },
-    /// Everything up to and including output `seq` has been taken in.
+    /// Everything up to and including output `seq` of `stream` has been
+    /// taken in. An ack of a stream that is no longer the session's (it was
+    /// taken over, or attached again) changes nothing.
     PtyAck {
         terminal_id: TerminalId,
+        stream: StreamId,
         seq: u32,
     },
     /// A window of the caller closed: its sessions end, except those that
@@ -369,20 +346,24 @@ pub enum Request {
     },
     /// What an agent's hook said (a post): the session of its terminal keeps
     /// it for whoever attaches later, and the client that shows it gets it
-    /// now. Without a terminal, every other client gets it.
+    /// now. Without a terminal, every other client that shows a session
+    /// gets it.
     AgentHook {
         hook: AgentHook,
     },
-    /// A question for another client (a request): the host passes it on and
-    /// answers with `Answered` once that client did. `NotShown` when nobody
-    /// is there to answer, `NoAnswer` when the client went away first.
+    /// A question for another client (a request): the host passes it on to
+    /// `to` and answers with `Answered` once that client did. `NoAddressee`
+    /// when nobody is there to answer, `NoAnswer` when the client went away
+    /// first. `question` is JSON text the host never reads.
     Ask {
-        question: Question,
+        to: Addressee,
+        question: String,
     },
-    /// The caller answers a question the host passed on to it (a post).
+    /// The caller answers a question the host passed on to it (a post):
+    /// JSON text the host never reads.
     Answer {
         relay: RelayId,
-        answer: Answer,
+        answer: String,
     },
     /// The caller answers the prompts of `session` from now on (a post).
     OwnPrompts {
@@ -492,7 +473,7 @@ pub enum Response {
     },
     /// What the client a question went to answered (`Request::Ask`).
     Answered {
-        answer: Answer,
+        answer: String,
     },
     /// What a later version answers and this one does not know.
     #[serde(other)]
@@ -533,9 +514,9 @@ pub enum HostErrorCode {
     ProcessesSurvived,
     /// Reading or writing failed on the host.
     Io,
-    /// Nobody is there to answer a question: no client shows the terminal,
-    /// or owns the prompts.
-    NotShown,
+    /// Nobody takes what was asked: no client shows the terminal, or owns
+    /// the prompt session.
+    NoAddressee,
     /// The client a question went to went away before it answered.
     NoAnswer,
     /// A code of a later version.
@@ -621,9 +602,13 @@ pub enum Event {
     /// What an agent's hook said. `replayed`: it was kept, and comes now
     /// because the client attached - it is not news.
     AgentHook { hook: AgentHook, replayed: bool },
-    /// A question for this client; it answers with `Request::Answer` under
-    /// `relay`.
-    Asked { relay: RelayId, question: Question },
+    /// A question for this client, as `to` named it; it answers with
+    /// `Request::Answer` under `relay`.
+    Asked {
+        relay: RelayId,
+        to: Addressee,
+        question: String,
+    },
     /// What a later version reports and this one does not know.
     #[serde(other)]
     Unknown,
@@ -705,43 +690,39 @@ mod tests {
         );
         assert_eq!(
             serde_json::to_string(&Request::Ask {
-                question: Question::RunAction {
+                to: Addressee::Terminal {
                     terminal_id: "t1".into(),
-                    name: "new_tab".into(),
-                    args: vec![],
-                }
+                },
+                question: "{}".into(),
             })
             .unwrap(),
-            r#"{"type":"ask","question":{"type":"runAction","terminal_id":"t1","name":"new_tab","args":[]}}"#
+            r#"{"type":"ask","to":{"type":"terminal","terminal_id":"t1"},"question":"{}"}"#
         );
         assert_eq!(
             serde_json::to_string(&Event::Asked {
                 relay: RelayId(3),
-                question: Question::Prompt {
-                    session: "s".into(),
-                    token: "k".into(),
-                    prompt: "Password:".into(),
-                }
+                to: Addressee::PromptSession {
+                    session: "s".into()
+                },
+                question: "{}".into(),
             })
             .unwrap(),
-            r#"{"type":"asked","relay":3,"question":{"type":"prompt","session":"s","token":"k","prompt":"Password:"}}"#
+            r#"{"type":"asked","relay":3,"to":{"type":"promptSession","session":"s"},"question":"{}"}"#
         );
         assert_eq!(
             serde_json::to_string(&Request::Answer {
                 relay: RelayId(3),
-                answer: Answer::ActionRun {
-                    status: ActionRunStatus::NotFound
-                }
+                answer: "null".into(),
             })
             .unwrap(),
-            r#"{"type":"answer","relay":3,"answer":{"type":"actionRun","status":"notFound"}}"#
+            r#"{"type":"answer","relay":3,"answer":"null"}"#
         );
         assert_eq!(
             serde_json::to_string(&Response::Answered {
-                answer: Answer::Prompt { answer: None }
+                answer: "null".into()
             })
             .unwrap(),
-            r#"{"type":"answered","answer":{"type":"prompt","answer":null}}"#
+            r#"{"type":"answered","answer":"null"}"#
         );
         assert_eq!(
             serde_json::to_string(&Request::OwnPrompts {
@@ -751,17 +732,15 @@ mod tests {
             r#"{"type":"ownPrompts","session":"s"}"#
         );
         assert_eq!(
-            serde_json::to_string(&HostErrorCode::NotShown).unwrap(),
-            r#""notShown""#
+            serde_json::to_string(&HostErrorCode::NoAddressee).unwrap(),
+            r#""noAddressee""#
         );
         assert_eq!(
             serde_json::to_string(&HostErrorCode::NoAnswer).unwrap(),
             r#""noAnswer""#
         );
-        let later: Question = serde_json::from_str(r#"{"type":"teleport"}"#).unwrap();
-        assert_eq!(later, Question::Unknown);
-        let later: ActionRunStatus = serde_json::from_str(r#""queued""#).unwrap();
-        assert_eq!(later, ActionRunStatus::Unknown);
+        let later: Addressee = serde_json::from_str(r#"{"type":"teleport"}"#).unwrap();
+        assert_eq!(later, Addressee::Unknown);
     }
 
     #[test]

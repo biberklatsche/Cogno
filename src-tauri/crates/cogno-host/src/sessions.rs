@@ -7,6 +7,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use portable_pty::CommandBuilder;
@@ -56,9 +57,10 @@ pub(crate) struct SpawnRequest {
     pub options: SpawnOptions,
     pub window: WindowLabel,
     pub stream: StreamId,
-    /// Set after the profile's own environment, so a profile cannot
-    /// override it.
-    pub env: Vec<(String, String)>,
+    /// The endpoint file of the daemon the shell runs in: the shell learns
+    /// it (`COGNO_HOST`), so a `cogno` of another build typed in it reaches
+    /// this daemon.
+    pub host_endpoint: PathBuf,
     pub lifetime: SessionLifetime,
 }
 
@@ -217,7 +219,7 @@ impl Sessions {
             options,
             window,
             stream,
-            env,
+            host_endpoint,
             lifetime,
         } = request;
         let terminal_id = options.terminal_id.clone();
@@ -229,7 +231,7 @@ impl Sessions {
 
         let prepared = spawner.prepare_spawn(&options.profile)?;
         let line_editor = LineEditorTarget::for_shell(options.profile.shell_type, &prepared.env);
-        let command = shell_command(prepared, line_editor.as_ref(), env, &terminal_id);
+        let command = shell_command(prepared, line_editor.as_ref(), &host_endpoint, &terminal_id);
         let StartedShell {
             process,
             mut child,
@@ -497,14 +499,14 @@ impl Sessions {
     /// The client's acknowledgement that it has taken in every piece of
     /// output up to and including `seq`. Acks for sessions that already
     /// ended are expected (output was still on its way) and accepted.
-    pub fn acknowledge(&self, client: ClientId, terminal_id: &str, seq: u32) {
+    pub fn acknowledge(&self, client: ClientId, terminal_id: &str, stream: StreamId, seq: u32) {
         let shared = self
             .table()
             .live
             .get(terminal_id)
             .map(|session| session.shared.clone());
         if let Some(shared) = shared {
-            shared.acknowledge(client, seq);
+            shared.acknowledge(client, stream, seq);
         }
     }
 
@@ -608,8 +610,17 @@ impl Sessions {
             return;
         };
         if let Some(attachment) = shared.take_hook(&hook) {
-            attachment.send_hook(hook, false);
+            attachment.send_hook(hook);
         }
+    }
+
+    /// The clients that show a session.
+    pub fn showing_clients(&self) -> HashSet<ClientId> {
+        self.table()
+            .live
+            .values()
+            .filter_map(|session| session.shared.attached_client())
+            .collect()
     }
 
     /// The client that shows the session of `terminal_id`, if one does.
@@ -666,12 +677,12 @@ impl Sessions {
 }
 
 /// The command a prepared spawn starts, with what the session adds to its
-/// environment after the profile's own: a profile overrides neither what
-/// the caller adds nor the terminal id.
+/// environment after the profile's own: a profile overrides neither the
+/// host's endpoint nor the terminal id.
 fn shell_command(
     prepared: PreparedSpawn,
     line_editor: Option<&LineEditorTarget>,
-    extra_env: Vec<(String, String)>,
+    host_endpoint: &Path,
     terminal_id: &TerminalId,
 ) -> CommandBuilder {
     let mut command = CommandBuilder::new(&prepared.program);
@@ -690,9 +701,7 @@ fn shell_command(
     if let Some((name, path)) = line_editor.and_then(LineEditorTarget::env) {
         command.env(name, path.as_os_str());
     }
-    for (key, value) in extra_env {
-        command.env(key, value);
-    }
+    command.env(env_vars::COGNO_HOST, host_endpoint.as_os_str());
     command.env(env_vars::COGNO_TERMINAL_ID, terminal_id);
     command.cwd(expand_home(&prepared.working_dir));
     command

@@ -39,8 +39,7 @@
             </div>
         }
         <!-- The user ended it: the pane is gone. Any other end leaves the pane, which says so. -->
-        @if (runtime.status === 'exited' && runtime.exit; as exit) {
-            @if (exit.kind !== 'exited' && exit.kind !== 'hungUp') {
+        @if (endedWithoutUser(); as exit) {
                 <div class="start-failed-overlay">
                     <div class="start-failed-title">
                         @switch (exit.kind) {
@@ -63,7 +62,6 @@
                         <button type="button" class="button" (click)="closeAfterFailure()">Close</button>
                     </div>
                 </div>
-            }
         }
     }
     <app-terminal-autocomplete></app-terminal-autocomplete>

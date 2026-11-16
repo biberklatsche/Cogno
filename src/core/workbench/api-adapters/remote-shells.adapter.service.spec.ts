@@ -102,11 +102,14 @@ describe("RemoteShellsAdapterService", () => {
       new Map([
         [
           "office",
-          { status: "failed", failure: { code: "hostTooOld", message: "Update it there" } },
+          {
+            status: "failed",
+            failure: { code: "invalidDestination", message: "Not an ssh destination" },
+          },
         ],
       ]),
     );
-    // Connecting again fails the same way until that Cogno is updated.
+    // Connecting again fails the same way until the settings change.
     expect(hosts[0]).toMatchObject({ failure: { worthRetrying: false } });
 
     config$.next({});

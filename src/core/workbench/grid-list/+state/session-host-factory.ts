@@ -5,7 +5,7 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { SessionBackend } from "@cogno/core/session/host/session-backend";
 import { SessionHost } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { runningShell } from "@cogno/core/workbench/hosts/running-shell";
+import { runningShell, shownByOtherCogno } from "@cogno/core/workbench/hosts/running-shell";
 import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-start.service";
 import {
   isHostError,
@@ -357,7 +357,7 @@ export class SessionHostFactory {
     return {
       kind: "shownElsewhere",
       shell,
-      by: attached.to === "otherClient" ? (attached.by ?? undefined) : undefined,
+      by: shownByOtherCogno(attached),
     };
   }
 

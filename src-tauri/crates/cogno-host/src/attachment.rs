@@ -61,6 +61,10 @@ impl Attachment {
         }
     }
 
+    pub fn stream(&self) -> StreamId {
+        self.stream
+    }
+
     pub fn is(&self, other: &Attachment) -> bool {
         Arc::ptr_eq(&self.flow, &other.flow)
     }
@@ -93,22 +97,29 @@ impl Attachment {
             Some(through) if !hooks.is_empty() => {
                 *lock(&self.held_hooks) = Some(HeldHooks { through, hooks });
             }
-            _ => {
-                for hook in hooks {
-                    self.sink.event(Event::AgentHook {
-                        hook,
-                        replayed: true,
-                    });
-                }
-            }
+            _ => self.send_replayed(hooks),
         }
     }
 
-    /// Sends the held hooks, if any: what they say comes before anything newer.
-    fn release_hooks(&self) {
-        let held = lock(&self.held_hooks).take();
-        if let Some(held) = held {
-            self.replay_hooks(held.hooks, None);
+    fn send_replayed(&self, hooks: Vec<AgentHook>) {
+        for hook in hooks {
+            self.sink.event(Event::AgentHook {
+                hook,
+                replayed: true,
+            });
+        }
+    }
+
+    /// Sends the held hooks, if any, and then `then` - all under the lock of
+    /// the held ones (the sink only queues): what they say comes before
+    /// anything newer, also when an ack releases them on another thread.
+    fn release_hooks(&self, then: Option<AgentHook>) {
+        let mut held = lock(&self.held_hooks);
+        if let Some(held) = held.take() {
+            self.send_replayed(held.hooks);
+        }
+        if let Some(hook) = then {
+            self.sink.agent_hook(hook);
         }
     }
 
@@ -132,7 +143,7 @@ impl Attachment {
             .as_ref()
             .is_some_and(|held| seq >= held.through);
         if released {
-            self.release_hooks();
+            self.release_hooks(None);
         }
     }
 
@@ -149,13 +160,11 @@ impl Attachment {
         });
     }
 
-    /// Passes on what the agent in the session's terminal said through its
-    /// hook; `replayed` when it was kept and comes because the client
-    /// attached.
-    pub fn send_hook(&self, hook: AgentHook, replayed: bool) {
+    /// Passes on what the agent in the session's terminal just said through
+    /// its hook.
+    pub fn send_hook(&self, hook: AgentHook) {
         // Held ones are older: they come first.
-        self.release_hooks();
-        self.sink.event(Event::AgentHook { hook, replayed });
+        self.release_hooks(Some(hook));
     }
 
     /// Tells the client that the session ended.

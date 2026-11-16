@@ -1,5 +1,5 @@
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { SESSION_TOKEN_VARIABLE, SessionInfoContract } from "@cogno/platform";
+import { AttachedContract, SESSION_TOKEN_VARIABLE, SessionInfoContract } from "@cogno/platform";
 
 /** What a session needs to show a shell that already runs. */
 export type RunningShell = {
@@ -33,4 +33,9 @@ export function runningShell(configured: ShellProfile, running: SessionInfoContr
     },
     sessionToken,
   };
+}
+
+/** What the machine of the other Cogno that shows a shell is called, when it said. */
+export function shownByOtherCogno(attached: AttachedContract): string | undefined {
+  return attached.to === "otherClient" ? (attached.by ?? undefined) : undefined;
 }

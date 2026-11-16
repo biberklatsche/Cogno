@@ -249,6 +249,20 @@ describe("GridListService", () => {
       );
     });
 
+    it("keeps the pane when its shell ended without the user, and when the user hung up removes it", () => {
+      vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
+      service.split(initialTerminalId, "vertical", "r");
+      const destroySpy = vi.spyOn(componentFactory, "destroy");
+
+      for (const kind of ["connectionLost", "killedByAnotherClient", "ptyFailed"] as const) {
+        emitSessionFact("term-2", { type: "exited", exit: { kind } });
+      }
+      expect(destroySpy).not.toHaveBeenCalled();
+
+      emitSessionFact("term-2", { type: "exited", exit: { kind: "hungUp" } });
+      expect(destroySpy).toHaveBeenCalledWith("term-2");
+    });
+
     it("should split pane down", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       service.split(initialTerminalId, "horizontal", "r");

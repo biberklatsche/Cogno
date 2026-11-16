@@ -21,7 +21,8 @@ use tauri::AppHandle;
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult, ErrorCode};
 use crate::host_connection::{Ending, HostConnection, OnLost, Starting};
-use connections::{Connections, Lost};
+use crate::host_endpoint::DEVELOPMENT_BUILD;
+use connections::{Connected, Connections, Lost};
 use routes::{Route, TerminalRoutes};
 use webview::{TerminalExit, WebviewEvents};
 
@@ -75,7 +76,7 @@ impl Hosts {
     fn local(self: &Arc<Self>) -> CommandResult<Arc<HostConnection>> {
         self.connections.local(|| {
             let stream = cogno_host::daemon_start::connect_or_start(
-                cfg!(debug_assertions),
+                DEVELOPMENT_BUILD,
                 env!("CARGO_PKG_VERSION"),
             )
             .map_err(|message| CommandError::new(AppErrorCode::HostNotStarted, message))?;
@@ -213,11 +214,17 @@ impl HostState {
     /// Connects to the host `name` by starting `command` (ssh), unless the
     /// connection already stands. Returns the host's operating system. Blocks
     /// for as long as the user needs to answer what ssh asks.
-    pub fn connect(&self, name: &str, command: Command) -> CommandResult<String> {
+    pub fn connect<C>(
+        &self,
+        name: &str,
+        commands: &[C],
+        command: impl Fn(&C) -> CommandResult<Command>,
+    ) -> CommandResult<Connected> {
         let hosts = &self.0;
-        let connection = hosts.connections.connect_remote(
+        hosts.connections.connect_remote(
             name,
-            || Starting::spawn(command),
+            commands,
+            |candidate| Starting::spawn(command(candidate)?),
             |starting| {
                 starting.introduce(
                     name,
@@ -225,8 +232,7 @@ impl HostState {
                     hosts.on_lost(Some(name.to_string())),
                 )
             },
-        )?;
-        Ok(connection.os().to_string())
+        )
     }
 
     /// Starts a shell on this machine for `request.window`.
@@ -333,8 +339,14 @@ impl HostState {
 
     /// Hangs up on the host `name`, or gives up connecting to it. Its shells
     /// that this app shows end here, as hung up on; they run on there.
-    pub fn disconnect(&self, name: &str) {
-        self.0.connections.disconnect(name);
+    pub async fn disconnect(&self, name: String) {
+        let hosts = self.0.clone();
+        // Ending ssh waits for the process: not on the thread of the UI.
+        let _ = blocking(move || {
+            hosts.connections.disconnect(&name);
+            Ok(())
+        })
+        .await;
     }
 
     /// For requests about one terminal that need no answer (what is typed,
@@ -356,7 +368,11 @@ impl HostState {
     ) -> CommandResult<()> {
         let (route, connection) = self.0.route(&terminal_id, window)?;
         match self.0.events.streams.acknowledged(route.stream, chunk) {
-            Some(seq) => connection.post(Request::PtyAck { terminal_id, seq }),
+            Some(seq) => connection.post(Request::PtyAck {
+                terminal_id,
+                stream: route.stream,
+                seq,
+            }),
             None => Ok(()),
         }
     }
@@ -406,30 +422,30 @@ impl HostState {
         }
     }
 
-    /// Ends this machine's daemon and the shells in it, whatever its version.
+    /// Ends this machine's daemon and the shells in it - if it still is one
+    /// this Cogno cannot talk to: another window may have ended it already,
+    /// and started a new one.
     pub async fn end_local_host(&self) -> CommandResult<()> {
         blocking(|| {
-            cogno_host::daemon_start::end_running_daemon(cfg!(debug_assertions))
+            cogno_host::daemon_start::end_incompatible_daemon(DEVELOPMENT_BUILD)
+                .map(|_ended_or_compatible| ())
                 .map_err(CommandError::internal)
         })
         .await
     }
 
     /// The prompts of git and ssh that a run of `session` asks go to this
-    /// app: its host passes them on (`Question::Prompt`).
-    pub fn own_prompts(&self, session: &str) -> CommandResult<()> {
-        self.0.local()?.post(Request::OwnPrompts {
+    /// app while the returned guard lives: its host passes them on. Waits
+    /// until the host took it on, so the first prompt finds it. Blocks.
+    pub fn own_prompts(&self, session: &str) -> CommandResult<OwnedPrompts> {
+        let local = self.0.local()?;
+        local.request(Request::OwnPrompts {
+            session: session.to_string(),
+        })?;
+        Ok(OwnedPrompts {
+            connection: local,
             session: session.to_string(),
         })
-    }
-
-    /// The run of `session` ended: its prompts are nobody's any more.
-    pub fn disown_prompts(&self, session: &str) {
-        if let Ok(local) = self.0.local() {
-            let _ = local.post(Request::DisownPrompts {
-                session: session.to_string(),
-            });
-        }
     }
 
     /// Hangs up on every host: what the app does on its way out. A host ends
@@ -445,6 +461,22 @@ fn terminal_of(request: &Request) -> CommandResult<&str> {
     request.terminal_id().ok_or_else(|| {
         CommandError::internal("A request about no terminal took a terminal's route")
     })
+}
+
+/// The prompts of a run's session that come to this app (`own_prompts`).
+/// Dropped - also when the run panics - they are nobody's any more: said on
+/// the connection that took them on, never on a new one set up for it.
+pub struct OwnedPrompts {
+    connection: Arc<HostConnection>,
+    session: String,
+}
+
+impl Drop for OwnedPrompts {
+    fn drop(&mut self) {
+        let _ = self.connection.post(Request::DisownPrompts {
+            session: std::mem::take(&mut self.session),
+        });
+    }
 }
 
 #[cfg(test)]

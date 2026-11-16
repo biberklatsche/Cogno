@@ -16,7 +16,7 @@ export type RemoteHost = {
 /** Why connecting to a machine failed. */
 export type RemoteHostFailure = {
   readonly message: string;
-  /** Whether connecting again can help; when not, the settings or a Cogno must change first. */
+  /** Whether connecting again can help; when not, the settings must change first. */
   readonly worthRetrying: boolean;
 };
 

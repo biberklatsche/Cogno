@@ -40,17 +40,20 @@ fn main() {
                 Ok(()) => std::process::exit(0),
                 Err(error) => {
                     eprintln!("{error}");
-                    std::process::exit(match error {
-                        cogno_host::daemon::BridgeError::NoDaemon(_) => {
-                            cogno_host::daemon::NO_DAEMON_EXIT_CODE
-                        }
-                        cogno_host::daemon::BridgeError::Broken(_) => 1,
-                    });
+                    std::process::exit(error.exit_code());
                 }
             }
         }
-        Some(CliCommand::Hook { provider, event }) => {
-            std::process::exit(cogno_lib::agent_hook::send(provider.clone(), event.clone()));
+        Some(CliCommand::Hook {
+            provider,
+            event,
+            sent_at,
+        }) => {
+            std::process::exit(cogno_lib::agent_hook::send(
+                provider.clone(),
+                event.clone(),
+                *sent_at,
+            ));
         }
         _ => {}
     }
@@ -81,7 +84,7 @@ fn main() {
 fn host_endpoint(given: &Option<std::path::PathBuf>) -> Result<std::path::PathBuf, String> {
     match given {
         Some(path) => Ok(path.clone()),
-        None => cogno_host::daemon::endpoint_path(cfg!(debug_assertions)),
+        None => cogno_lib::host_endpoint::own_host_endpoint(),
     }
 }
 

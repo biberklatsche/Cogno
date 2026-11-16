@@ -4,6 +4,7 @@ import { Subject } from "rxjs";
 import { describe, expect, it } from "vitest";
 import type { AgentSessionEvent } from "../../ports";
 import { CODING_AGENT_HOOK_COMMAND } from "./hook-command";
+import contract from "./hook-message.contract.json?raw";
 import { HookMessage, HookReading, hookSessionEvents$, toSessionEvent } from "./hook-transport";
 
 const reading: HookReading = {
@@ -84,6 +85,28 @@ describe("hookSessionEvents$", () => {
     });
 
     expect(received.map((event) => event.replayed)).toEqual([true, undefined]);
+  });
+});
+
+describe("the hook message as the app writes it", () => {
+  it("is read as the app means it (the app's side checks the same file)", () => {
+    const received: AgentSessionEvent[] = [];
+    const ipc = { messages$: new Subject<TerminalIpcMessage>() };
+    hookSessionEvents$(ipc as unknown as TerminalIpcPort, "codex", reading).subscribe((event) =>
+      received.push(event),
+    );
+
+    ipc.messages$.next(JSON.parse(contract) as TerminalIpcMessage);
+
+    expect(received).toEqual([
+      expect.objectContaining({
+        sessionId: "s1",
+        terminalId: "t1",
+        sentAt: 1_700_000_000_123,
+        replayed: true,
+        event: expect.objectContaining({ status: "ready" }),
+      }),
+    ]);
   });
 });
 

@@ -6,12 +6,13 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::attachment::Owner;
-use crate::env_vars;
 use crate::processes::{
     get_process_tree_snapshot, list_terminal_processes, terminate_process_tree,
 };
-use crate::protocol::{Event, HostError, HostErrorCode, Question, Reply, Request, Response};
-use crate::relay::{not_shown, Relay};
+use crate::protocol::{
+    Addressee, AgentHook, Event, HostError, HostErrorCode, Reply, Request, Response,
+};
+use crate::relay::{no_addressee, Relay};
 use crate::sessions::{Sessions, SpawnRequest, Spawned};
 use crate::shared_session::Departure;
 use crate::shell_integration;
@@ -22,6 +23,15 @@ use crate::wire::Output;
 /// Where what a host tells one client goes.
 pub trait EventSink: Send + Sync + 'static {
     fn event(&self, event: Event);
+    /// What an agent's hook said, now. Unlike output it is not paced by the
+    /// client's acknowledgements, and anyone on the machine can post hooks:
+    /// a sink may drop it while the client is far behind.
+    fn agent_hook(&self, hook: AgentHook) {
+        self.event(Event::AgentHook {
+            hook,
+            replayed: false,
+        });
+    }
     /// The answer to the client's request `id`, when it comes later than the
     /// request: a question another client answered.
     fn reply(&self, id: u64, reply: Reply);
@@ -84,12 +94,6 @@ impl Host {
                 stream,
                 lifetime,
             } => {
-                // Set after the profile's own environment, so a profile
-                // cannot override it.
-                let env = vec![(
-                    env_vars::COGNO_HOST.to_string(),
-                    self.endpoint.to_string_lossy().into_owned(),
-                )];
                 let integration =
                     shell_integration::root(&self.home, &options.integration_version)?;
                 let spawner = ShellSpawner::new(integration);
@@ -97,7 +101,7 @@ impl Host {
                     options,
                     window,
                     stream,
-                    env,
+                    host_endpoint: self.endpoint.clone(),
                     lifetime,
                 };
                 self.sessions
@@ -152,8 +156,13 @@ impl Host {
             Request::PtyKill { terminal_id } => {
                 self.sessions.kill(client.id, &terminal_id).map(done)
             }
-            Request::PtyAck { terminal_id, seq } => {
-                self.sessions.acknowledge(client.id, &terminal_id, seq);
+            Request::PtyAck {
+                terminal_id,
+                stream,
+                seq,
+            } => {
+                self.sessions
+                    .acknowledge(client.id, &terminal_id, stream, seq);
                 Ok(Response::Done)
             }
             Request::WindowClosed { window } => {
@@ -199,11 +208,15 @@ impl Host {
             Request::AgentHook { hook } => {
                 match hook.terminal_id.clone() {
                     Some(terminal_id) => self.sessions.take_hook(&terminal_id, hook),
-                    // No terminal names whose it is: every Cogno looks.
-                    None => self.relay.broadcast(client.id, || Event::AgentHook {
-                        hook: hook.clone(),
-                        replayed: false,
-                    }),
+                    // No terminal names whose it is: every Cogno that shows
+                    // one looks.
+                    None => {
+                        let showing = self.sessions.showing_clients();
+                        self.relay.broadcast(
+                            |to| to != client.id && showing.contains(&to),
+                            |sink| sink.agent_hook(hook.clone()),
+                        );
+                    }
                 }
                 Ok(Response::Done)
             }
@@ -245,18 +258,19 @@ impl Host {
     }
 
     /// Passes `client`'s question, which waits under request `id`, on to
-    /// the client that is to answer it; the answer comes later, under that
-    /// id. Nobody to answer: `NotShown` at once. Never blocks.
-    pub fn ask(&self, client: &Client, id: u64, question: Question) {
-        let answerer = match &question {
-            Question::RunAction { terminal_id, .. } => self.sessions.shown_by(terminal_id),
-            Question::Prompt { session, .. } => self.relay.prompt_owner(session),
-            Question::Unknown => {
+    /// the client `to` names; the answer comes later, under that id. Nobody
+    /// there: `NoAddressee` at once. What is asked the host never reads.
+    /// Never blocks.
+    pub fn ask(&self, client: &Client, id: u64, to: Addressee, question: String) {
+        let answerer = match &to {
+            Addressee::Terminal { terminal_id } => self.sessions.shown_by(terminal_id),
+            Addressee::PromptSession { session } => self.relay.prompt_owner(session),
+            Addressee::Unknown => {
                 client.sink.reply(
                     id,
                     Err(HostError::new(
                         HostErrorCode::InvalidRequest,
-                        "A question this host does not know",
+                        "An addressee this host does not know",
                     )),
                 );
                 return;
@@ -267,9 +281,10 @@ impl Host {
                 .relay
                 .ask(client.id, id, answerer, |relay| Event::Asked {
                     relay,
+                    to,
                     question,
                 }),
-            None => Err(not_shown()),
+            None => Err(no_addressee()),
         };
         if let Err(error) = asked {
             client.sink.reply(id, Err(error));
@@ -308,11 +323,73 @@ impl Host {
 }
 
 #[cfg(test)]
+pub(crate) mod test_support {
+    use crate::protocol::{
+        Request, SessionLifetime, ShellProfile, ShellType, SpawnOptions, StreamId, TerminalSize,
+    };
+
+    /// The shell prints `ready` and waits for input itself: a child process
+    /// of its own could outlive a kill and keep the console, and with it the
+    /// stream, open.
+    #[cfg(windows)]
+    pub(crate) const WAITING: &str = "echo ready & pause";
+    #[cfg(unix)]
+    pub(crate) const WAITING: &str = "echo ready; read line";
+
+    /// The shell prints `first`, a moment later `second`, and then waits.
+    #[cfg(windows)]
+    pub(crate) const TWO_LINES: &str =
+        "echo first & ping -n 2 127.0.0.1 >nul & echo second & pause";
+    #[cfg(unix)]
+    pub(crate) const TWO_LINES: &str = "echo first; sleep 1; echo second; read line";
+
+    pub(crate) const WINDOW: &str = "window-1";
+
+    /// A spawn of the platform's plain shell running `script`, without
+    /// integration.
+    pub(crate) fn spawn_request(
+        terminal_id: &str,
+        stream: u64,
+        script: &str,
+        survives: bool,
+    ) -> Request {
+        #[cfg(windows)]
+        let (shell_type, path, flag) = (ShellType::PowerShell, "cmd.exe", "/C");
+        #[cfg(unix)]
+        let (shell_type, path, flag) = (ShellType::Bash, "/bin/sh", "-c");
+        Request::PtySpawn {
+            options: SpawnOptions {
+                terminal_id: terminal_id.to_string(),
+                size: TerminalSize { cols: 80, rows: 24 },
+                profile: ShellProfile {
+                    shell_type,
+                    path: Some(path.to_string()),
+                    args: Some(vec![flag.to_string(), script.to_string()]),
+                    env: None,
+                    working_dir: Some(std::env::temp_dir().to_string_lossy().to_string()),
+                    enable_shell_integration: Some(false),
+                    inject_cogno_cli: Some(false),
+                    load_user_rc: None,
+                },
+                integration_version: "test".to_string(),
+            },
+            window: WINDOW.to_string(),
+            stream: StreamId(stream),
+            lifetime: if survives {
+                SessionLifetime::SurvivesClient
+            } else {
+                SessionLifetime::EndsWithClient
+            },
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
+    use super::test_support::{spawn_request, TWO_LINES, WAITING, WINDOW};
     use super::*;
     use crate::protocol::{
-        ActionRunStatus, AgentHook, Answer, Attached, ExitReason, RelayId, SessionLifetime,
-        SessionPlacement, ShellProfile, ShellType, SpawnOptions, StreamId, TerminalSize,
+        Attached, ExitReason, RelayId, SessionPlacement, StreamId, TerminalSize,
     };
     use crate::sessions::test_support::client_id;
     use std::sync::Mutex;
@@ -331,11 +408,11 @@ mod tests {
         handed_back: Vec<(String, String)>,
         /// Event and `replayed` of every agent hook passed on.
         hooks: Vec<(String, bool)>,
-        /// Every question passed on to this client.
-        asked: Vec<(RelayId, Question)>,
+        /// Every question passed on to this client, with whom it named.
+        asked: Vec<(RelayId, Addressee, String)>,
         /// Every reply that came later than its request: what was answered,
         /// or the error's code.
-        replies: Vec<(u64, Result<Answer, HostErrorCode>)>,
+        replies: Vec<(u64, Result<String, HostErrorCode>)>,
     }
 
     #[derive(Default)]
@@ -364,7 +441,11 @@ mod tests {
                     window,
                 } => recorded.handed_back.push((terminal_id, window)),
                 Event::AgentHook { hook, replayed } => recorded.hooks.push((hook.event, replayed)),
-                Event::Asked { relay, question } => recorded.asked.push((relay, question)),
+                Event::Asked {
+                    relay,
+                    to,
+                    question,
+                } => recorded.asked.push((relay, to, question)),
                 Event::Unknown => {}
             }
         }
@@ -441,55 +522,6 @@ mod tests {
                 "timed out waiting until {what}"
             );
             std::thread::sleep(Duration::from_millis(20));
-        }
-    }
-
-    /// The shell prints `ready` and waits for input itself: a child process
-    /// of its own could outlive a kill and keep the console, and with it the
-    /// stream, open.
-    #[cfg(windows)]
-    const WAITING: &str = "echo ready & pause";
-    #[cfg(unix)]
-    const WAITING: &str = "echo ready; read line";
-
-    /// The shell prints `first`, a moment later `second`, and then waits.
-    #[cfg(windows)]
-    const TWO_LINES: &str = "echo first & ping -n 2 127.0.0.1 >nul & echo second & pause";
-    #[cfg(unix)]
-    const TWO_LINES: &str = "echo first; sleep 1; echo second; read line";
-
-    const WINDOW: &str = "window-1";
-
-    /// A spawn of the platform's plain shell running `script`, without
-    /// integration.
-    fn spawn_request(terminal_id: &str, stream: u64, script: &str, survives: bool) -> Request {
-        #[cfg(windows)]
-        let (shell_type, path, flag) = (ShellType::PowerShell, "cmd.exe", "/C");
-        #[cfg(unix)]
-        let (shell_type, path, flag) = (ShellType::Bash, "/bin/sh", "-c");
-        Request::PtySpawn {
-            options: SpawnOptions {
-                terminal_id: terminal_id.to_string(),
-                size: TerminalSize { cols: 80, rows: 24 },
-                profile: ShellProfile {
-                    shell_type,
-                    path: Some(path.to_string()),
-                    args: Some(vec![flag.to_string(), script.to_string()]),
-                    env: None,
-                    working_dir: Some(std::env::temp_dir().to_string_lossy().to_string()),
-                    enable_shell_integration: Some(false),
-                    inject_cogno_cli: Some(false),
-                    load_user_rc: None,
-                },
-                integration_version: "test".to_string(),
-            },
-            window: WINDOW.to_string(),
-            stream: StreamId(stream),
-            lifetime: if survives {
-                SessionLifetime::SurvivesClient
-            } else {
-                SessionLifetime::EndsWithClient
-            },
         }
     }
 
@@ -1158,13 +1190,7 @@ mod tests {
 
     fn hook(terminal_id: Option<&str>, event: &str) -> Request {
         Request::AgentHook {
-            hook: AgentHook {
-                terminal_id: terminal_id.map(str::to_string),
-                provider: "codex".to_string(),
-                event: event.to_string(),
-                sent_at: 1,
-                payload: "{}".to_string(),
-            },
+            hook: AgentHook::of(terminal_id, event),
         }
     }
 
@@ -1172,19 +1198,26 @@ mod tests {
         sink.0.lock().unwrap().hooks.clone()
     }
 
-    fn run_action(terminal_id: &str) -> Question {
-        Question::RunAction {
+    fn terminal(terminal_id: &str) -> Addressee {
+        Addressee::Terminal {
             terminal_id: terminal_id.to_string(),
-            name: "new_tab".to_string(),
-            args: vec![],
         }
     }
 
-    fn asked_of(sink: &RecordingSink) -> Vec<(RelayId, Question)> {
+    fn prompt_session(session: &str) -> Addressee {
+        Addressee::PromptSession {
+            session: session.to_string(),
+        }
+    }
+
+    /// What the host passes on unread.
+    const QUESTION: &str = r#"{"anything":"at all"}"#;
+
+    fn asked_of(sink: &RecordingSink) -> Vec<(RelayId, Addressee, String)> {
         sink.0.lock().unwrap().asked.clone()
     }
 
-    fn replies_of(sink: &RecordingSink) -> Vec<(u64, Result<Answer, HostErrorCode>)> {
+    fn replies_of(sink: &RecordingSink) -> Vec<(u64, Result<String, HostErrorCode>)> {
         sink.0.lock().unwrap().replies.clone()
     }
 
@@ -1218,10 +1251,23 @@ mod tests {
         // Held until the laptop has taken in the replayed output: parsing it,
         // it goes through every command that ended back then.
         assert!(hooks_of(&on_the_laptop).is_empty());
+        // An ack of the stream the laptop had before is late: it releases
+        // nothing.
         host.handle(
             &laptop,
             Request::PtyAck {
                 terminal_id: "t1".to_string(),
+                stream: StreamId(4),
+                seq: 0,
+            },
+        )
+        .unwrap();
+        assert!(hooks_of(&on_the_laptop).is_empty());
+        host.handle(
+            &laptop,
+            Request::PtyAck {
+                terminal_id: "t1".to_string(),
+                stream: StreamId(5),
                 seq: 0,
             },
         )
@@ -1275,14 +1321,21 @@ mod tests {
     }
 
     #[test]
-    fn a_hook_that_names_no_terminal_goes_to_every_other_client() {
+    fn a_hook_that_names_no_terminal_goes_to_every_other_client_that_shows_one() {
         let (office, at_the_office) = client(1);
         let (laptop, on_the_laptop) = client(2);
         let (agent, from_the_agent) = client(3);
+        let (cli, from_the_cli) = client(4);
         let host = host();
-        for client in [&office, &laptop, &agent] {
+        for client in [&office, &laptop, &agent, &cli] {
             host.client_came(client);
         }
+        host.handle(&office, spawn_request("t1", 1, WAITING, false))
+            .unwrap();
+        host.handle(&laptop, spawn_request("t2", 1, WAITING, false))
+            .unwrap();
+        host.handle(&agent, spawn_request("t3", 1, WAITING, false))
+            .unwrap();
 
         host.handle(&agent, hook(None, "session.idle")).unwrap();
 
@@ -1295,6 +1348,9 @@ mod tests {
             [("session.idle".to_string(), false)]
         );
         assert!(hooks_of(&from_the_agent).is_empty());
+        // A process that only asked or told something shows nothing.
+        assert!(hooks_of(&from_the_cli).is_empty());
+        host.shut_down_all();
     }
 
     #[test]
@@ -1307,21 +1363,20 @@ mod tests {
         host.handle(&office, spawn_request("t1", 1, WAITING, false))
             .unwrap();
 
-        host.ask(&cli, 42, run_action("t1"));
+        host.ask(&cli, 42, terminal("t1"), QUESTION.to_string());
         let asked = asked_of(&at_the_office);
         assert_eq!(asked.len(), 1);
-        assert_eq!(asked[0].1, run_action("t1"));
+        assert_eq!(asked[0].1, terminal("t1"));
+        assert_eq!(asked[0].2, QUESTION);
         assert!(replies_of(&from_the_cli).is_empty());
 
-        let status = Answer::ActionRun {
-            status: ActionRunStatus::Dispatched,
-        };
+        let answer = r#"{"status":"dispatched"}"#.to_string();
         // Only the client the question went to answers it.
         host.handle(
             &cli,
             Request::Answer {
                 relay: asked[0].0,
-                answer: status.clone(),
+                answer: answer.clone(),
             },
         )
         .unwrap();
@@ -1330,12 +1385,12 @@ mod tests {
             &office,
             Request::Answer {
                 relay: asked[0].0,
-                answer: status.clone(),
+                answer: answer.clone(),
             },
         )
         .unwrap();
 
-        assert_eq!(replies_of(&from_the_cli), [(42, Ok(status))]);
+        assert_eq!(replies_of(&from_the_cli), [(42, Ok(answer))]);
         host.shut_down_all();
     }
 
@@ -1350,24 +1405,18 @@ mod tests {
             .unwrap();
         host.handle(&office, detach_request("t1")).unwrap();
 
-        host.ask(&cli, 1, run_action("t1"));
-        host.ask(&cli, 2, run_action("unknown"));
-        host.ask(
-            &cli,
-            3,
-            Question::Prompt {
-                session: "s".to_string(),
-                token: "k".to_string(),
-                prompt: "Password:".to_string(),
-            },
-        );
+        host.ask(&cli, 1, terminal("t1"), QUESTION.to_string());
+        host.ask(&cli, 2, terminal("unknown"), QUESTION.to_string());
+        host.ask(&cli, 3, prompt_session("s"), QUESTION.to_string());
+        host.ask(&cli, 4, Addressee::Unknown, QUESTION.to_string());
 
         assert_eq!(
             replies_of(&from_the_cli),
             [
-                (1, Err(HostErrorCode::NotShown)),
-                (2, Err(HostErrorCode::NotShown)),
-                (3, Err(HostErrorCode::NotShown)),
+                (1, Err(HostErrorCode::NoAddressee)),
+                (2, Err(HostErrorCode::NoAddressee)),
+                (3, Err(HostErrorCode::NoAddressee)),
+                (4, Err(HostErrorCode::InvalidRequest)),
             ]
         );
         host.shut_down_all();
@@ -1384,9 +1433,9 @@ mod tests {
         }
         host.handle(&office, spawn_request("t1", 1, WAITING, true))
             .unwrap();
-        host.ask(&gone_cli, 9, run_action("t1"));
+        host.ask(&gone_cli, 9, terminal("t1"), QUESTION.to_string());
         host.client_gone(gone_cli.id);
-        host.ask(&cli, 7, run_action("t1"));
+        host.ask(&cli, 7, terminal("t1"), QUESTION.to_string());
 
         host.client_gone(office.id);
 
@@ -1412,16 +1461,10 @@ mod tests {
         };
         host.handle(&first, own("ssh-1")).unwrap();
         host.handle(&second, own("git-1")).unwrap();
-        let prompt = Question::Prompt {
-            session: "git-1".to_string(),
-            token: "k".to_string(),
-            prompt: "Password:".to_string(),
-        };
-
-        host.ask(&helper, 1, prompt.clone());
+        host.ask(&helper, 1, prompt_session("git-1"), QUESTION.to_string());
 
         assert!(asked_of(&to_the_first).is_empty());
-        assert_eq!(asked_of(&to_the_second)[0].1, prompt);
+        assert_eq!(asked_of(&to_the_second)[0].1, prompt_session("git-1"));
         host.handle(
             &second,
             Request::DisownPrompts {
@@ -1429,10 +1472,10 @@ mod tests {
             },
         )
         .unwrap();
-        host.ask(&helper, 2, prompt);
+        host.ask(&helper, 2, prompt_session("git-1"), QUESTION.to_string());
         assert_eq!(
             replies_of(&from_the_helper),
-            [(2, Err(HostErrorCode::NotShown))]
+            [(2, Err(HostErrorCode::NoAddressee))]
         );
     }
 

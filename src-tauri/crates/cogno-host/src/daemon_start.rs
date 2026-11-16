@@ -76,15 +76,15 @@ fn knock(endpoint: &Path, patience: Duration) -> Option<TcpStream> {
     }
 }
 
-/// Ends this user's daemon of `dev_mode` and the shells in it, whatever its
-/// version: for one this Cogno cannot talk to. A daemon that is gone already
-/// is no failure; a process that does not answer as the daemon is never
-/// touched.
-pub fn end_running_daemon(dev_mode: bool) -> Result<(), String> {
+/// Ends this user's daemon of `dev_mode` and the shells in it, if it is one
+/// this Cogno cannot talk to; one it can - another Cogno may have started
+/// it meanwhile - is left alone. A daemon that is gone already is no
+/// failure; a process that does not answer as the daemon is never touched.
+pub fn end_incompatible_daemon(dev_mode: bool) -> Result<daemon::Ending, String> {
     let endpoint = daemon::endpoint_path(dev_mode)?;
     // Not while another Cogno starts one.
     let _one_start = take_start_lock(home_of(&endpoint)?)?;
-    daemon::end_daemon(&endpoint)
+    daemon::end_incompatible_daemon(&endpoint)
         .map_err(|error| format!("The Cogno host could not be ended: {error}"))
 }
 

@@ -14,8 +14,8 @@ use crate::host::ClientId;
 use crate::kept_hooks::KeptHooks;
 use crate::kept_output::KeptOutput;
 use crate::protocol::{
-    AgentHook, Attached, SessionInfo, SessionLifetime, SessionPlacement, ShellProfile, TerminalId,
-    TerminalSize,
+    AgentHook, Attached, SessionInfo, SessionLifetime, SessionPlacement, ShellProfile, StreamId,
+    TerminalId, TerminalSize,
 };
 use crate::sync::lock;
 
@@ -305,7 +305,10 @@ impl SharedSession {
 
     /// Only the client that shows the session paces it: a late ack from one
     /// that lost it must not hand its successor credit.
-    pub fn acknowledge(&self, client: ClientId, seq: u32) {
+    /// `client` has taken in output `seq` of `stream`. An ack of a stream
+    /// that is no longer the session's is late: it counts for nothing, nor
+    /// releases what waits for the stream that is.
+    pub fn acknowledge(&self, client: ClientId, stream: StreamId, seq: u32) {
         // A client that does not show the session does not wait for the lock.
         if self.attached_client() != Some(client) {
             return;
@@ -314,7 +317,7 @@ impl SharedSession {
             .state()
             .attached
             .as_ref()
-            .filter(|attached| attached.client == client)
+            .filter(|attached| attached.client == client && attached.stream() == stream)
         {
             attached.acknowledge(seq);
         }

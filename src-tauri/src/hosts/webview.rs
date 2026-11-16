@@ -131,13 +131,13 @@ impl Streams {
     }
 
     /// Cuts a piece of output into chunks the webview takes reliably and
-    /// sends them. False once the stream is closed or the webview behind it
-    /// is gone.
-    fn deliver(&self, output: Output) -> bool {
+    /// sends them; nothing once the stream is closed. A webview that is gone
+    /// takes nothing: its window's end closes the stream.
+    fn deliver(&self, output: Output) {
         let (channel, chunks) = {
             let mut open = lock(&self.open);
             let Some(stream) = open.get_mut(&output.stream) else {
-                return false;
+                return;
             };
             let chunks: Vec<Vec<u8>> = output
                 .bytes
@@ -155,9 +155,11 @@ impl Streams {
         };
         // Sent outside the lock: one slow webview must not hold up the
         // output of the other sessions.
-        chunks
-            .into_iter()
-            .all(|chunk| channel.send(InvokeResponseBody::Raw(chunk)).is_ok())
+        for chunk in chunks {
+            if channel.send(InvokeResponseBody::Raw(chunk)).is_err() {
+                return;
+            }
+        }
     }
 
     /// The webview took in every chunk up to and including `chunk`: the
@@ -270,8 +272,12 @@ impl HostEvents for WebviewEvents {
                     terminal_id.as_deref(),
                 );
             }
-            Event::Asked { relay, question } => {
-                questions::answer(&self.app, relay, question, answers);
+            Event::Asked {
+                relay,
+                to,
+                question,
+            } => {
+                questions::answer(&self.app, relay, to, &question, answers);
             }
             // Something a later host reports: nothing here to do with it.
             Event::Unknown => {}

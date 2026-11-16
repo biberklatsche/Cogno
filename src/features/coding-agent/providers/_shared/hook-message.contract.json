@@ -1,0 +1,6 @@
+{
+  "command": "coding_agent_hook",
+  "args": ["codex", "1700000000123", "Stop", "replayed"],
+  "terminalId": "t1",
+  "payload": { "session_id": "s1" }
+}

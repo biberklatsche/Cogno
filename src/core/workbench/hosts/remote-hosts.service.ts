@@ -20,19 +20,14 @@ export type ConnectFailure = {
 };
 
 /**
- * Failures that trying again cannot mend: something has to change first -
- * the config, or one of the two Cognos.
+ * Failures that trying again cannot mend: the settings have to change first.
+ * After a version mismatch it can, once the older Cogno is updated.
  */
-const LASTING_FAILURES: readonly ConnectFailureCode[] = [
-  "notConfigured",
-  "invalidDestination",
-  "thisCognoTooOld",
-  "hostTooOld",
-];
+const SETTINGS_FAILURES: readonly ConnectFailureCode[] = ["notConfigured", "invalidDestination"];
 
 /** Whether connecting again could work after `failure`. */
 export function isWorthRetrying(failure: ConnectFailure): boolean {
-  return !LASTING_FAILURES.includes(failure.code);
+  return !SETTINGS_FAILURES.includes(failure.code);
 }
 
 /** How far the connection to a host is; a host without an entry is not connected. */

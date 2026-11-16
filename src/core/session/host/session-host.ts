@@ -412,8 +412,9 @@ export class SessionHost {
       onSpawned: () => {
         this.setRuntime({ status: "running" });
         // A shell that already runs made its handshake long ago; the host
-        // plays it back with the output it kept.
-        if (!running) this.watchForHandshake(spawnProfile);
+        // plays it back with the output it kept. A new one - also one a
+        // retry started - makes it now.
+        if (!this._showsRunning) this.watchForHandshake(spawnProfile);
       },
       onTakenOver: (by) => {
         this.stopWatchingForHandshake();
@@ -542,7 +543,9 @@ export class SessionHost {
   retry(): void {
     if (!this.canRetry() || !this.ptyHandler) return;
     this.setRuntime({ status: "starting" });
-    this.ptyHandler.restart(this.backend.host === undefined ? "spawn" : "attach");
+    const mode = this.backend.host === undefined ? "spawn" : "attach";
+    this._showsRunning = mode === "attach";
+    this.ptyHandler.restart(mode);
   }
 
   /**

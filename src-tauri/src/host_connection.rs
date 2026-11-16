@@ -9,8 +9,10 @@
 //! never blocks, so a host that is slow to read (a stalled ssh) never holds
 //! up the thread that drives the UI.
 
-use cogno_host::protocol::{Answer, Event, RelayId, Reply, Request, Response};
-use cogno_host::wire::{self, ClientHello, ClientMessage, HostMessage, Output, VersionMismatch};
+use cogno_host::protocol::{Event, RelayId, Reply, Request, Response};
+use cogno_host::wire::{
+    self, ClientHello, ClientMessage, HostMessage, IntroductionError, Output, VersionMismatch,
+};
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Write};
 use std::net::{Shutdown, TcpStream};
@@ -91,7 +93,8 @@ pub trait HostEvents: Send + Sync + 'static {
 pub struct Answers(mpsc::Sender<ClientMessage>);
 
 impl Answers {
-    pub fn answer(&self, relay: RelayId, answer: Answer) {
+    /// `answer` as the asker reads it; the host carries it as it is.
+    pub fn answer(&self, relay: RelayId, answer: String) {
         let _ = self.0.send(ClientMessage::Post {
             request: Request::Answer { relay, answer },
         });
@@ -179,7 +182,7 @@ fn explain_failure(
     process: &Mutex<Child>,
     stderr: Stderr,
 ) -> CommandError {
-    let status = end_within(&mut lock(process), FAILED_PROCESS_PATIENCE);
+    let status = end_within(process, FAILED_PROCESS_PATIENCE);
     if error.is(AppErrorCode::NoCognoThere) {
         match status.and_then(|status| status.code()) {
             // ssh's own failure ("Permission denied", "Could not resolve
@@ -242,18 +245,19 @@ impl HostConnection {
     ) -> CommandResult<Self> {
         let mut reader = BufReader::with_capacity(READ_BUFFER_LEN, reader);
         let id = NEXT_CONNECTION.fetch_add(1, Ordering::Relaxed);
-        wire::skip_to_preamble(&mut reader).map_err(|_| no_cogno(reaching))?;
-        let hello = wire::read_host_hello(&mut reader).map_err(|_| {
-            CommandError::new(
-                AppErrorCode::ConnectFailed,
-                "The Cogno host did not introduce itself",
-            )
-        })?;
-        wire::check_versions(hello.protocol, hello.oldest)
-            .map_err(|mismatch| version_error(mismatch, reaching))?;
         let introduction = ClientHello::of_this_build(cogno_host::identity::machine_name());
-        wire::write_client_hello(&mut writer, &introduction)
-            .map_err(|_| CommandError::connection_lost())?;
+        let hello =
+            wire::introduce(&mut reader, &mut writer, &introduction).map_err(
+                |error| match error {
+                    IntroductionError::NoHost(_) => no_cogno(reaching),
+                    IntroductionError::NoHello(_) => CommandError::new(
+                        AppErrorCode::ConnectFailed,
+                        "The Cogno host did not introduce itself",
+                    ),
+                    IntroductionError::Versions(mismatch) => version_error(mismatch, reaching),
+                    IntroductionError::Broken(_) => CommandError::connection_lost(),
+                },
+            )?;
 
         let waiting = Arc::new(Mutex::new(Waiting::default()));
         let hung_up = Arc::new(AtomicBool::new(false));
@@ -411,17 +415,19 @@ fn end(process: &mut Child) {
 }
 
 /// Gives the process `patience` to end by itself, then ends it. Its exit
-/// status, when it ended by itself.
-fn end_within(process: &mut Child, patience: Duration) -> Option<ExitStatus> {
+/// status, when it ended by itself. Locked for each look only: hanging up
+/// meanwhile is not held up.
+fn end_within(process: &Mutex<Child>, patience: Duration) -> Option<ExitStatus> {
     let started = Instant::now();
     while started.elapsed() < patience {
-        match process.try_wait() {
+        let looked = lock(process).try_wait();
+        match looked {
             Ok(Some(status)) => return Some(status),
             Ok(None) => std::thread::sleep(PROCESS_POLL),
             Err(_) => break,
         }
     }
-    end(process);
+    end(&mut lock(process));
     None
 }
 
@@ -494,9 +500,52 @@ fn version_error(mismatch: VersionMismatch, reaching: Reaching<'_>) -> CommandEr
 }
 
 #[cfg(test)]
+pub mod test_support {
+    use super::*;
+
+    struct NoEvents;
+    impl HostEvents for NoEvents {
+        fn event(&self, _event: Event, _answers: &Answers) {}
+        fn output(&self, _output: Output) {}
+    }
+
+    /// A process that ends at once: what a connect starts, in a test.
+    pub fn a_process() -> Command {
+        if cfg!(windows) {
+            let mut command = Command::new("cmd");
+            command.args(["/C", "exit 0"]);
+            command
+        } else {
+            let mut command = Command::new("sh");
+            command.args(["-c", "exit 0"]);
+            command
+        }
+    }
+
+    /// A connection to a host that introduced itself and stays, answering
+    /// nothing.
+    pub fn a_standing_connection() -> HostConnection {
+        let (from_client, to_host) = std::io::pipe().unwrap();
+        let (to_client, mut from_host) = std::io::pipe().unwrap();
+        wire::write_host_hello(&mut from_host).unwrap();
+        // The host's ends stay open for as long as the test runs.
+        std::mem::forget((from_client, from_host));
+        HostConnection::over(
+            to_client,
+            to_host,
+            Reaching::Remote("office"),
+            Arc::new(NoEvents),
+            Box::new(|_, _| {}),
+            Box::new(|| {}),
+        )
+        .unwrap()
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
-    use cogno_host::protocol::{HostErrorCode, TerminalSize};
+    use cogno_host::protocol::{HostErrorCode, StreamId, TerminalSize};
     use cogno_host::wire::{OLDEST_PROTOCOL_VERSION, PROTOCOL_VERSION};
     use std::io::{PipeReader, PipeWriter};
 
@@ -573,11 +622,13 @@ mod tests {
         // A posted request gets no reply: the next one still gets its own.
         host.post(Request::PtyAck {
             terminal_id: "nobody".into(),
+            stream: StreamId(1),
             seq: 0,
         })
         .unwrap();
         let acknowledged = host.request(Request::PtyAck {
             terminal_id: "nobody".into(),
+            stream: StreamId(1),
             seq: 1,
         });
         assert!(matches!(acknowledged, Ok(Response::Done)));

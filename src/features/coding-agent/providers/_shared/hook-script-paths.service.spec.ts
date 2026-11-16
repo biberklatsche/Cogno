@@ -113,7 +113,7 @@ describe("hook scripts", () => {
 
   it("hand the payload to the starter's `hook` command, with provider and event (sh)", () => {
     const bash = bashHookScript(starter);
-    expect(bash).toContain(`"C:/Users/o'neil/.cogno/bin/cogno.cmd" hook "$1" "$2"`);
+    expect(bash).toContain(`'C:/Users/o'\\''neil/.cogno/bin/cogno.cmd' hook "$1" "$2"`);
     expect(bash).toContain("exit 0");
   });
 

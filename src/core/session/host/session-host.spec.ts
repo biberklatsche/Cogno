@@ -524,6 +524,42 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     expect(lastRenderer().dispose).not.toHaveBeenCalled();
   });
 
+  it("starts a new shell when retried after an end the user did not cause, and not after exit", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+    await settle();
+    host.attach(document.createElement("div"));
+    const onExit = ptyOf(host).onExit.mock.calls[0][0] as (event: {
+      reason: { kind: string; code?: number };
+    }) => void;
+
+    onExit({ reason: { kind: "killedByAnotherClient" } });
+    host.retry();
+    await settle();
+    expect(ptyOf(host).spawn).toHaveBeenCalledTimes(2);
+    expect(host.runtime.status).toBe("running");
+
+    onExit({ reason: { kind: "exited", code: 0 } });
+    host.retry();
+    await settle();
+    // `exit` was the user's: the pane goes, nothing starts again.
+    expect(ptyOf(host).spawn).toHaveBeenCalledTimes(2);
+  });
+
+  it("says another Cogno shows its shell, and starts nothing", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.showRunning("token");
+
+    host.startShownElsewhere("laptop");
+    await settle();
+
+    expect(host.runtime).toEqual({ status: "takenOver", takenBy: "laptop" });
+    expect(ptyOf(host).spawn).not.toHaveBeenCalled();
+    expect(ptyOf(host).attach).not.toHaveBeenCalled();
+  });
+
   it("close detaches, ends the machine and is final", async () => {
     const host = createHost();
     host.initialize("terminal-1", bashProfile);

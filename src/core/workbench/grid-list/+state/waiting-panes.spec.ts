@@ -110,9 +110,9 @@ describe("WaitingPanes", () => {
     expect(found).toHaveLength(1);
   });
 
-  it("offers no retry where something has to change first", async () => {
+  it("offers no retry where the settings have to change first", async () => {
     connect.mockRejectedValueOnce(
-      new ConnectError({ code: "hostTooOld", message: "update it there" }),
+      new ConnectError({ code: "invalidDestination", message: "not an ssh destination" }),
     );
 
     waitForShell();

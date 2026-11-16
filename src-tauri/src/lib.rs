@@ -10,6 +10,7 @@ mod db;
 mod host_connection;
 pub mod host_endpoint;
 mod hosts;
+mod relayed;
 mod runnable_actions;
 mod shell_bootstrap_logs;
 mod updater;
@@ -68,7 +69,7 @@ pub fn run(cli: Cli) {
                 return;
             };
             if let Some(action_payload) = cli.action_payload() {
-                route(app, "cli-action", &action_payload, None);
+                route(app, cli::CLI_ACTION_EVENT, &action_payload, None);
             }
             // `--config` and `--set` shape a process at its start; the one
             // already running cannot take them on, and the second process
@@ -188,7 +189,7 @@ pub fn run(cli: Cli) {
 
             // Run the requested command on first launch when present.
             if let Some(action_payload) = cli.action_payload() {
-                route(app.handle(), "cli-action", &action_payload, None);
+                route(app.handle(), cli::CLI_ACTION_EVENT, &action_payload, None);
             }
 
             #[cfg(debug_assertions)] // only include this code on debug builds

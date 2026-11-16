@@ -285,8 +285,9 @@ Cogno-Binary selbst: mit `COGNO_ASKPASS_SESSION` in der Umgebung arbeitet
 es als Askpass-Helfer (`commands/askpass.rs`), fragt mit dem Prompt-Text und
 einem Token über den Host seines Rechners (`Question::Prompt`) und druckt die
 Antwort. Solange der Lauf dauert, hat die App die Prompts seiner Sitzung beim
-Host angemeldet (`OwnPrompts`); der Host gibt sie ihr und keinem anderen
-Cogno. Das Token ist eines je Lauf, und die App beantwortet nur Prompts mit
+Host angemeldet (`OwnPrompts`, mit Antwort, bevor der Lauf startet; der
+Wächter `OwnedPrompts` meldet sie auf derselben Verbindung wieder ab); der
+Host gibt sie ihr und keinem anderen Cogno. Das Token ist eines je Lauf, und die App beantwortet nur Prompts mit
 dem Token ihres Laufs: Hooks und Helper, die git startet, erben die Umgebung
 des Laufs und können damit höchstens das Fenster dieses Laufs fragen. Die
 Sitzungs-ID vergibt der Aufrufer je Lauf (`CommandRunnerHostService`); das
@@ -330,7 +331,7 @@ u. a.: `tab-list/`, `grid-list/`, `terminal/` (Einhängen der Session-Hosts,
 `TerminalSessionRegistry`), `workspace/`, `side-menu/` (Rail, Panel,
 `ui-state`), `window/`, `app-buttons/`, `header/`, `app-menu/`,
 `native-menu/`, `notification/`, `actions/`, `keybindings/`, `external/`
-(CLI/HTTP), `bus/`, `feature-host/` und `api-adapters/`.
+(CLI), `bus/`, `feature-host/` und `api-adapters/`.
 
 `command-log/` hängt in `core/` nur von `infrastructure/` ab (DB-Bridge);
 `session/` und `workbench/` dürfen es importieren.
@@ -385,7 +386,7 @@ umgekehrt.** Die Workbench erzeugt Sessions (Tab öffnen, Split), hängt sie
 ein und aus, schließt sie und liest ihr Modell für Titel, Busy und Badge —
 das geht nicht ohne die Host-Schnittstelle. Die Session dagegen muss ohne
 Workbench sinnvoll sein: im Test, beim Restore in einem unsichtbaren Tab, in
-einem künftigen Headless-Betrieb über CLI/HTTP. Dieselbe Richtung gilt eine
+einem künftigen Headless-Betrieb über die CLI. Dieselbe Richtung gilt eine
 Ebene tiefer: der Session-Host besitzt die Maschine und importiert sie, die
 Maschine weiß nichts von der Session.
 
@@ -1057,7 +1058,8 @@ Daraus folgt:
   Byte-Stroms, wie die Shell ihn schrieb, begrenzt auf die Menge, um die ein
   Client ohnehin zurückliegen darf, gekürzt an einer Zeilengrenze. Ist ein
   Client angedockt, geht sie zusätzlich an ihn, unter Flusskontrolle. Ohne
-  Client wartet nichts: die Shell läuft weiter.
+  Client wartet nichts: die Shell läuft weiter. Eine Quittung (`PtyAck`)
+  nennt ihren Strom; die eines früheren Andockens zählt nicht.
 - **Andocken** (`PtyAttach`) spielt zuerst den Behalt ab, dann kommt, was die
   Shell schreibt. Der Host ist dabei kein Terminal-Emulator. Er liest im
   Strom nur die Sequenzen mit, die einen Modus schalten (Alt-Screen, Maus,
@@ -1102,6 +1104,10 @@ Daraus folgt:
   des Dienstes reiht nur ein. Ein Client, der langsam liest (ein hängendes
   `ssh`), hält weder die Leser seiner Sitzungen noch die Anfragen eines
   anderen Clients auf; die Flusskontrolle begrenzt, was sich ansammelt.
+  Hooks laufen außerhalb davon: Liegen für einen Client schon zu viele
+  ungeschrieben in der Schlange (`MAX_QUEUED_HOOK_BYTES`), verwirft der
+  Dienst weitere für ihn - die Sitzung behält sie ohnehin, ein späteres
+  Andocken bekommt sie.
 - **Wer eine Sitzung verlor, bekommt sie zurück, wenn der Übernehmer sie
   loslässt.** Der Host merkt sich an der Sitzung, wem sie zuletzt genommen
   wurde. Hängt der Übernehmer ab (`PtyDetach`), schließt sein Fenster oder
@@ -1184,9 +1190,10 @@ sonst an ihm scheitern oder ihn samt allen Shells beenden.
 **Ein Dienst eines älteren Cognos** (`hostTooOld` auf diesem Rechner) lebt
 weiter, solange er Shells hat, und die neue App kann mit ihm nicht reden. Der
 Nutzer kann ihn beenden (`host_end_local`, im Pane „End old host"): Die App
-prüft über `reach`, dass hinter der Prozess-ID der Dienst steht, beendet den
-Prozess unabhängig von seiner Version (`end_running_daemon`) und startet die
-Panes neu, die an ihm scheiterten. Seine Shells enden mit ihm; das sagt die
+liest den Gruß des laufenden Dienstes und beendet ihn nur, wenn sie mit ihm
+nicht reden kann (`end_incompatible_daemon`) - ein anderes Fenster kann ihn
+schon beendet und einen neuen gestartet haben, der samt seinen Shells
+bleibt. Danach startet sie die Panes neu, die an ihm scheiterten. Seine Shells enden mit ihm; das sagt die
 Meldung vorher.
 
 **Die Rahmung** (`wire.rs`) ist für beide Wege dieselbe:
@@ -1295,15 +1302,30 @@ Profils), sonst den seines Builds:
   andockt, bekommt die behaltenen als `replayed` - erst, wenn er die
   abgespielte Ausgabe quittiert hat: Beim Parsen geht er durch jeden Befehl,
   der damals endete, und ein Hook davor endete mit ihnen. Ohne Terminal geht
-  ein Hook an jeden anderen Client.
+  ein Hook an jeden anderen Client, der eine Sitzung zeigt - nicht an die,
+  die nur eine Sache zu sagen haben.
 - **Fragen mit Antwort** (`Request::Ask`, `Event::Asked`, `Request::Answer`):
-  `RunAction` geht an den Client, der das Terminal zeigt, `Prompt` an den, der
-  die Prompt-Sitzung angemeldet hat (`OwnPrompts`). Nimmt sie niemand, kommt
-  sofort `notShown`; geht der Gefragte, bekommt der Fragende `noAnswer`. Nur
-  der Gefragte kann antworten.
+  Der Dienst liest nur den Empfänger (`Addressee`): `Terminal` geht an den
+  Client, der das Terminal zeigt, `PromptSession` an den, der die
+  Prompt-Sitzung angemeldet hat (`OwnPrompts`). Frage und Antwort reicht er
+  als Text durch, ohne sie zu lesen: Er überlebt App-Updates und weiß nichts
+  von Aktionen oder Prompts. Nimmt sie niemand, kommt sofort `noAddressee`;
+  geht der Gefragte, bekommt der Fragende `noAnswer`. Nur der Gefragte kann
+  antworten. Wer kurz fragt (`once::ask`), unterscheidet „nicht gefragt"
+  (`Unreached`) von „keine Antwort" (`Unanswered`): `cogno action run`
+  weicht nur im ersten Fall auf den Single-Instance-Weg aus, die Aktion kann
+  sonst schon gelaufen sein.
 
-In der App beantwortet `hosts/questions.rs` die Fragen; Hooks gehen als
-Cogno-Nachricht (`cogno_message.rs`) an das Fenster ihres Terminals.
+Das Format der Fragen und Antworten gehört der App (`relayed.rs`: `RunAction`,
+`Prompt` und ihre Antworten), auf beiden Seiten: der Kommandozeile, die
+fragt, und der App, die antwortet. `hosts/questions.rs` beantwortet sie, auch
+eine unbekannte (`Answer::Unknown`), damit niemand vergeblich wartet. Hooks
+gehen als Cogno-Nachricht (`cogno_message.rs`) an das Fenster ihres
+Terminals; ihre Form prüfen App und Feature an derselben Datei
+(`hook-message.contract.json`). Ein Hook nennt den Zeitpunkt, an dem er
+geschah (`cogno hook --sent-at`): OpenCodes Plugin startet je Ereignis
+einen Prozess, und ein später gestarteter darf einen früheren nicht
+überholen.
 
 #### 2.7.2 Hosts im Frontend
 
@@ -1327,8 +1349,9 @@ Die Zuständigkeiten:
   den Stand je Host (`connections$`) und zeigt, was `ssh` dabei fragt, mit
   dem nackten Prompt-Dialog (2.1). Ein Fehlschlag trägt seinen Code
   (`ConnectFailure`); ob ein neuer Versuch etwas ändern kann, sagt
-  `isWorthRetrying` (nicht bei `notConfigured`, `invalidDestination`,
-  `thisCognoTooOld`, `hostTooOld`).
+  `isWorthRetrying` (nicht bei `notConfigured` und `invalidDestination`: da
+  müssen erst die Einstellungen anders werden; nach einem Versionskonflikt
+  hilft er, sobald das ältere Cogno aktualisiert ist).
 - **Vertrag und Feature:** `RemoteShellsPort` (`core/api/`, Adapter in
   `core/workbench/api-adapters/`) gibt einem Feature die Remotes der Config
   mit ihrem Verbindungsstand (bei einem Fehlschlag mit `worthRetrying`), das
@@ -1764,7 +1787,7 @@ Signal-Knoten gesetzt, weil `fixture.setInput` dafür nicht greift.
 ## 5. Der Aktionskatalog
 
 Aktionen sind die gemeinsame Sprache: ausgelöst per Keybinding,
-Menü, Palette, CLI und HTTP. Eine Aktion wird an vielen Orten gebraucht —
+Menü, Palette und CLI. Eine Aktion wird an vielen Orten gebraucht —
 Handler, Menü-Labels, Palette, CLI (`cli.rs`), Default-Konfiguration je OS,
 Doku —, und jeder Ort, der sie selbst aufschreibt, kann für sich abdriften.
 
@@ -1783,7 +1806,7 @@ defineAction({
 }),
 ```
 
-`name` ist der Bezeichner überall (Config, CLI, HTTP, Handler), `label` der
+`name` ist der Bezeichner überall (Config, CLI, Handler), `label` der
 Anzeigename, `description` der Text für `cogno action list` und die Doku.
 `defaultKeys` trägt je Keybinding die Flags `always` (feuert auch bei
 fokussiertem Terminal) und `performable` (verbraucht die Taste nur, wenn die
@@ -1898,7 +1921,7 @@ Default (aus `composeDefaultSettings`, 5.1); der Doku-Generator liest
 dieselben Descriptoren. Abschnitte folgen einer Konvention statt einer
 Liste: Jeder Top-Level-Schlüssel, der Gruppe, Map oder Liste ist, ist ein
 Abschnitt mit dem Namen seines Schlüssels (`.meta({ title })` nur, wo der
-Name falsch läse, etwa „HTTP server"), in der Reihenfolge des Schemas;
+Name falsch läse, etwa „App UI"), in der Reihenfolge des Schemas;
 einzelne Werte stehen unter „General". Ein neues Setting oder ein neuer
 Top-Level-Schlüssel, auch eines Features, erscheint damit im Panel und in
 der Referenz, ohne dass jemand eines von beiden anfasst. Was das Panel
@@ -2028,8 +2051,8 @@ Drei Aufgaben:
    unabhängig vom Modus bekannt sein muss: IDs, `requires`,
    **Settings-Schemas** (sonst kann die Config, in der `mode` steht, nicht
    validiert werden — das wäre ein Zirkel), **Migrationen** (laufen einmal,
-   Daten werden nicht abgeschaltet) und **Aktionsdefinitionen** (damit CLI,
-   HTTP und Palette den Namen kennen). Erst danach liest er `mode` und führt
+   Daten werden nicht abgeschaltet) und **Aktionsdefinitionen** (damit CLI
+   und Palette den Namen kennen). Erst danach liest er `mode` und führt
    je Feature den Runtime-Status: `inactive ⇄ active`, dazu
    `inactive → failed`.
 2. **Aktivierung (dynamisch, nur bei `mode: on`).** Löst `requires`

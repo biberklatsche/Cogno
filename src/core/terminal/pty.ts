@@ -398,10 +398,9 @@ export class Pty implements IPty {
   dispose(): void {
     // While an open is still in flight there is no session to end yet; the
     // open's continuation ends it as soon as it exists. A shell that was
-    // handed back is this terminal's again, though it is not shown yet.
-    if (this.state.kind === "live" || this.state.kind === "handedBack") {
-      this.letGo(this.state.terminalId);
-    }
+    // taken over or handed back is not shown here: a new session takes it
+    // back, and this one must not end it on its way out.
+    if (this.state.kind === "live") this.letGo(this.state.terminalId);
     this.closeOutput();
     this.state = { kind: "disposed" };
     this._pendingResize = undefined;

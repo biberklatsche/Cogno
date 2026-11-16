@@ -76,8 +76,11 @@ function post(hookEvent, payload) {
   try {
     const windows = process.platform === "win32";
     const env = { ...process.env, COGNO_TERMINAL_ID: "", COGNO_HOST: "" };
+    // When it happened, not when its process got going: events follow each
+    // other closely, and a process that starts late must not overtake.
+    const args = ["hook", PROVIDER, hookEvent, "--sent-at", String(Date.now())];
     // A .cmd starts only through cmd.exe; quoted, its path may hold spaces.
-    const child = spawn(windows ? '"' + STARTER + '"' : STARTER, ["hook", PROVIDER, hookEvent], {
+    const child = spawn(windows ? '"' + STARTER + '"' : STARTER, args, {
       env,
       shell: windows,
       stdio: ["pipe", "ignore", "ignore"],

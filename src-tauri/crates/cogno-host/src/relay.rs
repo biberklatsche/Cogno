@@ -1,13 +1,13 @@
-//! What one client of the host has for another: a question to answer (what
-//! `cogno action run` asks the Cogno that shows its terminal, what git or ssh
-//! asks the Cogno that started them), and what an agent's hook said that no
-//! terminal of its own names. The host only passes it on.
+//! What one client of the host has for another: a question to answer, for
+//! the client that shows a terminal or owns a prompt session, and what an
+//! agent's hook said that no terminal of its own names. The host routes it
+//! and passes it on; what it says is the clients' business.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::host::{Client, ClientId, EventSink};
-use crate::protocol::{Answer, Event, HostError, HostErrorCode, RelayId, Response};
+use crate::protocol::{Event, HostError, HostErrorCode, RelayId, Response};
 use crate::sync::lock;
 
 /// A question on its way: whom the answer goes to, under which of its
@@ -77,17 +77,17 @@ impl Relay {
         }
     }
 
-    /// Gives every connected client but `from` the event `event` makes.
-    pub fn broadcast(&self, from: ClientId, event: impl Fn() -> Event) {
-        let others: Vec<Arc<dyn EventSink>> = self
+    /// Hands every connected client `to` picks to `send`.
+    pub fn broadcast(&self, to: impl Fn(ClientId) -> bool, send: impl Fn(&dyn EventSink)) {
+        let picked: Vec<Arc<dyn EventSink>> = self
             .state()
             .clients
             .iter()
-            .filter(|(id, _)| **id != from)
+            .filter(|(id, _)| to(**id))
             .map(|(_, sink)| sink.clone())
             .collect();
-        for sink in others {
-            sink.event(event());
+        for sink in picked {
+            send(sink.as_ref());
         }
     }
 
@@ -112,7 +112,7 @@ impl Relay {
 
     /// Passes a question of `asker`, which waits under `request`, on to
     /// `answerer`, with the event `asked` makes of its relay id. Fails with
-    /// `NotShown` when `answerer` is not connected.
+    /// `NoAddressee` when `answerer` is not connected.
     pub fn ask(
         &self,
         asker: ClientId,
@@ -123,7 +123,7 @@ impl Relay {
         let (sink, relay) = {
             let mut state = self.state();
             let Some(sink) = state.clients.get(&answerer).cloned() else {
-                return Err(not_shown());
+                return Err(no_addressee());
             };
             state.next_relay += 1;
             let relay = RelayId(state.next_relay);
@@ -143,7 +143,7 @@ impl Relay {
 
     /// `from` answers the question `relay`: the asker gets the answer. Only
     /// the client the question went to answers it.
-    pub fn answer(&self, from: ClientId, relay: RelayId, answer: Answer) {
+    pub fn answer(&self, from: ClientId, relay: RelayId, answer: String) {
         let asker = {
             let mut state = self.state();
             let question = match state.pending.remove(&relay) {
@@ -168,9 +168,9 @@ impl Relay {
 }
 
 /// Nobody is there to answer.
-pub(crate) fn not_shown() -> HostError {
+pub(crate) fn no_addressee() -> HostError {
     HostError::new(
-        HostErrorCode::NotShown,
+        HostErrorCode::NoAddressee,
         "No Cogno shows that terminal or answers those prompts",
     )
 }

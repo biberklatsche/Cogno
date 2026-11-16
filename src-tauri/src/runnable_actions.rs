@@ -5,17 +5,23 @@
 use std::collections::HashSet;
 use std::sync::Mutex;
 
-use cogno_host::protocol::ActionRunStatus;
+use cogno_host::sync::lock;
 use tauri::State;
+
+use crate::relayed::ActionRunStatus;
 
 /// The action names the webview currently accepts, split by whether they
 /// would dispatch or are declared but inactive (a feature that is off).
 /// Anything in neither set is unknown.
 #[derive(Default)]
-pub struct RunnableActionsState {
-    dispatched: Mutex<HashSet<String>>,
-    inactive: Mutex<HashSet<String>>,
+struct RunnableActions {
+    dispatched: HashSet<String>,
+    inactive: HashSet<String>,
 }
+
+/// Both lists under one lock: an update is seen whole or not at all.
+#[derive(Default)]
+pub struct RunnableActionsState(Mutex<RunnableActions>);
 
 impl RunnableActionsState {
     pub fn new() -> Self {
@@ -23,13 +29,21 @@ impl RunnableActionsState {
     }
 
     pub fn classify(&self, name: &str) -> ActionRunStatus {
-        if self.dispatched.lock().unwrap().contains(name) {
+        let actions = lock(&self.0);
+        if actions.dispatched.contains(name) {
             ActionRunStatus::Dispatched
-        } else if self.inactive.lock().unwrap().contains(name) {
+        } else if actions.inactive.contains(name) {
             ActionRunStatus::Inactive
         } else {
             ActionRunStatus::NotFound
         }
+    }
+
+    fn set(&self, dispatched: Vec<String>, inactive: Vec<String>) {
+        *lock(&self.0) = RunnableActions {
+            dispatched: dispatched.into_iter().collect(),
+            inactive: inactive.into_iter().collect(),
+        };
     }
 }
 
@@ -40,8 +54,7 @@ pub fn set_runnable_actions(
     dispatched: Vec<String>,
     inactive: Vec<String>,
 ) {
-    *state.dispatched.lock().unwrap() = dispatched.into_iter().collect();
-    *state.inactive.lock().unwrap() = inactive.into_iter().collect();
+    state.set(dispatched, inactive);
 }
 
 #[cfg(test)]
@@ -51,8 +64,7 @@ mod tests {
     #[test]
     fn an_action_is_dispatched_inactive_or_not_found() {
         let state = RunnableActionsState::new();
-        *state.dispatched.lock().unwrap() = ["new_tab".to_string()].into();
-        *state.inactive.lock().unwrap() = ["git_panel".to_string()].into();
+        state.set(vec!["new_tab".into()], vec!["git_panel".into()]);
 
         assert_eq!(state.classify("new_tab"), ActionRunStatus::Dispatched);
         assert_eq!(state.classify("git_panel"), ActionRunStatus::Inactive);

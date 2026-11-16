@@ -25,6 +25,16 @@ pub struct Connections {
     /// The same for this machine's daemon, apart from the other machines: a
     /// password ssh waits for must not hold up the terminals here.
     connecting_local: Mutex<()>,
+    /// How often each host was hung up on: a connect that waits for its turn,
+    /// or between two commands, sees that it was given up meanwhile.
+    hang_ups: Mutex<HashMap<String, u64>>,
+}
+
+/// A connection to another machine, and which of the commands tried reached
+/// it: `None` when it already stood.
+pub struct Connected {
+    pub connection: Arc<HostConnection>,
+    pub by: Option<usize>,
 }
 
 /// What a lost connection means for its host.
@@ -88,33 +98,71 @@ impl Connections {
             .ok_or_else(CommandError::connection_lost)
     }
 
-    /// The connection to the host `name`: `start` starts its process unless
-    /// one stands, and `introduce` waits for the host there. Hanging up on
-    /// `name` meanwhile gives up on it.
-    pub fn connect_remote(
+    fn hang_ups_of(&self, name: &str) -> u64 {
+        lock(&self.hang_ups).get(name).copied().unwrap_or_default()
+    }
+
+    /// The connection to the host `name`, unless one stands: `start` starts
+    /// the process of each of `commands` in turn, as long as the one before
+    /// did not reach Cogno (`NoCognoThere`), and `introduce` waits for the
+    /// host there. Hanging up on `name` meanwhile gives up on it - also while
+    /// it waits for its turn.
+    pub fn connect_remote<C>(
         &self,
         name: &str,
-        start: impl FnOnce() -> CommandResult<Starting>,
-        introduce: impl FnOnce(Starting) -> CommandResult<HostConnection>,
-    ) -> CommandResult<Arc<HostConnection>> {
+        commands: &[C],
+        mut start: impl FnMut(&C) -> CommandResult<Starting>,
+        mut introduce: impl FnMut(Starting) -> CommandResult<HostConnection>,
+    ) -> CommandResult<Connected> {
+        let hang_ups = self.hang_ups_of(name);
+        let given_up = || self.hang_ups_of(name) != hang_ups;
         let _one_at_a_time = lock(&self.connecting_remote);
-        if let Ok(connected) = self.remote(name) {
-            return Ok(connected);
+        if let Ok(connection) = self.remote(name) {
+            return Ok(Connected {
+                connection,
+                by: None,
+            });
         }
-        let starting = start()?;
-        *lock(&self.setting_up) = Some((name.to_string(), starting.ender()));
-        let introduced = introduce(starting);
-        let given_up = lock(&self.setting_up).take().is_none();
-        if given_up {
-            if let Ok(connection) = introduced {
-                connection.hang_up();
+        let mut first_failure: Option<CommandError> = None;
+        for (index, command) in commands.iter().enumerate() {
+            if given_up() {
+                return Err(hung_up_on(name));
             }
-            return Err(CommandError::new(
-                AppErrorCode::ConnectionLost,
-                format!("The connection to {name} was hung up"),
-            ));
+            let starting = start(command)?;
+            *lock(&self.setting_up) = Some((name.to_string(), starting.ender()));
+            let introduced = introduce(starting);
+            if lock(&self.setting_up).take().is_none() {
+                if let Ok(connection) = introduced {
+                    connection.hang_up();
+                }
+                return Err(hung_up_on(name));
+            }
+            match introduced {
+                Ok(connection) => {
+                    return self
+                        .put_in_place(name, connection)
+                        .map(|connection| Connected {
+                            connection,
+                            by: Some(index),
+                        })
+                }
+                // The command did not reach Cogno: the next one may.
+                Err(error) if error.is(AppErrorCode::NoCognoThere) => {
+                    first_failure.get_or_insert(error);
+                }
+                Err(error) => return Err(error),
+            }
         }
-        let connection = Arc::new(introduced?);
+        // What the first command met says the most.
+        Err(first_failure.unwrap_or_else(|| CommandError::internal("No command to try")))
+    }
+
+    fn put_in_place(
+        &self,
+        name: &str,
+        connection: HostConnection,
+    ) -> CommandResult<Arc<HostConnection>> {
+        let connection = Arc::new(connection);
         lock(&self.remotes).insert(name.to_string(), connection.clone());
         // Lost before it was put in its place: its end found nothing to take
         // out, so it is taken out here.
@@ -157,8 +205,9 @@ impl Connections {
     }
 
     /// Hangs up on the host `name`, and gives up on a connection to it that
-    /// is being set up.
+    /// is being set up or waits to be.
     pub fn disconnect(&self, name: &str) {
+        *lock(&self.hang_ups).entry(name.to_string()).or_default() += 1;
         let standing = lock(&self.remotes).remove(name);
         if let Some(connection) = standing {
             connection.hang_up();
@@ -193,5 +242,112 @@ impl Connections {
         if let Some((_, give_up)) = lock(&self.setting_up).take() {
             give_up();
         }
+    }
+}
+
+fn hung_up_on(name: &str) -> CommandError {
+    CommandError::new(
+        AppErrorCode::ConnectionLost,
+        format!("The connection to {name} was hung up"),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::host_connection::test_support::{a_process, a_standing_connection};
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    fn not_cogno() -> CommandError {
+        CommandError::new(AppErrorCode::NoCognoThere, "cogno: not found")
+    }
+
+    #[test]
+    fn a_command_that_does_not_reach_cogno_is_followed_by_the_next() {
+        let connections = Connections::default();
+        let mut tried = 0;
+
+        let connected = connections
+            .connect_remote(
+                "office",
+                &["sh", "pwsh"],
+                |_| Starting::spawn(a_process()),
+                |_| {
+                    tried += 1;
+                    if tried == 1 {
+                        Err(not_cogno())
+                    } else {
+                        Ok(a_standing_connection())
+                    }
+                },
+            )
+            .unwrap();
+
+        assert_eq!(connected.by, Some(1));
+        assert!(connections.remote("office").is_ok());
+    }
+
+    #[test]
+    fn any_other_failure_ends_the_trying() {
+        let connections = Connections::default();
+        let mut tried = 0;
+
+        let failed = connections.connect_remote(
+            "office",
+            &["sh", "pwsh"],
+            |_| Starting::spawn(a_process()),
+            |_| {
+                tried += 1;
+                Err(CommandError::new(AppErrorCode::ConnectFailed, "denied"))
+            },
+        );
+
+        assert!(failed.err().unwrap().is(AppErrorCode::ConnectFailed));
+        assert_eq!(tried, 1);
+    }
+
+    #[test]
+    fn a_connect_that_waits_for_its_turn_is_given_up_when_hung_up_on() {
+        let connections = Arc::new(Connections::default());
+        let (release, released) = mpsc::channel::<()>();
+        let (entered, entering) = mpsc::channel::<()>();
+        // Another host takes its time: asked for a password, say.
+        let first = {
+            let connections = connections.clone();
+            std::thread::spawn(move || {
+                connections.connect_remote(
+                    "home",
+                    &["sh"],
+                    |_| Starting::spawn(a_process()),
+                    |_| {
+                        entered.send(()).unwrap();
+                        released.recv().unwrap();
+                        Ok(a_standing_connection())
+                    },
+                )
+            })
+        };
+        entering.recv().unwrap();
+        let second = {
+            let connections = connections.clone();
+            std::thread::spawn(move || {
+                connections.connect_remote(
+                    "office",
+                    &["sh"],
+                    |_| -> CommandResult<Starting> { panic!("started though hung up on") },
+                    |_| Ok(a_standing_connection()),
+                )
+            })
+        };
+        std::thread::sleep(Duration::from_millis(50));
+
+        connections.disconnect("office");
+        release.send(()).unwrap();
+
+        assert!(first.join().unwrap().is_ok());
+        let given_up = second.join().unwrap();
+        assert!(given_up.err().unwrap().is(AppErrorCode::ConnectionLost));
+        assert!(connections.remote("office").is_err());
     }
 }

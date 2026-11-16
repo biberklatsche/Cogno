@@ -2,7 +2,7 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { SessionBackend } from "@cogno/core/session/host/session-backend";
 import { HostError, OsPlatform, SessionInfoContract } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
-import { Subject } from "rxjs";
+import { filter, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
 import { Pane } from "../+model/model";
@@ -37,6 +37,7 @@ describe("SessionHostFactory", () => {
     mount: ReturnType<typeof vi.fn>;
   };
   let session: ReturnType<typeof vi.fn>;
+  let endLocalHost: ReturnType<typeof vi.fn>;
   let claimed: SessionInfoContract | undefined;
   let facts: Subject<Fact>;
   let reattachments: Subject<{ type: string; payload?: string }>;
@@ -53,6 +54,7 @@ describe("SessionHostFactory", () => {
     facts = new Subject();
     reattachments = new Subject();
     claimed = undefined;
+    endLocalHost = vi.fn().mockResolvedValue(undefined);
     session = vi.fn(async (_host: string | undefined, terminalId: string) =>
       TauriMockFactory.createSessionInfo(terminalId),
     );
@@ -76,7 +78,12 @@ describe("SessionHostFactory", () => {
           const entry = {
             pane,
             backend,
-            session: { runtime: { status: "starting" }, failStart: vi.fn() },
+            session: {
+              runtime: { status: "starting" },
+              failStart: vi.fn(),
+              retry: vi.fn(),
+              runsOnThisMachine: backend.host === undefined,
+            },
             keybindings: {},
             view: {
               location: { nativeElement: document.createElement("div") },
@@ -96,10 +103,12 @@ describe("SessionHostFactory", () => {
       {
         getShellProfileOrDefault: () => ({ shell_type: "ZSH", path: "/bin/zsh" }),
       } as unknown as ConfigService,
-      { on$: () => reattachments } as never,
+      {
+        on$: (type: string) => reattachments.pipe(filter((action) => action.type === type)),
+      } as never,
       { facts$: facts } as never,
       { platform: () => "linux" } as unknown as OsPlatform,
-      { session } as unknown as Hosts,
+      { session, endLocalHost } as unknown as Hosts,
       { claim: () => claimed } as never,
       scopes as never,
       waitingPanes as never,
@@ -347,6 +356,24 @@ describe("SessionHostFactory", () => {
 
       expect(opened[1]?.start.kind).toBe("spawn");
     });
+  });
+
+  it("ends the old host of this machine and starts again only what failed for it", async () => {
+    factory.ensureSession(localPane);
+    factory.ensureSession({ terminalId: "t3", shellName: "zsh" } as Pane);
+    const failed = entries.get("t1")?.session as unknown as {
+      runtime: { status: string; code?: string };
+      retry: ReturnType<typeof vi.fn>;
+    };
+    failed.runtime = { status: "failed", code: "hostTooOld" };
+    const other = entries.get("t3")?.session as unknown as { retry: ReturnType<typeof vi.fn> };
+
+    reattachments.next({ type: "ReplaceOldLocalHost" });
+    await settle();
+
+    expect(endLocalHost).toHaveBeenCalledOnce();
+    expect(failed.retry).toHaveBeenCalledOnce();
+    expect(other.retry).not.toHaveBeenCalled();
   });
 
   it("closes a pane for good: what waits stops, and the app hears the terminal went", () => {

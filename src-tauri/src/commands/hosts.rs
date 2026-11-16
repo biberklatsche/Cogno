@@ -8,6 +8,7 @@ use tauri::{AppHandle, Manager, State};
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
 use crate::commands::askpass::{point_ssh_at_helper, AskpassState};
+use crate::host_endpoint::DEVELOPMENT_BUILD;
 use crate::hosts::HostState;
 
 /// How often ssh asks the other machine whether it is still there, and how
@@ -29,7 +30,7 @@ pub struct HostInfo {
 /// The Cogno home on the other machine that the default command starts the
 /// bridge from: a development build talks to development builds.
 fn remote_home_directory_name() -> &'static str {
-    if cfg!(debug_assertions) {
+    if DEVELOPMENT_BUILD {
         identity::DEVELOPMENT_HOME_DIRECTORY_NAME
     } else {
         identity::HOME_DIRECTORY_NAME
@@ -96,51 +97,25 @@ pub async fn host_connect(
         let hosts = connecting.state::<HostState>();
         // What ssh asks comes to this app: the host of this machine passes it
         // on. Without that host nothing can ask; a key still logs in.
-        let owned = hosts.own_prompts(&session).is_ok();
-        let connected = connect_trying(&hosts, &name, &destination, &candidates, |ssh| {
-            point_ssh_at_helper(ssh, &session, &askpass_token);
-        });
-        if owned {
-            hosts.disown_prompts(&session);
-        }
-        connected
+        let _owned = hosts.own_prompts(&session);
+        let connected = hosts.connect(&name, &candidates, |remote_command: &String| {
+            let mut ssh = ssh_command(&destination, remote_command)?;
+            point_ssh_at_helper(&mut ssh, &session, &askpass_token);
+            Ok(ssh)
+        })?;
+        Ok(HostInfo {
+            os: connected.connection.os().to_string(),
+            found_command: connected
+                .by
+                .filter(|&index| index > 0)
+                .map(|index| candidates[index].clone()),
+        })
     })
     .await;
     app.state::<AskpassState>()
         .close_session(&app, &prompt_session);
 
     connected.map_err(CommandError::internal)?
-}
-
-/// Connects with each of `candidates` in turn, as long as the one before did
-/// not reach Cogno. `prepare` lets ssh ask through the app.
-fn connect_trying(
-    hosts: &HostState,
-    name: &str,
-    destination: &str,
-    candidates: &[String],
-    prepare: impl Fn(&mut Command),
-) -> CommandResult<HostInfo> {
-    let mut first_failure: Option<CommandError> = None;
-    for (index, remote_command) in candidates.iter().enumerate() {
-        let mut ssh = ssh_command(destination, remote_command)?;
-        prepare(&mut ssh);
-        match hosts.connect(name, ssh) {
-            Ok(os) => {
-                return Ok(HostInfo {
-                    os,
-                    found_command: (index > 0).then(|| remote_command.clone()),
-                })
-            }
-            // The command did not reach Cogno: the next one may.
-            Err(error) if error.is(AppErrorCode::NoCognoThere) => {
-                first_failure.get_or_insert(error);
-            }
-            Err(error) => return Err(error),
-        }
-    }
-    // What the default command met says the most.
-    Err(first_failure.unwrap_or_else(|| CommandError::internal("No command to try")))
 }
 
 /// The shells installed on this machine: offered as profiles on first start.
@@ -195,13 +170,14 @@ pub async fn host_kill_session(
 
 /// Hangs up on a host on another machine, or gives up connecting to it.
 #[tauri::command]
-pub fn host_disconnect(hosts: State<'_, HostState>, name: String) {
-    hosts.disconnect(&name);
+pub async fn host_disconnect(hosts: State<'_, HostState>, name: String) -> CommandResult<()> {
+    hosts.disconnect(name).await;
+    Ok(())
 }
 
-/// Ends this machine's host, whatever its version, and the shells in it: for
-/// one from an older Cogno that this one cannot talk to. The next terminal
-/// starts a host of this Cogno.
+/// Ends this machine's host and the shells in it, if it is one from an older
+/// Cogno that this one cannot talk to. The next terminal starts a host of
+/// this Cogno.
 #[tauri::command]
 pub async fn host_end_local(hosts: State<'_, HostState>) -> CommandResult<()> {
     hosts.end_local_host().await

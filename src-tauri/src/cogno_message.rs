@@ -52,14 +52,14 @@ mod tests {
             payload: r#"{"session_id":"s1"}"#.into(),
         };
 
+        // The webview's side reads the same file (`hook-transport.spec.ts`).
+        let contract: serde_json::Value = serde_json::from_str(include_str!(
+            "../../src/features/coding-agent/providers/_shared/hook-message.contract.json"
+        ))
+        .unwrap();
         assert_eq!(
             serde_json::to_value(CognoMessage::of_agent_hook(hook, true)).unwrap(),
-            serde_json::json!({
-                "command": "coding_agent_hook",
-                "args": ["codex", "1700000000123", "Stop", "replayed"],
-                "terminalId": "t1",
-                "payload": { "session_id": "s1" },
-            })
+            contract
         );
     }
 }

@@ -19,6 +19,7 @@ import {
   RemoteHostConnection,
   RemoteHostsService,
 } from "@cogno/core/workbench/hosts/remote-hosts.service";
+import { shownByOtherCogno } from "@cogno/core/workbench/hosts/running-shell";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { isHostError, SessionInfoContract } from "@cogno/platform";
@@ -86,7 +87,7 @@ function toRemoteShell(
     title: placement.title ?? undefined,
     directory: placement.directory ?? undefined,
     shown: shownWhere(session, sessions),
-    shownBy: attached.to === "otherClient" ? (attached.by ?? undefined) : undefined,
+    shownBy: shownByOtherCogno(attached),
   };
 }
 

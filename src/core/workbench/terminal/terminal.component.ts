@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   Signal,
@@ -18,6 +19,8 @@ import { TerminalHistoryService } from "@cogno/core/session/history/terminal-his
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { closesPane } from "@cogno/core/workbench/grid-list/+state/shell-end";
+import { TerminalExitContract } from "@cogno/platform";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
 import { SessionMenus } from "./+state/session-menus";
@@ -108,6 +111,12 @@ export class TerminalComponent implements AfterViewInit {
     event.stopPropagation();
     this.host.scrollToBottom();
   }
+
+  /** How the shell ended, when the user did not end it: the pane stays and says so. */
+  readonly endedWithoutUser: Signal<TerminalExitContract | undefined> = computed(() => {
+    const { status, exit } = this.runtime();
+    return status === "exited" && exit && !closesPane(exit) ? exit : undefined;
+  });
 
   /** Whether the shell runs on this machine, where Cogno can start a new one. */
   readonly runsOnThisMachine = this.host.runsOnThisMachine;

@@ -57,9 +57,8 @@ struct Endpoint {
     pid: u32,
 }
 
-/// Whether a process runs under `pid`: the daemon's, or one that was given
-/// its id since. Only reaching it tells which.
-fn process_runs(pid: u32) -> bool {
+/// Hands `with` the process that runs under `pid` now, if one does.
+fn with_process<R>(pid: u32, with: impl FnOnce(Option<&sysinfo::Process>) -> R) -> R {
     let pid = sysinfo::Pid::from_u32(pid);
     let mut system = sysinfo::System::new();
     system.refresh_processes_specifics(
@@ -67,7 +66,13 @@ fn process_runs(pid: u32) -> bool {
         true,
         sysinfo::ProcessRefreshKind::nothing(),
     );
-    system.process(pid).is_some()
+    with(system.process(pid))
+}
+
+/// Whether a process runs under `pid`: the daemon's, or one that was given
+/// its id since. Only reaching it tells which.
+fn process_runs(pid: u32) -> bool {
+    with_process(pid, |process| process.is_some())
 }
 
 /// Whether the process the endpoint file names runs, whether or not it
@@ -246,19 +251,36 @@ fn wait_for_preamble(stream: &TcpStream) -> io::Result<()> {
     }
 }
 
-/// Ends the daemon the endpoint file names, and the shells in it with it:
-/// for a daemon this Cogno cannot talk to, one of an older version. No
-/// version is spoken with it. That it takes the token and begins as a host
+/// What became of a daemon this Cogno was to end.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ending {
+    /// No daemon this Cogno cannot talk to is left: it was ended, or none
+    /// ran.
+    Ended,
+    /// The daemon that runs is one this Cogno talks to - another Cogno
+    /// started it meanwhile: left alone, with its shells.
+    Compatible,
+}
+
+/// Ends the daemon the endpoint file names, and the shells in it with it,
+/// if it is one this Cogno cannot talk to. Only its hello is read, which
+/// every version says alike. That it takes the token and begins as a host
 /// shows that the process the file names is the daemon (its id cannot be
 /// another's while it runs); a process that does not is never touched. A
 /// file whose process is gone only goes itself.
-pub fn end_daemon(endpoint: &Path) -> io::Result<()> {
+pub fn end_incompatible_daemon(endpoint: &Path) -> io::Result<Ending> {
     let written = match read_endpoint(endpoint) {
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Ending::Ended),
         read => read?,
     };
     if process_runs(written.pid) {
-        drop(reach(&written)?);
+        let mut stream = reach(&written)?;
+        wire::skip_to_preamble(&mut stream)?;
+        let hello = wire::read_host_hello(&mut stream)?;
+        if wire::check_versions(hello.protocol, hello.oldest).is_ok() {
+            return Ok(Ending::Compatible);
+        }
+        drop(stream);
         end_process(written.pid)?;
         let asked = Instant::now();
         while process_runs(written.pid) {
@@ -272,28 +294,22 @@ pub fn end_daemon(endpoint: &Path) -> io::Result<()> {
         }
     }
     remove_own_endpoint(endpoint, &written.token);
-    Ok(())
+    Ok(Ending::Ended)
 }
 
 /// Ends the process `pid`. Its shells end with it: on Unix the PTYs it held
 /// close and hang their shells up, on Windows the job of each shell kills
 /// the shell's tree when its handle closes (`process_job`).
 fn end_process(pid: u32) -> io::Result<()> {
-    let pid = sysinfo::Pid::from_u32(pid);
-    let mut system = sysinfo::System::new();
-    system.refresh_processes_specifics(
-        sysinfo::ProcessesToUpdate::Some(&[pid]),
-        true,
-        sysinfo::ProcessRefreshKind::nothing(),
-    );
-    let Some(process) = system.process(pid) else {
-        return Ok(());
-    };
     // Terminate where there is a choice: what the daemon cannot catch is no
     // different, and a signal it may one day handle is the polite one.
-    let ended = process
-        .kill_with(sysinfo::Signal::Term)
-        .unwrap_or_else(|| process.kill());
+    let ended = with_process(pid, |process| {
+        process.is_none_or(|process| {
+            process
+                .kill_with(sysinfo::Signal::Term)
+                .unwrap_or_else(|| process.kill())
+        })
+    });
     if ended {
         Ok(())
     } else {
@@ -313,7 +329,13 @@ pub fn bridge(
     mut input: impl Read + Send + 'static,
     mut output: impl Write,
 ) -> Result<(), BridgeError> {
-    let mut from_daemon = connect(endpoint).map_err(BridgeError::NoDaemon)?;
+    let mut from_daemon = connect(endpoint).map_err(|error| {
+        if no_daemon(&error) {
+            BridgeError::NoDaemon(error)
+        } else {
+            BridgeError::Unreachable(error)
+        }
+    })?;
     let mut to_daemon = from_daemon.try_clone().map_err(BridgeError::Broken)?;
     std::thread::spawn(move || {
         let _ = pass(&mut input, &mut to_daemon);
@@ -323,19 +345,48 @@ pub fn bridge(
     pass(&mut from_daemon, &mut output).map_err(BridgeError::Broken)
 }
 
+/// Whether connecting failed because no daemon runs: no endpoint file, its
+/// process is gone, or nothing listens on its port. Anything else is a
+/// daemon, or something in its place, that does not answer as one.
+fn no_daemon(error: &io::Error) -> bool {
+    matches!(
+        error.kind(),
+        io::ErrorKind::NotFound | io::ErrorKind::ConnectionRefused
+    )
+}
+
 /// Why the bridge ended other than by either side hanging up.
 #[derive(Debug)]
 pub enum BridgeError {
-    /// No daemon runs, or it does not answer.
+    /// No daemon runs.
     NoDaemon(io::Error),
+    /// A daemon seems to run, but does not answer as one.
+    Unreachable(io::Error),
     /// Passing the bytes on failed.
     Broken(io::Error),
+}
+
+impl BridgeError {
+    /// What `cogno server --stdio` exits with: only an absent daemon is
+    /// told apart (`NO_DAEMON_EXIT_CODE`).
+    pub fn exit_code(&self) -> i32 {
+        match self {
+            BridgeError::NoDaemon(_) => NO_DAEMON_EXIT_CODE,
+            BridgeError::Unreachable(_) | BridgeError::Broken(_) => 1,
+        }
+    }
 }
 
 impl std::fmt::Display for BridgeError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             BridgeError::NoDaemon(_) => formatter.write_str("No Cogno is running on this machine"),
+            BridgeError::Unreachable(error) => {
+                write!(
+                    formatter,
+                    "The Cogno host on this machine does not answer: {error}"
+                )
+            }
             BridgeError::Broken(error) => {
                 write!(formatter, "The connection to the Cogno host broke: {error}")
             }
@@ -532,22 +583,18 @@ fn wait_until_idle(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod test_support {
     use super::*;
-    use crate::protocol::{HostError, Request, Response};
-    use crate::wire::{self, ClientHello, ClientMessage, HostMessage};
 
-    fn hello() -> ClientHello {
-        ClientHello::of_this_build(Some("test".to_string()))
-    }
-
-    const QUICK: Patience = Patience {
+    /// A daemon that waits long for its first client, and briefly once the
+    /// last one left.
+    pub(crate) const QUICK: Patience = Patience {
         for_the_first_client: Duration::from_secs(10),
         when_idle: Duration::from_millis(300),
     };
 
     /// An endpoint file of this test's own, and the daemon behind it.
-    fn start(patience: Patience) -> (PathBuf, std::thread::JoinHandle<io::Result<()>>) {
+    pub(crate) fn start(patience: Patience) -> (PathBuf, std::thread::JoinHandle<io::Result<()>>) {
         let endpoint = std::env::temp_dir().join(format!(
             "cogno-daemon-test-{}.json",
             uuid::Uuid::new_v4().simple()
@@ -566,13 +613,23 @@ mod tests {
         }
         (endpoint, daemon)
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::test_support::{start, QUICK};
+    use super::*;
+    use crate::protocol::{HostError, Request, Response};
+    use crate::wire::{self, ClientHello, ClientMessage, HostMessage};
+
+    fn hello() -> ClientHello {
+        ClientHello::of_this_build(Some("test".to_string()))
+    }
 
     /// A connection that has exchanged hellos with the host.
     fn client(endpoint: &Path) -> TcpStream {
-        let mut stream = connect(endpoint).unwrap();
-        wire::skip_to_preamble(&mut stream).unwrap();
-        wire::read_host_hello(&mut stream).unwrap();
-        wire::write_client_hello(&mut stream, &hello()).unwrap();
+        let stream = connect(endpoint).unwrap();
+        wire::introduce(&mut &stream, &mut &stream, &hello()).unwrap();
         stream
     }
 
@@ -663,9 +720,7 @@ mod tests {
             std::thread::spawn(move || bridge(&endpoint, bridge_input, bridge_output))
         };
 
-        wire::skip_to_preamble(&mut from_bridge).unwrap();
-        wire::read_host_hello(&mut from_bridge).unwrap();
-        wire::write_client_hello(&mut to_bridge, &hello()).unwrap();
+        wire::introduce(&mut from_bridge, &mut to_bridge, &hello()).unwrap();
         wire::write_client_message(
             &mut to_bridge,
             ClientMessage::Request {
@@ -741,7 +796,7 @@ mod tests {
 
         // This process runs, but it is not the daemon: it lives on, and so
         // does the file.
-        assert!(end_daemon(&endpoint).is_err());
+        assert!(end_incompatible_daemon(&endpoint).is_err());
         assert!(endpoint.exists());
         let _ = std::fs::remove_file(&endpoint);
     }
@@ -764,10 +819,43 @@ mod tests {
         )
         .unwrap();
 
-        assert!(end_daemon(&endpoint).is_ok());
+        assert_eq!(end_incompatible_daemon(&endpoint).unwrap(), Ending::Ended);
         assert!(!endpoint.exists());
         // Nothing to end at all is no failure either.
-        assert!(end_daemon(&endpoint).is_ok());
+        assert_eq!(end_incompatible_daemon(&endpoint).unwrap(), Ending::Ended);
+    }
+
+    #[test]
+    fn a_daemon_this_cogno_talks_to_is_not_ended() {
+        let (endpoint, daemon) = start(QUICK);
+
+        assert_eq!(
+            end_incompatible_daemon(&endpoint).unwrap(),
+            Ending::Compatible
+        );
+        // Still there, and still answers.
+        drop(client(&endpoint));
+        assert!(finishes(daemon).is_ok());
+    }
+
+    #[test]
+    fn a_host_that_answers_bit_by_bit_is_waited_for() {
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+        let endpoint = Endpoint {
+            port: listener.local_addr().unwrap().port(),
+            token: "a".repeat(TOKEN_LEN),
+            pid: std::process::id(),
+        };
+        std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let (first, rest) = wire::PREAMBLE.split_at(3);
+            stream.write_all(first).unwrap();
+            std::thread::sleep(ANSWER_POLL_INTERVAL * 4);
+            stream.write_all(rest).unwrap();
+            std::thread::sleep(Duration::from_secs(1));
+        });
+
+        assert!(reach(&endpoint).is_ok());
     }
 
     #[test]
@@ -809,6 +897,17 @@ mod tests {
             bridge(&nowhere, io::empty(), io::sink()),
             Err(BridgeError::NoDaemon(_))
         ));
+    }
+
+    #[test]
+    fn a_bridge_to_a_daemon_that_does_not_answer_says_so() {
+        let (endpoint, _silent) = endpoint_of_a_silent_program();
+
+        let error = bridge(&endpoint, io::empty(), io::sink()).unwrap_err();
+
+        assert!(matches!(error, BridgeError::Unreachable(_)), "{error:?}");
+        assert_ne!(error.exit_code(), NO_DAEMON_EXIT_CODE);
+        let _ = std::fs::remove_file(&endpoint);
     }
 
     #[test]

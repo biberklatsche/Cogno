@@ -6,6 +6,10 @@ use std::path::PathBuf;
 
 use cogno_host::env_vars::COGNO_HOST;
 
+/// Whether this is a development build: it has a daemon and a Cogno home of
+/// its own, apart from the installed Cogno's.
+pub const DEVELOPMENT_BUILD: bool = cfg!(debug_assertions);
+
 /// The endpoint file of the host the environment names (`COGNO_HOST`: the
 /// host sets it for every shell it starts, the app for every process it asks
 /// through), else this build's own. So a `cogno` of another build, typed in a
@@ -19,5 +23,5 @@ pub fn host_endpoint() -> Result<PathBuf, String> {
 
 /// The endpoint file of this app's own host.
 pub fn own_host_endpoint() -> Result<PathBuf, String> {
-    cogno_host::daemon::endpoint_path(cfg!(debug_assertions))
+    cogno_host::daemon::endpoint_path(DEVELOPMENT_BUILD)
 }

@@ -140,11 +140,13 @@ describe("RemoteHostsService", () => {
     expect(isWorthRetrying(failure)).toBe(false);
   });
 
-  it("calls a failure worth retrying unless something has to change first", () => {
+  it("calls a failure worth retrying unless the settings have to change first", () => {
     expect(isWorthRetrying({ code: "connectFailed", message: "" })).toBe(true);
     expect(isWorthRetrying({ code: "noCognoThere", message: "" })).toBe(true);
-    expect(isWorthRetrying({ code: "hostTooOld", message: "" })).toBe(false);
+    // Once the older Cogno is updated, connecting again works.
+    expect(isWorthRetrying({ code: "hostTooOld", message: "" })).toBe(true);
     expect(isWorthRetrying({ code: "invalidDestination", message: "" })).toBe(false);
+    expect(isWorthRetrying({ code: "notConfigured", message: "" })).toBe(false);
   });
 
   it("forgets a lost connection and tells the user, in the window that used it", async () => {

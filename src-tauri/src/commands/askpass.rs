@@ -22,6 +22,10 @@ use tokio::sync::oneshot;
 pub const SESSION_ENV: &str = "COGNO_ASKPASS_SESSION";
 /// The session's token, which the helper presents with its prompt.
 pub const TOKEN_ENV: &str = "COGNO_ASKPASS_TOKEN";
+/// Where ssh asks when it has no terminal, and whether it does so even when
+/// it has one.
+pub const SSH_ASKPASS_ENV: &str = "SSH_ASKPASS";
+pub const SSH_ASKPASS_REQUIRE_ENV: &str = "SSH_ASKPASS_REQUIRE";
 /// How long a prompt waits for the user before it counts as refused.
 const ASKPASS_WAIT: std::time::Duration = std::time::Duration::from_secs(30 * 60);
 /// Event to the window: show a prompt.
@@ -230,8 +234,8 @@ pub fn point_ssh_at_helper(
 ) -> Option<std::path::PathBuf> {
     let helper = std::env::current_exe().ok()?;
     let host = crate::host_endpoint::own_host_endpoint().ok()?;
-    command.env("SSH_ASKPASS", &helper);
-    command.env("SSH_ASKPASS_REQUIRE", "force");
+    command.env(SSH_ASKPASS_ENV, &helper);
+    command.env(SSH_ASKPASS_REQUIRE_ENV, "force");
     command.env(SESSION_ENV, session_id);
     command.env(TOKEN_ENV, token);
     command.env(cogno_host::env_vars::COGNO_HOST, host);
@@ -252,21 +256,25 @@ pub fn askpass_answer(
 /// host of this machine and prints the answer. Exit 1 means "no answer",
 /// which the caller treats as a refused prompt.
 pub fn run_helper(session_id: &str, prompt_args: &[String]) -> i32 {
-    use cogno_host::protocol::{Answer, Question};
+    use crate::relayed::{self, Answer, Question};
+    use cogno_host::protocol::Addressee;
 
     let Ok(endpoint) = crate::host_endpoint::host_endpoint() else {
         return 1;
     };
-    let question = Question::Prompt {
+    let to = Addressee::PromptSession {
         session: session_id.to_string(),
+    };
+    let question = relayed::encode(&Question::Prompt {
         token: std::env::var(TOKEN_ENV).unwrap_or_default(),
         prompt: prompt_args.join(" "),
-    };
+    });
     // As long as the user takes: the app gives up on its own (`ASKPASS_WAIT`).
-    match cogno_host::once::ask(&endpoint, question, None) {
-        Ok(Ok(Answer::Prompt {
+    let answered = cogno_host::once::ask(&endpoint, to, question, None);
+    match answered.ok().and_then(|answer| relayed::decode(&answer)) {
+        Some(Answer::Prompt {
             answer: Some(answer),
-        })) => {
+        }) => {
             println!("{answer}");
             0
         }

@@ -6,10 +6,12 @@
  * installed. Never fails the agent: every exit is 0, nothing goes to stdout.
  */
 export function bashHookScript(starterPath: string): string {
+  // Single quotes keep every character of the path but the quote itself.
+  const quoted = `'${starterPath.replace(/\\/g, "/").replace(/'/g, "'\\''")}'`;
   return `#!/bin/sh
 # Cogno coding-agent hook. Usage: sh cogno-agent-hook.sh <provider> <hook event>
 # Written by Cogno; edits are overwritten.
-"${starterPath.replace(/\\/g, "/")}" hook "$1" "$2" >/dev/null 2>&1
+${quoted} hook "$1" "$2" >/dev/null 2>&1
 exit 0
 `;
 }
