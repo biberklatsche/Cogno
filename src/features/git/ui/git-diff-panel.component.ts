@@ -13,6 +13,7 @@ import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState } from "../git-view-state.service";
 import { GitPatch } from "../model/git-patch";
+import { GitConflictViewComponent } from "./git-conflict-view.component";
 import { GitDiffViewComponent } from "./git-diff-view.component";
 import { fileStatusClass, fileStatusIcon } from "./git-format";
 import { GitHunkActions, GitHunkViewComponent } from "./git-hunk-view.component";
@@ -27,7 +28,13 @@ import { GIT_SHARED_STYLES } from "./git-styles";
 @Component({
   selector: "app-git-diff-panel",
   standalone: true,
-  imports: [IconComponent, TooltipDirective, GitDiffViewComponent, GitHunkViewComponent],
+  imports: [
+    IconComponent,
+    TooltipDirective,
+    GitConflictViewComponent,
+    GitDiffViewComponent,
+    GitHunkViewComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (view.diff(); as source) {
@@ -41,25 +48,27 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         </span>
         <span class="subtle origin">{{ origin(source) }}</span>
         <span class="grow"></span>
-        @if (source.kind === "unstaged") {
+        @if (source.kind === "unstaged" && !isConflict(source)) {
           <button type="button" class="button small" (click)="operations.stage([source.file.path])">Stage File</button>
         } @else if (source.kind === "staged") {
           <button type="button" class="button small" (click)="operations.unstage([source.file.path])">Unstage File</button>
         }
-        <div class="mode">
-          <button type="button" class="button icon-button" appTooltip="Hunk View"
-                  [class.active]="view.diffMode() === 'hunks'" (click)="view.diffMode.set('hunks')">
-            <app-icon name="mdiViewSequential"></app-icon>
-          </button>
-          <button type="button" class="button icon-button" appTooltip="Split View"
-                  [class.active]="view.diffMode() === 'split'" (click)="view.diffMode.set('split')">
-            <app-icon name="mdiViewSplitVertical"></app-icon>
-          </button>
-          <button type="button" class="button icon-button" appTooltip="Inline View"
-                  [class.active]="view.diffMode() === 'unified'" (click)="view.diffMode.set('unified')">
-            <app-icon name="mdiViewAgenda"></app-icon>
-          </button>
-        </div>
+        @if (!isConflict(source)) {
+          <div class="mode">
+            <button type="button" class="button icon-button" appTooltip="Hunk View"
+                    [class.active]="view.diffMode() === 'hunks'" (click)="view.diffMode.set('hunks')">
+              <app-icon name="mdiViewSequential"></app-icon>
+            </button>
+            <button type="button" class="button icon-button" appTooltip="Split View"
+                    [class.active]="view.diffMode() === 'split'" (click)="view.diffMode.set('split')">
+              <app-icon name="mdiViewSplitVertical"></app-icon>
+            </button>
+            <button type="button" class="button icon-button" appTooltip="Inline View"
+                    [class.active]="view.diffMode() === 'unified'" (click)="view.diffMode.set('unified')">
+              <app-icon name="mdiViewAgenda"></app-icon>
+            </button>
+          </div>
+        }
         @if (source.file.status !== "D") {
           <button type="button" class="button icon-button" appTooltip="Open file" (click)="actions.openFile(source.file)">
             <app-icon name="mdiOpenInNew"></app-icon>
@@ -70,7 +79,9 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         </button>
       </header>
       <div class="diff-body">
-        @if (view.diffMode() === "hunks") {
+        @if (isConflict(source)) {
+          <app-git-conflict-view [path]="source.file.path"></app-git-conflict-view>
+        } @else if (view.diffMode() === "hunks") {
           @if (patch(); as patch) {
             <app-git-hunk-view [patch]="patch" [actions]="hunkActions(source)" [emptyText]="emptyText(source)"
                                (stage)="actions.stageHunk(patch, $event.hunk, $event.lines)"
@@ -130,7 +141,7 @@ export class GitDiffPanelComponent {
       const hunks = this.view.diffMode() === "hunks";
       const source = untracked(() => this.view.diff());
       if (source?.kind !== "commit") this.repository.status();
-      if (!key || !source) return;
+      if (!key || !source || this.isConflict(source)) return;
       untracked(() => void this.load(source, key, hunks));
     });
 
@@ -156,6 +167,11 @@ export class GitDiffPanelComponent {
     });
   }
 
+  /** A file git stopped on: shown for resolving, not as a diff. */
+  isConflict(source: GitDiffSource): boolean {
+    return source.kind === "unstaged" && source.file.status === "U";
+  }
+
   hunkActions(source: GitDiffSource): GitHunkActions {
     if (source.kind === "commit" || source.file.status === "U") return "none";
     return source.kind;
@@ -168,6 +184,7 @@ export class GitDiffPanelComponent {
 
   origin(source: GitDiffSource): string {
     if (source.kind === "commit") return source.sha.slice(0, 7);
+    if (this.isConflict(source)) return "Conflicted";
     return source.kind === "staged" ? "Staged" : "Unstaged";
   }
 

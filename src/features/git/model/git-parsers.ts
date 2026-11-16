@@ -280,3 +280,17 @@ export function cloneDirectoryName(url: string): string {
   const last = trimmed.split(/[\\/:]/).pop() ?? "";
   return last.replace(/\.git$/, "");
 }
+
+/**
+ * Reads `git ls-files -u -z` for one path: the file mode per stage git still
+ * holds, 1 the common base, 2 the current side, 3 the incoming one. A side
+ * that deleted the file has no stage.
+ */
+export function parseUnmergedStages(raw: string): ReadonlyMap<1 | 2 | 3, string> {
+  const stages = new Map<1 | 2 | 3, string>();
+  for (const entry of raw.split("\0")) {
+    const [, mode, stage] = /^(\d+) [0-9a-f]+ ([123])\t/.exec(entry) ?? [];
+    if (mode && stage) stages.set(Number(stage) as 1 | 2 | 3, mode);
+  }
+  return stages;
+}

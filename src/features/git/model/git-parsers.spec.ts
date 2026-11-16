@@ -11,6 +11,7 @@ import {
   parseRefs,
   parseStashes,
   parseTrack,
+  parseUnmergedStages,
 } from "./git-parsers";
 
 function file(path: string, status: GitFileStatus, isDirectory = false): GitFile {
@@ -280,5 +281,24 @@ describe("cloneDirectoryName", () => {
     ["git@host:repo", "repo"],
   ])("derives the folder of %s", (url, expected) => {
     expect(cloneDirectoryName(url)).toBe(expected);
+  });
+});
+
+describe("parseUnmergedStages", () => {
+  it("maps each stage git holds to its file mode", () => {
+    const raw = z(
+      "100644 587be6b4c3f93f93c489c0111bba5596147a26cb 1\tdel file.txt",
+      "100755 b77b4eb1d946f923f61785536da9ca5af6909f06 2\tdel file.txt",
+    );
+    expect(parseUnmergedStages(raw)).toEqual(
+      new Map([
+        [1, "100644"],
+        [2, "100755"],
+      ]),
+    );
+  });
+
+  it("reads nothing from an empty answer", () => {
+    expect(parseUnmergedStages("").size).toBe(0);
   });
 });

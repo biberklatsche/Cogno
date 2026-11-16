@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  signal,
+  untracked,
+} from "@angular/core";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitOperationsService } from "../git-operations.service";
 import { GitRepositoryService } from "../git-repository.service";
@@ -41,7 +48,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
           <app-git-file-list class="body" kind="conflicted" [files]="status().conflicted" [mode]="view.fileListMode()"
                              [selectedPath]="selectedPath('unstaged')"
                              (open)="openDiff($event, 'unstaged')"
-                             (primary)="markResolved($event)"
+                             (primary)="actions.markResolved($event)"
                              (menu)="actions.openWipFileMenu($event.event, $event.file, 'conflicted')"></app-git-file-list>
         }
         </section>
@@ -199,7 +206,14 @@ export class GitWipPanelComponent {
     readonly operations: GitOperationsService,
     readonly actions: GitUiActions,
     readonly view: GitViewState,
-  ) {}
+  ) {
+    // A merge, cherry pick or revert that stopped has its message ready; the
+    // form starts with it, as `git commit` in a terminal would.
+    effect(() => {
+      if (!this.repository.operation()) return;
+      untracked(() => void this.fillPreparedMessage());
+    });
+  }
 
   isOpen(group: GitWipFileGroup): boolean {
     return !this.view.closedWipGroups().has(group);
@@ -218,8 +232,13 @@ export class GitWipPanelComponent {
     this.actions.showDiff({ kind, file });
   }
 
-  markResolved(paths: string[]): void {
-    for (const path of paths) void this.operations.markResolved(path);
+  private async fillPreparedMessage(): Promise<void> {
+    if (this.summary() || this.description()) return;
+    const message = await this.repository.readMergeMessage();
+    if (!message || this.summary() || this.description()) return;
+    const [summary = "", ...rest] = message.split("\n");
+    this.summary.set(summary);
+    this.description.set(rest.join("\n").trim());
   }
 
   async commit(): Promise<void> {

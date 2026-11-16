@@ -18,6 +18,8 @@ describe("GitOperationsService", () => {
   const onPrompt = vi.fn();
   /** Whether the person refused a prompt during the run. */
   let refused: boolean;
+  /** The stages `ls-files -u` reports for a conflicted path. */
+  let stages: Map<1 | 2 | 3, string>;
 
   /** The cache helper every network command on macOS and Linux starts with. */
   const CACHE = ["-c", "credential.helper=cache --timeout=3600"];
@@ -31,8 +33,10 @@ describe("GitOperationsService", () => {
     backendOs = "linux";
     wslDistroName = undefined;
     refused = false;
+    stages = new Map();
     const repository = {
       run,
+      loadConflictStages: () => Promise.resolve(stages),
       runInCwd,
       refresh,
       currentSession: () => ({
@@ -69,6 +73,55 @@ describe("GitOperationsService", () => {
 
     expect(argsOfLastRun()).toEqual(["commit", "-m", "Fix bug\n\nDetails\nmore"]);
     expect(refresh).toHaveBeenCalled();
+  });
+
+  describe("conflicts", () => {
+    beforeEach(() => {
+      stages = new Map([
+        [1, "100644"],
+        [2, "100755"],
+        [3, "100644"],
+      ]);
+    });
+
+    it("takes a side by checking it out and staging it", async () => {
+      await service.takeConflictSide("a.txt", "theirs");
+
+      expect(run.mock.calls.map((call) => call[0])).toEqual([
+        ["checkout", "--theirs", "--", "a.txt"],
+        ["add", "--", "a.txt"],
+      ]);
+    });
+
+    it("deletes the file when the taken side deleted it", async () => {
+      stages.delete(3);
+
+      await service.takeConflictSide("a.txt", "theirs");
+
+      expect(run.mock.calls.map((call) => call[0])).toEqual([["rm", "-q", "--", "a.txt"]]);
+    });
+
+    it("writes a resolution as a blob through the file's filters, stages and checks it out", async () => {
+      run.mockImplementationOnce(() => Promise.resolve(ran("abc123\n")));
+
+      expect(await service.resolveConflict("a.txt", "merged\n")).toBe("ok");
+
+      expect(run.mock.calls[0]?.[0]).toEqual(["hash-object", "-w", "--stdin", "--path=a.txt"]);
+      expect(run.mock.calls[0]?.[2]).toBe("merged\n");
+      expect(run.mock.calls.slice(1).map((call) => call[0])).toEqual([
+        ["update-index", "--cacheinfo", "100755,abc123,a.txt"],
+        ["checkout", "--", "a.txt"],
+      ]);
+    });
+
+    it("stages nothing when the blob could not be written", async () => {
+      run.mockImplementationOnce(() => Promise.resolve(ran("", 128, "fatal: no space")));
+
+      expect(await service.resolveConflict("a.txt", "merged\n")).toBe("failed");
+
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "error" }));
+    });
   });
 
   it("pushes to an explicit remote branch and publishes with -u", async () => {

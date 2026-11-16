@@ -11,6 +11,13 @@ export type GitDiffContent = {
   readonly language: GitDiffLanguageLoader | undefined;
 };
 
+export type GitConflictContent = {
+  /** The working file, empty when it is not there. */
+  readonly text: string;
+  readonly hasOurs: boolean;
+  readonly hasTheirs: boolean;
+};
+
 /** Where a file's two sides come from. */
 export type GitDiffSource =
   | { readonly kind: "unstaged"; readonly file: GitFile }
@@ -79,6 +86,18 @@ export class GitDiffService {
       BLOB_TIMEOUT_MS,
     );
     return parseGitPatch(result?.exitCode === 0 ? result.stdout : "");
+  }
+
+  /**
+   * A conflicted file as the working tree has it, with its conflict markers,
+   * and which sides still have a version of it (one may have deleted it).
+   */
+  async loadConflict(path: string): Promise<GitConflictContent> {
+    const [text, stages] = await Promise.all([
+      this.readWorkingFile(path),
+      this.repository.loadConflictStages(path),
+    ]);
+    return { text, hasOurs: stages.has(2), hasTheirs: stages.has(3) };
   }
 
   /** A git object read in the bound session; empty when it does not exist. */

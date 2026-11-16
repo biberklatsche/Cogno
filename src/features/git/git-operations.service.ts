@@ -128,10 +128,44 @@ export class GitOperationsService {
     );
   }
 
+  /**
+   * Resolve a conflicted file as one side has it. A side that deleted the
+   * file has no version to check out (modify/delete); taking it deletes the file.
+   */
   async takeConflictSide(path: string, side: "ours" | "theirs"): Promise<GitOperationOutcome> {
+    const stages = await this.repository.loadConflictStages(path);
+    if (stages.size > 0 && !stages.has(side === "ours" ? 2 : 3)) {
+      return this.git(["rm", "-q", "--", path], "Resolve failed");
+    }
     const outcome = await this.git(["checkout", `--${side}`, "--", path], "Resolve failed");
     if (outcome !== "ok") return outcome;
     return this.git(["add", "--", path], "Resolve failed");
+  }
+
+  /**
+   * Resolve a conflicted file with `content`: written as git's blob through
+   * the file's filters (line endings), staged in place of the conflict and
+   * checked out, so the working tree holds the same text.
+   */
+  async resolveConflict(path: string, content: string): Promise<GitOperationOutcome> {
+    const stages = await this.repository.loadConflictStages(path);
+    const mode = stages.get(2) ?? stages.get(3) ?? "100644";
+    const hashed = await this.repository.run(
+      ["hash-object", "-w", "--stdin", `--path=${path}`],
+      LOCAL_TIMEOUT_MS,
+      content,
+    );
+    if (!this.report(hashed, "Resolve failed") || !hashed) {
+      await this.repository.refresh();
+      return "failed";
+    }
+    const blob = hashed.stdout.trim();
+    const staged = await this.git(
+      ["update-index", "--cacheinfo", `${mode},${blob},${path}`],
+      "Resolve failed",
+    );
+    if (staged !== "ok") return staged;
+    return this.git(["checkout", "--", path], "Resolve failed");
   }
 
   markResolved(path: string): Promise<GitOperationOutcome> {

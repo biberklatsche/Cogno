@@ -31,6 +31,7 @@ import {
   parseNameStatus,
   parseRefs,
   parseStashes,
+  parseUnmergedStages,
   REF_FORMAT,
   STASH_FORMAT,
 } from "./model/git-parsers";
@@ -234,6 +235,31 @@ export class GitRepositoryService {
       show.stdout,
       files?.exitCode === 0 ? parseNameStatus(files.stdout) : [],
     );
+  }
+
+  /** The file mode per stage of a conflicted path (`parseUnmergedStages`); empty when git cannot say. */
+  async loadConflictStages(path: string): Promise<ReadonlyMap<1 | 2 | 3, string>> {
+    const result = await this.run(["ls-files", "-u", "-z", "--", path]);
+    return parseUnmergedStages(result?.exitCode === 0 ? result.stdout : "");
+  }
+
+  /**
+   * The message git prepared for the commit that ends a merge, cherry pick or
+   * revert (`MERGE_MSG`), without its comment lines; null when there is none.
+   */
+  async readMergeMessage(): Promise<string | null> {
+    const session = this.boundSession;
+    const gitDir = this.gitDir;
+    if (!session || !gitDir) return null;
+    const path = session.fs.normalizePath(`${gitDir}/MERGE_MSG`);
+    const text = await session.fs.readTextFile(path).catch(() => null);
+    if (text === null) return null;
+    const message = text
+      .split(/\r?\n/)
+      .filter((line) => !line.startsWith("#"))
+      .join("\n")
+      .trim();
+    return message || null;
   }
 
   private requestAutomaticRefresh(resolveContext: boolean): void {
