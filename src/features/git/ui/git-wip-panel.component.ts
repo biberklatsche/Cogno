@@ -74,8 +74,8 @@ const OPERATION_NAMES: Record<GitOperation, string> = {
         </div>
         @if (isOpen("conflicted")) {
           <app-git-file-list class="body" kind="conflicted" [files]="status().conflicted" [mode]="view.fileListMode()"
-                             [selectedPath]="selectedPath('unstaged')"
-                             (open)="openDiff($event, 'unstaged')"
+                             [selectedPath]="selectedPath('conflicted')"
+                             (open)="openDiff($event, 'conflicted')"
                              (primary)="actions.markResolved($event)"
                              (menu)="actions.openWipFileMenu($event.event, $event.file, 'conflicted')"></app-git-file-list>
         }
@@ -281,12 +281,12 @@ export class GitWipPanelComponent {
     this.view.closedWipGroups.update((closed) => toggled(closed, group));
   }
 
-  selectedPath(kind: "unstaged" | "staged"): string | null {
+  selectedPath(kind: GitWipFileGroup): string | null {
     const diff = this.view.diff();
     return diff?.kind === kind ? diff.file.path : null;
   }
 
-  openDiff(file: GitFile, kind: "unstaged" | "staged"): void {
+  openDiff(file: GitFile, kind: GitWipFileGroup): void {
     this.actions.showDiff({ kind, file });
   }
 

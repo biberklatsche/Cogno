@@ -19,8 +19,8 @@ export type GitConflictContent = {
   readonly hasTheirs: boolean;
 };
 
-/** Where a file's two sides come from. */
-export type GitDiffSource =
+/** Where a file's two sides come from, for a diff. */
+export type GitTextSource =
   | { readonly kind: "unstaged"; readonly file: GitFile }
   | { readonly kind: "staged"; readonly file: GitFile }
   | {
@@ -29,6 +29,12 @@ export type GitDiffSource =
       readonly sha: string;
       readonly parent: string | null;
     };
+
+/**
+ * What the middle of the panel shows for a file: a diff, or for a file git
+ * stopped on, the conflict to resolve (which has no two sides to diff).
+ */
+export type GitDiffSource = GitTextSource | { readonly kind: "conflicted"; readonly file: GitFile };
 
 /** Truncate files larger than this to avoid passing huge strings to CodeMirror at all. */
 const TRUNCATE_THRESHOLD_BYTES = 500_000;
@@ -43,7 +49,7 @@ export class GitDiffService {
    * working tree, staged is HEAD against index, a commit is its first parent
    * against the commit. A side the file does not exist on is empty.
    */
-  async loadDiff(source: GitDiffSource): Promise<GitDiffContent> {
+  async loadDiff(source: GitTextSource): Promise<GitDiffContent> {
     const { file } = source;
     const language = detectGitDiffLanguage(file.path);
     const before = file.oldPath ?? file.path;
@@ -53,7 +59,6 @@ export class GitDiffService {
     let original = "";
     let modified = "";
     if (source.kind === "unstaged") {
-      // A conflicted file never comes here: it opens in the conflict view.
       original = added ? "" : await this.readBlob(`:0:${before}`);
       modified = deleted ? "" : await this.readWorkingText(file.path);
     } else if (source.kind === "staged") {
@@ -71,7 +76,7 @@ export class GitDiffService {
    * The same change as git's own patch, hunk by hunk. An untracked file has
    * none: git knows no previous version to diff against.
    */
-  async loadPatch(source: GitDiffSource): Promise<GitPatch> {
+  async loadPatch(source: GitTextSource): Promise<GitPatch> {
     const { file } = source;
     if (file.status === "?") return { header: [], hunks: [], binary: false };
     const args =

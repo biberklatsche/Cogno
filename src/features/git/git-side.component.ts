@@ -334,7 +334,7 @@ export class GitSideComponent implements OnDestroy {
   /** The work in progress with the first conflicted file open for resolving. */
   viewConflicts(file: GitFile): void {
     this.view.select({ kind: "wip" });
-    this.actions.showDiff({ kind: "unstaged", file });
+    this.actions.showDiff({ kind: "conflicted", file });
   }
 
   /** The dragged width as a CSS length, or null to leave the panel its default. */
