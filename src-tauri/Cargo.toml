@@ -47,7 +47,10 @@ base64 = "0.22"
 # version, with FTS5 included (needed for the trigram command search index).
 rusqlite = { version = "0.40", features = ["bundled"] }
 log = "0.4"
-tokio = { version = "1", features = ["net", "sync", "time"] }
+tokio = { version = "1", features = ["net", "sync", "time", "io-util"] }
+# Pairing with another machine (ARCHITECTURE.md 2.7.3). Without metrics and
+# port mapping: neither is used, both add size.
+iroh = { version = "1.4.1", default-features = false, features = ["tls-ring", "fast-apple-datapath"] }
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
@@ -61,6 +64,8 @@ libc = "0.2"
 
 [dev-dependencies]
 sysinfo = "0.33"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+iroh = { version = "1.4.1", default-features = false, features = ["tls-ring", "test-utils"] }
 
 [profile.release]
 lto = true

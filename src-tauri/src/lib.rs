@@ -10,6 +10,7 @@ mod db;
 mod host_connection;
 pub mod host_endpoint;
 mod hosts;
+mod pairing;
 mod relayed;
 mod runnable_actions;
 mod shell_bootstrap_logs;
@@ -133,6 +134,16 @@ pub fn run(cli: Cli) {
             crate::commands::hosts::host_disconnect,
             crate::commands::hosts::host_end_local,
             crate::commands::hosts::host_install_shell_integration,
+            crate::commands::pairing::pairing_state,
+            crate::commands::pairing::pairing_enable,
+            crate::commands::pairing::pairing_disable,
+            crate::commands::pairing::pairing_create_code,
+            crate::commands::pairing::pairing_cancel_code,
+            crate::commands::pairing::pairing_add,
+            crate::commands::pairing::pairing_answer,
+            crate::commands::pairing::pairing_set_accepting,
+            crate::commands::pairing::pairing_rename,
+            crate::commands::pairing::pairing_remove,
             crate::commands::keyboard::get_keyboard_layout,
             crate::commands::pty::pty_spawn,
             crate::commands::pty::pty_attach,
@@ -167,6 +178,7 @@ pub fn run(cli: Cli) {
             // Before the first window: its webview spawns the first shells.
             crate::shell_bootstrap_logs::manage(app.handle());
             app.manage(HostState::new(app.handle().clone()));
+            app.manage(crate::commands::pairing::PairingState::new(app.handle()));
             crate::updater::manage(app.handle());
             std::thread::spawn(crate::commands::clipboard_image::remove_leftover_paste_files);
 
@@ -208,6 +220,9 @@ pub fn run(cli: Cli) {
                 // A start that failed in `setup` never got a host.
                 if let Some(host) = app.try_state::<HostState>() {
                     host.hang_up_all();
+                }
+                if let Some(pairing) = app.try_state::<crate::commands::pairing::PairingState>() {
+                    pairing.close();
                 }
                 // Fold the WAL back into the main file so the database is a
                 // single, consistent file once the process is gone.

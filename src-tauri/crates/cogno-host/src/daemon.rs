@@ -124,69 +124,9 @@ fn write_endpoint(path: &Path, endpoint: &Endpoint) -> io::Result<()> {
         std::fs::create_dir_all(directory)?;
     }
     let _ = std::fs::remove_file(path);
-    let mut file = create_private(path)?;
+    let mut file = crate::private_file::create(path)?;
     let content = serde_json::to_vec(endpoint).map_err(|error| invalid(&error.to_string()))?;
     file.write_all(&content)
-}
-
-#[cfg(unix)]
-fn create_private(path: &Path) -> io::Result<std::fs::File> {
-    use std::os::unix::fs::OpenOptionsExt;
-    std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .mode(0o600)
-        .open(path)
-}
-
-/// On Windows a new file takes the permissions of its directory, and a
-/// profile may let others read. The file gets a list of its own instead:
-/// full access for its owner, nobody else, nothing inherited.
-#[cfg(windows)]
-fn create_private(path: &Path) -> io::Result<std::fs::File> {
-    use std::os::windows::ffi::OsStrExt;
-    use winapi::shared::sddl::{
-        ConvertStringSecurityDescriptorToSecurityDescriptorW, SDDL_REVISION_1,
-    };
-    use winapi::um::securitybaseapi::SetFileSecurityW;
-    use winapi::um::winbase::LocalFree;
-    use winapi::um::winnt::{DACL_SECURITY_INFORMATION, PROTECTED_DACL_SECURITY_INFORMATION};
-
-    let file = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)?;
-    let wide = |text: &std::ffi::OsStr| -> Vec<u16> { text.encode_wide().chain([0]).collect() };
-    // D: a permission list; P: nothing inherited; one entry: allow (A) all
-    // file access (FA) to the owner (OW).
-    let owner_only = wide(std::ffi::OsStr::new("D:P(A;;FA;;;OW)"));
-    let mut descriptor = std::ptr::null_mut();
-    // SAFETY: both strings are NUL-terminated; `descriptor` is allocated by
-    // the call and freed below.
-    let applied = unsafe {
-        ConvertStringSecurityDescriptorToSecurityDescriptorW(
-            owner_only.as_ptr(),
-            SDDL_REVISION_1 as u32,
-            &mut descriptor,
-            std::ptr::null_mut(),
-        ) != 0
-            && SetFileSecurityW(
-                wide(path.as_os_str()).as_ptr(),
-                DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
-                descriptor,
-            ) != 0
-    };
-    let failure = io::Error::last_os_error();
-    if !descriptor.is_null() {
-        // SAFETY: allocated by the conversion above.
-        unsafe { LocalFree(descriptor.cast()) };
-    }
-    if !applied {
-        drop(file);
-        let _ = std::fs::remove_file(path);
-        return Err(failure);
-    }
-    Ok(file)
 }
 
 /// Connects to the daemon the endpoint file names, if it answers. What comes

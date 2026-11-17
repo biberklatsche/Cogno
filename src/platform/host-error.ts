@@ -34,6 +34,10 @@ const HOST_ERROR_CODES = [
   "connectFailed",
   "invalidDestination",
   "unexpectedReply",
+  "pairingOff",
+  "pairingUnreachable",
+  "pairingCodeUnknown",
+  "pairingDeclined",
   "internal",
 ] as const;
 

@@ -6,6 +6,7 @@ pub mod environment;
 pub mod hosts;
 pub mod keyboard;
 pub mod notification;
+pub mod pairing;
 pub mod processes;
 pub mod pty;
 pub mod window;

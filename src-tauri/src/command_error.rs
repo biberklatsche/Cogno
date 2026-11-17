@@ -38,6 +38,14 @@ pub enum AppErrorCode {
     InvalidDestination,
     /// The host answered with something the request does not expect.
     UnexpectedReply,
+    /// Pairing is off: the Remote feature is switched off.
+    PairingOff,
+    /// Cogno's pairing server or the other machine was not reached.
+    PairingUnreachable,
+    /// No machine shows that pairing code, or no longer.
+    PairingCodeUnknown,
+    /// The other machine declined the pairing, or nobody answered there.
+    PairingDeclined,
     /// This app failed in itself (a worker thread died).
     Internal,
 }

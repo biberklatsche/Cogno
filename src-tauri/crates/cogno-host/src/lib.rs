@@ -17,6 +17,7 @@ mod kept_output;
 mod line_editor;
 pub mod login_environment;
 pub mod once;
+pub mod private_file;
 #[cfg(windows)]
 pub mod process_job;
 mod processes;
