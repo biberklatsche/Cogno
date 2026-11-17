@@ -15,6 +15,8 @@ export type SideMenuItem = {
   component: Type<unknown> | null;
   // Optional badge color indicator
   badgeColor?: string;
+  /** The entry of a Pro feature: shows a Pro badge. */
+  pro?: boolean;
   /** Shown below the feature entries, apart from them: the workbench's own panels. */
   bottom?: boolean;
   /** The panel's width before the user resized it; the common default otherwise. */

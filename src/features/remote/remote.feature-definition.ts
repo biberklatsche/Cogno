@@ -20,6 +20,7 @@ const remoteSideMenuFeatureDefinition = {
 export const remoteFeature: FeatureDefinition = {
   mode: "on",
   target: "workbench",
+  pro: true,
   id: remoteSideMenuFeatureDefinition.id,
   sideMenu: [remoteSideMenuFeatureDefinition],
 };

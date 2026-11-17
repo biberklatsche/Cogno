@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { SideMenuItem } from "./+state/side-menu.service";
-import { focusPanel, isSelectedSideMenuItem } from "./side-menu.component";
+import { focusPanel, isSelectedSideMenuItem, sideMenuTooltip } from "./side-menu.component";
 
 class DummyComponent {}
 
@@ -71,5 +71,21 @@ describe("focusPanel", () => {
     focusPanel(panel);
 
     expect(document.activeElement).toBe(field);
+  });
+});
+
+describe("sideMenuTooltip", () => {
+  const item: SideMenuItem = {
+    label: "Remote",
+    icon: "mdiConnection",
+    actionName: "open_remote",
+    component: DummyComponent,
+  };
+
+  it("names a Pro feature as Pro", () => {
+    expect(sideMenuTooltip({ ...item, pro: true })).toBe(
+      "Remote (Pro, free during alpha and beta)",
+    );
+    expect(sideMenuTooltip(item)).toBe("Remote");
   });
 });

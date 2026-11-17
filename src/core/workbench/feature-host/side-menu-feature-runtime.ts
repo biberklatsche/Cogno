@@ -31,6 +31,7 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
 
   constructor(
     private readonly config: SideMenuFeatureDefinition,
+    pro: boolean,
     injector: Injector,
     private readonly sideMenuService: SideMenuService,
     private readonly bus: AppBus,
@@ -46,6 +47,7 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
       order: config.order,
       component: isLazy ? null : (config.targetComponent as Type<unknown>),
       actionName: config.actionName,
+      ...(pro ? { pro } : {}),
     };
 
     if (isLazy) {

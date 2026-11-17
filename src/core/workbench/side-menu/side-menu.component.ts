@@ -24,6 +24,11 @@ export function focusPanel(panel: HTMLElement | undefined): void {
   panel.focus();
 }
 
+/** What the entry's tooltip says: its label, and for a Pro feature that it is Pro. */
+export function sideMenuTooltip(menuItem: SideMenuItem): string {
+  return menuItem.pro ? `${menuItem.label} (Pro, free during alpha and beta)` : menuItem.label;
+}
+
 export function isSelectedSideMenuItem(
   selectedItem: SideMenuItem | undefined,
   menuItem: SideMenuItem,
@@ -103,8 +108,11 @@ export function isSelectedSideMenuItem(
         </menu>
         <ng-template #menuButton let-menuItem>
                 <button class="button icon-button" (click)="open(menuItem)"
-                        [class.selected]="isMenuItemSelected(menuItem)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
+                        [class.selected]="isMenuItemSelected(menuItem)" [appTooltip]="tooltipOf(menuItem)" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
+                    @if (menuItem.pro) {
+                        <span class="pro-badge">Pro</span>
+                    }
                     @if (menuItem.badgeColor) {
                         <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
                     }
@@ -152,6 +160,20 @@ export function isSelectedSideMenuItem(
 
             .menu-spacer {
                 flex: 1 1 auto;
+            }
+
+            .pro-badge {
+                position: absolute;
+                top: 0;
+                right: 0;
+                padding: 0 2px;
+                border-radius: 3px;
+                font-size: 8px;
+                line-height: 10px;
+                font-weight: 600;
+                color: var(--background-color);
+                background-color: var(--highlight-color);
+                pointer-events: none;
             }
 
             .badge {
@@ -375,6 +397,10 @@ export class SideMenuComponent implements OnDestroy {
       return;
     }
     this.menuItemService.open(menuItem.label);
+  }
+
+  tooltipOf(menuItem: SideMenuItem): string {
+    return sideMenuTooltip(menuItem);
   }
 
   isMenuItemSelected(menuItem: SideMenuItem): boolean {
