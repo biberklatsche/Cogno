@@ -51,7 +51,7 @@ Every action, its description and default keybinding. `-` means no default keybi
 | --- | --- | --- | --- |
 | `trigger_autocomplete` | Manually trigger autocomplete suggestions | Ctrl+Space | Control+Space |
 | `trigger_command_history` | Open the command history dropdown | - | - |
-| `cycle_tab` | Cycle through available autocomplete modes (or history scope, while that dropdown is open) | Tab | Tab |
+| `cycle_tab` | Cycle through available autocomplete modes (or history scope, while that dropdown is open) | Shift+Tab | Shift+Tab |
 
 ## Tabs
 
