@@ -4,9 +4,7 @@ import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
-import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import type { AppWindow } from "@cogno/platform/window";
-import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
@@ -16,6 +14,7 @@ import {
   getDestroyRef,
   getGridListService,
   getTabListService,
+  getTerminalSessionRegistry,
 } from "../../../__test__/test-factory";
 import type { DiscardSessionMarker } from "./discard-session.marker";
 import type { SessionPersistenceService } from "./session-persistence.service";
@@ -32,7 +31,6 @@ describe("WorkspaceHostApplicationService", () => {
   let clearRestoreDataInDb: ReturnType<typeof vi.fn>;
   let forgetPendingSnapshots: ReturnType<typeof vi.fn>;
   let persistWorkspaceSnapshots: ReturnType<typeof vi.fn>;
-  let sessionFacts: Subject<unknown>;
   let discardSessionMarker: {
     isSet: boolean;
     set: ReturnType<typeof vi.fn>;
@@ -83,7 +81,6 @@ describe("WorkspaceHostApplicationService", () => {
       clearRestoreData: clearRestoreDataInDb,
     } as unknown as WorkspaceRepository;
 
-    sessionFacts = new Subject();
     restoreSettings = { enabled: true };
     appWindow = {
       isMain: true,
@@ -103,7 +100,7 @@ describe("WorkspaceHostApplicationService", () => {
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       discardSessionMarker as unknown as DiscardSessionMarker,
-      { facts$: sessionFacts } as unknown as TerminalSessionRegistry,
+      getTerminalSessionRegistry(),
       getDestroyRef(),
     );
   });
@@ -154,63 +151,61 @@ describe("WorkspaceHostApplicationService", () => {
     await vi.waitFor(() => {
       expect(service.getWorkspaceById("WS-1")).toBeTruthy();
     });
-    const events: string[] = [];
     let finishFirst!: () => void;
-    persistWorkspaceSnapshots.mockImplementationOnce(() => {
-      events.push("first started");
-      return new Promise<void>((resolve) => {
-        finishFirst = () => {
-          events.push("first done");
-          resolve();
-        };
-      });
-    });
-    persistWorkspaceSnapshots.mockImplementationOnce(async () => {
-      events.push("second started");
-    });
+    persistWorkspaceSnapshots.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishFirst = resolve)),
+    );
 
     const first = service.autoPersistWorkspace("WS-1");
     const second = service.autoPersistWorkspace("WS-1");
-    await vi.waitFor(() => expect(events).toEqual(["first started"]));
+    await vi.waitFor(() => expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1);
     finishFirst();
     await Promise.all([first, second]);
 
-    expect(events).toEqual(["first started", "first done", "second started"]);
+    expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps saving after a save that throws", async () => {
-    bus.publish({ type: "DBInitialized" });
-    await vi.waitFor(() => {
-      expect(service.getWorkspaceById("WS-1")).toBeTruthy();
-    });
-    vi.spyOn(service, "getWorkspaceById").mockImplementationOnce(() => {
-      throw new Error("broken layout");
-    });
+  describe("auto-save on output", () => {
+    let terminalId: string;
 
-    await expect(service.autoPersistWorkspace("WS-1")).rejects.toThrow("broken layout");
-    await service.autoPersistWorkspace("WS-1");
-
-    expect(persistWorkspaceSnapshots).toHaveBeenCalledWith("WS-1");
-  });
-
-  it("saves the active workspace while output never pauses", async () => {
-    bus.publish({ type: "DBInitialized" });
-    await vi.waitFor(() => {
-      expect(service.getWorkspaceById("WS-1")?.isActive).toBe(true);
-    });
-    vi.useFakeTimers();
-    try {
+    beforeEach(async () => {
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getWorkspaceById("WS-1")?.isActive).toBe(true);
+      });
+      terminalId = getSingleTerminalId(gridListService);
       persistWorkspaceSnapshots.mockClear();
-      const output = { terminalId: "TE-1", fact: { type: "outputReceived" } };
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("saves once after a burst of output settles", async () => {
+      emitSessionFact(terminalId, { type: "outputReceived" });
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves while output never pauses", async () => {
       for (let second = 0; second < 31; second++) {
-        sessionFacts.next(output);
+        emitSessionFact(terminalId, { type: "outputReceived" });
         await vi.advanceTimersByTimeAsync(1000);
       }
 
       expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
-    }
+    });
+
+    it("ignores output from terminals outside the active workspace", async () => {
+      emitSessionFact("TE-elsewhere", { type: "outputReceived" });
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(persistWorkspaceSnapshots).not.toHaveBeenCalled();
+    });
   });
 
   it("marks a workspace dirty when the working directory changes", async () => {

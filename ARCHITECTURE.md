@@ -829,8 +829,8 @@ braucht, schaltet ab.
 Workbench, dann asynchron je Host `snapshot()` (der Scrollback wird in
 Leerlaufzeit serialisiert, nicht im Eingabepfad) — und erst wenn alle
 Teile im Speicher liegen, **eine kurze Schreibtransaktion**. Keine offene
-Transaktion über einem `await`. Auslöser: Terminal-Ausgabe mit Debounce
-(und, solange die Ausgabe nicht abreißt, spätestens alle 30 s),
+Transaktion über einem `await`. Auslöser: Ausgabe im aktiven Workspace mit
+Debounce (und, solange die Ausgabe nicht abreißt, spätestens alle 30 s),
 Workspace-Wechsel (der verlassene), Beenden (alle offenen, mit Zeitbudget;
 was nicht rechtzeitig serialisiert ist, wird ohne Scrollback gespeichert).
 Die Speichervorgänge eines Fensters laufen nacheinander, und jeder sammelt
