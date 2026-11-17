@@ -1555,7 +1555,10 @@ run`. Nur wie der Byte-Strom entsteht, ist anders.
   verbinden sich gekoppelte Rechner nur noch über „nur direkt" (eingetragene
   Adresse oder lokales Netz); neues Koppeln geht dann nicht.
 - **Nur direkt.** Pro gekoppeltem Rechner wählbar: ohne Relay, über eine
-  eingetragene Adresse oder die Suche im lokalen Netz (mDNS).
+  eingetragene Adresse oder die Suche im lokalen Netz (mDNS, Dienst
+  `_cogno._udp`). Die App bindet dafür UDP-Port 7844, wenn er frei ist
+  (`PAIRING_PORT`; sonst irgendeinen), damit eine Adresse ohne Port
+  auskommt, und zeigt unter „Dieser Rechner“, wo sie direkt erreichbar ist.
 - **Geschützt** ist der Weg durch QUIC mit gegenseitig bewiesenen IDs: Die
   App spricht dort nur mit Rechnern ihrer Liste und kein HTTP.
 
