@@ -9,7 +9,7 @@ import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.s
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { AppWindow } from "@cogno/platform/window";
 import { Color } from "@cogno/shared/support";
-import { debounceTime, filter, merge } from "rxjs";
+import { auditTime, debounceTime, filter, merge } from "rxjs";
 import { DiscardSessionMarker } from "./discard-session.marker";
 import { SessionPersistenceService } from "./session-persistence.service";
 import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
@@ -41,6 +41,8 @@ function withoutTerminalIds(pane: PaneConfig): PaneConfig {
 
 /** Idle time after terminal output before an auto-save of the active workspace. */
 const IDLE_AUTOSAVE_MS = 2500;
+/** While output keeps coming, the active workspace is still saved this often. */
+const BUSY_AUTOSAVE_MS = 30_000;
 
 /**
  * What makes a workspace "dirty" when it changes: the tabs' identity, colour and
@@ -75,6 +77,8 @@ export class WorkspaceHostApplicationService {
   private readonly persistedWorkspaceRuntimeSignatureById = new Map<string, string>();
   /** Bumped whenever tabs or grids change, so `workspaceEntries` re-reads the live layout. */
   private readonly runtimeVersion = signal(0);
+  /** The save running or queued last; the next one waits for it. */
+  private lastSave: Promise<void> = Promise.resolve();
 
   readonly _workspaceList: WritableSignal<WorkspaceState[]> = signal([]);
   readonly workspaceList = this._workspaceList.asReadonly();
@@ -152,14 +156,16 @@ export class WorkspaceHostApplicationService {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => this.runtimeVersion.update((version) => version + 1));
 
-    // Idle auto-save: a few seconds after terminal output settles, persist the
-    // active workspace so a crash loses at most that window.
-    sessionRegistry.facts$
-      .pipe(
-        filter(({ fact }) => fact.type === "outputReceived"),
-        debounceTime(IDLE_AUTOSAVE_MS),
-        takeUntilDestroyed(destroyRef),
-      )
+    // Auto-save: a few seconds after terminal output settles, persist the
+    // active workspace so a crash loses at most that window. Output from any
+    // terminal resets the wait, so one that never stops printing (a dev
+    // server, a working agent) would hold it off for good; while output keeps
+    // coming, the workspace is saved every BUSY_AUTOSAVE_MS instead.
+    const output$ = sessionRegistry.facts$.pipe(
+      filter(({ fact }) => fact.type === "outputReceived"),
+    );
+    merge(output$.pipe(debounceTime(IDLE_AUTOSAVE_MS)), output$.pipe(auditTime(BUSY_AUTOSAVE_MS)))
+      .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => {
         const active = this.getActiveWorkspace();
         if (active) {
@@ -386,8 +392,18 @@ export class WorkspaceHostApplicationService {
    * Saves a workspace for session restore. A failure never propagates: the
    * workspace is marked (`autoSaveFailed`, shown on its tile) and the error is
    * reported, so switching workspaces or quitting is never held up by it.
+   * Saves run one after another, each gathering its state when its turn
+   * comes: the database does not keep the order of writes that run at the
+   * same time, so an older save could otherwise land last and win.
    */
-  async autoPersistWorkspace(workspaceId: string): Promise<void> {
+  autoPersistWorkspace(workspaceId: string): Promise<void> {
+    const save = this.lastSave.then(() => this.persistWorkspaceNow(workspaceId));
+    // A save that throws must not stop the ones after it.
+    this.lastSave = save.catch(() => undefined);
+    return save;
+  }
+
+  private async persistWorkspaceNow(workspaceId: string): Promise<void> {
     if (!this.isRestoreEnabled) {
       return;
     }

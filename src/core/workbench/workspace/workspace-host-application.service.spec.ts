@@ -32,6 +32,7 @@ describe("WorkspaceHostApplicationService", () => {
   let clearRestoreDataInDb: ReturnType<typeof vi.fn>;
   let forgetPendingSnapshots: ReturnType<typeof vi.fn>;
   let persistWorkspaceSnapshots: ReturnType<typeof vi.fn>;
+  let sessionFacts: Subject<unknown>;
   let discardSessionMarker: {
     isSet: boolean;
     set: ReturnType<typeof vi.fn>;
@@ -82,6 +83,7 @@ describe("WorkspaceHostApplicationService", () => {
       clearRestoreData: clearRestoreDataInDb,
     } as unknown as WorkspaceRepository;
 
+    sessionFacts = new Subject();
     restoreSettings = { enabled: true };
     appWindow = {
       isMain: true,
@@ -101,7 +103,7 @@ describe("WorkspaceHostApplicationService", () => {
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       discardSessionMarker as unknown as DiscardSessionMarker,
-      { facts$: new Subject() } as unknown as TerminalSessionRegistry,
+      { facts$: sessionFacts } as unknown as TerminalSessionRegistry,
       getDestroyRef(),
     );
   });
@@ -145,6 +147,70 @@ describe("WorkspaceHostApplicationService", () => {
 
     await service.autoPersistWorkspace("WS-1");
     expect(service.getWorkspaceById("WS-1")?.autoSaveFailed).toBe(false);
+  });
+
+  it("runs saves one after another, so a later save cannot be overtaken", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getWorkspaceById("WS-1")).toBeTruthy();
+    });
+    const events: string[] = [];
+    let finishFirst!: () => void;
+    persistWorkspaceSnapshots.mockImplementationOnce(() => {
+      events.push("first started");
+      return new Promise<void>((resolve) => {
+        finishFirst = () => {
+          events.push("first done");
+          resolve();
+        };
+      });
+    });
+    persistWorkspaceSnapshots.mockImplementationOnce(async () => {
+      events.push("second started");
+    });
+
+    const first = service.autoPersistWorkspace("WS-1");
+    const second = service.autoPersistWorkspace("WS-1");
+    await vi.waitFor(() => expect(events).toEqual(["first started"]));
+    finishFirst();
+    await Promise.all([first, second]);
+
+    expect(events).toEqual(["first started", "first done", "second started"]);
+  });
+
+  it("keeps saving after a save that throws", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getWorkspaceById("WS-1")).toBeTruthy();
+    });
+    vi.spyOn(service, "getWorkspaceById").mockImplementationOnce(() => {
+      throw new Error("broken layout");
+    });
+
+    await expect(service.autoPersistWorkspace("WS-1")).rejects.toThrow("broken layout");
+    await service.autoPersistWorkspace("WS-1");
+
+    expect(persistWorkspaceSnapshots).toHaveBeenCalledWith("WS-1");
+  });
+
+  it("saves the active workspace while output never pauses", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getWorkspaceById("WS-1")?.isActive).toBe(true);
+    });
+    vi.useFakeTimers();
+    try {
+      persistWorkspaceSnapshots.mockClear();
+      const output = { terminalId: "TE-1", fact: { type: "outputReceived" } };
+      for (let second = 0; second < 31; second++) {
+        sessionFacts.next(output);
+        await vi.advanceTimersByTimeAsync(1000);
+      }
+
+      expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("marks a workspace dirty when the working directory changes", async () => {

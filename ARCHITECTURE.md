@@ -829,9 +829,14 @@ braucht, schaltet ab.
 Workbench, dann asynchron je Host `snapshot()` (der Scrollback wird in
 Leerlaufzeit serialisiert, nicht im Eingabepfad) — und erst wenn alle
 Teile im Speicher liegen, **eine kurze Schreibtransaktion**. Keine offene
-Transaktion über einem `await`. Auslöser: Dirty-Tracking mit Debounce,
+Transaktion über einem `await`. Auslöser: Terminal-Ausgabe mit Debounce
+(und, solange die Ausgabe nicht abreißt, spätestens alle 30 s),
 Workspace-Wechsel (der verlassene), Beenden (alle offenen, mit Zeitbudget;
 was nicht rechtzeitig serialisiert ist, wird ohne Scrollback gespeichert).
+Die Speichervorgänge eines Fensters laufen nacheinander, und jeder sammelt
+erst ein, wenn er an der Reihe ist: Rust führt gleichzeitige Schreibbefehle
+in keiner festen Reihenfolge aus, ein älterer Stand könnte sonst zuletzt
+schreiben und gewinnen.
 Welche Workspaces offen sind und welcher aktiv, steht an der
 `workspace`-Zeile (`is_open`, `is_active`) und wird bei jedem Aktivieren
 und Schließen in einem Statement nachgeführt. Wiederherstellen: jeder
