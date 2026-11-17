@@ -11,7 +11,11 @@ describe("RemoteThisMachineComponent", () => {
 
   beforeEach(() => {
     vi.useFakeTimers({ now: 1_000_000 });
-    state$ = new BehaviorSubject<PairingState>({ available: true, accepting: true });
+    state$ = new BehaviorSubject<PairingState>({
+      available: true,
+      accepting: true,
+      addresses: [],
+    });
     pairing = {
       createCode: vi.fn().mockResolvedValue(undefined),
       cancelCode: vi.fn().mockResolvedValue(undefined),
@@ -30,6 +34,7 @@ describe("RemoteThisMachineComponent", () => {
       available: true,
       accepting: true,
       code: { code: "k7q4mx", expiresAt: 1_000_000 + 65_000 },
+      addresses: [],
     });
     expect(component.shownCode()).toEqual({ code: "K7Q-4MX", left: "1:05" });
 
@@ -53,5 +58,17 @@ describe("RemoteThisMachineComponent", () => {
     await component.setAccepting(false);
     expect(pairing.setAccepting).toHaveBeenCalledWith(false);
     expect(component.failure()).toBeUndefined();
+  });
+
+  it("knows where other machines reach this one directly", () => {
+    expect(component.directAddresses()).toBeUndefined();
+
+    state$.next({
+      available: true,
+      accepting: true,
+      addresses: ["192.168.1.5:7844", "10.0.0.7:7844"],
+    });
+
+    expect(component.directAddresses()).toBe("192.168.1.5:7844, 10.0.0.7:7844");
   });
 });

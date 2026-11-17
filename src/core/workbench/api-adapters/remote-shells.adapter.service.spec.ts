@@ -1,7 +1,7 @@
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { RemoteHostConnection } from "@cogno/core/workbench/hosts/remote-hosts.service";
-import { HostError, SessionInfoContract } from "@cogno/platform";
+import { HostError, PairedMachineContract, SessionInfoContract } from "@cogno/platform";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteShellsAdapterService } from "./remote-shells.adapter.service";
@@ -10,11 +10,13 @@ type RemoteConfig = {
   remote?: { hosts?: Record<string, { destination: string; command?: string }> };
 };
 
+const laptop: PairedMachineContract = { name: "laptop", endpointId: "a" };
+
 describe("RemoteShellsAdapterService", () => {
   let config$: BehaviorSubject<RemoteConfig>;
   let connections$: BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>;
-  let pairedNames$: BehaviorSubject<readonly string[]>;
-  let renamePaired: ReturnType<typeof vi.fn>;
+  let machines$: BehaviorSubject<readonly PairedMachineContract[]>;
+  let saveMachine: ReturnType<typeof vi.fn>;
   let removePaired: ReturnType<typeof vi.fn>;
   let update: ReturnType<typeof vi.fn>;
   let disconnect: ReturnType<typeof vi.fn>;
@@ -38,8 +40,8 @@ describe("RemoteShellsAdapterService", () => {
       remote: { hosts: { office: { destination: "lars@office" } } },
     });
     connections$ = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(new Map());
-    pairedNames$ = new BehaviorSubject<readonly string[]>([]);
-    renamePaired = vi.fn().mockResolvedValue(undefined);
+    machines$ = new BehaviorSubject<readonly PairedMachineContract[]>([]);
+    saveMachine = vi.fn().mockResolvedValue(undefined);
     removePaired = vi.fn().mockResolvedValue(true);
     update = vi.fn().mockResolvedValue(undefined);
     disconnect = vi.fn().mockResolvedValue(undefined);
@@ -63,16 +65,19 @@ describe("RemoteShellsAdapterService", () => {
       } as never,
       { connections$, connect: vi.fn(), disconnect } as never,
       {
-        pairedNames$,
+        machines$,
+        get machines() {
+          return machines$.value;
+        },
         get pairedNames() {
-          return pairedNames$.value;
+          return machines$.value.map(({ name }) => name);
         },
         remoteNames: () => [
           ...Object.keys(config$.value.remote?.hosts ?? {}),
-          ...pairedNames$.value,
+          ...machines$.value.map(({ name }) => name),
         ],
       } as never,
-      { rename: renamePaired, remove: removePaired } as never,
+      { saveMachine, remove: removePaired } as never,
       { sessions, killSession } as never,
       { takeBack, takeOverWhenOpened } as never,
       {
@@ -139,22 +144,29 @@ describe("RemoteShellsAdapterService", () => {
     let hosts: readonly RemoteHost[] = [];
     adapter.hosts$.subscribe((next) => (hosts = next));
 
-    pairedNames$.next(["laptop"]);
+    machines$.next([
+      laptop,
+      { name: "nas", endpointId: "b", directOnly: true, address: "192.168.1.20" },
+    ]);
 
     expect(hosts.map(({ kind, name }) => [kind, name])).toEqual([
       ["ssh", "office"],
       ["paired", "laptop"],
+      ["paired", "nas"],
     ]);
     expect(hosts[1]).toEqual({
       kind: "paired",
       name: "laptop",
+      directOnly: false,
+      address: undefined,
       connection: "disconnected",
       failure: undefined,
     });
+    expect(hosts[2]).toMatchObject({ directOnly: true, address: "192.168.1.20" });
   });
 
   describe("a paired machine", () => {
-    beforeEach(() => pairedNames$.next(["laptop"]));
+    beforeEach(() => machines$.next([laptop]));
 
     it("cannot give its name to a machine of the config", async () => {
       await expect(
@@ -164,18 +176,42 @@ describe("RemoteShellsAdapterService", () => {
     });
 
     it("is renamed in the pairing, to a name no other remote has", async () => {
-      await expect(adapter.renamePairedHost("laptop", "office")).rejects.toThrow("already");
-      await expect(adapter.renamePairedHost("laptop", "  ")).rejects.toThrow();
-      expect(renamePaired).not.toHaveBeenCalled();
+      await expect(
+        adapter.savePairedHost("laptop", { name: "office", directOnly: false }),
+      ).rejects.toThrow("already");
+      await expect(
+        adapter.savePairedHost("laptop", { name: "  ", directOnly: false }),
+      ).rejects.toThrow();
+      expect(saveMachine).not.toHaveBeenCalled();
 
-      await adapter.renamePairedHost("laptop", " notebook ");
-      expect(renamePaired).toHaveBeenCalledWith("laptop", "notebook");
+      await adapter.savePairedHost("laptop", { name: " notebook ", directOnly: false });
+      expect(saveMachine).toHaveBeenCalledWith("laptop", {
+        name: "notebook",
+        directOnly: false,
+        address: null,
+      });
     });
 
-    it("keeps its name without asking the pairing", async () => {
-      await adapter.renamePairedHost("laptop", "laptop");
+    it("saves how it is reached, and hangs up on what was set up otherwise", async () => {
+      await adapter.savePairedHost("laptop", {
+        name: "laptop",
+        directOnly: true,
+        address: " 192.168.1.20:7844 ",
+      });
 
-      expect(renamePaired).not.toHaveBeenCalled();
+      expect(saveMachine).toHaveBeenCalledWith("laptop", {
+        name: "laptop",
+        directOnly: true,
+        address: "192.168.1.20:7844",
+      });
+      expect(disconnect).toHaveBeenCalledWith("laptop");
+    });
+
+    it("leaves pairing and connection alone when nothing changed", async () => {
+      await adapter.savePairedHost("laptop", { name: "laptop", directOnly: false, address: " " });
+
+      expect(saveMachine).not.toHaveBeenCalled();
+      expect(disconnect).not.toHaveBeenCalled();
     });
 
     it("is removed from the pairing, not from the config", async () => {

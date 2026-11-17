@@ -3,8 +3,23 @@ import { Channel } from "@tauri-apps/api/core";
 import { invokeHost } from "./host-error";
 import { listenInThisWindow } from "./window-events";
 
-/** A machine this one is paired with. */
-export type PairedMachineContract = { name: string; endpointId: string };
+/** A machine this one is paired with, and how it is reached. */
+export type PairedMachineContract = {
+  name: string;
+  endpointId: string;
+  /** Only directly - in the local network or at `address` - never over Cogno's relay. */
+  directOnly?: boolean;
+  /** Where it is reached directly: a host name or IP address, with a port when not the default. */
+  address?: string;
+};
+
+/** What the user says about a paired machine. */
+export type PairedMachineSettingsContract = {
+  name: string;
+  directOnly: boolean;
+  /** None when left empty. */
+  address: string | null;
+};
 
 /** The code this machine shows for another one to pair with it. */
 export type PairingCodeContract = { code: string; expiresInSecs: number };
@@ -14,6 +29,8 @@ export type PairingStateContract = {
   /** Whether paired machines may connect while Cogno runs. */
   accepting: boolean;
   machines: PairedMachineContract[];
+  /** Where this machine is reached directly; none while pairing is off. */
+  addresses: string[];
   /** The code this machine shows, while it is valid. */
   code: PairingCodeContract | null;
 };
@@ -89,8 +106,9 @@ export class Pairing {
     return invokeHost("pairing_set_accepting", { on });
   }
 
-  rename(previous: string, name: string): Promise<void> {
-    return invokeHost("pairing_rename", { previous, name });
+  /** Saves the machine paired as `previous`: its name and how it is reached. */
+  saveMachine(previous: string, settings: PairedMachineSettingsContract): Promise<void> {
+    return invokeHost("pairing_save_machine", { previous, ...settings });
   }
 
   /**

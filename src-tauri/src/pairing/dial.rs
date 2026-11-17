@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use cogno_host::sync::lock;
 use iroh::endpoint::{ApplicationClose, Connection, ConnectionError, RecvStream, SendStream};
-use iroh::{Endpoint, EndpointAddr};
+use iroh::{Endpoint, EndpointAddr, EndpointId, RelayUrl};
 use tokio::task::JoinHandle;
 use tokio_util::io::SyncIoBridge;
 
@@ -39,12 +39,32 @@ pub struct Dialing {
 }
 
 impl Dialing {
-    pub fn start(endpoint: Endpoint, to: EndpointAddr, name: &str) -> Self {
+    /// Dials `id`: over `relay` unless it is `None` ("direct only"), and at
+    /// `address` when one is given - besides what the local network says.
+    pub fn start(
+        endpoint: Endpoint,
+        id: EndpointId,
+        relay: Option<RelayUrl>,
+        address: Option<String>,
+        name: &str,
+    ) -> Self {
         let connection = Arc::new(Mutex::new(None));
         let made = connection.clone();
         let name = name.to_string();
         let task = tokio::spawn(async move {
             let dialing = async {
+                let mut to = EndpointAddr::new(id);
+                if let Some(relay) = relay {
+                    to = to.with_relay_url(relay);
+                }
+                if let Some(address) = &address {
+                    for found in resolve(address)
+                        .await
+                        .map_err(|error| unreachable(&name, &error))?
+                    {
+                        to = to.with_ip_addr(found);
+                    }
+                }
                 let opened = endpoint
                     .connect(to, HOST_ALPN)
                     .await
@@ -94,6 +114,23 @@ impl Underway for Dialing {
     }
 }
 
+/// The socket addresses `address` names: a host name or IP address, with
+/// the pairing port unless it names one.
+async fn resolve(address: &str) -> std::io::Result<Vec<std::net::SocketAddr>> {
+    let with_port = if address.parse::<std::net::SocketAddr>().is_ok()
+        || address
+            .rsplit_once(':')
+            .is_some_and(|(host, port)| !host.contains(':') && port.parse::<u16>().is_ok())
+    {
+        address.to_string()
+    } else if address.parse::<std::net::Ipv6Addr>().is_ok() {
+        format!("[{address}]:{}", super::PAIRING_PORT)
+    } else {
+        format!("{address}:{}", super::PAIRING_PORT)
+    };
+    Ok(tokio::net::lookup_host(with_port).await?.collect())
+}
+
 fn unreachable(name: &str, reason: &dyn std::fmt::Display) -> CommandError {
     CommandError::new(
         AppErrorCode::ConnectFailed,
@@ -120,5 +157,32 @@ fn refused(name: &str, error: &ConnectionError) -> CommandError {
             format!("Cogno's shells do not run on {name}"),
         ),
         _ => unreachable(name, error),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn an_address_is_read_with_or_without_its_port() {
+        let port = crate::pairing::PAIRING_PORT;
+        assert_eq!(
+            resolve("192.168.1.20").await.unwrap(),
+            vec![format!("192.168.1.20:{port}").parse().unwrap()]
+        );
+        assert_eq!(
+            resolve("192.168.1.20:9000").await.unwrap(),
+            vec!["192.168.1.20:9000".parse().unwrap()]
+        );
+        assert_eq!(
+            resolve("::1").await.unwrap(),
+            vec![format!("[::1]:{port}").parse().unwrap()]
+        );
+        assert_eq!(
+            resolve("[::1]:9000").await.unwrap(),
+            vec!["[::1]:9000".parse().unwrap()]
+        );
+        assert!(!resolve("localhost").await.unwrap().is_empty());
     }
 }

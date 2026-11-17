@@ -3,6 +3,10 @@
 <plist version="1.0">
 <dict>
   <key>NSLocalNetworkUsageDescription</key>
-  <string>Cogno benötigt Zugriff auf Geräte im lokalen Netzwerk, damit Terminal-Sitzungen SSH-Verbindungen öffnen können.</string>
+  <string>Cogno benötigt Zugriff auf Geräte im lokalen Netzwerk, damit Terminal-Sitzungen SSH-Verbindungen öffnen und gekoppelte Rechner sich direkt finden können.</string>
+  <key>NSBonjourServices</key>
+  <array>
+    <string>_cogno._udp</string>
+  </array>
 </dict>
 </plist>

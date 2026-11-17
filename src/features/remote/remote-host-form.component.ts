@@ -10,13 +10,22 @@ import {
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
 import { RemotePanelService } from "./remote-panel.service";
 
-type FormValues = { name: string; destination: string; command: string };
+type FormValues = {
+  name: string;
+  destination: string;
+  command: string;
+  directOnly: boolean;
+  address: string;
+};
+
+/** The fields typed into. */
+type TextField = "name" | "destination" | "command" | "address";
 
 /**
  * Adds a remote reached over ssh, or changes a remote (`host`). The command
  * ssh runs there is advanced: Cogno finds it by itself when the remote names
- * none. A paired machine has only its name to change: how it is reached
- * comes from the pairing.
+ * none. A paired machine is reached through Cogno's server unless it is to be
+ * reached only directly: in this network, or at its address.
  */
 @Component({
   selector: "app-remote-host-form",
@@ -36,7 +45,32 @@ type FormValues = { name: string; destination: string; command: string };
           (input)="setField('name', $event)"
         />
       </label>
-      @if (!isPaired()) {
+      @if (isPaired()) {
+        <label class="check">
+          <input
+            type="checkbox"
+            [checked]="values().directOnly"
+            [disabled]="saving()"
+            (change)="setDirectOnly($event)"
+          />
+          <span>Connect only directly, not through Cogno's server</span>
+        </label>
+        <label>
+          <span>Address</span>
+          <input
+            type="text"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="192.168.1.20 or office-pc"
+            [value]="values().address"
+            [disabled]="saving()"
+            (input)="setField('address', $event)"
+          />
+          <span class="hint">
+            Needed only when the machine is not in this network, for example over a VPN
+          </span>
+        </label>
+      } @else {
         <label>
           <span>Destination</span>
           <input
@@ -98,6 +132,17 @@ type FormValues = { name: string; destination: string; command: string };
       opacity: 0.7;
     }
 
+    label.check {
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+    }
+
+    label.check span {
+      font-size: inherit;
+      opacity: 1;
+    }
+
     summary {
       cursor: pointer;
       margin-bottom: 4px;
@@ -137,7 +182,13 @@ export class RemoteHostFormComponent implements OnChanges {
   /** Saved or cancelled. */
   @Output() readonly closed = new EventEmitter<void>();
 
-  readonly values = signal<FormValues>({ name: "", destination: "", command: "" });
+  readonly values = signal<FormValues>({
+    name: "",
+    destination: "",
+    command: "",
+    directOnly: false,
+    address: "",
+  });
   readonly saving = signal(false);
   readonly error = signal<string | undefined>(undefined);
 
@@ -147,10 +198,13 @@ export class RemoteHostFormComponent implements OnChanges {
   ngOnChanges(): void {
     this.error.set(undefined);
     const ssh = this.host?.kind === "ssh" ? this.host : undefined;
+    const paired = this.host?.kind === "paired" ? this.host : undefined;
     this.values.set({
       name: this.host?.name ?? "",
       destination: ssh?.destination ?? "",
       command: ssh?.command ?? "",
+      directOnly: paired?.directOnly ?? false,
+      address: paired?.address ?? "",
     });
   }
 
@@ -162,9 +216,15 @@ export class RemoteHostFormComponent implements OnChanges {
     return this.host?.kind === "ssh" && !!this.host.command;
   }
 
-  setField(field: keyof FormValues, event: Event): void {
+  setField(field: TextField, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.values.update((values) => ({ ...values, [field]: value }));
+    this.error.set(undefined);
+  }
+
+  setDirectOnly(event: Event): void {
+    const directOnly = (event.target as HTMLInputElement).checked;
+    this.values.update((values) => ({ ...values, directOnly }));
     this.error.set(undefined);
   }
 
@@ -173,10 +233,14 @@ export class RemoteHostFormComponent implements OnChanges {
     if (this.saving()) return;
     this.saving.set(true);
     this.error.set(undefined);
-    const { name, destination, command } = this.values();
+    const { name, destination, command, directOnly, address } = this.values();
     const error =
       this.host?.kind === "paired"
-        ? await this.panel.renamePairedHost(this.host.name, name)
+        ? await this.panel.savePairedHost(this.host.name, {
+            name,
+            directOnly,
+            address: address.trim() || undefined,
+          })
         : await this.panel.saveHost(
             { name, destination, command: command.trim() || undefined },
             this.host?.name,

@@ -23,6 +23,30 @@ pub struct PairedMachine {
     pub name: String,
     #[serde(with = "endpoint_id_text")]
     pub endpoint_id: EndpointId,
+    /// Only directly - in the local network or at `address` - never over
+    /// Cogno's relay.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub direct_only: bool,
+    /// Where the machine is reached directly: a host name or IP address,
+    /// with a port when not the pairing port.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+}
+
+impl PairedMachine {
+    /// A machine just paired: reached however it can be.
+    pub fn new(name: String, endpoint_id: EndpointId) -> Self {
+        Self {
+            name,
+            endpoint_id,
+            direct_only: false,
+            address: None,
+        }
+    }
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 /// What `paired.json` holds.
@@ -190,6 +214,8 @@ mod tests {
             machines: vec![PairedMachine {
                 name: "laptop".into(),
                 endpoint_id: SecretKey::generate().public(),
+                direct_only: true,
+                address: Some("192.168.1.20".into()),
             }],
         };
 

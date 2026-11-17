@@ -15,6 +15,8 @@ export type PairingState =
       readonly accepting: boolean;
       /** The code this machine shows, while it is valid. */
       readonly code?: PairingCode;
+      /** Where other machines reach this one directly; none while pairing is off. */
+      readonly addresses: readonly string[];
     }
   | {
       readonly available: false;

@@ -30,7 +30,7 @@ describe("Pairing", () => {
   });
 
   it("asks for the state and passes commands on with their arguments", async () => {
-    const state = { accepting: true, machines: [], code: null };
+    const state = { accepting: true, machines: [], addresses: [], code: null };
     invokeMock.mockResolvedValueOnce(state);
     await expect(pairing.state()).resolves.toEqual(state);
     expect(invokeMock).toHaveBeenLastCalledWith("pairing_state", undefined);
@@ -41,10 +41,12 @@ describe("Pairing", () => {
     await pairing.setAccepting(false);
     expect(invokeMock).toHaveBeenLastCalledWith("pairing_set_accepting", { on: false });
 
-    await pairing.rename("office", "work");
-    expect(invokeMock).toHaveBeenLastCalledWith("pairing_rename", {
+    await pairing.saveMachine("office", { name: "work", directOnly: true, address: null });
+    expect(invokeMock).toHaveBeenLastCalledWith("pairing_save_machine", {
       previous: "office",
       name: "work",
+      directOnly: true,
+      address: null,
     });
 
     invokeMock.mockResolvedValueOnce(false);

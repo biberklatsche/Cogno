@@ -94,7 +94,12 @@ describe("RemoteSideComponent", () => {
   });
 
   it("connects a paired machine like any remote, and offers to remove one no longer paired", () => {
-    const laptop: RemoteHost = { kind: "paired", name: "laptop", connection: "disconnected" };
+    const laptop: RemoteHost = {
+      kind: "paired",
+      name: "laptop",
+      directOnly: false,
+      connection: "disconnected",
+    };
     expect(component.nextStep(laptop)).toBe("connect");
     expect(
       component.nextStep({

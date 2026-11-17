@@ -7,32 +7,36 @@ const FOR_POWERSHELL = '& ".cogno/bin/cogno" server --stdio';
 
 describe("RemoteHostFormComponent", () => {
   let saveHost: ReturnType<typeof vi.fn>;
-  let renamePairedHost: ReturnType<typeof vi.fn>;
+  let savePairedHost: ReturnType<typeof vi.fn>;
   let form: RemoteHostFormComponent;
   let closed: ReturnType<typeof vi.fn>;
 
   function open(host?: RemoteHost): void {
     form = new RemoteHostFormComponent({
       saveHost,
-      renamePairedHost,
+      savePairedHost,
     } as unknown as RemotePanelService);
     form.host = host;
     form.closed.subscribe(closed);
     form.ngOnChanges();
   }
 
-  const type = (field: "name" | "destination" | "command", value: string) =>
+  const type = (field: "name" | "destination" | "command" | "address", value: string) =>
     form.setField(field, { target: { value } } as unknown as Event);
 
   beforeEach(() => {
     saveHost = vi.fn().mockResolvedValue(undefined);
-    renamePairedHost = vi.fn().mockResolvedValue(undefined);
+    savePairedHost = vi.fn().mockResolvedValue(undefined);
     closed = vi.fn();
   });
 
   it("starts with what a host is; a command only where it names one", () => {
     open({ kind: "ssh", name: "office", destination: "lars@office", connection: "connected" });
-    expect(form.values()).toEqual({ name: "office", destination: "lars@office", command: "" });
+    expect(form.values()).toMatchObject({
+      name: "office",
+      destination: "lars@office",
+      command: "",
+    });
 
     open({
       kind: "ssh",
@@ -96,14 +100,30 @@ describe("RemoteHostFormComponent", () => {
     expect(closed).not.toHaveBeenCalled();
   });
 
-  it("only renames a paired machine: how it is reached comes from the pairing", async () => {
-    open({ kind: "paired", name: "office", connection: "disconnected" });
-    expect(form.values()).toEqual({ name: "office", destination: "", command: "" });
+  it("changes a paired machine's name and how it is reached, nothing of ssh", async () => {
+    open({
+      kind: "paired",
+      name: "office",
+      directOnly: true,
+      address: "192.168.1.20",
+      connection: "disconnected",
+    });
+    expect(form.values()).toMatchObject({
+      name: "office",
+      directOnly: true,
+      address: "192.168.1.20",
+    });
     type("name", "work");
+    type("address", "  ");
+    form.setDirectOnly({ target: { checked: false } } as unknown as Event);
 
     await form.save(new Event("submit"));
 
-    expect(renamePairedHost).toHaveBeenCalledWith("office", "work");
+    expect(savePairedHost).toHaveBeenCalledWith("office", {
+      name: "work",
+      directOnly: false,
+      address: undefined,
+    });
     expect(saveHost).not.toHaveBeenCalled();
     expect(closed).toHaveBeenCalledOnce();
   });

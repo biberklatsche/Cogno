@@ -1,6 +1,7 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  PairedHostSettings,
   RemoteHost,
   RemoteHostSettings,
   RemoteShell,
@@ -105,10 +106,13 @@ export class RemotePanelService {
     }
   }
 
-  /** Gives a paired machine another name; resolves with why not, if it did not. */
-  async renamePairedHost(previousName: string, name: string): Promise<string | undefined> {
+  /** Saves a paired machine's name and how it is reached; resolves with why not, if it did not. */
+  async savePairedHost(
+    previousName: string,
+    host: PairedHostSettings,
+  ): Promise<string | undefined> {
     try {
-      await this.port.renamePairedHost(previousName, name);
+      await this.port.savePairedHost(previousName, host);
       return undefined;
     } catch (error) {
       return messageOf(error);

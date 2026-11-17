@@ -143,7 +143,7 @@ pub fn run(cli: Cli) {
             crate::commands::pairing::pairing_add,
             crate::commands::pairing::pairing_answer,
             crate::commands::pairing::pairing_set_accepting,
-            crate::commands::pairing::pairing_rename,
+            crate::commands::pairing::pairing_save_machine,
             crate::commands::pairing::pairing_remove,
             crate::commands::keyboard::get_keyboard_layout,
             crate::commands::pty::pty_spawn,

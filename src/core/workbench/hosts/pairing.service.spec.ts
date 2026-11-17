@@ -6,7 +6,7 @@ import { PairingService } from "./pairing.service";
 const NOT_SET_UP = new HostError("pairingUnreachable", "Cogno's pairing server is not set up yet");
 
 function stateOf(overrides: Partial<PairingStateContract> = {}): PairingStateContract {
-  return { accepting: true, machines: [], code: null, ...overrides };
+  return { accepting: true, machines: [], addresses: [], code: null, ...overrides };
 }
 
 /** Lets what was answered arrive. */
@@ -53,11 +53,17 @@ describe("PairingService", () => {
     expect(states).toEqual([]);
 
     await settled();
-    expect(states.at(-1)).toEqual({ available: true, accepting: true, code: undefined });
+    expect(states.at(-1)).toEqual({
+      available: true,
+      accepting: true,
+      code: undefined,
+      addresses: [],
+    });
 
     pairing.state.mockResolvedValue(
       stateOf({
         machines: [{ name: "laptop", endpointId: "abc" }],
+        addresses: ["192.168.1.5:7844"],
         code: { code: "K7Q4MX", expiresInSecs: 300 },
       }),
     );
@@ -68,6 +74,7 @@ describe("PairingService", () => {
       available: true,
       accepting: true,
       code: { code: "K7Q4MX", expiresAt: 1_000_000 + 300_000 },
+      addresses: ["192.168.1.5:7844"],
     });
     expect(service.pairedNames).toEqual(["laptop"]);
     expect(service.remoteNames()).toEqual(["office", "laptop"]);

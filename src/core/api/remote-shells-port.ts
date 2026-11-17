@@ -23,7 +23,13 @@ type SshRemoteHost = RemoteHostConnectionState & {
   readonly command?: string;
 };
 
-type PairedRemoteHost = RemoteHostConnectionState & { readonly kind: "paired" };
+type PairedRemoteHost = RemoteHostConnectionState & {
+  readonly kind: "paired";
+  /** Only directly - in the local network or at `address` - never through Cogno's server. */
+  readonly directOnly: boolean;
+  /** Where it is reached directly: a host name or IP address, with a port when not the default. */
+  readonly address?: string;
+};
 
 /** Why connecting to a machine failed. */
 export type RemoteHostFailure = {
@@ -34,6 +40,9 @@ export type RemoteHostFailure = {
 
 /** What the user says about a machine reached over ssh. */
 export type RemoteHostSettings = Pick<SshRemoteHost, "name" | "destination" | "command">;
+
+/** What the user says about a paired machine. */
+export type PairedHostSettings = Pick<PairedRemoteHost, "name" | "directOnly" | "address">;
 
 /** A shell that runs on a machine. */
 export type RemoteShell = {
@@ -69,8 +78,11 @@ export abstract class RemoteShellsPort {
    * it was called when it is renamed. Rejects with a text for the user.
    */
   abstract saveHost(host: RemoteHostSettings, previousName?: string): Promise<void>;
-  /** Gives a paired machine another name. Rejects with a text for the user. */
-  abstract renamePairedHost(previousName: string, name: string): Promise<void>;
+  /**
+   * Saves a paired machine's name and how it is reached. Rejects with a
+   * text for the user.
+   */
+  abstract savePairedHost(previousName: string, host: PairedHostSettings): Promise<void>;
   /**
    * Takes a machine out of the config and hangs up on it, or removes the
    * pairing with it here and there.

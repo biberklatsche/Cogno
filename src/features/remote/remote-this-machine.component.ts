@@ -22,8 +22,8 @@ function messageOf(error: unknown): string {
 
 /**
  * This machine in the Remote panel: a code for another machine to pair with
- * it, and whether paired machines may connect. What runs on this machine
- * its tabs show.
+ * it, whether paired machines may connect, and where they reach it directly.
+ * What runs on this machine its tabs show.
  */
 @Component({
   selector: "app-remote-this-machine",
@@ -58,6 +58,9 @@ function messageOf(error: unknown): string {
             <app-toggle-switch [checked]="state.accepting"></app-toggle-switch>
             <span>Accept connections from paired machines</span>
           </button>
+          @if (directAddresses(); as addresses) {
+            <div class="hint">Other machines reach this one directly at {{ addresses }}</div>
+          }
         } @else {
           <div class="failure">{{ state.reason }}</div>
         }
@@ -140,6 +143,12 @@ export class RemoteThisMachineComponent {
     const left = code ? code.expiresAt - this.now() : 0;
     if (!code || left <= 0) return undefined;
     return { code: readable(code.code), left: minutesAndSeconds(left) };
+  });
+
+  /** Where other machines reach this one directly, when it is reached directly at all. */
+  readonly directAddresses = computed(() => {
+    const state = this.state();
+    return state?.available && state.addresses.length > 0 ? state.addresses.join(", ") : undefined;
   });
 
   constructor(

@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { PairingPort, PairingState } from "@cogno/core/api/pairing-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
-import { Pairing, PairingStateContract, toHostError } from "@cogno/platform";
+import { PairedMachineContract, Pairing, PairingStateContract, toHostError } from "@cogno/platform";
 import { BehaviorSubject, combineLatest, filter, map, Observable } from "rxjs";
 
 /** What pairing said when it was asked last, or why it could not say. */
@@ -12,11 +12,12 @@ type Read =
 function toState(read: Read, enableFailure: string | undefined): PairingState {
   if ("failure" in read) return { available: false, reason: read.failure };
   if (enableFailure !== undefined) return { available: false, reason: enableFailure };
-  const { accepting, code } = read.state;
+  const { accepting, code, addresses } = read.state;
   return {
     available: true,
     accepting,
     code: code ? { code: code.code, expiresAt: read.at + code.expiresInSecs * 1000 } : undefined,
+    addresses,
   };
 }
 
@@ -33,8 +34,8 @@ export class PairingService extends PairingPort {
   private reads = 0;
 
   readonly state$: Observable<PairingState>;
-  /** The names of the paired machines; none until they are known. */
-  readonly pairedNames$: Observable<readonly string[]>;
+  /** The paired machines; none until they are known. */
+  readonly machines$: Observable<readonly PairedMachineContract[]>;
 
   constructor(
     private readonly pairing: Pairing,
@@ -46,16 +47,21 @@ export class PairingService extends PairingPort {
       this.read.pipe(filter((read): read is Read => read !== undefined)),
       this.enableFailure,
     ]).pipe(map(([read, enableFailure]) => toState(read, enableFailure)));
-    this.pairedNames$ = this.read.pipe(map(namesOf));
+    this.machines$ = this.read.pipe(map(machinesOf));
     void pairing
       .onChanged(() => void this.readState())
       .then((unlisten) => destroyRef.onDestroy(unlisten));
     void this.readState();
   }
 
+  /** The paired machines, as far as they are known. */
+  get machines(): readonly PairedMachineContract[] {
+    return machinesOf(this.read.value);
+  }
+
   /** The names of the paired machines, as far as they are known. */
   get pairedNames(): readonly string[] {
-    return namesOf(this.read.value);
+    return this.machines.map(({ name }) => name);
   }
 
   /** The names of every remote: the ones of `remote.hosts` and the paired machines. */
@@ -105,6 +111,6 @@ export class PairingService extends PairingPort {
   }
 }
 
-function namesOf(read: Read | undefined): readonly string[] {
-  return read && "state" in read ? read.state.machines.map(({ name }) => name) : [];
+function machinesOf(read: Read | undefined): readonly PairedMachineContract[] {
+  return read && "state" in read ? read.state.machines : [];
 }

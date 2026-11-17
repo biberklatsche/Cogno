@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
 import {
+  PairedHostSettings,
   RemoteHost,
   RemoteHostSettings,
   RemoteShell,
@@ -131,10 +132,10 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     super();
     this.hosts$ = combineLatest([
       this.configService.config$,
-      this.pairingService.pairedNames$,
+      this.pairingService.machines$,
       this.remoteHosts.connections$,
     ]).pipe(
-      map(([config, pairedNames, connections]): RemoteHost[] => [
+      map(([config, machines, connections]): RemoteHost[] => [
         ...Object.entries(config.remote?.hosts ?? {}).map(
           ([name, host]): RemoteHost => ({
             kind: "ssh",
@@ -143,8 +144,13 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
             ...connectionOf(name, connections.get(name)),
           }),
         ),
-        ...pairedNames.map(
-          (name): RemoteHost => ({ kind: "paired", ...connectionOf(name, connections.get(name)) }),
+        ...machines.map(
+          ({ name, directOnly, address }): RemoteHost => ({
+            kind: "paired",
+            directOnly: directOnly ?? false,
+            address,
+            ...connectionOf(name, connections.get(name)),
+          }),
         ),
       ]),
     );
@@ -202,12 +208,26 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     }
   }
 
-  async renamePairedHost(previousName: string, name: string): Promise<void> {
-    const wanted = name.trim();
-    if (wanted === previousName) return;
-    if (wanted === "") throw new Error("A paired machine needs a name.");
-    this.ensureFree(wanted);
-    await this.pairing.rename(previousName, wanted);
+  async savePairedHost(previousName: string, host: PairedHostSettings): Promise<void> {
+    const name = host.name.trim();
+    const address = host.address?.trim() || undefined;
+    if (name === "") throw new Error("A paired machine needs a name.");
+    if (name !== previousName) this.ensureFree(name);
+    const previous = this.pairingService.machines.find((machine) => machine.name === previousName);
+    if (
+      name === previousName &&
+      host.directOnly === (previous?.directOnly ?? false) &&
+      address === previous?.address
+    ) {
+      return;
+    }
+    await this.pairing.saveMachine(previousName, {
+      name,
+      directOnly: host.directOnly,
+      address: address ?? null,
+    });
+    // What stands was set up with what no longer holds.
+    await this.remoteHosts.disconnect(previousName);
   }
 
   async removeHost(host: string): Promise<void> {

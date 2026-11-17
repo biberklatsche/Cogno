@@ -165,15 +165,18 @@ pub fn pairing_set_accepting(state: State<'_, PairingState>, on: bool) -> Comman
     state.pairing()?.set_accepting(on).map_err(command_error)
 }
 
+/// Saves a paired machine's name and how it is reached.
 #[tauri::command]
-pub fn pairing_rename(
+pub fn pairing_save_machine(
     state: State<'_, PairingState>,
     previous: String,
     name: String,
+    direct_only: bool,
+    address: Option<String>,
 ) -> CommandResult<()> {
     state
         .pairing()?
-        .rename(&previous, &name)
+        .save_machine(&previous, &name, direct_only, address)
         .map_err(command_error)
 }
 

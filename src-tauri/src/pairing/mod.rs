@@ -34,6 +34,12 @@ use store::{Paired, Store};
 
 /// How long the other machine may take to tell it removed the pairing too.
 const UNPAIR_PATIENCE: Duration = Duration::from_secs(5);
+/// The UDP port this machine is reached at directly, when it is free: an
+/// address entered on another machine needs no port then.
+pub const PAIRING_PORT: u16 = 7844;
+/// The name paired machines announce themselves under in the local network
+/// (`_cogno._udp`; macOS lists it in `NSBonjourServices`).
+const LOCAL_SERVICE_NAME: &str = "cogno";
 
 /// Cogno's own server (ARCHITECTURE.md 2.7.3): the relay, which is also where
 /// each machine is found by its id, and the rendezvous behind it.
@@ -66,6 +72,9 @@ impl Server {
 pub struct PairingView {
     pub accepting: bool,
     pub machines: Vec<PairedMachine>,
+    /// Where this machine is reached directly, while pairing is on: what to
+    /// enter as its address on another machine.
+    pub addresses: Vec<String>,
     /// The code this machine shows, while it is valid.
     pub code: Option<ShownCode>,
 }
@@ -164,20 +173,12 @@ impl Pairing {
         if lock(&self.0.endpoint).is_some() {
             return Ok(());
         }
-        let builder = Endpoint::builder(presets::Minimal)
-            .secret_key(self.0.store.key()?)
-            .relay_mode(RelayMode::Custom(self.0.server.relay_map.clone()))
-            .alpns(vec![PAIR_ALPN.to_vec(), HOST_ALPN.to_vec()]);
-        #[cfg(test)]
-        let builder = if self.0.server.insecure {
-            builder.ca_tls_config(iroh::tls::CaTlsConfig::insecure_skip_verify())
-        } else {
-            builder
+        let key = self.0.store.key()?;
+        let endpoint = match self.bind(key.clone(), Some(PAIRING_PORT)).await {
+            Ok(endpoint) => endpoint,
+            // Taken, by another Cogno build or another program: any port.
+            Err(_) => self.bind(key, None).await?,
         };
-        let endpoint = builder
-            .bind()
-            .await
-            .map_err(|error| PairingError::Unreachable(error.to_string()))?;
         let accepting = endpoint.clone();
         let pairing = self.clone();
         tokio::spawn(async move {
@@ -192,6 +193,39 @@ impl Pairing {
         });
         *lock(&self.0.endpoint) = Some(endpoint);
         Ok(())
+    }
+
+    async fn bind(
+        &self,
+        key: iroh::SecretKey,
+        port: Option<u16>,
+    ) -> Result<Endpoint, PairingError> {
+        let builder = Endpoint::builder(presets::Minimal)
+            .secret_key(key)
+            .relay_mode(RelayMode::Custom(self.0.server.relay_map.clone()))
+            .address_lookup(
+                iroh_mdns_address_lookup::MdnsAddressLookup::builder()
+                    .service_name(LOCAL_SERVICE_NAME),
+            )
+            .alpns(vec![PAIR_ALPN.to_vec(), HOST_ALPN.to_vec()]);
+        let builder = match port {
+            Some(port) => builder
+                .clear_ip_transports()
+                .bind_addr((std::net::Ipv4Addr::UNSPECIFIED, port))
+                .and_then(|builder| builder.bind_addr((std::net::Ipv6Addr::UNSPECIFIED, port)))
+                .map_err(|error| PairingError::Unreachable(error.to_string()))?,
+            None => builder,
+        };
+        #[cfg(test)]
+        let builder = if self.0.server.insecure {
+            builder.ca_tls_config(iroh::tls::CaTlsConfig::insecure_skip_verify())
+        } else {
+            builder
+        };
+        builder
+            .bind()
+            .await
+            .map_err(|error| PairingError::Unreachable(error.to_string()))
     }
 
     /// Stops the endpoint: the Remote feature was switched off. Nothing is
@@ -219,9 +253,21 @@ impl Pairing {
                 expires_in_secs: left.as_secs(),
             })
         });
+        let addresses = lock(&self.0.endpoint)
+            .as_ref()
+            .map(|endpoint| {
+                endpoint
+                    .addr()
+                    .ip_addrs()
+                    .filter(|address| !address.ip().is_loopback())
+                    .map(ToString::to_string)
+                    .collect()
+            })
+            .unwrap_or_default();
         Ok(PairingView {
             accepting: paired.accepting,
             machines: paired.machines,
+            addresses,
             code,
         })
     }
@@ -284,10 +330,7 @@ impl Pairing {
             Reply::Accepted { name } => {
                 let mut paired = self.0.store.paired()?;
                 let name = unique_name(name.as_deref(), taken, &paired);
-                let machine = PairedMachine {
-                    name,
-                    endpoint_id: peer,
-                };
+                let machine = PairedMachine::new(name, peer);
                 paired.machines.retain(|known| known.endpoint_id != peer);
                 paired.machines.push(machine.clone());
                 self.0.store.save(&paired)?;
@@ -315,10 +358,24 @@ impl Pairing {
         Ok(())
     }
 
-    pub fn rename(&self, previous: &str, name: &str) -> Result<(), PairingError> {
+    /// Saves the settings of the paired machine `previous` - its name and
+    /// how it is reached.
+    pub fn save_machine(
+        &self,
+        previous: &str,
+        name: &str,
+        direct_only: bool,
+        address: Option<String>,
+    ) -> Result<(), PairingError> {
         let mut paired = self.0.store.paired()?;
         for machine in paired.machines.iter_mut().filter(|m| m.name == previous) {
             machine.name = name.to_string();
+            machine.direct_only = direct_only;
+            machine.address = address
+                .as_deref()
+                .map(str::trim)
+                .filter(|address| !address.is_empty())
+                .map(str::to_string);
         }
         self.0.store.save(&paired)?;
         self.0.events.changed();
@@ -367,8 +424,14 @@ impl Pairing {
                     format!("This machine is not paired with {name}"),
                 )
             })?;
-        let to = self.0.server.address_of(machine.endpoint_id);
-        Ok(Dialing::start(endpoint, to, name))
+        let relay = (!machine.direct_only).then(|| self.0.server.relay_url.clone());
+        Ok(Dialing::start(
+            endpoint,
+            machine.endpoint_id,
+            relay,
+            machine.address.clone(),
+            name,
+        ))
     }
 
     fn endpoint(&self) -> Result<Endpoint, PairingError> {
@@ -427,10 +490,7 @@ impl Pairing {
         };
         let saved = self.0.store.paired().and_then(|mut paired| {
             paired.machines.retain(|known| known.endpoint_id != peer);
-            paired.machines.push(PairedMachine {
-                name: chosen,
-                endpoint_id: peer,
-            });
+            paired.machines.push(PairedMachine::new(chosen, peer));
             self.0.store.save(&paired)
         });
         if saved.is_err() {
@@ -553,7 +613,7 @@ mod tests {
     /// A relay and a rendezvous of the test's own, as Cogno's server is.
     struct TestServer {
         server: Server,
-        _relay: Box<dyn std::any::Any + Send>,
+        relay: Option<Box<dyn std::any::Any + Send>>,
         _rendezvous: Endpoint,
     }
 
@@ -576,7 +636,7 @@ mod tests {
                 rendezvous: rendezvous.id(),
                 insecure: true,
             },
-            _relay: Box::new(relay),
+            relay: Some(Box::new(relay)),
             _rendezvous: rendezvous,
         }
     }
@@ -771,14 +831,47 @@ mod tests {
         assert!(error.is(AppErrorCode::CognoNotRunning), "{error:?}");
     }
 
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_machine_set_to_direct_only_is_reached_without_the_relay() {
+        let mut test = test_server("K7Q4MX").await;
+        let daemon = crate::host_connection::test_support::test_daemon();
+        let (office, laptop, office_name) = paired_pair(&test, daemon).await;
+        let office_at = office
+            .view()
+            .unwrap()
+            .addresses
+            .into_iter()
+            .find(|address| address.starts_with(|c: char| c.is_ascii_digit()))
+            .expect("office is reached directly somewhere");
+        let port = office_at.rsplit_once(':').unwrap().1;
+        laptop
+            .save_machine(
+                &office_name,
+                &office_name,
+                true,
+                Some(format!("127.0.0.1:{port}")),
+            )
+            .unwrap();
+        // The relay is gone: only the direct way is left.
+        test.relay = None;
+
+        let connection = dial(&laptop, &office_name).await.unwrap();
+
+        tokio::task::spawn_blocking(move || connection.hang_up())
+            .await
+            .unwrap();
+        laptop.disable().await;
+        office.disable().await;
+    }
+
     #[test]
     fn a_name_that_is_taken_gets_a_number() {
         let paired = Paired {
             accepting: true,
-            machines: vec![PairedMachine {
-                name: "laptop 2".into(),
-                endpoint_id: SecretKey::generate().public(),
-            }],
+            machines: vec![PairedMachine::new(
+                "laptop 2".into(),
+                SecretKey::generate().public(),
+            )],
         };
         assert_eq!(unique_name(Some("office"), &[], &paired), "office");
         assert_eq!(
