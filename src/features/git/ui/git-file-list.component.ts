@@ -83,7 +83,8 @@ type GitFileListKind = "unstaged" | "staged" | "conflicted" | "commit";
     GIT_SHARED_STYLES,
     `
       :host { display: block; }
-      .grow, .name { flex: 0 1 auto; }
+      .name { flex: 0 1 auto; }
+      /* The name grows from its own width, so a short one leaves room for its folder. */
       .grow { flex: 1 1 auto; }
       .dir { flex: 1 1 auto; font-size: var(--git-font-small); }
     `,

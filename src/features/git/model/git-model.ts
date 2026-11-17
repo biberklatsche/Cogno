@@ -110,5 +110,16 @@ export type GitRefLabel = {
 /** A multi-step operation git stopped in, waiting for the user. */
 export type GitOperation = "merge" | "rebase" | "cherry-pick" | "revert";
 
+/**
+ * The commit a stopped merge, cherry pick or revert brings in (`MERGE_HEAD`,
+ * `CHERRY_PICK_HEAD`, `REVERT_HEAD`), for a merge the name it was given, and
+ * the commit message git prepared (`MERGE_MSG` without its comment lines).
+ */
+export type GitIncoming = {
+  readonly sha: string;
+  readonly name: string | null;
+  readonly message: string | null;
+};
+
 /** What "Pull" does: fetch only, or fetch and merge, fast-forward only, or rebase. */
 export type GitPullMode = "fetch" | "merge" | "ff-only" | "rebase";

@@ -15,6 +15,7 @@ import {
   GitCommit,
   GitCommitDetail,
   GitHead,
+  GitIncoming,
   GitOperation,
   GitRefs,
   GitRemote,
@@ -24,18 +25,26 @@ import {
 import {
   buildRefLabels,
   COMMIT_DETAIL_FORMAT,
+  GitConflictStages,
   LOG_FORMAT,
+  mergeSourceOf,
   parseCommitDetail,
   parseGitStatus,
   parseLog,
   parseNameStatus,
   parseRefs,
   parseStashes,
+  parseUnmergedStages,
   REF_FORMAT,
   STASH_FORMAT,
 } from "./model/git-parsers";
 
 export type { GitError };
+
+type StoppedOperation = {
+  readonly operation: GitOperation;
+  readonly incoming: GitIncoming | null;
+};
 
 /** The commit count the graph loads first and adds per "load more". */
 export const GIT_LOG_PAGE_SIZE = 1000;
@@ -72,6 +81,7 @@ export class GitRepositoryService {
   private readonly stashesSignal = signal<ReadonlyArray<GitStash>>([]);
   private readonly commitsSignal = signal<ReadonlyArray<GitCommit>>([]);
   private readonly operationSignal = signal<GitOperation | null>(null);
+  private readonly incomingSignal = signal<GitIncoming | null>(null);
   private readonly errorSignal = signal<GitError | null>(null);
   private readonly errorDetailSignal = signal<string | null>(null);
   private readonly logErrorSignal = signal<string | null>(null);
@@ -87,6 +97,7 @@ export class GitRepositoryService {
   readonly stashes = this.stashesSignal.asReadonly();
   readonly commits = this.commitsSignal.asReadonly();
   readonly operation = this.operationSignal.asReadonly();
+  readonly incoming = this.incomingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
   /** What git said when it failed: shown with the error, so the user can act on it. */
   readonly errorDetail = this.errorDetailSignal.asReadonly();
@@ -236,6 +247,12 @@ export class GitRepositoryService {
     );
   }
 
+  /** The versions of a conflicted path in the index; empty when git cannot say. */
+  async loadConflictStages(path: string): Promise<GitConflictStages> {
+    const result = await this.run(["ls-files", "-u", "-z", "--", path]);
+    return parseUnmergedStages(result?.exitCode === 0 ? result.stdout : "");
+  }
+
   private requestAutomaticRefresh(resolveContext: boolean): void {
     if (!this.active || this.availability.missing) return;
     this.requestRefresh(resolveContext);
@@ -342,7 +359,7 @@ export class GitRepositoryService {
     const git = (args: ReadonlyArray<string>) =>
       runGit(session, ["-C", root, ...args], READ_TIMEOUT_MS);
 
-    const [status, sha, branch, refs, remotes, stashes, operation] = await Promise.all([
+    const [status, sha, branch, refs, remotes, stashes, stopped] = await Promise.all([
       // Untracked directories as one entry each, as git shows them: listing
       // every file under an untracked build output took longer than the rest.
       git(["status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
@@ -377,7 +394,8 @@ export class GitRepositoryService {
     this.refsSignal.set(parsedRefs);
     this.remotesSignal.set(remotes);
     this.stashesSignal.set(stashes?.exitCode === 0 ? parseStashes(stashes.stdout) : []);
-    this.operationSignal.set(operation);
+    this.operationSignal.set(stopped?.operation ?? null);
+    this.incomingSignal.set(stopped?.incoming ?? null);
     if (commits) {
       this.commitsSignal.set(commits);
       this.hasMoreCommitsSignal.set(commits.length >= this.logLimitSignal());
@@ -433,16 +451,21 @@ export class GitRepositoryService {
     return parseLog(result.stdout);
   }
 
-  private async readOperation(session: BoundSessionHandle): Promise<GitOperation | null> {
+  /** The operation git stopped in and, but for a rebase, the commit it brings in. */
+  private async readOperation(session: BoundSessionHandle): Promise<StoppedOperation | null> {
     const gitDir = this.gitDir;
     if (!gitDir) return null;
+    const read = (name: string) =>
+      session.fs.readTextFile(session.fs.normalizePath(`${gitDir}/${name}`)).catch(() => null);
     for (const [marker, operation] of OPERATION_MARKERS) {
-      const path = session.fs.normalizePath(`${gitDir}/${marker}`);
-      const exists = await session.fs.readTextFile(path).then(
-        () => true,
-        () => false,
-      );
-      if (exists) return operation;
+      const content = await read(marker);
+      if (content === null) continue;
+      if (operation === "rebase") return { operation, incoming: null };
+      // An octopus merge lists one commit per line; the first stands for them.
+      const sha = content.trim().split(/\s+/)[0] ?? "";
+      const message = withoutComments((await read("MERGE_MSG")) ?? "");
+      const name = operation === "merge" ? mergeSourceOf(message ?? "") : null;
+      return { operation, incoming: sha ? { sha, name, message } : null };
     }
     return null;
   }
@@ -458,6 +481,7 @@ export class GitRepositoryService {
     this.stashesSignal.set([]);
     this.commitsSignal.set([]);
     this.operationSignal.set(null);
+    this.incomingSignal.set(null);
     this.hasMoreCommitsSignal.set(false);
     this.logLimitSignal.set(GIT_LOG_PAGE_SIZE);
     this.logErrorSignal.set(null);
@@ -473,6 +497,16 @@ export class GitRepositoryService {
  * worktree would go unseen. Git prints the common dir relative to the cwd
  * only when it is the worktree's own .git, so a relative one adds nothing.
  */
+/** A message git prepared, without the comment lines it adds for the editor; null when empty. */
+function withoutComments(text: string): string | null {
+  const message = text
+    .split(/\r?\n/)
+    .filter((line) => !line.startsWith("#"))
+    .join("\n")
+    .trim();
+  return message || null;
+}
+
 function dirsToWatch(gitDir: string, commonDir: string): string[] {
   const isAbsolute = commonDir.startsWith("/") || /^[A-Za-z]:[\\/]/.test(commonDir);
   if (!isAbsolute || commonDir === gitDir) return [gitDir];

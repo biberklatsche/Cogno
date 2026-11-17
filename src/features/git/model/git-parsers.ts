@@ -280,3 +280,39 @@ export function cloneDirectoryName(url: string): string {
   const last = trimmed.split(/[\\/:]/).pop() ?? "";
   return last.replace(/\.git$/, "");
 }
+
+/** One version of a conflicted file in the index. */
+export type GitConflictStage = { readonly mode: string; readonly blob: string };
+
+/** 1 the common base, 2 the current side, 3 the incoming one. */
+export type GitConflictStages = ReadonlyMap<1 | 2 | 3, GitConflictStage>;
+
+/**
+ * Reads `git ls-files -u -z` for one path: the version per stage git still
+ * holds. A side that deleted the file has no stage.
+ */
+export function parseUnmergedStages(raw: string): GitConflictStages {
+  const stages = new Map<1 | 2 | 3, GitConflictStage>();
+  for (const entry of raw.split("\0")) {
+    const [, mode, blob, stage] = /^(\d+) ([0-9a-f]+) ([123])\t/.exec(entry) ?? [];
+    if (mode && blob && stage) stages.set(Number(stage) as 1 | 2 | 3, { mode, blob });
+  }
+  return stages;
+}
+
+/**
+ * The branches, tag or commit a merge brings in, as `MERGE_MSG` names them
+ * ("Merge branch 'feature'", "Merge remote-tracking branch 'origin/x'",
+ * "Merge branches 'a' and 'b'"); several are listed comma-separated.
+ */
+export function mergeSourceOf(message: string): string | null {
+  const firstLine = message.split("\n")[0] ?? "";
+  const kind =
+    /^Merge (?:remote-tracking branches|remote-tracking branch|branches|branch|tags|tag|commits|commit) /;
+  if (!kind.test(firstLine)) return null;
+  // The quoted names, not the branch after " into ".
+  const names = [...firstLine.replace(/ into [^']*$/, "").matchAll(/'([^']+)'/g)].map(
+    (match) => match[1],
+  );
+  return names.length > 0 ? names.join(", ") : null;
+}

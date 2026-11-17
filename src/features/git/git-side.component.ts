@@ -11,6 +11,7 @@ import { GitOperationsService } from "./git-operations.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitUiActions } from "./git-ui-actions.service";
 import { GitSidePanel, GitViewState } from "./git-view-state.service";
+import { GitFile } from "./model/git-model";
 import { GitCommitPanelComponent } from "./ui/git-commit-panel.component";
 import { GitDiffPanelComponent } from "./ui/git-diff-panel.component";
 import { GitGraphComponent } from "./ui/git-graph.component";
@@ -67,6 +68,9 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
           <app-icon class="small-icon" name="mdiAlert"></app-icon>
           <span class="ellipsis">{{ operationLabel() }}</span>
           <span class="grow"></span>
+          @if (repository.status().conflicted[0]; as file) {
+            <button type="button" class="button small" (click)="viewConflicts(file)">View Conflicts</button>
+          }
           <button type="button" class="button small" (click)="operations.abortOperation(operation)">Abort</button>
           @if (operation === "rebase" || operation === "cherry-pick") {
             <button type="button" class="button small" (click)="operations.skipCommit(operation)">Skip Commit</button>
@@ -180,7 +184,6 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
         background: color-mix(in srgb, var(--color-yellow) 15%, transparent);
         border-bottom: 1px solid var(--git-border);
       }
-      .banner .grow { flex: 1; }
       .button.small { padding: 0.1rem 0.6rem; font-size: 0.85em; }
       /* The side panels follow the available width until the user drags them. */
       .body {
@@ -326,6 +329,12 @@ export class GitSideComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.resizeObserver.disconnect();
+  }
+
+  /** The work in progress with the first conflicted file open for resolving. */
+  viewConflicts(file: GitFile): void {
+    this.view.select({ kind: "wip" });
+    this.actions.showDiff({ kind: "conflicted", file });
   }
 
   /** The dragged width as a CSS length, or null to leave the panel its default. */

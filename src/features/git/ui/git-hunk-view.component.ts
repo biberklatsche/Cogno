@@ -77,7 +77,6 @@ export type GitHunkSelection = {
         display: block;
         height: 100%;
         overflow: auto;
-        font-size: 12px;
       }
       .hunk { margin-bottom: 0.75rem; }
       .hunk-header {
@@ -95,11 +94,10 @@ export type GitHunkSelection = {
       }
       .range { color: var(--color-cyan); white-space: nowrap; }
       .heading { flex: 0 1 auto; }
-      .grow { flex: 1; }
       .line {
         display: flex;
         align-items: stretch;
-        min-height: 20px;
+        min-height: 1.45em;
         white-space: pre;
       }
       .line.add { background: color-mix(in srgb, var(--color-green) 14%, transparent); }
@@ -115,12 +113,11 @@ export type GitHunkSelection = {
         text-align: right;
         color: var(--git-subtle);
         user-select: none;
-        font-size: inherit;
       }
-      .marker { flex: 0 0 1.2em; text-align: center; user-select: none; font-size: inherit; }
+      .marker { flex: 0 0 1.2em; text-align: center; user-select: none; }
       .add .marker { color: var(--color-green); }
       .del .marker { color: var(--color-red); }
-      .text { flex: 1 1 auto; font-size: inherit; padding-right: 1rem; }
+      .text { flex: 1 1 auto; padding-right: 1rem; }
       .no-newline { padding: 0 0.5rem; }
     `,
   ],

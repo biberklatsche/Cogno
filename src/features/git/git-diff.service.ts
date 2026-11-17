@@ -11,8 +11,16 @@ export type GitDiffContent = {
   readonly language: GitDiffLanguageLoader | undefined;
 };
 
-/** Where a file's two sides come from. */
-export type GitDiffSource =
+export type GitConflictContent = {
+  /** The working file, empty when it is not there. */
+  readonly text: string;
+  readonly hasBase: boolean;
+  readonly hasOurs: boolean;
+  readonly hasTheirs: boolean;
+};
+
+/** Where a file's two sides come from, for a diff. */
+export type GitTextSource =
   | { readonly kind: "unstaged"; readonly file: GitFile }
   | { readonly kind: "staged"; readonly file: GitFile }
   | {
@@ -21,6 +29,12 @@ export type GitDiffSource =
       readonly sha: string;
       readonly parent: string | null;
     };
+
+/**
+ * What the middle of the panel shows for a file: a diff, or for a file git
+ * stopped on, the conflict to resolve (which has no two sides to diff).
+ */
+export type GitDiffSource = GitTextSource | { readonly kind: "conflicted"; readonly file: GitFile };
 
 /** Truncate files larger than this to avoid passing huge strings to CodeMirror at all. */
 const TRUNCATE_THRESHOLD_BYTES = 500_000;
@@ -35,7 +49,7 @@ export class GitDiffService {
    * working tree, staged is HEAD against index, a commit is its first parent
    * against the commit. A side the file does not exist on is empty.
    */
-  async loadDiff(source: GitDiffSource): Promise<GitDiffContent> {
+  async loadDiff(source: GitTextSource): Promise<GitDiffContent> {
     const { file } = source;
     const language = detectGitDiffLanguage(file.path);
     const before = file.oldPath ?? file.path;
@@ -45,10 +59,8 @@ export class GitDiffService {
     let original = "";
     let modified = "";
     if (source.kind === "unstaged") {
-      // A conflicted file has no single index entry; it is compared with HEAD.
-      const base = file.status === "U" ? `HEAD:${before}` : `:0:${before}`;
-      original = added ? "" : await this.readBlob(base);
-      modified = deleted ? "" : await this.readWorkingFile(file.path);
+      original = added ? "" : await this.readBlob(`:0:${before}`);
+      modified = deleted ? "" : await this.readWorkingText(file.path);
     } else if (source.kind === "staged") {
       original = file.status === "A" ? "" : await this.readBlob(`HEAD:${before}`);
       modified = deleted ? "" : await this.readBlob(`:0:${file.path}`);
@@ -64,7 +76,7 @@ export class GitDiffService {
    * The same change as git's own patch, hunk by hunk. An untracked file has
    * none: git knows no previous version to diff against.
    */
-  async loadPatch(source: GitDiffSource): Promise<GitPatch> {
+  async loadPatch(source: GitTextSource): Promise<GitPatch> {
     const { file } = source;
     if (file.status === "?") return { header: [], hunks: [], binary: false };
     const args =
@@ -81,13 +93,26 @@ export class GitDiffService {
     return parseGitPatch(result?.exitCode === 0 ? result.stdout : "");
   }
 
+  /**
+   * A conflicted file as the working tree has it, with its conflict markers,
+   * and which sides still have a version of it (one may have deleted it).
+   */
+  async loadConflict(path: string): Promise<GitConflictContent> {
+    const [text, stages] = await Promise.all([
+      this.readWorkingText(path),
+      this.repository.loadConflictStages(path),
+    ]);
+    return { text, hasBase: stages.has(1), hasOurs: stages.has(2), hasTheirs: stages.has(3) };
+  }
+
   /** A git object read in the bound session; empty when it does not exist. */
   private async readBlob(revision: string): Promise<string> {
     const result = await this.repository.run(["cat-file", "-p", revision], BLOB_TIMEOUT_MS);
     return result?.exitCode === 0 ? result.stdout : "";
   }
 
-  private async readWorkingFile(path: string): Promise<string> {
+  /** A file as the working tree has it; empty when it is not there. */
+  async readWorkingText(path: string): Promise<string> {
     const session = this.repository.currentSession();
     const root = this.repository.root();
     if (!session || !root) return "";

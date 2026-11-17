@@ -8,8 +8,13 @@ import {
   ContextMenuOverlayService,
   DialogService,
 } from "@cogno/shared/ui";
-import { GitDiffSource } from "./git-diff.service";
-import { GitOperationOutcome, GitOperationsService, GitResetMode } from "./git-operations.service";
+import { GitDiffService, GitDiffSource } from "./git-diff.service";
+import {
+  CONFLICT_STAGE,
+  GitOperationOutcome,
+  GitOperationsService,
+  GitResetMode,
+} from "./git-operations.service";
 import { GitRemoteAccessService } from "./git-remote-access.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitGraphColumn, GitViewState, GitWipFileGroup } from "./git-view-state.service";
@@ -19,6 +24,7 @@ import {
   keptReason,
   remoteBranchesToDelete,
 } from "./model/git-branch-cleanup";
+import { conflictsOf, GitConflictSide, parseConflicts } from "./model/git-conflict";
 import {
   GitBranch,
   GitCommit,
@@ -67,6 +73,7 @@ export class GitUiActions {
     private readonly opener: Opener,
     private readonly access: GitRemoteAccessService,
     private readonly folders: FolderPicker,
+    private readonly diffs: GitDiffService,
   ) {}
 
   // Several branches
@@ -391,11 +398,9 @@ export class GitUiActions {
     const items: ContextMenuItem[] =
       group === "conflicted"
         ? [
-            item("Take current (ours)", () => this.operations.takeConflictSide(file.path, "ours")),
-            item("Take incoming (theirs)", () =>
-              this.operations.takeConflictSide(file.path, "theirs"),
-            ),
-            item("Mark resolved", () => this.operations.markResolved(file.path)),
+            item("Take current (ours)", () => this.takeConflictSide(file.path, "ours")),
+            item("Take incoming (theirs)", () => this.takeConflictSide(file.path, "theirs")),
+            item("Mark resolved", () => this.markResolved([file.path])),
           ]
         : group === "staged"
           ? [item("Unstage", () => this.operations.unstage([file.path]))]
@@ -456,6 +461,46 @@ export class GitUiActions {
   showDiff(source: GitDiffSource): void {
     if (source.file.isDirectory) return;
     this.view.openDiff(source);
+  }
+
+  /**
+   * Stage conflicted files as they are. One that still holds conflict markers
+   * would be committed with them, so that is asked first.
+   */
+  async markResolved(paths: ReadonlyArray<string>): Promise<void> {
+    if (paths.length === 0) return;
+    const texts = await Promise.all(paths.map((path) => this.diffs.readWorkingText(path)));
+    const withMarkers = paths.filter(
+      (_, index) => conflictsOf(parseConflicts(texts[index] ?? "")).length > 0,
+    );
+    if (withMarkers.length > 0) {
+      const message =
+        withMarkers.length === 1
+          ? `${withMarkers[0]} still contains conflict markers. Mark it resolved anyway?`
+          : `${withMarkers.length} files still contain conflict markers. Mark them resolved anyway?`;
+      const confirmed = await this.confirm(message, "Mark Resolved");
+      if (!confirmed) return;
+    }
+    await this.operations.markResolved(paths);
+  }
+
+  /**
+   * Resolve a conflicted file as one side has it. Where that side deleted
+   * the file, taking it deletes the file too - asked first, as the other
+   * side's changes go with it.
+   */
+  async takeConflictSide(path: string, side: GitConflictSide): Promise<void> {
+    const stages = await this.repository.loadConflictStages(path);
+    const deletes = stages.size > 0 && !stages.has(CONFLICT_STAGE[side]);
+    if (deletes) {
+      const which = side === "ours" ? "current" : "incoming";
+      const confirmed = await this.confirm(
+        `The ${which} side deleted ${path}. Delete the file and drop the other side's changes?`,
+        "Delete File",
+      );
+      if (!confirmed) return;
+    }
+    await this.operations.takeConflictSide(path, side, stages);
   }
 
   async discardFile(file: GitFile): Promise<void> {

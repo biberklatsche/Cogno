@@ -19,7 +19,8 @@ import { GitDiffMode } from "../git-view-state.service";
 const cognoTheme = EditorView.theme(
   {
     "&": {
-      fontSize: "12px",
+      // The panel's small size, as the code in the hunk and conflict views (.mono).
+      fontSize: "var(--git-font-small)",
       fontFamily: "var(--font-mono, monospace)",
       background: "var(--background-color)",
       color: "var(--foreground-color)",
@@ -95,10 +96,12 @@ const cognoHighlightStyle = HighlightStyle.define([
   },
 ]);
 
-async function buildExtensions(language: GitDiffLanguageLoader | undefined): Promise<Extension[]> {
+/** How a file looks in the git panel's editors: theme, highlighting, line numbers. */
+export async function gitEditorLook(
+  language: GitDiffLanguageLoader | undefined,
+): Promise<Extension[]> {
   const lang = (await language?.()) ?? null;
   return [
-    EditorState.readOnly.of(true),
     cognoTheme,
     syntaxHighlighting(cognoHighlightStyle),
     lineNumbers(),
@@ -106,12 +109,16 @@ async function buildExtensions(language: GitDiffLanguageLoader | undefined): Pro
   ];
 }
 
+async function buildExtensions(language: GitDiffLanguageLoader | undefined): Promise<Extension[]> {
+  return [EditorState.readOnly.of(true), ...(await gitEditorLook(language))];
+}
+
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 /** Keep the two panes of a split view at the same scroll offset. Returns the undo. */
-function syncScroll(scrollA: HTMLElement, scrollB: HTMLElement): () => void {
+export function syncScroll(scrollA: HTMLElement, scrollB: HTMLElement): () => void {
   let syncingA = false;
   let syncingB = false;
 
