@@ -260,16 +260,31 @@ fn end_process(pid: u32) -> io::Result<()> {
 /// client from one on this machine.
 pub fn bridge(
     endpoint: &Path,
-    mut input: impl Read + Send + 'static,
-    mut output: impl Write,
+    input: impl Read + Send + 'static,
+    output: impl Write,
 ) -> Result<(), BridgeError> {
-    let mut from_daemon = connect(endpoint).map_err(|error| {
+    bridge_to(reach_for_bridge(endpoint)?, input, output)
+}
+
+/// The daemon the endpoint file names, for a bridge: reached before the
+/// other side is answered, so it can be told why when there is none.
+pub fn reach_for_bridge(endpoint: &Path) -> Result<TcpStream, BridgeError> {
+    connect(endpoint).map_err(|error| {
         if no_daemon(&error) {
             BridgeError::NoDaemon(error)
         } else {
             BridgeError::Unreachable(error)
         }
-    })?;
+    })
+}
+
+/// Passes bytes between the two streams and the daemon reached
+/// (`reach_for_bridge`), until either side ends.
+pub fn bridge_to(
+    mut from_daemon: TcpStream,
+    mut input: impl Read + Send + 'static,
+    mut output: impl Write,
+) -> Result<(), BridgeError> {
     let mut to_daemon = from_daemon.try_clone().map_err(BridgeError::Broken)?;
     std::thread::spawn(move || {
         let _ = pass(&mut input, &mut to_daemon);

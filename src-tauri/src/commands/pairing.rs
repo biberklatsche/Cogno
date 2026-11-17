@@ -29,14 +29,18 @@ pub struct PairingState(Option<Pairing>);
 impl PairingState {
     pub fn new(app: &AppHandle) -> Self {
         let home = cogno_host::identity::cogno_home(DEVELOPMENT_BUILD).ok();
-        let pairing = home.zip(Server::cogno()).map(|(home, server)| {
-            let events = Arc::new(WebviewPairingEvents { app: app.clone() });
-            Pairing::new(&home, server, events)
-        });
+        let daemon = crate::host_endpoint::own_host_endpoint().ok();
+        let pairing = home
+            .zip(daemon)
+            .zip(Server::cogno())
+            .map(|((home, daemon), server)| {
+                let events = Arc::new(WebviewPairingEvents { app: app.clone() });
+                Pairing::new(&home, server, daemon, events)
+            });
         Self(pairing)
     }
 
-    fn pairing(&self) -> CommandResult<&Pairing> {
+    pub(crate) fn pairing(&self) -> CommandResult<&Pairing> {
         self.0.as_ref().ok_or_else(|| {
             CommandError::new(
                 AppErrorCode::PairingUnreachable,

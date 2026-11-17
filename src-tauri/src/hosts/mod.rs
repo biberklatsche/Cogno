@@ -247,6 +247,28 @@ impl HostState {
         )
     }
 
+    /// Connects to the paired machine `name` (ARCHITECTURE.md 2.7.3), unless
+    /// the connection already stands.
+    pub fn connect_paired(
+        &self,
+        name: &str,
+        pairing: &crate::pairing::Pairing,
+    ) -> CommandResult<Connected> {
+        let hosts = &self.0;
+        hosts.connections.connect_remote(
+            name,
+            &[name.to_string()],
+            |_| pairing.dial(name),
+            |dialing| {
+                dialing.introduce(
+                    name,
+                    hosts.events.clone(),
+                    hosts.on_lost(Some(name.to_string())),
+                )
+            },
+        )
+    }
+
     /// Starts a shell on this machine for `request.window`.
     pub async fn spawn(&self, request: SpawnRequest) -> CommandResult<Spawned> {
         let SpawnRequest {

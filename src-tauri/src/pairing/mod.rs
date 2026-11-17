@@ -3,9 +3,11 @@
 //!
 //! `Pairing` runs this machine's endpoint while the Remote feature is on: it
 //! gets codes from the rendezvous, pairs by a code another machine showed,
-//! answers the requests of others - asking the user through `PairingEvents`
-//! - and unpairs on both sides.
+//! answers the requests of others (asking the user through `PairingEvents`)
+//! and unpairs on both sides. It accepts the connections of paired machines
+//! and passes them to this machine's daemon, and dials them.
 
+mod dial;
 mod frame;
 mod handshake;
 mod rendezvous;
@@ -13,7 +15,7 @@ mod store;
 
 use std::collections::HashMap;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -23,6 +25,9 @@ use iroh::endpoint::presets;
 use iroh::{Endpoint, EndpointAddr, EndpointId, RelayMap, RelayMode, RelayUrl};
 use tokio::sync::oneshot;
 
+use crate::command_error::{AppErrorCode, CommandError, CommandResult};
+pub use dial::Dialing;
+use dial::{refusal, HOST_ALPN};
 use handshake::{Reply, Request, PAIR_ALPN};
 pub use store::PairedMachine;
 use store::{Paired, Store};
@@ -126,6 +131,8 @@ pub struct Pairing(Arc<Inner>);
 struct Inner {
     store: Store,
     server: Server,
+    /// This machine's daemon, which paired machines' connections go to.
+    daemon_endpoint: PathBuf,
     events: Arc<dyn PairingEvents>,
     endpoint: Mutex<Option<Endpoint>>,
     open_code: Mutex<Option<OpenCode>>,
@@ -134,10 +141,16 @@ struct Inner {
 }
 
 impl Pairing {
-    pub fn new(home: &Path, server: Server, events: Arc<dyn PairingEvents>) -> Self {
+    pub fn new(
+        home: &Path,
+        server: Server,
+        daemon_endpoint: PathBuf,
+        events: Arc<dyn PairingEvents>,
+    ) -> Self {
         Self(Arc::new(Inner {
             store: Store::new(home),
             server,
+            daemon_endpoint,
             events,
             endpoint: Mutex::new(None),
             open_code: Mutex::new(None),
@@ -154,7 +167,7 @@ impl Pairing {
         let builder = Endpoint::builder(presets::Minimal)
             .secret_key(self.0.store.key()?)
             .relay_mode(RelayMode::Custom(self.0.server.relay_map.clone()))
-            .alpns(vec![PAIR_ALPN.to_vec()]);
+            .alpns(vec![PAIR_ALPN.to_vec(), HOST_ALPN.to_vec()]);
         #[cfg(test)]
         let builder = if self.0.server.insecure {
             builder.ca_tls_config(iroh::tls::CaTlsConfig::insecure_skip_verify())
@@ -335,12 +348,38 @@ impl Pairing {
         Ok(matches!(told, Ok(Reply::Done)))
     }
 
+    /// Starts connecting to the paired machine `name`.
+    pub fn dial(&self, name: &str) -> CommandResult<Dialing> {
+        let endpoint = self.endpoint().map_err(|_| {
+            CommandError::new(
+                AppErrorCode::PairingOff,
+                "Pairing is off: switch on the Remote feature",
+            )
+        })?;
+        let paired = self.0.store.paired().map_err(CommandError::internal)?;
+        let machine = paired
+            .machines
+            .iter()
+            .find(|machine| machine.name == name)
+            .ok_or_else(|| {
+                CommandError::new(
+                    AppErrorCode::NotPaired,
+                    format!("This machine is not paired with {name}"),
+                )
+            })?;
+        let to = self.0.server.address_of(machine.endpoint_id);
+        Ok(Dialing::start(endpoint, to, name))
+    }
+
     fn endpoint(&self) -> Result<Endpoint, PairingError> {
         lock(&self.0.endpoint).clone().ok_or(PairingError::Off)
     }
 
-    /// Answers what another machine asks on `PAIR_ALPN`.
+    /// Answers a connection another machine made.
     async fn answer_connection(&self, connection: iroh::endpoint::Connection) {
+        if connection.alpn() == HOST_ALPN {
+            return self.pass_to_daemon(connection).await;
+        }
         let Ok(incoming) = handshake::receive(connection).await else {
             return;
         };
@@ -401,6 +440,50 @@ impl Pairing {
         Reply::Accepted {
             name: cogno_host::identity::machine_name(),
         }
+    }
+
+    /// A paired machine connects to this machine's host: its stream goes to
+    /// the daemon, as `cogno server --stdio` passes ssh's. Anyone else is
+    /// refused before anything reaches the daemon.
+    async fn pass_to_daemon(&self, connection: iroh::endpoint::Connection) {
+        let peer = connection.remote_id();
+        let refusal = match self.0.store.paired() {
+            Ok(paired) if !paired.machines.iter().any(|m| m.endpoint_id == peer) => {
+                Some(refusal::NOT_PAIRED)
+            }
+            Ok(paired) if !paired.accepting => Some(refusal::NOT_ACCEPTING),
+            Ok(_) => None,
+            Err(_) => Some(refusal::NOT_ACCEPTING),
+        };
+        if let Some(code) = refusal {
+            connection.close(code.into(), b"refused");
+            return;
+        }
+        // The daemon first: without one, the other side learns why instead
+        // of finding an empty stream.
+        let daemon_endpoint = self.0.daemon_endpoint.clone();
+        let reached = tokio::task::spawn_blocking(move || {
+            cogno_host::daemon::reach_for_bridge(&daemon_endpoint)
+        })
+        .await;
+        let Ok(Ok(daemon)) = reached else {
+            connection.close(refusal::NO_DAEMON.into(), b"no daemon");
+            return;
+        };
+        // The host speaks first: this side opens the stream.
+        let Ok((send, recv)) = connection.open_bi().await else {
+            return;
+        };
+        let runtime = tokio::runtime::Handle::current();
+        let _ = tokio::task::spawn_blocking(move || {
+            cogno_host::daemon::bridge_to(
+                daemon,
+                tokio_util::io::SyncIoBridge::new_with_handle(recv, runtime.clone()),
+                tokio_util::io::SyncIoBridge::new_with_handle(send, runtime),
+            )
+        })
+        .await;
+        connection.close(0u32.into(), b"done");
     }
 
     /// The machine `peer` removed the pairing: so does this one.
@@ -503,8 +586,12 @@ mod tests {
     }
 
     async fn machine(server: &Server) -> (Pairing, Arc<Told>) {
+        machine_with_daemon(server, home().join("host.json")).await
+    }
+
+    async fn machine_with_daemon(server: &Server, daemon: PathBuf) -> (Pairing, Arc<Told>) {
         let told = Arc::new(Told::default());
-        let pairing = Pairing::new(&home(), server.clone(), told.clone());
+        let pairing = Pairing::new(&home(), server.clone(), daemon, told.clone());
         pairing.enable().await.unwrap();
         let endpoint = lock(&pairing.0.endpoint).clone().unwrap();
         endpoint.online().await;
@@ -595,6 +682,93 @@ mod tests {
         let paired = laptop.pair_by_code("ZZZZZZ", &[], |_| {}).await;
 
         assert!(matches!(paired, Err(PairingError::UnknownCode)));
+    }
+
+    /// Office and laptop, paired; office's connections go to `daemon`.
+    async fn paired_pair(test: &TestServer, daemon: PathBuf) -> (Pairing, Pairing, String) {
+        let (office, office_told) = machine_with_daemon(&test.server, daemon).await;
+        let (laptop, _) = machine(&test.server).await;
+        office.create_code().await.unwrap();
+        answer_when_asked(&office, &office_told, Some("laptop"));
+        let paired = laptop.pair_by_code("K7Q4MX", &[], |_| {}).await.unwrap();
+        (office, laptop, paired.name)
+    }
+
+    /// What dialing `name` from `from` comes to, through to the host's hello.
+    async fn dial(
+        from: &Pairing,
+        name: &str,
+    ) -> CommandResult<crate::host_connection::HostConnection> {
+        use crate::host_connection::test_support::NoEvents;
+        let dialing = from.dial(name)?;
+        let name = name.to_string();
+        tokio::task::spawn_blocking(move || {
+            dialing.introduce(&name, Arc::new(NoEvents), Box::new(|_, _| {}))
+        })
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_paired_machine_reaches_the_daemon_of_the_other() {
+        let test = test_server("K7Q4MX").await;
+        let daemon = crate::host_connection::test_support::test_daemon();
+        let (office, laptop, office_name) = paired_pair(&test, daemon).await;
+
+        let connection = dial(&laptop, &office_name).await.unwrap();
+
+        let shells = tokio::task::spawn_blocking(move || {
+            let shells = connection.request(cogno_host::protocol::Request::ListSessions);
+            connection.hang_up();
+            shells
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            shells,
+            Ok(cogno_host::protocol::Response::Sessions { .. })
+        ));
+        // As the app does on quitting: nothing stays connected.
+        laptop.disable().await;
+        office.disable().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_machine_that_unpaired_is_refused() {
+        let test = test_server("K7Q4MX").await;
+        let daemon = crate::host_connection::test_support::test_daemon();
+        let (office, laptop, office_name) = paired_pair(&test, daemon).await;
+        // Office forgets laptop without telling it.
+        let mut paired = office.0.store.paired().unwrap();
+        paired.machines.clear();
+        office.0.store.save(&paired).unwrap();
+
+        let refused = dial(&laptop, &office_name).await;
+
+        assert!(refused.err().unwrap().is(AppErrorCode::NotPaired));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_machine_that_accepts_nothing_now_refuses() {
+        let test = test_server("K7Q4MX").await;
+        let daemon = crate::host_connection::test_support::test_daemon();
+        let (office, laptop, office_name) = paired_pair(&test, daemon).await;
+        office.set_accepting(false).unwrap();
+
+        let refused = dial(&laptop, &office_name).await;
+
+        assert!(refused.err().unwrap().is(AppErrorCode::ConnectFailed));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn without_a_daemon_there_cogno_does_not_run_there() {
+        let test = test_server("K7Q4MX").await;
+        let (_office, laptop, office_name) = paired_pair(&test, home().join("host.json")).await;
+
+        let refused = dial(&laptop, &office_name).await;
+
+        let error = refused.err().unwrap();
+        assert!(error.is(AppErrorCode::CognoNotRunning), "{error:?}");
     }
 
     #[test]

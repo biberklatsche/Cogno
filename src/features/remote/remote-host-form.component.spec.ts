@@ -7,11 +7,15 @@ const FOR_POWERSHELL = '& ".cogno/bin/cogno" server --stdio';
 
 describe("RemoteHostFormComponent", () => {
   let saveHost: ReturnType<typeof vi.fn>;
+  let renamePairedHost: ReturnType<typeof vi.fn>;
   let form: RemoteHostFormComponent;
   let closed: ReturnType<typeof vi.fn>;
 
   function open(host?: RemoteHost): void {
-    form = new RemoteHostFormComponent({ saveHost } as unknown as RemotePanelService);
+    form = new RemoteHostFormComponent({
+      saveHost,
+      renamePairedHost,
+    } as unknown as RemotePanelService);
     form.host = host;
     form.closed.subscribe(closed);
     form.ngOnChanges();
@@ -22,14 +26,16 @@ describe("RemoteHostFormComponent", () => {
 
   beforeEach(() => {
     saveHost = vi.fn().mockResolvedValue(undefined);
+    renamePairedHost = vi.fn().mockResolvedValue(undefined);
     closed = vi.fn();
   });
 
   it("starts with what a host is; a command only where it names one", () => {
-    open({ name: "office", destination: "lars@office", connection: "connected" });
+    open({ kind: "ssh", name: "office", destination: "lars@office", connection: "connected" });
     expect(form.values()).toEqual({ name: "office", destination: "lars@office", command: "" });
 
     open({
+      kind: "ssh",
       name: "office",
       destination: "lars@office",
       command: FOR_POWERSHELL,
@@ -62,10 +68,10 @@ describe("RemoteHostFormComponent", () => {
   });
 
   it("shows the other remote when the panel switches to it while it is open", async () => {
-    open({ name: "office", destination: "lars@office", connection: "connected" });
+    open({ kind: "ssh", name: "office", destination: "lars@office", connection: "connected" });
     type("destination", "changed@office");
 
-    form.host = { name: "home", destination: "lars@home", connection: "disconnected" };
+    form.host = { kind: "ssh", name: "home", destination: "lars@home", connection: "disconnected" };
     form.ngOnChanges();
     await form.save(new Event("submit"));
 
@@ -77,7 +83,7 @@ describe("RemoteHostFormComponent", () => {
 
   it("says why it did not save, and stays open", async () => {
     saveHost.mockResolvedValue("There is a remote called 'office' already.");
-    open({ name: "lab", destination: "lab", connection: "disconnected" });
+    open({ kind: "ssh", name: "lab", destination: "lab", connection: "disconnected" });
     type("name", "office");
 
     await form.save(new Event("submit"));
@@ -88,5 +94,17 @@ describe("RemoteHostFormComponent", () => {
     );
     expect(form.error()).toBe("There is a remote called 'office' already.");
     expect(closed).not.toHaveBeenCalled();
+  });
+
+  it("only renames a paired machine: how it is reached comes from the pairing", async () => {
+    open({ kind: "paired", name: "office", connection: "disconnected" });
+    expect(form.values()).toEqual({ name: "office", destination: "", command: "" });
+    type("name", "work");
+
+    await form.save(new Event("submit"));
+
+    expect(renamePairedHost).toHaveBeenCalledWith("office", "work");
+    expect(saveHost).not.toHaveBeenCalled();
+    expect(closed).toHaveBeenCalledOnce();
   });
 });

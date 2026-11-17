@@ -58,7 +58,12 @@ function underHost(host: RemoteHost, shells: HostShells | undefined): RemoteTree
     case "disconnected":
       return [];
     case "connecting":
-      return [statusNode(host.name, `Connecting to ${host.destination}...`)];
+      return [
+        statusNode(
+          host.name,
+          `Connecting to ${host.kind === "ssh" ? host.destination : host.name}...`,
+        ),
+      ];
     case "failed":
       return [failureNode(host.name, host.failure?.message ?? "Could not connect.")];
   }

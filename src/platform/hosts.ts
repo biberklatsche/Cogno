@@ -24,6 +24,14 @@ const HOST_DISCONNECTED_EVENT = "host-disconnected";
 @Injectable({ providedIn: "root" })
 export class Hosts {
   /**
+   * Connects to the paired machine `name` (ARCHITECTURE.md 2.7.3), unless
+   * the connection already stands.
+   */
+  connectPaired(name: string): Promise<HostInfo> {
+    return invokeHost<HostInfo>("host_connect_paired", { name });
+  }
+
+  /**
    * Connects to the host `name` at the ssh `destination`, unless the
    * connection already stands. Without a `command`, the ones Cogno knows are
    * tried in turn. What ssh asks on the way arrives as askpass prompts of

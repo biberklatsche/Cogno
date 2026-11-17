@@ -46,6 +46,8 @@ pub enum AppErrorCode {
     PairingCodeUnknown,
     /// The other machine declined the pairing, or nobody answered there.
     PairingDeclined,
+    /// The machine is not paired with this one (any more).
+    NotPaired,
     /// This app failed in itself (a worker thread died).
     Internal,
 }

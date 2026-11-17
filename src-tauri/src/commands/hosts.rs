@@ -118,6 +118,28 @@ pub async fn host_connect(
     connected.map_err(CommandError::internal)?
 }
 
+/// Connects to the paired machine `name`, unless the connection already
+/// stands (ARCHITECTURE.md 2.7.3).
+#[tauri::command]
+pub async fn host_connect_paired(app: AppHandle, name: String) -> CommandResult<HostInfo> {
+    let pairing = app
+        .state::<crate::commands::pairing::PairingState>()
+        .pairing()?
+        .clone();
+    let connecting = app.clone();
+    let connected = tauri::async_runtime::spawn_blocking(move || {
+        let connected = connecting
+            .state::<HostState>()
+            .connect_paired(&name, &pairing)?;
+        Ok(HostInfo {
+            os: connected.connection.os().to_string(),
+            found_command: None,
+        })
+    })
+    .await;
+    connected.map_err(CommandError::internal)?
+}
+
 /// The shells installed on this machine: offered as profiles on first start.
 #[tauri::command]
 pub async fn list_shells(hosts: State<'_, HostState>) -> CommandResult<Vec<ShellInfo>> {

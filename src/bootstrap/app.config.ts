@@ -11,6 +11,7 @@ import { ActionCatalog, ActionDispatcher } from "@cogno/core/api/action-catalog-
 import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { CommandRunner } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
+import { PairingPort } from "@cogno/core/api/pairing-port";
 import { RemoteShellsPort } from "@cogno/core/api/remote-shells-port";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalAnimationPort } from "@cogno/core/api/terminal-animation-port";
@@ -51,6 +52,8 @@ import { FEATURE_DEFINITIONS } from "@cogno/core/workbench/feature-host/feature-
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
+import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
+import { PairingRequestPrompt } from "@cogno/core/workbench/hosts/pairing-request.prompt";
 import { SessionPlacementPublisher } from "@cogno/core/workbench/hosts/session-placement.publisher";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
@@ -97,6 +100,7 @@ export const appConfig: ApplicationConfig = {
     { provide: TerminalProcessesPort, useExisting: TerminalProcessesAdapterService },
     { provide: TerminalIpcPort, useExisting: TerminalIpcAdapterService },
     { provide: RemoteShellsPort, useExisting: RemoteShellsAdapterService },
+    { provide: PairingPort, useExisting: PairingService },
     provideZonelessChangeDetection(),
     provideEnvironmentInitializer(() => {
       void Logger.initialize();
@@ -155,6 +159,8 @@ export const appConfig: ApplicationConfig = {
         eager(TerminalSearchApiService);
         eager(WorkspaceShortcutActionService);
         eager(SessionPlacementPublisher);
+        // Another machine may ask to pair with this one.
+        eager(PairingRequestPrompt);
 
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).

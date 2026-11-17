@@ -1,6 +1,7 @@
 import { signal } from "@angular/core";
 import type { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import type { Opener } from "@cogno/platform";
+import type { ContextMenuItem, ContextMenuOverlayService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RemotePanelService } from "./remote-panel.service";
 import type { HostShells } from "./remote-shell-tree";
@@ -23,8 +24,14 @@ class TestableRemoteSide extends RemoteSideComponent {
   }
 }
 
-function office(overrides: Partial<RemoteHost> = {}): RemoteHost {
-  return { name: "office", destination: "lars@office", connection: "connected", ...overrides };
+function office(overrides: Partial<Omit<RemoteHost, "kind">> = {}): RemoteHost {
+  return {
+    kind: "ssh",
+    name: "office",
+    destination: "lars@office",
+    connection: "connected",
+    ...overrides,
+  };
 }
 
 describe("RemoteSideComponent", () => {
@@ -35,6 +42,7 @@ describe("RemoteSideComponent", () => {
     removeHost: ReturnType<typeof vi.fn>;
     end: ReturnType<typeof vi.fn>;
   };
+  let openMenu: ReturnType<typeof vi.fn>;
   let component: TestableRemoteSide;
   const shell: RemoteShell = { terminalId: "t1", shown: "nowhere" };
 
@@ -46,9 +54,11 @@ describe("RemoteSideComponent", () => {
       removeHost: vi.fn().mockResolvedValue(undefined),
       end: vi.fn().mockResolvedValue(undefined),
     };
+    openMenu = vi.fn();
     component = new TestableRemoteSide(
       panel as unknown as RemotePanelService,
       { openUrl: vi.fn() } as unknown as Opener,
+      { openAtElement: openMenu } as unknown as ContextMenuOverlayService,
     );
   });
 
@@ -68,7 +78,7 @@ describe("RemoteSideComponent", () => {
 
   it("opens the form for a host to edit, and removes one to delete", () => {
     component.onHostAction("edit", office());
-    expect(component.form()).toEqual({ host: office() });
+    expect(component.form()).toEqual({ kind: "host", host: office() });
     expect(panel.removeHost).not.toHaveBeenCalled();
 
     component.onHostAction("delete", office());
@@ -83,9 +93,26 @@ describe("RemoteSideComponent", () => {
     expect(panel.end).toHaveBeenCalledWith("office", shell);
   });
 
-  it("opens an empty form to add a host", () => {
-    component.add();
+  it("connects a paired machine like any remote, and offers to remove one no longer paired", () => {
+    const laptop: RemoteHost = { kind: "paired", name: "laptop", connection: "disconnected" };
+    expect(component.nextStep(laptop)).toBe("connect");
+    expect(
+      component.nextStep({
+        ...laptop,
+        connection: "failed",
+        failure: { message: "not paired any more", worthRetrying: false },
+      }),
+    ).toBe("remove");
+  });
 
-    expect(component.form()).toEqual({});
+  it("adds a remote by pairing with it or over ssh, as the user chooses", () => {
+    component.chooseHowToAdd({ currentTarget: {} } as unknown as MouseEvent);
+    const [pair, ssh] = openMenu.mock.calls[0][1].items as ContextMenuItem[];
+
+    pair.action?.();
+    expect(component.form()).toEqual({ kind: "pair" });
+
+    ssh.action?.();
+    expect(component.form()).toEqual({ kind: "host" });
   });
 });

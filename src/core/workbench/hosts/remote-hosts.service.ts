@@ -4,6 +4,7 @@ import { remoteHostKeys } from "@cogno/core/infrastructure/config/models/remote-
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
+import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
 import { HostError, HostErrorCode, toHostError } from "@cogno/platform";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { BehaviorSubject, Observable } from "rxjs";
@@ -23,7 +24,11 @@ export type ConnectFailure = {
  * Failures that trying again cannot mend: the settings have to change first.
  * After a version mismatch it can, once the older Cogno is updated.
  */
-const SETTINGS_FAILURES: readonly ConnectFailureCode[] = ["notConfigured", "invalidDestination"];
+const SETTINGS_FAILURES: readonly ConnectFailureCode[] = [
+  "notConfigured",
+  "invalidDestination",
+  "notPaired",
+];
 
 /** Whether connecting again could work after `failure`. */
 export function isWorthRetrying(failure: ConnectFailure): boolean {
@@ -70,6 +75,7 @@ export class RemoteHostsService {
     private readonly configService: ConfigService,
     private readonly prompts: ProcessPromptDispatcher,
     private readonly promptDialog: ProcessPromptService,
+    private readonly pairing: PairingService,
     destroyRef: DestroyRef,
   ) {
     void hosts
@@ -94,6 +100,9 @@ export class RemoteHostsService {
     if (underway) return underway;
 
     const host = this.configService.config.remote?.hosts?.[name];
+    if (!host && this.pairing.pairedNames.includes(name)) {
+      return this.connectThrough(name, () => this.hosts.connectPaired(name));
+    }
     if (!host) {
       const failure: ConnectFailure = {
         code: "notConfigured",
@@ -106,10 +115,25 @@ export class RemoteHostsService {
     const forgetPrompts = this.prompts.register(promptSession, (prompt) =>
       this.promptDialog.ask(prompt),
     );
+    return this.connectThrough(
+      name,
+      () => this.hosts.connect(name, host.destination, host.command, promptSession),
+      forgetPrompts,
+    );
+  }
+
+  /**
+   * Sets up the connection `start` makes and keeps its state: the same for
+   * ssh and a paired machine. `whenSettled` runs once it is up or failed.
+   */
+  private connectThrough(
+    name: string,
+    start: () => Promise<HostInfo>,
+    whenSettled: () => void = () => {},
+  ): Promise<HostInfo> {
     // Hung up in the meantime: what comes of this connection is no news.
     const isCurrent = () => this.connecting.get(name) === connecting;
-    const connecting: Promise<HostInfo> = this.hosts
-      .connect(name, host.destination, host.command, promptSession)
+    const connecting: Promise<HostInfo> = start()
       .then((info) => {
         if (!isCurrent()) {
           throw new HostError("connectionLost", `The connection to ${name} was hung up.`);
@@ -125,7 +149,7 @@ export class RemoteHostsService {
         throw new ConnectError(failure);
       })
       .finally(() => {
-        forgetPrompts();
+        whenSettled();
         if (isCurrent()) this.connecting.delete(name);
       });
     this.connecting.set(name, connecting);

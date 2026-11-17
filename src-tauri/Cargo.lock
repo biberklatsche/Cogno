@@ -895,6 +895,7 @@ dependencies = [
  "tauri-plugin-window-state",
  "tauri-winrt-notification",
  "tokio",
+ "tokio-util",
  "uuid",
  "winapi",
 ]

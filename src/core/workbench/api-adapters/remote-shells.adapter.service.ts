@@ -10,10 +10,12 @@ import {
   remoteHostKeys as hostKeys,
   isSshDestination,
 } from "@cogno/core/infrastructure/config/models/remote-config";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
 import {
   isWorthRetrying,
   RemoteHostConnection,
@@ -22,7 +24,7 @@ import {
 import { shownByOtherCogno } from "@cogno/core/workbench/hosts/running-shell";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { isHostError, SessionInfoContract } from "@cogno/platform";
+import { isHostError, Pairing, SessionInfoContract } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
 import { combineLatest, defer, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
@@ -91,16 +93,13 @@ function toRemoteShell(
   };
 }
 
-function toRemoteHost(
+/** How far the connection to the machine `name` is. */
+function connectionOf(
   name: string,
-  destination: string,
-  command: string | undefined,
   connection: RemoteHostConnection | undefined,
-): RemoteHost {
+): Pick<RemoteHost, "name" | "connection" | "failure"> {
   return {
     name,
-    destination,
-    command,
     connection: connection?.status ?? "disconnected",
     failure:
       connection?.status === "failed"
@@ -120,6 +119,8 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
   constructor(
     private readonly configService: ConfigService,
     private readonly remoteHosts: RemoteHostsService,
+    private readonly pairingService: PairingService,
+    private readonly pairing: Pairing,
     private readonly hosts: Hosts,
     private readonly sessionFactory: SessionHostFactory,
     private readonly sessions: TerminalSessionRegistry,
@@ -128,12 +129,24 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     private readonly bus: AppBus,
   ) {
     super();
-    this.hosts$ = combineLatest([this.configService.config$, this.remoteHosts.connections$]).pipe(
-      map(([config, connections]) =>
-        Object.entries(config.remote?.hosts ?? {}).map(([name, host]) =>
-          toRemoteHost(name, host.destination, host.command, connections.get(name)),
+    this.hosts$ = combineLatest([
+      this.configService.config$,
+      this.pairingService.pairedNames$,
+      this.remoteHosts.connections$,
+    ]).pipe(
+      map(([config, pairedNames, connections]): RemoteHost[] => [
+        ...Object.entries(config.remote?.hosts ?? {}).map(
+          ([name, host]): RemoteHost => ({
+            kind: "ssh",
+            destination: host.destination,
+            command: host.command,
+            ...connectionOf(name, connections.get(name)),
+          }),
         ),
-      ),
+        ...pairedNames.map(
+          (name): RemoteHost => ({ kind: "paired", ...connectionOf(name, connections.get(name)) }),
+        ),
+      ]),
     );
     // A shell of another machine is shown here once its session runs, and
     // no longer once it is taken over or its session is gone. Shells of this
@@ -163,10 +176,8 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     if (!isSshDestination(destination)) {
       throw new Error("The destination is one word: a host name, user@host or an ssh alias.");
     }
+    if (name !== previousName) this.ensureFree(name);
     const known = this.configService.config.remote?.hosts ?? {};
-    if (name !== previousName && known[name]) {
-      throw new Error(`There is a remote called '${name}' already.`);
-    }
     const command = host.command?.trim() || undefined;
     const keys = hostKeys(name);
     const entries: Record<string, unknown> = {
@@ -191,10 +202,44 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     }
   }
 
+  async renamePairedHost(previousName: string, name: string): Promise<void> {
+    const wanted = name.trim();
+    if (wanted === previousName) return;
+    if (wanted === "") throw new Error("A paired machine needs a name.");
+    this.ensureFree(wanted);
+    await this.pairing.rename(previousName, wanted);
+  }
+
   async removeHost(host: string): Promise<void> {
+    if (this.pairingService.pairedNames.includes(host)) {
+      await this.removePaired(host);
+      return;
+    }
     const keys = hostKeys(host);
     await this.configService.update({ [keys.destination]: undefined, [keys.command]: undefined });
     await this.remoteHosts.disconnect(host);
+  }
+
+  /**
+   * Removes the pairing here; the other machine hears of it when it can be
+   * reached. When not, it learns of it when it connects next time.
+   */
+  private async removePaired(host: string): Promise<void> {
+    // The panes of its shells close here; the shells run on there.
+    await this.remoteHosts.disconnect(host);
+    if (await this.pairing.remove(host)) return;
+    ErrorReporter.reportWarning({
+      message: `Removed ${host} here, but ${host} could not be reached to remove this machine too. It is refused the next time it connects and can remove this machine then.`,
+      notify: true,
+      source: "RemoteHosts",
+    });
+  }
+
+  /** A name belongs to one remote of either kind. */
+  private ensureFree(name: string): void {
+    if (this.pairingService.remoteNames().includes(name)) {
+      throw new Error(`There is a remote called '${name}' already.`);
+    }
   }
 
   async connect(host: string): Promise<void> {

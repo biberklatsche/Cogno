@@ -16,8 +16,8 @@ function messageOf(error: unknown): string {
 }
 
 /**
- * What the Remote panel shows: the machines of the config, and the shells
- * that run on every connected one. The shells are read
+ * What the Remote panel shows: the machines of the config and the paired
+ * ones, and the shells that run on every connected one. The shells are read
  * while the panel is open - when it opens, when a machine connects and when
  * the user asks - not watched.
  */
@@ -99,6 +99,16 @@ export class RemotePanelService {
   async saveHost(host: RemoteHostSettings, previousName?: string): Promise<string | undefined> {
     try {
       await this.port.saveHost(host, previousName);
+      return undefined;
+    } catch (error) {
+      return messageOf(error);
+    }
+  }
+
+  /** Gives a paired machine another name; resolves with why not, if it did not. */
+  async renamePairedHost(previousName: string, name: string): Promise<string | undefined> {
+    try {
+      await this.port.renamePairedHost(previousName, name);
       return undefined;
     } catch (error) {
       return messageOf(error);

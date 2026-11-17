@@ -3,6 +3,7 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ProcessPromptDispatcher } from "@cogno/core/infrastructure/process-prompt/process-prompt-dispatcher";
 import { ProcessPromptService } from "@cogno/core/workbench/external/process-prompt.service";
+import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
 import { HostError } from "@cogno/platform";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +22,7 @@ describe("RemoteHostsService", () => {
   let forgetPrompts: ReturnType<typeof vi.fn>;
   let ask: ReturnType<typeof vi.fn>;
   let updateConfig: ReturnType<typeof vi.fn>;
+  let connectPaired: ReturnType<typeof vi.fn>;
   let service: RemoteHostsService;
 
   beforeEach(() => {
@@ -30,8 +32,10 @@ describe("RemoteHostsService", () => {
     register = vi.fn().mockReturnValue(forgetPrompts);
     ask = vi.fn().mockResolvedValue("secret");
     updateConfig = vi.fn().mockResolvedValue(undefined);
+    connectPaired = vi.fn();
     const hosts = {
       connect,
+      connectPaired,
       disconnect: hangUp,
       onDisconnected: vi.fn((listener) => {
         disconnected = listener;
@@ -54,8 +58,24 @@ describe("RemoteHostsService", () => {
       config,
       { register } as unknown as ProcessPromptDispatcher,
       { ask } as unknown as ProcessPromptService,
+      { pairedNames: ["laptop"] } as unknown as PairingService,
       { onDestroy: vi.fn() } as never,
     );
+  });
+
+  it("connects a paired machine without ssh and asks nothing", async () => {
+    connectPaired.mockResolvedValue({ os: "macos", foundCommand: null } satisfies HostInfo);
+
+    const info = await service.connect("laptop");
+
+    expect(info.os).toBe("macos");
+    expect(connectPaired).toHaveBeenCalledWith("laptop");
+    expect(connect).not.toHaveBeenCalled();
+    expect(register).not.toHaveBeenCalled();
+  });
+
+  it("calls a machine that is no longer paired nothing to retry", () => {
+    expect(isWorthRetrying({ code: "notPaired", message: "" })).toBe(false);
   });
 
   afterEach(() => vi.restoreAllMocks());

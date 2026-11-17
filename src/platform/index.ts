@@ -17,6 +17,7 @@ export * from "./native-menu";
 export * from "./notification";
 export * from "./opener";
 export * from "./os";
+export * from "./pairing";
 export * from "./path";
 export * from "./pty";
 export * from "./runnable-actions";

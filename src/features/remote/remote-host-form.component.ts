@@ -13,8 +13,10 @@ import { RemotePanelService } from "./remote-panel.service";
 type FormValues = { name: string; destination: string; command: string };
 
 /**
- * Adds a remote, or changes one (`host`). The command ssh runs there is
- * advanced: Cogno finds it by itself when the remote names none.
+ * Adds a remote reached over ssh, or changes a remote (`host`). The command
+ * ssh runs there is advanced: Cogno finds it by itself when the remote names
+ * none. A paired machine has only its name to change: how it is reached
+ * comes from the pairing.
  */
 @Component({
   selector: "app-remote-host-form",
@@ -34,33 +36,35 @@ type FormValues = { name: string; destination: string; command: string };
           (input)="setField('name', $event)"
         />
       </label>
-      <label>
-        <span>Destination</span>
-        <input
-          type="text"
-          spellcheck="false"
-          autocomplete="off"
-          placeholder="user@host or an ssh alias"
-          [value]="values().destination"
-          [disabled]="saving()"
-          (input)="setField('destination', $event)"
-        />
-      </label>
-      <details class="advanced" [open]="!!host?.command">
-        <summary>Advanced</summary>
+      @if (!isPaired()) {
         <label>
-          <span>Command ssh runs there</span>
+          <span>Destination</span>
           <input
             type="text"
             spellcheck="false"
             autocomplete="off"
-            placeholder="Found by itself"
-            [value]="values().command"
+            placeholder="user@host or an ssh alias"
+            [value]="values().destination"
             [disabled]="saving()"
-            (input)="setField('command', $event)"
+            (input)="setField('destination', $event)"
           />
         </label>
-      </details>
+        <details class="advanced" [open]="hasCommand()">
+          <summary>Advanced</summary>
+          <label>
+            <span>Command ssh runs there</span>
+            <input
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="Found by itself"
+              [value]="values().command"
+              [disabled]="saving()"
+              (input)="setField('command', $event)"
+            />
+          </label>
+        </details>
+      }
       @if (error(); as error) {
         <div class="failure">{{ error }}</div>
       }
@@ -142,11 +146,20 @@ export class RemoteHostFormComponent implements OnChanges {
   /** The panel may switch the form to another remote while it is open. */
   ngOnChanges(): void {
     this.error.set(undefined);
+    const ssh = this.host?.kind === "ssh" ? this.host : undefined;
     this.values.set({
       name: this.host?.name ?? "",
-      destination: this.host?.destination ?? "",
-      command: this.host?.command ?? "",
+      destination: ssh?.destination ?? "",
+      command: ssh?.command ?? "",
     });
+  }
+
+  protected isPaired(): boolean {
+    return this.host?.kind === "paired";
+  }
+
+  protected hasCommand(): boolean {
+    return this.host?.kind === "ssh" && !!this.host.command;
   }
 
   setField(field: keyof FormValues, event: Event): void {
@@ -161,10 +174,13 @@ export class RemoteHostFormComponent implements OnChanges {
     this.saving.set(true);
     this.error.set(undefined);
     const { name, destination, command } = this.values();
-    const error = await this.panel.saveHost(
-      { name, destination, command: command.trim() || undefined },
-      this.host?.name,
-    );
+    const error =
+      this.host?.kind === "paired"
+        ? await this.panel.renamePairedHost(this.host.name, name)
+        : await this.panel.saveHost(
+            { name, destination, command: command.trim() || undefined },
+            this.host?.name,
+          );
     this.saving.set(false);
     if (error === undefined) {
       this.closed.emit();

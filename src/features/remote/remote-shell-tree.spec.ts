@@ -8,6 +8,7 @@ function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): Remote
 
 function host(name: string, connection: RemoteHost["connection"], failure?: string): RemoteHost {
   return {
+    kind: "ssh",
     name,
     destination: `lars@${name}`,
     connection,

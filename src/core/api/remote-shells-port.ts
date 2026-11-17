@@ -1,17 +1,29 @@
 import { TerminalId } from "@cogno/shared/domain";
 import { Observable } from "rxjs";
 
-/** A machine from `remote.hosts`, and how far the connection to it is. */
-export type RemoteHost = {
+/**
+ * A machine whose shells Cogno can show, and how far the connection to it
+ * is: one of `remote.hosts`, reached over ssh, or one paired with this
+ * machine (ARCHITECTURE.md 2.7.3).
+ */
+export type RemoteHost = SshRemoteHost | PairedRemoteHost;
+
+type RemoteHostConnectionState = {
   readonly name: string;
-  /** Where ssh connects. */
-  readonly destination: string;
-  /** What ssh runs there to reach the Cogno; found by itself when left out. */
-  readonly command?: string;
   readonly connection: "disconnected" | "connecting" | "connected" | "failed";
   /** Why the connection failed; only while `failed`. */
   readonly failure?: RemoteHostFailure;
 };
+
+type SshRemoteHost = RemoteHostConnectionState & {
+  readonly kind: "ssh";
+  /** Where ssh connects. */
+  readonly destination: string;
+  /** What ssh runs there to reach the Cogno; found by itself when left out. */
+  readonly command?: string;
+};
+
+type PairedRemoteHost = RemoteHostConnectionState & { readonly kind: "paired" };
 
 /** Why connecting to a machine failed. */
 export type RemoteHostFailure = {
@@ -20,8 +32,8 @@ export type RemoteHostFailure = {
   readonly worthRetrying: boolean;
 };
 
-/** What the user says about a machine. */
-export type RemoteHostSettings = Pick<RemoteHost, "name" | "destination" | "command">;
+/** What the user says about a machine reached over ssh. */
+export type RemoteHostSettings = Pick<SshRemoteHost, "name" | "destination" | "command">;
 
 /** A shell that runs on a machine. */
 export type RemoteShell = {
@@ -39,10 +51,11 @@ export type RemoteShell = {
 
 /**
  * The machines whose shells Cogno can show, and the shells that run on them.
- * A machine is named as in `remote.hosts`.
+ * A machine is named as in `remote.hosts` or in the list of paired machines;
+ * a name belongs to one machine of either kind.
  */
 export abstract class RemoteShellsPort {
-  /** The machines of `remote.hosts`, again whenever one of them changes. */
+  /** The machines of `remote.hosts`, then the paired ones; again whenever one changes. */
   abstract readonly hosts$: Observable<readonly RemoteHost[]>;
   /**
    * Which shells this window shows changed: it began or stopped showing one,
@@ -52,11 +65,16 @@ export abstract class RemoteShellsPort {
   abstract readonly shownInThisWindowChanged$: Observable<void>;
 
   /**
-   * Writes a machine to the config. `previousName` is what it was called
-   * when it is renamed. Rejects with a text for the user.
+   * Writes a machine reached over ssh to the config. `previousName` is what
+   * it was called when it is renamed. Rejects with a text for the user.
    */
   abstract saveHost(host: RemoteHostSettings, previousName?: string): Promise<void>;
-  /** Takes a machine out of the config and hangs up on it. */
+  /** Gives a paired machine another name. Rejects with a text for the user. */
+  abstract renamePairedHost(previousName: string, name: string): Promise<void>;
+  /**
+   * Takes a machine out of the config and hangs up on it, or removes the
+   * pairing with it here and there.
+   */
   abstract removeHost(host: string): Promise<void>;
 
   /** Settles once the connection stands; how it fails shows on `hosts$`. */

@@ -128,6 +128,7 @@ pub fn run(cli: Cli) {
             crate::commands::config::get_default_config,
             crate::commands::hosts::list_shells,
             crate::commands::hosts::host_connect,
+            crate::commands::hosts::host_connect_paired,
             crate::commands::hosts::host_sessions,
             crate::commands::hosts::host_session,
             crate::commands::hosts::host_kill_session,

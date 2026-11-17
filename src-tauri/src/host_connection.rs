@@ -148,12 +148,6 @@ impl Starting {
         })
     }
 
-    /// Ends the process: `introduce` fails, or the connection it made ends.
-    pub fn ender(&self) -> HangUp {
-        let process = self.process.clone();
-        Box::new(move || end(&mut lock(&process)))
-    }
-
     /// Waits until the host at the other end introduced itself, which can
     /// take as long as the user needs to answer what the process asks (a
     /// password, a host key).
@@ -174,6 +168,21 @@ impl Starting {
         )
         .map_err(|error| explain_failure(error, &self.process, self.stderr))
     }
+}
+
+impl Underway for Starting {
+    /// Ends the process: `introduce` fails, or the connection it made ends.
+    fn ender(&self) -> HangUp {
+        let process = self.process.clone();
+        Box::new(move || end(&mut lock(&process)))
+    }
+}
+
+/// A connection to another machine on its way - an ssh process started, a
+/// paired machine dialed - whose host has not introduced itself yet.
+pub trait Underway {
+    /// What gives up on it: `introduce` fails, or the connection it made ends.
+    fn ender(&self) -> HangUp;
 }
 
 /// Why a process did not reach a host, in its own words where it said any.
@@ -229,6 +238,26 @@ impl HostConnection {
             Box::new(move || {
                 let _ = closer.shutdown(Shutdown::Both);
             }),
+        )
+    }
+
+    /// The connection to the host of the paired machine `name`, over the
+    /// stream the dial opened; `hang_up` closes it.
+    pub fn to_paired_machine(
+        reader: impl Read + Send + 'static,
+        writer: impl Write + Send + 'static,
+        name: &str,
+        events: Arc<dyn HostEvents>,
+        on_lost: OnLost,
+        hang_up: HangUp,
+    ) -> CommandResult<Self> {
+        Self::over(
+            reader,
+            writer,
+            Reaching::Remote(name),
+            events,
+            on_lost,
+            hang_up,
         )
     }
 
@@ -542,6 +571,28 @@ pub mod test_support {
         (host, (from_client, from_host))
     }
 
+    /// A daemon of the test's own, answering behind the endpoint file returned.
+    pub fn test_daemon() -> std::path::PathBuf {
+        let endpoint = std::env::temp_dir()
+            .join(format!(
+                "cogno-connection-test-{}",
+                uuid::Uuid::new_v4().simple()
+            ))
+            .join("host.json");
+        {
+            let endpoint = endpoint.clone();
+            std::thread::spawn(move || {
+                cogno_host::daemon::run(&endpoint, cogno_host::daemon::Patience::default())
+            });
+        }
+        let started = Instant::now();
+        while cogno_host::daemon::connect(&endpoint).is_err() {
+            assert!(started.elapsed() < Duration::from_secs(10));
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        endpoint
+    }
+
     /// A connection to a host that stays for as long as the test runs.
     pub fn a_standing_connection() -> HostConnection {
         let (connection, host_side) = silent_host(Box::new(|_, _| {}));
@@ -552,7 +603,7 @@ pub mod test_support {
 
 #[cfg(test)]
 mod tests {
-    use super::test_support::{failing_process, silent_host, NoEvents};
+    use super::test_support::{failing_process, silent_host, test_daemon, NoEvents};
     use super::*;
     use cogno_host::protocol::{HostErrorCode, StreamId, TerminalSize};
     use cogno_host::wire::{OLDEST_PROTOCOL_VERSION, PROTOCOL_VERSION};
@@ -583,28 +634,7 @@ mod tests {
 
     /// A daemon of this test's own, and a connection to it.
     fn connected(on_lost: OnLost) -> HostConnection {
-        let endpoint = std::env::temp_dir()
-            .join(format!(
-                "cogno-connection-test-{}",
-                uuid::Uuid::new_v4().simple()
-            ))
-            .join("host.json");
-        {
-            let endpoint = endpoint.clone();
-            std::thread::spawn(move || {
-                cogno_host::daemon::run(&endpoint, cogno_host::daemon::Patience::default())
-            });
-        }
-        let started = Instant::now();
-        let stream = loop {
-            match cogno_host::daemon::connect(&endpoint) {
-                Ok(stream) => break stream,
-                Err(_) => {
-                    assert!(started.elapsed() < Duration::from_secs(10));
-                    std::thread::sleep(Duration::from_millis(20));
-                }
-            }
-        };
+        let stream = cogno_host::daemon::connect(&test_daemon()).unwrap();
         HostConnection::to_this_machine(stream, Arc::new(NoEvents), on_lost).unwrap()
     }
 

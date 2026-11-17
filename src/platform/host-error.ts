@@ -38,6 +38,7 @@ const HOST_ERROR_CODES = [
   "pairingUnreachable",
   "pairingCodeUnknown",
   "pairingDeclined",
+  "notPaired",
   "internal",
 ] as const;
 

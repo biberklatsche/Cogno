@@ -2,23 +2,30 @@ import { ChangeDetectionStrategy, Component, computed, signal } from "@angular/c
 import { RemoteHost, RemoteShell } from "@cogno/core/api/remote-shells-port";
 import { Opener } from "@cogno/platform";
 import {
+  ContextMenuOverlayService,
   CopyEditDeleteComponent,
+  Icon,
   IconComponent,
   TooltipDirective,
   TreeComponent,
   TreeRowDirective,
 } from "@cogno/shared/ui";
 import { RemoteHostFormComponent } from "./remote-host-form.component";
+import { RemotePairFormComponent } from "./remote-pair-form.component";
 import { RemotePanelService } from "./remote-panel.service";
 import { hostNodes, RemoteTreeNode } from "./remote-shell-tree";
+import { RemoteThisMachineComponent } from "./remote-this-machine.component";
 
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
 
-/** The form that is open: one to add a remote, or one to change `host`. */
-type OpenForm = { readonly host?: RemoteHost };
+/**
+ * The form that is open: one to pair by code, one to add a remote reached
+ * over ssh, or one to change `host`.
+ */
+type OpenForm = { readonly kind: "pair" } | { readonly kind: "host"; readonly host?: RemoteHost };
 
 /** What the button next to a remote does. */
-type NextStep = "connect" | "cancel" | "disconnect" | "edit";
+type NextStep = "connect" | "cancel" | "disconnect" | "edit" | "remove";
 
 /** What the action buttons of a line said. */
 type RowAction = "copy" | "edit" | "delete";
@@ -30,6 +37,8 @@ type RowAction = "copy" | "edit" | "delete";
     CopyEditDeleteComponent,
     IconComponent,
     RemoteHostFormComponent,
+    RemotePairFormComponent,
+    RemoteThisMachineComponent,
     TooltipDirective,
     TreeComponent,
     TreeRowDirective,
@@ -49,7 +58,12 @@ type RowAction = "copy" | "edit" | "delete";
         <button type="button" class="button icon-button" appTooltip="Refresh" (click)="panel.refresh()">
           <app-icon name="mdiRefresh" [class.spinning]="panel.refreshing()"></app-icon>
         </button>
-        <button type="button" class="button icon-button" appTooltip="Add a remote" (click)="add()">
+        <button
+          type="button"
+          class="button icon-button"
+          appTooltip="Add a remote"
+          (click)="chooseHowToAdd($event)"
+        >
           <app-icon name="mdiPlus"></app-icon>
         </button>
       </header>
@@ -59,15 +73,20 @@ type RowAction = "copy" | "edit" | "delete";
       }
 
       @if (form(); as open) {
-        <app-remote-host-form
-          [host]="open.host"
-          (closed)="form.set(null)"
-        ></app-remote-host-form>
+        @if (open.kind === "pair") {
+          <app-remote-pair-form (closed)="form.set(null)"></app-remote-pair-form>
+        } @else {
+          <app-remote-host-form
+            [host]="open.host"
+            (closed)="form.set(null)"
+          ></app-remote-host-form>
+        }
       }
 
       @if (nodes().length === 0) {
         <div class="status">
-          No remotes yet. Add the machine whose shells you want to go on with from here.
+          No remotes yet. Pair with another machine, or add one over ssh, to open its shells
+          here.
         </div>
       }
 
@@ -78,7 +97,8 @@ type RowAction = "copy" | "edit" | "delete";
             @case ("host") {
               <div class="host-row">
                 <span class="connection" [class]="node.host.connection"></span>
-                <span class="name" [appTooltip]="node.host.destination">{{ node.host.name }}</span>
+                <app-icon class="kind-icon" [name]="kindIcon(node.host)"></app-icon>
+                <span class="name" [appTooltip]="kindTooltip(node.host)">{{ node.host.name }}</span>
                 <!-- Removing asks once more, as everywhere in the side panels. -->
                 <app-copy-edit-delete
                   class="row-action"
@@ -117,6 +137,16 @@ type RowAction = "copy" | "edit" | "delete";
                     <!-- Connecting again fails the same way: the settings must change first. -->
                     <button type="button" class="button text-button" (click)="edit(node.host)">
                       Edit
+                    </button>
+                  }
+                  @case ("remove") {
+                    <!-- The other machine removed the pairing: nothing reaches it any more. -->
+                    <button
+                      type="button"
+                      class="button text-button"
+                      (click)="panel.removeHost(node.host.name)"
+                    >
+                      Remove
                     </button>
                   }
                 }
@@ -176,6 +206,8 @@ type RowAction = "copy" | "edit" | "delete";
           }
         </ng-template>
       </app-tree>
+
+      <app-remote-this-machine></app-remote-this-machine>
     </div>
   `,
   styles: `
@@ -244,7 +276,8 @@ type RowAction = "copy" | "edit" | "delete";
       text-align: left;
     }
 
-    .shell-icon {
+    .shell-icon,
+    .kind-icon {
       flex: none;
       width: 16px;
       height: 16px;
@@ -366,18 +399,37 @@ export class RemoteSideComponent {
   constructor(
     protected readonly panel: RemotePanelService,
     private readonly opener: Opener,
+    private readonly menu: ContextMenuOverlayService,
   ) {}
 
   openDocumentation(): void {
     void this.opener.openUrl(DOCUMENTATION_URL);
   }
 
-  add(): void {
-    this.form.set({});
+  /** A remote is added by pairing with it, or over ssh. */
+  chooseHowToAdd(event: MouseEvent): void {
+    this.menu.openAtElement(
+      event.currentTarget as HTMLElement,
+      {
+        items: [
+          { label: "Pair with a code", action: () => this.form.set({ kind: "pair" }) },
+          { label: "Add over ssh", action: () => this.form.set({ kind: "host" }) },
+        ],
+      },
+      { horizontalAlign: "right" },
+    );
   }
 
   edit(host: RemoteHost): void {
-    this.form.set({ host });
+    this.form.set({ kind: "host", host });
+  }
+
+  protected kindIcon(host: RemoteHost): Icon {
+    return host.kind === "paired" ? "mdiLinkVariant" : "mdiConsoleNetworkOutline";
+  }
+
+  protected kindTooltip(host: RemoteHost): string {
+    return host.kind === "paired" ? "Paired machine" : `Over ssh: ${host.destination}`;
   }
 
   protected nextStep(host: RemoteHost): NextStep {
@@ -387,7 +439,9 @@ export class RemoteSideComponent {
       case "connecting":
         return "cancel";
       case "failed":
-        return host.failure?.worthRetrying === false ? "edit" : "connect";
+        if (host.failure?.worthRetrying !== false) return "connect";
+        // A paired machine fails for good only when it is not paired any more.
+        return host.kind === "paired" ? "remove" : "edit";
       default:
         return "connect";
     }

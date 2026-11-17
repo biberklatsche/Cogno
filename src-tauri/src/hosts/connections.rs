@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use cogno_host::sync::lock;
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
-use crate::host_connection::{HangUp, HostConnection, Starting};
+use crate::host_connection::{HangUp, HostConnection, Underway};
 
 #[derive(Default)]
 pub struct Connections {
@@ -124,12 +124,12 @@ impl Connections {
     /// did not reach Cogno (`NoCognoThere`), and `introduce` waits for the
     /// host there. Hanging up on `name` meanwhile gives up on it - also while
     /// it waits for its turn.
-    pub fn connect_remote(
+    pub fn connect_remote<U: Underway>(
         &self,
         name: &str,
         commands: &[String],
-        mut start: impl FnMut(&str) -> CommandResult<Starting>,
-        mut introduce: impl FnMut(Starting) -> CommandResult<HostConnection>,
+        mut start: impl FnMut(&str) -> CommandResult<U>,
+        mut introduce: impl FnMut(U) -> CommandResult<HostConnection>,
     ) -> CommandResult<Connected> {
         let hang_ups = self.hang_ups_of(name);
         let given_up = || self.hang_ups_of(name) != hang_ups;
@@ -285,6 +285,7 @@ fn hung_up_on(name: &str) -> CommandError {
 mod tests {
     use super::*;
     use crate::host_connection::test_support::{a_standing_connection, failing_process};
+    use crate::host_connection::Starting;
     use std::sync::mpsc;
     use std::time::Duration;
 
