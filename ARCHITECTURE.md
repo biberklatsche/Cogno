@@ -268,7 +268,9 @@ Sitzung angemeldet hat.
 
 Geschützt ist das wie die App selbst: Die Datei darf nur ihr Eigentümer
 lesen, der Dienst hört nur auf Loopback und spricht kein HTTP, eine Webseite
-kann ihn also auch per DNS-Rebinding nicht erreichen. Wer die Datei lesen
+kann ihn also auch per DNS-Rebinding nicht erreichen. Den einzigen Port nach
+außen öffnet die App für gekoppelte Rechner (2.7.3), und dort spricht sie nur
+mit Rechnern ihrer Liste. Wer die Datei lesen
 kann, kann ohnehin alles, was der Nutzer kann. Ein Hook, der kein Terminal
 nennt (der Hintergrunddienst eines Agents, 3.2), geht an jeden Cogno des
 Rechners: Das Schlimmste ist eine falsche Agent-Karte. `cogno action run`
@@ -1006,7 +1008,10 @@ um Hosts heißt jede Sache überall gleich, in Rust wie in TypeScript:
 
 | Begriff | Bedeutung | Im Code |
 |---|---|---|
-| Rechner, Remote | Ein Rechner, auf dem Shells laufen. Ein Remote ist ein anderer Rechner aus `remote.hosts`, unter seinem Namen dort | `remote.hosts`, `RemoteHost` |
+| Rechner, Remote | Ein Rechner, auf dem Shells laufen. Ein Remote ist ein anderer Rechner, unter seinem Namen: aus `remote.hosts` (über `ssh`) oder ein gekoppelter Rechner. Namen sind über beide Arten eindeutig | `remote.hosts`, `paired.json`, `RemoteHost` |
+| Koppeln | Zwei Rechner lernen sich einmal per Code kennen; danach verbinden sie sich ohne `ssh`, in beide Richtungen. Entkoppeln wirkt auf beiden Seiten | `pairing/`, `PairingPort` |
+| Treffpunkt, Relay | Der eigene Server: Der Treffpunkt tauscht einen Code gegen die ID eines Rechners, das Relay leitet weiter, wo kein direkter Weg geht | `cogno-rendezvous`, `iroh-relay` |
+| Annehmen | Die App nimmt die Verbindung eines gekoppelten Rechners an und reicht sie an den Dienst weiter | `pairing/accept.rs` |
 | Host | Was auf einem Rechner die Shells hält: der Dienst und darin die Struktur `Host`. Als Feld eines Panes, Backends oder Shell-Kontexts der Name eines Remotes; fehlt er, ist es dieser Rechner | `Host`, `Pane.host`, `SessionBackend.host` |
 | Dienst | Der Prozess des Hosts, einer je Nutzer und Rechner | `cogno daemon`, `daemon.rs` |
 | Sitzung | Eine Shell samt PTY auf einem Host, geschlüsselt nach der Terminal-ID. Im Frontend steuert sie ein `SessionHost`; Variablen, die einen halten, heißen `session` | `Session`, `SharedSession`, `SessionHost`, `TerminalId` |
@@ -1153,11 +1158,21 @@ Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
 - **Von einem anderen Rechner: `ssh` und eine Brücke.**
   `cogno server --stdio`, über `ssh` gestartet, reicht nur Bytes zwischen
   stdin/stdout und dem Dienst durch (`daemon::bridge`). Erreichbarkeit,
-  Anmeldung und Verschlüsselung sind Sache von `ssh`; Cogno öffnet nach
-  außen keinen Port. Für den Dienst ist ein solcher Client von einem lokalen
-  nicht zu unterscheiden. Läuft kein Dienst, sagt die Brücke das und endet
+  Anmeldung und Verschlüsselung sind Sache von `ssh`; für diesen Weg öffnet
+  Cogno nach außen keinen Port. Für den Dienst ist ein solcher Client von
+  einem lokalen nicht zu unterscheiden. Läuft kein Dienst, sagt die Brücke das und endet
   mit eigenem Code (`NO_DAEMON_EXIT_CODE`, bei der App `cognoNotRunning`);
   sie startet keinen.
+- **Von einem gekoppelten Rechner: iroh und die App** (2.7.3). Zwei
+  gekoppelte Rechner verbinden sich über QUIC (iroh): direkt im LAN, direkt
+  durch die Router oder, wo das nicht geht, über das Relay des eigenen
+  Servers. Angenommen wird in der **App**, nie im Dienst: Sie prüft die ID
+  des Partners gegen ihre Liste gekoppelter Rechner, öffnet den Strom (der
+  Host spricht zuerst) und reicht ihn an den Dienst weiter wie die Brücke
+  (`daemon::bridge`); auch dieser Client ist für den Dienst einer wie jeder
+  andere. Der Dienst lauscht weiterhin nur auf Loopback. Die App bindet
+  dafür einen UDP-Port, nur solange das Remote-Feature an ist. iroh hängt
+  nur am App-Crate, nie an `cogno-host`.
 - **Der Starter.** Gestartet wird über `".cogno/bin/cogno" server --stdio`
   (`default_remote_command`, aus denselben Konstanten wie der Starter selbst
   und die Argumente der Kommandozeile; ein Test hält sie gleich): eine kleine
@@ -1355,8 +1370,9 @@ Die Zuständigkeiten:
   müssen erst die Einstellungen anders werden; nach einem Versionskonflikt
   hilft er, sobald das ältere Cogno aktualisiert ist).
 - **Vertrag und Feature:** `RemoteShellsPort` (`core/api/`, Adapter in
-  `core/workbench/api-adapters/`) gibt einem Feature die Remotes der Config
-  mit ihrem Verbindungsstand (bei einem Fehlschlag mit `worthRetrying`), das
+  `core/workbench/api-adapters/`) gibt einem Feature die Remotes beider
+  Arten (`kind: "ssh" | "paired"`; die einen aus der Config, die anderen
+  aus der Kopplungsliste, 2.7.3) mit ihrem Verbindungsstand (bei einem Fehlschlag mit `worthRetrying`), das
   Pflegen von `remote.hosts` (das Ziel ist ein Wort und nie eine Option,
   `isSshDestination`, geprüft beim Speichern wie in Rust), Verbinden und
   Auflegen, die Shells eines Remotes und zwei Dinge mit einer Shell: hier
@@ -1365,7 +1381,8 @@ Die Zuständigkeiten:
   Hosts ist dieses Fenster, wenn hier ihre Sitzung läuft, sonst ein anderes.
   `features/remote` ist das Panel dazu: ein Baum Remote → Workspace → Tab →
   Shell. Dieser Rechner steht dort nicht: Was auf ihm läuft, zeigen seine
-  Tabs. Verbindung und Sitzungen bleiben Core — das Feature ist nur die
+  Tabs. Er hat nur einen Abschnitt zum Koppeln (`PairingPort`: Code, Annehmen
+  an/aus). Verbindung und Sitzungen bleiben Core — das Feature ist nur die
   Ansicht.
 - **Session:** bekommt als Wert, wo ihre Shell läuft (`SessionBackend`: Host
   und dessen Betriebssystem). Daraus leiten sich Shell-Kontext,
@@ -1502,6 +1519,45 @@ die Leitung: der Dienst nimmt nur relative Pfade unterhalb seines
 Integrationsverzeichnisses an. Auf einen anderen Rechner wird nichts gelegt:
 Cogno startet dort keine Shell, es zeigt nur, was das Cogno dort mit seinen
 eigenen Skripten gestartet hat.
+
+#### 2.7.3 Koppeln (Pairing)
+
+**Der zweite Weg zu einem anderen Rechner, gleichwertig neben `ssh`.**
+Nach dem Verbinden ist ein gekoppelter Rechner ein Remote wie jeder andere:
+dasselbe Host-Protokoll, Übernehmen und Zurückholen, Hooks, `cogno action
+run`. Nur wie der Byte-Strom entsteht, ist anders.
+
+- **Koppeln.** Rechner A holt beim Treffpunkt einen kurzen Code (einmalig,
+  wenige Minuten gültig). Rechner B gibt ihn ein, erfährt vom Treffpunkt die
+  ID von A und meldet sich bei A. A fragt den Nutzer; beide Seiten zeigen
+  dabei dieselbe **Prüfzahl** (aus beiden IDs und dem Code). Sie verrät, wenn
+  ein manipulierter Treffpunkt B eine fremde ID untergeschoben hätte. Wird
+  zugelassen, speichern beide einander. Entkoppeln sagt es dem anderen, wenn
+  er erreichbar ist; sonst lehnt er beim nächsten Versuch ab (`notPaired`)
+  und bietet dort das Entfernen an.
+- **Ablage.** Der eigene geheime Schlüssel (`pairing-key`) und die Liste der
+  gekoppelten Rechner (`paired.json`: Name, öffentliche ID, „nur direkt",
+  Adresse) liegen in Cognos Home, nur für den Eigentümer lesbar wie
+  `host.json`, und nur die App schreibt sie. Es ist das erste dauerhafte
+  Geheimnis neben dem Token des Dienstes. Die Config bleibt die Datei des
+  Nutzers: Eine Kopplung entsteht durch den Handschlag und gilt nur mit
+  diesem Schlüssel, sie wandert nicht mit, wenn jemand seine Config kopiert.
+  Wer aber Cognos ganzes Home auf einen zweiten Rechner kopiert, gibt ihm
+  dieselbe Identität.
+- **Annehmen.** Sobald gekoppelt, nimmt die App Verbindungen an, solange
+  Cogno läuft; im Panel abschaltbar. Ist das Remote-Feature aus, gibt es
+  keinen Endpunkt und keinen offenen Port.
+- **Der eigene Server.** Treffpunkt und Relay laufen auf einem eigenen
+  Server, ihre Adressen stehen fest in der App; Dienste Dritter (n0) werden
+  nicht benutzt. Das Relay sieht nur verschlüsselte Pakete, dazu, welche
+  IDs miteinander sprechen, ihre IP-Adressen und wie viel; der Treffpunkt
+  sieht kurz, welcher Code zu welcher ID gehört. Fällt der Server aus,
+  verbinden sich gekoppelte Rechner nur noch über „nur direkt" (eingetragene
+  Adresse oder lokales Netz); neues Koppeln geht dann nicht.
+- **Nur direkt.** Pro gekoppeltem Rechner wählbar: ohne Relay, über eine
+  eingetragene Adresse oder die Suche im lokalen Netz (mDNS).
+- **Geschützt** ist der Weg durch QUIC mit gegenseitig bewiesenen IDs: Die
+  App spricht dort nur mit Rechnern ihrer Liste und kein HTTP.
 
 ## 3. Das Protokoll (`core/api/`)
 
@@ -1993,8 +2049,17 @@ Feature = {
   notificationSources?                   // Deklaration: Quellen und Ereignisse für notification.source.<id>
   sideMenu?, notificationChannels?, suggestors? // Aktivierung: nur bei mode: on
   mode: "on" | "off"                      // jedes Feature; Default "on"
+  pro?: true                             // Pro-Feature; zeigt ein Abzeichen
 }
 ```
+
+**Pro gilt für ganze Features, nie für Teile davon.** Ein Pro-Feature trägt
+`pro: true`; das Side-Menu zeigt dann ein Abzeichen. Eine Prüfung, ob
+jemand Pro hat, gibt es noch nicht (während Alpha und Beta ist alles frei).
+Kommt sie, sitzt sie an einer Stelle: im Feature-Host für das Ein- und
+Ausschalten, und auf dem eigenen Server für das, was dort Kosten verursacht
+(Relay). Was im Client geprüft wird, lässt sich bei offenem Code umgehen;
+das wird hingenommen, solange es keine Kosten verursacht.
 
 `mode` ist der persistierte, per Hot-Reload wechselbare Produktzustand. Davon
 getrennt hat die Runtime einen nicht persistierten Status:
