@@ -29,12 +29,14 @@ import { ChangeDetectionStrategy, Component, input } from "@angular/core";
       transition: background 0.1s;
     }
 
-    :host(:hover) {
-      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+    :host(.focused) {
+      border-color: var(--selected-border-color);
+      background: var(--selected-background);
     }
 
-    :host(.focused) {
-      border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+    :host(:hover) {
+      border-color: var(--hover-border-color);
+      background: var(--hover-background);
     }
   `,
 })

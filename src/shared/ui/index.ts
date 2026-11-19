@@ -10,7 +10,7 @@ export * from "./common/text/start-ellipsis.directive";
 export * from "./common/tile/tile.component";
 export * from "./common/toggle-switch/toggle-switch.component";
 export * from "./common/tooltip/tooltip.directive";
-export * from "./common/workspace-group-header/workspace-group-header.component";
+export * from "./common/workspace-group/workspace-group.component";
 export * from "./context-menu-item";
 export * from "./dialog/confirm-dialog.component";
 export * from "./dialog/dialog.component";

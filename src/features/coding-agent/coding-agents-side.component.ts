@@ -10,7 +10,7 @@ import {
   TabChipComponent,
   TileComponent,
   TooltipDirective,
-  WorkspaceGroupHeaderComponent,
+  WorkspaceGroupComponent,
 } from "@cogno/shared/ui";
 import { interval } from "rxjs";
 import { AGENT_STATUS_SPECS } from "./coding-agent-animation";
@@ -55,7 +55,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     CopyEditDeleteComponent,
     TileComponent,
     TabChipComponent,
-    WorkspaceGroupHeaderComponent,
+    WorkspaceGroupComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -98,14 +98,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
             </div>
           }
           @for (group of groups(); track group.workspaceId) {
-            <section class="group">
-            @if (group.workspaceName) {
-              <app-workspace-group-header
-                class="group-header"
-                [name]="group.workspaceName"
-                [color]="group.workspaceColor ?? ''"
-              ></app-workspace-group-header>
-            }
+            <app-workspace-group [name]="group.workspaceName" [color]="group.workspaceColor ?? ''">
             @for (agent of group.items; track agent.sessionId) {
               <button
                 type="button"
@@ -159,7 +152,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 </div>
               </button>
             }
-            </section>
+            </app-workspace-group>
           }
         </div>
       } @else {
@@ -351,30 +344,9 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     .active-list {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
       flex: 1;
       overflow-y: auto;
       min-height: 0;
-    }
-
-    /* Each workspace is its own wrap grid, so its sticky header stays on top
-       while its cards scroll by and is pushed away by the next one. */
-    .group {
-      display: flex;
-      flex-flow: row wrap;
-      align-content: flex-start;
-      gap: 0.5rem;
-    }
-
-    /* A group header takes a whole row of the wrap grid. */
-    .group-header {
-      flex-basis: 100%;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      padding: 0.5rem 0 0.25rem;
-      /* The side menu's own surface, so the header looks like part of the list. */
-      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
     }
 
     .empty-state {
