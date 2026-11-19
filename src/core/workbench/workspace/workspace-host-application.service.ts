@@ -9,7 +9,7 @@ import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.s
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { AppWindow } from "@cogno/platform/window";
 import { Color } from "@cogno/shared/support";
-import { debounceTime, filter, merge } from "rxjs";
+import { debounceTime, exhaustMap, filter, merge, race, startWith, take, timer } from "rxjs";
 import { DiscardSessionMarker } from "./discard-session.marker";
 import { SessionPersistenceService } from "./session-persistence.service";
 import { WorkspaceConfiguration, WorkspaceState } from "./workspace.model";
@@ -41,6 +41,8 @@ function withoutTerminalIds(pane: PaneConfig): PaneConfig {
 
 /** Idle time after terminal output before an auto-save of the active workspace. */
 const IDLE_AUTOSAVE_MS = 2500;
+/** While output keeps coming, the active workspace is still saved this often. */
+const BUSY_AUTOSAVE_MS = 30_000;
 
 /**
  * What makes a workspace "dirty" when it changes: the tabs' identity, colour and
@@ -75,6 +77,8 @@ export class WorkspaceHostApplicationService {
   private readonly persistedWorkspaceRuntimeSignatureById = new Map<string, string>();
   /** Bumped whenever tabs or grids change, so `workspaceEntries` re-reads the live layout. */
   private readonly runtimeVersion = signal(0);
+  /** The save running or queued last; the next one waits for it. */
+  private lastSave: Promise<void> = Promise.resolve();
 
   readonly _workspaceList: WritableSignal<WorkspaceState[]> = signal([]);
   readonly workspaceList = this._workspaceList.asReadonly();
@@ -152,12 +156,24 @@ export class WorkspaceHostApplicationService {
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(() => this.runtimeVersion.update((version) => version + 1));
 
-    // Idle auto-save: a few seconds after terminal output settles, persist the
-    // active workspace so a crash loses at most that window.
-    sessionRegistry.facts$
+    // Auto-save the active workspace once its output settles, so a crash loses
+    // at most that window; output that never settles saves it every
+    // BUSY_AUTOSAVE_MS.
+    const output$ = sessionRegistry.facts$.pipe(
+      filter(
+        ({ terminalId, fact }) =>
+          fact.type === "outputReceived" &&
+          this.gridListService.terminalIdsInActiveWorkspace().includes(terminalId),
+      ),
+    );
+    output$
       .pipe(
-        filter(({ fact }) => fact.type === "outputReceived"),
-        debounceTime(IDLE_AUTOSAVE_MS),
+        exhaustMap(() =>
+          race(
+            output$.pipe(startWith(null), debounceTime(IDLE_AUTOSAVE_MS)),
+            timer(BUSY_AUTOSAVE_MS),
+          ).pipe(take(1)),
+        ),
         takeUntilDestroyed(destroyRef),
       )
       .subscribe(() => {
@@ -381,24 +397,30 @@ export class WorkspaceHostApplicationService {
    * restore. Unlike the explicit `saveWorkspace`, this includes the
    * default workspace. No-op when restore is off. Layout and snapshots are two
    * atomic batches; each collects its data before writing.
+   * A failure never propagates: the workspace is marked (`autoSaveFailed`,
+   * shown on its tile) and the error is reported, so switching workspaces or
+   * quitting is never held up by it.
+   * Saves run one after another, each gathering its state when its turn
+   * comes: the database does not keep the order of concurrent writes, so an
+   * older save could otherwise land last and win.
    */
-  /**
-   * Saves a workspace for session restore. A failure never propagates: the
-   * workspace is marked (`autoSaveFailed`, shown on its tile) and the error is
-   * reported, so switching workspaces or quitting is never held up by it.
-   */
-  async autoPersistWorkspace(workspaceId: string): Promise<void> {
-    if (!this.isRestoreEnabled) {
-      return;
-    }
-    if (workspaceId === DEFAULT_WORKSPACE_ID && !this.carriesSession) {
-      return;
-    }
-    const workspace = this.getWorkspaceById(workspaceId);
-    if (!workspace) {
-      return;
-    }
+  autoPersistWorkspace(workspaceId: string): Promise<void> {
+    this.lastSave = this.lastSave.then(() => this.persistWorkspaceNow(workspaceId));
+    return this.lastSave;
+  }
+
+  private async persistWorkspaceNow(workspaceId: string): Promise<void> {
     try {
+      if (!this.isRestoreEnabled) {
+        return;
+      }
+      if (workspaceId === DEFAULT_WORKSPACE_ID && !this.carriesSession) {
+        return;
+      }
+      const workspace = this.getWorkspaceById(workspaceId);
+      if (!workspace) {
+        return;
+      }
       await this.workspaceRepository.upsertWorkspace({
         id: workspace.id,
         name: workspace.name,

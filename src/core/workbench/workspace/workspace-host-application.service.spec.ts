@@ -4,9 +4,7 @@ import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { Grid } from "@cogno/core/workbench/grid-list/+model/model";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
-import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import type { AppWindow } from "@cogno/platform/window";
-import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clear,
@@ -16,6 +14,7 @@ import {
   getDestroyRef,
   getGridListService,
   getTabListService,
+  getTerminalSessionRegistry,
 } from "../../../__test__/test-factory";
 import type { DiscardSessionMarker } from "./discard-session.marker";
 import type { SessionPersistenceService } from "./session-persistence.service";
@@ -101,7 +100,7 @@ describe("WorkspaceHostApplicationService", () => {
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       discardSessionMarker as unknown as DiscardSessionMarker,
-      { facts$: new Subject() } as unknown as TerminalSessionRegistry,
+      getTerminalSessionRegistry(),
       getDestroyRef(),
     );
   });
@@ -145,6 +144,68 @@ describe("WorkspaceHostApplicationService", () => {
 
     await service.autoPersistWorkspace("WS-1");
     expect(service.getWorkspaceById("WS-1")?.autoSaveFailed).toBe(false);
+  });
+
+  it("runs saves one after another, so a later save cannot be overtaken", async () => {
+    bus.publish({ type: "DBInitialized" });
+    await vi.waitFor(() => {
+      expect(service.getWorkspaceById("WS-1")).toBeTruthy();
+    });
+    let finishFirst!: () => void;
+    persistWorkspaceSnapshots.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finishFirst = resolve)),
+    );
+
+    const first = service.autoPersistWorkspace("WS-1");
+    const second = service.autoPersistWorkspace("WS-1");
+    await vi.waitFor(() => expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1);
+    finishFirst();
+    await Promise.all([first, second]);
+
+    expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(2);
+  });
+
+  describe("auto-save on output", () => {
+    let terminalId: string;
+
+    beforeEach(async () => {
+      bus.publish({ type: "DBInitialized" });
+      await vi.waitFor(() => {
+        expect(service.getWorkspaceById("WS-1")?.isActive).toBe(true);
+      });
+      terminalId = getSingleTerminalId(gridListService);
+      persistWorkspaceSnapshots.mockClear();
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("saves once after a burst of output settles", async () => {
+      emitSessionFact(terminalId, { type: "outputReceived" });
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves while output never pauses", async () => {
+      for (let second = 0; second < 31; second++) {
+        emitSessionFact(terminalId, { type: "outputReceived" });
+        await vi.advanceTimersByTimeAsync(1000);
+      }
+
+      expect(persistWorkspaceSnapshots).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores output from terminals outside the active workspace", async () => {
+      emitSessionFact("TE-elsewhere", { type: "outputReceived" });
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      expect(persistWorkspaceSnapshots).not.toHaveBeenCalled();
+    });
   });
 
   it("marks a workspace dirty when the working directory changes", async () => {
