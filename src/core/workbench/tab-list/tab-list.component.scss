@@ -45,20 +45,20 @@
 
   &.is-active {
     color: var(--foreground-color);
-    border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
-    background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
+    border-color: var(--selected-border-color);
+    background: var(--selected-background);
 
     &:hover {
       color: var(--foreground-color);
-      border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
-      background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+      border-color: var(--hover-border-color);
+      background: var(--hover-background);
     }
   }
 
   &:hover {
     color: var(--foreground-color);
-    border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
-    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+    border-color: var(--hover-border-color);
+    background: var(--hover-background);
 
     .close {
       color: color-mix(in srgb, var(--theme-darken-color) calc(var(--color-mix-unit) * var(--mix-step-4)), var(--foreground-color));
@@ -234,8 +234,8 @@
   background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct2), transparent);
 
   &.is-active {
-    border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
-    background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+    border-color: var(--selected-border-color);
+    background: var(--selected-background);
   }
 
   &.has-color {

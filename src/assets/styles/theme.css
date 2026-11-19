@@ -22,6 +22,13 @@ html {
        out of 255). Background/shadow have their own brightness-dependent unit, set
        reactively from style.service.ts as --background-mix-unit/--shadow-mix-unit. */
     --color-mix-unit: 0.392%;
+    /* The one look for "this is the current one" (the open tab, the selected
+       workspace, the tile of the focused terminal) and for what the pointer is
+       over. Everything that marks a current item uses these, nothing else. */
+    --selected-border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+    --selected-background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color)) var(--menu-opacity-ct), transparent);
+    --hover-border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
+    --hover-background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
 }
 
 h1, h2, h3, h4, h5, h6, p {
@@ -67,14 +74,14 @@ button, a {
     /* A toggle that is on: lifted like a hovered button, and it stays there. */
     &.active {
         font-weight: 600;
-        border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
-        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+        border-color: var(--hover-border-color);
+        background: var(--hover-background);
     }
 
-    /* The same lift as a hovered tab: one step lighter, the border one more. */
+    /* The same lift as a hovered tab. */
     &:hover:not(:disabled) {
-        border-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-4)), var(--background-color));
-        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+        border-color: var(--hover-border-color);
+        background: var(--hover-background);
     }
 
     &:disabled {

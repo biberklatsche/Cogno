@@ -152,8 +152,8 @@ import { defaultWorkspaceIdContract } from "./workspace-entry";
       }
 
       .workspace-tile.selected {
-        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-3)), var(--background-color));
+        background: var(--selected-background);
+        border: 1px solid var(--selected-border-color);
         outline: none;
         opacity: 1;
       }

@@ -8,7 +8,7 @@ import {
   TabChipComponent,
   TileComponent,
   TooltipDirective,
-  WorkspaceGroupHeaderComponent,
+  WorkspaceGroupComponent,
 } from "@cogno/shared/ui";
 import {
   GitRepositoriesOverviewService,
@@ -31,7 +31,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
     TooltipDirective,
     TileComponent,
     TabChipComponent,
-    WorkspaceGroupHeaderComponent,
+    WorkspaceGroupComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -44,14 +44,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         <div class="empty">No open repositories</div>
       }
       @for (group of groups(); track group.workspaceId) {
-        <section class="group" [class.unnamed]="!group.workspaceName">
-        @if (group.workspaceName) {
-          <app-workspace-group-header
-            class="group-header"
-            [name]="group.workspaceName"
-            [color]="group.workspaceColor ?? ''"
-          ></app-workspace-group-header>
-        }
+        <app-workspace-group [name]="group.workspaceName" [color]="group.workspaceColor ?? ''">
         @for (tile of group.items; track tile.root) {
           <button
             type="button"
@@ -77,7 +70,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
             </span>
           </button>
         }
-        </section>
+        </app-workspace-group>
       }
     </div>
   `,
@@ -94,23 +87,10 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       .list {
         display: flex;
         flex-direction: column;
-        gap: 0.2rem;
         flex: 1;
         min-height: 0;
         overflow-y: auto;
         padding: 0 var(--git-gutter) var(--git-gutter);
-      }
-      /* Each workspace is its own section, so its sticky header stays on top
-         while its tiles scroll by and is pushed away by the next one. */
-      .group { display: flex; flex-direction: column; gap: 0.4rem; }
-      .group.unnamed { padding-top: var(--git-gutter); }
-      .group-header {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-        padding: var(--git-gutter) 0 0.2rem;
-        /* The side menu's own surface, so the header looks like part of the list. */
-        background: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
       }
       .tile { width: 100%; gap: 0.25rem; padding: 0.5rem 0.65rem; }
       .tab { align-self: flex-start; max-width: 100%; font-size: var(--git-font-small); }
