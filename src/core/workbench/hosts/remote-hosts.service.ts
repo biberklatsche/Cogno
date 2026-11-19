@@ -100,6 +100,10 @@ export class RemoteHostsService {
     if (underway) return underway;
 
     const host = this.configService.config.remote?.hosts?.[name];
+    if (!host && !this.pairing.isKnown) {
+      // At start a pane may ask before the paired machines are known.
+      return this.pairing.known.then(() => this.connect(name));
+    }
     if (!host && this.pairing.pairedNames.includes(name)) {
       return this.connectThrough(name, () => this.hosts.connectPaired(name));
     }

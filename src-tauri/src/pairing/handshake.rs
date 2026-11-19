@@ -20,6 +20,9 @@ pub const PAIR_ALPN: &[u8] = b"cogno/pair/1";
 const STEP_PATIENCE: Duration = Duration::from_secs(10);
 /// How long the user on the other machine may take to allow a pairing.
 pub const CONFIRM_PATIENCE: Duration = Duration::from_secs(120);
+/// How long the asking machine waits for the answer: longer than the other
+/// one waits for its user, so an answer given at the last moment arrives.
+pub const CONFIRM_WAIT: Duration = CONFIRM_PATIENCE.saturating_add(STEP_PATIENCE);
 /// Digits of the check number.
 const CHECK_DIGITS: u32 = 6;
 

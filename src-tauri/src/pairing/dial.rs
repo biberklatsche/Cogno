@@ -57,18 +57,27 @@ impl Dialing {
                 if let Some(relay) = relay {
                     to = to.with_relay_url(relay);
                 }
+                // An address that names nothing leaves the relay and the
+                // local network; when they fail too, it is what is told.
+                let mut unresolved = None;
                 if let Some(address) = &address {
-                    for found in resolve(address)
-                        .await
-                        .map_err(|error| unreachable(&name, &error))?
-                    {
-                        to = to.with_ip_addr(found);
+                    match resolve(address).await {
+                        Ok(found) => {
+                            for found in found {
+                                to = to.with_ip_addr(found);
+                            }
+                        }
+                        Err(error) => unresolved = Some(format!("{address}: {error}")),
                     }
                 }
-                let opened = endpoint
-                    .connect(to, HOST_ALPN)
-                    .await
-                    .map_err(|error| unreachable(&name, &error))?;
+                let opened =
+                    endpoint
+                        .connect(to, HOST_ALPN)
+                        .await
+                        .map_err(|error| match &unresolved {
+                            Some(unresolved) => unreachable(&name, unresolved),
+                            None => unreachable(&name, &error),
+                        })?;
                 *lock(&made) = Some(opened.clone());
                 // The host speaks first: the other side opens the stream.
                 opened

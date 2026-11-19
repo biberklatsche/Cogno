@@ -4,8 +4,10 @@
 
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use cogno_host::private_file;
+use cogno_host::sync::lock;
 use iroh::{EndpointId, SecretKey};
 use serde::{Deserialize, Serialize};
 
@@ -76,12 +78,16 @@ struct PairedFile {
 /// The pairing files of one Cogno home.
 pub struct Store {
     home: PathBuf,
+    /// Held from reading `paired.json` to writing it back: a change never
+    /// writes over another one made meanwhile.
+    changing: Mutex<()>,
 }
 
 impl Store {
     pub fn new(home: &Path) -> Self {
         Self {
             home: home.to_path_buf(),
+            changing: Mutex::new(()),
         }
     }
 
@@ -93,11 +99,7 @@ impl Store {
             Ok(text) => parse_key(text.trim()),
             Err(error) if error.kind() == io::ErrorKind::NotFound => {
                 let key = SecretKey::generate();
-                if let Some(home) = path.parent() {
-                    std::fs::create_dir_all(home)?;
-                }
-                let mut file = private_file::create(&path)?;
-                io::Write::write_all(&mut file, hex::encode(key.to_bytes()).as_bytes())?;
+                private_file::write_atomically(&path, hex::encode(key.to_bytes()).as_bytes())?;
                 Ok(key)
             }
             Err(error) => Err(error),
@@ -121,7 +123,16 @@ impl Store {
         }
     }
 
-    pub fn save(&self, paired: &Paired) -> io::Result<()> {
+    /// Changes the paired machines as `change` says, and saves them.
+    pub fn change<T>(&self, change: impl FnOnce(&mut Paired) -> T) -> io::Result<T> {
+        let _changing = lock(&self.changing);
+        let mut paired = self.paired()?;
+        let result = change(&mut paired);
+        self.save(&paired)?;
+        Ok(result)
+    }
+
+    fn save(&self, paired: &Paired) -> io::Result<()> {
         if self.written_by_a_later_cogno()? {
             return Err(io::Error::new(
                 io::ErrorKind::Unsupported,
@@ -222,6 +233,32 @@ mod tests {
         store.save(&paired).unwrap();
 
         assert_eq!(store.paired().unwrap(), paired);
+    }
+
+    #[test]
+    fn changes_made_at_once_all_land() {
+        let store = std::sync::Arc::new(store());
+
+        let changes: Vec<_> = (0..8)
+            .map(|n| {
+                let store = store.clone();
+                std::thread::spawn(move || {
+                    store
+                        .change(|paired| {
+                            paired.machines.push(PairedMachine::new(
+                                format!("machine {n}"),
+                                SecretKey::generate().public(),
+                            ))
+                        })
+                        .unwrap()
+                })
+            })
+            .collect();
+        for change in changes {
+            change.join().unwrap();
+        }
+
+        assert_eq!(store.paired().unwrap().machines.len(), 8);
     }
 
     #[test]

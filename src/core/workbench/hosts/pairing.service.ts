@@ -2,7 +2,7 @@ import { DestroyRef, Injectable } from "@angular/core";
 import { PairingPort, PairingState } from "@cogno/core/api/pairing-port";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { PairedMachineContract, Pairing, PairingStateContract, toHostError } from "@cogno/platform";
-import { BehaviorSubject, combineLatest, filter, map, Observable } from "rxjs";
+import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, Observable } from "rxjs";
 
 /** What pairing said when it was asked last, or why it could not say. */
 type Read =
@@ -36,6 +36,8 @@ export class PairingService extends PairingPort {
   readonly state$: Observable<PairingState>;
   /** The paired machines; none until they are known. */
   readonly machines$: Observable<readonly PairedMachineContract[]>;
+  /** Settles once pairing said what it knows, or why it cannot. */
+  readonly known: Promise<void>;
 
   constructor(
     private readonly pairing: Pairing,
@@ -48,10 +50,18 @@ export class PairingService extends PairingPort {
       this.enableFailure,
     ]).pipe(map(([read, enableFailure]) => toState(read, enableFailure)));
     this.machines$ = this.read.pipe(map(machinesOf));
+    this.known = firstValueFrom(this.read.pipe(filter((read) => read !== undefined))).then(
+      () => undefined,
+    );
     void pairing
       .onChanged(() => void this.readState())
       .then((unlisten) => destroyRef.onDestroy(unlisten));
     void this.readState();
+  }
+
+  /** Whether pairing said what it knows, or why it cannot. */
+  get isKnown(): boolean {
+    return this.read.value !== undefined;
   }
 
   /** The paired machines, as far as they are known. */

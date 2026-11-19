@@ -143,7 +143,13 @@ struct Inner {
     /// This machine's daemon, which paired machines' connections go to.
     daemon_endpoint: PathBuf,
     events: Arc<dyn PairingEvents>,
+    /// Held while the endpoint starts or stops: several windows switch it,
+    /// and a stop never comes before a start that is still on its way.
+    switching: tokio::sync::Mutex<()>,
     endpoint: Mutex<Option<Endpoint>>,
+    /// The connections of paired machines passed to the daemon: cut off
+    /// when their machine is unpaired or nothing is accepted any more.
+    passed: Mutex<Vec<iroh::endpoint::Connection>>,
     open_code: Mutex<Option<OpenCode>>,
     requests: Mutex<HashMap<u64, oneshot::Sender<Option<String>>>>,
     next_request: AtomicU64,
@@ -161,7 +167,9 @@ impl Pairing {
             server,
             daemon_endpoint,
             events,
+            switching: tokio::sync::Mutex::new(()),
             endpoint: Mutex::new(None),
+            passed: Mutex::new(Vec::new()),
             open_code: Mutex::new(None),
             requests: Mutex::new(HashMap::new()),
             next_request: AtomicU64::new(1),
@@ -170,6 +178,7 @@ impl Pairing {
 
     /// Starts this machine's endpoint: the Remote feature was switched on.
     pub async fn enable(&self) -> Result<(), PairingError> {
+        let _switching = self.0.switching.lock().await;
         if lock(&self.0.endpoint).is_some() {
             return Ok(());
         }
@@ -231,6 +240,7 @@ impl Pairing {
     /// Stops the endpoint: the Remote feature was switched off. Nothing is
     /// reachable any more; a code shown is gone, a request is declined.
     pub async fn disable(&self) {
+        let _switching = self.0.switching.lock().await;
         let endpoint = lock(&self.0.endpoint).take();
         *lock(&self.0.open_code) = None;
         let requests: Vec<_> = lock(&self.0.requests).drain().collect();
@@ -322,18 +332,19 @@ impl Pairing {
             &endpoint,
             self.0.server.address_of(peer),
             &request,
-            handshake::CONFIRM_PATIENCE,
+            handshake::CONFIRM_WAIT,
         )
         .await
         .map_err(|error| PairingError::Unreachable(error.to_string()))?;
         match reply {
             Reply::Accepted { name } => {
-                let mut paired = self.0.store.paired()?;
-                let name = unique_name(name.as_deref(), taken, &paired);
-                let machine = PairedMachine::new(name, peer);
-                paired.machines.retain(|known| known.endpoint_id != peer);
-                paired.machines.push(machine.clone());
-                self.0.store.save(&paired)?;
+                let machine = self.0.store.change(|paired| {
+                    let name = unique_name(name.as_deref(), taken, paired);
+                    let machine = PairedMachine::new(name, peer);
+                    paired.machines.retain(|known| known.endpoint_id != peer);
+                    paired.machines.push(machine.clone());
+                    machine
+                })?;
                 self.0.events.changed();
                 Ok(machine)
             }
@@ -350,10 +361,13 @@ impl Pairing {
         }
     }
 
+    /// Whether paired machines may connect; turned off, the ones connected
+    /// are cut off.
     pub fn set_accepting(&self, accepting: bool) -> Result<(), PairingError> {
-        let mut paired = self.0.store.paired()?;
-        paired.accepting = accepting;
-        self.0.store.save(&paired)?;
+        self.0.store.change(|paired| paired.accepting = accepting)?;
+        if !accepting {
+            self.cut_off(|_| true);
+        }
         self.0.events.changed();
         Ok(())
     }
@@ -367,17 +381,18 @@ impl Pairing {
         direct_only: bool,
         address: Option<String>,
     ) -> Result<(), PairingError> {
-        let mut paired = self.0.store.paired()?;
-        for machine in paired.machines.iter_mut().filter(|m| m.name == previous) {
-            machine.name = name.to_string();
-            machine.direct_only = direct_only;
-            machine.address = address
-                .as_deref()
-                .map(str::trim)
-                .filter(|address| !address.is_empty())
-                .map(str::to_string);
-        }
-        self.0.store.save(&paired)?;
+        let address = address
+            .as_deref()
+            .map(str::trim)
+            .filter(|address| !address.is_empty())
+            .map(str::to_string);
+        self.0.store.change(|paired| {
+            for machine in paired.machines.iter_mut().filter(|m| m.name == previous) {
+                machine.name = name.to_string();
+                machine.direct_only = direct_only;
+                machine.address = address.clone();
+            }
+        })?;
         self.0.events.changed();
         Ok(())
     }
@@ -385,12 +400,14 @@ impl Pairing {
     /// Removes the pairing with `name` here, and tells that machine. Whether
     /// it heard: when not, it refuses this one the next time.
     pub async fn remove(&self, name: &str) -> Result<bool, PairingError> {
-        let mut paired = self.0.store.paired()?;
-        let Some(index) = paired.machines.iter().position(|m| m.name == name) else {
+        let removed = self.0.store.change(|paired| {
+            let index = paired.machines.iter().position(|m| m.name == name)?;
+            Some(paired.machines.remove(index))
+        })?;
+        let Some(machine) = removed else {
             return Ok(true);
         };
-        let machine = paired.machines.remove(index);
-        self.0.store.save(&paired)?;
+        self.cut_off(|peer| peer == machine.endpoint_id);
         self.0.events.changed();
         let Ok(endpoint) = self.endpoint() else {
             return Ok(false);
@@ -488,10 +505,9 @@ impl Pairing {
         let Ok(Ok(Some(chosen))) = decision else {
             return Reply::Declined;
         };
-        let saved = self.0.store.paired().and_then(|mut paired| {
+        let saved = self.0.store.change(|paired| {
             paired.machines.retain(|known| known.endpoint_id != peer);
             paired.machines.push(PairedMachine::new(chosen, peer));
-            self.0.store.save(&paired)
         });
         if saved.is_err() {
             return Reply::Declined;
@@ -506,6 +522,14 @@ impl Pairing {
     /// the daemon, as `cogno server --stdio` passes ssh's. Anyone else is
     /// refused before anything reaches the daemon.
     async fn pass_to_daemon(&self, connection: iroh::endpoint::Connection) {
+        // Known before the check: unpairing meanwhile cuts it off as well.
+        lock(&self.0.passed).push(connection.clone());
+        self.serve_daemon(&connection).await;
+        let id = connection.stable_id();
+        lock(&self.0.passed).retain(|passed| passed.stable_id() != id);
+    }
+
+    async fn serve_daemon(&self, connection: &iroh::endpoint::Connection) {
         let peer = connection.remote_id();
         let refusal = match self.0.store.paired() {
             Ok(paired) if !paired.machines.iter().any(|m| m.endpoint_id == peer) => {
@@ -548,15 +572,25 @@ impl Pairing {
 
     /// The machine `peer` removed the pairing: so does this one.
     fn forget(&self, peer: EndpointId) {
-        let Ok(mut paired) = self.0.store.paired() else {
-            return;
-        };
-        let before = paired.machines.len();
-        paired
-            .machines
-            .retain(|machine| machine.endpoint_id != peer);
-        if paired.machines.len() != before && self.0.store.save(&paired).is_ok() {
+        let forgotten = self.0.store.change(|paired| {
+            let before = paired.machines.len();
+            paired
+                .machines
+                .retain(|machine| machine.endpoint_id != peer);
+            paired.machines.len() != before
+        });
+        self.cut_off(|passed| passed == peer);
+        if matches!(forgotten, Ok(true)) {
             self.0.events.changed();
+        }
+    }
+
+    /// Closes the passed connections of the machines `whose` picks.
+    fn cut_off(&self, whose: impl Fn(EndpointId) -> bool) {
+        for connection in lock(&self.0.passed).iter() {
+            if whose(connection.remote_id()) {
+                connection.close(refusal::NOT_PAIRED.into(), b"cut off");
+            }
         }
     }
 }
@@ -759,14 +793,20 @@ mod tests {
         from: &Pairing,
         name: &str,
     ) -> CommandResult<crate::host_connection::HostConnection> {
+        dial_until_lost(from, name, Box::new(|_, _| {})).await
+    }
+
+    async fn dial_until_lost(
+        from: &Pairing,
+        name: &str,
+        on_lost: crate::host_connection::OnLost,
+    ) -> CommandResult<crate::host_connection::HostConnection> {
         use crate::host_connection::test_support::NoEvents;
         let dialing = from.dial(name)?;
         let name = name.to_string();
-        tokio::task::spawn_blocking(move || {
-            dialing.introduce(&name, Arc::new(NoEvents), Box::new(|_, _| {}))
-        })
-        .await
-        .unwrap()
+        tokio::task::spawn_blocking(move || dialing.introduce(&name, Arc::new(NoEvents), on_lost))
+            .await
+            .unwrap()
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -794,14 +834,42 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn a_connected_machine_is_cut_off_when_nothing_is_accepted_any_more() {
+        let test = test_server("K7Q4MX").await;
+        let daemon = crate::host_connection::test_support::test_daemon();
+        let (office, laptop, office_name) = paired_pair(&test, daemon).await;
+        let (lost, gone) = oneshot::channel();
+        let _connection = dial_until_lost(
+            &laptop,
+            &office_name,
+            Box::new(move |_, _| {
+                let _ = lost.send(());
+            }),
+        )
+        .await
+        .unwrap();
+
+        office.set_accepting(false).unwrap();
+
+        tokio::time::timeout(Duration::from_secs(10), gone)
+            .await
+            .expect("cut off")
+            .unwrap();
+        laptop.disable().await;
+        office.disable().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn a_machine_that_unpaired_is_refused() {
         let test = test_server("K7Q4MX").await;
         let daemon = crate::host_connection::test_support::test_daemon();
         let (office, laptop, office_name) = paired_pair(&test, daemon).await;
         // Office forgets laptop without telling it.
-        let mut paired = office.0.store.paired().unwrap();
-        paired.machines.clear();
-        office.0.store.save(&paired).unwrap();
+        office
+            .0
+            .store
+            .change(|paired| paired.machines.clear())
+            .unwrap();
 
         let refused = dial(&laptop, &office_name).await;
 

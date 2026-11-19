@@ -23,6 +23,7 @@ describe("RemoteHostsService", () => {
   let ask: ReturnType<typeof vi.fn>;
   let updateConfig: ReturnType<typeof vi.fn>;
   let connectPaired: ReturnType<typeof vi.fn>;
+  let pairing: { pairedNames: string[]; isKnown: boolean; known: Promise<void> };
   let service: RemoteHostsService;
 
   beforeEach(() => {
@@ -33,6 +34,7 @@ describe("RemoteHostsService", () => {
     ask = vi.fn().mockResolvedValue("secret");
     updateConfig = vi.fn().mockResolvedValue(undefined);
     connectPaired = vi.fn();
+    pairing = { pairedNames: ["laptop"], isKnown: true, known: Promise.resolve() };
     const hosts = {
       connect,
       connectPaired,
@@ -58,9 +60,24 @@ describe("RemoteHostsService", () => {
       config,
       { register } as unknown as ProcessPromptDispatcher,
       { ask } as unknown as ProcessPromptService,
-      { pairedNames: ["laptop"] } as unknown as PairingService,
+      pairing as unknown as PairingService,
       { onDestroy: vi.fn() } as never,
     );
+  });
+
+  it("waits for the paired machines to be known before it connects one", async () => {
+    pairing.isKnown = false;
+    let known!: () => void;
+    pairing.known = new Promise((resolve) => (known = resolve));
+    connectPaired.mockResolvedValue({ os: "macos", foundCommand: null } satisfies HostInfo);
+
+    const connecting = service.connect("laptop");
+    expect(connectPaired).not.toHaveBeenCalled();
+    pairing.isKnown = true;
+    known();
+
+    await expect(connecting).resolves.toMatchObject({ os: "macos" });
+    expect(connectPaired).toHaveBeenCalledWith("laptop");
   });
 
   it("connects a paired machine without ssh and asks nothing", async () => {
