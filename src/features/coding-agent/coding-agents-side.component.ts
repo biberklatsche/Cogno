@@ -107,6 +107,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 [class]="cardState(agent)"
                 [class.unplaced]="!agent.terminalId"
                 [focused]="!!agent.terminalId && agent.terminalId === focusedTerminalId()"
+                [tint]="needsYou(agent) ? 'var(--agent-state-color)' : undefined"
                 (click)="navigateTo(agent)"
               >
                 <div class="agent-state">
@@ -364,18 +365,6 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
     .agent-card {
       flex: 1 1 400px;
       min-width: 265px;
-    }
-
-    /* A card that needs the user is tinted as a whole, not just marked. */
-    .agent-card.question,
-    .agent-card.error {
-      background: color-mix(in srgb, var(--agent-state-color) 9%, var(--background-color));
-      border-color: color-mix(in srgb, var(--agent-state-color) 55%, transparent);
-    }
-
-    .agent-card.question:hover,
-    .agent-card.error:hover {
-      background: color-mix(in srgb, var(--agent-state-color) 14%, var(--background-color));
     }
 
     /* Changed files on the left, the tab on the right, even when there are no files. */
@@ -642,6 +631,12 @@ export class CodingAgentsSideComponent {
 
   readonly countOf = countOf;
   readonly cardState = cardState;
+
+  /** A card that needs the user is tinted as a whole, not just marked. */
+  needsYou(agent: ActiveAgent): boolean {
+    const state = cardState(agent);
+    return state === "question" || state === "error";
+  }
 
   /** The card shows the same animation as the agent's tab. */
   statusKeyframes(agent: ActiveAgent): ReadonlyArray<number[][]> {
