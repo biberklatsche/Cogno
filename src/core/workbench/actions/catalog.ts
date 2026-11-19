@@ -264,7 +264,7 @@ export const coreActionCatalog = [
     label: "Cycle Tab",
     description:
       "Cycle through available autocomplete modes (or history scope, while that dropdown is open)",
-    defaultKeys: { default: [{ combo: "Tab" }] },
+    defaultKeys: { default: [{ combo: "Shift+Tab" }] },
   }),
   defineAction({
     name: "clear_line",
