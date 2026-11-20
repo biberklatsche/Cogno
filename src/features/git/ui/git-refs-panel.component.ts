@@ -119,7 +119,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
           @if (!collapsedRemotes().has(remote.name)) {
             @for (remoteBranch of remoteBranchesOf(remote.name); track remoteBranch.name) {
               <div class="row ref nested" [class.marked]="view.remoteMarks.names().has(remoteBranch.name)"
-                   (click)="clickRemoteBranch($event, remoteBranch)" (dblclick)="operations.checkoutRemoteBranch(remoteBranch)"
+                   (click)="clickRemoteBranch($event, remoteBranch)" (dblclick)="actions.checkoutRemote(remoteBranch)"
                    (contextmenu)="openRemoteBranchMenu($event, remoteBranch)">
                 <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
                 <span class="ellipsis grow" [appTooltip]="remoteBranch.name">{{ remoteBranch.shortName }}</span>
@@ -131,7 +131,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
       }
       </section>
 
-      @if (worktrees().length > 1) {
+      @if (hasWorktrees()) {
       <section class="section">
       <div class="section-header">
         <button type="button" class="toggle" (click)="toggle('worktrees')">
@@ -322,7 +322,11 @@ export class GitRefsPanelComponent {
       .filter((remote) => !collapsed.has(remote.name))
       .flatMap((remote) => this.remoteBranchesOf(remote.name));
   });
-  /** All worktrees; the section shows only once there is more than the main one. */
+  /**
+   * The section shows once there is more than the main worktree, whatever the
+   * filter; the filter only narrows its rows.
+   */
+  readonly hasWorktrees = computed(() => this.repository.worktrees().length > 1);
   readonly worktrees = computed(() =>
     this.matching(this.repository.worktrees(), (w) => `${w.path} ${w.branch ?? ""}`),
   );

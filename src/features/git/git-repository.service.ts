@@ -85,6 +85,8 @@ export class GitRepositoryService {
   private readonly stashesSignal = signal<ReadonlyArray<GitStash>>([]);
   private readonly worktreesSignal = signal<ReadonlyArray<GitWorktree>>([]);
   private readonly worktreeChangesSignal = signal<ReadonlyMap<string, number>>(new Map());
+  /** Counts the reads of the other worktrees' changes; only the latest one lands. */
+  private worktreeChangesRun = 0;
   private readonly commitsSignal = signal<ReadonlyArray<GitCommit>>([]);
   private readonly operationSignal = signal<GitOperation | null>(null);
   private readonly incomingSignal = signal<GitIncoming | null>(null);
@@ -396,9 +398,20 @@ export class GitRepositoryService {
     };
     const worktrees = worktreeList?.exitCode === 0 ? parseWorktrees(worktreeList.stdout, root) : [];
     const parsedRefs =
-      refs.exitCode === 0 ? withWorktrees(parseRefs(refs.stdout), worktrees) : EMPTY_REFS;
-    // Another worktree with a large tree must not hold up this one's view.
-    const worktreeChanges = this.loadWorktreeChanges(git, worktrees);
+      refs.exitCode === 0
+        ? withWorktrees(parseRefs(refs.stdout), worktrees, head.branch)
+        : EMPTY_REFS;
+    // Read beside this view and not waited for: another worktree with a large
+    // tree must hold up neither the view nor an operation waiting for this
+    // refresh. Only the latest read lands.
+    const changesRun = ++this.worktreeChangesRun;
+    this.loadWorktreeChanges(git, worktrees).then(
+      (changes) => {
+        if (changesRun !== this.worktreeChangesRun || session !== this.boundSession) return;
+        this.worktreeChangesSignal.set(changes);
+      },
+      () => undefined,
+    );
     const commits = await this.loadLog(git, head, parsedRefs);
     if (session !== this.boundSession) return;
 
@@ -416,8 +429,6 @@ export class GitRepositoryService {
       this.commitsSignal.set(commits);
       this.hasMoreCommitsSignal.set(commits.length >= this.logLimitSignal());
     }
-    const changes = await worktreeChanges;
-    if (session === this.boundSession) this.worktreeChangesSignal.set(changes);
   }
 
   /**
@@ -523,6 +534,7 @@ export class GitRepositoryService {
     this.remotesSignal.set([]);
     this.stashesSignal.set([]);
     this.worktreesSignal.set([]);
+    this.worktreeChangesRun++;
     this.worktreeChangesSignal.set(new Map());
     this.commitsSignal.set([]);
     this.operationSignal.set(null);

@@ -399,25 +399,32 @@ describe("withWorktrees", () => {
     lastCommitAt: 0,
     tipIsMerge: false,
   });
-  const worktree = (path: string, branchName: string | null, isCurrent: boolean) => ({
+  const worktree = (
+    path: string,
+    branchName: string | null,
+    isCurrent: boolean,
+    prunable = false,
+  ) => ({
     path,
     head: "c1",
     branch: branchName,
     isMain: false,
     isCurrent,
     locked: false,
-    prunable: false,
+    prunable,
+  });
+  const refsOf = (...names: string[]) => ({
+    branches: names.map(branch),
+    remoteBranches: [],
+    tags: [],
+    defaultBranches: [],
   });
 
   it("marks branches checked out in another worktree, not the one here", () => {
     const refs = withWorktrees(
-      {
-        branches: [branch("main"), branch("feature"), branch("free")],
-        remoteBranches: [],
-        tags: [],
-        defaultBranches: [],
-      },
+      refsOf("main", "feature", "free"),
       [worktree("/app", "main", false), worktree("/app-feature", "feature", true)],
+      "feature",
     );
 
     expect(refs.branches.map((b) => [b.name, b.worktree])).toEqual([
@@ -428,5 +435,29 @@ describe("withWorktrees", () => {
     expect(buildRefLabels(refs, { sha: "c1", branch: "feature" }).get("c1")?.[0]?.worktree).toBe(
       "/app",
     );
+  });
+
+  it("never marks the branch checked out here, even when no worktree reads as this one", () => {
+    // The root and git's list spell the folder differently: no worktree is current.
+    const refs = withWorktrees(
+      refsOf("main", "feature"),
+      [worktree("C:/Dev/App", "main", false), worktree("/app-feature", "feature", false)],
+      "main",
+    );
+
+    expect(refs.branches.map((b) => [b.name, b.worktree])).toEqual([
+      ["main", undefined],
+      ["feature", "/app-feature"],
+    ]);
+  });
+
+  it("does not mark the branch of a worktree whose folder is gone", () => {
+    const refs = withWorktrees(
+      refsOf("main", "old"),
+      [worktree("/app", "main", true), worktree("/app-old", "old", false, true)],
+      "main",
+    );
+
+    expect(refs.branches.every((b) => b.worktree === undefined)).toBe(true);
   });
 });

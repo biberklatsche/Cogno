@@ -310,11 +310,22 @@ export function parseWorktrees(raw: string, root: string): GitWorktree[] {
   return worktrees;
 }
 
-/** `refs` with each branch checked out in another worktree knowing that worktree. */
-export function withWorktrees(refs: GitRefs, worktrees: ReadonlyArray<GitWorktree>): GitRefs {
+/**
+ * `refs` with each branch checked out in another worktree knowing that
+ * worktree. The branch checked out here is never one of them, even when the
+ * paths differ in a way `isCurrent` does not see (a symlink, a short name);
+ * a worktree whose folder is gone has nothing checked out any more.
+ */
+export function withWorktrees(
+  refs: GitRefs,
+  worktrees: ReadonlyArray<GitWorktree>,
+  headBranch: string | null,
+): GitRefs {
   const elsewhere = new Map<string, string>();
   for (const worktree of worktrees) {
-    if (worktree.branch && !worktree.isCurrent) elsewhere.set(worktree.branch, worktree.path);
+    const { branch } = worktree;
+    if (!branch || branch === headBranch || worktree.isCurrent || worktree.prunable) continue;
+    elsewhere.set(branch, worktree.path);
   }
   if (elsewhere.size === 0) return refs;
   return {

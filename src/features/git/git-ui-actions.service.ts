@@ -38,7 +38,7 @@ import {
   GitTag,
   GitWorktree,
 } from "./model/git-model";
-import { cloneDirectoryName, folderName } from "./model/git-parsers";
+import { cloneDirectoryName, folderName, parseWorktrees } from "./model/git-parsers";
 import { buildHunkPatch, GitHunk, GitPatch } from "./model/git-patch";
 import {
   GitDeleteBranchesDialogComponent,
@@ -248,8 +248,17 @@ export class GitUiActions {
       void this.operations.checkoutBranch(label.name);
     } else if (label.kind === "remote") {
       const remoteBranch = refs.remoteBranches.find((b) => b.name === label.name);
-      if (remoteBranch) void this.operations.checkoutRemoteBranch(remoteBranch);
+      if (remoteBranch) this.checkoutRemote(remoteBranch);
     }
+  }
+
+  /**
+   * Check out a remote branch through its local one, as a double click does;
+   * left alone when that local branch is checked out in another worktree.
+   */
+  checkoutRemote(remoteBranch: GitRemoteBranch): void {
+    if (this.worktreeOfLocal(remoteBranch)) return;
+    void this.operations.checkoutRemoteBranch(remoteBranch);
   }
 
   // Context menus
@@ -291,7 +300,8 @@ export class GitUiActions {
         : item(
             "Pull (fast-forward only)",
             () => upstream && this.operations.pullBranch(branch.name, upstream),
-            !upstream,
+            // Git refuses to fetch into a branch another worktree has checked out.
+            !upstream || !!branch.worktree,
           ),
       item(branch.upstream ? `Push ${branch.name} to ${branch.upstream}` : "Push", () =>
         this.pushBranch(branch),
@@ -340,10 +350,13 @@ export class GitUiActions {
 
   openRemoteBranchMenu(event: MouseEvent, remoteBranch: GitRemoteBranch): void {
     const current = this.repository.head().branch ?? "HEAD";
+    const worktree = this.worktreeOfLocal(remoteBranch);
     this.openMenu(event, [
-      item(`Checkout ${remoteBranch.name}`, () =>
-        this.operations.checkoutRemoteBranch(remoteBranch),
-      ),
+      worktree
+        ? this.openTabItem(worktree)
+        : item(`Checkout ${remoteBranch.name}`, () =>
+            this.operations.checkoutRemoteBranch(remoteBranch),
+          ),
       separator(),
       item(`Merge ${remoteBranch.name} into ${current}`, () =>
         this.operations.merge(remoteBranch.name),
@@ -413,7 +426,11 @@ export class GitUiActions {
   openWorktreeMenu(event: MouseEvent, worktree: GitWorktree): void {
     const name = folderName(worktree.path);
     this.openMenu(event, [
-      item("Open tab in worktree", () => this.openWorktreeTab(worktree.path), worktree.isCurrent),
+      item(
+        "Open tab in worktree",
+        () => this.openWorktreeTab(worktree.path),
+        worktree.isCurrent || worktree.prunable,
+      ),
       item("Copy worktree path", () => this.clipboard.writeText(worktree.path)),
       ...(worktree.isMain
         ? []
@@ -424,7 +441,7 @@ export class GitUiActions {
               : item(`Lock ${name}`, () => this.operations.lockWorktree(worktree.path)),
             // Git keeps a locked worktree; the one shown here is in use.
             item(
-              `Remove ${name}…`,
+              worktree.prunable ? `Forget ${name}…` : `Remove ${name}…`,
               () => this.removeWorktree(worktree),
               worktree.isCurrent || worktree.locked,
             ),
@@ -470,8 +487,11 @@ export class GitUiActions {
       newBranch,
     );
     if (outcome !== "ok") return;
-    // Git answers with the folder as given; the list after the re-read has it in full.
-    const created = this.repository.worktrees().find((worktree) => !before.has(worktree.path));
+    // Git answers with the folder as given; its list has it in full. Asked here, not
+    // taken from the panel's re-read, which may still be on its way.
+    const listed = await this.repository.run(["worktree", "list", "--porcelain", "-z"]);
+    const worktrees = listed?.exitCode === 0 ? parseWorktrees(listed.stdout, root) : [];
+    const created = worktrees.find((worktree) => !before.has(worktree.path));
     if (created && (await this.confirm(`Open a tab in ${created.path}?`, "Open tab"))) {
       this.openWorktreeTab(created.path);
     }
@@ -479,6 +499,13 @@ export class GitUiActions {
 
   private async removeWorktree(worktree: GitWorktree): Promise<void> {
     const name = folderName(worktree.path);
+    if (worktree.prunable) {
+      // Its folder is gone already: nothing to lose, git only forgets it.
+      await this.confirmThen(`The folder of ${name} is gone. Forget the worktree?`, "Forget", () =>
+        this.operations.removeWorktree(worktree.path, false),
+      );
+      return;
+    }
     const changed = await this.operations.worktreeHasChanges(worktree.path);
     const confirmed = changed
       ? await this.confirm(
@@ -491,6 +518,11 @@ export class GitUiActions {
 
   private openTabItem(path: string): ContextMenuItem {
     return item(`Open tab in worktree ${folderName(path)}`, () => this.openWorktreeTab(path));
+  }
+
+  /** The other worktree the local branch of `remoteBranch`'s name is checked out in. */
+  private worktreeOfLocal(remoteBranch: GitRemoteBranch): string | undefined {
+    return this.repository.refs().branches.find((b) => b.name === remoteBranch.shortName)?.worktree;
   }
 
   openWipFileMenu(event: MouseEvent, file: GitFile, group: GitWipFileGroup): void {
