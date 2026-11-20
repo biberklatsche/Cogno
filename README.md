@@ -82,8 +82,8 @@ file or directory contains a different third-party license notice.
 - Command specs in `src/core/session/autocomplete/spec-command/data` are derived
   from [withfig/autocomplete](https://github.com/withfig/autocomplete)
   (`MIT`, © Hercules Labs Inc.); see the `LICENSE` file in that directory.
-- Bundled fonts: Roboto (`Apache-2.0`) and Comfortaa (`OFL-1.1`); license
-  files are next to the fonts in `src/assets/fonts`.
+- Bundled font: Roboto (`Apache-2.0`); its license
+  file is next to the font in `src/assets/fonts`.
 
 ## Configuration
 
