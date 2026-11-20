@@ -12,6 +12,14 @@ export function formatCommitTime(seconds: number, now: Date = new Date()): strin
   return `${date.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" })} ${time}`;
 }
 
+/** Up to two letters of the author's name, standing in while there is no avatar to show. */
+export function authorInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? "?";
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
+  return `${first}${last}`.toUpperCase();
+}
+
 /** How much older a commit is than `reference`, short: "3 d", "5 mo", "2 y". */
 export function formatAge(seconds: number, reference: number): string {
   const days = Math.max(0, Math.floor((reference - seconds) / (24 * 60 * 60)));
