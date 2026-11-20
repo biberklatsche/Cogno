@@ -44,7 +44,8 @@ export function isSelectedSideMenuItem(
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
         <aside #overlayAside
-               [class.base-overlay]="!isPinned() || isExpanded()"
+               [class.base-overlay]="!besideTerminals()"
+               [class.pinned]="besideTerminals()"
                [class.flat]="isExpanded()"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!isPinned()"
@@ -197,7 +198,7 @@ export function isSelectedSideMenuItem(
                background colour, or the background image - and the divider
                between panes towards the terminals. That it stays is visible
                at once. Its offsets are the aside's, so pinning does not move it. */
-            &:not(.base-overlay) {
+            &.pinned {
                 padding: 6px;
                 color: var(--foreground-color);
                 background-color: transparent;
@@ -299,6 +300,8 @@ export class SideMenuComponent implements OnDestroy {
   focused = this.menuItemService.isFocused;
   panelWidthInPixels = this.menuItemService.panelWidthInPixels;
   isExpanded = this.menuItemService.isExpanded;
+  /** Pinned beside the terminals, as one more pane; an expanded panel replaces them instead. */
+  readonly besideTerminals = computed(() => this.isPinned() && !this.isExpanded());
 
   @ViewChild("overlayAside", { static: false }) overlayAsideRef?: ElementRef<HTMLElement>;
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
