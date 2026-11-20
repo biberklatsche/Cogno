@@ -10,7 +10,7 @@ import { AppWindow } from "@cogno/platform";
 import { catchError, EMPTY, filter, merge, Observable, Subject, Subscription } from "rxjs";
 import { GitAvailability } from "./git-availability";
 import { classifyRootFailure, GitError, READ_TIMEOUT_MS, runGit } from "./git-run";
-import { countChanges, GitChangeCounts } from "./model/git-change-counts";
+import { countChanges } from "./model/git-change-counts";
 import { layoutGraph } from "./model/git-graph";
 import {
   GitCommit,
@@ -84,7 +84,7 @@ export class GitRepositoryService {
   private readonly remotesSignal = signal<ReadonlyArray<GitRemote>>([]);
   private readonly stashesSignal = signal<ReadonlyArray<GitStash>>([]);
   private readonly worktreesSignal = signal<ReadonlyArray<GitWorktree>>([]);
-  private readonly worktreeChangesSignal = signal<ReadonlyMap<string, GitChangeCounts>>(new Map());
+  private readonly worktreeChangesSignal = signal<ReadonlyMap<string, number>>(new Map());
   private readonly commitsSignal = signal<ReadonlyArray<GitCommit>>([]);
   private readonly operationSignal = signal<GitOperation | null>(null);
   private readonly incomingSignal = signal<GitIncoming | null>(null);
@@ -103,7 +103,7 @@ export class GitRepositoryService {
   readonly stashes = this.stashesSignal.asReadonly();
   /** All worktrees of the repository, the main one first; this one is `isCurrent`. */
   readonly worktrees = this.worktreesSignal.asReadonly();
-  /** The changes in each other worktree that has any, by its path. */
+  /** How many files differ in each other worktree that has changes, by its path. */
   readonly worktreeChanges = this.worktreeChangesSignal.asReadonly();
   readonly commits = this.commitsSignal.asReadonly();
   readonly operation = this.operationSignal.asReadonly();
@@ -397,10 +397,9 @@ export class GitRepositoryService {
     const worktrees = worktreeList?.exitCode === 0 ? parseWorktrees(worktreeList.stdout, root) : [];
     const parsedRefs =
       refs.exitCode === 0 ? withWorktrees(parseRefs(refs.stdout), worktrees) : EMPTY_REFS;
-    const [commits, worktreeChanges] = await Promise.all([
-      this.loadLog(git, head, parsedRefs),
-      this.loadWorktreeChanges(git, worktrees),
-    ]);
+    // Another worktree with a large tree must not hold up this one's view.
+    const worktreeChanges = this.loadWorktreeChanges(git, worktrees);
+    const commits = await this.loadLog(git, head, parsedRefs);
     if (session !== this.boundSession) return;
 
     this.errorSignal.set(null);
@@ -411,13 +410,14 @@ export class GitRepositoryService {
     this.remotesSignal.set(remotes);
     this.stashesSignal.set(stashes?.exitCode === 0 ? parseStashes(stashes.stdout) : []);
     this.worktreesSignal.set(worktrees);
-    this.worktreeChangesSignal.set(worktreeChanges);
     this.operationSignal.set(stopped?.operation ?? null);
     this.incomingSignal.set(stopped?.incoming ?? null);
     if (commits) {
       this.commitsSignal.set(commits);
       this.hasMoreCommitsSignal.set(commits.length >= this.logLimitSignal());
     }
+    const changes = await worktreeChanges;
+    if (session === this.boundSession) this.worktreeChangesSignal.set(changes);
   }
 
   /**
@@ -447,19 +447,20 @@ export class GitRepositoryService {
   private async loadWorktreeChanges(
     git: (args: ReadonlyArray<string>) => Promise<CommandRunnerResultContract | null>,
     worktrees: ReadonlyArray<GitWorktree>,
-  ): Promise<Map<string, GitChangeCounts>> {
+  ): Promise<Map<string, number>> {
     const others = worktrees.filter((worktree) => !worktree.isCurrent && !worktree.prunable);
     const results = await Promise.all(
       others.map((worktree) =>
         git(["-C", worktree.path, "status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
       ),
     );
-    const changes = new Map<string, GitChangeCounts>();
+    const changes = new Map<string, number>();
     others.forEach((worktree, index) => {
       const result = results[index];
       if (result?.exitCode !== 0) return;
       const counts = countChanges(parseGitStatus(result.stdout));
-      if (counts.added + counts.modified + counts.deleted > 0) changes.set(worktree.path, counts);
+      const total = counts.added + counts.modified + counts.deleted;
+      if (total > 0) changes.set(worktree.path, total);
     });
     return changes;
   }

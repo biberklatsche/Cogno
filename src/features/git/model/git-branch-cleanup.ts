@@ -20,9 +20,11 @@ export function keptReason(
   refs: GitRefs,
   head: GitHead,
 ): string | null {
-  if (!("remote" in branch) && shortName(branch) === head.branch) return "checked out";
-  // Git refuses to delete a branch another worktree has checked out.
-  if (!("remote" in branch) && branch.worktree) return `in worktree ${folderName(branch.worktree)}`;
+  if (!("remote" in branch)) {
+    if (shortName(branch) === head.branch) return "checked out";
+    // Git refuses to delete a branch another worktree has checked out.
+    if (branch.worktree) return `in worktree ${folderName(branch.worktree)}`;
+  }
   return isDefaultBranch(branch, refs) ? "default branch" : null;
 }
 

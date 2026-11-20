@@ -142,7 +142,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
         <span class="grow"></span>
         @if (hasPrunable()) {
           <button type="button" class="button icon-button header-action"
-                  appTooltip="Forget worktrees whose folder is gone" (click)="actions.pruneWorktrees()">
+                  appTooltip="Forget worktrees whose folder is gone" (click)="operations.pruneWorktrees()">
             <app-icon name="mdiBroom"></app-icon>
           </button>
         }

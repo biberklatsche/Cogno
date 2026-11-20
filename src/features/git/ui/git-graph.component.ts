@@ -54,21 +54,19 @@ type GraphItem = {
   readonly wipLinks: ReadonlyArray<WipLink>;
 };
 
-/** The fields every work in progress row has: its lane, null when its commit is not loaded. */
-type WipRowBase = { readonly lane: number | null; readonly passing: ReadonlyArray<WipLink> };
+/** A work in progress row: the one here, or another worktree's with how many files differ there. */
+type WipRow =
+  | { readonly kind: "wip" }
+  | { readonly kind: "worktree-wip"; readonly worktree: GitWorktree; readonly changes: number };
 
 /**
- * A row of the tree: a commit, or on top the work in progress here and that
- * of each other worktree with changes, as GitKraken shows them.
+ * A row of the tree: a commit, or on top the work in progress rows, as
+ * GitKraken shows them, with their lane (null when their commit is not
+ * loaded) and the dashed lines of the ones above passing by.
  */
 type TreeRow =
   | GraphItem
-  | (WipRowBase & { readonly kind: "wip" })
-  | (WipRowBase & {
-      readonly kind: "worktree-wip";
-      readonly worktree: GitWorktree;
-      readonly changes: number;
-    });
+  | (WipRow & { readonly lane: number | null; readonly passing: ReadonlyArray<WipLink> });
 
 /**
  * The commit graph: one row per commit with its branch and tag labels, the
@@ -468,57 +466,50 @@ export class GitGraphComponent {
   });
 
   /**
-   * The work in progress rows on top: this worktree's while it has something
-   * to commit, then each other worktree with changes. Each hangs from its
-   * HEAD and sits in that commit's lane, so its dashed line runs straight.
+   * The rows of the tree. On top the work in progress rows: this worktree's
+   * while it has something to commit, then each other worktree with changes.
+   * Each hangs from its HEAD and sits in that commit's lane, so its dashed
+   * line runs straight.
    */
-  private readonly wipRows = computed(() => {
-    const commits = this.repository.commits();
-    const graph = this.repository.graph();
-    const anchorOf = (sha: string | null): WipAnchor => {
-      const commitIndex = sha ? commits.findIndex((commit) => commit.sha === sha) : -1;
-      const lane = graph[commitIndex]?.lane;
-      return commitIndex === -1 || lane === undefined ? null : { commitIndex, lane };
-    };
-    const changes = this.repository.worktreeChanges();
-    const others = this.repository
-      .worktrees()
-      .filter((worktree) => changes.has(worktree.path))
-      .map((worktree) => {
-        const counts = changes.get(worktree.path);
-        return {
-          worktree,
-          changes: counts ? counts.added + counts.modified + counts.deleted : 0,
-          anchor: anchorOf(worktree.head),
-        };
-      });
-    const own = this.view.wipVisible() ? [{ anchor: anchorOf(this.repository.head().sha) }] : [];
-    return { own, others };
-  });
   readonly items = computed<TreeRow[]>(() => {
     const rows = this.repository.graph();
     const labels = this.repository.refLabels();
-    const { own, others } = this.wipRows();
-    const anchors = [...own, ...others].map((wip) => wip.anchor);
-    const links = wipLinks(anchors, rows.length);
-    const wips: TreeRow[] = [
-      ...own.map(
-        (wip, index): TreeRow => ({
-          kind: "wip",
-          lane: wip.anchor?.lane ?? null,
-          passing: links.inWipRows[index] ?? [],
-        }),
-      ),
-      ...others.map(
-        (wip, index): TreeRow => ({
-          kind: "worktree-wip",
-          worktree: wip.worktree,
-          changes: wip.changes,
-          lane: wip.anchor?.lane ?? null,
-          passing: links.inWipRows[own.length + index] ?? [],
-        }),
-      ),
+    const indexBySha = new Map(
+      this.repository.commits().map((commit, index) => [commit.sha, index]),
+    );
+    const anchorOf = (sha: string | null): WipAnchor => {
+      const commitIndex = sha === null ? undefined : indexBySha.get(sha);
+      const lane = commitIndex === undefined ? undefined : rows[commitIndex]?.lane;
+      return commitIndex === undefined || lane === undefined ? null : { commitIndex, lane };
+    };
+    const changes = this.repository.worktreeChanges();
+    const wipRows: ReadonlyArray<{ readonly anchor: WipAnchor; readonly row: WipRow }> = [
+      ...(this.view.wipVisible()
+        ? [{ anchor: anchorOf(this.repository.head().sha), row: { kind: "wip" as const } }]
+        : []),
+      ...this.repository.worktrees().flatMap((worktree) => {
+        const count = changes.get(worktree.path);
+        return count === undefined
+          ? []
+          : [
+              {
+                anchor: anchorOf(worktree.head),
+                row: { kind: "worktree-wip" as const, worktree, changes: count },
+              },
+            ];
+      }),
     ];
+    const links = wipLinks(
+      wipRows.map((wip) => wip.anchor),
+      rows.length,
+    );
+    const wips = wipRows.map(
+      ({ anchor, row }, index): TreeRow => ({
+        ...row,
+        lane: anchor?.lane ?? null,
+        passing: links.inWipRows[index] ?? [],
+      }),
+    );
     const commits = this.repository.commits().map<TreeRow>((commit, index) => ({
       kind: "commit",
       commit,

@@ -270,7 +270,7 @@ export class GitUiActions {
       item("Checkout this commit", () => this.operations.checkoutCommit(commit.sha)),
       separator(),
       item("Create branch here", () => this.beginBranch(commit.sha)),
-      item("Create worktree here…", () => this.createWorktree(commit.sha, short)),
+      item("Create worktree here…", () => this.createWorktree(commit.sha, "commit")),
       item("Create tag here", () => this.createTagAt(commit.sha, short)),
       separator(),
       ...this.commitItems(commit.sha, isMerge),
@@ -306,14 +306,14 @@ export class GitUiActions {
               this.operations.rebase(branch.name),
             ),
             separator(),
-            branch.worktree
-              ? this.openTabItem(branch.worktree)
-              : item(`Checkout ${branch.name}`, () => this.operations.checkoutBranch(branch.name)),
             ...(branch.worktree
-              ? []
+              ? [this.openTabItem(branch.worktree)]
               : [
+                  item(`Checkout ${branch.name}`, () =>
+                    this.operations.checkoutBranch(branch.name),
+                  ),
                   item(`Create worktree for ${branch.name}…`, () =>
-                    this.createWorktree(branch.name, branch.name, true),
+                    this.createWorktree(branch.name, "branch"),
                   ),
                 ]),
           ]),
@@ -443,18 +443,21 @@ export class GitUiActions {
 
   /**
    * Ask where to put a new worktree for `ref`, create it and offer a tab in
-   * it. A local branch is checked out there as it is; anything else (a
-   * commit) gets a new branch, or a detached HEAD when none is named.
+   * it. A local branch is checked out there as it is; a commit gets a new
+   * branch, or a detached HEAD when none is named.
    */
-  async createWorktree(ref: string, label: string, isBranch = false): Promise<void> {
+  private async createWorktree(ref: string, kind: "branch" | "commit"): Promise<void> {
     const root = this.repository.root();
     if (!root) return;
+    const label = kind === "commit" ? ref.slice(0, 7) : ref;
     const suggested = `../${folderName(root)}-${label.replace(/[\\/\s]+/g, "-")}`;
     const result = await this.prompt(`Create worktree for ${label}`, {
       message: "A relative folder is taken from the repository root.",
       fields: [
         { key: "path", label: "Folder", value: suggested, required: true },
-        ...(isBranch ? [] : [{ key: "branch", label: "New branch (empty for a detached HEAD)" }]),
+        ...(kind === "commit"
+          ? [{ key: "branch", label: "New branch (empty for a detached HEAD)" }]
+          : []),
       ],
       confirmLabel: "Create worktree",
     });
@@ -472,10 +475,6 @@ export class GitUiActions {
     if (created && (await this.confirm(`Open a tab in ${created.path}?`, "Open tab"))) {
       this.openWorktreeTab(created.path);
     }
-  }
-
-  pruneWorktrees(): void {
-    void this.operations.pruneWorktrees();
   }
 
   private async removeWorktree(worktree: GitWorktree): Promise<void> {
