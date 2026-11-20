@@ -192,15 +192,15 @@ export function isSelectedSideMenuItem(
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
             }
 
-            /* A pinned panel is no overlay but one more pane of the tab: the
-               terminal's background and the divider between panes towards
-               the terminals. That it stays is visible at once. */
+            /* A pinned panel is no overlay but one more pane of the tab: no
+               surface of its own, so it shows what the terminals show - the
+               background colour, or the background image - and the divider
+               between panes towards the terminals. That it stays is visible
+               at once. Its offsets are the aside's, so pinning does not move it. */
             &:not(.base-overlay) {
-                margin-top: 0;
-                margin-bottom: 0;
                 padding: 6px;
                 color: var(--foreground-color);
-                background-color: var(--background-color);
+                background-color: transparent;
                 border-left: 2px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
 
