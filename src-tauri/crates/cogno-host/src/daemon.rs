@@ -399,7 +399,12 @@ fn same_secret(a: &[u8], b: &[u8]) -> bool {
 /// then ends every shell that is left and returns. Fails at once when the
 /// endpoint file already names a daemon that answers: its sessions must never
 /// be cut off by a second one taking its endpoint.
-pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
+/// Its shells write their start-up logs to `bootstrap_log_dir`, if one is given.
+pub fn run(
+    endpoint: &Path,
+    patience: Patience,
+    bootstrap_log_dir: Option<PathBuf>,
+) -> io::Result<()> {
     if connect(endpoint).is_ok() {
         return Err(io::Error::new(
             io::ErrorKind::AlreadyExists,
@@ -426,7 +431,7 @@ pub fn run(endpoint: &Path, patience: Patience) -> io::Result<()> {
         },
     )?;
 
-    let host = Arc::new(Host::new(home, endpoint.to_path_buf()));
+    let host = Arc::new(Host::new(home, endpoint.to_path_buf(), bootstrap_log_dir));
     let clients = Arc::new(AtomicUsize::new(0));
     let had_a_client = Arc::new(AtomicBool::new(false));
     let ending = Arc::new(AtomicBool::new(false));
@@ -558,7 +563,7 @@ pub(crate) mod test_support {
         ));
         let daemon = {
             let endpoint = endpoint.clone();
-            std::thread::spawn(move || run(&endpoint, patience))
+            std::thread::spawn(move || run(&endpoint, patience, None))
         };
         let started = Instant::now();
         while connect(&endpoint).is_err() {
@@ -695,7 +700,7 @@ mod tests {
         let (endpoint, daemon) = start(QUICK);
         let held = client(&endpoint);
 
-        let second = run(&endpoint, QUICK);
+        let second = run(&endpoint, QUICK, None);
         assert_eq!(second.unwrap_err().kind(), io::ErrorKind::AlreadyExists);
         // And left the first one's endpoint alone.
         assert!(connect(&endpoint).is_ok());
@@ -751,7 +756,7 @@ mod tests {
         // A daemon that starts takes its place.
         let daemon = {
             let endpoint = endpoint.clone();
-            std::thread::spawn(move || run(&endpoint, QUICK))
+            std::thread::spawn(move || run(&endpoint, QUICK, None))
         };
         let reached = Instant::now();
         while connect(&endpoint).is_err() {
@@ -907,7 +912,7 @@ mod tests {
             when_idle: Duration::from_millis(300),
         };
 
-        assert!(run(&endpoint, impatient).is_ok());
+        assert!(run(&endpoint, impatient, None).is_ok());
         assert!(!endpoint.exists());
     }
 

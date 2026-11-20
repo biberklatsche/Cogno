@@ -70,15 +70,19 @@ pub struct Host {
     /// The daemon's endpoint file: its shells learn it (`COGNO_HOST`), so a
     /// `cogno` of another build typed in one reaches this daemon.
     endpoint: PathBuf,
+    /// Where shells write their start-up log; none unless the app that
+    /// started the daemon logs at debug level.
+    bootstrap_log_dir: Option<PathBuf>,
 }
 
 impl Host {
-    pub fn new(home: PathBuf, endpoint: PathBuf) -> Self {
+    pub fn new(home: PathBuf, endpoint: PathBuf, bootstrap_log_dir: Option<PathBuf>) -> Self {
         Self {
             sessions: Sessions::default(),
             relay: Relay::default(),
             home,
             endpoint,
+            bootstrap_log_dir,
         }
     }
 
@@ -96,7 +100,7 @@ impl Host {
             } => {
                 let integration =
                     shell_integration::root(&self.home, &options.integration_version)?;
-                let spawner = ShellSpawner::new(integration);
+                let spawner = ShellSpawner::new(integration, self.bootstrap_log_dir.clone());
                 let request = SpawnRequest {
                     options,
                     window,
@@ -510,7 +514,7 @@ mod tests {
 
     fn host() -> Host {
         let home = std::env::temp_dir().join("cogno-host-test-home");
-        Host::new(home.clone(), home.join("host.json"))
+        Host::new(home.clone(), home.join("host.json"), None)
     }
 
     /// The shell lives in another process: waits up to ten seconds.

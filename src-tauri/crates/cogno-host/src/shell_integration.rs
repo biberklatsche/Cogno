@@ -6,7 +6,7 @@
 use std::path::{Component, Path, PathBuf};
 
 use crate::protocol::{HostError, HostErrorCode, IntegrationFile};
-use crate::shell_spawner::{integration_root, LOG_DIRECTORY};
+use crate::shell_spawner::integration_root;
 
 /// Written last: it says that every file of the version is in place.
 const VERSION_FILE: &str = "VERSION";
@@ -41,7 +41,20 @@ pub(crate) fn install(
     version: &str,
     files: &[IntegrationFile],
 ) -> Result<(), HostError> {
-    install_into(&root(home, version)?, version, files)
+    install_into(&root(home, version)?, version, files)?;
+    remove_former_logs(home);
+    Ok(())
+}
+
+/// Shell start-up logs used to pile up under the shell integration, one per
+/// shell and never cleared; they now go to the app's log folder, at debug
+/// level only. A Cogno before the versioned integration kept them here.
+fn remove_former_logs(home: &Path) {
+    // Gone after the first time; nothing to report then.
+    let _ = std::fs::remove_dir_all(
+        home.join(super::shell_spawner::INTEGRATION_DIRECTORY)
+            .join("logs"),
+    );
 }
 
 fn install_into(root: &Path, version: &str, files: &[IntegrationFile]) -> Result<(), HostError> {
@@ -61,8 +74,6 @@ fn install_into(root: &Path, version: &str, files: &[IntegrationFile]) -> Result
 
     let failed =
         |what: &Path, error: std::io::Error| HostError::io(&what.display().to_string(), error);
-    let log_directory = root.join(LOG_DIRECTORY);
-    std::fs::create_dir_all(&log_directory).map_err(|error| failed(&log_directory, error))?;
     for (target, content) in &targets {
         if let Some(directory) = target.parent() {
             std::fs::create_dir_all(directory).map_err(|error| failed(directory, error))?;
@@ -134,8 +145,31 @@ mod tests {
             std::fs::read_to_string(root.join("VERSION")).unwrap(),
             "1.3.0"
         );
-        assert!(root.join("logs").is_dir());
+        assert!(!root.join("logs").exists());
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn installing_removes_the_log_folder_of_a_cogno_before_versions() {
+        let home = empty_root();
+        let former_logs = home.join("shell-integration").join("logs");
+        std::fs::create_dir_all(&former_logs).unwrap();
+        std::fs::write(former_logs.join("shell-bootstrap-a.log"), "start").unwrap();
+
+        install(
+            &home,
+            "1.3.1",
+            &[file("bash/bootstrap.bash", "# bootstrap")],
+        )
+        .unwrap();
+
+        assert!(!former_logs.exists());
+        assert!(home
+            .join("shell-integration")
+            .join("1.3.1")
+            .join("VERSION")
+            .is_file());
+        std::fs::remove_dir_all(home).unwrap();
     }
 
     #[test]

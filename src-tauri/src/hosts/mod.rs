@@ -17,7 +17,7 @@ use cogno_host::protocol::{
     TerminalId, TerminalProcess, WindowLabel,
 };
 use tauri::ipc::{Channel, InvokeResponseBody};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult, ErrorCode};
 use crate::host_connection::{Ending, HostConnection, OnLost, Starting};
@@ -55,6 +55,9 @@ async fn blocking<T: Send + 'static>(
 }
 
 struct Hosts {
+    /// Where the daemon this app starts writes its shells' start-up logs;
+    /// none unless the app logs at debug level.
+    bootstrap_log_dir: Option<std::path::PathBuf>,
     connections: Connections,
     routes: Arc<TerminalRoutes>,
     events: Arc<WebviewEvents>,
@@ -78,6 +81,7 @@ impl Hosts {
             let stream = cogno_host::daemon_start::connect_or_start(
                 DEVELOPMENT_BUILD,
                 env!("CARGO_PKG_VERSION"),
+                self.bootstrap_log_dir.as_deref(),
             )
             .map_err(|message| CommandError::new(AppErrorCode::HostNotStarted, message))?;
             HostConnection::to_this_machine(stream, self.events.clone(), self.on_lost(None))
@@ -213,10 +217,17 @@ impl Hosts {
 pub struct HostState(Arc<Hosts>);
 
 impl HostState {
+    /// Call after `shell_bootstrap_logs::manage`: the daemon it starts takes
+    /// that folder for its shells' start-up logs.
     pub fn new(app: AppHandle) -> Self {
+        let bootstrap_log_dir = app
+            .state::<crate::shell_bootstrap_logs::ShellBootstrapLogDir>()
+            .0
+            .clone();
         let routes = Arc::new(TerminalRoutes::default());
         let events = Arc::new(WebviewEvents::new(app, routes.clone()));
         Self(Arc::new(Hosts {
+            bootstrap_log_dir,
             connections: Connections::default(),
             routes,
             events,

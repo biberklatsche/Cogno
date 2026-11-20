@@ -28,6 +28,8 @@ const BUILDS_DIRECTORY: &str = "host";
 const DAEMON_BINARY_NAME: &str = "cogno.exe";
 /// The argument that runs `cogno` as the daemon.
 pub const DAEMON_ARGUMENT: &str = "daemon";
+/// Tells a starting daemon where its shells write their start-up logs.
+pub const SHELL_BOOTSTRAP_LOG_DIR_ARGUMENT: &str = "--shell-bootstrap-log-dir";
 /// The starter's name (on Windows with `.cmd`): what a Cogno on another
 /// machine runs through ssh.
 const STARTER_NAME: &str = "cogno";
@@ -40,7 +42,13 @@ pub const BRIDGE_ARGUMENTS: &str = "server --stdio";
 /// A daemon whose process runs is given time to answer before another one
 /// is started; that one takes over only if it still does not answer then
 /// (`daemon::run`).
-pub fn connect_or_start(dev_mode: bool, build: &str) -> Result<TcpStream, String> {
+/// A daemon started here writes its shells' start-up logs to
+/// `bootstrap_log_dir`, if one is given.
+pub fn connect_or_start(
+    dev_mode: bool,
+    build: &str,
+    bootstrap_log_dir: Option<&Path>,
+) -> Result<TcpStream, String> {
     let endpoint = daemon::endpoint_path(dev_mode)?;
     if let Ok(stream) = daemon::connect(&endpoint) {
         return Ok(stream);
@@ -57,7 +65,7 @@ pub fn connect_or_start(dev_mode: bool, build: &str) -> Result<TcpStream, String
     }
     let binary = daemon_binary(&endpoint, build)?;
     put_down_starter(&endpoint, &binary);
-    start(&binary)?;
+    start(&binary, bootstrap_log_dir)?;
     knock(&endpoint, START_PATIENCE).ok_or_else(|| "The Cogno host did not start".to_string())
 }
 
@@ -243,10 +251,13 @@ fn starter(binary: &Path) -> String {
 }
 
 /// Starts the daemon so that it outlives this app.
-fn start(binary: &Path) -> Result<(), String> {
+fn start(binary: &Path, bootstrap_log_dir: Option<&Path>) -> Result<(), String> {
     let mut command = Command::new(binary);
+    command.arg(DAEMON_ARGUMENT);
+    if let Some(dir) = bootstrap_log_dir {
+        command.arg(SHELL_BOOTSTRAP_LOG_DIR_ARGUMENT).arg(dir);
+    }
     command
-        .arg(DAEMON_ARGUMENT)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null());

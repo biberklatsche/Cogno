@@ -11,9 +11,7 @@ use crate::protocol::{HostError, HostErrorCode, ShellProfile, ShellType};
 
 /// The directory under the Cogno home that holds the shell integration, one
 /// directory per version of Cogno (`shell_integration`).
-const INTEGRATION_DIRECTORY: &str = "shell-integration";
-/// The integration writes its own logs here (`COGNO_LOG_DIR`).
-pub(crate) const LOG_DIRECTORY: &str = "logs";
+pub(crate) const INTEGRATION_DIRECTORY: &str = "shell-integration";
 /// Where a shell starts when its profile names no directory.
 const HOME_DIRECTORY: &str = "~";
 /// How long a spawn waits for the user's login environment. It is usually
@@ -37,11 +35,17 @@ pub struct PreparedSpawn {
 
 pub struct ShellSpawner {
     integration_root: PathBuf,
+    /// Where the shell writes its start-up log; none unless the app that
+    /// started the daemon logs at debug level.
+    bootstrap_log_dir: Option<PathBuf>,
 }
 
 impl ShellSpawner {
-    pub fn new(integration_root: PathBuf) -> Self {
-        Self { integration_root }
+    pub fn new(integration_root: PathBuf, bootstrap_log_dir: Option<PathBuf>) -> Self {
+        Self {
+            integration_root,
+            bootstrap_log_dir,
+        }
     }
 
     pub fn prepare_spawn(&self, profile: &ShellProfile) -> Result<PreparedSpawn, HostError> {
@@ -84,7 +88,7 @@ impl ShellSpawner {
 
         let mut env = EnvironmentBuilder::new(
             self.integration_root.clone(),
-            self.integration_root.join(LOG_DIRECTORY),
+            self.bootstrap_log_dir.as_deref(),
             load_user_rc,
             enable_integration,
         )
@@ -201,7 +205,7 @@ mod tests {
     }
 
     fn spawn(profile: &ShellProfile) -> PreparedSpawn {
-        ShellSpawner::new(PathBuf::from("/tmp/cogno-test-integration"))
+        ShellSpawner::new(PathBuf::from("/tmp/cogno-test-integration"), None)
             .prepare_spawn(profile)
             .expect("spawn is prepared")
     }
@@ -243,7 +247,7 @@ mod tests {
     fn a_profile_without_a_program_is_refused_with_its_code() {
         let mut without_program = profile(ShellType::Bash, false, None);
         without_program.path = None;
-        let refused = ShellSpawner::new(PathBuf::from("/tmp"))
+        let refused = ShellSpawner::new(PathBuf::from("/tmp"), None)
             .prepare_spawn(&without_program)
             .err()
             .unwrap();
@@ -261,7 +265,7 @@ mod tests {
 
     #[test]
     fn a_quote_in_the_integration_path_stays_inside_the_powershell_literal() {
-        let args = ShellSpawner::new(PathBuf::from("/home/O'Brien/cogno"))
+        let args = ShellSpawner::new(PathBuf::from("/home/O'Brien/cogno"), None)
             .integration_args(ShellType::PowerShell);
         assert!(args
             .last()

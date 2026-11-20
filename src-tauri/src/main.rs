@@ -24,10 +24,17 @@ fn main() {
     // `server --stdio`, started through ssh by a Cogno on another machine,
     // passes that Cogno's bytes to the daemon until it hangs up.
     match &cli.command {
-        Some(CliCommand::Daemon { endpoint }) => {
+        Some(CliCommand::Daemon {
+            endpoint,
+            shell_bootstrap_log_dir,
+        }) => {
             let ran = host_endpoint(endpoint).and_then(|endpoint| {
-                cogno_host::daemon::run(&endpoint, Default::default())
-                    .map_err(|error| error.to_string())
+                cogno_host::daemon::run(
+                    &endpoint,
+                    Default::default(),
+                    shell_bootstrap_log_dir.clone(),
+                )
+                .map_err(|error| error.to_string())
             });
             std::process::exit(exit_code_of(ran));
         }

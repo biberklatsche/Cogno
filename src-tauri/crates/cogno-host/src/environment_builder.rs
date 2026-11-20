@@ -2,7 +2,7 @@ use crate::env_vars;
 use crate::identity::TERM_PROGRAM_NAME;
 use crate::protocol::ShellType;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 /// The terminal type every shell is told it runs in.
@@ -16,7 +16,7 @@ pub struct EnvironmentBuilder {
 impl EnvironmentBuilder {
     pub fn new(
         integration_root: PathBuf,
-        log_dir: PathBuf,
+        log_dir: Option<&Path>,
         load_user_rc: bool,
         enable_integration: bool,
     ) -> Self {
@@ -42,10 +42,13 @@ impl EnvironmentBuilder {
                 env_vars::COGNO_LINE_EDITOR_PIPE_NAME.to_string(),
                 format!("cogno-line-editor-{}", session_id.replace('-', "")),
             );
-            env.insert(
-                env_vars::COGNO_LOG_DIR.to_string(),
-                log_dir.to_string_lossy().to_string(),
-            );
+            // Unset, the bootstrap scripts write no start-up log.
+            if let Some(log_dir) = log_dir {
+                env.insert(
+                    env_vars::COGNO_LOG_DIR.to_string(),
+                    log_dir.to_string_lossy().to_string(),
+                );
+            }
             env.insert(
                 env_vars::COGNO_ALLOW_USER_RC.to_string(),
                 if load_user_rc { "1" } else { "0" }.to_string(),
@@ -177,7 +180,7 @@ mod tests {
     use super::*;
 
     fn builder() -> EnvironmentBuilder {
-        EnvironmentBuilder::new(PathBuf::from("/root"), PathBuf::from("/logs"), true, true)
+        EnvironmentBuilder::new(PathBuf::from("/root"), None, true, true)
     }
 
     #[test]

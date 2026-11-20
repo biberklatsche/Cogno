@@ -582,7 +582,7 @@ pub mod test_support {
         {
             let endpoint = endpoint.clone();
             std::thread::spawn(move || {
-                cogno_host::daemon::run(&endpoint, cogno_host::daemon::Patience::default())
+                cogno_host::daemon::run(&endpoint, cogno_host::daemon::Patience::default(), None)
             });
         }
         let started = Instant::now();
