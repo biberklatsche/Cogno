@@ -43,8 +43,9 @@ export function isSelectedSideMenuItem(
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <aside #overlayAside class="base-overlay"
-               [class.flat]="isPinned() || isExpanded()"
+        <aside #overlayAside
+               [class.base-overlay]="!isPinned() || isExpanded()"
+               [class.flat]="isExpanded()"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!isPinned()"
                [class.shift-left]="visibleItems().length > 0 || bottomItems().length > 0"
@@ -191,15 +192,14 @@ export function isSelectedSideMenuItem(
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
             }
 
-            /* A pinned panel belongs to the tab like one more pane: the
-               terminal's background, no frame, and the divider between
-               panes towards the terminals. That it stays is visible at once. */
-            &:not(.overlay):not(.expanded) {
+            /* A pinned panel is no overlay but one more pane of the tab: the
+               terminal's background and the divider between panes towards
+               the terminals. That it stays is visible at once. */
+            &:not(.base-overlay) {
                 margin-top: 0;
                 margin-bottom: 0;
-                border: none;
-                border-radius: 0;
-                backdrop-filter: none;
+                padding: 6px;
+                color: var(--foreground-color);
                 background-color: var(--background-color);
                 border-left: 2px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
