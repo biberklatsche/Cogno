@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { groupByWorkspace } from "@cogno/shared/domain";
+import { groupByWorkspace, TerminalPlacement } from "@cogno/shared/domain";
 import {
   IconComponent,
   TabChipComponent,
@@ -60,7 +60,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
               <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
               <span class="ellipsis">{{ branchLabel(tile) }}</span>
             </span>
-            <div class="footer">
+            <span class="footer">
               <span class="counts mono">
                 <span class="status-added" [class.none]="tile.counts.added === 0">+{{ tile.counts.added }}</span>
                 <span class="status-edited" [class.none]="tile.counts.modified === 0">~{{ tile.counts.modified }}</span>
@@ -70,7 +70,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                 <span class="tabs">
                   <app-tab-chip
                     class="tab"
-                    [title]="first.tabTitle || repositoryName(tile)"
+                    [title]="tabTitle(first)"
                     [color]="first.tabColor"
                     [tooltip]="tabsTooltip(tile)"
                   ></app-tab-chip>
@@ -79,7 +79,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                   }
                 </span>
               }
-            </div>
+            </span>
           </button>
         }
         </app-workspace-group>
@@ -156,10 +156,14 @@ export class GitRepositoriesPanelComponent {
     return tile.root.split(/[\\/]/).filter(Boolean).pop() ?? tile.root;
   }
 
-  /** Every tab of the tile, one per line, when there is more than one. */
+  /** A tab as its header names it; one without a name by its place, as tabs are counted. */
+  tabTitle(tab: TerminalPlacement): string {
+    return tab.tabTitle || `Tab ${tab.tabIndex + 1}`;
+  }
+
+  /** Every tab of the tile, one per line: the chip cuts a long name short. */
   tabsTooltip(tile: GitRepositoryTile): string {
-    if (tile.tabs.length < 2) return "";
-    return tile.tabs.map((tab) => tab.tabTitle || this.repositoryName(tile)).join("\n");
+    return tile.tabs.map((tab) => this.tabTitle(tab)).join("\n");
   }
 
   branchLabel(tile: GitRepositoryTile): string {

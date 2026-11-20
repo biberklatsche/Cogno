@@ -263,6 +263,8 @@ function mergeSameRepository(repositories: ReadonlyArray<TerminalRepository>): G
       });
       continue;
     }
+    // A tab's index is its own within the workspace, a stack's members included, and the
+    // tile is the workspace's: the index tells the tabs apart.
     const newTab = placement && !tile.tabs.some((tab) => tab.tabIndex === placement.tabIndex);
     byKey.set(key, {
       ...tile,
