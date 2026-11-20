@@ -17,7 +17,7 @@ pub struct EnvironmentBuilder {
 impl EnvironmentBuilder {
     pub fn new(
         integration_root: PathBuf,
-        log_dir: PathBuf,
+        log_dir: Option<&Path>,
         load_user_rc: bool,
         enable_integration: bool,
     ) -> Self {
@@ -40,10 +40,13 @@ impl EnvironmentBuilder {
                 "COGNO_LINE_EDITOR_PIPE_NAME".to_string(),
                 format!("cogno-line-editor-{}", session_id.replace('-', "")),
             );
-            env.insert(
-                "COGNO_LOG_DIR".to_string(),
-                log_dir.to_string_lossy().to_string(),
-            );
+            // Unset, the bootstrap scripts write no start-up log.
+            if let Some(log_dir) = log_dir {
+                env.insert(
+                    "COGNO_LOG_DIR".to_string(),
+                    log_dir.to_string_lossy().to_string(),
+                );
+            }
             env.insert(
                 "COGNO_ALLOW_USER_RC".to_string(),
                 if load_user_rc { "1" } else { "0" }.to_string(),
@@ -192,7 +195,7 @@ mod tests {
     use super::*;
 
     fn builder() -> EnvironmentBuilder {
-        EnvironmentBuilder::new(PathBuf::from("/root"), PathBuf::from("/logs"), true, true)
+        EnvironmentBuilder::new(PathBuf::from("/root"), None, true, true)
     }
 
     #[test]

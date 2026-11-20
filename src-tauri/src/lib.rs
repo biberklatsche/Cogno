@@ -6,6 +6,7 @@ pub mod commands;
 mod db;
 mod endpoint;
 mod http_server;
+mod shell_bootstrap_logs;
 mod updater;
 
 use app_identity::LOG_FILE_STEM;
@@ -152,6 +153,7 @@ pub fn run(cli: Cli) {
         .setup(move |app| {
             crate::updater::manage(app.handle());
             std::thread::spawn(crate::commands::clipboard_image::remove_leftover_paste_files);
+            crate::shell_bootstrap_logs::manage(app.handle());
 
             let webview_window_builder =
                 WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
