@@ -21,18 +21,12 @@ describe("StatusIndicatorComponent", () => {
   let fixture: ComponentFixture<StatusIndicatorComponent>;
 
   const layers = () =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<SVGElement>("svg.layer"));
-  const classesOf = (layer: SVGElement) => (layer.getAttribute("class") ?? "").split(" ");
-
-  /** Two passes: the first runs the effect that picks the layers, the second renders them. */
-  function render(): void {
-    fixture.detectChanges();
-    fixture.detectChanges();
-  }
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(".layer"));
+  const classesOf = (layer: Element) => (layer.getAttribute("class") ?? "").split(" ");
 
   function show(indicator: StatusIndicator | undefined): void {
     setInput(fixture.componentInstance.indicator, indicator);
-    render();
+    fixture.detectChanges();
   }
 
   beforeEach(() => {
@@ -84,7 +78,7 @@ describe("StatusIndicatorComponent", () => {
     ]);
 
     vi.advanceTimersByTime(150);
-    render();
+    fixture.detectChanges();
 
     expect(layers()).toHaveLength(1);
     expect(classesOf(layers()[0])).toContain("face");
@@ -97,8 +91,21 @@ describe("StatusIndicatorComponent", () => {
     expect(classesOf(layers()[0])).toContain("leaving");
 
     vi.advanceTimersByTime(150);
-    render();
+    fixture.detectChanges();
     expect(layers()).toEqual([]);
+  });
+
+  it("drops a fading layer on time even while the new one keeps changing its mood", () => {
+    show({ motif: "equalizer", mood: "busy" });
+    show({ motif: "face", mood: "busy" });
+
+    vi.advanceTimersByTime(100);
+    show({ motif: "face", mood: "asking" });
+    vi.advanceTimersByTime(50);
+    fixture.detectChanges();
+
+    expect(layers()).toHaveLength(1);
+    expect(classesOf(layers()[0])).toEqual(expect.arrayContaining(["face", "asking"]));
   });
 
   it("gives a face fading in its own mask while the previous face still fades out", () => {

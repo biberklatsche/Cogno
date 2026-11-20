@@ -3,9 +3,8 @@ import {
   Component,
   effect,
   input,
+  linkedSignal,
   OnDestroy,
-  signal,
-  untracked,
 } from "@angular/core";
 
 /**
@@ -27,7 +26,25 @@ type Layer = {
   readonly leaving: boolean;
 };
 
-let nextMaskId = 0;
+let nextLayerId = 0;
+
+/**
+ * The layers after the indicator changed: the same motif changes its mood in
+ * place; another motif, or none, sends the current layer leaving.
+ */
+function nextLayers(
+  layers: readonly Layer[],
+  indicator: StatusIndicator | undefined,
+): readonly Layer[] {
+  const current = layers.find((layer) => !layer.leaving);
+  if (current && indicator && current.indicator.motif === indicator.motif) {
+    if (current.indicator.mood === indicator.mood) return layers;
+    return layers.map((layer) => (layer === current ? { ...layer, indicator } : layer));
+  }
+  if (!current && !indicator) return layers;
+  const next = layers.map((layer) => (layer === current ? { ...layer, leaving: true } : layer));
+  return indicator ? [...next, { id: nextLayerId++, indicator, leaving: false }] : next;
+}
 
 /**
  * The small animated status of a tab, a pane or an agent. A change of motif
@@ -44,15 +61,13 @@ let nextMaskId = 0;
         <svg
           viewBox="66 34 290 310"
           aria-hidden="true"
-          [attr.class]="
-            'layer face ' +
-            layer.indicator.mood +
-            (layer.leaving ? ' leaving' : '')
-          "
+          class="layer face"
+          [class]="layer.indicator.mood"
+          [class.leaving]="layer.leaving"
         >
           <defs>
             <mask
-              [attr.id]="maskId + '-' + layer.id"
+              [attr.id]="'status-face-' + layer.id"
               maskUnits="userSpaceOnUse"
               x="60"
               y="28"
@@ -90,66 +105,27 @@ let nextMaskId = 0;
             width="300"
             height="322"
             fill="currentColor"
-            [attr.mask]="'url(#' + maskId + '-' + layer.id + ')'"
+            [attr.mask]="'url(#status-face-' + layer.id + ')'"
           />
         </svg>
       } @else {
-        <svg
-          viewBox="0 0 14 14"
+        <div
+          class="layer equalizer"
+          [class]="layer.indicator.mood"
+          [class.leaving]="layer.leaving"
           aria-hidden="true"
-          [attr.class]="
-            'layer equalizer ' +
-            layer.indicator.mood +
-            (layer.leaving ? ' leaving' : '')
-          "
         >
-          <rect
-            x="0"
-            y="1"
-            width="2"
-            height="12"
-            rx="0.8"
-            fill="currentColor"
-          />
-          <rect
-            x="3"
-            y="1"
-            width="2"
-            height="12"
-            rx="0.8"
-            fill="currentColor"
-          />
-          <rect
-            x="6"
-            y="1"
-            width="2"
-            height="12"
-            rx="0.8"
-            fill="currentColor"
-          />
-          <rect
-            x="9"
-            y="1"
-            width="2"
-            height="12"
-            rx="0.8"
-            fill="currentColor"
-          />
-          <rect
-            x="12"
-            y="1"
-            width="2"
-            height="12"
-            rx="0.8"
-            fill="currentColor"
-          />
-        </svg>
+          @for (bar of bars; track bar) {
+            <span class="bar" [style.--i]="bar"></span>
+          }
+        </div>
       }
     }
   `,
   styles: `
     :host {
       display: inline-block;
+      vertical-align: middle;
       position: relative;
       flex-shrink: 0;
       width: 14px;
@@ -164,13 +140,19 @@ let nextMaskId = 0;
       overflow: visible;
       animation: layer-in ${FADE_MS}ms ease-out;
     }
+    /* An animation, not a transition: a layer that leaves while still fading in must not wait for that. */
     .layer.leaving {
       opacity: 0;
-      transition: opacity ${FADE_MS}ms ease-out;
+      animation: layer-out ${FADE_MS}ms ease-out;
     }
     @keyframes layer-in {
       from {
         opacity: 0;
+      }
+    }
+    @keyframes layer-out {
+      from {
+        opacity: 1;
       }
     }
 
@@ -386,30 +368,46 @@ let nextMaskId = 0;
       }
     }
 
-    /* Equalizer: five bars, each at its own tempo, so it never looks like a loop. */
-    .equalizer rect {
+    /* Equalizer: five HTML bars, so WebKit can run their transforms on the compositor. Each bar
+       keeps its own tempo while busy, so it never looks like a loop. */
+    .equalizer {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      box-sizing: border-box;
+      padding-block: 7%;
+    }
+    .equalizer .bar {
+      width: 14%;
+      height: 100%;
+      border-radius: 1px;
+      background: currentColor;
       transform-origin: center bottom;
+      will-change: transform;
     }
-    .equalizer.busy rect {
-      animation: equalizer-busy 0.6s ease-in-out infinite alternate;
+    .equalizer.busy .bar {
+      animation-name: equalizer-busy;
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      animation-direction: alternate;
     }
-    .equalizer.busy rect:nth-child(1) {
+    .equalizer.busy .bar:nth-child(1) {
       animation-duration: 0.62s;
       animation-delay: -0.3s;
     }
-    .equalizer.busy rect:nth-child(2) {
+    .equalizer.busy .bar:nth-child(2) {
       animation-duration: 0.44s;
       animation-delay: -0.1s;
     }
-    .equalizer.busy rect:nth-child(3) {
+    .equalizer.busy .bar:nth-child(3) {
       animation-duration: 0.71s;
       animation-delay: -0.55s;
     }
-    .equalizer.busy rect:nth-child(4) {
+    .equalizer.busy .bar:nth-child(4) {
       animation-duration: 0.5s;
       animation-delay: -0.2s;
     }
-    .equalizer.busy rect:nth-child(5) {
+    .equalizer.busy .bar:nth-child(5) {
       animation-duration: 0.58s;
       animation-delay: -0.42s;
     }
@@ -422,21 +420,9 @@ let nextMaskId = 0;
       }
     }
 
-    /* Equalizer, calm: the command runs but has been quiet for a while; the bars swell low and slow. */
-    .equalizer.calm rect {
-      animation: equalizer-calm 1.8s ease-in-out infinite alternate;
-    }
-    .equalizer.calm rect:nth-child(2) {
-      animation-delay: -0.36s;
-    }
-    .equalizer.calm rect:nth-child(3) {
-      animation-delay: -0.72s;
-    }
-    .equalizer.calm rect:nth-child(4) {
-      animation-delay: -1.08s;
-    }
-    .equalizer.calm rect:nth-child(5) {
-      animation-delay: -1.44s;
+    /* Equalizer, calm: the command runs but has been quiet for a while; the bars swell low and slow, as a wave. */
+    .equalizer.calm .bar {
+      animation: equalizer-calm 1.8s ease-in-out calc(var(--i) * -0.36s) infinite alternate;
     }
     @keyframes equalizer-calm {
       from {
@@ -466,10 +452,10 @@ let nextMaskId = 0;
       .face.asking .antenna {
         transform: rotate(-30deg);
       }
-      .equalizer.busy rect {
+      .equalizer.busy .bar {
         transform: scaleY(0.7);
       }
-      .equalizer.calm rect {
+      .equalizer.calm .bar {
         transform: scaleY(0.25);
       }
     }
@@ -479,45 +465,29 @@ export class StatusIndicatorComponent implements OnDestroy {
   /** What to show; none fades the indicator out. */
   indicator = input<StatusIndicator | undefined>(undefined);
 
-  protected readonly maskId = `status-indicator-face-${nextMaskId++}`;
-  protected readonly layers = signal<readonly Layer[]>([]);
+  protected readonly bars = [0, 1, 2, 3, 4];
+  protected readonly layers = linkedSignal<StatusIndicator | undefined, readonly Layer[]>({
+    source: this.indicator,
+    computation: (indicator, previous) => nextLayers(previous?.value ?? [], indicator),
+  });
 
-  private nextLayerId = 0;
-  private readonly fadeTimers = new Set<ReturnType<typeof setTimeout>>();
+  /** The removal of each leaving layer, due FADE_MS after it started leaving. */
+  private readonly fadeOuts = new Map<number, ReturnType<typeof setTimeout>>();
 
   constructor() {
     effect(() => {
-      const indicator = this.indicator();
-      untracked(() => this.show(indicator));
+      for (const layer of this.layers()) {
+        if (!layer.leaving || this.fadeOuts.has(layer.id)) continue;
+        const timer = setTimeout(() => {
+          this.fadeOuts.delete(layer.id);
+          this.layers.update((layers) => layers.filter((other) => other.id !== layer.id));
+        }, FADE_MS);
+        this.fadeOuts.set(layer.id, timer);
+      }
     });
   }
 
   ngOnDestroy(): void {
-    for (const timer of this.fadeTimers) clearTimeout(timer);
-    this.fadeTimers.clear();
-  }
-
-  private show(indicator: StatusIndicator | undefined): void {
-    const layers = this.layers();
-    const current = layers.find((layer) => !layer.leaving);
-
-    if (current && indicator && current.indicator.motif === indicator.motif) {
-      if (current.indicator.mood === indicator.mood) return;
-      this.layers.set(layers.map((layer) => (layer === current ? { ...layer, indicator } : layer)));
-      return;
-    }
-    if (!current && !indicator) return;
-
-    const next = layers.map((layer) => (layer === current ? { ...layer, leaving: true } : layer));
-    if (indicator) next.push({ id: this.nextLayerId++, indicator, leaving: false });
-    this.layers.set(next);
-
-    if (current) {
-      const timer = setTimeout(() => {
-        this.fadeTimers.delete(timer);
-        this.layers.update((all) => all.filter((layer) => layer.id !== current.id));
-      }, FADE_MS);
-      this.fadeTimers.add(timer);
-    }
+    for (const timer of this.fadeOuts.values()) clearTimeout(timer);
   }
 }

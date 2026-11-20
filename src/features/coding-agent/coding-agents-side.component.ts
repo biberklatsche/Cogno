@@ -478,9 +478,8 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       color: var(--agent-state-color);
     }
 
-    /* A little larger than the text beside it; a block, so it centres instead of sitting on the baseline. */
+    /* A little larger than the text beside it. */
     .agent-state app-status-indicator {
-      display: block;
       width: 18px;
       height: 18px;
     }
