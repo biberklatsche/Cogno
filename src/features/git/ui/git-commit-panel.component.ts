@@ -7,7 +7,7 @@ import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState } from "../git-view-state.service";
 import { GitCommitDetail, GitFile } from "../model/git-model";
 import { GitFileListComponent } from "./git-file-list.component";
-import { formatCommitTime } from "./git-format";
+import { authorInitials, formatCommitTime } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 /** A commit or stash: its message, author, parents and the files it changed. */
@@ -197,12 +197,8 @@ export class GitCommitPanelComponent {
     });
   }
 
-  /** Up to two letters of the name, standing in while there is no avatar to show. */
   initials(name: string): string {
-    const parts = name.trim().split(/\s+/).filter(Boolean);
-    const first = parts[0]?.[0] ?? "?";
-    const last = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? "") : "";
-    return `${first}${last}`.toUpperCase();
+    return authorInitials(name);
   }
 
   time(seconds: number): string {
