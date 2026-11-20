@@ -32,9 +32,9 @@ type GraphCommit = { readonly sha: string; readonly parents: ReadonlyArray<strin
  * every line is either straight or a single diagonal into or out of a node.
  *
  * The checked-out commit (`headSha`, when loaded) keeps the first lane, as in
- * GitKraken: tips above it start in lane 1, and its first-parent chain runs
- * down the left edge. A merge that has it as a further parent draws into
- * that lane directly instead of opening one on the right.
+ * GitKraken: the lane waits for it from the top, so tips above it start in
+ * lane 1 and a merge of it draws straight into lane 0, but it is drawn only
+ * from where something reaches it - its node, or a merge line.
  */
 export function layoutGraph(
   commits: ReadonlyArray<GraphCommit>,
@@ -45,29 +45,24 @@ export function layoutGraph(
   let nextColor = 0;
   const rows: GraphRow[] = [];
 
-  let reserved = headSha && commits.some((commit) => commit.sha === headSha) ? headSha : null;
-  if (reserved) {
-    lanes[0] = null;
+  let headLaneHidden = headSha !== null && commits.some((commit) => commit.sha === headSha);
+  if (headLaneHidden) {
+    lanes[0] = headSha;
     laneColors[0] = nextColor++;
   }
+  const isHidden = (index: number) => index === 0 && headLaneHidden;
 
   const freeLane = (): number => {
-    const first = reserved ? 1 : 0;
-    const index = lanes.indexOf(null, first);
-    return index === -1 ? Math.max(lanes.length, first) : index;
+    const index = lanes.indexOf(null);
+    return index === -1 ? lanes.length : index;
   };
 
   for (const commit of commits) {
     const segments: GraphSegment[] = [];
     let lane = lanes.indexOf(commit.sha);
-    let isBranchTip = lane === -1;
-    if (commit.sha === reserved) {
-      // Lanes waiting for it join lane 0 like at any node; the reserved lane itself has no line above.
-      lane = 0;
-      lanes[0] = commit.sha;
-      isBranchTip = true;
-      reserved = null;
-    } else if (isBranchTip) {
+    // A lane not drawn yet has no line above the node it waits for.
+    const isBranchTip = lane === -1 || isHidden(lane);
+    if (lane === -1) {
       lane = freeLane();
       lanes[lane] = commit.sha;
       laneColors[lane] = nextColor++;
@@ -76,7 +71,7 @@ export function layoutGraph(
     // Top half: every waiting lane comes down; those waiting for this commit end in its node.
     for (let index = 0; index < lanes.length; index++) {
       const waitingFor = lanes[index];
-      if (waitingFor === null || waitingFor === undefined) continue;
+      if (waitingFor === null || waitingFor === undefined || isHidden(index)) continue;
       if (waitingFor === commit.sha) {
         if (index === lane && isBranchTip) continue;
         segments.push({ half: "top", from: index, to: lane, color: laneColors[index] ?? 0 });
@@ -85,6 +80,7 @@ export function layoutGraph(
         segments.push({ half: "top", from: index, to: index, color: laneColors[index] ?? 0 });
       }
     }
+    if (lane === 0) headLaneHidden = false;
 
     const color = laneColors[lane] ?? 0;
     const opened = new Set<number>();
@@ -101,17 +97,14 @@ export function layoutGraph(
     }
     for (const parent of otherParents) {
       let target = lanes.indexOf(parent);
-      if (parent === reserved) {
-        // Merging the checked-out commit: the line goes straight into its
-        // first lane, which from here waits for it like any other lane.
-        target = 0;
-        lanes[0] = parent;
-        reserved = null;
-        opened.add(0);
-      } else if (target === -1) {
+      if (target === -1) {
         target = freeLane();
         lanes[target] = parent;
         laneColors[target] = nextColor++;
+        opened.add(target);
+      } else if (isHidden(target)) {
+        // The merge line is where the checked-out commit's lane starts.
+        headLaneHidden = false;
         opened.add(target);
       }
       segments.push({ half: "bottom", from: lane, to: target, color: laneColors[target] ?? 0 });
@@ -120,12 +113,11 @@ export function layoutGraph(
     // Every other lane continues straight down, including one a merge line
     // just joined: the branch it waits for runs on below the node.
     for (let index = 0; index < lanes.length; index++) {
-      if (lanes[index] === null || opened.has(index) || index === lane) continue;
+      if (lanes[index] === null || opened.has(index) || index === lane || isHidden(index)) continue;
       segments.push({ half: "bottom", from: index, to: index, color: laneColors[index] ?? 0 });
     }
 
-    const keep = reserved ? 1 : 0;
-    while (lanes.length > keep && lanes[lanes.length - 1] === null) lanes.pop();
+    while (lanes.length > 0 && lanes[lanes.length - 1] === null) lanes.pop();
 
     let width = lane + 1;
     for (const segment of segments) width = Math.max(width, segment.from + 1, segment.to + 1);
