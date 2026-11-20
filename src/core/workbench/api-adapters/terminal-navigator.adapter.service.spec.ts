@@ -1,3 +1,4 @@
+import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import type { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import type { WorkspaceHostApplicationService } from "@cogno/core/workbench/workspace/workspace-host-application.service";
@@ -9,6 +10,7 @@ describe("TerminalNavigatorAdapterService", () => {
     const gridListService = {
       findWorkspaceIdentifierByTerminalId: vi.fn(() => "workspace-2"),
       findTabIdByTerminalId: vi.fn(() => "tab-2"),
+      findShellNameByTerminalId: vi.fn(() => "Git Bash"),
       deferFocusTo: vi.fn(),
     };
     const tabListService = { selectTab: vi.fn() };
@@ -18,12 +20,14 @@ describe("TerminalNavigatorAdapterService", () => {
       getWorkspaceById: vi.fn(() => workspace),
       restoreWorkspace: vi.fn().mockResolvedValue(undefined),
     };
+    const bus = { publish: vi.fn() };
     const navigator = new TerminalNavigatorAdapterService(
       gridListService as unknown as GridListService,
       tabListService as unknown as TabListService,
       workspaces as unknown as WorkspaceHostApplicationService,
+      bus as unknown as AppBus,
     );
-    return { navigator, gridListService, tabListService, workspaces, workspace };
+    return { navigator, gridListService, tabListService, workspaces, workspace, bus };
   }
 
   it("switches workspaces the way the user does, then shows and focuses the terminal", async () => {
@@ -43,5 +47,21 @@ describe("TerminalNavigatorAdapterService", () => {
     await navigator.navigateToTerminal("terminal-7");
 
     expect(workspaces.restoreWorkspace).not.toHaveBeenCalled();
+  });
+
+  it("opens a tab in the folder with the terminal's shell, in the terminal's workspace", async () => {
+    const { navigator, workspaces, workspace, bus } = navigatorWith("workspace-1");
+
+    await navigator.openTabAt("C:/repo-feature", "terminal-7");
+
+    expect(workspaces.restoreWorkspace).toHaveBeenCalledWith(workspace);
+    expect(bus.publish).toHaveBeenCalledWith({
+      type: "CreateTab",
+      payload: expect.objectContaining({
+        shellName: "Git Bash",
+        workingDir: "C:/repo-feature",
+        isActive: true,
+      }),
+    });
   });
 });

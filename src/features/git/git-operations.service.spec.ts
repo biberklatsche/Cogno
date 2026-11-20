@@ -440,6 +440,34 @@ describe("GitOperationsService", () => {
     );
   });
 
+  it("adds a worktree with an existing ref or a new branch", async () => {
+    await service.addWorktree("../app-x", "main");
+    expect(argsOfLastRun()).toEqual(["worktree", "add", "--", "../app-x", "main"]);
+
+    await service.addWorktree("../app-y", "c1", "feature/y");
+    expect(argsOfLastRun()).toEqual(["worktree", "add", "-b", "feature/y", "--", "../app-y", "c1"]);
+  });
+
+  it("removes a worktree, forced only when asked", async () => {
+    await service.removeWorktree("C:/app-x", false);
+    expect(argsOfLastRun()).toEqual(["worktree", "remove", "--", "C:/app-x"]);
+
+    await service.removeWorktree("C:/app-x", true);
+    expect(argsOfLastRun()).toEqual(["worktree", "remove", "--force", "--", "C:/app-x"]);
+  });
+
+  it("counts a worktree as changed when it has changes or git cannot tell", async () => {
+    answer = ran("", 0);
+    expect(await service.worktreeHasChanges("C:/app-x")).toBe(false);
+    expect(argsOfLastRun()).toEqual(["-C", "C:/app-x", "status", "--porcelain", "-z"]);
+
+    answer = ran("?? new.txt\0", 0);
+    expect(await service.worktreeHasChanges("C:/app-x")).toBe(true);
+
+    answer = ran("", 128, "fatal: not a git repository");
+    expect(await service.worktreeHasChanges("C:/app-x")).toBe(true);
+  });
+
   it("shows no error for a run whose prompt the person refused", async () => {
     answer = ran("", 128, "fatal: could not read Username for 'https://github.com'");
     refused = true;

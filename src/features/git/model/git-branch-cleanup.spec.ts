@@ -64,6 +64,11 @@ describe("keptReason", () => {
   it("does not keep a remote branch for having the name of the checked-out one", () => {
     expect(keptReason(remoteBranch("origin/feature/x"), refs(), head)).toBeNull();
   });
+
+  it("keeps a branch another worktree has checked out", () => {
+    const inWorktree = branch("feature/y", { worktree: "C:/dev/app-y" });
+    expect(keptReason(inWorktree, refs(), head)).toBe("in worktree app-y");
+  });
 });
 
 describe("remoteBranchesToDelete", () => {

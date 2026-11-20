@@ -34,6 +34,30 @@ export type GitBranch = {
   readonly lastCommitAt: number;
   /** The tip has several parents; cherry pick and revert need `-m` for it. */
   readonly tipIsMerge: boolean;
+  /**
+   * The other worktree the branch is checked out in, as git prints its path;
+   * absent when it is checked out in none or in this one. Git refuses to check
+   * it out here, delete it or reset it while it is there.
+   */
+  readonly worktree?: string;
+};
+
+/** A working tree of the repository, as `git worktree list` reports it. */
+export type GitWorktree = {
+  /** As git prints it, in the form of the shell git runs in. */
+  readonly path: string;
+  /** The checked-out commit; null before the first commit. */
+  readonly head: string | null;
+  /** The checked-out branch; null when HEAD is detached. */
+  readonly branch: string | null;
+  /** The worktree the repository was cloned or created in; it cannot be removed. */
+  readonly isMain: boolean;
+  /** The one the panel shows. */
+  readonly isCurrent: boolean;
+  /** `git worktree lock`ed: git neither prunes nor removes it. */
+  readonly locked: boolean;
+  /** Its folder is gone; `git worktree prune` drops it. */
+  readonly prunable: boolean;
 };
 
 export type GitRemoteBranch = {
@@ -105,6 +129,8 @@ export type GitRefLabel = {
   readonly isHead: boolean;
   /** Remote branches of the same name on the same commit, folded into this label. */
   readonly remotes: ReadonlyArray<string>;
+  /** For a branch: the other worktree it is checked out in (`GitBranch.worktree`). */
+  readonly worktree?: string;
 };
 
 /** A multi-step operation git stopped in, waiting for the user. */

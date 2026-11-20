@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GraphRow, layoutGraph } from "./git-graph";
+import { GraphRow, layoutGraph, wipLinks } from "./git-graph";
 
 const commit = (sha: string, ...parents: string[]) => ({ sha, parents });
 
@@ -152,5 +152,36 @@ describe("layoutGraph", () => {
     const rows = layoutGraph([commit("b", "a")]);
 
     expect(segmentsOf(rows[0])).toEqual(["bottom 0>0"]);
+  });
+});
+
+describe("wipLinks", () => {
+  it("runs each work in progress line down its lane to its commit", () => {
+    // The own work in progress hangs from commit 0 in lane 0, another worktree's from commit 2 in lane 1.
+    const links = wipLinks(
+      [
+        { commitIndex: 0, lane: 0 },
+        { commitIndex: 2, lane: 1 },
+      ],
+      4,
+    );
+
+    expect(links.inWipRows).toEqual([[], [{ lane: 0, end: false }]]);
+    expect(links.inCommitRows).toEqual([
+      [
+        { lane: 0, end: true },
+        { lane: 1, end: false },
+      ],
+      [{ lane: 1, end: false }],
+      [{ lane: 1, end: true }],
+      [],
+    ]);
+  });
+
+  it("draws no line for a row whose commit is not loaded", () => {
+    const links = wipLinks([null, { commitIndex: 0, lane: 2 }], 1);
+
+    expect(links.inWipRows).toEqual([[], []]);
+    expect(links.inCommitRows).toEqual([[{ lane: 2, end: true }]]);
   });
 });

@@ -4,6 +4,7 @@ import { NotificationCenterPort } from "@cogno/core/api/notification-center-port
 import { isWslShellContext } from "@cogno/shared/domain";
 import { GitProcessPromptService, GitRunPrompts } from "./git-process-prompt.service";
 import { GitRepositoryService } from "./git-repository.service";
+import { localBranchOf } from "./model/git-branch-sort";
 import { GitConflictSide } from "./model/git-conflict";
 import { GitBranch, GitOperation, GitPullMode, GitRemoteBranch } from "./model/git-model";
 import { GitConflictStages, isPushRejected } from "./model/git-parsers";
@@ -233,8 +234,7 @@ export class GitOperationsService {
 
   /** A local branch tracking the remote branch, or the existing one of that name. */
   checkoutRemoteBranch(remoteBranch: GitRemoteBranch): Promise<GitOperationOutcome> {
-    const local = this.repository.refs().branches.some((b) => b.name === remoteBranch.shortName);
-    return local
+    return localBranchOf(remoteBranch, this.repository.refs())
       ? this.git(["switch", remoteBranch.shortName], "Checkout failed")
       : this.git(["switch", "--track", remoteBranch.name], "Checkout failed");
   }
@@ -250,6 +250,47 @@ export class GitOperationsService {
 
   renameBranch(name: string, newName: string): Promise<GitOperationOutcome> {
     return this.git(["branch", "-m", name, newName], "Rename failed");
+  }
+
+  // Worktrees
+
+  /**
+   * A new worktree at `path` with `ref` checked out, or with the new branch
+   * `newBranch` created at `ref`. A relative `path` is taken from the
+   * repository root.
+   */
+  addWorktree(path: string, ref: string, newBranch?: string): Promise<GitOperationOutcome> {
+    const branch = newBranch ? ["-b", newBranch] : [];
+    return this.git(["worktree", "add", ...branch, "--", path, ref], "Create worktree failed");
+  }
+
+  /** `force` also removes one with changes, which are lost then. */
+  removeWorktree(path: string, force: boolean): Promise<GitOperationOutcome> {
+    const forced = force ? ["--force"] : [];
+    return this.git(["worktree", "remove", ...forced, "--", path], "Remove worktree failed");
+  }
+
+  /** Whether the worktree has changes or untracked files that removing it would lose. */
+  async worktreeHasChanges(path: string): Promise<boolean> {
+    const result = await this.repository.run(
+      ["-C", path, "status", "--porcelain", "-z"],
+      LOCAL_TIMEOUT_MS,
+    );
+    // Without an answer it counts as changed, so nothing is lost unasked.
+    return result?.exitCode !== 0 || result.stdout.length > 0;
+  }
+
+  lockWorktree(path: string): Promise<GitOperationOutcome> {
+    return this.git(["worktree", "lock", "--", path], "Lock worktree failed");
+  }
+
+  unlockWorktree(path: string): Promise<GitOperationOutcome> {
+    return this.git(["worktree", "unlock", "--", path], "Unlock worktree failed");
+  }
+
+  /** Forgets worktrees whose folder is gone. */
+  pruneWorktrees(): Promise<GitOperationOutcome> {
+    return this.git(["worktree", "prune"], "Prune worktrees failed");
   }
 
   /**

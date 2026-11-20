@@ -385,6 +385,58 @@ describe("GitRepositoryService", () => {
     expect(service.status().staged[0]?.path).toBe("b.ts");
   });
 
+  it("reads another worktree's changes beside the refresh, one read at a time", async () => {
+    const releases: Array<() => void> = [];
+    const base = repo("/c/repo", {
+      "worktree list": ran(
+        z(
+          "worktree /c/repo",
+          "HEAD c1",
+          "branch refs/heads/main",
+          "",
+          "worktree /c/wt",
+          "HEAD c1",
+          "branch refs/heads/feature",
+          "",
+        ),
+      ),
+    });
+    const session = sessionHandle((request) => {
+      if (!request.args?.includes("/c/wt")) return base(request);
+      // The other worktree's status takes as long as the test says.
+      return new Promise((resolve) => releases.push(() => resolve(ran(z("?? new.txt")))));
+    });
+    const { service, focus$ } = makeService(session);
+    const otherReads = () =>
+      vi
+        .mocked(session.run)
+        .mock.calls.map(([request]) => request.args ?? [])
+        .filter((args) => args.includes("/c/wt"));
+
+    service.start();
+    await flush();
+    focus$.next(true);
+    await flush();
+    focus$.next(true);
+    await flush();
+
+    // The view does not wait for the other worktree, and its reads do not pile up.
+    expect(service.commits().map((c) => c.sha)).toEqual(["c1"]);
+    expect(otherReads()).toHaveLength(1);
+    expect(otherReads()[0]).toContain("--no-optional-locks");
+
+    releases.shift()?.();
+    await flush();
+    // Asked again meanwhile: the latest read runs next, and only it lands.
+    expect(otherReads()).toHaveLength(2);
+    expect(service.worktreeChanges().size).toBe(0);
+
+    releases.shift()?.();
+    await flush();
+    expect(otherReads()).toHaveLength(2);
+    expect(service.worktreeChanges().get("/c/wt")).toBe(1);
+  });
+
   it("loads a further page of commits on request", async () => {
     const session = sessionHandle(repo("/c/repo"));
     const { service } = makeService(session);

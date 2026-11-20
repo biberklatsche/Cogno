@@ -23,6 +23,47 @@ export type GraphRow = {
 type GraphCommit = { readonly sha: string; readonly parents: ReadonlyArray<string> };
 
 /**
+ * A work in progress row on top of the graph: the commit row it hangs from
+ * and that row's lane, or null when that commit is not loaded.
+ */
+export type WipAnchor = { readonly commitIndex: number; readonly lane: number } | null;
+
+/** A dashed line of a work in progress row in a row below it: passing through, or ending in its node. */
+export type WipLink = { readonly lane: number; readonly end: boolean };
+
+const NO_LINKS: ReadonlyArray<WipLink> = [];
+
+/**
+ * The dashed lines from the work in progress rows on top, in their order,
+ * down to the commits they hang from: per work in progress row the lines of
+ * the ones above that pass it, and per commit row the lines that pass it or
+ * end in its node. Each runs straight in the lane of its commit.
+ */
+export function wipLinks(
+  anchors: ReadonlyArray<WipAnchor>,
+  commitCount: number,
+): {
+  readonly inWipRows: ReadonlyArray<ReadonlyArray<WipLink>>;
+  readonly inCommitRows: ReadonlyArray<ReadonlyArray<WipLink>>;
+} {
+  const inWipRows = anchors.map((_, row) =>
+    anchors.slice(0, row).flatMap((anchor) => (anchor ? [{ lane: anchor.lane, end: false }] : [])),
+  );
+  // Below the deepest commit a line ends in, the rows share one empty list.
+  const reach = Math.max(-1, ...anchors.map((anchor) => anchor?.commitIndex ?? -1));
+  const inCommitRows = Array.from({ length: commitCount }, (_, index) =>
+    index > reach
+      ? NO_LINKS
+      : anchors.flatMap((anchor) =>
+          anchor && index <= anchor.commitIndex
+            ? [{ lane: anchor.lane, end: index === anchor.commitIndex }]
+            : [],
+        ),
+  );
+  return { inWipRows, inCommitRows };
+}
+
+/**
  * Lays out commits (newest first, every child before its parents) in lanes.
  * Each lane waits for one commit: the parent of the commit drawn above it. A
  * commit takes the leftmost lane waiting for it - other lanes waiting for it

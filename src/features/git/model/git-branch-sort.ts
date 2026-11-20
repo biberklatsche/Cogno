@@ -18,6 +18,11 @@ export function shortName(branch: GitBranch | GitRemoteBranch): string {
   return "remote" in branch ? branch.shortName : branch.name;
 }
 
+/** The local branch a checkout of `remoteBranch` switches to: the one of its short name. */
+export function localBranchOf(remoteBranch: GitRemoteBranch, refs: GitRefs): GitBranch | undefined {
+  return refs.branches.find((branch) => branch.name === remoteBranch.shortName);
+}
+
 /** A branch a remote's `HEAD` points at, or one named `main` or `master`. */
 export function isDefaultBranch(branch: GitBranch | GitRemoteBranch, refs: GitRefs): boolean {
   const name = shortName(branch);

@@ -20,7 +20,7 @@ export type GitSidePanel = "refs" | "detail" | "repositories";
 /** Which list a working-tree file is in. */
 export type GitWipFileGroup = "unstaged" | "staged" | "conflicted";
 /** The collapsible sections of the refs panel. */
-export type GitRefsSection = "local" | "remote" | "stashes" | "tags";
+export type GitRefsSection = "local" | "remote" | "worktrees" | "stashes" | "tags";
 
 const STORAGE_KEY = "cogno.git.view";
 

@@ -14,13 +14,14 @@ import {
   untracked,
   viewChild,
 } from "@angular/core";
-import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import { Icon, IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitAvatarService } from "../git-avatar.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitGraphColumn, GitViewState } from "../git-view-state.service";
-import { GraphRow, GraphSegment } from "../model/git-graph";
-import { GitCommit, GitRefLabel } from "../model/git-model";
+import { GraphRow, GraphSegment, WipAnchor, WipLink, wipLinks } from "../model/git-graph";
+import { GitCommit, GitRefLabel, GitWorktree } from "../model/git-model";
+import { folderName } from "../model/git-parsers";
 import { authorInitials, formatCommitTime, graphColor } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 import { PointerResize } from "./pointer-resize";
@@ -49,14 +50,23 @@ type GraphItem = {
   readonly commit: GitCommit;
   readonly row: GraphRow;
   readonly labels: ReadonlyArray<GitRefLabel>;
-  /** The dashed line from the work in progress down to HEAD: through this row, or ending in its node. */
-  readonly wipLink: "through" | "end" | null;
+  /** The dashed lines from the work in progress rows down to their commits, in this row. */
+  readonly wipLinks: ReadonlyArray<WipLink>;
 };
 
-/** A row of the tree: a commit, or the work in progress on top. */
-type TreeRow = GraphItem | { readonly kind: "wip" };
+/** A work in progress row: the one here, or another worktree's with how many files differ there. */
+type WipRow =
+  | { readonly kind: "wip" }
+  | { readonly kind: "worktree-wip"; readonly worktree: GitWorktree; readonly changes: number };
 
-const WIP_ROW: TreeRow = { kind: "wip" };
+/**
+ * A row of the tree: a commit, or on top the work in progress rows, as
+ * GitKraken shows them, with their lane (null when their commit is not
+ * loaded) and the dashed lines of the ones above passing by.
+ */
+type TreeRow =
+  | GraphItem
+  | (WipRow & { readonly lane: number | null; readonly passing: ReadonlyArray<WipLink> });
 
 /**
  * The commit graph: one row per commit with its branch and tag labels, the
@@ -113,6 +123,21 @@ const WIP_ROW: TreeRow = { kind: "wip" };
             (pointerdown)="startResize(column, $event, side === 'left' ? -1 : 1)" (pointermove)="resize($event)"
             (pointerup)="endResize($event)" (pointercancel)="endResize($event)" (dblclick)="resetWidth(column)"></span>
     </ng-template>
+    <!-- A work in progress node: the lines of the rows above passing by, its own running down to its commit. -->
+    <ng-template #wipGraph let-wip>
+      <span class="col-graph">
+        <svg [attr.width]="width('graph')" [attr.height]="rowHeight">
+          @for (link of wip.passing; track $index) {
+            <line [attr.x1]="laneX(link.lane)" y1="0" [attr.x2]="laneX(link.lane)" [attr.y2]="rowHeight" class="wip-link"></line>
+          }
+          @if (wip.lane !== null) {
+            <line [attr.x1]="laneX(wip.lane)" [attr.y1]="rowHeight / 2 + avatarRadius - 1" [attr.x2]="laneX(wip.lane)"
+                  [attr.y2]="rowHeight" class="wip-link"></line>
+          }
+          <circle [attr.cx]="laneX(wip.lane ?? 0)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1" class="wip-node"></circle>
+        </svg>
+      </span>
+    </ng-template>
 
     <!-- The round cut for every avatar, in the image's own box so one serves all lanes. -->
     <svg class="defs" width="0" height="0" aria-hidden="true">
@@ -124,22 +149,14 @@ const WIP_ROW: TreeRow = { kind: "wip" };
     <cdk-virtual-scroll-viewport class="viewport" [itemSize]="rowHeight" [minBufferPx]="400" [maxBufferPx]="800"
                                  (scrolledIndexChange)="loadMoreNearEnd()">
       <ng-container *cdkVirtualFor="let item of items(); trackBy: trackByRow; templateCacheSize: 0">
-      <!-- The work in progress is the first row of the tree and scrolls with it. -->
+      <!-- The work in progress rows are the first rows of the tree and scroll with it. -->
       @if (item.kind === "wip") {
       <div class="columns row wip" [class.selected]="view.selection().kind === 'wip'" (click)="view.select({ kind: 'wip' })">
         @if (visible("refs")) {
           <span class="col-refs"></span>
         }
         @if (visible("graph")) {
-          <span class="col-graph">
-            <svg [attr.width]="width('graph')" [attr.height]="rowHeight">
-              @if (headLane() !== null) {
-                <line [attr.x1]="laneX(headLane() ?? 0)" [attr.y1]="rowHeight / 2 + avatarRadius - 1" [attr.x2]="laneX(headLane() ?? 0)"
-                      [attr.y2]="rowHeight" class="wip-link"></line>
-              }
-              <circle [attr.cx]="laneX(headLane() ?? 0)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1" class="wip-node"></circle>
-            </svg>
-          </span>
+          <ng-container *ngTemplateOutlet="wipGraph; context: { $implicit: item }"></ng-container>
         }
         @if (conflictText(); as text) {
         <span class="col-message ellipsis wip-conflicts">
@@ -158,6 +175,25 @@ const WIP_ROW: TreeRow = { kind: "wip" };
           </span>
         </span>
         }
+      </div>
+      } @else if (item.kind === "worktree-wip") {
+      <!-- Another worktree's changes can only be worked on there: a double click opens a tab in it. -->
+      <div class="columns row wip" [appTooltip]="item.worktree.path"
+           (dblclick)="actions.openWorktreeTab(item.worktree.path)"
+           (contextmenu)="actions.openWorktreeMenu($event, item.worktree)">
+        @if (visible("refs")) {
+          <span class="col-refs"></span>
+        }
+        @if (visible("graph")) {
+          <ng-container *ngTemplateOutlet="wipGraph; context: { $implicit: item }"></ng-container>
+        }
+        <span class="col-message ellipsis">
+          <app-icon class="small-icon subtle" name="mdiFolderMultipleOutline"></app-icon>
+          Work in progress in {{ folder(item.worktree.path) }}
+          <span class="wip-count subtle">
+            {{ item.changes }} uncommitted {{ item.changes === 1 ? "change" : "changes" }}
+          </span>
+        </span>
       </div>
       } @else {
       <div class="columns row" [class.selected]="isSelected(item.commit.sha)"
@@ -178,7 +214,8 @@ const WIP_ROW: TreeRow = { kind: "wip" };
             <span class="label small" [class.head-label]="item.labels[0].isHead"
                   (dblclick)="$event.stopPropagation(); actions.checkoutLabel(item.labels[0])"
                   (contextmenu)="openLabelMenu($event, item.labels[0])">
-              <app-icon class="label-icon" [name]="labelIcon(item.labels[0])"></app-icon>
+              <app-icon class="label-icon" [name]="labelIcon(item.labels[0])"
+                        [appTooltip]="labelIconTooltip(item.labels[0])"></app-icon>
               @if (item.labels[0].remotes.length > 0) {
                 <app-icon class="label-icon" name="mdiCloudOutline" [appTooltip]="item.labels[0].remotes.join(', ')"></app-icon>
               }
@@ -196,9 +233,9 @@ const WIP_ROW: TreeRow = { kind: "wip" };
               @for (segment of item.row.segments; track $index) {
                 <path [attr.d]="segmentPath(segment)" [attr.stroke]="color(segment.color)"></path>
               }
-              @if (item.wipLink; as link) {
-                <line [attr.x1]="laneX(headLane() ?? 0)" y1="0" [attr.x2]="laneX(headLane() ?? 0)"
-                      [attr.y2]="link === 'end' ? rowHeight / 2 : rowHeight" class="wip-link"></line>
+              @for (link of item.wipLinks; track $index) {
+                <line [attr.x1]="laneX(link.lane)" y1="0" [attr.x2]="laneX(link.lane)"
+                      [attr.y2]="link.end ? rowHeight / 2 : rowHeight" class="wip-link"></line>
               }
               <g [appTooltip]="item.commit.author + ' <' + item.commit.email + '>'">
                 @if (item.commit.parents.length > 1) {
@@ -249,7 +286,7 @@ const WIP_ROW: TreeRow = { kind: "wip" };
         @for (label of popover.labels; track label.kind + label.name) {
           <span class="label small stacked" [class.head-label]="label.isHead"
                 (dblclick)="actions.checkoutLabel(label)" (contextmenu)="openLabelMenu($event, label)">
-            <app-icon class="label-icon" [name]="labelIcon(label)"></app-icon>
+            <app-icon class="label-icon" [name]="labelIcon(label)" [appTooltip]="labelIconTooltip(label)"></app-icon>
             @if (label.remotes.length > 0) {
               <app-icon class="label-icon" name="mdiCloudOutline" [appTooltip]="label.remotes.join(', ')"></app-icon>
             }
@@ -440,29 +477,59 @@ export class GitGraphComponent {
       : `${files} during the ${operation.replace("-", " ")}`;
   });
 
-  /** Index of HEAD among the loaded commits, when the work in progress hangs from it. */
-  private readonly headIndex = computed(() => {
-    if (!this.view.wipVisible()) return -1;
-    const sha = this.repository.head().sha;
-    return sha ? this.repository.commits().findIndex((commit) => commit.sha === sha) : -1;
-  });
-  /** The lane the work in progress sits in: HEAD's, so the dashed line runs straight. */
-  readonly headLane = computed(() => {
-    const index = this.headIndex();
-    return index === -1 ? null : (this.repository.graph()[index]?.lane ?? null);
-  });
+  /**
+   * The rows of the tree. On top the work in progress rows: this worktree's
+   * while it has something to commit, then each other worktree with changes.
+   * Each hangs from its HEAD and sits in that commit's lane, so its dashed
+   * line runs straight.
+   */
   readonly items = computed<TreeRow[]>(() => {
     const rows = this.repository.graph();
     const labels = this.repository.refLabels();
-    const headIndex = this.headIndex();
+    const indexBySha = new Map(
+      this.repository.commits().map((commit, index) => [commit.sha, index]),
+    );
+    const anchorOf = (sha: string | null): WipAnchor => {
+      const commitIndex = sha === null ? undefined : indexBySha.get(sha);
+      const lane = commitIndex === undefined ? undefined : rows[commitIndex]?.lane;
+      return commitIndex === undefined || lane === undefined ? null : { commitIndex, lane };
+    };
+    const changes = this.repository.worktreeChanges();
+    const wipRows: ReadonlyArray<{ readonly anchor: WipAnchor; readonly row: WipRow }> = [
+      ...(this.view.wipVisible()
+        ? [{ anchor: anchorOf(this.repository.head().sha), row: { kind: "wip" as const } }]
+        : []),
+      ...this.repository.worktrees().flatMap((worktree) => {
+        const count = changes.get(worktree.path);
+        return count === undefined
+          ? []
+          : [
+              {
+                anchor: anchorOf(worktree.head),
+                row: { kind: "worktree-wip" as const, worktree, changes: count },
+              },
+            ];
+      }),
+    ];
+    const links = wipLinks(
+      wipRows.map((wip) => wip.anchor),
+      rows.length,
+    );
+    const wips = wipRows.map(
+      ({ anchor, row }, index): TreeRow => ({
+        ...row,
+        lane: anchor?.lane ?? null,
+        passing: links.inWipRows[index] ?? [],
+      }),
+    );
     const commits = this.repository.commits().map<TreeRow>((commit, index) => ({
       kind: "commit",
       commit,
       row: rows[index] as GraphRow,
       labels: labels.get(commit.sha) ?? [],
-      wipLink: index < headIndex ? "through" : index === headIndex ? "end" : null,
+      wipLinks: links.inCommitRows[index] ?? [],
     }));
-    return this.view.wipVisible() ? [WIP_ROW, ...commits] : commits;
+    return [...wips, ...commits];
   });
   /** The graph column follows the lanes unless the user dragged it. */
   private readonly graphWidth = computed(() => {
@@ -524,7 +591,16 @@ export class GitGraphComponent {
     });
   }
 
-  trackByRow = (_index: number, item: TreeRow) => (item.kind === "wip" ? "wip" : item.commit.sha);
+  trackByRow = (_index: number, item: TreeRow) =>
+    item.kind === "wip"
+      ? "wip"
+      : item.kind === "worktree-wip"
+        ? `wip:${item.worktree.path}`
+        : item.commit.sha;
+
+  folder(path: string): string {
+    return folderName(path);
+  }
 
   /** The next page follows the scroll instead of a button; one request at a time. */
   loadMoreNearEnd(): void {
@@ -600,9 +676,15 @@ export class GitGraphComponent {
     return authorInitials(author);
   }
 
-  labelIcon(label: GitRefLabel): "mdiTagOutline" | "mdiCloudOutline" | "mdiLaptop" {
+  /** A branch another worktree has checked out shows that instead of the local mark. */
+  labelIcon(label: GitRefLabel): Icon {
     if (label.kind === "tag") return "mdiTagOutline";
-    return label.kind === "remote" ? "mdiCloudOutline" : "mdiLaptop";
+    if (label.kind === "remote") return "mdiCloudOutline";
+    return label.worktree ? "mdiFolderMultipleOutline" : "mdiLaptop";
+  }
+
+  labelIconTooltip(label: GitRefLabel): string {
+    return label.worktree ? `Checked out in worktree ${label.worktree}` : "";
   }
 
   showRefs(item: GraphItem, event: MouseEvent): void {

@@ -5,6 +5,7 @@ import { GitRepositoriesOverviewService } from "../git-repositories-overview.ser
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState } from "../git-view-state.service";
+import { folderName } from "../model/git-parsers";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
 /** Repository and branch, and the everyday actions: Pull, Push, Branch, Stash, Pop. */
@@ -146,10 +147,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
   ],
 })
 export class GitToolbarComponent {
-  readonly repositoryName = computed(() => {
-    const root = this.repository.root() ?? "";
-    return root.split(/[\\/]/).filter(Boolean).pop() ?? root;
-  });
+  readonly repositoryName = computed(() => folderName(this.repository.root() ?? ""));
   readonly detachedLabel = computed(() =>
     `HEAD ${this.repository.head().sha?.slice(0, 7) ?? ""}`.trim(),
   );
