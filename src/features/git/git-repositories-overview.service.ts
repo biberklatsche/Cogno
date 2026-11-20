@@ -25,11 +25,13 @@ type TerminalRepository = {
 
 /**
  * A repository as the repositories panel shows it: all terminals of one
- * workspace that stand in it, in tab order, share one tile, which shows the
- * placement of the first.
+ * workspace that stand in it, in tab order, share one tile, which is placed
+ * where the first stands.
  */
 export type GitRepositoryTile = Omit<TerminalRepository, "terminalId"> & {
   readonly terminalIds: ReadonlyArray<TerminalId>;
+  /** The tabs these terminals stand in, each once, in tab order. */
+  readonly tabs: ReadonlyArray<TerminalPlacement>;
 };
 
 /** A refresh of one terminal that is running; a request meanwhile makes it run once more. */
@@ -238,7 +240,10 @@ export class GitRepositoriesOverviewService {
   }
 }
 
-/** One tile per repository and workspace, in tab order; its first terminal gives the placement. */
+/**
+ * One tile per repository and workspace, in tab order; its first terminal
+ * gives the placement. Terminals split in one tab count as one tab.
+ */
 function mergeSameRepository(repositories: ReadonlyArray<TerminalRepository>): GitRepositoryTile[] {
   const byKey = new Map<string, GitRepositoryTile>();
   const inTabOrder = [...repositories].sort(
@@ -249,12 +254,21 @@ function mergeSameRepository(repositories: ReadonlyArray<TerminalRepository>): G
   for (const { terminalId, ...repository } of inTabOrder) {
     const key = `${repository.placement?.workspaceId ?? ""}\0${repository.root}`;
     const tile = byKey.get(key);
-    byKey.set(
-      key,
-      tile
-        ? { ...tile, terminalIds: [...tile.terminalIds, terminalId] }
-        : { ...repository, terminalIds: [terminalId] },
-    );
+    const placement = repository.placement;
+    if (!tile) {
+      byKey.set(key, {
+        ...repository,
+        terminalIds: [terminalId],
+        tabs: placement ? [placement] : [],
+      });
+      continue;
+    }
+    const newTab = placement && !tile.tabs.some((tab) => tab.tabIndex === placement.tabIndex);
+    byKey.set(key, {
+      ...tile,
+      terminalIds: [...tile.terminalIds, terminalId],
+      tabs: newTab ? [...tile.tabs, placement] : tile.tabs,
+    });
   }
   return [...byKey.values()];
 }

@@ -104,6 +104,7 @@ describe("GitRepositoriesOverviewService", () => {
         sha: "c1",
         counts: { added: 2, modified: 1, deleted: 1 },
         placement: expect.objectContaining({ tabTitle: "tab t1" }),
+        tabs: [expect.objectContaining({ tabTitle: "tab t1" })],
       },
     ]);
   });
@@ -138,6 +139,28 @@ describe("GitRepositoriesOverviewService", () => {
       ["/c/other", ["t4"], "tab t4"],
       ["/c/app", ["t3"], "tab t3"],
     ]);
+    expect(service.tiles()[0]?.tabs.map((tab) => tab.tabTitle)).toEqual(["tab t2", "tab t1"]);
+  });
+
+  it("lists a tab once when several of its split terminals stand in the repository", async () => {
+    getPlacement.mockImplementation((terminalId: string) => ({
+      workspaceId: "w1",
+      workspaceName: "Work",
+      workspacePosition: 0,
+      tabTitle: terminalId === "t3" ? "other" : "split",
+      tabIndex: terminalId === "t3" ? 1 : 0,
+    }));
+    sessions$.next([
+      session("t1", repo("/c/app", "main", "")),
+      session("t2", repo("/c/app", "main", "")),
+      session("t3", repo("/c/app", "main", "")),
+    ]);
+
+    service.start();
+    await flush();
+
+    expect(service.tiles()[0]?.terminalIds).toEqual(["t1", "t2", "t3"]);
+    expect(service.tiles()[0]?.tabs.map((tab) => tab.tabTitle)).toEqual(["split", "other"]);
   });
 
   it("does nothing while the panel is closed, and drops the tile of a session that ended", async () => {
