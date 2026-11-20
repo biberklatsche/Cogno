@@ -63,7 +63,9 @@ export function layoutGraph(
    */
   const waitingLane = (parent: string): number => {
     const drawn = lanes.findIndex((waitingFor, index) => waitingFor === parent && !isHidden(index));
-    return drawn !== -1 || lanes[0] !== parent ? drawn : 0;
+    if (drawn !== -1) return drawn;
+    // Only the hidden first lane can still wait for it here.
+    return lanes[0] === parent ? 0 : -1;
   };
 
   for (const commit of commits) {
@@ -89,6 +91,7 @@ export function layoutGraph(
         segments.push({ half: "top", from: index, to: index, color: laneColors[index] ?? 0 });
       }
     }
+    // While hidden, only the checked-out commit can take lane 0; its node starts the lane.
     if (lane === 0) headLaneHidden = false;
 
     const color = laneColors[lane] ?? 0;
