@@ -1612,7 +1612,7 @@ nach einem Fokuswechsel nicht in das falsche Terminal schreiben.
 **Übergreifende Features** bekommen `TerminalMonitorPort` (Aktivität, Ende und
 cwd je Terminal), `TerminalNavigator.navigateToTerminal(id)` (Workspace,
 Tab und Fokus auf ein Terminal bringen), `TerminalNavigator.openTabAt(cwd, id)`
-(neuer Tab in einem Ordner, mit der Shell und im Workspace dieses Terminals;
+(neuer Tab in einem Ordner, mit der Shell, auf dem Rechner und im Workspace dieses Terminals;
 Konsument: das Git-Panel, das einen Tab in einem Worktree öffnet) und als
 dessen lesendes Gegenstück
 `TerminalPlacementPort.getPlacement(id)` (Workspace und Tab eines Terminals

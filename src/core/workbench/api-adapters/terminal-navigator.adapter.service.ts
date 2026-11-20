@@ -36,6 +36,8 @@ export class TerminalNavigatorAdapterService extends TerminalNavigator {
       payload: {
         tabId: IdCreator.newTabId(),
         shellName: this.gridListService.findShellNameByTerminalId(besideTerminalId),
+        // The folder is on the terminal's machine: the tab opens there too.
+        host: this.gridListService.findHostByTerminalId(besideTerminalId),
         workingDir: cwd,
         isActive: true,
       },

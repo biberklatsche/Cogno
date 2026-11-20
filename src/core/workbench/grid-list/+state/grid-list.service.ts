@@ -98,6 +98,11 @@ export class GridListService implements PaneLayoutLookup {
     return this.locate(terminalId)?.node.data?.shellName;
   }
 
+  /** The machine the terminal's shell runs on; none for this one. */
+  findHostByTerminalId(terminalId: TerminalId): string | undefined {
+    return this.locate(terminalId)?.node.data?.host;
+  }
+
   removeWorkspaceRuntime(workspaceIdentifier: string): void {
     this.destroyWorkspaceGridList(this.stateByWorkspaceIdentifier.get(workspaceIdentifier)?.grids);
     this.stateByWorkspaceIdentifier.delete(workspaceIdentifier);
