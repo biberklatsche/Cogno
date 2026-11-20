@@ -43,7 +43,8 @@ export function isSelectedSideMenuItem(
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <aside #overlayAside class="base-overlay flat"
+        <aside #overlayAside class="base-overlay"
+               [class.flat]="isPinned() || isExpanded()"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!isPinned()"
                [class.shift-left]="visibleItems().length > 0 || bottomItems().length > 0"
@@ -184,10 +185,23 @@ export function isSelectedSideMenuItem(
                 opacity: 0;
             }
 
-            /* Only a floating panel lets the terminals show through; a pinned one
-               sits beside them and an expanded one replaces them. */
-            &:not(.overlay), &.expanded {
+            /* Only a floating panel lets the terminals show through, and its
+               shadow shows it lies above them; an expanded one replaces them. */
+            &.expanded {
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+            }
+
+            /* A pinned panel belongs to the tab like one more pane: the
+               terminal's background, no frame, and the divider between
+               panes towards the terminals. That it stays is visible at once. */
+            &:not(.overlay):not(.expanded) {
+                margin-top: 0;
+                margin-bottom: 0;
+                border: none;
+                border-radius: 0;
+                backdrop-filter: none;
+                background-color: var(--background-color);
+                border-left: 2px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
 
             &.overlay {
