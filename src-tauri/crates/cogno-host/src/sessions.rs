@@ -8,7 +8,8 @@
 use std::collections::{HashMap, HashSet};
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{mpsc, Arc, Mutex, MutexGuard};
+use std::time::Duration;
 
 use portable_pty::CommandBuilder;
 
@@ -29,6 +30,10 @@ use crate::sync::lock;
 /// buffered up to this size, so large reads coalesce output into few
 /// messages without any extra batching thread.
 const READ_BUF_SIZE: usize = 64 * 1024;
+/// How long the reader, at the end of the PTY, waits for the shell's exit
+/// code. A shell that ends closes its side of the PTY a moment before its
+/// exit can be collected; only an end with no exit after it is a failure.
+const EXIT_AFTER_PTY_END: Duration = Duration::from_secs(1);
 /// The user's home directory in a profile's working directory.
 const HOME_PREFIX: &str = "~";
 
@@ -280,6 +285,7 @@ impl Sessions {
                 handle.end(ExitReason::PtyFailed);
             });
         }
+        let (exited, exit_collected) = mpsc::channel::<()>();
         {
             let handle = handle.clone();
             std::thread::spawn(move || {
@@ -297,12 +303,16 @@ impl Sessions {
                 // This also stops the reader, even if a grandchild still holds
                 // the PTY and keeps producing output.
                 handle.end(reason);
+                let _ = exited.send(());
             });
         }
         std::thread::spawn(move || {
             pump_output(output, &handle.shared);
-            // EOF or a read error: the PTY is unusable. If the session was
-            // ended otherwise, it is no longer in the table and this is a no-op.
+            // EOF or a read error (EIO on Linux): usually the shell ending,
+            // whose exit is reported with its code. Only when none follows is
+            // the PTY itself at fault. If the session was ended otherwise, it
+            // is no longer in the table and this is a no-op.
+            let _ = exit_collected.recv_timeout(EXIT_AFTER_PTY_END);
             handle.end(ExitReason::PtyFailed);
         });
 
