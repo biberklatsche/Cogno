@@ -57,6 +57,15 @@ export function layoutGraph(
     return index === -1 ? lanes.length : index;
   };
 
+  /**
+   * The lane a merge line to `parent` joins: the leftmost one already drawn
+   * towards it, else the hidden first lane when it waits for it; -1 for none.
+   */
+  const waitingLane = (parent: string): number => {
+    const drawn = lanes.findIndex((waitingFor, index) => waitingFor === parent && !isHidden(index));
+    return drawn !== -1 || lanes[0] !== parent ? drawn : 0;
+  };
+
   for (const commit of commits) {
     const segments: GraphSegment[] = [];
     let lane = lanes.indexOf(commit.sha);
@@ -96,7 +105,7 @@ export function layoutGraph(
       segments.push({ half: "bottom", from: lane, to: lane, color });
     }
     for (const parent of otherParents) {
-      let target = lanes.indexOf(parent);
+      let target = waitingLane(parent);
       if (target === -1) {
         target = freeLane();
         lanes[target] = parent;

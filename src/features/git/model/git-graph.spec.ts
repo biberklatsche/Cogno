@@ -121,6 +121,27 @@ describe("layoutGraph", () => {
     expect(Math.max(...rows.map((row) => row.width))).toBe(3);
   });
 
+  it("joins a merge of HEAD into the lane already drawn towards it", () => {
+    // Tip x sits on HEAD h, so lane 1 runs down to h; m, further down, merges h as well.
+    const rows = layoutGraph(
+      [commit("x", "h"), commit("m", "p", "h"), commit("h", "p"), commit("p")],
+      "h",
+    );
+
+    expect(rows.map((row) => row.lane)).toEqual([1, 2, 0, 0]);
+    expect(segmentsOf(rows[1])).toEqual(["bottom 1>1", "bottom 2>1", "bottom 2>2", "top 1>1"]);
+    // One line into HEAD, the one lane 1 brings; lane 0 starts at HEAD's node.
+    expect(segmentsOf(rows[2])).toEqual(["bottom 0>0", "bottom 2>2", "top 1>0", "top 2>2"]);
+  });
+
+  it("does not start HEAD's lane for a commit whose parents are both HEAD", () => {
+    const rows = layoutGraph([commit("m", "h", "h"), commit("h")], "h");
+
+    // Both parents go down m's own lane, which already waits for h.
+    expect(segmentsOf(rows[0])).toEqual(["bottom 1>1", "bottom 1>1"]);
+    expect(segmentsOf(rows[1])).toEqual(["top 1>0"]);
+  });
+
   it("reserves nothing when HEAD is not among the loaded commits", () => {
     const rows = layoutGraph([commit("b", "a"), commit("a")], "elsewhere");
 
