@@ -11,6 +11,7 @@ const fs = {
   readTextFile: vi.fn(async () => ""),
   writeTextFile: vi.fn(async () => undefined),
   mkdir: vi.fn(async () => undefined),
+  remove: vi.fn(async () => undefined),
   readDir: vi.fn(async () => []),
   watchChanges$: vi.fn(),
   convertFileSrc: vi.fn((path: string) => `mock-url://${path}`),
@@ -74,19 +75,13 @@ describe("ShellIntegrationWriter", () => {
     expect(writeTextFileSpy).not.toHaveBeenCalled();
   });
 
-  it("creates directories, writes each shell's integration files and updates version logs", async () => {
-    const existingPaths = new Set<string>([
-      "/tmp/cogno/shell-integration/VERSION",
-      "/tmp/cogno/shell-integration/logs/updates.log",
-    ]);
+  it("creates the directory, writes each shell's integration files and the version", async () => {
+    const existingPaths = new Set<string>(["/tmp/cogno/shell-integration/VERSION"]);
 
     vi.mocked(fs.exists).mockImplementation(async (path: string) => existingPaths.has(path));
     vi.mocked(fs.readTextFile).mockImplementation(async (path: string) => {
       if (path.endsWith("/VERSION")) {
         return "1.0.0";
-      }
-      if (path.endsWith("/updates.log")) {
-        return "existing log\n";
       }
       return "";
     });
@@ -117,7 +112,6 @@ describe("ShellIntegrationWriter", () => {
     ] as unknown as ReadonlyArray<ShellSupportDefinitionContract>);
 
     expect(mkdirSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration", { recursive: true });
-    expect(mkdirSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/logs", { recursive: true });
     expect(writeTextFileSpy).toHaveBeenCalledWith(
       "/tmp/cogno/shell-integration/bash/base.sh",
       "base",
@@ -131,11 +125,23 @@ describe("ShellIntegrationWriter", () => {
       "entry",
     );
     expect(writeTextFileSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/VERSION", "1.3.0");
-    expect(writeTextFileSpy).toHaveBeenCalledWith(
-      "/tmp/cogno/shell-integration/logs/updates.log",
-      expect.stringContaining("Updated shell integration to version 1.3.0"),
+    expect(writeTextFileSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining("/logs/"),
+      expect.anything(),
     );
-    expect(loggerSpy).toHaveBeenCalledWith("Installing/updating shell integration scripts...");
+    expect(loggerSpy).toHaveBeenCalledWith("Shell integration updated to version 1.3.0");
+  });
+
+  it("removes the former log folder, where start-up logs used to pile up", async () => {
+    vi.mocked(fs.exists).mockResolvedValue(true);
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
+    const removeSpy = vi.mocked(fs.remove).mockResolvedValue(undefined);
+
+    await writer.ensure([]);
+
+    expect(removeSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/logs", {
+      recursive: true,
+    });
   });
 
   it("reports and rethrows installation errors", async () => {

@@ -20,6 +20,8 @@ pub struct ShellProfile {
 
 pub struct ShellSpawner {
     integration_root: PathBuf,
+    /// Where the shell writes its start-up log; none unless logging at debug level.
+    bootstrap_log_dir: Option<PathBuf>,
 }
 
 /// What a spawn needs: the program, its arguments, its environment and the
@@ -27,7 +29,7 @@ pub struct ShellSpawner {
 pub type PreparedSpawn = (String, Vec<String>, HashMap<String, String>, String);
 
 impl ShellSpawner {
-    pub fn new(dev_mode: bool) -> Result<Self, String> {
+    pub fn new(dev_mode: bool, bootstrap_log_dir: Option<PathBuf>) -> Result<Self, String> {
         let home = dirs::home_dir().ok_or("Could not determine home directory")?;
         let dir_name = if dev_mode {
             DEVELOPMENT_HOME_DIRECTORY_NAME
@@ -36,7 +38,10 @@ impl ShellSpawner {
         };
         let integration_root = home.join(dir_name).join("shell-integration");
 
-        Ok(Self { integration_root })
+        Ok(Self {
+            integration_root,
+            bootstrap_log_dir,
+        })
     }
 
     pub fn prepare_spawn(&self, profile: &ShellProfile) -> Result<PreparedSpawn, String> {
@@ -82,7 +87,6 @@ impl ShellSpawner {
         // Build environment
         let cogno_paths = self.get_cogno_paths();
         let cogno_executable_path = self.get_cogno_executable_path();
-        let log_dir = self.integration_root.join("logs");
 
         // Bounded wait: prefetch usually finished long ago; if the user's rc
         // files are slow or hang, spawn without the login baseline instead of
@@ -92,7 +96,7 @@ impl ShellSpawner {
 
         let env_builder = EnvironmentBuilder::new(
             self.integration_root.clone(),
-            log_dir,
+            self.bootstrap_log_dir.as_deref(),
             load_user_rc,
             enable_integration,
         )
@@ -233,6 +237,7 @@ mod tests {
     fn spawn(profile: &ShellProfile) -> (Vec<String>, HashMap<String, String>) {
         let spawner = ShellSpawner {
             integration_root: PathBuf::from("/tmp/cogno-test-integration"),
+            bootstrap_log_dir: None,
         };
         let (_, argv, env, _) = spawner.prepare_spawn(profile).expect("spawn is prepared");
         (argv, env)
@@ -275,6 +280,7 @@ mod tests {
     fn a_quote_in_the_integration_path_stays_inside_the_powershell_literal() {
         let spawner = ShellSpawner {
             integration_root: PathBuf::from("/home/O'Brien/cogno"),
+            bootstrap_log_dir: None,
         };
         let args = spawner
             .get_integration_args("PowerShell")

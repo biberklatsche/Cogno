@@ -31,6 +31,7 @@ export class ShellIntegrationWriter {
     const integrationRoot = await this.getIntegrationRoot();
 
     try {
+      await this.removeFormerLogs(integrationRoot);
       const availableShells = await this.shells.load();
       const availableShellTypes = new Set(availableShells.map((shell) => shell.shell_type));
       const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
@@ -54,9 +55,8 @@ export class ShellIntegrationWriter {
         definitionsByShellType,
       );
       await this.writeVersion(integrationRoot);
-      await this.logUpdate(integrationRoot);
 
-      Logger.info("Shell integration scripts installed successfully");
+      Logger.info(`Shell integration updated to version ${INTEGRATION_VERSION}`);
     } catch (error) {
       ErrorReporter.reportException({
         error,
@@ -120,12 +120,20 @@ export class ShellIntegrationWriter {
   }
 
   private async createBaseDirectories(integrationRoot: string): Promise<void> {
-    const directories = [integrationRoot, `${integrationRoot}/logs`];
+    if (!(await this.fs.exists(integrationRoot))) {
+      await this.fs.mkdir(integrationRoot, { recursive: true });
+    }
+  }
 
-    for (const directory of directories) {
-      if (!(await this.fs.exists(directory))) {
-        await this.fs.mkdir(directory, { recursive: true });
-      }
+  /**
+   * Shell start-up logs used to pile up here, one file per shell and never
+   * cleared. They now go to the app's log folder, and only at debug level
+   * (the backend sets COGNO_LOG_DIR); the old folder is removed once.
+   */
+  private async removeFormerLogs(integrationRoot: string): Promise<void> {
+    const formerLogs = `${integrationRoot}/logs`;
+    if (await this.fs.exists(formerLogs)) {
+      await this.fs.remove(formerLogs, { recursive: true });
     }
   }
 
@@ -169,18 +177,5 @@ export class ShellIntegrationWriter {
 
   private async writeVersion(integrationRoot: string): Promise<void> {
     await this.fs.writeTextFile(`${integrationRoot}/VERSION`, INTEGRATION_VERSION);
-  }
-
-  private async logUpdate(integrationRoot: string): Promise<void> {
-    const logFile = `${integrationRoot}/logs/updates.log`;
-    const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
-    const entry = `[${timestamp}] Updated shell integration to version ${INTEGRATION_VERSION}\n`;
-
-    let existing = "";
-    if (await this.fs.exists(logFile)) {
-      existing = await this.fs.readTextFile(logFile);
-    }
-
-    await this.fs.writeTextFile(logFile, existing + entry);
   }
 }

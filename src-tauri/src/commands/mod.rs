@@ -13,6 +13,7 @@ pub mod notification;
 pub mod process_job;
 pub mod processes;
 pub mod pty;
+pub mod shell_bootstrap_logs;
 pub mod shell_spawner;
 pub mod shells;
 pub mod window;
