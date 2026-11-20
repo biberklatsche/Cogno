@@ -8,6 +8,13 @@ const CACHE_DIR = "git";
 const CACHE_FILE = "avatars.json";
 /** A kept avatar older than this is still shown, and fetched anew meanwhile. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/**
+ * A kept avatar not fetched again for this long is dropped from the file:
+ * its author was not shown for weeks. Together with the cap on how many are
+ * kept, this keeps the file small however many repositories pass through.
+ */
+const KEEP_FOR_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_KEPT = 2000;
 const SAVE_DELAY_MS = 1000;
 
 /** An avatar as kept on disk, under the hash of its email. */
@@ -23,15 +30,28 @@ type KeptAvatar = { readonly dataUrl: string; readonly fetchedAt: number };
  * under the email hash, and shown from there at once; one older than a week
  * is fetched anew in the background. Until a picture is there, `url` answers
  * null and the caller shows the author's initials. One that cannot be
- * fetched, offline say, stays off for the session.
+ * fetched, offline say, stays off for the session; one that cannot be shown
+ * is dropped from the file too, so it is fetched again next time.
+ *
+ * Gravatar answers with `Access-Control-Allow-Origin: *`, which `fetch` from
+ * the webview needs. Avatars fetched in the second before the app closes are
+ * not written; they are fetched again on the next start.
  */
 @Injectable({ providedIn: "root" })
 export class GitAvatarService {
   /** The URL per email once known; null when there is none to show. */
   private readonly urls = signal<ReadonlyMap<string, string | null>>(new Map());
   private readonly pending = new Set<string>();
+  /** The hash each asked email was kept under, to drop it when it cannot be shown. */
+  private readonly hashes = new Map<string, string>();
+  /** Downloads in progress by hash: emails that differ only in case or spaces share one. */
+  private readonly downloads = new Map<string, Promise<string | null>>();
+  /** Dropped in this session; another window's copy on disk does not bring them back. */
+  private readonly dropped = new Set<string>();
   private kept: Promise<Map<string, KeptAvatar>> | null = null;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The write in progress; the next one waits for it, so two never overlap. */
+  private saving: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly fs: Fs,
@@ -45,8 +65,15 @@ export class GitAvatarService {
     return null;
   }
 
+  /** The picture of `email` could not be shown: none for this session, and gone from the file. */
   markFailed(email: string): void {
     this.remember(email, null);
+    const hash = this.hashes.get(email);
+    if (!hash) return;
+    this.dropped.add(hash);
+    void this.loadKept().then((kept) => {
+      if (kept.delete(hash)) this.scheduleSave();
+    });
   }
 
   private request(email: string): void {
@@ -57,25 +84,45 @@ export class GitAvatarService {
   }
 
   private async resolve(email: string, normalized: string): Promise<void> {
-    const hash = await sha256Hex(normalized);
-    const kept = (await this.loadKept()).get(hash);
-    // The kept one shows first, so a fresh one fetched meanwhile replaces it, never the other way round.
-    if (kept) this.remember(email, kept.dataUrl);
-    if (kept && Date.now() - kept.fetchedAt < MAX_AGE_MS) return;
-    const fresh = await this.download(hash);
-    if (fresh || !kept) this.remember(email, fresh);
+    try {
+      const hash = await sha256Hex(normalized);
+      this.hashes.set(email, hash);
+      const kept = (await this.loadKept()).get(hash);
+      // The kept one shows first, so a fresh one fetched meanwhile replaces it, never the other way round.
+      if (kept) this.remember(email, kept.dataUrl);
+      if (kept && Date.now() - kept.fetchedAt < MAX_AGE_MS) return;
+      const fresh = await this.downloadOnce(hash);
+      if (fresh || !kept) this.remember(email, fresh);
+    } catch {
+      this.remember(email, null);
+    }
   }
 
+  private downloadOnce(hash: string): Promise<string | null> {
+    const running = this.downloads.get(hash);
+    if (running) return running;
+    const download = this.download(hash).finally(() => this.downloads.delete(hash));
+    this.downloads.set(hash, download);
+    return download;
+  }
+
+  /** The picture as a data URL, kept for next time; null when there is no picture to have. */
   private async download(hash: string): Promise<string | null> {
     try {
       const response = await fetch(
         `https://www.gravatar.com/avatar/${hash}?s=${AVATAR_SIZE}&d=retro`,
       );
       if (!response.ok) return null;
-      const type = response.headers.get("content-type") ?? "image/png";
+      // A portal or proxy may answer with a page instead; only a picture is kept.
+      const type = (response.headers.get("content-type") ?? "image/png")
+        .split(";")[0]
+        ?.trim()
+        .toLowerCase();
+      if (!type?.startsWith("image/")) return null;
       const bytes = new Uint8Array(await response.arrayBuffer());
       const dataUrl = `data:${type};base64,${bytesToBase64(bytes)}`;
       (await this.loadKept()).set(hash, { dataUrl, fetchedAt: Date.now() });
+      this.dropped.delete(hash);
       this.scheduleSave();
       return dataUrl;
     } catch {
@@ -84,13 +131,13 @@ export class GitAvatarService {
   }
 
   private loadKept(): Promise<Map<string, KeptAvatar>> {
-    this.kept ??= this.readKept();
+    this.kept ??= this.readFile();
     return this.kept;
   }
 
-  private async readKept(): Promise<Map<string, KeptAvatar>> {
+  /** What the file holds; empty when it is missing or broken. */
+  private async readFile(): Promise<Map<string, KeptAvatar>> {
     try {
-      // A missing or broken file fails here and starts empty.
       const path = await this.cacheFilePath();
       const stored = JSON.parse(await this.fs.readTextFile(path)) as Record<string, unknown>;
       return new Map(
@@ -106,16 +153,31 @@ export class GitAvatarService {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => {
       this.saveTimer = null;
-      void this.save();
+      this.saving = this.saving.then(() => this.save());
     }, SAVE_DELAY_MS);
   }
 
+  /**
+   * Writes the kept avatars, together with what another window wrote
+   * meanwhile (the newer of each wins), without those not fetched for weeks
+   * and at most `MAX_KEPT`, the newest.
+   */
   private async save(): Promise<void> {
     try {
       const kept = await this.loadKept();
+      for (const [hash, avatar] of await this.readFile()) {
+        if (this.dropped.has(hash)) continue;
+        const own = kept.get(hash);
+        if (!own || own.fetchedAt < avatar.fetchedAt) kept.set(hash, avatar);
+      }
+      const since = Date.now() - KEEP_FOR_MS;
+      const written = [...kept]
+        .filter(([, avatar]) => avatar.fetchedAt >= since)
+        .sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
+        .slice(0, MAX_KEPT);
       const path = await this.cacheFilePath();
       await this.fs.mkdir(await this.paths.dirname(path), { recursive: true });
-      await this.fs.writeTextFile(path, JSON.stringify(Object.fromEntries(kept)));
+      await this.fs.writeTextFile(path, JSON.stringify(Object.fromEntries(written)));
     } catch {
       // Not kept this time; the avatars are fetched again on the next start.
     }

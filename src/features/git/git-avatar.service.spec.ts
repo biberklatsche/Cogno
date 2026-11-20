@@ -128,4 +128,115 @@ describe("GitAvatarService", () => {
 
     expect(service.url(EMAIL)).toBeNull();
   });
+
+  it("drops a picture that cannot be shown from the file too, so it is fetched again", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    files.set(FILE, JSON.stringify({ [HASH]: { dataUrl: "data:broken", fetchedAt: Date.now() } }));
+    const service = new GitAvatarService(fs, paths);
+    expect(await urlOnce(service)).toBe("data:broken");
+
+    service.markFailed(EMAIL);
+    await vi.waitFor(() => vi.runAllTimersAsync());
+    await vi.runAllTimersAsync();
+
+    expect(JSON.parse(files.get(FILE) ?? "{}")).toEqual({});
+    vi.useRealTimers();
+    expect(await urlOnce(new GitAvatarService(fs, paths))).toBe("data:image/png;base64,AQID");
+  });
+
+  it("keeps nothing that is not a picture, such as a portal's page", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    fetchMock.mockResolvedValue(
+      new Response("<html></html>", { headers: { "content-type": "text/html" } }),
+    );
+    const service = new GitAvatarService(fs, paths);
+
+    service.url(EMAIL);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    await vi.runAllTimersAsync();
+
+    expect(service.url(EMAIL)).toBeNull();
+    expect(files.has(FILE)).toBe(false);
+  });
+
+  it("leaves the parameters of the content type out of the data URL", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(new Uint8Array([1, 2, 3]), {
+        headers: { "content-type": "Image/PNG; charset=binary" },
+      }),
+    );
+    const service = new GitAvatarService(fs, paths);
+
+    expect(await urlOnce(service)).toBe("data:image/png;base64,AQID");
+  });
+
+  it("fetches once for emails that differ only in case and spaces", async () => {
+    let release: () => void = () => undefined;
+    fetchMock.mockImplementation(
+      () => new Promise<Response>((resolve) => (release = () => resolve(answer([1, 2, 3])))),
+    );
+    const service = new GitAvatarService(fs, paths);
+
+    service.url(EMAIL);
+    service.url(" lars@example.com ");
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    release();
+
+    await vi.waitFor(() => expect(service.url(" lars@example.com ")).not.toBeNull());
+    expect(service.url(EMAIL)).toBe(service.url(" lars@example.com "));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes what another window kept meanwhile, but not avatars unseen for weeks", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const service = new GitAvatarService(fs, paths);
+    await urlOnce(service);
+    // Another window wrote the file after this one read it.
+    files.set(
+      FILE,
+      JSON.stringify({
+        other: { dataUrl: "data:other", fetchedAt: Date.now() },
+        unseen: { dataUrl: "data:unseen", fetchedAt: Date.now() - 40 * DAY },
+      }),
+    );
+
+    await vi.runAllTimersAsync();
+
+    expect(Object.keys(JSON.parse(files.get(FILE) ?? "{}")).sort()).toEqual([HASH, "other"]);
+  });
+
+  it("keeps at most 2000 avatars, the newest", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const now = Date.now();
+    const stored = Object.fromEntries(
+      Array.from({ length: 2000 }, (_, index) => [
+        `h${index}`,
+        { dataUrl: "data:x", fetchedAt: now - DAY - index },
+      ]),
+    );
+    files.set(FILE, JSON.stringify(stored));
+    const service = new GitAvatarService(fs, paths);
+    await urlOnce(service);
+
+    await vi.runAllTimersAsync();
+
+    const written = Object.keys(JSON.parse(files.get(FILE) ?? "{}"));
+    expect(written).toHaveLength(2000);
+    expect(written).toContain(HASH);
+    expect(written).not.toContain("h1999");
+  });
+
+  it("gives up on an email it cannot hash instead of asking forever", async () => {
+    const digest = vi.spyOn(crypto.subtle, "digest").mockRejectedValueOnce(new Error("no crypto"));
+    const service = new GitAvatarService(fs, paths);
+
+    service.url(EMAIL);
+    await vi.waitFor(() => expect(digest).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    service.url(EMAIL);
+
+    expect(service.url(EMAIL)).toBeNull();
+    expect(digest).toHaveBeenCalledTimes(1);
+    digest.mockRestore();
+  });
 });
