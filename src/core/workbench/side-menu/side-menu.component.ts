@@ -187,12 +187,6 @@ export function isSelectedSideMenuItem(
                 opacity: 0;
             }
 
-            /* Only a floating panel lets the terminals show through, and its
-               shadow shows it lies above them; an expanded one replaces them. */
-            &.expanded {
-                background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
-            }
-
             /* A pinned panel is no overlay but one more pane of the tab: no
                surface of its own, so it shows what the terminals show - the
                background colour, or the background image - and the divider
@@ -219,7 +213,10 @@ export function isSelectedSideMenuItem(
                 right: 32px;
             }
 
+            /* An expanded panel replaces the terminals, so it is opaque; only a
+               floating one lets them show through. */
             &.expanded {
+                background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 position: absolute;
                 top: 0;
                 bottom: 0;
