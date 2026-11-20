@@ -22,7 +22,7 @@ import { GitGraphColumn, GitViewState } from "../git-view-state.service";
 import { GraphRow, GraphSegment, WipAnchor, WipLink, wipLinks } from "../model/git-graph";
 import { GitCommit, GitRefLabel, GitWorktree } from "../model/git-model";
 import { folderName } from "../model/git-parsers";
-import { formatCommitTime, graphColor } from "./git-format";
+import { authorInitials, formatCommitTime, graphColor } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 import { PointerResize } from "./pointer-resize";
 
@@ -249,8 +249,12 @@ type TreeRow =
                   <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius - 1"
                           [attr.stroke]="color(item.row.color)" class="avatar-ring"></circle>
                 } @else {
-                  <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" r="5"
+                  <!-- The author's initials on the lane colour until the avatar is there. -->
+                  <circle [attr.cx]="laneX(item.row.lane)" [attr.cy]="rowHeight / 2" [attr.r]="avatarRadius"
                           [attr.fill]="color(item.row.color)"></circle>
+                  <text [attr.x]="laneX(item.row.lane)" [attr.y]="rowHeight / 2" class="avatar-initials">
+                    {{ initials(item.commit.author) }}
+                  </text>
                 }
               </g>
             </svg>
@@ -381,6 +385,14 @@ type TreeRow =
       .col-graph path { fill: none; stroke-width: 2; }
       /* The lane colour framing the avatar, over its edge. */
       .avatar-ring { fill: none; stroke-width: 2; }
+      .avatar-initials {
+        fill: var(--background-color);
+        font-size: 9px;
+        font-weight: 600;
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+      }
       .wip-node { fill: none; stroke: var(--git-subtle); stroke-width: 2; stroke-dasharray: 3 2; }
       .wip-link { stroke: var(--git-subtle); stroke-width: 2; stroke-dasharray: 3 2; }
       .wip-count { margin-left: var(--git-gutter); font-style: italic; }
@@ -658,6 +670,10 @@ export class GitGraphComponent {
 
   time(seconds: number): string {
     return formatCommitTime(seconds);
+  }
+
+  initials(author: string): string {
+    return authorInitials(author);
   }
 
   /** A branch another worktree has checked out shows that instead of the local mark. */

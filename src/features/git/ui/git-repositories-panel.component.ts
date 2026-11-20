@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { groupByWorkspace } from "@cogno/shared/domain";
+import { groupByWorkspace, TerminalPlacement } from "@cogno/shared/domain";
 import {
   IconComponent,
   TabChipComponent,
@@ -19,7 +19,9 @@ import { GIT_SHARED_STYLES } from "./git-styles";
 /**
  * The repositories of all open terminals, grouped by workspace in tab order;
  * terminals of one workspace in the same repository share a tile. A tile names
- * the tab, the branch and how many files are new, changed and gone; clicking
+ * the repository, the branch, how many files are new, changed and gone, and
+ * bottom right the tab, as the coding agent cards do: the first, with "+N"
+ * and all of them in the tooltip when there are more; clicking
  * it focuses its first terminal (or keeps the focused one, if it is among
  * them), and the panel follows the focus to that repository.
  */
@@ -53,20 +55,30 @@ import { GIT_SHARED_STYLES } from "./git-styles";
             [focused]="isFocused(tile)"
             (click)="open(tile)"
           >
-            <app-tab-chip
-              class="tab"
-              [title]="tile.placement?.tabTitle || repositoryName(tile)"
-              [color]="tile.placement?.tabColor"
-              [tooltip]="tile.root"
-            ></app-tab-chip>
+            <span class="repository ellipsis" [appTooltip]="tile.root">{{ repositoryName(tile) }}</span>
             <span class="branch" [appTooltip]="branchLabel(tile)">
               <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
               <span class="ellipsis">{{ branchLabel(tile) }}</span>
             </span>
-            <span class="counts mono">
-              <span class="status-added" [class.none]="tile.counts.added === 0">+{{ tile.counts.added }}</span>
-              <span class="status-edited" [class.none]="tile.counts.modified === 0">~{{ tile.counts.modified }}</span>
-              <span class="status-removed" [class.none]="tile.counts.deleted === 0">−{{ tile.counts.deleted }}</span>
+            <span class="footer">
+              <span class="counts mono">
+                <span class="status-added" [class.none]="tile.counts.added === 0">+{{ tile.counts.added }}</span>
+                <span class="status-edited" [class.none]="tile.counts.modified === 0">~{{ tile.counts.modified }}</span>
+                <span class="status-removed" [class.none]="tile.counts.deleted === 0">−{{ tile.counts.deleted }}</span>
+              </span>
+              @if (tile.tabs[0]; as first) {
+                <span class="tabs">
+                  <app-tab-chip
+                    class="tab"
+                    [title]="tabTitle(first)"
+                    [color]="first.tabColor"
+                    [tooltip]="tabsTooltip(tile)"
+                  ></app-tab-chip>
+                  @if (tile.tabs.length > 1) {
+                    <span class="more" [appTooltip]="tabsTooltip(tile)">+{{ tile.tabs.length - 1 }}</span>
+                  }
+                </span>
+              }
             </span>
           </button>
         }
@@ -93,15 +105,28 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         padding: 0 var(--git-gutter) var(--git-gutter);
       }
       .tile { width: 100%; gap: 0.25rem; padding: 0.5rem 0.65rem; }
-      .tab { align-self: flex-start; max-width: 100%; font-size: var(--git-font-small); }
+      .repository { color: var(--git-subtle); font-size: var(--git-font-small); }
       .branch {
         display: flex;
         align-items: center;
         gap: 0.3rem;
         min-width: 0;
       }
-      .counts { display: flex; gap: 0.6rem; }
+      /* As on the coding agent cards: the tab sits bottom right. */
+      .footer { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+      .counts { display: flex; gap: 0.6rem; flex-shrink: 0; }
       .counts .none { color: var(--git-subtle); }
+      .tabs {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        min-width: 0;
+        max-width: 60%;
+        margin-left: auto;
+        font-size: var(--git-font-small);
+      }
+      .tab { min-width: 0; }
+      .more { flex-shrink: 0; color: var(--git-subtle); }
     `,
   ],
 })
@@ -126,9 +151,19 @@ export class GitRepositoriesPanelComponent {
     });
   }
 
-  /** The last path segment of the root, for a tab without a title. */
+  /** The last path segment of the root. */
   repositoryName(tile: GitRepositoryTile): string {
     return tile.root.split(/[\\/]/).filter(Boolean).pop() ?? tile.root;
+  }
+
+  /** A tab as its header names it; one without a name by its place, as tabs are counted. */
+  tabTitle(tab: TerminalPlacement): string {
+    return tab.tabTitle || `Tab ${tab.tabIndex + 1}`;
+  }
+
+  /** Every tab of the tile, one per line: the chip cuts a long name short. */
+  tabsTooltip(tile: GitRepositoryTile): string {
+    return tile.tabs.map((tab) => this.tabTitle(tab)).join("\n");
   }
 
   branchLabel(tile: GitRepositoryTile): string {

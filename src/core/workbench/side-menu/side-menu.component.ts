@@ -43,7 +43,10 @@ export function isSelectedSideMenuItem(
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <aside #overlayAside class="base-overlay flat"
+        <aside #overlayAside
+               [class.base-overlay]="!besideTerminals()"
+               [class.pinned]="besideTerminals()"
+               [class.flat]="isExpanded()"
                [class.hidden]="!selectedItem()"
                [class.overlay]="!isPinned()"
                [class.shift-left]="visibleItems().length > 0 || bottomItems().length > 0"
@@ -184,10 +187,16 @@ export function isSelectedSideMenuItem(
                 opacity: 0;
             }
 
-            /* Only a floating panel lets the terminals show through; a pinned one
-               sits beside them and an expanded one replaces them. */
-            &:not(.overlay), &.expanded {
-                background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+            /* A pinned panel is no overlay but one more pane of the tab: no
+               surface of its own, so it shows what the terminals show - the
+               background colour, or the background image - and the divider
+               between panes towards the terminals. That it stays is visible
+               at once. Its offsets are the aside's, so pinning does not move it. */
+            &.pinned {
+                padding: 6px;
+                color: var(--foreground-color);
+                background-color: transparent;
+                border-left: 2px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
 
             &.overlay {
@@ -204,7 +213,10 @@ export function isSelectedSideMenuItem(
                 right: 32px;
             }
 
+            /* An expanded panel replaces the terminals, so it is opaque; only a
+               floating one lets them show through. */
             &.expanded {
+                background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 position: absolute;
                 top: 0;
                 bottom: 0;
@@ -285,6 +297,8 @@ export class SideMenuComponent implements OnDestroy {
   focused = this.menuItemService.isFocused;
   panelWidthInPixels = this.menuItemService.panelWidthInPixels;
   isExpanded = this.menuItemService.isExpanded;
+  /** Pinned beside the terminals, as one more pane; an expanded panel replaces them instead. */
+  readonly besideTerminals = computed(() => this.isPinned() && !this.isExpanded());
 
   @ViewChild("overlayAside", { static: false }) overlayAsideRef?: ElementRef<HTMLElement>;
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
