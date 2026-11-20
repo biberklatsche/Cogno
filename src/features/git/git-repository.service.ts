@@ -10,6 +10,7 @@ import { AppWindow } from "@cogno/platform";
 import { catchError, EMPTY, filter, merge, Observable, Subject, Subscription } from "rxjs";
 import { GitAvailability } from "./git-availability";
 import { classifyRootFailure, GitError, READ_TIMEOUT_MS, runGit } from "./git-run";
+import { countChanges, GitChangeCounts } from "./model/git-change-counts";
 import { layoutGraph } from "./model/git-graph";
 import {
   GitCommit,
@@ -21,6 +22,7 @@ import {
   GitRemote,
   GitStash,
   GitStatus,
+  GitWorktree,
 } from "./model/git-model";
 import {
   buildRefLabels,
@@ -35,8 +37,10 @@ import {
   parseRefs,
   parseStashes,
   parseUnmergedStages,
+  parseWorktrees,
   REF_FORMAT,
   STASH_FORMAT,
+  withWorktrees,
 } from "./model/git-parsers";
 
 export type { GitError };
@@ -79,6 +83,8 @@ export class GitRepositoryService {
   private readonly refsSignal = signal<GitRefs>(EMPTY_REFS);
   private readonly remotesSignal = signal<ReadonlyArray<GitRemote>>([]);
   private readonly stashesSignal = signal<ReadonlyArray<GitStash>>([]);
+  private readonly worktreesSignal = signal<ReadonlyArray<GitWorktree>>([]);
+  private readonly worktreeChangesSignal = signal<ReadonlyMap<string, GitChangeCounts>>(new Map());
   private readonly commitsSignal = signal<ReadonlyArray<GitCommit>>([]);
   private readonly operationSignal = signal<GitOperation | null>(null);
   private readonly incomingSignal = signal<GitIncoming | null>(null);
@@ -95,6 +101,10 @@ export class GitRepositoryService {
   readonly refs = this.refsSignal.asReadonly();
   readonly remotes = this.remotesSignal.asReadonly();
   readonly stashes = this.stashesSignal.asReadonly();
+  /** All worktrees of the repository, the main one first; this one is `isCurrent`. */
+  readonly worktrees = this.worktreesSignal.asReadonly();
+  /** The changes in each other worktree that has any, by its path. */
+  readonly worktreeChanges = this.worktreeChangesSignal.asReadonly();
   readonly commits = this.commitsSignal.asReadonly();
   readonly operation = this.operationSignal.asReadonly();
   readonly incoming = this.incomingSignal.asReadonly();
@@ -359,7 +369,7 @@ export class GitRepositoryService {
     const git = (args: ReadonlyArray<string>) =>
       runGit(session, ["-C", root, ...args], READ_TIMEOUT_MS);
 
-    const [status, sha, branch, refs, remotes, stashes, stopped] = await Promise.all([
+    const [status, sha, branch, refs, remotes, stashes, stopped, worktreeList] = await Promise.all([
       // Untracked directories as one entry each, as git shows them: listing
       // every file under an untracked build output took longer than the rest.
       git(["status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
@@ -369,6 +379,7 @@ export class GitRepositoryService {
       this.loadRemotes(git),
       git(["stash", "list", `--format=${STASH_FORMAT}`]),
       this.readOperation(session),
+      git(["worktree", "list", "--porcelain", "-z"]),
     ]);
     // A rejection (focus moved, remote) keeps the last state; the refresh that the binding
     // change triggered reads the new one.
@@ -383,8 +394,13 @@ export class GitRepositoryService {
       sha: sha.exitCode === 0 ? sha.stdout.trim() || null : null,
       branch: branch.exitCode === 0 ? branch.stdout.trim() || null : null,
     };
-    const parsedRefs = refs.exitCode === 0 ? parseRefs(refs.stdout) : EMPTY_REFS;
-    const commits = await this.loadLog(git, head, parsedRefs);
+    const worktrees = worktreeList?.exitCode === 0 ? parseWorktrees(worktreeList.stdout, root) : [];
+    const parsedRefs =
+      refs.exitCode === 0 ? withWorktrees(parseRefs(refs.stdout), worktrees) : EMPTY_REFS;
+    const [commits, worktreeChanges] = await Promise.all([
+      this.loadLog(git, head, parsedRefs),
+      this.loadWorktreeChanges(git, worktrees),
+    ]);
     if (session !== this.boundSession) return;
 
     this.errorSignal.set(null);
@@ -394,6 +410,8 @@ export class GitRepositoryService {
     this.refsSignal.set(parsedRefs);
     this.remotesSignal.set(remotes);
     this.stashesSignal.set(stashes?.exitCode === 0 ? parseStashes(stashes.stdout) : []);
+    this.worktreesSignal.set(worktrees);
+    this.worktreeChangesSignal.set(worktreeChanges);
     this.operationSignal.set(stopped?.operation ?? null);
     this.incomingSignal.set(stopped?.incoming ?? null);
     if (commits) {
@@ -420,6 +438,30 @@ export class GitRepositoryService {
       const url = urls[index];
       return { name, url: url?.exitCode === 0 ? url.stdout.trim() : "" };
     });
+  }
+
+  /**
+   * The uncommitted changes of every other worktree whose folder is there,
+   * for its work in progress row in the graph; one without any is left out.
+   */
+  private async loadWorktreeChanges(
+    git: (args: ReadonlyArray<string>) => Promise<CommandRunnerResultContract | null>,
+    worktrees: ReadonlyArray<GitWorktree>,
+  ): Promise<Map<string, GitChangeCounts>> {
+    const others = worktrees.filter((worktree) => !worktree.isCurrent && !worktree.prunable);
+    const results = await Promise.all(
+      others.map((worktree) =>
+        git(["-C", worktree.path, "status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
+      ),
+    );
+    const changes = new Map<string, GitChangeCounts>();
+    others.forEach((worktree, index) => {
+      const result = results[index];
+      if (result?.exitCode !== 0) return;
+      const counts = countChanges(parseGitStatus(result.stdout));
+      if (counts.added + counts.modified + counts.deleted > 0) changes.set(worktree.path, counts);
+    });
+    return changes;
   }
 
   private async loadLog(
@@ -479,6 +521,8 @@ export class GitRepositoryService {
     this.refsSignal.set(EMPTY_REFS);
     this.remotesSignal.set([]);
     this.stashesSignal.set([]);
+    this.worktreesSignal.set([]);
+    this.worktreeChangesSignal.set(new Map());
     this.commitsSignal.set([]);
     this.operationSignal.set(null);
     this.incomingSignal.set(null);

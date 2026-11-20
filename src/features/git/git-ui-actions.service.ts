@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
 import { ClipboardAccess, FolderPicker, Opener } from "@cogno/platform";
 import { isWslShellContext } from "@cogno/shared/domain";
 import {
@@ -35,8 +36,9 @@ import {
   GitRemoteBranch,
   GitStash,
   GitTag,
+  GitWorktree,
 } from "./model/git-model";
-import { cloneDirectoryName } from "./model/git-parsers";
+import { cloneDirectoryName, folderName } from "./model/git-parsers";
 import { buildHunkPatch, GitHunk, GitPatch } from "./model/git-patch";
 import {
   GitDeleteBranchesDialogComponent,
@@ -74,6 +76,7 @@ export class GitUiActions {
     private readonly access: GitRemoteAccessService,
     private readonly folders: FolderPicker,
     private readonly diffs: GitDiffService,
+    private readonly navigator: TerminalNavigator,
   ) {}
 
   // Several branches
@@ -235,12 +238,13 @@ export class GitUiActions {
 
   /**
    * Check out the branch a graph label stands for, as a double click does in
-   * GitKraken: a remote branch through a local one tracking it. A tag or the
-   * checked-out branch is left alone.
+   * GitKraken: a remote branch through a local one tracking it. A tag, the
+   * checked-out branch and one another worktree has checked out (git would
+   * refuse it) are left alone.
    */
   checkoutLabel(label: GitRefLabel): void {
     const refs = this.repository.refs();
-    if (label.kind === "branch" && !label.isHead) {
+    if (label.kind === "branch" && !label.isHead && !label.worktree) {
       void this.operations.checkoutBranch(label.name);
     } else if (label.kind === "remote") {
       const remoteBranch = refs.remoteBranches.find((b) => b.name === label.name);
@@ -259,11 +263,14 @@ export class GitUiActions {
       .branches.filter((branch) => branch.sha === commit.sha && branch.name !== head.branch);
     this.openMenu(event, [
       ...localBranches.map((branch) =>
-        item(`Checkout ${branch.name}`, () => this.operations.checkoutBranch(branch.name)),
+        branch.worktree
+          ? this.openTabItem(branch.worktree)
+          : item(`Checkout ${branch.name}`, () => this.operations.checkoutBranch(branch.name)),
       ),
       item("Checkout this commit", () => this.operations.checkoutCommit(commit.sha)),
       separator(),
       item("Create branch here", () => this.beginBranch(commit.sha)),
+      item("Create worktree here…", () => this.createWorktree(commit.sha, short)),
       item("Create tag here", () => this.createTagAt(commit.sha, short)),
       separator(),
       ...this.commitItems(commit.sha, isMerge),
@@ -299,7 +306,16 @@ export class GitUiActions {
               this.operations.rebase(branch.name),
             ),
             separator(),
-            item(`Checkout ${branch.name}`, () => this.operations.checkoutBranch(branch.name)),
+            branch.worktree
+              ? this.openTabItem(branch.worktree)
+              : item(`Checkout ${branch.name}`, () => this.operations.checkoutBranch(branch.name)),
+            ...(branch.worktree
+              ? []
+              : [
+                  item(`Create worktree for ${branch.name}…`, () =>
+                    this.createWorktree(branch.name, branch.name, true),
+                  ),
+                ]),
           ]),
       separator(),
       item("Create branch here", () => this.beginBranch(branch.sha)),
@@ -308,7 +324,7 @@ export class GitUiActions {
       item("Create tag here", () => this.createTagAt(branch.name, branch.name)),
       separator(),
       item(`Rename ${branch.name}`, () => this.renameBranch(branch)),
-      item(`Delete ${branch.name}`, () => this.deleteBranch(branch), isHead),
+      item(`Delete ${branch.name}`, () => this.deleteBranch(branch), isHead || !!branch.worktree),
       // A remote branch of the same name on the same commit shares this label in the graph.
       ...this.repository
         .refs()
@@ -392,6 +408,90 @@ export class GitUiActions {
         ),
       ),
     ]);
+  }
+
+  openWorktreeMenu(event: MouseEvent, worktree: GitWorktree): void {
+    const name = folderName(worktree.path);
+    this.openMenu(event, [
+      item("Open tab in worktree", () => this.openWorktreeTab(worktree.path), worktree.isCurrent),
+      item("Copy worktree path", () => this.clipboard.writeText(worktree.path)),
+      ...(worktree.isMain
+        ? []
+        : [
+            separator(),
+            worktree.locked
+              ? item(`Unlock ${name}`, () => this.operations.unlockWorktree(worktree.path))
+              : item(`Lock ${name}`, () => this.operations.lockWorktree(worktree.path)),
+            // Git keeps a locked worktree; the one shown here is in use.
+            item(
+              `Remove ${name}…`,
+              () => this.removeWorktree(worktree),
+              worktree.isCurrent || worktree.locked,
+            ),
+          ]),
+    ]);
+  }
+
+  /** A new tab in the worktree, with the shell of the terminal the panel shows. */
+  openWorktreeTab(path: string): void {
+    const terminalId = this.repository.currentSession()?.identity.terminalId;
+    if (!terminalId) return;
+    this.navigator.openTabAt(path, terminalId).catch((error: unknown) => {
+      console.error("[git] Failed to open a tab in the worktree:", error);
+    });
+  }
+
+  /**
+   * Ask where to put a new worktree for `ref`, create it and offer a tab in
+   * it. A local branch is checked out there as it is; anything else (a
+   * commit) gets a new branch, or a detached HEAD when none is named.
+   */
+  async createWorktree(ref: string, label: string, isBranch = false): Promise<void> {
+    const root = this.repository.root();
+    if (!root) return;
+    const suggested = `../${folderName(root)}-${label.replace(/[\\/\s]+/g, "-")}`;
+    const result = await this.prompt(`Create worktree for ${label}`, {
+      message: "A relative folder is taken from the repository root.",
+      fields: [
+        { key: "path", label: "Folder", value: suggested, required: true },
+        ...(isBranch ? [] : [{ key: "branch", label: "New branch (empty for a detached HEAD)" }]),
+      ],
+      confirmLabel: "Create worktree",
+    });
+    if (!result) return;
+    const before = new Set(this.repository.worktrees().map((worktree) => worktree.path));
+    const newBranch = result.values["branch"]?.trim() || undefined;
+    const outcome = await this.operations.addWorktree(
+      result.values["path"]?.trim() ?? "",
+      ref,
+      newBranch,
+    );
+    if (outcome !== "ok") return;
+    // Git answers with the folder as given; the list after the re-read has it in full.
+    const created = this.repository.worktrees().find((worktree) => !before.has(worktree.path));
+    if (created && (await this.confirm(`Open a tab in ${created.path}?`, "Open tab"))) {
+      this.openWorktreeTab(created.path);
+    }
+  }
+
+  pruneWorktrees(): void {
+    void this.operations.pruneWorktrees();
+  }
+
+  private async removeWorktree(worktree: GitWorktree): Promise<void> {
+    const name = folderName(worktree.path);
+    const changed = await this.operations.worktreeHasChanges(worktree.path);
+    const confirmed = changed
+      ? await this.confirm(
+          `${name} has changes or untracked files. Remove it anyway? They are lost with its folder.`,
+          "Remove anyway",
+        )
+      : await this.confirm(`Remove the worktree ${name}? Its folder is deleted.`, "Remove");
+    if (confirmed) await this.operations.removeWorktree(worktree.path, changed);
+  }
+
+  private openTabItem(path: string): ContextMenuItem {
+    return item(`Open tab in worktree ${folderName(path)}`, () => this.openWorktreeTab(path));
   }
 
   openWipFileMenu(event: MouseEvent, file: GitFile, group: GitWipFileGroup): void {

@@ -1,5 +1,6 @@
 import { isDefaultBranch, shortName } from "./git-branch-sort";
 import { GitBranch, GitHead, GitRefs, GitRemoteBranch } from "./git-model";
+import { folderName } from "./git-parsers";
 
 /**
  * What a branch's age is measured against: the newest commit on any branch,
@@ -20,6 +21,8 @@ export function keptReason(
   head: GitHead,
 ): string | null {
   if (!("remote" in branch) && shortName(branch) === head.branch) return "checked out";
+  // Git refuses to delete a branch another worktree has checked out.
+  if (!("remote" in branch) && branch.worktree) return `in worktree ${folderName(branch.worktree)}`;
   return isDefaultBranch(branch, refs) ? "default branch" : null;
 }
 

@@ -13,6 +13,8 @@ import {
   parseStashes,
   parseTrack,
   parseUnmergedStages,
+  parseWorktrees,
+  withWorktrees,
 } from "./git-parsers";
 
 function file(path: string, status: GitFileStatus, isDirectory = false): GitFile {
@@ -318,5 +320,113 @@ describe("mergeSourceOf", () => {
 
   it("names nothing in another message", () => {
     expect(mergeSourceOf('Revert "x"')).toBeNull();
+  });
+});
+
+describe("parseWorktrees", () => {
+  const raw = [
+    "worktree C:/dev/app",
+    "HEAD a1",
+    "branch refs/heads/main",
+    "",
+    "worktree C:/dev/app-feature",
+    "HEAD b2",
+    "branch refs/heads/feature/x",
+    "locked on a stick",
+    "",
+    "worktree C:/dev/app-old",
+    "HEAD c3",
+    "detached",
+    "prunable gitdir file points to non-existent location",
+    "",
+    "",
+  ].join("\0");
+
+  it("reads each worktree, the first as the main one", () => {
+    expect(parseWorktrees(raw, "C:/dev/app-feature")).toEqual([
+      {
+        path: "C:/dev/app",
+        head: "a1",
+        branch: "main",
+        isMain: true,
+        isCurrent: false,
+        locked: false,
+        prunable: false,
+      },
+      {
+        path: "C:/dev/app-feature",
+        head: "b2",
+        branch: "feature/x",
+        isMain: false,
+        isCurrent: true,
+        locked: true,
+        prunable: false,
+      },
+      {
+        path: "C:/dev/app-old",
+        head: "c3",
+        branch: null,
+        isMain: false,
+        isCurrent: false,
+        locked: false,
+        prunable: true,
+      },
+    ]);
+  });
+
+  it("finds the current one whatever the separators and the drive letter's case", () => {
+    const current = parseWorktrees(raw, "c:\\dev\\app\\").filter((w) => w.isCurrent);
+    expect(current.map((w) => w.path)).toEqual(["C:/dev/app"]);
+  });
+
+  it("has no HEAD before the first commit", () => {
+    const [worktree] = parseWorktrees(
+      ["worktree /repo", `HEAD ${"0".repeat(40)}`, "branch refs/heads/main", "", ""].join("\0"),
+      "/repo",
+    );
+    expect(worktree?.head).toBeNull();
+  });
+});
+
+describe("withWorktrees", () => {
+  const branch = (name: string) => ({
+    name,
+    sha: "c1",
+    upstream: null,
+    ahead: 0,
+    behind: 0,
+    upstreamGone: false,
+    lastCommitAt: 0,
+    tipIsMerge: false,
+  });
+  const worktree = (path: string, branchName: string | null, isCurrent: boolean) => ({
+    path,
+    head: "c1",
+    branch: branchName,
+    isMain: false,
+    isCurrent,
+    locked: false,
+    prunable: false,
+  });
+
+  it("marks branches checked out in another worktree, not the one here", () => {
+    const refs = withWorktrees(
+      {
+        branches: [branch("main"), branch("feature"), branch("free")],
+        remoteBranches: [],
+        tags: [],
+        defaultBranches: [],
+      },
+      [worktree("/app", "main", false), worktree("/app-feature", "feature", true)],
+    );
+
+    expect(refs.branches.map((b) => [b.name, b.worktree])).toEqual([
+      ["main", "/app"],
+      ["feature", undefined],
+      ["free", undefined],
+    ]);
+    expect(buildRefLabels(refs, { sha: "c1", branch: "feature" }).get("c1")?.[0]?.worktree).toBe(
+      "/app",
+    );
   });
 });

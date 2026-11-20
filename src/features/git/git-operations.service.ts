@@ -252,6 +252,47 @@ export class GitOperationsService {
     return this.git(["branch", "-m", name, newName], "Rename failed");
   }
 
+  // Worktrees
+
+  /**
+   * A new worktree at `path` with `ref` checked out, or with the new branch
+   * `newBranch` created at `ref`. A relative `path` is taken from the
+   * repository root.
+   */
+  addWorktree(path: string, ref: string, newBranch?: string): Promise<GitOperationOutcome> {
+    const branch = newBranch ? ["-b", newBranch] : [];
+    return this.git(["worktree", "add", ...branch, "--", path, ref], "Create worktree failed");
+  }
+
+  /** `force` also removes one with changes, which are lost then. */
+  removeWorktree(path: string, force: boolean): Promise<GitOperationOutcome> {
+    const forced = force ? ["--force"] : [];
+    return this.git(["worktree", "remove", ...forced, "--", path], "Remove worktree failed");
+  }
+
+  /** Whether the worktree has changes or untracked files that removing it would lose. */
+  async worktreeHasChanges(path: string): Promise<boolean> {
+    const result = await this.repository.run(
+      ["-C", path, "status", "--porcelain", "-z"],
+      LOCAL_TIMEOUT_MS,
+    );
+    // Without an answer it counts as changed, so nothing is lost unasked.
+    return result?.exitCode !== 0 || result.stdout.length > 0;
+  }
+
+  lockWorktree(path: string): Promise<GitOperationOutcome> {
+    return this.git(["worktree", "lock", "--", path], "Lock worktree failed");
+  }
+
+  unlockWorktree(path: string): Promise<GitOperationOutcome> {
+    return this.git(["worktree", "unlock", "--", path], "Unlock worktree failed");
+  }
+
+  /** Forgets worktrees whose folder is gone. */
+  pruneWorktrees(): Promise<GitOperationOutcome> {
+    return this.git(["worktree", "prune"], "Prune worktrees failed");
+  }
+
   /**
    * The branches whose tip is neither in HEAD nor in their upstream: deleting
    * them may lose commits. An upstream in `goingUpstreams` is deleted along

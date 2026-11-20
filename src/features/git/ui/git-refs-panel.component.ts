@@ -13,7 +13,8 @@ import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitRefsSection, GitViewState } from "../git-view-state.service";
 import { GitBranchSort, nextSort, sortBranches } from "../model/git-branch-sort";
-import { GitBranch, GitRemoteBranch } from "../model/git-model";
+import { GitBranch, GitRemoteBranch, GitWorktree } from "../model/git-model";
+import { folderName } from "../model/git-parsers";
 import { toggled } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
 
@@ -25,9 +26,10 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
 };
 
 /**
- * The left panel: local branches, remotes with their branches, stashes and
- * tags, the checked-out branch highlighted. A click shows the commit in the
- * graph without marking the row, a double click checks a branch out, and
+ * The left panel: local branches, remotes with their branches, the worktrees
+ * (once there is more than one), stashes and tags, the checked-out branch
+ * highlighted. A click shows the commit in the graph without marking the row,
+ * a double click checks a branch out or opens a tab in a worktree, and
  * every row has its context menu. The branch sections sort by date or name
  * with the default branches on top; Cmd/Ctrl- and Shift-click mark branches
  * for one context menu on all of them.
@@ -70,6 +72,10 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
             }
             <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
             <span class="ellipsis grow" [appTooltip]="branch.name">{{ branch.name }}</span>
+            @if (branch.worktree) {
+              <app-icon class="small-icon subtle" name="mdiFolderMultipleOutline"
+                        [appTooltip]="'Checked out in worktree ' + branch.worktree"></app-icon>
+            }
             @if (branch.upstreamGone) {
               <span class="subtle track" appTooltip="The upstream branch was deleted">gone</span>
             }
@@ -124,6 +130,48 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
         </div>
       }
       </section>
+
+      @if (worktrees().length > 1) {
+      <section class="section">
+      <div class="section-header">
+        <button type="button" class="toggle" (click)="toggle('worktrees')">
+          <app-icon class="small-icon" [name]="isOpen('worktrees') ? 'mdiChevronDown' : 'mdiChevronRight'"></app-icon>
+          <app-icon class="small-icon" name="mdiFolderMultipleOutline"></app-icon>
+          Worktrees
+        </button>
+        <span class="grow"></span>
+        @if (hasPrunable()) {
+          <button type="button" class="button icon-button header-action"
+                  appTooltip="Forget worktrees whose folder is gone" (click)="actions.pruneWorktrees()">
+            <app-icon name="mdiBroom"></app-icon>
+          </button>
+        }
+        <span class="count">{{ worktrees().length }}</span>
+      </div>
+      @if (isOpen("worktrees")) {
+        <div class="body">
+        @for (worktree of worktrees(); track worktree.path) {
+          <div class="row ref" [class.selected]="worktree.isCurrent"
+               (click)="revealWorktree(worktree)" (dblclick)="openWorktree(worktree)"
+               (contextmenu)="actions.openWorktreeMenu($event, worktree)">
+            @if (worktree.isCurrent) {
+              <app-icon class="small-icon head-icon" name="mdiEyeOutline" appTooltip="Shown here"></app-icon>
+            }
+            <app-icon class="small-icon subtle" name="mdiFolderOutline"></app-icon>
+            <span class="ellipsis grow" [appTooltip]="worktree.path">{{ folder(worktree.path) }}</span>
+            <span class="subtle track ellipsis worktree-ref">{{ worktree.branch ?? (worktree.head?.slice(0, 7) ?? "") }}</span>
+            @if (worktree.locked) {
+              <app-icon class="small-icon subtle" name="mdiLock" appTooltip="Locked"></app-icon>
+            }
+            @if (worktree.prunable) {
+              <span class="subtle track" appTooltip="Its folder is gone">gone</span>
+            }
+          </div>
+        }
+        </div>
+      }
+      </section>
+      }
 
       <section class="section">
       <div class="section-header">
@@ -187,7 +235,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
         border-bottom: 1px solid var(--git-border);
       }
       .filter .text-input { padding: 0.15rem 0.4rem; }
-      /* An accordion as in GitKraken: the four headers always stay in view, every open section
+      /* An accordion as in GitKraken: the headers always stay in view, every open section
          scrolls on its own. The open sections share the height equally, but none takes more
          than its rows need, so the rest goes to the ones that scroll. Grid rows growing up to
          max-content do exactly that; a flex item with max-height: max-content collapses to its
@@ -224,6 +272,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
         color: var(--git-subtle);
       }
       .track-icon { width: 11px; height: 11px; }
+      .worktree-ref { max-width: 45%; }
     `,
   ],
 })
@@ -273,6 +322,11 @@ export class GitRefsPanelComponent {
       .filter((remote) => !collapsed.has(remote.name))
       .flatMap((remote) => this.remoteBranchesOf(remote.name));
   });
+  /** All worktrees; the section shows only once there is more than the main one. */
+  readonly worktrees = computed(() =>
+    this.matching(this.repository.worktrees(), (w) => `${w.path} ${w.branch ?? ""}`),
+  );
+  readonly hasPrunable = computed(() => this.repository.worktrees().some((w) => w.prunable));
   readonly stashes = computed(() => this.matching(this.repository.stashes(), (s) => s.message));
   readonly tags = computed(() => this.matching(this.repository.refs().tags, (t) => t.name));
 
@@ -369,8 +423,23 @@ export class GitRefsPanelComponent {
     return selection.kind === "stash" && selection.sha === sha;
   }
 
+  /** Another worktree's branch stays where it is: git would refuse it here. */
   checkout(branch: GitBranch): void {
-    if (branch.name !== this.head().branch) void this.operations.checkoutBranch(branch.name);
+    if (branch.name === this.head().branch || branch.worktree) return;
+    void this.operations.checkoutBranch(branch.name);
+  }
+
+  revealWorktree(worktree: GitWorktree): void {
+    this.view.clearMarks();
+    if (worktree.head) this.view.revealCommit(worktree.head);
+  }
+
+  openWorktree(worktree: GitWorktree): void {
+    if (!worktree.isCurrent && !worktree.prunable) this.actions.openWorktreeTab(worktree.path);
+  }
+
+  folder(path: string): string {
+    return folderName(path);
   }
 
   clearFilter(event: Event): void {

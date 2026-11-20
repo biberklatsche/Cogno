@@ -11,6 +11,7 @@ import {
   GitStash,
   GitStatus,
   GitTag,
+  GitWorktree,
 } from "./git-model";
 
 /** Field and record separators the format strings below ask git to emit. */
@@ -262,6 +263,7 @@ export function buildRefLabels(refs: GitRefs, head: GitHead): Map<string, GitRef
       name: branch.name,
       isHead: branch.name === head.branch,
       remotes,
+      ...(branch.worktree ? { worktree: branch.worktree } : {}),
     });
   }
   for (const remoteBranch of refs.remoteBranches) {
@@ -272,6 +274,73 @@ export function buildRefLabels(refs: GitRefs, head: GitHead): Map<string, GitRef
     add(tag.sha, { kind: "tag", name: tag.name, isHead: false, remotes: [] });
   }
   return labels;
+}
+
+/**
+ * Reads `git worktree list --porcelain -z`: attribute lines end in NUL, and an
+ * empty one ends a worktree. The first is the main worktree; `root` (the
+ * panel's `--show-toplevel`) tells which one is current.
+ */
+export function parseWorktrees(raw: string, root: string): GitWorktree[] {
+  const worktrees: GitWorktree[] = [];
+  let lines: string[] = [];
+  const flush = () => {
+    const path = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
+    if (path !== undefined) {
+      const branchRef = lines.find((line) => line.startsWith("branch "))?.slice("branch ".length);
+      const head = lines.find((line) => line.startsWith("HEAD "))?.slice("HEAD ".length);
+      worktrees.push({
+        path,
+        // Before the first commit git prints a HEAD of zeros.
+        head: head && !/^0+$/.test(head) ? head : null,
+        branch: branchRef?.startsWith("refs/heads/") ? branchRef.slice("refs/heads/".length) : null,
+        isMain: worktrees.length === 0,
+        isCurrent: samePath(path, root),
+        locked: lines.some((line) => line === "locked" || line.startsWith("locked ")),
+        prunable: lines.some((line) => line === "prunable" || line.startsWith("prunable ")),
+      });
+    }
+    lines = [];
+  };
+  for (const line of raw.split("\0")) {
+    if (line === "") flush();
+    else lines.push(line);
+  }
+  flush();
+  return worktrees;
+}
+
+/** `refs` with each branch checked out in another worktree knowing that worktree. */
+export function withWorktrees(refs: GitRefs, worktrees: ReadonlyArray<GitWorktree>): GitRefs {
+  const elsewhere = new Map<string, string>();
+  for (const worktree of worktrees) {
+    if (worktree.branch && !worktree.isCurrent) elsewhere.set(worktree.branch, worktree.path);
+  }
+  if (elsewhere.size === 0) return refs;
+  return {
+    ...refs,
+    branches: refs.branches.map((branch) => {
+      const worktree = elsewhere.get(branch.name);
+      return worktree ? { ...branch, worktree } : branch;
+    }),
+  };
+}
+
+/** The last folder of a path, either separator. */
+export function folderName(path: string): string {
+  return path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+}
+
+/**
+ * Whether two paths git printed name the same folder: either separator, no
+ * trailing one, and a Windows drive path in any case.
+ */
+function samePath(a: string, b: string): boolean {
+  const normalized = (path: string) => {
+    const unified = path.replace(/\\/g, "/").replace(/\/+$/, "");
+    return /^[A-Za-z]:/.test(unified) ? unified.toLowerCase() : unified;
+  };
+  return normalized(a) === normalized(b);
 }
 
 /** The directory name `git clone <url>` creates when none is given. */
