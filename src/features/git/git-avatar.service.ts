@@ -1,5 +1,5 @@
 import { Injectable, isDevMode, signal } from "@angular/core";
-import { Fs, Paths } from "@cogno/platform";
+import { bytesToBase64, Fs, Paths } from "@cogno/platform";
 
 /** Pixels requested: twice the commit panel's avatar, for high-density screens. */
 const AVATAR_SIZE = 56;
@@ -59,15 +59,11 @@ export class GitAvatarService {
   private async resolve(email: string, normalized: string): Promise<void> {
     const hash = await sha256Hex(normalized);
     const kept = (await this.loadKept()).get(hash);
-    if (!kept) {
-      this.remember(email, await this.download(hash));
-      return;
-    }
     // The kept one shows first, so a fresh one fetched meanwhile replaces it, never the other way round.
-    this.remember(email, kept.dataUrl);
-    if (Date.now() - kept.fetchedAt < MAX_AGE_MS) return;
+    if (kept) this.remember(email, kept.dataUrl);
+    if (kept && Date.now() - kept.fetchedAt < MAX_AGE_MS) return;
     const fresh = await this.download(hash);
-    if (fresh) this.remember(email, fresh);
+    if (fresh || !kept) this.remember(email, fresh);
   }
 
   private async download(hash: string): Promise<string | null> {
@@ -77,7 +73,8 @@ export class GitAvatarService {
       );
       if (!response.ok) return null;
       const type = response.headers.get("content-type") ?? "image/png";
-      const dataUrl = `data:${type};base64,${toBase64(await response.arrayBuffer())}`;
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const dataUrl = `data:${type};base64,${bytesToBase64(bytes)}`;
       (await this.loadKept()).set(hash, { dataUrl, fetchedAt: Date.now() });
       this.scheduleSave();
       return dataUrl;
@@ -93,8 +90,8 @@ export class GitAvatarService {
 
   private async readKept(): Promise<Map<string, KeptAvatar>> {
     try {
+      // A missing or broken file fails here and starts empty.
       const path = await this.cacheFilePath();
-      if (!(await this.fs.exists(path))) return new Map();
       const stored = JSON.parse(await this.fs.readTextFile(path)) as Record<string, unknown>;
       return new Map(
         Object.entries(stored).filter((entry): entry is [string, KeptAvatar] => isKept(entry[1])),
@@ -138,15 +135,6 @@ export class GitAvatarService {
 function isKept(value: unknown): value is KeptAvatar {
   const kept = value as Partial<KeptAvatar> | null;
   return typeof kept?.dataUrl === "string" && typeof kept.fetchedAt === "number";
-}
-
-function toBase64(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (let index = 0; index < bytes.length; index += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
-  }
-  return btoa(binary);
 }
 
 async function sha256Hex(text: string): Promise<string> {

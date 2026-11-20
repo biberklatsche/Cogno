@@ -13,8 +13,11 @@ describe("GitAvatarService", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   const fs = {
-    exists: async (path: string) => files.has(path),
-    readTextFile: async (path: string) => files.get(path) ?? "",
+    readTextFile: async (path: string) => {
+      const text = files.get(path);
+      if (text === undefined) throw new Error(`No such file: ${path}`);
+      return text;
+    },
     writeTextFile: async (path: string, data: string) => void files.set(path, data),
     mkdir: async () => undefined,
   } as unknown as Fs;
