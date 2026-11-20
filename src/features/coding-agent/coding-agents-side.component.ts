@@ -6,7 +6,8 @@ import { groupByWorkspace } from "@cogno/shared/domain";
 import {
   CopyEditDeleteComponent,
   IconComponent,
-  KeyframeBarsComponent,
+  StatusIndicator,
+  StatusIndicatorComponent,
   TabChipComponent,
   TileComponent,
   TooltipDirective,
@@ -51,7 +52,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
   imports: [
     IconComponent,
     TooltipDirective,
-    KeyframeBarsComponent,
+    StatusIndicatorComponent,
     CopyEditDeleteComponent,
     TileComponent,
     TabChipComponent,
@@ -111,7 +112,7 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
                 (click)="navigateTo(agent)"
               >
                 <div class="agent-state">
-                  <app-keyframe-bars [keyframes]="statusKeyframes(agent)" />
+                  <app-status-indicator [indicator]="statusIndicator(agent)" />
                   <span class="state-label">
                     {{ statusLabel(agent) }}
                     @if (agent.status === "working") {
@@ -477,17 +478,15 @@ export function countOf(count: number, singular: string, plural = `${singular}s`
       color: var(--agent-state-color);
     }
 
-    /* Block, not inline-flex: an inline box would sit on the text baseline instead of centring. */
-    .agent-state app-keyframe-bars {
-      display: flex;
+    /* A little larger than the text beside it. */
+    .agent-state app-status-indicator {
+      width: 18px;
+      height: 18px;
     }
 
-    /* The ghost's top two rows are near-empty antenna, so its visible body sits below the
-       box centre; the text moves down to meet it. */
     .state-label {
       font-weight: 500;
       white-space: nowrap;
-      margin-top: 2px;
     }
 
     .subagent-pill {
@@ -638,9 +637,9 @@ export class CodingAgentsSideComponent {
     return state === "question" || state === "error";
   }
 
-  /** The card shows the same animation as the agent's tab. */
-  statusKeyframes(agent: ActiveAgent): ReadonlyArray<number[][]> {
-    return AGENT_STATUS_SPECS[agent.status].keyframes;
+  /** The card shows the same face as the agent's tab. */
+  statusIndicator(agent: ActiveAgent): StatusIndicator {
+    return AGENT_STATUS_SPECS[agent.status].indicator;
   }
 
   statusLabel(agent: ActiveAgent): string {

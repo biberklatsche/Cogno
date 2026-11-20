@@ -19,7 +19,7 @@ import { GridListService } from "../+state/grid-list.service";
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
         @if (hasBusyRegistrations()) {
           <span class="busy-indicator">
-            <app-busy-indicator targetKind="terminal" [targetId]="terminalId()" [pauseInBackground]="true"></app-busy-indicator>
+            <app-busy-indicator targetKind="terminal" [targetId]="terminalId()"></app-busy-indicator>
           </span>
         }
         <span class="title">{{ title() }}</span>

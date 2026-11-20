@@ -1,6 +1,9 @@
+import type { StatusIndicator } from "@cogno/shared/ui";
+
 export type AnimationSpec = {
-  /** Grid keyframes: keyframes[frame][row][col], row 0 = top, values 0–1. */
-  readonly keyframes: number[][][];
+  /** What the busy indicator of the terminal's pane and tab shows. */
+  readonly indicator: StatusIndicator;
+  /** When several registrations target the same indicator, the highest priority wins. */
   readonly priority: number;
 };
 

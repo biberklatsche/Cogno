@@ -1,11 +1,11 @@
 import { MessageBase } from "@cogno/core/workbench/bus/message-base";
+import type { StatusIndicator } from "@cogno/shared/ui";
 
 /**
  * Registers an animation on the busy indicator of a terminal: it shows in the
  * pane header and in the tab the terminal is in.
  *
- * `keyframes`: array of frames; each frame is a MAX_HEIGHT×BAR_COUNT grid (number[][][]).
- *   grid[row][col], row 0 = top, values 0 (off) to 1 (full on). 1 frame = static, N = loop.
+ * `indicator`: what the indicator shows, the motif and its mood.
  *
  * `priority`: when multiple registrations target the same display, the highest priority wins.
  *
@@ -16,7 +16,7 @@ export type BusyIndicatorRegisterEvent = MessageBase<
   {
     registrationId: string;
     terminalId: string;
-    keyframes: number[][][];
+    indicator: StatusIndicator;
     priority: number;
   }
 >;

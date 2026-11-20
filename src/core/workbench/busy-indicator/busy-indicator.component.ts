@@ -1,21 +1,19 @@
 import { ChangeDetectionStrategy, Component, effect, input, signal } from "@angular/core";
 import { TabId } from "@cogno/core/workbench/grid-layout";
 import { TerminalId } from "@cogno/shared/domain";
-import { KeyframeBarsComponent } from "@cogno/shared/ui";
+import { StatusIndicator, StatusIndicatorComponent } from "@cogno/shared/ui";
 import { BusyIndicatorService } from "./busy-indicator.service";
 
 /**
- * The busy indicator of a pane or a tab: plays the animation registered with
+ * The busy indicator of a pane or a tab: shows the indicator registered with
  * the highest priority for that terminal, or for any terminal in that tab.
  */
 @Component({
   selector: "app-busy-indicator",
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [KeyframeBarsComponent],
-  template: `
-    <app-keyframe-bars [keyframes]="keyframes()" [pauseInBackground]="pauseInBackground()" />
-  `,
+  imports: [StatusIndicatorComponent],
+  template: ` <app-status-indicator [indicator]="indicator()" /> `,
   styles: `
     :host {
       display: inline-flex;
@@ -26,9 +24,8 @@ import { BusyIndicatorService } from "./busy-indicator.service";
 export class BusyIndicatorComponent {
   targetId = input.required<TerminalId | TabId>();
   targetKind = input.required<"terminal" | "tab">();
-  pauseInBackground = input(false);
 
-  protected readonly keyframes = signal<ReadonlyArray<number[][]> | undefined>(undefined);
+  protected readonly indicator = signal<StatusIndicator | undefined>(undefined);
 
   constructor(private readonly busyIndicatorService: BusyIndicatorService) {
     effect((onCleanup) => {
@@ -44,7 +41,7 @@ export class BusyIndicatorComponent {
             !best || registration.priority > best.priority ? registration : best,
           undefined,
         );
-        this.keyframes.set(top?.keyframes);
+        this.indicator.set(top?.indicator);
       });
       onCleanup(() => subscription.unsubscribe());
     });
