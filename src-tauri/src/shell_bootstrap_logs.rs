@@ -4,7 +4,6 @@
 //! points into the app's log folder, next to the app log, not the Cogno home.
 
 use std::path::{Path, PathBuf};
-use std::sync::Once;
 use std::time::{Duration, SystemTime};
 use tauri::{AppHandle, Manager};
 
@@ -12,21 +11,26 @@ const FOLDER: &str = "shell-bootstrap";
 /// Older start-up logs are removed: they pile up, one per shell.
 const KEEP_FOR: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 
-static CLEAR_OLD: Once = Once::new();
+/// The folder for the shells' start-up logs, worked out once at start; none
+/// unless logging at debug level.
+pub struct ShellBootstrapLogDir(pub Option<PathBuf>);
 
-/// The folder for the shells' start-up logs; none unless logging at debug level.
-pub fn log_dir(app: &AppHandle) -> Option<PathBuf> {
-    if log::max_level() < log::LevelFilter::Debug {
-        return None;
+/// Called once at start, after the logger is set up: picks the folder, and
+/// clears the old logs in it in the background.
+pub fn manage(app: &AppHandle) {
+    let dir = (log::max_level() >= log::LevelFilter::Debug)
+        .then(|| app.path().app_log_dir().ok())
+        .flatten()
+        .map(|log_dir| log_dir.join(FOLDER))
+        .filter(|dir| std::fs::create_dir_all(dir).is_ok());
+    if let Some(dir) = dir.clone() {
+        std::thread::spawn(move || clear_old(&dir, SystemTime::now()));
     }
-    let dir = app.path().app_log_dir().ok()?.join(FOLDER);
-    std::fs::create_dir_all(&dir).ok()?;
-    CLEAR_OLD.call_once(|| clear_older_than(&dir, KEEP_FOR, SystemTime::now()));
-    Some(dir)
+    app.manage(ShellBootstrapLogDir(dir));
 }
 
-/// Removes the files in `dir` last written before `now - keep_for`.
-fn clear_older_than(dir: &Path, keep_for: Duration, now: SystemTime) {
+/// Removes the files in `dir` last written more than `KEEP_FOR` before `now`.
+fn clear_old(dir: &Path, now: SystemTime) {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return;
     };
@@ -35,7 +39,7 @@ fn clear_older_than(dir: &Path, keep_for: Duration, now: SystemTime) {
         let too_old = written
             .ok()
             .and_then(|written| now.duration_since(written).ok())
-            .is_some_and(|age| age > keep_for);
+            .is_some_and(|age| age > KEEP_FOR);
         if too_old {
             let _ = std::fs::remove_file(entry.path());
         }
@@ -53,12 +57,14 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("shell-bootstrap-a.log"), "start").unwrap();
 
-        // A week and a day from now, the file just written counts as old.
-        let later = SystemTime::now() + KEEP_FOR + Duration::from_secs(24 * 60 * 60);
-        clear_older_than(&dir, KEEP_FOR, SystemTime::now());
+        clear_old(&dir, SystemTime::now());
         assert!(dir.join("shell-bootstrap-a.log").exists());
 
-        clear_older_than(&dir, KEEP_FOR, later);
+        // A week and a day from now, the file just written counts as old.
+        clear_old(
+            &dir,
+            SystemTime::now() + KEEP_FOR + Duration::from_secs(24 * 60 * 60),
+        );
         assert!(!dir.join("shell-bootstrap-a.log").exists());
 
         std::fs::remove_dir_all(&dir).unwrap();

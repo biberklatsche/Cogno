@@ -1,4 +1,3 @@
-use crate::app_identity::{DEVELOPMENT_HOME_DIRECTORY_NAME, HOME_DIRECTORY_NAME};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -30,13 +29,7 @@ pub type PreparedSpawn = (String, Vec<String>, HashMap<String, String>, String);
 
 impl ShellSpawner {
     pub fn new(dev_mode: bool, bootstrap_log_dir: Option<PathBuf>) -> Result<Self, String> {
-        let home = dirs::home_dir().ok_or("Could not determine home directory")?;
-        let dir_name = if dev_mode {
-            DEVELOPMENT_HOME_DIRECTORY_NAME
-        } else {
-            HOME_DIRECTORY_NAME
-        };
-        let integration_root = home.join(dir_name).join("shell-integration");
+        let integration_root = super::environment::cogno_home(dev_mode)?.join("shell-integration");
 
         Ok(Self {
             integration_root,

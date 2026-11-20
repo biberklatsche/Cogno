@@ -7,7 +7,7 @@ import { Logger } from "@cogno/platform/logger";
 import { Shells } from "@cogno/platform/shells";
 import { ShellTypeContract } from "@cogno/shared/domain";
 
-const INTEGRATION_VERSION = "1.3.0";
+const INTEGRATION_VERSION = "1.3.1";
 
 /**
  * Manages shell integration scripts in ~/.cogno/shell-integration
@@ -31,7 +31,6 @@ export class ShellIntegrationWriter {
     const integrationRoot = await this.getIntegrationRoot();
 
     try {
-      await this.removeFormerLogs(integrationRoot);
       const availableShells = await this.shells.load();
       const availableShellTypes = new Set(availableShells.map((shell) => shell.shell_type));
       const definitionsByShellType = this.createDefinitionsByShellType(shellSupportDefinitions);
@@ -48,7 +47,8 @@ export class ShellIntegrationWriter {
       Logger.info("Installing/updating shell integration scripts...");
       Logger.info(`Found shells: ${Array.from(availableShellTypes).join(", ")}`);
 
-      await this.createBaseDirectories(integrationRoot);
+      await this.fs.mkdir(integrationRoot, { recursive: true });
+      await this.removeFormerLogs(integrationRoot);
       await this.writeIntegrationFiles(
         integrationRoot,
         availableShellTypes,
@@ -119,16 +119,11 @@ export class ShellIntegrationWriter {
     return false;
   }
 
-  private async createBaseDirectories(integrationRoot: string): Promise<void> {
-    if (!(await this.fs.exists(integrationRoot))) {
-      await this.fs.mkdir(integrationRoot, { recursive: true });
-    }
-  }
-
   /**
    * Shell start-up logs used to pile up here, one file per shell and never
    * cleared. They now go to the app's log folder, and only at debug level
-   * (the backend sets COGNO_LOG_DIR); the old folder is removed once.
+   * (the backend sets COGNO_LOG_DIR). The old folder is removed with the
+   * update to 1.3.1, once per install; this can go with a later version.
    */
   private async removeFormerLogs(integrationRoot: string): Promise<void> {
     const formerLogs = `${integrationRoot}/logs`;

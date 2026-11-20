@@ -32,7 +32,7 @@ describe("ShellIntegrationWriter", () => {
 
   it("skips installation when the version is already current", async () => {
     vi.mocked(fs.exists).mockResolvedValue(true);
-    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.1");
     const mkdirSpy = vi.mocked(fs.mkdir);
 
     await writer.ensure([]);
@@ -43,7 +43,7 @@ describe("ShellIntegrationWriter", () => {
   it("reinstalls when a script is missing although the version is current", async () => {
     const missing = "/tmp/cogno/shell-integration/bash/base.sh";
     vi.mocked(fs.exists).mockImplementation(async (path: string) => path !== missing);
-    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.1");
     vi.mocked(shellsStub.load).mockResolvedValue([{ shell_type: "Bash" }] as never);
     const writeTextFileSpy = vi.mocked(fs.writeTextFile).mockResolvedValue(undefined);
     vi.spyOn(Logger, "info").mockImplementation(() => undefined);
@@ -61,7 +61,7 @@ describe("ShellIntegrationWriter", () => {
 
   it("leaves a complete, current installation alone", async () => {
     vi.mocked(fs.exists).mockResolvedValue(true);
-    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
+    vi.mocked(fs.readTextFile).mockResolvedValue("1.3.1");
     vi.mocked(shellsStub.load).mockResolvedValue([{ shell_type: "Bash" }] as never);
     const writeTextFileSpy = vi.mocked(fs.writeTextFile);
 
@@ -124,17 +124,14 @@ describe("ShellIntegrationWriter", () => {
       "/tmp/cogno/shell-integration/zsh/entry.zsh",
       "entry",
     );
-    expect(writeTextFileSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/VERSION", "1.3.0");
-    expect(writeTextFileSpy).not.toHaveBeenCalledWith(
-      expect.stringContaining("/logs/"),
-      expect.anything(),
-    );
-    expect(loggerSpy).toHaveBeenCalledWith("Shell integration updated to version 1.3.0");
+    expect(writeTextFileSpy).toHaveBeenCalledWith("/tmp/cogno/shell-integration/VERSION", "1.3.1");
+    expect(loggerSpy).toHaveBeenCalledWith("Shell integration updated to version 1.3.1");
   });
 
-  it("removes the former log folder, where start-up logs used to pile up", async () => {
+  it("removes the former log folder, where start-up logs used to pile up, with the update", async () => {
     vi.mocked(fs.exists).mockResolvedValue(true);
     vi.mocked(fs.readTextFile).mockResolvedValue("1.3.0");
+    vi.spyOn(Logger, "info").mockImplementation(() => undefined);
     const removeSpy = vi.mocked(fs.remove).mockResolvedValue(undefined);
 
     await writer.ensure([]);

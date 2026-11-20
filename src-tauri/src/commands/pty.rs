@@ -267,7 +267,10 @@ pub async fn pty_spawn(
 
     // Prepare shell spawn with integration
     let dev_mode = options.dev_mode.unwrap_or(false);
-    let bootstrap_log_dir = super::shell_bootstrap_logs::log_dir(&app);
+    let bootstrap_log_dir = app
+        .state::<crate::shell_bootstrap_logs::ShellBootstrapLogDir>()
+        .0
+        .clone();
     let spawner = ShellSpawner::new(dev_mode, bootstrap_log_dir)?;
     let (program, args, env, working_dir) = spawner.prepare_spawn(&options.profile)?;
     let line_editor_pipe_name = env.get("COGNO_LINE_EDITOR_PIPE_NAME").cloned();
