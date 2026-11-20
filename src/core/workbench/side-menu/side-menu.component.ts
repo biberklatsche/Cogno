@@ -14,6 +14,16 @@ import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pip
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { SideMenuItem, SideMenuService } from "./+state/side-menu.service";
 
+/**
+ * Takes the keyboard to the panel, unless it is already inside: a click on a
+ * field of a panel that did not have the keyboard focuses that field first,
+ * and taking it to the panel afterwards would leave the field without it.
+ */
+export function focusPanel(panel: HTMLElement | undefined): void {
+  if (!panel || panel.contains(document.activeElement)) return;
+  panel.focus();
+}
+
 export function isSelectedSideMenuItem(
   selectedItem: SideMenuItem | undefined,
   menuItem: SideMenuItem,
@@ -325,7 +335,7 @@ export class SideMenuComponent implements OnDestroy {
       const isOpen = !!this.selectedItem();
       const isFocused = this.focused();
       if (!isOpen || !isFocused) return;
-      queueMicrotask(() => this.overlayAsideRef?.nativeElement.focus());
+      queueMicrotask(() => focusPanel(this.overlayAsideRef?.nativeElement));
     });
   }
 

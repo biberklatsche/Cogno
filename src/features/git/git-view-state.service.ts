@@ -99,6 +99,8 @@ export class GitViewState {
   readonly hosts = signal<Readonly<Record<string, GitHostId>>>(this.stored.hosts ?? {});
   /** The commit a new branch is being named at, inline in its graph row. */
   readonly newBranchAt = signal<string | null>(null);
+  /** What the refs panel's filter field holds; Escape clears it before anything else closes. */
+  readonly refsFilter = signal("");
   /** A commit the graph should scroll to; cleared by the graph once it did. */
   readonly reveal = signal<string | null>(null);
   /** Branches marked in the refs panel for one action on all of them. */

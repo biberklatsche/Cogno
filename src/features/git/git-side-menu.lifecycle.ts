@@ -26,9 +26,13 @@ export class GitSideMenuLifecycle {
         this.overview.stop();
       },
       onFocus: () => {
-        // Escape clears marked branches first, then closes an open diff as in GitKraken, then the panel.
+        // Escape undoes one thing at a time, the nearest first: the branch name being typed,
+        // the filter, the marked branches, an open diff as in GitKraken, then the panel. It
+        // comes here before the fields themselves see it, so their part is done here too.
         sideMenuFeatureHandle.registerKeybindListener(["Escape"], () => {
-          if (this.view.hasMarks()) this.view.clearMarks();
+          if (this.view.newBranchAt()) this.view.newBranchAt.set(null);
+          else if (this.view.refsFilter()) this.view.refsFilter.set("");
+          else if (this.view.hasMarks()) this.view.clearMarks();
           else if (this.view.diff()) this.view.closeDiff();
           else sideMenuFeatureHandle.close();
         });
