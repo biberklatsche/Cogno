@@ -28,7 +28,7 @@ export class TerminalAnimationAdapterService extends TerminalAnimationPort {
       payload: {
         registrationId: `${registrationKey}-${terminalId}`,
         terminalId,
-        keyframes: spec.keyframes,
+        indicator: spec.indicator,
         priority: spec.priority,
       },
     });

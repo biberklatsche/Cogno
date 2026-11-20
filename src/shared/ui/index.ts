@@ -1,5 +1,3 @@
-export * from "./busy-indicator/busy-indicator.constants";
-export * from "./busy-indicator/keyframe-bars.component";
 export * from "./common/autofocus/side-menu-search-input.component";
 export * from "./common/color-field/color-field.component";
 export * from "./common/color-field/hex-color";
@@ -23,3 +21,4 @@ export * from "./icons/icon/icon.component";
 export * from "./icons/notification-glyph-paths";
 export * from "./menu/context-menu-overlay/context-menu.component";
 export * from "./menu/context-menu-overlay/context-menu-overlay.service";
+export * from "./status-indicator/status-indicator.component";

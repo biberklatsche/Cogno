@@ -4,42 +4,18 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalActivityService } from "@cogno/core/workbench/terminal-activity/terminal-activity.service";
 import { TerminalId } from "@cogno/shared/domain";
-import { BAR_COUNT, heightFrameToGrid, MAX_HEIGHT, MIN_HEIGHT } from "@cogno/shared/ui";
+import type { StatusIndicator } from "@cogno/shared/ui";
 import { Subscription } from "rxjs";
 
-const ACTIVE_FRAME_COUNT = 6;
-const IDLE_FRAME_COUNT = 20;
-const IDLE_WAVE_MIN = 1;
-const IDLE_WAVE_MAX = 3;
 const IDLE_WAVE_DELAY_MS = 2000;
 
 const PRIORITY_TERMINAL_ACTIVE = 2;
 const PRIORITY_TERMINAL_IDLE = 1;
 
-function generateActiveKeyframes(): number[][][] {
-  return Array.from({ length: ACTIVE_FRAME_COUNT }, (_, fi) => {
-    const heights = Array.from({ length: BAR_COUNT }, (_, bi) => {
-      const phase = (bi / BAR_COUNT) * Math.PI * 2;
-      const t = (fi / ACTIVE_FRAME_COUNT) * Math.PI * 2;
-      return MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * (0.5 + 0.5 * Math.sin(t + phase));
-    });
-    return heightFrameToGrid(heights);
-  });
-}
-
-function generateIdleKeyframes(): number[][][] {
-  return Array.from({ length: IDLE_FRAME_COUNT }, (_, fi) => {
-    const heights = Array.from({ length: BAR_COUNT }, (_, bi) => {
-      const phase = (bi / BAR_COUNT) * Math.PI * 2;
-      const t = (fi / IDLE_FRAME_COUNT) * Math.PI * 2;
-      return IDLE_WAVE_MIN + (IDLE_WAVE_MAX - IDLE_WAVE_MIN) * (0.5 + 0.5 * Math.sin(t + phase));
-    });
-    return heightFrameToGrid(heights);
-  });
-}
-
-const TERMINAL_BUSY_FRAMES = generateActiveKeyframes();
-const TERMINAL_IDLE_FRAMES = generateIdleKeyframes();
+/** Output is flowing. */
+const TERMINAL_ACTIVE: StatusIndicator = { motif: "equalizer", mood: "busy" };
+/** Still running, but no output for IDLE_WAVE_DELAY_MS. */
+const TERMINAL_IDLE: StatusIndicator = { motif: "equalizer", mood: "calm" };
 
 @Injectable({ providedIn: "root" })
 export class TerminalBusyIndicatorAdapterService {
@@ -83,7 +59,7 @@ export class TerminalBusyIndicatorAdapterService {
       payload: {
         registrationId: `terminal-busy-active-${terminalId}`,
         terminalId,
-        keyframes: TERMINAL_BUSY_FRAMES,
+        indicator: TERMINAL_ACTIVE,
         priority: PRIORITY_TERMINAL_ACTIVE,
       },
     });
@@ -95,7 +71,7 @@ export class TerminalBusyIndicatorAdapterService {
       payload: {
         registrationId: `terminal-busy-idle-${terminalId}`,
         terminalId,
-        keyframes: TERMINAL_IDLE_FRAMES,
+        indicator: TERMINAL_IDLE,
         priority: PRIORITY_TERMINAL_IDLE,
       },
     });

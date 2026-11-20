@@ -4,12 +4,13 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TabId } from "@cogno/core/workbench/grid-layout";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { TerminalId } from "@cogno/shared/domain";
+import type { StatusIndicator } from "@cogno/shared/ui";
 import { BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable } from "rxjs";
 
 export type BusyIndicatorRegistration = {
   registrationId: string;
   terminalId: string;
-  keyframes: number[][][];
+  indicator: StatusIndicator;
   priority: number;
 };
 
@@ -92,6 +93,7 @@ function sameRegistrations(
       r.registrationId === b[i].registrationId &&
       r.terminalId === b[i].terminalId &&
       r.priority === b[i].priority &&
-      r.keyframes === b[i].keyframes,
+      r.indicator.motif === b[i].indicator.motif &&
+      r.indicator.mood === b[i].indicator.mood,
   );
 }
