@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  OnDestroy,
   signal,
   untracked,
   WritableSignal,
@@ -227,8 +228,9 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
     `,
   ],
 })
-export class GitRefsPanelComponent {
-  readonly filter = signal("");
+export class GitRefsPanelComponent implements OnDestroy {
+  /** In the view state, so the panel's Escape can clear it before closing anything. */
+  readonly filter = this.view.refsFilter;
   readonly collapsedRemotes = signal<ReadonlySet<string>>(new Set());
 
   readonly localSort = signal<GitBranchSort>("date-desc");
@@ -296,6 +298,11 @@ export class GitRefsPanelComponent {
       const names = this.listedRemoteBranches().map((b) => b.name);
       untracked(() => this.view.remoteMarks.retain(names));
     });
+  }
+
+  /** A closed panel starts unfiltered, as before the filter lived in the view state. */
+  ngOnDestroy(): void {
+    this.filter.set("");
   }
 
   sortIcon(sort: GitBranchSort): Icon {
@@ -373,9 +380,12 @@ export class GitRefsPanelComponent {
     if (branch.name !== this.head().branch) void this.operations.checkoutBranch(branch.name);
   }
 
+  /**
+   * Escape in the field while the panel does not have the keyboard: clears
+   * the filter first. With the keyboard, the panel's own Escape does it.
+   */
   clearFilter(event: Event): void {
     if (!this.filter()) return;
-    // Escape clears the filter first; only an empty filter lets it close the panel.
     event.stopPropagation();
     this.filter.set("");
   }
