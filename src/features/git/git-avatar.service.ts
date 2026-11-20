@@ -39,13 +39,13 @@ type KeptAvatar = { readonly dataUrl: string; readonly fetchedAt: number };
  */
 @Injectable({ providedIn: "root" })
 export class GitAvatarService {
-  /** The URL per email once known; null when there is none to show. */
+  /**
+   * The URL per email once known, null when there is none to show. Keyed by
+   * the email as Gravatar hashes it, so spellings that differ only in case or
+   * spaces share one entry and one download.
+   */
   private readonly urls = signal<ReadonlyMap<string, string | null>>(new Map());
   private readonly pending = new Set<string>();
-  /** The hash each asked email was kept under, to drop it when it cannot be shown. */
-  private readonly hashes = new Map<string, string>();
-  /** Downloads in progress by hash: emails that differ only in case or spaces share one. */
-  private readonly downloads = new Map<string, Promise<string | null>>();
   /** Dropped in this session; another window's copy on disk does not bring them back. */
   private readonly dropped = new Set<string>();
   private kept: Promise<Map<string, KeptAvatar>> | null = null;
@@ -59,51 +59,41 @@ export class GitAvatarService {
   ) {}
 
   url(email: string): string | null {
-    const known = this.urls().get(email);
+    const key = normalize(email);
+    if (!key) return null;
+    const known = this.urls().get(key);
     if (known !== undefined) return known;
-    this.request(email);
+    if (!this.pending.has(key)) {
+      this.pending.add(key);
+      void this.resolve(key);
+    }
     return null;
   }
 
   /** The picture of `email` could not be shown: none for this session, and gone from the file. */
   markFailed(email: string): void {
-    this.remember(email, null);
-    const hash = this.hashes.get(email);
-    if (!hash) return;
-    this.dropped.add(hash);
-    void this.loadKept().then((kept) => {
-      if (kept.delete(hash)) this.scheduleSave();
-    });
+    const key = normalize(email);
+    this.remember(key, null);
+    void sha256Hex(key)
+      .then(async (hash) => {
+        this.dropped.add(hash);
+        if ((await this.loadKept()).delete(hash)) this.scheduleSave();
+      })
+      .catch(() => undefined);
   }
 
-  private request(email: string): void {
-    const normalized = email.trim().toLowerCase();
-    if (!normalized || this.pending.has(email)) return;
-    this.pending.add(email);
-    void this.resolve(email, normalized);
-  }
-
-  private async resolve(email: string, normalized: string): Promise<void> {
+  private async resolve(key: string): Promise<void> {
     try {
-      const hash = await sha256Hex(normalized);
-      this.hashes.set(email, hash);
+      const hash = await sha256Hex(key);
       const kept = (await this.loadKept()).get(hash);
       // The kept one shows first, so a fresh one fetched meanwhile replaces it, never the other way round.
-      if (kept) this.remember(email, kept.dataUrl);
+      if (kept) this.remember(key, kept.dataUrl);
       if (kept && Date.now() - kept.fetchedAt < MAX_AGE_MS) return;
-      const fresh = await this.downloadOnce(hash);
-      if (fresh || !kept) this.remember(email, fresh);
+      const fresh = await this.download(hash);
+      if (fresh || !kept) this.remember(key, fresh);
     } catch {
-      this.remember(email, null);
+      this.remember(key, null);
     }
-  }
-
-  private downloadOnce(hash: string): Promise<string | null> {
-    const running = this.downloads.get(hash);
-    if (running) return running;
-    const download = this.download(hash).finally(() => this.downloads.delete(hash));
-    this.downloads.set(hash, download);
-    return download;
   }
 
   /** The picture as a data URL, kept for next time; null when there is no picture to have. */
@@ -164,14 +154,15 @@ export class GitAvatarService {
    */
   private async save(): Promise<void> {
     try {
-      const kept = await this.loadKept();
+      // Merged for writing only: what other windows kept stays out of this one's memory.
+      const merged = new Map(await this.loadKept());
       for (const [hash, avatar] of await this.readFile()) {
         if (this.dropped.has(hash)) continue;
-        const own = kept.get(hash);
-        if (!own || own.fetchedAt < avatar.fetchedAt) kept.set(hash, avatar);
+        const own = merged.get(hash);
+        if (!own || own.fetchedAt < avatar.fetchedAt) merged.set(hash, avatar);
       }
       const since = Date.now() - KEEP_FOR_MS;
-      const written = [...kept]
+      const written = [...merged]
         .filter(([, avatar]) => avatar.fetchedAt >= since)
         .sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
         .slice(0, MAX_KEPT);
@@ -188,10 +179,15 @@ export class GitAvatarService {
     return this.paths.join(home, CACHE_DIR, CACHE_FILE);
   }
 
-  private remember(email: string, url: string | null): void {
-    this.pending.delete(email);
-    this.urls.update((urls) => new Map(urls).set(email, url));
+  private remember(key: string, url: string | null): void {
+    this.pending.delete(key);
+    this.urls.update((urls) => new Map(urls).set(key, url));
   }
+}
+
+/** The email as Gravatar hashes it: trimmed and lower-cased. */
+function normalize(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 function isKept(value: unknown): value is KeptAvatar {
