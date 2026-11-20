@@ -33,7 +33,8 @@ type GraphCommit = { readonly sha: string; readonly parents: ReadonlyArray<strin
  *
  * The checked-out commit (`headSha`, when loaded) keeps the first lane, as in
  * GitKraken: tips above it start in lane 1, and its first-parent chain runs
- * down the left edge.
+ * down the left edge. A merge that has it as a further parent draws into
+ * that lane directly instead of opening one on the right.
  */
 export function layoutGraph(
   commits: ReadonlyArray<GraphCommit>,
@@ -100,7 +101,14 @@ export function layoutGraph(
     }
     for (const parent of otherParents) {
       let target = lanes.indexOf(parent);
-      if (target === -1) {
+      if (parent === reserved) {
+        // Merging the checked-out commit: the line goes straight into its
+        // first lane, which from here waits for it like any other lane.
+        target = 0;
+        lanes[0] = parent;
+        reserved = null;
+        opened.add(0);
+      } else if (target === -1) {
         target = freeLane();
         lanes[target] = parent;
         laneColors[target] = nextColor++;

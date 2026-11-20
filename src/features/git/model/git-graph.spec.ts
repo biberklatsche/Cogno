@@ -87,6 +87,40 @@ describe("layoutGraph", () => {
     expect(segmentsOf(rows[1])).toEqual(["bottom 0>0", "top 1>0"]);
   });
 
+  it("draws a merge of HEAD straight into HEAD's first lane", () => {
+    // Above HEAD h: n, then m, which merges h; another branch b holds lane 2 meanwhile.
+    const rows = layoutGraph(
+      [
+        commit("n", "m", "b"),
+        commit("m", "p", "h"),
+        commit("h", "p"),
+        commit("b", "p"),
+        commit("p"),
+      ],
+      "h",
+    );
+
+    expect(rows.map((row) => row.lane)).toEqual([1, 1, 0, 2, 0]);
+    // The merge line goes left into lane 0, not out to a free lane on the right.
+    expect(segmentsOf(rows[1])).toEqual([
+      "bottom 1>0",
+      "bottom 1>1",
+      "bottom 2>2",
+      "top 1>1",
+      "top 2>2",
+    ]);
+    expect(segmentsOf(rows[2])).toEqual([
+      "bottom 0>0",
+      "bottom 1>1",
+      "bottom 2>2",
+      "top 0>0",
+      "top 1>1",
+      "top 2>2",
+    ]);
+    expect(rows[1]?.segments.find((s) => s.to === 0)?.color).toBe(rows[2]?.color);
+    expect(Math.max(...rows.map((row) => row.width))).toBe(3);
+  });
+
   it("reserves nothing when HEAD is not among the loaded commits", () => {
     const rows = layoutGraph([commit("b", "a"), commit("a")], "elsewhere");
 
