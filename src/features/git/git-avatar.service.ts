@@ -3,22 +3,28 @@ import { bytesToBase64, Fs, Paths } from "@cogno/platform";
 
 /** Pixels requested: twice the commit panel's avatar, for high-density screens. */
 const AVATAR_SIZE = 56;
-/** The feature's folder in the Cogno home, and the file the avatars are kept in. */
-const CACHE_DIR = "git";
-const CACHE_FILE = "avatars.json";
+/**
+ * The folder in the Cogno home the avatars are kept in, one file each. Under
+ * `cache`, so it is plain that it may be deleted: it fills again on its own.
+ */
+const AVATAR_DIR = ["cache", "avatars"] as const;
+/**
+ * A kept avatar's file: the email hash and when it was fetched, so the folder
+ * can be sorted and cleared by its names alone. The file holds the data URL.
+ */
+const FILE_NAME = /^([0-9a-f]{64})-(\d+)\.txt$/;
 /** A kept avatar older than this is still shown, and fetched anew meanwhile. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /**
- * A kept avatar not fetched again for this long is dropped from the file:
- * its author was not shown for weeks. Together with the cap on how many are
- * kept, this keeps the file small however many repositories pass through.
+ * A kept avatar not fetched again for this long is cleared out: its author
+ * was not shown for weeks. Together with the cap on how many are kept, this
+ * keeps the folder small however many repositories pass through.
  */
 const KEEP_FOR_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_KEPT = 2000;
-const SAVE_DELAY_MS = 1000;
 
-/** An avatar as kept on disk, under the hash of its email. */
-type KeptAvatar = { readonly dataUrl: string; readonly fetchedAt: number };
+/** A kept avatar's file, known by its name; its picture is read only when shown. */
+type KeptFile = { readonly name: string; readonly fetchedAt: number };
 
 /**
  * Avatars for the commit graph, from Gravatar by the author's email like
@@ -27,15 +33,16 @@ type KeptAvatar = { readonly dataUrl: string; readonly fetchedAt: number };
  *
  * Gravatar lets a picture be cached for five minutes only, so each start would
  * load every avatar again. The pictures are kept in the Cogno home instead,
- * under the email hash, and shown from there at once; one older than a week
- * is fetched anew in the background. Until a picture is there, `url` answers
- * null and the caller shows the author's initials. One that cannot be
- * fetched, offline say, stays off for the session; one that cannot be shown
- * is dropped from the file too, so it is fetched again next time.
+ * one file per email hash, and shown from there at once; one older than a
+ * week is fetched anew in the background. Only the folder's names are read up
+ * front, a picture only when its author is shown. Until a picture is there,
+ * `url` answers null and the caller shows the author's initials. One that
+ * cannot be fetched, offline say, stays off for the session; one that cannot
+ * be shown is removed from disk too, so it is fetched again next time.
  *
  * Gravatar answers with `Access-Control-Allow-Origin: *`, which `fetch` from
- * the webview needs. Avatars fetched in the second before the app closes are
- * not written; they are fetched again on the next start.
+ * the webview needs. Each avatar is its own file, so windows never write over
+ * each other's avatars.
  */
 @Injectable({ providedIn: "root" })
 export class GitAvatarService {
@@ -46,12 +53,8 @@ export class GitAvatarService {
    */
   private readonly urls = signal<ReadonlyMap<string, string | null>>(new Map());
   private readonly pending = new Set<string>();
-  /** Dropped in this session; another window's copy on disk does not bring them back. */
-  private readonly dropped = new Set<string>();
-  private kept: Promise<Map<string, KeptAvatar>> | null = null;
-  private saveTimer: ReturnType<typeof setTimeout> | null = null;
-  /** The write in progress; the next one waits for it, so two never overlap. */
-  private saving: Promise<void> = Promise.resolve();
+  /** The kept avatars by email hash, read from the folder's names once. */
+  private kept: Promise<Map<string, KeptFile>> | null = null;
 
   constructor(
     private readonly fs: Fs,
@@ -70,14 +73,17 @@ export class GitAvatarService {
     return null;
   }
 
-  /** The picture of `email` could not be shown: none for this session, and gone from the file. */
+  /** The picture of `email` could not be shown: none for this session, and gone from disk. */
   markFailed(email: string): void {
     const key = normalize(email);
     this.remember(key, null);
     void sha256Hex(key)
       .then(async (hash) => {
-        this.dropped.add(hash);
-        if ((await this.loadKept()).delete(hash)) this.scheduleSave();
+        const kept = await this.loadKept();
+        const file = kept.get(hash);
+        if (!file) return;
+        kept.delete(hash);
+        await this.removeFile(file.name);
       })
       .catch(() => undefined);
   }
@@ -85,18 +91,20 @@ export class GitAvatarService {
   private async resolve(key: string): Promise<void> {
     try {
       const hash = await sha256Hex(key);
-      const kept = (await this.loadKept()).get(hash);
+      const file = (await this.loadKept()).get(hash);
+      const shown = file ? await this.readPicture(file) : null;
       // The kept one shows first, so a fresh one fetched meanwhile replaces it, never the other way round.
-      if (kept) this.remember(key, kept.dataUrl);
-      if (kept && Date.now() - kept.fetchedAt < MAX_AGE_MS) return;
+      if (shown) this.remember(key, shown);
+      if (shown && file && Date.now() - file.fetchedAt < MAX_AGE_MS) return;
       const fresh = await this.download(hash);
-      if (fresh || !kept) this.remember(key, fresh);
+      if (fresh) await this.keep(hash, fresh);
+      if (fresh || !shown) this.remember(key, fresh);
     } catch {
       this.remember(key, null);
     }
   }
 
-  /** The picture as a data URL, kept for next time; null when there is no picture to have. */
+  /** The picture as a data URL; null when there is no picture to have. */
   private async download(hash: string): Promise<string | null> {
     try {
       const response = await fetch(
@@ -110,73 +118,86 @@ export class GitAvatarService {
         .toLowerCase();
       if (!type?.startsWith("image/")) return null;
       const bytes = new Uint8Array(await response.arrayBuffer());
-      const dataUrl = `data:${type};base64,${bytesToBase64(bytes)}`;
-      (await this.loadKept()).set(hash, { dataUrl, fetchedAt: Date.now() });
-      this.dropped.delete(hash);
-      this.scheduleSave();
-      return dataUrl;
+      return `data:${type};base64,${bytesToBase64(bytes)}`;
     } catch {
       return null;
     }
   }
 
-  private loadKept(): Promise<Map<string, KeptAvatar>> {
-    this.kept ??= this.readFile();
+  /** Writes the picture as the hash's new file and removes the one it replaces. */
+  private async keep(hash: string, dataUrl: string): Promise<void> {
+    try {
+      const fetchedAt = Date.now();
+      const name = `${hash}-${fetchedAt}.txt`;
+      const dir = await this.avatarDir();
+      await this.fs.mkdir(dir, { recursive: true });
+      await this.fs.writeTextFile(await this.paths.join(dir, name), dataUrl);
+      const kept = await this.loadKept();
+      const replaced = kept.get(hash);
+      kept.set(hash, { name, fetchedAt });
+      if (replaced) await this.removeFile(replaced.name);
+    } catch {
+      // Not kept this time; the avatar is fetched again on the next start.
+    }
+  }
+
+  /** The kept picture; null when another window removed or replaced the file meanwhile. */
+  private async readPicture(file: KeptFile): Promise<string | null> {
+    try {
+      return await this.fs.readTextFile(await this.paths.join(await this.avatarDir(), file.name));
+    } catch {
+      return null;
+    }
+  }
+
+  private loadKept(): Promise<Map<string, KeptFile>> {
+    this.kept ??= this.readFolder();
     return this.kept;
   }
 
-  /** What the file holds; empty when it is missing or broken. */
-  private async readFile(): Promise<Map<string, KeptAvatar>> {
+  /**
+   * The newest file per hash, from the folder's names alone. Older copies,
+   * avatars not fetched for weeks and those beyond `MAX_KEPT` are removed in
+   * the background.
+   */
+  private async readFolder(): Promise<Map<string, KeptFile>> {
+    let names: string[];
     try {
-      const path = await this.cacheFilePath();
-      const stored = JSON.parse(await this.fs.readTextFile(path)) as Record<string, unknown>;
-      return new Map(
-        Object.entries(stored).filter((entry): entry is [string, KeptAvatar] => isKept(entry[1])),
-      );
+      names = (await this.fs.readDir(await this.avatarDir())).map((entry) => entry.name);
     } catch {
       return new Map();
     }
-  }
-
-  /** Writes once a burst of downloads has settled, not once per avatar. */
-  private scheduleSave(): void {
-    if (this.saveTimer) clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => {
-      this.saveTimer = null;
-      this.saving = this.saving.then(() => this.save());
-    }, SAVE_DELAY_MS);
-  }
-
-  /**
-   * Writes the kept avatars, together with what another window wrote
-   * meanwhile (the newer of each wins), without those not fetched for weeks
-   * and at most `MAX_KEPT`, the newest.
-   */
-  private async save(): Promise<void> {
-    try {
-      // Merged for writing only: what other windows kept stays out of this one's memory.
-      const merged = new Map(await this.loadKept());
-      for (const [hash, avatar] of await this.readFile()) {
-        if (this.dropped.has(hash)) continue;
-        const own = merged.get(hash);
-        if (!own || own.fetchedAt < avatar.fetchedAt) merged.set(hash, avatar);
+    const files = names
+      .flatMap((name) => {
+        const [, hash, fetchedAt] = FILE_NAME.exec(name) ?? [];
+        return hash && fetchedAt ? [{ hash, name, fetchedAt: Number(fetchedAt) }] : [];
+      })
+      .sort((a, b) => b.fetchedAt - a.fetchedAt);
+    const since = Date.now() - KEEP_FOR_MS;
+    const kept = new Map<string, KeptFile>();
+    const cleared: string[] = [];
+    for (const file of files) {
+      if (kept.has(file.hash) || file.fetchedAt < since || kept.size >= MAX_KEPT) {
+        cleared.push(file.name);
+      } else {
+        kept.set(file.hash, { name: file.name, fetchedAt: file.fetchedAt });
       }
-      const since = Date.now() - KEEP_FOR_MS;
-      const written = [...merged]
-        .filter(([, avatar]) => avatar.fetchedAt >= since)
-        .sort(([, a], [, b]) => b.fetchedAt - a.fetchedAt)
-        .slice(0, MAX_KEPT);
-      const path = await this.cacheFilePath();
-      await this.fs.mkdir(await this.paths.dirname(path), { recursive: true });
-      await this.fs.writeTextFile(path, JSON.stringify(Object.fromEntries(written)));
+    }
+    void Promise.all(cleared.map((name) => this.removeFile(name)));
+    return kept;
+  }
+
+  private async removeFile(name: string): Promise<void> {
+    try {
+      await this.fs.remove(await this.paths.join(await this.avatarDir(), name));
     } catch {
-      // Not kept this time; the avatars are fetched again on the next start.
+      // Already gone, removed by another window say.
     }
   }
 
-  private async cacheFilePath(): Promise<string> {
+  private async avatarDir(): Promise<string> {
     const home = await this.paths.cognoHomeDir(isDevMode());
-    return this.paths.join(home, CACHE_DIR, CACHE_FILE);
+    return this.paths.join(home, ...AVATAR_DIR);
   }
 
   private remember(key: string, url: string | null): void {
@@ -188,11 +209,6 @@ export class GitAvatarService {
 /** The email as Gravatar hashes it: trimmed and lower-cased. */
 function normalize(email: string): string {
   return email.trim().toLowerCase();
-}
-
-function isKept(value: unknown): value is KeptAvatar {
-  const kept = value as Partial<KeptAvatar> | null;
-  return typeof kept?.dataUrl === "string" && typeof kept.fetchedAt === "number";
 }
 
 async function sha256Hex(text: string): Promise<string> {
