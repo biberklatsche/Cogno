@@ -4,6 +4,7 @@ import { NotificationCenterPort } from "@cogno/core/api/notification-center-port
 import { isWslShellContext } from "@cogno/shared/domain";
 import { GitProcessPromptService, GitRunPrompts } from "./git-process-prompt.service";
 import { GitRepositoryService } from "./git-repository.service";
+import { localBranchOf } from "./model/git-branch-sort";
 import { GitConflictSide } from "./model/git-conflict";
 import { GitBranch, GitOperation, GitPullMode, GitRemoteBranch } from "./model/git-model";
 import { GitConflictStages, isPushRejected } from "./model/git-parsers";
@@ -233,8 +234,7 @@ export class GitOperationsService {
 
   /** A local branch tracking the remote branch, or the existing one of that name. */
   checkoutRemoteBranch(remoteBranch: GitRemoteBranch): Promise<GitOperationOutcome> {
-    const local = this.repository.refs().branches.some((b) => b.name === remoteBranch.shortName);
-    return local
+    return localBranchOf(remoteBranch, this.repository.refs())
       ? this.git(["switch", remoteBranch.shortName], "Checkout failed")
       : this.git(["switch", "--track", remoteBranch.name], "Checkout failed");
   }

@@ -85,8 +85,9 @@ export class GitRepositoryService {
   private readonly stashesSignal = signal<ReadonlyArray<GitStash>>([]);
   private readonly worktreesSignal = signal<ReadonlyArray<GitWorktree>>([]);
   private readonly worktreeChangesSignal = signal<ReadonlyMap<string, number>>(new Map());
-  /** Counts the reads of the other worktrees' changes; only the latest one lands. */
-  private worktreeChangesRun = 0;
+  /** The read of the other worktrees' changes asked for while one runs; only it runs next. */
+  private worktreeChangesNext: (() => Promise<void>) | null = null;
+  private worktreeChangesReading = false;
   private readonly commitsSignal = signal<ReadonlyArray<GitCommit>>([]);
   private readonly operationSignal = signal<GitOperation | null>(null);
   private readonly incomingSignal = signal<GitIncoming | null>(null);
@@ -371,7 +372,7 @@ export class GitRepositoryService {
     const git = (args: ReadonlyArray<string>) =>
       runGit(session, ["-C", root, ...args], READ_TIMEOUT_MS);
 
-    const [status, sha, branch, refs, remotes, stashes, stopped, worktreeList] = await Promise.all([
+    const [status, sha, branch, refs, remotes, stashes, stopped, listed] = await Promise.all([
       // Untracked directories as one entry each, as git shows them: listing
       // every file under an untracked build output took longer than the rest.
       git(["status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
@@ -381,7 +382,7 @@ export class GitRepositoryService {
       this.loadRemotes(git),
       git(["stash", "list", `--format=${STASH_FORMAT}`]),
       this.readOperation(session),
-      git(["worktree", "list", "--porcelain", "-z"]),
+      listWorktrees(git, root),
     ]);
     // A rejection (focus moved, remote) keeps the last state; the refresh that the binding
     // change triggered reads the new one.
@@ -396,22 +397,19 @@ export class GitRepositoryService {
       sha: sha.exitCode === 0 ? sha.stdout.trim() || null : null,
       branch: branch.exitCode === 0 ? branch.stdout.trim() || null : null,
     };
-    const worktrees = worktreeList?.exitCode === 0 ? parseWorktrees(worktreeList.stdout, root) : [];
+    const worktrees = listed ?? [];
     const parsedRefs =
       refs.exitCode === 0
         ? withWorktrees(parseRefs(refs.stdout), worktrees, head.branch)
         : EMPTY_REFS;
-    // Read beside this view and not waited for: another worktree with a large
-    // tree must hold up neither the view nor an operation waiting for this
-    // refresh. Only the latest read lands.
-    const changesRun = ++this.worktreeChangesRun;
-    this.loadWorktreeChanges(git, worktrees).then(
-      (changes) => {
-        if (changesRun !== this.worktreeChangesRun || session !== this.boundSession) return;
-        this.worktreeChangesSignal.set(changes);
-      },
-      () => undefined,
-    );
+    this.readWorktreeChanges(async () => {
+      const changes = await this.loadWorktreeChanges(git, worktrees);
+      // A newer read waiting, another repository or another session: this one is out of date.
+      if (this.worktreeChangesNext || session !== this.boundSession || this.rootSignal() !== root) {
+        return;
+      }
+      this.worktreeChangesSignal.set(changes);
+    });
     const commits = await this.loadLog(git, head, parsedRefs);
     if (session !== this.boundSession) return;
 
@@ -452,8 +450,42 @@ export class GitRepositoryService {
   }
 
   /**
+   * The worktrees as git lists them now, asked of git rather than taken from
+   * the last refresh, which may still be on its way; empty without an answer.
+   */
+  async readWorktrees(): Promise<GitWorktree[]> {
+    const root = this.rootSignal();
+    if (!root) return [];
+    return (await listWorktrees((args) => this.run(args), root)) ?? [];
+  }
+
+  /**
+   * Reads the other worktrees' changes beside the refresh, not waited for:
+   * another worktree with a large tree must hold up neither the view nor an
+   * operation waiting for the refresh. One read at a time; asked again
+   * meanwhile, only the latest runs next, so frequent refreshes cannot pile
+   * reads up.
+   */
+  private readWorktreeChanges(read: () => Promise<void>): void {
+    this.worktreeChangesNext = read;
+    if (this.worktreeChangesReading) return;
+    this.worktreeChangesReading = true;
+    void (async () => {
+      while (this.worktreeChangesNext) {
+        const next = this.worktreeChangesNext;
+        this.worktreeChangesNext = null;
+        await next().catch(() => undefined);
+      }
+      this.worktreeChangesReading = false;
+    })();
+  }
+
+  /**
    * The uncommitted changes of every other worktree whose folder is there,
    * for its work in progress row in the graph; one without any is left out.
+   * `--no-optional-locks` keeps git from refreshing that worktree's index: it
+   * lies in the watched git dir, and a write there would start the next
+   * refresh.
    */
   private async loadWorktreeChanges(
     git: (args: ReadonlyArray<string>) => Promise<CommandRunnerResultContract | null>,
@@ -462,7 +494,15 @@ export class GitRepositoryService {
     const others = worktrees.filter((worktree) => !worktree.isCurrent && !worktree.prunable);
     const results = await Promise.all(
       others.map((worktree) =>
-        git(["-C", worktree.path, "status", "--porcelain=v1", "-z", "--untracked-files=normal"]),
+        git([
+          "--no-optional-locks",
+          "-C",
+          worktree.path,
+          "status",
+          "--porcelain=v1",
+          "-z",
+          "--untracked-files=normal",
+        ]),
       ),
     );
     const changes = new Map<string, number>();
@@ -534,7 +574,7 @@ export class GitRepositoryService {
     this.remotesSignal.set([]);
     this.stashesSignal.set([]);
     this.worktreesSignal.set([]);
-    this.worktreeChangesRun++;
+    this.worktreeChangesNext = null;
     this.worktreeChangesSignal.set(new Map());
     this.commitsSignal.set([]);
     this.operationSignal.set(null);
@@ -569,4 +609,13 @@ function dirsToWatch(gitDir: string, commonDir: string): string[] {
   if (!isAbsolute || commonDir === gitDir) return [gitDir];
   if (gitDir.startsWith(`${commonDir}/`)) return [commonDir];
   return [gitDir, commonDir];
+}
+
+/** All worktrees of the repository at `root`, as `git` lists them; null without an answer. */
+async function listWorktrees(
+  git: (args: ReadonlyArray<string>) => Promise<CommandRunnerResultContract | null>,
+  root: string,
+): Promise<GitWorktree[] | null> {
+  const listed = await git(["worktree", "list", "--porcelain", "-z"]);
+  return listed?.exitCode === 0 ? parseWorktrees(listed.stdout, root) : null;
 }

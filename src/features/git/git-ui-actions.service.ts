@@ -25,6 +25,7 @@ import {
   keptReason,
   remoteBranchesToDelete,
 } from "./model/git-branch-cleanup";
+import { localBranchOf } from "./model/git-branch-sort";
 import { conflictsOf, GitConflictSide, parseConflicts } from "./model/git-conflict";
 import {
   GitBranch,
@@ -38,7 +39,7 @@ import {
   GitTag,
   GitWorktree,
 } from "./model/git-model";
-import { cloneDirectoryName, folderName, parseWorktrees } from "./model/git-parsers";
+import { cloneDirectoryName, folderName } from "./model/git-parsers";
 import { buildHunkPatch, GitHunk, GitPatch } from "./model/git-patch";
 import {
   GitDeleteBranchesDialogComponent,
@@ -487,10 +488,8 @@ export class GitUiActions {
       newBranch,
     );
     if (outcome !== "ok") return;
-    // Git answers with the folder as given; its list has it in full. Asked here, not
-    // taken from the panel's re-read, which may still be on its way.
-    const listed = await this.repository.run(["worktree", "list", "--porcelain", "-z"]);
-    const worktrees = listed?.exitCode === 0 ? parseWorktrees(listed.stdout, root) : [];
+    // Git answers with the folder as given; its list has it in full.
+    const worktrees = await this.repository.readWorktrees();
     const created = worktrees.find((worktree) => !before.has(worktree.path));
     if (created && (await this.confirm(`Open a tab in ${created.path}?`, "Open tab"))) {
       this.openWorktreeTab(created.path);
@@ -520,9 +519,9 @@ export class GitUiActions {
     return item(`Open tab in worktree ${folderName(path)}`, () => this.openWorktreeTab(path));
   }
 
-  /** The other worktree the local branch of `remoteBranch`'s name is checked out in. */
+  /** The other worktree the local branch of `remoteBranch` is checked out in. */
   private worktreeOfLocal(remoteBranch: GitRemoteBranch): string | undefined {
-    return this.repository.refs().branches.find((b) => b.name === remoteBranch.shortName)?.worktree;
+    return localBranchOf(remoteBranch, this.repository.refs())?.worktree;
   }
 
   openWipFileMenu(event: MouseEvent, file: GitFile, group: GitWipFileGroup): void {
