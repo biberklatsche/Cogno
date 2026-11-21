@@ -194,7 +194,7 @@ function nextLayers(
       }
     }
 
-    /* Face, busy: one 8 s round. Reads three lines, looks up aside with a blink, bobs its head. */
+    /* Face, busy: one 8 s round. Reads three lines, looks up aside with a blink; the head bobs all the while. */
     .face.busy .eyes {
       animation: busy-eyes 8s ease-in-out infinite;
     }
@@ -202,7 +202,7 @@ function nextLayers(
       animation: busy-blink 8s ease-in-out infinite;
     }
     .face.busy .tilt {
-      animation: busy-nod 8s ease-in-out infinite;
+      animation: busy-nod 0.56s ease-in-out infinite;
     }
     .face.busy .antenna {
       animation: antenna-sway 1.4s ease-in-out infinite;
@@ -259,20 +259,10 @@ function nextLayers(
     }
     @keyframes busy-nod {
       0%,
-      70%,
-      98%,
       100% {
-        transform: translateY(0);
-      }
-      73.5%,
-      80.5%,
-      87.5%,
-      94.5% {
         transform: translateY(-5px);
       }
-      77%,
-      84%,
-      91% {
+      50% {
         transform: translateY(7px);
       }
     }
