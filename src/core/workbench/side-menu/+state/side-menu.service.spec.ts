@@ -7,316 +7,314 @@ class DummyComponent {}
 describe("SideMenuService", () => {
   let bus: AppBus;
   let service: SideMenuService;
-  let menuItem: SideMenuItem;
+  let publishSpy: { mock: { calls: unknown[][] }; mockClear(): void };
+
+  function item(label: string, order: number, extra: Partial<SideMenuItem> = {}): SideMenuItem {
+    return {
+      label,
+      order,
+      icon: "mdiViewDashboard",
+      actionName: "open_workspace",
+      component: DummyComponent,
+      ...extra,
+    };
+  }
+
+  function published(): string[] {
+    return publishSpy.mock.calls.map((call) => {
+      const message = call[0] as { type: string; payload?: { label?: string } };
+      return message.payload?.label ? `${message.type} ${message.payload.label}` : message.type;
+    });
+  }
+
+  function docked(): string[] {
+    return service.dockedItems().map((menuItem) => menuItem.label);
+  }
 
   beforeEach(() => {
     bus = new AppBus();
     service = new SideMenuService(bus);
-    menuItem = {
-      label: "Workspace",
-      icon: "mdiViewDashboard",
-      actionName: "open_workspace",
-      component: DummyComponent,
-    };
-    service.addMenuItem(menuItem);
+    service.addMenuItem(item("Workspace", 1));
+    service.addMenuItem(item("Git", 2));
+    service.addMenuItem(item("Agents", 3));
+    service.addMenuItem(item("Search", 4));
+    service.addMenuItem(item("Settings", 1, { bottom: true }));
+    publishSpy = vi.spyOn(bus, "publish");
   });
 
-  it("should focus when opening a side menu item", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
+  function pin(label: string): void {
+    service.open(label);
+    service.togglePin(label);
+  }
 
+  it("opens a panel floating and gives it the keyboard", () => {
     service.open("Workspace");
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
 
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(service.isFocused()).toBe(true);
-    expect(publishedTypes).toContain("SideMenuViewOpened");
-    expect(publishedTypes).toContain("SideMenuViewFocused");
+    expect(service.floatingItem()?.label).toBe("Workspace");
+    expect(docked()).toEqual([]);
+    expect(service.focusedLabel()).toBe("Workspace");
+    expect(published()).toEqual(["SideMenuViewOpened Workspace", "SideMenuViewFocused Workspace"]);
   });
 
-  it("should only blur when pinned item loses outside focus", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-
+  it("replaces the floating panel with another floating one", () => {
     service.open("Workspace");
-    service.togglePin();
-    service.blur();
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
-
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(service.isPinned()).toBe(true);
-    expect(service.isFocused()).toBe(false);
-    expect(publishedTypes).toContain("SideMenuViewBlurred");
-  });
-
-  it("should close and blur on close()", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-
-    service.open("Workspace");
-    service.close();
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
-
-    expect(service.selectedItem()).toBeUndefined();
-    expect(service.isFocused()).toBe(false);
-    expect(publishedTypes).toContain("SideMenuViewClosed");
-    expect(publishedTypes).toContain("SideMenuViewBlurred");
-  });
-
-  it("should only blur on close() when selected item is pinned", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-
-    service.open("Workspace");
-    service.togglePin();
     publishSpy.mockClear();
 
-    service.close();
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
-
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(service.isPinned()).toBe(true);
-    expect(service.isFocused()).toBe(false);
-    expect(publishedTypes).toContain("SideMenuViewBlurred");
-    expect(publishedTypes).not.toContain("SideMenuViewClosed");
-  });
-
-  it("should close pinned item when close is forced", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
-
-    service.open("Workspace");
-    service.togglePin();
-    publishSpy.mockClear();
-
-    service.close(true);
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
-
-    expect(service.selectedItem()).toBeUndefined();
-    expect(service.isFocused()).toBe(false);
-    expect(publishedTypes).toContain("SideMenuViewClosed");
-  });
-
-  it("keeps a force-closed panel pinned when it is opened again", () => {
-    service.open("Workspace");
-    service.togglePin();
-    service.close(true);
-
-    service.open("Workspace");
-
-    expect(service.isPinned()).toBe(true);
-  });
-
-  it("does not bring back a force-closed pinned panel until it is opened again", () => {
-    service.addMenuItem({
-      label: "Search",
-      icon: "mdiConsole",
-      actionName: "open_terminal_search",
-      component: DummyComponent,
-    });
-
-    service.open("Workspace");
-    service.togglePin();
-    service.close(true);
     service.open("Search");
-    service.close();
 
-    expect(service.selectedItem()).toBeUndefined();
-
-    service.open("Workspace");
-    service.open("Search");
-    service.close();
-
-    expect(service.selectedItem()?.label).toBe("Workspace");
+    expect(service.floatingItem()?.label).toBe("Search");
+    expect(service.isOpen("Workspace")).toBe(false);
+    expect(published()).toEqual([
+      "SideMenuViewBlurred Workspace",
+      "SideMenuViewClosed Workspace",
+      "SideMenuViewOpened Search",
+      "SideMenuViewFocused Search",
+    ]);
   });
 
-  it("should re-focus the same item when open is called again", () => {
-    const publishSpy = vi.spyOn(bus, "publish");
+  it("keeps a pinned panel open beside a floating one", () => {
+    pin("Workspace");
 
-    service.open("Workspace");
+    service.open("Search");
+
+    expect(docked()).toEqual(["Workspace"]);
+    expect(service.floatingItem()?.label).toBe("Search");
+    expect(service.focusedLabel()).toBe("Search");
+  });
+
+  it("stands pinned panels side by side in the rail's order, whatever order they opened in", () => {
+    pin("Settings");
+    pin("Agents");
+    pin("Workspace");
+
+    expect(docked()).toEqual(["Workspace", "Agents", "Settings"]);
+    expect(service.floatingItem()).toBeUndefined();
+  });
+
+  it("only focuses a pinned panel that is open already", () => {
+    pin("Workspace");
     service.blur();
     publishSpy.mockClear();
 
     service.open("Workspace");
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
 
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(service.isFocused()).toBe(true);
-    expect(publishedTypes).toContain("SideMenuViewFocused");
-    expect(publishedTypes).not.toContain("SideMenuViewOpened");
+    expect(published()).toEqual(["SideMenuViewFocused Workspace"]);
   });
 
-  it("should blur the currently focused item when switching directly to another item", () => {
-    service.addMenuItem({
-      label: "CommandPalette",
-      icon: "mdiConsole",
-      actionName: "open_command_palette",
-      component: DummyComponent,
-    });
+  it("opens a closed panel that stayed pinned beside the others again", () => {
+    pin("Workspace");
+    service.close("Workspace");
+    pin("Git");
 
     service.open("Workspace");
-    service.togglePin();
-    expect(service.isFocused()).toBe(true);
 
-    const publishSpy = vi.spyOn(bus, "publish");
-    service.open("CommandPalette");
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
-
-    expect(service.selectedItem()?.label).toBe("CommandPalette");
-    expect(service.isFocused()).toBe(true);
-    expect(publishedTypes).toContain("SideMenuViewBlurred");
-    expect(publishedTypes).toContain("SideMenuViewFocused");
+    expect(docked()).toEqual(["Workspace", "Git"]);
+    expect(service.isPinned("Workspace")).toBe(true);
   });
 
-  it("should clamp side menu panel width", () => {
-    service.open("Workspace");
-    service.setPanelWidthInPixels(100);
-    expect(service.panelWidthInPixels()).toBe(280);
-
-    service.setPanelWidthInPixels(999);
-    expect(service.panelWidthInPixels()).toBe(999);
-  });
-
-  it("keeps a width per panel", () => {
-    service.addMenuItem({ ...menuItem, label: "Search" });
-    service.open("Workspace");
-    service.setPanelWidthInPixels(500);
-
+  it("closes a pinned panel with X and leaves the floating one", () => {
+    pin("Workspace");
     service.open("Search");
-    expect(service.panelWidthInPixels()).toBe(360);
+    service.focus("Workspace");
+    publishSpy.mockClear();
 
-    service.open("Workspace");
-    expect(service.panelWidthInPixels()).toBe(500);
+    service.close("Workspace");
+
+    expect(docked()).toEqual([]);
+    expect(service.floatingItem()?.label).toBe("Search");
+    expect(service.isPinned("Workspace")).toBe(true);
+    expect(published()).toEqual([
+      "SideMenuViewBlurred Workspace",
+      "SideMenuViewClosed Workspace",
+      "FocusActiveTerminal",
+    ]);
   });
 
-  it("names the docked panel to bring back, not a floating one over it", () => {
-    service.addMenuItem({ ...menuItem, label: "Search" });
-    expect(service.dockedPanelLabel()).toBeNull();
-
-    service.open("Workspace");
-    expect(service.dockedPanelLabel()).toBeNull();
-
-    service.togglePin();
+  it("does not take the keyboard to the terminal when an unfocused panel closes", () => {
+    pin("Workspace");
     service.open("Search");
-    expect(service.dockedPanelLabel()).toBe("Workspace");
+    publishSpy.mockClear();
 
-    service.open("Workspace");
-    service.close(true);
-    expect(service.dockedPanelLabel()).toBeNull();
+    service.close("Workspace");
+
+    expect(service.focusedLabel()).toBe("Search");
+    expect(published()).toEqual(["SideMenuViewClosed Workspace"]);
   });
 
-  it("reopens a pinned panel unfocused and focuses the terminal when a transient panel closes", () => {
-    service.addMenuItem({
-      label: "Search",
-      icon: "mdiConsole",
-      actionName: "open_terminal_search",
-      component: DummyComponent,
-    });
-
-    // Pin Workspace, then open the transient Search over it.
-    service.open("Workspace");
-    service.togglePin();
+  it("dismisses a floating panel by closing it, the pinned ones stay", () => {
+    pin("Workspace");
     service.open("Search");
-    expect(service.selectedItem()?.label).toBe("Search");
+    publishSpy.mockClear();
 
-    const publishSpy = vi.spyOn(bus, "publish");
-    service.close();
-    const publishedTypes = publishSpy.mock.calls.map((call) => call[0].type);
+    service.dismiss("Search");
 
-    // The pinned panel comes back visible...
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(publishedTypes).toContain("SideMenuViewOpened");
-    // ...but does not grab the keyboard...
-    expect(service.isFocused()).toBe(false);
-    expect(publishedTypes).not.toContain("SideMenuViewFocused");
-    // ...so the focus can return to the terminal.
-    expect(publishedTypes).toContain("FocusActiveTerminal");
+    expect(service.floatingItem()).toBeUndefined();
+    expect(docked()).toEqual(["Workspace"]);
+    expect(service.focusedLabel()).toBeUndefined();
+    expect(published()).toEqual([
+      "SideMenuViewBlurred Search",
+      "SideMenuViewClosed Search",
+      "FocusActiveTerminal",
+    ]);
   });
 
-  it("keeps a panel pinned while it is closed and re-registered", () => {
-    service.open("Workspace");
-    service.togglePin();
-    service.close(true);
-    service.removeMenuItem("Workspace");
-    service.addMenuItem({ ...menuItem, icon: "mdiRobot" });
+  it("dismisses a pinned panel by giving the keyboard back to the terminal", () => {
+    pin("Workspace");
+    publishSpy.mockClear();
 
-    service.open("Workspace");
+    service.dismiss("Workspace");
 
-    expect(service.isPinned()).toBe(true);
+    expect(docked()).toEqual(["Workspace"]);
+    expect(service.focusedLabel()).toBeUndefined();
+    expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
+  });
+
+  it("leaves the keyboard alone when an unfocused pinned panel is dismissed", () => {
+    pin("Workspace");
+    service.open("Search");
+    publishSpy.mockClear();
+
+    service.dismiss("Workspace");
+
+    expect(service.focusedLabel()).toBe("Search");
+    expect(published()).toEqual([]);
+  });
+
+  it("gives the keyboard to one panel at a time", () => {
+    pin("Workspace");
+    service.open("Search");
+    publishSpy.mockClear();
+
+    service.focus("Workspace");
+
+    expect(service.focusedLabel()).toBe("Workspace");
+    expect(published()).toEqual(["SideMenuViewBlurred Search", "SideMenuViewFocused Workspace"]);
+  });
+
+  it("does not focus a panel that is not open", () => {
+    service.focus("Workspace");
+
+    expect(service.focusedLabel()).toBeUndefined();
+  });
+
+  it("pins the floating panel beside the others, and it stays open", () => {
+    pin("Agents");
+    service.open("Workspace");
+    publishSpy.mockClear();
+
+    service.togglePin("Workspace");
+
+    expect(docked()).toEqual(["Workspace", "Agents"]);
+    expect(service.floatingItem()).toBeUndefined();
+    expect(service.focusedLabel()).toBe("Workspace");
+    expect(published()).toEqual([]);
+  });
+
+  it("unpins a panel into the floating one, replacing the panel floating so far", () => {
+    pin("Workspace");
+    pin("Agents");
+    service.open("Search");
+    service.focus("Workspace");
+    publishSpy.mockClear();
+
+    service.togglePin("Workspace");
+
+    expect(docked()).toEqual(["Agents"]);
+    expect(service.floatingItem()?.label).toBe("Workspace");
+    expect(service.focusedLabel()).toBe("Workspace");
+    expect(published()).toEqual(["SideMenuViewClosed Search"]);
   });
 
   it("toggles a panel with its shortcut: open, focus when unfocused, close when focused", () => {
     service.toggle("Workspace");
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(service.isFocused()).toBe(true);
+    expect(service.focusedLabel()).toBe("Workspace");
 
     service.blur();
     service.toggle("Workspace");
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(service.isFocused()).toBe(true);
+    expect(service.focusedLabel()).toBe("Workspace");
 
     service.toggle("Workspace");
-    expect(service.selectedItem()).toBeUndefined();
+    expect(service.isOpen("Workspace")).toBe(false);
   });
 
   it("closes a focused pinned panel with its shortcut and keeps it pinned", () => {
+    pin("Workspace");
+
+    service.toggle("Workspace");
+    expect(service.isOpen("Workspace")).toBe(false);
+
+    service.toggle("Workspace");
+    expect(docked()).toEqual(["Workspace"]);
+  });
+
+  it("ignores a panel without a menu item", () => {
+    service.open("Unknown");
+
+    expect(service.floatingItem()).toBeUndefined();
+    expect(published()).toEqual([]);
+  });
+
+  it("follows a menu item that changes while its panel is open", () => {
+    pin("Workspace");
+    service.open("Search");
+
+    service.updateBadgeColor("Workspace", "red");
+    service.resolveComponent("Search", DummyComponent);
+
+    expect(service.dockedItems()[0].badgeColor).toBe("red");
+    expect(service.floatingItem()?.component).toBe(DummyComponent);
+  });
+
+  it("keeps a panel pinned while it is closed and re-registered", () => {
+    pin("Workspace");
+    service.close("Workspace");
+    service.removeMenuItem("Workspace");
+    service.addMenuItem(item("Workspace", 1, { icon: "mdiRobot" }));
+
     service.open("Workspace");
-    service.togglePin();
 
-    service.toggle("Workspace");
-    expect(service.selectedItem()).toBeUndefined();
+    expect(docked()).toEqual(["Workspace"]);
+  });
 
-    service.toggle("Workspace");
-    expect(service.isPinned()).toBe(true);
+  it("names the open pinned panels to bring back, not the floating one", () => {
+    pin("Workspace");
+    pin("Agents");
+    service.open("Search");
+
+    expect([...service.openPinnedLabels()].sort()).toEqual(["Agents", "Workspace"]);
   });
 
   it("restores pinned panels by label", () => {
-    service.setPinnedLabels(["Workspace"]);
+    service.setPinnedLabels(["Workspace", "Git"]);
 
-    service.open("Workspace");
-    service.close();
+    service.open("Workspace", false);
+    service.open("Git", false);
 
-    expect(service.selectedItem()?.label).toBe("Workspace");
-    expect(service.isPinned()).toBe(true);
+    expect(docked()).toEqual(["Workspace", "Git"]);
+    expect(service.focusedLabel()).toBeUndefined();
   });
 
-  it("expands the open panel and toggles it back", () => {
-    service.open("Workspace");
-    service.toggleExpanded();
+  it("keeps a width per panel and clamps it", () => {
+    service.setPanelWidthInPixels("Workspace", 100);
+    service.setPanelWidthInPixels("Git", 500);
 
-    expect(service.isExpanded()).toBe(true);
-    expect([...service.expandedLabels()]).toEqual(["Workspace"]);
-
-    service.toggleExpanded();
-    expect(service.isExpanded()).toBe(false);
-    expect(service.expandedLabels().size).toBe(0);
+    expect(service.panelWidthInPixels("Workspace")).toBe(280);
+    expect(service.panelWidthInPixels("Git")).toBe(500);
+    expect(service.panelWidthInPixels("Search")).toBe(360);
   });
 
-  it("keeps a panel expanded while it is closed and re-registered", () => {
-    service.open("Workspace");
-    service.toggleExpanded();
-    service.close(true);
-    service.removeMenuItem("Workspace");
-    service.addMenuItem({ ...menuItem, icon: "mdiCog" });
+  it("starts a panel at its own default width", () => {
+    service.addMenuItem(item("Settings", 1, { bottom: true, defaultPanelWidthInPixels: 620 }));
 
-    expect(service.isExpanded()).toBe(false);
-
-    service.open("Workspace");
-    expect(service.isExpanded()).toBe(true);
+    expect(service.panelWidthInPixels("Settings")).toBe(620);
   });
 
-  it("remembers expand per panel", () => {
-    service.addMenuItem({ ...menuItem, label: "Git", actionName: "open_git" });
-    service.open("Workspace");
-    service.toggleExpanded();
+  it("expands a panel and toggles it back, per panel and while it is closed", () => {
+    service.toggleExpanded("Workspace");
+    expect(service.isExpanded("Workspace")).toBe(true);
+    expect(service.isExpanded("Git")).toBe(false);
 
-    service.open("Git");
-    expect(service.isExpanded()).toBe(false);
-
-    service.setExpandedLabels(["Git"]);
-    expect(service.isExpanded()).toBe(true);
-    service.open("Workspace");
-    expect(service.isExpanded()).toBe(false);
-  });
-
-  it("does nothing when expanding without an open panel", () => {
-    service.toggleExpanded();
-
+    service.toggleExpanded("Workspace");
     expect(service.expandedLabels().size).toBe(0);
   });
 });

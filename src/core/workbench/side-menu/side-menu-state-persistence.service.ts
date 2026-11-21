@@ -19,9 +19,8 @@ export class SideMenuStatePersistenceService {
       void this.restore();
     });
 
-    // The open panel decides which docked panel comes back; the rest is per panel.
     combineLatest([
-      toObservable(this.sideMenuService.selectedItem),
+      toObservable(this.sideMenuService.dockedItems),
       toObservable(this.sideMenuService.pinnedLabels),
       toObservable(this.sideMenuService.expandedLabels),
       toObservable(this.sideMenuService.panelWidths),
@@ -41,14 +40,14 @@ export class SideMenuStatePersistenceService {
     const pinned = this.sideMenuService.pinnedLabels();
     const expanded = this.sideMenuService.expandedLabels();
     const widths = this.sideMenuService.panelWidths();
-    const docked = this.sideMenuService.dockedPanelLabel();
+    const open = this.sideMenuService.openPinnedLabels();
     const labels = new Set([...pinned, ...expanded, ...widths.keys()]);
     return [...labels].map((label) => ({
       label,
       is_pinned: pinned.has(label) ? 1 : 0,
       is_expanded: expanded.has(label) ? 1 : 0,
       width_pixels: widths.get(label) ?? null,
-      is_open: label === docked ? 1 : 0,
+      is_open: open.has(label) ? 1 : 0,
     }));
   }
 
@@ -61,8 +60,9 @@ export class SideMenuStatePersistenceService {
     );
     this.dbInitialized = true;
 
-    // The docked panel comes back beside the terminals, which keep the keyboard.
-    const open = panels.find((p) => p.is_open && p.is_pinned);
-    if (open) this.sideMenuService.open(open.label, false);
+    // The pinned panels come back beside the terminals, which keep the keyboard.
+    for (const panel of panels) {
+      if (panel.is_open && panel.is_pinned) this.sideMenuService.open(panel.label, false);
+    }
   }
 }

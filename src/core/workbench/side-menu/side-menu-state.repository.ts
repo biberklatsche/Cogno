@@ -7,7 +7,7 @@ export interface SideMenuPanelEntity {
   is_pinned: number;
   is_expanded: number;
   width_pixels: number | null;
-  /** The docked panel that comes back after a restart; at most one row. */
+  /** A pinned panel that was open and comes back after a restart. */
   is_open: number;
 }
 

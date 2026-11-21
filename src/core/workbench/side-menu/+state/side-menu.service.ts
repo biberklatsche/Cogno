@@ -21,86 +21,56 @@ export type SideMenuItem = {
   defaultPanelWidthInPixels?: number;
 };
 
+/**
+ * The side panels: pinned ones stand beside the terminals, side by side in the
+ * rail's order, until each is closed with X; one floating panel at a time lies
+ * over the terminals and the pinned ones, and another floating one replaces it.
+ * Pin, expand and width belong to the panel and outlive its being open and its
+ * menu item. At most one panel has the keyboard.
+ */
 @Injectable({ providedIn: "root" })
 export class SideMenuService {
   private static readonly defaultPanelWidthInPixels = 360;
   private static readonly minimumPanelWidthInPixels = 280;
 
-  private _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
-  private _selectedItem: WritableSignal<SideMenuItem | undefined> = signal<
-    SideMenuItem | undefined
-  >(undefined);
-  private _isFocused: WritableSignal<boolean> = signal<boolean>(false);
+  private readonly _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
+  /** The pinned panels that are open. */
+  private readonly _openPinnedLabels = signal<ReadonlySet<string>>(new Set());
+  private readonly _floatingLabel = signal<string | undefined>(undefined);
+  private readonly _focusedLabel = signal<string | undefined>(undefined);
   /** Each panel's own width, by label; a panel without one has the default. */
-  private _panelWidths: WritableSignal<ReadonlyMap<string, number>> = signal<
-    ReadonlyMap<string, number>
-  >(new Map());
-  /**
-   * Panels docked beside the terminals instead of floating over them; a docked
-   * panel stays open until it is closed with X. Like expand, pinning belongs to
-   * the panel and outlives both its being open and its menu item.
-   */
-  private _pinnedLabels: WritableSignal<ReadonlySet<string>> = signal<ReadonlySet<string>>(
-    new Set(),
-  );
-  /** The pinned panels opened since they were last closed, the latest on top. */
-  private _pinnedStack: string[] = [];
-  /**
-   * Panels that span the whole terminal area instead of their own width.
-   * Expand belongs to the panel, not to its being open: a closed panel opens
-   * expanded again, which is why this outlives the menu items.
-   */
-  private _expandedLabels: WritableSignal<ReadonlySet<string>> = signal<ReadonlySet<string>>(
-    new Set(),
-  );
+  private readonly _panelWidths = signal<ReadonlyMap<string, number>>(new Map());
+  private readonly _pinnedLabels = signal<ReadonlySet<string>>(new Set());
+  /** Panels that span the whole area, the terminals and the other panels. */
+  private readonly _expandedLabels = signal<ReadonlySet<string>>(new Set());
 
-  get menu(): Signal<SideMenuItem[]> {
-    return this._menuItems.asReadonly();
-  }
+  readonly menu: Signal<SideMenuItem[]> = this._menuItems.asReadonly();
+  readonly focusedLabel: Signal<string | undefined> = this._focusedLabel.asReadonly();
+  readonly panelWidths: Signal<ReadonlyMap<string, number>> = this._panelWidths.asReadonly();
+  readonly pinnedLabels: Signal<ReadonlySet<string>> = this._pinnedLabels.asReadonly();
+  readonly expandedLabels: Signal<ReadonlySet<string>> = this._expandedLabels.asReadonly();
 
-  get selectedItem(): Signal<SideMenuItem | undefined> {
-    return this._selectedItem.asReadonly();
-  }
-
-  get isFocused(): Signal<boolean> {
-    return this._isFocused.asReadonly();
-  }
-
-  get panelWidths(): Signal<ReadonlyMap<string, number>> {
-    return this._panelWidths.asReadonly();
-  }
-
-  /** The open panel's width. */
-  readonly panelWidthInPixels: Signal<number> = computed(() => {
-    const current = this._selectedItem();
-    return (
-      (current && this._panelWidths().get(current.label)) ??
-      current?.defaultPanelWidthInPixels ??
-      SideMenuService.defaultPanelWidthInPixels
-    );
+  /** The rail's entries in the rail's order: the features, then the workbench's own. */
+  readonly railItems: Signal<ReadonlyArray<SideMenuItem>> = computed(() => {
+    const items = this._menuItems();
+    return [
+      ...byOrder(items.filter((item) => !item.bottom)),
+      ...byOrder(items.filter((item) => item.bottom)),
+    ];
   });
 
-  get expandedLabels(): Signal<ReadonlySet<string>> {
-    return this._expandedLabels.asReadonly();
-  }
-
-  get pinnedLabels(): Signal<ReadonlySet<string>> {
-    return this._pinnedLabels.asReadonly();
-  }
-
-  /** Whether the open panel is pinned. */
-  readonly isPinned: Signal<boolean> = computed(() => {
-    const current = this._selectedItem();
-    return !!current && this._pinnedLabels().has(current.label);
+  /** The open pinned panels, in the rail's order. */
+  readonly dockedItems: Signal<ReadonlyArray<SideMenuItem>> = computed(() => {
+    const open = this._openPinnedLabels();
+    return this.railItems().filter((item) => open.has(item.label));
   });
 
-  /** Whether the open panel is expanded. */
-  readonly isExpanded: Signal<boolean> = computed(() => {
-    const current = this._selectedItem();
-    return !!current && this._expandedLabels().has(current.label);
+  readonly floatingItem: Signal<SideMenuItem | undefined> = computed(() => {
+    const label = this._floatingLabel();
+    return label === undefined ? undefined : this._menuItems().find((s) => s.label === label);
   });
 
-  constructor(private bus: AppBus) {}
+  constructor(private readonly bus: AppBus) {}
 
   addMenuItem(item: SideMenuItem): void {
     this._menuItems.update((s) => {
@@ -117,7 +87,6 @@ export class SideMenuService {
     this._menuItems.update((items) =>
       items.map((item) => (item.label === label ? { ...item, component } : item)),
     );
-    this._selectedItem.update((item) => (item?.label === label ? { ...item, component } : item));
   }
 
   removeMenuItem(label: string) {
@@ -131,43 +100,46 @@ export class SideMenuService {
     });
   }
 
-  isSelected(label: string): boolean {
-    return this._selectedItem()?.label === label;
+  isOpen(label: string): boolean {
+    return this._openPinnedLabels().has(label) || this._floatingLabel() === label;
+  }
+
+  isPinned(label: string): boolean {
+    return this._pinnedLabels().has(label);
+  }
+
+  isExpanded(label: string): boolean {
+    return this._expandedLabels().has(label);
+  }
+
+  panelWidthInPixels(label: string): number {
+    return (
+      this._panelWidths().get(label) ??
+      this._menuItems().find((item) => item.label === label)?.defaultPanelWidthInPixels ??
+      SideMenuService.defaultPanelWidthInPixels
+    );
   }
 
   /**
-   * Open a panel. `focusView` is false only when a panel is brought back as a
-   * side effect (a pinned panel reappearing when a transient one closes): the
-   * panel becomes visible but must not grab the keyboard, so focus can go where
-   * the caller wants it (the terminal).
+   * Opens a panel: a pinned one beside the others, a floating one in place of
+   * the floating one. `focusView` is false only when panels come back on their
+   * own (after a restart): they show but leave the keyboard to the terminal.
    */
   open(label: string, focusView = true): void {
-    const current = this._selectedItem();
-    if (current?.label === label) {
-      if (focusView) this.focus();
-      return;
+    if (!this._menuItems().some((item) => item.label === label)) return;
+
+    if (!this.isOpen(label)) {
+      if (this.isPinned(label)) {
+        this._openPinnedLabels.update((labels) => new Set(labels).add(label));
+      } else {
+        const floating = this._floatingLabel();
+        if (floating !== undefined) this.hide(floating);
+        this._floatingLabel.set(label);
+      }
+      this.bus.publish({ type: "SideMenuViewOpened", payload: { label } });
     }
 
-    if (current) {
-      this.blur();
-      this.bus.publish({ type: "SideMenuViewClosed", payload: { label: current.label } });
-    }
-
-    const item = this._menuItems().find((s) => s.label === label);
-    this._selectedItem.set(item);
-
-    // A panel closed while pinned keeps its pin, so opening it again puts it
-    // back on the pinned stack.
-    if (item && this._pinnedLabels().has(item.label) && !this._pinnedStack.includes(item.label)) {
-      this._pinnedStack.push(item.label);
-    }
-
-    if (item) {
-      this.bus.publish({ type: "SideMenuViewOpened", payload: { label: item.label } });
-      if (focusView) this.focus();
-    } else {
-      this.blur();
-    }
+    if (focusView) this.focus(label);
   }
 
   /**
@@ -175,84 +147,79 @@ export class SideMenuService {
    * open but unfocused, and closes it, as the X does, when it has the keyboard.
    */
   toggle(label: string): void {
-    if (this.isSelected(label) && this._isFocused()) {
-      this.close(true);
+    if (this.isOpen(label) && this._focusedLabel() === label) {
+      this.close(label);
       return;
     }
     this.open(label);
   }
 
-  close(force = false) {
-    const current = this._selectedItem();
-    if (!current) return;
-    if (this._pinnedLabels().has(current.label) && !force) {
-      this.blur();
-      this.bus.publish({ type: "FocusActiveTerminal" });
+  /** Closes the panel, pinned or not, as its X does. */
+  close(label: string): void {
+    if (!this.isOpen(label)) return;
+    this.hide(label);
+    if (this._focusedLabel() === undefined) this.bus.publish({ type: "FocusActiveTerminal" });
+  }
+
+  /**
+   * Done with the panel for now (Escape, a click elsewhere): a floating one
+   * closes, a pinned one stays and gives the keyboard back to the terminal.
+   */
+  dismiss(label: string): void {
+    if (!this.isOpen(label)) return;
+    if (!this.isPinned(label)) {
+      this.close(label);
       return;
     }
-
-    this.bus.publish({ type: "SideMenuViewClosed", payload: { label: current.label } });
-
+    if (this._focusedLabel() !== label) return;
     this.blur();
-    this._selectedItem.set(undefined);
-
-    // A forced close hides a pinned panel but leaves it pinned; it only stops
-    // coming back on its own until it is opened again.
-    const index = this._pinnedStack.indexOf(current.label);
-    if (index > -1) {
-      this._pinnedStack.splice(index, 1);
-    }
-    if (this._pinnedStack.length > 0) {
-      const pinnedItemLabel = this._pinnedStack[this._pinnedStack.length - 1];
-      // Bring the pinned panel back visible, but do not let it take the
-      // keyboard - the focus belongs to the terminal (below).
-      this.open(pinnedItemLabel, false);
-    }
     this.bus.publish({ type: "FocusActiveTerminal" });
   }
 
-  focus() {
-    const current = this._selectedItem();
-    if (!current || this._isFocused()) return;
-
-    this._isFocused.set(true);
-    this.bus.publish({ type: "SideMenuViewFocused", payload: { label: current.label } });
+  focus(label: string): void {
+    if (!this.isOpen(label) || this._focusedLabel() === label) return;
+    this.blur();
+    this._focusedLabel.set(label);
+    this.bus.publish({ type: "SideMenuViewFocused", payload: { label } });
   }
 
-  blur() {
-    const current = this._selectedItem();
-    if (!current || !this._isFocused()) return;
-
-    this._isFocused.set(false);
-    this.bus.publish({ type: "SideMenuViewBlurred", payload: { label: current.label } });
+  blur(): void {
+    const label = this._focusedLabel();
+    if (label === undefined) return;
+    this._focusedLabel.set(undefined);
+    this.bus.publish({ type: "SideMenuViewBlurred", payload: { label } });
   }
 
-  togglePin() {
-    const current = this._selectedItem();
-    if (!current) return;
-    const newPinned = !this._pinnedLabels().has(current.label);
+  /**
+   * An open panel changes sides and stays open: pinned it joins the others,
+   * unpinned it becomes the floating one and replaces the panel floating so far.
+   */
+  togglePin(label: string): void {
+    const pinned = !this.isPinned(label);
     this._pinnedLabels.update((labels) => {
       const next = new Set(labels);
-      if (newPinned) next.add(current.label);
-      else next.delete(current.label);
+      if (pinned) next.add(label);
+      else next.delete(label);
       return next;
     });
+    if (!this.isOpen(label)) return;
 
-    const index = this._pinnedStack.indexOf(current.label);
-    if (newPinned && index === -1) {
-      this._pinnedStack.push(current.label);
-    } else if (!newPinned && index > -1) {
-      this._pinnedStack.splice(index, 1);
+    if (pinned) {
+      this._floatingLabel.set(undefined);
+      this._openPinnedLabels.update((labels) => new Set(labels).add(label));
+      return;
     }
+    this._openPinnedLabels.update((labels) => withoutLabel(labels, label));
+    const floating = this._floatingLabel();
+    if (floating !== undefined) this.hide(floating);
+    this._floatingLabel.set(label);
   }
 
-  toggleExpanded() {
-    const current = this._selectedItem();
-    if (!current) return;
+  toggleExpanded(label: string): void {
     this._expandedLabels.update((labels) => {
       const next = new Set(labels);
-      if (next.has(current.label)) next.delete(current.label);
-      else next.add(current.label);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
       return next;
     });
   }
@@ -266,28 +233,22 @@ export class SideMenuService {
   }
 
   /**
-   * The panel to bring back after a restart: the pinned one in view, or the
-   * one a floating panel lies over. A floating panel is a quick look and is not
-   * brought back.
+   * The panels to bring back after a restart: the open pinned ones. A floating
+   * panel is a quick look and is not brought back.
    */
-  dockedPanelLabel(): string | null {
-    if (this.isPinned()) return this._selectedItem()?.label ?? null;
-    return this._pinnedStack.at(-1) ?? null;
+  openPinnedLabels(): ReadonlySet<string> {
+    return this._openPinnedLabels();
   }
 
   updateBadgeColor(label: string, color?: string) {
     this._menuItems.update((s) =>
       s.map((i) => (i.label === label ? { ...i, badgeColor: color } : i)),
     );
-    this._selectedItem.update((s) => (s?.label === label ? { ...s, badgeColor: color } : s));
   }
 
-  /** Sets the open panel's width. */
-  setPanelWidthInPixels(panelWidthInPixels: number): void {
-    const current = this._selectedItem();
-    if (!current) return;
+  setPanelWidthInPixels(label: string, panelWidthInPixels: number): void {
     const width = this.clampPanelWidthInPixels(panelWidthInPixels);
-    this._panelWidths.update((widths) => new Map(widths).set(current.label, width));
+    this._panelWidths.update((widths) => new Map(widths).set(label, width));
   }
 
   setPanelWidths(widths: ReadonlyMap<string, number>): void {
@@ -296,7 +257,26 @@ export class SideMenuService {
     );
   }
 
+  /** Takes an open panel away, its keyboard focus first. */
+  private hide(label: string): void {
+    if (this._focusedLabel() === label) this.blur();
+    if (this._floatingLabel() === label) this._floatingLabel.set(undefined);
+    this._openPinnedLabels.update((labels) => withoutLabel(labels, label));
+    this.bus.publish({ type: "SideMenuViewClosed", payload: { label } });
+  }
+
   private clampPanelWidthInPixels(panelWidthInPixels: number): number {
     return Math.max(SideMenuService.minimumPanelWidthInPixels, Math.round(panelWidthInPixels));
   }
+}
+
+function withoutLabel(labels: ReadonlySet<string>, label: string): ReadonlySet<string> {
+  if (!labels.has(label)) return labels;
+  const next = new Set(labels);
+  next.delete(label);
+  return next;
+}
+
+function byOrder(items: SideMenuItem[]): SideMenuItem[] {
+  return items.sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
 }

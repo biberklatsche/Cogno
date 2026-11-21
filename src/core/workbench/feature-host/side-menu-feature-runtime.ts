@@ -72,7 +72,7 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
-    if (this.sideMenuService.isSelected(this.menuItem.label)) this.sideMenuService.close(true);
+    this.sideMenuService.close(this.menuItem.label);
     this.lifecycle.onModeChange?.("off");
     this.removeKeybindHandler();
     this.keybinds.unregisterListener(this.config.configPath);
@@ -84,8 +84,9 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
     this.keybinds.registerListener(this.config.configPath, keys, handler);
   }
 
+  /** Done with the panel for now: a floating one closes, a pinned one gives the keyboard back. */
   close(): void {
-    this.sideMenuService.close();
+    this.sideMenuService.dismiss(this.config.title);
   }
 
   updateBadgeColor(color?: string): void {

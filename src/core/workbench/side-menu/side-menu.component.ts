@@ -7,7 +7,6 @@ import {
   ElementRef,
   effect,
   OnDestroy,
-  Signal,
   ViewChild,
 } from "@angular/core";
 import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
@@ -24,21 +23,6 @@ export function focusPanel(panel: HTMLElement | undefined): void {
   panel.focus();
 }
 
-export function isSelectedSideMenuItem(
-  selectedItem: SideMenuItem | undefined,
-  menuItem: SideMenuItem,
-): boolean {
-  if (!selectedItem) {
-    return false;
-  }
-
-  if (selectedItem.id && menuItem.id) {
-    return selectedItem.id === menuItem.id;
-  }
-
-  return selectedItem.label === menuItem.label;
-}
-
 @Component({
   selector: "app-side-menu",
   imports: [
@@ -49,50 +33,17 @@ export function isSelectedSideMenuItem(
     ActionKeybindingPipe,
   ],
   host: {
-    "[class.expanded-host]": "isExpanded()",
+    "[class.expanded-host]": "hasExpanded()",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        <aside #overlayAside
-               [class.base-overlay]="!besideTerminals()"
-               [class.pinned]="besideTerminals()"
-               [class.flat]="isExpanded()"
-               [class.hidden]="!selectedItem()"
-               [class.overlay]="!isPinned()"
-               [class.shift-left]="visibleItems().length > 0 || bottomItems().length > 0"
-               [class.expanded]="isExpanded()"
-               [style.width.px]="isExpanded() ? null : panelWidthInPixels()"
-               tabindex="-1"
-               (pointerdown)="focus()"
-        >
-            @if (!isExpanded()) {
-                <div class="resize-handle" (pointerdown)="startResize($event)"></div>
-            }
-            <header>
-                <h3>{{ selectedItem()?.label }}</h3>
-                <div class="btn-list">
-                    <button class="button icon-button" (click)="toggleExpanded()"
-                            [appTooltip]="isExpanded() ? 'Restore panel width' : 'Expand panel over the terminals'">
-                        <app-icon [name]="isExpanded() ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
-                    </button>
-                    <button class="button icon-button" (click)="togglePin()"
-                            [appTooltip]="isPinned() ? 'Unpin panel' : 'Pin panel beside the terminals'">
-                        <app-icon [name]="isPinned() ? 'mdiPin': 'mdiPinOff'"></app-icon>
-                    </button>
-                    <button class="button icon-button" (click)="close()" appTooltip="Close">
-                        <app-icon [name]="'mdiClose'"></app-icon>
-                    </button>
-                </div>
-            </header>
-            <main>
-                @if (selectedItem(); as item) {
-                    @if (item.component) {
-                        <ng-container *ngComponentOutlet="item.component"></ng-container>
-                    }
-                }
-            </main>
-        </aside>
-        <menu #menuCol [class.hidden]="visibleItems().length === 0 && bottomItems().length === 0">
+        @for (item of dockedItems(); track item.label) {
+            <ng-container *ngTemplateOutlet="panel; context: { $implicit: item, floating: false }"></ng-container>
+        }
+        @if (floatingItem(); as item) {
+            <ng-container *ngTemplateOutlet="panel; context: { $implicit: item, floating: true }"></ng-container>
+        }
+        <menu #menuCol [class.hidden]="railItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem.id ?? menuItem.label) {
                 <ng-container *ngTemplateOutlet="menuButton; context: { $implicit: menuItem }"></ng-container>
             }
@@ -101,9 +52,47 @@ export function isSelectedSideMenuItem(
                 <ng-container *ngTemplateOutlet="menuButton; context: { $implicit: menuItem }"></ng-container>
             }
         </menu>
+        <ng-template #panel let-item let-floating="floating">
+            <aside [attr.data-label]="item.label"
+                   [class.base-overlay]="floating || isExpanded(item.label)"
+                   [class.pinned]="!floating && !isExpanded(item.label)"
+                   [class.floating]="floating"
+                   [class.flat]="isExpanded(item.label)"
+                   [class.shift-left]="railItems().length > 0"
+                   [class.expanded]="isExpanded(item.label)"
+                   [style.width.px]="isExpanded(item.label) ? null : panelWidthInPixels(item.label)"
+                   tabindex="-1"
+                   (pointerdown)="focus(item.label)"
+            >
+                @if (!isExpanded(item.label)) {
+                    <div class="resize-handle" (pointerdown)="startResize($event, item.label)"></div>
+                }
+                <header>
+                    <h3>{{ item.label }}</h3>
+                    <div class="btn-list">
+                        <button class="button icon-button" (click)="toggleExpanded(item.label)"
+                                [appTooltip]="isExpanded(item.label) ? 'Restore panel width' : 'Expand panel over the terminals'">
+                            <app-icon [name]="isExpanded(item.label) ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
+                        </button>
+                        <button class="button icon-button" (click)="togglePin(item.label)"
+                                [appTooltip]="isPinned(item.label) ? 'Unpin panel' : 'Pin panel beside the terminals'">
+                            <app-icon [name]="isPinned(item.label) ? 'mdiPin': 'mdiPinOff'"></app-icon>
+                        </button>
+                        <button class="button icon-button" (click)="close(item.label)" appTooltip="Close">
+                            <app-icon [name]="'mdiClose'"></app-icon>
+                        </button>
+                    </div>
+                </header>
+                <main>
+                    @if (item.component) {
+                        <ng-container *ngComponentOutlet="item.component"></ng-container>
+                    }
+                </main>
+            </aside>
+        </ng-template>
         <ng-template #menuButton let-menuItem>
                 <button class="button icon-button" (click)="open(menuItem)"
-                        [class.selected]="isMenuItemSelected(menuItem)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
+                        [class.selected]="isOpen(menuItem.label)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                     @if (menuItem.badgeColor) {
                         <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
@@ -137,7 +126,7 @@ export function isSelectedSideMenuItem(
             gap: 4px;
             margin: 2px 4px 4px 2px;
             padding: 0;
-            z-index: 3;
+            z-index: 5;
             &.hidden {
                 margin: 0;
             }
@@ -170,29 +159,21 @@ export function isSelectedSideMenuItem(
                between the two does not shift the panel. */
             margin-top: 2px;
             margin-bottom: 4px;
+            position: relative;
             z-index: 2;
             display: flex;
             flex-direction: column;
             max-height: 100%;
             min-width: 0;
 
-            /* Slide in from the right on open, slide out on close.
-               \`display\` is transitioned discretely so the element stays
-               rendered until the leave transition has finished. */
+            /* Slide in from the right on open. */
             translate: 0 0;
             opacity: 1;
             transition:
                 translate 120ms ease-out,
-                opacity 120ms ease-out,
-                display 120ms allow-discrete;
+                opacity 120ms ease-out;
 
             @starting-style {
-                translate: 24px 0;
-                opacity: 0;
-            }
-
-            &.hidden {
-                display: none;
                 translate: 24px 0;
                 opacity: 0;
             }
@@ -201,7 +182,8 @@ export function isSelectedSideMenuItem(
                surface of its own, so it shows what the terminals show - the
                background colour, or the background image - and the divider
                between panes towards the terminals. That it stays is visible
-               at once. Its offsets are the aside's, so pinning does not move it. */
+               at once. Pinned panels stand side by side. Its offsets are the
+               aside's, so pinning does not move it. */
             &.pinned {
                 padding: 6px;
                 color: var(--foreground-color);
@@ -209,22 +191,26 @@ export function isSelectedSideMenuItem(
                 border-left: 2px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
 
-            &.overlay {
+            /* The floating panel lies at the right edge, over the terminals
+               and over the pinned panels. */
+            &.floating {
                 position: absolute;
                 right: 4px;
                 top: 0;
                 bottom: 0;
+                z-index: 4;
 
                 max-height: 100%;
                 overflow: hidden;
-            }
-            
-            &.shift-left {
-                right: 32px;
+
+                &.shift-left {
+                    right: 32px;
+                }
             }
 
-            /* An expanded panel replaces the terminals, so it is opaque; only a
-               floating one lets them show through. */
+            /* An expanded panel covers everything - the terminals and the
+               other panels - so it is opaque. A floating panel still lies over
+               an expanded pinned one: it is the one just opened. */
             &.expanded {
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
                 position: absolute;
@@ -232,11 +218,16 @@ export function isSelectedSideMenuItem(
                 bottom: 0;
                 left: 4px;
                 right: 4px;
+                z-index: 3;
                 max-height: 100%;
                 overflow: hidden;
 
                 &.shift-left {
                     right: 32px;
+                }
+
+                &.floating {
+                    z-index: 4;
                 }
             }
 
@@ -294,36 +285,39 @@ export function isSelectedSideMenuItem(
   ],
 })
 export class SideMenuComponent implements OnDestroy {
-  menuItems: Signal<SideMenuItem[]> = this.menuItemService.menu;
-  visibleItems: Signal<SideMenuItem[]> = computed(() =>
-    byOrder(this.menuItems().filter((menuItem) => !menuItem.bottom)),
-  );
+  readonly railItems = this.menuItemService.railItems;
+  readonly visibleItems = computed(() => this.railItems().filter((item) => !item.bottom));
   /** The workbench's own entries, below the features. */
-  bottomItems: Signal<SideMenuItem[]> = computed(() =>
-    byOrder(this.menuItems().filter((menuItem) => menuItem.bottom)),
-  );
-  selectedItem = this.menuItemService.selectedItem;
-  isPinned = this.menuItemService.isPinned;
-  focused = this.menuItemService.isFocused;
-  panelWidthInPixels = this.menuItemService.panelWidthInPixels;
-  isExpanded = this.menuItemService.isExpanded;
-  /** Pinned beside the terminals, as one more pane; an expanded panel replaces them instead. */
-  readonly besideTerminals = computed(() => this.isPinned() && !this.isExpanded());
+  readonly bottomItems = computed(() => this.railItems().filter((item) => item.bottom));
+  readonly dockedItems = this.menuItemService.dockedItems;
+  readonly floatingItem = this.menuItemService.floatingItem;
+  readonly focusedLabel = this.menuItemService.focusedLabel;
+  /** An expanded panel is laid out against the whole workbench area. */
+  readonly hasExpanded = computed(() => {
+    const expanded = this.menuItemService.expandedLabels();
+    const floating = this.floatingItem();
+    return (
+      this.dockedItems().some((item) => expanded.has(item.label)) ||
+      (!!floating && expanded.has(floating.label))
+    );
+  });
 
-  @ViewChild("overlayAside", { static: false }) overlayAsideRef?: ElementRef<HTMLElement>;
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
 
   private clickOutsideEffect: EffectRef;
   private lastOpenTimestamp = 0;
+  private resizeLabel?: string;
   private resizeStartPointerClientX = 0;
   private resizeStartPanelWidthInPixels = 0;
 
-  constructor(private menuItemService: SideMenuService) {
+  constructor(
+    private menuItemService: SideMenuService,
+    private host: ElementRef<HTMLElement>,
+  ) {
+    // A click elsewhere closes the floating panel and takes the keyboard from a pinned one.
     this.clickOutsideEffect = effect(() => {
-      const isOpen = !!this.selectedItem();
-      const isFocused = this.focused();
-
-      if (isOpen && isFocused) {
+      const listen = !!this.floatingItem() || this.focusedLabel() !== undefined;
+      if (listen) {
         this.lastOpenTimestamp = performance.now();
         document.addEventListener("pointerdown", this.onPointerDown, true);
       } else {
@@ -332,10 +326,9 @@ export class SideMenuComponent implements OnDestroy {
     });
 
     effect(() => {
-      const isOpen = !!this.selectedItem();
-      const isFocused = this.focused();
-      if (!isOpen || !isFocused) return;
-      queueMicrotask(() => focusPanel(this.overlayAsideRef?.nativeElement));
+      const label = this.focusedLabel();
+      if (label === undefined) return;
+      queueMicrotask(() => focusPanel(this.panelElement(label)));
     });
   }
 
@@ -355,71 +348,93 @@ export class SideMenuComponent implements OnDestroy {
     // Dialogs and context menus a panel opens live outside the panel's DOM.
     const clickedInsidePanelOverlay = !!targetElement?.closest("app-dialog, .menu-overlay-host");
     if (clickedInsidePanelOverlay) return;
+    if (this.menuColRef?.nativeElement.contains(target)) return;
 
-    const clickedInsideAside = this.overlayAsideRef?.nativeElement.contains(target);
-    const clickedInsideMenu = this.menuColRef?.nativeElement.contains(target);
+    const clickedPanel = targetElement?.closest<HTMLElement>("aside[data-label]") ?? null;
+    const clickedLabel =
+      clickedPanel && this.host.nativeElement.contains(clickedPanel)
+        ? clickedPanel.dataset["label"]
+        : undefined;
 
-    if (!clickedInsideAside && !clickedInsideMenu) {
-      if (this.isPinned()) {
-        this.menuItemService.blur();
-        return;
-      }
-      this.close();
-    }
+    // A click into another panel gives it the keyboard before the floating
+    // one closes, so the keyboard does not pass by the terminal.
+    if (clickedLabel !== undefined) this.menuItemService.focus(clickedLabel);
+    const floating = this.floatingItem()?.label;
+    if (floating !== undefined && floating !== clickedLabel) this.menuItemService.dismiss(floating);
+
+    const focused = this.focusedLabel();
+    if (clickedLabel === undefined && focused !== undefined) this.menuItemService.dismiss(focused);
   };
 
-  /** A click on the open panel's icon closes it, as the X does. */
+  /** A click on an open panel's icon closes it, as the X does. */
   open(menuItem: SideMenuItem) {
-    if (this.isMenuItemSelected(menuItem)) {
-      this.close();
+    if (this.isOpen(menuItem.label)) {
+      this.close(menuItem.label);
       return;
     }
     this.menuItemService.open(menuItem.label);
   }
 
-  isMenuItemSelected(menuItem: SideMenuItem): boolean {
-    return isSelectedSideMenuItem(this.selectedItem(), menuItem);
+  isOpen(label: string): boolean {
+    return this.menuItemService.isOpen(label);
   }
 
-  close() {
-    this.menuItemService.close(true);
+  isPinned(label: string): boolean {
+    return this.menuItemService.isPinned(label);
   }
 
-  focus() {
-    this.menuItemService.focus();
+  isExpanded(label: string): boolean {
+    return this.menuItemService.isExpanded(label);
   }
 
-  togglePin() {
-    this.menuItemService.togglePin();
+  panelWidthInPixels(label: string): number {
+    return this.menuItemService.panelWidthInPixels(label);
   }
 
-  toggleExpanded() {
-    this.menuItemService.toggleExpanded();
+  close(label: string) {
+    this.menuItemService.close(label);
   }
 
-  startResize(pointerEvent: PointerEvent): void {
+  focus(label: string) {
+    this.menuItemService.focus(label);
+  }
+
+  togglePin(label: string) {
+    this.menuItemService.togglePin(label);
+  }
+
+  toggleExpanded(label: string) {
+    this.menuItemService.toggleExpanded(label);
+  }
+
+  startResize(pointerEvent: PointerEvent, label: string): void {
     pointerEvent.preventDefault();
     pointerEvent.stopPropagation();
+    this.resizeLabel = label;
     this.resizeStartPointerClientX = pointerEvent.clientX;
-    this.resizeStartPanelWidthInPixels = this.panelWidthInPixels();
+    this.resizeStartPanelWidthInPixels = this.panelWidthInPixels(label);
     window.addEventListener("pointermove", this.onWindowPointerMove, true);
     window.addEventListener("pointerup", this.onWindowPointerUp, true);
   }
 
   private onWindowPointerMove = (pointerEvent: PointerEvent): void => {
+    if (this.resizeLabel === undefined) return;
     const horizontalDeltaInPixels = this.resizeStartPointerClientX - pointerEvent.clientX;
     this.menuItemService.setPanelWidthInPixels(
+      this.resizeLabel,
       this.resizeStartPanelWidthInPixels + horizontalDeltaInPixels,
     );
   };
 
   private onWindowPointerUp = (): void => {
+    this.resizeLabel = undefined;
     window.removeEventListener("pointermove", this.onWindowPointerMove, true);
     window.removeEventListener("pointerup", this.onWindowPointerUp, true);
   };
-}
 
-/** Sorts in place; callers pass a list they just filtered, never the service's own. */
-function byOrder(items: SideMenuItem[]): SideMenuItem[] {
-  return items.sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+  private panelElement(label: string): HTMLElement | undefined {
+    return [...this.host.nativeElement.querySelectorAll<HTMLElement>("aside[data-label]")].find(
+      (panel) => panel.dataset["label"] === label,
+    );
+  }
 }

@@ -18,9 +18,9 @@ describe("SideMenuFeatureRuntime", () => {
   let sideMenuService: {
     addMenuItem: ReturnType<typeof vi.fn>;
     removeMenuItem: ReturnType<typeof vi.fn>;
-    isSelected: ReturnType<typeof vi.fn>;
     toggle: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
+    dismiss: ReturnType<typeof vi.fn>;
     updateBadgeColor: ReturnType<typeof vi.fn>;
     resolveComponent: ReturnType<typeof vi.fn>;
   };
@@ -67,9 +67,9 @@ describe("SideMenuFeatureRuntime", () => {
     sideMenuService = {
       addMenuItem: vi.fn(),
       removeMenuItem: vi.fn(),
-      isSelected: vi.fn(() => false),
       toggle: vi.fn(),
       close: vi.fn(),
+      dismiss: vi.fn(),
       updateBadgeColor: vi.fn(),
       resolveComponent: vi.fn(),
     };
@@ -91,13 +91,11 @@ describe("SideMenuFeatureRuntime", () => {
 
     runtime.dispose();
     expect(lifecycle.onModeChange).toHaveBeenCalledWith("off");
-    expect(sideMenuService.close).not.toHaveBeenCalled();
     expect(sideMenuService.removeMenuItem).toHaveBeenCalledWith("Workspace");
   });
 
-  it("closes the panel on dispose when it is open, before the lifecycle goes off", () => {
+  it("closes its panel on dispose, pinned or floating, before the lifecycle goes off", () => {
     const calls: string[] = [];
-    sideMenuService.isSelected.mockReturnValue(true);
     sideMenuService.close.mockImplementation(() => calls.push("close"));
     const runtime = createRuntime({ onModeChange: vi.fn(() => calls.push("onModeChange")) });
     runtime.activate();
@@ -105,8 +103,7 @@ describe("SideMenuFeatureRuntime", () => {
 
     runtime.dispose();
 
-    expect(sideMenuService.isSelected).toHaveBeenCalledWith("Workspace");
-    expect(sideMenuService.close).toHaveBeenCalledWith(true);
+    expect(sideMenuService.close).toHaveBeenCalledWith("Workspace");
     expect(calls).toEqual(["close", "onModeChange"]);
   });
 
@@ -166,7 +163,7 @@ describe("SideMenuFeatureRuntime", () => {
     expect(id).toBe("feature.workspace");
     expect(keys).toEqual(["Escape"]);
     onEscape({ key: "Escape" } as KeyboardEvent);
-    expect(sideMenuService.close).toHaveBeenCalledTimes(1);
+    expect(sideMenuService.dismiss).toHaveBeenCalledWith("Workspace");
 
     appBus.publish({ type: "SideMenuViewBlurred", payload: { label: "Workspace" } });
     expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
@@ -198,7 +195,7 @@ describe("SideMenuFeatureRuntime", () => {
       "Workspace",
       "var(--color-yellow)",
     );
-    expect(sideMenuService.close).toHaveBeenCalled();
+    expect(sideMenuService.dismiss).toHaveBeenCalledWith("Workspace");
   });
 
   it("leaves nothing subscribed after dispose (leak check)", () => {
