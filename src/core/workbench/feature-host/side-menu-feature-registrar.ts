@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, Injector } from "@angular/core";
 import { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { FeatureDefinition } from "@cogno/core/api/contributions";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
@@ -25,6 +26,7 @@ export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
     private readonly bus: AppBus,
     private readonly keybinds: KeybindService,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
+    private readonly actions: ActionHandlers,
     destroyRef: DestroyRef,
   ) {
     destroyRef.onDestroy(() => {
@@ -65,6 +67,7 @@ export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
       this.bus,
       this.keybinds,
       this.applicationConfigurationPort,
+      this.actions,
     );
   }
 }

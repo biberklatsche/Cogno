@@ -1316,7 +1316,7 @@ sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 | Ableitung | Wie |
 |---|---|
 | Typ `CoreActionName` | Union aus dem `as const`-Katalog (`core/workbench/actions/catalog.ts`), nicht aus dem Laufzeit-Katalog (6.1); ein Tippfehler in `actions.handle("…")` ist ein Compile-Fehler. Der allgemeine `ActionName` ist `string`, weil Feature-Namen erst zur Laufzeit dazukommen |
-| Handler | Registrierung gegen den Namen (`actions.handle("new_tab", …)`) statt `switch` auf Strings, genau ein Handler je Aktion; eine Core-Aktion ohne Handler meldet der Start (`unhandledCoreActions`) |
+| Handler | Registrierung gegen den Namen (`actions.handle("new_tab", …)`) statt `switch` auf Strings, genau ein Handler je Aktion; eine Core-Aktion ohne Handler meldet der Start (`unhandledCoreActions`). Feature-Aktionen melden ihren Handler für die Dauer der Aktivierung am selben Ort an (`handleWhileActive`) |
 | Beschriftung | überall `actionLabel(name)`: das `label` aus dem Katalog, und für eine Aktion ohne Label (Feature-Aktionen sind nur Namen) der Name in Worten. Kein Menü wiederholt einen Text von Hand |
 | Palette | listet `known` unter der Beschriftung, mit dem Keybinding-Hint aus der Keybind-Konfiguration; gefunden wird über Beschriftung **und** Namen („Settings" ist `open_config`) |
 | natives Menü, Hamburger, Kontextmenüs | feuern Katalog-Aktionen. **Wo ein Eintrag steht, bestimmt das Menü**, nicht die Aktion — der Katalog hat bewusst kein `menu`-Feld, weil dieselbe Aktion in mehreren Menüs an verschiedenen Stellen stehen darf |

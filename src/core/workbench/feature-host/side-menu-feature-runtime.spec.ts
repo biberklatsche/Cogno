@@ -1,5 +1,6 @@
-import type { Injector } from "@angular/core";
+import type { DestroyRef, Injector } from "@angular/core";
 import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import type { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
@@ -12,6 +13,7 @@ class DummyComponent {}
 
 describe("SideMenuFeatureRuntime", () => {
   let appBus: AppBus;
+  let actionHandlers: ActionHandlers;
   let configSubject: BehaviorSubject<Record<string, unknown>>;
   let applicationConfigurationPort: ApplicationConfigurationPort;
   let injector: Injector;
@@ -52,11 +54,13 @@ describe("SideMenuFeatureRuntime", () => {
       appBus,
       keybindService as unknown as KeybindService,
       applicationConfigurationPort,
+      actionHandlers,
     );
   }
 
   beforeEach(() => {
     appBus = new AppBus();
+    actionHandlers = new ActionHandlers(appBus, { onDestroy: vi.fn() } as unknown as DestroyRef);
     configSubject = new BehaviorSubject<Record<string, unknown>>({
       feature: { workspace: { mode: "on" } },
     });

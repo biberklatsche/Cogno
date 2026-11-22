@@ -4,6 +4,7 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core/api/contributions";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import {
@@ -25,7 +26,8 @@ import { readFeatureConfig } from "./feature-config";
 export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
   private menuItem: SideMenuItem;
   private readonly lifecycle: SideMenuFeatureLifecycleContract;
-  private keybindSubscription?: Subscription;
+  /** Takes the handler of the panel's action away again. */
+  private stopHandlingAction?: () => void;
   private readonly subscriptions = new Subscription();
   private disposed = false;
 
@@ -36,6 +38,7 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
     private readonly bus: AppBus,
     private readonly keybinds: KeybindService,
     private readonly applicationConfigurationPort: ApplicationConfigurationPort,
+    private readonly actions: ActionHandlers,
   ) {
     const isLazy =
       typeof config.targetComponent === "function" && !config.targetComponent.prototype;
@@ -65,7 +68,10 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
     this.lifecycle.onModeChange?.("on");
     this.menuItem = { ...this.menuItem, order: this.resolveOrder() };
     this.sideMenuService.addMenuItem(this.menuItem);
-    this.addKeybindHandler();
+    // The panel's action opens it the way every panel's action does.
+    this.stopHandlingAction ??= this.actions.handleWhileActive(this.config.actionName, () =>
+      this.sideMenuService.toggle(this.config.title),
+    );
   }
 
   /** Tear the entry down completely: open panel, lifecycle off, keybindings, item, subscriptions. */
@@ -74,7 +80,8 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
     this.disposed = true;
     this.sideMenuService.close(this.menuItem.label);
     this.lifecycle.onModeChange?.("off");
-    this.removeKeybindHandler();
+    this.stopHandlingAction?.();
+    this.stopHandlingAction = undefined;
     this.keybinds.unregisterListener(this.config.configPath);
     this.sideMenuService.removeMenuItem(this.menuItem.label);
     this.subscriptions.unsubscribe();
@@ -138,20 +145,5 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
       this.config.configPath,
     )?.["order"];
     return typeof order === "number" ? order : this.config.order;
-  }
-
-  private addKeybindHandler(): void {
-    if (this.keybindSubscription) return;
-    this.keybindSubscription = this.bus.on$("ActionFired").subscribe((event) => {
-      if (event.payload === this.config.actionName) {
-        this.sideMenuService.toggle(this.config.title);
-        (event as { performed?: boolean }).performed = true;
-      }
-    });
-  }
-
-  private removeKeybindHandler(): void {
-    this.keybindSubscription?.unsubscribe();
-    this.keybindSubscription = undefined;
   }
 }
