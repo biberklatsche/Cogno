@@ -1,4 +1,5 @@
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import type { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type SideMenuItem, SideMenuService } from "./side-menu.service";
 
@@ -8,6 +9,12 @@ describe("SideMenuService", () => {
   let bus: AppBus;
   let service: SideMenuService;
   let publishSpy: { mock: { calls: unknown[][] }; mockClear(): void };
+  /** The Escape handlers bound right now, the latest on top, as the keybind service stacks them. */
+  let escapeHandlers: { id: string; handler: () => void }[];
+
+  function pressEscape(): void {
+    escapeHandlers.at(-1)?.handler();
+  }
 
   function item(label: string, order: number, extra: Partial<SideMenuItem> = {}): SideMenuItem {
     return {
@@ -33,7 +40,16 @@ describe("SideMenuService", () => {
 
   beforeEach(() => {
     bus = new AppBus();
-    service = new SideMenuService(bus);
+    escapeHandlers = [];
+    const keybinds = {
+      registerListener: (id: string, _keys: readonly string[], handler: () => void) => {
+        escapeHandlers = [...escapeHandlers.filter((bound) => bound.id !== id), { id, handler }];
+      },
+      unregisterListener: (id: string) => {
+        escapeHandlers = escapeHandlers.filter((bound) => bound.id !== id);
+      },
+    };
+    service = new SideMenuService(bus, keybinds as unknown as KeybindService);
     service.addMenuItem(item("Workspace", 1));
     service.addMenuItem(item("Git", 2));
     service.addMenuItem(item("Agents", 3));
@@ -156,6 +172,15 @@ describe("SideMenuService", () => {
       "SideMenuViewClosed Search",
       "FocusActiveTerminal",
     ]);
+  });
+
+  it("dismisses a floating panel that is set to pinned only afterwards, as on restore", () => {
+    service.open("Search");
+    service.setPinnedLabels(["Search"]);
+
+    service.dismiss("Search");
+
+    expect(service.floatingItem()).toBeUndefined();
   });
 
   it("dismisses a pinned panel by giving the keyboard back to the terminal", () => {
@@ -309,12 +334,213 @@ describe("SideMenuService", () => {
     expect(service.panelWidthInPixels("Settings")).toBe(620);
   });
 
-  it("expands a panel and toggles it back, per panel and while it is closed", () => {
-    service.toggleExpanded("Workspace");
-    expect(service.isExpanded("Workspace")).toBe(true);
-    expect(service.isExpanded("Git")).toBe(false);
+  describe("expand", () => {
+    it("expands an open panel and restores it", () => {
+      service.open("Workspace");
 
-    service.toggleExpanded("Workspace");
-    expect(service.expandedLabels().size).toBe(0);
+      service.toggleExpanded("Workspace");
+      expect(service.expandedLabel()).toBe("Workspace");
+      expect(service.isExpanded("Workspace")).toBe(true);
+
+      service.toggleExpanded("Workspace");
+      expect(service.expandedLabel()).toBeUndefined();
+    });
+
+    it("expands only one panel at a time: the next one takes its place", () => {
+      pin("Workspace");
+      pin("Git");
+      service.toggleExpanded("Workspace");
+
+      service.toggleExpanded("Git");
+
+      expect(service.isExpanded("Workspace")).toBe(false);
+      expect(service.isExpanded("Git")).toBe(true);
+    });
+
+    it("does not expand a panel that is not open", () => {
+      service.toggleExpanded("Workspace");
+
+      expect(service.expandedLabel()).toBeUndefined();
+    });
+
+    it("keeps a pinned panel pinned and open while expanded, and after", () => {
+      pin("Workspace");
+
+      service.toggleExpanded("Workspace");
+      service.toggleExpanded("Workspace");
+
+      expect(docked()).toEqual(["Workspace"]);
+      expect(service.isPinned("Workspace")).toBe(true);
+    });
+
+    it("stays expanded while another panel opens floating over it", () => {
+      pin("Workspace");
+      service.toggleExpanded("Workspace");
+
+      service.open("Search");
+
+      expect(service.isExpanded("Workspace")).toBe(true);
+      expect(service.floatingItem()?.label).toBe("Search");
+    });
+
+    it("is not kept: a closed panel opens at its normal size again", () => {
+      service.open("Workspace");
+      service.toggleExpanded("Workspace");
+      service.close("Workspace");
+
+      service.open("Workspace");
+
+      expect(service.isExpanded("Workspace")).toBe(false);
+    });
+
+    it("restores an expanded pinned panel on dismiss and gives the terminal the keyboard", () => {
+      pin("Workspace");
+      service.toggleExpanded("Workspace");
+      publishSpy.mockClear();
+
+      service.dismiss("Workspace");
+
+      expect(service.isExpanded("Workspace")).toBe(false);
+      expect(docked()).toEqual(["Workspace"]);
+      expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
+    });
+
+    it("closes an expanded floating panel on dismiss", () => {
+      service.open("Search");
+      service.toggleExpanded("Search");
+
+      service.dismiss("Search");
+
+      expect(service.floatingItem()).toBeUndefined();
+      expect(service.expandedLabel()).toBeUndefined();
+    });
+  });
+
+  describe("Escape", () => {
+    it("closes the floating panel that has the keyboard", () => {
+      service.open("Search");
+
+      pressEscape();
+
+      expect(service.floatingItem()).toBeUndefined();
+    });
+
+    it("takes the keyboard from a pinned panel, which stays", () => {
+      pin("Workspace");
+      publishSpy.mockClear();
+
+      pressEscape();
+
+      expect(docked()).toEqual(["Workspace"]);
+      expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
+    });
+
+    it("works for a panel of the workbench's own, registered without a feature", () => {
+      service.open("Settings");
+
+      pressEscape();
+
+      expect(service.floatingItem()).toBeUndefined();
+    });
+
+    it("is bound only while a panel has the keyboard", () => {
+      expect(escapeHandlers).toEqual([]);
+
+      service.open("Search");
+      expect(escapeHandlers).toHaveLength(1);
+
+      service.blur();
+      expect(escapeHandlers).toEqual([]);
+    });
+
+    it("follows the keyboard from one panel to the next", () => {
+      pin("Workspace");
+      service.open("Search");
+
+      pressEscape();
+
+      // Search had the keyboard, not Workspace.
+      expect(service.floatingItem()).toBeUndefined();
+      expect(docked()).toEqual(["Workspace"]);
+    });
+
+    it("leaves Escape to a panel that binds it itself when it gets the keyboard", () => {
+      const ownEscape = vi.fn();
+      bus.on$("SideMenuViewFocused").subscribe(() => {
+        escapeHandlers = [...escapeHandlers, { id: "feature.git", handler: ownEscape }];
+      });
+
+      service.open("Git");
+      pressEscape();
+
+      expect(ownEscape).toHaveBeenCalled();
+      expect(service.floatingItem()?.label).toBe("Git");
+    });
+  });
+
+  describe("a pointer press", () => {
+    it("on a pinned panel gives it the keyboard", () => {
+      pin("Workspace");
+      service.blur();
+
+      service.pointerDown("Workspace");
+
+      expect(service.focusedLabel()).toBe("Workspace");
+    });
+
+    it("on a pinned panel closes the floating one, the keyboard going straight to the pinned", () => {
+      pin("Workspace");
+      service.open("Search");
+      publishSpy.mockClear();
+
+      service.pointerDown("Workspace");
+
+      expect(service.floatingItem()).toBeUndefined();
+      expect(service.focusedLabel()).toBe("Workspace");
+      expect(published()).not.toContain("FocusActiveTerminal");
+    });
+
+    it("on the floating panel leaves it open", () => {
+      pin("Workspace");
+      service.open("Search");
+
+      service.pointerDown("Search");
+
+      expect(service.floatingItem()?.label).toBe("Search");
+      expect(docked()).toEqual(["Workspace"]);
+    });
+
+    it("beside every panel closes the floating one and keeps the pinned ones", () => {
+      pin("Workspace");
+      service.open("Search");
+      publishSpy.mockClear();
+
+      service.pointerDown(undefined);
+
+      expect(service.floatingItem()).toBeUndefined();
+      expect(docked()).toEqual(["Workspace"]);
+      expect(service.focusedLabel()).toBeUndefined();
+      expect(published()).toContain("FocusActiveTerminal");
+    });
+
+    it("beside every panel takes the keyboard from a pinned one, which stays", () => {
+      pin("Workspace");
+      publishSpy.mockClear();
+
+      service.pointerDown(undefined);
+
+      expect(docked()).toEqual(["Workspace"]);
+      expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
+    });
+
+    it("beside every panel changes nothing while no panel floats or has the keyboard", () => {
+      pin("Workspace");
+      service.blur();
+      publishSpy.mockClear();
+
+      service.pointerDown(undefined);
+
+      expect(published()).toEqual([]);
+    });
   });
 });

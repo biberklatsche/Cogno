@@ -24,7 +24,7 @@ describe("NotificationSideMenuLifecycle", () => {
     unread = signal(false);
     stateService = { unread, start: vi.fn(), stop: vi.fn(), markRead: vi.fn() };
     handle = {
-      close: vi.fn(),
+      dismiss: vi.fn(),
       registerKeybindListener: vi.fn(),
       updateBadgeColor: vi.fn(),
     };

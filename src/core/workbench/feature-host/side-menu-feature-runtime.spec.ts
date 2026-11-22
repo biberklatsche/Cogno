@@ -145,11 +145,8 @@ describe("SideMenuFeatureRuntime", () => {
     expect((actionEvent as { performed?: boolean }).performed).toBe(true);
   });
 
-  it("binds Escape to close while the view has focus, before the lifecycle binds its own keys", () => {
+  it("binds no key of its own on focus and drops the lifecycle's keys on blur", () => {
     const calls: string[] = [];
-    keybindService.registerListener.mockImplementation((_id, keys: string[]) =>
-      calls.push(`register ${keys.join(",")}`),
-    );
     keybindService.unregisterListener.mockImplementation(() => calls.push("unregister"));
     const lifecycle = {
       onFocus: vi.fn(() => calls.push("onFocus")),
@@ -159,15 +156,12 @@ describe("SideMenuFeatureRuntime", () => {
     runtime.activate();
 
     appBus.publish({ type: "SideMenuViewFocused", payload: { label: "Workspace" } });
-    const [id, keys, onEscape] = keybindService.registerListener.mock.calls[0];
-    expect(id).toBe("feature.workspace");
-    expect(keys).toEqual(["Escape"]);
-    onEscape({ key: "Escape" } as KeyboardEvent);
-    expect(sideMenuService.dismiss).toHaveBeenCalledWith("Workspace");
+    // Escape is the side menu's own, for every panel.
+    expect(keybindService.registerListener).not.toHaveBeenCalled();
 
     appBus.publish({ type: "SideMenuViewBlurred", payload: { label: "Workspace" } });
     expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
-    expect(calls).toEqual(["register Escape", "onFocus", "onBlur", "unregister"]);
+    expect(calls).toEqual(["onFocus", "onBlur", "unregister"]);
   });
 
   it("drops the feature's keys on dispose", () => {
@@ -184,7 +178,7 @@ describe("SideMenuFeatureRuntime", () => {
 
     runtime.registerKeybindListener(["Enter"], vi.fn());
     runtime.updateBadgeColor("var(--color-yellow)");
-    runtime.close();
+    runtime.dismiss();
 
     expect(keybindService.registerListener).toHaveBeenCalledWith(
       "feature.workspace",

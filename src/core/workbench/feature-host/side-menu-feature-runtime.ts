@@ -84,8 +84,7 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
     this.keybinds.registerListener(this.config.configPath, keys, handler);
   }
 
-  /** Done with the panel for now: a floating one closes, a pinned one gives the keyboard back. */
-  close(): void {
+  dismiss(): void {
     this.sideMenuService.dismiss(this.config.title);
   }
 
@@ -104,13 +103,12 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
         if (event.payload?.label === this.config.title) this.lifecycle.onClose?.();
       }),
     );
-    // While the panel has focus, Escape closes it. A lifecycle that binds
-    // Escape itself in onFocus replaces that default (same id, same key).
+    // The keys a lifecycle binds in onFocus hold while the panel has focus.
+    // Escape dismisses every panel by the side menu's own rule; a lifecycle
+    // that binds Escape lies on top of it.
     this.subscriptions.add(
       this.bus.on$("SideMenuViewFocused").subscribe((event) => {
-        if (event.payload?.label !== this.config.title) return;
-        this.registerKeybindListener(["Escape"], () => this.close());
-        this.lifecycle.onFocus?.();
+        if (event.payload?.label === this.config.title) this.lifecycle.onFocus?.();
       }),
     );
     this.subscriptions.add(

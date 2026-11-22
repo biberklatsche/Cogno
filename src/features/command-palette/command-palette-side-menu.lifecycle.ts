@@ -25,7 +25,7 @@ export class CommandPaletteSideMenuLifecycle {
           (keyboardEvent: KeyboardEvent) => {
             if (keyboardEvent.key === "Enter") {
               const selectedCommandEntry = this.commandPaletteService.selectedEntry();
-              sideMenuFeatureHandle.close();
+              sideMenuFeatureHandle.dismiss();
               // Closing resets the filter; without an entry captured here the
               // dispatch would fall back to the first entry of the full list.
               if (selectedCommandEntry) {

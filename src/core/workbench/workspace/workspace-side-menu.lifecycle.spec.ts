@@ -8,7 +8,7 @@ type SideMenuFeatureHandle = SideMenuFeatureHandleContract;
 describe("WorkspaceSideMenuLifecycle", () => {
   let workspaceService: Pick<WorkspaceService, "restoreSelectedWorkspace" | "selectNext">;
   let handle: {
-    close: ReturnType<typeof vi.fn<SideMenuFeatureHandle["close"]>>;
+    dismiss: ReturnType<typeof vi.fn<SideMenuFeatureHandle["dismiss"]>>;
     registerKeybindListener: ReturnType<
       typeof vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>
     >;
@@ -22,7 +22,7 @@ describe("WorkspaceSideMenuLifecycle", () => {
       selectNext: vi.fn(),
     };
     handle = {
-      close: vi.fn<SideMenuFeatureHandle["close"]>(),
+      dismiss: vi.fn<SideMenuFeatureHandle["dismiss"]>(),
       registerKeybindListener: vi.fn<SideMenuFeatureHandle["registerKeybindListener"]>(),
       updateBadgeColor: vi.fn<SideMenuFeatureHandle["updateBadgeColor"]>(),
     };
@@ -49,6 +49,6 @@ describe("WorkspaceSideMenuLifecycle", () => {
     expect(workspaceService.selectNext).toHaveBeenNthCalledWith(3, "left");
     expect(workspaceService.selectNext).toHaveBeenNthCalledWith(4, "right");
     expect(workspaceService.restoreSelectedWorkspace).toHaveBeenCalled();
-    expect(handle.close).toHaveBeenCalledTimes(1);
+    expect(handle.dismiss).toHaveBeenCalledTimes(1);
   });
 });

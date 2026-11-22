@@ -37,11 +37,8 @@ export function focusPanel(panel: HTMLElement | undefined): void {
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-        @for (item of dockedItems(); track item.label) {
-            <ng-container *ngTemplateOutlet="panel; context: { $implicit: item, floating: false }"></ng-container>
-        }
-        @if (floatingItem(); as item) {
-            <ng-container *ngTemplateOutlet="panel; context: { $implicit: item, floating: true }"></ng-container>
+        @for (item of openItems(); track item.label) {
+            <ng-container *ngTemplateOutlet="panel; context: { $implicit: item, floating: item.label === floatingItem()?.label }"></ng-container>
         }
         <menu #menuCol [class.hidden]="railItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem.id ?? menuItem.label) {
@@ -53,26 +50,26 @@ export function focusPanel(panel: HTMLElement | undefined): void {
             }
         </menu>
         <ng-template #panel let-item let-floating="floating">
+            @let expanded = isExpanded(item.label);
             <aside [attr.data-label]="item.label"
-                   [class.base-overlay]="floating || isExpanded(item.label)"
-                   [class.pinned]="!floating && !isExpanded(item.label)"
+                   [class.base-overlay]="floating || expanded"
+                   [class.pinned]="!floating && !expanded"
                    [class.floating]="floating"
-                   [class.flat]="isExpanded(item.label)"
+                   [class.flat]="expanded"
                    [class.shift-left]="railItems().length > 0"
-                   [class.expanded]="isExpanded(item.label)"
-                   [style.width.px]="isExpanded(item.label) ? null : panelWidthInPixels(item.label)"
+                   [class.expanded]="expanded"
+                   [style.width.px]="expanded ? null : panelWidthInPixels(item.label)"
                    tabindex="-1"
-                   (pointerdown)="focus(item.label)"
             >
-                @if (!isExpanded(item.label)) {
+                @if (!expanded) {
                     <div class="resize-handle" (pointerdown)="startResize($event, item.label)"></div>
                 }
                 <header>
                     <h3>{{ item.label }}</h3>
                     <div class="btn-list">
                         <button class="button icon-button" (click)="toggleExpanded(item.label)"
-                                [appTooltip]="isExpanded(item.label) ? 'Restore panel width' : 'Expand panel over the terminals'">
-                            <app-icon [name]="isExpanded(item.label) ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
+                                [appTooltip]="expanded ? 'Restore panel width' : 'Expand panel over the terminals'">
+                            <app-icon [name]="expanded ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
                         </button>
                         <button class="button icon-button" (click)="togglePin(item.label)"
                                 [appTooltip]="isPinned(item.label) ? 'Unpin panel' : 'Pin panel beside the terminals'">
@@ -193,14 +190,12 @@ export function focusPanel(panel: HTMLElement | undefined): void {
 
             /* The floating panel lies at the right edge, over the terminals
                and over the pinned panels. */
-            &.floating {
+            &.floating,
+            &.expanded {
                 position: absolute;
                 right: 4px;
                 top: 0;
                 bottom: 0;
-                z-index: 4;
-
-                max-height: 100%;
                 overflow: hidden;
 
                 &.shift-left {
@@ -209,26 +204,17 @@ export function focusPanel(panel: HTMLElement | undefined): void {
             }
 
             /* An expanded panel covers everything - the terminals and the
-               other panels - so it is opaque. A floating panel still lies over
-               an expanded pinned one: it is the one just opened. */
+               other panels - so it is opaque. */
             &.expanded {
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
-                position: absolute;
-                top: 0;
-                bottom: 0;
                 left: 4px;
-                right: 4px;
                 z-index: 3;
-                max-height: 100%;
-                overflow: hidden;
+            }
 
-                &.shift-left {
-                    right: 32px;
-                }
-
-                &.floating {
-                    z-index: 4;
-                }
+            /* After .expanded: a floating panel still lies over an expanded
+               pinned one, it is the one just opened. */
+            &.floating {
+                z-index: 4;
             }
 
             .resize-handle {
@@ -292,15 +278,16 @@ export class SideMenuComponent implements OnDestroy {
   readonly dockedItems = this.menuItemService.dockedItems;
   readonly floatingItem = this.menuItemService.floatingItem;
   readonly focusedLabel = this.menuItemService.focusedLabel;
-  /** An expanded panel is laid out against the whole workbench area. */
-  readonly hasExpanded = computed(() => {
-    const expanded = this.menuItemService.expandedLabels();
+  /**
+   * Every open panel in one list, the floating one last: pinning or unpinning
+   * an open panel then only changes its place and look, and its content lives on.
+   */
+  readonly openItems = computed(() => {
     const floating = this.floatingItem();
-    return (
-      this.dockedItems().some((item) => expanded.has(item.label)) ||
-      (!!floating && expanded.has(floating.label))
-    );
+    return floating ? [...this.dockedItems(), floating] : this.dockedItems();
   });
+  /** An expanded panel is laid out against the whole workbench area. */
+  readonly hasExpanded = computed(() => this.menuItemService.expandedLabel() !== undefined);
 
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
 
@@ -314,10 +301,10 @@ export class SideMenuComponent implements OnDestroy {
     private menuItemService: SideMenuService,
     private host: ElementRef<HTMLElement>,
   ) {
-    // A click elsewhere closes the floating panel and takes the keyboard from a pinned one.
+    // While a panel is open, every pointer press is told to the service: on
+    // which panel it went down, or that it went down beside them all.
     this.clickOutsideEffect = effect(() => {
-      const listen = !!this.floatingItem() || this.focusedLabel() !== undefined;
-      if (listen) {
+      if (this.openItems().length > 0) {
         this.lastOpenTimestamp = performance.now();
         document.addEventListener("pointerdown", this.onPointerDown, true);
       } else {
@@ -356,14 +343,7 @@ export class SideMenuComponent implements OnDestroy {
         ? clickedPanel.dataset["label"]
         : undefined;
 
-    // A click into another panel gives it the keyboard before the floating
-    // one closes, so the keyboard does not pass by the terminal.
-    if (clickedLabel !== undefined) this.menuItemService.focus(clickedLabel);
-    const floating = this.floatingItem()?.label;
-    if (floating !== undefined && floating !== clickedLabel) this.menuItemService.dismiss(floating);
-
-    const focused = this.focusedLabel();
-    if (clickedLabel === undefined && focused !== undefined) this.menuItemService.dismiss(focused);
+    this.menuItemService.pointerDown(clickedLabel);
   };
 
   /** A click on an open panel's icon closes it, as the X does. */
@@ -393,10 +373,6 @@ export class SideMenuComponent implements OnDestroy {
 
   close(label: string) {
     this.menuItemService.close(label);
-  }
-
-  focus(label: string) {
-    this.menuItemService.focus(label);
   }
 
   togglePin(label: string) {

@@ -34,7 +34,7 @@ export class GitSideMenuLifecycle {
           else if (this.view.refsFilter()) this.view.refsFilter.set("");
           else if (this.view.hasMarks()) this.view.clearMarks();
           else if (this.view.diff()) this.view.closeDiff();
-          else sideMenuFeatureHandle.close();
+          else sideMenuFeatureHandle.dismiss();
         });
       },
     };

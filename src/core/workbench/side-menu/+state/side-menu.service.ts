@@ -1,6 +1,7 @@
 import { computed, Injectable, Signal, signal, Type, WritableSignal } from "@angular/core";
 import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import { Icon } from "@cogno/shared/ui";
 
 export type SideMenuItem = {
@@ -25,13 +26,18 @@ export type SideMenuItem = {
  * The side panels: pinned ones stand beside the terminals, side by side in the
  * rail's order, until each is closed with X; one floating panel at a time lies
  * over the terminals and the pinned ones, and another floating one replaces it.
- * Pin, expand and width belong to the panel and outlive its being open and its
- * menu item. At most one panel has the keyboard.
+ * One open panel at a time can be expanded over everything; while it is, it does
+ * not stand among the pinned ones, and it goes back to its place when restored.
+ * Pin and width belong to the panel and outlive its being open and its menu
+ * item; expand lasts only while the panel is open. At most one panel has the
+ * keyboard. A panel is dismissed the same way whoever it belongs to: by a
+ * pointer press elsewhere and by Escape while it has the keyboard.
  */
 @Injectable({ providedIn: "root" })
 export class SideMenuService {
   private static readonly defaultPanelWidthInPixels = 360;
   private static readonly minimumPanelWidthInPixels = 280;
+  private static readonly dismissKeyListenerId = "side-menu.dismiss";
 
   private readonly _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
   /** The pinned panels that are open. */
@@ -41,14 +47,18 @@ export class SideMenuService {
   /** Each panel's own width, by label; a panel without one has the default. */
   private readonly _panelWidths = signal<ReadonlyMap<string, number>>(new Map());
   private readonly _pinnedLabels = signal<ReadonlySet<string>>(new Set());
-  /** Panels that span the whole area, the terminals and the other panels. */
-  private readonly _expandedLabels = signal<ReadonlySet<string>>(new Set());
+  /** The open panel that spans the whole area, the terminals and the other panels. */
+  private readonly _expandedLabel = signal<string | undefined>(undefined);
 
-  readonly menu: Signal<SideMenuItem[]> = this._menuItems.asReadonly();
   readonly focusedLabel: Signal<string | undefined> = this._focusedLabel.asReadonly();
   readonly panelWidths: Signal<ReadonlyMap<string, number>> = this._panelWidths.asReadonly();
   readonly pinnedLabels: Signal<ReadonlySet<string>> = this._pinnedLabels.asReadonly();
-  readonly expandedLabels: Signal<ReadonlySet<string>> = this._expandedLabels.asReadonly();
+  readonly expandedLabel: Signal<string | undefined> = this._expandedLabel.asReadonly();
+  /**
+   * The panels to bring back after a restart: the open pinned ones. A floating
+   * panel is a quick look and is not brought back.
+   */
+  readonly openPinnedLabels: Signal<ReadonlySet<string>> = this._openPinnedLabels.asReadonly();
 
   /** The rail's entries in the rail's order: the features, then the workbench's own. */
   readonly railItems: Signal<ReadonlyArray<SideMenuItem>> = computed(() => {
@@ -70,7 +80,10 @@ export class SideMenuService {
     return label === undefined ? undefined : this._menuItems().find((s) => s.label === label);
   });
 
-  constructor(private readonly bus: AppBus) {}
+  constructor(
+    private readonly bus: AppBus,
+    private readonly keybinds: KeybindService,
+  ) {}
 
   addMenuItem(item: SideMenuItem): void {
     this._menuItems.update((s) => {
@@ -109,7 +122,7 @@ export class SideMenuService {
   }
 
   isExpanded(label: string): boolean {
-    return this._expandedLabels().has(label);
+    return this._expandedLabel() === label;
   }
 
   panelWidthInPixels(label: string): number {
@@ -130,11 +143,9 @@ export class SideMenuService {
 
     if (!this.isOpen(label)) {
       if (this.isPinned(label)) {
-        this._openPinnedLabels.update((labels) => new Set(labels).add(label));
+        this._openPinnedLabels.update((labels) => withLabel(labels, label));
       } else {
-        const floating = this._floatingLabel();
-        if (floating !== undefined) this.hide(floating);
-        this._floatingLabel.set(label);
+        this.float(label);
       }
       this.bus.publish({ type: "SideMenuViewOpened", payload: { label } });
     }
@@ -147,7 +158,8 @@ export class SideMenuService {
    * open but unfocused, and closes it, as the X does, when it has the keyboard.
    */
   toggle(label: string): void {
-    if (this.isOpen(label) && this._focusedLabel() === label) {
+    // Only an open panel has the keyboard.
+    if (this._focusedLabel() === label) {
       this.close(label);
       return;
     }
@@ -163,23 +175,46 @@ export class SideMenuService {
 
   /**
    * Done with the panel for now (Escape, a click elsewhere): a floating one
-   * closes, a pinned one stays and gives the keyboard back to the terminal.
+   * closes, a pinned one stays and gives the keyboard back to the terminal -
+   * at its normal size, so the terminal is there to be seen.
    */
   dismiss(label: string): void {
     if (!this.isOpen(label)) return;
-    if (!this.isPinned(label)) {
+    // Where the panel lies decides, not what it is set to: the two differ
+    // when the pins are restored while a panel already floats.
+    if (this._floatingLabel() === label) {
       this.close(label);
       return;
     }
     if (this._focusedLabel() !== label) return;
+    if (this._expandedLabel() === label) this._expandedLabel.set(undefined);
     this.blur();
     this.bus.publish({ type: "FocusActiveTerminal" });
+  }
+
+  /**
+   * A pointer went down on the panel `label`, or beside every panel when there
+   * is none. The panel takes the keyboard; the floating panel is dismissed
+   * unless it is the one; beside every panel, so is the one with the keyboard.
+   * The clicked panel comes first, so the keyboard does not pass by the terminal.
+   */
+  pointerDown(label: string | undefined): void {
+    if (label !== undefined) this.focus(label);
+    const floating = this._floatingLabel();
+    if (floating !== undefined && floating !== label) this.dismiss(floating);
+    const focused = this._focusedLabel();
+    if (label === undefined && focused !== undefined) this.dismiss(focused);
   }
 
   focus(label: string): void {
     if (!this.isOpen(label) || this._focusedLabel() === label) return;
     this.blur();
     this._focusedLabel.set(label);
+    // Before the panel hears of its focus: a panel that binds Escape itself
+    // there lies on top of this and decides when to dismiss.
+    this.keybinds.registerListener(SideMenuService.dismissKeyListenerId, ["Escape"], () =>
+      this.dismiss(label),
+    );
     this.bus.publish({ type: "SideMenuViewFocused", payload: { label } });
   }
 
@@ -187,6 +222,7 @@ export class SideMenuService {
     const label = this._focusedLabel();
     if (label === undefined) return;
     this._focusedLabel.set(undefined);
+    this.keybinds.unregisterListener(SideMenuService.dismissKeyListenerId);
     this.bus.publish({ type: "SideMenuViewBlurred", payload: { label } });
   }
 
@@ -196,48 +232,28 @@ export class SideMenuService {
    */
   togglePin(label: string): void {
     const pinned = !this.isPinned(label);
-    this._pinnedLabels.update((labels) => {
-      const next = new Set(labels);
-      if (pinned) next.add(label);
-      else next.delete(label);
-      return next;
-    });
+    this._pinnedLabels.update((labels) =>
+      pinned ? withLabel(labels, label) : withoutLabel(labels, label),
+    );
     if (!this.isOpen(label)) return;
 
     if (pinned) {
       this._floatingLabel.set(undefined);
-      this._openPinnedLabels.update((labels) => new Set(labels).add(label));
+      this._openPinnedLabels.update((labels) => withLabel(labels, label));
       return;
     }
     this._openPinnedLabels.update((labels) => withoutLabel(labels, label));
-    const floating = this._floatingLabel();
-    if (floating !== undefined) this.hide(floating);
-    this._floatingLabel.set(label);
+    this.float(label);
   }
 
+  /** Expands an open panel in place of the one expanded so far, or restores it. */
   toggleExpanded(label: string): void {
-    this._expandedLabels.update((labels) => {
-      const next = new Set(labels);
-      if (next.has(label)) next.delete(label);
-      else next.add(label);
-      return next;
-    });
-  }
-
-  setExpandedLabels(labels: ReadonlyArray<string>): void {
-    this._expandedLabels.set(new Set(labels));
+    if (!this.isOpen(label)) return;
+    this._expandedLabel.update((expanded) => (expanded === label ? undefined : label));
   }
 
   setPinnedLabels(labels: ReadonlyArray<string>): void {
     this._pinnedLabels.set(new Set(labels));
-  }
-
-  /**
-   * The panels to bring back after a restart: the open pinned ones. A floating
-   * panel is a quick look and is not brought back.
-   */
-  openPinnedLabels(): ReadonlySet<string> {
-    return this._openPinnedLabels();
   }
 
   updateBadgeColor(label: string, color?: string) {
@@ -257,9 +273,17 @@ export class SideMenuService {
     );
   }
 
+  /** Makes the panel the floating one, in place of the one floating so far. */
+  private float(label: string): void {
+    const floating = this._floatingLabel();
+    if (floating !== undefined) this.hide(floating);
+    this._floatingLabel.set(label);
+  }
+
   /** Takes an open panel away, its keyboard focus first. */
   private hide(label: string): void {
     if (this._focusedLabel() === label) this.blur();
+    if (this._expandedLabel() === label) this._expandedLabel.set(undefined);
     if (this._floatingLabel() === label) this._floatingLabel.set(undefined);
     this._openPinnedLabels.update((labels) => withoutLabel(labels, label));
     this.bus.publish({ type: "SideMenuViewClosed", payload: { label } });
@@ -268,6 +292,10 @@ export class SideMenuService {
   private clampPanelWidthInPixels(panelWidthInPixels: number): number {
     return Math.max(SideMenuService.minimumPanelWidthInPixels, Math.round(panelWidthInPixels));
   }
+}
+
+function withLabel(labels: ReadonlySet<string>, label: string): ReadonlySet<string> {
+  return labels.has(label) ? labels : new Set(labels).add(label);
 }
 
 function withoutLabel(labels: ReadonlySet<string>, label: string): ReadonlySet<string> {

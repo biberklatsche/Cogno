@@ -14,11 +14,11 @@ describe("CommandPaletteSideMenuLifecycle", () => {
   >;
   let sideMenuFeatureHandle: SideMenuFeatureHandleContract;
   let registerKeybindListenerMock: Mock<SideMenuFeatureHandleContract["registerKeybindListener"]>;
-  let closeMock: Mock<SideMenuFeatureHandleContract["close"]>;
+  let dismissMock: Mock<SideMenuFeatureHandleContract["dismiss"]>;
 
   beforeEach(() => {
     registerKeybindListenerMock = vi.fn();
-    closeMock = vi.fn();
+    dismissMock = vi.fn();
 
     commandPaletteService = {
       selectedEntry: vi.fn() as unknown as CommandPaletteService["selectedEntry"],
@@ -28,7 +28,7 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     };
 
     sideMenuFeatureHandle = {
-      close: closeMock,
+      dismiss: dismissMock,
       registerKeybindListener: registerKeybindListenerMock,
       updateBadgeColor: vi.fn(),
     };
@@ -67,7 +67,7 @@ describe("CommandPaletteSideMenuLifecycle", () => {
 
     await Promise.resolve();
 
-    expect(closeMock).toHaveBeenCalledTimes(1);
+    expect(dismissMock).toHaveBeenCalledTimes(1);
     expect(commandPaletteService.fireSelectedAction).toHaveBeenCalledWith(selectedEntry);
   });
 
@@ -83,7 +83,7 @@ describe("CommandPaletteSideMenuLifecycle", () => {
     keybindHandler({ key: "ArrowDown" } as KeyboardEvent);
     keybindHandler({ key: "ArrowUp" } as KeyboardEvent);
 
-    expect(closeMock).not.toHaveBeenCalled();
+    expect(dismissMock).not.toHaveBeenCalled();
     expect(commandPaletteService.move).toHaveBeenNthCalledWith(1, 1);
     expect(commandPaletteService.move).toHaveBeenNthCalledWith(2, -1);
   });

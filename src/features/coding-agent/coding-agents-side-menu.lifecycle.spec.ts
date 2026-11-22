@@ -26,7 +26,7 @@ describe("CodingAgentsSideMenuLifecycle", () => {
     rescan = vi.fn().mockResolvedValue(undefined);
     statusService = { attention, start: vi.fn(), stop: vi.fn() };
     handle = {
-      close: vi.fn(),
+      dismiss: vi.fn(),
       registerKeybindListener: vi.fn(),
       updateBadgeColor: vi.fn(),
     };

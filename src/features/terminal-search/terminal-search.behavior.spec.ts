@@ -34,7 +34,7 @@ describe("terminal search behaviour", () => {
   let requestSearchMock: Mock<TerminalSearchApi["requestSearch"]>;
   let requestRevealMock: Mock<TerminalSearchApi["requestReveal"]>;
   let requestSearchDecorationClearMock: Mock<() => void>;
-  let closeMock: Mock<() => void>;
+  let dismissMock: Mock<() => void>;
   let press: (key: string) => void;
 
   /** Types a query, lets the debounce pass and answers like the terminal would. */
@@ -85,9 +85,9 @@ describe("terminal search behaviour", () => {
     const lifecycle = new TerminalSearchSideMenuLifecycle(service);
     const registerKeybindListenerMock = vi.fn();
     // Closing the side menu runs the lifecycle's onClose, like the app does.
-    closeMock = vi.fn(() => sideMenuLifecycle.onClose?.());
+    dismissMock = vi.fn(() => sideMenuLifecycle.onClose?.());
     const sideMenuLifecycle = lifecycle.create({
-      close: closeMock,
+      dismiss: dismissMock,
       registerKeybindListener: registerKeybindListenerMock,
       updateBadgeColor: vi.fn(),
     });
@@ -432,7 +432,7 @@ describe("terminal search behaviour", () => {
         matchLength: 6,
       });
       expect(requestSearchMock).not.toHaveBeenCalled();
-      expect(closeMock).not.toHaveBeenCalled();
+      expect(dismissMock).not.toHaveBeenCalled();
     });
 
     it("reveals the default selection on Enter", () => {
