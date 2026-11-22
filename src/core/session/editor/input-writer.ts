@@ -50,10 +50,19 @@ export class TerminalInputWriter {
     private readonly onUserInput?: () => void,
   ) {}
 
-  /** Move the cursor by `offset` columns (negative = left). */
+  /**
+   * Move the cursor by `offset` columns (negative = left). The shell reports
+   * the new position a pty round trip later; until then the model expects it
+   * there, so a move that follows at once starts from the right place.
+   */
   moveCursor(offset: number): void {
     if (offset === 0) return;
+    const input = this.stateManager.input;
+    const from = this.stateManager.editingCursorIndex;
+    // The read text has no trailing blanks, the cursor may stand beyond it.
+    const lineEnd = Math.max(input.text.length, input.maxCursorIndex, input.cursorIndex, from);
     this.pty.write(buildCursorMoveSequence(offset));
+    this.stateManager.expectCursorAt(Math.max(0, Math.min(lineEnd, from + offset)));
     this.onUserInput?.();
   }
 
@@ -64,6 +73,7 @@ export class TerminalInputWriter {
    */
   deleteChars(offsetToRangeEnd: number, count: number): void {
     if (count <= 0) return;
+    this.stateManager.discardExpectedCursor();
     this.pty.write(buildCursorMoveSequence(offsetToRangeEnd) + "\b".repeat(count));
     this.onUserInput?.();
   }
@@ -75,6 +85,7 @@ export class TerminalInputWriter {
    * responses) must keep using the pty directly.
    */
   writeRaw(data: string): void {
+    this.stateManager.discardExpectedCursor();
     this.pty.write(data);
     this.onUserInput?.();
   }
@@ -90,6 +101,7 @@ export class TerminalInputWriter {
 
   /** Dispatch a native line-editor action to the shell integration process. */
   executeNativeAction(actionId: ShellLineEditorActionContract, payload?: object): void {
+    this.stateManager.discardExpectedCursor();
     this.pty.executeLineEditorAction(actionId, payload);
     this.onUserInput?.();
   }
@@ -107,6 +119,8 @@ export class TerminalInputWriter {
     // raw path derives its clear sequence from it, and startCommand() resets
     // the state manager's input.
     const currentInput = this.stateManager.input;
+    const currentCursorIndex = this.stateManager.editingCursorIndex;
+    this.stateManager.discardExpectedCursor();
 
     // Notify up front: the raw path's individual writes may all be skipped
     // when the current input is empty, yet the insert below always happens.
@@ -140,7 +154,7 @@ export class TerminalInputWriter {
       return true;
     }
 
-    const countToEnd = currentInput.text.length - currentInput.cursorIndex;
+    const countToEnd = currentInput.text.length - currentCursorIndex;
     this.deleteChars(countToEnd, currentInput.text.length);
     this.pty.write(this.wrapForRawInsert(prepared.text));
 

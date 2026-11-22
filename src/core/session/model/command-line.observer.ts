@@ -114,6 +114,11 @@ export class CommandLineObserver implements ITerminalHandler {
       }),
     );
     this._disposables.push(
+      // Whatever the terminal sends itself - a key, a paste, composed text -
+      // is no cursor move of the editor.
+      this._terminal.onData(() => this.model.discardExpectedCursor()),
+    );
+    this._disposables.push(
       this._terminal.onKey((event) => {
         if (event.key === "\r" || event.key === "\n") {
           this.model.startCommand();

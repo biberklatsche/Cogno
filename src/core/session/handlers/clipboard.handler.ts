@@ -142,7 +142,7 @@ export class ClipboardHandler implements ITerminalHandler {
   private openComposerForMultilinePaste(clipboardText: string): boolean {
     if (!/\r?\n/.test(clipboardText)) return false;
     const input = this.model.input;
-    const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
+    const cursor = Math.max(0, Math.min(this.model.editingCursorIndex, input.text.length));
     const pasted = clipboardText.replace(/\r\n/g, "\n");
     this.model.report({
       type: "composerRequested",

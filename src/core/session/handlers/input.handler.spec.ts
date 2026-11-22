@@ -8,11 +8,11 @@ import { InputHandler } from "./input.handler";
 describe("InputHandler", () => {
   let handler: InputHandler;
   let mockTerminal: Terminal;
-  let model: Pick<SessionModel, "clearUnreadNotification">;
+  let model: Pick<SessionModel, "clearUnreadNotification" | "discardExpectedCursor">;
   let mockPty: Pick<IPty, "write">;
 
   beforeEach(() => {
-    model = { clearUnreadNotification: vi.fn() };
+    model = { clearUnreadNotification: vi.fn(), discardExpectedCursor: vi.fn() };
     mockPty = { write: vi.fn() };
     handler = new InputHandler(model as SessionModel, mockPty as IPty);
     mockTerminal = TerminalMockFactory.createTerminal();
@@ -48,6 +48,8 @@ describe("InputHandler", () => {
     handler.writeRaw("hello");
 
     expect(mockPty.write).toHaveBeenCalledWith("hello");
+    // The text moves the cursor: what the editor expected of it no longer holds.
+    expect(model.discardExpectedCursor).toHaveBeenCalled();
   });
 
   it("no longer touches the terminal after dispose", () => {

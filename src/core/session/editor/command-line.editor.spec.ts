@@ -3,6 +3,7 @@ import type { ShellLineEditorDefinitionContract } from "@cogno/core/session/shel
 import type { IPty } from "@cogno/core/terminal/pty";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withExpectedCursor } from "../../../__test__/mocks/expected-cursor.mock";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { CommandLineBuffer } from "../model/command-line.buffer";
@@ -41,7 +42,7 @@ describe("CommandLineEditor", () => {
       onData: vi.fn(),
       onExit: vi.fn(),
     } as any;
-    state = {
+    state = withExpectedCursor({
       terminalId,
       isCommandRunning: false,
       input: { text: "hello world example", cursorIndex: 6, maxCursorIndex: 19 },
@@ -55,7 +56,7 @@ describe("CommandLineEditor", () => {
         nativeActions: ["clearLineToEnd", "deleteSelection", "replaceCurrentInput"],
         bracketedPaste: true,
       },
-    };
+    });
     editor = createEditor();
     mockTerminal = TerminalMockFactory.createTerminal();
 
@@ -87,6 +88,26 @@ describe("CommandLineEditor", () => {
         cursorIndex: 7,
       });
       expect(mockPty.write).not.toHaveBeenCalled();
+    });
+
+    it("splits the line on Shift+Enter where a move just sent will put the cursor", () => {
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      // Cursor reported at 6; the editor moved it to 11 and the shell has not echoed yet.
+      state.expectCursorAt(11);
+
+      customKeyHandler({
+        type: "keydown",
+        key: "Enter",
+        shiftKey: true,
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as unknown as KeyboardEvent);
+
+      expect(state.report).toHaveBeenCalledWith({
+        type: "composerRequested",
+        seedText: "hello world\n example",
+        cursorIndex: 12,
+      });
     });
 
     it("opens the composer on Shift+Enter at an empty prompt without seeding a blank second line", () => {
@@ -512,6 +533,94 @@ describe("CommandLineEditor", () => {
       editor.runEditorAction("selectTextRight");
       // Should now select from 0 to 2
       expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 2);
+    });
+
+    it("grows the selection on a fast key repeat, before the shell echoes any move", () => {
+      state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
+
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+
+      expect(vi.mocked(mockTerminal.select).mock.calls).toEqual([
+        [0, 1, 1],
+        [0, 1, 2],
+        [0, 1, 3],
+      ]);
+    });
+
+    it("is not pulled back by the echo of an earlier move", () => {
+      state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
+
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextLeft");
+      // Reports on the way to the target, one of them equal to it.
+      state.input = { ...state.input, cursorIndex: 2 };
+      editor.runEditorAction("selectTextRight");
+
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 3);
+    });
+
+    it("stops the selection at the end of the line however often the key repeats", () => {
+      state.input = { text: "hello", cursorIndex: 4, maxCursorIndex: 5 };
+
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextLeft");
+
+      // from the end (5) one to the left, anchored at 4: nothing selected
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(4, 1, 0);
+    });
+
+    it("keeps a cursor beyond the read text where it is: trailing blanks are not in the text", () => {
+      state.input = { text: "git", cursorIndex: 4, maxCursorIndex: 4 };
+
+      editor.runEditorAction("selectTextLeft");
+      editor.runEditorAction("selectTextLeft");
+
+      expect(mockPty.write).toHaveBeenCalledTimes(2);
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(2, 1, 2);
+    });
+
+    it("deletes what was selected when the delete follows before the shell echoes the moves", () => {
+      state.sessionCapabilities = undefined;
+      state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+      vi.mocked(mockTerminal.hasSelection).mockReturnValue(true);
+      vi.mocked(mockTerminal.getSelectionPosition).mockReturnValue({
+        start: { x: 0, y: 1 },
+        end: { x: 3, y: 1 },
+      });
+      vi.mocked(mockPty.write).mockClear();
+
+      const customKeyHandler = vi.mocked(mockTerminal.attachCustomKeyEventHandler).mock.calls[0][0];
+      customKeyHandler({
+        type: "keydown",
+        key: "Backspace",
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+      } as unknown as KeyboardEvent);
+
+      // The cursor will be at 3, the end of the selection: three backspaces, no move.
+      expect(mockPty.write).toHaveBeenCalledWith("\b\b\b");
+    });
+
+    it("starts from the reported position again after something else was written", () => {
+      state.sessionCapabilities = undefined;
+      state.input = { text: "hello world", cursorIndex: 0, maxCursorIndex: 11 };
+      editor.runEditorAction("selectTextRight");
+      editor.runEditorAction("selectTextRight");
+
+      editor.runEditorAction("deleteNextWord");
+      state.input = { text: "world", cursorIndex: 0, maxCursorIndex: 11 };
+      editor.runEditorAction("selectTextRight");
+
+      expect(mockTerminal.select).toHaveBeenLastCalledWith(0, 1, 1);
     });
 
     it("should shrink selection when reversing direction", () => {
@@ -944,9 +1053,20 @@ describe("CommandLineEditor", () => {
       // moves from index 13 to index 3 -> offset -10 -> 10x left arrow
       expect(mockPty.write).toHaveBeenLastCalledWith("\x1b[D".repeat(10));
 
+      // The shell has not echoed the move up yet: down starts where up will end.
       const down = pressArrow("ArrowDown");
       expect(down.result).toBe(false);
       expect(down.preventDefault).toHaveBeenCalled();
+      // moves from index 3 back to index 13 -> offset 10
+      expect(mockPty.write).toHaveBeenLastCalledWith("\x1b[C".repeat(10));
+    });
+
+    it("clamps a move down to the furthest cursor position", () => {
+      mockTerminal.cols = 10;
+      state.input = { text: "0123456789ABCDEFGHIJ", cursorIndex: 13, maxCursorIndex: 20 };
+
+      pressArrow("ArrowDown");
+
       // moves from index 13 to index 20 (clamped to maxCursorIndex) -> offset 7
       expect(mockPty.write).toHaveBeenLastCalledWith("\x1b[C".repeat(7));
     });
@@ -985,18 +1105,29 @@ describe("CommandLineEditor", () => {
       expect(mockTerminal.clearSelection).toHaveBeenCalled();
     });
 
-    it("optimistically updates cursorIndex/maxCursorIndex so a fast key-repeat doesn't read stale state", () => {
+    it("walks up row by row on a fast key repeat, before the shell echoes any move", () => {
       mockTerminal.cols = 10;
-      state.input = { text: "0123456789ABCDEFGHIJ", cursorIndex: 13, maxCursorIndex: 20 };
+      state.input = {
+        text: "0123456789ABCDEFGHIJ0123456789ABCD",
+        cursorIndex: 33,
+        maxCursorIndex: 34,
+      };
 
-      pressArrow("ArrowDown");
+      pressArrow("ArrowUp");
+      pressArrow("ArrowUp");
+      // The echo of the first move arrives late and must not pull the editor back.
+      state.input = { ...state.input, cursorIndex: 23 };
+      pressArrow("ArrowUp");
 
-      // moved from 13 to 20 (clamped); maxCursorIndex stays 20.
-      expect(state.updateInput).toHaveBeenCalledWith({
-        text: "0123456789ABCDEFGHIJ",
-        cursorIndex: 20,
-        maxCursorIndex: 20,
-      });
+      expect(vi.mocked(mockPty.write).mock.calls).toEqual([
+        ["\x1b[D".repeat(10)],
+        ["\x1b[D".repeat(10)],
+        ["\x1b[D".repeat(10)],
+      ]);
+      // Now on the first row: one more asks for the history.
+      pressArrow("ArrowUp");
+      expect(state.report).toHaveBeenCalledWith({ type: "commandHistoryRequested" });
+      expect(state.updateInput).not.toHaveBeenCalled();
     });
   });
 });
