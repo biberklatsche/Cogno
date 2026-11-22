@@ -56,6 +56,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
   ],
   host: {
     "[style.--panel-min-width.px]": "minimumPanelWidthInPixels",
+    "[style.--panels-in-row]": "panelsInRow()",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -124,6 +125,10 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
            floating and the expanded panel are laid out against that row. */
         :host {
             display: contents;
+            /* The rail's button and its margins; what a pinned panel adds to its width. */
+            --rail-width: 32px;
+            --panel-padding: 6px;
+            --panel-divider: 2px;
         }
 
         h3 {
@@ -203,11 +208,18 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
             &.pinned {
                 /* Shrinks long before the terminals do (grid-list.component). */
                 flex: 0 100000 auto;
-                min-width: var(--panel-min-width);
-                padding: 6px;
+                /* Its minimum - unless the row cannot even hold every panel at
+                   its minimum: then they share what is there, so nothing is
+                   pushed out of the window. The terminals have no width then;
+                   it takes closing a panel to get them back. */
+                min-width: min(
+                    var(--panel-min-width),
+                    calc((100% - var(--rail-width)) / var(--panels-in-row) - 2 * var(--panel-padding) - var(--panel-divider))
+                );
+                padding: var(--panel-padding);
                 color: var(--foreground-color);
                 background-color: transparent;
-                border-left: 2px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                border-left: var(--panel-divider) solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
 
             /* The floating panel lies at the right edge, over the terminals
@@ -216,7 +228,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
             &.expanded {
                 position: absolute;
                 /* Beside the rail: a panel is only open while its entry is there. */
-                right: 32px;
+                right: var(--rail-width);
                 top: 0;
                 bottom: 0;
                 overflow: hidden;
@@ -301,6 +313,13 @@ export class SideMenuComponent implements OnDestroy {
   readonly floatingItem = this.menuItemService.floatingItem;
   readonly focusedLabel = this.menuItemService.focusedLabel;
   readonly openItems = this.menuItemService.openItems;
+  /** The pinned panels standing in the row with the terminals: not the floating one, not an expanded one. */
+  protected readonly panelsInRow = computed(() => {
+    const floating = this.floatingItem()?.label;
+    return this.openItems().filter(
+      (item) => item.label !== floating && !this.isExpanded(item.label),
+    ).length;
+  });
   /** Flips only when the first panel opens or the last one closes, whatever else changes. */
   private readonly anyPanelOpen = computed(() => this.openItems().length > 0);
 
