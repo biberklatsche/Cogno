@@ -89,6 +89,22 @@ button, a {
     }
 }
 
+/* A pane that does not have the keyboard is dimmed, as far as
+   terminal.inactive_overlay_opacity says: the terminals, and the pinned side
+   panels, which stand among them as panes. */
+.without-keyboard {
+    position: relative;
+
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        background: rgb(0 0 0 / var(--inactive-overlay-opacity, 0.3));
+        pointer-events: none;
+    }
+}
+
 .base-overlay {
     background-color: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct), transparent);
     border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));

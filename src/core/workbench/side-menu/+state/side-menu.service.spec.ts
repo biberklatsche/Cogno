@@ -342,26 +342,27 @@ describe("SideMenuService", () => {
     expect(published()).toEqual([]);
   });
 
-  it("toggles a panel with its shortcut: open, focus when unfocused, close when focused", () => {
-    service.toggle("Workspace");
-    expect(service.focusedLabel()).toBe("Workspace");
+  it("toggles a floating panel with its shortcut or icon: open, then close, like a dialog", () => {
+    service.toggle("Search");
+    expect(service.floatingItem()?.label).toBe("Search");
+    expect(service.focusedLabel()).toBe("Search");
 
-    service.pointerDown(undefined);
-    service.toggle("Workspace");
-    expect(service.focusedLabel()).toBe("Workspace");
-
-    service.toggle("Workspace");
-    expect(service.isOpen("Workspace")).toBe(false);
+    service.toggle("Search");
+    expect(service.isOpen("Search")).toBe(false);
   });
 
-  it("closes a focused pinned panel with its shortcut and keeps it pinned", () => {
+  it("toggles the keyboard of a pinned panel with its shortcut or icon, and never closes it", () => {
     pin("Workspace");
-
-    service.toggle("Workspace");
-    expect(service.isOpen("Workspace")).toBe(false);
+    publishSpy.mockClear();
 
     service.toggle("Workspace");
     expect(docked()).toEqual(["Workspace"]);
+    expect(service.focusedLabel()).toBeUndefined();
+    expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
+
+    service.toggle("Workspace");
+    expect(docked()).toEqual(["Workspace"]);
+    expect(service.focusedLabel()).toBe("Workspace");
   });
 
   it("ignores a panel without a menu item", () => {
@@ -427,7 +428,7 @@ describe("SideMenuService", () => {
   });
 
   describe("expand", () => {
-    it("expands an open panel and restores it", () => {
+    it("expands the panel that has the keyboard and restores it", () => {
       service.open("Workspace");
 
       service.toggleExpanded("Workspace");
@@ -437,111 +438,104 @@ describe("SideMenuService", () => {
       expect(service.isExpanded("Workspace")).toBe(false);
     });
 
-    it("expands only one panel at a time: the next one takes its place", () => {
+    it("shows a panel at its size while it does not have the keyboard, so the terminal is seen", () => {
       pin("Workspace");
-      pin("Git");
       service.toggleExpanded("Workspace");
 
-      service.toggleExpanded("Git");
+      service.dismiss("Workspace");
 
       expect(service.isExpanded("Workspace")).toBe(false);
-      expect(service.isExpanded("Git")).toBe(true);
-    });
-
-    it("does not expand a panel that is not open", () => {
-      service.toggleExpanded("Workspace");
-
-      expect(service.isExpanded("Workspace")).toBe(false);
-    });
-
-    it("keeps a pinned panel pinned and open while expanded, and after", () => {
-      pin("Workspace");
-
-      service.toggleExpanded("Workspace");
-      service.toggleExpanded("Workspace");
-
       expect(docked()).toEqual(["Workspace"]);
-      expect(service.isPinned("Workspace")).toBe(true);
     });
 
-    it("stays expanded while another panel opens floating over it", () => {
+    it("expands it again as soon as it has the keyboard back", () => {
+      pin("Workspace");
+      service.toggleExpanded("Workspace");
+      service.dismiss("Workspace");
+
+      service.toggle("Workspace");
+
+      expect(service.isExpanded("Workspace")).toBe(true);
+    });
+
+    it("goes back to its size when another panel is opened, pinned or floating", () => {
+      pin("Git");
+      service.toggleExpanded("Git");
+
+      service.open("Search");
+      expect(service.isExpanded("Git")).toBe(false);
+
+      service.pointerDown("Git");
+      expect(service.isExpanded("Git")).toBe(true);
+
+      pin("Workspace");
+      expect(service.isExpanded("Git")).toBe(false);
+    });
+
+    it("expands only one panel at a time, also when several are set to expand", () => {
+      pin("Workspace");
+      service.toggleExpanded("Workspace");
+      pin("Git");
+      service.toggleExpanded("Git");
+
+      expect(service.isExpanded("Git")).toBe(true);
+      expect(service.isExpanded("Workspace")).toBe(false);
+    });
+
+    it("goes back to its size when a terminal takes the keyboard by itself", () => {
       pin("Workspace");
       service.toggleExpanded("Workspace");
 
-      service.open("Search");
+      service.keyboardMovedTo(undefined);
 
-      expect(service.isExpanded("Workspace")).toBe(true);
-      expect(service.floatingItem()?.label).toBe("Search");
+      expect(service.isExpanded("Workspace")).toBe(false);
     });
 
-    it("goes back to its size when another pinned panel takes the keyboard", () => {
-      pin("Workspace");
-      pin("Git");
-      service.toggleExpanded("Git");
-
-      // Workspace stands beside the terminals, under the expanded Git.
-      service.open("Workspace");
-
-      expect(service.isExpanded("Git")).toBe(false);
-      expect(service.focusedLabel()).toBe("Workspace");
-    });
-
-    it("gets the keyboard when the floating panel over it closes", () => {
-      pin("Git");
-      service.toggleExpanded("Git");
-      service.open("Search");
-      publishSpy.mockClear();
-
-      service.dismiss("Search");
-
-      expect(service.isExpanded("Git")).toBe(true);
-      expect(service.focusedLabel()).toBe("Git");
-      // The terminal lies under the expanded panel and gets nothing.
-      expect(published()).not.toContain("FocusActiveTerminal");
-    });
-
-    it("goes back to its size when the floating panel over it is pinned and keeps the keyboard", () => {
-      pin("Git");
-      service.toggleExpanded("Git");
-      service.open("Search");
-
-      service.togglePin("Search");
-
-      expect(service.isExpanded("Git")).toBe(false);
-      expect(docked()).toEqual(["Git", "Search"]);
-      expect(service.focusedLabel()).toBe("Search");
-    });
-
-    it("is not kept: a closed panel opens at its normal size again", () => {
+    it("is kept for the panel: closed and opened again it is expanded", () => {
       service.open("Workspace");
       service.toggleExpanded("Workspace");
       service.close("Workspace");
 
       service.open("Workspace");
 
-      expect(service.isExpanded("Workspace")).toBe(false);
+      expect(service.isExpanded("Workspace")).toBe(true);
     });
 
-    it("restores an expanded pinned panel on dismiss and gives the terminal the keyboard", () => {
-      pin("Workspace");
-      service.toggleExpanded("Workspace");
-      publishSpy.mockClear();
+    it("comes back from the last run and leaves a panel that returns without the keyboard at its size", () => {
+      service.restorePinnedLabels(["Git"]);
+      service.restoreExpandedLabels(["Git"]);
 
-      service.dismiss("Workspace");
+      service.reopen(["Git"]);
+      expect(service.isExpanded("Git")).toBe(false);
+      expect([...service.expandedLabels()]).toEqual(["Git"]);
 
-      expect(service.isExpanded("Workspace")).toBe(false);
-      expect(docked()).toEqual(["Workspace"]);
-      expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
+      service.toggle("Git");
+      expect(service.isExpanded("Git")).toBe(true);
     });
 
-    it("closes an expanded floating panel on dismiss", () => {
+    it("closes an expanded floating panel on dismiss, like any floating panel", () => {
       service.open("Search");
       service.toggleExpanded("Search");
 
       service.dismiss("Search");
 
       expect(service.floatingItem()).toBeUndefined();
-      expect(service.isExpanded("Search")).toBe(false);
+    });
+  });
+
+  describe("which pane has the keyboard", () => {
+    it("is a pinned panel while it has it: the terminals do not", () => {
+      pin("Workspace");
+      expect(service.keyboardInPinnedPanel()).toBe(true);
+
+      service.dismiss("Workspace");
+      expect(service.keyboardInPinnedPanel()).toBe(false);
+    });
+
+    it("is not the floating panel: it lies over the panes like a dialog", () => {
+      service.open("Search");
+
+      expect(service.keyboardInPinnedPanel()).toBe(false);
     });
   });
 

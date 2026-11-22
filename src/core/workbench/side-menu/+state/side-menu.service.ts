@@ -26,12 +26,14 @@ export type SideMenuItem = {
  * The side panels: pinned ones stand beside the terminals, side by side in the
  * rail's order, until each is closed with X; one floating panel at a time lies
  * over the terminals and the pinned ones, and another floating one replaces it.
- * One open panel at a time can be expanded over everything; while it is, it does
- * not stand among the pinned ones, and it goes back to its place when restored.
- * Pin and width belong to the panel and outlive its being open and its menu
- * item; expand lasts only while the panel is open. At most one panel has the
- * keyboard. A panel is dismissed the same way whoever it belongs to: by a
- * pointer press elsewhere and by Escape while it has the keyboard.
+ * A pinned panel is like one more pane: Escape and a press elsewhere only take
+ * the keyboard from it. The floating one is like a dialog: they close it.
+ * A panel set to expand spans everything while it has the keyboard and stands
+ * at its size otherwise, so the terminal is never hidden while it has the
+ * keyboard and only one panel is expanded at a time. Pin, expand and width
+ * belong to the panel and outlive its being open and its menu item. At most
+ * one panel has the keyboard, and every panel loses it the same way, whoever
+ * it belongs to.
  */
 @Injectable({ providedIn: "root" })
 export class SideMenuService {
@@ -49,12 +51,21 @@ export class SideMenuService {
   /** Each panel's own width, by label; a panel without one has the default. */
   private readonly _panelWidths = signal<ReadonlyMap<string, number>>(new Map());
   private readonly _pinnedLabels = signal<ReadonlySet<string>>(new Set());
-  /** The open panel that spans the whole area, the terminals and the other panels. */
-  private readonly _expandedLabel = signal<string | undefined>(undefined);
+  /** Panels set to span the whole area, the terminals and the other panels, while they have the keyboard. */
+  private readonly _expandedLabels = signal<ReadonlySet<string>>(new Set());
 
   readonly focusedLabel: Signal<string | undefined> = this._focusedLabel.asReadonly();
   readonly panelWidths: Signal<ReadonlyMap<string, number>> = this._panelWidths.asReadonly();
   readonly pinnedLabels: Signal<ReadonlySet<string>> = this._pinnedLabels.asReadonly();
+  readonly expandedLabels: Signal<ReadonlySet<string>> = this._expandedLabels.asReadonly();
+  /**
+   * A pinned panel has the keyboard. It is one of the panes then, and the
+   * terminals show that they do not have it, as they do among themselves.
+   */
+  readonly keyboardInPinnedPanel: Signal<boolean> = computed(() => {
+    const focused = this._focusedLabel();
+    return focused !== undefined && focused !== this._floatingLabel();
+  });
   /**
    * The panels to bring back after a restart: the open pinned ones, and those
    * of the last run still waiting for their menu item. A floating panel is a
@@ -132,7 +143,7 @@ export class SideMenuService {
   }
 
   isExpanded(label: string): boolean {
-    return this._expandedLabel() === label;
+    return this._expandedLabels().has(label) && this._focusedLabel() === label;
   }
 
   panelWidthInPixels(label: string): number {
@@ -164,31 +175,27 @@ export class SideMenuService {
   }
 
   /**
-   * A panel's shortcut and its icon in the rail: opens the panel, takes the
-   * keyboard to it when it is open but unfocused - which shows it, should
-   * another panel lie over it - and closes it, as the X does, when it has the
-   * keyboard.
+   * A panel's shortcut and its icon in the rail: opens the panel and takes the
+   * keyboard to it - which shows it, should another panel lie over it. On the
+   * panel that has the keyboard it is done with the panel as Escape is: the
+   * floating one closes, a pinned one stays and the terminal gets the
+   * keyboard back. Only its X closes a pinned panel.
    */
   toggle(label: string): void {
-    // Only an open panel has the keyboard.
-    if (this._focusedLabel() === label) {
-      this.close(label);
-      return;
-    }
-    this.open(label);
+    if (this._focusedLabel() === label) this.dismiss(label);
+    else this.open(label);
   }
 
   /** Closes the panel, pinned or not, as its X does. */
   close(label: string): void {
     if (!this.isOpen(label)) return;
     this.hide(label);
-    if (this._focusedLabel() === undefined) this.passKeyboardOn();
+    if (this._focusedLabel() === undefined) this.bus.publish({ type: "FocusActiveTerminal" });
   }
 
   /**
    * Done with the panel for now (Escape, a click elsewhere): a floating one
-   * closes, a pinned one stays and gives the keyboard back to the terminal -
-   * at its normal size, so the terminal is there to be seen.
+   * closes, a pinned one stays and gives the keyboard back to the terminal.
    */
   dismiss(label: string): void {
     if (this._floatingLabel() === label) {
@@ -196,9 +203,8 @@ export class SideMenuService {
       return;
     }
     if (this._focusedLabel() !== label) return;
-    this._expandedLabel.set(undefined);
     this.blur();
-    this.passKeyboardOn();
+    this.bus.publish({ type: "FocusActiveTerminal" });
   }
 
   /**
@@ -268,10 +274,16 @@ export class SideMenuService {
     this.float(label);
   }
 
-  /** Expands an open panel in place of the one expanded so far, or restores it. */
+  /** Sets the panel to expand while it has the keyboard, or takes that back. */
   toggleExpanded(label: string): void {
-    if (!this.isOpen(label)) return;
-    this._expandedLabel.update((expanded) => (expanded === label ? undefined : label));
+    this._expandedLabels.update((labels) =>
+      labels.has(label) ? withoutLabel(labels, label) : withLabel(labels, label),
+    );
+  }
+
+  /** The panels set to expand in the last run, added to those set since the start. */
+  restoreExpandedLabels(labels: ReadonlyArray<string>): void {
+    this._expandedLabels.update((expanded) => new Set([...expanded, ...labels]));
   }
 
   /**
@@ -322,26 +334,13 @@ export class SideMenuService {
   }
 
   /**
-   * No panel has the keyboard any more. It goes to the expanded panel, which
-   * covers the terminals, and to the terminal otherwise.
-   */
-  private passKeyboardOn(): void {
-    const expanded = this._expandedLabel();
-    if (expanded !== undefined) this.focus(expanded);
-    else this.bus.publish({ type: "FocusActiveTerminal" });
-  }
-
-  /**
-   * The panel with the keyboard is there to be seen. The floating panel and an
-   * expanded one lie over the pinned ones, so for a pinned panel the floating
-   * one closes and the expanded one goes back to its size. The floating panel
-   * lies over everything and needs nothing.
+   * The panel with the keyboard is there to be seen. The floating panel lies
+   * over the pinned ones, so for a pinned panel it closes. (An expanded panel
+   * is never in the way: it is only expanded while it has the keyboard itself.)
    */
   private uncover(label: string): void {
     const floating = this._floatingLabel();
-    if (floating === label) return;
-    if (floating !== undefined) this.hide(floating);
-    if (this._expandedLabel() !== label) this._expandedLabel.set(undefined);
+    if (floating !== undefined && floating !== label) this.hide(floating);
   }
 
   /** The floating panel takes its place among the pinned ones and stays open. */
@@ -361,7 +360,6 @@ export class SideMenuService {
   /** Takes an open panel away, its keyboard focus first. */
   private hide(label: string): void {
     if (this._focusedLabel() === label) this.blur();
-    if (this._expandedLabel() === label) this._expandedLabel.set(undefined);
     if (this._floatingLabel() === label) this._floatingLabel.set(undefined);
     this._openPinnedLabels.update((labels) => withoutLabel(labels, label));
     this.bus.publish({ type: "SideMenuViewClosed", payload: { label } });

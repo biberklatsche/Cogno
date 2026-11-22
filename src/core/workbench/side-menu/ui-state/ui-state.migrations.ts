@@ -4,7 +4,6 @@ import migration002ImportLegacyUiState from "./migrations/002_import_legacy_ui_s
 import migration003AddExpanded from "./migrations/003_add_expanded.sql?raw";
 import migration004ExpandedPanels from "./migrations/004_expanded_panels.sql?raw";
 import migration005PanelState from "./migrations/005_panel_state.sql?raw";
-import migration006ExpandNotKept from "./migrations/006_expand_not_kept.sql?raw";
 
 export const sideMenuUiStateMigrations = registerDatabaseMigrations("side-menu-ui-state", [
   { name: "init-ui-state", sql: migration001InitUiState },
@@ -12,5 +11,4 @@ export const sideMenuUiStateMigrations = registerDatabaseMigrations("side-menu-u
   { name: "add-expanded", sql: migration003AddExpanded },
   { name: "expanded-panels", sql: migration004ExpandedPanels },
   { name: "panel-state", sql: migration005PanelState },
-  { name: "expand-not-kept", sql: migration006ExpandNotKept },
 ]);

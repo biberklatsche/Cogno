@@ -78,6 +78,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                    [class.base-overlay]="floating || expanded"
                    [class.pinned]="!floating && !expanded"
                    [class.floating]="floating"
+                   [class.without-keyboard]="!floating && focusedLabel() !== item.label"
                    [class.flat]="expanded"
                    [class.expanded]="expanded"
                    [style.width.px]="expanded ? null : panelWidthInPixels(item.label)"
@@ -111,7 +112,12 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
         </ng-template>
         <ng-template #menuButton let-menuItem>
                 <button class="button icon-button" (click)="toggle(menuItem)"
-                        [class.selected]="isOpen(menuItem.label)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
+                        [class.selected]="floatingItem()?.label === menuItem.label"
+                        [class.pinned]="isPinned(menuItem.label)"
+                        [class.open]="isOpen(menuItem.label)"
+                        [class.keyboard]="focusedLabel() === menuItem.label"
+                        [appTooltip]="isPinned(menuItem.label) ? menuItem.label + ' (pinned)' : menuItem.label"
+                        [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                     @if (menuItem.badgeColor) {
                         <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
@@ -149,8 +155,51 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                 margin: 0;
             }
 
+            /* The floating panel's entry is a filled button: it is open like a
+               dialog and its entry closes it. */
             .button.icon-button.selected {
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+            }
+
+            /* A pinned panel's entry has a bar on the side where the panel
+               stands: it belongs to the layout, and its entry only takes the
+               keyboard there. Faint while the panel is closed, full while it
+               is open, in the highlight colour while it has the keyboard. */
+            .button.icon-button.pinned::before {
+                content: "";
+                position: absolute;
+                left: -2px;
+                top: 5px;
+                bottom: 5px;
+                width: 2px;
+                border-radius: 2px;
+                background: var(--foreground-color);
+                opacity: 0.3;
+                transition:
+                    top 120ms ease-out,
+                    bottom 120ms ease-out,
+                    opacity 120ms ease-out,
+                    background-color 120ms ease-out;
+            }
+
+            .button.icon-button.pinned.open {
+                color: var(--foreground-color);
+
+                &::before {
+                    top: 2px;
+                    bottom: 2px;
+                    opacity: 1;
+                }
+            }
+
+            .button.icon-button.pinned.keyboard::before {
+                background: var(--highlight-color);
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .button.icon-button.pinned::before {
+                    transition: none;
+                }
             }
 
             .button {

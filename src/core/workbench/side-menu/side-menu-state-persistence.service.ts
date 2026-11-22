@@ -22,6 +22,7 @@ export class SideMenuStatePersistenceService {
     combineLatest([
       toObservable(this.sideMenuService.labelsToBringBack),
       toObservable(this.sideMenuService.pinnedLabels),
+      toObservable(this.sideMenuService.expandedLabels),
       toObservable(this.sideMenuService.panelWidths),
     ])
       .pipe(
@@ -37,12 +38,14 @@ export class SideMenuStatePersistenceService {
 
   private panels(): SideMenuPanelEntity[] {
     const pinned = this.sideMenuService.pinnedLabels();
+    const expanded = this.sideMenuService.expandedLabels();
     const widths = this.sideMenuService.panelWidths();
     const open = this.sideMenuService.labelsToBringBack();
-    const labels = new Set([...pinned, ...widths.keys()]);
+    const labels = new Set([...pinned, ...expanded, ...widths.keys()]);
     return [...labels].map((label) => ({
       label,
       is_pinned: pinned.has(label) ? 1 : 0,
+      is_expanded: expanded.has(label) ? 1 : 0,
       width_pixels: widths.get(label) ?? null,
       is_open: open.has(label) ? 1 : 0,
     }));
@@ -51,6 +54,9 @@ export class SideMenuStatePersistenceService {
   private async restore(): Promise<void> {
     const panels = await this.repository.loadPanels();
     this.sideMenuService.restorePinnedLabels(panels.filter((p) => p.is_pinned).map((p) => p.label));
+    this.sideMenuService.restoreExpandedLabels(
+      panels.filter((p) => p.is_expanded).map((p) => p.label),
+    );
     this.sideMenuService.setPanelWidths(
       new Map(panels.flatMap((p) => (p.width_pixels === null ? [] : [[p.label, p.width_pixels]]))),
     );
