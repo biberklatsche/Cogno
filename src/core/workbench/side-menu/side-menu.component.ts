@@ -56,7 +56,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
   ],
   host: {
     "[style.--panel-min-width.px]": "minimumPanelWidthInPixels",
-    "[style.--panels-in-row]": "panelsInRow()",
+    "[style.--open-pinned-panels]": "openPinnedPanels()",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -94,8 +94,8 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                     <h3>{{ item.label }}</h3>
                     <div class="btn-list">
                         <button class="button icon-button" (click)="toggleExpanding(item.label)"
-                                [appTooltip]="expanded ? 'Restore panel width' : 'Expand panel over the terminals'">
-                            <app-icon [name]="expanded ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
+                                [appTooltip]="isExpanding(item.label) ? 'Keep panel at its width' : 'Expand panel over the terminals while it has the keyboard'">
+                            <app-icon [name]="isExpanding(item.label) ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
                         </button>
                         <button class="button icon-button" (click)="togglePin(item.label)"
                                 [appTooltip]="isPinned(item.label) ? 'Unpin panel' : 'Pin panel beside the terminals'">
@@ -115,7 +115,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
         </ng-template>
         <ng-template #menuButton let-menuItem>
                 <button class="button icon-button" (click)="toggle(menuItem)"
-                        [class.selected]="floatingLabel() === menuItem.label"
+                        [class.floating]="floatingLabel() === menuItem.label"
                         [class.standing]="isPinned(menuItem.label) && isOpen(menuItem.label)"
                         [class.keyboard]="focusedLabel() === menuItem.label"
                         [appTooltip]="isPinned(menuItem.label) ? menuItem.label + ' (pinned)' : menuItem.label"
@@ -159,7 +159,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
 
             /* The floating panel's entry is a filled button: it is open like a
                dialog and its entry closes it. */
-            .button.icon-button.selected {
+            .button.icon-button.floating {
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
             }
 
@@ -232,7 +232,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                it takes closing a panel to get them back. */
             min-width: min(
                 var(--panel-min-width),
-                calc((100% - var(--rail-width)) / var(--panels-in-row) - 2 * var(--panel-padding) - var(--panel-divider))
+                calc((100% - var(--rail-width)) / var(--open-pinned-panels) - 2 * var(--panel-padding) - var(--panel-divider))
             );
             padding: var(--panel-padding);
             border-left: var(--panel-divider) solid transparent;
@@ -269,13 +269,11 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                at once. Pinned panels stand side by side. Its offsets are the
                aside's, so pinning does not move it. */
             &.in-row {
-                color: var(--foreground-color);
-                background-color: transparent;
                 border-left-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
 
-            /* The floating panel lies at the right edge, over the terminals
-               and over the pinned panels. */
+            /* The floating and the expanded panel are laid out against the
+               row, beside the rail, over the terminals and the pinned panels. */
             &.floating,
             &.expanded {
                 position: absolute;
@@ -361,7 +359,7 @@ export class SideMenuComponent implements OnDestroy {
   readonly focusedLabel = this.menuItemService.focusedLabel;
   readonly openItems = this.menuItemService.openItems;
   /** The pinned panels, each standing in the row with the terminals or keeping its place there. */
-  protected readonly panelsInRow = computed(() => {
+  protected readonly openPinnedPanels = computed(() => {
     const floating = this.floatingLabel();
     return this.openItems().filter((item) => item.label !== floating).length;
   });
@@ -370,7 +368,7 @@ export class SideMenuComponent implements OnDestroy {
 
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
 
-  private clickOutsideEffect: EffectRef;
+  private outsideListenersEffect: EffectRef;
   private lastOpenTimestamp = 0;
   private resizeLabel?: string;
   private resizeStartPointerClientX = 0;
@@ -383,7 +381,7 @@ export class SideMenuComponent implements OnDestroy {
   ) {
     // While a panel is open, the service is told on which panel a pointer
     // press went down or where the keyboard went, or that it was beside them all.
-    this.clickOutsideEffect = effect(() => {
+    this.outsideListenersEffect = effect(() => {
       if (this.anyPanelOpen()) {
         this.lastOpenTimestamp = performance.now();
         document.addEventListener("pointerdown", this.onPointerDown, true);
@@ -406,7 +404,7 @@ export class SideMenuComponent implements OnDestroy {
     document.removeEventListener("focusin", this.onFocusIn, true);
     window.removeEventListener("pointermove", this.onWindowPointerMove, true);
     window.removeEventListener("pointerup", this.onWindowPointerUp, true);
-    this.clickOutsideEffect.destroy();
+    this.outsideListenersEffect.destroy();
   }
 
   private onPointerDown = (ev: PointerEvent) => {
@@ -453,6 +451,10 @@ export class SideMenuComponent implements OnDestroy {
 
   isPinned(label: string): boolean {
     return this.menuItemService.isPinned(label);
+  }
+
+  isExpanding(label: string): boolean {
+    return this.menuItemService.isExpanding(label);
   }
 
   isExpanded(label: string): boolean {

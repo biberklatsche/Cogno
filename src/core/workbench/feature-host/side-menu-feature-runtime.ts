@@ -65,7 +65,7 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
 
   /** Show the entry, honour the keybinding, tell the lifecycle the feature is on. */
   activate(): void {
-    // The panel's action opens it the way every panel's action does. First,
+    // The panel's action brings it up the way every panel's action does. First,
     // because it fails for an action that has a handler already, and then
     // nothing of the entry may have started.
     this.stopHandlingAction ??= this.actions.handleWhileActive(this.config.actionName, () =>

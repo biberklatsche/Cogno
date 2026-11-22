@@ -34,7 +34,7 @@ describe("SideMenuService", () => {
     });
   }
 
-  function docked(): string[] {
+  function openPinned(): string[] {
     const floating = service.floatingLabel();
     return service
       .openItems()
@@ -71,7 +71,7 @@ describe("SideMenuService", () => {
     service.open("Workspace");
 
     expect(service.floatingLabel()).toBe("Workspace");
-    expect(docked()).toEqual([]);
+    expect(openPinned()).toEqual([]);
     expect(service.focusedLabel()).toBe("Workspace");
     expect(published()).toEqual(["SideMenuViewOpened Workspace", "SideMenuViewFocused Workspace"]);
   });
@@ -97,7 +97,7 @@ describe("SideMenuService", () => {
 
     service.open("Search");
 
-    expect(docked()).toEqual(["Workspace"]);
+    expect(openPinned()).toEqual(["Workspace"]);
     expect(service.floatingLabel()).toBe("Search");
     expect(service.focusedLabel()).toBe("Search");
   });
@@ -107,7 +107,7 @@ describe("SideMenuService", () => {
     pin("Agents");
     pin("Workspace");
 
-    expect(docked()).toEqual(["Workspace", "Agents", "Settings"]);
+    expect(openPinned()).toEqual(["Workspace", "Agents", "Settings"]);
     expect(service.floatingLabel()).toBeUndefined();
   });
 
@@ -128,7 +128,7 @@ describe("SideMenuService", () => {
 
     service.open("Workspace");
 
-    expect(docked()).toEqual(["Workspace", "Git"]);
+    expect(openPinned()).toEqual(["Workspace", "Git"]);
     expect(service.isPinned("Workspace")).toBe(true);
   });
 
@@ -139,7 +139,7 @@ describe("SideMenuService", () => {
 
     service.close("Workspace");
 
-    expect(docked()).toEqual([]);
+    expect(openPinned()).toEqual([]);
     expect(service.floatingLabel()).toBe("Search");
     expect(service.focusedLabel()).toBe("Search");
     expect(service.isPinned("Workspace")).toBe(true);
@@ -167,7 +167,7 @@ describe("SideMenuService", () => {
     service.dismiss("Search");
 
     expect(service.floatingLabel()).toBeUndefined();
-    expect(docked()).toEqual(["Workspace"]);
+    expect(openPinned()).toEqual(["Workspace"]);
     expect(service.focusedLabel()).toBeUndefined();
     expect(published()).toEqual([
       "SideMenuViewBlurred Search",
@@ -184,7 +184,7 @@ describe("SideMenuService", () => {
       service.restorePinnedLabels(["Search"]);
 
       expect(service.floatingLabel()).toBeUndefined();
-      expect(docked()).toEqual(["Search"]);
+      expect(openPinned()).toEqual(["Search"]);
       // It stayed open and kept the keyboard: its feature hears nothing.
       expect(service.focusedLabel()).toBe("Search");
       expect(published()).toEqual([]);
@@ -197,7 +197,7 @@ describe("SideMenuService", () => {
 
       expect(service.isPinned("Git")).toBe(true);
       expect(service.isPinned("Workspace")).toBe(true);
-      expect(docked()).toEqual(["Git"]);
+      expect(openPinned()).toEqual(["Git"]);
     });
 
     it("leave such a panel pinned, so dismissing it keeps it", () => {
@@ -206,7 +206,7 @@ describe("SideMenuService", () => {
 
       service.dismiss("Search");
 
-      expect(docked()).toEqual(["Search"]);
+      expect(openPinned()).toEqual(["Search"]);
     });
 
     it("let it be unpinned again without closing it for its feature", () => {
@@ -228,7 +228,7 @@ describe("SideMenuService", () => {
 
       service.reopen(["Workspace", "Git"]);
 
-      expect(docked()).toEqual(["Workspace", "Git"]);
+      expect(openPinned()).toEqual(["Workspace", "Git"]);
       expect(service.focusedLabel()).toBeUndefined();
       expect(published()).toEqual(["SideMenuViewOpened Workspace", "SideMenuViewOpened Git"]);
     });
@@ -237,10 +237,10 @@ describe("SideMenuService", () => {
       service.restorePinnedLabels(["Late"]);
 
       service.reopen(["Late"]);
-      expect(docked()).toEqual([]);
+      expect(openPinned()).toEqual([]);
 
       service.addMenuItem(item("Late", 9));
-      expect(docked()).toEqual(["Late"]);
+      expect(openPinned()).toEqual(["Late"]);
       expect(published()).toContain("SideMenuViewOpened Late");
     });
 
@@ -260,13 +260,13 @@ describe("SideMenuService", () => {
 
       service.addMenuItem(item("Late", 5));
 
-      expect(docked()).toEqual([]);
+      expect(openPinned()).toEqual([]);
     });
 
     it("does not bring back a panel that is no longer pinned", () => {
       service.reopen(["Workspace"]);
 
-      expect(docked()).toEqual([]);
+      expect(openPinned()).toEqual([]);
       expect(service.floatingLabel()).toBeUndefined();
     });
   });
@@ -277,7 +277,7 @@ describe("SideMenuService", () => {
 
     service.dismiss("Workspace");
 
-    expect(docked()).toEqual(["Workspace"]);
+    expect(openPinned()).toEqual(["Workspace"]);
     expect(service.focusedLabel()).toBeUndefined();
     expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
   });
@@ -311,7 +311,7 @@ describe("SideMenuService", () => {
 
     service.togglePin("Workspace");
 
-    expect(docked()).toEqual(["Workspace", "Agents"]);
+    expect(openPinned()).toEqual(["Workspace", "Agents"]);
     expect(service.floatingLabel()).toBeUndefined();
     expect(service.focusedLabel()).toBe("Workspace");
     expect(published()).toEqual([]);
@@ -325,7 +325,7 @@ describe("SideMenuService", () => {
 
     service.togglePin("Workspace");
 
-    expect(docked()).toEqual(["Agents"]);
+    expect(openPinned()).toEqual(["Agents"]);
     expect(service.floatingLabel()).toBe("Workspace");
     expect(service.focusedLabel()).toBe("Workspace");
     expect(published()).toEqual([]);
@@ -345,12 +345,12 @@ describe("SideMenuService", () => {
     publishSpy.mockClear();
 
     service.toggle("Workspace");
-    expect(docked()).toEqual(["Workspace"]);
+    expect(openPinned()).toEqual(["Workspace"]);
     expect(service.focusedLabel()).toBeUndefined();
     expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
 
     service.toggle("Workspace");
-    expect(docked()).toEqual(["Workspace"]);
+    expect(openPinned()).toEqual(["Workspace"]);
     expect(service.focusedLabel()).toBe("Workspace");
   });
 
@@ -382,7 +382,7 @@ describe("SideMenuService", () => {
 
     service.open("Workspace");
 
-    expect(docked()).toEqual(["Workspace"]);
+    expect(openPinned()).toEqual(["Workspace"]);
   });
 
   it("names the open pinned panels to bring back, not the floating one", () => {
@@ -426,7 +426,7 @@ describe("SideMenuService", () => {
       service.dismiss("Workspace");
 
       expect(service.isExpanded("Workspace")).toBe(false);
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
     });
 
     it("expands it again as soon as it has the keyboard back", () => {
@@ -529,7 +529,7 @@ describe("SideMenuService", () => {
       service.toggle("Workspace");
 
       expect(service.floatingLabel()).toBeUndefined();
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
       expect(service.focusedLabel()).toBe("Workspace");
       // The keyboard goes straight to the pinned panel, not by the terminal.
       expect(published()).toEqual([
@@ -545,7 +545,7 @@ describe("SideMenuService", () => {
 
       service.toggle("Git");
 
-      expect(docked()).toEqual(["Git"]);
+      expect(openPinned()).toEqual(["Git"]);
       expect(service.floatingLabel()).toBeUndefined();
     });
 
@@ -554,7 +554,7 @@ describe("SideMenuService", () => {
 
       service.toggle("Search");
 
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
       expect(service.floatingLabel()).toBe("Search");
     });
 
@@ -584,11 +584,11 @@ describe("SideMenuService", () => {
 
       pressEscape();
 
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
       expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
     });
 
-    it("works for a panel of the workbench's own, registered without a feature", () => {
+    it("is the side menu's own rule, so a panel registered without a feature has it too", () => {
       service.open("Settings");
 
       pressEscape();
@@ -614,7 +614,7 @@ describe("SideMenuService", () => {
 
       // Search had the keyboard, not Workspace.
       expect(service.floatingLabel()).toBeUndefined();
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
     });
 
     it("leaves Escape to a panel that binds it itself when it gets the keyboard", () => {
@@ -640,7 +640,7 @@ describe("SideMenuService", () => {
 
       expect(service.focusedLabel()).toBeUndefined();
       expect(escapeHandlers).toEqual([]);
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
       // The terminal has the keyboard already; nobody is told to take it.
       expect(published()).toEqual(["SideMenuViewBlurred Workspace"]);
     });
@@ -729,7 +729,7 @@ describe("SideMenuService", () => {
       service.pointerDown("Search");
 
       expect(service.floatingLabel()).toBe("Search");
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
     });
 
     it("beside every panel closes the floating one and keeps the pinned ones", () => {
@@ -740,7 +740,7 @@ describe("SideMenuService", () => {
       service.pointerDown(undefined);
 
       expect(service.floatingLabel()).toBeUndefined();
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
       expect(service.focusedLabel()).toBeUndefined();
       expect(published()).toContain("FocusActiveTerminal");
     });
@@ -751,7 +751,7 @@ describe("SideMenuService", () => {
 
       service.pointerDown(undefined);
 
-      expect(docked()).toEqual(["Workspace"]);
+      expect(openPinned()).toEqual(["Workspace"]);
       expect(published()).toEqual(["SideMenuViewBlurred Workspace", "FocusActiveTerminal"]);
     });
 

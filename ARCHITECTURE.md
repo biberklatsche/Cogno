@@ -320,9 +320,12 @@ Dialog darüber. Welches Terminal aktiv ist, hält `grid-list/`; ob stattdessen
 ein Panel die Tastatur hat, hält `side-menu/` (`SideMenuService`). Dort liegt
 auch, wie ein Panel sie wieder abgibt — Escape, ein Druck daneben, sein
 Eintrag in der Rail und seine Aktion, für jedes Panel gleich, ob Feature oder
-nicht: die Tastatur geht in beiden Fällen ans Terminal zurück; das angepinnte
-bleibt dabei stehen, das schwebende schließt. Ein Pane ohne Tastatur sieht
-überall gleich aus, Terminal wie Panel. Ordner in `core/workbench/`
+nicht: die Tastatur geht ans Terminal zurück, angepinnt wie schwebend; das
+angepinnte bleibt dabei stehen, das schwebende schließt. Ein Panel, das auf
+Expandieren gestellt ist, spannt nur über die ganze Fläche, solange es die
+Tastatur hat — so ist nie ein Terminal verdeckt, das sie hat, und höchstens
+ein Panel expandiert. Ein Pane ohne Tastatur sieht überall gleich aus,
+Terminal wie Panel. Ordner in `core/workbench/`
 u. a.: `tab-list/`, `grid-list/`, `terminal/` (Einhängen der Session-Hosts,
 `TerminalSessionRegistry`), `workspace/`, `side-menu/` (Rail, Panel,
 `ui-state`), `window/`, `app-buttons/`, `header/`, `app-menu/`,

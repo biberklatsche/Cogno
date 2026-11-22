@@ -1,10 +1,11 @@
 import { Injectable } from "@angular/core";
 import { DatabaseAccess } from "@cogno/platform";
 
-/** One panel that differs from the default: floating, default width, not expanded. */
+/** One panel that differs from the default: floating, default width, not expanding. */
 export interface SideMenuPanelEntity {
   label: string;
   is_pinned: number;
+  /** Set to expand; it is expanded only while it has the keyboard. */
   is_expanded: number;
   width_pixels: number | null;
   /** A pinned panel that was open and comes back after a restart. */

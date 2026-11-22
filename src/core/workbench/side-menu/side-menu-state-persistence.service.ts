@@ -38,14 +38,14 @@ export class SideMenuStatePersistenceService {
 
   private panels(): SideMenuPanelEntity[] {
     const pinned = this.sideMenuService.pinnedLabels();
-    const expanded = this.sideMenuService.expandingLabels();
+    const expanding = this.sideMenuService.expandingLabels();
     const widths = this.sideMenuService.panelWidths();
     const open = this.sideMenuService.labelsToBringBack();
-    const labels = new Set([...pinned, ...expanded, ...widths.keys()]);
+    const labels = new Set([...pinned, ...expanding, ...widths.keys()]);
     return [...labels].map((label) => ({
       label,
       is_pinned: pinned.has(label) ? 1 : 0,
-      is_expanded: expanded.has(label) ? 1 : 0,
+      is_expanded: expanding.has(label) ? 1 : 0,
       width_pixels: widths.get(label) ?? null,
       is_open: open.has(label) ? 1 : 0,
     }));

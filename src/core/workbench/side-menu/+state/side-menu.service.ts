@@ -139,6 +139,11 @@ export class SideMenuService {
     return this._pinnedLabels().has(label);
   }
 
+  /** Set to expand; whether it is expanded right now is `isExpanded`. */
+  isExpanding(label: string): boolean {
+    return this._expandingLabels().has(label);
+  }
+
   isExpanded(label: string): boolean {
     return this._expandingLabels().has(label) && this._focusedLabel() === label;
   }
@@ -264,7 +269,7 @@ export class SideMenuService {
     if (!this.isOpen(label)) return;
 
     if (pinned) {
-      this.dock(label);
+      this.moveToPinned(label);
       return;
     }
     this._openPinnedLabels.update((labels) => withoutLabel(labels, label));
@@ -280,7 +285,7 @@ export class SideMenuService {
 
   /** The expanding panels of the last run, added to those set since the start. */
   restoreExpandingLabels(labels: ReadonlyArray<string>): void {
-    this._expandingLabels.update((expanded) => new Set([...expanded, ...labels]));
+    this._expandingLabels.update((expanding) => new Set([...expanding, ...labels]));
   }
 
   /**
@@ -291,7 +296,7 @@ export class SideMenuService {
   restorePinnedLabels(labels: ReadonlyArray<string>): void {
     this._pinnedLabels.update((pinned) => new Set([...pinned, ...labels]));
     const floating = this._floatingLabel();
-    if (floating !== undefined && this.isPinned(floating)) this.dock(floating);
+    if (floating !== undefined && this.isPinned(floating)) this.moveToPinned(floating);
   }
 
   /**
@@ -333,8 +338,7 @@ export class SideMenuService {
   /**
    * Closes the floating panel for another panel. The panel with the keyboard
    * is there to be seen, and the floating one lies over the pinned ones; and
-   * only one panel floats. (An expanded panel is never in the way: it is only
-   * expanded while it has the keyboard itself.)
+   * only one panel floats.
    */
   private uncover(label: string): void {
     const floating = this._floatingLabel();
@@ -342,7 +346,7 @@ export class SideMenuService {
   }
 
   /** The floating panel takes its place among the pinned ones and stays open. */
-  private dock(label: string): void {
+  private moveToPinned(label: string): void {
     this._floatingLabel.set(undefined);
     this._openPinnedLabels.update((labels) => withLabel(labels, label));
   }
