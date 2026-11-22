@@ -73,10 +73,15 @@ export class SideMenuService {
     ];
   });
 
-  /** The open pinned panels, in the rail's order. */
-  readonly dockedItems: Signal<ReadonlyArray<SideMenuItem>> = computed(() => {
-    const open = this._openPinnedLabels();
-    return this.railItems().filter((item) => open.has(item.label));
+  /**
+   * Every open panel in the rail's order, which is the order the pinned ones
+   * stand in. The floating one is among them and laid out apart, so pinning or
+   * unpinning an open panel changes its place and look and nothing else.
+   */
+  readonly openItems: Signal<ReadonlyArray<SideMenuItem>> = computed(() => {
+    const pinned = this._openPinnedLabels();
+    const floating = this._floatingLabel();
+    return this.railItems().filter((item) => pinned.has(item.label) || item.label === floating);
   });
 
   readonly floatingItem: Signal<SideMenuItem | undefined> = computed(() => {
@@ -212,6 +217,16 @@ export class SideMenuService {
     if (focused !== undefined) this.dismiss(focused);
   }
 
+  /**
+   * The keyboard went somewhere by itself: into the panel `label`, by Tab, or
+   * out of every panel when there is none - a terminal took it. Nothing is
+   * dismissed for that; the panel only stops having the keyboard.
+   */
+  keyboardMovedTo(label: string | undefined): void {
+    if (label !== undefined) this.focus(label);
+    else this.blur();
+  }
+
   /** Gives the keyboard to an open panel. */
   private focus(label: string): void {
     if (this._focusedLabel() === label) return;
@@ -260,11 +275,12 @@ export class SideMenuService {
   }
 
   /**
-   * The pins of the last run. A panel opened floating before they arrived
-   * goes where it is pinned, so where a panel lies always follows its pin.
+   * The pins of the last run, added to those set since the start. A panel
+   * opened floating before they arrived goes where it is pinned, so where a
+   * panel lies always follows its pin.
    */
-  setPinnedLabels(labels: ReadonlyArray<string>): void {
-    this._pinnedLabels.set(new Set(labels));
+  restorePinnedLabels(labels: ReadonlyArray<string>): void {
+    this._pinnedLabels.update((pinned) => new Set([...pinned, ...labels]));
     const floating = this._floatingLabel();
     if (floating !== undefined && this.isPinned(floating)) this.dock(floating);
   }

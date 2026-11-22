@@ -35,7 +35,11 @@ describe("SideMenuService", () => {
   }
 
   function docked(): string[] {
-    return service.dockedItems().map((menuItem) => menuItem.label);
+    const floating = service.floatingItem()?.label;
+    return service
+      .openItems()
+      .map((menuItem) => menuItem.label)
+      .filter((label) => label !== floating);
   }
 
   beforeEach(() => {
@@ -188,7 +192,7 @@ describe("SideMenuService", () => {
       service.open("Search");
       publishSpy.mockClear();
 
-      service.setPinnedLabels(["Search"]);
+      service.restorePinnedLabels(["Search"]);
 
       expect(service.floatingItem()).toBeUndefined();
       expect(docked()).toEqual(["Search"]);
@@ -197,9 +201,19 @@ describe("SideMenuService", () => {
       expect(published()).toEqual([]);
     });
 
+    it("are added to a pin set before they arrived", () => {
+      pin("Git");
+
+      service.restorePinnedLabels(["Workspace"]);
+
+      expect(service.isPinned("Git")).toBe(true);
+      expect(service.isPinned("Workspace")).toBe(true);
+      expect(docked()).toEqual(["Git"]);
+    });
+
     it("leave such a panel pinned, so dismissing it keeps it", () => {
       service.open("Search");
-      service.setPinnedLabels(["Search"]);
+      service.restorePinnedLabels(["Search"]);
 
       service.dismiss("Search");
 
@@ -208,7 +222,7 @@ describe("SideMenuService", () => {
 
     it("let it be unpinned again without closing it for its feature", () => {
       service.open("Search");
-      service.setPinnedLabels(["Search"]);
+      service.restorePinnedLabels(["Search"]);
       publishSpy.mockClear();
 
       service.togglePin("Search");
@@ -220,7 +234,7 @@ describe("SideMenuService", () => {
 
   describe("reopening the panels of the last run", () => {
     it("opens the pinned ones beside the terminals and leaves the keyboard alone", () => {
-      service.setPinnedLabels(["Workspace", "Git"]);
+      service.restorePinnedLabels(["Workspace", "Git"]);
       publishSpy.mockClear();
 
       service.reopen(["Workspace", "Git"]);
@@ -231,7 +245,7 @@ describe("SideMenuService", () => {
     });
 
     it("opens a panel whose menu item comes later, as soon as it is there", () => {
-      service.setPinnedLabels(["Late"]);
+      service.restorePinnedLabels(["Late"]);
 
       service.reopen(["Late"]);
       expect(docked()).toEqual([]);
@@ -242,7 +256,7 @@ describe("SideMenuService", () => {
     });
 
     it("keeps a panel that has not come yet among those to bring back", () => {
-      service.setPinnedLabels(["Late"]);
+      service.restorePinnedLabels(["Late"]);
 
       service.reopen(["Late"]);
 
@@ -250,7 +264,7 @@ describe("SideMenuService", () => {
     });
 
     it("opens it only once: changing the menu item later does not bring it back", () => {
-      service.setPinnedLabels(["Late"]);
+      service.restorePinnedLabels(["Late"]);
       service.reopen(["Late"]);
       service.addMenuItem(item("Late", 9));
       service.close("Late");
@@ -364,7 +378,7 @@ describe("SideMenuService", () => {
     service.updateBadgeColor("Workspace", "red");
     service.resolveComponent("Search", DummyComponent);
 
-    expect(service.dockedItems()[0].badgeColor).toBe("red");
+    expect(service.openItems()[0].badgeColor).toBe("red");
     expect(service.floatingItem()?.component).toBe(DummyComponent);
   });
 
@@ -388,7 +402,7 @@ describe("SideMenuService", () => {
   });
 
   it("restores pinned panels by label", () => {
-    service.setPinnedLabels(["Workspace", "Git"]);
+    service.restorePinnedLabels(["Workspace", "Git"]);
 
     service.open("Workspace", false);
     service.open("Git", false);
@@ -551,7 +565,7 @@ describe("SideMenuService", () => {
     });
 
     it("opens a pinned panel in place of the floating one that would lie over it", () => {
-      service.setPinnedLabels(["Git"]);
+      service.restorePinnedLabels(["Git"]);
       service.open("Search");
 
       service.toggle("Git");
@@ -570,7 +584,7 @@ describe("SideMenuService", () => {
     });
 
     it("leaves a floating panel open while panels of the last run come back", () => {
-      service.setPinnedLabels(["Workspace"]);
+      service.restorePinnedLabels(["Workspace"]);
       service.open("Search");
 
       service.reopen(["Workspace"]);
@@ -639,6 +653,75 @@ describe("SideMenuService", () => {
 
       expect(ownEscape).toHaveBeenCalled();
       expect(service.floatingItem()?.label).toBe("Git");
+    });
+  });
+
+  describe("the keyboard moving by itself", () => {
+    it("to a terminal takes it from the pinned panel and frees Escape for the terminal", () => {
+      pin("Workspace");
+      publishSpy.mockClear();
+
+      service.keyboardMovedTo(undefined);
+
+      expect(service.focusedLabel()).toBeUndefined();
+      expect(escapeHandlers).toEqual([]);
+      expect(docked()).toEqual(["Workspace"]);
+      // The terminal has the keyboard already; nobody is told to take it.
+      expect(published()).toEqual(["SideMenuViewBlurred Workspace"]);
+    });
+
+    it("to a terminal leaves the floating panel open, without the keyboard", () => {
+      service.open("Search");
+
+      service.keyboardMovedTo(undefined);
+
+      expect(service.floatingItem()?.label).toBe("Search");
+      expect(service.focusedLabel()).toBeUndefined();
+    });
+
+    it("into another panel gives that one the keyboard", () => {
+      pin("Workspace");
+      pin("Git");
+
+      service.keyboardMovedTo("Workspace");
+
+      expect(service.focusedLabel()).toBe("Workspace");
+    });
+
+    it("lets the panel's shortcut bring the keyboard back instead of closing it", () => {
+      pin("Workspace");
+      service.keyboardMovedTo(undefined);
+
+      service.toggle("Workspace");
+
+      expect(service.isOpen("Workspace")).toBe(true);
+      expect(service.focusedLabel()).toBe("Workspace");
+    });
+  });
+
+  describe("the order of the open panels", () => {
+    it("is the rail's, whichever was opened first and wherever each lies", () => {
+      pin("Agents");
+      pin("Workspace");
+      service.open("Git");
+
+      expect(service.openItems().map((menuItem) => menuItem.label)).toEqual([
+        "Workspace",
+        "Git",
+        "Agents",
+      ]);
+    });
+
+    it("does not change when a panel is pinned or unpinned, so its content stays in place", () => {
+      pin("Agents");
+      service.open("Workspace");
+      const before = service.openItems().map((menuItem) => menuItem.label);
+
+      service.togglePin("Workspace");
+      expect(service.openItems().map((menuItem) => menuItem.label)).toEqual(before);
+
+      service.togglePin("Workspace");
+      expect(service.openItems().map((menuItem) => menuItem.label)).toEqual(before);
     });
   });
 

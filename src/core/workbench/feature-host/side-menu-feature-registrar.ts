@@ -40,12 +40,20 @@ export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
     if (this.runtimesByFeatureId.has(feature.id)) {
       return;
     }
-    const runtimes = (feature.sideMenu ?? []).map((definition) => {
-      const runtime = this.createRuntime(definition as SideMenuFeatureDefinition);
-      runtime.activate();
-      return runtime;
-    });
+    // Known before they start, so a feature whose entry fails to come up
+    // leaves none of its entries behind.
+    const runtimes: SideMenuFeatureRuntime[] = [];
     this.runtimesByFeatureId.set(feature.id, runtimes);
+    try {
+      for (const definition of feature.sideMenu ?? []) {
+        const runtime = this.createRuntime(definition as SideMenuFeatureDefinition);
+        runtimes.push(runtime);
+        runtime.activate();
+      }
+    } catch (error) {
+      this.disposeRuntimes(feature.id);
+      throw error;
+    }
   }
 
   unregister(feature: FeatureDefinition<ActionName>): void {

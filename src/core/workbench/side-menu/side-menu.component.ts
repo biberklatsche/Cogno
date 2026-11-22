@@ -298,17 +298,9 @@ export class SideMenuComponent implements OnDestroy {
   readonly visibleItems = computed(() => this.railItems().filter((item) => !item.bottom));
   /** The workbench's own entries, below the features. */
   readonly bottomItems = computed(() => this.railItems().filter((item) => item.bottom));
-  readonly dockedItems = this.menuItemService.dockedItems;
   readonly floatingItem = this.menuItemService.floatingItem;
   readonly focusedLabel = this.menuItemService.focusedLabel;
-  /**
-   * Every open panel in one list, the floating one last: pinning or unpinning
-   * an open panel then only changes its place and look, and its content lives on.
-   */
-  readonly openItems = computed(() => {
-    const floating = this.floatingItem();
-    return floating ? [...this.dockedItems(), floating] : this.dockedItems();
-  });
+  readonly openItems = this.menuItemService.openItems;
   /** Flips only when the first panel opens or the last one closes, whatever else changes. */
   private readonly anyPanelOpen = computed(() => this.openItems().length > 0);
 
@@ -325,14 +317,16 @@ export class SideMenuComponent implements OnDestroy {
     private menuItemService: SideMenuService,
     private host: ElementRef<HTMLElement>,
   ) {
-    // While a panel is open, every pointer press is told to the service: on
-    // which panel it went down, or that it went down beside them all.
+    // While a panel is open, the service is told on which panel a pointer
+    // press went down or where the keyboard went, or that it was beside them all.
     this.clickOutsideEffect = effect(() => {
       if (this.anyPanelOpen()) {
         this.lastOpenTimestamp = performance.now();
         document.addEventListener("pointerdown", this.onPointerDown, true);
+        document.addEventListener("focusin", this.onFocusIn, true);
       } else {
         document.removeEventListener("pointerdown", this.onPointerDown, true);
+        document.removeEventListener("focusin", this.onFocusIn, true);
       }
     });
 
@@ -345,6 +339,7 @@ export class SideMenuComponent implements OnDestroy {
 
   ngOnDestroy() {
     document.removeEventListener("pointerdown", this.onPointerDown, true);
+    document.removeEventListener("focusin", this.onFocusIn, true);
     window.removeEventListener("pointermove", this.onWindowPointerMove, true);
     window.removeEventListener("pointerup", this.onWindowPointerUp, true);
     this.clickOutsideEffect.destroy();
@@ -354,21 +349,34 @@ export class SideMenuComponent implements OnDestroy {
     // Ignore the very event that triggered open
     if (Math.abs(ev.timeStamp - this.lastOpenTimestamp) < 10) return;
 
-    const target = ev.target as Node;
-    const targetElement = target instanceof Element ? target : null;
-    // Dialogs and context menus a panel opens live outside the panel's DOM.
-    const clickedInsidePanelOverlay = !!targetElement?.closest("app-dialog, .menu-overlay-host");
-    if (clickedInsidePanelOverlay) return;
-    if (this.menuColRef?.nativeElement.contains(target)) return;
-
-    const clickedPanel = targetElement?.closest<HTMLElement>("aside[data-label]") ?? null;
-    const clickedLabel =
-      clickedPanel && this.host.nativeElement.contains(clickedPanel)
-        ? clickedPanel.dataset["label"]
-        : undefined;
-
-    this.menuItemService.pointerDown(clickedLabel);
+    if (this.belongsToThePanels(ev.target)) return;
+    this.menuItemService.pointerDown(this.panelLabelOf(ev.target));
   };
+
+  /**
+   * The keyboard can leave a panel without a pointer press: a shortcut gives
+   * it to a terminal, Tab takes it to the next panel. The panel that had it
+   * must not go on believing it has - its Escape would be taken from the terminal.
+   */
+  private onFocusIn = (ev: FocusEvent) => {
+    if (this.belongsToThePanels(ev.target)) return;
+    const label = this.panelLabelOf(ev.target);
+    if (label !== this.focusedLabel()) this.menuItemService.keyboardMovedTo(label);
+  };
+
+  /** The rail, and the dialogs and context menus a panel opens outside its own DOM. */
+  private belongsToThePanels(target: EventTarget | null): boolean {
+    if (!(target instanceof Node)) return false;
+    if (this.menuColRef?.nativeElement.contains(target)) return true;
+    return target instanceof Element && !!target.closest("app-dialog, .menu-overlay-host");
+  }
+
+  /** The panel the element lies in, if any. */
+  private panelLabelOf(target: EventTarget | null): string | undefined {
+    const panel =
+      target instanceof Element ? target.closest<HTMLElement>("aside[data-label]") : null;
+    return panel && this.host.nativeElement.contains(panel) ? panel.dataset["label"] : undefined;
+  }
 
   /** A click on a panel's icon does what its shortcut does. */
   toggle(menuItem: SideMenuItem) {

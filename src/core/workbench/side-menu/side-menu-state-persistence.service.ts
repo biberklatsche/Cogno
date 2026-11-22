@@ -50,7 +50,7 @@ export class SideMenuStatePersistenceService {
 
   private async restore(): Promise<void> {
     const panels = await this.repository.loadPanels();
-    this.sideMenuService.setPinnedLabels(panels.filter((p) => p.is_pinned).map((p) => p.label));
+    this.sideMenuService.restorePinnedLabels(panels.filter((p) => p.is_pinned).map((p) => p.label));
     this.sideMenuService.setPanelWidths(
       new Map(panels.flatMap((p) => (p.width_pixels === null ? [] : [[p.label, p.width_pixels]]))),
     );
