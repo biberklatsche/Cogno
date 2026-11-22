@@ -194,52 +194,49 @@ function nextLayers(
       }
     }
 
-    /* Face, busy: one 8 s round. Reads three lines, looks up aside with a blink, bobs its head. */
+    /* Face, busy: one 5.6 s round. Reads three lines, glances up with a blink, reads on; the head
+       bobs all the while and the antenna swings from left to right, once per two nods. */
     .face.busy .eyes {
-      animation: busy-eyes 8s ease-in-out infinite;
+      animation: busy-eyes 5.6s ease-in-out infinite;
     }
     .face.busy .eye {
-      animation: busy-blink 8s ease-in-out infinite;
+      animation: busy-blink 5.6s ease-in-out infinite;
     }
     .face.busy .tilt {
-      animation: busy-nod 8s ease-in-out infinite;
+      animation: busy-nod 0.56s ease-in-out infinite;
     }
     .face.busy .antenna {
-      animation: antenna-sway 1.4s ease-in-out infinite;
+      animation: antenna-sway 1.12s ease-in-out infinite;
     }
     @keyframes antenna-sway {
-      0%, 100% { transform: rotate(-12deg); }
-      50% { transform: rotate(10deg); }
+      0%, 100% { transform: rotate(-58deg); }
+      50% { transform: rotate(4deg); }
     }
     @keyframes busy-eyes {
       0% {
         transform: translate(-17px, 0);
         animation-timing-function: linear;
       }
-      12% {
+      17.14% {
         transform: translate(17px, 0);
       }
-      15% {
+      21.43% {
         transform: translate(-17px, 0);
         animation-timing-function: linear;
       }
-      27% {
+      38.57% {
         transform: translate(17px, 0);
       }
-      30% {
+      42.86% {
         transform: translate(-17px, 0);
         animation-timing-function: linear;
       }
-      42% {
+      60% {
         transform: translate(17px, 0);
       }
-      47%,
-      66% {
+      67.14%,
+      85.71% {
         transform: translate(15px, -18px);
-      }
-      70%,
-      96% {
-        transform: translate(0, 0);
       }
       100% {
         transform: translate(-17px, 0);
@@ -247,13 +244,13 @@ function nextLayers(
     }
     @keyframes busy-blink {
       0%,
-      56%,
-      60%,
+      73.8%,
+      79.5%,
       100% {
         transform: scaleY(1);
       }
-      57.5%,
-      58% {
+      75.9%,
+      76.6% {
         transform: scaleY(0.1);
       }
     }
