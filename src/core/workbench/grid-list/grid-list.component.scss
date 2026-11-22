@@ -6,8 +6,16 @@
   width: 100%;
 }
 
+/* The terminals share this row with the pinned side panels and the rail, which
+   are items of it too (the side menu's host has no box of its own). The
+   terminals take what is left but start from their floor, 80 columns; when the
+   row is too narrow, the panels give way first - they shrink far more readily
+   (side-menu.component) - down to their own minimum, and only then do the
+   terminals go below their floor. The floating and the expanded panel are laid
+   out against this host. */
 .main {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   position: relative;
   z-index: 1;
   app-grid {
@@ -22,8 +30,18 @@
   }
 }
 
+/* The floor of the terminals: 80 columns of the terminal's font. It is the
+   only content of .main in the flow, so it is the width .main starts from. */
+.terminal-floor {
+  width: 80ch;
+  height: 0;
+  visibility: hidden;
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+}
+
 app-side-menu {
-  z-index: 2;
+  display: contents;
 }
 
 

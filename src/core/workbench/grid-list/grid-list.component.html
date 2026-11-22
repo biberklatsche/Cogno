@@ -1,9 +1,10 @@
-<div class="main">
+<div class="main" #terminals>
+    <div class="terminal-floor" #terminalFloor aria-hidden="true"></div>
     @for (grid of gridList$ | async; track grid.tabId) {
         <app-grid [class.hidden]="grid.tabId !== (activeTabId$ | async)" [node]="grid.tree.root"></app-grid>
     } @empty {
         <app-empty></app-empty>
     }
 </div>
-<app-side-menu></app-side-menu>
+<app-side-menu [roomBesideTerminals]="roomBesideTerminals"></app-side-menu>
 

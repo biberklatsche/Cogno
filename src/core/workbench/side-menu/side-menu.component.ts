@@ -6,6 +6,7 @@ import {
   EffectRef,
   ElementRef,
   effect,
+  input,
   OnDestroy,
   ViewChild,
 } from "@angular/core";
@@ -23,6 +24,14 @@ export function focusPanel(panel: HTMLElement | undefined): void {
   panel.focus();
 }
 
+/**
+ * The width a panel gets while its edge is dragged: it follows the pointer,
+ * but grows no further than the room the terminals have left above their floor.
+ */
+export function resizedPanelWidth(startWidth: number, draggedBy: number, room: number): number {
+  return Math.min(startWidth + draggedBy, startWidth + Math.max(0, room));
+}
+
 @Component({
   selector: "app-side-menu",
   imports: [
@@ -33,7 +42,7 @@ export function focusPanel(panel: HTMLElement | undefined): void {
     ActionKeybindingPipe,
   ],
   host: {
-    "[class.expanded-host]": "hasExpanded()",
+    "[style.--panel-min-width.px]": "minimumPanelWidthInPixels",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -98,18 +107,10 @@ export function focusPanel(panel: HTMLElement | undefined): void {
         </ng-template>`,
   styles: [
     `
-        :host {
-            display: flex;
-            flex-direction: row;
-            position: relative;
-            min-height: 0;
-        }
-
-        /* An expanded panel is laid out against the whole workbench area,
-           so the host must not be its containing block. */
-        :host(.expanded-host) {
-            position: static;
-        }
+        /* The host has no box (display: contents, set where it is placed):
+           the panels and the rail are items of the row they share with the
+           terminals, and the floating and the expanded panel are laid out
+           against that row. */
 
         h3 {
             font-weight: normal;
@@ -120,6 +121,7 @@ export function focusPanel(panel: HTMLElement | undefined): void {
         menu {
             display: flex;
             flex-direction: column;
+            flex-shrink: 0;
             gap: 4px;
             margin: 2px 4px 4px 2px;
             padding: 0;
@@ -181,7 +183,13 @@ export function focusPanel(panel: HTMLElement | undefined): void {
                between panes towards the terminals. That it stays is visible
                at once. Pinned panels stand side by side. Its offsets are the
                aside's, so pinning does not move it. */
+            /* When the row is too narrow for the terminals' floor, the pinned
+               panels get narrower, each in proportion to its width, down to
+               the minimum; the width they are set to stays. */
             &.pinned {
+                /* Shrinks long before the terminals do (grid-list.component). */
+                flex: 0 100000 auto;
+                min-width: var(--panel-min-width);
                 padding: 6px;
                 color: var(--foreground-color);
                 background-color: transparent;
@@ -271,6 +279,10 @@ export function focusPanel(panel: HTMLElement | undefined): void {
   ],
 })
 export class SideMenuComponent implements OnDestroy {
+  /** How much wider the panels can get before the terminals reach their floor. */
+  readonly roomBesideTerminals = input<() => number>(() => Number.POSITIVE_INFINITY);
+  protected readonly minimumPanelWidthInPixels = SideMenuService.minimumPanelWidthInPixels;
+
   readonly railItems = this.menuItemService.railItems;
   readonly visibleItems = computed(() => this.railItems().filter((item) => !item.bottom));
   /** The workbench's own entries, below the features. */
@@ -286,9 +298,6 @@ export class SideMenuComponent implements OnDestroy {
     const floating = this.floatingItem();
     return floating ? [...this.dockedItems(), floating] : this.dockedItems();
   });
-  /** An expanded panel is laid out against the whole workbench area. */
-  readonly hasExpanded = computed(() => this.menuItemService.expandedLabel() !== undefined);
-
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
 
   private clickOutsideEffect: EffectRef;
@@ -296,6 +305,7 @@ export class SideMenuComponent implements OnDestroy {
   private resizeLabel?: string;
   private resizeStartPointerClientX = 0;
   private resizeStartPanelWidthInPixels = 0;
+  private resizeRoomInPixels = 0;
 
   constructor(
     private menuItemService: SideMenuService,
@@ -388,7 +398,11 @@ export class SideMenuComponent implements OnDestroy {
     pointerEvent.stopPropagation();
     this.resizeLabel = label;
     this.resizeStartPointerClientX = pointerEvent.clientX;
-    this.resizeStartPanelWidthInPixels = this.panelWidthInPixels(label);
+    // From the width it shows, which is less than the width it is set to while
+    // the row is too narrow.
+    this.resizeStartPanelWidthInPixels =
+      this.panelElement(label)?.getBoundingClientRect().width ?? this.panelWidthInPixels(label);
+    this.resizeRoomInPixels = this.roomBesideTerminals()();
     window.addEventListener("pointermove", this.onWindowPointerMove, true);
     window.addEventListener("pointerup", this.onWindowPointerUp, true);
   }
@@ -398,7 +412,11 @@ export class SideMenuComponent implements OnDestroy {
     const horizontalDeltaInPixels = this.resizeStartPointerClientX - pointerEvent.clientX;
     this.menuItemService.setPanelWidthInPixels(
       this.resizeLabel,
-      this.resizeStartPanelWidthInPixels + horizontalDeltaInPixels,
+      resizedPanelWidth(
+        this.resizeStartPanelWidthInPixels,
+        horizontalDeltaInPixels,
+        this.resizeRoomInPixels,
+      ),
     );
   };
 

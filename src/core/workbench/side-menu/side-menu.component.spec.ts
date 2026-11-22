@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { focusPanel } from "./side-menu.component";
+import { focusPanel, resizedPanelWidth } from "./side-menu.component";
 
 describe("focusPanel", () => {
   afterEach(() => {
@@ -32,5 +32,23 @@ describe("focusPanel", () => {
     focusPanel(panel);
 
     expect(document.activeElement).toBe(field);
+  });
+});
+
+describe("resizedPanelWidth", () => {
+  it("follows the pointer while the terminals have room left", () => {
+    expect(resizedPanelWidth(360, 100, 300)).toBe(460);
+  });
+
+  it("stops where the terminals reach their floor", () => {
+    expect(resizedPanelWidth(360, 500, 300)).toBe(660);
+  });
+
+  it("gets narrower freely", () => {
+    expect(resizedPanelWidth(360, -50, 0)).toBe(310);
+  });
+
+  it("does not grow while the terminals are below their floor already", () => {
+    expect(resizedPanelWidth(360, 80, -40)).toBe(360);
   });
 });

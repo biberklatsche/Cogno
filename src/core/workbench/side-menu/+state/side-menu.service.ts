@@ -36,7 +36,7 @@ export type SideMenuItem = {
 @Injectable({ providedIn: "root" })
 export class SideMenuService {
   private static readonly defaultPanelWidthInPixels = 360;
-  private static readonly minimumPanelWidthInPixels = 280;
+  static readonly minimumPanelWidthInPixels = 280;
   private static readonly dismissKeyListenerId = "side-menu.dismiss";
 
   private readonly _menuItems: WritableSignal<SideMenuItem[]> = signal<SideMenuItem[]>([]);
