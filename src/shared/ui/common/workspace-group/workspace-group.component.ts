@@ -1,11 +1,11 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   ElementRef,
   Inject,
   input,
   OnDestroy,
-  OnInit,
   signal,
 } from "@angular/core";
 
@@ -20,6 +20,7 @@ import {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <span class="rest-mark" aria-hidden="true"></span>
     @if (name()) {
       <header
         class="header"
@@ -34,15 +35,28 @@ import {
   `,
   styles: `
     :host {
+      --group-padding-top: 1rem;
+      position: relative;
       display: flex;
       flex-flow: row wrap;
       align-content: flex-start;
       gap: 0.5rem;
-      padding-top: 1rem;
+      padding-top: var(--group-padding-top);
     }
 
     :host(:first-child) {
-      padding-top: 0.25rem;
+      --group-padding-top: 0.25rem;
+    }
+
+    /* Marks where the name rests, right below the group's padding. Out of the
+       flow, so it adds no row and no gap to the tiles. */
+    .rest-mark {
+      position: absolute;
+      top: var(--group-padding-top);
+      left: 0;
+      width: 100%;
+      height: 1px;
+      pointer-events: none;
     }
 
     /* Takes a whole row; the group's gap is all that separates it from its tiles.
@@ -108,7 +122,7 @@ import {
     }
   `,
 })
-export class WorkspaceGroupComponent implements OnInit, OnDestroy {
+export class WorkspaceGroupComponent implements AfterViewInit, OnDestroy {
   /** Name of the workspace; without one the tiles stand alone. */
   readonly name = input<string>();
   /** Colour name of the workspace. */
@@ -117,37 +131,42 @@ export class WorkspaceGroupComponent implements OnInit, OnDestroy {
   /** Whether the name is held at the top while its tiles scroll beneath it. */
   readonly stuck = signal(false);
 
-  /** Only a scroll of a container holding the group can move it; terminals scroll a lot. */
-  private readonly onScroll = (event: Event): void => {
-    if (event.target instanceof Node && event.target.contains(this.host.nativeElement)) {
-      this.updateStuck();
-    }
-  };
+  /**
+   * Watches the mark of the name's resting place. The name can only start or
+   * stop sticking when that mark crosses the edge of what the panel shows -
+   * by a scroll, or by the layout moving the group without one.
+   */
+  private restMarkObserver?: IntersectionObserver;
 
   constructor(@Inject(ElementRef) private readonly host: ElementRef<HTMLElement>) {}
 
-  ngOnInit(): void {
-    // Scroll events do not bubble; capturing on the document catches the
-    // panel's scroll container without the group having to know it.
-    document.addEventListener("scroll", this.onScroll, { capture: true, passive: true });
+  ngAfterViewInit(): void {
+    const restMark = this.host.nativeElement.querySelector<HTMLElement>(":scope > .rest-mark");
+    if (!restMark) return;
+    // No root: the intersection is clipped by the panel's scroll container
+    // without the group having to know it.
+    this.restMarkObserver = new IntersectionObserver((entries) => {
+      const latest = entries.at(-1);
+      if (latest) this.updateStuck(restMark, latest.isIntersecting);
+    });
+    this.restMarkObserver.observe(restMark);
   }
 
   ngOnDestroy(): void {
-    document.removeEventListener("scroll", this.onScroll, { capture: true });
+    this.restMarkObserver?.disconnect();
   }
 
   /**
-   * A header that sticks has been pushed down inside its group: it sits further
-   * from the group's top than where it rests, right below the group's padding.
+   * The name sticks while its resting place is out of view above it. A resting
+   * place out of view below takes the name along, so the two stay together.
    */
-  private updateStuck(): void {
-    const group = this.host.nativeElement;
-    const header = group.querySelector<HTMLElement>(":scope > .header");
-    if (!header) return;
-    const pushedBy =
-      header.getBoundingClientRect().top -
-      group.getBoundingClientRect().top -
-      Number.parseFloat(getComputedStyle(group).paddingTop);
+  private updateStuck(restMark: HTMLElement, restMarkInView: boolean): void {
+    const header = this.host.nativeElement.querySelector<HTMLElement>(":scope > .header");
+    if (restMarkInView || !header) {
+      this.stuck.set(false);
+      return;
+    }
+    const pushedBy = header.getBoundingClientRect().top - restMark.getBoundingClientRect().top;
     this.stuck.set(pushedBy > 0.5);
   }
 }

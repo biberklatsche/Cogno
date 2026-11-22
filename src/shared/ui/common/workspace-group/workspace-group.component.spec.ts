@@ -2,7 +2,7 @@ import { InputSignal, provideZonelessChangeDetection } from "@angular/core";
 import { SIGNAL } from "@angular/core/primitives/signals";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WorkspaceGroupComponent } from "./workspace-group.component";
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
@@ -13,26 +13,56 @@ function setInput<T>(input: InputSignal<T>, value: T): void {
   node.applyValueToInputSignal(node, value);
 }
 
+/** Stands in for the browser's observer, which jsdom does not have. */
+class IntersectionObserverStub {
+  static instances: IntersectionObserverStub[] = [];
+  readonly observed: Element[] = [];
+  disconnected = false;
+
+  constructor(private readonly callback: (entries: { isIntersecting: boolean }[]) => void) {
+    IntersectionObserverStub.instances.push(this);
+  }
+
+  observe(element: Element): void {
+    this.observed.push(element);
+  }
+
+  disconnect(): void {
+    this.disconnected = true;
+  }
+
+  /** The observed mark crossed the edge of what the panel shows. */
+  crossed(isIntersecting: boolean): void {
+    if (!this.disconnected) this.callback([{ isIntersecting }]);
+  }
+}
+
 /**
  * Pins when the workspace name takes its surface: only while it sticks, that
- * is while its group has scrolled up and the name is held at the top above
- * the tiles passing beneath it. At rest it has none.
+ * is while its group has moved up and the name is held at the top above the
+ * tiles passing beneath it. At rest it has none.
  */
 describe("WorkspaceGroupComponent", () => {
-  const PADDING = 16;
   let fixture: ComponentFixture<WorkspaceGroupComponent>;
   let group: HTMLElement;
   let header: HTMLElement;
+  let restMark: HTMLElement;
+  let observer: IntersectionObserverStub;
 
-  /** Places group and name as the scroll container would after a scroll. */
-  async function scrollTo(groupTop: number, headerTop: number): Promise<void> {
-    group.getBoundingClientRect = () => new DOMRect(0, groupTop, 300, 200);
+  /** The panel shows what lies between its top at 0 and this. */
+  const PANEL_HEIGHT = 600;
+
+  /** Places the resting place and the name, and reports the mark crossing the edge. */
+  function moveTo(restTop: number, headerTop: number): void {
+    restMark.getBoundingClientRect = () => new DOMRect(0, restTop, 300, 1);
     header.getBoundingClientRect = () => new DOMRect(0, headerTop, 300, 20);
-    document.body.dispatchEvent(new Event("scroll"));
+    observer.crossed(restTop + 1 > 0 && restTop < PANEL_HEIGHT);
     if (!fixture.componentRef.hostView.destroyed) fixture.detectChanges();
   }
 
-  beforeEach(async () => {
+  beforeEach(() => {
+    IntersectionObserverStub.instances = [];
+    vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
     TestBed.configureTestingModule({
       imports: [WorkspaceGroupComponent],
       providers: [provideZonelessChangeDetection()],
@@ -42,56 +72,73 @@ describe("WorkspaceGroupComponent", () => {
     setInput(fixture.componentInstance.color, "blue");
     fixture.detectChanges();
     group = fixture.nativeElement as HTMLElement;
-    group.style.paddingTop = `${PADDING}px`;
     header = group.querySelector(".header") as HTMLElement;
+    restMark = group.querySelector(".rest-mark") as HTMLElement;
+    [observer] = IntersectionObserverStub.instances;
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     TestBed.resetTestingModule();
   });
 
-  it("has no surface while the name rests right below the group's padding", async () => {
-    await scrollTo(100, 100 + PADDING);
+  it("watches the mark of the name's resting place", () => {
+    expect(observer.observed).toEqual([restMark]);
+  });
+
+  it("has no surface while the name rests in its place", () => {
+    moveTo(116, 116);
 
     expect(header.classList.contains("stuck")).toBe(false);
   });
 
-  it("takes its surface once the group scrolls up and the name is held at the top", async () => {
-    await scrollTo(-50, 0);
+  it("takes its surface once the group moves up and the name is held at the top", () => {
+    moveTo(-34, 0);
 
     expect(header.classList.contains("stuck")).toBe(true);
   });
 
-  it("drops its surface again when the group scrolls back down", async () => {
-    await scrollTo(-50, 0);
-    await scrollTo(100, 100 + PADDING);
+  it("drops its surface again when the group comes back down", () => {
+    moveTo(-34, 0);
+    moveTo(116, 116);
 
     expect(header.classList.contains("stuck")).toBe(false);
   });
 
-  it("ignores scrolling elsewhere, such as a terminal", async () => {
-    const terminal = document.createElement("div");
-    document.body.appendChild(terminal);
-    group.getBoundingClientRect = () => new DOMRect(0, -50, 300, 200);
-    header.getBoundingClientRect = () => new DOMRect(0, 0, 300, 20);
-
-    terminal.dispatchEvent(new Event("scroll"));
-    fixture.detectChanges();
+  it("drops its surface as soon as the resting place is back in view", () => {
+    moveTo(-34, 0);
+    // Half a pixel of the mark is back: the name is still pushed by that much.
+    moveTo(-0.5, 0);
 
     expect(header.classList.contains("stuck")).toBe(false);
-    terminal.remove();
   });
 
-  it("stops listening once the group is gone", async () => {
+  it("has no surface while the group is out of view below, name and mark together", () => {
+    moveTo(900, 900);
+
+    expect(header.classList.contains("stuck")).toBe(false);
+  });
+
+  it("listens to no scrolling: a terminal scrolls a lot", () => {
+    const addEventListener = vi.spyOn(document, "addEventListener");
+    const other = TestBed.createComponent(WorkspaceGroupComponent);
+    other.detectChanges();
+
+    expect(addEventListener).not.toHaveBeenCalledWith(
+      "scroll",
+      expect.anything(),
+      expect.anything(),
+    );
+    addEventListener.mockRestore();
+  });
+
+  it("stops watching once the group is gone", () => {
     const component = fixture.componentInstance;
     fixture.destroy();
-    // Back in the document, so a listener left behind would still see the group scroll.
-    document.body.appendChild(group);
 
-    await scrollTo(-50, 0);
-
+    expect(observer.disconnected).toBe(true);
+    moveTo(-34, 0);
     expect(component.stuck()).toBe(false);
-    group.remove();
   });
 
   it("sets no colour for a group without one, so the surface falls back", () => {
