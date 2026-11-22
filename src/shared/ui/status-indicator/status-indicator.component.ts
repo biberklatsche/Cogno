@@ -194,23 +194,24 @@ function nextLayers(
       }
     }
 
-    /* Face, busy: one 5.6 s round. Reads three lines, glances up with a blink, reads on; the head
-       bobs all the while and the antenna swings from left to right, once per two nods. */
+    /* Face, busy: one 6.4 s round. Reads three lines, glances up with a blink, reads on; the head
+       bobs all the while and the antenna swings from its rest pose to the left and back, once per
+       two nods. Slow enough to read as a bob at 14px, and it starts where the other moods stand. */
     .face.busy .eyes {
-      animation: busy-eyes 5.6s ease-in-out infinite;
+      animation: busy-eyes 6.4s ease-in-out infinite;
     }
     .face.busy .eye {
-      animation: busy-blink 5.6s ease-in-out infinite;
+      animation: busy-blink 6.4s ease-in-out infinite;
     }
     .face.busy .tilt {
-      animation: busy-nod 0.56s ease-in-out infinite;
+      animation: busy-nod 0.8s ease-in-out infinite;
     }
     .face.busy .antenna {
-      animation: antenna-sway 1.12s ease-in-out infinite;
+      animation: antenna-sway 1.6s ease-in-out infinite;
     }
     @keyframes antenna-sway {
-      0%, 100% { transform: rotate(-58deg); }
-      50% { transform: rotate(4deg); }
+      0%, 100% { transform: rotate(0); }
+      50% { transform: rotate(-58deg); }
     }
     @keyframes busy-eyes {
       0% {
@@ -256,20 +257,10 @@ function nextLayers(
     }
     @keyframes busy-nod {
       0%,
-      70%,
-      98%,
       100% {
-        transform: translateY(0);
-      }
-      73.5%,
-      80.5%,
-      87.5%,
-      94.5% {
         transform: translateY(-5px);
       }
-      77%,
-      84%,
-      91% {
+      50% {
         transform: translateY(7px);
       }
     }
