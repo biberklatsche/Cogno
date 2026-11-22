@@ -61,7 +61,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
         @for (item of openItems(); track item.label) {
-            <ng-container *ngTemplateOutlet="panel; context: { $implicit: item, floating: item.label === floatingItem()?.label }"></ng-container>
+            <ng-container *ngTemplateOutlet="panel; context: { $implicit: item, floating: item.label === floatingLabel() }"></ng-container>
         }
         <menu #menuCol [class.hidden]="railItems().length === 0">
             @for (menuItem of visibleItems(); track menuItem.id ?? menuItem.label) {
@@ -74,12 +74,15 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
         </menu>
         <ng-template #panel let-item let-floating="floating">
             @let expanded = isExpanded(item.label);
+            @let inRow = !floating && !expanded;
+            @if (expanded && !floating) {
+                <div class="row-slot" [style.width.px]="panelWidthInPixels(item.label)"></div>
+            }
             <aside [attr.data-label]="item.label"
-                   [class.base-overlay]="floating || expanded"
-                   [class.pinned]="!floating && !expanded"
+                   [class.base-overlay]="!inRow"
+                   [class.in-row]="inRow"
                    [class.floating]="floating"
                    [class.without-keyboard]="!floating && focusedLabel() !== item.label"
-                   [class.flat]="expanded"
                    [class.expanded]="expanded"
                    [style.width.px]="expanded ? null : panelWidthInPixels(item.label)"
                    tabindex="-1"
@@ -90,7 +93,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                 <header>
                     <h3>{{ item.label }}</h3>
                     <div class="btn-list">
-                        <button class="button icon-button" (click)="toggleExpanded(item.label)"
+                        <button class="button icon-button" (click)="toggleExpanding(item.label)"
                                 [appTooltip]="expanded ? 'Restore panel width' : 'Expand panel over the terminals'">
                             <app-icon [name]="expanded ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
                         </button>
@@ -112,9 +115,8 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
         </ng-template>
         <ng-template #menuButton let-menuItem>
                 <button class="button icon-button" (click)="toggle(menuItem)"
-                        [class.selected]="floatingItem()?.label === menuItem.label"
-                        [class.pinned]="isPinned(menuItem.label)"
-                        [class.open]="isOpen(menuItem.label)"
+                        [class.selected]="floatingLabel() === menuItem.label"
+                        [class.standing]="isPinned(menuItem.label) && isOpen(menuItem.label)"
                         [class.keyboard]="focusedLabel() === menuItem.label"
                         [appTooltip]="isPinned(menuItem.label) ? menuItem.label + ' (pinned)' : menuItem.label"
                         [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
@@ -161,43 +163,35 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
             }
 
-            /* A pinned panel's entry has a bar on the side where the panel
-               stands: it belongs to the layout, and its entry only takes the
-               keyboard there. Faint while the panel is closed, full while it
-               is open, in the highlight colour while it has the keyboard. */
-            .button.icon-button.pinned::before {
+            /* The entry of the panel that has the keyboard is the bright one,
+               whichever kind of panel it is. */
+            .button.icon-button.keyboard {
+                color: var(--foreground-color);
+            }
+
+            /* An open pinned panel's entry has a bar on the side where the
+               panel stands: it belongs to the layout, and its entry only
+               takes the keyboard there. Quiet while the panel just stands
+               there, in the highlight colour while it has the keyboard. A
+               closed panel's entry is unmarked, pinned or not. */
+            .button.icon-button.standing::before {
                 content: "";
                 position: absolute;
                 left: -2px;
-                top: 5px;
-                bottom: 5px;
+                top: 3px;
+                bottom: 3px;
                 width: 2px;
                 border-radius: 2px;
-                background: var(--foreground-color);
-                opacity: 0.3;
-                transition:
-                    top 120ms ease-out,
-                    bottom 120ms ease-out,
-                    opacity 120ms ease-out,
-                    background-color 120ms ease-out;
+                background: color-mix(in srgb, var(--foreground-color) var(--opacity-subtle), transparent);
+                transition: background-color 120ms ease-out;
             }
 
-            .button.icon-button.pinned.open {
-                color: var(--foreground-color);
-
-                &::before {
-                    top: 2px;
-                    bottom: 2px;
-                    opacity: 1;
-                }
-            }
-
-            .button.icon-button.pinned.keyboard::before {
+            .button.icon-button.standing.keyboard::before {
                 background: var(--highlight-color);
             }
 
             @media (prefers-reduced-motion: reduce) {
-                .button.icon-button.pinned::before {
+                .button.icon-button.standing::before {
                     transition: none;
                 }
             }
@@ -221,9 +215,32 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
             }
         }
 
+        /* What stands in the row with the terminals: a pinned panel, and the
+           place an expanded pinned panel keeps while it spans everything, so
+           the terminals do not change their width - and are not resized -
+           each time it takes or gives back the keyboard.
+           When the row is too narrow for the terminals' floor, these get
+           narrower, each in proportion to its width, down to the minimum; the
+           width they are set to stays. */
+        aside.in-row,
+        .row-slot {
+            /* Shrinks long before the terminals do (grid-list.component). */
+            flex: 0 100000 auto;
+            /* The minimum - unless the row cannot even hold every panel at
+               its minimum: then they share what is there, so nothing is
+               pushed out of the window. The terminals have no width then;
+               it takes closing a panel to get them back. */
+            min-width: min(
+                var(--panel-min-width),
+                calc((100% - var(--rail-width)) / var(--panels-in-row) - 2 * var(--panel-padding) - var(--panel-divider))
+            );
+            padding: var(--panel-padding);
+            border-left: var(--panel-divider) solid transparent;
+        }
+
         aside {
-            /* Same vertical offsets in docked and overlay mode so toggling
-               between the two does not shift the panel. */
+            /* Same vertical offsets pinned and floating, so changing between
+               the two does not shift the panel. */
             margin-top: 2px;
             margin-bottom: 4px;
             position: relative;
@@ -251,24 +268,10 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                between panes towards the terminals. That it stays is visible
                at once. Pinned panels stand side by side. Its offsets are the
                aside's, so pinning does not move it. */
-            /* When the row is too narrow for the terminals' floor, the pinned
-               panels get narrower, each in proportion to its width, down to
-               the minimum; the width they are set to stays. */
-            &.pinned {
-                /* Shrinks long before the terminals do (grid-list.component). */
-                flex: 0 100000 auto;
-                /* Its minimum - unless the row cannot even hold every panel at
-                   its minimum: then they share what is there, so nothing is
-                   pushed out of the window. The terminals have no width then;
-                   it takes closing a panel to get them back. */
-                min-width: min(
-                    var(--panel-min-width),
-                    calc((100% - var(--rail-width)) / var(--panels-in-row) - 2 * var(--panel-padding) - var(--panel-divider))
-                );
-                padding: var(--panel-padding);
+            &.in-row {
                 color: var(--foreground-color);
                 background-color: transparent;
-                border-left: var(--panel-divider) solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                border-left-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
             }
 
             /* The floating panel lies at the right edge, over the terminals
@@ -280,21 +283,16 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                 right: var(--rail-width);
                 top: 0;
                 bottom: 0;
+                z-index: 3;
                 overflow: hidden;
             }
 
             /* An expanded panel covers everything - the terminals and the
-               other panels - so it is opaque. */
+               other panels - so it is opaque and casts no shadow. */
             &.expanded {
                 background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
+                box-shadow: none;
                 left: 4px;
-                z-index: 3;
-            }
-
-            /* After .expanded: a floating panel still lies over an expanded
-               pinned one, it is the one just opened. */
-            &.floating {
-                z-index: 4;
             }
 
             .resize-handle {
@@ -359,15 +357,13 @@ export class SideMenuComponent implements OnDestroy {
   readonly visibleItems = computed(() => this.railItems().filter((item) => !item.bottom));
   /** The workbench's own entries, below the features. */
   readonly bottomItems = computed(() => this.railItems().filter((item) => item.bottom));
-  readonly floatingItem = this.menuItemService.floatingItem;
+  readonly floatingLabel = this.menuItemService.floatingLabel;
   readonly focusedLabel = this.menuItemService.focusedLabel;
   readonly openItems = this.menuItemService.openItems;
-  /** The pinned panels standing in the row with the terminals: not the floating one, not an expanded one. */
+  /** The pinned panels, each standing in the row with the terminals or keeping its place there. */
   protected readonly panelsInRow = computed(() => {
-    const floating = this.floatingItem()?.label;
-    return this.openItems().filter(
-      (item) => item.label !== floating && !this.isExpanded(item.label),
-    ).length;
+    const floating = this.floatingLabel();
+    return this.openItems().filter((item) => item.label !== floating).length;
   });
   /** Flips only when the first panel opens or the last one closes, whatever else changes. */
   private readonly anyPanelOpen = computed(() => this.openItems().length > 0);
@@ -475,8 +471,8 @@ export class SideMenuComponent implements OnDestroy {
     this.menuItemService.togglePin(label);
   }
 
-  toggleExpanded(label: string) {
-    this.menuItemService.toggleExpanded(label);
+  toggleExpanding(label: string) {
+    this.menuItemService.toggleExpanding(label);
   }
 
   startResize(pointerEvent: PointerEvent, label: string): void {
@@ -492,9 +488,7 @@ export class SideMenuComponent implements OnDestroy {
       : this.panelWidthInPixels(label);
     // The floating panel lies over the terminals and takes no room from them.
     this.resizeRoomInPixels =
-      this.floatingItem()?.label === label
-        ? Number.POSITIVE_INFINITY
-        : this.roomBesideTerminals()();
+      this.floatingLabel() === label ? Number.POSITIVE_INFINITY : this.roomBesideTerminals()();
     window.addEventListener("pointermove", this.onWindowPointerMove, true);
     window.addEventListener("pointerup", this.onWindowPointerUp, true);
   }

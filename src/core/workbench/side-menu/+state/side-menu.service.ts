@@ -51,13 +51,13 @@ export class SideMenuService {
   /** Each panel's own width, by label; a panel without one has the default. */
   private readonly _panelWidths = signal<ReadonlyMap<string, number>>(new Map());
   private readonly _pinnedLabels = signal<ReadonlySet<string>>(new Set());
-  /** Panels set to span the whole area, the terminals and the other panels, while they have the keyboard. */
-  private readonly _expandedLabels = signal<ReadonlySet<string>>(new Set());
+  /** Expanding panels: set to span the whole area, the terminals and the other panels, while they have the keyboard. */
+  private readonly _expandingLabels = signal<ReadonlySet<string>>(new Set());
 
   readonly focusedLabel: Signal<string | undefined> = this._focusedLabel.asReadonly();
   readonly panelWidths: Signal<ReadonlyMap<string, number>> = this._panelWidths.asReadonly();
   readonly pinnedLabels: Signal<ReadonlySet<string>> = this._pinnedLabels.asReadonly();
-  readonly expandedLabels: Signal<ReadonlySet<string>> = this._expandedLabels.asReadonly();
+  readonly expandingLabels: Signal<ReadonlySet<string>> = this._expandingLabels.asReadonly();
   /**
    * A pinned panel has the keyboard. It is one of the panes then, and the
    * terminals show that they do not have it, as they do among themselves.
@@ -95,10 +95,7 @@ export class SideMenuService {
     return this.railItems().filter((item) => pinned.has(item.label) || item.label === floating);
   });
 
-  readonly floatingItem: Signal<SideMenuItem | undefined> = computed(() => {
-    const label = this._floatingLabel();
-    return label === undefined ? undefined : this._menuItems().find((s) => s.label === label);
-  });
+  readonly floatingLabel: Signal<string | undefined> = this._floatingLabel.asReadonly();
 
   constructor(
     private readonly bus: AppBus,
@@ -143,7 +140,7 @@ export class SideMenuService {
   }
 
   isExpanded(label: string): boolean {
-    return this._expandedLabels().has(label) && this._focusedLabel() === label;
+    return this._expandingLabels().has(label) && this._focusedLabel() === label;
   }
 
   panelWidthInPixels(label: string): number {
@@ -274,16 +271,16 @@ export class SideMenuService {
     this.float(label);
   }
 
-  /** Sets the panel to expand while it has the keyboard, or takes that back. */
-  toggleExpanded(label: string): void {
-    this._expandedLabels.update((labels) =>
+  /** Makes the panel an expanding one, expanded while it has the keyboard, or takes that back. */
+  toggleExpanding(label: string): void {
+    this._expandingLabels.update((labels) =>
       labels.has(label) ? withoutLabel(labels, label) : withLabel(labels, label),
     );
   }
 
-  /** The panels set to expand in the last run, added to those set since the start. */
-  restoreExpandedLabels(labels: ReadonlyArray<string>): void {
-    this._expandedLabels.update((expanded) => new Set([...expanded, ...labels]));
+  /** The expanding panels of the last run, added to those set since the start. */
+  restoreExpandingLabels(labels: ReadonlyArray<string>): void {
+    this._expandingLabels.update((expanded) => new Set([...expanded, ...labels]));
   }
 
   /**
@@ -334,9 +331,10 @@ export class SideMenuService {
   }
 
   /**
-   * The panel with the keyboard is there to be seen. The floating panel lies
-   * over the pinned ones, so for a pinned panel it closes. (An expanded panel
-   * is never in the way: it is only expanded while it has the keyboard itself.)
+   * Closes the floating panel for another panel. The panel with the keyboard
+   * is there to be seen, and the floating one lies over the pinned ones; and
+   * only one panel floats. (An expanded panel is never in the way: it is only
+   * expanded while it has the keyboard itself.)
    */
   private uncover(label: string): void {
     const floating = this._floatingLabel();
@@ -347,13 +345,11 @@ export class SideMenuService {
   private dock(label: string): void {
     this._floatingLabel.set(undefined);
     this._openPinnedLabels.update((labels) => withLabel(labels, label));
-    if (this._focusedLabel() === label) this.uncover(label);
   }
 
   /** Makes the panel the floating one, in place of the one floating so far. */
   private float(label: string): void {
-    const floating = this._floatingLabel();
-    if (floating !== undefined) this.hide(floating);
+    this.uncover(label);
     this._floatingLabel.set(label);
   }
 

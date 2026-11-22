@@ -1,7 +1,6 @@
 @if (node) {
     @if(node.isLeaf) {
-        <app-pane [class.focus]="node.data!.isFocused"
-                  [class.without-keyboard]="!node.data!.isFocused || keyboardInPinnedPanel()"
+        <app-pane [class.without-keyboard]="!node.data!.isFocused || keyboardInPinnedPanel()"
                   [pane]="node.data!">
         </app-pane>
     } @else {

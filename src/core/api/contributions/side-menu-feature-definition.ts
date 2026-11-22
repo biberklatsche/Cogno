@@ -10,7 +10,7 @@ export type SideMenuFeatureLifecycleFactory = (
 
 /**
  * One entry in the side menu: what the app shows (title, icon, order, the
- * action that opens and closes it) and what the feature provides (the panel component,
+ * action that brings its panel up) and what the feature provides (the panel component,
  * loaded lazily, and its lifecycle).
  */
 export interface SideMenuFeatureDefinitionContract<TActionName = string> {

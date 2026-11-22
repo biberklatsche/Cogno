@@ -113,10 +113,6 @@ button, a {
     color: var(--foreground-color);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
     padding: 6px;
-
-    &.flat {
-        box-shadow: none;
-    }
 }
 
 .keybinding {
