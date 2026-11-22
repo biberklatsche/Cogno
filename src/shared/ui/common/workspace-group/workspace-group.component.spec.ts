@@ -85,10 +85,20 @@ describe("WorkspaceGroupComponent", () => {
   it("stops listening once the group is gone", async () => {
     const component = fixture.componentInstance;
     fixture.destroy();
+    // Back in the document, so a listener left behind would still see the group scroll.
+    document.body.appendChild(group);
 
     await scrollTo(-50, 0);
 
     expect(component.stuck()).toBe(false);
+    group.remove();
+  });
+
+  it("sets no colour for a group without one, so the surface falls back", () => {
+    setInput(fixture.componentInstance.color, "");
+    fixture.detectChanges();
+
+    expect(header.style.getPropertyValue("--workspace-color")).toBe("");
   });
 
   it("carries the workspace colour for its surface", () => {

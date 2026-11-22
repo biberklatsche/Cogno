@@ -24,7 +24,7 @@ import {
       <header
         class="header"
         [class.stuck]="stuck()"
-        [style.--workspace-color]="'var(--color-' + color() + ')'"
+        [style.--workspace-color]="color() ? 'var(--color-' + color() + ')' : null"
       >
         <span class="dot"></span>
         <span class="name">{{ name() }}</span>
@@ -69,12 +69,19 @@ import {
       background-color: transparent;
       transition:
         background-color 120ms ease-out,
-        backdrop-filter 120ms ease-out;
+        backdrop-filter 120ms ease-out,
+        -webkit-backdrop-filter 120ms ease-out;
     }
 
+    /* A group without a colour still gets a surface, in the text colour. */
     .header.stuck {
-      background-color: color-mix(in srgb, var(--workspace-color) var(--menu-opacity-ct2), transparent);
+      background-color: color-mix(
+        in srgb,
+        var(--workspace-color, var(--foreground-color)) var(--menu-opacity-ct2),
+        transparent
+      );
       backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
     }
 
     @media (prefers-reduced-motion: reduce) {
