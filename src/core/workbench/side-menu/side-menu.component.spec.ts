@@ -25,6 +25,30 @@ describe("focusPanel", () => {
     expect(document.activeElement).toBe(panel);
   });
 
+  it("takes the keyboard to the panel's search field and selects its text", () => {
+    const { panel, field, terminal } = panelWithField();
+    field.dataset["sideMenuAutofocus"] = "true";
+    field.value = "git";
+    terminal.focus();
+
+    focusPanel(panel);
+
+    expect(document.activeElement).toBe(field);
+    expect(field.selectionStart).toBe(0);
+    expect(field.selectionEnd).toBe(3);
+  });
+
+  it("stays in its own panel: the search field of another panel is left alone", () => {
+    const first = panelWithField();
+    first.field.dataset["sideMenuAutofocus"] = "true";
+    const second = panelWithField();
+    second.field.dataset["sideMenuAutofocus"] = "true";
+
+    focusPanel(second.panel);
+
+    expect(document.activeElement).toBe(second.field);
+  });
+
   it("leaves it in a field of the panel that a click just focused", () => {
     const { panel, field } = panelWithField();
     field.focus();

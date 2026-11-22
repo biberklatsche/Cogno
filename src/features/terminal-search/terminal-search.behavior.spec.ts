@@ -11,10 +11,6 @@ import { getDestroyRef } from "../../__test__/destroy-ref";
 import { TerminalSearchService } from "./terminal-search.service";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
 
-vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", () => ({
-  focusSideMenuAutofocusElement: vi.fn(),
-}));
-
 const lineOne = line(3, "needle one");
 const lineTwo = line(8, "needle two");
 const lineThree = line(12, "needle three");

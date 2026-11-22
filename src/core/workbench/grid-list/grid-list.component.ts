@@ -26,7 +26,7 @@ export class GridListComponent {
     const terminals = this.terminals?.nativeElement;
     const floor = this.terminalFloor?.nativeElement;
     if (!terminals || !floor) return 0;
-    return Math.max(0, terminals.clientWidth - floor.offsetWidth);
+    return terminals.clientWidth - floor.offsetWidth;
   };
 
   constructor(gridListService: GridListService) {

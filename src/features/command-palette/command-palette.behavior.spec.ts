@@ -6,10 +6,6 @@ import { getDestroyRef } from "../../__test__/destroy-ref";
 import { CommandPaletteService } from "./command-palette.service";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";
 
-vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", () => ({
-  focusSideMenuAutofocusElement: vi.fn(),
-}));
-
 /**
  * Pins what the palette does as the panel and its side-menu lifecycle use it:
  * keys go in through the registered key listener, the list and the selection

@@ -20,7 +20,7 @@ export class SideMenuStatePersistenceService {
     });
 
     combineLatest([
-      toObservable(this.sideMenuService.openPinnedLabels),
+      toObservable(this.sideMenuService.labelsToBringBack),
       toObservable(this.sideMenuService.pinnedLabels),
       toObservable(this.sideMenuService.panelWidths),
     ])
@@ -38,7 +38,7 @@ export class SideMenuStatePersistenceService {
   private panels(): SideMenuPanelEntity[] {
     const pinned = this.sideMenuService.pinnedLabels();
     const widths = this.sideMenuService.panelWidths();
-    const open = this.sideMenuService.openPinnedLabels();
+    const open = this.sideMenuService.labelsToBringBack();
     const labels = new Set([...pinned, ...widths.keys()]);
     return [...labels].map((label) => ({
       label,
@@ -56,9 +56,6 @@ export class SideMenuStatePersistenceService {
     );
     this.dbInitialized = true;
 
-    // The pinned panels come back beside the terminals, which keep the keyboard.
-    for (const panel of panels) {
-      if (panel.is_open && panel.is_pinned) this.sideMenuService.open(panel.label, false);
-    }
+    this.sideMenuService.reopen(panels.filter((p) => p.is_open).map((p) => p.label));
   }
 }

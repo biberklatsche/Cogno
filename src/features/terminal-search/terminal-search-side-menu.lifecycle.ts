@@ -3,7 +3,6 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core/api/contributions";
-import { focusSideMenuAutofocusElement } from "@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element";
 import { TerminalSearchService } from "./terminal-search.service";
 
 @Injectable({ providedIn: "root" })
@@ -17,10 +16,7 @@ export class TerminalSearchSideMenuLifecycle {
           this.terminalSearchService.handleSideMenuClose();
         }
       },
-      onOpen: () => {
-        this.terminalSearchService.handleSideMenuOpen();
-        focusSideMenuAutofocusElement();
-      },
+      onOpen: () => this.terminalSearchService.handleSideMenuOpen(),
       onClose: () => this.terminalSearchService.handleSideMenuClose(),
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
@@ -35,7 +31,6 @@ export class TerminalSearchSideMenuLifecycle {
             this.terminalSearchService.move(keyboardEvent.key === "ArrowDown" ? 1 : -1);
           },
         );
-        focusSideMenuAutofocusElement();
       },
     };
   }

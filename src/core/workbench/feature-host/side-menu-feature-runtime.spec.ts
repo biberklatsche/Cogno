@@ -1,4 +1,4 @@
-import type { DestroyRef, Injector } from "@angular/core";
+import type { Injector } from "@angular/core";
 import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
@@ -7,6 +7,7 @@ import type { SideMenuService } from "@cogno/core/workbench/side-menu/+state/sid
 import type { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { SideMenuFeatureRuntime } from "./side-menu-feature-runtime";
 
 class DummyComponent {}
@@ -60,7 +61,7 @@ describe("SideMenuFeatureRuntime", () => {
 
   beforeEach(() => {
     appBus = new AppBus();
-    actionHandlers = new ActionHandlers(appBus, { onDestroy: vi.fn() } as unknown as DestroyRef);
+    actionHandlers = new ActionHandlers(appBus, getDestroyRef());
     configSubject = new BehaviorSubject<Record<string, unknown>>({
       feature: { workspace: { mode: "on" } },
     });
@@ -166,6 +167,30 @@ describe("SideMenuFeatureRuntime", () => {
     appBus.publish({ type: "SideMenuViewBlurred", payload: { label: "Workspace" } });
     expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
     expect(calls).toEqual(["onFocus", "onBlur", "unregister"]);
+  });
+
+  it("starts nothing of the entry when its action has a handler already", () => {
+    actionHandlers.handleWhileActive("open_workspace", () => undefined);
+    const lifecycle = { onModeChange: vi.fn() };
+    const runtime = createRuntime(lifecycle);
+
+    expect(() => runtime.activate()).toThrow("Action already has a handler: open_workspace");
+
+    expect(lifecycle.onModeChange).not.toHaveBeenCalled();
+    expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
+  });
+
+  it("leaves the action without a handler when the feature does not come up", () => {
+    const runtime = createRuntime({
+      onModeChange: () => {
+        throw new Error("no start");
+      },
+    });
+
+    expect(() => runtime.activate()).toThrow("no start");
+
+    expect(() => actionHandlers.handleWhileActive("open_workspace", () => undefined)).not.toThrow();
+    expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
   });
 
   it("drops the feature's keys on dispose", () => {

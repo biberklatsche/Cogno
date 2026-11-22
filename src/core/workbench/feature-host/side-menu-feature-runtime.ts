@@ -65,13 +65,22 @@ export class SideMenuFeatureRuntime implements SideMenuFeatureHandleContract {
 
   /** Show the entry, honour the keybinding, tell the lifecycle the feature is on. */
   activate(): void {
-    this.lifecycle.onModeChange?.("on");
-    this.menuItem = { ...this.menuItem, order: this.resolveOrder() };
-    this.sideMenuService.addMenuItem(this.menuItem);
-    // The panel's action opens it the way every panel's action does.
+    // The panel's action opens it the way every panel's action does. First,
+    // because it fails for an action that has a handler already, and then
+    // nothing of the entry may have started.
     this.stopHandlingAction ??= this.actions.handleWhileActive(this.config.actionName, () =>
       this.sideMenuService.toggle(this.config.title),
     );
+    try {
+      this.lifecycle.onModeChange?.("on");
+    } catch (error) {
+      // The feature did not come up: its action has no handler either.
+      this.stopHandlingAction();
+      this.stopHandlingAction = undefined;
+      throw error;
+    }
+    this.menuItem = { ...this.menuItem, order: this.resolveOrder() };
+    this.sideMenuService.addMenuItem(this.menuItem);
   }
 
   /** Tear the entry down completely: open panel, lifecycle off, keybindings, item, subscriptions. */

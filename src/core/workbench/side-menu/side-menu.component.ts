@@ -11,17 +11,30 @@ import {
   ViewChild,
 } from "@angular/core";
 import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
-import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
+import { IconComponent, SIDE_MENU_SEARCH_INPUT_SELECTOR, TooltipDirective } from "@cogno/shared/ui";
 import { SideMenuItem, SideMenuService } from "./+state/side-menu.service";
 
 /**
- * Takes the keyboard to the panel, unless it is already inside: a click on a
- * field of a panel that did not have the keyboard focuses that field first,
- * and taking it to the panel afterwards would leave the field without it.
+ * Takes the keyboard to the panel: to its search field when it has one, with
+ * the text selected so typing replaces it, and to the panel itself otherwise.
+ * Not when the keyboard is already inside: a click on a field of a panel that
+ * did not have the keyboard focuses that field first, and taking it elsewhere
+ * afterwards would leave the field without it.
  */
 export function focusPanel(panel: HTMLElement | undefined): void {
   if (!panel || panel.contains(document.activeElement)) return;
-  panel.focus();
+  const searchField = panel.querySelector<HTMLInputElement>(SIDE_MENU_SEARCH_INPUT_SELECTOR);
+  if (!searchField) {
+    panel.focus();
+    return;
+  }
+  searchField.focus();
+  searchField.select();
+}
+
+/** The width set on a panel, without its padding and border: what `style.width` means. */
+function contentWidth(panel: HTMLElement): number {
+  return Number.parseFloat(getComputedStyle(panel).width);
 }
 
 /**
@@ -65,7 +78,6 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                    [class.pinned]="!floating && !expanded"
                    [class.floating]="floating"
                    [class.flat]="expanded"
-                   [class.shift-left]="railItems().length > 0"
                    [class.expanded]="expanded"
                    [style.width.px]="expanded ? null : panelWidthInPixels(item.label)"
                    tabindex="-1"
@@ -97,7 +109,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
             </aside>
         </ng-template>
         <ng-template #menuButton let-menuItem>
-                <button class="button icon-button" (click)="open(menuItem)"
+                <button class="button icon-button" (click)="toggle(menuItem)"
                         [class.selected]="isOpen(menuItem.label)" [appTooltip]="menuItem.label" [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
                     @if (menuItem.badgeColor) {
@@ -107,10 +119,12 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
         </ng-template>`,
   styles: [
     `
-        /* The host has no box (display: contents, set where it is placed):
-           the panels and the rail are items of the row they share with the
-           terminals, and the floating and the expanded panel are laid out
-           against that row. */
+        /* The host has no box: the panels and the rail are items of the row
+           they share with the terminals (grid-list.component), and the
+           floating and the expanded panel are laid out against that row. */
+        :host {
+            display: contents;
+        }
 
         h3 {
             font-weight: normal;
@@ -201,14 +215,11 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
             &.floating,
             &.expanded {
                 position: absolute;
-                right: 4px;
+                /* Beside the rail: a panel is only open while its entry is there. */
+                right: 32px;
                 top: 0;
                 bottom: 0;
                 overflow: hidden;
-
-                &.shift-left {
-                    right: 32px;
-                }
             }
 
             /* An expanded panel covers everything - the terminals and the
@@ -298,6 +309,9 @@ export class SideMenuComponent implements OnDestroy {
     const floating = this.floatingItem();
     return floating ? [...this.dockedItems(), floating] : this.dockedItems();
   });
+  /** Flips only when the first panel opens or the last one closes, whatever else changes. */
+  private readonly anyPanelOpen = computed(() => this.openItems().length > 0);
+
   @ViewChild("menuCol", { static: false }) menuColRef?: ElementRef<HTMLElement>;
 
   private clickOutsideEffect: EffectRef;
@@ -314,7 +328,7 @@ export class SideMenuComponent implements OnDestroy {
     // While a panel is open, every pointer press is told to the service: on
     // which panel it went down, or that it went down beside them all.
     this.clickOutsideEffect = effect(() => {
-      if (this.openItems().length > 0) {
+      if (this.anyPanelOpen()) {
         this.lastOpenTimestamp = performance.now();
         document.addEventListener("pointerdown", this.onPointerDown, true);
       } else {
@@ -356,13 +370,9 @@ export class SideMenuComponent implements OnDestroy {
     this.menuItemService.pointerDown(clickedLabel);
   };
 
-  /** A click on an open panel's icon closes it, as the X does. */
-  open(menuItem: SideMenuItem) {
-    if (this.isOpen(menuItem.label)) {
-      this.close(menuItem.label);
-      return;
-    }
-    this.menuItemService.open(menuItem.label);
+  /** A click on a panel's icon does what its shortcut does. */
+  toggle(menuItem: SideMenuItem) {
+    this.menuItemService.toggle(menuItem.label);
   }
 
   isOpen(label: string): boolean {
@@ -400,9 +410,15 @@ export class SideMenuComponent implements OnDestroy {
     this.resizeStartPointerClientX = pointerEvent.clientX;
     // From the width it shows, which is less than the width it is set to while
     // the row is too narrow.
-    this.resizeStartPanelWidthInPixels =
-      this.panelElement(label)?.getBoundingClientRect().width ?? this.panelWidthInPixels(label);
-    this.resizeRoomInPixels = this.roomBesideTerminals()();
+    const panel = (pointerEvent.currentTarget as HTMLElement).parentElement;
+    this.resizeStartPanelWidthInPixels = panel
+      ? contentWidth(panel)
+      : this.panelWidthInPixels(label);
+    // The floating panel lies over the terminals and takes no room from them.
+    this.resizeRoomInPixels =
+      this.floatingItem()?.label === label
+        ? Number.POSITIVE_INFINITY
+        : this.roomBesideTerminals()();
     window.addEventListener("pointermove", this.onWindowPointerMove, true);
     window.addEventListener("pointerup", this.onWindowPointerUp, true);
   }
