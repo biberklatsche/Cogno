@@ -83,6 +83,19 @@ describe("CommandLineObserver", () => {
     expect(stateManager.isCommandRunning).toBe(true);
   });
 
+  it("drops the cursor the editor expects when the terminal sends input itself", () => {
+    observer.registerTerminal(mockTerminal);
+    // Keys, pastes and composed text all reach the shell through onData.
+    const onDataCallback = vi.mocked(mockTerminal.onData).mock.calls[0][0];
+    stateManager.endCommand();
+    stateManager.updateInput({ text: "hello", cursorIndex: 2, maxCursorIndex: 5 });
+    stateManager.expectCursorAt(4);
+
+    onDataCallback("pasted text");
+
+    expect(stateManager.editingCursorIndex).toBe(2);
+  });
+
   describe("ghost-text bound shrinking on deletion", () => {
     function fireKey(key: string): void {
       const onKeyCallback = vi.mocked(mockTerminal.onKey).mock.calls[0][0];
@@ -110,6 +123,16 @@ describe("CommandLineObserver", () => {
       fireKey("Backspace");
 
       expect(stateManager.input.maxCursorIndex).toBe(2);
+    });
+
+    it("ignores Backspace when the editor just moved the cursor to the start", () => {
+      // The shell still reports 3; the move to the start is under way.
+      stateManager.updateInput({ text: "git", cursorIndex: 3, maxCursorIndex: 3 });
+      stateManager.expectCursorAt(0);
+
+      fireKey("Backspace");
+
+      expect(stateManager.input.maxCursorIndex).toBe(3);
     });
 
     it("ignores Backspace at the start of the input", () => {

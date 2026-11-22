@@ -39,6 +39,7 @@ export class InputHandler implements ITerminalHandler {
 
   /** Writes text as if typed. */
   writeRaw(text: string): void {
+    this.model.discardExpectedCursor();
     this.pty.write(text);
     this.onUserInput?.();
   }

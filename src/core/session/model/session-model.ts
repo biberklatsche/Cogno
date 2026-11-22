@@ -9,6 +9,7 @@ import type { SessionFact } from "../session-facts";
 import { createPathAdapter } from "../shells/shell-definitions";
 import { Command, CommandData } from "./command.model";
 import { ExecutedCommand, TerminalCommandHistoryStore } from "./command-history.store";
+import { ExpectedCursor } from "./expected-cursor";
 import { contextFromHandshake, deriveShellContext } from "./shell-context";
 
 export type TerminalInput = {
@@ -87,6 +88,7 @@ export class SessionModel {
   private _sessionToken?: string;
   private _untrustedSequenceCount = 0;
   private _isRestoring = false;
+  private readonly _expectedCursor = new ExpectedCursor();
 
   constructor(
     backendOs: OsType,
@@ -306,6 +308,7 @@ export class SessionModel {
     this._historyStore.startCommand(overrideInputText ?? currentInput.text);
 
     const commandText = overrideInputText ?? currentInput.text;
+    this._expectedCursor.discard();
     this.update({
       isCommandRunning: true,
       commandStartTime: Date.now(),
@@ -342,7 +345,28 @@ export class SessionModel {
   }
 
   updateInput(input: TerminalInput): void {
+    const previousText = this._state.value.input.text;
+    if (input.text !== previousText) this._expectedCursor.textChanged(previousText, input.text);
     this.update({ input });
+  }
+
+  /**
+   * The cursor position to compute an edit from: where the cursor moves the
+   * editor already sent will end, as long as that holds; the reported
+   * `input.cursorIndex` otherwise. What is on screen is always the latter.
+   */
+  get editingCursorIndex(): number {
+    return this._expectedCursor.resolve(this._state.value.input.cursorIndex);
+  }
+
+  /** The editor sent cursor moves that end at `index`. */
+  expectCursorAt(index: number): void {
+    this._expectedCursor.expect(index, this._state.value.input.cursorIndex);
+  }
+
+  /** The line is changed by something other than a cursor move of the editor. */
+  discardExpectedCursor(): void {
+    this._expectedCursor.discard();
   }
 
   get sessionCapabilities(): ShellSessionCapabilitiesContract | undefined {

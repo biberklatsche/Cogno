@@ -9,6 +9,7 @@ import type { IPty } from "@cogno/core/terminal/pty";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import type { Terminal } from "@xterm/xterm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withExpectedCursor } from "../../../__test__/mocks/expected-cursor.mock";
 import { TerminalMockFactory } from "../../../__test__/mocks/terminal-mock.factory";
 import { PromptMarkerRegistry } from "../decoration/prompt-marker.registry";
 import { TerminalInputWriter } from "../editor/input-writer";
@@ -84,12 +85,12 @@ describe("ClipboardHandler", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockStateManager = {
+    mockStateManager = withExpectedCursor({
       isCommandRunning: false,
       input: { text: "hello world", cursorIndex: 5, maxCursorIndex: 11 },
       sessionCapabilities: undefined,
       report: vi.fn(),
-    };
+    });
     mockPty = { write: vi.fn(), executeLineEditorAction: vi.fn() };
     mockConfigService = makeConfigService();
     mockSelectionHandler = makeMockSelectionHandler();
@@ -141,6 +142,22 @@ describe("ClipboardHandler", () => {
         }),
       );
       expect(pasteSpy).not.toHaveBeenCalled();
+    });
+
+    it("pastes multiline text where a move just sent will put the cursor", async () => {
+      vi.mocked(clipboardStub.readText).mockResolvedValue("one\ntwo");
+      // Cursor reported at 5; the editor moved it to 0 and the shell has not echoed yet.
+      (mockStateManager as unknown as SessionModel).expectCursorAt(0);
+
+      void handler.paste();
+
+      await vi.waitFor(() =>
+        expect(mockStateManager.report).toHaveBeenCalledWith({
+          type: "composerRequested",
+          seedText: "one\ntwohello world",
+          cursorIndex: "one\ntwo".length,
+        }),
+      );
     });
 
     it("pastes multiline text directly while a command is running", async () => {

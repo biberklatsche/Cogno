@@ -132,4 +132,59 @@ describe("SessionModel", () => {
     expect(facts).toContainEqual({ type: "commandCompleted", command: executed });
     expect(model.commands).toHaveLength(2);
   });
+  describe("expected cursor", () => {
+    function modelAt(cursorIndex: number): SessionModel {
+      const model = new SessionModel("linux", new TerminalCommandHistoryStore(), recorderStub());
+      model.updateInput({ text: "hello world", cursorIndex, maxCursorIndex: 11 });
+      return model;
+    }
+
+    it("edits from the reported cursor until the editor expects another", () => {
+      const model = modelAt(3);
+      expect(model.editingCursorIndex).toBe(3);
+
+      model.expectCursorAt(6);
+
+      expect(model.editingCursorIndex).toBe(6);
+      expect(model.input.cursorIndex).toBe(3);
+    });
+
+    it("keeps the expectation while the shell reports the cursor on its way", () => {
+      const model = modelAt(3);
+      model.expectCursorAt(6);
+
+      model.updateInput({ ...model.input, cursorIndex: 4 });
+      model.updateInput({ ...model.input, cursorIndex: 6 });
+      model.updateInput({ ...model.input, cursorIndex: 7 });
+
+      expect(model.editingCursorIndex).toBe(6);
+    });
+
+    it("moves the expectation along when the echo of earlier typing arrives", () => {
+      const model = modelAt(11);
+      model.expectCursorAt(8);
+
+      model.updateInput({ ...model.input, text: "hello worldx", cursorIndex: 12 });
+
+      expect(model.editingCursorIndex).toBe(9);
+    });
+
+    it("drops the expectation when the text changes otherwise", () => {
+      const model = modelAt(3);
+      model.expectCursorAt(6);
+
+      model.updateInput({ ...model.input, text: "hello world --all", cursorIndex: 17 });
+
+      expect(model.editingCursorIndex).toBe(17);
+    });
+
+    it("drops the expectation when a command starts", () => {
+      const model = modelAt(3);
+      model.expectCursorAt(6);
+
+      model.startCommand();
+
+      expect(model.editingCursorIndex).toBe(0);
+    });
+  });
 });

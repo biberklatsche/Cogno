@@ -56,7 +56,7 @@ export class CommandLineEditor implements ITerminalHandler {
           // At the prompt, multiline input is edited in the composer overlay
           // instead of fighting the shell's single-line editing model.
           const input = this.model.input;
-          const cursor = Math.max(0, Math.min(input.cursorIndex, input.text.length));
+          const cursor = Math.max(0, Math.min(this.model.editingCursorIndex, input.text.length));
           // An empty prompt has no line to split — inserting "\n" there would
           // seed the composer with two blank lines instead of one. Just place
           // the cursor at the end of what's already there.
@@ -184,32 +184,37 @@ export class CommandLineEditor implements ITerminalHandler {
     if (!this._terminal) return;
     const input = this.model.input;
     const text = input.text;
-    const countToEnd = text.length - input.cursorIndex;
+    const countToEnd = text.length - this.model.editingCursorIndex;
     this.inputWriter.deleteChars(countToEnd, text.length);
     this.shrinkMaxCursorIndexTo(0);
   }
 
   clearLineToEnd() {
     const input = this.model.input;
-    const countToEnd = input.text.length - input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
+    const countToEnd = input.text.length - currentPos;
     if (countToEnd > 0) {
       this.inputWriter.deleteChars(countToEnd, countToEnd);
-      this.shrinkMaxCursorIndexTo(input.cursorIndex);
+      // The bound must not drop below the real input: take the reported
+      // position too, in case the shell has not followed the editor yet.
+      this.shrinkMaxCursorIndexTo(Math.max(input.cursorIndex, currentPos));
     }
   }
 
   clearLineToStart() {
     const input = this.model.input;
-    const countToStart = input.cursorIndex;
+    const countToStart = this.model.editingCursorIndex;
     if (countToStart > 0) {
       this.inputWriter.deleteChars(0, countToStart);
-      this.shrinkMaxCursorIndexTo(input.maxCursorIndex - countToStart);
+      // Shrink only by what is deleted for certain, should the shell not have
+      // followed the editor's cursor moves.
+      this.shrinkMaxCursorIndexTo(input.maxCursorIndex - Math.min(countToStart, input.cursorIndex));
     }
   }
 
   deletePreviousWord() {
     const input = this.model.input;
-    const currentPos = input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
     if (currentPos === 0) return;
 
     const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
@@ -217,13 +222,16 @@ export class CommandLineEditor implements ITerminalHandler {
 
     if (countToDelete > 0) {
       this.inputWriter.deleteChars(0, countToDelete);
-      this.shrinkMaxCursorIndexTo(input.maxCursorIndex - countToDelete);
+      // As in clearLineToStart: shrink only by what is deleted for certain.
+      this.shrinkMaxCursorIndexTo(
+        input.maxCursorIndex - Math.min(countToDelete, input.cursorIndex),
+      );
     }
   }
 
   deleteNextWord() {
     const input = this.model.input;
-    const currentPos = input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
     const text = input.text;
     if (currentPos >= text.length) return;
 
@@ -235,7 +243,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   goToNextWord() {
     const input = this.model.input;
-    const currentPos = input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
     const text = input.text;
     if (currentPos >= text.length) return;
 
@@ -247,7 +255,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   goToPreviousWord() {
     const input = this.model.input;
-    const currentPos = input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
     if (currentPos === 0) return;
 
     const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
@@ -257,15 +265,15 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   goToStartOfLine() {
-    const input = this.model.input;
-    if (input.cursorIndex === 0) return;
+    const currentPos = this.model.editingCursorIndex;
+    if (currentPos === 0) return;
 
-    this.inputWriter.moveCursor(-input.cursorIndex);
+    this.inputWriter.moveCursor(-currentPos);
   }
 
   goToEndOfLine() {
     const input = this.model.input;
-    const countToMove = input.text.length - input.cursorIndex;
+    const countToMove = input.text.length - this.model.editingCursorIndex;
     if (countToMove <= 0) return;
 
     this.inputWriter.moveCursor(countToMove);
@@ -281,7 +289,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   selectWordRight() {
     const input = this.model.input;
-    const currentPos = input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
     const nextWordEnd = this.findNextWordEnd(input.text, currentPos);
     const countToMove = nextWordEnd - currentPos;
     if (countToMove > 0) {
@@ -291,7 +299,7 @@ export class CommandLineEditor implements ITerminalHandler {
 
   selectWordLeft() {
     const input = this.model.input;
-    const currentPos = input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
     const prevWordStart = this.findPreviousWordStart(input.text, currentPos);
     const countToMove = currentPos - prevWordStart;
     if (countToMove > 0) {
@@ -301,15 +309,14 @@ export class CommandLineEditor implements ITerminalHandler {
 
   selectTextToEndOfLine() {
     const input = this.model.input;
-    const countToMove = input.text.length - input.cursorIndex;
+    const countToMove = input.text.length - this.model.editingCursorIndex;
     if (countToMove > 0) {
       this._selectAndMove(countToMove);
     }
   }
 
   selectTextToStartOfLine() {
-    const input = this.model.input;
-    const countToMove = input.cursorIndex;
+    const countToMove = this.model.editingCursorIndex;
     if (countToMove > 0) {
       this._selectAndMove(-countToMove);
     }
@@ -319,7 +326,7 @@ export class CommandLineEditor implements ITerminalHandler {
     this._clearSelection();
     this._selectionStart = 0;
     const input = this.model.input;
-    const currentCursorIdx = input.cursorIndex;
+    const currentCursorIdx = this.model.editingCursorIndex;
     const textLength = input.text.length;
 
     const offsetToEnd = textLength - currentCursorIdx;
@@ -342,8 +349,9 @@ export class CommandLineEditor implements ITerminalHandler {
     if (!this._terminal) return true;
 
     const input = this.model.input;
+    const cursorIndex = this.model.editingCursorIndex;
     const cols = this.commandLineBuffer.cols;
-    const row = Math.floor(input.cursorIndex / cols);
+    const row = Math.floor(cursorIndex / cols);
     const lastRow = Math.floor(input.maxCursorIndex / cols);
     const direction = event.key === "ArrowUp" ? -1 : 1;
 
@@ -360,20 +368,12 @@ export class CommandLineEditor implements ITerminalHandler {
 
     const newIndex =
       direction === -1
-        ? Math.max(0, input.cursorIndex - cols)
-        : Math.min(input.maxCursorIndex, input.cursorIndex + cols);
-    const offset = newIndex - input.cursorIndex;
+        ? Math.max(0, cursorIndex - cols)
+        : Math.min(input.maxCursorIndex, cursorIndex + cols);
+    const offset = newIndex - cursorIndex;
     if (offset !== 0) {
       this._clearSelection();
       this.inputWriter.moveCursor(offset);
-      // Optimistically reflect the move locally: the authoritative onCursorMove
-      // event lags behind the pty round-trip, so without this a fast key-repeat
-      // would read a stale cursorIndex and miscompute the next row boundary.
-      this.model.updateInput({
-        ...input,
-        cursorIndex: newIndex,
-        maxCursorIndex: Math.max(input.maxCursorIndex, newIndex),
-      });
     }
 
     event.preventDefault();
@@ -435,8 +435,7 @@ export class CommandLineEditor implements ITerminalHandler {
       return true;
     }
 
-    const input = this.model.input;
-    const currentCursorIdx = input.cursorIndex;
+    const currentCursorIdx = this.model.editingCursorIndex;
     const cursorOffsetToEnd = range.endIndex - currentCursorIdx;
 
     this.inputWriter.deleteChars(cursorOffsetToEnd, deleteLength);
@@ -486,7 +485,7 @@ export class CommandLineEditor implements ITerminalHandler {
     if (!this._terminal) return;
 
     const input = this.model.input;
-    const currentPos = input.cursorIndex;
+    const currentPos = this.model.editingCursorIndex;
 
     if (this._selectionStart === null) {
       const range = this.commandLineBuffer.selectedInputRange(input.maxCursorIndex);

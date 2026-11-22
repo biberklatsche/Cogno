@@ -1,5 +1,6 @@
 import type { IPty } from "@cogno/core/terminal/pty";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withExpectedCursor } from "../../../__test__/mocks/expected-cursor.mock";
 import type { SessionModel } from "../model/session-model";
 import { TerminalInputWriter } from "./input-writer";
 
@@ -16,13 +17,13 @@ describe("TerminalInputWriter", () => {
       executeLineEditorAction: vi.fn(),
     } as unknown as IPty;
     inputState = { text: "hello", cursorIndex: 5, maxCursorIndex: 5 };
-    stateManager = {
+    stateManager = withExpectedCursor({
       get input() {
         return inputState;
       },
       sessionCapabilities: undefined,
       startCommand: vi.fn(),
-    } as unknown as SessionModel;
+    }) as unknown as SessionModel;
     onUserInput = vi.fn<() => void>();
     inputWriter = new TerminalInputWriter(mockPty, stateManager, undefined, onUserInput);
   });
@@ -76,6 +77,68 @@ describe("TerminalInputWriter", () => {
 
     expect(mockPty.write).toHaveBeenCalledWith("ls");
     expect(onUserInput).toHaveBeenCalled();
+  });
+
+  describe("expected cursor", () => {
+    beforeEach(() => {
+      inputState = { text: "hello", cursorIndex: 2, maxCursorIndex: 5 };
+    });
+
+    it("expects the cursor where the moves it sent will end", () => {
+      inputWriter.moveCursor(1);
+      inputWriter.moveCursor(1);
+
+      expect(stateManager.editingCursorIndex).toBe(4);
+    });
+
+    it("does not expect the cursor before the start of the line", () => {
+      inputWriter.moveCursor(-9);
+
+      expect(stateManager.editingCursorIndex).toBe(0);
+    });
+
+    it("expects nothing beyond the read text: the shell may refuse the move there", () => {
+      // "ls" with a bound left over from a longer line; the cursor is at the end.
+      inputState = { text: "ls", cursorIndex: 2, maxCursorIndex: 20 };
+
+      inputWriter.moveCursor(1);
+      inputWriter.moveCursor(1);
+
+      expect(stateManager.editingCursorIndex).toBe(2);
+    });
+
+    it("goes by the report again once a move leads behind trailing blanks", () => {
+      // "git " reads as "git"; the shell has echoed two moves to the left.
+      inputState = { text: "git", cursorIndex: 2, maxCursorIndex: 4 };
+
+      inputWriter.moveCursor(2);
+      inputState = { ...inputState, cursorIndex: 4 };
+
+      expect(stateManager.editingCursorIndex).toBe(4);
+    });
+
+    it.each([
+      ["a deletion", () => inputWriter.deleteChars(0, 1)],
+      ["raw input", () => inputWriter.writeRaw("x")],
+      ["a native action", () => inputWriter.executeNativeAction("goToNextWord")],
+      ["a replaced input", () => inputWriter.replaceInput("ls", 2)],
+    ])("goes back to the reported position after %s", (_name, write) => {
+      inputWriter.moveCursor(2);
+
+      write();
+
+      expect(stateManager.editingCursorIndex).toBe(2);
+    });
+
+    it("clears the input from where the cursor will be, not from where it was reported", () => {
+      inputWriter.moveCursor(3);
+      vi.mocked(mockPty.write).mockClear();
+
+      inputWriter.replaceInput("ls", 2);
+
+      // At the end of "hello" already: no move, five backspaces.
+      expect(mockPty.write).toHaveBeenNthCalledWith(1, "\b".repeat(5));
+    });
   });
 
   it("works without an onUserInput hook", () => {
