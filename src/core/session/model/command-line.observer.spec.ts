@@ -125,6 +125,16 @@ describe("CommandLineObserver", () => {
       expect(stateManager.input.maxCursorIndex).toBe(2);
     });
 
+    it("ignores Backspace when the editor just moved the cursor to the start", () => {
+      // The shell still reports 3; the move to the start is under way.
+      stateManager.updateInput({ text: "git", cursorIndex: 3, maxCursorIndex: 3 });
+      stateManager.expectCursorAt(0);
+
+      fireKey("Backspace");
+
+      expect(stateManager.input.maxCursorIndex).toBe(3);
+    });
+
     it("ignores Backspace at the start of the input", () => {
       stateManager.updateInput({ text: "git", cursorIndex: 0, maxCursorIndex: 5 });
 

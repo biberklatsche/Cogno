@@ -77,20 +77,11 @@ export class ExpectedCursor {
  */
 function shiftOfEditAt(cursor: number, previousText: string, text: string): number | undefined {
   const grown = text.length - previousText.length;
-  if (grown > 0) {
-    const inserted =
-      text.slice(0, cursor) === previousText.slice(0, cursor) &&
-      text.slice(cursor + grown) === previousText.slice(cursor);
-    return inserted && cursor <= previousText.length ? grown : undefined;
-  }
-  if (grown < 0) {
-    const start = cursor + grown;
-    const removed =
-      start >= 0 &&
-      cursor <= previousText.length &&
-      text.slice(0, start) === previousText.slice(0, start) &&
-      text.slice(start) === previousText.slice(cursor);
-    return removed ? grown : undefined;
-  }
-  return undefined;
+  // Typed text starts at the cursor, a backspace ends there.
+  const unchangedUntil = Math.min(cursor, cursor + grown);
+  if (grown === 0 || unchangedUntil < 0 || cursor > previousText.length) return undefined;
+  const editedAtCursor =
+    text.slice(0, unchangedUntil) === previousText.slice(0, unchangedUntil) &&
+    text.slice(cursor + grown) === previousText.slice(cursor);
+  return editedAtCursor ? grown : undefined;
 }

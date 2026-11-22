@@ -91,19 +91,28 @@ describe("TerminalInputWriter", () => {
       expect(stateManager.editingCursorIndex).toBe(4);
     });
 
-    it("does not expect the cursor outside the line", () => {
-      inputWriter.moveCursor(9);
-      expect(stateManager.editingCursorIndex).toBe(5);
-
+    it("does not expect the cursor before the start of the line", () => {
       inputWriter.moveCursor(-9);
+
       expect(stateManager.editingCursorIndex).toBe(0);
     });
 
-    it("follows the cursor back behind trailing blanks the read text does not show", () => {
+    it("expects nothing beyond the read text: the shell may refuse the move there", () => {
+      // "ls" with a bound left over from a longer line; the cursor is at the end.
+      inputState = { text: "ls", cursorIndex: 2, maxCursorIndex: 20 };
+
+      inputWriter.moveCursor(1);
+      inputWriter.moveCursor(1);
+
+      expect(stateManager.editingCursorIndex).toBe(2);
+    });
+
+    it("goes by the report again once a move leads behind trailing blanks", () => {
       // "git " reads as "git"; the shell has echoed two moves to the left.
       inputState = { text: "git", cursorIndex: 2, maxCursorIndex: 4 };
 
       inputWriter.moveCursor(2);
+      inputState = { ...inputState, cursorIndex: 4 };
 
       expect(stateManager.editingCursorIndex).toBe(4);
     });

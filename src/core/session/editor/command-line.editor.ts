@@ -191,12 +191,13 @@ export class CommandLineEditor implements ITerminalHandler {
 
   clearLineToEnd() {
     const input = this.model.input;
-    const countToEnd = input.text.length - this.model.editingCursorIndex;
+    const currentPos = this.model.editingCursorIndex;
+    const countToEnd = input.text.length - currentPos;
     if (countToEnd > 0) {
       this.inputWriter.deleteChars(countToEnd, countToEnd);
       // The bound must not drop below the real input: take the reported
       // position too, in case the shell has not followed the editor yet.
-      this.shrinkMaxCursorIndexTo(Math.max(input.cursorIndex, this.model.editingCursorIndex));
+      this.shrinkMaxCursorIndexTo(Math.max(input.cursorIndex, currentPos));
     }
   }
 
@@ -221,7 +222,10 @@ export class CommandLineEditor implements ITerminalHandler {
 
     if (countToDelete > 0) {
       this.inputWriter.deleteChars(0, countToDelete);
-      this.shrinkMaxCursorIndexTo(input.maxCursorIndex - countToDelete);
+      // As in clearLineToStart: shrink only by what is deleted for certain.
+      this.shrinkMaxCursorIndexTo(
+        input.maxCursorIndex - Math.min(countToDelete, input.cursorIndex),
+      );
     }
   }
 
@@ -261,9 +265,10 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   goToStartOfLine() {
-    if (this.model.editingCursorIndex === 0) return;
+    const currentPos = this.model.editingCursorIndex;
+    if (currentPos === 0) return;
 
-    this.inputWriter.moveCursor(-this.model.editingCursorIndex);
+    this.inputWriter.moveCursor(-currentPos);
   }
 
   goToEndOfLine() {
@@ -311,7 +316,6 @@ export class CommandLineEditor implements ITerminalHandler {
   }
 
   selectTextToStartOfLine() {
-    const input = this.model.input;
     const countToMove = this.model.editingCursorIndex;
     if (countToMove > 0) {
       this._selectAndMove(-countToMove);
@@ -431,7 +435,6 @@ export class CommandLineEditor implements ITerminalHandler {
       return true;
     }
 
-    const input = this.model.input;
     const currentCursorIdx = this.model.editingCursorIndex;
     const cursorOffsetToEnd = range.endIndex - currentCursorIdx;
 

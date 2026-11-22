@@ -57,12 +57,12 @@ export class TerminalInputWriter {
    */
   moveCursor(offset: number): void {
     if (offset === 0) return;
-    const input = this.stateManager.input;
-    const from = this.stateManager.editingCursorIndex;
-    // The read text has no trailing blanks, the cursor may stand beyond it.
-    const lineEnd = Math.max(input.text.length, input.maxCursorIndex, input.cursorIndex, from);
+    const target = this.stateManager.editingCursorIndex + offset;
     this.pty.write(buildCursorMoveSequence(offset));
-    this.stateManager.expectCursorAt(Math.max(0, Math.min(lineEnd, from + offset)));
+    // Beyond the read text the editor cannot tell trailing blanks from the
+    // end of the line, where the shell refuses the move: no expectation there.
+    if (target > this.stateManager.input.text.length) this.stateManager.discardExpectedCursor();
+    else this.stateManager.expectCursorAt(Math.max(0, target));
     this.onUserInput?.();
   }
 

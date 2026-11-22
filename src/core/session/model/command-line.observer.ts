@@ -172,11 +172,14 @@ export class CommandLineObserver implements ITerminalHandler {
     // inferred text length may over-approximate (leaked ghost), but then the
     // bound sits at least one above the real length, so shrinking by one
     // still keeps it valid.
-    const deletesSomething =
-      key === "Backspace" ? input.cursorIndex > 0 : input.cursorIndex < input.text.length;
+    // While the shell has not followed the editor's cursor moves, both the
+    // reported and the expected position must agree on that.
+    const leftmost = Math.min(input.cursorIndex, this.model.editingCursorIndex);
+    const rightmost = Math.max(input.cursorIndex, this.model.editingCursorIndex);
+    const deletesSomething = key === "Backspace" ? leftmost > 0 : rightmost < input.text.length;
     if (!deletesSomething) return;
 
-    const cursorAfterDelete = key === "Backspace" ? input.cursorIndex - 1 : input.cursorIndex;
+    const cursorAfterDelete = key === "Backspace" ? rightmost - 1 : rightmost;
     this.model.updateInput({
       ...input,
       maxCursorIndex: Math.max(cursorAfterDelete, input.maxCursorIndex - 1),

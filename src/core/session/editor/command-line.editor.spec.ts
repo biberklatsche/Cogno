@@ -193,6 +193,19 @@ describe("CommandLineEditor", () => {
       );
     });
 
+    it("shrinks only by what is deleted for certain while the shell has not followed a move", () => {
+      // Reported at 6, expected at 11: should the shell not have moved, six
+      // backspaces from 6 delete six characters, not a whole word further right.
+      state.expectCursorAt(11);
+
+      editor.deletePreviousWord();
+
+      // "world" (5 chars) is asked for; at most min(5, 6) is certain.
+      expect(state.updateInput).toHaveBeenCalledWith(
+        expect.objectContaining({ maxCursorIndex: 14 }),
+      );
+    });
+
     it("does not shrink on deleteNextWord (forward count may include ghost text)", () => {
       editor.deleteNextWord();
 
