@@ -93,13 +93,13 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                 <header>
                     <h3>{{ item.label }}</h3>
                     <div class="btn-list">
-                        <button class="button icon-button" (click)="toggleExpanding(item.label)"
-                                [appTooltip]="isExpanding(item.label) ? 'Keep panel at its width' : 'Expand panel over the terminals while it has the keyboard'">
-                            <app-icon [name]="isExpanding(item.label) ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
-                        </button>
                         <button class="button icon-button" (click)="togglePin(item.label)"
                                 [appTooltip]="isPinned(item.label) ? 'Unpin panel' : 'Pin panel beside the terminals'">
                             <app-icon [name]="isPinned(item.label) ? 'mdiPin': 'mdiPinOff'"></app-icon>
+                        </button>
+                        <button class="button icon-button" (click)="toggleExpanding(item.label)"
+                                [appTooltip]="isExpanding(item.label) ? 'Keep panel at its width' : 'Expand panel over the terminals while it has the keyboard'">
+                            <app-icon [name]="isExpanding(item.label) ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
                         </button>
                         <button class="button icon-button" (click)="close(item.label)" appTooltip="Close">
                             <app-icon [name]="'mdiClose'"></app-icon>
@@ -239,8 +239,8 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
         }
 
         aside {
-            /* Same vertical offsets pinned and floating, so changing between
-               the two does not shift the panel. */
+            /* The floating panel's offsets; a pinned one has them inside
+               (below), so changing between the two does not shift the content. */
             margin-top: 2px;
             margin-bottom: 4px;
             position: relative;
@@ -266,10 +266,16 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                surface of its own, so it shows what the terminals show - the
                background colour, or the background image - and the divider
                between panes towards the terminals. That it stays is visible
-               at once. Pinned panels stand side by side. Its offsets are the
-               aside's, so pinning does not move it. */
+               at once. Pinned panels stand side by side. Its divider runs the
+               full height of the row, like the dividers between the terminals;
+               the aside's offsets move into its padding, so its content stays
+               where it is floating and pinning does not move it. */
             &.in-row {
                 border-left-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+                margin-top: 0;
+                margin-bottom: 0;
+                padding-top: calc(var(--panel-padding) + 2px);
+                padding-bottom: calc(var(--panel-padding) + 4px);
             }
 
             /* The floating and the expanded panel are laid out against the
@@ -322,6 +328,14 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                     flex-direction: row;
                     gap: 2px;
                     margin-left: auto;
+
+                    /* The size of the terminal pane's close button
+                       (pane-header.component), so the icons match. */
+                    .button.icon-button {
+                        width: 20px;
+                        height: 20px;
+                        padding: 2px;
+                    }
                 }
             }
             
