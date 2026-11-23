@@ -10,7 +10,7 @@ const notificationSideMenuFeatureDefinition = {
   id: notificationFeatureId,
   title: "Notification",
   icon: "mdiBell",
-  order: 20,
+  order: 70,
   actionName: "open_notification",
   configPath: "feature.notification_overview",
   targetComponent: () =>
