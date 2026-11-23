@@ -85,6 +85,7 @@ describe("PaneHeaderComponent drag interaction", () => {
   let elementUnderPointer: Element | null;
   let gridListService: {
     activeGridIsSplit$: Observable<boolean>;
+    maximizedTerminalId$: Observable<string | undefined>;
     startPaneSwapDrag: ReturnType<typeof vi.fn>;
     finishPaneSwapDrag: ReturnType<typeof vi.fn>;
     cancelPaneSwapDrag: ReturnType<typeof vi.fn>;
@@ -103,6 +104,7 @@ describe("PaneHeaderComponent drag interaction", () => {
     elementUnderPointer = null;
     gridListService = {
       activeGridIsSplit$: of(false),
+      maximizedTerminalId$: of(undefined),
       startPaneSwapDrag: vi.fn(() => {
         swapDragActive = true;
       }),
