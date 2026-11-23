@@ -99,7 +99,7 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                         </button>
                         <button class="button icon-button" (click)="toggleExpanding(item.label)"
                                 [appTooltip]="isExpanding(item.label) ? 'Keep panel at its width' : 'Expand panel over the terminals while it has the keyboard'">
-                            <app-icon [name]="isExpanding(item.label) ? 'mdiArrowCollapseHorizontal' : 'mdiArrowExpandHorizontal'"></app-icon>
+                            <app-icon [name]="isExpanding(item.label) ? 'mdiArrowCollapse' : 'mdiArrowExpand'"></app-icon>
                         </button>
                         <button class="button icon-button" (click)="close(item.label)" appTooltip="Close">
                             <app-icon [name]="'mdiClose'"></app-icon>

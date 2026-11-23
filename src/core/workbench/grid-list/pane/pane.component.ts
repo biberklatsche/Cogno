@@ -37,13 +37,22 @@ import { PaneHeaderComponent } from "./pane-header.component";
       width: 100%;
   }
 
+  /* A maximized pane looks like an expanded side panel (side-menu.component):
+     an opaque surface with the same edge and offsets, over the other panes
+     of the tab but not over the pinned panels beside them. */
   :host.is-maximized {
       position: absolute;
-      inset: 0;
+      top: 2px;
+      bottom: 4px;
+      left: 4px;
+      right: 4px;
+      width: auto;
+      height: auto;
       z-index: 20;
-      background: color-mix(in srgb, var(--background-color) 50%, transparent);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      padding: 6px;
+      border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+      border-radius: 6px;
+      background-color: color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color));
   }
 
   :host.is-hidden-during-maximize {
