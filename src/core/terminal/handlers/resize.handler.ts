@@ -81,7 +81,7 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
       cols: this._terminal.cols,
       rows: this._terminal.rows,
     };
-    const newRendererDimensions = this._fitAddon.proposeDimensions();
+    const newRendererDimensions = this.proposeDimensions();
     if (!newRendererDimensions) return;
     const terminalCore = this._terminal as Terminal & TerminalCoreWithCharSize;
     const coreBeforeFit = terminalCore._core;
@@ -119,10 +119,22 @@ export class ResizeHandler implements ITerminalHandler, IFitHandler {
    */
   fitTerminalWithoutPty(): void {
     if (!this._terminal || !this._fitAddon) return;
-    const dimensions = this._fitAddon.proposeDimensions();
+    const dimensions = this.proposeDimensions();
     if (dimensions && isValidTerminalDimensions(dimensions)) {
       this._fitAddon.fit();
     }
+  }
+
+  /**
+   * A container without a box (not in the document yet, or hidden) has no
+   * size to fit to. The fit addon would answer its minimum of 2x1 there, and
+   * the terminal and the pty would be shrunk to it.
+   */
+  private proposeDimensions(): ReturnType<FitAddon["proposeDimensions"]> {
+    if (this._terminalContainer.clientWidth === 0 || this._terminalContainer.clientHeight === 0) {
+      return undefined;
+    }
+    return this._fitAddon?.proposeDimensions();
   }
 
   /**
