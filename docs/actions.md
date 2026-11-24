@@ -16,12 +16,12 @@ Every action, its description and default keybinding. `-` means no default keybi
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
 | `select_all` | Select all text in the terminal | Ctrl+A | Command+A |
-| `select_text_right` | Extend the selection one character right/left | Shift+Right | Shift+Right |
-| `select_text_left` | Extend the selection one character right/left | Shift+Left | Shift+Left |
-| `select_word_right` | Extend the selection one word right/left | Ctrl+Shift+Right | Command+Shift+Right |
-| `select_word_left` | Extend the selection one word right/left | Ctrl+Shift+Left | Command+Shift+Left |
-| `select_text_to_end_of_line` | Extend selection to line boundary | Ctrl+Shift+M | Command+Shift+M |
-| `select_text_to_start_of_line` | Extend selection to line boundary | Ctrl+Shift+N | Command+Shift+N |
+| `select_text_right` | Extend the selection one character to the right | Shift+Right | Shift+Right |
+| `select_text_left` | Extend the selection one character to the left | Shift+Left | Shift+Left |
+| `select_word_right` | Extend the selection one word to the right | Ctrl+Shift+Right | Command+Shift+Right |
+| `select_word_left` | Extend the selection one word to the left | Ctrl+Shift+Left | Command+Shift+Left |
+| `select_text_to_end_of_line` | Extend the selection to the end of the line | Ctrl+Shift+M | Command+Shift+M |
+| `select_text_to_start_of_line` | Extend the selection to the start of the line | Ctrl+Shift+N | Command+Shift+N |
 
 ## Cursor movement
 
@@ -36,9 +36,9 @@ Every action, its description and default keybinding. `-` means no default keybi
 
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
-| `clear_buffer` | Clear the terminal scrollback buffer | Ctrl+Alt+C | Command+Alt+C |
+| `clear_buffer` | Clear the terminal output, including the scrollback | Ctrl+Alt+C | Command+Alt+C |
 | `send_text` | Write the text after `send_text:` to the terminal as if typed. Escapes: `\xHH` (an ASCII character, `\x03` is Ctrl+C), `\e` (escape), `\r` (enter), `\n`, `\t`, `\\` | - | - |
-| `terminate_processes` | End what runs in the foreground of the terminal; the shell and its background jobs stay | - | - |
+| `terminate_processes` | End the program running in the terminal. The shell and its background jobs keep running | - | - |
 | `clear_line` | Clear the current input line | Ctrl+Y | Command+Y |
 | `clear_line_to_end` | Delete from the cursor to the end of the line | Ctrl+K | Command+K |
 | `clear_line_to_start` | Delete from the cursor to the start of the line | Ctrl+L | Command+L |
@@ -49,9 +49,9 @@ Every action, its description and default keybinding. `-` means no default keybi
 
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
-| `trigger_autocomplete` | Manually trigger autocomplete suggestions | Ctrl+Space | Control+Space |
+| `trigger_autocomplete` | Show autocomplete suggestions | Ctrl+Space | Control+Space |
 | `trigger_command_history` | Open the command history dropdown | - | - |
-| `cycle_tab` | Cycle through available autocomplete modes (or history scope, while that dropdown is open) | Shift+Tab | Shift+Tab |
+| `cycle_tab` | In the autocomplete list, switch between all, history and context suggestions. In the command history, switch between all commands, this directory and this terminal | Shift+Tab | Shift+Tab |
 
 ## Tabs
 
@@ -59,8 +59,8 @@ Every action, its description and default keybinding. `-` means no default keybi
 | --- | --- | --- | --- |
 | `new_tab` | Open a new terminal tab | Ctrl+T | Command+T |
 | `close_tab` | Close the current tab | Ctrl+Shift+W | Control+Shift+W |
-| `select_next_tab` | Switch to the next/previous tab | Ctrl+PageDown | Command+PageDown |
-| `select_previous_tab` | Switch to the next/previous tab | Ctrl+PageUp | Command+PageUp |
+| `select_next_tab` | Switch to the next tab | Ctrl+PageDown | Command+PageDown |
+| `select_previous_tab` | Switch to the previous tab | Ctrl+PageUp | Command+PageUp |
 | `close_other_tabs` | Close all tabs except the current one | Alt+W | Option+Shift+W |
 | `close_all_tabs` | Close all tabs | Ctrl+Shift+Q | Command+Shift+Q |
 | `select_tab_1` | Jump to tab 1 | Ctrl+1 | Command+1 |
@@ -77,8 +77,8 @@ Every action, its description and default keybinding. `-` means no default keybi
 
 | Action | Description | Windows/Linux | macOS |
 | --- | --- | --- | --- |
-| `select_next_pane` | Switch focus between panes | Ctrl+Shift+PageDown | Command+Shift+PageDown |
-| `select_previous_pane` | Switch focus between panes | Ctrl+Shift+PageUp | Command+Shift+PageUp |
+| `select_next_pane` | Move the focus to the next pane | Ctrl+Shift+PageDown | Command+Shift+PageDown |
+| `select_previous_pane` | Move the focus to the previous pane | Ctrl+Shift+PageUp | Command+Shift+PageUp |
 | `split_right` | Split the current pane to the right | Ctrl+R | Command+R |
 | `split_left` | Split the current pane to the left | Ctrl+Shift+R | Command+Shift+R |
 | `split_down` | Split the current pane downward | Ctrl+D | Command+D |
@@ -127,6 +127,7 @@ Every action, its description and default keybinding. `-` means no default keybi
 | `open_git` | Open the Git panel | Ctrl+Alt+G | Command+Control+G |
 | `open_notification` | Open the Notification panel | Ctrl+Alt+N | Command+Control+N |
 | `open_process_info` | Open the Process Info panel | Ctrl+Alt+P | Command+Control+P |
+| `open_remote` | Open the Remote panel | - | - |
 | `open_terminal_search` | Open the Terminal Search panel | Ctrl+F | Command+F |
 
 ## Window

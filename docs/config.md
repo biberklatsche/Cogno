@@ -299,7 +299,7 @@ Padding between terminal content and bottom edge.
 
 ### `padding.remove_on_full_screen_app`
 
-Drop the padding while a full-screen app (vim, less) owns the screen.
+Remove the padding while a full-screen program such as vim or less is open.
 
 **Type:** boolean · **Default:** `false`
 
@@ -427,7 +427,7 @@ Clipboard access and copy behaviour.
 
 ### `clipboard.read`
 
-Whether programs in the terminal may read your clipboard (OSC 52); `ask` asks each time. Your own pasting always works.
+Whether programs in the terminal may read your clipboard (OSC 52). `ask` asks you each time.
 
 **Type:** `ask` | `allow` | `deny` · **Default:** `ask`
 
@@ -497,7 +497,7 @@ Make the `cogno` command available in this shell.
 
 ### `shell.profiles.<name>.enable_shell_integration`
 
-Let Cogno follow this shell: which commands run, how they end and the current directory. Without it, history and command status stay empty.
+Let Cogno see which commands run in this shell, whether they succeed and the current directory. Off leaves the command history and command status empty.
 
 **Type:** boolean
 
@@ -613,12 +613,6 @@ Tooltip shown when hovering the segment.
 
 **Type:** string
 
-### `prompt.segment.<name>.className`
-
-Extra CSS class for custom styling.
-
-**Type:** string
-
 ### `prompt.segment.<name>.format`
 
 How the value is rendered, e.g. `timespan` for a duration.
@@ -711,7 +705,7 @@ How strongly panes that are not focused are dimmed, 0-100.
 
 ### `terminal.ignore_bracketed_paste_mode`
 
-Paste text as if you had typed it, even where a program wants to be told it is a paste. Pasted lines then run at once.
+Paste text as if you had typed it. A line break in pasted text then runs the command at once.
 
 **Type:** boolean · **Default:** `false`
 
@@ -723,7 +717,7 @@ Adjust text colors until they stand out from their background by at least this r
 
 ### `terminal.screen_reader_mode`
 
-Expose terminal output to screen readers.
+Let screen readers read the terminal output.
 
 **Type:** boolean · **Default:** `false`
 
@@ -741,13 +735,13 @@ Width of a tab character in columns.
 
 ### `terminal.word_separator`
 
-Characters that end a word for double-click selection and word-wise motion.
+Characters that end a word when you double-click to select it.
 
 **Type:** string · **Default:** `` "()[]{}'\"\\,;:/&<>*+=$^!~` " ``
 
 ### `terminal.progress_bar.enabled`
 
-Show the progress bar in the terminal header.
+Show a progress bar in the terminal header while a program reports progress.
 
 **Type:** boolean · **Default:** `true`
 
@@ -777,7 +771,7 @@ Keep a command out of the history when you type a space in front of it, as bash 
 
 ### `terminal.history.import_shell_history`
 
-Fill an empty history from your shell's own history file the first time Cogno starts (bash, zsh, PowerShell).
+When the history is empty, fill it from your shell's own history file (bash, zsh, PowerShell).
 
 **Type:** boolean · **Default:** `false`
 
@@ -799,7 +793,7 @@ How long autocomplete waits, in milliseconds, for suggestions it has to look up 
 
 ### `autocomplete.allowed_return_codes`
 
-Exit codes a command may end with to be suggested; `[0]` suggests only successful commands, empty suggests all.
+Suggest only commands from your history that ended with one of these exit codes. `[0]` suggests only successful commands; empty suggests all.
 
 **Type:** integer[] · **Default:** `[]`
 
@@ -857,7 +851,7 @@ Notify only when a command ran for at least this many seconds.
 
 ### `notification.source.errors.handled.enabled`
 
-Notify when Cogno ran into an error and carried on.
+Notify about errors Cogno could recover from.
 
 **Type:** boolean · **Default:** `false`
 
@@ -890,28 +884,6 @@ Notify when an agent has finished and waits for you.
 Notify when an agent reports an error.
 
 **Type:** boolean · **Default:** `false`
-
-## HTTP server
-
-Local HTTP server used by the CLI.
-
-### `http_server.enabled`
-
-Let the `cogno` command and the coding-agent hooks reach this app through a local server.
-
-**Type:** boolean · **Default:** `true`
-
-### `http_server.port`
-
-Port the local server listens on.
-
-**Type:** integer 1-65535 · **Default:** `9000`
-
-### `http_server.auto_next_port`
-
-If the port is taken, try the next free one instead of failing.
-
-**Type:** boolean · **Default:** `true`
 
 ## Feature
 
@@ -994,6 +966,18 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `50`
+
+### `feature.remote.mode`
+
+Turn the feature on or off. Off removes it entirely, including its side-menu entry and actions.
+
+**Type:** `off` | `on` · **Default:** `on`
+
+### `feature.remote.order`
+
+Position in the side menu; lower numbers come first.
+
+**Type:** integer · **Default:** `90`
 
 ### `feature.coding_agents.mode`
 
