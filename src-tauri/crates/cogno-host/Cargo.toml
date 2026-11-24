@@ -17,7 +17,7 @@ sysinfo = "0.33"
 log = "0.4"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["jobapi2", "handleapi", "processthreadsapi", "winnt", "minwindef"] }
+winapi = { version = "0.3", features = ["jobapi2", "handleapi", "processthreadsapi", "winnt", "minwindef", "sddl", "winbase", "securitybaseapi"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
