@@ -245,7 +245,6 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
       }
       .file-link {
         flex: 0 0 auto;
-        white-space: nowrap;
       }
       .body {
         flex: 1 1 auto;
@@ -468,6 +467,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
+        white-space: nowrap;
       }
     `,
   ],
@@ -540,10 +540,10 @@ export class SettingsPanelComponent {
       );
   }
 
-  /** A control that takes text needs the row's width; a switch, a choice or a number does not. */
+  /** A control that takes text needs the row's width; a switch, a choice, a number or a link to the file does not. */
   isWide(row: SettingRow): boolean {
     const kind = row.control.kind;
-    return kind !== "boolean" && kind !== "enum" && kind !== "number";
+    return kind !== "boolean" && kind !== "enum" && kind !== "number" && kind !== "file-only";
   }
 
   /** Takes the key out of the file; the default applies again. */
