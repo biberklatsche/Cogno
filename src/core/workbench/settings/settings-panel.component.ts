@@ -88,9 +88,9 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
           </button>
         }
       </nav>
-      <select class="sections-select" [value]="activeSection()" (change)="activeSection.set(select.value); query.set('')" #select>
+      <select class="sections-select" (change)="activeSection.set(select.value); query.set('')" #select>
         @for (section of view().sections; track section.title) {
-          <option [value]="section.title">{{ section.title }}</option>
+          <option [value]="section.title" [selected]="section.title === activeSection()">{{ section.title }}</option>
         }
       </select>
 
@@ -98,16 +98,26 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         @if (!view().searching) {
           <h2 class="title">{{ activeSection() }}</h2>
         }
-        @if (view().rows.length === 0) {
+        @if (view().blocks.length === 0) {
           <p class="empty">No setting matches.</p>
         }
-        @for (row of view().rows; track row.key) {
-          @for (heading of row.headings; track heading.key) {
+        @for (block of view().blocks; track block.key) {
+          @for (heading of block.headings; track heading.key) {
             <h3 [class]="'group level-' + heading.level">{{ heading.title }}</h3>
             @if (heading.description) {
               <p class="group-description">{{ heading.description }}</p>
             }
           }
+          <div class="block" [class.grouped]="block.grouped">
+          @if (block.title) {
+            <header class="block-head">
+              <h4>{{ block.title }}</h4>
+              @if (block.description) {
+                <p>{{ block.description }}</p>
+              }
+            </header>
+          }
+          @for (row of block.rows; track row.key) {
           <!-- A short control stands beside the text; one that takes text gets the line below it. -->
           <section class="row" [class.wide]="isWide(row)">
             <div class="text">
@@ -149,9 +159,9 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
                   </button>
                 }
                 @case ("enum") {
-                  <select [value]="row.value" (change)="write(row, enumSelect.value)" #enumSelect>
+                  <select (change)="write(row, enumSelect.value)" #enumSelect>
                     @for (option of row.control.values; track option) {
-                      <option [value]="option">{{ option }}</option>
+                      <option [value]="option" [selected]="option === row.value">{{ option }}</option>
                     }
                   </select>
                 }
@@ -205,6 +215,8 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
               }
             </div>
           </section>
+          }
+          </div>
         }
       </div>
     </div>
@@ -308,41 +320,47 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
       .group.level-0 {
         margin-top: 2rem;
       }
-      /* A group is named in the terminal's font, quietly, above a rule that opens its rows. */
+      /* A group that holds groups heads them: its name, then what it is about. */
       .group {
-        margin: 1.75rem 0 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--settings-rule);
-        font-family: var(--terminal-font-family, monospace);
-        font-size: 0.9em;
-        font-weight: 400;
+        margin: 2rem 0 0;
+        font-size: 1.05em;
+        font-weight: 600;
         line-height: 1.3;
-        opacity: 0.65;
-      }
-      .group.level-0 {
-        padding-bottom: 0;
-        border-bottom: 0;
-        font-family: inherit;
-        opacity: 1;
-      }
-      /* Deeper groups step in instead of growing quieter. */
-      .group.level-2 {
-        margin-top: 1.25rem;
-      }
-      .group.level-3,
-      .group.level-4,
-      .group.level-5 {
-        margin-top: 1rem;
-        padding-left: 0.6rem;
       }
       .rows > .group:first-child {
         margin-top: 0;
       }
       .group-description {
-        margin: 0.5rem 0 0;
+        margin: 0.2rem 0 0;
         font-size: 0.9em;
         line-height: 1.45;
         opacity: 0.65;
+      }
+      /* The rows of one group stand on one surface, mixed from the theme like every other. */
+      .block.grouped {
+        margin-top: 0.75rem;
+        padding: 0 1rem;
+        border: 1px solid var(--settings-rule);
+        border-radius: var(--button-border-radius);
+        background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct2), transparent);
+      }
+      .block-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.1rem 0.75rem;
+        padding: 0.7rem 0 0.6rem;
+        border-bottom: 1px solid var(--settings-rule);
+      }
+      .block-head h4 {
+        margin: 0;
+        font-size: 0.95em;
+        font-weight: 600;
+      }
+      .block-head p {
+        margin: 0;
+        font-size: 0.88em;
+        opacity: 0.6;
       }
       .row {
         display: grid;
@@ -351,7 +369,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         gap: 0.5rem 1.5rem;
         padding: 1rem 0;
       }
-      /* A rule between two rows; a heading already draws the one above its first row. */
+      /* A rule between two rows of a block. */
       .row + .row {
         border-top: 1px solid var(--settings-rule);
       }

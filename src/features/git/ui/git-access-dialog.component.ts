@@ -41,9 +41,9 @@ export type GitAccessDialogData = {
       @if (data.askProvider) {
         <label class="provider">
           <span>{{ situation().host }} is</span>
-          <select [value]="situation().provider" (change)="chooseProvider(select.value)" #select>
+          <select (change)="chooseProvider(select.value)" #select>
             @for (host of hosts; track host.id) {
-              <option [value]="host.id">{{ host.label }}</option>
+              <option [value]="host.id" [selected]="host.id === situation().provider">{{ host.label }}</option>
             }
           </select>
         </label>
