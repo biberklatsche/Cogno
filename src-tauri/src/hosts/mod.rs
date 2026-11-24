@@ -26,13 +26,6 @@ use connections::{Connections, Lost};
 use routes::{Route, TerminalRoutes};
 use webview::{TerminalExit, WebviewEvents};
 
-/// What a start asks for, past the shell itself.
-pub struct SpawnRequest {
-    pub options: SpawnOptions,
-    pub window: WindowLabel,
-    pub on_data: Channel<InvokeResponseBody>,
-}
-
 /// What a start did.
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -122,13 +115,18 @@ impl Hosts {
             self.events.streams.close(route.stream);
             self.events.exit(&route.window, &terminal_id, exit);
         }
-        // Hung up on: nothing was lost. Replaced: the host is still there.
-        if ending == Ending::HungUp || lost == Lost::Replaced {
+        // Replaced: the host is still there.
+        if lost == Lost::Replaced {
             return;
         }
         match host {
-            Some(name) => self.events.disconnected(name),
-            None => log::error!(target: "host", "the connection to this machine's host was lost"),
+            // Every window hears of it, also of a hang-up: the one that
+            // asked for it is not the only one that knew the host connected.
+            Some(id) => self.events.disconnected(id, ending == Ending::Lost),
+            None if ending == Ending::Lost => {
+                log::error!(target: "host", "the connection to this machine's host was lost")
+            }
+            None => {}
         }
     }
 
@@ -223,34 +221,28 @@ impl HostState {
         }))
     }
 
-    /// Connects to the paired machine `name` (ARCHITECTURE.md 2.7.3), unless
+    /// Connects to the paired machine `id` (ARCHITECTURE.md 2.7.3), unless
     /// the connection already stands.
     pub fn connect(
         &self,
-        name: &str,
+        id: &str,
         pairing: &crate::pairing::Pairing,
     ) -> CommandResult<Arc<HostConnection>> {
         let hosts = &self.0;
         hosts.connections.connect_remote(
-            name,
-            || pairing.dial(name),
-            |dialing| {
-                dialing.introduce(
-                    name,
-                    hosts.events.clone(),
-                    hosts.on_lost(Some(name.to_string())),
-                )
-            },
+            id,
+            || pairing.dial(id),
+            |dialing| dialing.introduce(hosts.events.clone(), hosts.on_lost(Some(id.to_string()))),
         )
     }
 
-    /// Starts a shell on this machine for `request.window`.
-    pub async fn spawn(&self, request: SpawnRequest) -> CommandResult<Spawned> {
-        let SpawnRequest {
-            options,
-            window,
-            on_data,
-        } = request;
+    /// Starts a shell on this machine for `window`.
+    pub async fn spawn(
+        &self,
+        options: SpawnOptions,
+        window: WindowLabel,
+        on_data: Channel<InvokeResponseBody>,
+    ) -> CommandResult<Spawned> {
         let terminal_id = options.terminal_id.clone();
         self.0
             .open_terminal(
@@ -412,18 +404,32 @@ impl HostState {
     /// The pane of `window` for a shell of this machine is gone for good: the
     /// host ends the shell if it belongs to that window. Not through the
     /// terminal's route: a window whose shell another machine shows has none.
-    pub fn pane_closed(&self, window: &str, terminal_id: TerminalId) -> CommandResult<()> {
-        self.0.routes.remove_of_window(&terminal_id, window);
-        self.0.local()?.post(Request::PaneClosed {
-            terminal_id,
-            window: window.to_string(),
+    pub async fn pane_closed(
+        &self,
+        window: WindowLabel,
+        terminal_id: TerminalId,
+    ) -> CommandResult<()> {
+        let hosts = self.0.clone();
+        // Off the thread of the UI: the connection may have to be set up.
+        blocking(move || {
+            hosts.routes.remove_of_window(&terminal_id, &window);
+            hosts.local()?.post(Request::PaneClosed {
+                terminal_id,
+                window,
+            })
         })
+        .await
     }
 
     /// The processes under every terminal's shell, on every machine.
     pub async fn terminal_processes(&self) -> CommandResult<Vec<TerminalProcess>> {
         let hosts = self.0.clone();
         blocking(move || Ok(hosts.terminal_processes())).await
+    }
+
+    /// Whether `window` is the one that shows the terminal.
+    pub fn shows(&self, window: &str, terminal_id: &str) -> bool {
+        self.0.routes.of_window(terminal_id, window).is_ok()
     }
 
     /// The window that spawned or attached the terminal: where its messages go.

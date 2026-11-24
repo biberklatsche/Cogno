@@ -13,7 +13,7 @@ use crate::protocol::{
     Addressee, AgentHook, Event, HostError, HostErrorCode, Reply, Request, Response,
 };
 use crate::relay::{no_addressee, Relay};
-use crate::sessions::{Sessions, SpawnRequest, Spawned};
+use crate::sessions::{Sessions, Spawned};
 use crate::shared_session::Departure;
 use crate::shell_integration;
 use crate::shell_spawner::ShellSpawner;
@@ -101,6 +101,9 @@ impl Host {
     /// a shell, closing a ConPTY, walking the machine's processes): never
     /// call this on a thread that must not block (`Request::may_block`).
     pub fn handle(&self, client: &Client, request: Request) -> Reply {
+        if client.origin == Origin::OtherMachine && request.only_from_this_machine() {
+            return Err(not_for_another_machine());
+        }
         let done = |_| Response::Done;
         match request {
             Request::PtySpawn {
@@ -111,14 +114,8 @@ impl Host {
                 let integration =
                     shell_integration::root(&self.home, &options.integration_version)?;
                 let spawner = ShellSpawner::new(integration, self.bootstrap_log_dir.clone());
-                let request = SpawnRequest {
-                    options,
-                    window,
-                    stream,
-                    host_endpoint: self.endpoint.clone(),
-                };
                 self.sessions
-                    .spawn(client, &spawner, request)
+                    .spawn(client, &spawner, options, window, stream, &self.endpoint)
                     .map(|spawned| match spawned {
                         Spawned::Started { shell_process_id } => {
                             Response::Spawned { shell_process_id }
@@ -288,6 +285,11 @@ impl Host {
     /// there: `NoAddressee` at once. What is asked the host never reads.
     /// Never blocks.
     pub fn ask(&self, client: &Client, id: u64, to: Addressee, question: String) {
+        // A question is asked by a process of this machine.
+        if client.origin == Origin::OtherMachine {
+            client.sink.reply(id, Err(not_for_another_machine()));
+            return;
+        }
         let answerer = match &to {
             Addressee::Terminal { terminal_id } => self.sessions.shown_by(terminal_id),
             Addressee::PromptSession { session } => self.relay.prompt_owner(session),
@@ -341,6 +343,13 @@ impl Host {
             .owner_of(terminal_id)
             .map(|owner| owner.window)
     }
+}
+
+fn not_for_another_machine() -> HostError {
+    HostError::new(
+        HostErrorCode::InvalidRequest,
+        "A Cogno on another machine only shows the shells that run here",
+    )
 }
 
 #[cfg(test)]
@@ -1061,13 +1070,32 @@ mod tests {
     }
 
     #[test]
-    fn a_cogno_on_another_machine_starts_no_shell() {
-        let (laptop, _) = other_machine(2, None);
+    fn a_cogno_on_another_machine_starts_nothing_and_writes_nothing_here() {
+        let (laptop, on_the_laptop) = other_machine(2, None);
         let host = host();
+        let not_its_business = [
+            spawn_request("t1", 1, WAITING),
+            Request::InstallShellIntegration {
+                version: "test".to_string(),
+                files: Vec::new(),
+            },
+            Request::ListShells,
+            hook(None, "Stop"),
+            Request::OwnPrompts {
+                session: "s".to_string(),
+            },
+        ];
 
-        let refused = host.handle(&laptop, spawn_request("t1", 1, WAITING));
+        for request in not_its_business {
+            let refused = host.handle(&laptop, request);
+            assert_eq!(refused.unwrap_err().code, HostErrorCode::InvalidRequest);
+        }
+        host.ask(&laptop, 9, terminal("t1"), "{}".to_string());
 
-        assert_eq!(refused.unwrap_err().code, HostErrorCode::InvalidRequest);
+        assert_eq!(
+            replies_of(&on_the_laptop),
+            [(9, Err(HostErrorCode::InvalidRequest))]
+        );
         assert!(sessions_of(&host, &laptop).is_empty());
     }
 

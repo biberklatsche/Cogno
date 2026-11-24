@@ -41,15 +41,12 @@ describe("Pairing", () => {
     await pairing.setOpen(true);
     expect(invokeMock).toHaveBeenLastCalledWith("pairing_set_open", { open: true });
 
-    await pairing.rename("office", "work");
-    expect(invokeMock).toHaveBeenLastCalledWith("pairing_rename", {
-      previous: "office",
-      name: "work",
-    });
+    await pairing.rename("abc", "work");
+    expect(invokeMock).toHaveBeenLastCalledWith("pairing_rename", { id: "abc", name: "work" });
 
     invokeMock.mockResolvedValueOnce(false);
-    await expect(pairing.remove("work")).resolves.toBe(false);
-    expect(invokeMock).toHaveBeenLastCalledWith("pairing_remove", { name: "work" });
+    await expect(pairing.remove("abc")).resolves.toBe(false);
+    expect(invokeMock).toHaveBeenLastCalledWith("pairing_remove", { id: "abc" });
   });
 
   it("hands the request with the check number to the caller while both users compare", async () => {

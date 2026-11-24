@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { invokeHost } from "./host-error";
 import { OsType } from "./os";
-import { SessionInfoContract } from "./session-contracts";
+import { SeenSessionContract } from "./session-contracts";
 
 /** What a connected host on another machine says about itself. */
 export type HostInfo = {
@@ -19,11 +19,11 @@ const HOST_DISCONNECTED_EVENT = "host-disconnected";
 @Injectable({ providedIn: "root" })
 export class Hosts {
   /**
-   * Connects to the paired machine `name` (ARCHITECTURE.md 2.7.3), unless
+   * Connects to the paired machine `id` (ARCHITECTURE.md 2.7.3), unless
    * the connection already stands.
    */
-  connect(name: string): Promise<HostInfo> {
-    return invokeHost<HostInfo>("host_connect", { name });
+  connect(id: string): Promise<HostInfo> {
+    return invokeHost<HostInfo>("host_connect", { id });
   }
 
   /**
@@ -41,16 +41,16 @@ export class Hosts {
   /**
    * The shells that run on `host`, this machine when none is named.
    */
-  sessions(host: string | undefined): Promise<SessionInfoContract[]> {
-    return invokeHost<SessionInfoContract[]>("host_sessions", { host: host ?? null });
+  sessions(host: string | undefined): Promise<SeenSessionContract[]> {
+    return invokeHost<SeenSessionContract[]>("host_sessions", { host: host ?? null });
   }
 
   /**
    * The shell `terminalId` on `host`, this machine when none is named.
    * Rejects with `sessionNotFound` when it does not run there.
    */
-  session(host: string | undefined, terminalId: string): Promise<SessionInfoContract> {
-    return invokeHost<SessionInfoContract>("host_session", {
+  session(host: string | undefined, terminalId: string): Promise<SeenSessionContract> {
+    return invokeHost<SeenSessionContract>("host_session", {
       host: host ?? null,
       terminalId,
     });
@@ -62,17 +62,20 @@ export class Hosts {
   }
 
   /**
-   * Hangs up on the host `name`, or gives up connecting to it. Its terminals
+   * Hangs up on the host `id`, or gives up connecting to it. Its terminals
    * end as hung up on; their shells run on there.
    */
-  disconnect(name: string): Promise<void> {
-    return invokeHost("host_disconnect", { name });
+  disconnect(id: string): Promise<void> {
+    return invokeHost("host_disconnect", { id });
   }
 
-  /** The connection to a host broke without this Cogno hanging up. */
-  onDisconnected(listener: (name: string) => void): Promise<UnlistenFn> {
-    return listen<{ host: string }>(HOST_DISCONNECTED_EVENT, ({ payload }) =>
-      listener(payload.host),
+  /**
+   * The connection to the host `id` ended, in whichever window: `lost`
+   * when it broke, not when this Cogno hung up.
+   */
+  onDisconnected(listener: (id: string, lost: boolean) => void): Promise<UnlistenFn> {
+    return listen<{ host: string; lost: boolean }>(HOST_DISCONNECTED_EVENT, ({ payload }) =>
+      listener(payload.host, payload.lost),
     );
   }
 }

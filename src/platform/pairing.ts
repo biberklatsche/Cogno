@@ -5,7 +5,9 @@ import { listenInThisWindow } from "./window-events";
 
 /** A machine this one is paired with. */
 export type PairedMachineContract = {
+  /** What the user calls it. */
   name: string;
+  /** What it is known by: it stays when the machine is renamed. */
   endpointId: string;
 };
 
@@ -87,17 +89,17 @@ export class Pairing {
     return invokeHost("pairing_answer", { id, confirmed });
   }
 
-  /** Calls the paired machine `previous` `name` from now on. */
-  rename(previous: string, name: string): Promise<void> {
-    return invokeHost("pairing_rename", { previous, name });
+  /** Calls the paired machine `id` `name` from now on. */
+  rename(id: string, name: string): Promise<void> {
+    return invokeHost("pairing_rename", { id, name });
   }
 
   /**
    * Removes the pairing here and tells the other machine; resolves with
    * whether it heard. When not, it is refused the next time it connects.
    */
-  remove(name: string): Promise<boolean> {
-    return invokeHost<boolean>("pairing_remove", { name });
+  remove(id: string): Promise<boolean> {
+    return invokeHost<boolean>("pairing_remove", { id });
   }
 
   onRequest(listener: (request: PairingRequestContract) => void): Promise<() => void> {

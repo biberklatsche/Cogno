@@ -406,6 +406,24 @@ impl Request {
         }
     }
 
+    /// Whether only a client of this machine may ask it. A Cogno on another
+    /// machine borrows the sessions that run here: it shows them, types into
+    /// them and ends them, and answers what is asked in them. It starts
+    /// none, writes nothing into this machine's Cogno home and speaks for no
+    /// process here.
+    pub fn only_from_this_machine(&self) -> bool {
+        matches!(
+            self,
+            Request::PtySpawn { .. }
+                | Request::InstallShellIntegration { .. }
+                | Request::ListShells
+                | Request::AgentHook { .. }
+                | Request::Ask { .. }
+                | Request::OwnPrompts { .. }
+                | Request::DisownPrompts { .. }
+        )
+    }
+
     /// Whether answering can take a while (starting a shell, closing a
     /// ConPTY, writing to a pipe a shell reads when it gets to it, walking
     /// the machine's processes).

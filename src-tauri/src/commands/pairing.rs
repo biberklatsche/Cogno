@@ -12,9 +12,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
 use crate::commands::window_registry::route;
 use crate::host_endpoint::DEVELOPMENT_BUILD;
-use crate::pairing::{
-    PairRequest, PairedMachine, Pairing, PairingError, PairingEvents, PairingView,
-};
+use crate::pairing::{PairRequest, PairedMachine, Pairing, PairingEvents, PairingView};
 
 /// A machine asks to pair; to the last focused window.
 const PAIRING_REQUEST_EVENT: &str = "pairing-request";
@@ -73,34 +71,16 @@ impl PairingEvents for WebviewPairingEvents {
     }
 }
 
-fn command_error(error: PairingError) -> CommandError {
-    match error {
-        PairingError::Off => CommandError::new(
-            AppErrorCode::PairingOff,
-            "Pairing is off: switch on the Remote feature",
-        ),
-        PairingError::Unreachable(reason) => CommandError::new(
-            AppErrorCode::PairingUnreachable,
-            format!("Could not reach the other machine: {reason}"),
-        ),
-        PairingError::Declined => CommandError::new(
-            AppErrorCode::PairingDeclined,
-            "The pairing was not confirmed on both machines",
-        ),
-        PairingError::Storage(error) => CommandError::internal(error),
-    }
-}
-
 #[tauri::command]
 pub fn pairing_state(state: State<'_, PairingState>) -> CommandResult<PairingView> {
-    state.pairing()?.view().map_err(command_error)
+    state.pairing()?.view().map_err(CommandError::from)
 }
 
 /// The Remote feature was switched on: this machine becomes reachable for
 /// the machines it is paired with.
 #[tauri::command]
 pub async fn pairing_enable(state: State<'_, PairingState>) -> CommandResult<()> {
-    state.pairing()?.enable().await.map_err(command_error)
+    state.pairing()?.enable().await.map_err(CommandError::from)
 }
 
 /// The Remote feature was switched off: nothing is reachable any more.
@@ -116,7 +96,7 @@ pub async fn pairing_disable(state: State<'_, PairingState>) -> CommandResult<()
 /// seen by the machines nearby and takes their requests to pair.
 #[tauri::command]
 pub fn pairing_set_open(state: State<'_, PairingState>, open: bool) -> CommandResult<()> {
-    state.pairing()?.set_open(open).map_err(command_error)
+    state.pairing()?.set_open(open).map_err(CommandError::from)
 }
 
 /// Asks the machine nearby with `id` to pair. `on_request` gets the check
@@ -134,7 +114,7 @@ pub async fn pairing_pair(
             let _ = on_request.send(request);
         })
         .await
-        .map_err(command_error)
+        .map_err(CommandError::from)
 }
 
 /// What the user says to a request: whether the check number is the same on
@@ -149,22 +129,26 @@ pub fn pairing_answer(
     Ok(())
 }
 
-/// Calls the paired machine `previous` `name` from now on.
+/// Calls the paired machine `id` `name` from now on.
 #[tauri::command]
 pub fn pairing_rename(
     state: State<'_, PairingState>,
-    previous: String,
+    id: String,
     name: String,
 ) -> CommandResult<()> {
     state
         .pairing()?
-        .rename(&previous, &name)
-        .map_err(command_error)
+        .rename(&id, &name)
+        .map_err(CommandError::from)
 }
 
 /// Removes the pairing here and on the other machine; whether that one
 /// heard of it.
 #[tauri::command]
-pub async fn pairing_remove(state: State<'_, PairingState>, name: String) -> CommandResult<bool> {
-    state.pairing()?.remove(&name).await.map_err(command_error)
+pub async fn pairing_remove(state: State<'_, PairingState>, id: String) -> CommandResult<bool> {
+    state
+        .pairing()?
+        .remove(&id)
+        .await
+        .map_err(CommandError::from)
 }

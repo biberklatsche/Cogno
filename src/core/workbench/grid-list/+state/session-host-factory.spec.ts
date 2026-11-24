@@ -1,6 +1,6 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { SessionBackend } from "@cogno/core/session/host/session-backend";
-import { HostError, OsPlatform, SessionInfoContract } from "@cogno/platform";
+import { HostError, OsPlatform, SeenSessionContract } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
 import { filter, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,7 +13,7 @@ import { FoundShell } from "./waiting-panes";
 type Fact = { terminalId: string; fact: { type: string; exit?: { kind: string } } };
 
 /** A shell another Cogno shows right now. */
-function shownByLaptop(terminalId: string): SessionInfoContract {
+function shownByLaptop(terminalId: string): SeenSessionContract {
   return {
     ...TauriMockFactory.createSessionInfo(terminalId),
     attached: { to: "otherClient", by: "laptop" },
@@ -37,7 +37,7 @@ describe("SessionHostFactory", () => {
     mount: ReturnType<typeof vi.fn>;
   };
   let session: ReturnType<typeof vi.fn>;
-  let claimed: SessionInfoContract | undefined;
+  let claimed: SeenSessionContract | undefined;
   let facts: Subject<Fact>;
   let reattachments: Subject<{ type: string; payload?: string }>;
   let factory: SessionHostFactory;
@@ -176,6 +176,26 @@ describe("SessionHostFactory", () => {
       };
       expect(started.failStart).toHaveBeenCalledExactlyOnceWith(lost);
       expect(opened).toHaveLength(1);
+    });
+
+    it("shows on a shell this window showed before its webview was loaded again", () => {
+      claimed = {
+        ...TauriMockFactory.createSessionInfo("t1"),
+        attached: { to: "thisClient" },
+        shownInThisWindow: true,
+      };
+
+      factory.ensureSession(localPane);
+
+      expect(opened[0]?.start.kind).toBe("showRunning");
+    });
+
+    it("says a shell another window of this Cogno shows is shown there", () => {
+      claimed = { ...TauriMockFactory.createSessionInfo("t1"), attached: { to: "thisClient" } };
+
+      factory.ensureSession(localPane);
+
+      expect(opened[0]?.start.kind).toBe("shownElsewhere");
     });
 
     it("says a shell another Cogno shows is shown there, and does not take it", () => {

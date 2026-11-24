@@ -40,13 +40,6 @@ struct Waiting {
 /// Tells connections apart, also two to the same host one after the other.
 static NEXT_CONNECTION: AtomicU64 = AtomicU64::new(1);
 
-/// Which host a connection reaches, for what its errors say.
-#[derive(Clone, Copy)]
-pub enum Reaching<'a> {
-    ThisMachine,
-    Remote(&'a str),
-}
-
 /// How a connection ended.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Ending {
@@ -117,7 +110,7 @@ impl HostConnection {
         Self::over(
             reader,
             stream,
-            Reaching::ThisMachine,
+            None,
             events,
             on_lost,
             // The host learns at once that this app is gone, also while a
@@ -128,33 +121,14 @@ impl HostConnection {
         )
     }
 
-    /// The connection to the host of the paired machine `name`, over the
-    /// stream the dial opened; `hang_up` closes it.
-    pub fn to_paired_machine(
-        reader: impl Read + Send + 'static,
-        writer: impl Write + Send + 'static,
-        name: &str,
-        events: Arc<dyn HostEvents>,
-        on_lost: OnLost,
-        hang_up: HangUp,
-    ) -> CommandResult<Self> {
-        Self::over(
-            reader,
-            writer,
-            Reaching::Remote(name),
-            events,
-            on_lost,
-            hang_up,
-        )
-    }
-
-    /// Talks to the host behind the two streams. Returns once the two have
+    /// Talks to the host behind the two streams: the one of the paired
+    /// machine `host`, this machine's when `None`. Returns once the two have
     /// introduced each other; `on_lost` runs once, with the connection's id,
     /// when the host's stream ends, and `hang_up` when this app hangs up.
-    fn over(
+    pub fn over(
         reader: impl Read + Send + 'static,
         mut writer: impl Write + Send + 'static,
-        reaching: Reaching<'_>,
+        host: Option<&str>,
         events: Arc<dyn HostEvents>,
         on_lost: OnLost,
         hang_up: HangUp,
@@ -165,12 +139,14 @@ impl HostConnection {
         let hello =
             wire::introduce(&mut reader, &mut writer, &introduction).map_err(
                 |error| match error {
-                    IntroductionError::NoHost(_) => no_cogno(reaching),
+                    IntroductionError::NoHost(_) => {
+                        CommandError::new(AppErrorCode::NoCognoThere, "No Cogno host answered")
+                    }
                     IntroductionError::NoHello(_) => CommandError::new(
                         AppErrorCode::ConnectFailed,
                         "The Cogno host did not introduce itself",
                     ),
-                    IntroductionError::Versions(mismatch) => version_error(mismatch, reaching),
+                    IntroductionError::Versions(mismatch) => version_error(mismatch, host),
                     IntroductionError::Broken(_) => CommandError::connection_lost(),
                 },
             )?;
@@ -324,32 +300,20 @@ fn spawn_writer(mut writer: impl Write + Send + 'static) -> mpsc::Sender<ClientM
     outgoing
 }
 
-fn no_cogno(reaching: Reaching<'_>) -> CommandError {
-    CommandError::new(
-        AppErrorCode::NoCognoThere,
-        match reaching {
-            Reaching::ThisMachine => "The Cogno host of this machine did not answer",
-            Reaching::Remote(_) => "No Cogno host answered",
-        },
-    )
-}
-
 /// Which Cogno to update, said for the host it is about.
-fn version_error(mismatch: VersionMismatch, reaching: Reaching<'_>) -> CommandError {
-    match (mismatch, reaching) {
-        (VersionMismatch::ThisIsOlder, _) => CommandError::new(
+fn version_error(mismatch: VersionMismatch, host: Option<&str>) -> CommandError {
+    match mismatch {
+        VersionMismatch::ThisIsOlder => CommandError::new(
             AppErrorCode::ThisCognoTooOld,
             "The Cogno host is newer than this Cogno can talk to: update this Cogno",
         ),
-        // The app runs this machine's host itself: only a file another
-        // Cogno left behind could lead here.
-        (VersionMismatch::TheyAreOlder, Reaching::ThisMachine) => CommandError::new(
+        // The app runs this machine's host itself, so that one is never older.
+        VersionMismatch::TheyAreOlder => CommandError::new(
             AppErrorCode::HostTooOld,
-            "The Cogno host of this machine is older than this Cogno can talk to",
-        ),
-        (VersionMismatch::TheyAreOlder, Reaching::Remote(name)) => CommandError::new(
-            AppErrorCode::HostTooOld,
-            format!("The Cogno on {name} is older than this Cogno can talk to: update it there"),
+            format!(
+                "The Cogno on {} is older than this Cogno can talk to: update it there",
+                host.unwrap_or("this machine")
+            ),
         ),
     }
 }
@@ -374,7 +338,7 @@ pub mod test_support {
         let host = HostConnection::over(
             to_client,
             to_host,
-            Reaching::ThisMachine,
+            None,
             Arc::new(NoEvents),
             on_lost,
             Box::new(|| {}),
@@ -498,7 +462,7 @@ mod tests {
         let refused = HostConnection::over(
             reader,
             std::io::sink(),
-            Reaching::Remote("office"),
+            Some("office"),
             Arc::new(NoEvents),
             ignored(),
             Box::new(|| {}),
@@ -526,7 +490,7 @@ mod tests {
         HostConnection::over(
             reader,
             std::io::sink(),
-            Reaching::Remote("office"),
+            Some("office"),
             Arc::new(NoEvents),
             ignored(),
             Box::new(|| {}),

@@ -4,7 +4,7 @@ import { RemoteHostFormComponent } from "./remote-host-form.component";
 import type { RemotePanelService } from "./remote-panel.service";
 
 function remote(name: string): RemoteHost {
-  return { name, connection: "disconnected" };
+  return { id: `${name}-id`, name, connection: "disconnected" };
 }
 
 describe("RemoteHostFormComponent", () => {
@@ -33,7 +33,7 @@ describe("RemoteHostFormComponent", () => {
 
     await form.save(new Event("submit"));
 
-    expect(renameHost).toHaveBeenCalledWith("office", "work");
+    expect(renameHost).toHaveBeenCalledWith("office-id", "work");
     expect(closed).toHaveBeenCalledOnce();
   });
 
@@ -45,7 +45,7 @@ describe("RemoteHostFormComponent", () => {
     form.ngOnChanges();
     await form.save(new Event("submit"));
 
-    expect(renameHost).toHaveBeenCalledWith("home", "home");
+    expect(renameHost).toHaveBeenCalledWith("home-id", "home");
   });
 
   it("says why it did not save, and stays open", async () => {

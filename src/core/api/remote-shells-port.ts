@@ -6,6 +6,9 @@ import { Observable } from "rxjs";
  * is: one paired with this machine (ARCHITECTURE.md 2.7.3).
  */
 export type RemoteHost = {
+  /** What the machine is known by: panes and every call here name it by this. */
+  readonly id: string;
+  /** What the user calls it; free to change. */
   readonly name: string;
   readonly connection: "disconnected" | "connecting" | "connected" | "failed";
   /** Why the connection failed; only while `failed`. */
@@ -35,7 +38,7 @@ export type RemoteShell = {
 
 /**
  * The machines whose shells Cogno can show - the ones paired with this
- * machine - and the shells that run on them. A name belongs to one machine.
+ * machine - and the shells that run on them. `host` is a machine's id.
  */
 export abstract class RemoteShellsPort {
   /** The paired machines; again whenever one changes. */
@@ -47,8 +50,8 @@ export abstract class RemoteShellsPort {
    */
   abstract readonly shownInThisWindowChanged$: Observable<void>;
 
-  /** Calls the machine `previousName` `name` from now on. Rejects with a text for the user. */
-  abstract renameHost(previousName: string, name: string): Promise<void>;
+  /** Calls the machine `name` from now on. Rejects with a text for the user. */
+  abstract renameHost(host: string, name: string): Promise<void>;
   /** Hangs up on a machine and removes the pairing with it, here and there. */
   abstract removeHost(host: string): Promise<void>;
 

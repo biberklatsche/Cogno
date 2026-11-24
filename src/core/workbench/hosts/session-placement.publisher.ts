@@ -11,8 +11,7 @@ const SETTLE_MS = 250;
 /**
  * Tells this machine's host where each of its shells sits in this Cogno:
  * workspace, tab, title and directory. Another Cogno that looks at the
- * machine finds a shell by that, and so does this one for a shell no window
- * shows any more.
+ * machine finds a shell by that.
  *
  * Only the shells of this machine are placed. A shell of another machine
  * that is shown here keeps the placement of the Cogno it belongs to.

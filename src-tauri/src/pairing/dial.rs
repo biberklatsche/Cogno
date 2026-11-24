@@ -30,16 +30,20 @@ type Streams = (SendStream, RecvStream);
 
 /// A dial on its way: the connection, once there, and the task that makes it.
 pub struct Dialing {
+    /// What the user calls the machine, for what failures say.
+    name: String,
     task: JoinHandle<Result<Streams, CommandError>>,
     connection: Arc<Mutex<Option<Connection>>>,
 }
 
 impl Dialing {
-    /// Dials the paired machine `id`, found in the local network.
+    /// Dials the paired machine `id`, found in the local network; the user
+    /// knows it as `name`.
     pub fn start(endpoint: Endpoint, id: EndpointId, name: &str) -> Self {
         let connection = Arc::new(Mutex::new(None));
         let made = connection.clone();
-        let name = name.to_string();
+        let dialed = name.to_string();
+        let name = dialed.clone();
         let task = tokio::spawn(async move {
             let dialing = async {
                 let opened = endpoint
@@ -57,13 +61,16 @@ impl Dialing {
                 .await
                 .map_err(|_| unreachable(&name, &"no answer in time"))?
         });
-        Self { task, connection }
+        Self {
+            name: dialed,
+            task,
+            connection,
+        }
     }
 
     /// Waits for the host there to introduce itself. On a blocking thread.
     pub fn introduce(
         self,
-        name: &str,
         events: Arc<dyn HostEvents>,
         on_lost: OnLost,
     ) -> CommandResult<HostConnection> {
@@ -74,7 +81,7 @@ impl Dialing {
             .map_err(|_| CommandError::connection_lost())??;
         let reader = SyncIoBridge::new_with_handle(recv, runtime.clone());
         let writer = SyncIoBridge::new_with_handle(send, runtime);
-        HostConnection::to_paired_machine(reader, writer, name, events, on_lost, ender)
+        HostConnection::over(reader, writer, Some(&self.name), events, on_lost, ender)
     }
 }
 

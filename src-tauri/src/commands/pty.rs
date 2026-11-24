@@ -3,7 +3,7 @@ use tauri::ipc::{Channel, InvokeResponseBody};
 use tauri::State;
 
 use crate::command_error::CommandResult;
-use crate::hosts::{HostState, SpawnRequest, Spawned};
+use crate::hosts::{HostState, Spawned};
 
 /// Starts a shell on this machine; on another one, Cogno only shows what
 /// runs there.
@@ -15,11 +15,7 @@ pub async fn pty_spawn(
     on_data: Channel<InvokeResponseBody>,
 ) -> CommandResult<Spawned> {
     hosts
-        .spawn(SpawnRequest {
-            options,
-            window: window.label().to_string(),
-            on_data,
-        })
+        .spawn(options, window.label().to_string(), on_data)
         .await
 }
 
@@ -121,12 +117,14 @@ pub async fn pty_detach(
 /// The pane of a shell of this machine is gone for good: the shell ends if
 /// it belongs to the calling window, also while another machine shows it.
 #[tauri::command]
-pub fn pty_pane_closed(
+pub async fn pty_pane_closed(
     window: tauri::WebviewWindow,
     hosts: State<'_, HostState>,
     terminal_id: String,
 ) -> CommandResult<()> {
-    hosts.pane_closed(window.label(), terminal_id)
+    hosts
+        .pane_closed(window.label().to_string(), terminal_id)
+        .await
 }
 
 /// The webview's acknowledgement that it has taken in every chunk up to and

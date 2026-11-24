@@ -7,7 +7,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{mpsc, Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
@@ -15,7 +15,7 @@ use portable_pty::CommandBuilder;
 
 use crate::attachment::{Attachment, Owner};
 use crate::env_vars;
-use crate::host::{Client, ClientId, Origin};
+use crate::host::{Client, ClientId};
 use crate::line_editor::LineEditorTarget;
 use crate::protocol::{
     AgentHook, ExitReason, HostError, HostErrorCode, SessionInfo, SessionPlacement, SpawnOptions,
@@ -55,17 +55,6 @@ impl Session {
         self.shell.shut_down();
         ended
     }
-}
-
-/// What a `PtySpawn` asks for, past the shell itself.
-pub(crate) struct SpawnRequest {
-    pub options: SpawnOptions,
-    pub window: WindowLabel,
-    pub stream: StreamId,
-    /// The endpoint file of the host the shell runs in: the shell learns
-    /// it (`COGNO_HOST`), so a `cogno` of another build typed in it reaches
-    /// this host.
-    pub host_endpoint: PathBuf,
 }
 
 /// What became of a spawn.
@@ -170,25 +159,25 @@ impl SessionHandle {
             return;
         };
         let ended = session.shut_down();
-        tell_ended(&self.terminal_id, ended, reason, None);
+        tell_ended(&self.terminal_id, ended, reason, |_| false);
     }
 }
 
-/// Tells whoever showed an ended session, except `not_told`, and whom it was
-/// taken from, that it ended.
+/// Tells whoever showed an ended session, and whom it was taken from, that
+/// it ended - except the windows that `knows` it already.
 fn tell_ended(
     terminal_id: &TerminalId,
     ended: Ended,
     reason: ExitReason,
-    not_told: Option<ClientId>,
+    knows: impl Fn(&Owner) -> bool,
 ) {
     if let Some(attachment) = ended.attachment {
-        if Some(attachment.client) != not_told {
+        if !knows(&attachment.owner()) {
             attachment.tell_exit(terminal_id, reason);
         }
         attachment.end();
     }
-    if let Some(taken_from) = ended.taken_from {
+    if let Some(taken_from) = ended.taken_from.filter(|waiting| !knows(&waiting.owner)) {
         taken_from.tell_exit(terminal_id, reason);
     }
 }
@@ -206,28 +195,20 @@ impl Sessions {
         lock(&self.table)
     }
 
-    /// Starts the shell of `request.options` in a PTY of its own, attached to
-    /// `client`: its output goes there under `request.stream`, its end as
-    /// `PtyExit`. Only this machine's app starts shells: a session belongs to
-    /// one of its windows.
+    /// Starts the shell of `options` in a PTY of its own, attached to
+    /// `window` of `client`: its output goes there under `stream`, its end
+    /// as `PtyExit`. The session belongs to that window. The shell learns `host_endpoint`, the endpoint
+    /// file of the host it runs in (`COGNO_HOST`), so a `cogno` of another
+    /// build typed in it reaches this host.
     pub fn spawn(
         &self,
         client: &Client,
         spawner: &ShellSpawner,
-        request: SpawnRequest,
+        options: SpawnOptions,
+        window: WindowLabel,
+        stream: StreamId,
+        host_endpoint: &Path,
     ) -> Result<Spawned, HostError> {
-        let SpawnRequest {
-            options,
-            window,
-            stream,
-            host_endpoint,
-        } = request;
-        if client.origin != Origin::ThisMachine {
-            return Err(HostError::new(
-                HostErrorCode::InvalidRequest,
-                "A Cogno on another machine starts no shell here",
-            ));
-        }
         let terminal_id = options.terminal_id.clone();
         // Checked again when the session is registered: two spawns of one id
         // may start at once.
@@ -237,7 +218,7 @@ impl Sessions {
 
         let prepared = spawner.prepare_spawn(&options.profile)?;
         let line_editor = LineEditorTarget::for_shell(options.profile.shell_type, &prepared.env);
-        let command = shell_command(prepared, line_editor.as_ref(), &host_endpoint, &terminal_id);
+        let command = shell_command(prepared, line_editor.as_ref(), host_endpoint, &terminal_id);
         let StartedShell {
             process,
             mut child,
@@ -493,11 +474,17 @@ impl Sessions {
             .remove(terminal_id)
             .ok_or_else(|| HostError::session_not_found(terminal_id))?;
         let ended = session.shut_down();
+        // The client that asked knows, where it shows the session itself.
+        let asked = ended
+            .attachment
+            .as_ref()
+            .map(Attachment::owner)
+            .filter(|shows| shows.client == client);
         tell_ended(
             terminal_id,
             ended,
             ExitReason::KilledByAnotherClient,
-            Some(client),
+            |owner| asked.as_ref() == Some(owner),
         );
         Ok(())
     }
@@ -517,20 +504,13 @@ impl Sessions {
         let Some(session) = session else {
             return;
         };
-        let Ended {
-            attachment,
-            taken_from,
-        } = session.shut_down();
-        if let Some(attachment) = attachment {
-            if attachment.owner() != *owner {
-                attachment.tell_exit(terminal_id, ExitReason::KilledByAnotherClient);
-            }
-            attachment.end();
-        }
-        // The window that asked may be the one it was taken from.
-        if let Some(taken_from) = taken_from.filter(|taken_from| taken_from.owner != *owner) {
-            taken_from.tell_exit(terminal_id, ExitReason::KilledByAnotherClient);
-        }
+        // The window that asked may show it, or be the one it was taken from.
+        tell_ended(
+            terminal_id,
+            session.shut_down(),
+            ExitReason::KilledByAnotherClient,
+            |window| window == owner,
+        );
     }
 
     /// The client's acknowledgement that it has taken in every piece of
@@ -607,22 +587,15 @@ impl Sessions {
         }
         let shut_down = std::thread::spawn(move || {
             for (terminal_id, session) in sessions {
-                let Ended {
-                    attachment,
-                    taken_from,
-                } = session.shut_down();
-                // The owner is gone and hears nothing but the stream's end;
-                // a Cogno that borrowed the session, or waits for it, hears
-                // that it ended.
-                if let Some(attachment) = attachment {
-                    if !departure.owns(&attachment.owner()) {
-                        attachment.tell_exit(&terminal_id, ExitReason::KilledByAnotherClient);
-                    }
-                    attachment.end();
-                }
-                if let Some(taken_from) = taken_from {
-                    taken_from.tell_exit(&terminal_id, ExitReason::KilledByAnotherClient);
-                }
+                // Who is gone hears nothing but the stream's end; a Cogno
+                // that borrowed the session, or waits for it, hears that it
+                // ended.
+                tell_ended(
+                    &terminal_id,
+                    session.shut_down(),
+                    ExitReason::KilledByAnotherClient,
+                    |owner| departure.owns(owner),
+                );
             }
         });
         let mut shut_downs = lock(&self.shut_downs);

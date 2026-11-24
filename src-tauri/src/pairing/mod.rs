@@ -35,7 +35,7 @@ pub use dial::Dialing;
 use dial::{refusal, HOST_ALPN};
 use handshake::{Incoming, Message, Pending, PAIR_ALPN};
 pub use store::PairedMachine;
-use store::{Paired, Store};
+use store::Store;
 
 /// How long the other machine may take to tell it removed the pairing too.
 const UNPAIR_PATIENCE: Duration = Duration::from_secs(5);
@@ -110,6 +110,26 @@ impl From<io::Error> for PairingError {
     }
 }
 
+impl From<PairingError> for CommandError {
+    fn from(error: PairingError) -> Self {
+        match error {
+            PairingError::Off => CommandError::new(
+                AppErrorCode::PairingOff,
+                "Pairing is off: switch on the Remote feature",
+            ),
+            PairingError::Unreachable(reason) => CommandError::new(
+                AppErrorCode::PairingUnreachable,
+                format!("Could not reach the other machine: {reason}"),
+            ),
+            PairingError::Declined => CommandError::new(
+                AppErrorCode::PairingDeclined,
+                "The pairing was not confirmed on both machines",
+            ),
+            PairingError::Storage(error) => CommandError::internal(error),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Pairing(Arc<Inner>);
 
@@ -130,6 +150,9 @@ struct Inner {
     /// The machines in the local network that announce a name: they have
     /// pairing open.
     nearby: Mutex<BTreeMap<EndpointId, String>>,
+    /// What keeps `nearby` as the local network says, while the endpoint
+    /// runs.
+    watching_nearby: Mutex<Option<tokio::task::JoinHandle<()>>>,
     /// The pairings that wait for this machine's user.
     requests: Mutex<HashMap<u64, oneshot::Sender<bool>>>,
     next_request: AtomicU64,
@@ -146,6 +169,7 @@ impl Pairing {
             passed: Mutex::new(Vec::new()),
             open: Mutex::new(false),
             nearby: Mutex::new(BTreeMap::new()),
+            watching_nearby: Mutex::new(None),
             requests: Mutex::new(HashMap::new()),
             next_request: AtomicU64::new(1),
         }))
@@ -194,11 +218,14 @@ impl Pairing {
         Ok(())
     }
 
-    /// Keeps `nearby` as the local network says, until the endpoint is gone.
+    /// Keeps `nearby` as the local network says, until `disable` ends it.
     fn watch_nearby(&self, local_network: MdnsAddressLookup, own: EndpointId) {
         let pairing = self.clone();
-        tokio::spawn(async move {
+        let watching = tokio::spawn(async move {
             let mut events = local_network.subscribe().await;
+            // The endpoint keeps the lookup alive, and only for as long as
+            // it runs.
+            drop(local_network);
             while let Some(event) = events.next().await {
                 let changed = match event {
                     DiscoveryEvent::Discovered { endpoint_info, .. } => {
@@ -219,11 +246,13 @@ impl Pairing {
                     }
                     _ => false,
                 };
-                if changed {
+                // Shown only while pairing is open here.
+                if changed && *lock(&pairing.0.open) {
                     pairing.0.events.changed();
                 }
             }
         });
+        *lock(&self.0.watching_nearby) = Some(watching);
     }
 
     /// Stops the endpoint: the Remote feature was switched off. Nothing is
@@ -231,6 +260,9 @@ impl Pairing {
     pub async fn disable(&self) {
         let _switching = self.0.switching.lock().await;
         let endpoint = lock(&self.0.endpoint).take();
+        if let Some(watching) = lock(&self.0.watching_nearby).take() {
+            watching.abort();
+        }
         *lock(&self.0.open) = false;
         lock(&self.0.nearby).clear();
         lock(&self.0.requests).clear();
@@ -246,7 +278,7 @@ impl Pairing {
         let nearby = if open {
             lock(&self.0.nearby)
                 .iter()
-                .filter(|(id, _)| !paired.machines.iter().any(|m| m.endpoint_id == **id))
+                .filter(|(id, _)| !paired.iter().any(|m| m.endpoint_id == **id))
                 .map(|(id, name)| NearbyMachine {
                     id: id.to_string(),
                     name: name.clone(),
@@ -256,7 +288,7 @@ impl Pairing {
             Vec::new()
         };
         Ok(PairingView {
-            machines: paired.machines,
+            machines: paired,
             open,
             nearby,
         })
@@ -301,9 +333,7 @@ impl Pairing {
             .await
             .map_err(|error| PairingError::Unreachable(error.to_string()))?
             .ok_or(PairingError::Declined)?;
-        self.settle(pending, on_request)
-            .await
-            .ok_or(PairingError::Declined)
+        self.settle(pending, on_request).await
     }
 
     /// Asks this machine's user and tells the other machine; saves the
@@ -312,7 +342,7 @@ impl Pairing {
         &self,
         pending: Pending,
         tell: impl FnOnce(PairRequest),
-    ) -> Option<PairedMachine> {
+    ) -> Result<PairedMachine, PairingError> {
         let id = self.0.next_request.fetch_add(1, Ordering::Relaxed);
         let (answer, answered) = oneshot::channel();
         lock(&self.0.requests).insert(id, answer);
@@ -331,23 +361,22 @@ impl Pairing {
         lock(&self.0.requests).remove(&id);
         self.0.events.request_ended(id);
         if !both {
-            return None;
+            return Err(PairingError::Declined);
         }
-        let machine = self
-            .0
-            .store
-            .change(|paired| {
-                paired.machines.retain(|known| known.endpoint_id != peer);
-                let machine = PairedMachine {
-                    name: unique_name(wanted.as_deref(), paired),
-                    endpoint_id: peer,
-                };
-                paired.machines.push(machine.clone());
-                machine
-            })
-            .ok()?;
+        let machine = self.0.store.change(|paired| {
+            // Paired before: it keeps the name the user knows it by.
+            if let Some(known) = paired.iter().find(|known| known.endpoint_id == peer) {
+                return known.clone();
+            }
+            let machine = PairedMachine {
+                name: unique_name(wanted.as_deref(), paired),
+                endpoint_id: peer,
+            };
+            paired.push(machine.clone());
+            machine
+        })?;
         self.0.events.changed();
-        Some(machine)
+        Ok(machine)
     }
 
     /// What this machine's user says to request `id`: whether the check
@@ -358,10 +387,10 @@ impl Pairing {
         }
     }
 
-    /// Calls the paired machine `previous` `name` from now on.
-    pub fn rename(&self, previous: &str, name: &str) -> Result<(), PairingError> {
+    /// Calls the paired machine `id` `name` from now on.
+    pub fn rename(&self, id: &str, name: &str) -> Result<(), PairingError> {
         self.0.store.change(|paired| {
-            for machine in paired.machines.iter_mut().filter(|m| m.name == previous) {
+            for machine in paired.iter_mut().filter(|m| is(m, id)) {
                 machine.name = name.to_string();
             }
         })?;
@@ -369,12 +398,12 @@ impl Pairing {
         Ok(())
     }
 
-    /// Removes the pairing with `name` here, and tells that machine. Whether
-    /// it heard: when not, it refuses this one the next time.
-    pub async fn remove(&self, name: &str) -> Result<bool, PairingError> {
+    /// Removes the pairing with the machine `id` here, and tells that
+    /// machine. Whether it heard: when not, it refuses this one the next time.
+    pub async fn remove(&self, id: &str) -> Result<bool, PairingError> {
         let removed = self.0.store.change(|paired| {
-            let index = paired.machines.iter().position(|m| m.name == name)?;
-            Some(paired.machines.remove(index))
+            let index = paired.iter().position(|m| is(m, id))?;
+            Some(paired.remove(index))
         })?;
         let Some(machine) = removed else {
             return Ok(true);
@@ -387,26 +416,20 @@ impl Pairing {
         Ok(handshake::tell_unpaired(&endpoint, machine.endpoint_id, UNPAIR_PATIENCE).await)
     }
 
-    /// Starts connecting to the paired machine `name`.
-    pub fn dial(&self, name: &str) -> CommandResult<Dialing> {
-        let endpoint = self.endpoint().map_err(|_| {
-            CommandError::new(
-                AppErrorCode::PairingOff,
-                "Pairing is off: switch on the Remote feature",
-            )
-        })?;
+    /// Starts connecting to the paired machine `id`.
+    pub fn dial(&self, id: &str) -> CommandResult<Dialing> {
+        let endpoint = self.endpoint()?;
         let paired = self.0.store.paired().map_err(CommandError::internal)?;
         let machine = paired
-            .machines
             .iter()
-            .find(|machine| machine.name == name)
+            .find(|machine| is(machine, id))
             .ok_or_else(|| {
                 CommandError::new(
                     AppErrorCode::NotPaired,
-                    format!("This machine is not paired with {name}"),
+                    "This machine is not paired with that machine (any more)",
                 )
             })?;
-        Ok(Dialing::start(endpoint, machine.endpoint_id, name))
+        Ok(Dialing::start(endpoint, machine.endpoint_id, &machine.name))
     }
 
     fn endpoint(&self) -> Result<Endpoint, PairingError> {
@@ -425,8 +448,12 @@ impl Pairing {
                     return;
                 };
                 if let Ok(pending) = asking.offer(&endpoint, Some(own_name())).await {
-                    self.settle(pending, |request| self.0.events.request(request))
+                    let settled = self
+                        .settle(pending, |request| self.0.events.request(request))
                         .await;
+                    if let Err(PairingError::Storage(error)) = settled {
+                        log::error!(target: "pairing", "a pairing could not be saved: {error}");
+                    }
                 }
             }
             Ok(Some(Incoming::Unpair(answering))) => {
@@ -454,7 +481,7 @@ impl Pairing {
             .0
             .store
             .paired()
-            .is_ok_and(|paired| paired.machines.iter().any(|m| m.endpoint_id == peer));
+            .is_ok_and(|paired| paired.iter().any(|m| m.endpoint_id == peer));
         if !paired {
             connection.close(refusal::NOT_PAIRED.into(), b"refused");
             return;
@@ -478,11 +505,9 @@ impl Pairing {
     /// The machine `peer` removed the pairing: so does this one.
     fn forget(&self, peer: EndpointId) {
         let forgotten = self.0.store.change(|paired| {
-            let before = paired.machines.len();
-            paired
-                .machines
-                .retain(|machine| machine.endpoint_id != peer);
-            paired.machines.len() != before
+            let before = paired.len();
+            paired.retain(|machine| machine.endpoint_id != peer);
+            paired.len() != before
         });
         self.cut_off(peer);
         if matches!(forgotten, Ok(true)) {
@@ -500,6 +525,11 @@ impl Pairing {
     }
 }
 
+/// Whether `machine` is the one paired under `id`.
+fn is(machine: &PairedMachine, id: &str) -> bool {
+    machine.endpoint_id.to_string() == id
+}
+
 /// How this machine calls itself towards others.
 fn own_name() -> String {
     cogno_host::identity::machine_name().unwrap_or_else(|| UNNAMED_MACHINE.to_string())
@@ -507,12 +537,12 @@ fn own_name() -> String {
 
 /// `wanted`, or - when that is taken or missing - the first of "wanted 2",
 /// "wanted 3", ... that no paired machine has.
-fn unique_name(wanted: Option<&str>, paired: &Paired) -> String {
+fn unique_name(wanted: Option<&str>, paired: &[PairedMachine]) -> String {
     let base = wanted
         .map(str::trim)
         .filter(|name| !name.is_empty())
         .unwrap_or(UNNAMED_MACHINE);
-    let is_free = |name: &str| !paired.machines.iter().any(|m| m.name == name);
+    let is_free = |name: &str| !paired.iter().any(|m| m.name == name);
     if is_free(base) {
         return base.to_string();
     }
@@ -562,13 +592,14 @@ mod tests {
         pairing.endpoint().unwrap().addr()
     }
 
-    /// Answers the first request `told` hears with `confirmed`.
+    /// Answers the next request `told` hears with `confirmed`.
     fn answer_when_asked(pairing: &Pairing, told: &Arc<Told>, confirmed: bool) {
         let pairing = pairing.clone();
         let told = told.clone();
+        let heard_before = lock(&told.requests).len();
         tokio::spawn(async move {
             loop {
-                if let Some(request) = lock(&told.requests).first().cloned() {
+                if let Some(request) = lock(&told.requests).get(heard_before).cloned() {
                     pairing.answer(request.id, confirmed);
                     return;
                 }
@@ -595,14 +626,14 @@ mod tests {
             .await
     }
 
-    /// Office and laptop, paired; the name the laptop knows the office by.
+    /// Office and laptop, paired; the id the laptop knows the office by.
     async fn paired_pair() -> (Pairing, Pairing, String) {
         let (office, office_told) = machine().await;
         let (laptop, _) = machine().await;
         let paired = asked_to_pair(&office, &office_told, &laptop, true)
             .await
             .unwrap();
-        (office, laptop, paired.name)
+        (office, laptop, paired.endpoint_id.to_string())
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -688,9 +719,9 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn a_paired_machine_reaches_the_host_of_the_other() {
-        let (office, laptop, office_name) = paired_pair().await;
+        let (office, laptop, office_id) = paired_pair().await;
 
-        let connection = dial(&laptop, &office_name).await.unwrap();
+        let connection = dial(&laptop, &office_id).await.unwrap();
 
         let shells = tokio::task::spawn_blocking(move || {
             let shells = connection.request(cogno_host::protocol::Request::ListSessions);
@@ -708,16 +739,15 @@ mod tests {
         office.disable().await;
     }
 
-    /// What dialing `name` from `from` comes to, through to the host's hello.
+    /// What dialing `id` from `from` comes to, through to the host's hello.
     async fn dial(
         from: &Pairing,
-        name: &str,
+        id: &str,
     ) -> CommandResult<crate::host_connection::HostConnection> {
         use crate::host_connection::test_support::NoEvents;
-        let dialing = from.dial(name)?;
-        let name = name.to_string();
+        let dialing = from.dial(id)?;
         tokio::task::spawn_blocking(move || {
-            dialing.introduce(&name, Arc::new(NoEvents), Box::new(|_, _| {}))
+            dialing.introduce(Arc::new(NoEvents), Box::new(|_, _| {}))
         })
         .await
         .unwrap()
@@ -732,7 +762,7 @@ mod tests {
             .0
             .store
             .change(|paired| {
-                paired.machines.push(PairedMachine {
+                paired.push(PairedMachine {
                     name: "office".into(),
                     endpoint_id: office.endpoint().unwrap().id(),
                 })
@@ -743,38 +773,48 @@ mod tests {
         let _ =
             handshake::tell_unpaired(&stranger.endpoint().unwrap(), known, UNPAIR_PATIENCE).await;
 
-        let refused = dial(&stranger, "office").await;
+        let office_id = office.endpoint().unwrap().id().to_string();
+        let refused = dial(&stranger, &office_id).await;
 
         assert!(refused.err().unwrap().is(AppErrorCode::NotPaired));
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn unpairing_removes_the_pairing_on_both_machines() {
-        let (office, laptop, office_name) = paired_pair().await;
+        let (office, laptop, office_id) = paired_pair().await;
 
-        let heard = laptop.remove(&office_name).await.unwrap();
+        let heard = laptop.remove(&office_id).await.unwrap();
 
         assert!(heard);
         assert!(laptop.view().unwrap().machines.is_empty());
         assert!(office.view().unwrap().machines.is_empty());
-        let refused = dial(&laptop, &office_name).await;
+        let refused = dial(&laptop, &office_id).await;
         assert!(refused.err().unwrap().is(AppErrorCode::NotPaired));
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    async fn a_paired_machine_is_called_what_the_user_says() {
-        let (_office, laptop, office_name) = paired_pair().await;
-
-        laptop.rename(&office_name, "work").unwrap();
-
-        let names: Vec<_> = laptop
-            .view()
+    async fn a_paired_machine_is_called_what_the_user_says_also_after_pairing_again() {
+        let (office, office_told) = machine().await;
+        let (laptop, _) = machine().await;
+        let office_id = asked_to_pair(&office, &office_told, &laptop, true)
+            .await
             .unwrap()
-            .machines
-            .into_iter()
-            .map(|machine| machine.name)
-            .collect();
-        assert_eq!(names, ["work"]);
+            .endpoint_id
+            .to_string();
+        let names = || -> Vec<String> {
+            let machines = laptop.view().unwrap().machines;
+            machines.into_iter().map(|machine| machine.name).collect()
+        };
+
+        laptop.rename(&office_id, "work").unwrap();
+        assert_eq!(names(), ["work"]);
+
+        // Paired again, as after the office removed the pairing on its side.
+        let again = asked_to_pair(&office, &office_told, &laptop, true)
+            .await
+            .unwrap();
+        assert_eq!(again.name, "work");
+        assert_eq!(names(), ["work"]);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -812,12 +852,10 @@ mod tests {
 
     #[test]
     fn a_machine_gets_a_name_no_other_paired_machine_has() {
-        let paired = Paired {
-            machines: vec![PairedMachine {
-                name: "laptop".into(),
-                endpoint_id: SecretKey::generate().public(),
-            }],
-        };
+        let paired = vec![PairedMachine {
+            name: "laptop".into(),
+            endpoint_id: SecretKey::generate().public(),
+        }];
 
         assert_eq!(unique_name(Some("office"), &paired), "office");
         assert_eq!(unique_name(Some("laptop"), &paired), "laptop 2");

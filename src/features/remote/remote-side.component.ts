@@ -101,7 +101,7 @@ type RowAction = "copy" | "edit" | "delete";
                       type="button"
                       class="button text-button"
                       appTooltip="Its shells run on; the ones shown here close"
-                      (click)="panel.disconnect(node.host.name)"
+                      (click)="panel.disconnect(node.host.id)"
                     >
                       Disconnect
                     </button>
@@ -110,7 +110,7 @@ type RowAction = "copy" | "edit" | "delete";
                     <button
                       type="button"
                       class="button text-button"
-                      (click)="panel.disconnect(node.host.name)"
+                      (click)="panel.disconnect(node.host.id)"
                     >
                       Cancel
                     </button>
@@ -119,7 +119,7 @@ type RowAction = "copy" | "edit" | "delete";
                     <button
                       type="button"
                       class="button text-button"
-                      (click)="panel.connect(node.host.name)"
+                      (click)="panel.connect(node.host.id)"
                     >
                       Connect
                     </button>
@@ -129,7 +129,7 @@ type RowAction = "copy" | "edit" | "delete";
                     <button
                       type="button"
                       class="button text-button"
-                      (click)="panel.removeHost(node.host.name)"
+                      (click)="panel.removeHost(node.host.id)"
                     >
                       Remove
                     </button>
@@ -161,7 +161,7 @@ type RowAction = "copy" | "edit" | "delete";
                   type="button"
                   class="shell"
                   [appTooltip]="node.shell.directory ?? ''"
-                  (click)="panel.show(node.hostName, node.shell)"
+                  (click)="panel.show(node.host, node.shell)"
                 >
                   <app-icon class="shell-icon" name="mdiConsole"></app-icon>
                   <span class="name">{{ node.name }}</span>
@@ -183,7 +183,7 @@ type RowAction = "copy" | "edit" | "delete";
                     class="row-action"
                     [enableEdit]="false"
                     deleteTooltip="End the shell"
-                    (onEvent)="onShellAction($event, node.hostName, node.shell)"
+                    (onEvent)="onShellAction($event, node.host, node.shell)"
                   ></app-copy-edit-delete>
                 }
               </div>
@@ -408,10 +408,10 @@ export class RemoteSideComponent {
   /** Removing a remote asks once more, as everywhere in the side panels. */
   protected onHostAction(action: RowAction, host: RemoteHost): void {
     if (action === "edit") this.edit(host);
-    if (action === "delete") void this.panel.removeHost(host.name);
+    if (action === "delete") void this.panel.removeHost(host.id);
   }
 
-  protected onShellAction(action: RowAction, hostName: string, shell: RemoteShell): void {
-    if (action === "delete") void this.panel.end(hostName, shell);
+  protected onShellAction(action: RowAction, host: string, shell: RemoteShell): void {
+    if (action === "delete") void this.panel.end(host, shell);
   }
 }

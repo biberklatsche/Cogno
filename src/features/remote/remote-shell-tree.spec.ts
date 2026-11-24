@@ -8,6 +8,7 @@ function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): Remote
 
 function host(name: string, connection: RemoteHost["connection"], failure?: string): RemoteHost {
   return {
+    id: name,
     name,
     connection,
     failure: failure === undefined ? undefined : { message: failure, worthRetrying: true },
@@ -106,7 +107,7 @@ describe("hostNodes", () => {
     const shellNode = treeOf(shell("t1", { workspace: "Cogno", title: "vim" }))[0]?.children[0]
       ?.children[0];
 
-    expect(shellNode).toMatchObject({ kind: "shell", hostName: "office", name: "vim" });
+    expect(shellNode).toMatchObject({ kind: "shell", host: "office", name: "vim" });
   });
 
   it("puts shells without a tab under their workspace, and without one under 'No workspace'", () => {

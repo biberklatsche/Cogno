@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemotePanelService } from "./remote-panel.service";
 
 function host(name: string, connection: RemoteHost["connection"]): RemoteHost {
-  return { name, connection };
+  return { id: name, name, connection };
 }
 
 function shell(terminalId: string, overrides: Partial<RemoteShell> = {}): RemoteShell {

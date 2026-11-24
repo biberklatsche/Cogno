@@ -10,7 +10,7 @@ import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-
 import {
   isHostError,
   OsPlatform,
-  SessionInfoContract,
+  SeenSessionContract,
   TerminalExitContract,
 } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
@@ -200,7 +200,7 @@ export class SessionHostFactory {
     takeOver: boolean,
   ): Promise<boolean> {
     const pane = entry.pane;
-    let running: SessionInfoContract;
+    let running: SeenSessionContract;
     try {
       running = await this.hosts.session(pane.host, terminalId);
     } catch (error) {
@@ -322,12 +322,15 @@ export class SessionHostFactory {
 
   /**
    * How the pane's session shows `running`, a shell that already runs. One
-   * that is shown elsewhere is taken from there only when `takeOver`.
+   * that is shown elsewhere is taken from there only when `takeOver`. One
+   * this window shows itself - its webview was loaded again - is shown on.
    */
-  private showing(pane: Pane, running: SessionInfoContract, takeOver: boolean): SessionStart {
+  private showing(pane: Pane, running: SeenSessionContract, takeOver: boolean): SessionStart {
     const shell = runningShell(this.configuredProfile(pane), running);
     const { attached } = running;
-    if (takeOver || attached.to === "nowhere") return { kind: "showRunning", shell };
+    if (takeOver || attached.to === "nowhere" || running.shownInThisWindow) {
+      return { kind: "showRunning", shell };
+    }
     return {
       kind: "shownElsewhere",
       shell,

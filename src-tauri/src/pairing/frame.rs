@@ -33,22 +33,6 @@ pub async fn open(
         .map_err(|_| io::Error::new(io::ErrorKind::TimedOut, "the other machine was not reached"))?
 }
 
-/// Connects to `to` on `alpn`, sends `request` and waits up to `patience`
-/// for the one reply.
-pub async fn ask<Q: Serialize, R: DeserializeOwned>(
-    endpoint: &Endpoint,
-    to: impl Into<EndpointAddr>,
-    alpn: &[u8],
-    request: &Q,
-    patience: Duration,
-) -> io::Result<R> {
-    let (connection, mut send, mut recv) = open(endpoint, to, alpn).await?;
-    write(&mut send, request).await?;
-    let reply = read(&mut recv, patience).await;
-    connection.close(0u32.into(), b"done");
-    reply
-}
-
 pub async fn write<T: Serialize>(send: &mut SendStream, message: &T) -> io::Result<()> {
     let json = serde_json::to_vec(message).map_err(io::Error::other)?;
     let length = u32::try_from(json.len())

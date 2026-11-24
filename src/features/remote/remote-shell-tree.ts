@@ -18,7 +18,8 @@ export type RemoteTreeNode = {
   | { readonly kind: "workspace" | "tab"; readonly name: string }
   | {
       readonly kind: "shell";
-      readonly hostName: string;
+      /** The id of the machine the shell runs on. */
+      readonly host: string;
       readonly shell: RemoteShell;
       /** What the shell is called in the tree. */
       readonly name: string;
@@ -39,16 +40,16 @@ function lastSegment(directory: string | undefined): string | undefined {
   return segments?.at(-1) ?? directory;
 }
 
-/** The panel's tree: every host of the config, with what is known of its shells. */
+/** The panel's tree: every remote, with what is known of its shells. */
 export function hostNodes(
   hosts: readonly RemoteHost[],
   shells: ReadonlyMap<string, HostShells>,
 ): RemoteTreeNode[] {
   return hosts.map((host) => ({
     kind: "host",
-    key: keyOf("host", host.name),
+    key: keyOf("host", host.id),
     host,
-    children: underHost(host, shells.get(host.name)),
+    children: underHost(host, shells.get(host.id)),
   }));
 }
 
@@ -58,20 +59,20 @@ function underHost(host: RemoteHost, shells: HostShells | undefined): RemoteTree
     case "disconnected":
       return [];
     case "connecting":
-      return [statusNode(host.name, `Connecting to ${host.name}...`)];
+      return [statusNode(host.id, `Connecting to ${host.name}...`)];
     case "failed":
-      return [failureNode(host.name, host.failure?.message ?? "Could not connect.")];
+      return [failureNode(host.id, host.failure?.message ?? "Could not connect.")];
   }
   if (!shells || shells.status === "loading") {
-    return [statusNode(host.name, "Looking for shells...")];
+    return [statusNode(host.id, "Looking for shells...")];
   }
   if (shells.status === "failed") {
-    return [failureNode(host.name, shells.reason)];
+    return [failureNode(host.id, shells.reason)];
   }
   if (shells.shells.length === 0) {
-    return [statusNode(host.name, "No shells are running.")];
+    return [statusNode(host.id, "No shells are running.")];
   }
-  return workspaceNodes(host.name, shells.shells);
+  return workspaceNodes(host.id, shells.shells);
 }
 
 /**
@@ -80,7 +81,7 @@ function underHost(host: RemoteHost, shells: HostShells | undefined): RemoteTree
  * under its workspace directly. A shell that nothing shows right now stays
  * where it was: its Cogno is closed, or it let the shell go.
  */
-function workspaceNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
+function workspaceNodes(host: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
   const workspaces = new Map<string | undefined, Map<string | undefined, RemoteShell[]>>();
   for (const shell of shells) {
     const tabs = getOrAdd(workspaces, shell.workspace, () => new Map());
@@ -88,24 +89,24 @@ function workspaceNodes(hostName: string, shells: readonly RemoteShell[]): Remot
   }
   return sortedByName(workspaces, "unnamedLast").map(([workspace, tabs]) => ({
     kind: "workspace",
-    key: keyOf("workspace", hostName, workspace),
+    key: keyOf("workspace", host, workspace),
     name: workspace ?? UNNAMED_WORKSPACE,
     children: sortedByName(tabs, "unnamedFirst").flatMap(([tab, tabShells]): RemoteTreeNode[] =>
       tab === undefined
-        ? shellNodes(hostName, tabShells)
+        ? shellNodes(host, tabShells)
         : [
             {
               kind: "tab",
-              key: keyOf("tab", hostName, workspace, tab),
+              key: keyOf("tab", host, workspace, tab),
               name: tab,
-              children: shellNodes(hostName, tabShells),
+              children: shellNodes(host, tabShells),
             },
           ],
     ),
   }));
 }
 
-function shellNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
+function shellNodes(host: string, shells: readonly RemoteShell[]): RemoteTreeNode[] {
   return shells
     .map((shell) => ({ shell, name: shellName(shell) }))
     .sort(
@@ -114,8 +115,8 @@ function shellNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTre
     )
     .map(({ shell, name }) => ({
       kind: "shell",
-      key: keyOf("shell", hostName, shell.terminalId),
-      hostName,
+      key: keyOf("shell", host, shell.terminalId),
+      host,
       shell,
       name,
       children: [],
@@ -123,13 +124,13 @@ function shellNodes(hostName: string, shells: readonly RemoteShell[]): RemoteTre
 }
 
 /** A line that says how far getting the host's shells is. */
-function statusNode(hostName: string, text: string): RemoteTreeNode {
-  return { kind: "status", key: keyOf("status", hostName), text, failure: false, children: [] };
+function statusNode(host: string, text: string): RemoteTreeNode {
+  return { kind: "status", key: keyOf("status", host), text, failure: false, children: [] };
 }
 
 /** A line that says why the host's shells cannot be shown. */
-function failureNode(hostName: string, text: string): RemoteTreeNode {
-  return { kind: "status", key: keyOf("status", hostName), text, failure: true, children: [] };
+function failureNode(host: string, text: string): RemoteTreeNode {
+  return { kind: "status", key: keyOf("status", host), text, failure: true, children: [] };
 }
 
 /** A path of names; one that is not given stays apart from every name. */

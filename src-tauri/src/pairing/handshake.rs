@@ -330,9 +330,13 @@ pub async fn tell_unpaired(
     to: impl Into<EndpointAddr>,
     patience: Duration,
 ) -> bool {
-    let told: io::Result<Message> =
-        frame::ask(endpoint, to, PAIR_ALPN, &Message::Unpair, patience).await;
-    matches!(told, Ok(Message::Done))
+    let Ok((connection, mut send, mut recv)) = frame::open(endpoint, to, PAIR_ALPN).await else {
+        return false;
+    };
+    let heard = frame::write(&mut send, &Message::Unpair).await.is_ok()
+        && matches!(frame::read(&mut recv, patience).await, Ok(Message::Done));
+    connection.close(0u32.into(), b"done");
+    heard
 }
 
 #[cfg(test)]

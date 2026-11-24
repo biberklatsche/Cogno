@@ -13,16 +13,16 @@ use crate::host_connection::{HangUp, HostConnection, Underway};
 pub struct Connections {
     /// The connection to this machine's host, once there was one.
     local: Mutex<Option<Arc<HostConnection>>>,
-    /// The connections to other machines, by the name they are paired under.
+    /// The connections to other machines, by the id they are paired under.
     remotes: Mutex<HashMap<String, Arc<HostConnection>>>,
-    /// One connection to another machine is set up at a time: two panes of
-    /// one host restored together share a connection instead of each starting
-    /// one.
-    connecting_remote: Mutex<()>,
+    /// One connection to a machine is set up at a time: two panes of one
+    /// host restored together share a connection instead of each starting
+    /// one. A turn per machine: one that is not reached holds up no other.
+    connecting_remote: Mutex<HashMap<String, Arc<Mutex<()>>>>,
     /// The same for this machine's host, apart from the other machines: one
     /// that does not answer must not hold up the terminals here.
     connecting_local: Mutex<()>,
-    /// The connects to other machines, by the host's name.
+    /// The connects to other machines, by the host's id.
     attempts: Mutex<HashMap<String, Attempt>>,
 }
 
@@ -78,10 +78,7 @@ impl Connections {
             .filter(|remote| !remote.is_lost())
             .cloned()
             .ok_or_else(|| {
-                CommandError::new(
-                    AppErrorCode::NotConnected,
-                    format!("Not connected to the host {name}"),
-                )
+                CommandError::new(AppErrorCode::NotConnected, "Not connected to that machine")
             })
     }
 
@@ -123,12 +120,16 @@ impl Connections {
     ) -> CommandResult<Arc<HostConnection>> {
         let hang_ups = self.hang_ups_of(name);
         let given_up = || self.hang_ups_of(name) != hang_ups;
-        let _one_at_a_time = lock(&self.connecting_remote);
+        let turn = lock(&self.connecting_remote)
+            .entry(name.to_string())
+            .or_default()
+            .clone();
+        let _one_at_a_time = lock(&turn);
         if let Ok(connection) = self.remote(name) {
             return Ok(connection);
         }
         if given_up() {
-            return Err(hung_up_on(name));
+            return Err(hung_up());
         }
         let starting = start()?;
         self.set_ender(name, Some(starting.ender()));
@@ -136,7 +137,7 @@ impl Connections {
         if given_up() {
             self.set_ender(name, None);
             (starting.ender())();
-            return Err(hung_up_on(name));
+            return Err(hung_up());
         }
         let introduced = introduce(starting);
         self.set_ender(name, None);
@@ -144,7 +145,7 @@ impl Connections {
             if let Ok(connection) = introduced {
                 connection.hang_up();
             }
-            return Err(hung_up_on(name));
+            return Err(hung_up());
         }
         self.put_in_place(name, introduced?)
     }
@@ -242,11 +243,8 @@ impl Connections {
     }
 }
 
-fn hung_up_on(name: &str) -> CommandError {
-    CommandError::new(
-        AppErrorCode::ConnectionLost,
-        format!("The connection to {name} was hung up"),
-    )
+fn hung_up() -> CommandError {
+    CommandError::new(AppErrorCode::ConnectionLost, "The connection was hung up")
 }
 
 #[cfg(test)]
@@ -332,12 +330,12 @@ mod tests {
         let connections = Arc::new(Connections::default());
         let (release, released) = mpsc::channel::<()>();
         let (entered, entering) = mpsc::channel::<()>();
-        // Another host takes its time to answer.
+        // The first connect to the office takes its time to answer.
         let first = {
             let connections = connections.clone();
             std::thread::spawn(move || {
                 connections.connect_remote(
-                    "home",
+                    "office",
                     || Ok(Setting::default()),
                     |_| {
                         entered.send(()).unwrap();
@@ -348,6 +346,14 @@ mod tests {
             })
         };
         entering.recv().unwrap();
+        // A second one waits for its turn; another machine does not.
+        assert!(connections
+            .connect_remote(
+                "home",
+                || Ok(Setting::default()),
+                |_| Ok(a_standing_connection())
+            )
+            .is_ok());
         let second = {
             let connections = connections.clone();
             std::thread::spawn(move || {
@@ -358,20 +364,13 @@ mod tests {
                 )
             })
         };
-        // Waits for its turn once it noted how often the host was hung up on.
-        let started = std::time::Instant::now();
-        while !lock(&connections.attempts).contains_key("office") {
-            assert!(
-                started.elapsed() < Duration::from_secs(10),
-                "it never asked"
-            );
-            std::thread::yield_now();
-        }
+        // Long enough for it to have noted how often the host was hung up on.
+        std::thread::sleep(Duration::from_millis(200));
 
         connections.disconnect("office");
         release.send(()).unwrap();
 
-        assert!(first.join().unwrap().is_ok());
+        assert!(first.join().unwrap().is_err());
         let given_up = second.join().unwrap();
         assert!(given_up.err().unwrap().is(AppErrorCode::ConnectionLost));
         assert!(connections.remote("office").is_err());

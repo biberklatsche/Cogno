@@ -2,9 +2,8 @@
 //! whoever talks to it over a stream (this machine's app over loopback, a
 //! Cogno on a paired machine).
 //!
-//! The host starts with a preamble, so anything a login prints before it can
-//! be told apart and skipped, then says hello. The client answers with its own
-//! hello. After that both directions are frames: length, kind, body. Messages
+//! The host starts with a preamble, by which it is told from anything else
+//! that may answer, then says hello. The client answers with its own hello. After that both directions are frames: length, kind, body. Messages
 //! are JSON; a session's output is binary, because it is most of the traffic.
 //! A frame of a kind this build does not know is skipped. A message whose
 //! body names something this build does not know fails alone: a request is
@@ -35,8 +34,6 @@ pub const OLDEST_PROTOCOL_VERSION: u32 = 1;
 /// It comes before any version is spoken and never changes: a Cogno of any
 /// version tells a host by it (`local_host`).
 pub(crate) const PREAMBLE: &[u8] = b"\x02COGNO-HOST\x03";
-/// How much a login may print before the preamble.
-const MAX_NOISE_BEFORE_PREAMBLE: usize = 64 * 1024;
 
 /// Length (u32, little endian), then kind.
 const FRAME_HEADER_LEN: usize = 4 + 1;
@@ -280,24 +277,15 @@ pub fn write_host_hello(writer: &mut impl Write) -> io::Result<()> {
     )
 }
 
-/// Reads up to and including the preamble, past whatever came before it.
-pub fn skip_to_preamble(reader: &mut impl Read) -> io::Result<()> {
-    let mut matched = 0;
-    let mut byte = [0u8; 1];
-    for _ in 0..MAX_NOISE_BEFORE_PREAMBLE + PREAMBLE.len() {
-        reader.read_exact(&mut byte)?;
-        matched = if byte[0] == PREAMBLE[matched] {
-            matched + 1
-        } else if byte[0] == PREAMBLE[0] {
-            1
-        } else {
-            0
-        };
-        if matched == PREAMBLE.len() {
-            return Ok(());
-        }
+/// Reads the preamble a host's stream begins with.
+fn read_preamble(reader: &mut impl Read) -> io::Result<()> {
+    let mut begun = [0u8; PREAMBLE.len()];
+    reader.read_exact(&mut begun)?;
+    if begun == PREAMBLE {
+        Ok(())
+    } else {
+        Err(invalid("no Cogno host answered"))
     }
-    Err(invalid("no Cogno host answered"))
 }
 
 /// The host's hello, the first message after the preamble.
@@ -357,10 +345,10 @@ impl From<IntroductionError> for io::Error {
     }
 }
 
-/// The hello of the host at the other end: skips to its preamble, takes its
+/// The hello of the host at the other end: reads its preamble, takes its
 /// hello and checks that the two share a version.
-pub fn read_compatible_hello(reader: &mut impl Read) -> Result<HostHello, IntroductionError> {
-    skip_to_preamble(reader).map_err(IntroductionError::NoHost)?;
+fn read_compatible_hello(reader: &mut impl Read) -> Result<HostHello, IntroductionError> {
+    read_preamble(reader).map_err(IntroductionError::NoHost)?;
     let host = read_host_hello(reader).map_err(IntroductionError::NoHello)?;
     check_versions(host.protocol, host.oldest).map_err(IntroductionError::Versions)?;
     Ok(host)
@@ -709,14 +697,14 @@ mod tests {
     }
 
     #[test]
-    fn the_hellos_are_found_behind_what_a_login_printed() {
-        let mut bytes = b"Last login: Mon Nov  9\r\n\x02COGNO welcome\r\n".to_vec();
+    fn the_hellos_come_back_as_they_were_written() {
+        let mut bytes = Vec::new();
         write_host_hello(&mut bytes).unwrap();
         let client = ClientHello::of_this_build(Some("laptop".into()));
         write_client_hello(&mut bytes, &client).unwrap();
 
         let mut reader = bytes.as_slice();
-        skip_to_preamble(&mut reader).unwrap();
+        read_preamble(&mut reader).unwrap();
         let host = read_host_hello(&mut reader).unwrap();
         assert_eq!(host.protocol, PROTOCOL_VERSION);
         assert_eq!(host.oldest, OLDEST_PROTOCOL_VERSION);
@@ -752,7 +740,7 @@ mod tests {
     #[test]
     fn a_stream_without_a_host_behind_it_is_an_error() {
         let mut reader: &[u8] = b"bash: cogno: command not found\n";
-        assert!(skip_to_preamble(&mut reader).is_err());
+        assert!(read_preamble(&mut reader).is_err());
     }
 
     #[test]

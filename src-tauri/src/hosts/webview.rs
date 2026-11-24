@@ -91,8 +91,12 @@ struct TakenOverPayload {
 }
 
 #[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct HostDisconnected {
+    /// The id the machine is paired under.
     host: String,
+    /// Whether the connection broke, as opposed to this app hanging up.
+    lost: bool,
 }
 
 /// A session's output on its way to the webview.
@@ -217,12 +221,14 @@ impl WebviewEvents {
         );
     }
 
-    /// Tells every window that the connection to `host` ended.
-    pub fn disconnected(&self, host: &str) {
+    /// Tells every window that the connection to `host` ended: `lost`
+    /// without this app hanging up, or hung up on.
+    pub fn disconnected(&self, host: &str, lost: bool) {
         let _ = self.app.emit(
             HOST_DISCONNECTED_EVENT,
             HostDisconnected {
                 host: host.to_string(),
+                lost,
             },
         );
     }

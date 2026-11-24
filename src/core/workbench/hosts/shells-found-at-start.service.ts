@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { SessionInfoContract } from "@cogno/platform";
+import { SeenSessionContract } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
 
@@ -18,7 +18,7 @@ import { TerminalId } from "@cogno/shared/domain";
  */
 @Injectable({ providedIn: "root" })
 export class ShellsFoundAtStart {
-  private readonly found = new Map<TerminalId, SessionInfoContract>();
+  private readonly found = new Map<TerminalId, SeenSessionContract>();
 
   constructor(private readonly hosts: Hosts) {}
 
@@ -43,7 +43,7 @@ export class ShellsFoundAtStart {
   }
 
   /** The shell of `terminalId`, for the pane that shows it; once. */
-  claim(terminalId: TerminalId): SessionInfoContract | undefined {
+  claim(terminalId: TerminalId): SeenSessionContract | undefined {
     const shell = this.found.get(terminalId);
     this.found.delete(terminalId);
     return shell;

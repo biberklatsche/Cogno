@@ -16,7 +16,7 @@ import { FoundShell, WaitingPanes } from "./waiting-panes";
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
-const pane = { terminalId: "t1", shellName: "zsh", host: "office" } as Pane & { host: string };
+const pane = { terminalId: "t1", shellName: "zsh", host: "office-id" } as Pane & { host: string };
 
 describe("WaitingPanes", () => {
   let connections: BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>;
@@ -24,6 +24,7 @@ describe("WaitingPanes", () => {
   let connect: ReturnType<typeof vi.fn>;
   let session: ReturnType<typeof vi.fn>;
   let publish: ReturnType<typeof vi.fn>;
+  let enabled$: BehaviorSubject<boolean>;
   let waitingPanes: WaitingPanes;
   let mountPoint: HTMLElement;
   let found: FoundShell[];
@@ -44,12 +45,14 @@ describe("WaitingPanes", () => {
     });
     session = vi.fn(async () => TauriMockFactory.createSessionInfo("t1"));
     publish = vi.fn();
+    enabled$ = new BehaviorSubject(true);
     waitingPanes = new WaitingPanes(
       TestBed.inject(EnvironmentInjector),
       TestBed.inject(ApplicationRef),
       { publish } as never,
       { connections$: connections, info: () => info, connect } as unknown as RemoteHostsService,
       { session } as unknown as Hosts,
+      { enabled$, nameOf: () => "office" } as never,
       { onDestroy: vi.fn() } as never,
     );
     mountPoint = document.createElement("div");
@@ -65,8 +68,8 @@ describe("WaitingPanes", () => {
     waitForShell();
     await settle();
 
-    expect(connect).toHaveBeenCalledExactlyOnceWith("office");
-    expect(session).toHaveBeenCalledExactlyOnceWith("office", "t1");
+    expect(connect).toHaveBeenCalledExactlyOnceWith("office-id");
+    expect(session).toHaveBeenCalledExactlyOnceWith("office-id", "t1");
     expect(found).toEqual([{ session: TauriMockFactory.createSessionInfo("t1"), os: "linux" }]);
     // It waits no more: its view is gone.
     expect(waitingPanes.isWaiting("t1")).toBe(false);
@@ -110,6 +113,19 @@ describe("WaitingPanes", () => {
     expect(found).toHaveLength(1);
   });
 
+  it("tries again by itself once pairing runs, when it was restored before that", async () => {
+    enabled$.next(false);
+    connect.mockRejectedValueOnce(new ConnectError({ code: "pairingOff", message: "off" }));
+    waitForShell();
+    await settle();
+    expect(found).toEqual([]);
+
+    enabled$.next(true);
+    await settle();
+
+    expect(found).toHaveLength(1);
+  });
+
   it("offers no retry for a machine that is not paired any more", async () => {
     connect.mockRejectedValueOnce(
       new ConnectError({ code: "notPaired", message: "not paired any more" }),
@@ -129,7 +145,7 @@ describe("WaitingPanes", () => {
 
     // The user connects from the Remote panel.
     info = { os: "macos" };
-    connections.next(new Map([["office", { status: "connected", info }]]));
+    connections.next(new Map([["office-id", { status: "connected", info }]]));
     await settle();
 
     expect(found).toEqual([{ session: TauriMockFactory.createSessionInfo("t1"), os: "macos" }]);

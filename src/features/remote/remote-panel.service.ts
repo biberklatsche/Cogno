@@ -30,7 +30,7 @@ export class RemotePanelService {
   private opened = false;
 
   readonly hosts = this.hostsSignal.asReadonly();
-  /** The shells by host name. */
+  /** The shells by the host's id. */
   readonly shells = this.shellsSignal.asReadonly();
   /** Whether the hosts are being asked what runs there, after a refresh. */
   readonly refreshing = computed(() => this.refreshesSignal() > 0);
@@ -91,9 +91,9 @@ export class RemotePanelService {
   }
 
   /** Renames a machine; resolves with why not, if it did not. */
-  async renameHost(previousName: string, name: string): Promise<string | undefined> {
+  async renameHost(host: string, name: string): Promise<string | undefined> {
     try {
-      await this.port.renameHost(previousName, name);
+      await this.port.renameHost(host, name);
       return undefined;
     } catch (error) {
       return messageOf(error);
@@ -125,7 +125,7 @@ export class RemotePanelService {
     await Promise.all(
       this.hosts()
         .filter((host) => host.connection === "connected")
-        .map((host) => this.load(host.name)),
+        .map((host) => this.load(host.id)),
     );
   }
 
@@ -134,7 +134,7 @@ export class RemotePanelService {
     const connected = new Set(
       this.hosts()
         .filter((host) => host.connection === "connected")
-        .map((host) => host.name),
+        .map((host) => host.id),
     );
     const known = this.shells();
     const kept = new Map([...known].filter(([name]) => connected.has(name)));

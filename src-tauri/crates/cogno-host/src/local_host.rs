@@ -56,16 +56,11 @@ fn read_endpoint(path: &Path) -> io::Result<Endpoint> {
     serde_json::from_slice(&std::fs::read(path)?).map_err(|error| invalid(&error.to_string()))
 }
 
-/// Writes the endpoint so that only its owner can read it. The file exists
-/// with its final permissions before the token goes into it.
+/// Writes the endpoint so that only its owner can read it, and nobody reads
+/// half of it.
 fn write_endpoint(path: &Path, endpoint: &Endpoint) -> io::Result<()> {
-    if let Some(directory) = path.parent() {
-        std::fs::create_dir_all(directory)?;
-    }
-    let _ = std::fs::remove_file(path);
-    let mut file = crate::private_file::create(path)?;
     let content = serde_json::to_vec(endpoint).map_err(|error| invalid(&error.to_string()))?;
-    file.write_all(&content)
+    crate::private_file::write_atomically(path, &content)
 }
 
 /// Connects to the host the endpoint file names, if it answers. What comes

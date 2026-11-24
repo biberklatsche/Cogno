@@ -51,5 +51,14 @@ export type SessionInfoContract = {
   attached: AttachedContract;
 };
 
+/** A shell that runs on a host, as this window sees it. */
+export type SeenSessionContract = SessionInfoContract & {
+  /**
+   * Whether this window is the one that shows it: the app knows that, also
+   * right after the window's webview was loaded again.
+   */
+  shownInThisWindow: boolean;
+};
+
 /** The environment variable that carries a session's token to its shell. */
 export const SESSION_TOKEN_VARIABLE = "COGNO_SESSION_TOKEN";

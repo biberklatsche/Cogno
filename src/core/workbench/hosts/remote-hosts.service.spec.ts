@@ -1,5 +1,4 @@
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
 import { HostError } from "@cogno/platform";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,14 +12,12 @@ import {
 describe("RemoteHostsService", () => {
   let connect: ReturnType<typeof vi.fn>;
   let hangUp: ReturnType<typeof vi.fn>;
-  let disconnected: (name: string) => void;
-  let pairing: { pairedNames: string[]; isKnown: boolean; known: Promise<void> };
+  let disconnected: (id: string, lost: boolean) => void;
   let service: RemoteHostsService;
 
   beforeEach(() => {
     connect = vi.fn();
     hangUp = vi.fn().mockResolvedValue(undefined);
-    pairing = { pairedNames: ["mac", "box"], isKnown: true, known: Promise.resolve() };
     const hosts = {
       connect,
       disconnect: hangUp,
@@ -31,24 +28,9 @@ describe("RemoteHostsService", () => {
     } as unknown as Hosts;
     service = new RemoteHostsService(
       hosts,
-      pairing as unknown as PairingService,
+      { nameOf: (id: string) => (id === "mac" ? "MacBook" : undefined) } as never,
       { onDestroy: vi.fn() } as never,
     );
-  });
-
-  it("waits for the paired machines to be known before it connects one", async () => {
-    pairing.isKnown = false;
-    let known!: () => void;
-    pairing.known = new Promise((resolve) => (known = resolve));
-    connect.mockResolvedValue({ os: "macos" } satisfies HostInfo);
-
-    const connecting = service.connect("mac");
-    expect(connect).not.toHaveBeenCalled();
-    pairing.isKnown = true;
-    known();
-
-    await expect(connecting).resolves.toMatchObject({ os: "macos" });
-    expect(connect).toHaveBeenCalledWith("mac");
   });
 
   afterEach(() => vi.restoreAllMocks());
@@ -90,11 +72,11 @@ describe("RemoteHostsService", () => {
     await expect(service.connect("mac")).resolves.toEqual({ os: "macos" });
   });
 
-  it("refuses a machine that is not paired, as nothing worth retrying", async () => {
+  it("takes a machine that is not paired as nothing worth retrying", async () => {
+    connect.mockRejectedValueOnce(new HostError("notPaired", "Not paired with nowhere"));
     const refused = service.connect("nowhere");
 
     await expect(refused).rejects.toMatchObject({ failure: { code: "notPaired" } });
-    expect(connect).not.toHaveBeenCalled();
     const { failure } = (await refused.catch((error: ConnectError) => error)) as ConnectError;
     expect(isWorthRetrying(failure)).toBe(false);
   });
@@ -113,14 +95,26 @@ describe("RemoteHostsService", () => {
     await service.connect("mac");
 
     // Another window's host: nothing of this window ended.
-    disconnected("box");
+    disconnected("box", true);
     expect(warned).not.toHaveBeenCalled();
 
-    disconnected("mac");
+    disconnected("mac", true);
     expect(service.info("mac")).toBeUndefined();
+    // By the name the user knows the machine by.
     expect(warned).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.stringContaining("mac"), notify: true }),
+      expect.objectContaining({ message: expect.stringContaining("MacBook"), notify: true }),
     );
+  });
+
+  it("forgets a connection another window hung up on, without calling it a loss", async () => {
+    const warned = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
+    connect.mockResolvedValue({ os: "macos" });
+    await service.connect("mac");
+
+    disconnected("mac", false);
+
+    expect(service.info("mac")).toBeUndefined();
+    expect(warned).not.toHaveBeenCalled();
   });
 
   describe("how far a connection is", () => {
@@ -162,7 +156,7 @@ describe("RemoteHostsService", () => {
 
       await service.disconnect("mac");
       // The backend says so too, as for every connection that ends.
-      disconnected("mac");
+      disconnected("mac", true);
 
       expect(hangUp).toHaveBeenCalledWith("mac");
       expect(service.info("mac")).toBeUndefined();
@@ -188,7 +182,7 @@ describe("RemoteHostsService", () => {
       await service.connect("mac");
       vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
 
-      disconnected("mac");
+      disconnected("mac", true);
 
       expect(seen.get("mac")).toBeUndefined();
     });

@@ -14,7 +14,7 @@ import {
 import { shownByOtherCogno } from "@cogno/core/workbench/hosts/running-shell";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
-import { isHostError, Pairing, SessionInfoContract } from "@cogno/platform";
+import { isHostError, PairedMachineContract, Pairing, SeenSessionContract } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
 import { combineLatest, defer, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
@@ -44,30 +44,19 @@ function remoteSessionsGone(sessions: TerminalSessionRegistry): Observable<void>
 /** The runtimes at which a window begins or stops showing a shell it has a session for. */
 const SHOWING_CHANGES: readonly SessionRuntime["status"][] = ["running", "takenOver"];
 
-/**
- * Where `session` is shown, from this window's side: the host says which
- * Cogno shows it, this window knows whether it is the one.
- */
-function shownWhere(
-  session: SessionInfoContract,
-  sessions: TerminalSessionRegistry,
-): RemoteShell["shown"] {
+/** Where `session` is shown, from this window's side. */
+function shownWhere(session: SeenSessionContract): RemoteShell["shown"] {
   switch (session.attached.to) {
     case "nowhere":
       return "nowhere";
     case "thisClient":
-      return sessions.get(session.terminalId)?.host.runtime.status === "running"
-        ? "thisWindow"
-        : "otherWindow";
+      return session.shownInThisWindow ? "thisWindow" : "otherWindow";
     default:
       return "otherCogno";
   }
 }
 
-function toRemoteShell(
-  session: SessionInfoContract,
-  sessions: TerminalSessionRegistry,
-): RemoteShell {
+function toRemoteShell(session: SeenSessionContract): RemoteShell {
   const { placement, attached } = session;
   return {
     terminalId: session.terminalId,
@@ -75,18 +64,19 @@ function toRemoteShell(
     tab: placement.tab ?? undefined,
     title: placement.title ?? undefined,
     directory: placement.directory ?? undefined,
-    shown: shownWhere(session, sessions),
+    shown: shownWhere(session),
     shownBy: shownByOtherCogno(attached),
   };
 }
 
-/** How far the connection to the machine `name` is. */
-function connectionOf(
-  name: string,
+/** The paired machine `machine`, and how far the connection to it is. */
+function toRemoteHost(
+  machine: PairedMachineContract,
   connection: RemoteHostConnection | undefined,
-): Pick<RemoteHost, "name" | "connection" | "failure"> {
+): RemoteHost {
   return {
-    name,
+    id: machine.endpointId,
+    name: machine.name,
     connection: connection?.status ?? "disconnected",
     failure:
       connection?.status === "failed"
@@ -120,7 +110,7 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
       this.remoteHosts.connections$,
     ]).pipe(
       map(([machines, connections]): RemoteHost[] =>
-        machines.map(({ name }) => connectionOf(name, connections.get(name))),
+        machines.map((machine) => toRemoteHost(machine, connections.get(machine.endpointId))),
       ),
     );
     // A shell of another machine is shown here once its session runs, and
@@ -142,14 +132,15 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     ).pipe(map(() => undefined));
   }
 
-  async renameHost(previousName: string, name: string): Promise<void> {
+  async renameHost(host: string, name: string): Promise<void> {
     const renamed = name.trim();
     if (renamed === "") throw new Error("A remote needs a name.");
-    if (renamed === previousName) return;
-    this.ensureFree(renamed);
-    await this.pairing.rename(previousName, renamed);
-    // What stands is known under the name that no longer holds.
-    await this.remoteHosts.disconnect(previousName);
+    if (renamed === this.pairingService.nameOf(host)) return;
+    // Two remotes of one name could not be told apart in the panel.
+    if (this.pairingService.pairedNames.includes(renamed)) {
+      throw new Error(`There is a remote called '${renamed}' already.`);
+    }
+    await this.pairing.rename(host, renamed);
   }
 
   /**
@@ -158,20 +149,14 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
    */
   async removeHost(host: string): Promise<void> {
     // The panes of its shells close here; the shells run on there.
+    const name = this.pairingService.nameOf(host) ?? "the machine";
     await this.remoteHosts.disconnect(host);
     if (await this.pairing.remove(host)) return;
     ErrorReporter.reportWarning({
-      message: `Removed ${host} here, but ${host} could not be reached to remove this machine too. It is refused the next time it connects and can remove this machine then.`,
+      message: `Removed ${name} here, but ${name} could not be reached to remove this machine too. It is refused the next time it connects and can remove this machine then.`,
       notify: true,
       source: "RemoteHosts",
     });
-  }
-
-  /** A name belongs to one remote. */
-  private ensureFree(name: string): void {
-    if (this.pairingService.pairedNames.includes(name)) {
-      throw new Error(`There is a remote called '${name}' already.`);
-    }
   }
 
   async connect(host: string): Promise<void> {
@@ -183,9 +168,7 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
   }
 
   async shells(host: string): Promise<readonly RemoteShell[]> {
-    return (await this.hosts.sessions(host)).map((session) =>
-      toRemoteShell(session, this.sessions),
-    );
+    return (await this.hosts.sessions(host)).map(toRemoteShell);
   }
 
   async show(host: string, terminalId: TerminalId): Promise<void> {

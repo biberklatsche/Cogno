@@ -23,14 +23,7 @@ const PAIRED_VERSION: u32 = 1;
 #[serde(rename_all = "camelCase")]
 pub struct PairedMachine {
     pub name: String,
-    #[serde(with = "endpoint_id_text")]
     pub endpoint_id: EndpointId,
-}
-
-/// What `paired.json` holds.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct Paired {
-    pub machines: Vec<PairedMachine>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -73,21 +66,19 @@ impl Store {
     /// The paired machines; none before the first pairing.
     /// A file of a later Cogno is read as far as it is understood - and
     /// `save` refuses to overwrite it.
-    pub fn paired(&self) -> io::Result<Paired> {
+    pub fn paired(&self) -> io::Result<Vec<PairedMachine>> {
         match std::fs::read(self.paired_path()) {
             Ok(bytes) => {
                 let file: PairedFile = serde_json::from_slice(&bytes).map_err(invalid)?;
-                Ok(Paired {
-                    machines: file.machines,
-                })
+                Ok(file.machines)
             }
-            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Paired::default()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(Vec::new()),
             Err(error) => Err(error),
         }
     }
 
     /// Changes the paired machines as `change` says, and saves them.
-    pub fn change<T>(&self, change: impl FnOnce(&mut Paired) -> T) -> io::Result<T> {
+    pub fn change<T>(&self, change: impl FnOnce(&mut Vec<PairedMachine>) -> T) -> io::Result<T> {
         let _changing = lock(&self.changing);
         let mut paired = self.paired()?;
         let result = change(&mut paired);
@@ -95,7 +86,7 @@ impl Store {
         Ok(result)
     }
 
-    fn save(&self, paired: &Paired) -> io::Result<()> {
+    fn save(&self, paired: &[PairedMachine]) -> io::Result<()> {
         if self.written_by_a_later_cogno()? {
             return Err(io::Error::new(
                 io::ErrorKind::Unsupported,
@@ -104,7 +95,7 @@ impl Store {
         }
         let file = PairedFile {
             version: PAIRED_VERSION,
-            machines: paired.machines.clone(),
+            machines: paired.to_vec(),
         };
         let content = serde_json::to_vec_pretty(&file).map_err(invalid)?;
         private_file::write_atomically(&self.paired_path(), &content)
@@ -142,22 +133,6 @@ fn invalid(error: impl std::fmt::Display) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, error.to_string())
 }
 
-/// An endpoint id in the file as the text iroh shows it.
-mod endpoint_id_text {
-    use iroh::EndpointId;
-    use serde::{Deserialize, Deserializer, Serializer};
-
-    pub fn serialize<S: Serializer>(id: &EndpointId, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.collect_str(id)
-    }
-
-    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<EndpointId, D::Error> {
-        String::deserialize(deserializer)?
-            .parse()
-            .map_err(serde::de::Error::custom)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -181,13 +156,11 @@ mod tests {
     #[test]
     fn paired_machines_come_back_as_they_were_saved() {
         let store = store();
-        assert_eq!(store.paired().unwrap(), Paired::default());
-        let paired = Paired {
-            machines: vec![PairedMachine {
-                name: "laptop".into(),
-                endpoint_id: SecretKey::generate().public(),
-            }],
-        };
+        assert!(store.paired().unwrap().is_empty());
+        let paired = vec![PairedMachine {
+            name: "laptop".into(),
+            endpoint_id: SecretKey::generate().public(),
+        }];
 
         store.save(&paired).unwrap();
 
@@ -204,7 +177,7 @@ mod tests {
                 std::thread::spawn(move || {
                     store
                         .change(|paired| {
-                            paired.machines.push(PairedMachine {
+                            paired.push(PairedMachine {
                                 name: format!("machine {n}"),
                                 endpoint_id: SecretKey::generate().public(),
                             })
@@ -217,7 +190,7 @@ mod tests {
             change.join().unwrap();
         }
 
-        assert_eq!(store.paired().unwrap().machines.len(), 8);
+        assert_eq!(store.paired().unwrap().len(), 8);
     }
 
     #[test]
@@ -226,8 +199,8 @@ mod tests {
         let later = r#"{"version":2,"machines":[],"groups":[]}"#;
         private_file::write_atomically(&store.paired_path(), later.as_bytes()).unwrap();
 
-        assert!(store.paired().unwrap().machines.is_empty());
-        assert!(store.save(&Paired::default()).is_err());
+        assert!(store.paired().unwrap().is_empty());
+        assert!(store.save(&[]).is_err());
         assert_eq!(std::fs::read_to_string(store.paired_path()).unwrap(), later);
     }
 }

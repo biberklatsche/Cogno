@@ -117,7 +117,7 @@ export class RemoteHostFormComponent implements OnChanges {
     if (this.saving()) return;
     this.saving.set(true);
     this.error.set(undefined);
-    const error = await this.panel.renameHost(this.host.name, this.name());
+    const error = await this.panel.renameHost(this.host.id, this.name());
     this.saving.set(false);
     if (error === undefined) {
       this.closed.emit();

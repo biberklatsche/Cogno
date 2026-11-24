@@ -1,13 +1,13 @@
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { RemoteHostConnection } from "@cogno/core/workbench/hosts/remote-hosts.service";
-import { HostError, PairedMachineContract, SessionInfoContract } from "@cogno/platform";
+import { HostError, PairedMachineContract, SeenSessionContract } from "@cogno/platform";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteShellsAdapterService } from "./remote-shells.adapter.service";
 
-const laptop: PairedMachineContract = { name: "laptop", endpointId: "a" };
-const office: PairedMachineContract = { name: "office", endpointId: "o" };
+const laptop: PairedMachineContract = { name: "laptop", endpointId: "laptop-id" };
+const office: PairedMachineContract = { name: "office", endpointId: "office-id" };
 
 describe("RemoteShellsAdapterService", () => {
   let connections$: BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>;
@@ -56,6 +56,7 @@ describe("RemoteShellsAdapterService", () => {
         get pairedNames() {
           return machines$.value.map(({ name }) => name);
         },
+        nameOf: (id: string) => machines$.value.find((machine) => machine.endpointId === id)?.name,
       } as never,
       { rename, remove: removePaired } as never,
       { sessions, killSession } as never,
@@ -78,12 +79,14 @@ describe("RemoteShellsAdapterService", () => {
   it("lists the paired machines with how far their connection is", () => {
     let hosts: readonly RemoteHost[] = [];
     adapter.hosts$.subscribe((next) => (hosts = next));
-    expect(hosts).toEqual([{ name: "office", connection: "disconnected", failure: undefined }]);
+    expect(hosts).toEqual([
+      { id: "office-id", name: "office", connection: "disconnected", failure: undefined },
+    ]);
 
     connections$.next(
       new Map([
         [
-          "office",
+          "office-id",
           { status: "failed", failure: { code: "connectFailed", message: "No route to host" } },
         ],
       ]),
@@ -96,7 +99,7 @@ describe("RemoteShellsAdapterService", () => {
     connections$.next(
       new Map([
         [
-          "office",
+          "office-id",
           {
             status: "failed",
             failure: { code: "notPaired", message: "Not paired any more" },
@@ -117,32 +120,31 @@ describe("RemoteShellsAdapterService", () => {
   describe("a paired machine", () => {
     beforeEach(() => machines$.next([office, laptop]));
 
-    it("is renamed in the pairing, to a name no other remote has, and hung up on", async () => {
-      await expect(adapter.renameHost("laptop", "office")).rejects.toThrow("already");
-      await expect(adapter.renameHost("laptop", "  ")).rejects.toThrow();
+    it("is renamed in the pairing, to a name no other remote has; its connection stays", async () => {
+      await expect(adapter.renameHost("laptop-id", "office")).rejects.toThrow("already");
+      await expect(adapter.renameHost("laptop-id", "  ")).rejects.toThrow();
       expect(rename).not.toHaveBeenCalled();
 
-      await adapter.renameHost("laptop", " notebook ");
+      await adapter.renameHost("laptop-id", " notebook ");
 
-      expect(rename).toHaveBeenCalledWith("laptop", "notebook");
-      // What stands is known under the old name.
-      expect(disconnect).toHaveBeenCalledWith("laptop");
+      expect(rename).toHaveBeenCalledWith("laptop-id", "notebook");
+      // It is known by its id: what stands, and its panes, are untouched.
+      expect(disconnect).not.toHaveBeenCalled();
     });
 
-    it("leaves pairing and connection alone when the name stays", async () => {
-      await adapter.renameHost("laptop", " laptop ");
+    it("leaves the pairing alone when the name stays", async () => {
+      await adapter.renameHost("laptop-id", " laptop ");
 
       expect(rename).not.toHaveBeenCalled();
-      expect(disconnect).not.toHaveBeenCalled();
     });
 
     it("is hung up on and removed from the pairing", async () => {
       const warn = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
       try {
-        await adapter.removeHost("laptop");
+        await adapter.removeHost("laptop-id");
 
-        expect(disconnect).toHaveBeenCalledWith("laptop");
-        expect(removePaired).toHaveBeenCalledWith("laptop");
+        expect(disconnect).toHaveBeenCalledWith("laptop-id");
+        expect(removePaired).toHaveBeenCalledWith("laptop-id");
         expect(warn).not.toHaveBeenCalled();
       } finally {
         warn.mockRestore();
@@ -153,10 +155,13 @@ describe("RemoteShellsAdapterService", () => {
       const warn = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
       removePaired.mockResolvedValue(false);
       try {
-        await adapter.removeHost("laptop");
+        await adapter.removeHost("laptop-id");
 
         expect(warn).toHaveBeenCalledWith(
-          expect.objectContaining({ notify: true, message: expect.stringContaining("refused") }),
+          expect.objectContaining({
+            notify: true,
+            message: expect.stringMatching(/^Removed laptop here.*refused/),
+          }),
         );
       } finally {
         warn.mockRestore();
@@ -165,7 +170,7 @@ describe("RemoteShellsAdapterService", () => {
   });
 
   it("says what runs on a machine, in the words of the Cogno it belongs to", async () => {
-    const session: SessionInfoContract = {
+    const session: SeenSessionContract = {
       terminalId: "t1",
       placement: { workspace: "Cogno", tab: "build", title: null, directory: "C:\\dev" },
       profile: {
@@ -176,6 +181,7 @@ describe("RemoteShellsAdapterService", () => {
       },
       size: { cols: 80, rows: 24 },
       attached: { to: "otherClient", by: "lars-laptop" },
+      shownInThisWindow: false,
     };
     sessions.mockResolvedValue([session]);
 
@@ -194,7 +200,10 @@ describe("RemoteShellsAdapterService", () => {
   });
 
   it("tells this window from the other windows of this Cogno", async () => {
-    const shownByThisCogno = (terminalId: string): SessionInfoContract => ({
+    const shownByThisCogno = (
+      terminalId: string,
+      shownInThisWindow: boolean,
+    ): SeenSessionContract => ({
       terminalId,
       placement: {},
       profile: {
@@ -205,11 +214,10 @@ describe("RemoteShellsAdapterService", () => {
       },
       size: { cols: 80, rows: 24 },
       attached: { to: "thisClient" },
+      shownInThisWindow,
     });
-    sessions.mockResolvedValue([shownByThisCogno("t1"), shownByThisCogno("t2")]);
-    register("t1", "office", "running");
-    // A pane here whose shell another window took.
-    register("t2", "office", "takenOver");
+    // The app says which of its windows shows a shell.
+    sessions.mockResolvedValue([shownByThisCogno("t1", true), shownByThisCogno("t2", false)]);
 
     const shells = await adapter.shells("office");
 

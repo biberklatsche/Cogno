@@ -1021,11 +1021,11 @@ Sache überall gleich, in Rust wie in TypeScript:
 
 | Begriff | Bedeutung | Im Code |
 |---|---|---|
-| Rechner, Remote | Ein Rechner, auf dem Shells laufen. Ein Remote ist ein anderer, gekoppelter Rechner, unter seinem Namen | `paired.json`, `RemoteHost` |
+| Rechner, Remote | Ein Rechner, auf dem Shells laufen. Ein Remote ist ein anderer, gekoppelter Rechner. Erkannt wird er an seiner ID (Panes, Verbindungen und die Historie nennen sie); sein Name ist nur, wie der Nutzer ihn nennt, und frei zu ändern | `paired.json`, `RemoteHost` |
 | Koppeln | Zwei Rechner lernen sich einmal kennen und speichern einander, in beide Richtungen. Entkoppeln wirkt auf beiden Seiten | `pairing/`, `PairingPort` |
 | Verbinden | Jeder spätere Zugriff auf einen gekoppelten Rechner, ohne Rückfrage dort | `host_connect`, `RemoteHostsService` |
 | Annehmen | Die App nimmt die Verbindung eines gekoppelten Rechners an und gibt sie ihrem Host | `pairing/` |
-| Host | Was auf einem Rechner die Shells hält: die Struktur `Host`, in der App dieses Rechners. Als Feld eines Panes, Backends oder Shell-Kontexts der Name eines Remotes; fehlt er, ist es dieser Rechner | `Host`, `Pane.host`, `SessionBackend.host` |
+| Host | Was auf einem Rechner die Shells hält: die Struktur `Host`, in der App dieses Rechners. Als Feld eines Panes, Backends oder Shell-Kontexts die ID eines Remotes; fehlt sie, ist es dieser Rechner | `Host`, `Pane.host`, `SessionBackend.host` |
 | Sitzung | Eine Shell samt PTY auf einem Host, geschlüsselt nach der Terminal-ID. Im Frontend steuert sie ein `SessionHost`; Variablen, die einen halten, heißen `session` | `Session`, `SharedSession`, `SessionHost`, `TerminalId` |
 | Client | Ein Cogno, das mit einem Host spricht, mit allen seinen Fenstern: eine Verbindung, mit ID und Namen aus ihrem Hello. Es ist die App dieses Rechners oder das Cogno eines anderen | `Client`, `ClientId`, `ClientHello` |
 | Fenster | Das Fenster der App dieses Rechners, dem eine Sitzung gehört; sie endet mit ihm | `WindowLabel`, `Owner`, `WindowClosed` |
@@ -1184,7 +1184,10 @@ kommt: von diesem Rechner (über Loopback) oder von einem anderen (von der App
 hereingereicht). Nur ein Client dieses Rechners startet Sitzungen, und nur
 seinen Fenstern gehören sie. Ein anderer Rechner **leiht** eine Sitzung: Er
 dockt an, tippt, hängt ab und kann sie auf Wunsch des Nutzers beenden. Er
-startet keine, und keine endet, weil er geht.
+startet keine, und keine endet, weil er geht. Auch sonst tut er hier
+nichts für sich: Skripte der Shell-Integration ablegen, Prompts
+übernehmen, Hooks melden und Fragen stellen nimmt der Host nur von diesem
+Rechner an (`Request::only_from_this_machine`).
 
 **Lebenslauf.** Der Host beginnt und endet mit der App, und mit ihr enden
 alle Shells. Die App läuft je Nutzer und Build einmal (Single-Instance), also
@@ -1196,9 +1199,9 @@ Beenden von Cogno überleben, sind nicht geplant (8).
 **Die Rahmung** (`wire.rs`) ist für jeden Client dieselbe:
 
 - Der Host beginnt mit einer **Kennung** und einem `HostHello` (Bereich der
-  Protokollversionen, die er spricht, und Betriebssystem). Die Gegenseite
-  überspringt, was ein Login davor ausgibt, und antwortet mit ihrem
-  `ClientHello` (ihr Bereich und ihr Name).
+  Protokollversionen, die er spricht, und Betriebssystem). An der Kennung
+  erkennt die Gegenseite den Host; sie antwortet mit ihrem `ClientHello`
+  (ihr Bereich und ihr Name).
 - **Versionsbereich:** Laptop und Büro-Rechner werden nie gleichzeitig
   aktualisiert. Jeder Build spricht `OLDEST_PROTOCOL_VERSION` bis
   `PROTOCOL_VERSION`; beide Seiten prüfen, ob sich die Bereiche treffen
@@ -1249,9 +1252,10 @@ Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
 (`webview.rs`) sind getrennt; `mod.rs` ist die Fassade für die Befehle.
 
 - **Verbinden.** `host_connect` wählt den gekoppelten Rechner an (2.7.3)
-  und hält die Verbindung unter seinem Namen; die Verbindung zum eigenen
-  Host hält sie ebenso, für sich aufgebaut: Ein Rechner, der nicht
-  antwortet, hält die Terminals hier nicht auf. Bis der Host sich
+  und hält die Verbindung unter seiner ID; die Verbindung zum eigenen
+  Host hält sie ebenso, für sich aufgebaut. Je Rechner entsteht eine
+  Verbindung zur Zeit; einer, der nicht antwortet, hält weder die Terminals
+  hier noch das Verbinden zu einem anderen auf. Bis der Host sich
   vorgestellt hat, kann der Nutzer aufgeben (`host_disconnect` während des
   Verbindens).
 - **Routen.** Jedes Terminal der App steht in der Tabelle mit der Verbindung,
@@ -1265,8 +1269,10 @@ Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
 - **Auflegen** (`HostConnection::hang_up`) beendet die Verbindung sofort,
   auch wenn eine Anfrage sie noch hält, und lässt alles scheitern, was auf
   eine Antwort wartet. Ihre Terminals enden mit `hungUp`. Bricht die
-  Verbindung dagegen von selbst ab, enden sie mit `connectionLost`, und alle
-  Fenster hören `host-disconnected`.
+  Verbindung dagegen von selbst ab, enden sie mit `connectionLost`. In
+  beiden Fällen hören alle Fenster `host-disconnected` (mit `lost`): Die
+  Verbindung gehört der App, und kein Fenster darf sie weiter für stehend
+  halten, weil ein anderes aufgelegt hat.
 - **Wer nicht antwortet, hält nur sich auf.** Die Prozesse unter den Shells
   (`terminal_processes`) fragt die App bei allen Hosts zugleich und wartet
   je Host höchstens zwei Sekunden.
@@ -1352,8 +1358,10 @@ Die Zuständigkeiten:
   Fehlschlag mit `worthRetrying`), Umbenennen und Entkoppeln, Verbinden und
   Auflegen, die Shells eines Remotes und zwei Dinge mit einer Shell: hier
   zeigen (zum Pane gehen, zurückholen oder einen Tab öffnen), beenden. Wer
-  eine Shell zeigt, löst der Adapter für das Fenster auf: `thisClient` des
-  Hosts ist dieses Fenster, wenn hier ihre Sitzung läuft, sonst ein anderes.
+  eine Shell zeigt, löst die App für das Fenster auf: Der Host kennt nur die
+  App (`thisClient`), sie kennt ihre Fenster und sagt zu jeder Sitzung, ob
+  das fragende sie zeigt (`shownInThisWindow`) - auch gleich nach dem
+  Neuladen einer Webview, wenn dort nichts mehr davon weiß.
   `features/remote` ist das Panel dazu: ein Baum Remote → Workspace → Tab →
   Shell. Dieser Rechner steht dort nicht: Was auf ihm läuft, zeigen seine
   Tabs. Dazu „Koppeln" (`PairingPort`): die Rechner in der Nähe, anfragen,
@@ -1527,7 +1535,9 @@ action run`.
   Remote-Feature läuft. Ist es aus, gibt es keinen Endpunkt und keinen
   offenen Port.
 - **Am gekoppelten Rechner** lässt sich nur der Name ändern, und er lässt
-  sich entkoppeln. Entkoppeln sagt es dem anderen, wenn er erreichbar ist;
+  sich entkoppeln. Der Name ist Anzeige: Panes, Verbindung und Historie
+  hängen an der ID und bleiben beim Umbenennen, was sie sind. Wird ein
+  Rechner erneut gekoppelt, behält er den Namen, den der Nutzer ihm gab. Entkoppeln sagt es dem anderen, wenn er erreichbar ist;
   sonst lehnt er beim nächsten Versuch ab (`notPaired`) und bietet dort das
   Entfernen an.
 - **Geschützt** ist der Weg durch QUIC mit gegenseitig bewiesenen IDs: Die

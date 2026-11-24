@@ -1,4 +1,4 @@
-import type { SessionInfoContract } from "@cogno/platform";
+import type { SeenSessionContract } from "@cogno/platform";
 import { vi } from "vitest";
 
 export class TauriMockFactory {
@@ -12,7 +12,7 @@ export class TauriMockFactory {
   }
 
   /** A shell as its host describes it: a Bash that nobody shows. */
-  static createSessionInfo(terminalId = "test-terminal"): SessionInfoContract {
+  static createSessionInfo(terminalId = "test-terminal"): SeenSessionContract {
     return {
       terminalId,
       placement: {},
@@ -25,6 +25,7 @@ export class TauriMockFactory {
       },
       size: { cols: 80, rows: 24 },
       attached: { to: "nowhere" },
+      shownInThisWindow: false,
     };
   }
 

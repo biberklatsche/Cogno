@@ -115,8 +115,7 @@ export class WorkspaceHostApplicationService {
     this.bus.once$("DBInitialized").subscribe(async () => {
       // The shells that still run on this machine must be known before the
       // first pane is restored: a pane whose shell runs shows it, it does not
-      // start another. Asked here, not before the window is drawn: starting
-      // the daemon can take a moment.
+      // start another.
       const asked = this.shellsFoundAtStart.find();
       await this.discardSessionIfMarked();
       const savedWorkspaces = this.workspacesToStartWith(

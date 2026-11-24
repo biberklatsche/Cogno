@@ -24,7 +24,7 @@ class TestableRemoteSide extends RemoteSideComponent {
 }
 
 function office(overrides: Partial<RemoteHost> = {}): RemoteHost {
-  return { name: "office", connection: "connected", ...overrides };
+  return { id: "office-id", name: "office", connection: "connected", ...overrides };
 }
 
 describe("RemoteSideComponent", () => {
@@ -72,7 +72,7 @@ describe("RemoteSideComponent", () => {
     expect(panel.removeHost).not.toHaveBeenCalled();
 
     component.onHostAction("delete", office());
-    expect(panel.removeHost).toHaveBeenCalledWith("office");
+    expect(panel.removeHost).toHaveBeenCalledWith("office-id");
   });
 
   it("ends a shell only when its deletion is confirmed", () => {

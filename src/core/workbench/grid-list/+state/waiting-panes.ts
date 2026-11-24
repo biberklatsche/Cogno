@@ -8,25 +8,28 @@ import {
 } from "@angular/core";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
 import { ConnectError, RemoteHostsService } from "@cogno/core/workbench/hosts/remote-hosts.service";
 import {
   WaitingPaneComponent,
   WaitingPaneState,
 } from "@cogno/core/workbench/hosts/waiting-pane.component";
-import { isHostError, SessionInfoContract, toHostError } from "@cogno/platform";
+import { isHostError, SeenSessionContract, toHostError } from "@cogno/platform";
 import { Hosts } from "@cogno/platform/hosts";
 import { OsType } from "@cogno/platform/os";
 import { TerminalId } from "@cogno/shared/domain";
+import { filter } from "rxjs";
 import { Pane } from "../+model/model";
 
 /** The shell a waiting pane found, and the system it runs on. */
 export type FoundShell = {
-  readonly session: SessionInfoContract;
+  readonly session: SeenSessionContract;
   readonly os: OsType;
 };
 
 type WaitingPane = {
   readonly terminalId: TerminalId;
+  /** The id of the machine the shell runs on. */
   readonly host: string;
   /** Told once, when the shell is found; the pane stops waiting then. */
   readonly onFound: (found: FoundShell) => void;
@@ -53,6 +56,7 @@ export class WaitingPanes {
     private readonly bus: AppBus,
     private readonly remoteHosts: RemoteHostsService,
     private readonly hosts: Hosts,
+    private readonly pairing: PairingService,
     destroyRef: DestroyRef,
   ) {
     // A machine connected meanwhile - from the Remote panel, or for another
@@ -67,6 +71,20 @@ export class WaitingPanes {
         }
       }
     });
+    // A pane restored before this machine's endpoint ran was told that
+    // pairing is off: it tries again once it runs.
+    connections.add(
+      this.pairing.enabled$.pipe(filter((enabled) => enabled)).subscribe(() => {
+        for (const waiting of this.waiting.values()) {
+          if (
+            waiting.state.status === "connectFailed" &&
+            waiting.state.failure.code === "pairingOff"
+          ) {
+            this.connect(waiting);
+          }
+        }
+      }),
+    );
     destroyRef.onDestroy(() => connections.unsubscribe());
   }
 
@@ -120,7 +138,7 @@ export class WaitingPanes {
     if (!waiting) return;
     if (!waiting.view) {
       const view = createComponent(WaitingPaneComponent, { environmentInjector: this.env });
-      view.setInput("host", waiting.host);
+      view.setInput("host", this.pairing.nameOf(waiting.host) ?? "the other machine");
       view.setInput("state", waiting.state);
       view.instance.retry.subscribe(() => this.findShell(waiting));
       view.instance.closePane.subscribe(() =>

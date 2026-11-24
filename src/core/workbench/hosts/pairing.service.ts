@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { PairingCheck, PairingPort, PairingState } from "@cogno/core/api/pairing-port";
 import { PairedMachineContract, Pairing, PairingStateContract, toHostError } from "@cogno/platform";
-import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, Observable } from "rxjs";
+import { BehaviorSubject, combineLatest, filter, map, Observable } from "rxjs";
 
 /** What pairing said when it was asked last, or why it could not say. */
 type Read = { readonly state: PairingStateContract } | { readonly failure: string };
@@ -22,14 +22,15 @@ function toState(read: Read, enableFailure: string | undefined): PairingState {
 export class PairingService extends PairingPort {
   private readonly read = new BehaviorSubject<Read | undefined>(undefined);
   private readonly enableFailure = new BehaviorSubject<string | undefined>(undefined);
+  private readonly enabled = new BehaviorSubject(false);
   /** The newest question; an answer to an older one is no news. */
   private reads = 0;
 
   readonly state$: Observable<PairingState>;
+  /** Whether this machine's endpoint runs: paired machines can be connected to. */
+  readonly enabled$: Observable<boolean> = this.enabled.asObservable();
   /** The paired machines; none until they are known. */
   readonly machines$: Observable<readonly PairedMachineContract[]>;
-  /** Settles once pairing said what it knows, or why it cannot. */
-  readonly known: Promise<void>;
 
   constructor(
     private readonly pairing: Pairing,
@@ -41,23 +42,20 @@ export class PairingService extends PairingPort {
       this.enableFailure,
     ]).pipe(map(([read, enableFailure]) => toState(read, enableFailure)));
     this.machines$ = this.read.pipe(map(machinesOf));
-    this.known = firstValueFrom(this.read.pipe(filter((read) => read !== undefined))).then(
-      () => undefined,
-    );
     void pairing
       .onChanged(() => void this.readState())
       .then((unlisten) => destroyRef.onDestroy(unlisten));
     void this.readState();
   }
 
-  /** Whether pairing said what it knows, or why it cannot. */
-  get isKnown(): boolean {
-    return this.read.value !== undefined;
-  }
-
   /** The paired machines, as far as they are known. */
   get machines(): readonly PairedMachineContract[] {
     return machinesOf(this.read.value);
+  }
+
+  /** What the user calls the paired machine `id`, as far as it is known. */
+  nameOf(id: string): string | undefined {
+    return this.machines.find((machine) => machine.endpointId === id)?.name;
   }
 
   /** The names of the paired machines, as far as they are known. */
@@ -69,12 +67,14 @@ export class PairingService extends PairingPort {
     try {
       await this.pairing.enable();
       this.enableFailure.next(undefined);
+      this.enabled.next(true);
     } catch (error) {
       this.enableFailure.next(toHostError(error).message);
     }
   }
 
   async disable(): Promise<void> {
+    this.enabled.next(false);
     this.enableFailure.next(undefined);
     await this.pairing.disable();
   }
