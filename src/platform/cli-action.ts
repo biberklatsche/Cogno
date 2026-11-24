@@ -1,5 +1,6 @@
 import { Injectable } from "@angular/core";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { UnlistenFn } from "@tauri-apps/api/event";
+import { listenInThisWindow } from "./window-events";
 
 /**
  * What a second `cogno` start handed to the running instance: an action to
@@ -9,14 +10,10 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 @Injectable({ providedIn: "root" })
 export class CliActionListener {
   register(listener: (command: string) => void): Promise<UnlistenFn> {
-    return listen<string>("cli-action", ({ payload }) => {
-      listener(payload);
-    });
+    return listenInThisWindow<string>("cli-action", listener);
   }
 
   registerNotice(listener: (notice: string) => void): Promise<UnlistenFn> {
-    return listen<string>("cli-notice", ({ payload }) => {
-      listener(payload);
-    });
+    return listenInThisWindow<string>("cli-notice", listener);
   }
 }

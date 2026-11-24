@@ -11,6 +11,7 @@ describe("TerminalNavigatorAdapterService", () => {
       findWorkspaceIdentifierByTerminalId: vi.fn(() => "workspace-2"),
       findTabIdByTerminalId: vi.fn(() => "tab-2"),
       findShellNameByTerminalId: vi.fn(() => "Git Bash"),
+      findHostByTerminalId: vi.fn((): string | undefined => undefined),
       deferFocusTo: vi.fn(),
     };
     const tabListService = { selectTab: vi.fn() };
@@ -62,6 +63,18 @@ describe("TerminalNavigatorAdapterService", () => {
         workingDir: "C:/repo-feature",
         isActive: true,
       }),
+    });
+  });
+
+  it("opens the tab on the machine the terminal runs on", async () => {
+    const { navigator, gridListService, bus } = navigatorWith("workspace-2");
+    gridListService.findHostByTerminalId.mockReturnValue("build-server");
+
+    await navigator.openTabAt("/srv/repo-feature", "terminal-7");
+
+    expect(bus.publish).toHaveBeenCalledWith({
+      type: "CreateTab",
+      payload: expect.objectContaining({ host: "build-server", workingDir: "/srv/repo-feature" }),
     });
   });
 });

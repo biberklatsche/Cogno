@@ -42,7 +42,10 @@ describe("SideMenuFeatureRuntime", () => {
     targetComponent: DummyComponent,
   };
 
-  function createRuntime(lifecycle: Record<string, unknown> = {}): SideMenuFeatureRuntime {
+  function createRuntime(
+    lifecycle: Record<string, unknown> = {},
+    pro = false,
+  ): SideMenuFeatureRuntime {
     injector = { get: vi.fn() } as unknown as Injector;
     const withLifecycle: SideMenuFeatureDefinition = {
       ...definition,
@@ -50,6 +53,7 @@ describe("SideMenuFeatureRuntime", () => {
     };
     return new SideMenuFeatureRuntime(
       withLifecycle,
+      pro,
       injector,
       sideMenuService as unknown as SideMenuService,
       appBus,
@@ -239,5 +243,12 @@ describe("SideMenuFeatureRuntime", () => {
     expect(lifecycle.onOpen).not.toHaveBeenCalled();
     expect(sideMenuService.toggle).not.toHaveBeenCalled();
     expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
+  });
+  it("marks the entry of a Pro feature as Pro", () => {
+    createRuntime({}, true).activate();
+
+    expect(sideMenuService.addMenuItem).toHaveBeenCalledWith(
+      expect.objectContaining({ label: "Workspace", pro: true }),
+    );
   });
 });

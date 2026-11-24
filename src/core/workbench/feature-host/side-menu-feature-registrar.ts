@@ -46,7 +46,10 @@ export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
     this.runtimesByFeatureId.set(feature.id, runtimes);
     try {
       for (const definition of feature.sideMenu ?? []) {
-        const runtime = this.createRuntime(definition as SideMenuFeatureDefinition);
+        const runtime = this.createRuntime(
+          definition as SideMenuFeatureDefinition,
+          feature.pro === true,
+        );
         runtimes.push(runtime);
         runtime.activate();
       }
@@ -67,9 +70,13 @@ export class SideMenuFeatureRegistrar implements FeatureContributionRegistrar {
     this.runtimesByFeatureId.delete(featureId);
   }
 
-  private createRuntime(definition: SideMenuFeatureDefinition): SideMenuFeatureRuntime {
+  private createRuntime(
+    definition: SideMenuFeatureDefinition,
+    pro: boolean,
+  ): SideMenuFeatureRuntime {
     return new SideMenuFeatureRuntime(
       definition,
+      pro,
       this.injector,
       this.sideMenuService,
       this.bus,

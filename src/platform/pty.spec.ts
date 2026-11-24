@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HostError } from "./host-error";
 import {
   PTY_CHUNK_GAP_TIMEOUT_MS,
   type PtyChunkContract,
@@ -25,7 +26,11 @@ vi.mock("@tauri-apps/api/core", () => ({
   },
 }));
 
-vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn() }));
+const thisWindow = vi.hoisted(() => ({ listen: vi.fn() }));
+
+vi.mock("@tauri-apps/api/webviewWindow", () => ({
+  getCurrentWebviewWindow: () => thisWindow,
+}));
 
 /** Frames a chunk the way the Rust reader thread does: u32 LE seq + payload. */
 function frame(seq: number, text: string): ArrayBuffer {
@@ -186,15 +191,14 @@ describe("PtyTransport", () => {
     return transport.spawn(
       {
         terminalId: "t1",
-        cols: 80,
-        rows: 24,
+        size: { cols: 80, rows: 24 },
         profile: {
           shell_type: "Bash",
           inject_cogno_cli: true,
           enable_shell_integration: true,
           load_user_rc: true,
         },
-        devMode: true,
+        integrationVersion: "1.3.0",
       },
       output,
     );
@@ -205,11 +209,10 @@ describe("PtyTransport", () => {
     const [command, args] = vi.mocked(invoke).mock.calls[0] as [string, any];
     expect(command).toBe("pty_spawn");
     expect(args.options).toEqual({
-      name: "t1",
-      cols: 80,
-      rows: 24,
+      terminal_id: "t1",
+      size: { cols: 80, rows: 24 },
       profile: expect.objectContaining({ shell_type: "Bash" }),
-      dev_mode: true,
+      integration_version: "1.3.0",
     });
     const channel: PtyDataChannel = args.onData;
     registry.callbacks.get(channel.id)!({ message: frame(0, "hi"), index: 0 });
@@ -218,28 +221,85 @@ describe("PtyTransport", () => {
     await expect(handle.ready).resolves.toEqual({ shellProcessId: 4711 });
   });
 
+  it("tells failures apart by their code, never by their text", async () => {
+    vi.mocked(invoke).mockRejectedValueOnce({ code: "shellAlreadyRuns", message: "runs" });
+    const refused = spawn().ready;
+    await expect(refused).rejects.toBeInstanceOf(HostError);
+    await expect(refused).rejects.toMatchObject({ code: "shellAlreadyRuns" });
+
+    vi.mocked(invoke).mockRejectedValueOnce({ code: "spawnFailed", message: "No such shell" });
+    const failed = spawn().ready;
+    await expect(failed).rejects.toMatchObject({ code: "spawnFailed", message: "No such shell" });
+  });
+
   it("should close the channel through the spawn handle", () => {
     const handle = spawn();
     const channel: PtyDataChannel = (vi.mocked(invoke).mock.calls[0] as any)[1].onData;
+    // Acks name the channel the output came through.
+    expect(handle.channel).toBe(channel.id);
     handle.closeOutput();
     expect(unregisterCallback).toHaveBeenCalledWith(channel.id);
   });
 
   it("should map the remaining commands one to one", async () => {
-    await transport.ack("t1", 7);
+    await transport.ack("t1", 3, 7);
     await transport.write("t1", "ls");
-    await transport.resize("t1", 100, 30);
-    await transport.kill("t1");
+    await transport.resize("t1", { cols: 100, rows: 30 });
+    await transport.paneClosed("t1");
     await transport.executeLineEditorAction("t1", "clearLine", { start: 0 });
     expect(vi.mocked(invoke).mock.calls).toEqual([
-      ["pty_ack", { terminalId: "t1", seq: 7 }],
+      ["pty_ack", { terminalId: "t1", channel: 3, seq: 7 }],
       ["pty_write", { terminalId: "t1", data: "ls" }],
-      ["pty_resize", { terminalId: "t1", cols: 100, rows: 30 }],
-      ["pty_kill", { terminalId: "t1" }],
+      ["pty_resize", { terminalId: "t1", size: { cols: 100, rows: 30 } }],
+      ["pty_pane_closed", { terminalId: "t1" }],
       [
         "pty_execute_line_editor_action",
         { terminalId: "t1", action: "clearLine", payloadJson: JSON.stringify({ start: 0 }) },
       ],
     ]);
+  });
+
+  describe("what the backend says about a terminal", () => {
+    type Handler = (event: { payload: unknown }) => void;
+
+    beforeEach(() => {
+      thisWindow.listen.mockReset().mockResolvedValue(() => undefined);
+    });
+
+    // Another window of this app can show the same terminal, having taken
+    // it over: each hears only what is said to itself.
+    it("hears only this window's end of a shell", async () => {
+      const ended = vi.fn();
+
+      await transport.onExit("t1", ended);
+
+      const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
+      expect(event).toBe("pty-exit:t1");
+      handler({ payload: { reason: { kind: "exited", code: 3 } } });
+      expect(ended).toHaveBeenCalledWith({ reason: { kind: "exited", code: 3 } });
+    });
+
+    it("hears only this window's shell coming free again", async () => {
+      const handedBack = vi.fn();
+
+      await transport.onHandedBack("t1", handedBack);
+
+      const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
+      expect(event).toBe("pty-handed-back:t1");
+      handler({ payload: null });
+      expect(handedBack).toHaveBeenCalledOnce();
+    });
+
+    it("hears only this window's loss of a shell, and who shows it now", async () => {
+      const takenOver = vi.fn();
+
+      await transport.onTakenOver("t1", takenOver);
+
+      const [event, handler] = thisWindow.listen.mock.calls[0] as [string, Handler];
+      expect(event).toBe("pty-taken-over:t1");
+      handler({ payload: { by: "lars-laptop" } });
+      handler({ payload: { by: null } });
+      expect(takenOver.mock.calls).toEqual([["lars-laptop"], [undefined]]);
+    });
   });
 });

@@ -55,11 +55,12 @@ describe("CommandLogRepository", () => {
 
     expect(database.execute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT OR IGNORE INTO shell_context"),
-      ["linux", "Bash", "", expect.any(Number)],
+      ["linux", "Bash", "", "", expect.any(Number)],
     );
     expect(database.select).toHaveBeenCalledWith(expect.stringContaining("FROM shell_context"), [
       "linux",
       "Bash",
+      "",
       "",
     ]);
   });
@@ -76,6 +77,24 @@ describe("CommandLogRepository", () => {
       "windows",
       "Bash",
       "Ubuntu",
+      "",
+      expect.any(Number),
+    ]);
+  });
+
+  it("includes the machine of a shell on another one in the context key", async () => {
+    database.select.mockResolvedValueOnce([{ id: 1 }]);
+    await CommandLogRepository.createForContext(
+      database as unknown as DatabaseAccess,
+      { backendOs: "linux", shellType: "Bash", host: "box" } as never,
+      createPathAdapter(),
+    );
+
+    expect(database.execute).toHaveBeenCalledWith(expect.any(String), [
+      "linux",
+      "Bash",
+      "",
+      "box",
       expect.any(Number),
     ]);
   });

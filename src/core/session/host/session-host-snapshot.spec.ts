@@ -89,7 +89,9 @@ vi.mock("@cogno/core/terminal/pty", () => {
     write = vi.fn();
     spawn = vi.fn().mockResolvedValue(undefined);
     onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
-    kill = vi.fn();
+    onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    onHandedBack = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    attach = vi.fn().mockResolvedValue(undefined);
     faults$ = new Subject();
   }
   return { Pty: vi.fn(PtyMock) };
@@ -115,7 +117,6 @@ describe("SessionHost snapshot/restore", () => {
     configService.setConfig({ font: { enable_ligatures: false } } as never);
     host = new SessionHost(
       osStub,
-      { isDevMode: () => false } as never,
       { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess,
       configService as unknown as ConfigService,
       {} as never,
@@ -127,6 +128,7 @@ describe("SessionHost snapshot/restore", () => {
         onCwdChanged: vi.fn(),
         onCommandExecuted: vi.fn(),
       } as unknown as CommandRecorder,
+      { os: "linux" },
     );
     host.initialize("t1", bashProfile);
   });
@@ -142,7 +144,7 @@ describe("SessionHost snapshot/restore", () => {
       });
       host.start();
       host.attach(document.createElement("div"));
-      host.close();
+      host.close(true);
       writeMock.mockClear();
       vi.advanceTimersByTime(RESTORE_FRAME_FALLBACK_MS);
       expect(writeMock).not.toHaveBeenCalled();
@@ -338,7 +340,6 @@ describe("SessionHost snapshot/restore", () => {
     windowsConfig.setConfig({ font: { enable_ligatures: false } } as never);
     const windowsHost = new SessionHost(
       { platform: () => "windows" } as unknown as OsPlatform,
-      { isDevMode: () => false } as never,
       { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess,
       windowsConfig as unknown as ConfigService,
       {} as never,
@@ -346,6 +347,7 @@ describe("SessionHost snapshot/restore", () => {
       {} as never,
       new TerminalCommandHistoryStore(),
       { initialize: vi.fn(), onCwdChanged: vi.fn(), onCommandExecuted: vi.fn() } as never,
+      { os: "windows" },
     );
     windowsHost.initialize("t2", bashProfile);
     windowsHost.restore({

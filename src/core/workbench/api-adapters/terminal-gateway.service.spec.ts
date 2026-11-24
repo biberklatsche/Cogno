@@ -179,6 +179,18 @@ describe("TerminalGatewayService", () => {
       expect(commandRunner.run).not.toHaveBeenCalled();
     });
 
+    it("rejects a shell on another machine like a foreign context", async () => {
+      bindWith({ shellContext: { shellType: "ZSH", backendOs: "macos", host: "mac" } });
+
+      const runResult = await service.run(
+        { executable: "git", args: ["status"], contextRevision: 3 },
+        identity,
+      );
+
+      expect(runResult).toEqual({ status: "rejected", reason: "unknown-context" });
+      expect(commandRunner.run).not.toHaveBeenCalled();
+    });
+
     it("rejects a run while the shell has not reported its cwd yet", async () => {
       bindWith({ cwd: "" });
 

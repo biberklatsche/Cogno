@@ -5,7 +5,7 @@ export const ClipboardConfigSchema = z.strictObject({
     .enum(["ask", "allow", "deny"])
     .optional()
     .describe(
-      "Whether programs in the terminal may read your clipboard (OSC 52); `ask` asks each time. Your own pasting always works.",
+      "Whether programs in the terminal may read your clipboard (OSC 52). `ask` asks you each time.",
     ),
   write: z
     .enum(["allow", "deny"])

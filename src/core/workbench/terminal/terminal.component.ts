@@ -2,6 +2,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   Signal,
@@ -18,6 +19,8 @@ import { TerminalHistoryService } from "@cogno/core/session/history/terminal-his
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { closesPane } from "@cogno/core/workbench/grid-list/+state/shell-end";
+import { TerminalExitContract } from "@cogno/platform";
 import { ContextMenuItem, ContextMenuOverlayService, IconComponent } from "@cogno/shared/ui";
 import { map } from "rxjs";
 import { SessionMenus } from "./+state/session-menus";
@@ -109,12 +112,28 @@ export class TerminalComponent implements AfterViewInit {
     this.host.scrollToBottom();
   }
 
-  /** The shell did not start: try again with the same profile. */
+  /** How the shell ended, when the user did not end it: the pane stays and says so. */
+  readonly endedWithoutUser: Signal<TerminalExitContract | undefined> = computed(() => {
+    const { status, exit } = this.runtime();
+    return status === "exited" && exit && !closesPane(exit) ? exit : undefined;
+  });
+
+  /** Whether the shell runs on this machine, where Cogno can start a new one. */
+  readonly runsOnThisMachine = this.host.runsOnThisMachine;
+
+  /** The shell did not start, or ended without the user: try again with the same profile. */
   retry(): void {
     this.host.retry();
   }
 
-  /** The shell did not start: give the pane up. */
+  /** Another Cogno shows the shell: show it here again. */
+  reattach(): void {
+    const terminalId = this.host.terminalId;
+    if (!terminalId) return;
+    this.bus.publish({ type: "ReattachTerminal", payload: terminalId });
+  }
+
+  /** The shell did not start, ended, or is shown elsewhere: give the pane up. */
   closeAfterFailure(): void {
     const terminalId = this.host.terminalId;
     if (!terminalId) return;

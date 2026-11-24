@@ -33,14 +33,14 @@ vi.mock("@cogno/core/terminal/pty", () => {
     write = vi.fn();
     spawn = vi.fn().mockResolvedValue(undefined);
     onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
-    kill = vi.fn();
+    onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    attach = vi.fn().mockResolvedValue(undefined);
     faults$ = new Subject();
   }
   return { Pty: vi.fn(PtyMock) };
 });
 
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
-const environmentStub = { isDevMode: () => false } as never;
 const clipboardStub = { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess;
 const terminalId = "test-terminal-id";
 
@@ -64,7 +64,6 @@ describe("SessionKeybindings", () => {
 
     host = new SessionHost(
       osStub,
-      environmentStub,
       clipboardStub,
       configService as unknown as ConfigService,
       {} as never,
@@ -76,6 +75,7 @@ describe("SessionKeybindings", () => {
         onCwdChanged: vi.fn(),
         onCommandExecuted: vi.fn(),
       } as unknown as CommandRecorder,
+      { os: "linux" },
     );
 
     preloadForShellIntegration = vi.fn();

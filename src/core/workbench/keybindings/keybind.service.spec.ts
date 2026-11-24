@@ -7,7 +7,7 @@ import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
-import { BehaviorSubject, Subject } from "rxjs";
+import { BehaviorSubject, NEVER, Subject } from "rxjs";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { KeybindService } from "./keybind.service";
@@ -41,6 +41,7 @@ describe("KeybindService", () => {
         {} as ShellProfile,
         {
           facts$: subject.asObservable(),
+          runtime$: NEVER,
         } as unknown as SessionHost,
       );
     }

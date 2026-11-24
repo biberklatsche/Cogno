@@ -28,6 +28,7 @@ describe("WorkspaceHostApplicationService", () => {
   let workspaceRepository: WorkspaceRepository;
   let service: WorkspaceHostApplicationService;
   let restoreSettings: { enabled: boolean };
+  /** The shells of this machine that no Cogno shows when the app starts. */
   let clearRestoreDataInDb: ReturnType<typeof vi.fn>;
   let forgetPendingSnapshots: ReturnType<typeof vi.fn>;
   let persistWorkspaceSnapshots: ReturnType<typeof vi.fn>;
@@ -100,6 +101,9 @@ describe("WorkspaceHostApplicationService", () => {
       } as unknown as SessionPersistenceService,
       appWindow as unknown as AppWindow,
       discardSessionMarker as unknown as DiscardSessionMarker,
+      {
+        find: async () => undefined,
+      } as never,
       getTerminalSessionRegistry(),
       getDestroyRef(),
     );

@@ -16,6 +16,11 @@ export type Pane = {
   workingDir?: string;
   title?: string;
   terminalId?: TerminalId;
+  /**
+   * The machine from `remote.hosts` the pane's shell runs on; left out for
+   * this one. Such a pane shows a shell that runs there: it starts none.
+   */
+  host?: string;
   isFocused?: boolean;
 };
 

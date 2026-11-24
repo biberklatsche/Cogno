@@ -38,7 +38,6 @@ describe("CommandLineEditor", () => {
       write: vi.fn(),
       executeLineEditorAction: vi.fn(),
       resize: vi.fn(),
-      kill: vi.fn(),
       onData: vi.fn(),
       onExit: vi.fn(),
     } as any;

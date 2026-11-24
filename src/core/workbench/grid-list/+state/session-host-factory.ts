@@ -1,159 +1,123 @@
-import {
-  ApplicationRef,
-  ComponentRef,
-  createComponent,
-  createEnvironmentInjector,
-  EnvironmentInjector,
-  Injectable,
-  Type,
-} from "@angular/core";
+import { ApplicationRef, createComponent, DestroyRef, Injectable, Type } from "@angular/core";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { Environment } from "@cogno/core/infrastructure/environment/environment";
-import { TerminalAutocompleteService } from "@cogno/core/session/autocomplete/terminal-autocomplete.service";
-import { SessionCommandLog } from "@cogno/core/session/command-log/session-command-log";
-import { TerminalComposerService } from "@cogno/core/session/composer/terminal-composer.service";
-import { TerminalHistoryService } from "@cogno/core/session/history/terminal-history.service";
-import { PendingSessionSnapshots } from "@cogno/core/session/host/pending-session-snapshots";
+import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
+import { SessionBackend } from "@cogno/core/session/host/session-backend";
 import { SessionHost } from "@cogno/core/session/host/session-host";
-import { TerminalCommandHistoryStore } from "@cogno/core/session/model/command-history.store";
-import { CommandRecorder } from "@cogno/core/session/recorder/command-recorder";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
-import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
-import { ClipboardAccess } from "@cogno/platform/clipboard";
+import { runningShell, shownByOtherCogno } from "@cogno/core/workbench/hosts/running-shell";
+import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-start.service";
+import {
+  isHostError,
+  OsPlatform,
+  SessionInfoContract,
+  TerminalExitContract,
+} from "@cogno/platform";
+import { Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
-import { ContextMenuOverlayService } from "@cogno/shared/ui";
-import { SessionClipboardPrompt } from "../../terminal/+state/session-clipboard-prompt";
 import { SessionKeybindings } from "../../terminal/+state/session-keybindings";
-import { SessionMenus } from "../../terminal/+state/session-menus";
-import { SessionNotifications } from "../../terminal/+state/session-notifications";
 import { TerminalSessionRegistry } from "../../terminal/+state/terminal-session.registry";
 import { TerminalComponent } from "../../terminal/terminal.component";
-import { TerminalFileDropService } from "../../terminal/terminal-file-drop.service";
 import { Pane } from "../+model/model";
+import { SessionEntry, SessionScopeBuilder, SessionStart } from "./session-scope.builder";
+import { closesPane } from "./shell-end";
+import { FoundShell, WaitingPanes } from "./waiting-panes";
 
-/** The host is a plain class; Angular only wires its sources. */
-function createSessionHost(
-  os: OsPlatform,
-  environment: Environment,
-  clipboard: ClipboardAccess,
-  configService: ConfigService,
-  opener: Opener,
-  contextMenuOverlay: ContextMenuOverlayService,
-  ptyTransport: PtyTransport,
-  historyStore: TerminalCommandHistoryStore,
-  recorder: CommandRecorder,
-): SessionHost {
-  return new SessionHost(
-    os,
-    environment,
-    clipboard,
-    configService,
-    opener,
-    contextMenuOverlay,
-    ptyTransport,
-    historyStore,
-    recorder,
-  );
+/** A pane whose shell runs on another machine. */
+type RemotePane = Pane & { readonly host: string };
+
+function isRemote(pane: Pane): pane is RemotePane {
+  return pane.host !== undefined;
 }
 
-type SessionEntry = {
-  /** Everything that lives and dies with the session (ARCHITECTURE.md 2.2, axis 2). */
-  readonly injector: EnvironmentInjector;
-  readonly host: SessionHost;
-  readonly keybindings: SessionKeybindings;
-  readonly notifications: SessionNotifications;
-  readonly clipboardPrompt: SessionClipboardPrompt;
-  /** The pane's view; exists only once the pane was on screen. */
-  componentRef?: ComponentRef<TerminalComponent>;
-};
-
 /**
- * Owns the sessions: one host per terminal id, started as soon as the pane
- * exists in the layout - visible or not - and closed only on an explicit
- * destroy. The view is created lazily on the first attach and reparented
- * afterwards; destroying a view never ends a session (ARCHITECTURE.md 2.3).
+ * Owns the sessions: one per terminal id, started as soon as the pane exists
+ * in the layout - visible or not - and closed only on an explicit destroy.
+ * The view is created lazily on the first mount and moved afterwards;
+ * destroying a view never ends a session (ARCHITECTURE.md 2.3).
+ *
+ * A pane of this machine starts its shell - or, when the shell already runs
+ * (Cogno was closed and it went on, or another Cogno started it), shows it.
+ * A pane of another machine (`Pane.host`) only ever shows a shell that runs
+ * there: it waits (`WaitingPanes`) until that machine is connected and has
+ * said that the shell runs, and again when the connection breaks.
+ *
+ * A pane never takes a shell from another Cogno by itself: one that finds
+ * its shell shown elsewhere says so, and the user decides.
  */
 @Injectable({ providedIn: "root" })
 export class SessionHostFactory {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
+  /** Where each pane is on screen, once it was. */
+  private readonly mountPoints = new Map<TerminalId, HTMLElement>();
+  /** Panes the user opened to show a shell here, whoever shows it now. */
+  private readonly takingOver = new Set<TerminalId>();
 
   constructor(
-    private readonly env: EnvironmentInjector,
     private readonly appRef: ApplicationRef,
     private readonly configService: ConfigService,
     private readonly bus: AppBus,
     private readonly sessionRegistry: TerminalSessionRegistry,
-    private readonly pendingSnapshots: PendingSessionSnapshots,
-  ) {}
+    private readonly os: OsPlatform,
+    private readonly hosts: Hosts,
+    private readonly shellsFoundAtStart: ShellsFoundAtStart,
+    private readonly scopes: SessionScopeBuilder,
+    private readonly waitingPanes: WaitingPanes,
+    destroyRef: DestroyRef,
+  ) {
+    const reopenings = this.bus
+      .on$("ReattachTerminal")
+      .subscribe((action) => action.payload && void this.takeBack(action.payload));
+    reopenings.add(
+      this.sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
+        // A shell that another Cogno took and let go again comes back by
+        // itself, into the pane that still says where it went.
+        if (fact.type === "handedBack") void this.takeBack(terminalId);
+        // A shell already ran when the pane wanted to start one - Cogno did
+        // not know it was there: it is shown instead.
+        if (fact.type === "shellAlreadyRuns") void this.showRunningShell(terminalId);
+        // The shell the pane was to show had ended by then.
+        if (fact.type === "shellGone") this.onShellGone(terminalId);
+        if (fact.type === "exited" && !closesPane(fact.exit)) {
+          this.onShellLost(terminalId, fact.exit);
+        }
+      }),
+    );
+    destroyRef.onDestroy(() => reopenings.unsubscribe());
+  }
 
-  /** Makes sure the pane's session exists and runs; a no-op once it does. */
+  /**
+   * Makes sure the pane's session exists and runs; a no-op once it does.
+   * Returns nothing for a pane that has no session yet: one that waits for
+   * its machine, or whose shell is gone.
+   */
   ensureSession(pane: Pane): SessionEntry | undefined {
     const terminalId = pane.terminalId;
     if (!terminalId) return undefined;
     const existing = this.sessions.get(terminalId);
     if (existing) return existing;
+    if (this.waitingPanes.isWaiting(terminalId)) return undefined;
 
-    const injector = createEnvironmentInjector(
-      [
-        TerminalCommandHistoryStore,
-        SessionCommandLog,
-        CommandRecorder,
-        {
-          provide: SessionHost,
-          useFactory: createSessionHost,
-          deps: [
-            OsPlatform,
-            Environment,
-            ClipboardAccess,
-            ConfigService,
-            Opener,
-            ContextMenuOverlayService,
-            PtyTransport,
-            TerminalCommandHistoryStore,
-            CommandRecorder,
-          ],
-        },
-        SessionKeybindings,
-        SessionNotifications,
-        SessionClipboardPrompt,
-        SessionMenus,
-        TerminalAutocompleteService,
-        TerminalComposerService,
-        TerminalHistoryService,
-        TerminalFileDropService,
-      ],
-      this.env,
-    );
-    const shellProfile = this.shellProfileFor(pane);
-    const host = injector.get(SessionHost);
-    const keybindings = injector.get(SessionKeybindings);
-    host.initialize(terminalId, shellProfile);
-    // The registry owns the session's lifecycle now: it must know the host
-    // before it starts so its facts$ carries every fact from the first one.
-    this.sessionRegistry.register(terminalId, shellProfile, host);
-    keybindings.start(terminalId, shellProfile);
-    // The composer, notifications, clipboard prompt and menus listen from the
-    // start; the view comes later.
-    injector.get(TerminalComposerService);
-    const notifications = injector.get(SessionNotifications);
-    const clipboardPrompt = injector.get(SessionClipboardPrompt);
-    injector.get(SessionMenus);
-    // Session restore: stash the saved scrollback before start() so
-    // the host defers the shell spawn; the replay happens on the first attach,
-    // into an open, final-sized terminal.
-    const snapshot = this.pendingSnapshots.take(terminalId);
-    if (snapshot) {
-      host.restore(snapshot);
+    if (isRemote(pane)) {
+      this.waitForShell(terminalId, pane);
+      return undefined;
     }
-    host.start();
-
-    const entry: SessionEntry = { injector, host, keybindings, notifications, clipboardPrompt };
-    this.sessions.set(terminalId, entry);
-    return entry;
+    const backend: SessionBackend = { os: this.os.platform() };
+    const running = this.shellsFoundAtStart.claim(terminalId);
+    const start: SessionStart = running
+      ? this.showing(pane, running, this.takingOver.delete(terminalId))
+      : { kind: "spawn", profile: this.configuredProfile(pane) };
+    return this.open(terminalId, pane, backend, start);
   }
 
-  /** Puts the pane's view into `hostElement`, creating it the first time. */
+  /**
+   * The pane about to open for `terminalId` was asked for by the user to
+   * show that shell here: it takes it from whoever shows it.
+   */
+  takeOverWhenOpened(terminalId: TerminalId): void {
+    this.takingOver.add(terminalId);
+  }
+
   /** The keybindings of the session `terminalId`, for central action dispatch. */
   getSessionKeybindings(terminalId: TerminalId): SessionKeybindings | undefined {
     return this.sessions.get(terminalId)?.keybindings;
@@ -161,50 +125,217 @@ export class SessionHostFactory {
 
   /** The live host of the session `terminalId`, for snapshotting. */
   getSessionHost(terminalId: TerminalId): SessionHost | undefined {
-    return this.sessions.get(terminalId)?.host;
+    return this.sessions.get(terminalId)?.session;
   }
 
   /** Every live session host, for recording aborted commands on quit. */
   getAllSessionHosts(): SessionHost[] {
-    return [...this.sessions.values()].map((session) => session.host);
+    return [...this.sessions.values()].map((entry) => entry.session);
   }
 
-  attach(pane: Pane, hostElement: HTMLElement): void {
+  /** Puts the pane's terminal - or what it shows while it waits - at `mountPoint`. */
+  mount(pane: Pane, mountPoint: HTMLElement): void {
+    const terminalId = pane.terminalId;
+    if (!terminalId) return;
+    this.mountPoints.set(terminalId, mountPoint);
     const entry = this.ensureSession(pane);
-    if (!entry) return;
-    if (!entry.componentRef) {
-      const ref = createComponent(TerminalComponent as Type<TerminalComponent>, {
-        environmentInjector: entry.injector,
-      });
-      this.appRef.attachView(ref.hostView);
-      ref.changeDetectorRef.detectChanges();
-      entry.componentRef = ref;
+    if (entry) {
+      this.mountView(entry, mountPoint);
+    } else {
+      this.waitingPanes.mount(terminalId, mountPoint);
     }
-    hostElement.appendChild(entry.componentRef.location.nativeElement); // reparent, no rebuild
-    entry.componentRef.changeDetectorRef.detectChanges();
   }
 
   /** Final close (pane removed): the view, the session and everything bound to it. */
   destroy(terminalId?: TerminalId): void {
     if (!terminalId) return;
+    // An answer that still comes finds the pane gone and opens nothing.
+    this.waitingPanes.stop(terminalId);
+    this.mountPoints.delete(terminalId);
+    this.takingOver.delete(terminalId);
+    this.closeSession(terminalId, true);
+  }
+
+  /**
+   * Shows the shell of a pane whose session lost it to another Cogno again
+   * here: the user asked for it, or that Cogno let it go. Resolves to whether
+   * the pane shows it now.
+   */
+  async takeBack(terminalId: TerminalId): Promise<boolean> {
+    const entry = this.sessions.get(terminalId);
+    if (entry?.session.runtime.status !== "takenOver") return false;
+    return this.reopenShowingRunning(terminalId, entry, true);
+  }
+
+  /**
+   * The shell ended without the user ending it; the pane stays and says so.
+   * A shell of another machine whose connection broke may run on there: the
+   * pane waits for that machine again.
+   */
+  private onShellLost(terminalId: TerminalId, exit: TerminalExitContract): void {
+    const entry = this.sessions.get(terminalId);
+    if (!entry || !isRemote(entry.pane) || exit.kind !== "connectionLost") return;
+    this.waitAgain(terminalId, entry.pane);
+  }
+
+  /**
+   * A pane's start found its shell running already: it is shown instead -
+   * unless another Cogno shows it.
+   */
+  private async showRunningShell(terminalId: TerminalId): Promise<void> {
+    const entry = this.sessions.get(terminalId);
+    if (entry?.session.runtime.status !== "starting") return;
+    await this.reopenShowingRunning(terminalId, entry, false);
+  }
+
+  /**
+   * The pane's session gives way to one that shows the running shell. The
+   * shell is asked for first: the new session needs its profile and secret,
+   * and the shell may have ended meanwhile. `takeOver`: the shell is taken
+   * from whoever shows it.
+   */
+  private async reopenShowingRunning(
+    terminalId: TerminalId,
+    entry: SessionEntry,
+    takeOver: boolean,
+  ): Promise<boolean> {
+    const pane = entry.pane;
+    let running: SessionInfoContract;
+    try {
+      running = await this.hosts.session(pane.host, terminalId);
+    } catch (error) {
+      if (this.sessions.get(terminalId) !== entry) return false;
+      if (isHostError(error, "sessionNotFound")) {
+        this.onShellGone(terminalId);
+        return false;
+      }
+      if (isRemote(pane) && isHostError(error, "notConnected", "connectionLost")) {
+        // The machine has to be connected first; the waiting pane does that.
+        if (takeOver) this.takingOver.add(terminalId);
+        this.waitAgain(terminalId, pane);
+        return true;
+      }
+      if (entry.session.runtime.status === "starting") {
+        entry.session.failStart(error);
+      } else {
+        ErrorReporter.reportException({
+          error,
+          handled: true,
+          notify: true,
+          source: "SessionHostFactory",
+          context: { operation: "reopenShowingRunning", terminalId },
+        });
+      }
+      return false;
+    }
+    if (this.sessions.get(terminalId) !== entry) return false;
+    this.reopen(terminalId, entry, this.showing(pane, running, takeOver));
+    return true;
+  }
+
+  /**
+   * The shell a session was to show had ended: a pane of this machine starts
+   * a new one, a pane of another says that it is gone.
+   */
+  private onShellGone(terminalId: TerminalId): void {
+    const entry = this.sessions.get(terminalId);
+    if (!entry) return;
+    const pane = entry.pane;
+    if (isRemote(pane)) {
+      // The terminal stays: features must not hear that it went.
+      this.closeSession(terminalId, false);
+      this.waitingPanes.showGone(pane, (found) => this.openFound(terminalId, pane, found));
+      this.mountWaiting(terminalId);
+      return;
+    }
+    this.reopen(terminalId, entry, { kind: "spawn", profile: this.configuredProfile(pane) });
+  }
+
+  /** The pane of another machine waits for its shell; see `WaitingPanes`. */
+  private waitForShell(terminalId: TerminalId, pane: RemotePane): void {
+    this.waitingPanes.wait(pane, (found) => this.openFound(terminalId, pane, found));
+  }
+
+  /** The pane's session gives way to waiting for its machine again. */
+  private waitAgain(terminalId: TerminalId, pane: RemotePane): void {
+    // The terminal stays: features must not hear that it went.
+    this.closeSession(terminalId, false);
+    this.waitForShell(terminalId, pane);
+    this.mountWaiting(terminalId);
+  }
+
+  private openFound(terminalId: TerminalId, pane: RemotePane, found: FoundShell): void {
+    const start = this.showing(pane, found.session, this.takingOver.delete(terminalId));
+    this.open(terminalId, pane, { host: pane.host, os: found.os }, start);
+  }
+
+  private mountWaiting(terminalId: TerminalId): void {
+    const mountPoint = this.mountPoints.get(terminalId);
+    if (mountPoint) this.waitingPanes.mount(terminalId, mountPoint);
+  }
+
+  /**
+   * Replaces the pane's session by a new one that starts as `start` says, on
+   * screen where the pane is. The terminal stays: features must not hear
+   * that it went.
+   */
+  private reopen(terminalId: TerminalId, entry: SessionEntry, start: SessionStart): void {
+    this.closeSession(terminalId, false);
+    this.open(terminalId, entry.pane, entry.backend, start);
+  }
+
+  private open(
+    terminalId: TerminalId,
+    pane: Pane,
+    backend: SessionBackend,
+    start: SessionStart,
+  ): SessionEntry {
+    const entry = this.scopes.open(terminalId, pane, backend, start);
+    this.sessions.set(terminalId, entry);
+    const mountPoint = this.mountPoints.get(terminalId);
+    if (mountPoint) this.mountView(entry, mountPoint);
+    return entry;
+  }
+
+  private closeSession(terminalId: TerminalId, removed: boolean): void {
     const entry = this.sessions.get(terminalId);
     if (!entry) return;
     try {
-      entry.componentRef?.destroy();
-      entry.keybindings.dispose();
-      entry.notifications.dispose();
-      entry.clipboardPrompt.dispose();
-      // The app hears TerminalRemoved before the machine goes, as it always did.
-      this.sessionRegistry.unregister(terminalId);
-      this.bus.publish({ type: "TerminalRemoved", payload: terminalId });
-      entry.host.close();
-      entry.injector.destroy();
+      this.scopes.close(terminalId, entry, removed);
     } finally {
       this.sessions.delete(terminalId);
     }
   }
 
-  private shellProfileFor(pane: Pane): ShellProfile {
+  private mountView(entry: SessionEntry, mountPoint: HTMLElement): void {
+    if (!entry.view) {
+      const view = createComponent(TerminalComponent as Type<TerminalComponent>, {
+        environmentInjector: entry.injector,
+      });
+      this.appRef.attachView(view.hostView);
+      view.changeDetectorRef.detectChanges();
+      entry.view = view;
+    }
+    mountPoint.appendChild(entry.view.location.nativeElement); // moved, not rebuilt
+    entry.view.changeDetectorRef.detectChanges();
+  }
+
+  /**
+   * How the pane's session shows `running`, a shell that already runs. One
+   * that is shown elsewhere is taken from there only when `takeOver`.
+   */
+  private showing(pane: Pane, running: SessionInfoContract, takeOver: boolean): SessionStart {
+    const shell = runningShell(this.configuredProfile(pane), running);
+    const { attached } = running;
+    if (takeOver || attached.to === "nowhere") return { kind: "showRunning", shell };
+    return {
+      kind: "shownElsewhere",
+      shell,
+      by: shownByOtherCogno(attached),
+    };
+  }
+
+  private configuredProfile(pane: Pane): ShellProfile {
     const shellProfile = this.configService.getShellProfileOrDefault(pane.shellName);
     if (pane.workingDir) {
       shellProfile.working_dir = pane.workingDir;

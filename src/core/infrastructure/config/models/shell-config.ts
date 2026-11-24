@@ -27,7 +27,7 @@ const ShellProfileSchema = z
       .boolean()
       .default(true)
       .describe(
-        "Let Cogno follow this shell: which commands run, how they end and the current directory. Without it, history and command status stay empty.",
+        "Let Cogno see which commands run in this shell, whether they succeed and the current directory. Off leaves the command history and command status empty.",
       ),
     load_user_rc: z
       .boolean()

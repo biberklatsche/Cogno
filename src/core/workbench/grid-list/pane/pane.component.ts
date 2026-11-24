@@ -94,11 +94,11 @@ export class PaneComponent implements AfterViewInit {
       if (!this._viewReady()) return;
       const pane = this.pane();
       const id = pane.terminalId;
-      const host = this.hostRef?.nativeElement;
-      if (!id || !host) return;
+      const mountPoint = this.hostRef?.nativeElement;
+      if (!id || !mountPoint) return;
       if (this._attachedTerminalId !== id) {
-        while (host.firstChild) host.removeChild(host.firstChild);
-        this._terminalComponents.attach(pane, host);
+        while (mountPoint.firstChild) mountPoint.removeChild(mountPoint.firstChild);
+        this._terminalComponents.mount(pane, mountPoint);
         this._attachedTerminalId = id;
       }
     });

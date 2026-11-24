@@ -37,6 +37,11 @@ function contentWidth(panel: HTMLElement): number {
   return Number.parseFloat(getComputedStyle(panel).width);
 }
 
+/** What the entry's tooltip says: its label, and for a Pro feature that it is Pro. */
+export function sideMenuTooltip(menuItem: SideMenuItem): string {
+  return menuItem.pro ? `${menuItem.label} (Pro, free during alpha and beta)` : menuItem.label;
+}
+
 /**
  * The width a panel gets while its edge is dragged: it follows the pointer,
  * but grows no further than the room the terminals have left above their floor.
@@ -118,9 +123,12 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
                         [class.floating]="floatingLabel() === menuItem.label"
                         [class.standing]="isPinned(menuItem.label) && isOpen(menuItem.label)"
                         [class.keyboard]="focusedLabel() === menuItem.label"
-                        [appTooltip]="isPinned(menuItem.label) ? menuItem.label + ' (pinned)' : menuItem.label"
+                        [appTooltip]="isPinned(menuItem.label) ? tooltipOf(menuItem) + ' (pinned)' : tooltipOf(menuItem)"
                         [appTooltipSecondary]="menuItem.actionName | actionkeybinding">
                     <app-icon [name]="menuItem.icon || 'mdiAbTesting'"></app-icon>
+                    @if (menuItem.pro) {
+                        <span class="pro-badge">Pro</span>
+                    }
                     @if (menuItem.badgeColor) {
                         <span class="badge" [style.background-color]="menuItem.badgeColor"></span>
                     }
@@ -202,6 +210,20 @@ export function resizedPanelWidth(startWidth: number, draggedBy: number, room: n
 
             .menu-spacer {
                 flex: 1 1 auto;
+            }
+
+            .pro-badge {
+                position: absolute;
+                top: 0;
+                right: 0;
+                padding: 0 2px;
+                border-radius: 3px;
+                font-size: 8px;
+                line-height: 10px;
+                font-weight: 600;
+                color: var(--background-color);
+                background-color: var(--highlight-color);
+                pointer-events: none;
             }
 
             .badge {
@@ -452,6 +474,10 @@ export class SideMenuComponent implements OnDestroy {
     const panel =
       target instanceof Element ? target.closest<HTMLElement>("aside[data-label]") : null;
     return panel && this.host.nativeElement.contains(panel) ? panel.dataset["label"] : undefined;
+  }
+
+  tooltipOf(menuItem: SideMenuItem): string {
+    return sideMenuTooltip(menuItem);
   }
 
   /** A click on a panel's icon does what its shortcut does. */

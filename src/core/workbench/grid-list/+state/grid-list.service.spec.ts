@@ -230,7 +230,7 @@ describe("GridListService", () => {
       service.split(initialTerminalId, "vertical", "r");
       const destroySpy = vi.spyOn(componentFactory, "destroy");
 
-      emitSessionFact("term-2", { type: "exited", exitCode: 0 });
+      emitSessionFact("term-2", { type: "exited", exit: { kind: "exited", code: 0 } });
 
       let grids: Grid[] = [];
       service.grids$.subscribe((g) => (grids = g));
@@ -242,11 +242,25 @@ describe("GridListService", () => {
     it("removes the tab when the last pane's session exits", () => {
       const publishSpy = vi.spyOn(bus, "publish");
 
-      emitSessionFact(initialTerminalId, { type: "exited", exitCode: 0 });
+      emitSessionFact(initialTerminalId, { type: "exited", exit: { kind: "exited", code: 0 } });
 
       expect(publishSpy).toHaveBeenCalledWith(
         expect.objectContaining({ type: "RemoveTab", payload: tabId }),
       );
+    });
+
+    it("keeps the pane when its shell ended without the user, and when the user hung up removes it", () => {
+      vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
+      service.split(initialTerminalId, "vertical", "r");
+      const destroySpy = vi.spyOn(componentFactory, "destroy");
+
+      for (const kind of ["connectionLost", "killedByAnotherClient", "ptyFailed"] as const) {
+        emitSessionFact("term-2", { type: "exited", exit: { kind } });
+      }
+      expect(destroySpy).not.toHaveBeenCalled();
+
+      emitSessionFact("term-2", { type: "exited", exit: { kind: "hungUp" } });
+      expect(destroySpy).toHaveBeenCalledWith("term-2");
     });
 
     it("should split pane down", () => {

@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { focusPanel, resizedPanelWidth } from "./side-menu.component";
+import type { SideMenuItem } from "./+state/side-menu.service";
+import { focusPanel, resizedPanelWidth, sideMenuTooltip } from "./side-menu.component";
+
+class DummyComponent {}
 
 describe("focusPanel", () => {
   afterEach(() => {
@@ -74,5 +77,21 @@ describe("resizedPanelWidth", () => {
 
   it("does not grow while the terminals are below their floor already", () => {
     expect(resizedPanelWidth(360, 80, -40)).toBe(360);
+  });
+});
+
+describe("sideMenuTooltip", () => {
+  const item: SideMenuItem = {
+    label: "Remote",
+    icon: "mdiConnection",
+    actionName: "open_remote",
+    component: DummyComponent,
+  };
+
+  it("names a Pro feature as Pro", () => {
+    expect(sideMenuTooltip({ ...item, pro: true })).toBe(
+      "Remote (Pro, free during alpha and beta)",
+    );
+    expect(sideMenuTooltip(item)).toBe("Remote");
   });
 });

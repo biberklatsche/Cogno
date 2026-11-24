@@ -44,7 +44,7 @@ export const TerminalConfigSchema = z.strictObject({
     .boolean()
     .optional()
     .describe(
-      "Paste text as if you had typed it, even where a program wants to be told it is a paste. Pasted lines then run at once.",
+      "Paste text as if you had typed it. A line break in pasted text then runs the command at once.",
     ),
   minimum_contrast_ratio: z
     .number()
@@ -52,7 +52,10 @@ export const TerminalConfigSchema = z.strictObject({
     .describe(
       "Adjust text colors until they stand out from their background by at least this ratio; 1 changes nothing.",
     ),
-  screen_reader_mode: z.boolean().optional().describe("Expose terminal output to screen readers."),
+  screen_reader_mode: z
+    .boolean()
+    .optional()
+    .describe("Let screen readers read the terminal output."),
   allow_transparency: z
     .boolean()
     .optional()
@@ -61,13 +64,16 @@ export const TerminalConfigSchema = z.strictObject({
   word_separator: z
     .string()
     .optional()
-    .describe("Characters that end a word for double-click selection and word-wise motion."),
+    .describe("Characters that end a word when you double-click to select it."),
   progress_bar: z
     .strictObject({
-      enabled: z.boolean().optional().describe("Show the progress bar in the terminal header."),
+      enabled: z
+        .boolean()
+        .optional()
+        .describe("Show a progress bar in the terminal header while a program reports progress."),
     })
     .optional()
-    .describe("The OSC 9;4 progress bar in the terminal header."),
+    .describe("Progress that programs report (OSC 9;4), shown in the terminal header."),
   images: z
     .strictObject({
       enabled: z
@@ -104,7 +110,7 @@ export const TerminalConfigSchema = z.strictObject({
         .boolean()
         .optional()
         .describe(
-          "Fill an empty history from your shell's own history file the first time Cogno starts (bash, zsh, PowerShell).",
+          "When the history is empty, fill it from your shell's own history file (bash, zsh, PowerShell).",
         ),
       auto_execute: z
         .boolean()
@@ -114,5 +120,5 @@ export const TerminalConfigSchema = z.strictObject({
         ),
     })
     .optional()
-    .describe("The recorded command history behind autocomplete and the history panel."),
+    .describe("The commands you ran, used by autocomplete and the command history."),
 });

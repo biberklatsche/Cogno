@@ -1,8 +1,11 @@
 import {
+  HostErrorCode,
+  isHostError,
   PtyChunkContract,
   PtyExitEventContract,
+  PtyOpenHandleContract,
+  PtyOutputListenerContract,
   PtyShellProfileContract,
-  PtySpawnHandleContract,
   PtyTransport,
 } from "@cogno/platform";
 import { IDisposable } from "@cogno/shared/support";
@@ -16,9 +19,28 @@ import {
 export type PtyChunkListener = (chunk: PtyChunkContract) => void;
 export type PtyExitListener = (exit: PtyExitEventContract) => void;
 
+/** Where the shell runs and how it is started. */
+export type PtyOptions = {
+  /**
+   * The connected host on another machine the shell runs on; left out for
+   * this one. A shell there is only ever attached to, never started.
+   */
+  readonly host?: string;
+  /** The version of the shell integration a shell started here sources. */
+  readonly integrationVersion: string;
+};
+
 export interface IPty extends IDisposable {
   /** Things the machine could not do; the host decides who is told. */
   readonly faults$: Observable<TerminalMachineFault>;
+  /** Whether the shell is shown here: started or attached, not taken over and not ended. */
+  readonly isLive: boolean;
+
+  /**
+   * Gives the shell up without ending it: another session of this terminal
+   * takes it on. `dispose` ends the terminal for good, and the shell with it.
+   */
+  release(): void;
 
   /**
    * Spawns the shell. `onData` receives raw output chunks in order, from the
@@ -30,6 +52,21 @@ export interface IPty extends IDisposable {
     dimensions: TerminalDimensions,
     onData: PtyChunkListener,
   ): Promise<void>;
+  /**
+   * Shows a shell that already runs under `terminalId` instead of starting
+   * one. `onData` first receives what its host kept of the output.
+   */
+  attach(terminalId: string, onData: PtyChunkListener): Promise<void>;
+  /**
+   * Another Cogno took the shell over: it runs on, but not here any more.
+   * A listener that subscribes afterwards is told at once.
+   */
+  onTakenOver(listener: (by?: string) => void): IDisposable;
+  /**
+   * The Cogno that took the shell over let it go: it can be shown here
+   * again. A listener that subscribes afterwards is told at once.
+   */
+  onHandedBack(listener: () => void): IDisposable;
   resize(dimensions: TerminalDimensions): void;
   /** Flow control: the terminal has parsed every chunk up to and including `seq`. */
   ack(seq: number): void;
@@ -40,11 +77,47 @@ export interface IPty extends IDisposable {
    * immediately, so an exit racing the spawn is never lost.
    */
   onExit(listener: PtyExitListener): IDisposable;
-  kill(signal?: string): void;
 }
+
+/**
+ * Where the PTY is. `opening` and `live` hold the open output; the others
+ * hold none. Taken over and handed back are kept for whoever asks later.
+ */
+type PtyState =
+  | { readonly kind: "idle" }
+  | { readonly kind: "opening"; readonly terminalId: string; readonly output?: OpenOutput }
+  | { readonly kind: "live"; readonly terminalId: string; readonly output: OpenOutput }
+  | { readonly kind: "takenOver"; readonly terminalId: string; readonly by?: string }
+  | { readonly kind: "handedBack"; readonly terminalId: string; readonly by?: string }
+  /** `endsShell`: disposed for good, not released to another session. */
+  | { readonly kind: "disposed"; readonly endsShell: boolean };
+
+type OpenOutput = PtyOpenHandleContract<unknown>;
+
+/**
+ * Failures a request can meet without anything being wrong: the session
+ * ended or passed to another Cogno while the request was on its way.
+ */
+const RACED_AN_END: readonly HostErrorCode[] = [
+  "sessionNotFound",
+  "attachedElsewhere",
+  "connectionLost",
+];
 
 export class Pty implements IPty {
   private readonly faults$$ = new Subject<TerminalMachineFault>();
+  private state: PtyState = { kind: "idle" };
+  private _pendingResize?: TerminalDimensions;
+  private _unlisten: (() => void) | undefined = undefined;
+  private _exit: PtyExitEventContract | undefined = undefined;
+  private readonly _exitListeners = new Set<PtyExitListener>();
+  private readonly _takenOverListeners = new Set<(by?: string) => void>();
+  private readonly _handedBackListeners = new Set<() => void>();
+
+  constructor(
+    private readonly _transport: PtyTransport,
+    private readonly _options: PtyOptions,
+  ) {}
 
   /**
    * Things that went wrong down here. The machine reports, it does not
@@ -54,96 +127,150 @@ export class Pty implements IPty {
     return this.faults$$.asObservable();
   }
 
-  private reportFault(fault: TerminalMachineFault): void {
+  get isLive(): boolean {
+    return this.state.kind === "live" && this._exit === undefined;
+  }
+
+  /** The terminal the PTY belongs to, while it has one. */
+  private get terminalId(): string | undefined {
+    return "terminalId" in this.state ? this.state.terminalId : undefined;
+  }
+
+  /** Reports a failure, unless it only raced the end of the session. */
+  private reportUnlessRaced(fault: TerminalMachineFault): void {
+    if (isHostError(fault.error, ...RACED_AN_END)) return;
     this.faults$$.next(fault);
   }
 
-  private _terminalId: string | undefined = undefined;
-  private _spawned = false;
-  private _disposed = false;
-  private _pendingResize?: TerminalDimensions;
-  private _spawn: PtySpawnHandleContract | undefined = undefined;
-  private _exitUnlisten: (() => void) | undefined = undefined;
-  private _exit: PtyExitEventContract | undefined = undefined;
-  private readonly _exitListeners = new Set<PtyExitListener>();
-
-  constructor(
-    private readonly _transport: PtyTransport,
-    private readonly _devMode: boolean,
-  ) {}
-
-  async spawn(
+  spawn(
     terminalId: string,
     shellProfile: PtyShellProfileContract,
     dimensions: TerminalDimensions,
     onData: PtyChunkListener,
   ): Promise<void> {
-    this._spawn?.closeOutput();
-    this._terminalId = terminalId;
-    this._spawned = false;
+    if (this._options.host !== undefined) {
+      return Promise.reject(new Error("A shell on another machine is never started from here."));
+    }
+    return this.open(terminalId, onData, (output) =>
+      this._transport.spawn(
+        {
+          terminalId,
+          size: { cols: dimensions.cols, rows: dimensions.rows },
+          profile: shellProfile,
+          integrationVersion: this._options.integrationVersion,
+        },
+        output,
+      ),
+    );
+  }
+
+  attach(terminalId: string, onData: PtyChunkListener): Promise<void> {
+    return this.open(terminalId, onData, (output) =>
+      this._transport.attach({ terminalId, host: this._options.host }, output),
+    );
+  }
+
+  /**
+   * Starts or attaches (`start`), with everything around it that both need:
+   * the listeners that must exist before the first byte, and the cleanup of
+   * a session that is no longer wanted when it comes into being.
+   */
+  private async open(
+    terminalId: string,
+    onData: PtyChunkListener,
+    start: (output: PtyOutputListenerContract) => OpenOutput,
+  ): Promise<void> {
+    if (this.state.kind === "disposed") throw new Error("The PTY is disposed.");
+    this.closeOutput();
+    this.state = { kind: "opening", terminalId };
     this._pendingResize = undefined;
     this._exit = undefined;
-    // Listen before the shell exists: a shell that dies at once emits its exit
-    // before the spawn call even returns.
-    this._exitUnlisten?.();
-    this._exitUnlisten = undefined;
-    const unlisten = await this._transport.onExit(terminalId, (exit) => this.notifyExit(exit));
-    if (this._disposed || this._terminalId !== terminalId) {
+    this._unlisten?.();
+    this._unlisten = undefined;
+    // Listen before the shell exists: a shell that dies at once emits its
+    // exit before the call even returns, and a takeover can cross an attach.
+    const unlistens = await Promise.all([
+      this._transport.onExit(terminalId, (exit) => this.notifyExit(exit)),
+      this._transport.onTakenOver(terminalId, (by) => this.notifyTakenOver(terminalId, by)),
+      this._transport.onHandedBack(terminalId, () => this.notifyHandedBack(terminalId)),
+    ]);
+    const unlisten = () => {
+      for (const stop of unlistens) stop();
+    };
+    if (!this.isOpening(terminalId)) {
       unlisten();
-      return;
+      throw new Error("The PTY was closed while it opened.");
     }
-    this._exitUnlisten = unlisten;
-    const spawn = this._transport.spawn(
-      {
-        terminalId,
-        cols: dimensions.cols,
-        rows: dimensions.rows,
-        profile: shellProfile,
-        devMode: this._devMode,
-      },
-      {
-        onChunk: onData,
-        onChunksLost: (fromSeq, toSeq) => this.reportLostChunks(terminalId, fromSeq, toSeq),
-      },
-    );
-    this._spawn = spawn;
+    this._unlisten = unlisten;
+    const output = start({
+      onChunk: onData,
+      onChunksLost: (fromSeq, toSeq) => this.reportLostChunks(terminalId, fromSeq, toSeq),
+    });
+    this.state = { kind: "opening", terminalId, output };
     try {
-      await spawn.ready;
+      await output.ready;
     } catch (error) {
-      // A rejected spawn must not leave the channel's transformCallback
-      // registration behind: closeOutput() releases it (see
-      // PtyDataChannel.close), same as the success-path cleanup below does.
-      spawn.closeOutput();
+      // A rejected open must not leave the channel's callback registration
+      // behind: closing the output releases it (see PtyDataChannel.close).
+      output.closeOutput();
+      if (this.isOpening(terminalId, output)) this.state = { kind: "idle" };
       throw error;
     }
-    if (this._disposed || this._spawn !== spawn) {
-      // Disposed (or respawned) while the backend was still spawning. A
-      // session nobody listens to must be killed now, or its reader parks
-      // forever waiting for acks that never come. (A respawn under the same
-      // id replaced it backend-side already.)
-      spawn.closeOutput();
-      if (this._disposed || this._terminalId !== terminalId) {
-        this.killSession(terminalId);
-      }
+    if (!this.isOpening(terminalId, output)) {
+      // Disposed, opened anew or taken over while the host was still at it.
+      output.closeOutput();
+      if (this.disposedForGood()) this.letGo(terminalId);
       return;
     }
-    this._spawned = true;
+    this.state = { kind: "live", terminalId, output };
     this.flushPendingResize();
   }
 
-  ack(seq: number): void {
-    if (!this._terminalId || this._disposed) return;
-    this._transport.ack(this._terminalId, seq).catch((error) =>
-      this.reportFault({
-        operation: "ack",
-        error,
-        context: { seq, terminalId: this._terminalId },
-      }),
+  /** The terminal whose output is open, and that output: the host knows it, answered or not. */
+  private withOutput(): { terminalId: string; output: OpenOutput } | undefined {
+    const state = this.state;
+    if (state.kind === "live") return state;
+    if (state.kind === "opening" && state.output !== undefined) {
+      return { terminalId: state.terminalId, output: state.output };
+    }
+    return undefined;
+  }
+
+  private isDisposed(): boolean {
+    return this.state.kind === "disposed";
+  }
+
+  /** Disposed, not released: the shell goes with the terminal. */
+  private disposedForGood(): boolean {
+    return this.state.kind === "disposed" && this.state.endsShell;
+  }
+
+  private isOpening(terminalId: string, output?: OpenOutput): boolean {
+    return (
+      this.state.kind === "opening" &&
+      this.state.terminalId === terminalId &&
+      (output === undefined || this.state.output === output)
     );
   }
 
+  /**
+   * Acknowledges as soon as there is output to acknowledge: a host sends
+   * what it kept of an attached shell before it answers, and a reader that
+   * waits for acks must not wait for that answer.
+   */
+  ack(seq: number): void {
+    const open = this.withOutput();
+    if (open === undefined) return;
+    const { terminalId } = open;
+    this._transport
+      .ack(terminalId, open.output.channel, seq)
+      .catch((error) =>
+        this.reportUnlessRaced({ operation: "ack", error, context: { seq, terminalId } }),
+      );
+  }
+
   private reportLostChunks(terminalId: string, fromSeq: number, toSeq: number): void {
-    this.reportFault({
+    this.faults$$.next({
       operation: "onData",
       error: new Error(
         `PTY output chunks ${fromSeq}..${toSeq - 1} were lost in transit and skipped`,
@@ -152,51 +279,76 @@ export class Pty implements IPty {
     });
   }
 
-  kill(signal?: string): void {
-    if (!this._terminalId) return;
-    this.killSession(this._terminalId, signal);
-  }
-
-  private killSession(terminalId: string, signal?: string): void {
+  /**
+   * This terminal is done with the session. A shell of this machine ends
+   * with its terminal. One of another machine belongs to the Cogno there
+   * and is only let go: it runs on, for that Cogno or this one to show again.
+   */
+  private letGo(terminalId: string): void {
+    if (this._options.host === undefined) {
+      this._transport
+        .paneClosed(terminalId)
+        .catch((error) =>
+          this.reportUnlessRaced({ operation: "paneClosed", error, context: { terminalId } }),
+        );
+      return;
+    }
     this._transport
-      .kill(terminalId)
+      .detach(terminalId)
       .catch((error) =>
-        this.reportFault({ operation: "kill", error, context: { signal, terminalId } }),
+        this.reportUnlessRaced({ operation: "detach", error, context: { terminalId } }),
       );
   }
 
   resize(dimensions: TerminalDimensions) {
-    if (!this._terminalId) throw Error("Please spawn Pty before resize.");
     if (!isValidTerminalDimensions(dimensions)) return;
-    if (!this._spawned) {
+    if (this.state.kind === "opening") {
       this._pendingResize = dimensions;
       return;
     }
-    this._transport.resize(this._terminalId, dimensions.cols, dimensions.rows).catch((error) =>
-      this.reportFault({
-        operation: "resize",
-        error,
-        context: { columns: dimensions.cols, rows: dimensions.rows, terminalId: this._terminalId },
-      }),
-    );
+    if (this.state.kind !== "live") return;
+    this.sendResize(this.state.terminalId, dimensions, "resize");
   }
 
-  write(data: string) {
-    if (!this._terminalId) throw Error("Please spawn Pty before write to it.");
+  private flushPendingResize(): void {
+    const pending = this._pendingResize;
+    this._pendingResize = undefined;
+    if (pending && this.state.kind === "live") {
+      this.sendResize(this.state.terminalId, pending, "flushPendingResize");
+    }
+  }
+
+  private sendResize(terminalId: string, dimensions: TerminalDimensions, operation: string): void {
     this._transport
-      .write(this._terminalId, data)
+      .resize(terminalId, { cols: dimensions.cols, rows: dimensions.rows })
       .catch((error) =>
-        this.reportFault({ operation: "write", error, context: { terminalId: this._terminalId } }),
+        this.reportUnlessRaced({
+          operation,
+          error,
+          context: { columns: dimensions.cols, rows: dimensions.rows, terminalId },
+        }),
+      );
+  }
+
+  /** Typed into a shell this terminal does not show (any more) goes nowhere. */
+  write(data: string) {
+    if (this.state.kind !== "live") return;
+    const terminalId = this.state.terminalId;
+    this._transport
+      .write(terminalId, data)
+      .catch((error) =>
+        this.reportUnlessRaced({ operation: "write", error, context: { terminalId } }),
       );
   }
 
   executeLineEditorAction(action: string, payload?: object) {
-    if (!this._terminalId) throw Error("Please spawn Pty before executing line editor actions.");
-    this._transport.executeLineEditorAction(this._terminalId, action, payload).catch((error) =>
-      this.reportFault({
+    if (this.state.kind !== "live") return;
+    const terminalId = this.state.terminalId;
+    this._transport.executeLineEditorAction(terminalId, action, payload).catch((error) =>
+      this.reportUnlessRaced({
         operation: "executeLineEditorAction",
         error,
-        context: { action, terminalId: this._terminalId },
+        context: { action, terminalId },
       }),
     );
   }
@@ -212,37 +364,71 @@ export class Pty implements IPty {
     for (const listener of this._exitListeners) listener(exit);
   }
 
-  dispose(): void {
-    this._disposed = true;
-    // While a spawn is still in flight there is no session to kill yet; the
-    // spawn continuation kills it as soon as it exists.
-    if (this._spawned) this.kill();
-    this._spawned = false;
-    this._pendingResize = undefined;
-    this._spawn?.closeOutput();
-    this._spawn = undefined;
-    this._exitUnlisten?.();
-    this._exitUnlisten = undefined;
-    this._exitListeners.clear();
-    this._terminalId = undefined;
+  onTakenOver(listener: (by?: string) => void): IDisposable {
+    this._takenOverListeners.add(listener);
+    if (this.state.kind === "takenOver" || this.state.kind === "handedBack") {
+      listener(this.state.by);
+    }
+    return { dispose: () => this._takenOverListeners.delete(listener) };
   }
 
-  private flushPendingResize() {
-    if (!this._terminalId || !this._spawned || !this._pendingResize) return;
-    const pendingResize = this._pendingResize;
+  onHandedBack(listener: () => void): IDisposable {
+    this._handedBackListeners.add(listener);
+    if (this.state.kind === "handedBack") listener();
+    return { dispose: () => this._handedBackListeners.delete(listener) };
+  }
+
+  /**
+   * The shell is another Cogno's now. Nothing of it is this machine's to
+   * touch any more: disposing must not kill what runs on elsewhere.
+   */
+  private notifyTakenOver(terminalId: string, by?: string): void {
+    if (this.terminalId !== terminalId || this.state.kind === "disposed") return;
+    this.closeOutput();
     this._pendingResize = undefined;
-    this._transport
-      .resize(this._terminalId, pendingResize.cols, pendingResize.rows)
-      .catch((error) =>
-        this.reportFault({
-          operation: "flushPendingResize",
-          error,
-          context: {
-            columns: pendingResize.cols,
-            rows: pendingResize.rows,
-            terminalId: this._terminalId,
-          },
-        }),
-      );
+    this.state = { kind: "takenOver", terminalId, by };
+    for (const listener of this._takenOverListeners) listener(by);
+  }
+
+  private notifyHandedBack(terminalId: string): void {
+    if (this.state.kind !== "takenOver" || this.state.terminalId !== terminalId) return;
+    this.state = { kind: "handedBack", terminalId, by: this.state.by };
+    for (const listener of this._handedBackListeners) listener();
+  }
+
+  private closeOutput(): void {
+    if (this.state.kind === "opening" || this.state.kind === "live") {
+      this.state.output?.closeOutput();
+    }
+  }
+
+  dispose(): void {
+    this.teardown(true);
+  }
+
+  release(): void {
+    this.teardown(false);
+  }
+
+  private teardown(endsShell: boolean): void {
+    if (this.isDisposed()) return;
+    // While an open is still in flight there is no session to end yet; the
+    // open's continuation ends it as soon as it exists. A shell of this
+    // machine that another Cogno shows ends with its terminal all the same;
+    // one of another machine that it took again is not this one's to let go.
+    const state = this.state;
+    const shown = state.kind === "live" || state.kind === "handedBack";
+    const lent = state.kind === "takenOver" && this._options.host === undefined;
+    if (endsShell && (shown || lent)) {
+      this.letGo(state.terminalId);
+    }
+    this.closeOutput();
+    this.state = { kind: "disposed", endsShell };
+    this._pendingResize = undefined;
+    this._unlisten?.();
+    this._unlisten = undefined;
+    this._exitListeners.clear();
+    this._takenOverListeners.clear();
+    this._handedBackListeners.clear();
   }
 }

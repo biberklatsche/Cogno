@@ -1,3 +1,4 @@
+import type { TerminalExitContract } from "@cogno/platform";
 import type { TerminalSearchResultContract } from "@cogno/shared/domain";
 import type { CommandMenuBlockRange } from "./decoration/command-menu-items";
 import type { ExecutedCommand } from "./recorder/executed-command";
@@ -44,7 +45,24 @@ export type SessionFact =
   /** A search over the scrollback finished. */
   | { readonly type: "searchResult"; readonly result: TerminalSearchResultContract }
   /** The shell process ended. */
-  | { readonly type: "exited"; readonly exitCode: number }
+  | { readonly type: "exited"; readonly exit: TerminalExitContract }
+  /**
+   * The Cogno that had taken the shell over let it go: nobody shows it now,
+   * and this session, which lost it, could be replaced by one that does.
+   */
+  | { readonly type: "handedBack" }
+  /**
+   * The shell could not be started: one already runs under this terminal id
+   * (Cogno did not know it was there). This session could be replaced by one
+   * that shows it.
+   */
+  | { readonly type: "shellAlreadyRuns" }
+  /**
+   * The shell this session was to show had ended by the time it attached.
+   * This session could be replaced by one that starts a shell, or that says
+   * it is gone.
+   */
+  | { readonly type: "shellGone" }
   /** Output arrived from the shell. */
   | { readonly type: "outputReceived" }
   /** The terminal gained or lost the keyboard. */

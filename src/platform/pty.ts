@@ -1,39 +1,71 @@
 import { Injectable } from "@angular/core";
-import { ShellTypeContract } from "@cogno/shared/domain";
-import { invoke, SERIALIZE_TO_IPC_FN, transformCallback } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-
-/**
- * Shell profile as the backend's spawner expects it (wire format, hence the
- * snake_case keys). Structurally identical to the app's configured profile.
- */
-export type PtyShellProfileContract = {
-  shell_type: ShellTypeContract;
-  path?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  working_dir?: string;
-  inject_cogno_cli: boolean;
-  enable_shell_integration: boolean;
-  load_user_rc: boolean;
-};
+import { SERIALIZE_TO_IPC_FN, transformCallback } from "@tauri-apps/api/core";
+import { invokeHost } from "./host-error";
+import {
+  PtyShellProfileContract,
+  SessionInfoContract,
+  SessionPlacementContract,
+  TerminalSizeContract,
+} from "./session-contracts";
+import { listenInThisWindow } from "./window-events";
 
 export type PtySpawnOptionsContract = {
   terminalId: string;
-  cols: number;
-  rows: number;
+  size: TerminalSizeContract;
   profile: PtyShellProfileContract;
-  devMode: boolean;
+  /** The version of the shell integration the shell sources. */
+  integrationVersion: string;
 };
 
-type PtySpawnResultContract = {
-  shellProcessId: number | null;
+/** What a start did. */
+export type PtySpawnedContract = { shellProcessId: number | null };
+
+/** The events of one terminal, as `<name>:<terminal id>` (`hosts/webview.rs`). */
+const PTY_EXIT_EVENT = "pty-exit";
+const PTY_TAKEN_OVER_EVENT = "pty-taken-over";
+const PTY_HANDED_BACK_EVENT = "pty-handed-back";
+
+function terminalEvent(name: string, terminalId: string): string {
+  return `${name}:${terminalId}`;
+}
+
+/**
+ * Opens the channel a shell's output comes through, then the shell (`open`
+ * starts or attaches it). The channel exists before the host sends, so no
+ * output is lost between the call and the listener.
+ */
+function openOutput<T>(
+  output: PtyOutputListenerContract,
+  open: (onData: PtyDataChannel) => Promise<T>,
+): PtyOpenHandleContract<T> {
+  const channel = new PtyDataChannel();
+  channel.onmessage = (chunk) => output.onChunk(chunk);
+  channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
+  return { ready: open(channel), channel: channel.id, closeOutput: () => channel.close() };
+}
+
+/** A shell that already runs, and where. */
+export type PtyAttachOptionsContract = {
+  terminalId: string;
+  host?: string;
 };
 
 /** One chunk of raw PTY output. `seq` numbers the chunks of a spawn from 0 up. */
 export type PtyChunkContract = { seq: number; data: Uint8Array };
 
-export type PtyExitEventContract = { exitCode: number; signal?: number };
+/** Why a terminal ended. */
+export type TerminalExitContract =
+  | { kind: "exited"; code: number }
+  /** Another Cogno ended it. */
+  | { kind: "killedByAnotherClient" }
+  /** Reading or writing the PTY failed. */
+  | { kind: "ptyFailed" }
+  /** The connection to its host broke; the shell may run on there. */
+  | { kind: "connectionLost" }
+  /** The user hung up on its host; the shell runs on there. */
+  | { kind: "hungUp" };
+
+export type PtyExitEventContract = { reason: TerminalExitContract };
 
 export interface PtyOutputListenerContract {
   /** Chunks arrive strictly in sequence order. */
@@ -42,9 +74,18 @@ export interface PtyOutputListenerContract {
   onChunksLost(fromSeq: number, toSeq: number): void;
 }
 
-export interface PtySpawnHandleContract {
-  /** Resolves once the shell runs, rejects when it could not be spawned. */
-  readonly ready: Promise<PtySpawnResultContract>;
+export interface PtyOpenHandleContract<T> {
+  /**
+   * Resolves once the shell runs (or, for an attach, once it is shown here),
+   * rejects with a `HostError` when it could not be spawned or is not there
+   * to attach to.
+   */
+  readonly ready: Promise<T>;
+  /**
+   * The channel the output comes through. An ack names it: one of an earlier
+   * open of the same terminal counts for nothing.
+   */
+  readonly channel: number;
   /**
    * Stops output delivery for good. Safe to call before `ready` settles;
    * the backend session (if it comes into existence) still has to be killed.
@@ -52,13 +93,23 @@ export interface PtySpawnHandleContract {
   closeOutput(): void;
 }
 
+/** The state a process is in (`ProcessStatus` in `cogno-host`). */
+export type ProcessStatusContract =
+  | "Running"
+  | "Sleeping"
+  | "Idle"
+  | "Stopped"
+  | "Zombie"
+  | "Dead"
+  | "Other";
+
 /** What the process-info panel shows about one process. */
 export type ProcessDetails = {
   processId: number;
   parentProcessId: number | null;
   name: string;
   currentWorkingDirectory: string | null;
-  status: string;
+  status: ProcessStatusContract;
   runTimeSeconds: number;
   memoryBytes: number;
 };
@@ -206,64 +257,114 @@ export class PtyDataChannel {
 }
 
 /**
- * Transport to the backend's PTY sessions over Tauri commands: `pty_spawn`
- * with a `PtyDataChannel` for output, `pty_ack` for flow control, plus the
- * usual write/resize/kill. Output is pushed through the listener handed to
- * `spawn` (wired before the shell starts, so no byte is lost) and subject
- * to flow control: the reader stops once too much output is unacknowledged,
- * so the consumer must `ack` chunks as it processes them.
+ * Transport to the hosts' shells over Tauri commands: `pty_spawn` and
+ * `pty_attach` with a `PtyDataChannel` for output, `pty_ack` for flow
+ * control, plus the usual write/resize/kill. Output is pushed through the
+ * listener handed to `spawn` or `attach` (wired before the shell starts, so
+ * no byte is lost) and subject to flow control: the host stops reading once
+ * too much output is unacknowledged, so the consumer must `ack` chunks as it
+ * processes them. Every failure is a `HostError`.
  */
 @Injectable({ providedIn: "root" })
 export class PtyTransport {
+  /** Rejects with `shellAlreadyRuns` when a shell runs under the id already. */
   spawn(
     options: PtySpawnOptionsContract,
     output: PtyOutputListenerContract,
-  ): PtySpawnHandleContract {
-    // The channel exists before the reader thread starts, so no output can be
-    // lost between spawn and listener registration.
-    const channel = new PtyDataChannel();
-    channel.onmessage = (chunk) => output.onChunk(chunk);
-    channel.onGap = (fromSeq, toSeq) => output.onChunksLost(fromSeq, toSeq);
-    const ready = invoke<PtySpawnResultContract>("pty_spawn", {
-      options: {
-        name: options.terminalId,
-        cols: options.cols,
-        rows: options.rows,
-        profile: options.profile,
-        dev_mode: options.devMode,
-      },
-      onData: channel,
-    });
-    return {
-      ready,
-      closeOutput: () => channel.close(),
-    };
+  ): PtyOpenHandleContract<PtySpawnedContract> {
+    return openOutput(output, (onData) =>
+      invokeHost<PtySpawnedContract>("pty_spawn", {
+        options: {
+          terminal_id: options.terminalId,
+          size: options.size,
+          profile: options.profile,
+          integration_version: options.integrationVersion,
+        },
+        onData,
+      }),
+    );
   }
 
-  ack(terminalId: string, seq: number): Promise<void> {
-    return invoke("pty_ack", { terminalId, seq });
+  /**
+   * Shows a shell that already runs. What its host kept of the output comes
+   * first, then what the shell writes; whoever showed it before is told that
+   * it was taken over. Rejects with `sessionNotFound` when it does not run.
+   */
+  attach(
+    options: PtyAttachOptionsContract,
+    output: PtyOutputListenerContract,
+  ): PtyOpenHandleContract<SessionInfoContract> {
+    return openOutput(output, (onData) =>
+      invokeHost<SessionInfoContract>("pty_attach", {
+        terminalId: options.terminalId,
+        host: options.host ?? null,
+        onData,
+      }),
+    );
   }
 
-  kill(terminalId: string): Promise<void> {
-    return invoke("pty_kill", { terminalId });
+  /**
+   * Another Cogno attached to the shell: it runs on, shown there. `by` is
+   * what that Cogno's machine is called, when it said.
+   */
+  onTakenOver(terminalId: string, listener: (by?: string) => void): Promise<() => void> {
+    return listenInThisWindow<{ by: string | null }>(
+      terminalEvent(PTY_TAKEN_OVER_EVENT, terminalId),
+      (payload) => listener(payload?.by ?? undefined),
+    );
   }
 
-  resize(terminalId: string, cols: number, rows: number): Promise<void> {
-    return invoke("pty_resize", { terminalId, cols, rows });
+  /**
+   * The Cogno that took the shell over let it go, or is gone: nobody shows
+   * it now, and this window, which showed it before, may again.
+   */
+  onHandedBack(terminalId: string, listener: () => void): Promise<() => void> {
+    return listenInThisWindow<void>(terminalEvent(PTY_HANDED_BACK_EVENT, terminalId), () =>
+      listener(),
+    );
+  }
+
+  /** Says where the shell sits in this Cogno, for another Cogno to find it by. */
+  place(terminalId: string, placement: SessionPlacementContract): Promise<void> {
+    return invokeHost("pty_place", { terminalId, placement });
+  }
+
+  /** The chunks up to `seq` of the output through `channel` are taken in. */
+  ack(terminalId: string, channel: number, seq: number): Promise<void> {
+    return invokeHost("pty_ack", { terminalId, channel, seq });
+  }
+
+  /**
+   * The pane of a shell of this machine is gone for good: the shell ends if
+   * it belongs to this window, also while another machine shows it.
+   */
+  paneClosed(terminalId: string): Promise<void> {
+    return invokeHost("pty_pane_closed", { terminalId });
+  }
+
+  /** Stops showing the shell; it runs on, for whoever shows it next. */
+  detach(terminalId: string): Promise<void> {
+    return invokeHost("pty_detach", { terminalId });
+  }
+
+  resize(terminalId: string, size: TerminalSizeContract): Promise<void> {
+    return invokeHost("pty_resize", { terminalId, size });
   }
 
   onExit(terminalId: string, listener: (event: PtyExitEventContract) => void): Promise<() => void> {
-    return listen<PtyExitEventContract>(`pty-exit:${terminalId}`, (event) => {
-      listener(event.payload);
-    });
+    return listenInThisWindow<PtyExitEventContract>(
+      terminalEvent(PTY_EXIT_EVENT, terminalId),
+      listener,
+    );
   }
 
   write(terminalId: string, data: string): Promise<void> {
-    return invoke("pty_write", { terminalId, data });
+    return invokeHost("pty_write", { terminalId, data });
   }
 
+  /** Rejects with `lineEditorUnavailable` for a shell that takes no actions. */
   executeLineEditorAction(terminalId: string, action: string, payload?: object): Promise<void> {
-    return invoke("pty_execute_line_editor_action", {
+    return invokeHost("pty_execute_line_editor_action", {
       terminalId,
       action,
       payloadJson: payload ? JSON.stringify(payload) : null,
@@ -282,26 +383,27 @@ export type TerminalProcessContract = {
 /** Process inspection of PTY sessions (not part of the transport port). */
 export const TauriPty = {
   getProcessTreeByTerminalId(terminalId: string) {
-    return invoke<ProcessTreeSnapshot>("pty_get_process_tree_by_terminal_id", {
+    return invokeHost<ProcessTreeSnapshot>("pty_get_process_tree_by_terminal_id", {
       terminalId,
     });
   },
   /** The processes under every terminal's shell, one pass over the machine. */
   listTerminalProcesses() {
-    return invoke<TerminalProcessContract[]>("pty_list_terminal_processes");
+    return invokeHost<TerminalProcessContract[]>("pty_list_terminal_processes");
   },
   /**
    * Ends a process under the terminal's shell and everything it started;
-   * rejects for the shell itself and for a process outside that tree.
+   * rejects with `notInTerminalTree` for the shell itself and for a process
+   * outside that tree.
    */
   terminateProcess(terminalId: string, processId: number) {
-    return invoke<void>("pty_terminate_process", { terminalId, processId });
+    return invokeHost<void>("pty_terminate_process", { terminalId, processId });
   },
   /**
    * Ends what runs in the foreground of the terminal; the shell and its
    * background jobs stay. On Windows everything under the shell ends.
    */
-  terminateProcesses(terminalId: string) {
-    return invoke<void>("pty_terminate_processes", { terminalId });
+  terminateForegroundJob(terminalId: string) {
+    return invokeHost<void>("pty_terminate_foreground_job", { terminalId });
   },
 };

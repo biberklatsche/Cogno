@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { SessionHost } from "@cogno/core/session/host/session-host";
+import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { SessionFact } from "@cogno/core/session/session-facts";
 import { TerminalId } from "@cogno/shared/domain";
 import { Observable, Subject, Subscription } from "rxjs";
@@ -17,6 +17,12 @@ export interface IdentifiedSessionFact {
   readonly fact: SessionFact;
 }
 
+/** A session's runtime, as it is now, tagged with the terminal it belongs to. */
+export interface IdentifiedSessionRuntime {
+  readonly terminalId: TerminalId;
+  readonly runtime: SessionRuntime;
+}
+
 /**
  * The running sessions by terminal id, for the adapters that answer for them.
  *
@@ -29,22 +35,30 @@ export interface IdentifiedSessionFact {
 @Injectable({ providedIn: "root" })
 export class TerminalSessionRegistry {
   private readonly entriesByTerminalId = new Map<TerminalId, TerminalSessionRegistryEntry>();
-  private readonly factSubscriptions = new Map<TerminalId, Subscription>();
+  private readonly sessionSubscriptions = new Map<TerminalId, Subscription>();
   private readonly facts = new Subject<IdentifiedSessionFact>();
+  private readonly runtimes = new Subject<IdentifiedSessionRuntime>();
   private readonly changes = new Subject<void>();
 
   /** Every session's facts, each tagged with its terminal id. */
   readonly facts$: Observable<IdentifiedSessionFact> = this.facts.asObservable();
+  /**
+   * Every session's runtime, each tagged with its terminal id: once when it
+   * is registered, then whenever it changes. The runtime is no fact (2.3);
+   * this is the one place that follows it for every session.
+   */
+  readonly runtimes$: Observable<IdentifiedSessionRuntime> = this.runtimes.asObservable();
   /** A session was registered or unregistered; `entries` has changed. */
   readonly changes$: Observable<void> = this.changes.asObservable();
 
   register(terminalId: TerminalId, shellProfile: ShellProfile, host: SessionHost): void {
     this.entriesByTerminalId.set(terminalId, { terminalId, shellProfile, host });
-    this.factSubscriptions.get(terminalId)?.unsubscribe();
-    this.factSubscriptions.set(
-      terminalId,
-      host.facts$.subscribe((fact) => this.facts.next({ terminalId, fact })),
+    this.sessionSubscriptions.get(terminalId)?.unsubscribe();
+    const following = host.facts$.subscribe((fact) => this.facts.next({ terminalId, fact }));
+    following.add(
+      host.runtime$.subscribe((runtime) => this.runtimes.next({ terminalId, runtime })),
     );
+    this.sessionSubscriptions.set(terminalId, following);
     this.changes.next();
   }
 
@@ -52,8 +66,8 @@ export class TerminalSessionRegistry {
     if (!terminalId) {
       return;
     }
-    this.factSubscriptions.get(terminalId)?.unsubscribe();
-    this.factSubscriptions.delete(terminalId);
+    this.sessionSubscriptions.get(terminalId)?.unsubscribe();
+    this.sessionSubscriptions.delete(terminalId);
     if (this.entriesByTerminalId.delete(terminalId)) {
       this.changes.next();
     }

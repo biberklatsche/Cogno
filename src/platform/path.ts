@@ -24,9 +24,13 @@ export class Paths {
     return invoke<string>("get_cogno_home_dir", { devMode });
   }
 
-  /** The endpoint file through which a process outside Cogno's terminals reaches Cogno. */
-  cognoEndpointFilePath(devMode: boolean): Promise<string> {
-    return invoke<string>("get_cogno_endpoint_file_path", { devMode });
+  /**
+   * The starter in the Cogno home: the stable path of the `cogno` command,
+   * whichever version is installed. Hooks and plugins run it to reach the
+   * host of this machine.
+   */
+  cognoStarterPath(devMode: boolean): Promise<string> {
+    return invoke<string>("get_cogno_starter_path", { devMode });
   }
 
   cognoConfigFilePath(devMode: boolean): Promise<string> {

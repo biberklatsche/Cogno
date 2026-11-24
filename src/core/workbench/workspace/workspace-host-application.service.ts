@@ -3,7 +3,9 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
+import { asNewLocalPane } from "@cogno/core/workbench/grid-layout";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
+import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-start.service";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
@@ -34,9 +36,9 @@ function mapPaneLeaves(pane: PaneConfig, mapLeaf: (leaf: PaneConfig) => PaneConf
   };
 }
 
-/** The pane tree without its terminal ids: every leaf opens a new shell. */
-function withoutTerminalIds(pane: PaneConfig): PaneConfig {
-  return mapPaneLeaves(pane, ({ terminalId: _terminalId, ...leaf }) => leaf);
+/** The pane tree without its shells: every leaf opens a new one on this machine. */
+function withNewLocalShells(pane: PaneConfig): PaneConfig {
+  return mapPaneLeaves(pane, (leaf) => asNewLocalPane(leaf));
 }
 
 /** Idle time after terminal output before an auto-save of the active workspace. */
@@ -65,6 +67,7 @@ const DIRTY_TRACKED_KEYS = [
   "rightChild",
   "shellName",
   "workingDir",
+  "host",
 ];
 
 @Injectable({ providedIn: "root" })
@@ -105,26 +108,32 @@ export class WorkspaceHostApplicationService {
     private readonly sessionPersistence: SessionPersistenceService,
     private readonly appWindow: AppWindow,
     private readonly discardSessionMarker: DiscardSessionMarker,
+    private readonly shellsFoundAtStart: ShellsFoundAtStart,
     sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
     this.bus.once$("DBInitialized").subscribe(async () => {
+      // The shells that still run on this machine must be known before the
+      // first pane is restored: a pane whose shell runs shows it, it does not
+      // start another. Asked here, not before the window is drawn: starting
+      // the daemon can take a moment.
+      const asked = this.shellsFoundAtStart.find();
       await this.discardSessionIfMarked();
-      const workspaces = this.workspacesToStartWith(
+      const savedWorkspaces = this.workspacesToStartWith(
         await this.workspaceRepository.getAllWorkspaces(),
       );
-      await this.repairDuplicateIds(workspaces);
-      const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
-        workspaces,
-        this.defaultWorkspace,
-      );
-
-      for (const workspace of workspaces) {
+      await this.repairDuplicateIds(savedWorkspaces);
+      await asked;
+      for (const workspace of savedWorkspaces) {
         this.persistedWorkspaceRuntimeSignatureById.set(
           workspace.id,
           this.createWorkspaceRuntimeSignature(workspace.tabs, workspace.stacks, workspace.grids),
         );
       }
+      const workspaceList = WorkspaceStateUseCase.createInitialWorkspaceState(
+        savedWorkspaces,
+        this.defaultWorkspace,
+      );
 
       this._workspaceList.set(workspaceList);
 
@@ -138,7 +147,7 @@ export class WorkspaceHostApplicationService {
       // runtime again, in the background; the one that was active comes to
       // the front last.
       const activeWorkspace = WorkspaceStateUseCase.getActiveWorkspace(workspaceList);
-      for (const workspace of workspaces) {
+      for (const workspace of savedWorkspaces) {
         if (
           workspace.isOpen &&
           workspace.id !== activeWorkspace?.id &&
@@ -570,7 +579,7 @@ export class WorkspaceHostApplicationService {
             return leaf;
           }
           orphanedTerminalIds.push(leaf.terminalId);
-          return { ...leaf, terminalId: IdCreator.newTerminalId() };
+          return asNewLocalPane(leaf, IdCreator.newTerminalId());
         }),
       }));
 
@@ -634,7 +643,7 @@ export class WorkspaceHostApplicationService {
       }));
       workspace.grids = workspace.grids.map((grid) => ({
         tabId: freshTabIds.get(grid.tabId) ?? grid.tabId,
-        pane: withoutTerminalIds(grid.pane),
+        pane: withNewLocalShells(grid.pane),
       }));
     }
     await this.workspaceRepository.upsertWorkspace(workspace);

@@ -149,7 +149,7 @@ describe("GridListService workspace runtime", () => {
     });
 
     it("drops the exited pane there and ends its session, leaving the shown one alone", () => {
-      emitSessionFact("term-2", { type: "exited", exitCode: 0 });
+      emitSessionFact("term-2", { type: "exited", exit: { kind: "exited", code: 0 } });
 
       expect(componentFactory.destroy).toHaveBeenCalledWith("term-2");
       expect(service.terminalIdsForWorkspace("ws-2")).toEqual(["term-3"]);
@@ -159,8 +159,8 @@ describe("GridListService workspace runtime", () => {
     it("closes the tab there when its last pane exits", () => {
       let removedTab: string | undefined;
       bus.on$("RemoveTab").subscribe((event) => (removedTab = event.payload));
-      emitSessionFact("term-2", { type: "exited", exitCode: 0 });
-      emitSessionFact("term-3", { type: "exited", exitCode: 0 });
+      emitSessionFact("term-2", { type: "exited", exit: { kind: "exited", code: 0 } });
+      emitSessionFact("term-3", { type: "exited", exit: { kind: "exited", code: 0 } });
       expect(removedTab).toBe("tab-2");
 
       bus.publish({ type: "TabRemoved", payload: "tab-2" });

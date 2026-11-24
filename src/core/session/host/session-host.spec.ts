@@ -2,6 +2,7 @@ import type { ConfigService } from "@cogno/core/infrastructure/config/config.ser
 import type { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { Renderer } from "@cogno/core/terminal/renderer";
+import { HostError } from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { OsPlatform } from "@cogno/platform/os";
 import { BehaviorSubject, Subject } from "rxjs";
@@ -36,14 +37,16 @@ vi.mock("@cogno/core/terminal/pty", () => {
     write = vi.fn();
     spawn = vi.fn().mockResolvedValue(undefined);
     onExit = vi.fn().mockReturnValue({ dispose: vi.fn() });
-    kill = vi.fn();
+    onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    onHandedBack = vi.fn().mockReturnValue({ dispose: vi.fn() });
+    attach = vi.fn().mockResolvedValue(undefined);
+    isLive = true;
     faults$ = new Subject();
   }
   return { Pty: vi.fn(PtyMock) };
 });
 
 const osStub = { platform: () => "linux" } as unknown as OsPlatform;
-const environmentStub = { isDevMode: () => false } as never;
 const clipboardStub = { writeText: vi.fn(async () => undefined) } as unknown as ClipboardAccess;
 
 function configStub(config: Record<string, unknown>): ConfigService {
@@ -63,7 +66,6 @@ function createHost(config: Record<string, unknown> = { font: { enable_ligatures
   } as unknown as CommandRecorder;
   return new SessionHost(
     osStub,
-    environmentStub,
     clipboardStub,
     configStub(config),
     {} as never,
@@ -71,6 +73,7 @@ function createHost(config: Record<string, unknown> = { font: { enable_ligatures
     {} as never,
     new TerminalCommandHistoryStore(),
     recorder,
+    { os: "linux" },
   );
 }
 
@@ -276,8 +279,8 @@ describe("SessionHost", () => {
     host.initialize("terminal-1", bashProfile);
     host.start();
 
-    host.close();
-    host.close();
+    host.close(true);
+    host.close(true);
 
     expect(lastRenderer().dispose).toHaveBeenCalledTimes(1);
     expect(host.runtime.status).toBe("closed");
@@ -324,7 +327,13 @@ async function settle(): Promise<void> {
 function ptyOf(host: SessionHost) {
   return (
     host as unknown as {
-      pty: { spawn: ReturnType<typeof vi.fn>; onExit: ReturnType<typeof vi.fn> };
+      pty: {
+        spawn: ReturnType<typeof vi.fn>;
+        attach: ReturnType<typeof vi.fn>;
+        onExit: ReturnType<typeof vi.fn>;
+        onTakenOver: ReturnType<typeof vi.fn>;
+        onHandedBack: ReturnType<typeof vi.fn>;
+      };
     }
   ).pty;
 }
@@ -363,6 +372,114 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     expect(host.runtime.status).toBe("running");
   });
 
+  it("shows a shell that already runs instead of starting one, with the secret it was started with", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.showRunning("the-running-shells-token");
+
+    host.start();
+    await settle();
+
+    expect(ptyOf(host).attach).toHaveBeenCalledWith("terminal-1", expect.any(Function));
+    expect(ptyOf(host).spawn).not.toHaveBeenCalled();
+    expect(host.model.sessionToken).toBe("the-running-shells-token");
+    expect(host.runtime.status).toBe("running");
+  });
+
+  it("says so when its shell could not start because one already runs under its id", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    const facts: string[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact.type));
+    vi.mocked(ptyOf(host).spawn).mockRejectedValueOnce(
+      new HostError("shellAlreadyRuns", "A shell already runs under terminal-1"),
+    );
+    const reported = vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => undefined);
+
+    host.start();
+    await settle();
+
+    // Nothing went wrong: the shell is there, and only has to be shown.
+    expect(host.runtime.status).toBe("starting");
+    expect(facts).toContain("shellAlreadyRuns");
+    expect(reported).not.toHaveBeenCalled();
+  });
+
+  it("fails its start when the shell it found running cannot be shown after all", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    vi.mocked(ptyOf(host).spawn).mockRejectedValueOnce(
+      new HostError("shellAlreadyRuns", "A shell already runs under terminal-1"),
+    );
+    vi.spyOn(ErrorReporter, "reportException").mockImplementation(() => undefined);
+    host.start();
+    await settle();
+
+    host.failStart(new HostError("connectionLost", "The connection is gone"));
+
+    expect(host.runtime).toEqual({
+      status: "failed",
+      reason: "The connection is gone",
+      code: "connectionLost",
+    });
+  });
+
+  it("says so when the running shell it was to show had ended by then", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.showRunning("the-running-shells-token");
+    const facts: string[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact.type));
+    vi.mocked(ptyOf(host).attach).mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
+
+    host.start();
+    await settle();
+
+    expect(host.runtime.status).toBe("starting");
+    expect(facts).toContain("shellGone");
+  });
+
+  it("makes up a secret nothing can echo back for a running shell whose host kept none", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.showRunning(undefined);
+
+    host.start();
+    await settle();
+
+    expect(ptyOf(host).attach).toHaveBeenCalled();
+    expect(host.model.sessionToken).toMatch(/^[0-9a-f]{32}$/);
+  });
+
+  it("is taken over when another Cogno attaches to its shell", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+    await settle();
+
+    (ptyOf(host).onTakenOver.mock.calls[0][0] as () => void)();
+
+    expect(host.runtime.status).toBe("takenOver");
+  });
+
+  it("says when the Cogno that took its shell let it go, while it still waits for it", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+    await settle();
+    const facts: string[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact.type));
+    const handedBack = ptyOf(host).onHandedBack.mock.calls[0][0] as () => void;
+
+    // It shows its shell: there is nothing to come back.
+    handedBack();
+    expect(facts).not.toContain("handedBack");
+
+    (ptyOf(host).onTakenOver.mock.calls[0][0] as () => void)();
+    handedBack();
+    expect(facts.filter((type) => type === "handedBack")).toHaveLength(1);
+  });
+
   it("keeps running while detached and only moves the element on a second attach", async () => {
     const host = createHost();
     host.initialize("terminal-1", bashProfile);
@@ -396,13 +513,51 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     const facts: SessionFact[] = [];
     host.facts$.subscribe((fact) => facts.push(fact));
 
-    const onExit = ptyOf(host).onExit.mock.calls[0][0] as (event: { exitCode: number }) => void;
-    onExit({ exitCode: 3 });
+    const onExit = ptyOf(host).onExit.mock.calls[0][0] as (event: {
+      reason: { kind: "exited"; code: number };
+    }) => void;
+    onExit({ reason: { kind: "exited", code: 3 } });
 
-    expect(host.runtime).toEqual({ status: "exited", exitCode: 3 });
-    expect(facts).toContainEqual({ type: "exited", exitCode: 3 });
+    expect(host.runtime).toEqual({ status: "exited", exit: { kind: "exited", code: 3 } });
+    expect(facts).toContainEqual({ type: "exited", exit: { kind: "exited", code: 3 } });
     expect(host.display).toBe("attached");
     expect(lastRenderer().dispose).not.toHaveBeenCalled();
+  });
+
+  it("starts a new shell when retried after an end the user did not cause, and not after exit", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.start();
+    await settle();
+    host.attach(document.createElement("div"));
+    const onExit = ptyOf(host).onExit.mock.calls[0][0] as (event: {
+      reason: { kind: string; code?: number };
+    }) => void;
+
+    onExit({ reason: { kind: "killedByAnotherClient" } });
+    host.retry();
+    await settle();
+    expect(ptyOf(host).spawn).toHaveBeenCalledTimes(2);
+    expect(host.runtime.status).toBe("running");
+
+    onExit({ reason: { kind: "exited", code: 0 } });
+    host.retry();
+    await settle();
+    // `exit` was the user's: the pane goes, nothing starts again.
+    expect(ptyOf(host).spawn).toHaveBeenCalledTimes(2);
+  });
+
+  it("says another Cogno shows its shell, and starts nothing", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.showRunning("token");
+
+    host.startShownElsewhere("laptop");
+    await settle();
+
+    expect(host.runtime).toEqual({ status: "takenOver", takenBy: "laptop" });
+    expect(ptyOf(host).spawn).not.toHaveBeenCalled();
+    expect(ptyOf(host).attach).not.toHaveBeenCalled();
   });
 
   it("close detaches, ends the machine and is final", async () => {
@@ -415,8 +570,8 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     const seen: string[] = [];
     host.runtime$.subscribe((runtime) => seen.push(runtime.status));
 
-    host.close();
-    host.close();
+    host.close(true);
+    host.close(true);
 
     expect(seen).toEqual(["running", "closing", "closed"]);
     expect(host.display).toBe("detached");

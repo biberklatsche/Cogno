@@ -12,6 +12,18 @@
         <div class="webgl-restore-overlay">Restoring terminal renderer…</div>
     }
     @if (runtime(); as runtime) {
+        @if (runtime.status === 'takenOver') {
+            <div class="start-failed-overlay">
+                <div class="start-failed-title">
+                    This shell is shown {{ runtime.takenBy ? 'on ' + runtime.takenBy : 'in another Cogno' }}
+                </div>
+                <div class="start-failed-reason">It keeps running there.</div>
+                <div class="start-failed-actions">
+                    <button type="button" class="button" (click)="reattach()">Show it here</button>
+                    <button type="button" class="button" (click)="closeAfterFailure()">Close</button>
+                </div>
+            </div>
+        }
         @if (runtime.status === 'failed') {
             <div class="start-failed-overlay">
                 <div class="start-failed-title">The shell could not be started</div>
@@ -21,6 +33,31 @@
                     <button type="button" class="button" (click)="closeAfterFailure()">Close</button>
                 </div>
             </div>
+        }
+        <!-- The user ended it: the pane is gone. Any other end leaves the pane, which says so. -->
+        @if (endedWithoutUser(); as exit) {
+                <div class="start-failed-overlay">
+                    <div class="start-failed-title">
+                        @switch (exit.kind) {
+                            @case ('killedByAnotherClient') { The shell was ended by another Cogno }
+                            @case ('connectionLost') { The connection to the Cogno host broke }
+                            @default { The shell's terminal failed }
+                        }
+                    </div>
+                    @if (runsOnThisMachine) {
+                        <div class="start-failed-reason">
+                            {{ exit.kind === 'connectionLost' ? 'If the shell runs on, it is shown again.' : 'A new shell starts here.' }}
+                        </div>
+                    }
+                    <div class="start-failed-actions">
+                        @if (runsOnThisMachine) {
+                            <button type="button" class="button" (click)="retry()">
+                                {{ exit.kind === 'connectionLost' ? 'Reconnect' : 'New shell' }}
+                            </button>
+                        }
+                        <button type="button" class="button" (click)="closeAfterFailure()">Close</button>
+                    </div>
+                </div>
         }
     }
     <app-terminal-autocomplete></app-terminal-autocomplete>

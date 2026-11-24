@@ -1,19 +1,31 @@
 import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
-import { Environment } from "@cogno/core/infrastructure/environment/environment";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { ShellLineEditorActionContract } from "@cogno/core/session/shells/shell-definition";
 import { CursorHandler } from "@cogno/core/terminal/handlers/cursor.handler";
 import { FocusHandler } from "@cogno/core/terminal/handlers/focus.handler";
 import { MouseHandler } from "@cogno/core/terminal/handlers/mouse.handler";
-import { PtyHandler } from "@cogno/core/terminal/handlers/pty.handler";
+import {
+  PtyHandler,
+  PtyHandlerListener,
+  PtyOpenMode,
+} from "@cogno/core/terminal/handlers/pty.handler";
 import { ResizeHandler } from "@cogno/core/terminal/handlers/resize.handler";
 import { ScrollStateHandler } from "@cogno/core/terminal/handlers/scroll-state.handler";
 import { SelectionHandler } from "@cogno/core/terminal/handlers/selection.handler";
 import { MachineState, MachineStateSnapshot } from "@cogno/core/terminal/machine-state";
 import { IPty, Pty } from "@cogno/core/terminal/pty";
 import { IRenderer, Renderer } from "@cogno/core/terminal/renderer";
-import { Opener, OsPlatform, PtyTransport } from "@cogno/platform";
+import {
+  HostError,
+  HostErrorCode,
+  isHostError,
+  Opener,
+  OsPlatform,
+  PtyTransport,
+  SESSION_TOKEN_VARIABLE,
+  TerminalExitContract,
+} from "@cogno/platform";
 import { ClipboardAccess } from "@cogno/platform/clipboard";
 import { ProcessTreeSnapshot, TauriPty } from "@cogno/platform/pty";
 import {
@@ -56,7 +68,9 @@ import { SessionModel, SessionModelSnapshot, TerminalInput } from "../model/sess
 import { CommandRecorder } from "../recorder/command-recorder";
 import { SessionFact } from "../session-facts";
 import { shellDefinitions } from "../shells/shell-definitions";
+import { INTEGRATION_VERSION } from "../shells/shell-integration.writer";
 import { serializeScrollback } from "./scrollback-serializer";
+import { SessionBackend } from "./session-backend";
 import {
   type CommandSnapshot,
   SESSION_SNAPSHOT_VERSION,
@@ -138,6 +152,8 @@ type SessionRuntimeStatus =
   | "running"
   | "failed"
   | "exited"
+  /** Another Cogno shows the shell now; it runs on, but not here. */
+  | "takenOver"
   | "closing"
   | "closed";
 
@@ -145,8 +161,12 @@ export type SessionRuntime = {
   readonly status: SessionRuntimeStatus;
   /** Why the start failed; only while `failed`. */
   readonly reason?: string;
+  /** The host's code for why the start failed, when a host said it; only while `failed`. */
+  readonly code?: HostErrorCode;
   /** How the shell ended; only from `exited` on. */
-  readonly exitCode?: number;
+  readonly exit?: TerminalExitContract;
+  /** What the machine is called that shows the shell; only while `takenOver`. */
+  readonly takenBy?: string;
 };
 
 /** Axis B - display: whether the machine is in the DOM right now. */
@@ -198,12 +218,16 @@ export class SessionHost {
   private promptMarkerRegistry?: PromptMarkerRegistry;
   /** A snapshot waiting to be replayed on the first attach. */
   private _pendingRestore?: SessionSnapshot;
+  /** Whether the shell already runs and is shown, not started; see `showRunning`. */
+  private _showsRunning = false;
+  /** The token of a shell that already runs; see `showRunning`. */
+  private _runningToken?: string;
   private _restoreScheduled = false;
   private handshakeTimeout?: ReturnType<typeof setTimeout>;
 
   constructor(
+    /** The window's operating system: which key opens a link. */
     private readonly os: OsPlatform,
-    environment: Environment,
     private readonly clipboard: ClipboardAccess,
     private readonly configService: ConfigService,
     private readonly opener: Opener,
@@ -211,12 +235,16 @@ export class SessionHost {
     ptyTransport: PtyTransport,
     historyStore: TerminalCommandHistoryStore,
     recorder: CommandRecorder,
+    private readonly backend: SessionBackend,
   ) {
-    this.model = new SessionModel(this.os.platform(), historyStore, recorder);
-    this.pty = new Pty(ptyTransport, environment.isDevMode());
+    this.model = new SessionModel(this.backend.os, historyStore, recorder);
+    this.pty = new Pty(ptyTransport, {
+      host: this.backend.host,
+      integrationVersion: INTEGRATION_VERSION,
+    });
     this.renderer = new Renderer(
       toTerminalMachineOptions(this.configService.config),
-      this.os.platform(),
+      this.backend.os,
     );
     // The machine reports faults, it does not handle them: the host decides
     // who hears about it (ARCHITECTURE.md 2.1, boundary decision 2).
@@ -328,7 +356,13 @@ export class SessionHost {
     }
     this._terminalId = terminalId;
     this._shellProfile = shellProfile;
-    this.model.initialize(terminalId, shellProfile.shell_type, shellProfile, this.os.platform());
+    this.model.initialize(
+      terminalId,
+      shellProfile.shell_type,
+      shellProfile,
+      this.backend.os,
+      this.backend.host,
+    );
   }
 
   /**
@@ -346,12 +380,18 @@ export class SessionHost {
 
     // The session's secret: the integration scripts echo it back in every
     // model-changing OSC sequence, so output content cannot impersonate
-    // them. Created here, before the first byte can arrive.
-    const sessionToken = createSessionToken();
+    // them. Created here, before the first byte can arrive - or, for a
+    // shell that already runs, the one it was started with.
+    const running = this._showsRunning;
+    const sessionToken = this._runningToken ?? createSessionToken();
+    if (running) {
+      // The host plays back what it kept, which is newer than any snapshot.
+      this._pendingRestore = undefined;
+    }
     this.model.setSessionToken(sessionToken);
     const spawnProfile: ShellProfile = {
       ...shellProfile,
-      env: { ...shellProfile.env, COGNO_SESSION_TOKEN: sessionToken },
+      env: { ...shellProfile.env, [SESSION_TOKEN_VARIABLE]: sessionToken },
     };
 
     // The machine takes values; reading the config and pushing them again
@@ -369,18 +409,34 @@ export class SessionHost {
       }),
     );
 
-    this.ptyHandler = new PtyHandler(terminalId, this.pty, spawnProfile, {
-      onSpawned: () => {
+    const listener: PtyHandlerListener = {
+      onSpawned: (mode) => {
         this.setRuntime({ status: "running" });
-        this.watchForHandshake(spawnProfile);
+        // A shell that already runs made its handshake long ago; the host
+        // plays it back with the output it kept. A new one makes it now.
+        if (mode === "spawn") this.watchForHandshake(spawnProfile);
       },
-      onFailed: (error) => this.onStartFailed(error),
-      onExited: (exitCode) => {
+      onTakenOver: (by) => {
         this.stopWatchingForHandshake();
-        this.setRuntime({ status: "exited", exitCode });
-        this.hostFacts.next({ type: "exited", exitCode });
+        this.setRuntime({ status: "takenOver", takenBy: by });
+      },
+      onHandedBack: () => {
+        // Only a session that still waits for its shell has use for it.
+        if (this.runtime.status === "takenOver") {
+          this.hostFacts.next({ type: "handedBack" });
+        }
+      },
+      onFailed: (error, mode) => this.onStartFailed(error, mode),
+      onExited: (exit) => {
+        this.stopWatchingForHandshake();
+        this.setRuntime({ status: "exited", exit });
+        this.hostFacts.next({ type: "exited", exit });
       },
       onOutput: () => this.hostFacts.next({ type: "outputReceived" }),
+    };
+    this.ptyHandler = new PtyHandler(terminalId, this.pty, spawnProfile, {
+      mode: running ? "attach" : "spawn",
+      listener,
     });
     // A restored session defers the shell spawn to its first attach: the saved
     // scrollback must be written into an open, final-sized terminal before the
@@ -474,15 +530,37 @@ export class SessionHost {
     }
   }
 
-  /** Tries the shell again after a failed start. */
-  retry(): void {
-    if (this.runtime.status !== "failed" || !this.ptyHandler) return;
-    this.setRuntime({ status: "starting" });
-    this.ptyHandler.restart();
+  /** Whether the shell runs on this machine, where Cogno starts shells. */
+  get runsOnThisMachine(): boolean {
+    return this.backend.host === undefined;
   }
 
-  /** Ends the session for good: the workbench decided so. Idempotent. */
-  close(): void {
+  /**
+   * Tries the shell again after a failed start, or after it ended without the
+   * user ending it. On this machine that starts a new one - or shows the one
+   * that still runs; on another, Cogno attaches again to the shell there.
+   */
+  retry(): void {
+    if (!this.canRetry() || !this.ptyHandler) return;
+    this.setRuntime({ status: "starting" });
+    this.ptyHandler.restart(this.backend.host === undefined ? "spawn" : "attach");
+  }
+
+  /**
+   * The start found its shell running (`shellAlreadyRuns`), but it cannot be
+   * shown: the start failed after all, and Retry tries again.
+   */
+  failStart(error: unknown): void {
+    if (this.runtime.status !== "starting") return;
+    this.fail(error);
+  }
+
+  /**
+   * Ends the session: the workbench decided so. `endsShell`: the terminal
+   * goes for good; otherwise another session of it takes the shell on.
+   * Idempotent.
+   */
+  close(endsShell: boolean): void {
     if (this.isEnding) return;
     this.setRuntime({ status: "closing" });
     this.stopWatchingForHandshake();
@@ -490,7 +568,8 @@ export class SessionHost {
     this.model.dispose();
     this.hostFacts.complete();
     this.renderer.dispose();
-    this.pty.dispose();
+    if (endsShell) this.pty.dispose();
+    else this.pty.release();
     this.disposables.forEach((disposable) => {
       disposable.dispose();
     });
@@ -730,6 +809,27 @@ export class SessionHost {
   }
 
   /**
+   * The session's shell already runs (Cogno was closed and it went on, or
+   * another Cogno started it): `start()` shows it instead of starting one.
+   * `sessionToken` is the secret it was started with; without one, the
+   * session makes up a secret nothing can echo back. Called before start().
+   */
+  showRunning(sessionToken: string | undefined): void {
+    this._showsRunning = true;
+    this._runningToken = sessionToken;
+  }
+
+  /**
+   * The session's shell runs, but another Cogno - or another window of this
+   * one - shows it: instead of `start()`, the session says so and waits.
+   * Taking the shell is the user's to decide; a new session does that.
+   */
+  startShownElsewhere(by: string | undefined): void {
+    if (this.runtime.status !== "allocated") return;
+    this.setRuntime({ status: "takenOver", takenBy: by });
+  }
+
+  /**
    * Replay a snapshot's scrollback into the buffer, above a separator line, then
    * re-anchor its markers and seed their command metadata so the decorations
    * render. The replay is dead scrollback - the live prompt runs below it - so
@@ -798,7 +898,7 @@ export class SessionHost {
     terminal.write(`\r\n\x1b[8m${RESTORE_BOUNDARY_SENTINEL}\x1b[0m`, () =>
       this.renderRestoreBoundary(terminal),
     );
-    const trailer = this.os.platform() === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
+    const trailer = this.backend.os === "windows" ? "\r\n".repeat(terminal.rows) : "\r\n";
     terminal.write(trailer, () => {
       // xterm may call back after the session closed.
       if (this.isEnding) return;
@@ -890,12 +990,12 @@ export class SessionHost {
   }
 
   /** Ends what runs in the foreground of the session; the shell and its background jobs stay. */
-  terminateProcesses(): Promise<void> {
+  terminateForegroundJob(): Promise<void> {
     const terminalId = this.terminalId;
     if (!terminalId) {
       return Promise.reject(new Error("Session has no terminal id yet."));
     }
-    return TauriPty.terminateProcesses(terminalId);
+    return TauriPty.terminateForegroundJob(terminalId);
   }
 
   /** The marker menu for the first command scrolled out of view; empty when there is none. */
@@ -949,9 +1049,30 @@ export class SessionHost {
     this.handshakeTimeout = undefined;
   }
 
-  private onStartFailed(error: unknown): void {
+  private onStartFailed(error: unknown, mode: PtyOpenMode): void {
+    if (isHostError(error, "shellAlreadyRuns")) {
+      // Nothing is wrong: the shell is there, it only has to be shown. The
+      // session stays starting until it is.
+      this.hostFacts.next({ type: "shellAlreadyRuns" });
+      return;
+    }
+    if (mode === "attach" && isHostError(error, "sessionNotFound")) {
+      // The shell ended between being found and being attached to.
+      this.hostFacts.next({ type: "shellGone" });
+      return;
+    }
+    this.fail(error);
+  }
+
+  private canRetry(): boolean {
+    const { status, exit } = this.runtime;
+    return status === "failed" || (status === "exited" && exit?.kind !== "exited");
+  }
+
+  private fail(error: unknown): void {
     const reason = error instanceof Error ? error.message : String(error);
-    this.setRuntime({ status: "failed", reason });
+    const code = error instanceof HostError ? error.code : undefined;
+    this.setRuntime({ status: "failed", reason, code });
     ErrorReporter.reportException({
       error,
       handled: true,

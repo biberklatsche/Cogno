@@ -33,6 +33,11 @@ export interface FeatureDefinition<TActionName = string> {
    */
   readonly target: "session" | "workbench";
   /**
+   * A Pro feature (ARCHITECTURE.md 6): its side-menu entry shows a Pro badge.
+   * Pro applies to a whole feature; nothing checks it yet.
+   */
+  readonly pro?: true;
+  /**
    * Other features this one needs; resolved transitively by the feature-host
    * before activation. Unknown or cyclic requires abort the start.
    */

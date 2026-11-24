@@ -6,9 +6,10 @@ import {
   TabRemovedEvent,
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
-import { GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
+import { asNewLocalPane, GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { closesPane } from "@cogno/core/workbench/grid-list/+state/shell-end";
 import { BinaryNode, BinaryTree } from "@cogno/core/workbench/grid-list/binary-tree";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
@@ -97,6 +98,11 @@ export class GridListService implements PaneLayoutLookup {
     return this.locate(terminalId)?.node.data?.shellName;
   }
 
+  /** The machine the terminal's shell runs on; none for this one. */
+  findHostByTerminalId(terminalId: TerminalId): string | undefined {
+    return this.locate(terminalId)?.node.data?.host;
+  }
+
   removeWorkspaceRuntime(workspaceIdentifier: string): void {
     this.destroyWorkspaceGridList(this.stateByWorkspaceIdentifier.get(workspaceIdentifier)?.grids);
     this.stateByWorkspaceIdentifier.delete(workspaceIdentifier);
@@ -152,7 +158,12 @@ export class GridListService implements PaneLayoutLookup {
         if (!payload) return;
         this.restoreGrid({
           tabId: payload.tabId,
-          pane: { workingDir: payload.workingDir, shellName: payload.shellName },
+          pane: {
+            workingDir: payload.workingDir,
+            shellName: payload.shellName,
+            terminalId: payload.terminalId,
+            host: payload.host,
+          },
         });
         if (payload.isActive) {
           this.selectGrid(payload.tabId);
@@ -179,9 +190,10 @@ export class GridListService implements PaneLayoutLookup {
             this.applyPaneCwd(terminalId, fact.cwd);
             break;
           case "exited":
-            // The shell ended: drop its pane (and the tab/session with the last
-            // one). No bus hop - the session reports, the workbench acts.
-            this.removePane(terminalId);
+            // The user ended the shell: drop its pane (and the tab/session with
+            // the last one). Any other end leaves the pane, which says what
+            // happened. No bus hop - the session reports, the workbench acts.
+            if (closesPane(fact.exit)) this.removePane(terminalId);
             break;
           case "focusChanged":
             if (fact.focused) this.applyPaneFocus(terminalId);
@@ -430,16 +442,16 @@ export class GridListService implements PaneLayoutLookup {
           `[grid-list] Terminal ${persistedTerminalId} is laid out twice; the second pane gets a new id.`,
         );
       }
-      const terminalId =
-        persistedTerminalId && !takenTerminalIds.has(persistedTerminalId)
-          ? persistedTerminalId
-          : IdCreator.newTerminalId();
+      const keepsItsShell = !!persistedTerminalId && !takenTerminalIds.has(persistedTerminalId);
+      const terminalId = keepsItsShell ? persistedTerminalId : IdCreator.newTerminalId();
+      const leaf = keepsItsShell ? nodeConfig : asNewLocalPane(nodeConfig, terminalId);
       takenTerminalIds.add(terminalId);
       parent.data = {
-        shellName: nodeConfig.shellName,
-        workingDir: nodeConfig.workingDir,
-        title: nodeConfig.title,
+        shellName: leaf.shellName,
+        workingDir: leaf.workingDir,
+        title: leaf.title,
         terminalId,
+        host: leaf.host,
       };
     }
   }
@@ -454,6 +466,7 @@ export class GridListService implements PaneLayoutLookup {
         // Persisted so a restored pane keeps its terminal id and its scrollback
         // snapshot (keyed by it) can be replayed.
         terminalId: node.data?.terminalId,
+        host: node.data?.host,
       };
     }
     // Split node

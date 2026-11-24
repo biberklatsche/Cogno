@@ -497,7 +497,10 @@ describe("CommandRecorder shell-history import", () => {
     config: { terminal: { history: { import_shell_history: true } } },
   } as unknown as ConfigService;
 
-  async function startWith(hasAnyCommands: boolean) {
+  async function startWith(
+    hasAnyCommands: boolean,
+    startContext: ResolvedShellContextContract = shellContext,
+  ) {
     (
       CommandRecorder as unknown as { shellHistoryImportStarted: boolean }
     ).shellHistoryImportStarted = false;
@@ -519,7 +522,7 @@ describe("CommandRecorder shell-history import", () => {
       historyReader,
       importConfig,
     );
-    recorder.initialize(shellContext, pathAdapter);
+    recorder.initialize(startContext, pathAdapter);
     await flushActions();
     await flushActions();
     return repository;
@@ -533,5 +536,16 @@ describe("CommandRecorder shell-history import", () => {
   it("does not import again once the history has commands", async () => {
     const repository = await startWith(true);
     expect(repository.bulkImportCommands).not.toHaveBeenCalled();
+  });
+
+  it("leaves this machine's history file out of a shell on another machine", async () => {
+    const repository = await startWith(false, { ...shellContext, host: "box" });
+
+    expect(repository.bulkImportCommands).not.toHaveBeenCalled();
+    // The one import is still to come, for the first shell of this machine.
+    expect(
+      (CommandRecorder as unknown as { shellHistoryImportStarted: boolean })
+        .shellHistoryImportStarted,
+    ).toBe(false);
   });
 });

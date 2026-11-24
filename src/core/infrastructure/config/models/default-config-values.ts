@@ -236,6 +236,10 @@ export const defaultSettings = {
       mode: "on",
       order: "50",
     },
+    remote: {
+      mode: "on",
+      order: "90",
+    },
     coding_agents: {
       mode: "on",
       order: "20",
@@ -245,11 +249,6 @@ export const defaultSettings = {
     read: "ask",
     write: "allow",
     trim_trailing_spaces: "true",
-  },
-  http_server: {
-    enabled: "true",
-    port: "9000",
-    auto_next_port: "true",
   },
 } as const;
 
