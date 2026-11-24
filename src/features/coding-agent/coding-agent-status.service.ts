@@ -63,8 +63,9 @@ const UNBOUND_POLL_MS = 3000;
 
 /**
  * A session no terminal of Cogno's runs (an agent in another program's
- * terminal reaches Cogno over the endpoint file too) is ignored. The id is
- * kept this long: a resumed session may come back in a Cogno terminal.
+ * terminal reaches Cogno through the host too, naming no terminal) is
+ * ignored. The id is kept this long: a resumed session may come back in a
+ * Cogno terminal.
  */
 const FOREIGN_SESSION_TTL_MS = 60_000;
 
@@ -85,6 +86,11 @@ type SessionState = {
   shown: boolean;
   /** When the newest status event applied was sent; older ones are stale. */
   lastSentAt: number;
+  /**
+   * The newest status event was played back, not lived: what it changes is
+   * shown, but nobody is notified of it (`AgentSessionEvent.replayed`).
+   */
+  replaying: boolean;
   subagentIds: Set<string>;
   /** The main agent reported "ready" while subagents were still running. */
   readyDeferred: boolean;
@@ -290,6 +296,7 @@ export class CodingAgentStatusService {
     const state = existing ?? this.createState(key, provider, event, terminalId, hook.status);
     if (event.sentAt > 0 && event.sentAt < state.lastSentAt) return;
     if (event.sentAt > 0) state.lastSentAt = event.sentAt;
+    state.replaying = event.replayed === true;
 
     // A user's prompt also starts over: a subagent whose stop never came (the
     // turn was interrupted, a hook failed) must not keep the card working. A
@@ -322,7 +329,12 @@ export class CodingAgentStatusService {
     this.registerAnimation(state);
     this.publish();
 
-    if (state.shown && shownBefore !== undefined && shownBefore !== shown.status) {
+    if (
+      state.shown &&
+      !state.replaying &&
+      shownBefore !== undefined &&
+      shownBefore !== shown.status
+    ) {
       this.notifyStatusChanged(provider.name, shown.status);
     }
   }
@@ -340,7 +352,7 @@ export class CodingAgentStatusService {
     state.agent = { ...state.agent, status: "ready", statusSince: Date.now() };
     this.registerAnimation(state);
     this.publish();
-    if (state.shown) this.notifyStatusChanged(state.provider.name, "ready");
+    if (state.shown && !state.replaying) this.notifyStatusChanged(state.provider.name, "ready");
   }
 
   /**
@@ -393,6 +405,7 @@ export class CodingAgentStatusService {
       firstSeenAt: Date.now(),
       shown: terminalId !== undefined,
       lastSentAt: 0,
+      replaying: false,
       subagentIds: new Set(),
       readyDeferred: false,
     };

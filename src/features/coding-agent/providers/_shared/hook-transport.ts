@@ -4,14 +4,19 @@ import { AgentStatus } from "../../agent-status";
 import { AgentHookEvent, AgentSessionEvent } from "../../ports";
 import { CODING_AGENT_HOOK_COMMAND } from "./hook-command";
 
-/** One hook as the script posted it, before the adapter reads the payload. */
+/** One hook as it arrived, before the adapter reads the payload. */
 export type HookMessage = {
   readonly hookEvent: string;
   /** The terminal from the hook's environment, when it had one. */
   readonly terminalId?: string;
   readonly sentAt: number;
+  /** Played back by the host when this Cogno began to show the terminal. */
+  readonly replayed?: boolean;
   readonly payload: unknown;
 };
+
+/** The fourth argument of a hook message that the host played back. */
+const REPLAYED = "replayed";
 
 /** What the adapter reads from a payload about the session it belongs to. */
 export type HookSession = {
@@ -37,7 +42,10 @@ export type HookReading = {
   readonly sessionOf: (payload: unknown) => HookSession;
 };
 
-/** One adapter's hooks, as they arrive over Cogno's HTTP server, read as session events. */
+/**
+ * One adapter's hooks, read as session events. They arrive from the host of
+ * the machine the agent runs on, as `[provider, sentAt, event, replayed?]`.
+ */
 export function hookSessionEvents$(
   ipc: TerminalIpcPort,
   providerId: string,
@@ -51,6 +59,7 @@ export function hookSessionEvents$(
           hookEvent: m.args?.[2] ?? "",
           ...(m.terminalId ? { terminalId: m.terminalId } : {}),
           sentAt: Number(m.args?.[1] ?? 0) || 0,
+          ...(m.args?.[3] === REPLAYED ? { replayed: true } : {}),
           payload: m.payload,
         },
         reading,
@@ -79,6 +88,7 @@ export function toSessionEvent(
     ...(message.terminalId ? { terminalId: message.terminalId } : {}),
     ...(session.cwd ? { cwd: session.cwd } : {}),
     sentAt: message.sentAt,
+    ...(message.replayed ? { replayed: true } : {}),
     event,
   };
 }

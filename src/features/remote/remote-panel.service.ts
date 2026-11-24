@@ -1,0 +1,181 @@
+import { computed, DestroyRef, Injectable, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { RemoteHost, RemoteShell, RemoteShellsPort } from "@cogno/core/api/remote-shells-port";
+import { HostShells } from "./remote-shell-tree";
+
+/** How long a refresh is shown at least. */
+const REFRESH_SHOWN_FOR_MS = 600;
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * What the Remote panel shows: the paired machines, and the shells that run
+ * on every connected one. The shells are read
+ * while the panel is open - when it opens, when a machine connects and when
+ * the user asks - not watched.
+ */
+@Injectable({ providedIn: "root" })
+export class RemotePanelService {
+  private readonly hostsSignal = signal<readonly RemoteHost[]>([]);
+  private readonly shellsSignal = signal<ReadonlyMap<string, HostShells>>(new Map());
+  /**
+   * The newest question to each host. An answer to an older one - asked
+   * before the panel closed, or before a shell was shown - is no news.
+   */
+  private readonly questions = new Map<string, number>();
+  private readonly failureSignal = signal<string | undefined>(undefined);
+  private readonly refreshesSignal = signal(0);
+  private opened = false;
+
+  readonly hosts = this.hostsSignal.asReadonly();
+  /** The shells by host name. */
+  readonly shells = this.shellsSignal.asReadonly();
+  /** Whether the hosts are being asked what runs there, after a refresh. */
+  readonly refreshing = computed(() => this.refreshesSignal() > 0);
+  /** Why the last thing the user asked for did not work. */
+  readonly failure = this.failureSignal.asReadonly();
+
+  constructor(
+    private readonly port: RemoteShellsPort,
+    destroyRef: DestroyRef,
+  ) {
+    this.port.hosts$.pipe(takeUntilDestroyed(destroyRef)).subscribe((hosts) => {
+      this.hostsSignal.set(hosts);
+      if (this.opened) this.followConnections();
+    });
+    // What this window shows is part of what the panel says of each shell.
+    this.port.shownInThisWindowChanged$.pipe(takeUntilDestroyed(destroyRef)).subscribe(() => {
+      if (this.opened) void this.loadConnected();
+    });
+  }
+
+  open(): void {
+    this.opened = true;
+    void this.refresh();
+  }
+
+  close(): void {
+    this.opened = false;
+    this.shellsSignal.set(new Map());
+    this.failureSignal.set(undefined);
+  }
+
+  /**
+   * Asks every connected host what runs there now. Counts as refreshing for
+   * at least a moment, so a click on Refresh is seen even when the answers
+   * come at once.
+   */
+  async refresh(): Promise<void> {
+    this.failureSignal.set(undefined);
+    this.refreshesSignal.update((refreshes) => refreshes + 1);
+    try {
+      await Promise.all([
+        this.loadConnected(),
+        new Promise((resolve) => setTimeout(resolve, REFRESH_SHOWN_FOR_MS)),
+      ]);
+    } finally {
+      this.refreshesSignal.update((refreshes) => refreshes - 1);
+    }
+  }
+
+  connect(host: string): void {
+    this.failureSignal.set(undefined);
+    // How it fails shows on the host itself.
+    this.port.connect(host).catch(() => undefined);
+  }
+
+  disconnect(host: string): Promise<void> {
+    return this.attempt(() => this.port.disconnect(host));
+  }
+
+  /** Renames a machine; resolves with why not, if it did not. */
+  async renameHost(previousName: string, name: string): Promise<string | undefined> {
+    try {
+      await this.port.renameHost(previousName, name);
+      return undefined;
+    } catch (error) {
+      return messageOf(error);
+    }
+  }
+
+  removeHost(host: string): Promise<void> {
+    return this.attempt(() => this.port.removeHost(host));
+  }
+
+  /**
+   * Shows the shell in this window. The host's shells are read again once it
+   * is shown here (`shownInThisWindowChanged$`).
+   */
+  show(host: string, shell: RemoteShell): Promise<void> {
+    return this.attempt(() => this.port.show(host, shell.terminalId));
+  }
+
+  /** Ends the shell; the host's shells are read again after. */
+  end(host: string, shell: RemoteShell): Promise<void> {
+    return this.attempt(async () => {
+      await this.port.end(host, shell.terminalId);
+      await this.load(host);
+    });
+  }
+
+  /** Reads the shells of every connected host. */
+  private async loadConnected(): Promise<void> {
+    await Promise.all(
+      this.hosts()
+        .filter((host) => host.connection === "connected")
+        .map((host) => this.load(host.name)),
+    );
+  }
+
+  /** A machine that connected gets its shells read; one that is gone loses them. */
+  private followConnections(): void {
+    const connected = new Set(
+      this.hosts()
+        .filter((host) => host.connection === "connected")
+        .map((host) => host.name),
+    );
+    const known = this.shells();
+    const kept = new Map([...known].filter(([name]) => connected.has(name)));
+    if (kept.size !== known.size) this.shellsSignal.set(kept);
+    for (const name of connected) {
+      if (!known.has(name)) void this.load(name);
+    }
+  }
+
+  private async load(host: string): Promise<void> {
+    const question = this.ask(host);
+    if (!this.shells().has(host)) this.set(host, { status: "loading" });
+    let loaded: HostShells;
+    try {
+      loaded = { status: "loaded", shells: await this.port.shells(host) };
+    } catch (error) {
+      loaded = { status: "failed", reason: messageOf(error) };
+    }
+    // Closed, hung up or asked again in the meantime: nobody waits for it.
+    if (this.questions.get(host) === question && this.shells().has(host)) {
+      this.set(host, loaded);
+    }
+  }
+
+  /** A new question to `host`; whatever it was asked before is no news any more. */
+  private ask(host: string): number {
+    const question = (this.questions.get(host) ?? 0) + 1;
+    this.questions.set(host, question);
+    return question;
+  }
+
+  private set(host: string, shells: HostShells): void {
+    this.shellsSignal.update((known) => new Map(known).set(host, shells));
+  }
+
+  private async attempt(action: () => Promise<void>): Promise<void> {
+    this.failureSignal.set(undefined);
+    try {
+      await action();
+    } catch (error) {
+      this.failureSignal.set(messageOf(error));
+    }
+  }
+}

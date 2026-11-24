@@ -1,5 +1,4 @@
 import { AgentStatus } from "../../agent-status";
-import { CODING_AGENT_HOOK_COMMAND } from "../_shared/hook-command";
 
 export type OpenCodeEventEntry = { readonly eventName: string; readonly status: AgentStatus };
 
@@ -55,46 +54,56 @@ export const OPENCODE_CONFIG = {
 
 /**
  * The plugin source. It runs in OpenCode's background service, which has no
- * terminal environment, so it finds Cogno through the endpoint file (the
- * terminal's own environment, if any, is only a fallback and never names a
- * terminal: the service's environment is the first starter's, not this
- * session's). Every message carries the session, its parent when it is a
- * subagent's, and its folder, so Cogno can place it (ARCHITECTURE.md 3.2).
- * Nothing in here ever fails OpenCode: every error is swallowed.
+ * terminal environment of its own: the service's environment is the first
+ * starter's, not this session's. So it hands every event to Cogno's starter
+ * (`cogno hook`) without the terminal and host that environment names; the
+ * host of this machine passes an event that names no terminal on to every
+ * Cogno, and the one whose terminal runs the session binds it there. Every
+ * message carries the session, its parent when it is a subagent's, and its
+ * folder, so Cogno can place it (ARCHITECTURE.md 3.2). Nothing in here ever
+ * fails OpenCode: every error is swallowed.
  */
-export function openCodePlugin(endpointPath: string): string {
+export function openCodePlugin(starterPath: string): string {
   const subscribed = SUBSCRIBED_EVENTS.map((entry) => entry.eventName);
   return `// Cogno coding-agent plugin for OpenCode. Written by Cogno; edits are overwritten.
-import { readFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 
 const PROVIDER = ${JSON.stringify(OPENCODE_CONFIG.id)};
-const COMMAND = ${JSON.stringify(CODING_AGENT_HOOK_COMMAND)};
-const ENDPOINT = ${JSON.stringify(endpointPath)};
+const STARTER = ${JSON.stringify(starterPath)};
 const EVENTS = ${JSON.stringify(subscribed)};
 
-function endpoint() {
-  try {
-    const file = JSON.parse(readFileSync(ENDPOINT, "utf8"));
-    if (file.port && file.token) return file;
-  } catch {}
-  const { COGNO_PORT, COGNO_TOKEN } = process.env;
-  return COGNO_PORT && COGNO_TOKEN ? { port: COGNO_PORT, token: COGNO_TOKEN } : undefined;
+// How long one hook may hold up the next: \`cogno hook\` gives up long before.
+const HOOK_PATIENCE_MS = 5000;
+let sending = Promise.resolve();
+
+// One hook after the other: each process ends once the host has its hook, so
+// a later one, however quickly it starts, cannot overtake it.
+function post(hookEvent, payload) {
+  sending = sending.then(() => send(hookEvent, payload));
 }
 
-function post(hookEvent, payload) {
-  const target = endpoint();
-  if (!target) return;
-  const body = JSON.stringify({
-    command: COMMAND,
-    args: [PROVIDER, String(Date.now()), hookEvent],
-    payload,
+function send(hookEvent, payload) {
+  return new Promise((done) => {
+    try {
+      const windows = process.platform === "win32";
+      const env = { ...process.env, COGNO_TERMINAL_ID: "", COGNO_HOST: "" };
+      // A .cmd starts only through cmd.exe; quoted, its path may hold spaces.
+      const child = spawn(windows ? '"' + STARTER + '"' : STARTER, ["hook", PROVIDER, hookEvent], {
+        env,
+        shell: windows,
+        stdio: ["pipe", "ignore", "ignore"],
+        windowsHide: true,
+      });
+      child.on("error", done);
+      child.on("exit", done);
+      child.stdin.on("error", () => {});
+      child.stdin.end(JSON.stringify(payload));
+      child.unref();
+      setTimeout(done, HOOK_PATIENCE_MS).unref();
+    } catch {
+      done();
+    }
   });
-  fetch("http://127.0.0.1:" + target.port + "/action", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Cogno-Token": target.token },
-    body,
-    signal: AbortSignal.timeout(5000),
-  }).catch(() => {});
 }
 
 function promptText(prompt) {

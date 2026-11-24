@@ -6,6 +6,7 @@ import {
   FeatureGitSchema,
   FeatureNotificationOverviewSchema,
   FeatureProcessInfoSchema,
+  FeatureRemoteSchema,
   FeatureSearchSchema,
   FeatureWorkspaceSchema,
 } from "@cogno/core/api/contributions";
@@ -20,6 +21,7 @@ const featureSettingsSchemaShape = {
       search: FeatureSearchSchema.optional(),
       git: FeatureGitSchema.optional(),
       process_info: FeatureProcessInfoSchema.optional(),
+      remote: FeatureRemoteSchema.optional(),
       coding_agents: FeatureCodingAgentsSchema.optional(),
     })
     .optional()

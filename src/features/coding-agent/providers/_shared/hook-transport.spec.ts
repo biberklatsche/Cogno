@@ -4,6 +4,7 @@ import { Subject } from "rxjs";
 import { describe, expect, it } from "vitest";
 import type { AgentSessionEvent } from "../../ports";
 import { CODING_AGENT_HOOK_COMMAND } from "./hook-command";
+import contract from "./hook-message.contract.json?raw";
 import { HookMessage, HookReading, hookSessionEvents$, toSessionEvent } from "./hook-transport";
 
 const reading: HookReading = {
@@ -64,6 +65,47 @@ describe("hookSessionEvents$", () => {
         sentAt: 1700000000123,
         event: { kind: "status", status: "working", sessionBoundary: false, details: {} },
       },
+    ]);
+  });
+
+  it("says when the host played a hook back", () => {
+    const ipc = { messages$: new Subject<TerminalIpcMessage>() } as unknown as TerminalIpcPort;
+    const received: AgentSessionEvent[] = [];
+    hookSessionEvents$(ipc, "codex", reading).subscribe((event) => received.push(event));
+
+    (ipc.messages$ as Subject<TerminalIpcMessage>).next({
+      command: CODING_AGENT_HOOK_COMMAND,
+      args: ["codex", "1", "Stop", "replayed"],
+      payload: { session_id: "s1" },
+    });
+    (ipc.messages$ as Subject<TerminalIpcMessage>).next({
+      command: CODING_AGENT_HOOK_COMMAND,
+      args: ["codex", "2", "Stop"],
+      payload: { session_id: "s1" },
+    });
+
+    expect(received.map((event) => event.replayed)).toEqual([true, undefined]);
+  });
+});
+
+describe("the hook message as the app writes it", () => {
+  it("is read as the app means it (the app's side checks the same file)", () => {
+    const received: AgentSessionEvent[] = [];
+    const ipc = { messages$: new Subject<TerminalIpcMessage>() };
+    hookSessionEvents$(ipc as unknown as TerminalIpcPort, "codex", reading).subscribe((event) =>
+      received.push(event),
+    );
+
+    ipc.messages$.next(JSON.parse(contract) as TerminalIpcMessage);
+
+    expect(received).toEqual([
+      expect.objectContaining({
+        sessionId: "s1",
+        terminalId: "t1",
+        sentAt: 1_700_000_000_123,
+        replayed: true,
+        event: expect.objectContaining({ status: "ready" }),
+      }),
     ]);
   });
 });

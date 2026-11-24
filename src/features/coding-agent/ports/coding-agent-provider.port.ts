@@ -51,6 +51,11 @@ export type AgentSessionEvent = {
   readonly cwd?: string;
   /** Unix milliseconds when the hook ran; events apply in this order. 0 when unknown. */
   readonly sentAt: number;
+  /**
+   * Played back by the host when this Cogno began to show the terminal: it
+   * says how things stand, not what just happened, so nobody is notified.
+   */
+  readonly replayed?: boolean;
   readonly event: AgentHookEvent;
 };
 
