@@ -212,7 +212,7 @@ Recorder (Kontext-Spalte der History) nicht mehr. Ein einmal beim Start aus
 dem Profil abgeleiteter Kontext reicht deshalb nicht.
 
 Das Sitzungsmodell führt eine **Kontext-Zeitachse**. Ein Kontext hat
-`{ shellType, backendOs, wslDistro?, remoteHost?, capabilities, since }`; der
+`{ shellType, backendOs, wslDistro?, host?, capabilities, since }`; der
 aktuelle ist der letzte Eintrag. Kontextwechsel erkennt die Session aus
 denselben Quellen wie alles andere: der neue `COGNO:CAPS`-Handshake, wenn die
 innere Shell die Integration geladen hat (der erwünschte Fall), sonst
@@ -231,7 +231,7 @@ die Ausgabe eines SSH-Hosts. Sobald `COGNO:CAPS` und `COGNO:PROMPT`
 Pfadauflösung, Editor-Aktionen und `run` steuern, muss die Session wissen,
 dass die Sequenz von *ihrer* Integration stammt. Dafür erzeugt Rust beim
 Spawn ein zufälliges Sitzungsgeheimnis `COGNO_SESSION_TOKEN` in der
-Umgebung (neben `COGNO_PORT`/`COGNO_TERMINAL_ID`); die Integrationsskripte
+Umgebung (neben `COGNO_TERMINAL_ID` und `COGNO_HOST`); die Integrationsskripte
 senden es in jeder modelländernden Sequenz mit (`COGNO:CAPS;token=…`,
 `COGNO:PROMPT;token=…`). Die Session verwirft Sequenzen ohne passendes
 Token, zählt sie und meldet ab einer Schwelle sichtbar „nicht
@@ -255,37 +255,44 @@ meldet den Fakt `clipboardReadRequested`, die Workbench fragt den Nutzer und
 ruft `answerClipboardRead` auf dem Host. Einfügen durch den Nutzer ist davon
 nicht berührt.
 
-**Der lokale HTTP-Server ist ebenso geschützt.** Über ihn melden
-Coding-Agent-Hooks ihre Ereignisse und löst `cogno action run` Aktionen aus.
-Rust erzeugt je Start ein Geheimnis `COGNO_TOKEN` und gibt es jeder Shell mit
-(neben `COGNO_PORT`); jede Anfrage muss es im Header `X-Cogno-Token` tragen
-und die Loopback-Adresse (`127.0.0.1:<port>`, `localhost:<port>`) als Host
-nennen. So erreicht den Server nur, was in einem Cogno-Terminal gestartet
-wurde — kein anderer lokaler Prozess und keine Webseite, die ihren Namen per
-DNS-Rebinding auf 127.0.0.1 umbiegt.
+**Was Prozesse Cogno sagen, geht über den Host ihres Rechners.** Einen
+HTTP-Server hat die App nicht. Drei Dinge kommen von Prozessen, die nicht die
+App sind: die Hooks eines Coding-Agents (3.2), `cogno action run`, in einem
+Terminal getippt, und die Prompts von git und ssh (unten). Alle drei sprechen
+mit dem Host ihres Rechners (2.7.1, „Weitergabe"), über dieselbe
+Endpoint-Datei `host.json` und dasselbe Token wie die App; welche Datei, sagt
+`COGNO_HOST`, das der Host jeder Shell mitgibt. Der Host reicht weiter,
+was er nicht selbst beantwortet: an den Cogno, der das Terminal zeigt - auf
+diesem Rechner oder einem anderen -, oder an die App, die die Prompts einer
+Sitzung angemeldet hat.
 
-Prozesse außerhalb jedes Cogno-Terminals haben einen eigenen Schlüssel —
-etwa der Hintergrunddienst eines Coding-Agents (3.2). Für sie schreibt der
-Server beim Start eine Endpoint-Datei `~/.cogno/endpoint.json` (Port
-und ein **externes Token**, nur für den Nutzer lesbar) und löscht sie beim
-Beenden. Rust kennt dabei keinen Konsumenten: das externe Token öffnet
-ausschließlich `POST /action`, das eine Nachricht an die Webview reicht;
-`/action/run` (Aktionen auslösen) und `/askpass` bleiben beim Launch- bzw.
-Lauf-Token. Ein lokaler Prozess, der die Datei liest, kann damit nur
-Nachrichten schicken. Heute liest sie allein das Coding-Agents-Feature, das
-Schlimmste ist eine falsche Agent-Karte. **Wer künftig `/action`-Nachrichten
-mit Wirkung verarbeitet, muss davon ausgehen, dass sie von außen kommen
-können.**
+Geschützt ist das wie die App selbst: Die Datei darf nur ihr Eigentümer
+lesen, der Host hört nur auf Loopback und spricht kein HTTP, eine Webseite
+kann ihn also auch per DNS-Rebinding nicht erreichen. Den einzigen Port nach
+außen öffnet die App für gekoppelte Rechner (2.7.3), und dort spricht sie nur
+mit Rechnern ihrer Liste. Wer die Datei lesen
+kann, kann ohnehin alles, was der Nutzer kann. Ein Hook, der kein Terminal
+nennt (der Hintergrunddienst eines Agents, 3.2), geht an jeden Cogno des
+Rechners: Das Schlimmste ist eine falsche Agent-Karte. `cogno action run`
+geht nur an den Cogno, der das Terminal zeigt, in dem es getippt wurde; der
+beantwortet es aus den Aktionen, die gerade laufen (`set_runnable_actions`).
+Eine Shell erbt kein `COGNO_*` aus der Umgebung, mit der Cogno gestartet
+wurde: Diese Variablen setzt nur der Host selbst.
 
-**Prozesse ohne Terminal fragen über denselben Server.** Was `run` startet
+**Prozesse ohne Terminal fragen über denselben Weg.** Was `run` startet
 (2.2), hat keine PTY; git und ssh würden Zugangsdaten, Passphrasen und
 Host-Keys dort abfragen und ohne Terminal abbrechen. Deshalb setzt der
 Runner `GIT_TERMINAL_PROMPT=0` und zeigt `GIT_ASKPASS`/`SSH_ASKPASS` auf das
 Cogno-Binary selbst: mit `COGNO_ASKPASS_SESSION` in der Umgebung arbeitet
-es als Askpass-Helfer (`commands/askpass.rs`), schickt den Prompt-Text mit
-Token an `POST /askpass` und druckt die Antwort. Das Token ist eines je
-Lauf und öffnet nur `/askpass` für diese Sitzung — nicht das Launch-Token,
-denn Hooks und Helper, die git startet, erben die Umgebung des Laufs. Die
+es als Askpass-Helfer (`commands/askpass.rs`), fragt mit dem Prompt-Text und
+einem Token über den Host seines Rechners (`Question::Prompt`) und druckt die
+Antwort. Solange der Lauf dauert, hat die App die Prompts seiner Sitzung beim
+Host angemeldet (`OwnPrompts`, mit Antwort, bevor der Lauf startet; der
+Wächter `OwnedPrompts` meldet sie auf derselben Verbindung wieder ab); der
+Host gibt sie ihr und keinem anderen Cogno. Ein Lauf ohne Prompt-Handler
+meldet nichts an. Das Token ist eines je Lauf, und die App beantwortet nur Prompts mit
+dem Token ihres Laufs: Hooks und Helper, die git startet, erben die Umgebung
+des Laufs und können damit höchstens das Fenster dieses Laufs fragen. Die
 Sitzungs-ID vergibt der Aufrufer je Lauf (`CommandRunnerHostService`); das
 Event trägt sie, und so
 landet der Prompt beim **Lauf, der ihn ausgelöst hat**. Das Zuordnen
@@ -293,8 +300,9 @@ landet der Prompt beim **Lauf, der ihn ausgelöst hat**. Das Zuordnen
 (`core/infrastructure/process-prompt/`): wer einen Prozess ohne Terminal
 startet, meldet dort unter seiner Sitzungs-ID einen Handler an, und eine
 Anfrage, für die niemand angemeldet ist, wird abgelehnt. Er liegt in der
-Infrastructure, weil nicht nur Läufe einer Sitzung fragen — auch das `ssh`
-einer Host-Verbindung, das die Workbench startet (2.7). Für einen Lauf gilt: `run` nimmt einen
+Infrastructure, weil zwei Schichten ihn brauchen: die Session meldet die
+Handler ihrer Läufe an, die Workbench zeigt den Dialog für einen Lauf ohne
+eigenen Handler. Für einen Lauf gilt: `run` nimmt einen
 `onPrompt`-Handler, und das Feature, das git gestartet hat, beantwortet die
 Frage mit seinem eigenen Dialog und seinem eigenen Wissen (das Git-Feature
 liest aus dem Prompt-Text, ob Name, Passwort, Passphrase oder Host-Key
@@ -338,7 +346,7 @@ u. a.: `tab-list/`, `grid-list/`, `terminal/` (Einhängen der Session-Hosts,
 `TerminalSessionRegistry`), `workspace/`, `side-menu/` (Rail, Panel,
 `ui-state`), `window/`, `app-buttons/`, `header/`, `app-menu/`,
 `native-menu/`, `notification/`, `actions/`, `keybindings/`, `external/`
-(CLI/HTTP), `bus/`, `feature-host/` und `api-adapters/`.
+(CLI), `bus/`, `feature-host/` und `api-adapters/`.
 
 `command-log/` hängt in `core/` nur von `infrastructure/` ab (DB-Bridge);
 `session/` und `workbench/` dürfen es importieren.
@@ -393,7 +401,7 @@ umgekehrt.** Die Workbench erzeugt Sessions (Tab öffnen, Split), hängt sie
 ein und aus, schließt sie und liest ihr Modell für Titel, Busy und Badge —
 das geht nicht ohne die Host-Schnittstelle. Die Session dagegen muss ohne
 Workbench sinnvoll sein: im Test, beim Restore in einem unsichtbaren Tab, in
-einem künftigen Headless-Betrieb über CLI/HTTP. Dieselbe Richtung gilt eine
+einem künftigen Headless-Betrieb über die CLI. Dieselbe Richtung gilt eine
 Ebene tiefer: der Session-Host besitzt die Maschine und importiert sie, die
 Maschine weiß nichts von der Session.
 
@@ -644,6 +652,9 @@ allocated -> starting -> running          (PTY läuft, Core parst, Modell lebt)
                      \-> failed
 running   -> exited  -> closed            (Prozess endete; Exit-Code im Zustand)
 running   -> closing -> closed            (expliziter Close durch die Workbench)
+running   -> takenOver                    (ein anderes Cogno zeigt die Shell, 2.7.2)
+allocated -> takenOver                    (die gefundene Shell zeigt schon ein anderes)
+exited    -> starting                     (eine neue Shell nach einem Ende ohne den Nutzer)
 ```
 
 **Achse B — Darstellung** (steuert die Workbench über den Host):
@@ -667,10 +678,10 @@ späteren Anzeigen stimmen; `attach` fittet und resized die PTY, xterm
 reflowt.
 
 `exited` ist ein Fakt der Session, `closing` ein Befehl der Workbench. Bei
-`exited` entscheidet die Workbench: Pane entfernen, war es das letzte Pane
-des Tabs auch den Tab — und danach den Host schließen. Ob ein Pane bei
-Exit-Code ≠ 0 stattdessen mit sichtbarem Ergebnis stehen bleibt, ist eine
-Workbench-Option, keine Session-Entscheidung.
+`exited` entscheidet die Workbench am Grund (`closesPane`): Hat der Nutzer
+die Shell beendet (`exit` in der Shell, Auflegen beim Host), entfernt sie das
+Pane, war es das letzte Pane des Tabs auch den Tab — und schließt danach den
+Host. Jedes andere Ende lässt das Pane mit sichtbarem Zustand stehen (2.7.2).
 
 Ein Startfehler lässt das Pane mit sichtbarem Fehlerzustand, Retry und Close
 bestehen. Reparenting, Tab-Wechsel und Workspace-Wechsel verändern nur die
@@ -897,8 +908,8 @@ Stellen halten das:
 Ein Tauri-Fenster ist eine eigene Webview mit eigener Angular-Instanz. Zwei
 Fenster teilen keinen JS-Zustand: jedes hat seine eigene Workbench, eigene
 Session-Hosts, einen eigenen Feature-Host. Geteilt ist nur der Rust-Prozess —
-und der ist fensterunabhängig: alle PTYs in einer Map
-`terminalId → Session` (im Host, 2.7), eine Datenbank, ein HTTP-Server.
+und der ist fensterunabhängig: ein Host, der alle PTYs hält (2.7), eine
+Datenbank.
 Nachrichten an die Fenster routet `window_registry.rs` (Entscheidung 2),
 statt sie per `app.emit` an *alle* Fenster zu senden.
 
@@ -906,15 +917,18 @@ Entscheidungen:
 
 1. **Identität ist vierteilig:** `{windowId, workspaceId, tabId, sessionId}`.
    `windowId` ist das Tauri-Label. Alles, was ein Ziel adressiert
-   (Notifications, `navigateToTerminal`, CLI/HTTP mit `terminalId`), trägt es.
+   (Notifications, `navigateToTerminal`, CLI mit `terminalId`), trägt es.
 2. **Rust ist der Besitzer alles Prozessglobalen** und die einzige Stelle,
-   die alle Fenster kennt: PTYs, Datenbank, HTTP-Server, CLI-Empfang,
+   die alle Fenster kennt: PTYs, Datenbank, CLI-Empfang,
    Coding-Agent-Hook-Empfang, Config-Watcher, OS-Notification-Klicks,
    Selbst-Update (`updater.rs`: ein Prüf-, Download- und Installationszustand
-   für die ganze App). Welches Fenster zu einem Terminal gehört, weiß
-   allein sein PTY: der Spawn kommt immer aus einem Fenster, und dessen
-   Label trägt die Session im Host als ihren Besitzer (2.7; keine zweite
-   Tabelle). Rust routet:
+   für die ganze App). Welches Fenster zu einem Terminal gehört, steht
+   an zwei Stellen, weil die App mit dem Host nur über sein Protokoll
+   spricht: Die App führt eine Tabelle Terminal → Fenster und Host
+   (`hosts/routes.rs`), aus der sie Nachrichten zustellt, und die Session im
+   Host trägt das Label als ihr Fenster (2.7), damit er sie beim
+   Verschwinden des Fensters freigibt. Beide entstehen beim Spawn und vergehen mit der
+   Sitzung. Rust routet:
    Nachricht mit `terminalId` → `emit_to` an das Fenster dieses PTY; globale Aktion ohne Ziel → das fokussierte Fenster;
    Config-Änderung und Update-Zustand → Broadcast (die Fälle, in denen
    Broadcast richtig ist: prozessweiter Zustand, den jedes Fenster zeigt).
@@ -947,11 +961,11 @@ Entscheidungen:
    viele Fenster es gibt — sie sieht nur Nachrichten für sich.
 3. **Eine Session gehört dem Fenster, dessen Webview ihren xterm-Core
    hält.** Der PTY-Prozess lebt in Rust; nur der Buffer ist im JS-Heap.
-   Rust merkt sich am PTY das Fenster, das ihn gestartet hat: daraus routet
-   es seine Nachrichten (Entscheidung 2), und damit gibt es ihn frei, wenn
-   dieses Fenster verschwindet (Entscheidung 4). Weil das Fenster nur am
-   PTY steht, entscheidet das Aufräumen unter demselben Lock wie der Spawn,
-   welche Sessions dem Fenster gehören. „Pane in anderes Fenster" ist damit kein Umhängen,
+   Der Host merkt sich am PTY das Fenster, das ihn gestartet hat (als
+   Besitzer, je Client), und gibt ihn damit frei, wenn die App meldet, dass
+   dieses Fenster verschwunden ist (Entscheidung 4). Weil der Besitzer am
+   PTY steht, entscheidet das Aufräumen im Host unter demselben Lock wie
+   der Spawn, welche Sessions dem Fenster gehören. „Pane in anderes Fenster" ist damit kein Umhängen,
    sondern ein Restore (2.5): Snapshot im Quellfenster, neuer Core im
    Zielfenster, Übernahme derselben PTY über `terminalId` – dabei zieht
    das gemerkte Fenster des PTY mit um. Die Architektur trägt das; geplant
@@ -989,7 +1003,7 @@ Entscheidungen:
 
 ---
 
-### 2.7 Der Host (Rust)
+### 2.7 Hosts und Sitzungen
 
 Der Rust-Teil besteht aus zwei Crates. **`cogno-host`**
 (`src-tauri/crates/cogno-host/`) ist alles, was auf dem Rechner laufen muss,
@@ -997,30 +1011,536 @@ auf dem die Shell läuft: PTYs mit Flow-Control, Shell-Start und Umgebung,
 Login-Umgebung, Line-Editor-Kanal, die Prozesse unter einer Shell, die
 installierten Shells. Es importiert kein Tauri und kennt weder Fenster noch
 Webview. Die **App** (`src-tauri/src/`) ist der Rest: Fenster, Datenbank,
-Config, HTTP-Server, Askpass, Command-Runner, Updater.
+Config, Askpass, Command-Runner, Updater, und das Koppeln mit anderen
+Rechnern.
+
+Dieser Abschnitt hat drei Teile: der Host und sein Protokoll (2.7.1), wie
+das Frontend Hosts und Sitzungen führt (2.7.2), und wie zwei Rechner sich
+koppeln und verbinden (2.7.3). Vorab die Begriffe; rund um Hosts heißt jede
+Sache überall gleich, in Rust wie in TypeScript:
+
+| Begriff | Bedeutung | Im Code |
+|---|---|---|
+| Rechner, Remote | Ein Rechner, auf dem Shells laufen. Ein Remote ist ein anderer, gekoppelter Rechner, unter seinem Namen | `paired.json`, `RemoteHost` |
+| Koppeln | Zwei Rechner lernen sich einmal kennen und speichern einander, in beide Richtungen. Entkoppeln wirkt auf beiden Seiten | `pairing/`, `PairingPort` |
+| Verbinden | Jeder spätere Zugriff auf einen gekoppelten Rechner, ohne Rückfrage dort | `host_connect`, `RemoteHostsService` |
+| Annehmen | Die App nimmt die Verbindung eines gekoppelten Rechners an und gibt sie ihrem Host | `pairing/` |
+| Host | Was auf einem Rechner die Shells hält: die Struktur `Host`, in der App dieses Rechners. Als Feld eines Panes, Backends oder Shell-Kontexts der Name eines Remotes; fehlt er, ist es dieser Rechner | `Host`, `Pane.host`, `SessionBackend.host` |
+| Sitzung | Eine Shell samt PTY auf einem Host, geschlüsselt nach der Terminal-ID. Im Frontend steuert sie ein `SessionHost`; Variablen, die einen halten, heißen `session` | `Session`, `SharedSession`, `SessionHost`, `TerminalId` |
+| Client | Ein Cogno, das mit einem Host spricht, mit allen seinen Fenstern: eine Verbindung, mit ID und Namen aus ihrem Hello. Es ist die App dieses Rechners oder das Cogno eines anderen | `Client`, `ClientId`, `ClientHello` |
+| Fenster | Das Fenster der App dieses Rechners, dem eine Sitzung gehört; sie endet mit ihm | `WindowLabel`, `Owner`, `WindowClosed` |
+| Leihen | Das Cogno eines anderen Rechners zeigt eine Sitzung; sie gehört weiter ihrem Fenster | `PtyAttach` eines anderen Rechners |
+| Platz | Wo eine Sitzung im Cogno sitzt, dem sie gehört: Workspace, Tab, Titel, Verzeichnis | `SessionPlacement`, `PtyPlace` |
+| Starten | Eine neue Shell beginnen; nur auf diesem Rechner | `PtySpawn`, `spawn` |
+| Andocken, Abhängen | Ein Client zeigt eine laufende Sitzung, oder nicht mehr; nur im Protokoll. Das Einhängen einer Ansicht ins DOM heißt `mount` | `PtyAttach`, `PtyDetach`, `Attached` |
+| Wer zeigt | Aus Sicht des fragenden Clients: niemand, er selbst, ein anderer. Das Remote-Panel unterscheidet für sich dieses Fenster, ein anderes Fenster dieses Cognos und ein anderes Cogno | `Attached::{Nowhere, ThisClient, OtherClient}`, `RemoteShell.shown` |
+| Zeigen | Was der Nutzer im Remote-Panel will: zum Pane gehen, zurückholen oder einen Tab öffnen | `RemoteShellsPort.show` |
+| Übernommen, zurückgegeben | Ein anderer Client dockte an; der ließ wieder los | `PtyTakenOver`, `PtyHandedBack`, Fakt `handedBack` |
+| Zurückholen | Eine übernommene Sitzung hier wieder zeigen | `takeBack`, `ReattachTerminal` |
+| Beenden | Eine Sitzung auf Wunsch enden lassen, vom Remote-Panel aus | `PtyKill`, `host_kill_session` |
+| Pane geschlossen | Das Pane einer Shell dieses Rechners ist endgültig weg: Sie endet, wenn sie dem Fenster gehört | `PaneClosed`, `pty_pane_closed` |
+| Ende | Eine Sitzung endete, mit Grund | `PtyExit`, `ExitReason`, `TerminalExit` |
+| Auflegen | Die App beendet eine Verbindung selbst, auf Wunsch des Nutzers oder beim Beenden | `HostConnection::hang_up`, `Ending::HungUp`, Ende `hungUp` |
+| Strom | Der Ausgabekanal eines Andockens | `StreamId` |
+| Weitergabe | Was ein Prozess eines Rechners einem Cogno sagt, über den Host dieses Rechners: ein Hook, eine Frage mit Antwort | `relay.rs`, `AgentHook`, `Ask`/`Asked`/`Answer`, `OwnPrompts`, `once` |
+
+#### 2.7.1 Der Host und sein Protokoll (Rust)
+
+**Der Host läuft in der App**, einer je Nutzer und Rechner, und lebt so lange
+wie sie. Die App spricht mit ihm trotzdem nicht direkt, sondern als einer
+seiner Clients über eine Verbindung; das Cogno eines anderen Rechners ist ein
+weiterer. So gibt es einen Weg für alle.
 
 Der Host hat genau einen Eingang und einen Ausgang (`protocol.rs`):
 
-- **`Host::handle(Request) -> Reply`** beantwortet eine Anfrage (PTY starten,
-  schreiben, Größe, beenden, quittieren; Prozessbaum; Shells auflisten). Die
-  Tauri-Kommandos der App sind nur noch Hüllen, die eine Anfrage bauen.
-- **`EventSink`** nimmt, was der Host meldet: Ausgabe einer Sitzung unter dem
-  Strom, den der Aufrufer beim Start genannt hat, und ihr Ende. Die App
-  reicht die Ausgabe an den Webview-Channel dieses Stroms und das Ende per
-  `emit_to` an das Fenster (`src-tauri/src/host.rs`).
+- **`Host::handle(client, Request) -> Reply`** beantwortet eine Anfrage (PTY
+  starten, schreiben, Größe, beenden, quittieren; andocken, trennen,
+  Sitzungen auflisten; Prozessbaum; Shells auflisten). Die Tauri-Kommandos
+  der App sind nur noch Hüllen, die eine Anfrage bauen.
+- **Ein `Client`** hat eine ID, den Namen aus seinem Hello und einen
+  **`EventSink`**, der nimmt, was der Host für ihn meldet: Ausgabe einer
+  Sitzung unter dem Strom, den er beim Start oder Andocken genannt hat, ihr
+  Ende, und dass ein anderer sie übernommen hat. Die App reicht die Ausgabe
+  an den Webview-Channel dieses Stroms und das Ende per `emit_to` an das
+  Fenster (`src-tauri/src/hosts/`).
 
-Auch lokal läuft damit jeder Aufruf über Anfrage und Ereignis — derselbe Weg,
-den ein Host auf einem anderen Rechner hätte.
+Auf diesem Rechner wie auf einem anderen läuft damit jeder Aufruf über
+Anfrage und Ereignis, über dieselbe Art Verbindung (`host_connection.rs` in
+der App). Einen zweiten, direkten Weg der App zu ihrem eigenen Host gibt es
+nicht.
 
-Zwei Dinge gibt die App dem Host mit, weil er sie nicht kennen soll:
+**Eine Sitzung gehört einem Fenster dieses Rechners, wer immer sie zeigt.**
+Im Host ist eine Sitzung eine Shell mit ihrer PTY; ein Client ist höchstens
+*angedockt*. Daraus folgt:
 
-- **Den Besitzer einer Sitzung.** Für den Host ist er ein Name ohne
-  Bedeutung; die App nennt das Fenster. Er steht an der Sitzung selbst, damit
-  Spawn und Aufräumen eines Besitzers unter einem Lock entscheiden (2.6,
-  Entscheidung 3 und 4). `ReleaseOwner` beendet alle Sitzungen eines Besitzers.
-- **`COGNO_PORT` und `COGNO_TOKEN`.** Der HTTP-Server gehört der App; sie
-  reicht beide als zusätzliche Umgebung in den Spawn. Der Host setzt sie nach
-  der Umgebung des Profils, ein Profil überschreibt sie also nicht.
+- **Ausgabe geht immer in den Behalt** (`kept_output.rs`): das Ende des
+  Byte-Stroms, wie die Shell ihn schrieb, begrenzt auf die Menge, um die ein
+  Client ohnehin zurückliegen darf, gekürzt an einer Zeilengrenze. Ist ein
+  Client angedockt, geht sie zusätzlich an ihn, unter Flusskontrolle. Ohne
+  Client wartet nichts: die Shell läuft weiter. Eine Quittung (`PtyAck`)
+  nennt ihren Strom; die eines früheren Andockens zählt nicht. Ebenso nennt
+  die Quittung des Webviews an die App den Kanal, über den die Ausgabe kam.
+- **Andocken** (`PtyAttach`) spielt zuerst den Behalt ab, dann kommt, was die
+  Shell schreibt. Der Host ist dabei kein Terminal-Emulator. Er liest im
+  Strom nur die Sequenzen mit, die einen Modus schalten (Alt-Screen, Maus,
+  Bracketed Paste, Cursor, Tastaturmodi), und nennt die eingeschalteten nach
+  dem Abspielen, auch wenn ihre Einschalt-Sequenz längst aus dem Behalt
+  gefallen ist. Ein Reset (`ESC c`) setzt alle zurück, ein Soft-Reset
+  (`CSI ! p`) die, die er auch im Terminal zurücksetzt. Prompt-Marker, cwd
+  und Kommando-Grenzen entstehen im Frontend beim Abspielen von selbst neu;
+  das Sitzungsmodell bleibt dort.
+- **Der Alt-Screen wird nicht behalten.** Was ein Vollbildprogramm gezeichnet
+  hat, galt der alten Größe, und ein Terminal führt davon auch keinen
+  Verlauf. Ein andockender Client wird nur in den Alt-Screen gesetzt, und der
+  Host bittet das Programm, neu zu zeichnen (`ask_for_redraw`: unter Unix
+  `SIGWINCH` an die Vordergrund-Prozessgruppe, unter Windows eine Größe hin
+  und zurück) – eine gleich gebliebene Größe allein meldet kein System.
+- **Ein Client je Sitzung.** Dockt ein zweiter an, endet der Strom des ersten
+  und er bekommt `PtyTakenOver` mit dem Namen des neuen (unten). `PtyDetach`
+  hängt den Client ab, die Sitzung läuft weiter. Eine Sitzung endet nie mit
+  dem anderen Rechner, der sie geliehen hat: Sie gehört weiter ihrem
+  Fenster. Übernommen wird auch zwischen zwei Fenstern derselben App: Der
+  Besitzer ist Client **und** Fenster, nur derselbe Besitzer dockt ohne
+  Meldung erneut an (Neuladen). Darum hört ein Fenster `pty-exit` und
+  `pty-taken-over` nur für sich (`platform/pty.ts`); ein gewöhnliches
+  `listen` hörte auch, was dem Fenster gesagt wird, das die Shell verlor.
+- **Wer eine Sitzung beendet, sagt es den anderen.** Beendet ein Client eine
+  Sitzung (`PtyKill`), hört nur er nichts: wer sie zeigt und wem sie genommen
+  wurde, bekommt `PtyExit` mit dem Grund (`ExitReason`: beendet mit Code, von
+  einem anderen beendet, PTY kaputt). `PtyDetach`, `PtyPlace`, Getipptes,
+  Größe und Quittungen wirken nur für den Client, der die Sitzung gerade
+  zeigt; eine Anfrage, die eine Übernahme kreuzt, scheitert mit
+  `attachedElsewhere` und ändert nichts.
+- **Eine Sperre je Sitzung.** Was ausgegeben wurde, wer sie zeigt, wem sie
+  gehört und wem sie genommen wurde, liegt unter einer Sperre
+  (`SharedSession`): Andocken, Abhängen und Beenden entscheiden in einem
+  Schritt, zwei gleichzeitige Andockvorgänge lassen die Sitzung nie einem
+  gehören und beim anderen hängen. Reihenfolge: erst die Tabelle aller
+  Sitzungen, dann die einer Sitzung, nie umgekehrt; unter der Tabelle
+  geschieht nichts, was blockieren kann. Starten und Andocken prüfen unter
+  der Tabelle, ob ihr Client noch da ist: ein gerade gegangener bekommt keine
+  Sitzung mehr.
+- **Senden blockiert nie.** Jeder Client hat einen Schreib-Thread, der Rest
+  des Hosts reiht nur ein. Ein Client, der langsam liest (eine stockende
+  Verbindung), hält weder die Leser seiner Sitzungen noch die Anfragen eines
+  anderen Clients auf; die Flusskontrolle begrenzt, was sich ansammelt.
+  Hooks laufen außerhalb davon: Liegen für einen Client schon zu viele
+  ungeschrieben in der Schlange (`MAX_QUEUED_HOOK_BYTES`), verwirft der
+  Host weitere für ihn - die Sitzung behält sie ohnehin, ein späteres
+  Andocken bekommt sie.
+- **Wer eine Sitzung verlor, bekommt sie zurück, wenn der Übernehmer sie
+  loslässt.** Der Host merkt sich an der Sitzung, wem sie zuletzt genommen
+  wurde. Hängt der Übernehmer ab (`PtyDetach`), schließt sein Fenster oder
+  verschwindet seine Verbindung, bekommt jener `PtyHandedBack`. Eine Sitzung,
+  die niemand zeigte, wurde niemandem genommen; und für einen Client, der
+  selbst gegangen ist, wartet nichts mehr.
+- **Der Host kennt zu jeder Sitzung ihren Platz** (`SessionPlacement`) und zu
+  jedem Client einen Namen (aus seinem Hello, der Rechnername). Beides sind
+  Worte des Clients, die der Host nur aufhebt und mit `ListSessions` und
+  `GetSession` weitergibt, zusammen mit `Attached` (`nowhere`, `thisClient`,
+  `otherClient` samt Name). Daran findet ein anderes Cogno eine Shell.
+- **Eine Sitzung endet mit ihrem Fenster.** Schließt das Fenster, dem sie
+  gehört, oder endet die App, endet die Sitzung, auch wenn ein anderer
+  Rechner sie gerade zeigt; der bekommt `PtyExit`. Ebenso beendet ein
+  geschlossener Tab seine Shell in jedem Fall (`PaneClosed`: Der Host
+  beendet sie, wenn sie dem Fenster gehört, das fragt - nicht, wenn ein
+  anderes Fenster dieser App sie übernommen hat). Eine Shell ohne Fenster
+  gibt es nicht. Geht dagegen ein anderer Rechner, der sie geliehen hat, bekommt
+  ihr Fenster sie zurück (oben). Das Aufräumen eines gegangenen Clients läuft
+  auch nach einer Panik seines Threads (ein Drop-Wächter).
+- **Der Handshake der Shell-Integration wird eigens behalten.** Er kommt
+  einmal, beim Start der Shell, und ohne ihn kennt ein Client weder Shell noch
+  Fähigkeiten. Ist er aus dem Behalt gefallen, steht er beim Abspielen vorn.
+  Das ist die eine Stelle, an der der Host eine Cogno-Sequenz kennt; ihren
+  Inhalt liest er nicht.
+
+Bekannte Grenzen: Programme, die ohne Alt-Screen über mehrere Zeilen
+zeichnen, sehen nach dem Andocken kurz unordentlich aus, bis sie neu malen;
+unter Windows liefert ConPTY sein eigenes, für die alte Breite umbrochenes
+Abbild, sodass älterer Verlauf nach einem Breitenwechsel weniger gut passt.
+
+**Wie man den Host erreicht.**
+
+- **Auf diesem Rechner: TCP auf der Loopback-Schnittstelle, mit Token.** Die
+  App öffnet beim Start einen Port auf Loopback und schreibt ihn mit einem
+  frischen Geheimnis nach `~/.cogno/host.json`; jede Verbindung beginnt mit
+  diesem Token. Die Datei darf nur ihr Eigentümer lesen (Unix `0600`; unter
+  Windows eine eigene Zugriffsliste ohne Vererbung, weil ein Profil anderen
+  Lesezugriff vererben kann). So kommen die App selbst und die Prozesse
+  herein, die ihr etwas zu sagen haben: Hooks, `cogno action run` und
+  Askpass-Helfer (2.1).
+- **Von einem gekoppelten Rechner: iroh und die App** (2.7.3). Zwei
+  gekoppelte Rechner verbinden sich über QUIC (iroh). Die App nimmt an: Sie
+  prüft die ID des Partners gegen ihre Liste gekoppelter Rechner, öffnet den
+  Strom (der Host spricht zuerst) und gibt ihn dem Host als Client eines
+  anderen Rechners. Dafür bindet sie einen UDP-Port, nur solange das
+  Remote-Feature an ist. iroh hängt nur am App-Crate, nie an `cogno-host`.
+- **Der Starter.** `~/.cogno/bin/cogno` ist eine kleine Datei, die die App
+  beim Start in ihr Cogno-Home legt und die auf ihr Binary zeigt. Hook-Skripte
+  und Plugins rufen Cogno darüber auf, unabhängig vom Installationsort (3.2).
+
+**Zwei Arten von Clients.** Der Host weiß von jeder Verbindung, woher sie
+kommt: von diesem Rechner (über Loopback) oder von einem anderen (von der App
+hereingereicht). Nur ein Client dieses Rechners startet Sitzungen, und nur
+seinen Fenstern gehören sie. Ein anderer Rechner **leiht** eine Sitzung: Er
+dockt an, tippt, hängt ab und kann sie auf Wunsch des Nutzers beenden. Er
+startet keine, und keine endet, weil er geht.
+
+**Lebenslauf.** Der Host beginnt und endet mit der App, und mit ihr enden
+alle Shells. Die App läuft je Nutzer und Build einmal (Single-Instance), also
+gibt es je `host.json` einen Host. Eine Datei, die ein abgestürztes Cogno
+hinterließ, überschreibt der nächste Start; beim Beenden nimmt die App ihre
+mit. Einen eigenen Prozess für den Host gibt es nicht: Shells, die das
+Beenden von Cogno überleben, sind nicht geplant (8).
+
+**Die Rahmung** (`wire.rs`) ist für jeden Client dieselbe:
+
+- Der Host beginnt mit einer **Kennung** und einem `HostHello` (Bereich der
+  Protokollversionen, die er spricht, und Betriebssystem). Die Gegenseite
+  überspringt, was ein Login davor ausgibt, und antwortet mit ihrem
+  `ClientHello` (ihr Bereich und ihr Name).
+- **Versionsbereich:** Laptop und Büro-Rechner werden nie gleichzeitig
+  aktualisiert. Jeder Build spricht `OLDEST_PROTOCOL_VERSION` bis
+  `PROTOCOL_VERSION`; beide Seiten prüfen, ob sich die Bereiche treffen
+  (`check_versions`), sonst nennt der Fehler, welche Seite zu alt ist
+  (`thisCognoTooOld`, `hostTooOld`). Gesprochen wird die neueste gemeinsame
+  Version. Eine neue Version ergänzt das Protokoll und wird nur genutzt, wo
+  beide Seiten sie kennen; `OLDEST_PROTOCOL_VERSION` steigt nur, wenn sie
+  aufgibt, was ältere brauchen.
+- **Was eine spätere Version ergänzt, kostet höchstens eine Anfrage, nie die
+  Verbindung.** Anfragen, Antworten, Ereignisse und Fehlercodes sind getaggte
+  Enums mit `#[serde(other)] Unknown`, ebenso `Attached` und `ExitReason`. Ein
+  Frame wird erst als Hülle (`type`, `id`) gelesen: Passt der Inhalt nicht,
+  antwortet der Host dieser einen Anfrage mit `invalidRequest`, eine
+  unbekannte Art beantwortet er mit `unknownRequest`; beim Client wird eine
+  unlesbare Antwort zum Fehler `unknown` dieser Anfrage und ein unlesbares
+  Ereignis übersprungen. Nur was gar kein JSON ist, beendet die Verbindung.
+  Die Leitungstypen stehen alle in `protocol.rs`, keine sind von den Modulen
+  geliehen, die die Arbeit tun; ein Test hält das Format von Version 1 fest.
+- Danach laufen in beide Richtungen **Frames** aus Länge, Art und Inhalt.
+  Eine `Request` (mit ID) bekommt eine Antwort mit derselben ID; ein `Post`
+  (Getipptes, Größe, Platz, Quittungen) bekommt keine. Ereignisse sind JSON;
+  die Ausgabe einer Sitzung ist ein eigener, binärer Frame (Stream, Nummer,
+  Bytes eines ganzen Lesevorgangs). Erst die App schneidet sie für die
+  Webview in Stücke unter 1 KiB (`hosts/webview.rs`, die Begründung steht
+  dort) und übersetzt deren Quittungen zurück in die Nummern des Hosts.
+- **Endet der Strom eines Clients, ist dieser Client weg** — was er geliehen
+  hatte, geht an sein Fenster zurück (oben). Ein
+  Start oder Andocken eines Clients, das erst danach ankommt, scheitert mit
+  `windowClosed`.
+
+**Fehler tragen einen Code** (`HostError { code, message }` im Protokoll,
+`CommandError { code, message }` für jeden Tauri-Befehl um Hosts und Shells,
+`HostError` mit `HostErrorCode` in `platform/host-error.ts`). Code entscheidet
+nur am Code; der Text ist für Menschen und wird nie verglichen. Die App
+ergänzt eigene Codes (`connectionLost`, `notConnected`, `notPaired`, …).
+Erwartbare Fehler einer kreuzenden Anfrage (`sessionNotFound`,
+`attachedElsewhere`, `connectionLost` bei Quittung, Getipptem oder Größe)
+meldet die PTY nicht als Störung.
+
+Anfragen, die dauern können (`Request::may_block`), beantwortet der Host
+auf einem eigenen Thread, damit Eingabe und Quittungen der übrigen Sitzungen
+nicht warten.
+
+**Die App als Client** (`hosts/`, `host_connection.rs`). Die Verbindungen
+(`connections.rs`), die Tabelle Terminal → Host, Verbindung, Fenster und
+Stream mit einem Wächter, der nach einer gescheiterten Anfrage den alten
+Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
+(`webview.rs`) sind getrennt; `mod.rs` ist die Fassade für die Befehle.
+
+- **Verbinden.** `host_connect` wählt den gekoppelten Rechner an (2.7.3)
+  und hält die Verbindung unter seinem Namen; die Verbindung zum eigenen
+  Host hält sie ebenso, für sich aufgebaut: Ein Rechner, der nicht
+  antwortet, hält die Terminals hier nicht auf. Bis der Host sich
+  vorgestellt hat, kann der Nutzer aufgeben (`host_disconnect` während des
+  Verbindens).
+- **Routen.** Jedes Terminal der App steht in der Tabelle mit der Verbindung,
+  über die es kam; jede Anfrage mit Terminal-ID geht über genau diese, ohne
+  dass das Frontend den Host nennt, und jede Nachricht an das richtige
+  Fenster (2.6). Ist diese Verbindung weg, geht die Anfrage nirgends hin –
+  sie baut keine neue auf. Getipptes, Größenänderungen und Quittungen werden
+  gesendet, ohne auf die Antwort zu warten. Eine Verbindung schreibt über
+  einen eigenen Thread, kein Befehl blockiert auf einer stockenden
+  Verbindung.
+- **Auflegen** (`HostConnection::hang_up`) beendet die Verbindung sofort,
+  auch wenn eine Anfrage sie noch hält, und lässt alles scheitern, was auf
+  eine Antwort wartet. Ihre Terminals enden mit `hungUp`. Bricht die
+  Verbindung dagegen von selbst ab, enden sie mit `connectionLost`, und alle
+  Fenster hören `host-disconnected`.
+- **Wer nicht antwortet, hält nur sich auf.** Die Prozesse unter den Shells
+  (`terminal_processes`) fragt die App bei allen Hosts zugleich und wartet
+  je Host höchstens zwei Sekunden.
+- Gestartet wird nur auf dem Host dieses Rechners (`pty_spawn` kennt
+  keinen Host); an eine Shell eines anderen Rechners wird nur angedockt
+  (`pty_attach`). Der Host dort lehnt den Start eines anderen Rechners auch
+  selbst ab.
+
+Eins gibt die App dem Host mit, weil er es nicht kennen soll:
+
+- **Das Fenster einer Sitzung.** Für den Host ist es ein Name ohne
+  Bedeutung; die App nennt das Fenster, das sie startete oder andockte. Es
+  steht an der Sitzung selbst, damit Spawn und Aufräumen eines Fensters
+  unter einem Lock entscheiden (2.6, Entscheidung 3 und 4). `WindowClosed`
+  beendet alle Sitzungen eines Fensters. Der Name gilt je Client: zwei Apps, deren Fenster beide `main`
+  heißen, sind zwei Besitzer.
+
+**Weitergabe.** Was ein Prozess eines Rechners einem Cogno zu sagen hat,
+gibt der Host dieses Rechners weiter (`relay.rs`). Ein Prozess, der nur eine
+Sache zu sagen hat, spricht ihn kurz an (`once::post`, `once::ask`) - den
+Host, den `COGNO_HOST` nennt (jede Shell bekommt es nach der Umgebung ihres
+Profils), sonst den seines Builds. Läuft Cogno nicht, gibt es niemanden, dem
+er etwas sagen könnte:
+
+- **Hooks** (`Request::AgentHook`, ohne Antwort): Nennt der Hook sein
+  Terminal, behält die Sitzung ihn (die letzten 256 KiB, `kept_hooks.rs`) und
+  gibt ihn dem Client, der sie zeigt (`Event::AgentHook`). Wer später
+  andockt, bekommt die behaltenen als `replayed` - erst, wenn er die
+  abgespielte Ausgabe quittiert hat: Beim Parsen geht er durch jeden Befehl,
+  der damals endete, und ein Hook davor endete mit ihnen. Ohne Terminal geht
+  ein Hook an jeden anderen Client, der eine Sitzung zeigt - nicht an die,
+  die nur eine Sache zu sagen haben.
+- **Fragen mit Antwort** (`Request::Ask`, `Event::Asked`, `Request::Answer`):
+  Der Host liest nur den Empfänger (`Addressee`): `Terminal` geht an den
+  Client, der das Terminal zeigt, `PromptSession` an den, der die
+  Prompt-Sitzung angemeldet hat (`OwnPrompts`). Frage und Antwort reicht er
+  als Text durch, ohne sie zu lesen: Er weiß nichts von Aktionen oder
+  Prompts. Nimmt sie niemand, kommt sofort `noAddressee`;
+  geht der Gefragte, bekommt der Fragende `noAnswer`. Nur der Gefragte kann
+  antworten. Wer kurz fragt (`once::ask`), unterscheidet „nicht gefragt"
+  (`Unreached`) von „keine Antwort" (`Unanswered`): `cogno action run`
+  weicht nur im ersten Fall auf den Single-Instance-Weg aus, die Aktion kann
+  sonst schon gelaufen sein.
+
+Das Format der Fragen und Antworten gehört der App (`relayed.rs`: `RunAction`,
+`Prompt` und ihre Antworten), auf beiden Seiten: der Kommandozeile, die
+fragt, und der App, die antwortet. `hosts/questions.rs` beantwortet sie, auch
+eine unbekannte (`Answer::Unknown`), damit niemand vergeblich wartet. Hooks
+gehen als Cogno-Nachricht (`cogno_message.rs`) an das Fenster ihres
+Terminals; ihre Form prüfen App und Feature an derselben Datei
+(`hook-message.contract.json`). OpenCodes Plugin startet je Ereignis einen
+Prozess, und zwar erst, wenn der vorige seinen Hook abgegeben hat: ein
+später gestarteter kann einen früheren nicht überholen.
+
+#### 2.7.2 Hosts im Frontend
+
+**Eine Sitzung läuft auf einem Host.** Das ist dieser Rechner oder ein
+Remote. Den Host nennt das **Pane** (`Pane.host`, mit dem Layout
+gespeichert), nicht das Shell-Profil: Ein anderer Rechner wird ferngesteuert
+— Cogno zeigt Shells, die dort schon laufen, und startet dort keine. Ein
+solches Pane kommt aus dem Remote-Panel (unten). Bekommt ein Pane eine neue
+Terminal-ID (ein kopierter Workspace, eine doppelte ID), zeigt es nicht mehr
+die Shell, mit der es gespeichert wurde: es startet eine neue auf diesem
+Rechner und verliert Host und Verzeichnis des anderen (`asNewLocalPane`).
+
+Die Zuständigkeiten:
+
+- **`platform/hosts.ts`:** verbinden, auflegen, Sitzungen eines Hosts
+  auflisten, eine erfragen und beenden, Shell-Integration ablegen,
+  `onDisconnected`. **`platform/pairing.ts`:** was 2.7.3 beschreibt.
+- **Workbench (`core/workbench/hosts/`):** Alles zu Hosts, dem dieses
+  Rechners wie den entfernten. `RemoteHostsService` verbindet, wenn der
+  Nutzer es verlangt oder ein Pane den Host braucht, einmal je Host, und
+  führt den Stand je Host (`connections$`). Ein Fehlschlag trägt seinen Code
+  (`ConnectFailure`); ob ein neuer Versuch etwas ändern kann, sagt
+  `isWorthRetrying` (nicht bei `notPaired`: da hilft nur neu koppeln; nach
+  einem Versionskonflikt hilft er, sobald das ältere Cogno aktualisiert
+  ist). `PairingService` führt, was vom Koppeln zu sehen ist, und fragt den
+  Nutzer, wenn ein anderer Rechner koppeln will.
+- **Vertrag und Feature:** `RemoteShellsPort` (`core/api/`, Adapter in
+  `core/workbench/api-adapters/`) gibt einem Feature die Remotes (die
+  gekoppelten Rechner, 2.7.3) mit ihrem Verbindungsstand (bei einem
+  Fehlschlag mit `worthRetrying`), Umbenennen und Entkoppeln, Verbinden und
+  Auflegen, die Shells eines Remotes und zwei Dinge mit einer Shell: hier
+  zeigen (zum Pane gehen, zurückholen oder einen Tab öffnen), beenden. Wer
+  eine Shell zeigt, löst der Adapter für das Fenster auf: `thisClient` des
+  Hosts ist dieses Fenster, wenn hier ihre Sitzung läuft, sonst ein anderes.
+  `features/remote` ist das Panel dazu: ein Baum Remote → Workspace → Tab →
+  Shell. Dieser Rechner steht dort nicht: Was auf ihm läuft, zeigen seine
+  Tabs. Dazu „Koppeln" (`PairingPort`): die Rechner in der Nähe, anfragen,
+  und die Prüfzahl bestätigen. Verbindung, Kopplung und Sitzungen bleiben
+  Core — das Feature ist nur die Ansicht.
+- **Session:** bekommt als Wert, wo ihre Shell läuft (`SessionBackend`: Host
+  und dessen Betriebssystem). Daraus leiten sich Shell-Kontext,
+  Pfadadapter und das ConPTY-Verhalten des Renderers ab — nicht aus dem
+  Betriebssystem des Fensters. `OsPlatform` braucht die Sitzung nur noch für
+  das, was das Fenster betrifft (welche Taste einen Link öffnet).
+
+**Andocken.** Ob eine Shell läuft, entscheidet der Host, nie ein Stand im
+Frontend: Eine Sitzung, die eine laufende Shell zeigen soll, fragt den
+Host frisch nach genau ihr (`GetSession`: Profil und Token, oder
+`sessionNotFound`) und dockt dann an. Verschwindet die Shell zwischen Frage
+und Andocken, scheitert das Andocken mit `sessionNotFound`. Kein Cache, kein
+Zeitfenster.
+
+- Ein Pane, dessen Shell schon läuft, bekommt eine Sitzung, die **andockt
+  statt startet** (`SessionHost.showRunning`): mit dem Token, mit dem die
+  Shell gestartet wurde, ohne gespeicherten Scrollback (der Behalt des Hosts
+  ist neuer) und mit dem Shell-Typ der laufenden Shell (`runningShell`). Hat
+  der Host keinen Token zu ihr, gilt ihre Integration nicht als
+  vertrauenswürdig und die Sitzung nimmt ein Geheimnis, das niemand
+  zurücksenden kann. Das ist der dritte Weg neben Start und
+  Wiederherstellung (2.5). Er gilt für die Shell eines anderen Rechners und
+  auf diesem Rechner nach einem Neuladen der Webview: Das Fenster blieb, also
+  laufen seine Shells noch.
+- **Übernehmen ist Sache des Nutzers.** Zeigt ein anderes Cogno (oder ein
+  anderes Fenster) die Shell, die ein Pane findet, nimmt das Pane sie nicht:
+  seine Sitzung beginnt `takenOver` (`SessionHost.startShownElsewhere`) und
+  sagt, wo sie gezeigt wird. Genommen wird sie, wenn der Nutzer es will:
+  „Show it here" im Pane, oder „zeigen" im Remote-Panel, das den neuen Tab
+  dafür vormerkt (`SessionHostFactory.takeOverWhenOpened`). Das gilt beim
+  Wiederherstellen eines Workspaces wie für ein Pane, dessen Start eine
+  laufende Shell fand.
+- **Beim Start der Webview** fragt die Workbench einmal, welche Shells auf
+  diesem Rechner laufen (`ShellsFoundAtStart`), vor dem ersten Pane. Nach
+  dem Start der App sind es keine; nach einem Neuladen der Webview die des
+  Fensters. Das ist nur ein Hinweis, damit ein Pane mit laufender Shell
+  nicht erst seinen Scrollback abspielt und dann startet; jede Shell wird
+  einmal abgeholt. Stimmt der Hinweis nicht mehr, sagen es die Codes: Ein
+  Start unter einer laufenden ID bekommt `shellAlreadyRuns`, ein Andocken an
+  eine beendete `sessionNotFound`.
+- **Eine laufende Shell wird nie für einen Start beendet.** Wollte ein Pane
+  starten, weil Cogno die Shell unter seiner ID nicht kannte, lehnt der
+  Host den Start ab (`Response::ShellAlreadyRuns`, im Webview der Code
+  `shellAlreadyRuns`). Die Sitzung bleibt `starting` und nennt das als Fakt
+  (`shellAlreadyRuns`); die Sitzungsfabrik fragt nach der Shell und dockt an
+  – oder sagt, wo sie gezeigt wird. War die Shell, an die eine Sitzung
+  andocken sollte, inzwischen beendet, nennt sie den Fakt `shellGone`: auf
+  diesem Rechner startet die Fabrik eine neue, auf einem anderen sagt das
+  Pane, dass sie fehlt.
+- Ein Pane eines anderen Rechners dockt **nur** an: Es zeigt eine Shell, die
+  dort läuft, und startet nie eine. Bis die Verbindung steht und der Rechner
+  gesagt hat, dass die Shell läuft, hat es **keine Sitzung**; es wartet
+  (`WaitingPanes`) und zeigt, wie weit das ist (`WaitingPaneComponent`:
+  verbinden, nach der Shell fragen, Verbindung gescheitert, keine Antwort,
+  Shell weg). Ein Retry gibt es nur, wo er etwas ändern kann. Verbindet der
+  Nutzer den Rechner anderswo, fragt das wartende Pane von selbst. Wird es
+  geschlossen, lässt es die Shell nur los (`PtyDetach`): Sie ist geliehen
+  und gehört dem Cogno dort. Die Regel „ein geschlossener Tab beendet seine
+  Shell" gilt für die Shells dieses Rechners. Das Layout des anderen Fensters wandert nicht
+  mit; jede Shell bekommt hier einen eigenen Tab. Warum die Sitzung warten
+  muss: Sie braucht das Betriebssystem ihrer Shell schon beim Entstehen, und
+  das sagt erst der verbundene Host.
+- Übernimmt ein anderes Cogno eine Sitzung, wird sie hier `takenOver`
+  (Runtime-Achse, 2.3) und nennt, wo sie jetzt gezeigt wird: Die Shell läuft
+  weiter und gehört weiter diesem Fenster. Wird ihr Pane hier geschlossen,
+  endet sie, auch beim anderen.
+  Die PTY merkt sich die Übernahme, damit auch hört, wer sich erst danach
+  anmeldet (eine Übernahme kann ein Andocken kreuzen). „Hier zeigen"
+  verwirft die Sitzung und dockt mit einer neuen an
+  (`SessionHostFactory.takeBack`, aus dem Pane über `ReattachTerminal` auf dem
+  Bus); das Terminal bleibt dabei, Features hören kein `TerminalRemoved`. Ist
+  der Rechner dafür nicht verbunden, wartet das Pane wieder auf ihn. Was
+  hier getippt wird, geht nach der Übernahme nirgends mehr hin. Das Andocken
+  geschieht auch von selbst, wenn der Host meldet, dass die Shell wieder frei
+  ist: Die Sitzung, die noch wartet, nennt das als Fakt (`handedBack`), die
+  Sitzungsfabrik dockt neu an.
+- **Ein Pane geht nur, wenn der Nutzer es will** (`closesPane`): wenn die
+  Shell selbst endete (`exit`) oder der Nutzer beim Host auflegte (`hungUp`).
+  Jedes andere Ende lässt das Pane stehen, und es sagt, was geschah. Bricht
+  die Verbindung zu einem anderen Rechner ab, wartet das Pane wieder auf ihn
+  – die Shell läuft dort womöglich weiter. Endet eine Shell dieses Rechners
+  anders (von einem anderen Cogno beendet, PTY kaputt), bietet das Pane eine
+  neue an (`SessionHost.retry`; läuft die alte noch, wird sie gezeigt).
+- **Die Sitzungsfabrik** (`grid-list/+state/`) ist in drei Teile geschnitten:
+  `SessionHostFactory` entscheidet, was ein Pane bekommt, und hält die
+  Sitzungen und den Platz jedes Panes auf dem Bildschirm; `SessionScopeBuilder`
+  baut eine Sitzung samt ihrem Injector und baut sie wieder ab – auch ihre
+  Ansicht aus dem DOM, damit eine ersetzte Sitzung keine zurücklässt;
+  `WaitingPanes` führt die Panes, die auf ihren Rechner warten.
+- **Die Plätze pflegt die Workbench** (`SessionPlacementPublisher`): Für jede
+  laufende Shell dieses Rechners sagt sie dem Host, wo sie sitzt, und wieder,
+  wenn sich Workspace, Tab, Titel oder Verzeichnis ändern. Eine Shell eines
+  anderen Rechners, die hier gezeigt wird, behält den Platz im Cogno, zu dem
+  sie gehört.
+
+Grenze: Das Sitzungsmodell entsteht beim Andocken aus dem Behalt neu. Was
+vor dessen Anfang lag, kennt es nicht — etwa eine vor langer Zeit gestartete
+innere Shell (`wsl`, `ssh`), in der die Sitzung noch steckt.
+
+**Der Host steht im Shell-Kontext** (`host`, fehlt für diesen Rechner). Eine
+Shell, die in einer Sitzung auf einem Host gestartet wird, bleibt auf ihm.
+Daran hängen zwei Dinge:
+
+- **Nichts von dort wird hier geöffnet oder gestartet.** Pfade eines solchen
+  Kontexts gehören dem anderen Rechner. `CommandRunnerHostService` und
+  `FilesystemHostService` (`core/session/exec/`), die einzigen Stellen, die
+  im Sitzungskontext diesen Rechner anfassen, lehnen ihn ab; die
+  Sitzungs-API weist `run`, `insertInput` und `fs` mit `unknown-context`
+  zurück, wie bei einer fremden Shell. Der History-Import liest die Datei
+  dieses Rechners und läuft für einen Host nicht. `run` und Dateien über den
+  Host zu leiten ist der nächste Ausbau; bis dahin zeigen Features in einer
+  solchen Sitzung „nicht verfügbar". Prozess-Info geht schon, weil sie über
+  die Terminal-ID läuft.
+- **Die Historie ist je Rechner getrennt.** `shell_context` führt den Host im
+  Schlüssel (2.4), Kommandos und Verzeichnisse zweier Rechner mischen sich
+  nicht.
+
+**Die Shell-Integration gehört dem Cogno, das die Shell startet.** Die
+Skripte stehen in `core/session/shells/`; `ShellIntegrationWriter` reicht sie
+beim Laden der Config mit ihrer Version (`INTEGRATION_VERSION`) an den Host
+dieses Rechners (`InstallShellIntegration`), und der legt sie unter
+`~/.cogno/shell-integration/<version>/` ab, wenn eine Datei fehlt. Jede
+Version hat ihr eigenes Verzeichnis. Ein Start nennt die Version, deren
+Skripte die Shell lädt (`SpawnOptions.integration_version`). Die Pfade
+kommen über die Leitung: der Host nimmt nur relative Pfade unterhalb seines
+Integrationsverzeichnisses an. Auf einen anderen Rechner wird nichts gelegt:
+Cogno startet dort keine Shell, es zeigt nur, was das Cogno dort mit seinen
+eigenen Skripten gestartet hat.
+
+#### 2.7.3 Koppeln und Verbinden
+
+**Der eine Weg zu einem anderen Rechner.** **Koppeln** ist das einmalige
+Kennenlernen zweier Rechner, **Verbinden** jeder spätere Zugriff. Ein
+gekoppelter Rechner ist ein Remote: Über die Verbindung läuft das
+Host-Protokoll (2.7.1), mit Übernehmen und Zurückholen, Hooks und `cogno
+action run`.
+
+- **Identität.** Jeder Rechner hat einen geheimen Schlüssel (`pairing-key`);
+  der öffentliche Teil ist seine ID. iroh beweist beim Aufbau jeder
+  Verbindung beiden Seiten die ID der anderen.
+- **Finden im lokalen Netz.** Solange das Remote-Feature an ist, kündigt die
+  App ihre ID mit ihren Adressen im lokalen Netz an (mDNS, Dienst
+  `_cogno._udp`): So findet ein gekoppelter Rechner sie ohne Server. Ihren
+  **Namen** kündigt sie nur an, solange der Nutzer „Koppeln" offen hat. Nur
+  dann steht sie bei anderen, die ebenfalls „Koppeln" offen haben, unter
+  „Rechner in der Nähe", und nur dann nimmt sie eine Anfrage zum Koppeln an.
+  Gekoppelte Rechner stehen dort nicht; sie stehen als Remotes im Panel.
+- **Koppeln.** B wählt A unter „Rechner in der Nähe" und fragt an
+  (`cogno/pair/1`), mit seinem Namen. Beide zeigen dieselbe sechsstellige
+  **Prüfzahl**; der Nutzer vergleicht sie und bestätigt auf beiden Rechnern.
+  Erst wenn beide bestätigt haben, speichern beide einander. Die Prüfzahl
+  entsteht aus beiden IDs und je einer frischen Zufallszahl; B legt sich auf
+  seine fest, bevor A ihre nennt. Ein Rechner, der sich im Netz nur als A
+  ausgibt, kann so keine passende Zahl herbeirechnen. Eine Anfrage, die
+  niemand bestätigt, verfällt nach zwei Minuten.
+- **Ablage.** Der eigene geheime Schlüssel und die Liste der gekoppelten
+  Rechner (`paired.json`: Name, ID) liegen in Cognos Home, nur für den
+  Eigentümer lesbar wie `host.json`, und nur die App schreibt sie. Der
+  Schlüssel ist das einzige dauerhafte Geheimnis. Die Config bleibt die Datei
+  des Nutzers: Eine Kopplung entsteht durch den Handschlag und gilt nur mit
+  diesem Schlüssel, sie wandert nicht mit, wenn jemand seine Config kopiert.
+  Wer aber Cognos ganzes Home auf einen zweiten Rechner kopiert, gibt ihm
+  dieselbe Identität.
+- **Verbinden.** Verbunden wird, wenn der Nutzer es im Remote-Panel verlangt
+  oder ein Pane den Rechner braucht, ohne Rückfrage auf der anderen Seite.
+  Die App nimmt Verbindungen gekoppelter Rechner an, solange Cogno mit dem
+  Remote-Feature läuft. Ist es aus, gibt es keinen Endpunkt und keinen
+  offenen Port.
+- **Am gekoppelten Rechner** lässt sich nur der Name ändern, und er lässt
+  sich entkoppeln. Entkoppeln sagt es dem anderen, wenn er erreichbar ist;
+  sonst lehnt er beim nächsten Versuch ab (`notPaired`) und bietet dort das
+  Entfernen an.
+- **Geschützt** ist der Weg durch QUIC mit gegenseitig bewiesenen IDs: Die
+  App spricht dort nur mit Rechnern ihrer Liste und, solange „Koppeln" offen
+  ist, mit einem, der koppeln will. HTTP spricht sie nicht.
+- **Über Netzgrenzen (noch nicht gebaut, 7).** Im lokalen Netz braucht es
+  keinen Server. Für Rechner in verschiedenen Netzen kommt ein Relay auf
+  einem eigenen Server dazu (ein unverändertes `iroh-relay`, seine Adresse
+  fest in der App, keine Dienste Dritter): Über es findet ein Rechner den
+  anderen an dessen ID, und es leitet verschlüsselte Pakete weiter, wo kein
+  direkter Weg geht. Gekoppelt wird dann mit einer **Einladung**: A zeigt
+  seine ID zum Kopieren, B fügt sie ein; danach derselbe Handschlag mit
+  Prüfzahl. Einen Treffpunkt-Dienst und Codes gibt es nicht.
 
 ## 3. Das Protokoll (`core/api/`)
 
@@ -1034,6 +1554,7 @@ Features importieren, und besteht **nur aus Verträgen**:
   `ApplicationConfigurationPort`,
   `TerminalIpcPort`, `TerminalAnimationPort`, `TerminalSearchApi`, `NotificationCenterPort`,
   `TerminalNavigator`, `TerminalPlacementPort`, `TerminalProcessesPort`,
+  `RemoteShellsPort`,
   `ActionCatalog`/`ActionDispatcher`, `CommandRunner`.
 - **Contributions** (Feature → Core, `core/api/contributions/`):
   `FeatureDefinition`, Side-Menu-Features, Feature-Settings,
@@ -1071,7 +1592,7 @@ nach einem Fokuswechsel nicht in das falsche Terminal schreiben.
 **Übergreifende Features** bekommen `TerminalMonitorPort` (Aktivität, Ende und
 cwd je Terminal), `TerminalNavigator.navigateToTerminal(id)` (Workspace,
 Tab und Fokus auf ein Terminal bringen), `TerminalNavigator.openTabAt(cwd, id)`
-(neuer Tab in einem Ordner, mit der Shell und im Workspace dieses Terminals;
+(neuer Tab in einem Ordner, mit der Shell, auf dem Rechner und im Workspace dieses Terminals;
 Konsument: das Git-Panel, das einen Tab in einem Worktree öffnet) und als
 dessen lesendes Gegenstück
 `TerminalPlacementPort.getPlacement(id)` (Workspace und Tab eines Terminals
@@ -1151,12 +1672,11 @@ Für Ports und Schnittstellen gelten drei Regeln:
 ### 3.2 Coding-Agents: Sitzung des Agenten als Schlüssel
 
 Die Coding-Agents waren zuerst **terminalgeschlüsselt**: der Hook eines
-Agenten erbte `COGNO_PORT`, `COGNO_TOKEN` und `COGNO_TERMINAL_ID` aus der
-Shell, meldete sich damit, und das Feature führte je Terminal einen
-Agenten. Das trägt nicht mehr: Codex (ab 0.157) und OpenCode (ab 2.x) lassen
-Hooks und Plugins in einem zentralen Hintergrunddienst laufen, der die
-Umgebung der Shell hat, die ihn zuerst gestartet hat — oder gar keine. Dort
-gibt es weder Port noch Terminal. Cogno zwingt die Agenten nicht in einen
+Agenten erbte die Umgebung der Shell, meldete sich mit ihrem Terminal, und
+das Feature führte je Terminal einen Agenten. Das trägt nicht mehr: Codex
+(ab 0.157) und OpenCode (ab 2.x) lassen Hooks und Plugins in einem zentralen
+Hintergrunddienst laufen, der die Umgebung der Shell hat, die ihn zuerst
+gestartet hat — oder gar keine. Dort gibt es oft kein Terminal. Cogno zwingt die Agenten nicht in einen
 Betrieb ohne Dienst (`--no-daemon`, `daemon_auto_start = false`): das ist
 ein Eingriff in fremde Befehle und Konfiguration, und der Modus fällt
 absehbar weg.
@@ -1167,16 +1687,21 @@ Deshalb gilt:
    jedem Ereignis nennt (`session_id` bei Codex und Claude Code, die
    Session-ID bei OpenCode). Das Terminal ist ein Attribut der Sitzung, das
    Cogno ermittelt, nicht die Identität.
-2. **Hooks finden Cogno ohne Umgebung.** Das Feature legt je Shell ein
-   stabiles Hook-Skript unter `~/.cogno/coding-agents/` ab (sh und
+2. **Hooks gehen über den Host ihres Rechners.** Das Feature legt je Shell
+   ein stabiles Hook-Skript unter `~/.cogno/coding-agents/` ab (sh und
    PowerShell; geschrieben über `platform/`, wenn ein Adapter es zum ersten
-   Mal braucht, inhaltsgleich bleibt unberührt). Das Skript liest den Payload
-   von stdin, nimmt Port, Token und Terminal aus der Umgebung, wenn sie da
-   ist, sonst Port und externes Token aus der Endpoint-Datei (2.1), und
-   sendet die Nachricht `coding_agent_hook` mit `[provider, sentAt, event]`
-   an `POST /action`. Das Protokoll kennt nur das Feature; Rust reicht die
-   Nachricht weiter wie jede andere. In der Agenten-Config steht nur
-   `<skript> <provider> <event>`:
+   Mal braucht, inhaltsgleich bleibt unberührt). Das Skript reicht den
+   Payload von stdin an den Starter weiter, `~/.cogno/bin/cogno hook
+   <provider> <event>` (`agent_hook.rs`): Der nimmt das Terminal aus der
+   Umgebung, wenn sie eins nennt, und gibt den Hook dem Host des Rechners
+   (2.7.1, „Weitergabe"). Der Host gibt ihn dem Cogno, der das Terminal
+   zeigt, auch auf einem anderen Rechner, und spielt die letzten einem
+   Cogno ab, der es später zeigt (`replayed`: ein abgespielter Hook ändert
+   die Karte, benachrichtigt aber niemanden). Einen Hook ohne Terminal
+   bekommt jeder Cogno des Rechners. In der App wird er zur Nachricht
+   `coding_agent_hook` mit `[provider, sentAt, event, replayed?]`; das
+   Protokoll des Payloads kennt nur das Feature. In der Agenten-Config steht
+   nur `<skript> <provider> <event>`:
    der Befehl ändert sich nie, auch wenn das Protokoll sich ändert. Das
    zählt, weil Codex jeden geänderten Hook-Befehl bis zur erneuten Freigabe
    im Terminal (`/hooks`, `trusted_hash`) stillschweigend nicht ausführt;
@@ -1195,14 +1720,15 @@ Deshalb gilt:
    `sessionId` (Status, Details, Sitzungsgrenze, Subagent) mit dem, was der
    Agent über die Sitzung weiß: `terminalId`, wenn der Hook sie noch hatte,
    `cwd`, Startzeit. Woher die Ereignisse kommen — Hook-Payloads über
-   `/action`, ein Plugin, später ein App-Server-Protokoll — entscheidet der
+   den Host, ein Plugin, später ein App-Server-Protokoll — entscheidet der
    Adapter; das Feature sieht nur `events$`. Der Status steht nicht mehr im
    Hook-Befehl, sondern wird im Adapter aus dem Ereignis gelesen. OpenCode
    ist der Plugin-Fall: ein Ordner von Cogno unter
-   `~/.config/opencode/plugins/`, der im Hintergrunddienst läuft, Cogno über
-   die Endpoint-Datei findet, nie ein Terminal nennt (die Umgebung des
-   Dienstes ist die des ersten Starters) und Kind-Sitzungen (`parentID`) als
-   Subagenten der Eltern-Sitzung meldet.
+   `~/.config/opencode/plugins/`, der im Hintergrunddienst läuft, jedes
+   Ereignis dem Starter (`cogno hook`) gibt, dabei nie ein Terminal nennt
+   (die Umgebung des Dienstes ist die des ersten Starters, das Plugin nimmt
+   `COGNO_TERMINAL_ID` und `COGNO_HOST` heraus) und Kind-Sitzungen
+   (`parentID`) als Subagenten der Eltern-Sitzung meldet.
 4. **Die Zuordnung zum Terminal ist generisch.** Ein Binder im Feature nimmt
    `terminalId`, wenn das Ereignis eine nennt (Claude Code: exakt wie
    bisher). Sonst gleicht er `cwd` und Startzeit der Sitzung gegen die
@@ -1303,7 +1829,7 @@ Signal-Knoten gesetzt, weil `fixture.setInput` dafür nicht greift.
 ## 5. Der Aktionskatalog
 
 Aktionen sind die gemeinsame Sprache: ausgelöst per Keybinding,
-Menü, Palette, CLI und HTTP. Eine Aktion wird an vielen Orten gebraucht —
+Menü, Palette und CLI. Eine Aktion wird an vielen Orten gebraucht —
 Handler, Menü-Labels, Palette, CLI (`cli.rs`), Default-Konfiguration je OS,
 Doku —, und jeder Ort, der sie selbst aufschreibt, kann für sich abdriften.
 
@@ -1322,7 +1848,7 @@ defineAction({
 }),
 ```
 
-`name` ist der Bezeichner überall (Config, CLI, HTTP, Handler), `label` der
+`name` ist der Bezeichner überall (Config, CLI, Handler), `label` der
 Anzeigename, `description` der Text für `cogno action list` und die Doku.
 `defaultKeys` trägt je Keybinding die Flags `always` (feuert auch bei
 fokussiertem Terminal) und `performable` (verbraucht die Taste nur, wenn die
@@ -1361,7 +1887,7 @@ Der Katalog in der Workbench hat zwei Mengen, nicht eine:
   Features steht dort und tut nichts); das native Menü zeigt die Einträge
   ausgeschalteter Features deaktiviert.
 
-Damit antworten CLI und HTTP dreistufig: nicht in `known` → „unbekannte
+Damit antwortet `cogno action run` dreistufig: nicht in `known` → „unbekannte
 Aktion"; in `known`, nicht in `active` → „Feature *x* ist nicht aktiv";
 sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 `known` minus `active` gegen die Menge der ausgeschalteten Features: was
@@ -1378,11 +1904,11 @@ sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 | Default-Keybindings | Teil der generierten Default-Konfiguration, siehe unten |
 | Doku | Codegen → `docs/actions.md`, analog zu Zod `.describe()` bei den Settings |
 | Config-Validierung | das Schema prüft die Form einer `keybind`-Zeile; ob ihr Aktionsname deklariert ist, prüft `ConfigBootstrapAdapter` gegen `known` und meldet es als Config-Warnung mit Zeile und Name. Dort und nicht im Config-Reader, weil `infrastructure/` den Katalog nicht kennen darf |
-| HTTP und CLI | Rust kennt die Mengen `dispatched` und `inactive` (`set_runnable_actions`) und antwortet damit dreistufig |
+| CLI | Rust kennt die Mengen `dispatched` und `inactive` (`set_runnable_actions`) und beantwortet `cogno action run` aus einem Terminal damit dreistufig, über den Host, der das Terminal führt |
 
 **Vom Auslöser zum Handler, vom Handler zur Wirkung.** Alle Auslöser —
-Keybinding, Palette, natives Menü, Hamburger, Kontextmenü eines Terminals, CLI,
-HTTP — feuern dasselbe `ActionFired`; `ActionHandlers` hat darauf das eine Abo
+Keybinding, Palette, natives Menü, Hamburger, Kontextmenü eines Terminals,
+CLI — feuern dasselbe `ActionFired`; `ActionHandlers` hat darauf das eine Abo
 und ruft den registrierten Handler. Das ist der Bus-Teil, weil die Auslöser
 einander und den Handler nicht kennen. Ab dem Handler gibt es keinen Bus mehr:
 er ruft die Workbench oder die Sitzung direkt auf
@@ -1391,7 +1917,7 @@ meldet mit `false`, wenn er nichts getan hat, damit ein `performable`-Keybinding
 zum Terminal durchfällt.
 
 Eine Aktion, die ein Terminal braucht, läuft auf dem, das sie **nennt**
-(`ActionFired.terminalId` — das Kontextmenü eines Panes, HTTP), sonst auf dem
+(`ActionFired.terminalId` — das Kontextmenü eines Panes), sonst auf dem
 fokussierten. Ein Keybinding kann das Ziel weiten: `broadcast:` trifft jede
 lebende Sitzung des Fensters, `workspace:` jedes Terminal des angezeigten
 Workspace. Layout-Aktionen (Split, Pane-Wechsel, Maximieren) werden
@@ -1437,7 +1963,7 @@ Default (aus `composeDefaultSettings`, 5.1); der Doku-Generator liest
 dieselben Descriptoren. Abschnitte folgen einer Konvention statt einer
 Liste: Jeder Top-Level-Schlüssel, der Gruppe, Map oder Liste ist, ist ein
 Abschnitt mit dem Namen seines Schlüssels (`.meta({ title })` nur, wo der
-Name falsch läse, etwa „HTTP server"), in der Reihenfolge des Schemas;
+Name falsch läse, etwa „App UI"), in der Reihenfolge des Schemas;
 einzelne Werte stehen unter „General". Ein neues Setting oder ein neuer
 Top-Level-Schlüssel, auch eines Features, erscheint damit im Panel und in
 der Referenz, ohne dass jemand eines von beiden anfasst. Was das Panel
@@ -1507,8 +2033,17 @@ Feature = {
   notificationSources?                   // Deklaration: Quellen und Ereignisse für notification.source.<id>
   sideMenu?, notificationChannels?, suggestors? // Aktivierung: nur bei mode: on
   mode: "on" | "off"                      // jedes Feature; Default "on"
+  pro?: true                             // Pro-Feature; zeigt ein Abzeichen
 }
 ```
+
+**Pro gilt für ganze Features, nie für Teile davon.** Ein Pro-Feature trägt
+`pro: true`; das Side-Menu zeigt dann ein Abzeichen. Eine Prüfung, ob
+jemand Pro hat, gibt es noch nicht (während Alpha und Beta ist alles frei).
+Kommt sie, sitzt sie an einer Stelle: im Feature-Host für das Ein- und
+Ausschalten, und auf dem eigenen Server für das, was dort Kosten verursacht
+(Relay). Was im Client geprüft wird, lässt sich bei offenem Code umgehen;
+das wird hingenommen, solange es keine Kosten verursacht.
 
 `mode` ist der persistierte, per Hot-Reload wechselbare Produktzustand. Davon
 getrennt hat die Runtime einen nicht persistierten Status:
@@ -1567,8 +2102,8 @@ Drei Aufgaben:
    unabhängig vom Modus bekannt sein muss: IDs, `requires`,
    **Settings-Schemas** (sonst kann die Config, in der `mode` steht, nicht
    validiert werden — das wäre ein Zirkel), **Migrationen** (laufen einmal,
-   Daten werden nicht abgeschaltet) und **Aktionsdefinitionen** (damit CLI,
-   HTTP und Palette den Namen kennen). Erst danach liest er `mode` und führt
+   Daten werden nicht abgeschaltet) und **Aktionsdefinitionen** (damit CLI
+   und Palette den Namen kennen). Erst danach liest er `mode` und führt
    je Feature den Runtime-Status: `inactive ⇄ active`, dazu
    `inactive → failed`.
 2. **Aktivierung (dynamisch, nur bei `mode: on`).** Löst `requires`
@@ -1685,6 +2220,7 @@ erreicht, ohne sie zu importieren.
 | Deaktivierungstest je Feature (4.2) | fehlt für `git` und `process-info` |
 | **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
 | `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |
+| **Koppeln über Netzgrenzen (2.7.3)** | Relay auf einem eigenen Server und die Einladung; bis dahin koppeln und verbinden sich Rechner nur im lokalen Netz. |
 
 ---
 
@@ -1695,4 +2231,6 @@ erreicht, ohne sie zu importieren.
 - Umbenennung bestehender DB-Tabellen
 - Protokoll-Operationen ohne Konsumenten
 - Pane in ein anderes Fenster verschieben: von 2.6 getragen (Snapshot + PTY-Übernahme), aber nicht gebaut
-- Feature-Funktionen in Remote-Sitzungen (SSH): `boundSession.run` gibt es dort nicht, also kein Git-Panel, keine Prozess-Info, keine Agent-Erkennung. Manches geht in SSH einfach nicht; ein Cogno-Agent auf dem Host wäre ein eigenes Vorhaben.
+- Shells, die das Beenden von Cogno überleben: Der Host läuft in der App (2.7.1)
+- Rechner ohne laufendes Cogno erreichen (kein `ssh`, kein eigener Dienst): Verbindungen nimmt die App an (2.7.3)
+- Feature-Funktionen in einer Sitzung, in der der Nutzer selbst `ssh` tippt: `boundSession.run` gibt es dort nicht, also kein Git-Panel, keine Prozess-Info, keine Agent-Erkennung. Dafür gibt es Sitzungen auf einem Host (2.7).
