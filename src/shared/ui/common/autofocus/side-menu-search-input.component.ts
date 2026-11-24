@@ -1,9 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, output } from "@angular/core";
 
+/** Finds the search field of a side panel: what the side menu gives the keyboard to. */
+export const SIDE_MENU_SEARCH_INPUT_SELECTOR = "[data-side-menu-autofocus='true']";
+
 /**
- * The text field at the top of a side menu that filters what is below it. It
- * takes the focus when the menu opens (see `focusSideMenuAutofocusElement`)
- * and reports every keystroke as the new query.
+ * The text field at the top of a side panel that filters what is below it. It
+ * takes the keyboard when its panel does (the side menu finds it by
+ * `SIDE_MENU_SEARCH_INPUT_SELECTOR`) and reports every keystroke as the new query.
  */
 @Component({
   selector: "app-side-menu-search-input",

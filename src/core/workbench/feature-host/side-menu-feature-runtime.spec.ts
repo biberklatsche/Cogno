@@ -1,26 +1,29 @@
 import type { Injector } from "@angular/core";
 import type { ApplicationConfigurationPort } from "@cogno/core/api/application-configuration-port";
+import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
 import type { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import type { SideMenuFeatureDefinition } from "@cogno/core/workbench/side-menu/+state/side-menu-feature-definitions";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { SideMenuFeatureRuntime } from "./side-menu-feature-runtime";
 
 class DummyComponent {}
 
 describe("SideMenuFeatureRuntime", () => {
   let appBus: AppBus;
+  let actionHandlers: ActionHandlers;
   let configSubject: BehaviorSubject<Record<string, unknown>>;
   let applicationConfigurationPort: ApplicationConfigurationPort;
   let injector: Injector;
   let sideMenuService: {
     addMenuItem: ReturnType<typeof vi.fn>;
     removeMenuItem: ReturnType<typeof vi.fn>;
-    isSelected: ReturnType<typeof vi.fn>;
     toggle: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
+    dismiss: ReturnType<typeof vi.fn>;
     updateBadgeColor: ReturnType<typeof vi.fn>;
     resolveComponent: ReturnType<typeof vi.fn>;
   };
@@ -52,11 +55,13 @@ describe("SideMenuFeatureRuntime", () => {
       appBus,
       keybindService as unknown as KeybindService,
       applicationConfigurationPort,
+      actionHandlers,
     );
   }
 
   beforeEach(() => {
     appBus = new AppBus();
+    actionHandlers = new ActionHandlers(appBus, getDestroyRef());
     configSubject = new BehaviorSubject<Record<string, unknown>>({
       feature: { workspace: { mode: "on" } },
     });
@@ -67,9 +72,9 @@ describe("SideMenuFeatureRuntime", () => {
     sideMenuService = {
       addMenuItem: vi.fn(),
       removeMenuItem: vi.fn(),
-      isSelected: vi.fn(() => false),
       toggle: vi.fn(),
       close: vi.fn(),
+      dismiss: vi.fn(),
       updateBadgeColor: vi.fn(),
       resolveComponent: vi.fn(),
     };
@@ -91,13 +96,11 @@ describe("SideMenuFeatureRuntime", () => {
 
     runtime.dispose();
     expect(lifecycle.onModeChange).toHaveBeenCalledWith("off");
-    expect(sideMenuService.close).not.toHaveBeenCalled();
     expect(sideMenuService.removeMenuItem).toHaveBeenCalledWith("Workspace");
   });
 
-  it("closes the panel on dispose when it is open, before the lifecycle goes off", () => {
+  it("closes its panel on dispose, pinned or floating, before the lifecycle goes off", () => {
     const calls: string[] = [];
-    sideMenuService.isSelected.mockReturnValue(true);
     sideMenuService.close.mockImplementation(() => calls.push("close"));
     const runtime = createRuntime({ onModeChange: vi.fn(() => calls.push("onModeChange")) });
     runtime.activate();
@@ -105,8 +108,7 @@ describe("SideMenuFeatureRuntime", () => {
 
     runtime.dispose();
 
-    expect(sideMenuService.isSelected).toHaveBeenCalledWith("Workspace");
-    expect(sideMenuService.close).toHaveBeenCalledWith(true);
+    expect(sideMenuService.close).toHaveBeenCalledWith("Workspace");
     expect(calls).toEqual(["close", "onModeChange"]);
   });
 
@@ -148,11 +150,8 @@ describe("SideMenuFeatureRuntime", () => {
     expect((actionEvent as { performed?: boolean }).performed).toBe(true);
   });
 
-  it("binds Escape to close while the view has focus, before the lifecycle binds its own keys", () => {
+  it("binds no key of its own on focus and drops the lifecycle's keys on blur", () => {
     const calls: string[] = [];
-    keybindService.registerListener.mockImplementation((_id, keys: string[]) =>
-      calls.push(`register ${keys.join(",")}`),
-    );
     keybindService.unregisterListener.mockImplementation(() => calls.push("unregister"));
     const lifecycle = {
       onFocus: vi.fn(() => calls.push("onFocus")),
@@ -162,15 +161,36 @@ describe("SideMenuFeatureRuntime", () => {
     runtime.activate();
 
     appBus.publish({ type: "SideMenuViewFocused", payload: { label: "Workspace" } });
-    const [id, keys, onEscape] = keybindService.registerListener.mock.calls[0];
-    expect(id).toBe("feature.workspace");
-    expect(keys).toEqual(["Escape"]);
-    onEscape({ key: "Escape" } as KeyboardEvent);
-    expect(sideMenuService.close).toHaveBeenCalledTimes(1);
+    // Escape is the side menu's own, for every panel.
+    expect(keybindService.registerListener).not.toHaveBeenCalled();
 
     appBus.publish({ type: "SideMenuViewBlurred", payload: { label: "Workspace" } });
     expect(keybindService.unregisterListener).toHaveBeenCalledWith("feature.workspace");
-    expect(calls).toEqual(["register Escape", "onFocus", "onBlur", "unregister"]);
+    expect(calls).toEqual(["onFocus", "onBlur", "unregister"]);
+  });
+
+  it("starts nothing of the entry when its action has a handler already", () => {
+    actionHandlers.handleWhileActive("open_workspace", () => undefined);
+    const lifecycle = { onModeChange: vi.fn() };
+    const runtime = createRuntime(lifecycle);
+
+    expect(() => runtime.activate()).toThrow("Action already has a handler: open_workspace");
+
+    expect(lifecycle.onModeChange).not.toHaveBeenCalled();
+    expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
+  });
+
+  it("leaves the action without a handler when the feature does not come up", () => {
+    const runtime = createRuntime({
+      onModeChange: () => {
+        throw new Error("no start");
+      },
+    });
+
+    expect(() => runtime.activate()).toThrow("no start");
+
+    expect(() => actionHandlers.handleWhileActive("open_workspace", () => undefined)).not.toThrow();
+    expect(sideMenuService.addMenuItem).not.toHaveBeenCalled();
   });
 
   it("drops the feature's keys on dispose", () => {
@@ -187,7 +207,7 @@ describe("SideMenuFeatureRuntime", () => {
 
     runtime.registerKeybindListener(["Enter"], vi.fn());
     runtime.updateBadgeColor("var(--color-yellow)");
-    runtime.close();
+    runtime.dismiss();
 
     expect(keybindService.registerListener).toHaveBeenCalledWith(
       "feature.workspace",
@@ -198,7 +218,7 @@ describe("SideMenuFeatureRuntime", () => {
       "Workspace",
       "var(--color-yellow)",
     );
-    expect(sideMenuService.close).toHaveBeenCalled();
+    expect(sideMenuService.dismiss).toHaveBeenCalledWith("Workspace");
   });
 
   it("leaves nothing subscribed after dispose (leak check)", () => {

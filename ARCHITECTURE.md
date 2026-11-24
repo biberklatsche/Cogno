@@ -314,7 +314,18 @@ Feature-Host. Sie kennt Sessions nur als einhängbare Hosts mit Identität —
 niemals deren Inhalt. Prüfkriterium: braucht der Code die *Menge* der
 Sitzungen oder die Layout-Identität `{windowId, workspaceId, tabId, sessionId}`, nicht
 eine einzelne Sitzung samt Bytestrom, Eingabezeile oder cwd? Der Fokus
-(„welches Pane ist aktiv") ist Workbench-Zustand. Ordner in `core/workbench/`
+(„welches Pane ist aktiv") ist Workbench-Zustand. Ein angepinntes Side-Panel
+steht als weiteres Pane neben den Terminals, ein schwebendes liegt wie ein
+Dialog darüber. Welches Terminal aktiv ist, hält `grid-list/`; ob stattdessen
+ein Panel die Tastatur hat, hält `side-menu/` (`SideMenuService`). Dort liegt
+auch, wie ein Panel sie wieder abgibt — Escape, ein Druck daneben, sein
+Eintrag in der Rail und seine Aktion, für jedes Panel gleich, ob Feature oder
+nicht: die Tastatur geht ans Terminal zurück, angepinnt wie schwebend; das
+angepinnte bleibt dabei stehen, das schwebende schließt. Ein Panel, das auf
+Expandieren gestellt ist, spannt nur über die ganze Fläche, solange es die
+Tastatur hat — so ist nie ein Terminal verdeckt, das sie hat, und höchstens
+ein Panel expandiert. Ein Pane ohne Tastatur sieht überall gleich aus,
+Terminal wie Panel. Ordner in `core/workbench/`
 u. a.: `tab-list/`, `grid-list/`, `terminal/` (Einhängen der Session-Hosts,
 `TerminalSessionRegistry`), `workspace/`, `side-menu/` (Rail, Panel,
 `ui-state`), `window/`, `app-buttons/`, `header/`, `app-menu/`,
@@ -1036,7 +1047,8 @@ und nutzt den `InputWriter` der Session direkt. Braucht ein Feature das
 einmal, kommt eine Operation mit Identitäts-Check wie bei `run` dazu.
 
 Bindung: Standard „folgt dem Fokus", auf Wunsch **gehalten**. Das Wort *pin*
-ist bereits für „Panel offen halten" belegt (`side-menu.service.ts`);
+ist bereits belegt — ein angepinntes Panel steht als Pane neben den Terminals
+(`side-menu.service.ts`);
 die Bindung heißt deshalb `hold`/`release` — „das Git-Panel hält Terminal 3".
 Zustände: `following | held`, orthogonal zu `unbound/active/closing/closed`.
 
@@ -1289,7 +1301,7 @@ Zwei Quellen, ein Katalog:
   `name`-Literale.
 - **Feature-Aktionen** deklariert jedes Feature als Namen — in
   `FeatureDefinition.actions` (`{ actionName }`) oder als `actionName` seiner
-  `sideMenu`-Contribution, der Aktion, die sein Panel öffnet. Ihre Beschreibung leitet der Codegen aus dem
+  `sideMenu`-Contribution, der Aktion, die sein Panel nach vorn holt. Ihre Beschreibung leitet der Codegen aus dem
   Panel-Titel ab, ihre Default-Keybindings stehen in `featureKeybinds`
   (`default-config-values.ts`), weil ein Feature keine Tasten besitzt, solange
   es aus ist.
@@ -1316,7 +1328,7 @@ sonst ausführen. Der Start-Test „keine Aktion ohne Handler" prüft
 | Ableitung | Wie |
 |---|---|
 | Typ `CoreActionName` | Union aus dem `as const`-Katalog (`core/workbench/actions/catalog.ts`), nicht aus dem Laufzeit-Katalog (6.1); ein Tippfehler in `actions.handle("…")` ist ein Compile-Fehler. Der allgemeine `ActionName` ist `string`, weil Feature-Namen erst zur Laufzeit dazukommen |
-| Handler | Registrierung gegen den Namen (`actions.handle("new_tab", …)`) statt `switch` auf Strings, genau ein Handler je Aktion; eine Core-Aktion ohne Handler meldet der Start (`unhandledCoreActions`) |
+| Handler | Registrierung gegen den Namen (`actions.handle("new_tab", …)`) statt `switch` auf Strings, genau ein Handler je Aktion; eine Core-Aktion ohne Handler meldet der Start (`unhandledCoreActions`). Feature-Aktionen melden ihren Handler für die Dauer der Aktivierung am selben Ort an (`handleWhileActive`) |
 | Beschriftung | überall `actionLabel(name)`: das `label` aus dem Katalog, und für eine Aktion ohne Label (Feature-Aktionen sind nur Namen) der Name in Worten. Kein Menü wiederholt einen Text von Hand |
 | Palette | listet `known` unter der Beschriftung, mit dem Keybinding-Hint aus der Keybind-Konfiguration; gefunden wird über Beschriftung **und** Namen („Settings" ist `open_config`) |
 | natives Menü, Hamburger, Kontextmenüs | feuern Katalog-Aktionen. **Wo ein Eintrag steht, bestimmt das Menü**, nicht die Aktion — der Katalog hat bewusst kein `menu`-Feld, weil dieselbe Aktion in mehreren Menüs an verschiedenen Stellen stehen darf |

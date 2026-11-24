@@ -10,7 +10,7 @@ const gitSideMenuFeatureDefinition = {
   id: gitFeatureId,
   title: "Git",
   icon: "mdiGit",
-  order: 50,
+  order: 30,
   actionName: "open_git",
   configPath: "feature.git",
   targetComponent: () => import("./git-side.component").then((m) => m.GitSideComponent),

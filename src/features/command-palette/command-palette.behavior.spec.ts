@@ -6,10 +6,6 @@ import { getDestroyRef } from "../../__test__/destroy-ref";
 import { CommandPaletteService } from "./command-palette.service";
 import { CommandPaletteSideMenuLifecycle } from "./command-palette-side-menu.lifecycle";
 
-vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", () => ({
-  focusSideMenuAutofocusElement: vi.fn(),
-}));
-
 /**
  * Pins what the palette does as the panel and its side-menu lifecycle use it:
  * keys go in through the registered key listener, the list and the selection
@@ -19,7 +15,7 @@ describe("command palette behaviour", () => {
   let service: CommandPaletteService;
   let actionEntriesSubject: BehaviorSubject<ReadonlyArray<ActionEntryContract>>;
   let dispatchActionMock: Mock<(actionDefinition: { actionName: string }) => void>;
-  let closeMock: Mock<() => void>;
+  let dismissMock: Mock<() => void>;
   let press: (key: string) => void;
 
   const labels = () => service.filteredCommandList().map((commandEntry) => commandEntry.label);
@@ -43,9 +39,9 @@ describe("command palette behaviour", () => {
     const lifecycle = new CommandPaletteSideMenuLifecycle(service);
     const registerKeybindListenerMock = vi.fn();
     // Closing the side menu runs the lifecycle's onClose, like the app does.
-    closeMock = vi.fn(() => sideMenuLifecycle.onClose?.());
+    dismissMock = vi.fn(() => sideMenuLifecycle.onClose?.());
     const sideMenuLifecycle = lifecycle.create({
-      close: closeMock,
+      dismiss: dismissMock,
       registerKeybindListener: registerKeybindListenerMock,
       updateBadgeColor: vi.fn(),
     });
@@ -240,7 +236,7 @@ describe("command palette behaviour", () => {
 
       press("Enter");
 
-      expect(closeMock).toHaveBeenCalledTimes(1);
+      expect(dismissMock).toHaveBeenCalledTimes(1);
       expect(dispatchActionMock).not.toHaveBeenCalled();
 
       await Promise.resolve();
@@ -255,7 +251,7 @@ describe("command palette behaviour", () => {
       press("Enter");
       await Promise.resolve();
 
-      expect(closeMock).toHaveBeenCalledTimes(1);
+      expect(dismissMock).toHaveBeenCalledTimes(1);
       expect(dispatchActionMock).not.toHaveBeenCalled();
     });
 
@@ -265,7 +261,7 @@ describe("command palette behaviour", () => {
       service.fireSelectedAction(clickedEntry);
 
       expect(dispatchActionMock).toHaveBeenCalledWith({ actionName: "split_right" });
-      expect(closeMock).not.toHaveBeenCalled();
+      expect(dismissMock).not.toHaveBeenCalled();
     });
   });
 

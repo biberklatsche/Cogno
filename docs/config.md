@@ -941,7 +941,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 Position in the side menu; lower numbers come first.
 
-**Type:** integer · **Default:** `20`
+**Type:** integer · **Default:** `70`
 
 ### `feature.notification_overview.overview.max_items`
 
@@ -959,7 +959,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 Position in the side menu; lower numbers come first.
 
-**Type:** integer · **Default:** `30`
+**Type:** integer · **Default:** `60`
 
 ### `feature.search.mode`
 
@@ -983,7 +983,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 Position in the side menu; lower numbers come first.
 
-**Type:** integer · **Default:** `50`
+**Type:** integer · **Default:** `30`
 
 ### `feature.process_info.mode`
 
@@ -995,7 +995,7 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 Position in the side menu; lower numbers come first.
 
-**Type:** integer · **Default:** `80`
+**Type:** integer · **Default:** `50`
 
 ### `feature.coding_agents.mode`
 
@@ -1007,4 +1007,4 @@ Turn the feature on or off. Off removes it entirely, including its side-menu ent
 
 Position in the side menu; lower numbers come first.
 
-**Type:** integer · **Default:** `65`
+**Type:** integer · **Default:** `20`

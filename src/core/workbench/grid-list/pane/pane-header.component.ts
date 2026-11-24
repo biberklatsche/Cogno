@@ -1,11 +1,12 @@
 import { DOCUMENT } from "@angular/common";
 import { Component, computed, Inject, input, OnDestroy } from "@angular/core";
 import { toObservable, toSignal } from "@angular/core/rxjs-interop";
+import { ActionKeybindingPipe } from "@cogno/core/infrastructure/keybindings/pipe/action-keybinding.pipe";
 import { BusyIndicatorComponent } from "@cogno/core/workbench/busy-indicator/busy-indicator.component";
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import { trackPointerDrag } from "@cogno/core/workbench/drag-preview/pointer-drag";
-import { IconComponent } from "@cogno/shared/ui";
+import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { switchMap } from "rxjs";
 import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
 import { GridListService } from "../+state/grid-list.service";
@@ -13,7 +14,7 @@ import { GridListService } from "../+state/grid-list.service";
 @Component({
   selector: "app-pane-header",
   standalone: true,
-  imports: [IconComponent, BusyIndicatorComponent],
+  imports: [IconComponent, BusyIndicatorComponent, TooltipDirective, ActionKeybindingPipe],
   template: `
     @if (shouldShow()) {
       <div class="pane-header" (mousedown)="startPaneSwapDrag($event)">
@@ -23,9 +24,17 @@ import { GridListService } from "../+state/grid-list.service";
           </span>
         }
         <span class="title">{{ title() }}</span>
-        <button class="close button icon-button" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
-          <app-icon name="mdiClose"></app-icon>
-        </button>
+        <div class="buttons">
+          <button class="button icon-button" type="button" [class.maximized]="isMaximized()"
+                  (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); toggleMaximize()"
+                  [appTooltip]="isMaximized() ? 'Restore pane' : 'Maximize pane'"
+                  [appTooltipSecondary]="(isMaximized() ? 'minimize_pane' : 'maximize_pane') | actionkeybinding">
+            <app-icon [name]="isMaximized() ? 'mdiArrowCollapse' : 'mdiArrowExpand'"></app-icon>
+          </button>
+          <button class="button icon-button" type="button" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation(); closePane()">
+            <app-icon name="mdiClose"></app-icon>
+          </button>
+        </div>
       </div>
     }
   `,
@@ -39,12 +48,13 @@ import { GridListService } from "../+state/grid-list.service";
       display: flex;
       align-items: center;
       justify-content: center;
-      /* Room for the absolutely positioned busy indicator and close button. */
-      padding: 2px 26px;
+      /* Room for the absolutely positioned busy indicator and buttons, the
+         same on both sides so the title stays centred. */
+      padding: 2px 48px;
       background: transparent;
       height: 24px;
 
-      &:hover .close {
+      &:hover .icon-button {
         opacity: 1;
       }
     }
@@ -76,9 +86,15 @@ import { GridListService } from "../+state/grid-list.service";
       transform: translateY(-50%);
     }
 
-    .close {
+    .buttons {
       position: absolute;
       right: 2px;
+      display: flex;
+      gap: 2px;
+    }
+
+    /* The side panels' header buttons have the same size (side-menu.component). */
+    .icon-button {
       padding: 2px;
       display: inline-flex;
       align-items: center;
@@ -95,6 +111,11 @@ import { GridListService } from "../+state/grid-list.service";
       &:hover {
         opacity: 1 !important;
       }
+
+      /* The way back from a maximized pane stays in sight. */
+      &.maximized {
+        opacity: 0.8;
+      }
     }
   `,
 })
@@ -110,6 +131,10 @@ export class PaneHeaderComponent implements OnDestroy {
   private readonly isInFullScreenMode = computed(() =>
     this.terminalFullscreenService.isTerminalFullScreen(this.terminalId()),
   );
+  private readonly maximizedTerminalId = toSignal(this.gridListService.maximizedTerminalId$, {
+    initialValue: undefined,
+  });
+  readonly isMaximized = computed(() => this.maximizedTerminalId() === this.terminalId());
   shouldShow = computed(() => this.activeGridIsSplit() && !this.isInFullScreenMode());
 
   private readonly busyRegistrations = toSignal(
@@ -147,6 +172,12 @@ export class PaneHeaderComponent implements OnDestroy {
       onRelease: (releaseEvent) => this.dropPane(releaseEvent),
       onCancel: () => this.gridListService.cancelPaneSwapDrag(),
     });
+  }
+
+  /** Maximizes this pane or restores it, and gives it the keyboard either way. */
+  toggleMaximize(): void {
+    this.gridListService.togglePaneMaximize(this.terminalId());
+    this.gridListService.deferFocusTo(this.terminalId());
   }
 
   closePane() {

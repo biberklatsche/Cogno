@@ -214,14 +214,14 @@ export const defaultSettings = {
     },
     notification_overview: {
       mode: "on",
-      order: "20",
+      order: "70",
       overview: {
         max_items: "30",
       },
     },
     command_palette: {
       mode: "on",
-      order: "30",
+      order: "60",
     },
     search: {
       mode: "on",
@@ -229,15 +229,15 @@ export const defaultSettings = {
     },
     git: {
       mode: "on",
-      order: "50",
+      order: "30",
     },
     process_info: {
       mode: "on",
-      order: "80",
+      order: "50",
     },
     coding_agents: {
       mode: "on",
-      order: "65",
+      order: "20",
     },
   },
   updater: {

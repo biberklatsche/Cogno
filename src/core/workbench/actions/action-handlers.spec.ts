@@ -49,6 +49,33 @@ describe("ActionHandlers", () => {
     expect(result.performed).toBeUndefined();
   });
 
+  it("handles a feature's action while the feature is active, and no longer after", () => {
+    const handler = vi.fn();
+    const stop = handlers.handleWhileActive("open_git", handler);
+
+    const result = bus.publish(ActionFired.create("open_git"));
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(result.performed).toBe(true);
+
+    stop();
+    bus.publish(ActionFired.create("open_git"));
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("lets a feature that comes back register its action again", () => {
+    handlers.handleWhileActive("open_git", () => undefined)();
+
+    expect(() => handlers.handleWhileActive("open_git", () => undefined)).not.toThrow();
+  });
+
+  it("rejects a second handler for a feature's action as well", () => {
+    handlers.handleWhileActive("open_git", () => undefined);
+
+    expect(() => handlers.handleWhileActive("open_git", () => undefined)).toThrow(
+      "Action already has a handler: open_git",
+    );
+  });
+
   it("rejects a second handler for the same action", () => {
     handlers.handle("new_tab", () => undefined);
 

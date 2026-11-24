@@ -10,7 +10,7 @@ const processInfoSideMenuFeatureDefinition = {
   id: processInfoFeatureId,
   title: "Process Info",
   icon: "mdiListBox",
-  order: 80,
+  order: 50,
   actionName: "open_process_info",
   configPath: "feature.process_info",
   targetComponent: () =>

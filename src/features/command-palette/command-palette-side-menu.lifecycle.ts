@@ -3,7 +3,6 @@ import {
   SideMenuFeatureHandleContract,
   SideMenuFeatureLifecycleContract,
 } from "@cogno/core/api/contributions";
-import { focusSideMenuAutofocusElement } from "@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element";
 import { CommandPaletteService } from "./command-palette.service";
 
 @Injectable({ providedIn: "root" })
@@ -17,7 +16,6 @@ export class CommandPaletteSideMenuLifecycle {
           this.commandPaletteService.handleSideMenuClose();
         }
       },
-      onOpen: () => focusSideMenuAutofocusElement(),
       onClose: () => this.commandPaletteService.handleSideMenuClose(),
       onFocus: () => {
         sideMenuFeatureHandle.registerKeybindListener(
@@ -25,9 +23,10 @@ export class CommandPaletteSideMenuLifecycle {
           (keyboardEvent: KeyboardEvent) => {
             if (keyboardEvent.key === "Enter") {
               const selectedCommandEntry = this.commandPaletteService.selectedEntry();
-              sideMenuFeatureHandle.close();
-              // Closing resets the filter; without an entry captured here the
-              // dispatch would fall back to the first entry of the full list.
+              sideMenuFeatureHandle.dismiss();
+              // A floating palette closes on that, which resets the filter;
+              // without an entry captured here the dispatch would fall back to
+              // the first entry of the full list.
               if (selectedCommandEntry) {
                 queueMicrotask(() => {
                   this.commandPaletteService.fireSelectedAction(selectedCommandEntry);
@@ -38,7 +37,6 @@ export class CommandPaletteSideMenuLifecycle {
             this.commandPaletteService.move(keyboardEvent.key === "ArrowDown" ? 1 : -1);
           },
         );
-        focusSideMenuAutofocusElement();
       },
     };
   }

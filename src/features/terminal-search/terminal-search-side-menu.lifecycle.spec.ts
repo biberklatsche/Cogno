@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import type { TerminalSearchService } from "./terminal-search.service";
 import { TerminalSearchSideMenuLifecycle } from "./terminal-search-side-menu.lifecycle";
 
-vi.mock("@cogno/shared/ui/common/autofocus/focus-side-menu-autofocus-element", () => ({
-  focusSideMenuAutofocusElement: vi.fn(),
-}));
-
 describe("TerminalSearchSideMenuLifecycle", () => {
   let terminalSearchService: Pick<
     TerminalSearchService,
@@ -18,11 +14,11 @@ describe("TerminalSearchSideMenuLifecycle", () => {
   >;
   let sideMenuFeatureHandle: SideMenuFeatureHandleContract;
   let registerKeybindListenerMock: Mock<SideMenuFeatureHandleContract["registerKeybindListener"]>;
-  let closeMock: Mock<SideMenuFeatureHandleContract["close"]>;
+  let dismissMock: Mock<SideMenuFeatureHandleContract["dismiss"]>;
 
   beforeEach(() => {
     registerKeybindListenerMock = vi.fn();
-    closeMock = vi.fn();
+    dismissMock = vi.fn();
 
     terminalSearchService = {
       handleSideMenuOpen: vi.fn(),
@@ -33,7 +29,7 @@ describe("TerminalSearchSideMenuLifecycle", () => {
     };
 
     sideMenuFeatureHandle = {
-      close: closeMock,
+      dismiss: dismissMock,
       registerKeybindListener: registerKeybindListenerMock,
       updateBadgeColor: vi.fn(),
     };
@@ -96,7 +92,7 @@ describe("TerminalSearchSideMenuLifecycle", () => {
 
     keybindHandler({ key: "Enter" } as KeyboardEvent);
 
-    expect(closeMock).not.toHaveBeenCalled();
+    expect(dismissMock).not.toHaveBeenCalled();
     expect(terminalSearchService.repeatSearch).toHaveBeenCalledTimes(1);
   });
 });

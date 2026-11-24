@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { ActionName } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { ActionContextContract, ActionTriggerContract } from "@cogno/shared/domain";
 import { CoreActionName, coreActionCatalog } from "./catalog";
@@ -22,22 +23,23 @@ export type ActionHandler = (
 ) => boolean | void | Promise<boolean | void>;
 
 /**
- * The one place core actions are handled (ARCHITECTURE.md 5). Services register
+ * The one place actions are handled (ARCHITECTURE.md 5). Services register
  * `handle("new_tab", …)` instead of switching on the fired action name; a single
  * subscription routes each `ActionFired` to its handler and applies the same
  * performed/consumed semantics the old `onAction$` did. Exactly one handler per
- * action - a second registration is a programming error.
+ * action - a second registration is a programming error. A core action has its
+ * handler for good; a feature's action has one only while the feature is active.
  */
 @Injectable({ providedIn: "root" })
 export class ActionHandlers {
-  private readonly handlers = new Map<CoreActionName, ActionHandler>();
+  private readonly handlers = new Map<ActionName, ActionHandler>();
 
   constructor(appBus: AppBus, destroyRef: DestroyRef) {
     appBus
       .on$("ActionFired")
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((event) => {
-        const handler = this.handlers.get(event.payload as CoreActionName);
+        const handler = event.payload === undefined ? undefined : this.handlers.get(event.payload);
         if (!handler) {
           return;
         }
@@ -72,6 +74,21 @@ export class ActionHandlers {
 
   /** Register the one handler for a core action. */
   handle(actionName: CoreActionName, handler: ActionHandler): void {
+    this.register(actionName, handler);
+  }
+
+  /**
+   * Register the one handler for a feature's action, for as long as the
+   * feature is active: the returned function takes it away again.
+   */
+  handleWhileActive(actionName: ActionName, handler: ActionHandler): () => void {
+    this.register(actionName, handler);
+    return () => {
+      if (this.handlers.get(actionName) === handler) this.handlers.delete(actionName);
+    };
+  }
+
+  private register(actionName: ActionName, handler: ActionHandler): void {
     if (this.handlers.has(actionName)) {
       throw new Error(`Action already has a handler: ${actionName}`);
     }

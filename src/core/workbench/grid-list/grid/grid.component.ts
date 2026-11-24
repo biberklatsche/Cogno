@@ -1,6 +1,7 @@
 import { NgStyle } from "@angular/common";
 import { Component, Input } from "@angular/core";
 import { BinaryNode } from "@cogno/core/workbench/grid-list/binary-tree";
+import { SideMenuService } from "@cogno/core/workbench/side-menu/+state/side-menu.service";
 import { Pane, SplitDirection } from "../+model/model";
 import { PaneComponent } from "../pane/pane.component";
 
@@ -12,6 +13,11 @@ import { PaneComponent } from "../pane/pane.component";
 })
 export class GridComponent {
   @Input({ required: true }) node!: BinaryNode<Pane>;
+
+  /** A pinned side panel is one of the panes: while it has the keyboard, no terminal does. */
+  protected readonly keyboardInPinnedPanel = this.sideMenuService.keyboardInPinnedPanel;
+
+  constructor(private readonly sideMenuService: SideMenuService) {}
 
   styleForSplit(direction: SplitDirection, ratio: number = 0.5) {
     ratio = Math.max(0.05, Math.min(0.95, ratio));

@@ -25,7 +25,7 @@ export class WorkspaceSideMenuLifecycle {
           (keyboardEvent: KeyboardEvent) => {
             if (keyboardEvent.key === "Enter") {
               void this.workspaceService.restoreSelectedWorkspace().then(() => {
-                sideMenuFeatureHandle.close();
+                sideMenuFeatureHandle.dismiss();
               });
               return;
             }

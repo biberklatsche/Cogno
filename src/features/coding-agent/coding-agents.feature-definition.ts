@@ -11,7 +11,7 @@ const codingAgentsSideMenuFeatureDefinition = {
   id: codingAgentsFeatureId,
   title: "Coding Agents",
   icon: "mdiRobot",
-  order: 65,
+  order: 20,
   actionName: "open_coding_agents",
   configPath: "feature.coding_agents",
   targetComponent: () =>

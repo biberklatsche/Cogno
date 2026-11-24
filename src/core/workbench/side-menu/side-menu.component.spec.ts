@@ -1,44 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { SideMenuItem } from "./+state/side-menu.service";
-import { focusPanel, isSelectedSideMenuItem } from "./side-menu.component";
-
-class DummyComponent {}
-
-describe("isSelectedSideMenuItem", () => {
-  it("keeps the item selected after the menu item instance is replaced", () => {
-    const selectedItem: SideMenuItem = {
-      id: "notification",
-      label: "Notification",
-      icon: "mdiBell",
-      actionName: "open_notification",
-      component: DummyComponent,
-    };
-
-    const replacedMenuItem: SideMenuItem = {
-      ...selectedItem,
-      icon: "mdiBellBadge",
-    };
-
-    expect(selectedItem).not.toBe(replacedMenuItem);
-    expect(isSelectedSideMenuItem(selectedItem, replacedMenuItem)).toBe(true);
-  });
-
-  it("falls back to the label when no stable id is present", () => {
-    const selectedItem: SideMenuItem = {
-      label: "AI Chat",
-      icon: "mdiRobot",
-      actionName: "open_ai_chat",
-      component: DummyComponent,
-    };
-
-    const replacedMenuItem: SideMenuItem = {
-      ...selectedItem,
-    };
-
-    expect(selectedItem).not.toBe(replacedMenuItem);
-    expect(isSelectedSideMenuItem(selectedItem, replacedMenuItem)).toBe(true);
-  });
-});
+import { focusPanel, resizedPanelWidth } from "./side-menu.component";
 
 describe("focusPanel", () => {
   afterEach(() => {
@@ -64,6 +25,30 @@ describe("focusPanel", () => {
     expect(document.activeElement).toBe(panel);
   });
 
+  it("takes the keyboard to the panel's search field and selects its text", () => {
+    const { panel, field, terminal } = panelWithField();
+    field.dataset["sideMenuAutofocus"] = "true";
+    field.value = "git";
+    terminal.focus();
+
+    focusPanel(panel);
+
+    expect(document.activeElement).toBe(field);
+    expect(field.selectionStart).toBe(0);
+    expect(field.selectionEnd).toBe(3);
+  });
+
+  it("stays in its own panel: the search field of another panel is left alone", () => {
+    const first = panelWithField();
+    first.field.dataset["sideMenuAutofocus"] = "true";
+    const second = panelWithField();
+    second.field.dataset["sideMenuAutofocus"] = "true";
+
+    focusPanel(second.panel);
+
+    expect(document.activeElement).toBe(second.field);
+  });
+
   it("leaves it in a field of the panel that a click just focused", () => {
     const { panel, field } = panelWithField();
     field.focus();
@@ -71,5 +56,23 @@ describe("focusPanel", () => {
     focusPanel(panel);
 
     expect(document.activeElement).toBe(field);
+  });
+});
+
+describe("resizedPanelWidth", () => {
+  it("follows the pointer while the terminals have room left", () => {
+    expect(resizedPanelWidth(360, 100, 300)).toBe(460);
+  });
+
+  it("stops where the terminals reach their floor", () => {
+    expect(resizedPanelWidth(360, 500, 300)).toBe(660);
+  });
+
+  it("gets narrower freely", () => {
+    expect(resizedPanelWidth(360, -50, 0)).toBe(310);
+  });
+
+  it("does not grow while the terminals are below their floor already", () => {
+    expect(resizedPanelWidth(360, 80, -40)).toBe(360);
   });
 });

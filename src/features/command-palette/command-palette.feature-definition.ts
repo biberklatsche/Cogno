@@ -10,7 +10,7 @@ const commandPaletteSideMenuFeatureDefinition = {
   id: commandPaletteFeatureId,
   title: "Command Palette",
   icon: "mdiPaletteSwatch",
-  order: 30,
+  order: 60,
   actionName: "open_command_palette",
   configPath: "feature.command_palette",
   targetComponent: () =>
