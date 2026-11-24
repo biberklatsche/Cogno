@@ -1,14 +1,16 @@
-//! Prompts from processes the command runner starts (git, ssh): they get no
-//! terminal, so `GIT_ASKPASS`/`SSH_ASKPASS` point at this binary, which asks
-//! the window that started the command over the HTTP server (`/askpass`) and
-//! prints the answer. One runner session is one running command; the caller
-//! names its id, so the window can hand the prompt to whoever started the run.
+//! Prompts from processes this app starts (git through the command runner,
+//! and the ssh git runs): they get no terminal, so `GIT_ASKPASS` and
+//! `SSH_ASKPASS` point at this binary, which asks through the host of this
+//! machine (`Question::Prompt`) and prints the answer. The app owns the
+//! prompts of a session while its command runs (`Request::OwnPrompts`), so the
+//! host passes them on to this app and no other; the window that started the
+//! command asks the user. One session is one running command; the caller
+//! names its id, so the window can hand the prompt to whoever started it.
 //!
-//! Each session has a token of its own that opens `/askpass` for that
-//! session and nothing else. Everything git starts inherits the run's
-//! environment (hooks in the repository, remote helpers, the credential
-//! helper); with the launch token in there, a hook could drive the agent
-//! endpoints. With the session token it can at most ask its own run's window.
+//! Each session has a token of its own, and the app answers a prompt only
+//! with it: everything git starts inherits the run's environment (hooks in
+//! the repository, remote helpers, the credential helper), and the token lets
+//! such a process at most ask its own run's window.
 
 use serde::Serialize;
 use std::collections::HashMap;
@@ -18,6 +20,14 @@ use tokio::sync::oneshot;
 
 /// The variable that turns this binary into the askpass helper.
 pub const SESSION_ENV: &str = "COGNO_ASKPASS_SESSION";
+/// The session's token, which the helper presents with its prompt.
+pub const TOKEN_ENV: &str = "COGNO_ASKPASS_TOKEN";
+/// Where ssh asks when it has no terminal, and whether it does so even when
+/// it has one.
+pub const SSH_ASKPASS_ENV: &str = "SSH_ASKPASS";
+pub const SSH_ASKPASS_REQUIRE_ENV: &str = "SSH_ASKPASS_REQUIRE";
+/// How long a prompt waits for the user before it counts as refused.
+const ASKPASS_WAIT: std::time::Duration = std::time::Duration::from_secs(30 * 60);
 /// Event to the window: show a prompt.
 pub const REQUEST_EVENT: &str = "askpass-request";
 /// Event to the window: the command ended, the prompt is moot.
@@ -47,7 +57,7 @@ struct Pending {
 struct Session {
     /// The window that started the command.
     window: String,
-    /// What the run's processes present on `/askpass`.
+    /// What the run's processes present with a prompt.
     token: String,
 }
 
@@ -63,7 +73,7 @@ impl AskpassState {
     }
 
     /// A command with the caller's session id starts in `window`. Returns
-    /// the token its processes get for `/askpass`.
+    /// the token its processes present with a prompt.
     pub fn open_session(&self, session_id: &str, window: &str) -> String {
         let token = uuid::Uuid::new_v4().simple().to_string();
         self.sessions.lock().unwrap().insert(
@@ -187,6 +197,51 @@ impl AskpassState {
     }
 }
 
+/// Asks the user in the window of `session`, for a prompt the host passed
+/// on: `None` when the token is not the session's, nobody could answer, or
+/// nobody did in time.
+pub async fn ask_window(
+    app: &AppHandle,
+    session: &str,
+    token: &str,
+    prompt: String,
+) -> Option<String> {
+    let askpass = app.state::<AskpassState>();
+    if !askpass.authorizes(session, token) {
+        log::warn!(target: "askpass", "a prompt with a wrong token; refused");
+        return None;
+    }
+    let (request_id, receiver) = askpass.request(app, session, prompt)?;
+    // The user may take a while; the helper waits, and the runner's timeout pauses.
+    match tokio::time::timeout(ASKPASS_WAIT, receiver).await {
+        Ok(received) => received.ok().flatten(),
+        Err(_) => {
+            askpass.expire(app, &request_id);
+            None
+        }
+    }
+}
+
+/// Makes ssh ask through this binary instead of a terminal it does not have:
+/// `session_id` and `token` are what `open_session` took and gave. The helper
+/// is told this app's host (`COGNO_HOST`), whatever environment the app
+/// itself was started in. Returns the helper, or `None` when there is none to
+/// point at and the process is left as it is.
+pub fn point_ssh_at_helper(
+    command: &mut std::process::Command,
+    session_id: &str,
+    token: &str,
+) -> Option<std::path::PathBuf> {
+    let helper = std::env::current_exe().ok()?;
+    let host = crate::host_endpoint::own_host_endpoint().ok()?;
+    command.env(SSH_ASKPASS_ENV, &helper);
+    command.env(SSH_ASKPASS_REQUIRE_ENV, "force");
+    command.env(SESSION_ENV, session_id);
+    command.env(TOKEN_ENV, token);
+    command.env(cogno_host::env_vars::COGNO_HOST, host);
+    Some(helper)
+}
+
 /// The window answers a prompt; `None` cancels it, and the process sees a failed read.
 #[tauri::command]
 pub fn askpass_answer(
@@ -197,40 +252,33 @@ pub fn askpass_answer(
     state.answer(&request_id, answer)
 }
 
-/// The helper side: runs in the process git or ssh started, asks the running
-/// Cogno and prints the answer. Exit 1 means "no answer", which the caller
-/// treats as a refused prompt.
+/// The helper side: runs in the process git or ssh started, asks through the
+/// host of this machine and prints the answer. Exit 1 means "no answer",
+/// which the caller treats as a refused prompt.
 pub fn run_helper(session_id: &str, prompt_args: &[String]) -> i32 {
-    let port = match std::env::var("COGNO_PORT") {
-        Ok(port) => port,
-        Err(_) => return 1,
+    use crate::relayed::{self, Answer, Question};
+    use cogno_host::protocol::Addressee;
+
+    let Ok(endpoint) = crate::host_endpoint::host_endpoint() else {
+        return 1;
     };
-    let token = std::env::var("COGNO_TOKEN").unwrap_or_default();
-    let prompt = prompt_args.join(" ");
-    let body = serde_json::json!({ "session": session_id, "prompt": prompt });
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(60 * 60))
-        .build()
-    {
-        Ok(client) => client,
-        Err(_) => return 1,
+    let to = Addressee::PromptSession {
+        session: session_id.to_string(),
     };
-    let response = match client
-        .post(format!("http://127.0.0.1:{port}/askpass"))
-        .header(crate::http_server::TOKEN_HEADER, token)
-        .json(&body)
-        .send()
-    {
-        Ok(response) => response,
-        Err(_) => return 1,
-    };
-    let payload: serde_json::Value = response.json().unwrap_or_default();
-    match payload.get("answer").and_then(|value| value.as_str()) {
-        Some(answer) => {
+    let question = relayed::encode(&Question::Prompt {
+        token: std::env::var(TOKEN_ENV).unwrap_or_default(),
+        prompt: prompt_args.join(" "),
+    });
+    // As long as the user takes: the app gives up on its own (`ASKPASS_WAIT`).
+    let answered = cogno_host::once::ask(&endpoint, to, question, None);
+    match answered.ok().and_then(|answer| relayed::decode(&answer)) {
+        Some(Answer::Prompt {
+            answer: Some(answer),
+        }) => {
             println!("{answer}");
             0
         }
-        None => 1,
+        _ => 1,
     }
 }
 

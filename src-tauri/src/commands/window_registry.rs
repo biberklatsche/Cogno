@@ -4,7 +4,7 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::host::HostState;
+use crate::hosts::HostState;
 
 /// Emit `event` to the window that owns `terminal_id` (or the last-focused
 /// window when no terminal is given or known), falling back to a broadcast

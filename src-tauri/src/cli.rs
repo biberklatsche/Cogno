@@ -30,6 +30,15 @@ pub enum CliCommand {
         #[command(subcommand)]
         command: ConfigCommand,
     },
+    /// Hand a coding agent's hook, read from stdin, to Cogno (what the hooks
+    /// Cogno installs run)
+    #[command(hide = true)]
+    Hook {
+        /// The agent, as Cogno names it
+        provider: String,
+        /// The agent's hook event
+        event: String,
+    },
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -63,17 +72,23 @@ pub enum ConfigCommand {
     Path,
 }
 
+/// The webview event an action from the command line arrives as.
+pub const CLI_ACTION_EVENT: &str = "cli-action";
+
+/// `name[:arg...]`, as the webview parses an action from the command line.
+pub fn action_payload(name: &str, args: &[String]) -> String {
+    std::iter::once(name)
+        .chain(args.iter().map(String::as_str))
+        .collect::<Vec<_>>()
+        .join(":")
+}
+
 impl Cli {
     pub fn action_payload(&self) -> Option<String> {
         match &self.command {
             Some(CliCommand::Action {
                 command: ActionCommand::Run { name, args },
-            }) => {
-                let mut action_parts = Vec::with_capacity(args.len() + 1);
-                action_parts.push(name.clone());
-                action_parts.extend(args.clone());
-                Some(action_parts.join(":"))
-            }
+            }) => Some(action_payload(name, args)),
             _ => None,
         }
     }
@@ -113,51 +128,68 @@ impl Cli {
     }
 }
 
-/// When invoked inside a running Cogno terminal (COGNO_PORT set), run an
-/// `action run` over HTTP and return the process exit code; otherwise `None` so
-/// the caller falls back to the single-instance path.
-pub fn try_run_action_over_http(cli: &Cli) -> Option<i32> {
+/// How long `action run` waits for the Cogno that shows its terminal.
+const ACTION_RUN_PATIENCE: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// Inside a Cogno terminal (`COGNO_TERMINAL_ID` set), `action run` asks the
+/// Cogno that shows that terminal - through the host that runs it, wherever
+/// that Cogno is - and returns the exit code. `None` only when nothing was
+/// asked - outside a Cogno terminal, or with no host to ask: the caller
+/// falls back to the single-instance path. Once asked, it never falls back:
+/// the action may have run, and on another machine that path would start a
+/// Cogno there.
+pub fn try_run_action_in_terminal(cli: &Cli) -> Option<i32> {
+    use crate::relayed::{self, ActionRunStatus, Answer, Question};
+    use cogno_host::once::{self, AskError};
+    use cogno_host::protocol::Addressee;
+
     let (name, args) = match &cli.command {
         Some(CliCommand::Action {
             command: ActionCommand::Run { name, args },
         }) => (name, args),
         _ => return None,
     };
-
-    let port = std::env::var("COGNO_PORT").ok()?;
-    let token = std::env::var("COGNO_TOKEN").unwrap_or_default();
-    let url = format!("http://127.0.0.1:{}/action/run", port);
-    let body = serde_json::json!({ "name": name, "args": args });
-
-    let response = match reqwest::blocking::Client::new()
-        .post(&url)
-        .header(crate::http_server::TOKEN_HEADER, token)
-        .json(&body)
-        .send()
-    {
-        Ok(response) => response,
-        Err(error) => {
-            // The running instance is unreachable; fall back to the normal path.
-            eprintln!(
-                "Could not reach Cogno on port {} ({}); falling back.",
-                port, error
-            );
+    let terminal_id = std::env::var(cogno_host::env_vars::COGNO_TERMINAL_ID)
+        .ok()
+        .filter(|id| !id.is_empty())?;
+    let endpoint = crate::host_endpoint::host_endpoint().ok()?;
+    let question = relayed::encode(&Question::RunAction {
+        name: name.clone(),
+        args: args.clone(),
+    });
+    let deadline = std::time::Instant::now() + ACTION_RUN_PATIENCE;
+    let answer = match once::ask(
+        &endpoint,
+        Addressee::Terminal { terminal_id },
+        question,
+        Some(deadline),
+    ) {
+        Ok(answer) => relayed::decode(&answer),
+        Err(AskError::Unreached(error)) => {
+            eprintln!("Could not reach the Cogno host ({error}); falling back.");
             return None;
         }
+        Err(error) => {
+            eprintln!("Action '{}': {error}.", name);
+            return Some(1);
+        }
     };
-
-    let payload: serde_json::Value = response.json().unwrap_or_default();
-    let status = payload.get("status").and_then(|value| value.as_str());
-    match status {
-        Some("dispatched") => {
+    match answer {
+        Some(Answer::ActionRun {
+            status: ActionRunStatus::Dispatched,
+        }) => {
             println!("dispatched: {}", name);
             Some(0)
         }
-        Some("inactive") => {
+        Some(Answer::ActionRun {
+            status: ActionRunStatus::Inactive,
+        }) => {
             eprintln!("Action '{}' is not active (its feature is off).", name);
             Some(2)
         }
-        Some("unknown") => {
+        Some(Answer::ActionRun {
+            status: ActionRunStatus::NotFound,
+        }) => {
             eprintln!("Unknown action: {}", name);
             eprintln!("Use `cogno action list` to see all supported actions.");
             Some(1)

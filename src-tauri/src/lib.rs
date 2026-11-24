@@ -1,22 +1,27 @@
 #[path = "actions.generated.rs"]
 pub mod actions_generated;
+pub mod agent_hook;
 mod app_identity;
 pub mod cli;
+mod cogno_message;
+mod command_error;
 pub mod commands;
 mod db;
-mod endpoint;
-mod host;
-mod http_server;
+mod host_connection;
+pub mod host_endpoint;
+mod hosts;
+mod pairing;
+mod relayed;
+mod runnable_actions;
 mod shell_bootstrap_logs;
 mod updater;
 
 use app_identity::LOG_FILE_STEM;
 use cli::Cli;
-use cogno_host::protocol::Request;
 use commands::window_registry::{route, WindowRegistry};
 use db::Db;
-use host::HostState;
-use http_server::{HttpServerState, RunnableActionsState};
+use hosts::HostState;
+use runnable_actions::RunnableActionsState;
 use tauri::window::Color;
 use tauri::{Builder, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 
@@ -65,7 +70,7 @@ pub fn run(cli: Cli) {
                 return;
             };
             if let Some(action_payload) = cli.action_payload() {
-                route(app, "cli-action", &action_payload, None);
+                route(app, cli::CLI_ACTION_EVENT, &action_payload, None);
             }
             // `--config` and `--set` shape a process at its start; the one
             // already running cannot take them on, and the second process
@@ -90,7 +95,6 @@ pub fn run(cli: Cli) {
             }
         }))
         .manage(crate::commands::window::QuitState::default())
-        .manage(HttpServerState::new())
         .manage(RunnableActionsState::new())
         .manage(Db::new())
         .manage(WindowRegistry::new())
@@ -106,11 +110,7 @@ pub fn run(cli: Cli) {
                 let app = window.app_handle();
                 app.state::<crate::commands::window::QuitState>()
                     .cancel_window(window.label());
-                // Returns at once: the host releases the sessions on a thread
-                // of its own.
-                let _ = app.state::<HostState>().handle(Request::ReleaseOwner {
-                    owner: window.label().to_string(),
-                });
+                app.state::<HostState>().window_closed(window.label());
                 app.state::<WindowRegistry>().on_destroyed(window.label());
             }
             _ => {}
@@ -126,19 +126,37 @@ pub fn run(cli: Cli) {
             crate::commands::command_runner::command_runner_execute,
             crate::commands::askpass::askpass_answer,
             crate::commands::config::get_default_config,
-            crate::commands::shells::list_shells,
+            crate::commands::hosts::list_shells,
+            crate::commands::hosts::host_connect,
+            crate::commands::hosts::host_sessions,
+            crate::commands::hosts::host_session,
+            crate::commands::hosts::host_kill_session,
+            crate::commands::hosts::host_disconnect,
+            crate::commands::hosts::host_install_shell_integration,
+            crate::commands::pairing::pairing_state,
+            crate::commands::pairing::pairing_enable,
+            crate::commands::pairing::pairing_disable,
+            crate::commands::pairing::pairing_set_open,
+            crate::commands::pairing::pairing_pair,
+            crate::commands::pairing::pairing_answer,
+            crate::commands::pairing::pairing_rename,
+            crate::commands::pairing::pairing_remove,
             crate::commands::keyboard::get_keyboard_layout,
             crate::commands::pty::pty_spawn,
+            crate::commands::pty::pty_attach,
+            crate::commands::pty::pty_place,
             crate::commands::pty::pty_write,
             crate::commands::pty::pty_execute_line_editor_action,
             crate::commands::pty::pty_resize,
-            crate::commands::pty::pty_kill,
+            crate::commands::pty::pty_detach,
+            crate::commands::pty::pty_pane_closed,
             crate::commands::pty::pty_ack,
             crate::commands::processes::pty_get_process_tree_by_terminal_id,
             crate::commands::processes::pty_list_terminal_processes,
             crate::commands::processes::pty_terminate_process,
+            crate::commands::processes::pty_terminate_foreground_job,
             crate::commands::environment::get_cogno_home_dir,
-            crate::commands::environment::get_cogno_endpoint_file_path,
+            crate::commands::environment::get_cogno_starter_path,
             crate::commands::environment::get_cogno_config_file_path,
             crate::commands::environment::get_cogno_db_file_path,
             crate::commands::environment::get_cogno_log_file_path,
@@ -148,8 +166,7 @@ pub fn run(cli: Cli) {
             crate::commands::window::window_release_workspace,
             crate::commands::notification::send_os_notification,
             crate::commands::clipboard_image::save_clipboard_image_to_file,
-            crate::http_server::start_http_server,
-            crate::http_server::set_runnable_actions,
+            crate::runnable_actions::set_runnable_actions,
             crate::updater::updater_state,
             crate::updater::updater_check,
             crate::updater::updater_install
@@ -158,6 +175,7 @@ pub fn run(cli: Cli) {
             // Before the first window: its webview spawns the first shells.
             crate::shell_bootstrap_logs::manage(app.handle());
             app.manage(HostState::new(app.handle().clone()));
+            app.manage(crate::commands::pairing::PairingState::new(app.handle()));
             crate::updater::manage(app.handle());
             std::thread::spawn(crate::commands::clipboard_image::remove_leftover_paste_files);
 
@@ -180,7 +198,7 @@ pub fn run(cli: Cli) {
 
             // Run the requested command on first launch when present.
             if let Some(action_payload) = cli.action_payload() {
-                route(app.handle(), "cli-action", &action_payload, None);
+                route(app.handle(), cli::CLI_ACTION_EVENT, &action_payload, None);
             }
 
             #[cfg(debug_assertions)] // only include this code on debug builds
@@ -194,14 +212,15 @@ pub fn run(cli: Cli) {
         .expect("error while building tauri application")
         .run(|app, event| {
             if let RunEvent::Exit = event {
-                // Shells first, so none outlives the app (SIGHUP lets them
-                // write their history on the way out).
-                // A start that failed in `setup` never got a host.
-                if let Some(host) = app.try_state::<HostState>() {
-                    host.release_all();
+                // Nothing is reachable any more, and this machine's shells
+                // end with the app. A start that failed in `setup` never got
+                // a host.
+                if let Some(pairing) = app.try_state::<crate::commands::pairing::PairingState>() {
+                    pairing.close();
                 }
-                // No process must find this instance's port once it is gone.
-                app.state::<HttpServerState>().remove_endpoint();
+                if let Some(host) = app.try_state::<HostState>() {
+                    host.close();
+                }
                 // Fold the WAL back into the main file so the database is a
                 // single, consistent file once the process is gone.
                 app.state::<Db>().close();
