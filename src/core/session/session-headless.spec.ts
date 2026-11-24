@@ -407,9 +407,14 @@ describe("headless session (size and reflow)", () => {
     await session.write(stream.prompt(1));
     await session.write("echo hi");
 
+    // xterm's DOM renderer measures glyph widths on a 2d canvas; happy-dom has none.
+    const getContext = vi
+      .spyOn(HTMLCanvasElement.prototype, "getContext")
+      .mockReturnValue({ font: "", measureText: () => ({ width: 8 }) } as never);
     const host = document.createElement("div");
     document.body.appendChild(host);
     session.terminal.open(host);
+    getContext.mockRestore();
 
     expect(session.model.input.text).toBe("echo hi");
     expect(session.model.commands).toHaveLength(1);

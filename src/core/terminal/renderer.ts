@@ -104,6 +104,8 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
   private _terminal: Terminal;
   /** Off once WebGL is known not to work here; xterm's DOM renderer then stays. */
   private _webglEnabled: boolean;
+  /** Box drawing, block and powerline glyphs drawn by the WebGL renderer instead of the font. */
+  private readonly _customGlyphs: boolean | undefined;
   private _disposed = false;
 
   private _fitAddon = new FitAddon();
@@ -133,11 +135,14 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
     private readonly webglPool: WebglContextPool = WebglContextPool.instance,
   ) {
     this._webglEnabled = options.webgl ?? false;
+    this._customGlyphs = options.customGlyphs;
     this._terminal = new Terminal({
-      overviewRuler: {
+      scrollbar: {
         width: options.overviewRulerWidth,
-        showBottomBorder: false,
-        showTopBorder: false,
+        overviewRuler: {
+          showBottomBorder: false,
+          showTopBorder: false,
+        },
       },
       scrollback: options.scrollbackLines,
       tabStopWidth: options.tabStopWidth,
@@ -147,7 +152,6 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
       smoothScrollDuration: options.smoothScrollDuration,
       allowTransparency: options.allowTransparency,
       altClickMovesCursor: options.altClickMovesCursor,
-      customGlyphs: options.customGlyphs,
       drawBoldTextInBrightColors: options.drawBoldTextInBrightColors,
       ignoreBracketedPasteMode: options.ignoreBracketedPasteMode,
       minimumContrastRatio: options.minimumContrastRatio,
@@ -273,7 +277,7 @@ export class Renderer implements IRenderer, IDisposable, WebglPoolMember {
   private useWebGl(reason: WebglGivenUp["reason"]): boolean {
     try {
       if (!this._webglAddon) {
-        this._webglAddon = new WebglAddon();
+        this._webglAddon = new WebglAddon({ customGlyphs: this._customGlyphs });
         this._webglContextLossDisposable = this._webglAddon.onContextLoss(() => {
           this.handleWebGlContextLoss();
         });
