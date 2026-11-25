@@ -6,6 +6,7 @@ import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.servic
 import type { TauriMenu } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import type { AppWindow } from "@cogno/platform/window";
+import { Subject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NativeMenuService } from "./native-menu.service";
 
@@ -26,10 +27,9 @@ const tauriMenuStub = {
     return { kind: "item", ...config };
   }),
   newSubmenu: vi.fn(async (config: Record<string, unknown>) => ({ kind: "submenu", ...config })),
-  new: vi.fn(async ({ items }: { items: unknown[] }) => ({
-    items,
-    setAsAppMenu: vi.fn(async () => undefined),
-  })),
+  new: vi.fn(async ({ items }: { items: unknown[] }) => ({ items })),
+  setAsAppMenu: vi.fn(async () => undefined),
+  releaseAll: vi.fn(async () => undefined),
 } as unknown as TauriMenu;
 
 describe("NativeMenuService", () => {
@@ -225,6 +225,40 @@ describe("NativeMenuService", () => {
       expect(pasteInto(field)).toBe(false);
       expect(publishSpy).not.toHaveBeenCalled();
     });
+  });
+
+  it("releases the previous menu's native objects before it makes the next one's", async () => {
+    await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();
+
+    const firstCallOf = (stub: unknown) =>
+      vi.mocked(stub as () => void).mock.invocationCallOrder[0];
+    expect(firstCallOf(tauriMenuStub.releaseAll)).toBeLessThan(firstCallOf(tauriMenuStub.newItem));
+    expect(tauriMenuStub.setAsAppMenu).toHaveBeenCalledOnce();
+  });
+
+  it("on macOS builds one menu after another, never two at once", async () => {
+    const config$ = new Subject<Record<string, unknown>>();
+    const focus$ = new Subject<boolean>();
+    const service = new NativeMenuService(
+      tauriMenuStub,
+      { onFocusChanged$: focus$ } as unknown as AppWindow,
+      { platform: () => "macos" } as unknown as OsPlatform,
+      appBus,
+      keybindService,
+      appWiringService as never,
+      { config$ } as unknown as ConfigService,
+      destroyRef,
+    );
+    const steps: string[] = [];
+    vi.mocked(tauriMenuStub.releaseAll).mockImplementation(async () => void steps.push("release"));
+    vi.mocked(tauriMenuStub.setAsAppMenu).mockImplementation(async () => void steps.push("set"));
+
+    config$.next({});
+    focus$.next(true);
+    focus$.next(false);
+    await (service as unknown as { menuBuilds: Promise<void> }).menuBuilds;
+
+    expect(steps).toEqual(["release", "set", "release", "set"]);
   });
 
   it("publishes action events when menu item callbacks are executed", async () => {
