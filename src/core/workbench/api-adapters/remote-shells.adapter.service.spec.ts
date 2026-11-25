@@ -1,7 +1,7 @@
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { RemoteHostConnection } from "@cogno/core/workbench/hosts/remote-hosts.service";
 import { HostError, PairedMachineContract, SeenSessionContract } from "@cogno/platform";
+import { HostConnectionContract } from "@cogno/platform/hosts";
 import { BehaviorSubject, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RemoteShellsAdapterService } from "./remote-shells.adapter.service";
@@ -10,7 +10,7 @@ const laptop: PairedMachineContract = { name: "laptop", endpointId: "laptop-id" 
 const office: PairedMachineContract = { name: "office", endpointId: "office-id" };
 
 describe("RemoteShellsAdapterService", () => {
-  let connections$: BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>;
+  let connections$: BehaviorSubject<ReadonlyMap<string, HostConnectionContract>>;
   let machines$: BehaviorSubject<readonly PairedMachineContract[]>;
   let rename: ReturnType<typeof vi.fn>;
   let removePaired: ReturnType<typeof vi.fn>;
@@ -31,7 +31,7 @@ describe("RemoteShellsAdapterService", () => {
   let adapter: RemoteShellsAdapterService;
 
   beforeEach(() => {
-    connections$ = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(new Map());
+    connections$ = new BehaviorSubject<ReadonlyMap<string, HostConnectionContract>>(new Map());
     machines$ = new BehaviorSubject<readonly PairedMachineContract[]>([office]);
     rename = vi.fn().mockResolvedValue(undefined);
     removePaired = vi.fn().mockResolvedValue(true);

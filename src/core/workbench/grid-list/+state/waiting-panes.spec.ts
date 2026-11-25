@@ -1,12 +1,9 @@
 import { ApplicationRef, EnvironmentInjector, provideZonelessChangeDetection } from "@angular/core";
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
-import {
-  RemoteHostConnection,
-  RemoteHostsService,
-} from "@cogno/core/workbench/hosts/remote-hosts.service";
+import { RemoteHostsService } from "@cogno/core/workbench/hosts/remote-hosts.service";
 import { HostError } from "@cogno/platform";
-import { HostInfo, Hosts } from "@cogno/platform/hosts";
+import { HostConnectionContract, Hosts } from "@cogno/platform/hosts";
 import { BehaviorSubject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
@@ -18,8 +15,7 @@ TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 const pane = { terminalId: "t1", shellName: "zsh", host: "office-id" } as Pane & { host: string };
 
 describe("WaitingPanes", () => {
-  let connections: BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>;
-  let info: HostInfo | undefined;
+  let connections: BehaviorSubject<ReadonlyMap<string, HostConnectionContract>>;
   let connect: ReturnType<typeof vi.fn>;
   let session: ReturnType<typeof vi.fn>;
   let publish: ReturnType<typeof vi.fn>;
@@ -36,12 +32,8 @@ describe("WaitingPanes", () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
-    connections = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(new Map());
-    info = undefined;
-    connect = vi.fn(async () => {
-      info = { os: "linux" };
-      return info;
-    });
+    connections = new BehaviorSubject<ReadonlyMap<string, HostConnectionContract>>(new Map());
+    connect = vi.fn(async () => ({ os: "linux" }));
     session = vi.fn(async () => TauriMockFactory.createSessionInfo("t1"));
     publish = vi.fn();
     enabled$ = new BehaviorSubject(true);
@@ -49,7 +41,7 @@ describe("WaitingPanes", () => {
       TestBed.inject(EnvironmentInjector),
       TestBed.inject(ApplicationRef),
       { publish } as never,
-      { connections$: connections, info: () => info, connect } as unknown as RemoteHostsService,
+      { connections$: connections, connect } as unknown as RemoteHostsService,
       { session } as unknown as Hosts,
       { enabled$, machines$: new BehaviorSubject([]), labelOf: () => "office" } as never,
       { onDestroy: vi.fn() } as never,
@@ -138,9 +130,9 @@ describe("WaitingPanes", () => {
     await settle();
     expect(found).toEqual([]);
 
-    // The user connects from the Remote panel.
-    info = { os: "macos" };
-    connections.next(new Map([["office-id", { status: "connected", ...info }]]));
+    // The user connects from the Remote panel, in whichever window.
+    connect.mockResolvedValue({ os: "macos" });
+    connections.next(new Map([["office-id", { status: "connected" }]]));
     await settle();
 
     expect(found).toEqual([{ session: TauriMockFactory.createSessionInfo("t1"), os: "macos" }]);

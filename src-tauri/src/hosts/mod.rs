@@ -21,8 +21,8 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult, ErrorCode};
 use crate::host_connection::{Ending, HostConnection, OnLost};
+use connections::Connections;
 pub use connections::RemoteState;
-use connections::{Connections, Lost};
 use routes::{Route, TerminalRoutes};
 use webview::{TerminalExit, WebviewEvents};
 
@@ -106,7 +106,7 @@ impl Hosts {
     /// connection to the same host - it was hung up and set up again - and
     /// its terminals stay.
     fn lost(&self, host: Option<&str>, connection: u64, ending: Ending) {
-        let lost = self.connections.forget(host, connection);
+        let was_current = self.connections.ended(host, connection, ending);
         let exit = match ending {
             Ending::HungUp => TerminalExit::HungUp,
             Ending::Lost => TerminalExit::ConnectionLost,
@@ -115,17 +115,8 @@ impl Hosts {
             self.events.streams.close(route.stream);
             self.events.exit(&route.window, &terminal_id, exit);
         }
-        // Replaced: the host is still there.
-        if lost == Lost::Replaced {
-            return;
-        }
-        if ending != Ending::Lost {
-            return;
-        }
-        match host {
-            // Every window says so; a hang-up they know of already.
-            Some(id) => self.connections.lost_remote(id),
-            None => log::error!(target: "host", "the connection to this machine's host was lost"),
+        if host.is_none() && was_current && ending == Ending::Lost {
+            log::error!(target: "host", "the connection to this machine's host was lost");
         }
     }
 

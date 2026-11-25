@@ -137,10 +137,10 @@ export class RemotePanelService {
         .map((host) => host.id),
     );
     const known = this.shells();
-    const kept = new Map([...known].filter(([name]) => connected.has(name)));
+    const kept = new Map([...known].filter(([id]) => connected.has(id)));
     if (kept.size !== known.size) this.shellsSignal.set(kept);
-    for (const name of connected) {
-      if (!known.has(name)) void this.load(name);
+    for (const id of connected) {
+      if (!known.has(id)) void this.load(id);
     }
   }
 

@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { HostErrorCode, invokeHost } from "./host-error";
+import { HostErrorCode, invokeHost, toHostError } from "./host-error";
 import { OsType } from "./os";
 import { SeenSessionContract } from "./session-contracts";
 
@@ -15,8 +15,11 @@ export type HostInfo = {
  */
 export type HostConnectionContract =
   | { status: "connecting" }
-  | ({ status: "connected" } & HostInfo)
-  | { status: "failed"; failure: { code: HostErrorCode; message: string } };
+  | { status: "connected" }
+  | { status: "failed"; failure: ConnectFailure };
+
+/** Why a connection failed: a host's or the app's code, and words for the user. */
+export type ConnectFailure = { code: HostErrorCode; message: string };
 
 /** To every window: what `connections` returns changed. */
 const HOST_CONNECTIONS_CHANGED_EVENT = "host-connections-changed";
@@ -79,8 +82,17 @@ export class Hosts {
   }
 
   /** How far the connection to each paired machine is, by its id. */
-  connections(): Promise<Record<string, HostConnectionContract>> {
-    return invokeHost("host_connections");
+  async connections(): Promise<Record<string, HostConnectionContract>> {
+    const connections =
+      await invokeHost<Record<string, HostConnectionContract>>("host_connections");
+    for (const connection of Object.values(connections)) {
+      if (connection.status === "failed") {
+        // A code of a later app is unknown here, as with every failure.
+        const { code, message } = toHostError(connection.failure);
+        connection.failure = { code, message };
+      }
+    }
+    return connections;
   }
 
   /** What `connections` returns changed, whichever window caused it. */

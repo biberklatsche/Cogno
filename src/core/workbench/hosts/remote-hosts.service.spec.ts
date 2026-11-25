@@ -1,7 +1,6 @@
-import { HostError } from "@cogno/platform";
-import { HostConnectionContract, HostInfo, Hosts } from "@cogno/platform/hosts";
+import { HostConnectionContract, Hosts } from "@cogno/platform/hosts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { isWorthRetrying, RemoteHostConnection, RemoteHostsService } from "./remote-hosts.service";
+import { isWorthRetrying, RemoteHostsService } from "./remote-hosts.service";
 
 describe("RemoteHostsService", () => {
   /** What the app says of its connections. */
@@ -10,14 +9,11 @@ describe("RemoteHostsService", () => {
   let hangUp: ReturnType<typeof vi.fn>;
   let changed: () => void;
   let service: RemoteHostsService;
-  let seen: ReadonlyMap<string, RemoteHostConnection>;
+  let seen: ReadonlyMap<string, HostConnectionContract>;
 
   const settled = () => new Promise((resolve) => setTimeout(resolve));
 
-  beforeEach(async () => {
-    app = {};
-    connect = vi.fn();
-    hangUp = vi.fn().mockResolvedValue(undefined);
+  function create(): RemoteHostsService {
     const hosts = {
       connect,
       disconnect: hangUp,
@@ -27,92 +23,57 @@ describe("RemoteHostsService", () => {
         return Promise.resolve(() => undefined);
       }),
     } as unknown as Hosts;
-    service = new RemoteHostsService(hosts, { onDestroy: vi.fn() } as never);
-    service.connections$.subscribe((connections) => (seen = connections));
-    await settled();
+    return new RemoteHostsService(hosts, { onDestroy: vi.fn() } as never);
+  }
+
+  beforeEach(() => {
+    app = {};
+    connect = vi.fn().mockResolvedValue({ os: "linux" });
+    hangUp = vi.fn().mockResolvedValue(undefined);
   });
 
   it("knows at its start what the app is connected to, from whichever window", async () => {
-    app = { mac: { status: "connected", os: "macos" } };
-    const late = new RemoteHostsService(
-      {
-        connections: () => Promise.resolve(app),
-        onConnectionsChanged: () => Promise.resolve(() => undefined),
-      } as unknown as Hosts,
-      { onDestroy: vi.fn() } as never,
-    );
+    app = { mac: { status: "connected" } };
+    service = create();
+    service.connections$.subscribe((connections) => (seen = connections));
     await settled();
 
-    expect(late.info("mac")).toEqual({ os: "macos" });
+    expect(seen.get("mac")).toEqual({ status: "connected" });
   });
 
   it("follows what the app says: connecting, connected, lost, hung up", async () => {
+    service = create();
+    service.connections$.subscribe((connections) => (seen = connections));
+    await settled();
     expect(seen.get("mac")).toBeUndefined();
-
-    app = { mac: { status: "connecting" } };
-    changed();
-    await settled();
-    expect(seen.get("mac")).toEqual({ status: "connecting" });
-    expect(service.info("mac")).toBeUndefined();
-
-    app = { mac: { status: "connected", os: "macos" } };
-    changed();
-    await settled();
-    expect(service.info("mac")).toEqual({ os: "macos" });
 
     const failure = { code: "connectionLost", message: "The connection to the host is lost" };
-    app = { mac: { status: "failed", failure } as HostConnectionContract };
-    changed();
-    await settled();
-    expect(seen.get("mac")).toEqual({ status: "failed", failure });
-    expect(service.info("mac")).toBeUndefined();
-
-    app = {};
-    changed();
-    await settled();
-    expect(seen.get("mac")).toBeUndefined();
+    const said: Record<string, HostConnectionContract>[] = [
+      { mac: { status: "connecting" } },
+      { mac: { status: "connected" } },
+      { mac: { status: "failed", failure } as HostConnectionContract },
+      {},
+    ];
+    for (const next of said) {
+      app = next;
+      changed();
+      await settled();
+      expect(seen.get("mac")).toEqual(next["mac"]);
+    }
   });
 
-  it("knows a machine as connected once connecting returned", async () => {
-    connect.mockImplementation(() => {
-      app = { box: { status: "connected", os: "linux" } };
-      return Promise.resolve({ os: "linux" } satisfies HostInfo);
-    });
+  it("asks the app to connect and to hang up, and keeps nothing of its own", async () => {
+    service = create();
+    service.connections$.subscribe((connections) => (seen = connections));
 
     await expect(service.connect("box")).resolves.toEqual({ os: "linux" });
+    await service.disconnect("box");
+    await settled();
 
     expect(connect).toHaveBeenCalledWith("box");
-    // Without waiting for the app's word of the change.
-    expect(service.info("box")).toEqual({ os: "linux" });
-  });
-
-  it("fails with the app's code and reason, and says so", async () => {
-    const failure = { code: "noCognoThere", message: "No Cogno host answered" } as const;
-    connect.mockImplementation(() => {
-      app = { mac: { status: "failed", failure } };
-      return Promise.reject(new HostError(failure.code, failure.message));
-    });
-
-    const failed = service.connect("mac");
-
-    await expect(failed).rejects.toBeInstanceOf(HostError);
-    await expect(failed).rejects.toMatchObject(failure);
-    expect(seen.get("mac")).toEqual({ status: "failed", failure });
-  });
-
-  it("knows a machine as hung up on once hanging up returned", async () => {
-    app = { mac: { status: "connected", os: "macos" } };
-    changed();
-    await settled();
-    hangUp.mockImplementation(() => {
-      app = {};
-      return Promise.resolve();
-    });
-
-    await service.disconnect("mac");
-
-    expect(hangUp).toHaveBeenCalledWith("mac");
-    expect(service.info("mac")).toBeUndefined();
+    expect(hangUp).toHaveBeenCalledWith("box");
+    // The app said nothing of a connection: none is shown.
+    expect(seen.size).toBe(0);
   });
 
   it("calls a failure worth retrying unless the machine has to be paired first", () => {

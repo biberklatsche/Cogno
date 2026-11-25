@@ -1,13 +1,7 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { HostConnectionContract, HostInfo, Hosts } from "@cogno/platform/hosts";
+import { ConnectFailure, HostConnectionContract, HostInfo, Hosts } from "@cogno/platform/hosts";
 import { BehaviorSubject, Observable } from "rxjs";
-
-/** How far the connection to a host is; a host without an entry is not connected. */
-export type RemoteHostConnection = HostConnectionContract;
-
-/** Why a connection failed: a host's or the app's code, and words for the user. */
-export type ConnectFailure = Extract<RemoteHostConnection, { status: "failed" }>["failure"];
 
 /**
  * Whether connecting again could work after `failure`. Not to a machine
@@ -32,14 +26,14 @@ export function isWorthRetrying(failure: ConnectFailure): boolean {
  */
 @Injectable({ providedIn: "root" })
 export class RemoteHostsService {
-  private readonly connections = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(
+  private readonly connections = new BehaviorSubject<ReadonlyMap<string, HostConnectionContract>>(
     new Map(),
   );
   /** Counts the reads: an answer counts only while it is the newest. */
   private reads = 0;
 
   /** How far each host's connection is, by the host's id; the current state first. */
-  readonly connections$: Observable<ReadonlyMap<string, RemoteHostConnection>> =
+  readonly connections$: Observable<ReadonlyMap<string, HostConnectionContract>> =
     this.connections.asObservable();
 
   constructor(
@@ -52,40 +46,26 @@ export class RemoteHostsService {
     void this.read();
   }
 
-  /** What a host said about itself, while its connection stands. */
-  info(id: string): HostInfo | undefined {
-    const connection = this.connections.value.get(id);
-    return connection?.status === "connected" ? { os: connection.os } : undefined;
-  }
-
   /**
    * Connects to the host unless the connection stands; the app sets one up
-   * once, however many ask. Rejects with a `HostError`.
+   * once, however many ask. Resolves with what the host says about itself;
+   * rejects with a `HostError`.
    */
-  async connect(id: string): Promise<HostInfo> {
-    try {
-      return await this.hosts.connect(id);
-    } finally {
-      // Known here once this returns, not only when the app's word arrives.
-      await this.read();
-    }
+  connect(id: string): Promise<HostInfo> {
+    return this.hosts.connect(id);
   }
 
   /**
    * Hangs up on the host, or gives up connecting to it, for every window.
    * The panes that show its shells close; the shells themselves run on.
    */
-  async disconnect(id: string): Promise<void> {
-    try {
-      await this.hosts.disconnect(id);
-    } finally {
-      await this.read();
-    }
+  disconnect(id: string): Promise<void> {
+    return this.hosts.disconnect(id);
   }
 
   private async read(): Promise<void> {
     const question = ++this.reads;
-    let connections: ReadonlyMap<string, RemoteHostConnection>;
+    let connections: ReadonlyMap<string, HostConnectionContract>;
     try {
       connections = new Map(Object.entries(await this.hosts.connections()));
     } catch (error) {

@@ -1271,12 +1271,13 @@ Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
   eine Antwort wartet. Ihre Terminals enden mit `hungUp`. Bricht die
   Verbindung dagegen von selbst ab, enden sie mit `connectionLost`.
 - **Der Verbindungsstand gehört der App**, wie die Verbindung selbst: je
-  gekoppeltem Rechner `connecting`, `connected` (mit dem System dort) oder
+  gekoppeltem Rechner `connecting`, `connected` oder
   `failed` (mit Code und Grund), ohne Eintrag nicht verbunden. Eine
   abgebrochene Verbindung steht als `failed` (`connectionLost`), bis wieder
   verbunden oder aufgelegt wird. Die Fenster erfragen den Stand
   (`host_connections`) und hören von jeder Änderung
-  (`host-connections-changed`); keins führt einen eigenen. So zeigen alle
+  (`host-connections-changed`); keins führt einen eigenen, und keins meldet
+  einen Abbruch eigens. So zeigen alle
   Fenster dasselbe, gleich welches verbunden oder aufgelegt hat.
 - **Wer nicht antwortet, hält nur sich auf.** Die Prozesse unter den Shells
   (`terminal_processes`) fragt die App bei allen Hosts zugleich und wartet

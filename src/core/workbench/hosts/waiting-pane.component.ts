@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from "@angular/core";
-import { ConnectFailure, isWorthRetrying } from "./remote-hosts.service";
+import { ConnectFailure } from "@cogno/platform/hosts";
+import { isWorthRetrying } from "./remote-hosts.service";
 
 /** Why a pane of another machine shows no terminal (yet). */
 export type WaitingPaneState =

@@ -15,7 +15,7 @@ import {
   WaitingPaneState,
 } from "@cogno/core/workbench/hosts/waiting-pane.component";
 import { isHostError, SeenSessionContract, toHostError } from "@cogno/platform";
-import { Hosts } from "@cogno/platform/hosts";
+import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { OsType } from "@cogno/platform/os";
 import { TerminalId } from "@cogno/shared/domain";
 import { filter } from "rxjs";
@@ -67,7 +67,7 @@ export class WaitingPanes {
           waiting.state.status === "connectFailed" &&
           states.get(waiting.host)?.status === "connected"
         ) {
-          this.lookForShell(waiting);
+          this.connect(waiting);
         }
       }
     });
@@ -117,7 +117,7 @@ export class WaitingPanes {
       attempt: 0,
     };
     this.waiting.set(terminalId, waiting);
-    this.findShell(waiting);
+    this.connect(waiting);
   }
 
   /**
@@ -150,7 +150,7 @@ export class WaitingPanes {
       const view = createComponent(WaitingPaneComponent, { environmentInjector: this.env });
       view.setInput("host", this.pairing.labelOf(waiting.host));
       view.setInput("state", waiting.state);
-      view.instance.retry.subscribe(() => this.findShell(waiting));
+      view.instance.retry.subscribe(() => this.connect(waiting));
       view.instance.closePane.subscribe(() =>
         this.bus.publish(ActionFired.create("close_terminal", undefined, undefined, terminalId)),
       );
@@ -170,41 +170,28 @@ export class WaitingPanes {
     waiting.view?.destroy();
   }
 
-  private findShell(waiting: WaitingPane): void {
-    if (this.remoteHosts.info(waiting.host)) {
-      this.lookForShell(waiting);
-    } else {
-      this.connect(waiting);
-    }
-  }
-
+  /**
+   * Connects the pane's machine and asks it for the shell. A connection
+   * that stands is the answer at once: the app sets one up only when there
+   * is none.
+   */
   private connect(waiting: WaitingPane): void {
     const attempt = this.begin(waiting, { status: "connecting" });
     this.remoteHosts.connect(waiting.host).then(
-      () => this.isCurrent(waiting, attempt) && this.lookForShell(waiting),
+      (info) => this.isCurrent(waiting, attempt) && this.lookForShell(waiting, info),
       (error: unknown) => {
         if (!this.isCurrent(waiting, attempt)) return;
-        const failure = toHostError(error);
-        this.setState(waiting, {
-          status: "connectFailed",
-          failure: { code: failure.code, message: failure.message },
-        });
+        this.setState(waiting, { status: "connectFailed", failure: toHostError(error) });
       },
     );
   }
 
-  private lookForShell(waiting: WaitingPane): void {
+  private lookForShell(waiting: WaitingPane, info: HostInfo): void {
     const attempt = this.begin(waiting, { status: "lookingForShell" });
     const terminalId = waiting.terminalId;
     this.hosts.session(waiting.host, terminalId).then(
       (session) => {
-        const info = this.remoteHosts.info(waiting.host);
         if (!this.isCurrent(waiting, attempt)) return;
-        if (!info) {
-          // Hung up while the answer was on its way.
-          this.connect(waiting);
-          return;
-        }
         this.stop(terminalId);
         waiting.onFound({ session, os: info.os });
       },

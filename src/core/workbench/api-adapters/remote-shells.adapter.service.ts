@@ -8,14 +8,13 @@ import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/sessi
 import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
 import {
   isWorthRetrying,
-  RemoteHostConnection,
   RemoteHostsService,
 } from "@cogno/core/workbench/hosts/remote-hosts.service";
 import { shownByOtherCogno } from "@cogno/core/workbench/hosts/running-shell";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { isHostError, PairedMachineContract, Pairing, SeenSessionContract } from "@cogno/platform";
-import { Hosts } from "@cogno/platform/hosts";
+import { HostConnectionContract, Hosts } from "@cogno/platform/hosts";
 import { TerminalId } from "@cogno/shared/domain";
 import { combineLatest, defer, distinctUntilChanged, filter, map, merge, Observable } from "rxjs";
 import { TerminalNavigatorAdapterService } from "./terminal-navigator.adapter.service";
@@ -72,7 +71,7 @@ function toRemoteShell(session: SeenSessionContract): RemoteShell {
 /** The paired machine `machine`, and how far the connection to it is. */
 function toRemoteHost(
   machine: PairedMachineContract,
-  connection: RemoteHostConnection | undefined,
+  connection: HostConnectionContract | undefined,
 ): RemoteHost {
   return {
     id: machine.endpointId,
