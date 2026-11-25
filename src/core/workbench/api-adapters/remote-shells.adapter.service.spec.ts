@@ -53,9 +53,6 @@ describe("RemoteShellsAdapterService", () => {
         get machines() {
           return machines$.value;
         },
-        get pairedNames() {
-          return machines$.value.map(({ name }) => name);
-        },
         nameOf: (id: string) => machines$.value.find((machine) => machine.endpointId === id)?.name,
         labelOf: (id: string) =>
           machines$.value.find((machine) => machine.endpointId === id)?.name ?? "the other machine",
@@ -122,8 +119,11 @@ describe("RemoteShellsAdapterService", () => {
   describe("a paired machine", () => {
     beforeEach(() => machines$.next([office, laptop]));
 
-    it("is renamed in the pairing, to a name no other remote has; its connection stays", async () => {
-      await expect(adapter.renameHost("laptop-id", "office")).rejects.toThrow("already");
+    it("is renamed in the pairing, also to the name of another remote; its connection stays", async () => {
+      await adapter.renameHost("laptop-id", "office");
+      expect(rename).toHaveBeenLastCalledWith("laptop-id", "office");
+      rename.mockClear();
+
       await expect(adapter.renameHost("laptop-id", "  ")).rejects.toThrow();
       expect(rename).not.toHaveBeenCalled();
 

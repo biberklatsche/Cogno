@@ -35,16 +35,17 @@ struct PairedFile {
 /// The pairing files of one Cogno home.
 pub struct Store {
     home: PathBuf,
-    /// Held from reading `paired.json` to writing it back: a change never
-    /// writes over another one made meanwhile.
-    changing: Mutex<()>,
+    /// The paired machines as `paired.json` has them, once read: only this
+    /// app writes the file. Held from reading to writing back, so a change
+    /// never writes over another one made meanwhile.
+    paired: Mutex<Option<Vec<PairedMachine>>>,
 }
 
 impl Store {
     pub fn new(home: &Path) -> Self {
         Self {
             home: home.to_path_buf(),
-            changing: Mutex::new(()),
+            paired: Mutex::new(None),
         }
     }
 
@@ -67,6 +68,22 @@ impl Store {
     /// A file of a later Cogno is read as far as it is understood - and
     /// `save` refuses to overwrite it.
     pub fn paired(&self) -> io::Result<Vec<PairedMachine>> {
+        let mut known = lock(&self.paired);
+        self.known(&mut known).cloned()
+    }
+
+    /// What `known` holds, read from the file the first time.
+    fn known<'a>(
+        &self,
+        known: &'a mut Option<Vec<PairedMachine>>,
+    ) -> io::Result<&'a mut Vec<PairedMachine>> {
+        if known.is_none() {
+            *known = Some(self.read()?);
+        }
+        Ok(known.as_mut().expect("read above"))
+    }
+
+    fn read(&self) -> io::Result<Vec<PairedMachine>> {
         match std::fs::read(self.paired_path()) {
             Ok(bytes) => {
                 let file: PairedFile = serde_json::from_slice(&bytes).map_err(invalid)?;
@@ -79,10 +96,11 @@ impl Store {
 
     /// Changes the paired machines as `change` says, and saves them.
     pub fn change<T>(&self, change: impl FnOnce(&mut Vec<PairedMachine>) -> T) -> io::Result<T> {
-        let _changing = lock(&self.changing);
-        let mut paired = self.paired()?;
+        let mut known = lock(&self.paired);
+        let mut paired = self.known(&mut known)?.clone();
         let result = change(&mut paired);
         self.save(&paired)?;
+        *known = Some(paired);
         Ok(result)
     }
 
@@ -162,9 +180,11 @@ mod tests {
             endpoint_id: SecretKey::generate().public(),
         }];
 
-        store.save(&paired).unwrap();
+        store.change(|machines| *machines = paired.clone()).unwrap();
 
         assert_eq!(store.paired().unwrap(), paired);
+        // Also for the app started the next time.
+        assert_eq!(Store::new(&store.home).paired().unwrap(), paired);
     }
 
     #[test]

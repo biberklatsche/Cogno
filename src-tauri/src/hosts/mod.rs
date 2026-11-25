@@ -230,7 +230,11 @@ impl HostState {
         let hosts = &self.0;
         hosts.connections.connect_remote(
             id,
-            || pairing.dial(id),
+            || {
+                let dialing = pairing.dial(id)?;
+                let ender = dialing.ender();
+                Ok((dialing, ender))
+            },
             |dialing| dialing.introduce(hosts.events.clone(), hosts.on_lost(Some(id.to_string()))),
         )
     }

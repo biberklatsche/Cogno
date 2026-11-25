@@ -13,7 +13,7 @@ use tokio::task::JoinHandle;
 use tokio_util::io::SyncIoBridge;
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
-use crate::host_connection::{HangUp, HostConnection, HostEvents, OnLost, Underway};
+use crate::host_connection::{HangUp, HostConnection, HostEvents, OnLost};
 
 pub const HOST_ALPN: &[u8] = b"cogno/host/1";
 
@@ -84,8 +84,10 @@ impl Dialing {
     }
 }
 
-impl Underway for Dialing {
-    fn ender(&self) -> HangUp {
+impl Dialing {
+    /// What gives up on the dial: `introduce` fails, or the connection it
+    /// made ends.
+    pub fn ender(&self) -> HangUp {
         let task = self.task.abort_handle();
         let connection = self.connection.clone();
         Box::new(move || {

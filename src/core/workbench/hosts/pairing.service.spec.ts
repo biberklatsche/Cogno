@@ -96,7 +96,7 @@ describe("PairingService", () => {
       nearby: [{ id: "def", name: "office" }],
       invitation: undefined,
     });
-    expect(service.pairedNames).toEqual(["laptop"]);
+    expect(service.machines.map(({ name }) => name)).toEqual(["laptop"]);
   });
 
   it("says why pairing does not work, and knows no paired machines then", async () => {
@@ -108,7 +108,7 @@ describe("PairingService", () => {
       available: false,
       reason: "This machine's Cogno host could not be opened",
     });
-    expect(service.pairedNames).toEqual([]);
+    expect(service.machines).toEqual([]);
   });
 
   it("takes only the newest answer, also when an older one comes last", async () => {
@@ -122,7 +122,7 @@ describe("PairingService", () => {
     answerFirst(stateOf({ machines: [{ name: "old", endpointId: "a" }] }));
     await settled();
 
-    expect(service.pairedNames).toEqual(["new"]);
+    expect(service.machines.map(({ name }) => name)).toEqual(["new"]);
   });
 
   it("switches pairing on with the relay of the config, or without one when it is off", async () => {

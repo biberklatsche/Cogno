@@ -90,13 +90,6 @@ pub struct HostConnection {
     hung_up: Arc<AtomicBool>,
 }
 
-/// A connection to another machine on its way - a paired machine dialed -
-/// whose host has not introduced itself yet.
-pub trait Underway {
-    /// What gives up on it: `introduce` fails, or the connection it made ends.
-    fn ender(&self) -> HangUp;
-}
-
 impl HostConnection {
     /// Talks to this machine's host over `stream`.
     pub fn to_this_machine(

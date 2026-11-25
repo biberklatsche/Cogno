@@ -49,13 +49,13 @@ describe("RemoteHostFormComponent", () => {
   });
 
   it("says why it did not save, and stays open", async () => {
-    renameHost.mockResolvedValue("There is a remote called 'office' already.");
+    renameHost.mockResolvedValue("A remote needs a name.");
     open(remote("lab"));
     type("office");
 
     await form.save(new Event("submit"));
 
-    expect(form.error()).toBe("There is a remote called 'office' already.");
+    expect(form.error()).toBe("A remote needs a name.");
     expect(closed).not.toHaveBeenCalled();
   });
 });

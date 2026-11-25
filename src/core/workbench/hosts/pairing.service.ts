@@ -82,11 +82,6 @@ export class PairingService extends PairingPort {
     return this.machines.find((machine) => machine.endpointId === id)?.name;
   }
 
-  /** The names of the paired machines, as far as they are known. */
-  get pairedNames(): readonly string[] {
-    return this.machines.map(({ name }) => name);
-  }
-
   async enable(): Promise<void> {
     try {
       await this.pairing.enable(relayOf(this.configService.config));

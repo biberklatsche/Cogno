@@ -45,17 +45,6 @@ const LOCAL_SERVICE_NAME: &str = "cogno";
 /// What a machine is called that does not say how it calls itself.
 const UNNAMED_MACHINE: &str = "machine";
 
-/// The relay machines of different networks find and reach each other
-/// through.
-#[derive(Clone)]
-struct Relay {
-    url: RelayUrl,
-    map: RelayMap,
-    /// Tests run a relay with a certificate of their own.
-    #[cfg(test)]
-    insecure: bool,
-}
-
 /// What the user sees of pairing; told through `PairingEvents::changed`.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -208,31 +197,28 @@ impl Pairing {
     /// endpoint that runs with that relay is left as it is, one that runs
     /// with another starts again: every window asks, one endpoint follows.
     pub async fn enable(&self, relay: Option<&str>) -> Result<(), PairingError> {
-        let relay = match relay {
-            Some(address) => {
-                let url: RelayUrl = address.parse().map_err(|_| {
+        let relay = relay
+            .map(|address| {
+                address.parse::<RelayUrl>().map_err(|_| {
                     PairingError::Unreachable(format!("{address} is not the address of a relay"))
-                })?;
-                Some(Relay {
-                    map: RelayMap::from(url.clone()),
-                    url,
-                    #[cfg(test)]
-                    insecure: false,
                 })
-            }
-            None => None,
-        };
+            })
+            .transpose()?;
         self.start(relay, true).await
     }
 
     /// Starts the endpoint. Without `local_network`, machines are neither
-    /// announced nor found there: for tests of the way through the relay.
-    async fn start(&self, relay: Option<Relay>, local_network: bool) -> Result<(), PairingError> {
+    /// announced nor found there: for tests of the way through the relay,
+    /// which run one with a certificate of their own.
+    async fn start(
+        &self,
+        relay: Option<RelayUrl>,
+        local_network: bool,
+    ) -> Result<(), PairingError> {
         let _switching = self.0.switching.lock().await;
-        let wanted = relay.as_ref().map(|relay| &relay.url);
         let runs_as_wanted = lock(&self.0.endpoint)
             .as_ref()
-            .map(|running| running.relay.as_ref() == wanted);
+            .map(|running| running.relay == relay);
         match runs_as_wanted {
             Some(true) => return Ok(()),
             Some(false) => self.stop().await,
@@ -241,7 +227,7 @@ impl Pairing {
         let unreachable =
             |error: &dyn std::fmt::Display| PairingError::Unreachable(error.to_string());
         let relay_mode = match &relay {
-            Some(relay) => RelayMode::Custom(relay.map.clone()),
+            Some(relay) => RelayMode::Custom(RelayMap::from(relay.clone())),
             None => RelayMode::Disabled,
         };
         let builder = Endpoint::builder(presets::Minimal)
@@ -249,7 +235,7 @@ impl Pairing {
             .relay_mode(relay_mode)
             .alpns(vec![PAIR_ALPN.to_vec(), HOST_ALPN.to_vec()]);
         #[cfg(test)]
-        let builder = if relay.as_ref().is_some_and(|relay| relay.insecure) {
+        let builder = if !local_network {
             builder.ca_tls_config(iroh::tls::CaTlsConfig::insecure_skip_verify())
         } else {
             builder
@@ -281,10 +267,7 @@ impl Pairing {
                 });
             }
         });
-        *lock(&self.0.endpoint) = Some(Running {
-            endpoint,
-            relay: relay.map(|relay| relay.url),
-        });
+        *lock(&self.0.endpoint) = Some(Running { endpoint, relay });
         self.0.events.changed();
         Ok(())
     }
@@ -451,7 +434,7 @@ impl Pairing {
                 return known.clone();
             }
             let machine = PairedMachine {
-                name: unique_name(wanted.as_deref(), paired),
+                name: name_of(wanted.as_deref()),
                 endpoint_id: peer,
             };
             paired.push(machine.clone());
@@ -636,27 +619,20 @@ fn own_name() -> String {
     cogno_host::identity::machine_name().unwrap_or_else(|| UNNAMED_MACHINE.to_string())
 }
 
-/// `wanted`, or - when that is taken or missing - the first of "wanted 2",
-/// "wanted 3", ... that no paired machine has.
-fn unique_name(wanted: Option<&str>, paired: &[PairedMachine]) -> String {
-    let base = wanted
+/// What a machine just paired is called: as it calls itself. Two machines
+/// may be called alike - they are told apart by their ids - and the user
+/// can rename either.
+fn name_of(wanted: Option<&str>) -> String {
+    wanted
         .map(str::trim)
         .filter(|name| !name.is_empty())
-        .unwrap_or(UNNAMED_MACHINE);
-    let is_free = |name: &str| !paired.iter().any(|m| m.name == name);
-    if is_free(base) {
-        return base.to_string();
-    }
-    (2..)
-        .map(|n| format!("{base} {n}"))
-        .find(|name| is_free(name))
-        .expect("a free name")
+        .unwrap_or(UNNAMED_MACHINE)
+        .to_string()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use iroh::SecretKey;
 
     /// What a test's pairing told the app.
     #[derive(Default)]
@@ -695,7 +671,7 @@ mod tests {
 
     /// A machine that reaches others through `relay` alone: it neither
     /// announces itself in the local network nor finds anyone there.
-    async fn machine_behind(relay: &Relay) -> (Pairing, Arc<Told>) {
+    async fn machine_behind(relay: &RelayUrl) -> (Pairing, Arc<Told>) {
         let (pairing, told) = machine_off();
         pairing.start(Some(relay.clone()), false).await.unwrap();
         pairing.endpoint().unwrap().online().await;
@@ -704,12 +680,7 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn machines_of_different_networks_pair_by_an_invitation_and_connect_through_the_relay() {
-        let (map, url, _server) = iroh::test_utils::run_relay_server().await.unwrap();
-        let relay = Relay {
-            url,
-            map,
-            insecure: true,
-        };
+        let (_, relay, _server) = iroh::test_utils::run_relay_server().await.unwrap();
         let (office, office_told) = machine_behind(&relay).await;
         let (laptop, _) = machine_behind(&relay).await;
         // What the office shows to copy, and the laptop's user pastes.
@@ -1050,15 +1021,9 @@ mod tests {
     }
 
     #[test]
-    fn a_machine_gets_a_name_no_other_paired_machine_has() {
-        let paired = vec![PairedMachine {
-            name: "laptop".into(),
-            endpoint_id: SecretKey::generate().public(),
-        }];
-
-        assert_eq!(unique_name(Some("office"), &paired), "office");
-        assert_eq!(unique_name(Some("laptop"), &paired), "laptop 2");
-        assert_eq!(unique_name(None, &paired), "machine");
-        assert_eq!(unique_name(Some("  "), &paired), "machine");
+    fn a_machine_is_called_as_it_calls_itself_or_machine() {
+        assert_eq!(name_of(Some(" office ")), "office");
+        assert_eq!(name_of(None), "machine");
+        assert_eq!(name_of(Some("  ")), "machine");
     }
 }

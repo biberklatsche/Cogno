@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use cogno_host::sync::lock;
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
-use crate::host_connection::{HangUp, HostConnection, Underway};
+use crate::host_connection::{HangUp, HostConnection};
 
 #[derive(Default)]
 pub struct Connections {
@@ -101,21 +101,25 @@ impl Connections {
             .hang_ups
     }
 
-    /// What ends the connect to `id` in progress.
-    fn set_ender(&self, id: &str, ender: Option<HangUp>) {
-        lock(&self.attempts)
-            .entry(id.to_string())
-            .or_default()
-            .ender = ender;
+    /// What ends the connect to `id` in progress; what did before.
+    fn set_ender(&self, id: &str, ender: Option<HangUp>) -> Option<HangUp> {
+        std::mem::replace(
+            &mut lock(&self.attempts)
+                .entry(id.to_string())
+                .or_default()
+                .ender,
+            ender,
+        )
     }
 
     /// The connection to the host `id`, unless one stands: `start` sets
-    /// out for it and `introduce` waits for the host there. Hanging up on
-    /// `id` meanwhile gives up on it - also while it waits for its turn.
-    pub fn connect_remote<U: Underway>(
+    /// out for it, and says what gives up on that; `introduce` waits for
+    /// the host there. Hanging up on `id` meanwhile gives up on it - also
+    /// while it waits for its turn.
+    pub fn connect_remote<U>(
         &self,
         id: &str,
-        start: impl FnOnce() -> CommandResult<U>,
+        start: impl FnOnce() -> CommandResult<(U, HangUp)>,
         introduce: impl FnOnce(U) -> CommandResult<HostConnection>,
     ) -> CommandResult<Arc<HostConnection>> {
         let hang_ups = self.hang_ups_of(id);
@@ -132,12 +136,13 @@ impl Connections {
         if given_up() {
             return Err(hung_up());
         }
-        let starting = start()?;
-        self.set_ender(id, Some(starting.ender()));
+        let (starting, ender) = start()?;
+        self.set_ender(id, Some(ender));
         // Hung up on before the ender was there to be called.
         if given_up() {
-            self.set_ender(id, None);
-            (starting.ender())();
+            if let Some(ender) = self.set_ender(id, None) {
+                ender();
+            }
             return Err(hung_up());
         }
         let introduced = introduce(starting);
@@ -256,28 +261,16 @@ mod tests {
     use std::sync::mpsc;
     use std::time::Duration;
 
-    /// A connect on its way that notes when it is given up on.
-    #[derive(Default)]
-    struct Setting {
-        ended: Arc<AtomicBool>,
-    }
-
-    impl Underway for Setting {
-        fn ender(&self) -> HangUp {
-            let ended = self.ended.clone();
-            Box::new(move || ended.store(true, Ordering::SeqCst))
-        }
+    /// A connect on its way that nothing has to give up on.
+    fn setting() -> ((), HangUp) {
+        ((), Box::new(|| {}))
     }
 
     #[test]
     fn a_host_that_introduces_itself_is_connected_once() {
         let connections = Connections::default();
         let connect = || {
-            connections.connect_remote(
-                "office",
-                || Ok(Setting::default()),
-                |_| Ok(a_standing_connection()),
-            )
+            connections.connect_remote("office", || Ok(setting()), |_| Ok(a_standing_connection()))
         };
 
         let first = connect().unwrap();
@@ -297,9 +290,11 @@ mod tests {
             || {
                 // Hung up on before its ender was stored.
                 connections.disconnect("office");
-                Ok(Setting {
-                    ended: ended.clone(),
-                })
+                let ended = ended.clone();
+                Ok((
+                    (),
+                    Box::new(move || ended.store(true, Ordering::SeqCst)) as HangUp,
+                ))
             },
             |_| {
                 introduced = true;
@@ -318,7 +313,7 @@ mod tests {
 
         let failed = connections.connect_remote(
             "office",
-            || Ok(Setting::default()),
+            || Ok(setting()),
             |_| Err(CommandError::new(AppErrorCode::ConnectFailed, "denied")),
         );
 
@@ -337,7 +332,7 @@ mod tests {
             std::thread::spawn(move || {
                 connections.connect_remote(
                     "office",
-                    || Ok(Setting::default()),
+                    || Ok(setting()),
                     |_| {
                         entered.send(()).unwrap();
                         released.recv().unwrap();
@@ -349,18 +344,14 @@ mod tests {
         entering.recv().unwrap();
         // A second one waits for its turn; another machine does not.
         assert!(connections
-            .connect_remote(
-                "home",
-                || Ok(Setting::default()),
-                |_| Ok(a_standing_connection())
-            )
+            .connect_remote("home", || Ok(setting()), |_| Ok(a_standing_connection()))
             .is_ok());
         let second = {
             let connections = connections.clone();
             std::thread::spawn(move || {
                 connections.connect_remote(
                     "office",
-                    || -> CommandResult<Setting> { panic!("started though hung up on") },
+                    || -> CommandResult<((), HangUp)> { panic!("started though hung up on") },
                     |_| Ok(a_standing_connection()),
                 )
             })

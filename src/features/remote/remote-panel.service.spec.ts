@@ -238,10 +238,8 @@ describe("RemotePanelService", () => {
   it("hands back why a machine could not be saved", async () => {
     await expect(service.renameHost("office", "mac")).resolves.toBeUndefined();
 
-    port.renameHost.mockRejectedValue(new Error("There is a remote called 'mac' already."));
-    await expect(service.renameHost("office", "mac")).resolves.toBe(
-      "There is a remote called 'mac' already.",
-    );
+    port.renameHost.mockRejectedValue(new Error("A remote needs a name."));
+    await expect(service.renameHost("office", "mac")).resolves.toBe("A remote needs a name.");
   });
 
   it("leaves a failed connection to the host's own state", async () => {

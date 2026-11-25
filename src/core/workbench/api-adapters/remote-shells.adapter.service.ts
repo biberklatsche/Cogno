@@ -136,10 +136,6 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     const renamed = name.trim();
     if (renamed === "") throw new Error("A remote needs a name.");
     if (renamed === this.pairingService.nameOf(host)) return;
-    // Two remotes of one name could not be told apart in the panel.
-    if (this.pairingService.pairedNames.includes(renamed)) {
-      throw new Error(`There is a remote called '${renamed}' already.`);
-    }
     await this.pairing.rename(host, renamed);
   }
 
