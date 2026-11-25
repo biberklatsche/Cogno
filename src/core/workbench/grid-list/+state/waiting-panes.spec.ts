@@ -2,7 +2,6 @@ import { ApplicationRef, EnvironmentInjector, provideZonelessChangeDetection } f
 import { TestBed } from "@angular/core/testing";
 import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-browser/testing";
 import {
-  ConnectError,
   RemoteHostConnection,
   RemoteHostsService,
 } from "@cogno/core/workbench/hosts/remote-hosts.service";
@@ -52,7 +51,7 @@ describe("WaitingPanes", () => {
       { publish } as never,
       { connections$: connections, info: () => info, connect } as unknown as RemoteHostsService,
       { session } as unknown as Hosts,
-      { enabled$, nameOf: () => "office" } as never,
+      { enabled$, machines$: new BehaviorSubject([]), labelOf: () => "office" } as never,
       { onDestroy: vi.fn() } as never,
     );
     mountPoint = document.createElement("div");
@@ -97,9 +96,7 @@ describe("WaitingPanes", () => {
   });
 
   it("offers to try again after a connection that could work next time", async () => {
-    connect.mockRejectedValueOnce(
-      new ConnectError({ code: "noCognoThere", message: "No Cogno host answered" }),
-    );
+    connect.mockRejectedValueOnce(new HostError("noCognoThere", "No Cogno host answered"));
 
     waitForShell();
     await settle();
@@ -115,7 +112,7 @@ describe("WaitingPanes", () => {
 
   it("tries again by itself once pairing runs, when it was restored before that", async () => {
     enabled$.next(false);
-    connect.mockRejectedValueOnce(new ConnectError({ code: "pairingOff", message: "off" }));
+    connect.mockRejectedValueOnce(new HostError("pairingOff", "off"));
     waitForShell();
     await settle();
     expect(found).toEqual([]);
@@ -127,9 +124,7 @@ describe("WaitingPanes", () => {
   });
 
   it("offers no retry for a machine that is not paired any more", async () => {
-    connect.mockRejectedValueOnce(
-      new ConnectError({ code: "notPaired", message: "not paired any more" }),
-    );
+    connect.mockRejectedValueOnce(new HostError("notPaired", "not paired any more"));
 
     waitForShell();
     await settle();
@@ -138,7 +133,7 @@ describe("WaitingPanes", () => {
   });
 
   it("asks for the shell once the machine is connected by someone else", async () => {
-    connect.mockRejectedValueOnce(new ConnectError({ code: "connectFailed", message: "denied" }));
+    connect.mockRejectedValueOnce(new HostError("connectFailed", "denied"));
     waitForShell();
     await settle();
     expect(found).toEqual([]);

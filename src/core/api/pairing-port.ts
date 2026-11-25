@@ -30,14 +30,16 @@ export type PairingState =
 /** The number both machines show, and what the user says to it. */
 export type PairingCheck = {
   readonly check: string;
+  /** How the other machine calls itself, when it says. */
+  readonly name?: string;
   /** Whether the other machine shows the same number. */
   answer(same: boolean): void;
 };
 
 /**
  * Pairing this machine with others (ARCHITECTURE.md 2.7.3): opening pairing,
- * so two machines of one network see each other, and asking one of them to
- * pair. The paired machines themselves are remotes (`RemoteShellsPort`).
+ * so two machines of one network see each other, and asking one to pair -
+ * one seen nearby, or one in another network by its invitation. The paired machines themselves are remotes (`RemoteShellsPort`).
  * Failures reject with a `HostError` whose code says why (`pairingDeclined`,
  * `pairingUnreachable`, `pairingOff`) and whose message is for the user.
  */

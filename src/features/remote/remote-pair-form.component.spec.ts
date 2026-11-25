@@ -121,23 +121,42 @@ describe("RemotePairFormComponent", () => {
       expect(form.copied()).toBe(true);
     });
 
-    it("pairs with the machine whose invitation was pasted", async () => {
-      paste(`  ${"CD".repeat(32)} `);
+    it("pairs with the machine whose invitation was pasted, and calls it what it says", async () => {
+      let paired!: (name: string) => void;
+      pair.mockImplementation((_id: string, onCheck: (check: PairingCheck) => void) => {
+        onCheck({ check: "123456", name: "office", answer: vi.fn() });
+        return new Promise((resolve) => (paired = resolve));
+      });
+      paste(`  ${invitation} `);
 
-      await form.pairByInvitation(new Event("submit"));
+      const pairing = form.pairByInvitation(new Event("submit"));
 
-      expect(pair).toHaveBeenCalledWith("cd".repeat(32), expect.any(Function));
+      expect(pair).toHaveBeenCalledWith(invitation, expect.any(Function));
+      // Its name is known once it was asked.
+      expect(form.machineName()).toBe("office");
+
+      paired("office");
+      await pairing;
       expect(form.state()).toEqual({ step: "paired", name: "office" });
       expect(form.pasted()).toBe("");
     });
 
-    it("asks nobody when what was pasted is no invitation", async () => {
+    it("says in the app's words when what was pasted is no invitation", async () => {
+      pair.mockRejectedValue(new HostError("pairingUnreachable", "This is not an invitation."));
       paste("K7Q-4MX");
 
       await form.pairByInvitation(new Event("submit"));
 
+      expect(form.error()).toBe("This is not an invitation.");
+      expect(form.pasted()).toBe("K7Q-4MX");
+    });
+
+    it("asks nobody while nothing is pasted", async () => {
+      paste("  ");
+
+      await form.pairByInvitation(new Event("submit"));
+
       expect(pair).not.toHaveBeenCalled();
-      expect(form.error()).toContain("not an invitation");
     });
 
     it("offers no invitation where only this network is reached", () => {

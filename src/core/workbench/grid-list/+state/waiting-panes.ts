@@ -9,7 +9,7 @@ import {
 import { ActionFired } from "@cogno/core/workbench/bus/action.models";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
-import { ConnectError, RemoteHostsService } from "@cogno/core/workbench/hosts/remote-hosts.service";
+import { RemoteHostsService } from "@cogno/core/workbench/hosts/remote-hosts.service";
 import {
   WaitingPaneComponent,
   WaitingPaneState,
@@ -85,6 +85,16 @@ export class WaitingPanes {
         }
       }),
     );
+    // A machine that got its name only now, or another one: the panes that
+    // wait for it say so.
+    connections.add(
+      this.pairing.machines$.subscribe(() => {
+        for (const waiting of this.waiting.values()) {
+          waiting.view?.setInput("host", this.pairing.labelOf(waiting.host));
+          waiting.view?.changeDetectorRef.detectChanges();
+        }
+      }),
+    );
     destroyRef.onDestroy(() => connections.unsubscribe());
   }
 
@@ -138,7 +148,7 @@ export class WaitingPanes {
     if (!waiting) return;
     if (!waiting.view) {
       const view = createComponent(WaitingPaneComponent, { environmentInjector: this.env });
-      view.setInput("host", this.pairing.nameOf(waiting.host) ?? "the other machine");
+      view.setInput("host", this.pairing.labelOf(waiting.host));
       view.setInput("state", waiting.state);
       view.instance.retry.subscribe(() => this.findShell(waiting));
       view.instance.closePane.subscribe(() =>
@@ -174,7 +184,7 @@ export class WaitingPanes {
       () => this.isCurrent(waiting, attempt) && this.lookForShell(waiting),
       (error: unknown) => {
         if (!this.isCurrent(waiting, attempt)) return;
-        const failure = error instanceof ConnectError ? error.failure : toHostError(error);
+        const failure = toHostError(error);
         this.setState(waiting, {
           status: "connectFailed",
           failure: { code: failure.code, message: failure.message },

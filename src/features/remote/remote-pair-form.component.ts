@@ -16,18 +16,20 @@ import {
 } from "@cogno/core/api/pairing-port";
 import { ClipboardAccess, isHostError } from "@cogno/platform";
 
-/** How far pairing is: choosing a machine, comparing the number, waiting for the other, done. */
+/**
+ * How far pairing is: choosing a machine, comparing the number, waiting for
+ * the other, done. `name` is what the other machine is called, once known:
+ * one that was invited says it only when it is asked.
+ */
 type PairStep =
   | { readonly step: "choosing" }
-  | { readonly step: "asking"; readonly machine: NearbyMachine }
-  | { readonly step: "comparing"; readonly machine: NearbyMachine; readonly check: PairingCheck }
-  | { readonly step: "confirmed"; readonly machine: NearbyMachine }
+  | { readonly step: "asking"; readonly name?: string }
+  | { readonly step: "comparing"; readonly name?: string; readonly check: PairingCheck }
+  | { readonly step: "confirmed"; readonly name?: string }
   | { readonly step: "paired"; readonly name: string };
 
-/** What a machine's invitation looks like: its id, 64 hex digits. */
-const INVITATION = /^[0-9a-f]{64}$/i;
-/** What a machine is called before it said its name. */
-const INVITED_MACHINE = "the other machine";
+/** How long "Copied" stands on the button. */
+const COPIED_SHOWN_FOR_MS = 2000;
 
 /** Why pairing did not work, in words for the user. */
 function failureText(error: unknown): string {
@@ -56,7 +58,7 @@ function failureText(error: unknown): string {
       } @else {
         @switch (state().step) {
           @case ("paired") {
-            <div class="status">Paired with {{ pairedName() }}.</div>
+            <div class="status">Paired with {{ machineName() }}.</div>
           }
           @case ("comparing") {
             <div class="status">Does {{ machineName() }} show this number?</div>
@@ -74,7 +76,7 @@ function failureText(error: unknown): string {
           }
           @default {
             <div class="hint">
-              Open this on the other machine too. Both have to be in the same network.
+              Open this on the other machine too. A machine in the same network is listed here.
             </div>
             @for (machine of nearby(); track machine.id) {
               <div class="machine">
@@ -228,6 +230,7 @@ export class RemotePairFormComponent {
   readonly pasted = signal("");
   /** Whether this machine's invitation was just copied. */
   readonly copied = signal(false);
+  private copiedShown?: ReturnType<typeof setTimeout>;
   private readonly pairingState = signal<PairingState | undefined>(undefined);
 
   /** Why pairing does not work on this machine at all. */
@@ -245,17 +248,14 @@ export class RemotePairFormComponent {
     const state = this.pairingState();
     return state?.available ? state.invitation : undefined;
   });
+  /** What the machine being paired with is called. */
   readonly machineName = computed(() => {
     const state = this.state();
-    return "machine" in state ? state.machine.name : undefined;
+    return ("name" in state ? state.name : undefined) ?? "the other machine";
   });
   readonly check = computed(() => {
     const state = this.state();
     return state.step === "comparing" ? state.check.check : undefined;
-  });
-  readonly pairedName = computed(() => {
-    const state = this.state();
-    return state.step === "paired" ? state.name : undefined;
   });
 
   constructor(
@@ -268,7 +268,10 @@ export class RemotePairFormComponent {
       .subscribe((state) => this.pairingState.set(state));
     // Open for as long as this is shown, and no longer.
     this.setOpen(true);
-    destroyRef.onDestroy(() => this.setOpen(false));
+    destroyRef.onDestroy(() => {
+      this.setOpen(false);
+      clearTimeout(this.copiedShown);
+    });
   }
 
   private setOpen(open: boolean): void {
@@ -277,15 +280,21 @@ export class RemotePairFormComponent {
     });
   }
 
-  async pair(machine: NearbyMachine): Promise<void> {
+  /** Pairs with a machine nearby. */
+  pair(machine: NearbyMachine): Promise<void> {
+    return this.ask(machine.id, machine.name);
+  }
+
+  /** Asks the machine `id` to pair; `name` is what it is called, where known. */
+  private async ask(id: string, name?: string): Promise<void> {
     if (this.state().step !== "choosing") return;
     this.error.set(undefined);
-    this.state.set({ step: "asking", machine });
+    this.state.set({ step: "asking", name });
     try {
-      const name = await this.pairing.pair(machine.id, (check) =>
-        this.state.set({ step: "comparing", machine, check }),
+      const paired = await this.pairing.pair(id, (check) =>
+        this.state.set({ step: "comparing", name: name ?? check.name, check }),
       );
-      this.state.set({ step: "paired", name });
+      this.state.set({ step: "paired", name: paired });
     } catch (error) {
       this.state.set({ step: "choosing" });
       this.error.set(failureText(error));
@@ -302,17 +311,17 @@ export class RemotePairFormComponent {
     if (!invitation) return;
     await this.clipboard.writeText(invitation);
     this.copied.set(true);
+    clearTimeout(this.copiedShown);
+    this.copiedShown = setTimeout(() => this.copied.set(false), COPIED_SHOWN_FOR_MS);
   }
 
   /** Pairs with the machine whose invitation the user pasted. */
   async pairByInvitation(event: Event): Promise<void> {
     event.preventDefault();
     const invitation = this.pasted().trim();
-    if (!INVITATION.test(invitation)) {
-      this.error.set("This is not an invitation. Copy it on the other machine and paste it here.");
-      return;
-    }
-    await this.pair({ id: invitation.toLowerCase(), name: INVITED_MACHINE });
+    if (invitation === "") return;
+    // Whether it is one, the app says.
+    await this.ask(invitation);
     if (this.state().step === "paired") this.pasted.set("");
   }
 
@@ -321,6 +330,6 @@ export class RemotePairFormComponent {
     const state = this.state();
     if (state.step !== "comparing") return;
     state.check.answer(same);
-    if (same) this.state.set({ step: "confirmed", machine: state.machine });
+    if (same) this.state.set({ step: "confirmed", name: state.name });
   }
 }

@@ -20,10 +20,11 @@ export type NearbyMachineContract = {
 
 /** What the user sees of pairing on this machine. */
 export type PairingStateContract = {
-  /** This machine's id while its endpoint runs: the invitation another machine pairs by. */
-  id: string | null;
-  /** Whether machines in other networks are reached: a relay is set. */
-  acrossNetworks: boolean;
+  /**
+   * What a machine in another network pairs with this one by; none unless
+   * other networks are reached.
+   */
+  invitation: string | null;
   machines: PairedMachineContract[];
   /** Whether the user has pairing open: this machine is seen nearby and takes requests. */
   open: boolean;
@@ -49,8 +50,9 @@ const PAIRING_CHANGED_EVENT = "pairing-changed";
 
 /**
  * Pairing with other machines (ARCHITECTURE.md 2.7.3): while pairing is open
- * on two machines of one network, each sees the other; one asks, both show
- * the same check number, and both users confirm it. Every failure is a
+ * on two machines of one network, each sees the other; a machine in another
+ * network is asked by its invitation. One asks, both show the same check
+ * number, and both users confirm it. Every failure is a
  * `HostError`.
  */
 @Injectable({ providedIn: "root" })

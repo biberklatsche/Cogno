@@ -149,7 +149,7 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
    */
   async removeHost(host: string): Promise<void> {
     // The panes of its shells close here; the shells run on there.
-    const name = this.pairingService.nameOf(host) ?? "the machine";
+    const name = this.pairingService.labelOf(host);
     await this.remoteHosts.disconnect(host);
     if (await this.pairing.remove(host)) return;
     ErrorReporter.reportWarning({

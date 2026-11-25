@@ -60,11 +60,10 @@ struct Relay {
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PairingView {
-    /// This machine's id while its endpoint runs: the invitation a machine
-    /// in another network pairs by.
-    pub id: Option<String>,
-    /// Whether machines in other networks are reached: a relay is set.
-    pub across_networks: bool,
+    /// What a machine in another network pairs with this one by: this
+    /// machine's id. None unless other networks are reached - the endpoint
+    /// runs with a relay.
+    pub invitation: Option<String>,
     pub machines: Vec<PairedMachine>,
     /// Whether the user has pairing open: this machine is seen nearby and
     /// takes requests to pair.
@@ -113,6 +112,8 @@ pub enum PairingError {
     Off,
     /// The other machine was not reached.
     Unreachable(String),
+    /// What the user pasted is no machine's invitation.
+    NoInvitation,
     /// The other machine does not pair now, a user declined or did not
     /// answer in time.
     Declined,
@@ -137,6 +138,10 @@ impl From<PairingError> for CommandError {
                 AppErrorCode::PairingUnreachable,
                 format!("Could not reach the other machine: {reason}"),
             ),
+            PairingError::NoInvitation => CommandError::new(
+                AppErrorCode::PairingUnreachable,
+                "This is not an invitation. Copy it on the other machine and paste all of it",
+            ),
             PairingError::Declined => CommandError::new(
                 AppErrorCode::PairingDeclined,
                 "The pairing was not confirmed on both machines",
@@ -144,6 +149,12 @@ impl From<PairingError> for CommandError {
             PairingError::Storage(error) => CommandError::internal(error),
         }
     }
+}
+
+/// This machine's endpoint while it runs, and the relay it runs with.
+struct Running {
+    endpoint: Endpoint,
+    relay: Option<RelayUrl>,
 }
 
 #[derive(Clone)]
@@ -157,9 +168,7 @@ struct Inner {
     /// Held while the endpoint starts or stops: several windows switch it,
     /// and a stop never comes before a start that is still on its way.
     switching: tokio::sync::Mutex<()>,
-    endpoint: Mutex<Option<Endpoint>>,
-    /// The relay the endpoint runs with, if any.
-    relay: Mutex<Option<RelayUrl>>,
+    endpoint: Mutex<Option<Running>>,
     /// The connections of paired machines handed to the host: cut off when
     /// their machine is unpaired.
     passed: Mutex<Vec<iroh::endpoint::Connection>>,
@@ -184,7 +193,6 @@ impl Pairing {
             events,
             switching: tokio::sync::Mutex::new(()),
             endpoint: Mutex::new(None),
-            relay: Mutex::new(None),
             passed: Mutex::new(Vec::new()),
             open: Mutex::new(false),
             nearby: Mutex::new(BTreeMap::new()),
@@ -196,7 +204,9 @@ impl Pairing {
 
     /// Starts this machine's endpoint: the Remote feature was switched on.
     /// With `relay`, the address of a relay server, machines in other
-    /// networks are reached too; without, only the local network.
+    /// networks are reached too; without, only the local network. An
+    /// endpoint that runs with that relay is left as it is, one that runs
+    /// with another starts again: every window asks, one endpoint follows.
     pub async fn enable(&self, relay: Option<&str>) -> Result<(), PairingError> {
         let relay = match relay {
             Some(address) => {
@@ -219,8 +229,14 @@ impl Pairing {
     /// announced nor found there: for tests of the way through the relay.
     async fn start(&self, relay: Option<Relay>, local_network: bool) -> Result<(), PairingError> {
         let _switching = self.0.switching.lock().await;
-        if lock(&self.0.endpoint).is_some() {
-            return Ok(());
+        let wanted = relay.as_ref().map(|relay| &relay.url);
+        let runs_as_wanted = lock(&self.0.endpoint)
+            .as_ref()
+            .map(|running| running.relay.as_ref() == wanted);
+        match runs_as_wanted {
+            Some(true) => return Ok(()),
+            Some(false) => self.stop().await,
+            None => {}
         }
         let unreachable =
             |error: &dyn std::fmt::Display| PairingError::Unreachable(error.to_string());
@@ -253,7 +269,6 @@ impl Pairing {
                 .add(lookup.clone());
             self.watch_nearby(lookup, endpoint.id());
         }
-        *lock(&self.0.relay) = relay.map(|relay| relay.url);
         let accepting = endpoint.clone();
         let pairing = self.clone();
         tokio::spawn(async move {
@@ -266,7 +281,11 @@ impl Pairing {
                 });
             }
         });
-        *lock(&self.0.endpoint) = Some(endpoint);
+        *lock(&self.0.endpoint) = Some(Running {
+            endpoint,
+            relay: relay.map(|relay| relay.url),
+        });
+        self.0.events.changed();
         Ok(())
     }
 
@@ -311,17 +330,21 @@ impl Pairing {
     /// reachable any more; pairing is closed, a request is declined.
     pub async fn disable(&self) {
         let _switching = self.0.switching.lock().await;
-        let endpoint = lock(&self.0.endpoint).take();
-        *lock(&self.0.relay) = None;
+        self.stop().await;
+    }
+
+    /// Stops the endpoint, if it runs. Under `switching`.
+    async fn stop(&self) {
+        let Some(running) = lock(&self.0.endpoint).take() else {
+            return;
+        };
         if let Some(watching) = lock(&self.0.watching_nearby).take() {
             watching.abort();
         }
         *lock(&self.0.open) = false;
         lock(&self.0.nearby).clear();
         lock(&self.0.requests).clear();
-        if let Some(endpoint) = endpoint {
-            endpoint.close().await;
-        }
+        running.endpoint.close().await;
         self.0.events.changed();
     }
 
@@ -340,11 +363,12 @@ impl Pairing {
         } else {
             Vec::new()
         };
+        let invitation = lock(&self.0.endpoint)
+            .as_ref()
+            .filter(|running| running.relay.is_some())
+            .map(|running| running.endpoint.id().to_string());
         Ok(PairingView {
-            id: lock(&self.0.endpoint)
-                .as_ref()
-                .map(|endpoint| endpoint.id().to_string()),
-            across_networks: lock(&self.0.relay).is_some(),
+            invitation,
             machines: paired,
             open,
             nearby,
@@ -355,9 +379,11 @@ impl Pairing {
     /// announces its name, so it is seen nearby, and takes requests to pair.
     pub fn set_open(&self, open: bool) -> Result<(), PairingError> {
         let endpoint = self.endpoint()?;
+        if std::mem::replace(&mut *lock(&self.0.open), open) == open {
+            return Ok(());
+        }
         let name = open.then(own_name).and_then(|name| name.parse().ok());
         endpoint.set_user_data_for_address_lookup(name);
-        *lock(&self.0.open) = open;
         if !open {
             // Whoever waits for the user here waits no longer.
             lock(&self.0.requests).clear();
@@ -375,9 +401,7 @@ impl Pairing {
         id: &str,
         on_request: impl FnOnce(PairRequest),
     ) -> Result<PairedMachine, PairingError> {
-        let id: EndpointId = id
-            .parse()
-            .map_err(|_| PairingError::Unreachable("not a machine's id".to_string()))?;
+        let id: EndpointId = id.trim().parse().map_err(|_| PairingError::NoInvitation)?;
         self.pair_at(self.address_of(id), on_request).await
     }
 
@@ -447,8 +471,9 @@ impl Pairing {
 
     /// Calls the paired machine `id` `name` from now on.
     pub fn rename(&self, id: &str, name: &str) -> Result<(), PairingError> {
+        let id = id.parse::<EndpointId>().ok();
         self.0.store.change(|paired| {
-            for machine in paired.iter_mut().filter(|m| is(m, id)) {
+            for machine in paired.iter_mut().filter(|m| Some(m.endpoint_id) == id) {
                 machine.name = name.to_string();
             }
         })?;
@@ -459,8 +484,9 @@ impl Pairing {
     /// Removes the pairing with the machine `id` here, and tells that
     /// machine. Whether it heard: when not, it refuses this one the next time.
     pub async fn remove(&self, id: &str) -> Result<bool, PairingError> {
+        let id = id.parse::<EndpointId>().ok();
         let removed = self.0.store.change(|paired| {
-            let index = paired.iter().position(|m| is(m, id))?;
+            let index = paired.iter().position(|m| Some(m.endpoint_id) == id)?;
             Some(paired.remove(index))
         })?;
         let Some(machine) = removed else {
@@ -478,10 +504,11 @@ impl Pairing {
     /// Starts connecting to the paired machine `id`.
     pub fn dial(&self, id: &str) -> CommandResult<Dialing> {
         let endpoint = self.endpoint()?;
+        let id = id.parse::<EndpointId>().ok();
         let paired = self.0.store.paired().map_err(CommandError::internal)?;
         let machine = paired
             .iter()
-            .find(|machine| is(machine, id))
+            .find(|machine| Some(machine.endpoint_id) == id)
             .ok_or_else(|| {
                 CommandError::new(
                     AppErrorCode::NotPaired,
@@ -499,14 +526,20 @@ impl Pairing {
     /// alone, in another one through the relay.
     fn address_of(&self, id: EndpointId) -> EndpointAddr {
         let address = EndpointAddr::new(id);
-        match lock(&self.0.relay).clone() {
+        let relay = lock(&self.0.endpoint)
+            .as_ref()
+            .and_then(|running| running.relay.clone());
+        match relay {
             Some(relay) => address.with_relay_url(relay),
             None => address,
         }
     }
 
     fn endpoint(&self) -> Result<Endpoint, PairingError> {
-        lock(&self.0.endpoint).clone().ok_or(PairingError::Off)
+        lock(&self.0.endpoint)
+            .as_ref()
+            .map(|running| running.endpoint.clone())
+            .ok_or(PairingError::Off)
     }
 
     /// Answers a connection another machine made.
@@ -598,11 +631,6 @@ impl Pairing {
     }
 }
 
-/// Whether `machine` is the one paired under `id`.
-fn is(machine: &PairedMachine, id: &str) -> bool {
-    machine.endpoint_id.to_string() == id
-}
-
 /// How this machine calls itself towards others.
 fn own_name() -> String {
     cogno_host::identity::machine_name().unwrap_or_else(|| UNNAMED_MACHINE.to_string())
@@ -685,9 +713,7 @@ mod tests {
         let (office, office_told) = machine_behind(&relay).await;
         let (laptop, _) = machine_behind(&relay).await;
         // What the office shows to copy, and the laptop's user pastes.
-        let view = office.view().unwrap();
-        assert!(view.across_networks);
-        let invitation = view.id.unwrap();
+        let invitation = office.view().unwrap().invitation.unwrap();
         office.set_open(true).unwrap();
         answer_when_asked(&office, &office_told, true);
 
@@ -713,7 +739,7 @@ mod tests {
         let (laptop, _) = machine_off();
         office.enable(nowhere).await.unwrap();
         laptop.enable(nowhere).await.unwrap();
-        let office_id = office.view().unwrap().id.unwrap();
+        let office_id = office.view().unwrap().invitation.unwrap();
         office.set_open(true).unwrap();
         answer_when_asked(&office, &office_told, true);
 
@@ -732,7 +758,32 @@ mod tests {
         let refused = office.enable(Some("not a url")).await;
 
         assert!(matches!(refused, Err(PairingError::Unreachable(_))));
-        assert!(office.view().unwrap().id.is_none());
+        assert!(office.endpoint().is_err());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_endpoint_starts_again_only_when_another_relay_is_asked_for() {
+        let (office, _) = machine().await;
+        let first = office.endpoint().unwrap();
+        // No invitation where only the local network is reached.
+        assert!(office.view().unwrap().invitation.is_none());
+
+        // Another window asks for the same: nothing happens.
+        office.enable(None).await.unwrap();
+        assert!(!first.is_closed());
+
+        office.enable(Some("https://127.0.0.1:9")).await.unwrap();
+        assert!(first.is_closed());
+        assert!(office.view().unwrap().invitation.is_some());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn what_was_pasted_and_is_no_invitation_is_said_to_be_none() {
+        let (laptop, _) = machine().await;
+
+        let refused = laptop.pair("K7Q-4MX", |_| {}).await;
+
+        assert!(matches!(refused, Err(PairingError::NoInvitation)));
     }
 
     /// Where the tests reach `pairing`: its addresses on this machine.

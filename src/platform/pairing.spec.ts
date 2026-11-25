@@ -30,7 +30,7 @@ describe("Pairing", () => {
   });
 
   it("asks for the state and passes commands on with their arguments", async () => {
-    const state = { id: "abc", acrossNetworks: true, machines: [], open: false, nearby: [] };
+    const state = { invitation: "abc", machines: [], open: false, nearby: [] };
     invokeMock.mockResolvedValueOnce(state);
     await expect(pairing.state()).resolves.toEqual(state);
     expect(invokeMock).toHaveBeenLastCalledWith("pairing_state", undefined);

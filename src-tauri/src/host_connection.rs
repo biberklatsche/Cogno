@@ -1,9 +1,8 @@
 //! A connection to a host, spoken in the host's wire format: to this
 //! machine's host, or to the host of a paired machine (`pairing::dial`).
-//! Requests
-//! go out with an id and their replies come back under it; events and
-//! output go to the `HostEvents` the connection was given, which answers
-//! what the host passes on over the same connection (`Answers`).
+//! Requests go out with an id and their replies come back under it; events
+//! and output go to the `HostEvents` the connection was given, which
+//! answers what the host passes on over the same connection (`Answers`).
 //!
 //! What goes out is written by a thread of the connection's own: sending
 //! never blocks, so a host that is slow to read never holds up the thread

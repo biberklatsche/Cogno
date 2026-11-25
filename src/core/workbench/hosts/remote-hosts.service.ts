@@ -1,15 +1,12 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
-import { HostError, HostErrorCode, toHostError } from "@cogno/platform";
+import { HostError, toHostError } from "@cogno/platform";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { BehaviorSubject, Observable } from "rxjs";
 
-/** Why a connection failed: a host's or the app's code. */
-export type ConnectFailure = {
-  readonly code: HostErrorCode;
-  readonly message: string;
-};
+/** Why a connection failed: the code and message of the `HostError` it failed with. */
+export type ConnectFailure = Pick<HostError, "code" | "message">;
 
 /**
  * Whether connecting again could work after `failure`. Not to a machine
@@ -25,14 +22,6 @@ export type RemoteHostConnection =
   | { readonly status: "connecting" }
   | { readonly status: "connected"; readonly info: HostInfo }
   | { readonly status: "failed"; readonly failure: ConnectFailure };
-
-/** `connect` failed; `failure` says why. */
-export class ConnectError extends Error {
-  constructor(readonly failure: ConnectFailure) {
-    super(failure.message);
-    this.name = "ConnectError";
-  }
-}
 
 /**
  * The connections to the paired machines. A connection is set up when it is
@@ -71,7 +60,7 @@ export class RemoteHostsService {
 
   /**
    * Connects to the host unless the connection stands or is being set up.
-   * Rejects with a `ConnectError`.
+   * Rejects with a `HostError`.
    */
   connect(id: string): Promise<HostInfo> {
     const known = this.info(id);
@@ -94,7 +83,7 @@ export class RemoteHostsService {
         const error = toHostError(rejection);
         const failure: ConnectFailure = { code: error.code, message: error.message };
         if (isCurrent()) this.setConnection(id, { status: "failed", failure });
-        throw new ConnectError(failure);
+        throw error;
       })
       .finally(() => {
         if (isCurrent()) this.connecting.delete(id);
@@ -135,9 +124,8 @@ export class RemoteHostsService {
     this.setConnection(id, undefined);
     // Hung up on in another window: nothing was lost.
     if (!lost) return;
-    const name = this.pairing.nameOf(id) ?? "the other machine";
     ErrorReporter.reportWarning({
-      message: `The connection to ${name} was lost. Its terminals wait until it is back.`,
+      message: `The connection to ${this.pairing.labelOf(id)} was lost. Its terminals wait until it is back.`,
       notify: true,
       source: "RemoteHosts",
     });

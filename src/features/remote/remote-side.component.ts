@@ -15,7 +15,7 @@ import { hostNodes, RemoteTreeNode } from "./remote-shell-tree";
 
 const DOCUMENTATION_URL = "https://cogno.rocks/docs/remote-hosts/";
 
-/** The form that is open: one to pair with a machine nearby, or one to rename `host`. */
+/** The form that is open: one to pair with a machine, or one to rename `host`. */
 type OpenForm = { readonly kind: "pair" } | { readonly kind: "host"; readonly host: RemoteHost };
 
 /** What the button next to a remote does. */

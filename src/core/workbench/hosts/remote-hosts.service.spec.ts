@@ -2,12 +2,7 @@ import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { HostError } from "@cogno/platform";
 import { HostInfo, Hosts } from "@cogno/platform/hosts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  ConnectError,
-  isWorthRetrying,
-  RemoteHostConnection,
-  RemoteHostsService,
-} from "./remote-hosts.service";
+import { isWorthRetrying, RemoteHostConnection, RemoteHostsService } from "./remote-hosts.service";
 
 describe("RemoteHostsService", () => {
   let connect: ReturnType<typeof vi.fn>;
@@ -28,7 +23,7 @@ describe("RemoteHostsService", () => {
     } as unknown as Hosts;
     service = new RemoteHostsService(
       hosts,
-      { nameOf: (id: string) => (id === "mac" ? "MacBook" : undefined) } as never,
+      { labelOf: (id: string) => (id === "mac" ? "MacBook" : "the other machine") } as never,
       { onDestroy: vi.fn() } as never,
     );
   });
@@ -62,9 +57,10 @@ describe("RemoteHostsService", () => {
     connect.mockRejectedValueOnce(new HostError("noCognoThere", "No Cogno host answered"));
 
     const failed = service.connect("mac");
-    await expect(failed).rejects.toBeInstanceOf(ConnectError);
+    await expect(failed).rejects.toBeInstanceOf(HostError);
     await expect(failed).rejects.toMatchObject({
-      failure: { code: "noCognoThere", message: "No Cogno host answered" },
+      code: "noCognoThere",
+      message: "No Cogno host answered",
     });
     expect(service.info("mac")).toBeUndefined();
 
@@ -76,8 +72,8 @@ describe("RemoteHostsService", () => {
     connect.mockRejectedValueOnce(new HostError("notPaired", "Not paired with nowhere"));
     const refused = service.connect("nowhere");
 
-    await expect(refused).rejects.toMatchObject({ failure: { code: "notPaired" } });
-    const { failure } = (await refused.catch((error: ConnectError) => error)) as ConnectError;
+    const failure = (await refused.catch((error: HostError) => error)) as HostError;
+    expect(failure.code).toBe("notPaired");
     expect(isWorthRetrying(failure)).toBe(false);
   });
 

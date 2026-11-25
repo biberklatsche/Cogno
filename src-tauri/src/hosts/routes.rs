@@ -50,6 +50,13 @@ impl TerminalRoutes {
             .ok_or_else(|| HostError::session_not_found(terminal_id).into())
     }
 
+    /// Whether `window` is the one that shows the terminal.
+    pub fn is_of_window(&self, terminal_id: &str, window: &str) -> bool {
+        lock(&self.0)
+            .get(terminal_id)
+            .is_some_and(|route| route.window == window)
+    }
+
     pub fn window_of(&self, terminal_id: &str) -> Option<WindowLabel> {
         lock(&self.0)
             .get(terminal_id)

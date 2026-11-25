@@ -8,8 +8,7 @@ const NO_HOST = new HostError("pairingOff", "This machine's Cogno host could not
 
 function stateOf(overrides: Partial<PairingStateContract> = {}): PairingStateContract {
   return {
-    id: "abc",
-    acrossNetworks: false,
+    invitation: null,
     machines: [],
     open: false,
     nearby: [],
@@ -134,8 +133,8 @@ describe("PairingService", () => {
 
     config$.next({ remote: { relay: "off" } });
     await settled();
-    // The endpoint that ran starts again, for the local network only.
-    expect(pairing.disable).toHaveBeenCalledOnce();
+    // The app starts the endpoint again, for the local network only.
+    expect(pairing.disable).not.toHaveBeenCalled();
     expect(pairing.enable).toHaveBeenLastCalledWith(null);
   });
 
@@ -148,13 +147,13 @@ describe("PairingService", () => {
     expect(pairing.enable).not.toHaveBeenCalled();
   });
 
-  it("offers an invitation only where another network is reached", async () => {
-    pairing.state.mockResolvedValue(stateOf({ acrossNetworks: true }));
+  it("hands on the invitation the app offers, and none where it offers none", async () => {
+    pairing.state.mockResolvedValue(stateOf({ invitation: "abc" }));
     create();
     await settled();
     expect(states.at(-1)).toMatchObject({ invitation: "abc" });
 
-    pairing.state.mockResolvedValue(stateOf({ acrossNetworks: false }));
+    pairing.state.mockResolvedValue(stateOf());
     changed();
     await settled();
     expect(states.at(-1)).toMatchObject({ invitation: undefined });

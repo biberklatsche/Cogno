@@ -107,7 +107,8 @@ pub fn pairing_set_open(state: State<'_, PairingState>, open: bool) -> CommandRe
     state.pairing()?.set_open(open).map_err(CommandError::from)
 }
 
-/// Asks the machine nearby with `id` to pair. `on_request` gets the check
+/// Asks the machine with `id` to pair: one nearby, or one whose invitation
+/// the user pasted. `on_request` gets the check
 /// number to show; `pairing_answer` says whether the user found it the same
 /// on the other machine. Resolves once both users confirmed.
 #[tauri::command]

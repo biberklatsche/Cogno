@@ -57,6 +57,8 @@ describe("RemoteShellsAdapterService", () => {
           return machines$.value.map(({ name }) => name);
         },
         nameOf: (id: string) => machines$.value.find((machine) => machine.endpointId === id)?.name,
+        labelOf: (id: string) =>
+          machines$.value.find((machine) => machine.endpointId === id)?.name ?? "the other machine",
       } as never,
       { rename, remove: removePaired } as never,
       { sessions, killSession } as never,

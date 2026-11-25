@@ -15,10 +15,6 @@ pub struct Connections {
     local: Mutex<Option<Arc<HostConnection>>>,
     /// The connections to other machines, by the id they are paired under.
     remotes: Mutex<HashMap<String, Arc<HostConnection>>>,
-    /// One connection to a machine is set up at a time: two panes of one
-    /// host restored together share a connection instead of each starting
-    /// one. A turn per machine: one that is not reached holds up no other.
-    connecting_remote: Mutex<HashMap<String, Arc<Mutex<()>>>>,
     /// The same for this machine's host, apart from the other machines: one
     /// that does not answer must not hold up the terminals here.
     connecting_local: Mutex<()>,
@@ -31,6 +27,10 @@ pub struct Connections {
 /// or once the host answered - gives up.
 #[derive(Default)]
 struct Attempt {
+    /// Held while a connection to the host is set up: two panes of one host
+    /// restored together share a connection instead of each starting one.
+    /// A turn per machine: one that is not reached holds up no other.
+    turn: Arc<Mutex<()>>,
     hang_ups: u64,
     /// Ends the connect in progress.
     ender: Option<HangUp>,
@@ -72,9 +72,9 @@ impl Connections {
         Ok(connection)
     }
 
-    pub fn remote(&self, name: &str) -> CommandResult<Arc<HostConnection>> {
+    pub fn remote(&self, id: &str) -> CommandResult<Arc<HostConnection>> {
         lock(&self.remotes)
-            .get(name)
+            .get(id)
             .filter(|remote| !remote.is_lost())
             .cloned()
             .ok_or_else(|| {
@@ -87,80 +87,81 @@ impl Connections {
     pub fn current(&self, host: Option<&str>, id: u64) -> CommandResult<Arc<HostConnection>> {
         let connection = match host {
             None => lock(&self.local).clone(),
-            Some(name) => lock(&self.remotes).get(name).cloned(),
+            Some(id) => lock(&self.remotes).get(id).cloned(),
         };
         connection
             .filter(|connection| connection.id() == id && !connection.is_lost())
             .ok_or_else(CommandError::connection_lost)
     }
 
-    fn hang_ups_of(&self, name: &str) -> u64 {
+    fn hang_ups_of(&self, id: &str) -> u64 {
         lock(&self.attempts)
-            .entry(name.to_string())
+            .entry(id.to_string())
             .or_default()
             .hang_ups
     }
 
-    /// What ends the connect to `name` in progress.
-    fn set_ender(&self, name: &str, ender: Option<HangUp>) {
+    /// What ends the connect to `id` in progress.
+    fn set_ender(&self, id: &str, ender: Option<HangUp>) {
         lock(&self.attempts)
-            .entry(name.to_string())
+            .entry(id.to_string())
             .or_default()
             .ender = ender;
     }
 
-    /// The connection to the host `name`, unless one stands: `start` sets
+    /// The connection to the host `id`, unless one stands: `start` sets
     /// out for it and `introduce` waits for the host there. Hanging up on
-    /// `name` meanwhile gives up on it - also while it waits for its turn.
+    /// `id` meanwhile gives up on it - also while it waits for its turn.
     pub fn connect_remote<U: Underway>(
         &self,
-        name: &str,
+        id: &str,
         start: impl FnOnce() -> CommandResult<U>,
         introduce: impl FnOnce(U) -> CommandResult<HostConnection>,
     ) -> CommandResult<Arc<HostConnection>> {
-        let hang_ups = self.hang_ups_of(name);
-        let given_up = || self.hang_ups_of(name) != hang_ups;
-        let turn = lock(&self.connecting_remote)
-            .entry(name.to_string())
+        let hang_ups = self.hang_ups_of(id);
+        let given_up = || self.hang_ups_of(id) != hang_ups;
+        let turn = lock(&self.attempts)
+            .entry(id.to_string())
             .or_default()
+            .turn
             .clone();
         let _one_at_a_time = lock(&turn);
-        if let Ok(connection) = self.remote(name) {
+        if let Ok(connection) = self.remote(id) {
             return Ok(connection);
         }
         if given_up() {
             return Err(hung_up());
         }
         let starting = start()?;
-        self.set_ender(name, Some(starting.ender()));
+        self.set_ender(id, Some(starting.ender()));
         // Hung up on before the ender was there to be called.
         if given_up() {
-            self.set_ender(name, None);
+            self.set_ender(id, None);
             (starting.ender())();
             return Err(hung_up());
         }
         let introduced = introduce(starting);
-        self.set_ender(name, None);
+        self.set_ender(id, None);
         if given_up() {
             if let Ok(connection) = introduced {
                 connection.hang_up();
             }
             return Err(hung_up());
         }
-        self.put_in_place(name, introduced?)
+        self.put_in_place(id, introduced?)
     }
 
     fn put_in_place(
         &self,
-        name: &str,
+        id: &str,
         connection: HostConnection,
     ) -> CommandResult<Arc<HostConnection>> {
         let connection = Arc::new(connection);
-        lock(&self.remotes).insert(name.to_string(), connection.clone());
+        lock(&self.remotes).insert(id.to_string(), connection.clone());
         // Lost before it was put in its place: its end found nothing to take
         // out, so it is taken out here.
         if connection.is_lost() {
-            lock(&self.remotes).remove(name);
+            lock(&self.remotes).remove(id);
             return Err(CommandError::connection_lost());
         }
         Ok(connection)
@@ -181,14 +182,14 @@ impl Connections {
                 *local = None;
                 Lost::HostGone
             }
-            Some(name) => {
+            Some(id) => {
                 let mut remotes = lock(&self.remotes);
-                if is_it(remotes.get(name)) {
-                    remotes.remove(name);
+                if is_it(remotes.get(id)) {
+                    remotes.remove(id);
                     return Lost::HostGone;
                 }
                 // Not in the map at all: it was hung up on.
-                if remotes.contains_key(name) {
+                if remotes.contains_key(id) {
                     Lost::Replaced
                 } else {
                     Lost::HostGone
@@ -202,7 +203,7 @@ impl Connections {
     fn give_up(&self, which: impl Fn(&str) -> bool) {
         let enders: Vec<HangUp> = lock(&self.attempts)
             .iter_mut()
-            .filter(|(name, _)| which(name))
+            .filter(|(id, _)| which(id))
             .filter_map(|(_, attempt)| {
                 attempt.hang_ups += 1;
                 attempt.ender.take()
@@ -213,14 +214,14 @@ impl Connections {
         }
     }
 
-    /// Hangs up on the host `name`, and gives up on a connection to it that
+    /// Hangs up on the host `id`, and gives up on a connection to it that
     /// is being set up or waits to be.
-    pub fn disconnect(&self, name: &str) {
-        let standing = lock(&self.remotes).remove(name);
+    pub fn disconnect(&self, id: &str) {
+        let standing = lock(&self.remotes).remove(id);
         if let Some(connection) = standing {
             connection.hang_up();
         }
-        self.give_up(|host| host == name);
+        self.give_up(|host| host == id);
     }
 
     /// Every connection that stands, this machine's included.

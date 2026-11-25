@@ -411,17 +411,36 @@ impl Request {
     /// them and ends them, and answers what is asked in them. It starts
     /// none, writes nothing into this machine's Cogno home and speaks for no
     /// process here.
+    ///
+    /// Every request is named here: one that is added has to be decided.
     pub fn only_from_this_machine(&self) -> bool {
-        matches!(
-            self,
+        match self {
             Request::PtySpawn { .. }
-                | Request::InstallShellIntegration { .. }
-                | Request::ListShells
-                | Request::AgentHook { .. }
-                | Request::Ask { .. }
-                | Request::OwnPrompts { .. }
-                | Request::DisownPrompts { .. }
-        )
+            | Request::InstallShellIntegration { .. }
+            | Request::ListShells
+            | Request::AgentHook { .. }
+            | Request::Ask { .. }
+            | Request::OwnPrompts { .. }
+            | Request::DisownPrompts { .. } => true,
+            Request::PtyAttach { .. }
+            | Request::PtyDetach { .. }
+            | Request::PtyPlace { .. }
+            | Request::PtyWrite { .. }
+            | Request::PtyLineEditorAction { .. }
+            | Request::PtyResize { .. }
+            | Request::PtyKill { .. }
+            | Request::PaneClosed { .. }
+            | Request::PtyAck { .. }
+            | Request::WindowClosed { .. }
+            | Request::ListSessions
+            | Request::GetSession { .. }
+            | Request::ProcessTree { .. }
+            | Request::TerminalProcesses
+            | Request::TerminateProcess { .. }
+            | Request::TerminateForegroundJob { .. }
+            | Request::Answer { .. }
+            | Request::Unknown => false,
+        }
     }
 
     /// Whether answering can take a while (starting a shell, closing a

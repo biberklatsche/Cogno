@@ -1,8 +1,7 @@
 //! The hosts this app talks to (`cogno-host`): this machine's, which the app
 //! runs itself and which holds its shells, and those of the paired machines
-//! it is connected to. The
-//! commands turn what the webview asks into requests; what a host reports
-//! goes back to the webview from here.
+//! it is connected to. The commands turn what the webview asks into
+//! requests; what a host reports goes back to the webview from here.
 
 mod connections;
 mod questions;
@@ -429,7 +428,7 @@ impl HostState {
 
     /// Whether `window` is the one that shows the terminal.
     pub fn shows(&self, window: &str, terminal_id: &str) -> bool {
-        self.0.routes.of_window(terminal_id, window).is_ok()
+        self.0.routes.is_of_window(terminal_id, window)
     }
 
     /// The window that spawned or attached the terminal: where its messages go.

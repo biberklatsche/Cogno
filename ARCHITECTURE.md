@@ -1551,8 +1551,10 @@ action run`.
   weiter. Es sieht, welche IDs miteinander sprechen, ihre IP-Adressen und
   wie viel, nie den Inhalt. Seine Adresse steht in der Config
   (`remote.relay`, Standard `https://relay.cogno.rocks`, `off` für nur das
-  lokale Netz); `PairingService` gibt sie beim Einschalten mit und startet
-  den Endpunkt neu, wenn sie sich ändert. Ist das Relay nicht erreichbar,
+  lokale Netz); `PairingService` gibt sie beim Einschalten mit, auch wieder,
+  wenn sie sich ändert. Den Endpunkt führt die App: Sie lässt ihn, wie er
+  ist, wenn er schon mit diesem Relay läuft, und startet ihn einmal neu,
+  wenn ein anderes verlangt wird - gleich, wie viele Fenster fragen. Ist das Relay nicht erreichbar,
   bleibt das lokale Netz, wie es ist. Dienste Dritter werden nicht benutzt.
 - **Einladung.** Für einen Rechner in einem anderen Netz gibt es keine Liste
   „in der Nähe": A zeigt seine ID zum Kopieren (die Einladung, nur wenn ein
