@@ -11,6 +11,8 @@ export type TabAddedEvent = MessageBase<
     workingDir?: string;
     terminalId?: TerminalId;
     host?: string;
+    /** See `CreateTabAction`. */
+    takeOver?: boolean;
   }
 >;
 export type TabRemovedEvent = MessageBase<"TabRemoved", TabId>;

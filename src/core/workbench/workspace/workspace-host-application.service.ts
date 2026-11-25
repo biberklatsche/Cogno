@@ -137,7 +137,7 @@ export class WorkspaceHostApplicationService {
       this._workspaceList.set(workspaceList);
 
       // Load saved scrollback into the pending store before any session spawns,
-      // so the factory can replay it as terminals are (re)created.
+      // so each session can replay its own as terminals are (re)created.
       await this.sessionPersistence.loadPendingSnapshots(
         workspaceList.map((workspace) => workspace.id),
       );

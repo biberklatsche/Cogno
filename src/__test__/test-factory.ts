@@ -8,7 +8,7 @@ import { MachineState } from "@cogno/core/terminal/machine-state";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import type { PaneSessionManager } from "@cogno/core/workbench/grid-list/+state/pane-session-manager";
 import { TabListService } from "@cogno/core/workbench/tab-list/+state/tab-list.service";
 import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import type { TerminalBusyStateService } from "@cogno/core/workbench/terminal/terminal-busy-state.service";
@@ -27,7 +27,7 @@ let gridListService: GridListService | undefined;
 let terminalSessionRegistry: TerminalSessionRegistry | undefined;
 const sessionFactSubjects = new Map<TerminalId, Subject<SessionFact>>();
 let tabListService: TabListService | undefined;
-let terminalComponentFactory: SessionHostFactory | undefined;
+let paneSessionManager: PaneSessionManager | undefined;
 let windowService: WindowService | undefined;
 let selectionHandler: SelectionHandler | undefined;
 let machineState: MachineState | undefined;
@@ -58,7 +58,7 @@ export function getGridListService(): GridListService {
   if (!gridListService) {
     gridListService = new GridListService(
       getAppBus(),
-      getSessionHostFactory(),
+      getPaneSessionManager(),
       getTerminalSessionRegistry(),
       getDestroyRef(),
     );
@@ -109,15 +109,16 @@ export function getTabListService(): TabListService {
   return tabListService;
 }
 
-export function getSessionHostFactory(): SessionHostFactory {
-  if (!terminalComponentFactory) {
-    terminalComponentFactory = {
+export function getPaneSessionManager(): PaneSessionManager {
+  if (!paneSessionManager) {
+    paneSessionManager = {
       destroy: vi.fn(),
       ensureSession: vi.fn(),
+      takeOverWhenOpened: vi.fn(),
       attach: vi.fn(),
-    } as unknown as SessionHostFactory;
+    } as unknown as PaneSessionManager;
   }
-  return terminalComponentFactory;
+  return paneSessionManager;
 }
 
 export function getDestroyRef(): DestroyRef {
@@ -178,7 +179,7 @@ export function clear() {
   terminalSessionRegistry = undefined;
   sessionFactSubjects.clear();
   tabListService = undefined;
-  terminalComponentFactory = undefined;
+  paneSessionManager = undefined;
   windowService = undefined;
   selectionHandler = undefined;
   machineState = undefined;

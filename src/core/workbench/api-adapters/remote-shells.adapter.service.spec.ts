@@ -17,7 +17,6 @@ describe("RemoteShellsAdapterService", () => {
   let sessions: ReturnType<typeof vi.fn>;
   let killSession: ReturnType<typeof vi.fn>;
   let takeBack: ReturnType<typeof vi.fn>;
-  let takeOverWhenOpened: ReturnType<typeof vi.fn>;
   let sessionChanges: Subject<void>;
   let sessionRuntimes: Subject<{ terminalId: string; runtime: { status: string } }>;
   let sessionEntries: {
@@ -38,7 +37,6 @@ describe("RemoteShellsAdapterService", () => {
     sessions = vi.fn().mockResolvedValue([]);
     killSession = vi.fn().mockResolvedValue(undefined);
     takeBack = vi.fn().mockResolvedValue(false);
-    takeOverWhenOpened = vi.fn();
     sessionChanges = new Subject();
     sessionRuntimes = new Subject();
     sessionEntries = [];
@@ -55,7 +53,7 @@ describe("RemoteShellsAdapterService", () => {
       } as never,
       { rename, remove: removePaired } as never,
       { sessions, killSession } as never,
-      { takeBack, takeOverWhenOpened } as never,
+      { takeBack } as never,
       {
         changes$: sessionChanges,
         runtimes$: sessionRuntimes,
@@ -194,10 +192,14 @@ describe("RemoteShellsAdapterService", () => {
       await adapter.show("office", "t1");
 
       // The user asked for it here: the new pane takes it from whoever shows it.
-      expect(takeOverWhenOpened).toHaveBeenCalledWith("t1");
       expect(publish).toHaveBeenCalledWith({
         type: "CreateTab",
-        payload: expect.objectContaining({ terminalId: "t1", host: "office", isActive: true }),
+        payload: expect.objectContaining({
+          terminalId: "t1",
+          host: "office",
+          isActive: true,
+          takeOver: true,
+        }),
       });
     });
 

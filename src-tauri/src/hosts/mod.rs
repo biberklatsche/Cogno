@@ -82,7 +82,7 @@ impl Hosts {
     fn connection(self: &Arc<Self>, host: Option<&str>) -> CommandResult<Arc<HostConnection>> {
         match host {
             None => self.local(),
-            Some(name) => self.connections.remote(name),
+            Some(id) => self.connections.remote(id),
         }
     }
 
@@ -310,13 +310,13 @@ impl HostState {
         blocking(move || hosts.connection(host.as_deref())?.request(request)).await
     }
 
-    /// Ends the shell `terminal_id` on the host `name`, whether this app
+    /// Ends the shell `terminal_id` on the paired machine `id`, whether this app
     /// shows it or not. A window of this app that shows it learns that it
     /// ended - the host tells only other clients - once it did.
-    pub async fn kill_session(&self, name: String, terminal_id: TerminalId) -> CommandResult<()> {
+    pub async fn kill_session(&self, id: String, terminal_id: TerminalId) -> CommandResult<()> {
         let killed = self
             .request_on(
-                Some(name),
+                Some(id),
                 Request::PtyKill {
                     terminal_id: terminal_id.clone(),
                 },
@@ -339,13 +339,13 @@ impl HostState {
         killed.map(|_| ())
     }
 
-    /// Hangs up on the host `name`, or gives up connecting to it. Its shells
+    /// Hangs up on the paired machine `id`, or gives up connecting to it. Its shells
     /// that this app shows end here, as hung up on; they run on there.
-    pub async fn disconnect(&self, name: String) {
+    pub async fn disconnect(&self, id: String) {
         let hosts = self.0.clone();
         // Hanging up may wait: not on the thread of the UI.
         let _ = blocking(move || {
-            hosts.connections.disconnect(&name);
+            hosts.connections.disconnect(&id);
             Ok(())
         })
         .await;

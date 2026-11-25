@@ -5,7 +5,7 @@ import { SessionSnapshot } from "./session-snapshot";
 /**
  * Snapshots read from the database at startup, waiting for their session to be
  * (re)created (session restore). The workspace loader fills this; the
- * session-host factory takes each one when it spawns the matching terminal and
+ * workbench takes each one when it spawns the matching terminal and
  * replays it. One-shot: a taken snapshot is not replayed again.
  */
 @Injectable({ providedIn: "root" })

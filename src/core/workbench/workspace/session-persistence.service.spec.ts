@@ -1,6 +1,6 @@
 import type { ConfigService } from "@cogno/core/infrastructure/config/config.service";
 import type { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import type { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionPersistenceService } from "./session-persistence.service";
 import type { WorkspaceRepository } from "./workspace.repository";
@@ -12,9 +12,9 @@ describe("SessionPersistenceService", () => {
   const snapshotOf = (id: string) => ({ version: 1, scrollback: `SB-${id}` });
 
   function make(): SessionPersistenceService {
-    const factory = {
-      getSessionHost: (id: string) => ({ snapshot: vi.fn(() => snapshotOf(id)) }),
-    } as unknown as SessionHostFactory;
+    const sessions = {
+      get: (id: string) => ({ host: { snapshot: vi.fn(() => snapshotOf(id)) } }),
+    } as unknown as TerminalSessionRegistry;
     const gridList = {
       terminalIdsForWorkspace: () => terminalIds,
     } as unknown as GridListService;
@@ -23,7 +23,7 @@ describe("SessionPersistenceService", () => {
     const config = {
       config: { general: { session_restore: restore } },
     } as unknown as ConfigService;
-    return new SessionPersistenceService(factory, gridList, repo, config, {
+    return new SessionPersistenceService(sessions, gridList, repo, config, {
       set: vi.fn(),
       take: vi.fn(),
       peek: vi.fn(),
@@ -47,17 +47,17 @@ describe("SessionPersistenceService", () => {
 
   it("carries forward the pending snapshot for a tab with no live host", async () => {
     const pendingSnap = { version: 3, scrollback: "PENDING", commands: [] };
-    const factory = {
-      getSessionHost: (id: string) =>
-        id === "t1" ? { snapshot: vi.fn(() => snapshotOf("t1")) } : undefined,
-    } as unknown as SessionHostFactory;
+    const sessions = {
+      get: (id: string) =>
+        id === "t1" ? { host: { snapshot: vi.fn(() => snapshotOf("t1")) } } : undefined,
+    } as unknown as TerminalSessionRegistry;
     const gridList = { terminalIdsForWorkspace: () => ["t1", "t2"] } as unknown as GridListService;
     saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
     const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
     const config = {
       config: { general: { session_restore: restore } },
     } as unknown as ConfigService;
-    await new SessionPersistenceService(factory, gridList, repo, config, {
+    await new SessionPersistenceService(sessions, gridList, repo, config, {
       set: vi.fn(),
       take: vi.fn(),
       peek: vi.fn((id: string) => (id === "t2" ? pendingSnap : undefined)),
@@ -91,6 +91,23 @@ describe("SessionPersistenceService", () => {
     expect(set).toHaveBeenCalledExactlyOnceWith("t1", valid);
   });
 
+  it("records the running command of every live session as aborted", async () => {
+    const recorded = [vi.fn().mockResolvedValue(undefined), vi.fn().mockResolvedValue(undefined)];
+    const sessions = {
+      entries: recorded.map((recordAbortedCommand) => ({ host: { recordAbortedCommand } })),
+    } as unknown as TerminalSessionRegistry;
+
+    await new SessionPersistenceService(
+      sessions,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    ).recordAbortedCommands();
+
+    for (const record of recorded) expect(record).toHaveBeenCalledTimes(1);
+  });
+
   it("does nothing when restore is disabled", async () => {
     restore = { enabled: false };
     await make().persistWorkspace("ws-1");
@@ -99,16 +116,18 @@ describe("SessionPersistenceService", () => {
 
   it("captures no scrollback (maxLines 0) when scrollback is off", async () => {
     restore = { enabled: true, scrollback: false, max_lines: 500 };
-    const factory = {
-      getSessionHost: () => ({ snapshot: vi.fn((maxLines: number) => ({ version: 1, maxLines })) }),
-    } as unknown as SessionHostFactory;
+    const sessions = {
+      get: () => ({
+        host: { snapshot: vi.fn((maxLines: number) => ({ version: 1, maxLines })) },
+      }),
+    } as unknown as TerminalSessionRegistry;
     const gridList = { terminalIdsForWorkspace: () => ["t1"] } as unknown as GridListService;
     saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
     const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
     const config = {
       config: { general: { session_restore: restore } },
     } as unknown as ConfigService;
-    await new SessionPersistenceService(factory, gridList, repo, config, {
+    await new SessionPersistenceService(sessions, gridList, repo, config, {
       set: vi.fn(),
       take: vi.fn(),
     } as never).persistWorkspace("ws-1");

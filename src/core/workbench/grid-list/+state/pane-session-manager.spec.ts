@@ -6,7 +6,7 @@ import { filter, Subject } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TauriMockFactory } from "../../../../__test__/mocks/tauri-mock.factory";
 import { Pane } from "../+model/model";
-import { SessionHostFactory } from "./session-host-factory";
+import { PaneSessionManager } from "./pane-session-manager";
 import { SessionEntry, SessionStart } from "./session-scope.builder";
 import { FoundShell } from "./waiting-panes";
 
@@ -20,8 +20,8 @@ function shownByLaptop(terminalId: string): SeenSessionContract {
   };
 }
 
-/** What the factory decides for a pane, seen from what it asks of its helpers. */
-describe("SessionHostFactory", () => {
+/** What `PaneSessionManager` decides for a pane, seen from what it asks of its helpers. */
+describe("PaneSessionManager", () => {
   const localPane = { terminalId: "t1", shellName: "zsh" } as Pane;
   const remotePane = { terminalId: "t2", shellName: "zsh", host: "office" } as Pane;
   let opened: { terminalId: string; backend: SessionBackend; start: SessionStart }[];
@@ -40,7 +40,7 @@ describe("SessionHostFactory", () => {
   let claimed: SeenSessionContract | undefined;
   let facts: Subject<Fact>;
   let reattachments: Subject<{ type: string; payload?: string }>;
-  let factory: SessionHostFactory;
+  let paneSessionManager: PaneSessionManager;
 
   const settle = () => new Promise((resolve) => setTimeout(resolve));
 
@@ -96,7 +96,7 @@ describe("SessionHostFactory", () => {
         closed.push({ terminalId, removed }),
       ),
     };
-    factory = new SessionHostFactory(
+    paneSessionManager = new PaneSessionManager(
       {} as never,
       {
         getShellProfileOrDefault: () => ({ shell_type: "ZSH", path: "/bin/zsh" }),
@@ -123,7 +123,7 @@ describe("SessionHostFactory", () => {
 
   describe("a pane of this machine", () => {
     it("starts a shell of its profile", () => {
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       expect(opened).toEqual([
         {
@@ -137,7 +137,7 @@ describe("SessionHostFactory", () => {
     it("shows the shell that ran when the window started instead of starting one", () => {
       claimed = TauriMockFactory.createSessionInfo("t1");
 
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       expect(opened[0]?.start).toMatchObject({
         kind: "showRunning",
@@ -146,14 +146,14 @@ describe("SessionHostFactory", () => {
     });
 
     it("is a no-op once its session exists", () => {
-      factory.ensureSession(localPane);
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       expect(opened).toHaveLength(1);
     });
 
     it("shows the shell its start found running, asked for afresh", async () => {
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       facts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
       await settle();
@@ -166,7 +166,7 @@ describe("SessionHostFactory", () => {
     it("fails its start when the shell it found running cannot be asked for", async () => {
       const lost = new HostError("connectionLost", "lost");
       session.mockRejectedValueOnce(lost);
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       facts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
       await settle();
@@ -185,7 +185,7 @@ describe("SessionHostFactory", () => {
         shownInThisWindow: true,
       };
 
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       expect(opened[0]?.start.kind).toBe("showRunning");
     });
@@ -193,7 +193,7 @@ describe("SessionHostFactory", () => {
     it("says a shell another window of this Cogno shows is shown there", () => {
       claimed = { ...TauriMockFactory.createSessionInfo("t1"), attached: { to: "thisClient" } };
 
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       expect(opened[0]?.start.kind).toBe("shownElsewhere");
     });
@@ -201,14 +201,14 @@ describe("SessionHostFactory", () => {
     it("says a shell another Cogno shows is shown there, and does not take it", () => {
       claimed = shownByLaptop("t1");
 
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       expect(opened[0]?.start).toMatchObject({ kind: "shownElsewhere", by: "laptop" });
     });
 
     it("does not take the shell its start found running when another Cogno shows it", async () => {
       session.mockResolvedValueOnce(shownByLaptop("t1"));
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       facts.next({ terminalId: "t1", fact: { type: "shellAlreadyRuns" } });
       await settle();
@@ -217,7 +217,7 @@ describe("SessionHostFactory", () => {
     });
 
     it("stays when its shell ended without the user, and says so itself", () => {
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       for (const kind of ["killedByAnotherClient", "ptyFailed", "connectionLost"]) {
         facts.next({ terminalId: "t1", fact: { type: "exited", exit: { kind } } });
@@ -229,7 +229,7 @@ describe("SessionHostFactory", () => {
 
     it("starts a shell after all when the one it was to show had ended", () => {
       claimed = TauriMockFactory.createSessionInfo("t1");
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
 
       facts.next({ terminalId: "t1", fact: { type: "shellGone" } });
 
@@ -240,15 +240,15 @@ describe("SessionHostFactory", () => {
 
   describe("a pane of another machine", () => {
     it("has no session while it waits for its machine and its shell", () => {
-      expect(factory.ensureSession(remotePane)).toBeUndefined();
-      expect(factory.ensureSession(remotePane)).toBeUndefined();
+      expect(paneSessionManager.ensureSession(remotePane)).toBeUndefined();
+      expect(paneSessionManager.ensureSession(remotePane)).toBeUndefined();
 
       expect(waitingPanes.wait).toHaveBeenCalledOnce();
       expect(opened).toEqual([]);
     });
 
     it("gets a session that shows the shell it found, on the machine's system", () => {
-      factory.ensureSession(remotePane);
+      paneSessionManager.ensureSession(remotePane);
 
       onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "windows" });
 
@@ -259,7 +259,7 @@ describe("SessionHostFactory", () => {
 
     it("puts its terminal where the pane is once the shell is found", () => {
       const mountPoint = document.createElement("div");
-      factory.mount(remotePane, mountPoint);
+      paneSessionManager.mount(remotePane, mountPoint);
       expect(waitingPanes.mount).toHaveBeenCalledWith("t2", mountPoint);
 
       onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
@@ -268,20 +268,20 @@ describe("SessionHostFactory", () => {
     });
 
     it("says another Cogno shows the shell it found, unless the user opened it to show it", () => {
-      factory.ensureSession(remotePane);
+      paneSessionManager.ensureSession(remotePane);
       onFound.get("t2")?.({ session: shownByLaptop("t2"), os: "linux" });
       expect(opened[0]?.start.kind).toBe("shownElsewhere");
 
-      factory.destroy("t2");
-      factory.takeOverWhenOpened("t2");
-      factory.ensureSession(remotePane);
+      paneSessionManager.destroy("t2");
+      paneSessionManager.takeOverWhenOpened("t2");
+      paneSessionManager.ensureSession(remotePane);
       onFound.get("t2")?.({ session: shownByLaptop("t2"), os: "linux" });
       expect(opened[1]?.start.kind).toBe("showRunning");
     });
 
     it("waits for its machine again when the connection broke; the shell may run on", () => {
       const mountPoint = document.createElement("div");
-      factory.mount(remotePane, mountPoint);
+      paneSessionManager.mount(remotePane, mountPoint);
       onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
 
       facts.next({ terminalId: "t2", fact: { type: "exited", exit: { kind: "connectionLost" } } });
@@ -292,7 +292,7 @@ describe("SessionHostFactory", () => {
     });
 
     it("leaves a pane whose shell the user ended to the workbench", () => {
-      factory.ensureSession(remotePane);
+      paneSessionManager.ensureSession(remotePane);
       onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
 
       facts.next({ terminalId: "t2", fact: { type: "exited", exit: { kind: "hungUp" } } });
@@ -303,12 +303,12 @@ describe("SessionHostFactory", () => {
     });
 
     it("waits for its machine when the user takes the shell back while it is not connected", async () => {
-      factory.ensureSession(remotePane);
+      paneSessionManager.ensureSession(remotePane);
       onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
       runtimeOf("t2", "takenOver");
       session.mockRejectedValueOnce(new HostError("notConnected", "not connected"));
 
-      await expect(factory.takeBack("t2")).resolves.toBe(true);
+      await expect(paneSessionManager.takeBack("t2")).resolves.toBe(true);
       expect(waitingPanes.wait).toHaveBeenCalledTimes(2);
 
       // Found again: the user asked for it, so it is taken from whoever shows it.
@@ -318,7 +318,7 @@ describe("SessionHostFactory", () => {
 
     it("says the shell is gone when it ended before the session attached", () => {
       const mountPoint = document.createElement("div");
-      factory.mount(remotePane, mountPoint);
+      paneSessionManager.mount(remotePane, mountPoint);
       onFound.get("t2")?.({ session: TauriMockFactory.createSessionInfo("t2"), os: "linux" });
 
       facts.next({ terminalId: "t2", fact: { type: "shellGone" } });
@@ -333,14 +333,14 @@ describe("SessionHostFactory", () => {
 
   describe("a shell another Cogno took over", () => {
     beforeEach(() => {
-      factory.ensureSession(localPane);
+      paneSessionManager.ensureSession(localPane);
       runtimeOf("t1", "takenOver");
     });
 
     it("is shown here again when the user asks, with what its host says of it now", async () => {
       session.mockResolvedValueOnce(shownByLaptop("t1"));
 
-      await expect(factory.takeBack("t1")).resolves.toBe(true);
+      await expect(paneSessionManager.takeBack("t1")).resolves.toBe(true);
 
       expect(session).toHaveBeenCalledExactlyOnceWith(undefined, "t1");
       expect(opened[1]?.start.kind).toBe("showRunning");
@@ -363,26 +363,26 @@ describe("SessionHostFactory", () => {
     it("is not taken back while it runs here", async () => {
       runtimeOf("t1", "running");
 
-      await expect(factory.takeBack("t1")).resolves.toBe(false);
+      await expect(paneSessionManager.takeBack("t1")).resolves.toBe(false);
       expect(session).not.toHaveBeenCalled();
     });
 
     it("starts a new shell here when it ended meanwhile", async () => {
       session.mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
 
-      await expect(factory.takeBack("t1")).resolves.toBe(false);
+      await expect(paneSessionManager.takeBack("t1")).resolves.toBe(false);
 
       expect(opened[1]?.start.kind).toBe("spawn");
     });
   });
 
   it("closes a pane for good: what waits stops, and the app hears the terminal went", () => {
-    factory.ensureSession(localPane);
+    paneSessionManager.ensureSession(localPane);
 
-    factory.destroy("t1");
+    paneSessionManager.destroy("t1");
 
     expect(waitingPanes.stop).toHaveBeenCalledWith("t1");
     expect(closed).toEqual([{ terminalId: "t1", removed: true }]);
-    expect(factory.getSessionHost("t1")).toBeUndefined();
+    expect(paneSessionManager.getSessionKeybindings("t1")).toBeUndefined();
   });
 });

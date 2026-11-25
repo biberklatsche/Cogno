@@ -3,7 +3,6 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { ShellProfile } from "@cogno/core/infrastructure/config/models/shell-config";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { SessionBackend } from "@cogno/core/session/host/session-backend";
-import { SessionHost } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { runningShell, shownByOtherCogno } from "@cogno/core/workbench/hosts/running-shell";
 import { ShellsFoundAtStart } from "@cogno/core/workbench/hosts/shells-found-at-start.service";
@@ -46,7 +45,7 @@ function isRemote(pane: Pane): pane is RemotePane {
  * its shell shown elsewhere says so, and the user decides.
  */
 @Injectable({ providedIn: "root" })
-export class SessionHostFactory {
+export class PaneSessionManager {
   private readonly sessions = new Map<TerminalId, SessionEntry>();
   /** Where each pane is on screen, once it was. */
   private readonly mountPoints = new Map<TerminalId, HTMLElement>();
@@ -112,7 +111,8 @@ export class SessionHostFactory {
 
   /**
    * The pane about to open for `terminalId` was asked for by the user to
-   * show that shell here: it takes it from whoever shows it.
+   * show that shell here (`CreateTab.takeOver`): it takes it from whoever
+   * shows it.
    */
   takeOverWhenOpened(terminalId: TerminalId): void {
     this.takingOver.add(terminalId);
@@ -121,16 +121,6 @@ export class SessionHostFactory {
   /** The keybindings of the session `terminalId`, for central action dispatch. */
   getSessionKeybindings(terminalId: TerminalId): SessionKeybindings | undefined {
     return this.sessions.get(terminalId)?.keybindings;
-  }
-
-  /** The live host of the session `terminalId`, for snapshotting. */
-  getSessionHost(terminalId: TerminalId): SessionHost | undefined {
-    return this.sessions.get(terminalId)?.session;
-  }
-
-  /** Every live session host, for recording aborted commands on quit. */
-  getAllSessionHosts(): SessionHost[] {
-    return [...this.sessions.values()].map((entry) => entry.session);
   }
 
   /** Puts the pane's terminal - or what it shows while it waits - at `mountPoint`. */
@@ -222,7 +212,7 @@ export class SessionHostFactory {
           error,
           handled: true,
           notify: true,
-          source: "SessionHostFactory",
+          source: "PaneSessionManager",
           context: { operation: "reopenShowingRunning", terminalId },
         });
       }

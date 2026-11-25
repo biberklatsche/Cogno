@@ -30,7 +30,7 @@ use iroh_mdns_address_lookup::{DiscoveryEvent, MdnsAddressLookup};
 use n0_future::StreamExt;
 use tokio::sync::oneshot;
 
-use crate::command_error::{AppErrorCode, CommandError, CommandResult};
+use crate::command_error::{AppErrorCode, CommandError};
 pub use dial::Dialing;
 use dial::{refusal, HOST_ALPN};
 use handshake::{Incoming, Message, Pending, PAIR_ALPN};
@@ -135,7 +135,10 @@ impl From<PairingError> for CommandError {
                 AppErrorCode::NoInvitation,
                 "This is not an invitation. Copy it on the other machine and paste all of it",
             ),
-            PairingError::NotPaired => not_paired(),
+            PairingError::NotPaired => CommandError::new(
+                AppErrorCode::NotPaired,
+                "This machine is not paired with that machine (any more)",
+            ),
             PairingError::NameMissing => {
                 CommandError::new(AppErrorCode::NameMissing, "A remote needs a name")
             }
@@ -148,10 +151,19 @@ impl From<PairingError> for CommandError {
     }
 }
 
-/// This machine's endpoint while it runs, and the relay it runs with.
+/// This machine's endpoint while it runs, and what only holds while it does:
+/// stopped, all of it is gone at once.
 struct Running {
     endpoint: Endpoint,
+    /// The relay it runs with.
     relay: Option<RelayUrl>,
+    /// Whether the user has pairing open.
+    open: bool,
+    /// The machines in the local network that announce a name: they have
+    /// pairing open.
+    nearby: BTreeMap<EndpointId, String>,
+    /// What keeps `nearby` as the local network says.
+    watching_nearby: Option<tokio::task::JoinHandle<()>>,
 }
 
 #[derive(Clone)]
@@ -165,18 +177,10 @@ struct Inner {
     /// Held while the endpoint starts or stops: several windows switch it,
     /// and a stop never comes before a start that is still on its way.
     switching: tokio::sync::Mutex<()>,
-    endpoint: Mutex<Option<Running>>,
+    running: Mutex<Option<Running>>,
     /// The connections of paired machines handed to the host: cut off when
     /// their machine is unpaired.
     passed: Mutex<Vec<iroh::endpoint::Connection>>,
-    /// Whether the user has pairing open.
-    open: Mutex<bool>,
-    /// The machines in the local network that announce a name: they have
-    /// pairing open.
-    nearby: Mutex<BTreeMap<EndpointId, String>>,
-    /// What keeps `nearby` as the local network says, while the endpoint
-    /// runs.
-    watching_nearby: Mutex<Option<tokio::task::JoinHandle<()>>>,
     /// The pairings that wait for this machine's user.
     requests: Mutex<HashMap<u64, oneshot::Sender<bool>>>,
     next_request: AtomicU64,
@@ -189,11 +193,8 @@ impl Pairing {
             host,
             events,
             switching: tokio::sync::Mutex::new(()),
-            endpoint: Mutex::new(None),
+            running: Mutex::new(None),
             passed: Mutex::new(Vec::new()),
-            open: Mutex::new(false),
-            nearby: Mutex::new(BTreeMap::new()),
-            watching_nearby: Mutex::new(None),
             requests: Mutex::new(HashMap::new()),
             next_request: AtomicU64::new(1),
         }))
@@ -224,7 +225,7 @@ impl Pairing {
         local_network: bool,
     ) -> Result<(), PairingError> {
         let _switching = self.0.switching.lock().await;
-        let runs_as_wanted = lock(&self.0.endpoint)
+        let runs_as_wanted = lock(&self.0.running)
             .as_ref()
             .map(|running| running.relay == relay);
         match runs_as_wanted {
@@ -249,7 +250,7 @@ impl Pairing {
             builder
         };
         let endpoint = builder.bind().await.map_err(|error| unreachable(&error))?;
-        if local_network {
+        let lookup = if local_network {
             // Announces this machine in the local network and finds the
             // others there: paired machines by their id, machines to pair
             // with by the name they announce.
@@ -261,8 +262,10 @@ impl Pairing {
                 .address_lookup()
                 .map_err(|error| unreachable(&error))?
                 .add(lookup.clone());
-            self.watch_nearby(lookup, endpoint.id());
-        }
+            Some(lookup)
+        } else {
+            None
+        };
         let accepting = endpoint.clone();
         let pairing = self.clone();
         tokio::spawn(async move {
@@ -275,46 +278,67 @@ impl Pairing {
                 });
             }
         });
-        *lock(&self.0.endpoint) = Some(Running { endpoint, relay });
+        {
+            // Under the lock from before the watching starts: what it sees
+            // first finds the endpoint running.
+            let mut running = lock(&self.0.running);
+            let watching_nearby = lookup.map(|lookup| self.watch_nearby(lookup, endpoint.id()));
+            *running = Some(Running {
+                endpoint,
+                relay,
+                open: false,
+                nearby: BTreeMap::new(),
+                watching_nearby,
+            });
+        }
         self.0.events.changed();
         Ok(())
     }
 
-    /// Keeps `nearby` as the local network says, until `disable` ends it.
-    fn watch_nearby(&self, local_network: MdnsAddressLookup, own: EndpointId) {
+    /// Keeps `nearby` as the local network says, until the endpoint stops.
+    fn watch_nearby(
+        &self,
+        local_network: MdnsAddressLookup,
+        own: EndpointId,
+    ) -> tokio::task::JoinHandle<()> {
         let pairing = self.clone();
-        let watching = tokio::spawn(async move {
+        tokio::spawn(async move {
             let mut events = local_network.subscribe().await;
             // The endpoint keeps the lookup alive, and only for as long as
             // it runs.
             drop(local_network);
             while let Some(event) = events.next().await {
-                let changed = match event {
-                    DiscoveryEvent::Discovered { endpoint_info, .. } => {
-                        let id = endpoint_info.endpoint_id;
-                        let name = endpoint_info
-                            .data
-                            .user_data()
-                            .map(|name| name.to_string())
-                            .filter(|name| id != own && !name.is_empty());
-                        let mut nearby = lock(&pairing.0.nearby);
-                        match name {
-                            Some(name) => nearby.insert(id, name.clone()) != Some(name),
-                            None => nearby.remove(&id).is_some(),
+                let shown_changed = {
+                    let mut running = lock(&pairing.0.running);
+                    let Some(running) = running.as_mut() else {
+                        return;
+                    };
+                    let changed = match event {
+                        DiscoveryEvent::Discovered { endpoint_info, .. } => {
+                            let id = endpoint_info.endpoint_id;
+                            let name = endpoint_info
+                                .data
+                                .user_data()
+                                .map(|name| name.to_string())
+                                .filter(|name| id != own && !name.is_empty());
+                            match name {
+                                Some(name) => running.nearby.insert(id, name.clone()) != Some(name),
+                                None => running.nearby.remove(&id).is_some(),
+                            }
                         }
-                    }
-                    DiscoveryEvent::Expired { endpoint_id } => {
-                        lock(&pairing.0.nearby).remove(&endpoint_id).is_some()
-                    }
-                    _ => false,
+                        DiscoveryEvent::Expired { endpoint_id } => {
+                            running.nearby.remove(&endpoint_id).is_some()
+                        }
+                        _ => false,
+                    };
+                    // Shown only while pairing is open here.
+                    changed && running.open
                 };
-                // Shown only while pairing is open here.
-                if changed && *lock(&pairing.0.open) {
+                if shown_changed {
                     pairing.0.events.changed();
                 }
             }
-        });
-        *lock(&self.0.watching_nearby) = Some(watching);
+        })
     }
 
     /// Stops the endpoint: the Remote feature was switched off. Nothing is
@@ -326,14 +350,12 @@ impl Pairing {
 
     /// Stops the endpoint, if it runs. Under `switching`.
     async fn stop(&self) {
-        let Some(running) = lock(&self.0.endpoint).take() else {
+        let Some(running) = lock(&self.0.running).take() else {
             return;
         };
-        if let Some(watching) = lock(&self.0.watching_nearby).take() {
+        if let Some(watching) = running.watching_nearby {
             watching.abort();
         }
-        *lock(&self.0.open) = false;
-        lock(&self.0.nearby).clear();
         lock(&self.0.requests).clear();
         running.endpoint.close().await;
         self.0.events.changed();
@@ -341,23 +363,24 @@ impl Pairing {
 
     pub fn view(&self) -> Result<PairingView, PairingError> {
         let paired = self.0.store.paired()?;
-        let open = *lock(&self.0.open);
-        let nearby = if open {
-            lock(&self.0.nearby)
-                .iter()
-                .filter(|(id, _)| !paired.iter().any(|m| m.endpoint_id == **id))
-                .map(|(id, name)| NearbyMachine {
-                    id: id.to_string(),
-                    name: name.clone(),
-                })
-                .collect()
-        } else {
-            Vec::new()
-        };
-        let invitation = lock(&self.0.endpoint)
+        let running = lock(&self.0.running);
+        let open = running.as_ref().is_some_and(|running| running.open);
+        let nearby = running
+            .as_ref()
+            .filter(|running| running.open)
+            .into_iter()
+            .flat_map(|running| &running.nearby)
+            .filter(|(id, _)| !paired.iter().any(|m| m.endpoint_id == **id))
+            .map(|(id, name)| NearbyMachine {
+                id: id.to_string(),
+                name: name.clone(),
+            })
+            .collect();
+        let invitation = running
             .as_ref()
             .filter(|running| running.relay.is_some())
             .map(|running| running.endpoint.id().to_string());
+        drop(running);
         Ok(PairingView {
             invitation,
             machines: paired,
@@ -369,12 +392,17 @@ impl Pairing {
     /// The user opened or closed pairing. While it is open, this machine
     /// announces its name, so it is seen nearby, and takes requests to pair.
     pub fn set_open(&self, open: bool) -> Result<(), PairingError> {
-        let endpoint = self.endpoint()?;
-        if std::mem::replace(&mut *lock(&self.0.open), open) == open {
-            return Ok(());
+        {
+            // With the endpoint, under one lock: pairing is never open on an
+            // endpoint that stopped meanwhile.
+            let mut running = lock(&self.0.running);
+            let running = running.as_mut().ok_or(PairingError::Off)?;
+            if std::mem::replace(&mut running.open, open) == open {
+                return Ok(());
+            }
+            let name = open.then(own_name).and_then(|name| name.parse().ok());
+            running.endpoint.set_user_data_for_address_lookup(name);
         }
-        let name = open.then(own_name).and_then(|name| name.parse().ok());
-        endpoint.set_user_data_for_address_lookup(name);
         if !open {
             // Whoever waits for the user here waits no longer.
             lock(&self.0.requests).clear();
@@ -498,14 +526,14 @@ impl Pairing {
     }
 
     /// Starts connecting to the paired machine `id`.
-    pub fn dial(&self, id: &str) -> CommandResult<Dialing> {
+    pub fn dial(&self, id: &str) -> Result<Dialing, PairingError> {
         let endpoint = self.endpoint()?;
         let id = id.parse::<EndpointId>().ok();
-        let paired = self.0.store.paired().map_err(CommandError::internal)?;
+        let paired = self.0.store.paired()?;
         let machine = paired
             .iter()
             .find(|machine| Some(machine.endpoint_id) == id)
-            .ok_or_else(not_paired)?;
+            .ok_or(PairingError::NotPaired)?;
         Ok(Dialing::start(
             endpoint,
             self.address_of(machine.endpoint_id),
@@ -517,7 +545,7 @@ impl Pairing {
     /// alone, in another one through the relay.
     fn address_of(&self, id: EndpointId) -> EndpointAddr {
         let address = EndpointAddr::new(id);
-        let relay = lock(&self.0.endpoint)
+        let relay = lock(&self.0.running)
             .as_ref()
             .and_then(|running| running.relay.clone());
         match relay {
@@ -527,10 +555,18 @@ impl Pairing {
     }
 
     fn endpoint(&self) -> Result<Endpoint, PairingError> {
-        lock(&self.0.endpoint)
+        lock(&self.0.running)
             .as_ref()
             .map(|running| running.endpoint.clone())
             .ok_or(PairingError::Off)
+    }
+
+    /// The endpoint, while the user has pairing open.
+    fn open_endpoint(&self) -> Option<Endpoint> {
+        lock(&self.0.running)
+            .as_ref()
+            .filter(|running| running.open)
+            .map(|running| running.endpoint.clone())
     }
 
     /// Answers a connection another machine made.
@@ -540,7 +576,7 @@ impl Pairing {
         }
         match handshake::receive(connection).await {
             Ok(Some(Incoming::Pair(asking))) => {
-                let (Ok(endpoint), true) = (self.endpoint(), *lock(&self.0.open)) else {
+                let Some(endpoint) = self.open_endpoint() else {
                     let _ = asking.decline().await;
                     return;
                 };
@@ -620,13 +656,6 @@ impl Pairing {
             }
         }
     }
-}
-
-fn not_paired() -> CommandError {
-    CommandError::new(
-        AppErrorCode::NotPaired,
-        "This machine is not paired with that machine (any more)",
-    )
 }
 
 /// How this machine calls itself towards others.
@@ -928,7 +957,7 @@ mod tests {
     async fn dial(
         from: &Pairing,
         id: &str,
-    ) -> CommandResult<crate::host_connection::HostConnection> {
+    ) -> crate::command_error::CommandResult<crate::host_connection::HostConnection> {
         use crate::host_connection::test_support::NoEvents;
         let dialing = from.dial(id)?;
         tokio::task::spawn_blocking(move || {

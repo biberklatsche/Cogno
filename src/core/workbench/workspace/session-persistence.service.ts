@@ -3,7 +3,7 @@ import { ConfigService } from "@cogno/core/infrastructure/config/config.service"
 import { PendingSessionSnapshots } from "@cogno/core/session/host/pending-session-snapshots";
 import { isSessionSnapshot } from "@cogno/core/session/host/session-snapshot";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/terminal-session.registry";
 import { WorkspaceTerminalSession } from "./workspace.model";
 import { WorkspaceRepository } from "./workspace.repository";
 
@@ -17,7 +17,7 @@ const DEFAULT_MAX_LINES = 1000;
 @Injectable({ providedIn: "root" })
 export class SessionPersistenceService {
   constructor(
-    private readonly sessionHostFactory: SessionHostFactory,
+    private readonly sessions: TerminalSessionRegistry,
     private readonly gridListService: GridListService,
     private readonly workspaceRepository: WorkspaceRepository,
     private readonly configService: ConfigService,
@@ -26,7 +26,7 @@ export class SessionPersistenceService {
 
   /**
    * Read the stored snapshots for these workspaces into the pending store so the
-   * session-host factory can replay each when it (re)creates the terminal. An
+   * session can replay its own when the terminal is (re)created. An
    * unreadable snapshot is skipped - that terminal starts without
    * scrollback. No-op when restore is off.
    */
@@ -53,9 +53,7 @@ export class SessionPersistenceService {
    * of session restore - the command log persists regardless of that setting.
    */
   async recordAbortedCommands(): Promise<void> {
-    await Promise.all(
-      this.sessionHostFactory.getAllSessionHosts().map((host) => host.recordAbortedCommand()),
-    );
+    await Promise.all(this.sessions.entries.map(({ host }) => host.recordAbortedCommand()));
   }
 
   /** Drop the snapshots still waiting in memory; the stored rows are the repository's. */
@@ -72,7 +70,7 @@ export class SessionPersistenceService {
     const sessions: WorkspaceTerminalSession[] = this.gridListService
       .terminalIdsForWorkspace(workspaceId)
       .flatMap((terminalId) => {
-        const host = this.sessionHostFactory.getSessionHost(terminalId);
+        const host = this.sessions.get(terminalId)?.host;
         if (host) {
           return [{ terminalId, sessionData: JSON.stringify(host.snapshot(maxLines)) }];
         }

@@ -30,7 +30,7 @@ import { TerminalFileDropService } from "./terminal-file-drop.service";
 /**
  * The pane's view of a session. The session itself - host, keybindings,
  * notifications, menus, dropdown services - is created and started by
- * SessionHostFactory
+ * PaneSessionManager
  * before this view exists and outlives it; this only attaches the machine
  * to its element, shows a failed start, and detaches on destroy.
  */
@@ -79,7 +79,7 @@ export class TerminalComponent implements AfterViewInit {
     );
     this.isWebglContextLost = toSignal(this.host.isWebglContextLost$, { initialValue: false });
     this.runtime = toSignal(this.host.runtime$, { initialValue: this.host.runtime });
-    // The view goes, the session stays: closing is the factory's decision.
+    // The view goes, the session stays: closing is PaneSessionManager's decision.
     destroyRef.onDestroy(() => this.host.detach());
   }
 

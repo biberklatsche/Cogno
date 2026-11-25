@@ -101,6 +101,25 @@ describe("TabListService", () => {
       expect(currentTabs[0].isActive).toBe(true);
     });
 
+    it("passes on what a created tab's pane shows, and that it takes the shell over", () => {
+      const added: unknown[] = [];
+      bus.on$("TabAdded").subscribe((event) => added.push(event.payload));
+
+      bus.publish({
+        type: "CreateTab",
+        payload: { tabId: "remote-tab", terminalId: "t1", host: "office", takeOver: true },
+      });
+
+      expect(added).toEqual([
+        expect.objectContaining({
+          tabId: "remote-tab",
+          terminalId: "t1",
+          host: "office",
+          takeOver: true,
+        }),
+      ]);
+    });
+
     it("should handle SelectTab event", () => {
       const tab: Tab = { id: "t1", systemTitle: "T1", isActive: false, activeShellType: "unknown" };
       service.addTab(tab);

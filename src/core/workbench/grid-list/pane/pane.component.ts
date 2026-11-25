@@ -9,7 +9,7 @@ import {
   ViewChild,
 } from "@angular/core";
 import { toSignal } from "@angular/core/rxjs-interop";
-import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { PaneSessionManager } from "@cogno/core/workbench/grid-list/+state/pane-session-manager";
 import { TerminalId } from "@cogno/shared/domain";
 import { Pane } from "../+model/model";
 import { GridListService } from "../+state/grid-list.service";
@@ -86,7 +86,7 @@ export class PaneComponent implements AfterViewInit {
   });
 
   constructor(
-    private _terminalComponents: SessionHostFactory,
+    private paneSessionManager: PaneSessionManager,
     private gridListService: GridListService,
   ) {
     // Create the effect within an injection context (constructor)
@@ -98,7 +98,7 @@ export class PaneComponent implements AfterViewInit {
       if (!id || !mountPoint) return;
       if (this._attachedTerminalId !== id) {
         while (mountPoint.firstChild) mountPoint.removeChild(mountPoint.firstChild);
-        this._terminalComponents.mount(pane, mountPoint);
+        this.paneSessionManager.mount(pane, mountPoint);
         this._attachedTerminalId = id;
       }
     });

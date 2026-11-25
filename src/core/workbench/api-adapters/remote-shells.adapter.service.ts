@@ -3,7 +3,7 @@ import { RemoteHost, RemoteShell, RemoteShellsPort } from "@cogno/core/api/remot
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { PaneSessionManager } from "@cogno/core/workbench/grid-list/+state/pane-session-manager";
 import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
 import {
   isWorthRetrying,
@@ -96,7 +96,7 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     private readonly pairingService: PairingService,
     private readonly pairing: Pairing,
     private readonly hosts: Hosts,
-    private readonly sessionFactory: SessionHostFactory,
+    private readonly paneSessionManager: PaneSessionManager,
     private readonly sessions: TerminalSessionRegistry,
     private readonly gridList: GridListService,
     private readonly navigator: TerminalNavigatorAdapterService,
@@ -157,17 +157,16 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
   }
 
   async show(host: string, terminalId: TerminalId): Promise<void> {
-    if (await this.sessionFactory.takeBack(terminalId)) return;
+    if (await this.paneSessionManager.takeBack(terminalId)) return;
     if (this.gridList.findTabIdByTerminalId(terminalId)) {
       await this.navigator.navigateToTerminal(terminalId);
       return;
     }
     // The new pane asks the host for its shell itself, and takes it from
     // whoever shows it: the user asked for it here.
-    this.sessionFactory.takeOverWhenOpened(terminalId);
     this.bus.publish({
       type: "CreateTab",
-      payload: { tabId: IdCreator.newTabId(), terminalId, host, isActive: true },
+      payload: { tabId: IdCreator.newTabId(), terminalId, host, isActive: true, takeOver: true },
     });
   }
 

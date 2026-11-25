@@ -8,7 +8,7 @@ import {
 } from "@cogno/core/workbench/bus/tab-list/events";
 import { asNewLocalPane, GridConfig, PaneConfig, TabId } from "@cogno/core/workbench/grid-layout";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
-import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { PaneSessionManager } from "@cogno/core/workbench/grid-list/+state/pane-session-manager";
 import { closesPane } from "@cogno/core/workbench/grid-list/+state/shell-end";
 import { BinaryNode, BinaryTree } from "@cogno/core/workbench/grid-list/binary-tree";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
@@ -124,7 +124,7 @@ export class GridListService implements PaneLayoutLookup {
 
   constructor(
     private bus: AppBus,
-    private componentFactory: SessionHostFactory,
+    private paneSessionManager: PaneSessionManager,
     private readonly sessionRegistry: TerminalSessionRegistry,
     destroyRef: DestroyRef,
   ) {
@@ -156,6 +156,10 @@ export class GridListService implements PaneLayoutLookup {
       .subscribe((event: TabAddedEvent) => {
         const payload = event.payload;
         if (!payload) return;
+        // Said before the pane exists: its session starts with it.
+        if (payload.takeOver && payload.terminalId) {
+          this.paneSessionManager.takeOverWhenOpened(payload.terminalId);
+        }
         this.restoreGrid({
           tabId: payload.tabId,
           pane: {
@@ -227,7 +231,7 @@ export class GridListService implements PaneLayoutLookup {
         this.deferFocusTo(newChild?.data?.terminalId);
       }
     }
-    this.componentFactory.destroy(terminalId);
+    this.paneSessionManager.destroy(terminalId);
     this.storeWorkspaceGridList(workspaceIdentifier, state.grids);
   }
 
@@ -369,7 +373,7 @@ export class GridListService implements PaneLayoutLookup {
   private ensureSessions(gridList: GridList): void {
     for (const grid of Object.values(gridList)) {
       for (const node of grid.tree.find((node) => node.isLeaf)) {
-        if (node.data?.terminalId) this.componentFactory.ensureSession(node.data);
+        if (node.data?.terminalId) this.paneSessionManager.ensureSession(node.data);
       }
     }
   }
@@ -496,7 +500,7 @@ export class GridListService implements PaneLayoutLookup {
     const terminalIds = this.leafTerminalIds(grid);
     delete state.grids[tab];
     for (const terminalId of terminalIds) {
-      this.componentFactory.destroy(terminalId);
+      this.paneSessionManager.destroy(terminalId);
     }
     this.storeWorkspaceGridList(workspaceIdentifier, state.grids);
     if (state.activeTabId === tab) {
@@ -756,7 +760,7 @@ export class GridListService implements PaneLayoutLookup {
     if (!gridList) return;
     for (const grid of Object.values(gridList)) {
       for (const terminalId of this.leafTerminalIds(grid)) {
-        this.componentFactory.destroy(terminalId);
+        this.paneSessionManager.destroy(terminalId);
       }
     }
   }

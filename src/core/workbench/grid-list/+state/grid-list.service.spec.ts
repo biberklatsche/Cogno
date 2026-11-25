@@ -6,7 +6,7 @@ import type {
   TabSelectedEvent,
 } from "@cogno/core/workbench/bus/tab-list/events";
 import type { TerminalConfig } from "@cogno/core/workbench/grid-layout";
-import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import type { PaneSessionManager } from "@cogno/core/workbench/grid-list/+state/pane-session-manager";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,7 +15,7 @@ import {
   emitSessionFact,
   getAppBus,
   getDestroyRef,
-  getSessionHostFactory,
+  getPaneSessionManager,
   getTerminalSessionRegistry,
 } from "../../../../__test__/test-factory";
 import type { Grid } from "../+model/model";
@@ -24,14 +24,14 @@ import { GridListService } from "./grid-list.service";
 describe("GridListService", () => {
   let service: GridListService;
   let bus: AppBus;
-  let componentFactory: SessionHostFactory;
+  let paneSessionManager: PaneSessionManager;
 
   beforeEach(() => {
     bus = getAppBus();
-    componentFactory = getSessionHostFactory();
+    paneSessionManager = getPaneSessionManager();
     service = new GridListService(
       bus,
-      componentFactory,
+      paneSessionManager,
       getTerminalSessionRegistry(),
       getDestroyRef(),
     );
@@ -65,6 +65,26 @@ describe("GridListService", () => {
       let activeTabId: string | undefined;
       service.activeTabId$.subscribe((id) => (activeTabId = id));
       expect(activeTabId).toBe(tabId);
+    });
+
+    it("tells the sessions that a tab opened to show a shell here takes it over", () => {
+      bus.publish({
+        type: "TabAdded",
+        payload: { tabId: "tab-1", isActive: true, terminalId: "t1", host: "office" },
+      } as TabAddedEvent);
+      expect(paneSessionManager.takeOverWhenOpened).not.toHaveBeenCalled();
+
+      bus.publish({
+        type: "TabAdded",
+        payload: {
+          tabId: "tab-2",
+          isActive: true,
+          terminalId: "t2",
+          host: "office",
+          takeOver: true,
+        },
+      } as TabAddedEvent);
+      expect(paneSessionManager.takeOverWhenOpened).toHaveBeenCalledWith("t2");
     });
 
     it("should handle TabRemoved event", () => {
@@ -200,7 +220,7 @@ describe("GridListService", () => {
       // Split first so we have something to remove that isn't root
       service.split(initialTerminalId, "vertical", "r");
 
-      const destroySpy = vi.spyOn(componentFactory, "destroy");
+      const destroySpy = vi.spyOn(paneSessionManager, "destroy");
 
       service.removePane("term-2");
 
@@ -228,7 +248,7 @@ describe("GridListService", () => {
     it("removes only the exited pane when the session exits and others remain", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       service.split(initialTerminalId, "vertical", "r");
-      const destroySpy = vi.spyOn(componentFactory, "destroy");
+      const destroySpy = vi.spyOn(paneSessionManager, "destroy");
 
       emitSessionFact("term-2", { type: "exited", exit: { kind: "exited", code: 0 } });
 
@@ -252,7 +272,7 @@ describe("GridListService", () => {
     it("keeps the pane when its shell ended without the user, and when the user hung up removes it", () => {
       vi.spyOn(IdCreator, "newTerminalId").mockReturnValue("term-2");
       service.split(initialTerminalId, "vertical", "r");
-      const destroySpy = vi.spyOn(componentFactory, "destroy");
+      const destroySpy = vi.spyOn(paneSessionManager, "destroy");
 
       for (const kind of ["connectionLost", "killedByAnotherClient", "ptyFailed"] as const) {
         emitSessionFact("term-2", { type: "exited", exit: { kind } });

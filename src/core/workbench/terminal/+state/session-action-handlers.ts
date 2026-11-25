@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { ActionHandlers } from "@cogno/core/workbench/actions/action-handlers";
 import { CoreActionName } from "@cogno/core/workbench/actions/catalog";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import { PaneSessionManager } from "@cogno/core/workbench/grid-list/+state/pane-session-manager";
 
 const SESSION_ACTIONS: ReadonlyArray<CoreActionName> = [
   "trigger_autocomplete",
@@ -21,7 +21,7 @@ export class SessionActionHandlers {
   constructor(
     actions: ActionHandlers,
     private readonly gridListService: GridListService,
-    private readonly sessionHostFactory: SessionHostFactory,
+    private readonly paneSessionManager: PaneSessionManager,
   ) {
     for (const action of SESSION_ACTIONS) {
       actions.handle(action, () => this.delegate(action));
@@ -34,7 +34,7 @@ export class SessionActionHandlers {
       return false;
     }
     return (
-      this.sessionHostFactory.getSessionKeybindings(terminalId)?.performAction(action) ?? false
+      this.paneSessionManager.getSessionKeybindings(terminalId)?.performAction(action) ?? false
     );
   }
 }

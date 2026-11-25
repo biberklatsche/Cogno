@@ -1,7 +1,7 @@
 import type { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import type { TabAddedEvent } from "@cogno/core/workbench/bus/tab-list/events";
 import { type GridConfig } from "@cogno/core/workbench/grid-layout";
-import type { SessionHostFactory } from "@cogno/core/workbench/grid-list/+state/session-host-factory";
+import type { PaneSessionManager } from "@cogno/core/workbench/grid-list/+state/pane-session-manager";
 import { IdCreator } from "@cogno/core/workbench/id-creator";
 import { defaultWorkspaceIdContract } from "@cogno/core/workbench/workspace/workspace-entry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,7 +10,7 @@ import {
   emitSessionFact,
   getAppBus,
   getDestroyRef,
-  getSessionHostFactory,
+  getPaneSessionManager,
   getTerminalSessionRegistry,
 } from "../../../../__test__/test-factory";
 import type { Grid } from "../+model/model";
@@ -24,17 +24,17 @@ import { GridListService } from "./grid-list.service";
 describe("GridListService workspace runtime", () => {
   let service: GridListService;
   let bus: AppBus;
-  let componentFactory: SessionHostFactory;
+  let paneSessionManager: PaneSessionManager;
   let grids: Grid[];
   let activeTabId: string | undefined;
   let maximizedTerminalId: string | undefined;
 
   beforeEach(() => {
     bus = getAppBus();
-    componentFactory = getSessionHostFactory();
+    paneSessionManager = getPaneSessionManager();
     service = new GridListService(
       bus,
-      componentFactory,
+      paneSessionManager,
       getTerminalSessionRegistry(),
       getDestroyRef(),
     );
@@ -74,7 +74,7 @@ describe("GridListService workspace runtime", () => {
     expect(grids.map((grid) => grid.tabId)).toEqual(["tab-1"]);
     expect(activeTabId).toBe("tab-1");
     expect(maximizedTerminalId).toBe("term-1");
-    expect(componentFactory.destroy).not.toHaveBeenCalled();
+    expect(paneSessionManager.destroy).not.toHaveBeenCalled();
   });
 
   it("publishes the visible terminals of the activated workspace", () => {
@@ -119,7 +119,7 @@ describe("GridListService workspace runtime", () => {
 
     service.removeWorkspaceRuntime(defaultWorkspaceIdContract);
 
-    expect(componentFactory.destroy).toHaveBeenCalledWith("term-1");
+    expect(paneSessionManager.destroy).toHaveBeenCalledWith("term-1");
     expect(grids).toEqual([]);
     expect(activeTabId).toBeUndefined();
     expect(maximizedTerminalId).toBeUndefined();
@@ -151,7 +151,7 @@ describe("GridListService workspace runtime", () => {
     it("drops the exited pane there and ends its session, leaving the shown one alone", () => {
       emitSessionFact("term-2", { type: "exited", exit: { kind: "exited", code: 0 } });
 
-      expect(componentFactory.destroy).toHaveBeenCalledWith("term-2");
+      expect(paneSessionManager.destroy).toHaveBeenCalledWith("term-2");
       expect(service.terminalIdsForWorkspace("ws-2")).toEqual(["term-3"]);
       expect(grids.map((grid) => grid.tabId)).toEqual(["tab-1"]);
     });
@@ -183,8 +183,8 @@ describe("GridListService workspace runtime", () => {
 
     service.removeWorkspaceRuntime("ws-2");
 
-    expect(componentFactory.destroy).toHaveBeenCalledTimes(1);
-    expect(componentFactory.destroy).toHaveBeenCalledWith("term-2");
+    expect(paneSessionManager.destroy).toHaveBeenCalledTimes(1);
+    expect(paneSessionManager.destroy).toHaveBeenCalledWith("term-2");
     expect(service.terminalIdsForWorkspace("ws-2")).toEqual([]);
     expect(grids.map((grid) => grid.tabId)).toEqual(["tab-1"]);
     expect(activeTabId).toBe("tab-1");
@@ -212,7 +212,7 @@ describe("GridListService workspace runtime", () => {
     );
 
     expect(gridEmissions).toBe(0);
-    expect(componentFactory.ensureSession).toHaveBeenCalledWith(
+    expect(paneSessionManager.ensureSession).toHaveBeenCalledWith(
       expect.objectContaining({ terminalId: "term-3" }),
     );
     expect(service.terminalIdsForWorkspace("ws-2")).toEqual(["term-2", "term-3"]);
@@ -225,8 +225,8 @@ describe("GridListService workspace runtime", () => {
 
     // Replacing a workspace's grids ends the sessions it had before.
     service.restoreGridsForWorkspace([gridConfig("tab-4", "term-4")], "ws-2");
-    expect(componentFactory.destroy).toHaveBeenCalledWith("term-2");
-    expect(componentFactory.destroy).toHaveBeenCalledWith("term-3");
+    expect(paneSessionManager.destroy).toHaveBeenCalledWith("term-2");
+    expect(paneSessionManager.destroy).toHaveBeenCalledWith("term-3");
     expect(service.terminalIdsForWorkspace("ws-2")).toEqual(["term-4"]);
   });
 

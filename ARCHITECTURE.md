@@ -1404,7 +1404,8 @@ Zeitfenster.
   seine Sitzung beginnt `takenOver` (`SessionHost.startShownElsewhere`) und
   sagt, wo sie gezeigt wird. Genommen wird sie, wenn der Nutzer es will:
   „Show it here" im Pane, oder „zeigen" im Remote-Panel, das den neuen Tab
-  dafür vormerkt (`SessionHostFactory.takeOverWhenOpened`). Das gilt beim
+  mit diesem Auftrag anlegt (`CreateTab.takeOver`; die Workbench merkt ihn vor,
+  ehe das Pane entsteht: `PaneSessionManager.takeOverWhenOpened`). Das gilt beim
   Wiederherstellen eines Workspaces wie für ein Pane, dessen Start eine
   laufende Shell fand.
 - **Beim Start der Webview** fragt die Workbench einmal, welche Shells auf
@@ -1444,7 +1445,7 @@ Zeitfenster.
   Die PTY merkt sich die Übernahme, damit auch hört, wer sich erst danach
   anmeldet (eine Übernahme kann ein Andocken kreuzen). „Hier zeigen"
   verwirft die Sitzung und dockt mit einer neuen an
-  (`SessionHostFactory.takeBack`, aus dem Pane über `ReattachTerminal` auf dem
+  (`PaneSessionManager.takeBack`, aus dem Pane über `ReattachTerminal` auf dem
   Bus); das Terminal bleibt dabei, Features hören kein `TerminalRemoved`. Ist
   der Rechner dafür nicht verbunden, wartet das Pane wieder auf ihn. Was
   hier getippt wird, geht nach der Übernahme nirgends mehr hin. Das Andocken
@@ -1459,7 +1460,7 @@ Zeitfenster.
   anders (von einem anderen Cogno beendet, PTY kaputt), bietet das Pane eine
   neue an (`SessionHost.retry`; läuft die alte noch, wird sie gezeigt).
 - **Die Sitzungsfabrik** (`grid-list/+state/`) ist in drei Teile geschnitten:
-  `SessionHostFactory` entscheidet, was ein Pane bekommt, und hält die
+  `PaneSessionManager` entscheidet, was ein Pane bekommt, und hält die
   Sitzungen und den Platz jedes Panes auf dem Bildschirm; `SessionScopeBuilder`
   baut eine Sitzung samt ihrem Injector und baut sie wieder ab – auch ihre
   Ansicht aus dem DOM, damit eine ersetzte Sitzung keine zurücklässt;

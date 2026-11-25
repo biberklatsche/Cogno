@@ -17,7 +17,7 @@ import {
   getAppBus,
   getDestroyRef,
   getGridListService,
-  getSessionHostFactory,
+  getPaneSessionManager,
   getTerminalSessionRegistry,
 } from "../../../../../__test__/test-factory";
 import { TerminalActionHandlers } from "./terminal-action-handlers";
@@ -173,7 +173,7 @@ describe("terminal actions, from ActionFired to their effect", () => {
       const result = fire("close_terminal");
 
       expect(result.performed).toBe(true);
-      expect(getSessionHostFactory().destroy).toHaveBeenCalledWith("term-1");
+      expect(getPaneSessionManager().destroy).toHaveBeenCalledWith("term-1");
       expect(currentGrid().tree.root.data?.terminalId).toBe("term-2");
     });
   });
@@ -359,7 +359,7 @@ describe("terminal actions, from ActionFired to their effect", () => {
       expect(currentGrid().tree.root.right?.right?.data?.terminalId).toBe("term-3");
 
       fire("close_terminal", undefined, "term-2");
-      expect(getSessionHostFactory().destroy).toHaveBeenCalledWith("term-2");
+      expect(getPaneSessionManager().destroy).toHaveBeenCalledWith("term-2");
     });
 
     it("checks the named session's selection for a performable copy", () => {
