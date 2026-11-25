@@ -30,8 +30,8 @@ export type PairingState =
 /** The number both machines show, and what the user says to it. */
 export type PairingCheck = {
   readonly check: string;
-  /** How the other machine calls itself, when it says. */
-  readonly name?: string;
+  /** What the other machine is called: as it calls itself. */
+  readonly name: string;
   /** Whether the other machine shows the same number. */
   answer(same: boolean): void;
 };

@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable } from "@angular/core";
+import { Injectable } from "@angular/core";
 import { Pairing, PairingRequestContract } from "@cogno/platform";
 import {
   ConfirmDialogComponent,
@@ -6,6 +6,10 @@ import {
   DialogRef,
   DialogService,
 } from "@cogno/shared/ui";
+
+/** How wide the question is, and how wide at most in a narrow window. */
+const DIALOG_WIDTH = "32rem";
+const DIALOG_MAX_WIDTH = "calc(100vw - 2rem)";
 
 /**
  * Asks the user when another machine wants to pair with this one, and tells
@@ -15,33 +19,44 @@ import {
  * up, timed out) closes its dialog unanswered.
  */
 @Injectable({ providedIn: "root" })
-export class PairingRequestPrompt {
+export class RemotePairingRequestPrompt {
   private readonly open = new Map<number, DialogRef<boolean>>();
+
+  /** What ends the listening, while it listens. */
+  private listening?: Promise<ReadonlyArray<() => void>>;
 
   constructor(
     private readonly pairing: Pairing,
     private readonly dialogs: DialogService,
-    destroyRef: DestroyRef,
-  ) {
-    void pairing
-      .onRequest((request) => void this.ask(request))
-      .then((unlisten) => destroyRef.onDestroy(unlisten));
-    void pairing
-      .onRequestEnded((id) => this.end(id))
-      .then((unlisten) => destroyRef.onDestroy(unlisten));
+  ) {}
+
+  /** Takes the requests from now on; a no-op while it does. */
+  listen(): void {
+    this.listening ??= Promise.all([
+      this.pairing.onRequest((request) => void this.ask(request)),
+      this.pairing.onRequestEnded((id) => this.end(id)),
+    ]);
+  }
+
+  /** Takes no requests any more: the feature is off, and nothing of it stays. */
+  stop(): void {
+    void this.listening?.then((unlisten) => {
+      for (const end of unlisten) end();
+    });
+    this.listening = undefined;
   }
 
   private async ask(request: PairingRequestContract): Promise<void> {
     const dialog = this.dialogs.open<ConfirmDialogData, boolean>(ConfirmDialogComponent, {
       title: "Pairing",
       data: {
-        message: `${request.name ?? "A machine"} wants to pair with this machine. Does it show ${request.check}?`,
+        message: `${request.name} wants to pair with this machine. Does it show ${request.check}?`,
         confirmLabel: "They match",
         cancelLabel: "Decline",
       },
       closeOnBackdropClick: false,
-      width: "32rem",
-      maxWidth: "calc(100vw - 2rem)",
+      width: DIALOG_WIDTH,
+      maxWidth: DIALOG_MAX_WIDTH,
     });
     this.open.set(request.id, dialog);
     const confirmed = (await dialog.result) ?? false;

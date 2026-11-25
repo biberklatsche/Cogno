@@ -49,7 +49,7 @@ describe("RemotePairFormComponent", () => {
     let paired!: (name: string) => void;
     const answer = vi.fn();
     pair.mockImplementation((_id: string, onCheck: (check: PairingCheck) => void) => {
-      onCheck({ check: "123456", answer });
+      onCheck({ check: "123456", name: "office", answer });
       return new Promise((resolve) => (paired = resolve));
     });
 
@@ -74,6 +74,7 @@ describe("RemotePairFormComponent", () => {
       return new Promise((_resolve, reject) =>
         onCheck({
           check: "123456",
+          name: "office",
           answer: () => reject(new HostError("pairingDeclined", "not confirmed")),
         }),
       );

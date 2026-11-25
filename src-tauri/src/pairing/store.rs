@@ -94,13 +94,17 @@ impl Store {
         }
     }
 
-    /// Changes the paired machines as `change` says, and saves them.
+    /// Changes the paired machines as `change` says, and saves them when
+    /// that changed any.
     pub fn change<T>(&self, change: impl FnOnce(&mut Vec<PairedMachine>) -> T) -> io::Result<T> {
         let mut known = lock(&self.paired);
-        let mut paired = self.known(&mut known)?.clone();
+        let before = self.known(&mut known)?;
+        let mut paired = before.clone();
         let result = change(&mut paired);
-        self.save(&paired)?;
-        *known = Some(paired);
+        if paired != *before {
+            self.save(&paired)?;
+            *known = Some(paired);
+        }
         Ok(result)
     }
 
@@ -139,8 +143,11 @@ impl Store {
     }
 }
 
+/// How long this machine's secret key is.
+const KEY_BYTES: usize = 32;
+
 fn parse_key(text: &str) -> io::Result<SecretKey> {
-    let bytes: [u8; 32] = hex::decode(text)
+    let bytes: [u8; KEY_BYTES] = hex::decode(text)
         .map_err(invalid)?
         .try_into()
         .map_err(|_| invalid("the pairing key has the wrong length"))?;

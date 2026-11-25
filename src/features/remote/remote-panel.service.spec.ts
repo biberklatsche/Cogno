@@ -31,6 +31,7 @@ describe("RemotePanelService", () => {
       | "removeHost"]: ReturnType<typeof vi.fn>;
   };
   let service: RemotePanelService;
+  let dispatch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     hosts$ = new BehaviorSubject<readonly RemoteHost[]>([host("office", "disconnected")]);
@@ -42,10 +43,12 @@ describe("RemotePanelService", () => {
       connect: vi.fn().mockResolvedValue(undefined),
       disconnect: vi.fn().mockResolvedValue(undefined),
       renameHost: vi.fn().mockResolvedValue(undefined),
-      removeHost: vi.fn().mockResolvedValue(undefined),
+      removeHost: vi.fn().mockResolvedValue(true),
     };
+    dispatch = vi.fn();
     service = new RemotePanelService(
       { hosts$, shownInThisWindowChanged$, ...port } as unknown as RemoteShellsPort,
+      { dispatch } as never,
       { onDestroy: vi.fn() } as unknown as DestroyRef,
     );
   });
@@ -240,6 +243,22 @@ describe("RemotePanelService", () => {
 
     port.renameHost.mockRejectedValue(new Error("A remote needs a name."));
     await expect(service.renameHost("office", "mac")).resolves.toBe("A remote needs a name.");
+  });
+
+  it("removes a machine, and notifies when that machine did not hear of it", async () => {
+    await service.removeHost(host("office", "connected"));
+    expect(port.removeHost).toHaveBeenCalledWith("office");
+    expect(dispatch).not.toHaveBeenCalled();
+
+    port.removeHost.mockResolvedValue(false);
+    await service.removeHost(host("office", "connected"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "warning",
+        header: "Removed office here only",
+        body: expect.stringMatching(/^office could not be reached.*refused/),
+      }),
+    );
   });
 
   it("leaves a failed connection to the host's own state", async () => {

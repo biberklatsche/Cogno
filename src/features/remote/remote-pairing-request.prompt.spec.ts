@@ -1,14 +1,17 @@
 import type { Pairing, PairingRequestContract } from "@cogno/platform";
 import { DialogRef, type DialogService } from "@cogno/shared/ui";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PairingRequestPrompt } from "./pairing-request.prompt";
+import { RemotePairingRequestPrompt } from "./remote-pairing-request.prompt";
 
-describe("PairingRequestPrompt", () => {
+describe("RemotePairingRequestPrompt", () => {
   let request: (request: PairingRequestContract) => void;
   let ended: (id: number) => void;
   let answer: ReturnType<typeof vi.fn>;
   let open: ReturnType<typeof vi.fn>;
   let dialog: DialogRef<boolean>;
+  let unlisten: ReturnType<typeof vi.fn>;
+  let onRequest: ReturnType<typeof vi.fn>;
+  let prompt: RemotePairingRequestPrompt;
 
   beforeEach(() => {
     answer = vi.fn().mockResolvedValue(undefined);
@@ -16,21 +19,37 @@ describe("PairingRequestPrompt", () => {
       dialog = new DialogRef<boolean>(1, () => undefined);
       return dialog;
     });
-    new PairingRequestPrompt(
+    unlisten = vi.fn();
+    onRequest = vi.fn((listener) => {
+      request = listener;
+      return Promise.resolve(unlisten);
+    });
+    prompt = new RemotePairingRequestPrompt(
       {
         answer,
-        onRequest: vi.fn((listener) => {
-          request = listener;
-          return Promise.resolve(() => undefined);
-        }),
+        onRequest,
         onRequestEnded: vi.fn((listener) => {
           ended = listener;
-          return Promise.resolve(() => undefined);
+          return Promise.resolve(unlisten);
         }),
       } as unknown as Pairing,
       { open } as unknown as DialogService,
-      { onDestroy: vi.fn() } as never,
     );
+    prompt.listen();
+  });
+
+  it("listens once while it does, and not at all once it was stopped", async () => {
+    prompt.listen();
+    expect(onRequest).toHaveBeenCalledOnce();
+
+    prompt.stop();
+    await Promise.resolve();
+    await Promise.resolve();
+    // Both listeners are gone.
+    expect(unlisten).toHaveBeenCalledTimes(2);
+
+    prompt.listen();
+    expect(onRequest).toHaveBeenCalledTimes(2);
   });
 
   it("asks the user, naming the machine and the number it shows", () => {
@@ -42,12 +61,6 @@ describe("PairingRequestPrompt", () => {
       confirmLabel: "They match",
       cancelLabel: "Decline",
     });
-  });
-
-  it("says 'A machine' for one that does not say how it calls itself", () => {
-    request({ id: 1, name: null, check: "123456" });
-
-    expect(open.mock.calls[0][1].data.message).toMatch(/^A machine wants to pair/);
   });
 
   it("confirms when the user says the numbers match", async () => {

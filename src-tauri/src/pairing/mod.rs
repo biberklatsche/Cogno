@@ -43,7 +43,7 @@ const UNPAIR_PATIENCE: Duration = Duration::from_secs(5);
 /// (`_cogno._udp`; macOS lists it in `NSBonjourServices`).
 const LOCAL_SERVICE_NAME: &str = "cogno";
 /// What a machine is called that does not say how it calls itself.
-const UNNAMED_MACHINE: &str = "machine";
+const UNNAMED_MACHINE: &str = "Unnamed machine";
 
 /// What the user sees of pairing; told through `PairingEvents::changed`.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -77,8 +77,8 @@ pub struct NearbyMachine {
 #[serde(rename_all = "camelCase")]
 pub struct PairRequest {
     pub id: u64,
-    /// How the other machine calls itself, when it says.
-    pub name: Option<String>,
+    /// What the other machine is called: as it calls itself.
+    pub name: String,
     /// The number the other machine shows too.
     pub check: String,
 }
@@ -103,6 +103,10 @@ pub enum PairingError {
     Unreachable(String),
     /// What the user pasted is no machine's invitation.
     NoInvitation,
+    /// The machine is not paired with this one (any more).
+    NotPaired,
+    /// A paired machine was given no name.
+    NameMissing,
     /// The other machine does not pair now, a user declined or did not
     /// answer in time.
     Declined,
@@ -128,9 +132,13 @@ impl From<PairingError> for CommandError {
                 format!("Could not reach the other machine: {reason}"),
             ),
             PairingError::NoInvitation => CommandError::new(
-                AppErrorCode::PairingUnreachable,
+                AppErrorCode::NoInvitation,
                 "This is not an invitation. Copy it on the other machine and paste all of it",
             ),
+            PairingError::NotPaired => not_paired(),
+            PairingError::NameMissing => {
+                CommandError::new(AppErrorCode::NameMissing, "A remote needs a name")
+            }
             PairingError::Declined => CommandError::new(
                 AppErrorCode::PairingDeclined,
                 "The pairing was not confirmed on both machines",
@@ -412,10 +420,10 @@ impl Pairing {
         let (answer, answered) = oneshot::channel();
         lock(&self.0.requests).insert(id, answer);
         let peer = pending.peer;
-        let wanted = pending.peer_name.clone();
+        let name = name_of(pending.peer_name.as_deref());
         tell(PairRequest {
             id,
-            name: wanted.clone(),
+            name: name.clone(),
             check: pending.check.clone(),
         });
         let confirmed = async {
@@ -434,7 +442,7 @@ impl Pairing {
                 return known.clone();
             }
             let machine = PairedMachine {
-                name: name_of(wanted.as_deref()),
+                name,
                 endpoint_id: peer,
             };
             paired.push(machine.clone());
@@ -454,12 +462,17 @@ impl Pairing {
 
     /// Calls the paired machine `id` `name` from now on.
     pub fn rename(&self, id: &str, name: &str) -> Result<(), PairingError> {
+        let name = name.trim();
+        if name.is_empty() {
+            return Err(PairingError::NameMissing);
+        }
         let id = id.parse::<EndpointId>().ok();
-        self.0.store.change(|paired| {
-            for machine in paired.iter_mut().filter(|m| Some(m.endpoint_id) == id) {
-                machine.name = name.to_string();
-            }
+        let renamed = self.0.store.change(|paired| {
+            let machine = paired.iter_mut().find(|m| Some(m.endpoint_id) == id)?;
+            machine.name = name.to_string();
+            Some(())
         })?;
+        renamed.ok_or(PairingError::NotPaired)?;
         self.0.events.changed();
         Ok(())
     }
@@ -492,12 +505,7 @@ impl Pairing {
         let machine = paired
             .iter()
             .find(|machine| Some(machine.endpoint_id) == id)
-            .ok_or_else(|| {
-                CommandError::new(
-                    AppErrorCode::NotPaired,
-                    "This machine is not paired with that machine (any more)",
-                )
-            })?;
+            .ok_or_else(not_paired)?;
         Ok(Dialing::start(
             endpoint,
             self.address_of(machine.endpoint_id),
@@ -612,6 +620,13 @@ impl Pairing {
             }
         }
     }
+}
+
+fn not_paired() -> CommandError {
+    CommandError::new(
+        AppErrorCode::NotPaired,
+        "This machine is not paired with that machine (any more)",
+    )
 }
 
 /// How this machine calls itself towards others.
@@ -976,7 +991,13 @@ mod tests {
             machines.into_iter().map(|machine| machine.name).collect()
         };
 
-        laptop.rename(&office_id, "work").unwrap();
+        laptop.rename(&office_id, " work ").unwrap();
+        assert_eq!(names(), ["work"]);
+        // No name is none, and nobody else is renamed for it.
+        let unnamed = laptop.rename(&office_id, "  ");
+        assert!(matches!(unnamed, Err(PairingError::NameMissing)));
+        let unknown = laptop.rename(&laptop.endpoint().unwrap().id().to_string(), "me");
+        assert!(matches!(unknown, Err(PairingError::NotPaired)));
         assert_eq!(names(), ["work"]);
 
         // Paired again, as after the office removed the pairing on its side.
@@ -1023,7 +1044,7 @@ mod tests {
     #[test]
     fn a_machine_is_called_as_it_calls_itself_or_machine() {
         assert_eq!(name_of(Some(" office ")), "office");
-        assert_eq!(name_of(None), "machine");
-        assert_eq!(name_of(Some("  ")), "machine");
+        assert_eq!(name_of(None), UNNAMED_MACHINE);
+        assert_eq!(name_of(Some("  ")), UNNAMED_MACHINE);
     }
 }

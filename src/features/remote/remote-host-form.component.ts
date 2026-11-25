@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   EventEmitter,
   Input,
   OnChanges,
@@ -36,7 +37,7 @@ import { RemotePanelService } from "./remote-panel.service";
         <button type="button" class="button" [disabled]="saving()" (click)="closed.emit()">
           Cancel
         </button>
-        <button type="submit" class="button" [disabled]="saving()">Save</button>
+        <button type="submit" class="button" [disabled]="saving() || unnamed()">Save</button>
       </div>
     </form>
   `,
@@ -97,6 +98,8 @@ export class RemoteHostFormComponent implements OnChanges {
 
   readonly name = signal("");
   readonly saving = signal(false);
+  /** Whether no name is typed: a remote needs one. */
+  readonly unnamed = computed(() => this.name().trim() === "");
   readonly error = signal<string | undefined>(undefined);
 
   constructor(private readonly panel: RemotePanelService) {}
@@ -114,7 +117,7 @@ export class RemoteHostFormComponent implements OnChanges {
 
   async save(event: Event): Promise<void> {
     event.preventDefault();
-    if (this.saving()) return;
+    if (this.saving() || this.unnamed()) return;
     this.saving.set(true);
     this.error.set(undefined);
     const error = await this.panel.renameHost(this.host.id, this.name());

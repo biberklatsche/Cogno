@@ -53,7 +53,6 @@ import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
 import { PaneLayoutLookup } from "@cogno/core/workbench/grid-list/+state/pane-layout-lookup";
 import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
-import { PairingRequestPrompt } from "@cogno/core/workbench/hosts/pairing-request.prompt";
 import { SessionPlacementPublisher } from "@cogno/core/workbench/hosts/session-placement.publisher";
 import { ActionKeybindingPortAdapterService } from "@cogno/core/workbench/keybindings/action-keybinding-port.adapter.service";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
@@ -159,8 +158,6 @@ export const appConfig: ApplicationConfig = {
         eager(TerminalSearchApiService);
         eager(WorkspaceShortcutActionService);
         eager(SessionPlacementPublisher);
-        // Another machine may ask to pair with this one.
-        eager(PairingRequestPrompt);
 
         // Construct the tab-list so its actions register, then verify every core
         // action has a handler (a catalog action nothing handles is a bug).

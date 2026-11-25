@@ -1,5 +1,4 @@
 import { RemoteHost } from "@cogno/core/api/remote-shells-port";
-import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { HostError, PairedMachineContract, SeenSessionContract } from "@cogno/platform";
 import { HostConnectionContract } from "@cogno/platform/hosts";
 import { BehaviorSubject, Subject } from "rxjs";
@@ -53,9 +52,6 @@ describe("RemoteShellsAdapterService", () => {
         get machines() {
           return machines$.value;
         },
-        nameOf: (id: string) => machines$.value.find((machine) => machine.endpointId === id)?.name,
-        labelOf: (id: string) =>
-          machines$.value.find((machine) => machine.endpointId === id)?.name ?? "the other machine",
       } as never,
       { rename, remove: removePaired } as never,
       { sessions, killSession } as never,
@@ -119,55 +115,22 @@ describe("RemoteShellsAdapterService", () => {
   describe("a paired machine", () => {
     beforeEach(() => machines$.next([office, laptop]));
 
-    it("is renamed in the pairing, also to the name of another remote; its connection stays", async () => {
-      await adapter.renameHost("laptop-id", "office");
-      expect(rename).toHaveBeenLastCalledWith("laptop-id", "office");
-      rename.mockClear();
+    it("is renamed in the pairing, whatever the name; its connection stays", async () => {
+      await adapter.renameHost("laptop-id", " office ");
 
-      await expect(adapter.renameHost("laptop-id", "  ")).rejects.toThrow();
-      expect(rename).not.toHaveBeenCalled();
-
-      await adapter.renameHost("laptop-id", " notebook ");
-
-      expect(rename).toHaveBeenCalledWith("laptop-id", "notebook");
+      // Whether that is a name, the app says.
+      expect(rename).toHaveBeenCalledWith("laptop-id", " office ");
       // It is known by its id: what stands, and its panes, are untouched.
       expect(disconnect).not.toHaveBeenCalled();
     });
 
-    it("leaves the pairing alone when the name stays", async () => {
-      await adapter.renameHost("laptop-id", " laptop ");
+    it("is hung up on and removed from the pairing, and says whether that machine heard", async () => {
+      await expect(adapter.removeHost("laptop-id")).resolves.toBe(true);
+      expect(disconnect).toHaveBeenCalledWith("laptop-id");
+      expect(removePaired).toHaveBeenCalledWith("laptop-id");
 
-      expect(rename).not.toHaveBeenCalled();
-    });
-
-    it("is hung up on and removed from the pairing", async () => {
-      const warn = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
-      try {
-        await adapter.removeHost("laptop-id");
-
-        expect(disconnect).toHaveBeenCalledWith("laptop-id");
-        expect(removePaired).toHaveBeenCalledWith("laptop-id");
-        expect(warn).not.toHaveBeenCalled();
-      } finally {
-        warn.mockRestore();
-      }
-    });
-
-    it("tells the user when the other machine did not hear of its removal", async () => {
-      const warn = vi.spyOn(ErrorReporter, "reportWarning").mockImplementation(() => undefined);
       removePaired.mockResolvedValue(false);
-      try {
-        await adapter.removeHost("laptop-id");
-
-        expect(warn).toHaveBeenCalledWith(
-          expect.objectContaining({
-            notify: true,
-            message: expect.stringMatching(/^Removed laptop here.*refused/),
-          }),
-        );
-      } finally {
-        warn.mockRestore();
-      }
+      await expect(adapter.removeHost("laptop-id")).resolves.toBe(false);
     });
   });
 

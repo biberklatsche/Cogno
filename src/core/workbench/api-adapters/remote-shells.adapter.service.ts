@@ -1,6 +1,5 @@
 import { Injectable } from "@angular/core";
 import { RemoteHost, RemoteShell, RemoteShellsPort } from "@cogno/core/api/remote-shells-port";
-import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
 import { SessionHost, SessionRuntime } from "@cogno/core/session/host/session-host";
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
@@ -131,27 +130,18 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
     ).pipe(map(() => undefined));
   }
 
-  async renameHost(host: string, name: string): Promise<void> {
-    const renamed = name.trim();
-    if (renamed === "") throw new Error("A remote needs a name.");
-    if (renamed === this.pairingService.nameOf(host)) return;
-    await this.pairing.rename(host, renamed);
+  renameHost(host: string, name: string): Promise<void> {
+    return this.pairing.rename(host, name);
   }
 
   /**
    * Removes the pairing here; the other machine hears of it when it can be
    * reached. When not, it learns of it when it connects next time.
    */
-  async removeHost(host: string): Promise<void> {
+  async removeHost(host: string): Promise<boolean> {
     // The panes of its shells close here; the shells run on there.
-    const name = this.pairingService.labelOf(host);
     await this.remoteHosts.disconnect(host);
-    if (await this.pairing.remove(host)) return;
-    ErrorReporter.reportWarning({
-      message: `Removed ${name} here, but ${name} could not be reached to remove this machine too. It is refused the next time it connects and can remove this machine then.`,
-      notify: true,
-      source: "RemoteHosts",
-    });
+    return this.pairing.remove(host);
   }
 
   async connect(host: string): Promise<void> {

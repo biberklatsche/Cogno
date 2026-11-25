@@ -94,11 +94,11 @@ describe("Pairing", () => {
     await pairing.onChanged(changed);
 
     const handlers = new Map(listenMock.mock.calls);
-    handlers.get("pairing-request")!({ payload: { id: 1, name: null, check: "123456" } });
+    handlers.get("pairing-request")!({ payload: { id: 1, name: "laptop", check: "123456" } });
     handlers.get("pairing-request-ended")!({ payload: 1 });
     handlers.get("pairing-changed")!({ payload: null });
 
-    expect(requests).toHaveBeenCalledWith({ id: 1, name: null, check: "123456" });
+    expect(requests).toHaveBeenCalledWith({ id: 1, name: "laptop", check: "123456" });
     expect(ended).toHaveBeenCalledWith(1);
     expect(changed).toHaveBeenCalledOnce();
   });

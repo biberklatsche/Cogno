@@ -87,6 +87,20 @@ describe("WaitingPanes", () => {
     expect(found).toEqual([]);
   });
 
+  it("says that the machine is not connected when the user hung up on it, and offers to connect", async () => {
+    connect.mockRejectedValueOnce(new HostError("hungUp", "The connection was hung up"));
+
+    waitForShell();
+    await settle();
+
+    // Asked for: nothing went wrong, and no reason is given.
+    expect(shown()).toBe("Not connected to office Connect Close");
+
+    mountPoint.querySelector("button")?.click();
+    await settle();
+    expect(found).toHaveLength(1);
+  });
+
   it("offers to try again after a connection that could work next time", async () => {
     connect.mockRejectedValueOnce(new HostError("noCognoThere", "No Cogno host answered"));
 

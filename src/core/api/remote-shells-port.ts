@@ -52,8 +52,13 @@ export abstract class RemoteShellsPort {
 
   /** Calls the machine `name` from now on. Rejects with a text for the user. */
   abstract renameHost(host: string, name: string): Promise<void>;
-  /** Hangs up on a machine and removes the pairing with it, here and there. */
-  abstract removeHost(host: string): Promise<void>;
+  /**
+   * Hangs up on a machine and removes the pairing with it, here and there.
+   * Resolves with whether the other machine heard of it: one that was not
+   * reached is refused the next time it connects, and can remove this
+   * machine then.
+   */
+  abstract removeHost(host: string): Promise<boolean>;
 
   /** Settles once the connection stands; how it fails shows on `hosts$`. */
   abstract connect(host: string): Promise<void>;

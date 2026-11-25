@@ -129,7 +129,7 @@ type RowAction = "copy" | "edit" | "delete";
                     <button
                       type="button"
                       class="button text-button"
-                      (click)="panel.removeHost(node.host.id)"
+                      (click)="panel.removeHost(node.host)"
                     >
                       Remove
                     </button>
@@ -408,7 +408,7 @@ export class RemoteSideComponent {
   /** Removing a remote asks once more, as everywhere in the side panels. */
   protected onHostAction(action: RowAction, host: RemoteHost): void {
     if (action === "edit") this.edit(host);
-    if (action === "delete") void this.panel.removeHost(host.id);
+    if (action === "delete") void this.panel.removeHost(host);
   }
 
   protected onShellAction(action: RowAction, host: string, shell: RemoteShell): void {

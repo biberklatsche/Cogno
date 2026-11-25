@@ -37,6 +37,17 @@ describe("RemoteHostFormComponent", () => {
     expect(closed).toHaveBeenCalledOnce();
   });
 
+  it("saves no remote without a name", async () => {
+    open(remote("office"));
+    type("  ");
+
+    expect(form.unnamed()).toBe(true);
+    await form.save(new Event("submit"));
+
+    expect(renameHost).not.toHaveBeenCalled();
+    expect(closed).not.toHaveBeenCalled();
+  });
+
   it("shows the other remote when the panel switches to it while it is open", async () => {
     open(remote("office"));
     type("changed");

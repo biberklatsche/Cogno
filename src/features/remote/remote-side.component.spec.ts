@@ -72,7 +72,7 @@ describe("RemoteSideComponent", () => {
     expect(panel.removeHost).not.toHaveBeenCalled();
 
     component.onHostAction("delete", office());
-    expect(panel.removeHost).toHaveBeenCalledWith("office-id");
+    expect(panel.removeHost).toHaveBeenCalledWith(office());
   });
 
   it("ends a shell only when its deletion is confirmed", () => {

@@ -16,6 +16,8 @@ pub enum AppErrorCode {
     ShellAlreadyRuns,
     /// The connection to the host broke while the request was on its way.
     ConnectionLost,
+    /// The user hung up on the machine while it was being connected.
+    HungUp,
     /// There is no connection to the host the request is for.
     NotConnected,
     /// This machine's host could not be started or reached.
@@ -41,6 +43,10 @@ pub enum AppErrorCode {
     PairingDeclined,
     /// The machine is not paired with this one (any more).
     NotPaired,
+    /// What the user pasted to pair by is no machine's invitation.
+    NoInvitation,
+    /// A paired machine was given no name.
+    NameMissing,
     /// This app failed in itself (a worker thread died).
     Internal,
 }

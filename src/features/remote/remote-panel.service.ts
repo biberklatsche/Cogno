@@ -1,5 +1,6 @@
 import { computed, DestroyRef, Injectable, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
 import { RemoteHost, RemoteShell, RemoteShellsPort } from "@cogno/core/api/remote-shells-port";
 import { HostShells } from "./remote-shell-tree";
 
@@ -39,6 +40,7 @@ export class RemotePanelService {
 
   constructor(
     private readonly port: RemoteShellsPort,
+    private readonly notifications: NotificationCenterPort,
     destroyRef: DestroyRef,
   ) {
     this.port.hosts$.pipe(takeUntilDestroyed(destroyRef)).subscribe((hosts) => {
@@ -100,8 +102,20 @@ export class RemotePanelService {
     }
   }
 
-  removeHost(host: string): Promise<void> {
-    return this.attempt(() => this.port.removeHost(host));
+  /**
+   * Removes a machine. When that machine did not hear of it, the user is
+   * notified: that stays to be read, whatever the panel does meanwhile.
+   */
+  removeHost(host: RemoteHost): Promise<void> {
+    return this.attempt(async () => {
+      if (await this.port.removeHost(host.id)) return;
+      this.notifications.dispatch({
+        header: `Removed ${host.name} here only`,
+        body: `${host.name} could not be reached to remove this machine too. It is refused the next time it connects and can remove this machine then.`,
+        type: "warning",
+        timestamp: new Date(),
+      });
+    });
   }
 
   /**

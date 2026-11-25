@@ -25,6 +25,7 @@ const HOST_ERROR_CODES = [
   // The app's.
   "shellAlreadyRuns",
   "connectionLost",
+  "hungUp",
   "notConnected",
   "hostNotStarted",
   "noCognoThere",
@@ -36,6 +37,8 @@ const HOST_ERROR_CODES = [
   "pairingUnreachable",
   "pairingDeclined",
   "notPaired",
+  "noInvitation",
+  "nameMissing",
   "internal",
 ] as const;
 

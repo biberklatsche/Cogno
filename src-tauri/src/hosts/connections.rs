@@ -310,7 +310,7 @@ impl Connections {
 }
 
 fn hung_up() -> CommandError {
-    CommandError::new(AppErrorCode::ConnectionLost, "The connection was hung up")
+    CommandError::new(AppErrorCode::HungUp, "The connection was hung up")
 }
 
 #[cfg(test)]
@@ -362,7 +362,7 @@ mod tests {
             },
         );
 
-        assert!(given_up.err().unwrap().is(AppErrorCode::ConnectionLost));
+        assert!(given_up.err().unwrap().is(AppErrorCode::HungUp));
         assert!(!introduced);
         assert!(ended.load(Ordering::SeqCst));
     }
@@ -488,7 +488,7 @@ mod tests {
 
         assert!(first.join().unwrap().is_err());
         let given_up = second.join().unwrap();
-        assert!(given_up.err().unwrap().is(AppErrorCode::ConnectionLost));
+        assert!(given_up.err().unwrap().is(AppErrorCode::HungUp));
         assert!(connections.remote("office").is_err());
     }
 }

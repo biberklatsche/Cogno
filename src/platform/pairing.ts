@@ -35,8 +35,8 @@ export type PairingStateContract = {
 /** A pairing waits for this machine's user: both machines show `check`. */
 export type PairingRequestContract = {
   id: number;
-  /** How the other machine calls itself, when it says. */
-  name: string | null;
+  /** What the other machine is called: as it calls itself. */
+  name: string;
   /** The number the other machine shows too. */
   check: string;
 };

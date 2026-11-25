@@ -74,12 +74,8 @@ export class PairingService extends PairingPort {
 
   /** What to call the machine `id` towards the user: its name, as far as it is known. */
   labelOf(id: string): string {
-    return this.nameOf(id) ?? "the other machine";
-  }
-
-  /** What the user calls the paired machine `id`, as far as it is known. */
-  nameOf(id: string): string | undefined {
-    return this.machines.find((machine) => machine.endpointId === id)?.name;
+    const paired = this.machines.find((machine) => machine.endpointId === id);
+    return paired?.name ?? "the other machine";
   }
 
   async enable(): Promise<void> {
@@ -106,7 +102,7 @@ export class PairingService extends PairingPort {
     const paired = await this.pairing.pair(id, (request) =>
       onCheck({
         check: request.check,
-        name: request.name ?? undefined,
+        name: request.name,
         answer: (same) => void this.pairing.answer(request.id, same),
       }),
     );

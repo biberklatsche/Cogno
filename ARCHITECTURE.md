@@ -1357,8 +1357,10 @@ Die Zuständigkeiten:
   (`ConnectFailure`); ob ein neuer Versuch etwas ändern kann, sagt
   `isWorthRetrying` (nicht bei `notPaired`: da hilft nur neu koppeln; nach
   einem Versionskonflikt hilft er, sobald das ältere Cogno aktualisiert
-  ist). `PairingService` führt, was vom Koppeln zu sehen ist, und fragt den
-  Nutzer, wenn ein anderer Rechner koppeln will.
+  ist). `PairingService` führt, was vom Koppeln zu sehen ist. Den
+  Nutzer fragt das Feature, wenn ein anderer Rechner koppeln will
+  (`RemotePairingRequestPrompt`): Core kennt weder den Dialog noch seine
+  Texte.
 - **Vertrag und Feature:** `RemoteShellsPort` (`core/api/`, Adapter in
   `core/workbench/api-adapters/`) gibt einem Feature die Remotes (die
   gekoppelten Rechner, 2.7.3) mit ihrem Verbindungsstand (bei einem

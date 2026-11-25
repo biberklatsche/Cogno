@@ -8,12 +8,17 @@ export type WaitingPaneState =
   | { readonly status: "connecting" }
   /** The machine is asked for the pane's shell. */
   | { readonly status: "lookingForShell" }
-  /** The machine could not be connected. */
+  /** The machine could not be connected, or the user hung up on it meanwhile. */
   | { readonly status: "connectFailed"; readonly failure: ConnectFailure }
   /** The machine is connected but did not say whether the shell runs. */
   | { readonly status: "noAnswer"; readonly message: string }
   /** The machine answered: the pane's shell does not run there any more. */
   | { readonly status: "shellGone" };
+
+/** Whether the user hung up on the machine: asked for, so nothing went wrong. */
+function wasHungUp(failure: ConnectFailure): boolean {
+  return failure.code === "hungUp";
+}
 
 /** Whether trying again could get the pane its shell. */
 function canRetry(state: WaitingPaneState): boolean {
@@ -46,8 +51,12 @@ function canRetry(state: WaitingPaneState): boolean {
           <div class="waiting-title">Looking for the shell on {{ host }}…</div>
         }
         @case ("connectFailed") {
-          <div class="waiting-title">Could not connect to {{ host }}</div>
-          <div class="waiting-reason">{{ state.failure.message }}</div>
+          @if (hungUp(state.failure)) {
+            <div class="waiting-title">Not connected to {{ host }}</div>
+          } @else {
+            <div class="waiting-title">Could not connect to {{ host }}</div>
+            <div class="waiting-reason">{{ state.failure.message }}</div>
+          }
         }
         @case ("noAnswer") {
           <div class="waiting-title">{{ host }} did not say whether the shell runs</div>
@@ -60,7 +69,9 @@ function canRetry(state: WaitingPaneState): boolean {
       @if (state.status !== "connecting" && state.status !== "lookingForShell") {
         <div class="waiting-actions">
           @if (retryable(state)) {
-            <button type="button" class="button" (click)="retry.emit()">Retry</button>
+            <button type="button" class="button" (click)="retry.emit()">
+              {{ retryLabel(state) }}
+            </button>
           }
           <button type="button" class="button" (click)="closePane.emit()">Close</button>
         </div>
@@ -105,5 +116,13 @@ export class WaitingPaneComponent {
 
   protected retryable(state: WaitingPaneState): boolean {
     return canRetry(state);
+  }
+
+  protected hungUp(failure: ConnectFailure): boolean {
+    return wasHungUp(failure);
+  }
+
+  protected retryLabel(state: WaitingPaneState): string {
+    return state.status === "connectFailed" && wasHungUp(state.failure) ? "Connect" : "Retry";
   }
 }
