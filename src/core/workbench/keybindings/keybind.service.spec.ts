@@ -8,7 +8,7 @@ import { TerminalSessionRegistry } from "@cogno/core/workbench/terminal/+state/t
 import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
 import { OsPlatform, OsType } from "@cogno/platform/os";
 import { BehaviorSubject, Subject } from "rxjs";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDestroyRef } from "../../../__test__/destroy-ref";
 import { KeybindService } from "./keybind.service";
 import { TerminalKeybindingContextService } from "./terminal-keybinding-context.service";
@@ -67,6 +67,7 @@ describe("KeybindService", () => {
   });
 
   afterEach(() => {
+    platform = "linux";
     service.unregisterListener("test-listener");
     document.body.innerHTML = "";
     config$.next({ keybind: [] });
@@ -188,8 +189,36 @@ describe("KeybindService", () => {
 
     expect(handler).not.toHaveBeenCalled();
     expect(dispatchResult).toBe(true);
+  });
 
-    platform = "linux";
+  describe("the macOS Edit menu's keys in a terminal", () => {
+    const pressInTerminal = (init: KeyboardEventInit): boolean => {
+      const terminalElement = document.createElement("div");
+      terminalElement.className = "terminal xterm";
+      const helperTextareaElement = document.createElement("textarea");
+      helperTextareaElement.className = "xterm-helper-textarea";
+      terminalElement.appendChild(helperTextareaElement);
+      document.body.appendChild(terminalElement);
+      return helperTextareaElement.dispatchEvent(
+        new KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init }),
+      );
+    };
+
+    beforeEach(() => {
+      platform = "macos";
+    });
+
+    it("never reach the menu when no keybinding takes them", () => {
+      expect(pressInTerminal({ key: "v", metaKey: true })).toBe(false);
+      expect(pressInTerminal({ key: "z", metaKey: true, shiftKey: true })).toBe(false);
+    });
+
+    it("are left alone on other keys and other platforms", () => {
+      expect(pressInTerminal({ key: "k", metaKey: true })).toBe(true);
+
+      platform = "linux";
+      expect(pressInTerminal({ key: "v", metaKey: true })).toBe(true);
+    });
   });
 
   it("does not treat the xterm helper textarea as a native editable field", () => {

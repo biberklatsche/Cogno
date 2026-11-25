@@ -6,7 +6,7 @@ import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.servic
 import type { TauriMenu } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import type { AppWindow } from "@cogno/platform/window";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NativeMenuService } from "./native-menu.service";
 
 const menuItemActionCallbacks = new Map<string, () => void>();
@@ -181,6 +181,50 @@ describe("NativeMenuService", () => {
       "Paste",
       "SelectAll",
     ]);
+  });
+
+  describe("on macOS, a paste from the Edit menu", () => {
+    const pasteInto = (element: Element) => {
+      const event = new Event("paste", { bubbles: true, cancelable: true });
+      element.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    let publishSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      publishSpy = vi.spyOn(appBus, "publish");
+      new NativeMenuService(
+        tauriMenuStub,
+        appWindowStub,
+        { platform: () => "macos" } as unknown as OsPlatform,
+        appBus,
+        keybindService,
+        appWiringService as never,
+        configService,
+        destroyRef,
+      );
+    });
+
+    afterEach(() => {
+      for (const [teardown] of vi.mocked(destroyRef.onDestroy).mock.calls) teardown();
+      document.body.innerHTML = "";
+    });
+
+    it("is Cogno's paste while a terminal has the keyboard", () => {
+      const terminal = document.body.appendChild(document.createElement("div"));
+      terminal.className = "terminal xterm";
+      const textarea = terminal.appendChild(document.createElement("textarea"));
+
+      expect(pasteInto(textarea)).toBe(true);
+      expect(publishSpy).toHaveBeenCalledWith(expect.objectContaining({ payload: "paste" }));
+    });
+
+    it("stays the system's paste in a text field", () => {
+      const field = document.body.appendChild(document.createElement("input"));
+
+      expect(pasteInto(field)).toBe(false);
+      expect(publishSpy).not.toHaveBeenCalled();
+    });
   });
 
   it("publishes action events when menu item callbacks are executed", async () => {
