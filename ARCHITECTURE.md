@@ -1269,10 +1269,15 @@ Stand zurückstellt (`routes.rs`), und die Zustellung an die Webview
 - **Auflegen** (`HostConnection::hang_up`) beendet die Verbindung sofort,
   auch wenn eine Anfrage sie noch hält, und lässt alles scheitern, was auf
   eine Antwort wartet. Ihre Terminals enden mit `hungUp`. Bricht die
-  Verbindung dagegen von selbst ab, enden sie mit `connectionLost`. In
-  beiden Fällen hören alle Fenster `host-disconnected` (mit `lost`): Die
-  Verbindung gehört der App, und kein Fenster darf sie weiter für stehend
-  halten, weil ein anderes aufgelegt hat.
+  Verbindung dagegen von selbst ab, enden sie mit `connectionLost`.
+- **Der Verbindungsstand gehört der App**, wie die Verbindung selbst: je
+  gekoppeltem Rechner `connecting`, `connected` (mit dem System dort) oder
+  `failed` (mit Code und Grund), ohne Eintrag nicht verbunden. Eine
+  abgebrochene Verbindung steht als `failed` (`connectionLost`), bis wieder
+  verbunden oder aufgelegt wird. Die Fenster erfragen den Stand
+  (`host_connections`) und hören von jeder Änderung
+  (`host-connections-changed`); keins führt einen eigenen. So zeigen alle
+  Fenster dasselbe, gleich welches verbunden oder aufgelegt hat.
 - **Wer nicht antwortet, hält nur sich auf.** Die Prozesse unter den Shells
   (`terminal_processes`) fragt die App bei allen Hosts zugleich und wartet
   je Host höchstens zwei Sekunden.
@@ -1341,12 +1346,13 @@ Rechner und verliert Host und Verzeichnis des anderen (`asNewLocalPane`).
 Die Zuständigkeiten:
 
 - **`platform/hosts.ts`:** verbinden, auflegen, Sitzungen eines Hosts
-  auflisten, eine erfragen und beenden, Shell-Integration ablegen,
-  `onDisconnected`. **`platform/pairing.ts`:** was 2.7.3 beschreibt.
+  auflisten, eine erfragen und beenden, Shell-Integration ablegen, den
+  Verbindungsstand erfragen und von seinen Änderungen hören. **`platform/pairing.ts`:** was 2.7.3 beschreibt.
 - **Workbench (`core/workbench/hosts/`):** Alles zu Hosts, dem dieses
   Rechners wie den entfernten. `RemoteHostsService` verbindet, wenn der
-  Nutzer es verlangt oder ein Pane den Host braucht, einmal je Host, und
-  führt den Stand je Host (`connections$`). Ein Fehlschlag trägt seinen Code
+  Nutzer es verlangt oder ein Pane den Host braucht, und gibt den Stand je
+  Host weiter (`connections$`), wie die App ihn führt (2.7.1): Er liest ihn
+  neu, wenn die App eine Änderung meldet, und merkt sich selbst nichts. Ein Fehlschlag trägt seinen Code
   (`ConnectFailure`); ob ein neuer Versuch etwas ändern kann, sagt
   `isWorthRetrying` (nicht bei `notPaired`: da hilft nur neu koppeln; nach
   einem Versionskonflikt hilft er, sobald das ältere Cogno aktualisiert

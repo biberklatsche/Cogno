@@ -47,8 +47,8 @@ const HALF_SEQ_RANGE: u32 = 1 << 31;
 pub const PTY_EXIT_EVENT: &str = "pty-exit";
 pub const PTY_HANDED_BACK_EVENT: &str = "pty-handed-back";
 pub const PTY_TAKEN_OVER_EVENT: &str = "pty-taken-over";
-/// To every window: the connection to a host on another machine ended.
-pub const HOST_DISCONNECTED_EVENT: &str = "host-disconnected";
+/// To every window: how far the connection to a machine is changed.
+pub const HOST_CONNECTIONS_CHANGED_EVENT: &str = "host-connections-changed";
 
 fn terminal_event(name: &str, terminal_id: &str) -> String {
     format!("{name}:{terminal_id}")
@@ -88,15 +88,6 @@ struct ExitPayload {
 #[derive(Clone, Serialize)]
 struct TakenOverPayload {
     by: Option<String>,
-}
-
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct HostDisconnected {
-    /// The id the machine is paired under.
-    host: String,
-    /// Whether the connection broke, as opposed to this app hanging up.
-    lost: bool,
 }
 
 /// A session's output on its way to the webview.
@@ -218,18 +209,6 @@ impl WebviewEvents {
             window,
             &terminal_event(PTY_EXIT_EVENT, terminal_id),
             ExitPayload { reason },
-        );
-    }
-
-    /// Tells every window that the connection to `host` ended: `lost`
-    /// without this app hanging up, or hung up on.
-    pub fn disconnected(&self, host: &str, lost: bool) {
-        let _ = self.app.emit(
-            HOST_DISCONNECTED_EVENT,
-            HostDisconnected {
-                host: host.to_string(),
-                lost,
-            },
         );
     }
 }

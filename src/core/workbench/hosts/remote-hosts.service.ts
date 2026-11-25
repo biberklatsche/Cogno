@@ -1,12 +1,13 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { ErrorReporter } from "@cogno/core/infrastructure/error/error-reporter";
-import { PairingService } from "@cogno/core/workbench/hosts/pairing.service";
-import { HostError, toHostError } from "@cogno/platform";
-import { HostInfo, Hosts } from "@cogno/platform/hosts";
+import { HostConnectionContract, HostInfo, Hosts } from "@cogno/platform/hosts";
 import { BehaviorSubject, Observable } from "rxjs";
 
-/** Why a connection failed: the code and message of the `HostError` it failed with. */
-export type ConnectFailure = Pick<HostError, "code" | "message">;
+/** How far the connection to a host is; a host without an entry is not connected. */
+export type RemoteHostConnection = HostConnectionContract;
+
+/** Why a connection failed: a host's or the app's code, and words for the user. */
+export type ConnectFailure = Extract<RemoteHostConnection, { status: "failed" }>["failure"];
 
 /**
  * Whether connecting again could work after `failure`. Not to a machine
@@ -17,26 +18,25 @@ export function isWorthRetrying(failure: ConnectFailure): boolean {
   return failure.code !== "notPaired";
 }
 
-/** How far the connection to a host is; a host without an entry is not connected. */
-export type RemoteHostConnection =
-  | { readonly status: "connecting" }
-  | { readonly status: "connected"; readonly info: HostInfo }
-  | { readonly status: "failed"; readonly failure: ConnectFailure };
-
 /**
  * The connections to the paired machines. A connection is set up when it is
  * asked for - by the user, or by a pane that shows a shell of that machine -
  * and stands until it breaks, is hung up or Cogno ends.
+ *
+ * The connections are the app's, one per machine for all its windows, and
+ * so is how far each is: this window reads it again whenever the app says
+ * it changed, and keeps nothing of its own.
  *
  * Nothing is installed there: Cogno only shows shells that run on the other
  * machine, started by the Cogno there with its own shell integration.
  */
 @Injectable({ providedIn: "root" })
 export class RemoteHostsService {
-  private readonly connecting = new Map<string, Promise<HostInfo>>();
   private readonly connections = new BehaviorSubject<ReadonlyMap<string, RemoteHostConnection>>(
     new Map(),
   );
+  /** Counts the reads: an answer counts only while it is the newest. */
+  private reads = 0;
 
   /** How far each host's connection is, by the host's id; the current state first. */
   readonly connections$: Observable<ReadonlyMap<string, RemoteHostConnection>> =
@@ -44,90 +44,54 @@ export class RemoteHostsService {
 
   constructor(
     private readonly hosts: Hosts,
-    private readonly pairing: PairingService,
     destroyRef: DestroyRef,
   ) {
     void hosts
-      .onDisconnected((id, lost) => this.onDisconnected(id, lost))
+      .onConnectionsChanged(() => void this.read())
       .then((unlisten) => destroyRef.onDestroy(unlisten));
+    void this.read();
   }
 
   /** What a host said about itself, while its connection stands. */
   info(id: string): HostInfo | undefined {
     const connection = this.connections.value.get(id);
-    return connection?.status === "connected" ? connection.info : undefined;
+    return connection?.status === "connected" ? { os: connection.os } : undefined;
   }
 
   /**
-   * Connects to the host unless the connection stands or is being set up.
-   * Rejects with a `HostError`.
+   * Connects to the host unless the connection stands; the app sets one up
+   * once, however many ask. Rejects with a `HostError`.
    */
-  connect(id: string): Promise<HostInfo> {
-    const known = this.info(id);
-    if (known) return Promise.resolve(known);
-    const underway = this.connecting.get(id);
-    if (underway) return underway;
-
-    // Hung up in the meantime: what comes of this connection is no news.
-    const isCurrent = () => this.connecting.get(id) === connecting;
-    const connecting: Promise<HostInfo> = this.hosts
-      .connect(id)
-      .then((info) => {
-        if (!isCurrent()) {
-          throw new HostError("connectionLost", "The connection was hung up.");
-        }
-        this.setConnection(id, { status: "connected", info });
-        return info;
-      })
-      .catch((rejection: unknown) => {
-        const error = toHostError(rejection);
-        const failure: ConnectFailure = { code: error.code, message: error.message };
-        if (isCurrent()) this.setConnection(id, { status: "failed", failure });
-        throw error;
-      })
-      .finally(() => {
-        if (isCurrent()) this.connecting.delete(id);
-      });
-    this.connecting.set(id, connecting);
-    this.setConnection(id, { status: "connecting" });
-    return connecting;
+  async connect(id: string): Promise<HostInfo> {
+    try {
+      return await this.hosts.connect(id);
+    } finally {
+      // Known here once this returns, not only when the app's word arrives.
+      await this.read();
+    }
   }
 
   /**
-   * Hangs up on the host, or gives up connecting to it. The panes that show
-   * its shells close here; the shells themselves run on.
+   * Hangs up on the host, or gives up connecting to it, for every window.
+   * The panes that show its shells close; the shells themselves run on.
    */
   async disconnect(id: string): Promise<void> {
-    // Asked for: nothing was lost, so nothing is warned about.
-    this.connecting.delete(id);
-    this.setConnection(id, undefined);
-    await this.hosts.disconnect(id);
-  }
-
-  private setConnection(id: string, connection: RemoteHostConnection | undefined): void {
-    const next = new Map(this.connections.value);
-    if (connection) {
-      next.set(id, connection);
-    } else {
-      next.delete(id);
+    try {
+      await this.hosts.disconnect(id);
+    } finally {
+      await this.read();
     }
-    this.connections.next(next);
   }
 
-  /**
-   * The app's connection to the host ended, whichever window caused it:
-   * this window must not go on believing that it stands.
-   */
-  private onDisconnected(id: string, lost: boolean): void {
-    // Only a window that used the host has anything to forget, or to tell.
-    if (!this.info(id)) return;
-    this.setConnection(id, undefined);
-    // Hung up on in another window: nothing was lost.
-    if (!lost) return;
-    ErrorReporter.reportWarning({
-      message: `The connection to ${this.pairing.labelOf(id)} was lost. Its terminals wait until it is back.`,
-      notify: true,
-      source: "RemoteHosts",
-    });
+  private async read(): Promise<void> {
+    const question = ++this.reads;
+    let connections: ReadonlyMap<string, RemoteHostConnection>;
+    try {
+      connections = new Map(Object.entries(await this.hosts.connections()));
+    } catch (error) {
+      ErrorReporter.reportException({ error, handled: true, source: "RemoteHosts" });
+      return;
+    }
+    if (question === this.reads) this.connections.next(connections);
   }
 }

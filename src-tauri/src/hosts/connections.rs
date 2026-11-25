@@ -9,8 +9,25 @@ use cogno_host::sync::lock;
 use crate::command_error::{AppErrorCode, CommandError, CommandResult};
 use crate::host_connection::{HangUp, HostConnection};
 
+/// How far the connection to a machine is, for every window to show; a
+/// machine without one is not connected.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(tag = "status", rename_all = "camelCase")]
+pub enum RemoteState {
+    Connecting,
+    Connected {
+        /// "windows", "macos" or "linux".
+        os: String,
+    },
+    Failed {
+        failure: CommandError,
+    },
+}
+
 #[derive(Default)]
 pub struct Connections {
+    /// Told whenever a machine's `RemoteState` changed.
+    on_change: Option<Box<dyn Fn() + Send + Sync>>,
     /// The connection to this machine's host, once there was one.
     local: Mutex<Option<Arc<HostConnection>>>,
     /// The connections to other machines, by the id they are paired under.
@@ -34,6 +51,8 @@ struct Attempt {
     hang_ups: u64,
     /// Ends the connect in progress.
     ender: Option<HangUp>,
+    /// How far the connection is, as the windows show it.
+    state: Option<RemoteState>,
 }
 
 /// What a lost connection means for its host.
@@ -47,6 +66,68 @@ pub enum Lost {
 }
 
 impl Connections {
+    /// Connections whose remote states `on_change` hears change.
+    pub fn telling(on_change: impl Fn() + Send + Sync + 'static) -> Self {
+        Self {
+            on_change: Some(Box::new(on_change)),
+            ..Self::default()
+        }
+    }
+
+    /// How far the connection to each machine is, by its id.
+    pub fn states(&self) -> HashMap<String, RemoteState> {
+        lock(&self.attempts)
+            .iter()
+            .filter_map(|(id, attempt)| Some((id.clone(), attempt.state.clone()?)))
+            .collect()
+    }
+
+    /// Changes the state of the hosts `which` names as `change` says, and
+    /// tells of it when that changed one.
+    fn change_states(&self, which: impl Fn(&str) -> bool, change: impl Fn(&mut Attempt)) {
+        let changed = lock(&self.attempts)
+            .iter_mut()
+            .filter(|(id, _)| which(id))
+            .fold(false, |changed, (_, attempt)| {
+                let before = attempt.state.clone();
+                change(attempt);
+                changed || attempt.state != before
+            });
+        if changed {
+            if let Some(on_change) = &self.on_change {
+                on_change();
+            }
+        }
+    }
+
+    /// A connect to `id` sets out: how often the host was hung up on so far.
+    fn begin(&self, id: &str) -> u64 {
+        lock(&self.attempts).entry(id.to_string()).or_default();
+        self.change_states(
+            |host| host == id,
+            |attempt| {
+                if !matches!(attempt.state, Some(RemoteState::Connected { .. })) {
+                    attempt.state = Some(RemoteState::Connecting);
+                }
+            },
+        );
+        self.hang_ups_of(id)
+    }
+
+    /// The connection to `id` broke: said so until it is connected again.
+    pub fn lost_remote(&self, id: &str) {
+        self.change_states(
+            |host| host == id,
+            |attempt| {
+                if matches!(attempt.state, Some(RemoteState::Connected { .. })) {
+                    attempt.state = Some(RemoteState::Failed {
+                        failure: CommandError::connection_lost(),
+                    });
+                }
+            },
+        );
+    }
+
     fn live_local(&self) -> Option<Arc<HostConnection>> {
         lock(&self.local)
             .as_ref()
@@ -122,7 +203,35 @@ impl Connections {
         start: impl FnOnce() -> CommandResult<(U, HangUp)>,
         introduce: impl FnOnce(U) -> CommandResult<HostConnection>,
     ) -> CommandResult<Arc<HostConnection>> {
-        let hang_ups = self.hang_ups_of(id);
+        let hang_ups = self.begin(id);
+        let connected = self.connect_in_turn(id, hang_ups, start, introduce);
+        // Hung up on meanwhile: what came of this connect is no news.
+        self.change_states(
+            |host| host == id,
+            |attempt| {
+                if attempt.hang_ups != hang_ups {
+                    return;
+                }
+                attempt.state = Some(match &connected {
+                    Ok(connection) => RemoteState::Connected {
+                        os: connection.os().to_string(),
+                    },
+                    Err(failure) => RemoteState::Failed {
+                        failure: failure.clone(),
+                    },
+                });
+            },
+        );
+        connected
+    }
+
+    fn connect_in_turn<U>(
+        &self,
+        id: &str,
+        hang_ups: u64,
+        start: impl FnOnce() -> CommandResult<(U, HangUp)>,
+        introduce: impl FnOnce(U) -> CommandResult<HostConnection>,
+    ) -> CommandResult<Arc<HostConnection>> {
         let given_up = || self.hang_ups_of(id) != hang_ups;
         let turn = lock(&self.attempts)
             .entry(id.to_string())
@@ -204,7 +313,7 @@ impl Connections {
     }
 
     /// Gives up the connects to the hosts `which` names; those in progress
-    /// end.
+    /// end, and the hosts are not connected.
     fn give_up(&self, which: impl Fn(&str) -> bool) {
         let enders: Vec<HangUp> = lock(&self.attempts)
             .iter_mut()
@@ -217,6 +326,7 @@ impl Connections {
         for end in enders {
             end();
         }
+        self.change_states(which, |attempt| attempt.state = None);
     }
 
     /// Hangs up on the host `id`, and gives up on a connection to it that
@@ -319,6 +429,67 @@ mod tests {
 
         assert!(failed.err().unwrap().is(AppErrorCode::ConnectFailed));
         assert!(connections.remote("office").is_err());
+    }
+
+    #[test]
+    fn every_change_of_how_far_a_connection_is_is_told() {
+        let told = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let connections = {
+            let told = told.clone();
+            Connections::telling(move || {
+                told.fetch_add(1, Ordering::SeqCst);
+            })
+        };
+        let state = |id: &str| connections.states().get(id).cloned();
+
+        let failed = connections.connect_remote(
+            "office",
+            || {
+                assert_eq!(state("office"), Some(RemoteState::Connecting));
+                Ok(setting())
+            },
+            |_| Err(CommandError::new(AppErrorCode::ConnectFailed, "denied")),
+        );
+        let failure = failed.err().unwrap();
+        assert_eq!(state("office"), Some(RemoteState::Failed { failure }));
+
+        let connected = connections
+            .connect_remote("office", || Ok(setting()), |_| Ok(a_standing_connection()))
+            .unwrap();
+        let os = connected.os().to_string();
+        assert_eq!(state("office"), Some(RemoteState::Connected { os }));
+        // Connecting, failed, connecting, connected.
+        assert_eq!(told.load(Ordering::SeqCst), 4);
+
+        // Asked for again while it stands: nothing changes.
+        connections
+            .connect_remote("office", || Ok(setting()), |_| Ok(a_standing_connection()))
+            .unwrap();
+        assert_eq!(told.load(Ordering::SeqCst), 4);
+
+        connections.lost_remote("office");
+        assert!(matches!(state("office"), Some(RemoteState::Failed { .. })));
+
+        connections.disconnect("office");
+        assert_eq!(state("office"), None);
+        assert_eq!(told.load(Ordering::SeqCst), 6);
+    }
+
+    #[test]
+    fn a_connect_that_was_hung_up_on_leaves_the_host_not_connected() {
+        let connections = Connections::default();
+
+        let given_up = connections.connect_remote(
+            "office",
+            || {
+                connections.disconnect("office");
+                Ok(setting())
+            },
+            |_| Ok(a_standing_connection()),
+        );
+
+        assert!(given_up.is_err());
+        assert_eq!(connections.states().get("office"), None);
     }
 
     #[test]

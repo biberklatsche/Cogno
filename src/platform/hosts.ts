@@ -1,6 +1,6 @@
 import { Injectable } from "@angular/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { invokeHost } from "./host-error";
+import { HostErrorCode, invokeHost } from "./host-error";
 import { OsType } from "./os";
 import { SeenSessionContract } from "./session-contracts";
 
@@ -9,8 +9,17 @@ export type HostInfo = {
   os: OsType;
 };
 
-/** To every window: the connection to a host on another machine ended. */
-const HOST_DISCONNECTED_EVENT = "host-disconnected";
+/**
+ * How far the app's connection to a paired machine is; a machine without
+ * one is not connected. The same for every window.
+ */
+export type HostConnectionContract =
+  | { status: "connecting" }
+  | ({ status: "connected" } & HostInfo)
+  | { status: "failed"; failure: { code: HostErrorCode; message: string } };
+
+/** To every window: what `connections` returns changed. */
+const HOST_CONNECTIONS_CHANGED_EVENT = "host-connections-changed";
 
 /**
  * The machines whose shells Cogno shows: this one, and the ones paired with
@@ -69,13 +78,13 @@ export class Hosts {
     return invokeHost("host_disconnect", { id });
   }
 
-  /**
-   * The connection to the host `id` ended, in whichever window: `lost`
-   * when it broke, not when this Cogno hung up.
-   */
-  onDisconnected(listener: (id: string, lost: boolean) => void): Promise<UnlistenFn> {
-    return listen<{ host: string; lost: boolean }>(HOST_DISCONNECTED_EVENT, ({ payload }) =>
-      listener(payload.host, payload.lost),
-    );
+  /** How far the connection to each paired machine is, by its id. */
+  connections(): Promise<Record<string, HostConnectionContract>> {
+    return invokeHost("host_connections");
+  }
+
+  /** What `connections` returns changed, whichever window caused it. */
+  onConnectionsChanged(listener: () => void): Promise<UnlistenFn> {
+    return listen(HOST_CONNECTIONS_CHANGED_EVENT, () => listener());
   }
 }

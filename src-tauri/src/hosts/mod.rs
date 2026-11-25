@@ -17,10 +17,11 @@ use cogno_host::protocol::{
     TerminalProcess, WindowLabel,
 };
 use tauri::ipc::{Channel, InvokeResponseBody};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::command_error::{AppErrorCode, CommandError, CommandResult, ErrorCode};
 use crate::host_connection::{Ending, HostConnection, OnLost};
+pub use connections::RemoteState;
 use connections::{Connections, Lost};
 use routes::{Route, TerminalRoutes};
 use webview::{TerminalExit, WebviewEvents};
@@ -118,14 +119,13 @@ impl Hosts {
         if lost == Lost::Replaced {
             return;
         }
+        if ending != Ending::Lost {
+            return;
+        }
         match host {
-            // Every window hears of it, also of a hang-up: the one that
-            // asked for it is not the only one that knew the host connected.
-            Some(id) => self.events.disconnected(id, ending == Ending::Lost),
-            None if ending == Ending::Lost => {
-                log::error!(target: "host", "the connection to this machine's host was lost")
-            }
-            None => {}
+            // Every window says so; a hang-up they know of already.
+            Some(id) => self.connections.lost_remote(id),
+            None => log::error!(target: "host", "the connection to this machine's host was lost"),
         }
     }
 
@@ -211,13 +211,22 @@ impl HostState {
             log::error!(target: "host", "this machine's host could not be opened: {reason}");
         }
         let routes = Arc::new(TerminalRoutes::default());
-        let events = Arc::new(WebviewEvents::new(app, routes.clone()));
+        let events = Arc::new(WebviewEvents::new(app.clone(), routes.clone()));
+        let connections = Connections::telling(move || {
+            let _ = app.emit(webview::HOST_CONNECTIONS_CHANGED_EVENT, ());
+        });
         Self(Arc::new(Hosts {
             local_host,
-            connections: Connections::default(),
+            connections,
             routes,
             events,
         }))
+    }
+
+    /// How far the connection to each machine is, by its id: the same for
+    /// every window.
+    pub fn remote_states(&self) -> std::collections::HashMap<String, RemoteState> {
+        self.0.connections.states()
     }
 
     /// Connects to the paired machine `id` (ARCHITECTURE.md 2.7.3), unless

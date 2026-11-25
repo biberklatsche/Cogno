@@ -140,7 +140,7 @@ describe("WaitingPanes", () => {
 
     // The user connects from the Remote panel.
     info = { os: "macos" };
-    connections.next(new Map([["office-id", { status: "connected", info }]]));
+    connections.next(new Map([["office-id", { status: "connected", ...info }]]));
     await settle();
 
     expect(found).toEqual([{ session: TauriMockFactory.createSessionInfo("t1"), os: "macos" }]);

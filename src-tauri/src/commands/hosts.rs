@@ -31,6 +31,15 @@ pub async fn host_connect(app: AppHandle, id: String) -> CommandResult<HostInfo>
     connected.map_err(CommandError::internal)?
 }
 
+/// How far the connection to each paired machine is, by its id; a machine
+/// that is not named is not connected. Changes are told to every window.
+#[tauri::command]
+pub fn host_connections(
+    hosts: State<'_, HostState>,
+) -> std::collections::HashMap<String, crate::hosts::RemoteState> {
+    hosts.remote_states()
+}
+
 /// The shells installed on this machine: offered as profiles on first start.
 #[tauri::command]
 pub async fn list_shells(hosts: State<'_, HostState>) -> CommandResult<Vec<ShellInfo>> {
