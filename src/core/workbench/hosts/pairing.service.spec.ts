@@ -1,12 +1,20 @@
 import type { PairingState } from "@cogno/core/api/pairing-port";
 import { HostError, type Pairing, type PairingStateContract } from "@cogno/platform";
+import { BehaviorSubject } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PairingService } from "./pairing.service";
 
 const NO_HOST = new HostError("pairingOff", "This machine's Cogno host could not be opened");
 
 function stateOf(overrides: Partial<PairingStateContract> = {}): PairingStateContract {
-  return { machines: [], open: false, nearby: [], ...overrides };
+  return {
+    id: "abc",
+    acrossNetworks: false,
+    machines: [],
+    open: false,
+    nearby: [],
+    ...overrides,
+  };
 }
 
 /** Lets what was answered arrive. */
@@ -21,6 +29,7 @@ describe("PairingService", () => {
   };
   let service: PairingService;
   let states: PairingState[];
+  let config$: BehaviorSubject<{ remote?: { relay?: string } }>;
 
   function create(): void {
     service = new PairingService(
@@ -31,6 +40,12 @@ describe("PairingService", () => {
           return Promise.resolve(() => undefined);
         }),
       } as unknown as Pairing,
+      {
+        config$,
+        get config() {
+          return config$.value;
+        },
+      } as never,
       { onDestroy: vi.fn() } as never,
     );
     states = [];
@@ -39,6 +54,9 @@ describe("PairingService", () => {
 
   beforeEach(() => {
     vi.useFakeTimers({ now: 1_000_000 });
+    config$ = new BehaviorSubject<{ remote?: { relay?: string } }>({
+      remote: { relay: "https://relay.example" },
+    });
     pairing = {
       state: vi.fn().mockResolvedValue(stateOf()),
       enable: vi.fn().mockResolvedValue(undefined),
@@ -56,7 +74,12 @@ describe("PairingService", () => {
     expect(states).toEqual([]);
 
     await settled();
-    expect(states.at(-1)).toEqual({ available: true, open: false, nearby: [] });
+    expect(states.at(-1)).toEqual({
+      available: true,
+      open: false,
+      nearby: [],
+      invitation: undefined,
+    });
 
     pairing.state.mockResolvedValue(
       stateOf({
@@ -72,6 +95,7 @@ describe("PairingService", () => {
       available: true,
       open: true,
       nearby: [{ id: "def", name: "office" }],
+      invitation: undefined,
     });
     expect(service.pairedNames).toEqual(["laptop"]);
   });
@@ -100,6 +124,40 @@ describe("PairingService", () => {
     await settled();
 
     expect(service.pairedNames).toEqual(["new"]);
+  });
+
+  it("switches pairing on with the relay of the config, or without one when it is off", async () => {
+    create();
+
+    await service.enable();
+    expect(pairing.enable).toHaveBeenLastCalledWith("https://relay.example");
+
+    config$.next({ remote: { relay: "off" } });
+    await settled();
+    // The endpoint that ran starts again, for the local network only.
+    expect(pairing.disable).toHaveBeenCalledOnce();
+    expect(pairing.enable).toHaveBeenLastCalledWith(null);
+  });
+
+  it("leaves pairing off when the relay changes while it is off", async () => {
+    create();
+
+    config$.next({ remote: { relay: "off" } });
+    await settled();
+
+    expect(pairing.enable).not.toHaveBeenCalled();
+  });
+
+  it("offers an invitation only where another network is reached", async () => {
+    pairing.state.mockResolvedValue(stateOf({ acrossNetworks: true }));
+    create();
+    await settled();
+    expect(states.at(-1)).toMatchObject({ invitation: "abc" });
+
+    pairing.state.mockResolvedValue(stateOf({ acrossNetworks: false }));
+    changed();
+    await settled();
+    expect(states.at(-1)).toMatchObject({ invitation: undefined });
   });
 
   it("shows a failure to switch pairing on until it is switched off", async () => {

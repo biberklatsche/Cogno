@@ -1,6 +1,6 @@
 //! Pairing with another machine (ARCHITECTURE.md 2.7.3): two machines learn
-//! each other once and then connect over iroh, in the local network without
-//! any server.
+//! each other once and then connect over iroh - in the local network without
+//! any server, across networks through a relay.
 //!
 //! `Pairing` runs this machine's endpoint while the Remote feature is on.
 //! While the user has pairing open, it announces this machine's name, lists
@@ -25,7 +25,7 @@ use std::time::Duration;
 use cogno_host::local_host::LocalHost;
 use cogno_host::sync::lock;
 use iroh::endpoint::presets;
-use iroh::{Endpoint, EndpointAddr, EndpointId, RelayMode};
+use iroh::{Endpoint, EndpointAddr, EndpointId, RelayMap, RelayMode, RelayUrl};
 use iroh_mdns_address_lookup::{DiscoveryEvent, MdnsAddressLookup};
 use n0_future::StreamExt;
 use tokio::sync::oneshot;
@@ -45,10 +45,26 @@ const LOCAL_SERVICE_NAME: &str = "cogno";
 /// What a machine is called that does not say how it calls itself.
 const UNNAMED_MACHINE: &str = "machine";
 
+/// The relay machines of different networks find and reach each other
+/// through.
+#[derive(Clone)]
+struct Relay {
+    url: RelayUrl,
+    map: RelayMap,
+    /// Tests run a relay with a certificate of their own.
+    #[cfg(test)]
+    insecure: bool,
+}
+
 /// What the user sees of pairing; told through `PairingEvents::changed`.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PairingView {
+    /// This machine's id while its endpoint runs: the invitation a machine
+    /// in another network pairs by.
+    pub id: Option<String>,
+    /// Whether machines in other networks are reached: a relay is set.
+    pub across_networks: bool,
     pub machines: Vec<PairedMachine>,
     /// Whether the user has pairing open: this machine is seen nearby and
     /// takes requests to pair.
@@ -142,6 +158,8 @@ struct Inner {
     /// and a stop never comes before a start that is still on its way.
     switching: tokio::sync::Mutex<()>,
     endpoint: Mutex<Option<Endpoint>>,
+    /// The relay the endpoint runs with, if any.
+    relay: Mutex<Option<RelayUrl>>,
     /// The connections of paired machines handed to the host: cut off when
     /// their machine is unpaired.
     passed: Mutex<Vec<iroh::endpoint::Connection>>,
@@ -166,6 +184,7 @@ impl Pairing {
             events,
             switching: tokio::sync::Mutex::new(()),
             endpoint: Mutex::new(None),
+            relay: Mutex::new(None),
             passed: Mutex::new(Vec::new()),
             open: Mutex::new(false),
             nearby: Mutex::new(BTreeMap::new()),
@@ -176,32 +195,65 @@ impl Pairing {
     }
 
     /// Starts this machine's endpoint: the Remote feature was switched on.
-    pub async fn enable(&self) -> Result<(), PairingError> {
+    /// With `relay`, the address of a relay server, machines in other
+    /// networks are reached too; without, only the local network.
+    pub async fn enable(&self, relay: Option<&str>) -> Result<(), PairingError> {
+        let relay = match relay {
+            Some(address) => {
+                let url: RelayUrl = address.parse().map_err(|_| {
+                    PairingError::Unreachable(format!("{address} is not the address of a relay"))
+                })?;
+                Some(Relay {
+                    map: RelayMap::from(url.clone()),
+                    url,
+                    #[cfg(test)]
+                    insecure: false,
+                })
+            }
+            None => None,
+        };
+        self.start(relay, true).await
+    }
+
+    /// Starts the endpoint. Without `local_network`, machines are neither
+    /// announced nor found there: for tests of the way through the relay.
+    async fn start(&self, relay: Option<Relay>, local_network: bool) -> Result<(), PairingError> {
         let _switching = self.0.switching.lock().await;
         if lock(&self.0.endpoint).is_some() {
             return Ok(());
         }
         let unreachable =
             |error: &dyn std::fmt::Display| PairingError::Unreachable(error.to_string());
-        let endpoint = Endpoint::builder(presets::Minimal)
+        let relay_mode = match &relay {
+            Some(relay) => RelayMode::Custom(relay.map.clone()),
+            None => RelayMode::Disabled,
+        };
+        let builder = Endpoint::builder(presets::Minimal)
             .secret_key(self.0.store.key()?)
-            .relay_mode(RelayMode::Disabled)
-            .alpns(vec![PAIR_ALPN.to_vec(), HOST_ALPN.to_vec()])
-            .bind()
-            .await
-            .map_err(|error| unreachable(&error))?;
-        // Announces this machine in the local network and finds the others
-        // there: paired machines by their id, machines to pair with by the
-        // name they announce.
-        let local_network = MdnsAddressLookup::builder()
-            .service_name(LOCAL_SERVICE_NAME)
-            .build(endpoint.id())
-            .map_err(|error| unreachable(&error))?;
-        endpoint
-            .address_lookup()
-            .map_err(|error| unreachable(&error))?
-            .add(local_network.clone());
-        self.watch_nearby(local_network, endpoint.id());
+            .relay_mode(relay_mode)
+            .alpns(vec![PAIR_ALPN.to_vec(), HOST_ALPN.to_vec()]);
+        #[cfg(test)]
+        let builder = if relay.as_ref().is_some_and(|relay| relay.insecure) {
+            builder.ca_tls_config(iroh::tls::CaTlsConfig::insecure_skip_verify())
+        } else {
+            builder
+        };
+        let endpoint = builder.bind().await.map_err(|error| unreachable(&error))?;
+        if local_network {
+            // Announces this machine in the local network and finds the
+            // others there: paired machines by their id, machines to pair
+            // with by the name they announce.
+            let lookup = MdnsAddressLookup::builder()
+                .service_name(LOCAL_SERVICE_NAME)
+                .build(endpoint.id())
+                .map_err(|error| unreachable(&error))?;
+            endpoint
+                .address_lookup()
+                .map_err(|error| unreachable(&error))?
+                .add(lookup.clone());
+            self.watch_nearby(lookup, endpoint.id());
+        }
+        *lock(&self.0.relay) = relay.map(|relay| relay.url);
         let accepting = endpoint.clone();
         let pairing = self.clone();
         tokio::spawn(async move {
@@ -260,6 +312,7 @@ impl Pairing {
     pub async fn disable(&self) {
         let _switching = self.0.switching.lock().await;
         let endpoint = lock(&self.0.endpoint).take();
+        *lock(&self.0.relay) = None;
         if let Some(watching) = lock(&self.0.watching_nearby).take() {
             watching.abort();
         }
@@ -288,6 +341,10 @@ impl Pairing {
             Vec::new()
         };
         Ok(PairingView {
+            id: lock(&self.0.endpoint)
+                .as_ref()
+                .map(|endpoint| endpoint.id().to_string()),
+            across_networks: lock(&self.0.relay).is_some(),
             machines: paired,
             open,
             nearby,
@@ -309,7 +366,8 @@ impl Pairing {
         Ok(())
     }
 
-    /// Asks the machine nearby with `id` to pair. `on_request` gets the
+    /// Asks the machine with `id` to pair: one nearby, or one in another
+    /// network whose invitation the user was given. `on_request` gets the
     /// check number to show; `answer` says whether this machine's user
     /// found it the same as on the other machine. Paired once both did.
     pub async fn pair(
@@ -320,7 +378,7 @@ impl Pairing {
         let id: EndpointId = id
             .parse()
             .map_err(|_| PairingError::Unreachable("not a machine's id".to_string()))?;
-        self.pair_at(EndpointAddr::new(id), on_request).await
+        self.pair_at(self.address_of(id), on_request).await
     }
 
     async fn pair_at(
@@ -413,7 +471,8 @@ impl Pairing {
         let Ok(endpoint) = self.endpoint() else {
             return Ok(false);
         };
-        Ok(handshake::tell_unpaired(&endpoint, machine.endpoint_id, UNPAIR_PATIENCE).await)
+        let there = self.address_of(machine.endpoint_id);
+        Ok(handshake::tell_unpaired(&endpoint, there, UNPAIR_PATIENCE).await)
     }
 
     /// Starts connecting to the paired machine `id`.
@@ -429,7 +488,21 @@ impl Pairing {
                     "This machine is not paired with that machine (any more)",
                 )
             })?;
-        Ok(Dialing::start(endpoint, machine.endpoint_id, &machine.name))
+        Ok(Dialing::start(
+            endpoint,
+            self.address_of(machine.endpoint_id),
+            &machine.name,
+        ))
+    }
+
+    /// Where the machine `id` is found: in the local network by its id
+    /// alone, in another one through the relay.
+    fn address_of(&self, id: EndpointId) -> EndpointAddr {
+        let address = EndpointAddr::new(id);
+        match lock(&self.0.relay).clone() {
+            Some(relay) => address.with_relay_url(relay),
+            None => address,
+        }
     }
 
     fn endpoint(&self) -> Result<Endpoint, PairingError> {
@@ -578,13 +651,88 @@ mod tests {
         std::env::temp_dir().join(format!("cogno-pairing-{}", uuid::Uuid::new_v4().simple()))
     }
 
-    /// A machine with the Remote feature on.
+    /// A machine with the Remote feature on, and no relay.
     async fn machine() -> (Pairing, Arc<Told>) {
+        let (pairing, told) = machine_off();
+        pairing.enable(None).await.unwrap();
+        (pairing, told)
+    }
+
+    /// A machine whose Remote feature is not on yet.
+    fn machine_off() -> (Pairing, Arc<Told>) {
         let told = Arc::new(Told::default());
         let (_, host) = crate::host_connection::test_support::test_host();
-        let pairing = Pairing::new(&home(), host, told.clone());
-        pairing.enable().await.unwrap();
+        (Pairing::new(&home(), host, told.clone()), told)
+    }
+
+    /// A machine that reaches others through `relay` alone: it neither
+    /// announces itself in the local network nor finds anyone there.
+    async fn machine_behind(relay: &Relay) -> (Pairing, Arc<Told>) {
+        let (pairing, told) = machine_off();
+        pairing.start(Some(relay.clone()), false).await.unwrap();
+        pairing.endpoint().unwrap().online().await;
         (pairing, told)
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn machines_of_different_networks_pair_by_an_invitation_and_connect_through_the_relay() {
+        let (map, url, _server) = iroh::test_utils::run_relay_server().await.unwrap();
+        let relay = Relay {
+            url,
+            map,
+            insecure: true,
+        };
+        let (office, office_told) = machine_behind(&relay).await;
+        let (laptop, _) = machine_behind(&relay).await;
+        // What the office shows to copy, and the laptop's user pastes.
+        let view = office.view().unwrap();
+        assert!(view.across_networks);
+        let invitation = view.id.unwrap();
+        office.set_open(true).unwrap();
+        answer_when_asked(&office, &office_told, true);
+
+        let asking = laptop.clone();
+        let paired = laptop
+            .pair(&invitation, move |request| asking.answer(request.id, true))
+            .await
+            .unwrap();
+
+        let connection = dial(&laptop, &paired.endpoint_id.to_string())
+            .await
+            .unwrap();
+        connection.hang_up();
+        laptop.disable().await;
+        office.disable().await;
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn machines_of_one_network_pair_also_when_the_relay_is_not_reached() {
+        // Nothing listens there.
+        let nowhere = Some("https://127.0.0.1:9");
+        let (office, office_told) = machine_off();
+        let (laptop, _) = machine_off();
+        office.enable(nowhere).await.unwrap();
+        laptop.enable(nowhere).await.unwrap();
+        let office_id = office.view().unwrap().id.unwrap();
+        office.set_open(true).unwrap();
+        answer_when_asked(&office, &office_told, true);
+
+        let asking = laptop.clone();
+        let paired = laptop
+            .pair(&office_id, move |request| asking.answer(request.id, true))
+            .await;
+
+        assert!(paired.is_ok(), "{paired:?}");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_address_that_is_no_relay_is_refused() {
+        let (office, _) = machine_off();
+
+        let refused = office.enable(Some("not a url")).await;
+
+        assert!(matches!(refused, Err(PairingError::Unreachable(_))));
+        assert!(office.view().unwrap().id.is_none());
     }
 
     /// Where the tests reach `pairing`: its addresses on this machine.

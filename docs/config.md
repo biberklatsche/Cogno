@@ -885,6 +885,16 @@ Notify when an agent reports an error.
 
 **Type:** boolean · **Default:** `false`
 
+## Remote
+
+How paired machines reach each other.
+
+### `remote.relay`
+
+The relay server through which paired machines in other networks find and reach each other. It only passes on encrypted data. `off` reaches paired machines in your local network only.
+
+**Type:** `off` | string · **Default:** `https://relay.cogno.rocks`
+
 ## Feature
 
 Each feature can be switched off entirely and ordered in the side menu.

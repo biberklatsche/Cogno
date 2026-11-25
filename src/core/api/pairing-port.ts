@@ -11,6 +11,11 @@ export type NearbyMachine = {
 export type PairingState =
   | {
       readonly available: true;
+      /**
+       * What the user gives to someone in another network to pair with this
+       * machine; none when only the local network is reached.
+       */
+      readonly invitation?: string;
       /** Whether pairing is open: this machine is seen nearby and takes requests to pair. */
       readonly open: boolean;
       /** The machines nearby to pair with; none unless pairing is open here. */
@@ -49,7 +54,8 @@ export abstract class PairingPort {
   abstract setOpen(open: boolean): Promise<void>;
 
   /**
-   * Asks the machine nearby with `id` to pair. `onCheck` gets the number
+   * Asks the machine with `id` to pair: one nearby, or one whose invitation
+   * the user was given. `onCheck` gets the number
    * both machines show; the user says there whether they are the same.
    * Resolves, once both users confirmed, with the name the machine is a
    * remote under.

@@ -16,6 +16,7 @@ describe("RemotePairFormComponent", () => {
   let state$: BehaviorSubject<PairingState>;
   let pair: ReturnType<typeof vi.fn>;
   let setOpen: ReturnType<typeof vi.fn>;
+  let writeText: ReturnType<typeof vi.fn>;
   let destroy: () => void;
   let form: RemotePairFormComponent;
 
@@ -27,8 +28,10 @@ describe("RemotePairFormComponent", () => {
     destroy = () => {
       for (const callback of destroyed) callback();
     };
+    writeText = vi.fn().mockResolvedValue(undefined);
     form = new RemotePairFormComponent(
       { state$, pair, setOpen } as unknown as PairingPort,
+      { writeText } as never,
       { onDestroy: (callback: () => void) => destroyed.push(callback) } as unknown as DestroyRef,
     );
   });
@@ -101,6 +104,47 @@ describe("RemotePairFormComponent", () => {
     await settled();
 
     expect(pair).toHaveBeenCalledOnce();
+  });
+
+  describe("with a machine in another network", () => {
+    const invitation = "ab".repeat(32);
+    const paste = (value: string) => form.setPasted({ target: { value } } as unknown as Event);
+
+    beforeEach(() => {
+      state$.next({ available: true, open: true, nearby: [], invitation });
+    });
+
+    it("copies this machine's invitation", async () => {
+      await form.copyInvitation();
+
+      expect(writeText).toHaveBeenCalledWith(invitation);
+      expect(form.copied()).toBe(true);
+    });
+
+    it("pairs with the machine whose invitation was pasted", async () => {
+      paste(`  ${"CD".repeat(32)} `);
+
+      await form.pairByInvitation(new Event("submit"));
+
+      expect(pair).toHaveBeenCalledWith("cd".repeat(32), expect.any(Function));
+      expect(form.state()).toEqual({ step: "paired", name: "office" });
+      expect(form.pasted()).toBe("");
+    });
+
+    it("asks nobody when what was pasted is no invitation", async () => {
+      paste("K7Q-4MX");
+
+      await form.pairByInvitation(new Event("submit"));
+
+      expect(pair).not.toHaveBeenCalled();
+      expect(form.error()).toContain("not an invitation");
+    });
+
+    it("offers no invitation where only this network is reached", () => {
+      state$.next({ available: true, open: true, nearby: [] });
+
+      expect(form.invitation()).toBeUndefined();
+    });
   });
 
   it("says why pairing does not work on this machine", () => {

@@ -20,6 +20,10 @@ export type NearbyMachineContract = {
 
 /** What the user sees of pairing on this machine. */
 export type PairingStateContract = {
+  /** This machine's id while its endpoint runs: the invitation another machine pairs by. */
+  id: string | null;
+  /** Whether machines in other networks are reached: a relay is set. */
+  acrossNetworks: boolean;
   machines: PairedMachineContract[];
   /** Whether the user has pairing open: this machine is seen nearby and takes requests. */
   open: boolean;
@@ -55,9 +59,13 @@ export class Pairing {
     return invokeHost<PairingStateContract>("pairing_state");
   }
 
-  /** Makes this machine reachable for the machines it is paired with. */
-  enable(): Promise<void> {
-    return invokeHost("pairing_enable");
+  /**
+   * Makes this machine reachable for the machines it is paired with: with
+   * `relay`, the address of a relay server, also for those in other
+   * networks; without, in the local network only.
+   */
+  enable(relay: string | null): Promise<void> {
+    return invokeHost("pairing_enable", { relay });
   }
 
   /** Nothing is reachable any more; pairing is closed, a request declined. */
@@ -71,7 +79,8 @@ export class Pairing {
   }
 
   /**
-   * Asks the machine nearby with `id` to pair. `onRequest` gets the check
+   * Asks the machine with `id` to pair: one nearby, or one whose invitation
+   * the user was given. `onRequest` gets the check
    * number to show; `answer` says whether the user found it the same on the
    * other machine. Resolves once both users confirmed.
    */

@@ -11,6 +11,7 @@ import { MenuSchema } from "./menu-config";
 import { NotificationConfigSchema } from "./notification-config";
 import { PaddingSchema } from "./padding-config";
 import { PromptConfigSchema } from "./prompt-config";
+import { RemoteConfigSchema } from "./remote-config";
 import { ScrollbarSchema } from "./scrollbar-config";
 import { SelectionSchema } from "./selection-config";
 import { ShellConfigSchema, ShellType } from "./shell-config";
@@ -48,6 +49,7 @@ export const baseConfigSchemaShape = {
   terminal: TerminalConfigSchema.optional().describe("Terminal rendering and behaviour."),
   autocomplete: AutocompleteConfigSchema.optional().describe("Command autocomplete behaviour."),
   notification: NotificationConfigSchema.optional().describe("Which events notify you, and how."),
+  remote: RemoteConfigSchema.optional().describe("How paired machines reach each other."),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z

@@ -1543,14 +1543,23 @@ action run`.
 - **Geschützt** ist der Weg durch QUIC mit gegenseitig bewiesenen IDs: Die
   App spricht dort nur mit Rechnern ihrer Liste und, solange „Koppeln" offen
   ist, mit einem, der koppeln will. HTTP spricht sie nicht.
-- **Über Netzgrenzen (noch nicht gebaut, 7).** Im lokalen Netz braucht es
-  keinen Server. Für Rechner in verschiedenen Netzen kommt ein Relay auf
-  einem eigenen Server dazu (ein unverändertes `iroh-relay`, seine Adresse
-  fest in der App, keine Dienste Dritter): Über es findet ein Rechner den
-  anderen an dessen ID, und es leitet verschlüsselte Pakete weiter, wo kein
-  direkter Weg geht. Gekoppelt wird dann mit einer **Einladung**: A zeigt
-  seine ID zum Kopieren, B fügt sie ein; danach derselbe Handschlag mit
-  Prüfzahl. Einen Treffpunkt-Dienst und Codes gibt es nicht.
+- **Über Netzgrenzen.** Im lokalen Netz braucht es keinen Server. Für
+  Rechner in verschiedenen Netzen kommt ein **Relay** dazu, ein
+  unverändertes `iroh-relay`: Über es findet ein Rechner den anderen an
+  dessen ID, die beiden öffnen mit seiner Hilfe einen direkten Weg durch
+  ihre Router, und wo das nicht geht, leitet es die verschlüsselten Pakete
+  weiter. Es sieht, welche IDs miteinander sprechen, ihre IP-Adressen und
+  wie viel, nie den Inhalt. Seine Adresse steht in der Config
+  (`remote.relay`, Standard `https://relay.cogno.rocks`, `off` für nur das
+  lokale Netz); `PairingService` gibt sie beim Einschalten mit und startet
+  den Endpunkt neu, wenn sie sich ändert. Ist das Relay nicht erreichbar,
+  bleibt das lokale Netz, wie es ist. Dienste Dritter werden nicht benutzt.
+- **Einladung.** Für einen Rechner in einem anderen Netz gibt es keine Liste
+  „in der Nähe": A zeigt seine ID zum Kopieren (die Einladung, nur wenn ein
+  Relay gesetzt ist), B fügt sie ein. Danach derselbe Handschlag mit
+  Prüfzahl, und auch dafür muss „Koppeln" auf A offen sein. Die Einladung
+  ist kein Geheimnis: Ohne die Bestätigung auf beiden Rechnern koppelt sie
+  niemanden. Einen Treffpunkt-Dienst und Codes gibt es nicht.
 
 ## 3. Das Protokoll (`core/api/`)
 
@@ -2230,7 +2239,7 @@ erreicht, ohne sie zu importieren.
 | Deaktivierungstest je Feature (4.2) | fehlt für `git` und `process-info` |
 | **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
 | `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |
-| **Koppeln über Netzgrenzen (2.7.3)** | Relay auf einem eigenen Server und die Einladung; bis dahin koppeln und verbinden sich Rechner nur im lokalen Netz. |
+| **Relay-Server (2.7.3)** | `relay.cogno.rocks` muss aufgesetzt werden; bis dahin koppeln und verbinden sich Rechner nur im lokalen Netz, oder über ein Relay, das der Nutzer selbst einträgt. |
 
 ---
 

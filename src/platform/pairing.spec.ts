@@ -30,10 +30,15 @@ describe("Pairing", () => {
   });
 
   it("asks for the state and passes commands on with their arguments", async () => {
-    const state = { machines: [], open: false, nearby: [] };
+    const state = { id: "abc", acrossNetworks: true, machines: [], open: false, nearby: [] };
     invokeMock.mockResolvedValueOnce(state);
     await expect(pairing.state()).resolves.toEqual(state);
     expect(invokeMock).toHaveBeenLastCalledWith("pairing_state", undefined);
+
+    await pairing.enable("https://relay.example");
+    expect(invokeMock).toHaveBeenLastCalledWith("pairing_enable", {
+      relay: "https://relay.example",
+    });
 
     await pairing.answer(3, true);
     expect(invokeMock).toHaveBeenLastCalledWith("pairing_answer", { id: 3, confirmed: true });

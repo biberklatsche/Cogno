@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use cogno_host::sync::lock;
 use iroh::endpoint::{ApplicationClose, Connection, ConnectionError, RecvStream, SendStream};
-use iroh::{Endpoint, EndpointAddr, EndpointId};
+use iroh::{Endpoint, EndpointAddr};
 use tokio::task::JoinHandle;
 use tokio_util::io::SyncIoBridge;
 
@@ -37,9 +37,8 @@ pub struct Dialing {
 }
 
 impl Dialing {
-    /// Dials the paired machine `id`, found in the local network; the user
-    /// knows it as `name`.
-    pub fn start(endpoint: Endpoint, id: EndpointId, name: &str) -> Self {
+    /// Dials the paired machine at `to`; the user knows it as `name`.
+    pub fn start(endpoint: Endpoint, to: EndpointAddr, name: &str) -> Self {
         let connection = Arc::new(Mutex::new(None));
         let made = connection.clone();
         let dialed = name.to_string();
@@ -47,7 +46,7 @@ impl Dialing {
         let task = tokio::spawn(async move {
             let dialing = async {
                 let opened = endpoint
-                    .connect(EndpointAddr::new(id), HOST_ALPN)
+                    .connect(to, HOST_ALPN)
                     .await
                     .map_err(|error| unreachable(&name, &error))?;
                 *lock(&made) = Some(opened.clone());
@@ -101,7 +100,7 @@ impl Underway for Dialing {
 fn unreachable(name: &str, reason: &dyn std::fmt::Display) -> CommandError {
     CommandError::new(
         AppErrorCode::ConnectFailed,
-        format!("Could not reach {name}: Cogno must run there, in the same network ({reason})"),
+        format!("Could not reach {name}: Cogno must run there and be reachable ({reason})"),
     )
 }
 

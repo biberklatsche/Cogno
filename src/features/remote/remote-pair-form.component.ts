@@ -14,7 +14,7 @@ import {
   PairingPort,
   PairingState,
 } from "@cogno/core/api/pairing-port";
-import { isHostError } from "@cogno/platform";
+import { ClipboardAccess, isHostError } from "@cogno/platform";
 
 /** How far pairing is: choosing a machine, comparing the number, waiting for the other, done. */
 type PairStep =
@@ -23,6 +23,11 @@ type PairStep =
   | { readonly step: "comparing"; readonly machine: NearbyMachine; readonly check: PairingCheck }
   | { readonly step: "confirmed"; readonly machine: NearbyMachine }
   | { readonly step: "paired"; readonly name: string };
+
+/** What a machine's invitation looks like: its id, 64 hex digits. */
+const INVITATION = /^[0-9a-f]{64}$/i;
+/** What a machine is called before it said its name. */
+const INVITED_MACHINE = "the other machine";
 
 /** Why pairing did not work, in words for the user. */
 function failureText(error: unknown): string {
@@ -33,9 +38,11 @@ function failureText(error: unknown): string {
 }
 
 /**
- * Pairs this machine with one nearby. Pairing is open while this is shown:
- * this machine is seen by the others that have it open, and sees them. The
- * user picks one, compares the number both show, and confirms it on both.
+ * Pairs this machine with another one. Pairing is open while this is shown:
+ * this machine is seen by the others nearby that have it open, and sees
+ * them. The user picks one - or, for a machine in another network, pastes
+ * the invitation that one shows - compares the number both show, and
+ * confirms it on both.
  */
 @Component({
   selector: "app-remote-pair-form",
@@ -78,6 +85,33 @@ function failureText(error: unknown): string {
               </div>
             } @empty {
               <div class="status">Looking for machines nearby…</div>
+            }
+            @if (invitation(); as invitation) {
+              <div class="other-network">
+                <div class="hint">
+                  In another network: send this machine's invitation to the other one, or paste
+                  the one it sent you. Open this there too.
+                </div>
+                <div class="machine">
+                  <span class="name invitation">{{ invitation }}</span>
+                  <button type="button" class="button text-button" (click)="copyInvitation()">
+                    {{ copied() ? "Copied" : "Copy" }}
+                  </button>
+                </div>
+                <form class="machine" (submit)="pairByInvitation($event)">
+                  <input
+                    type="text"
+                    spellcheck="false"
+                    autocomplete="off"
+                    placeholder="Paste an invitation"
+                    [value]="pasted()"
+                    (input)="setPasted($event)"
+                  />
+                  <button type="submit" class="button text-button" [disabled]="pasted().trim() === ''">
+                    Pair
+                  </button>
+                </form>
+              </div>
             }
           }
         }
@@ -125,6 +159,36 @@ function failureText(error: unknown): string {
       white-space: nowrap;
     }
 
+    .other-network {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px solid color-mix(in srgb, var(--foreground-color) 15%, transparent);
+    }
+
+    .invitation {
+      font-family: var(--terminal-font-family, monospace);
+      font-size: 0.85rem;
+      opacity: 0.7;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      background: var(--background-color);
+      color: var(--foreground-color);
+      border: 1px solid color-mix(in srgb, var(--foreground-color) 20%, transparent);
+      border-radius: var(--button-border-radius);
+      padding: 0.3rem 0.4rem;
+      font: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--highlight-color);
+    }
+
     .check {
       font-family: var(--terminal-font-family, monospace);
       font-size: 1.4rem;
@@ -160,6 +224,10 @@ export class RemotePairFormComponent {
 
   readonly state = signal<PairStep>({ step: "choosing" });
   readonly error = signal<string | undefined>(undefined);
+  /** The invitation of another machine the user is pasting. */
+  readonly pasted = signal("");
+  /** Whether this machine's invitation was just copied. */
+  readonly copied = signal(false);
   private readonly pairingState = signal<PairingState | undefined>(undefined);
 
   /** Why pairing does not work on this machine at all. */
@@ -171,6 +239,11 @@ export class RemotePairFormComponent {
   readonly nearby = computed(() => {
     const state = this.pairingState();
     return state?.available ? state.nearby : [];
+  });
+  /** What to give someone in another network; none when only this network is reached. */
+  readonly invitation = computed(() => {
+    const state = this.pairingState();
+    return state?.available ? state.invitation : undefined;
   });
   readonly machineName = computed(() => {
     const state = this.state();
@@ -187,6 +260,7 @@ export class RemotePairFormComponent {
 
   constructor(
     private readonly pairing: PairingPort,
+    private readonly clipboard: ClipboardAccess,
     destroyRef: DestroyRef,
   ) {
     pairing.state$
@@ -216,6 +290,30 @@ export class RemotePairFormComponent {
       this.state.set({ step: "choosing" });
       this.error.set(failureText(error));
     }
+  }
+
+  setPasted(event: Event): void {
+    this.pasted.set((event.target as HTMLInputElement).value);
+    this.error.set(undefined);
+  }
+
+  async copyInvitation(): Promise<void> {
+    const invitation = this.invitation();
+    if (!invitation) return;
+    await this.clipboard.writeText(invitation);
+    this.copied.set(true);
+  }
+
+  /** Pairs with the machine whose invitation the user pasted. */
+  async pairByInvitation(event: Event): Promise<void> {
+    event.preventDefault();
+    const invitation = this.pasted().trim();
+    if (!INVITATION.test(invitation)) {
+      this.error.set("This is not an invitation. Copy it on the other machine and paste it here.");
+      return;
+    }
+    await this.pair({ id: invitation.toLowerCase(), name: INVITED_MACHINE });
+    if (this.state().step === "paired") this.pasted.set("");
   }
 
   /** The user compared the number both machines show. */

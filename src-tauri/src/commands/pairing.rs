@@ -77,10 +77,18 @@ pub fn pairing_state(state: State<'_, PairingState>) -> CommandResult<PairingVie
 }
 
 /// The Remote feature was switched on: this machine becomes reachable for
-/// the machines it is paired with.
+/// the machines it is paired with - with `relay`, the address of a relay
+/// server, also for those in other networks.
 #[tauri::command]
-pub async fn pairing_enable(state: State<'_, PairingState>) -> CommandResult<()> {
-    state.pairing()?.enable().await.map_err(CommandError::from)
+pub async fn pairing_enable(
+    state: State<'_, PairingState>,
+    relay: Option<String>,
+) -> CommandResult<()> {
+    state
+        .pairing()?
+        .enable(relay.as_deref())
+        .await
+        .map_err(CommandError::from)
 }
 
 /// The Remote feature was switched off: nothing is reachable any more.

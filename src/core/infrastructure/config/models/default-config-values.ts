@@ -245,6 +245,9 @@ export const defaultSettings = {
       order: "20",
     },
   },
+  remote: {
+    relay: "https://relay.cogno.rocks",
+  },
   clipboard: {
     read: "ask",
     write: "allow",

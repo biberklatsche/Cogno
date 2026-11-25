@@ -1,7 +1,18 @@
 import { DestroyRef, Injectable } from "@angular/core";
 import { PairingCheck, PairingPort, PairingState } from "@cogno/core/api/pairing-port";
+import { ConfigService } from "@cogno/core/infrastructure/config/config.service";
+import { Config } from "@cogno/core/infrastructure/config/models/config";
+import { NO_RELAY } from "@cogno/core/infrastructure/config/models/remote-config";
 import { PairedMachineContract, Pairing, PairingStateContract, toHostError } from "@cogno/platform";
-import { BehaviorSubject, combineLatest, filter, map, Observable } from "rxjs";
+import {
+  BehaviorSubject,
+  combineLatest,
+  distinctUntilChanged,
+  filter,
+  map,
+  Observable,
+  skip,
+} from "rxjs";
 
 /** What pairing said when it was asked last, or why it could not say. */
 type Read = { readonly state: PairingStateContract } | { readonly failure: string };
@@ -9,8 +20,9 @@ type Read = { readonly state: PairingStateContract } | { readonly failure: strin
 function toState(read: Read, enableFailure: string | undefined): PairingState {
   if ("failure" in read) return { available: false, reason: read.failure };
   if (enableFailure !== undefined) return { available: false, reason: enableFailure };
-  const { open, nearby } = read.state;
-  return { available: true, open, nearby };
+  const { open, nearby, id, acrossNetworks } = read.state;
+  // An invitation is of use only where another network is reached.
+  return { available: true, open, nearby, invitation: (acrossNetworks && id) || undefined };
 }
 
 /**
@@ -34,6 +46,7 @@ export class PairingService extends PairingPort {
 
   constructor(
     private readonly pairing: Pairing,
+    private readonly configService: ConfigService,
     destroyRef: DestroyRef,
   ) {
     super();
@@ -46,6 +59,13 @@ export class PairingService extends PairingPort {
       .onChanged(() => void this.readState())
       .then((unlisten) => destroyRef.onDestroy(unlisten));
     void this.readState();
+    // Another relay: the endpoint that runs starts again with it.
+    const relayChanges = this.configService.config$
+      .pipe(map(relayOf), distinctUntilChanged(), skip(1))
+      .subscribe(() => {
+        if (this.enabled.value) void this.disable().then(() => this.enable());
+      });
+    destroyRef.onDestroy(() => relayChanges.unsubscribe());
   }
 
   /** The paired machines, as far as they are known. */
@@ -65,7 +85,7 @@ export class PairingService extends PairingPort {
 
   async enable(): Promise<void> {
     try {
-      await this.pairing.enable();
+      await this.pairing.enable(relayOf(this.configService.config));
       this.enableFailure.next(undefined);
       this.enabled.next(true);
     } catch (error) {
@@ -103,6 +123,12 @@ export class PairingService extends PairingPort {
     }
     if (question === this.reads) this.read.next(read);
   }
+}
+
+/** The relay the config names; none when it is switched off. */
+function relayOf(config: Config): string | null {
+  const relay = config.remote?.relay;
+  return relay === undefined || relay === NO_RELAY ? null : relay;
 }
 
 function machinesOf(read: Read | undefined): readonly PairedMachineContract[] {
