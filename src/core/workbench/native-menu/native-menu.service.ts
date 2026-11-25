@@ -73,6 +73,22 @@ export class NativeMenuService {
       ],
     });
 
+    // The system's own entries: without them macOS routes no Cmd+V, Cmd+C, Cmd+X,
+    // Cmd+A or Cmd+Z to a text field, so nothing could be pasted into a dialog.
+    // The terminal is not affected; its keybindings take the key first.
+    const editSubmenu = await this.tauriMenu.newSubmenu({
+      text: "Edit",
+      items: [
+        await this.tauriMenu.newPredefinedItem({ item: "Undo" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Redo" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Separator" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Cut" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Copy" }),
+        await this.tauriMenu.newPredefinedItem({ item: "Paste" }),
+        await this.tauriMenu.newPredefinedItem({ item: "SelectAll" }),
+      ],
+    });
+
     const sideMenuFeatureDefinitions = this.featureHost.getSideMenuFeatureDefinitions();
     const sortedSideMenuFeatureDefinitions = [...sideMenuFeatureDefinitions].sort(
       (firstFeatureDefinition, secondFeatureDefinition) =>
@@ -100,7 +116,7 @@ export class NativeMenuService {
     });
 
     const menu = await this.tauriMenu.new({
-      items: [appSubmenu, fileSubmenu, viewSubmenu, helpSubmenu],
+      items: [appSubmenu, fileSubmenu, editSubmenu, viewSubmenu, helpSubmenu],
     });
     await menu.setAsAppMenu();
   }

@@ -162,6 +162,27 @@ describe("NativeMenuService", () => {
     );
   });
 
+  it("offers the system's editing entries, so text fields take Cmd+V and its kin", async () => {
+    await (nativeMenuService as unknown as { buildMenu: () => Promise<void> }).buildMenu();
+
+    const submenus = vi
+      .mocked(tauriMenuStub.newSubmenu)
+      .mock.calls.map(
+        (call) => call[0] as unknown as { text: string; items: { config: { item: string } }[] },
+      );
+    const editSubmenu = submenus.find((submenu) => submenu.text === "Edit");
+
+    expect(editSubmenu?.items.map((item) => item.config.item)).toEqual([
+      "Undo",
+      "Redo",
+      "Separator",
+      "Cut",
+      "Copy",
+      "Paste",
+      "SelectAll",
+    ]);
+  });
+
   it("publishes action events when menu item callbacks are executed", async () => {
     const publishedEvents: unknown[] = [];
     vi.spyOn(appBus, "publish").mockImplementation((event) => {
