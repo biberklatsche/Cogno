@@ -41,7 +41,7 @@ fn render(origins: &[String]) -> String {
 
 /// Rewrites the file for the origins signed in right now.
 pub fn write(cogno_home: &Path, origins: &[String]) -> io::Result<()> {
-    super::store::write_private(&path(cogno_home), &render(origins))
+    crate::private_file::write(&path(cogno_home), &render(origins))
 }
 
 /// What a process Cogno starts needs in its environment for git to read the

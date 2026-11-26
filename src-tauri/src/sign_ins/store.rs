@@ -12,7 +12,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fs;
-use std::io;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -248,28 +247,13 @@ impl Store {
             .filter(|(_, held)| held.in_memory.is_none())
             .map(|(origin, held)| (origin.clone(), held.sign_in.clone()))
             .collect();
-        if let Err(error) = write_private(
+        if let Err(error) = crate::private_file::write(
             &self.index_path,
             &serde_json::to_string_pretty(&index).unwrap_or_default(),
         ) {
             log::error!(target: "sign_ins", "cannot write {}: {error}", self.index_path.display());
         }
     }
-}
-
-/// Writes a file only the user can read, replacing it in one step.
-pub fn write_private(path: &std::path::Path, content: &str) -> io::Result<()> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let staged = path.with_extension("tmp");
-    fs::write(&staged, content)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&staged, fs::Permissions::from_mode(0o600))?;
-    }
-    fs::rename(&staged, path)
 }
 
 #[cfg(test)]

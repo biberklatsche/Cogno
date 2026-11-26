@@ -1,11 +1,11 @@
 import { Injectable } from "@angular/core";
 import {
+  ProcessAnswers,
   ProcessCredentialAnswer,
   ProcessCredentialRequest,
 } from "@cogno/core/api/command-runner-port";
 import { DialogService } from "@cogno/shared/ui";
 import { GitRemoteAccessService } from "./git-remote-access.service";
-import { GitRunHandlers } from "./git-run";
 import { GitViewState } from "./git-view-state.service";
 import { gitHostFor } from "./hosts/git-hosts";
 import { classifyGitPrompt, GitPrompt } from "./model/git-process-prompt";
@@ -17,11 +17,13 @@ import {
 } from "./ui/git-credential-dialog.component";
 import { GitProcessPromptDialogComponent } from "./ui/git-process-prompt-dialog.component";
 
-/** What one git run may ask, and whether the person refused to say. */
+/** Who answers one git run, and what became of its access. */
 export type GitRunPrompts = {
-  readonly handlers: GitRunHandlers;
+  readonly answers: ProcessAnswers;
   /** True once a credential request was dismissed; the run's failure needs no toast then. */
   readonly refused: () => boolean;
+  /** The origin git reported its credential as rejected for, if it did. */
+  readonly rejectedFor: () => string | null;
 };
 
 /**
@@ -40,13 +42,14 @@ export class GitProcessPromptService {
     private readonly view: GitViewState,
   ) {}
 
-  /** Handlers for one run; each run gets its own, so a refusal is never charged to another. */
+  /** Answers for one run; each run gets its own, so nothing is charged to another. */
   forRun(): GitRunPrompts {
     let refused = false;
+    let rejectedFor: string | null = null;
     return {
-      handlers: {
-        onPrompt: (prompt) => this.show(classifyGitPrompt(prompt.text), prompt.closed),
-        onCredential: async (request) => {
+      answers: {
+        prompt: (prompt) => this.show(classifyGitPrompt(prompt.text), prompt.closed),
+        credential: async (request) => {
           const result = await this.askCredential(request);
           if (request.closed.aborted) return null;
           if (result === "other") void this.access.open(request.origin);
@@ -56,8 +59,12 @@ export class GitProcessPromptService {
           }
           return result;
         },
+        credentialRejected: (origin) => {
+          rejectedFor = origin;
+        },
       },
       refused: () => refused,
+      rejectedFor: () => rejectedFor,
     };
   }
 

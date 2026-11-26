@@ -277,29 +277,45 @@ können.**
 
 **Prozesse ohne Terminal fragen über denselben Server.** Was `run` startet
 (2.2), hat keine PTY; git und ssh würden Zugangsdaten, Passphrasen und
-Host-Keys dort abfragen und ohne Terminal abbrechen. Deshalb setzt der
-Runner `GIT_TERMINAL_PROMPT=0` und zeigt `GIT_ASKPASS`/`SSH_ASKPASS` auf das
-Cogno-Binary selbst: mit `COGNO_ASKPASS_SESSION` in der Umgebung arbeitet
-es als Askpass-Helfer (`commands/askpass.rs`), schickt den Prompt-Text mit
-Token an `POST /askpass` und druckt die Antwort. Das Token ist eines je
-Lauf und öffnet nur `/askpass` für diese Sitzung — nicht das Launch-Token,
-denn Hooks und Helper, die git startet, erben die Umgebung des Laufs. Die
-Sitzungs-ID vergibt der Aufrufer je Lauf (`CommandRunnerHostService`); das
-Event trägt sie, und so
-landet der Prompt beim **Lauf, der ihn ausgelöst hat**: `run` nimmt einen
-`onPrompt`-Handler, und das Feature, das git gestartet hat, beantwortet die
-Frage mit seinem eigenen Dialog und seinem eigenen Wissen (das Git-Feature
-liest aus dem Prompt-Text, ob Passphrase oder Host-Key gefragt ist). Core
-kennt keinen dieser Prompts: für einen Lauf ohne Handler
-zeigt die Workbench nur den Text und ein maskiertes Feld
+Host-Keys dort abfragen und ohne Terminal abbrechen. Sie fragen deshalb
+über einen Helfer, und der Helfer ist das Cogno-Binary selbst unter anderem
+Aufruf: er erreicht das laufende Cogno über den lokalen Server und druckt
+die Antwort. Zwei Helfer gibt es. **Askpass** für das, was `ssh` fragt: der
+Runner setzt `GIT_TERMINAL_PROMPT=0` und zeigt `GIT_ASKPASS`/`SSH_ASKPASS`
+auf das Binary, das den Prompt-Text an `POST /askpass` schickt
+(`commands/askpass.rs`). Und gits **Credential-Helper** für Zugangsdaten
+über HTTPS (`POST /credential`, nächster Absatz).
+
+Beide münden in denselben Kanal zum Fenster
+(`commands/run_questions.rs`): eine **Frage einer Art** mit Nutzlast an das
+Fenster des Laufs, und dessen Antwort. Der Kanal kennt keine Art; drei gibt
+es: `prompt` (der Text, den ssh gedruckt hätte), `credential` (git braucht
+Zugangsdaten für einen Origin) und `credential_rejected` (git meldet seine
+Zugangsdaten für einen Origin als abgelehnt). Die Sitzungs-ID vergibt der
+Aufrufer je Lauf (`CommandRunnerHostService`) und steht als
+`COGNO_RUN_SESSION` in der Umgebung des Laufs; jede Frage trägt sie, und
+so landet sie beim **Lauf, der sie ausgelöst hat**. `run` nimmt dafür
+`answers` (`ProcessAnswers` in `core/api`): wer Prompts beantwortet, wer
+Zugangsdaten, wer von einer Ablehnung erfährt. Jeder Teil ist optional, und
+der Lauf nennt dem Backend beim Start die Arten, die er beantwortet — eine
+Frage, für die niemand da ist, erreicht kein Fenster. Das Feature, das git
+gestartet hat, antwortet mit seinem eigenen Dialog und seinem eigenen
+Wissen (das Git-Feature liest aus dem Prompt-Text, ob eine Ja/Nein-Frage
+oder eine verdeckte Eingabe gemeint ist). Core kennt den Inhalt keiner
+Frage: für einen Lauf über die gebundene Sitzung, der keine Prompts
+beantwortet, zeigt die Workbench nur den Text und ein maskiertes Feld
 (`core/workbench/external/process-prompt.service.ts`); ein Lauf, der nicht
-über die gebundene Sitzung kam (Autocomplete), lehnt jeden Prompt ab. Die
-Antwort geht per `askpass_answer` zurück. Abbrechen heißt „keine Antwort",
-git meldet dann einen fehlgeschlagenen Lesevorgang; endet der Prozess vorher,
-feuert das `closed`-Signal des Prompts und der Dialog geht zu. Solange ein
-Prompt offen ist, läuft der Timeout des Befehls nicht. Für eine WSL-Distro
-übersetzt `WSLENV` die Pfade. Über Askpass kommt nur, was `ssh` fragt;
-Zugangsdaten für HTTPS fragt git strukturiert beim Credential-Helper ab.
+über die gebundene Sitzung kam (Autocomplete), beantwortet nichts. Die
+Antwort geht per `run_question_answer` zurück. Ablehnen heißt „keine
+Antwort": bei einem Prompt meldet git einen fehlgeschlagenen Lesevorgang;
+endet der Prozess vorher, feuert das `closed`-Signal der Frage und der
+Dialog geht zu. Solange eine Frage offen ist, läuft der Timeout des Befehls
+nicht.
+
+Das Token der Helfer ist eines je Lauf und öffnet nur `/askpass` und
+`/credential` für diese Sitzung — nicht das Launch-Token, denn Hooks und
+Helper, die git startet, erben die Umgebung des Laufs. Für eine WSL-Distro
+übersetzt `WSLENV` die Pfade.
 
 **Anmeldungen: Cogno ist gits Credential-Helper.** GitHub, GitLab und
 Codeberg nehmen über HTTPS kein Kontopasswort an, nur ein Token. Statt es
@@ -359,14 +375,13 @@ angefasst. Daraus folgen die Regeln:
    lokalen Servers. Ist der Origin angemeldet, antwortet das Backend
    selbst, ohne Fenster. Sonst entscheidet, wer fragt. Ein Lauf des Runners
    (Lauf-Token) reicht die Anfrage an den **Lauf, der sie ausgelöst hat**:
-   `run` nimmt neben `onPrompt` einen `onCredential`-Handler. Das
+   als Frage der Art `credential` (oben). Das
    Git-Feature zeigt seinen Dialog: im Browser anmelden, dann antwortet das
    Backend mit dem neuen Token, oder Name und Token tippen, dann reicht das
    Feature beides durch. Lehnt der Nutzer ab, sagt der Helper git `quit`,
-   und git fragt nicht weiter. Ein Lauf ohne `onCredential` sagt das beim
-   Start: der Helper antwortet ihm nichts, kein Fenster wird gefragt, und git
-   geht weiter zu seinem eigenen Prompt, der über Askpass bei `onPrompt`
-   landet.
+   und git fragt nicht weiter. Ein Lauf, der keine Zugangsdaten beantwortet,
+   bekommt vom Helper nichts: kein Fenster wird gefragt, und git geht weiter
+   zu seinem eigenen Prompt, der über Askpass als `prompt` ankommt.
    Ein `git push`, das der Nutzer im Terminal tippt (Launch-Token), bekommt
    nur für angemeldete Origins eine Antwort: sonst fragt git im Terminal,
    wo es hingehört.
@@ -379,9 +394,15 @@ angefasst. Daraus folgen die Regeln:
    geschrieben und die Fenster benachrichtigt (`sign-ins-changed`). Kommt
    bei der Erneuerung keine Antwort (offline), bleibt die Anmeldung. `erase`
    ist zugleich das Signal, dass ein Lauf an den Zugangsdaten gescheitert
-   ist: das Ergebnis des Laufs nennt den Origin (`credentialRejectedFor`),
-   und das Feature öffnet den Zugangsdialog statt gits Meldung zu zeigen,
-   ohne deren Text zu lesen.
+   ist: der Lauf erfährt den Origin als Frage der Art `credential_rejected`,
+   bevor git endet, und das Feature öffnet den Zugangsdialog statt gits
+   Meldung zu zeigen, ohne deren Text zu lesen. Das Ergebnis eines Laufs
+   trägt deshalb nichts über git.
+
+Die Variablen für gits Config-Datei bekommt jeder Prozess, den Cogno
+startet, nicht nur git: eine Anmeldung gilt für die Umgebung, wie
+`COGNO_PORT`, und git wird auch von dem gestartet, was Cogno startet (ein
+Skript, `npm`, `gh`). Einem Programm, das kein git ist, sagen sie nichts.
 
 Wer in einer Cogno-Shell läuft, kann sich über den Helper das Token eines
 angemeldeten Origins geben lassen. Das ist dieselbe Grenze wie beim
@@ -633,7 +654,7 @@ Fakt ermittelt, sondern *worüber* er ist:
   Argumentliste: kein Quoting, keine Injection über Pfade mit Leerzeichen
   oder Anführungszeichen, und die Argumente lassen sich vor dem Start
   kontextgerecht übersetzen. Optional bekommt der Prozess `stdin` — einen
-  Patch für `git apply`, nie eine Shell-Eingabe — und einen `onPrompt`-Handler
+  Patch für `git apply`, nie eine Shell-Eingabe — und `answers`
   für das, was er ohne Terminal fragen würde (2.1). `contextRevision` ist die Revision des
   Kontexteintrags, mit dem das Feature geplant hat; ist sie nicht mehr
   aktuell, lehnt `run` ab statt im falschen Kontext zu laufen. `run` startet einen
@@ -1311,8 +1332,8 @@ selbst in `try/catch` rufen.
 | Command-Log langsam oder Schreibfehler | ✅ begrenzte Queue, Verlustzähler, Backoff, einmalige Meldung (`session-command-log.ts`, `command-log.health.ts`) |
 | Gefälschte `COGNO:*`-Sequenz aus Programmausgabe | ✅ `COGNO_SESSION_TOKEN`-Prüfung mit Zähler (`session-model.ts`) |
 | Shell-Kontext wechselt (ssh/wsl/su) ohne Handshake | ✅ unbekannter Kontext in der Kontext-Zeitachse (`session-model.ts`) |
-| Prozess ohne Terminal fragt (ssh: Passphrase, Host-Key) | ✅ Prompt geht an den `onPrompt`-Handler des Laufs, sonst an den nackten Workbench-Dialog; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`askpass.rs`, `command-runner-host.service.ts`, `process-prompt.service.ts`) |
-| git braucht Zugangsdaten für einen Origin ohne Anmeldung | ✅ Anfrage geht an den `onCredential`-Handler des Laufs; ohne Handler antwortet der Helper nichts und git fragt über Askpass; Ablehnen = `quit` (`sign_ins/helper.rs`, `command-runner-host.service.ts`, `git-process-prompt.service.ts`) |
+| Prozess ohne Terminal fragt (ssh: Passphrase, Host-Key) | ✅ Frage der Art `prompt` geht an `answers.prompt` des Laufs, sonst an den nackten Workbench-Dialog; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`run_questions.rs`, `askpass.rs`, `command-runner-host.service.ts`, `process-prompt.service.ts`) |
+| git braucht Zugangsdaten für einen Origin ohne Anmeldung | ✅ Frage der Art `credential` geht an `answers.credential` des Laufs; beantwortet der Lauf keine, antwortet der Helper nichts und git fragt über Askpass; Ablehnen = `quit` (`sign_ins/helper.rs`, `command-runner-host.service.ts`, `git-process-prompt.service.ts`) |
 | Refresh-Token abgelehnt oder Schlüsselbund-Eintrag fehlt | ✅ Origin gilt als abgemeldet, der nächste Lauf fragt neu (`sign_ins/mod.rs`, `sign_ins/store.rs`) |
 | Anbieter beim Erneuern nicht erreichbar | ✅ Anmeldung bleibt, der Lauf bekommt kein Token (`sign_ins/mod.rs`) |
 | Kein Schlüsselbund (Linux ohne Secret Service) | ✅ Anmeldung nur bis zum Beenden, im Dialog gesagt (`sign_ins/store.rs`) |

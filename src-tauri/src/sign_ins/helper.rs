@@ -13,14 +13,29 @@
 //! itself.
 
 use super::{git_config, now, Credential, SignIns};
-use crate::commands::askpass::{
-    ask_running_cogno, Answer, AskpassState, CredentialAnswer, Question, SESSION_ENV,
-};
+use crate::commands::run_questions::{ask_running_cogno, Asked, RunQuestions, SESSION_ENV};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Read;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
+
+/// The kind of question a credential request is; the payload names the origin.
+const CREDENTIAL_KIND: &str = "credential";
+/// The kind that tells the run git reported its credential for an origin as
+/// rejected. Asked like a question, so the run has heard of it before git
+/// ends: its failure then needs no message read to be understood.
+const REJECTED_KIND: &str = "credential_rejected";
+
+/// What the window answers to a credential request.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+enum WindowAnswer {
+    /// The person signed in in the browser; the backend holds the token.
+    SignedIn,
+    /// Typed by hand, handed to git as it is.
+    Typed { username: String, password: String },
+}
 
 /// How long a credential typed by hand is handed out again: one push must not
 /// ask for every fetch that follows.
@@ -110,15 +125,18 @@ pub async fn answer(app: &AppHandle, request: Request) -> Reply {
     };
     let sign_ins = app.state::<SignIns>();
     let typed = app.state::<Typed>();
-    let askpass = app.state::<AskpassState>();
+    let questions = app.state::<RunQuestions>();
+    let about_origin = serde_json::json!({ "origin": origin });
 
     if request.operation == "erase" {
-        if let Some(session) = &request.session {
-            askpass.note_credential_rejected(session, &origin);
-        }
         if let Some(password) = &request.password {
             typed.forget(&origin, password);
             sign_ins.rejected(&origin, password).await;
+        }
+        if let Some(session) = &request.session {
+            questions
+                .ask(app, session, REJECTED_KIND, about_origin)
+                .await;
         }
         return Reply::Nothing;
     }
@@ -129,30 +147,29 @@ pub async fn answer(app: &AppHandle, request: Request) -> Reply {
     if let Some(credential) = typed.get(&origin) {
         return credential.into();
     }
-    let Some(session) = request
-        .session
-        .filter(|session| askpass.answers_credentials(session))
-    else {
+    let Some(session) = &request.session else {
         return Reply::Nothing;
     };
-    match askpass
-        .ask(app, &session, Question::Credential(origin.clone()))
+    let answer = match questions
+        .ask(app, session, CREDENTIAL_KIND, about_origin)
         .await
     {
-        // The run is over or its window is gone: nobody to ask.
-        None => Reply::Nothing,
-        Some(Some(Answer::Credential(CredentialAnswer::SignedIn))) => {
-            match sign_ins.credential(&origin).await {
-                Some(credential) => credential.into(),
-                None => Reply::Quit,
-            }
-        }
-        Some(Some(Answer::Credential(CredentialAnswer::Typed { username, password }))) => {
+        Asked::Answered(answer) => serde_json::from_value::<WindowAnswer>(answer).ok(),
+        Asked::Refused => None,
+        // The run has nobody for credentials, or is over: git goes on.
+        Asked::Unanswered => return Reply::Nothing,
+    };
+    match answer {
+        Some(WindowAnswer::SignedIn) => match sign_ins.credential(&origin).await {
+            Some(credential) => credential.into(),
+            None => Reply::Quit,
+        },
+        Some(WindowAnswer::Typed { username, password }) => {
             let credential = Credential { username, password };
             typed.remember(&origin, credential.clone());
             credential.into()
         }
-        Some(_) => Reply::Quit,
+        None => Reply::Quit,
     }
 }
 

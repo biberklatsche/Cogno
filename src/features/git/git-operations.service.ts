@@ -607,8 +607,8 @@ export class GitOperationsService {
     const timeoutMs = options.timeoutMs ?? LOCAL_TIMEOUT_MS;
     const prompts = this.prompts.forRun();
     const result = options.inCwd
-      ? await this.repository.runInCwd(args, timeoutMs, options.stdin, prompts.handlers)
-      : await this.repository.run(args, timeoutMs, options.stdin, prompts.handlers);
+      ? await this.repository.runInCwd(args, timeoutMs, options.stdin, prompts.answers)
+      : await this.repository.run(args, timeoutMs, options.stdin, prompts.answers);
     if (options.refused && result && result.exitCode !== 0 && options.refused(result)) {
       await this.repository.refresh();
       return "rejected";
@@ -635,8 +635,9 @@ export class GitOperationsService {
       if (prompts?.refused()) return false;
       // Git reported the credential it used as rejected: the ways in say more
       // than git's message, and no text has to be read to know.
-      if (result.credentialRejectedFor) {
-        void this.access.open(result.credentialRejectedFor, { rejected: true });
+      const rejectedFor = prompts?.rejectedFor();
+      if (rejectedFor) {
+        void this.access.open(rejectedFor, { rejected: true });
         return false;
       }
       const body =

@@ -16,20 +16,12 @@ pub fn endpoint_path(cogno_home: &Path) -> PathBuf {
 
 /// Writes the endpoint file for this instance, readable by the user only.
 pub fn write(cogno_home: &Path, port: u16, external_token: &str) -> io::Result<()> {
-    fs::create_dir_all(cogno_home)?;
     let content = serde_json::json!({
         "port": port,
         "token": external_token,
     })
     .to_string();
-    let path = endpoint_path(cogno_home);
-    fs::write(&path, content)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
-    }
-    Ok(())
+    crate::private_file::write(&endpoint_path(cogno_home), &content)
 }
 
 /// Takes the endpoint file away: nothing listens any more. A missing file is fine.

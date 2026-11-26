@@ -6,6 +6,7 @@ pub mod commands;
 mod db;
 mod endpoint;
 mod http_server;
+mod private_file;
 mod shell_bootstrap_logs;
 pub mod sign_ins;
 mod updater;
@@ -94,7 +95,7 @@ pub fn run(cli: Cli) {
         .manage(RunnableActionsState::new())
         .manage(Db::new())
         .manage(WindowRegistry::new())
-        .manage(crate::commands::askpass::AskpassState::new())
+        .manage(crate::commands::run_questions::RunQuestions::new())
         .on_window_event(|window, event| match event {
             WindowEvent::Focused(true) => {
                 window
@@ -120,8 +121,7 @@ pub fn run(cli: Cli) {
             crate::db::commands::db_select,
             crate::db::commands::db_batch,
             crate::commands::command_runner::command_runner_execute,
-            crate::commands::askpass::askpass_answer,
-            crate::commands::askpass::credential_answer,
+            crate::commands::run_questions::run_question_answer,
             crate::sign_ins::commands::sign_ins_sign_in,
             crate::sign_ins::commands::sign_ins_cancel,
             crate::sign_ins::commands::sign_ins_sign_out,

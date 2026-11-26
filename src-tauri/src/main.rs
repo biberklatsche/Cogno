@@ -19,7 +19,7 @@ fn main() {
 
     // Started by git or ssh as the askpass helper (see commands/askpass.rs):
     // the arguments are the prompt, not a Cogno command line.
-    if let Ok(session_id) = std::env::var(cogno_lib::commands::askpass::SESSION_ENV) {
+    if let Ok(session_id) = std::env::var(cogno_lib::commands::run_questions::SESSION_ENV) {
         let prompt_args: Vec<String> = std::env::args().skip(1).collect();
         std::process::exit(cogno_lib::commands::askpass::run_helper(
             &session_id,

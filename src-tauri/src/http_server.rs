@@ -369,24 +369,16 @@ pub fn start_http_server(
                                 return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })));
                             }
                         };
-                        // The run's own token, not the launch token: see askpass.rs.
-                        let askpass = app.state::<crate::commands::askpass::AskpassState>();
+                        // The run's own token, not the launch token: see run_questions.rs.
+                        let questions = app.state::<crate::commands::run_questions::RunQuestions>();
                         let authorized = host_is_loopback(&headers, actual_port)
                             && presented_token(&headers)
-                                .is_some_and(|token| askpass.authorizes(&payload.session, token));
+                                .is_some_and(|token| questions.authorizes(&payload.session, token));
                         if !authorized {
                             log::warn!(target: "http_server", "POST /askpass rejected: missing or wrong token");
                             return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
                         }
-                        let question = crate::commands::askpass::Question::Prompt(payload.prompt);
-                        let Some(answered) = askpass.ask(&app, &payload.session, question).await else {
-                            log::warn!(target: "http_server", "POST /askpass: unknown session or closed window");
-                            return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "unknown session" })));
-                        };
-                        let answer = match answered {
-                            Some(crate::commands::askpass::Answer::Text(text)) => Some(text),
-                            _ => None,
-                        };
+                        let answer = crate::commands::askpass::answer(&app, &payload.session, payload.prompt).await;
                         (StatusCode::OK, Json(serde_json::json!({ "answer": answer })))
                     }
                 }),
@@ -404,11 +396,11 @@ pub fn start_http_server(
                             }
                         };
                         // A run presents its own token; git typed in a terminal the launch token.
-                        let askpass = app.state::<crate::commands::askpass::AskpassState>();
+                        let questions = app.state::<crate::commands::run_questions::RunQuestions>();
                         let authorized = match &payload.session {
                             Some(session) => host_is_loopback(&headers, actual_port)
                                 && presented_token(&headers)
-                                    .is_some_and(|token| askpass.authorizes(session, token)),
+                                    .is_some_and(|token| questions.authorizes(session, token)),
                             None => launch_authorized,
                         };
                         if !authorized {

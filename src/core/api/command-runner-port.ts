@@ -1,18 +1,15 @@
 import { ShellContextContract } from "@cogno/shared/domain";
 
 /**
- * What a process without a terminal would have asked on one: git for
- * credentials, ssh for a passphrase or a host key. `text` is the prompt as the
- * process printed it; `closed` fires when the process ended before it got an
- * answer, so an open dialog can go away.
+ * What a process without a terminal would have asked on one: the ssh git
+ * starts for a passphrase or a host key. `text` is the prompt as the process
+ * printed it; `closed` fires when the process ended before it got an answer,
+ * so an open dialog can go away.
  */
 export interface ProcessPromptRequest {
   readonly text: string;
   readonly closed: AbortSignal;
 }
-
-/** Answers a prompt; `null` refuses it and the process sees a failed read. */
-export type ProcessPromptHandler = (prompt: ProcessPromptRequest) => Promise<string | null>;
 
 /**
  * Git needs credentials for `origin` (`https://host[:port]`) and no credential
@@ -30,10 +27,28 @@ export type ProcessCredentialAnswer =
   /** Typed by hand; git gets it as it is. */
   | { readonly kind: "typed"; readonly username: string; readonly password: string };
 
-/** Answers a credential request; `null` refuses it and git fails without asking further. */
-export type ProcessCredentialHandler = (
-  request: ProcessCredentialRequest,
-) => Promise<ProcessCredentialAnswer | null>;
+/**
+ * Who answers what the process of one run asks. Each part is optional: a run
+ * says which questions it has somebody for, and no other reaches it.
+ */
+export interface ProcessAnswers {
+  /** Answers a prompt; `null` refuses it and the process sees a failed read. Without, every prompt is refused. */
+  readonly prompt?: (request: ProcessPromptRequest) => Promise<string | null>;
+  /**
+   * Answers a credential request of git; `null` refuses it and git fails
+   * without asking further. Without, git goes on to its own prompt, which
+   * reaches `prompt`.
+   */
+  readonly credential?: (
+    request: ProcessCredentialRequest,
+  ) => Promise<ProcessCredentialAnswer | null>;
+  /**
+   * Git reported the credential it used for `origin` as rejected: the run
+   * fails on its access. Called before the run ends, whoever the credential
+   * came from.
+   */
+  readonly credentialRejected?: (origin: string) => void;
+}
 
 export interface CommandRunnerRequestContract {
   readonly cwd: string;
@@ -42,30 +57,20 @@ export interface CommandRunnerRequestContract {
   readonly args?: ReadonlyArray<string>;
   /**
    * Idle time, not total: the process is ended once it has shown no output
-   * and had no prompt open for this long. A transfer that reports progress
+   * and had no question open for this long. A transfer that reports progress
    * runs as long as it takes; a process that went silent is ended.
    */
   readonly timeoutMs?: number;
   /** Written to the process and closed; for a patch to `git apply`, a message to `git credential`. */
   readonly stdin?: string;
-  /** Answers the prompts of this run; without one every prompt is refused. */
-  readonly onPrompt?: ProcessPromptHandler;
-  /**
-   * Answers git's credential requests of this run; without one git goes on to
-   * its own prompt, which reaches `onPrompt`.
-   */
-  readonly onCredential?: ProcessCredentialHandler;
+  /** Who answers what the process asks; see `ProcessAnswers` for what happens without. */
+  readonly answers?: ProcessAnswers;
 }
 
 export interface CommandRunnerResultContract {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number;
-  /**
-   * The origin whose credential git reported as rejected: the run failed on
-   * its access, whoever the credential came from.
-   */
-  readonly credentialRejectedFor?: string;
 }
 
 export abstract class CommandRunner {

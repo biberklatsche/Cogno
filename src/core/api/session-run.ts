@@ -1,8 +1,4 @@
-import {
-  CommandRunnerResultContract,
-  ProcessCredentialHandler,
-  ProcessPromptHandler,
-} from "@cogno/core/api/command-runner-port";
+import { CommandRunnerResultContract, ProcessAnswers } from "@cogno/core/api/command-runner-port";
 
 /** A command a feature asks to run on the session it is bound to. */
 export interface SessionRunRequest {
@@ -19,13 +15,11 @@ export interface SessionRunRequest {
   /** Written to the process as its standard input, then closed. */
   readonly stdin?: string;
   /**
-   * Answers what the process asks for without a terminal (credentials, a
-   * passphrase, a host key). Without one the workbench shows a plain dialog
-   * that knows nothing about the process.
+   * Who answers what the process asks without a terminal (a passphrase, a
+   * host key, credentials). A part left out falls back to the workbench: a
+   * prompt gets a plain dialog that knows nothing about the process.
    */
-  readonly onPrompt?: ProcessPromptHandler;
-  /** Answers git's credential requests; without one git goes on to its own prompt. */
-  readonly onCredential?: ProcessCredentialHandler;
+  readonly answers?: ProcessAnswers;
 }
 
 export type SessionRunRejection =

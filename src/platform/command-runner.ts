@@ -1,28 +1,27 @@
 import { Injectable } from "@angular/core";
 import { invoke } from "@tauri-apps/api/core";
+import { RunQuestionKind } from "./run-questions";
 
 export type CommandRunnerExecuteResult = {
   stdout: string;
   stderr: string;
   exitCode: number;
-  /** The origin whose credential git reported as rejected during the run. */
-  credentialRejectedFor?: string;
 };
 
 @Injectable({ providedIn: "root" })
 export class CommandRunner {
   /**
-   * `stdin`, when given, is written to the process and closed. Prompts the
-   * process raises (see `AskpassRequests`) carry `promptSession`;
-   * `answersCredentials` says whether somebody answers its credential
-   * requests - without, git goes on to its own prompt.
+   * `stdin`, when given, is written to the process and closed. What the
+   * process asks (see `RunQuestions`) carries `promptSession`; `answers`
+   * names the kinds of question the caller has somebody for, and no other
+   * kind reaches the window.
    */
   execute(
     program: string,
     args: readonly string[],
     cwd: string,
     promptSession: string,
-    answersCredentials: boolean,
+    answers: ReadonlyArray<RunQuestionKind>,
     timeoutMs?: number,
     stdin?: string,
   ): Promise<CommandRunnerExecuteResult> {
@@ -31,7 +30,7 @@ export class CommandRunner {
       args: [...args],
       cwd,
       promptSession,
-      answersCredentials,
+      answers: [...answers],
       timeoutMs,
       stdin,
     });

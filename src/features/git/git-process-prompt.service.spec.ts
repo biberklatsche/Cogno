@@ -35,7 +35,7 @@ describe("GitProcessPromptService", () => {
   it("asks for credentials of a host with what its provider says about tokens", async () => {
     const prompts = service.forRun();
 
-    const answered = prompts.handlers.onCredential(request("https://gitlab.com"));
+    const answered = prompts.answers.credential?.(request("https://gitlab.com"));
     answer({ kind: "typed", username: "me", password: "token" });
 
     expect(await answered).toEqual({ kind: "typed", username: "me", password: "token" });
@@ -55,7 +55,7 @@ describe("GitProcessPromptService", () => {
   });
 
   it("takes a host nobody owns for what the person said it is, without a browser sign-in", async () => {
-    const answered = service.forRun().handlers.onCredential(request("https://git.firma.de:8443"));
+    const answered = service.forRun().answers.credential?.(request("https://git.firma.de:8443"));
     answer(undefined);
     await answered;
 
@@ -67,7 +67,7 @@ describe("GitProcessPromptService", () => {
   it("refuses a dismissed request and remembers it for the run", async () => {
     const prompts = service.forRun();
 
-    const answered = prompts.handlers.onCredential(request("https://gitlab.com"));
+    const answered = prompts.answers.credential?.(request("https://gitlab.com"));
     answer(undefined);
 
     expect(await answered).toBeNull();
@@ -79,7 +79,7 @@ describe("GitProcessPromptService", () => {
   it("shows the other ways in when the person asks for them", async () => {
     const prompts = service.forRun();
 
-    const answered = prompts.handlers.onCredential(request("https://gitlab.com"));
+    const answered = prompts.answers.credential?.(request("https://gitlab.com"));
     answer("other");
 
     expect(await answered).toBeNull();
@@ -91,7 +91,7 @@ describe("GitProcessPromptService", () => {
     const closed = new AbortController();
     const prompts = service.forRun();
 
-    const answered = prompts.handlers.onCredential(request("https://gitlab.com", closed));
+    const answered = prompts.answers.credential?.(request("https://gitlab.com", closed));
     closed.abort();
     answer(undefined);
 
@@ -101,7 +101,7 @@ describe("GitProcessPromptService", () => {
   });
 
   it("shows what ssh asks as a prompt of its kind", async () => {
-    const answered = service.forRun().handlers.onPrompt({
+    const answered = service.forRun().answers.prompt?.({
       text: "Enter passphrase for key '/home/l/.ssh/id_ed25519': ",
       closed: new AbortController().signal,
     });
@@ -112,5 +112,15 @@ describe("GitProcessPromptService", () => {
       GitProcessPromptDialogComponent,
       expect.objectContaining({ data: expect.objectContaining({ confirm: false }) }),
     );
+  });
+
+  it("remembers for the run which origin git reported its credential as rejected for", () => {
+    const prompts = service.forRun();
+    expect(prompts.rejectedFor()).toBeNull();
+
+    prompts.answers.credentialRejected?.("https://gitlab.com");
+
+    expect(prompts.rejectedFor()).toBe("https://gitlab.com");
+    expect(service.forRun().rejectedFor()).toBeNull();
   });
 });

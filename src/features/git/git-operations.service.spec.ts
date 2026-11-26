@@ -15,8 +15,10 @@ describe("GitOperationsService", () => {
   let backendOs: "linux" | "windows";
   let wslDistroName: string | undefined;
   let service: GitOperationsService;
-  /** The handlers every operation hands git. */
-  const handlers = { onPrompt: vi.fn(), onCredential: vi.fn() };
+  /** Who answers every operation's git. */
+  const answers = { prompt: vi.fn(), credential: vi.fn(), credentialRejected: vi.fn() };
+  /** The origin git reported its credential as rejected for during the run. */
+  let rejectedFor: string | null;
   let openAccess: ReturnType<typeof vi.fn>;
   /** Whether the person refused a prompt during the run. */
   let refused: boolean;
@@ -33,6 +35,7 @@ describe("GitOperationsService", () => {
     backendOs = "linux";
     wslDistroName = undefined;
     refused = false;
+    rejectedFor = null;
     stages = new Map();
     const repository = {
       run,
@@ -56,7 +59,7 @@ describe("GitOperationsService", () => {
       repository,
       { dispatch } as unknown as NotificationCenterPort,
       {
-        forRun: () => ({ handlers, refused: () => refused }),
+        forRun: () => ({ answers, refused: () => refused, rejectedFor: () => rejectedFor }),
       } as unknown as GitProcessPromptService,
       { open: openAccess } as unknown as GitRemoteAccessService,
     );
@@ -384,7 +387,7 @@ describe("GitOperationsService", () => {
       ["clone", "--progress", "https://x/y.git", "y"],
       300_000,
       undefined,
-      handlers,
+      answers,
     );
     expect(run).not.toHaveBeenCalled();
   });
@@ -409,7 +412,7 @@ describe("GitOperationsService", () => {
       ["apply", "--cached", "--reverse", "--whitespace=nowarn", "--recount", "-"],
       30_000,
       "diff --git a/x b/x\n",
-      handlers,
+      answers,
     );
   });
 
@@ -442,10 +445,8 @@ describe("GitOperationsService", () => {
   });
 
   it("shows the ways in, not git's message, when git reports its credential as rejected", async () => {
-    answer = {
-      ...ran("", 128, "remote: HTTP Basic: Access denied.\nfatal: Authentication failed"),
-      credentialRejectedFor: "https://gitlab.com",
-    };
+    answer = ran("", 128, "remote: HTTP Basic: Access denied.\nfatal: Authentication failed");
+    rejectedFor = "https://gitlab.com";
 
     const outcome = await service.fetch("origin");
 
