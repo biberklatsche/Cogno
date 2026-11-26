@@ -106,6 +106,9 @@ pub struct Store {
     index_path: PathBuf,
     keychain: Box<dyn Secrets>,
     held: Mutex<BTreeMap<String, Held>>,
+    /// One write of the index at a time, each with what is held then: an
+    /// older state never lands on top of a newer one.
+    saving: Mutex<()>,
 }
 
 fn access_key(origin: &str) -> String {
@@ -140,6 +143,7 @@ impl Store {
             index_path,
             keychain,
             held: Mutex::new(held),
+            saving: Mutex::new(()),
         }
     }
 
@@ -215,11 +219,20 @@ impl Store {
     }
 
     /// The refresh token of an origin; read only when a token is renewed.
-    pub fn refresh_token(&self, origin: &str) -> Option<String> {
-        let in_memory = self.held.lock().unwrap().get(origin)?.in_memory.clone();
+    /// `Err` when the keychain did not answer: that there is none is not known.
+    pub fn refresh_token(&self, origin: &str) -> Result<Option<String>, String> {
+        let Some(in_memory) = self
+            .held
+            .lock()
+            .unwrap()
+            .get(origin)
+            .map(|held| held.in_memory.clone())
+        else {
+            return Ok(None);
+        };
         match in_memory {
-            Some(tokens) => tokens.refresh,
-            None => self.keychain.get(&refresh_key(origin)).ok().flatten(),
+            Some(tokens) => Ok(tokens.refresh),
+            None => self.keychain.get(&refresh_key(origin)),
         }
     }
 
@@ -239,6 +252,7 @@ impl Store {
     }
 
     fn save_index(&self) {
+        let _one_at_a_time = self.saving.lock().unwrap();
         let index: BTreeMap<String, SignIn> = self
             .held
             .lock()
@@ -267,10 +281,15 @@ pub mod tests {
     pub struct FakeKeychain {
         pub entries: Arc<Mutex<HashMap<String, String>>>,
         pub refuses: Arc<Mutex<bool>>,
+        /// The key whose read fails, as when access to one entry is denied.
+        pub denied: Arc<Mutex<Option<String>>>,
     }
 
     impl Secrets for FakeKeychain {
         fn get(&self, key: &str) -> Result<Option<String>, String> {
+            if self.denied.lock().unwrap().as_deref() == Some(key) {
+                return Err("access denied".into());
+            }
             Ok(self.entries.lock().unwrap().get(key).cloned())
         }
 
@@ -336,7 +355,10 @@ pub mod tests {
             reopened.get(ORIGIN),
             Some((sign_in(), "access".to_string()))
         );
-        assert_eq!(reopened.refresh_token(ORIGIN), Some("refresh".to_string()));
+        assert_eq!(
+            reopened.refresh_token(ORIGIN),
+            Ok(Some("refresh".to_string()))
+        );
         fs::remove_dir_all(home).unwrap();
     }
 
@@ -367,7 +389,7 @@ pub mod tests {
         assert!(!store.put(ORIGIN, sign_in(), &tokens()));
 
         assert_eq!(store.get(ORIGIN), Some((sign_in(), "access".to_string())));
-        assert_eq!(store.refresh_token(ORIGIN), Some("refresh".to_string()));
+        assert_eq!(store.refresh_token(ORIGIN), Ok(Some("refresh".to_string())));
         assert!(keychain.entries.lock().unwrap().is_empty());
         assert_eq!(store.origins(), vec![(ORIGIN.to_string(), false)]);
         assert!(Store::open(home.clone(), Box::new(keychain))
@@ -407,7 +429,7 @@ pub mod tests {
         );
 
         assert_eq!(store.get(ORIGIN).unwrap().1, "next");
-        assert_eq!(store.refresh_token(ORIGIN), None);
+        assert_eq!(store.refresh_token(ORIGIN), Ok(None));
         fs::remove_dir_all(home).unwrap();
     }
 }

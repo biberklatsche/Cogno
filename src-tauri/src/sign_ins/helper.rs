@@ -49,6 +49,8 @@ pub struct Request {
     pub operation: String,
     pub protocol: Option<String>,
     pub host: Option<String>,
+    /// The name git already has for the request, from the remote's url.
+    pub username: Option<String>,
     /// The credential git reports as rejected (`erase`).
     pub password: Option<String>,
 }
@@ -91,10 +93,13 @@ impl Typed {
             .insert(origin.to_string(), (credential, now() + TYPED_SECONDS));
     }
 
-    fn get(&self, origin: &str) -> Option<Credential> {
+    /// The credential typed for `origin`; when git names a user, only that
+    /// user's.
+    fn get(&self, origin: &str, username: Option<&str>) -> Option<Credential> {
         let mut typed = self.0.lock().unwrap();
         match typed.get(origin) {
-            Some((credential, until)) if *until > now() => Some(credential.clone()),
+            Some((credential, until)) if *until > now() => Some(credential.clone())
+                .filter(|credential| username.is_none_or(|name| name == credential.username)),
             Some(_) => {
                 typed.remove(origin);
                 None
@@ -144,12 +149,14 @@ pub async fn answer(app: &AppHandle, request: Request) -> Reply {
     if let Some(credential) = sign_ins.credential(&origin).await {
         return credential.into();
     }
-    if let Some(credential) = typed.get(&origin) {
-        return credential.into();
-    }
+    // Git typed in a terminal gets what is signed in and nothing else: what
+    // a run's dialog took belongs to the runs, and git asks in the terminal.
     let Some(session) = &request.session else {
         return Reply::Nothing;
     };
+    if let Some(credential) = typed.get(&origin, request.username.as_deref()) {
+        return credential.into();
+    }
     let answer = match questions
         .ask(app, session, CREDENTIAL_KIND, about_origin)
         .await
@@ -210,6 +217,7 @@ pub fn run_helper(operation: &str) -> i32 {
         operation: operation.to_string(),
         protocol: asked.remove("protocol"),
         host: asked.remove("host"),
+        username: asked.remove("username"),
         password: asked.remove("password"),
     };
     // A rejection matters to the run it happened in, or by the credential
@@ -287,12 +295,14 @@ mod tests {
         let typed = Typed::default();
         typed.remember(ORIGIN, credential("token"));
 
-        assert_eq!(typed.get(ORIGIN), Some(credential("token")));
+        assert_eq!(typed.get(ORIGIN, None), Some(credential("token")));
+        assert_eq!(typed.get(ORIGIN, Some("me")), Some(credential("token")));
+        assert_eq!(typed.get(ORIGIN, Some("somebody-else")), None);
         typed.forget(ORIGIN, "another");
-        assert_eq!(typed.get(ORIGIN), Some(credential("token")));
+        assert_eq!(typed.get(ORIGIN, None), Some(credential("token")));
 
         typed.forget(ORIGIN, "token");
-        assert_eq!(typed.get(ORIGIN), None);
+        assert_eq!(typed.get(ORIGIN, None), None);
     }
 
     #[test]
@@ -304,7 +314,7 @@ mod tests {
             .unwrap()
             .insert(ORIGIN.to_string(), (credential("token"), now() - 1));
 
-        assert_eq!(typed.get(ORIGIN), None);
+        assert_eq!(typed.get(ORIGIN, None), None);
         assert!(typed.0.lock().unwrap().is_empty());
     }
 }

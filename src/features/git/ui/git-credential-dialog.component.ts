@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Inject, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, Inject, signal } from "@angular/core";
 import { ProcessCredentialAnswer } from "@cogno/core/api/command-runner-port";
 import { SignInProvider } from "@cogno/platform";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
@@ -71,7 +71,7 @@ export type GitCredentialDialogResult = ProcessCredentialAnswer | "other";
           <button type="button" class="button" (click)="dialogRef.close('other')">Other ways…</button>
           <span class="spacer"></span>
           <button type="button" class="button" (click)="dialogRef.close()">Cancel</button>
-          <button type="submit" class="button" [class.primary]="!data.provider" [disabled]="!secret()">
+          <button type="submit" class="button" [class.primary]="!data.provider" [disabled]="!complete()">
             Use token
           </button>
         </div>
@@ -119,6 +119,8 @@ export type GitCredentialDialogResult = ProcessCredentialAnswer | "other";
 export class GitCredentialDialogComponent {
   readonly name = signal("");
   readonly secret = signal("");
+  /** A host takes no token without a name next to it. */
+  readonly complete = computed(() => this.name().trim() !== "" && this.secret() !== "");
 
   constructor(
     readonly dialogRef: DialogRef<GitCredentialDialogResult>,
@@ -126,7 +128,7 @@ export class GitCredentialDialogComponent {
   ) {}
 
   useTyped(): void {
-    if (!this.secret()) return;
+    if (!this.complete()) return;
     this.dialogRef.close({
       kind: "typed",
       username: this.name().trim(),

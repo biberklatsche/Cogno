@@ -192,11 +192,17 @@ impl SignIns {
     }
 
     /// The sign-in of `origin` with its access token, read off the runtime's
-    /// threads: the keychain may take its time.
+    /// threads: the keychain may take its time. The store signs an origin out
+    /// whose token is gone from the keychain; git and the windows hear of it.
     async fn stored(&self, origin: &str) -> Option<(SignIn, String)> {
+        let was_signed_in = self.store.contains(origin);
         let store = self.store.clone();
         let key = origin.to_string();
-        blocking(move || store.get(&key)).await?
+        let found = blocking(move || store.get(&key)).await?;
+        if found.is_none() && was_signed_in && !self.store.contains(origin) {
+            self.changed();
+        }
+        found
     }
 
     /// Signs in to `origin` in the browser. `open` shows the page; the wait
@@ -311,10 +317,18 @@ impl SignIns {
     async fn renew(&self, origin: &str, sign_in: SignIn) -> Option<Credential> {
         let store = self.store.clone();
         let key = origin.to_string();
-        let Some(refresh) = blocking(move || store.refresh_token(&key)).await? else {
-            log::info!(target: "sign_ins", "{origin}: the token is spent and cannot be renewed; signed out");
-            self.drop_sign_in(origin).await;
-            return None;
+        let refresh = match blocking(move || store.refresh_token(&key)).await? {
+            Ok(Some(refresh)) => refresh,
+            Ok(None) => {
+                log::info!(target: "sign_ins", "{origin}: the token is spent and cannot be renewed; signed out");
+                self.drop_sign_in(origin).await;
+                return None;
+            }
+            // A keychain that does not answer says nothing about the sign-in.
+            Err(error) => {
+                log::warn!(target: "sign_ins", "{origin}: keychain read for the renewal failed: {error}");
+                return None;
+            }
         };
         match oauth::refresh(&sign_in.provider, &refresh).await {
             Ok(grant) => {
@@ -393,6 +407,7 @@ mod tests {
 
     struct Fixture {
         sign_ins: SignIns,
+        keychain: FakeKeychain,
         home: PathBuf,
         changes: Arc<Mutex<Vec<Vec<SignInStatus>>>>,
     }
@@ -401,13 +416,15 @@ mod tests {
         let home = temp_home();
         let changes = Arc::new(Mutex::new(Vec::new()));
         let seen = changes.clone();
+        let keychain = FakeKeychain::default();
         let sign_ins = SignIns::open(
             home.clone(),
-            Store::open(home.clone(), Box::new(FakeKeychain::default())),
+            Store::open(home.clone(), Box::new(keychain.clone())),
             Box::new(move |statuses| seen.lock().unwrap().push(statuses.to_vec())),
         );
         Fixture {
             sign_ins,
+            keychain,
             home,
             changes,
         }
@@ -525,6 +542,30 @@ mod tests {
         assert_eq!(fixture.sign_ins.credential(ORIGIN).await, None);
 
         assert_eq!(fixture.sign_ins.statuses().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_refresh_token_the_keychain_does_not_hand_out_keeps_the_sign_in() {
+        let fixture = fixture();
+        signed_in(&fixture, "http://127.0.0.1:1/unused", Some(30), Some("r1")).await;
+        *fixture.keychain.denied.lock().unwrap() = Some(format!("{ORIGIN}#refresh"));
+
+        assert_eq!(fixture.sign_ins.credential(ORIGIN).await, None);
+
+        assert_eq!(fixture.sign_ins.statuses().len(), 1);
+        assert_eq!(fixture.keychain.entries.lock().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_token_gone_from_the_keychain_signs_the_origin_out_for_git_and_the_windows() {
+        let fixture = fixture();
+        signed_in(&fixture, "http://127.0.0.1:1/unused", None, None).await;
+        fixture.keychain.entries.lock().unwrap().clear();
+
+        assert_eq!(fixture.sign_ins.credential(ORIGIN).await, None);
+
+        assert!(!git_config(&fixture).contains("gitlab.com"));
+        assert_eq!(fixture.changes.lock().unwrap().last(), Some(&vec![]));
     }
 
     #[tokio::test]

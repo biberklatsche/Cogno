@@ -61,11 +61,13 @@ export class GitRemoteAccessService {
   /**
    * The credential helpers git would ask for the remote, from its config - the
    * values, never a message. `credentialUrl` keeps the remote's port, since a
-   * helper may be scoped to it.
+   * helper may be scoped to it. Read without includes: Cogno's own helper
+   * reaches git through an include and would stand in front of the user's.
+   * A helper the user set in a file their config includes is not seen either.
    */
   private async helpersFor(credentialUrl: string): Promise<ReadonlyArray<string>> {
     const result = await this.repository.runInCwd(
-      ["config", "--get-urlmatch", "credential.helper", credentialUrl],
+      ["config", "--no-includes", "--get-urlmatch", "credential.helper", credentialUrl],
       CONFIG_TIMEOUT_MS,
     );
     if (!result || result.exitCode !== 0) return [];

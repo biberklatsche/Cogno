@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  input,
+  output,
+  signal,
+} from "@angular/core";
 import { SignInProvider } from "@cogno/platform";
 import { GitSignIns } from "../git-sign-ins.service";
 
@@ -75,12 +83,25 @@ export class GitSignInComponent {
   readonly failure = signal<string | null>(null);
   readonly status = computed(() => this.signIns.status(this.origin()));
 
-  constructor(readonly signIns: GitSignIns) {}
+  private gone = false;
+
+  constructor(
+    readonly signIns: GitSignIns,
+    destroyRef: DestroyRef,
+  ) {
+    // Whoever closes the dialog backs out: a browser tab finished later must
+    // not sign in behind their back.
+    destroyRef.onDestroy(() => {
+      this.gone = true;
+      if (this.waiting()) this.signIns.cancel(this.origin());
+    });
+  }
 
   async signIn(): Promise<void> {
     this.failure.set(null);
     this.waiting.set(true);
     const failure = await this.signIns.signIn(this.origin(), this.provider());
+    if (this.gone) return;
     this.waiting.set(false);
     this.failure.set(failure);
     if (failure === null) this.signedIn.emit();

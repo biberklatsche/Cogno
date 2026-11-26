@@ -11,10 +11,13 @@ use ring::rand::{SecureRandom, SystemRandom};
 use serde::Deserialize;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::mpsc;
 
 /// How long the token endpoint may take to answer.
 const TOKEN_TIMEOUT: Duration = Duration::from_secs(30);
+/// How long one connection to the listener may take to send its request.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 /// More than a browser sends for the redirect; the rest is not read.
 const MAX_REQUEST_BYTES: usize = 16 * 1024;
 
@@ -102,40 +105,61 @@ fn page(status: &str, text: &str) -> String {
     )
 }
 
-/// Serves the listener until the browser brings this sign-in's redirect.
-pub async fn wait_for_code(listener: TcpListener, state: &str) -> Result<String, String> {
-    loop {
-        let (mut stream, _) = listener.accept().await.map_err(|e| e.to_string())?;
-        let mut request = Vec::new();
-        let mut chunk = [0u8; 2048];
-        while !request.windows(4).any(|window| window == b"\r\n\r\n")
-            && request.len() < MAX_REQUEST_BYTES
-        {
-            match stream.read(&mut chunk).await {
-                Ok(0) | Err(_) => break,
-                Ok(read) => request.extend_from_slice(&chunk[..read]),
-            }
+/// Reads one request and answers it. `None` for a connection that was not
+/// this sign-in's redirect.
+async fn serve(mut stream: TcpStream, state: &str) -> Option<Result<String, String>> {
+    let mut request = Vec::new();
+    let mut chunk = [0u8; 2048];
+    while !request.windows(4).any(|window| window == b"\r\n\r\n")
+        && request.len() < MAX_REQUEST_BYTES
+    {
+        match stream.read(&mut chunk).await {
+            Ok(0) | Err(_) => break,
+            Ok(read) => request.extend_from_slice(&chunk[..read]),
         }
-        let head = String::from_utf8_lossy(&request);
-        let target = head.split_whitespace().nth(1).unwrap_or("/");
-        let redirect = read_redirect(target, state);
-        let reply = match &redirect {
-            Redirect::Code(_) => page(
-                "200 OK",
-                "Signed in. You can close this tab and go back to Cogno.",
-            ),
-            Redirect::Refused(_) => page(
-                "200 OK",
-                "The sign-in was not completed. You can close this tab and try again in Cogno.",
-            ),
-            Redirect::Other => page("404 Not Found", "Nothing here."),
-        };
-        let _ = stream.write_all(reply.as_bytes()).await;
-        let _ = stream.shutdown().await;
-        match redirect {
-            Redirect::Code(code) => return Ok(code),
-            Redirect::Refused(reason) => return Err(reason),
-            Redirect::Other => {}
+    }
+    let head = String::from_utf8_lossy(&request);
+    let target = head.split_whitespace().nth(1).unwrap_or("/");
+    let redirect = read_redirect(target, state);
+    let reply = match &redirect {
+        Redirect::Code(_) => page(
+            "200 OK",
+            "Signed in. You can close this tab and go back to Cogno.",
+        ),
+        Redirect::Refused(_) => page(
+            "200 OK",
+            "The sign-in was not completed. You can close this tab and try again in Cogno.",
+        ),
+        Redirect::Other => page("404 Not Found", "Nothing here."),
+    };
+    let _ = stream.write_all(reply.as_bytes()).await;
+    let _ = stream.shutdown().await;
+    match redirect {
+        Redirect::Code(code) => Some(Ok(code)),
+        Redirect::Refused(reason) => Some(Err(reason)),
+        Redirect::Other => None,
+    }
+}
+
+/// Serves the listener until the browser brings this sign-in's redirect.
+/// Every connection is served on its own: a browser opens connections it
+/// sends nothing on, and one of those must not hold up the redirect.
+pub async fn wait_for_code(listener: TcpListener, state: &str) -> Result<String, String> {
+    let (found, mut redirects) = mpsc::channel(1);
+    loop {
+        tokio::select! {
+            accepted = listener.accept() => {
+                let (stream, _) = accepted.map_err(|e| e.to_string())?;
+                let found = found.clone();
+                let state = state.to_string();
+                tokio::spawn(async move {
+                    let served = tokio::time::timeout(REQUEST_TIMEOUT, serve(stream, &state)).await;
+                    if let Ok(Some(redirect)) = served {
+                        let _ = found.send(redirect).await;
+                    }
+                });
+            }
+            Some(redirect) = redirects.recv() => return redirect,
         }
     }
 }
@@ -177,7 +201,9 @@ struct TokenResponse {
 }
 
 /// Reads the token endpoint's answer. GitHub reports an error with status 200,
-/// so the body decides, not the status.
+/// so the body decides whether there is a grant. A refusal counts as one only
+/// when it is an OAuth error (RFC 6749, 5.2: `error`, with 400 or 401, or
+/// GitHub's 200): a rate limit or a proxy's answer says nothing about the token.
 fn read_grant(status: u16, body: &str) -> Result<Grant, GrantError> {
     let Ok(response) = serde_json::from_str::<TokenResponse>(body) else {
         return Err(GrantError::Unreachable(format!(
@@ -190,15 +216,14 @@ fn read_grant(status: u16, body: &str) -> Result<Grant, GrantError> {
             refresh_token: response.refresh_token.filter(|token| !token.is_empty()),
             expires_in: response.expires_in,
         }),
-        None if status >= 500 => Err(GrantError::Unreachable(format!(
-            "the token endpoint answered {status}"
-        ))),
-        None => Err(GrantError::Rejected(
-            response
-                .error_description
-                .or(response.error)
-                .unwrap_or_else(|| format!("the token endpoint answered {status}")),
-        )),
+        None => match response.error {
+            Some(error) if matches!(status, 200 | 400 | 401) => Err(GrantError::Rejected(
+                response.error_description.unwrap_or(error),
+            )),
+            _ => Err(GrantError::Unreachable(format!(
+                "the token endpoint answered {status}"
+            ))),
+        },
     }
 }
 
@@ -341,11 +366,28 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn an_answer_that_is_no_oauth_error_says_nothing_about_the_token() {
+        for (status, body) in [
+            (429, r#"{"message":"rate limited"}"#),
+            (429, r#"{"error":"slow_down"}"#),
+            (403, r#"{"message":"blocked by the proxy"}"#),
+            (200, "{}"),
+        ] {
+            assert!(
+                matches!(read_grant(status, body), Err(GrantError::Unreachable(_))),
+                "{status} {body}"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn the_listener_hands_out_the_code_of_the_matching_redirect() {
         let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
         let port = listener.local_addr().unwrap().port();
         let waiting = tokio::spawn(async move { wait_for_code(listener, "mine").await });
+        // A connection that sends nothing, as a browser opens them ahead of use.
+        let _silent = TcpStream::connect(("127.0.0.1", port)).await.unwrap();
 
         for target in ["/favicon.ico", "/?code=abc&state=mine"] {
             let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))

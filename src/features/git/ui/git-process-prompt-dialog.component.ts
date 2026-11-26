@@ -18,13 +18,17 @@ import { GitPrompt } from "../model/git-process-prompt";
         <input
           #field
           class="field"
-          type="password"
+          [type]="shown() ? 'text' : 'password'"
           spellcheck="false"
           autocomplete="off"
           autocapitalize="off"
           [value]="value()"
           (input)="value.set(field.value)"
         />
+        <label class="show">
+          <input #show type="checkbox" [checked]="shown()" (change)="shown.set(show.checked)" />
+          <span>Show what I type</span>
+        </label>
       }
       <div class="actions">
         @if (data.confirm) {
@@ -64,6 +68,15 @@ import { GitPrompt } from "../model/git-process-prompt";
         outline: none;
         border-color: var(--highlight-color);
       }
+      .show {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .show input {
+        accent-color: var(--highlight-color);
+        margin: 0;
+      }
       .actions {
         display: flex;
         justify-content: flex-end;
@@ -74,6 +87,11 @@ import { GitPrompt } from "../model/git-process-prompt";
 })
 export class GitProcessPromptDialogComponent {
   readonly value = signal("");
+  /**
+   * What is asked is known only as text in git's language, so the field does
+   * not guess whether it is a secret: hidden unless the person says otherwise.
+   */
+  readonly shown = signal(false);
 
   constructor(
     readonly dialogRef: DialogRef<string>,

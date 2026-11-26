@@ -2,23 +2,37 @@
 //! with its token, the index of sign-ins, git's config file.
 
 use std::fs;
-use std::io;
+use std::io::{self, Write};
 use std::path::Path;
 
 /// Writes the file with user-only permissions and puts it in place in one
 /// step: nobody reads half of it, and it never exists with wider permissions.
+/// Each write stages under a name of its own, so two at once do not collide;
+/// the one that renames last is the one that stays.
 pub fn write(path: &Path, content: &str) -> io::Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let staged = path.with_extension("tmp");
-    fs::write(&staged, content)?;
+    let name = path.file_name().unwrap_or_default().to_string_lossy();
+    let staged = path.with_file_name(format!(".{name}.{}.tmp", uuid::Uuid::new_v4().simple()));
+    let written = stage(&staged, content).and_then(|()| fs::rename(&staged, path));
+    if written.is_err() {
+        let _ = fs::remove_file(&staged);
+    }
+    written
+}
+
+fn stage(staged: &Path, content: &str) -> io::Result<()> {
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create_new(true);
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&staged, fs::Permissions::from_mode(0o600))?;
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
     }
-    fs::rename(&staged, path)
+    let mut file = options.open(staged)?;
+    file.write_all(content.as_bytes())?;
+    file.sync_all()
 }
 
 #[cfg(test)]
@@ -34,7 +48,11 @@ mod tests {
         write(&path, "second").unwrap();
 
         assert_eq!(fs::read_to_string(&path).unwrap(), "second");
-        assert!(!path.with_extension("tmp").exists());
+        let left: Vec<_> = fs::read_dir(path.parent().unwrap())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        assert_eq!(left, vec![std::ffi::OsString::from("file.json")]);
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;

@@ -408,7 +408,8 @@ Wer in einer Cogno-Shell läuft, kann sich über den Helper das Token eines
 angemeldeten Origins geben lassen. Das ist dieselbe Grenze wie beim
 Launch-Token (oben) und wie bei jedem Keychain-Helper, den `git credential
 fill` befragt. `include.path` aus der Umgebung braucht git 2.31; ein älteres
-git sieht die Datei nicht und fragt über Askpass. Ist der lokale Server aus
+git sieht die Datei nicht und fragt über Askpass, Name und Passwort als
+zwei Prompts, bei jedem Lauf neu: dort merkt sich niemand etwas. Ist der lokale Server aus
 (`http_server.enabled`), gibt es weder Askpass noch Helper, und eine
 Anmeldung wird abgelehnt statt gespeichert. Eine Shell in einer WSL-Distro
 bekommt die Datei noch nicht mit (der Runner dort schon, über `WSLENV`).
