@@ -31,7 +31,7 @@ describe("UpdaterService", () => {
   };
   let dispatch: ReturnType<typeof vi.fn>;
   let openUrl: ReturnType<typeof vi.fn>;
-  let configuration: { updater?: { install?: "background" | "ask" } } | undefined;
+  let configuration: { general?: { update_install?: "background" | "ask" } } | undefined;
   let service: UpdaterService;
 
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe("UpdaterService", () => {
   });
 
   it("does not download on its own when set to ask", () => {
-    configuration = { updater: { install: "ask" } };
+    configuration = { general: { update_install: "ask" } };
     service.start();
     expect(updater.check).toHaveBeenLastCalledWith({ force: false, download: false });
   });

@@ -15,7 +15,6 @@ import { ScrollbarSchema } from "./scrollbar-config";
 import { SelectionSchema } from "./selection-config";
 import { ShellConfigSchema, ShellType } from "./shell-config";
 import { TerminalConfigSchema } from "./terminal-config";
-import { UpdaterConfigSchema } from "./updater-config";
 
 export { Color, ShellType };
 
@@ -66,7 +65,6 @@ export const baseConfigSchemaShape = {
   http_server: HttpServerSchema.meta({ title: "HTTP server" })
     .optional()
     .describe("Local HTTP server used by the CLI."),
-  updater: UpdaterConfigSchema.optional().describe("How Cogno keeps itself up to date."),
 } satisfies z.ZodRawShape;
 
 export const ConfigSchema = z

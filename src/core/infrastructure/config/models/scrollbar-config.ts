@@ -38,12 +38,6 @@ export const ScrollbarSchema = z.strictObject({
     .min(0, "Scrollbar smooth scroll duration must be at least 0")
     .optional()
     .describe("Scroll multiplier while the fast-scroll modifier is held."),
-  scrollback_lines: z
-    .number()
-    .int()
-    .min(100, "Scrollback lines must be at least 100")
-    .optional()
-    .describe("How many lines of scrollback the terminal keeps."),
 });
 
 export type Scrollbar = z.infer<typeof ScrollbarSchema>;

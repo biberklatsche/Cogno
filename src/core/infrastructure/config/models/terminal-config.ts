@@ -16,6 +16,12 @@ export const TerminalConfigSchema = z.strictObject({
     .describe(
       "Draw the terminal with the graphics card, which is faster. Turn it off if text looks broken.",
     ),
+  scrollback_lines: z
+    .number()
+    .int()
+    .min(100, "Scrollback lines must be at least 100")
+    .optional()
+    .describe("How many lines of scrollback the terminal keeps."),
   decoration: z
     .strictObject({
       color: decorationColorSchema

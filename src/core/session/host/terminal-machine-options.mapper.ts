@@ -25,7 +25,7 @@ export function toTerminalMachineOptions(config: Config): TerminalMachineOptions
     drawBoldTextInBrightColors: config.font?.draw_bold_text_in_bright_colors,
     rescaleOverlappingGlyphs: config.font?.rescale_overlapping_glyphs,
 
-    scrollbackLines: config.scrollbar?.scrollback_lines,
+    scrollbackLines: config.terminal?.scrollback_lines,
     scrollSensitivity: config.scrollbar?.sensitivity,
     fastScrollSensitivity: config.scrollbar?.fast_scroll_sensitivity,
     scrollOnUserInput: config.scrollbar?.scroll_on_user_input,

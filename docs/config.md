@@ -17,6 +17,12 @@ Reload the config automatically when the file changes on disk.
 
 **Type:** boolean · **Default:** `true`
 
+### `general.update_install`
+
+How Cogno keeps itself up to date: `background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
+
+**Type:** `background` | `ask` · **Default:** `background`
+
 ### `general.session_restore.enabled`
 
 Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.
@@ -387,12 +393,6 @@ Scroll multiplier while the fast-scroll modifier is held.
 
 **Type:** integer ≥ 0 · **Default:** `2`
 
-### `scrollbar.scrollback_lines`
-
-How many lines of scrollback the terminal keeps.
-
-**Type:** integer ≥ 100 · **Default:** `100000`
-
 ## Selection
 
 Text selection colors and behaviour.
@@ -661,6 +661,12 @@ Draw the terminal with the graphics card, which is faster. Turn it off if text l
 
 **Type:** boolean · **Default:** `true` (linux: `false`)
 
+### `terminal.scrollback_lines`
+
+How many lines of scrollback the terminal keeps.
+
+**Type:** integer ≥ 100 · **Default:** `100000`
+
 ### `terminal.decoration.color.background`
 
 Fill color of the decoration.
@@ -907,16 +913,6 @@ If the port is taken, try the next free one instead of failing.
 
 **Type:** boolean · **Default:** `true`
 
-## Updater
-
-How Cogno keeps itself up to date.
-
-### `updater.install`
-
-`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
-
-**Type:** `background` | `ask` · **Default:** `background`
-
 ## Feature
 
 Each feature can be switched off entirely and ordered in the side menu.
@@ -945,7 +941,7 @@ Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `70`
 
-### `feature.notification_overview.overview.max_items`
+### `feature.notification_overview.max_items`
 
 How many notifications the overview keeps, or `unlimited`.
 

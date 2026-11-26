@@ -5,6 +5,12 @@ export const GeneralConfigSchema = z.strictObject({
     .boolean()
     .optional()
     .describe("Reload the config automatically when the file changes on disk."),
+  update_install: z
+    .enum(["background", "ask"])
+    .optional()
+    .describe(
+      "How Cogno keeps itself up to date: `background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.",
+    ),
   session_restore: z
     .strictObject({
       enabled: z
