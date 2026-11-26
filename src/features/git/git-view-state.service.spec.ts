@@ -74,6 +74,15 @@ describe("GitViewState", () => {
     expect(view.selection()).toEqual({ kind: "commit", sha: "def456" });
   });
 
+  it("has no row above or below a selection that is no row of the tree", () => {
+    view.select({ kind: "stash", sha: "0s7a5h", ref: "stash@{0}" });
+
+    view.stepSelection(1);
+    view.stepSelection(-1);
+
+    expect(view.selection()).toEqual({ kind: "stash", sha: "0s7a5h", ref: "stash@{0}" });
+  });
+
   it("closes an open diff when the selection steps on", () => {
     view.openDiff({ kind: "unstaged", file: { path: "a.ts" } } as never);
 

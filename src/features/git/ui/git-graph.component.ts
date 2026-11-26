@@ -531,6 +531,11 @@ export class GitGraphComponent {
     }));
     return [...wips, ...commits];
   });
+  /** The row the selection stands for, named as `rowKey` names it. */
+  private readonly selectedRow = computed(() => {
+    const selection = this.view.selection();
+    return selection.kind === "wip" ? WIP_ROW : selection.sha;
+  });
   /** The graph column follows the lanes unless the user dragged it. */
   private readonly graphWidth = computed(() => {
     const lanes = this.repository.graph().reduce((max, row) => Math.max(max, row.width), 1);
@@ -579,27 +584,26 @@ export class GitGraphComponent {
     });
     // The selected row stays in view: it moves with the arrow keys, and a tree
     // that takes a diff's place again starts where the selection is. Scrolls
-    // just far enough, and not at all for a row that is seen.
-    effect(() => {
-      const selection = this.view.selection();
+    // just far enough, and not at all for a row that is seen. Follows the row
+    // that is selected, not the selection object, which is a new one with
+    // every re-read of the repository.
+    effect((onCleanup) => {
+      const selected = this.selectedRow();
       const viewport = this.viewport();
       if (!viewport) return;
       // Once the viewport knows its size, which it does not while it is created.
-      requestAnimationFrame(() => {
-        const index = this.items().findIndex((item) =>
-          item.kind === "commit"
-            ? selection.kind !== "wip" && item.commit.sha === selection.sha
-            : item.kind === "wip" && selection.kind === "wip",
-        );
-        if (index === -1) return;
+      const frame = requestAnimationFrame(() => {
+        const visibleHeight = viewport.getViewportSize();
+        const index = this.items().findIndex((item) => rowKey(item) === selected);
+        if (index === -1 || visibleHeight === 0) return;
         const top = index * this.rowHeight;
         const visibleTop = viewport.measureScrollOffset("top");
-        const visibleHeight = viewport.getViewportSize();
         if (top < visibleTop) viewport.scrollToOffset(top);
         else if (top + this.rowHeight > visibleTop + visibleHeight) {
           viewport.scrollToOffset(top + this.rowHeight - visibleHeight);
         }
       });
+      onCleanup(() => cancelAnimationFrame(frame));
     });
     effect(() => {
       const sha = this.view.reveal();
@@ -615,12 +619,7 @@ export class GitGraphComponent {
     });
   }
 
-  trackByRow = (_index: number, item: TreeRow) =>
-    item.kind === "wip"
-      ? "wip"
-      : item.kind === "worktree-wip"
-        ? `wip:${item.worktree.path}`
-        : item.commit.sha;
+  trackByRow = (_index: number, item: TreeRow) => rowKey(item);
 
   folder(path: string): string {
     return folderName(path);
@@ -754,4 +753,12 @@ export class GitGraphComponent {
       if (tag) this.actions.openTagMenu(event, tag);
     }
   }
+}
+
+const WIP_ROW = "wip";
+
+/** What names a row of the tree: a commit's sha, or which work in progress it is. */
+function rowKey(item: TreeRow): string {
+  if (item.kind === "wip") return WIP_ROW;
+  return item.kind === "worktree-wip" ? `wip:${item.worktree.path}` : item.commit.sha;
 }

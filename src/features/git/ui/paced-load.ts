@@ -7,13 +7,14 @@ const REST_MS = 120;
  * until the selection rests, so git is not started for every row passed.
  */
 export class PacedLoad {
-  private lastStart = 0;
+  private lastStart = Number.NEGATIVE_INFINITY;
   private waiting: ReturnType<typeof setTimeout> | null = null;
 
   /** Takes the place of a load still waiting. */
   start(load: () => void): void {
     this.cancel();
-    const now = Date.now();
+    // Not the wall clock, which can be set back.
+    const now = performance.now();
     const moving = now - this.lastStart < REST_MS;
     this.lastStart = now;
     if (!moving) {

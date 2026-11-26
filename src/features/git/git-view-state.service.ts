@@ -121,7 +121,8 @@ export class GitViewState {
   /**
    * An arrow key in the tree: selects the row above or below the selected
    * one, in the order listed - the work in progress while it is shown, then
-   * the commits.
+   * the commits. From a selection that is no row of the tree (a stash, a
+   * commit not loaded) there is no row above or below.
    */
   stepSelection(step: 1 | -1): void {
     const rows: GitSelection[] = [
@@ -134,6 +135,7 @@ export class GitViewState {
         ? selection.kind !== "wip" && row.sha === selection.sha
         : selection.kind === "wip",
     );
+    if (current === -1) return;
     const next = nextStop(rows, current, step);
     if (next) this.select(next);
   }

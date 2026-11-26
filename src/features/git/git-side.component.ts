@@ -29,7 +29,7 @@ const MIN_PANEL_WIDTH = 160;
 /** What the graph in the middle keeps at least while a side panel is dragged wider. */
 const MIN_CENTER_WIDTH = 240;
 /** Where the person types or chooses: there the arrow keys are the field's. */
-const TEXT_ENTRY = 'input, textarea, select, [contenteditable=""], [contenteditable="true"]';
+const FORM_FIELD = "input, textarea, select";
 const PANEL_SELECTORS: Record<GitSidePanel, string> = {
   refs: ".refs",
   detail: ".detail",
@@ -58,6 +58,7 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    "(document:keydown)": "onKey($event)",
     "[style.--git-refs-width]": "panelWidth('refs')",
     "[style.--git-detail-width]": "panelWidth('detail')",
     "[style.--git-repositories-width]": "panelWidth('repositories')",
@@ -83,8 +84,8 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
         </div>
       }
 
-      <div class="body" tabindex="0" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()"
-           [class.with-repositories]="!narrow()" (keydown)="onKey($event)">
+      <div class="body" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()"
+           [class.with-repositories]="!narrow()">
         @if (view.refsVisible()) {
           <app-git-refs-panel class="refs"></app-git-refs-panel>
         }
@@ -214,7 +215,6 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
         grid-template-columns: var(--refs-width) minmax(0, 1fr) var(--detail-width) var(--repositories-width);
         grid-template-areas: "refs center detail repositories";
       }
-      .body:focus { outline: none; }
       .refs { grid-area: refs; min-height: 0; border-right: 1px solid var(--git-border); }
       .center { grid-area: center; min-height: 0; min-width: 0; }
       .detail { grid-area: detail; min-height: 0; min-width: 0; border-left: 1px solid var(--git-border); }
@@ -347,7 +347,7 @@ export class GitSideComponent implements OnDestroy {
    */
   onKey(event: KeyboardEvent): void {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
-    if (event.target instanceof Element && event.target.closest(TEXT_ENTRY) !== null) return;
+    if (!this.hasKeyboard(event.target)) return;
     const inFiles = this.view.diff() !== null;
     const files = this.commitPanel() ?? this.wipPanel();
     switch (event.key) {
@@ -368,6 +368,20 @@ export class GitSideComponent implements OnDestroy {
         return;
     }
     event.preventDefault();
+  }
+
+  /**
+   * Whether a key typed at `target` is the panel's. The focus is in the
+   * panel, or on what is around it: the side menu takes it when the panel
+   * opens or is clicked, and it falls back to the page when what had it is
+   * gone (a button of a diff that closed). Not in a field, and not while the
+   * panel is hidden.
+   */
+  private hasKeyboard(target: EventTarget | null): boolean {
+    const panel = this.host.nativeElement;
+    if (!(target instanceof HTMLElement) || panel.offsetParent === null) return false;
+    if (target.isContentEditable || target.closest(FORM_FIELD) !== null) return false;
+    return panel.contains(target) || target.contains(panel);
   }
 
   /** The work in progress with the first conflicted file open for resolving. */
