@@ -7,6 +7,7 @@ import { ActionFired, ActionName } from "@cogno/core/workbench/bus/action.models
 import { AppBus } from "@cogno/core/workbench/bus/app-bus";
 import { FeatureHost } from "@cogno/core/workbench/feature-host/feature-host";
 import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.service";
+import { Logger } from "@cogno/platform/logger";
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
@@ -18,6 +19,7 @@ import { readFeatureConfig } from "../feature-host/feature-config";
 })
 export class NativeMenuService {
   private latestConfig?: Config;
+  private menuBuilds: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly tauriMenu: TauriMenu,
@@ -30,14 +32,12 @@ export class NativeMenuService {
     ref: DestroyRef,
   ) {
     if (this.os.platform() === "macos") {
-      configService.config$.pipe(takeUntilDestroyed(ref)).subscribe(async (config) => {
+      configService.config$.pipe(takeUntilDestroyed(ref)).subscribe((config) => {
         this.latestConfig = config;
-        await this.buildMenu();
+        this.rebuildMenu();
       });
-      this.appWindow.onFocusChanged$.pipe(takeUntilDestroyed(ref)).subscribe(async (focus) => {
-        if (focus) {
-          await this.buildMenu();
-        }
+      this.appWindow.onFocusChanged$.pipe(takeUntilDestroyed(ref)).subscribe((focus) => {
+        if (focus) this.rebuildMenu();
       });
       // Edit > Paste clicked while a terminal has the keyboard would paste
       // natively, past the session: it becomes Cogno's paste instead.
@@ -52,7 +52,17 @@ export class NativeMenuService {
     }
   }
 
+  /** One build after another: a build releases what the one before it made. */
+  private rebuildMenu(): void {
+    this.menuBuilds = this.menuBuilds
+      .then(() => this.buildMenu())
+      .catch((error) => Logger.warn(`Could not build the app menu: ${error}`));
+  }
+
   private async buildMenu() {
+    // Each build makes a whole menu of native objects; the last one's go first.
+    await this.tauriMenu.releaseAll();
+
     const appSubmenu = await this.tauriMenu.newSubmenu({
       id: "cogno",
       text: "Cogno",
@@ -125,7 +135,7 @@ export class NativeMenuService {
     const menu = await this.tauriMenu.new({
       items: [appSubmenu, fileSubmenu, editSubmenu, viewSubmenu, helpSubmenu],
     });
-    await menu.setAsAppMenu();
+    await this.tauriMenu.setAsAppMenu(menu);
   }
 
   /** A menu entry is named after its action; a feature's entry after the feature. */
