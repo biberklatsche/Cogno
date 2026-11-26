@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildSettingRows,
   buildSettingsView,
+  markHits,
   parseInput,
   renderValue,
   SettingRowsInput,
@@ -187,6 +188,27 @@ describe("blocks", () => {
       title: "Notifications",
       level: 0,
     });
+  });
+});
+
+describe("markHits", () => {
+  it("cuts a text at every term, whatever its case, and joins hits that touch", () => {
+    expect(markHits("Font size of the Terminal font", ["font", "term", "minal"])).toEqual([
+      { text: "Font", hit: true },
+      { text: " size of the ", hit: false },
+      { text: "Terminal", hit: true },
+      { text: " ", hit: false },
+      { text: "font", hit: true },
+    ]);
+  });
+
+  it("leaves a text without a hit whole, and an empty one out", () => {
+    expect(markHits("cursor", [])).toEqual([{ text: "cursor", hit: false }]);
+    expect(markHits("", ["a"])).toEqual([]);
+  });
+
+  it("hands the query's words to the view, lowercased", () => {
+    expect(view({ ...input, query: " WebGL  on " }).terms).toEqual(["webgl", "on"]);
   });
 });
 

@@ -56,7 +56,11 @@ export type SettingsView = {
   readonly blocks: ReadonlyArray<SettingBlock>;
   /** A query is set: the rows come from every section, each headed by its section. */
   readonly searching: boolean;
+  /** The query's words, lowercased: what the panel marks in the rows it shows. */
+  readonly terms: ReadonlyArray<string>;
 };
+
+export type TextPiece = { readonly text: string; readonly hit: boolean };
 
 export type SettingHeading = {
   readonly key: string;
@@ -109,7 +113,26 @@ export function buildSettingsView(
   for (const row of matching) counts.set(row.section, (counts.get(row.section) ?? 0) + 1);
   const sections = [...counts].map(([title, count]) => ({ title, count }));
   const shown = searching ? matching : matching.filter((row) => row.section === filter.section);
-  return { sections, blocks: toBlocks(shown, searching), searching };
+  return { sections, blocks: toBlocks(shown, searching), searching, terms };
+}
+
+/** A text cut where it holds one of the lowercased terms, whatever its own case. */
+export function markHits(text: string, terms: ReadonlyArray<string>): TextPiece[] {
+  const lower = text.toLowerCase();
+  const hit = new Array<boolean>(text.length).fill(false);
+  for (const term of terms) {
+    for (let at = lower.indexOf(term); at !== -1; at = lower.indexOf(term, at + term.length)) {
+      hit.fill(true, at, at + term.length);
+    }
+  }
+  const pieces: TextPiece[] = [];
+  let start = 0;
+  for (let index = 1; index <= text.length; index++) {
+    if (index < text.length && hit[index] === hit[start]) continue;
+    pieces.push({ text: text.slice(start, index), hit: hit[start] === true });
+    start = index;
+  }
+  return pieces;
 }
 
 /**

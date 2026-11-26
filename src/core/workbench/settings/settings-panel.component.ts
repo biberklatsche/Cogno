@@ -24,6 +24,7 @@ import {
   ToggleSwitchComponent,
   TooltipDirective,
 } from "@cogno/shared/ui";
+import { MarkedTextComponent } from "./marked-text.component";
 import { SettingsNavigation } from "./settings-navigation";
 import {
   buildSettingRows,
@@ -53,6 +54,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
   imports: [
     ColorFieldComponent,
     IconComponent,
+    MarkedTextComponent,
     SideMenuSearchInputComponent,
     ToggleSwitchComponent,
     TooltipDirective,
@@ -66,7 +68,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         [value]="query()"
         (query)="query.set($event)"
       ></app-side-menu-search-input>
-      <button type="button" class="button small file-link" (click)="openConfigFile()">
+      <button type="button" class="file-link" (click)="openConfigFile()">
         <app-icon name="mdiOpenInNew"></app-icon>
         Edit in settings file
       </button>
@@ -103,9 +105,16 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         }
         @for (block of view().blocks; track block.key) {
           @for (heading of block.headings; track heading.key) {
-            <h3 [class]="'group level-' + heading.level" [attr.data-section]="heading.level === 0 ? heading.title : null">{{ heading.title }}</h3>
+            <h3 [class]="'group level-' + heading.level" [attr.data-section]="heading.level === 0 ? heading.title : null">
+              <!-- A section's name is searched, a group's is not. -->
+              @if (heading.level === 0) {
+                <app-marked-text [text]="heading.title" [terms]="view().terms" />
+              } @else {
+                {{ heading.title }}
+              }
+            </h3>
             @if (heading.description) {
-              <p class="group-description">{{ heading.description }}</p>
+              <p class="group-description"><app-marked-text [text]="heading.description" [terms]="view().terms" /></p>
             }
           }
           <div class="block" [class.grouped]="block.grouped">
@@ -113,7 +122,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
             <header class="block-head">
               <h4>{{ block.title }}</h4>
               @if (block.description) {
-                <p>{{ block.description }}</p>
+                <p><app-marked-text [text]="block.description" [terms]="view().terms" /></p>
               }
             </header>
           }
@@ -122,7 +131,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
           <section class="row" [class.wide]="isWide(row)">
             <div class="text">
               <header class="row-head">
-                <code class="key">{{ row.key }}</code>
+                <code class="key"><app-marked-text [text]="row.key" [terms]="view().terms" /></code>
                 <!-- Always in the layout, so a row never changes height when it becomes modified. -->
                 <button
                   type="button"
@@ -137,7 +146,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
                 </button>
               </header>
               <!-- On one line: a line break between the parts would show as a space around every code span. -->
-              <p class="description">@for (part of row.descriptionParts; track $index) {@if (part.code) {<code>{{ part.text }}</code>} @else {<span>{{ part.text }}</span>}}</p>
+              <p class="description">@for (part of row.descriptionParts; track $index) {@if (part.code) {<code><app-marked-text [text]="part.text" [terms]="view().terms" /></code>} @else {<app-marked-text [text]="part.text" [terms]="view().terms" />}}</p>
               @if (errors()[row.key]; as error) {
                 <p class="error">{{ error }}</p>
               } @else if (row.modified && row.default !== undefined) {
@@ -196,7 +205,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
                   }
                 }
                 @case ("file-only") {
-                  <button type="button" class="button small" (click)="openConfigFile()">
+                  <button type="button" class="file-link" (click)="openConfigFile()">
                     <app-icon name="mdiOpenInNew"></app-icon>
                     Edit in settings file
                   </button>
@@ -243,8 +252,23 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         flex: 1 1 auto;
         min-width: 0;
       }
+      /* Opens the settings file, outside the panel: a link, in the colour that marks one. */
       .file-link {
         flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--highlight-color);
+        font: inherit;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        text-underline-offset: 2px;
+      }
+      .file-link:hover {
+        text-decoration: underline;
       }
       .body {
         flex: 1 1 auto;
@@ -462,12 +486,6 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
       .error {
         opacity: 1;
         color: var(--color-red, inherit);
-      }
-      .button.small {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        white-space: nowrap;
       }
     `,
   ],
