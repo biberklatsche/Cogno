@@ -180,9 +180,6 @@ pub struct AskpassPayload {
     pub prompt: String,
 }
 
-/// How long a prompt may stay open before the helper gives up.
-const ASKPASS_WAIT: std::time::Duration = std::time::Duration::from_secs(30 * 60);
-
 /// The header every request carries the launch token in.
 pub const TOKEN_HEADER: &str = "x-cogno-token";
 
@@ -290,8 +287,10 @@ pub fn start_http_server(
         let app_emit = app.clone();
         let app_run = app.clone();
         let app_askpass = app.clone();
+        let app_credential = app.clone();
         let token = app.state::<HttpServerState>().token().to_string();
         let token_for_run = token.clone();
+        let token_for_credential = token.clone();
         let external_token = app.state::<HttpServerState>().external_token.clone();
         let router = Router::new()
             .route(
@@ -360,7 +359,7 @@ pub fn start_http_server(
                 }),
             )
             .route(
-                "/askpass",
+                crate::commands::askpass::ROUTE,
                 post(move |headers: axum::http::HeaderMap, result: Result<Json<AskpassPayload>, JsonRejection>| {
                     let app = app_askpass.clone();
                     async move {
@@ -370,28 +369,46 @@ pub fn start_http_server(
                                 return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })));
                             }
                         };
-                        // The run's own token, not the launch token: see askpass.rs.
-                        let askpass = app.state::<crate::commands::askpass::AskpassState>();
+                        // The run's own token, not the launch token: see run_questions.rs.
+                        let questions = app.state::<crate::commands::run_questions::RunQuestions>();
                         let authorized = host_is_loopback(&headers, actual_port)
                             && presented_token(&headers)
-                                .is_some_and(|token| askpass.authorizes(&payload.session, token));
+                                .is_some_and(|token| questions.authorizes(&payload.session, token));
                         if !authorized {
                             log::warn!(target: "http_server", "POST /askpass rejected: missing or wrong token");
                             return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
                         }
-                        let Some((request_id, receiver)) = askpass.request(&app, &payload.session, payload.prompt) else {
-                            log::warn!(target: "http_server", "POST /askpass: unknown session or closed window");
-                            return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "unknown session" })));
-                        };
-                        // The user may take a while; the helper waits, and the runner's timeout pauses.
-                        let answer = match tokio::time::timeout(ASKPASS_WAIT, receiver).await {
-                            Ok(received) => received.ok().flatten(),
-                            Err(_) => {
-                                askpass.expire(&app, &request_id);
-                                None
+                        let answer = crate::commands::askpass::answer(&app, &payload.session, payload.prompt).await;
+                        (StatusCode::OK, Json(serde_json::json!({ "answer": answer })))
+                    }
+                }),
+            )
+            .route(
+                crate::sign_ins::helper::ROUTE,
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<crate::sign_ins::helper::Request>, JsonRejection>| {
+                    let app = app_credential.clone();
+                    let launch_authorized = is_authorized(&headers, &token_for_credential, actual_port);
+                    async move {
+                        let payload = match result {
+                            Ok(Json(payload)) => payload,
+                            Err(e) => {
+                                return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": e.to_string() })));
                             }
                         };
-                        (StatusCode::OK, Json(serde_json::json!({ "answer": answer })))
+                        // A run presents its own token; git typed in a terminal the launch token.
+                        let questions = app.state::<crate::commands::run_questions::RunQuestions>();
+                        let authorized = match &payload.session {
+                            Some(session) => host_is_loopback(&headers, actual_port)
+                                && presented_token(&headers)
+                                    .is_some_and(|token| questions.authorizes(session, token)),
+                            None => launch_authorized,
+                        };
+                        if !authorized {
+                            log::warn!(target: "http_server", "POST /credential rejected: missing or wrong token");
+                            return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
+                        }
+                        let reply = crate::sign_ins::helper::answer(&app, payload).await;
+                        (StatusCode::OK, Json(serde_json::json!(reply)))
                     }
                 }),
             );

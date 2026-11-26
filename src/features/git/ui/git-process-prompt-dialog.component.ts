@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Inject, signal } from "@angular/core";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
-import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
+import { GitPrompt } from "../model/git-process-prompt";
 
 /**
  * The dialog git or ssh gets instead of a terminal prompt. Confirming answers
@@ -14,20 +14,24 @@ import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
   template: `
     <form class="prompt" (submit)="$event.preventDefault(); confirm()">
       <pre class="message">{{ data.message }}</pre>
-      @if (data.kind !== "confirm") {
+      @if (!data.confirm) {
         <input
           #field
           class="field"
-          [type]="secret ? 'password' : 'text'"
+          [type]="shown() ? 'text' : 'password'"
           spellcheck="false"
           autocomplete="off"
           autocapitalize="off"
           [value]="value()"
           (input)="value.set(field.value)"
         />
+        <label class="show">
+          <input #show type="checkbox" [checked]="shown()" (change)="shown.set(show.checked)" />
+          <span>Show what I type</span>
+        </label>
       }
       <div class="actions">
-        @if (data.kind === "confirm") {
+        @if (data.confirm) {
           <button type="button" class="button" (click)="dialogRef.close('no')">No</button>
           <button type="submit" class="button primary">Yes</button>
         } @else {
@@ -64,6 +68,15 @@ import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
         outline: none;
         border-color: var(--highlight-color);
       }
+      .show {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .show input {
+        accent-color: var(--highlight-color);
+        margin: 0;
+      }
       .actions {
         display: flex;
         justify-content: flex-end;
@@ -74,19 +87,22 @@ import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
 })
 export class GitProcessPromptDialogComponent {
   readonly value = signal("");
-  readonly secret: boolean;
+  /**
+   * What is asked is known only as text in git's language, so the field does
+   * not guess whether it is a secret: hidden unless the person says otherwise.
+   */
+  readonly shown = signal(false);
 
   constructor(
     readonly dialogRef: DialogRef<string>,
     @Inject(DIALOG_DATA) readonly data: GitPrompt,
   ) {
-    this.secret = isSecretPrompt(data.kind);
     queueMicrotask(() =>
       document.querySelector<HTMLInputElement>("app-git-process-prompt-dialog .field")?.focus(),
     );
   }
 
   confirm(): void {
-    this.dialogRef.close(this.data.kind === "confirm" ? "yes" : this.value());
+    this.dialogRef.close(this.data.confirm ? "yes" : this.value());
   }
 }

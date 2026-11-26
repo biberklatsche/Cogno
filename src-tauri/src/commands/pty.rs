@@ -291,6 +291,7 @@ pub async fn pty_spawn(
     cmd.args(&args);
 
     // Set environment variables
+    let profile_git_config_count = env.get("GIT_CONFIG_COUNT").cloned();
     for (key, value) in env {
         cmd.env(key, value);
     }
@@ -320,6 +321,13 @@ pub async fn pty_spawn(
     if http_port != 0 {
         cmd.env("COGNO_PORT", http_port.to_string());
         cmd.env("COGNO_TOKEN", http_server.token());
+        // A `git push` typed here uses a sign-in made in Cogno: git includes
+        // Cogno's config file and asks this binary (sign_ins/git_config.rs).
+        let existing = profile_git_config_count.or_else(|| std::env::var("GIT_CONFIG_COUNT").ok());
+        for (key, value) in crate::sign_ins::git_config::environment_for(&app, existing.as_deref())
+        {
+            cmd.env(key, value);
+        }
     }
     cmd.env("COGNO_TERMINAL_ID", &terminal_id);
 

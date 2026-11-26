@@ -4,7 +4,7 @@ import { isWslShellContext } from "@cogno/shared/domain";
 import { DialogService } from "@cogno/shared/ui";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitViewState } from "./git-view-state.service";
-import { GitAccessPlatform, GitAccessSituation, knownGitHost } from "./hosts/git-hosts";
+import { GitAccessPlatform, GitAccessSituation, gitHostFor, knownGitHost } from "./hosts/git-hosts";
 import { credentialUrlOf, hostOf, isSshUrl } from "./model/git-remote-url";
 import { GitAccessDialogComponent, GitAccessDialogData } from "./ui/git-access-dialog.component";
 
@@ -25,23 +25,28 @@ export class GitRemoteAccessService {
     private readonly navigator: TerminalNavigator,
   ) {}
 
-  /** The dialog for the host `url` names; nothing for a local path. */
-  async open(url: string): Promise<void> {
+  /**
+   * The dialog for the host `url` names - a remote's url or an origin; nothing
+   * for a local path. `rejected`: git just reported the credential it used
+   * there as rejected.
+   */
+  async open(url: string, why: { readonly rejected?: boolean } = {}): Promise<void> {
     const host = hostOf(url);
     const session = this.repository.currentSession();
     if (!host || !session) return;
-    const known = knownGitHost(host);
-    const remembered = this.view.hosts()[host];
+    const origin = credentialUrlOf(url) ?? `https://${host}`;
     const situation: GitAccessSituation = {
       host,
-      provider: known?.id ?? remembered ?? "other",
+      provider: gitHostFor(host, this.view.hosts()).id,
       platform: platformOf(session.shellContext),
       ssh: isSshUrl(url),
-      helpers: await this.helpersFor(credentialUrlOf(url) ?? `https://${host}`),
+      helpers: await this.helpersFor(origin),
     };
     const data: GitAccessDialogData = {
       situation,
-      askProvider: known === null,
+      origin,
+      rejected: why.rejected === true,
+      askProvider: knownGitHost(host) === null,
       onProvider: (provider) => this.view.hosts.update((hosts) => ({ ...hosts, [host]: provider })),
       onInsert: (command) => this.insert(command),
     };
@@ -56,11 +61,13 @@ export class GitRemoteAccessService {
   /**
    * The credential helpers git would ask for the remote, from its config - the
    * values, never a message. `credentialUrl` keeps the remote's port, since a
-   * helper may be scoped to it.
+   * helper may be scoped to it. Read without includes: Cogno's own helper
+   * reaches git through an include and would stand in front of the user's.
+   * A helper the user set in a file their config includes is not seen either.
    */
   private async helpersFor(credentialUrl: string): Promise<ReadonlyArray<string>> {
     const result = await this.repository.runInCwd(
-      ["config", "--get-urlmatch", "credential.helper", credentialUrl],
+      ["config", "--no-includes", "--get-urlmatch", "credential.helper", credentialUrl],
       CONFIG_TIMEOUT_MS,
     );
     if (!result || result.exitCode !== 0) return [];

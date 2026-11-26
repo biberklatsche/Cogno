@@ -1,7 +1,4 @@
-import {
-  CommandRunnerResultContract,
-  ProcessPromptHandler,
-} from "@cogno/core/api/command-runner-port";
+import { CommandRunnerResultContract, ProcessAnswers } from "@cogno/core/api/command-runner-port";
 import { SessionHandle } from "@cogno/core/api/session-api";
 
 /**
@@ -39,7 +36,7 @@ export async function runGit(
   args: ReadonlyArray<string>,
   timeoutMs: number,
   stdin?: string,
-  onPrompt?: ProcessPromptHandler,
+  answers?: ProcessAnswers,
 ): Promise<CommandRunnerResultContract | null> {
   const outcome = await session.run({
     executable: "git",
@@ -47,7 +44,7 @@ export async function runGit(
     contextRevision: session.contextRevision,
     timeoutMs,
     ...(stdin === undefined ? {} : { stdin }),
-    ...(onPrompt === undefined ? {} : { onPrompt }),
+    ...(answers === undefined ? {} : { answers }),
   });
   return outcome.status === "ran" ? outcome.result : null;
 }

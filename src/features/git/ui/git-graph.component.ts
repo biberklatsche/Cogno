@@ -212,7 +212,7 @@ type TreeRow =
                    (blur)="actions.cancelBranch()" #branchName />
           } @else if (item.labels.length > 0) {
             <span class="label small" [class.head-label]="item.labels[0].isHead"
-                  (dblclick)="$event.stopPropagation(); actions.checkoutLabel(item.labels[0])"
+                  (dblclick)="$event.stopPropagation(); actions.goToLabel(item.labels[0])"
                   (contextmenu)="openLabelMenu($event, item.labels[0])">
               <app-icon class="label-icon" [name]="labelIcon(item.labels[0])"
                         [appTooltip]="labelIconTooltip(item.labels[0])"></app-icon>
@@ -285,7 +285,7 @@ type TreeRow =
            (mouseenter)="keepRefs()" (mouseleave)="scheduleHideRefs()">
         @for (label of popover.labels; track label.kind + label.name) {
           <span class="label small stacked" [class.head-label]="label.isHead"
-                (dblclick)="actions.checkoutLabel(label)" (contextmenu)="openLabelMenu($event, label)">
+                (dblclick)="actions.goToLabel(label)" (contextmenu)="openLabelMenu($event, label)">
             <app-icon class="label-icon" [name]="labelIcon(label)" [appTooltip]="labelIconTooltip(label)"></app-icon>
             @if (label.remotes.length > 0) {
               <app-icon class="label-icon" name="mdiCloudOutline" [appTooltip]="label.remotes.join(', ')"></app-icon>

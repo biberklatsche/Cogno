@@ -1,5 +1,4 @@
 export * from "./app-info";
-export * from "./askpass";
 export * from "./cli-action";
 export * from "./cli-config-overrides";
 export * from "./clipboard";
@@ -18,7 +17,9 @@ export * from "./opener";
 export * from "./os";
 export * from "./path";
 export * from "./pty";
+export * from "./run-questions";
 export * from "./shells";
+export * from "./sign-ins";
 export * from "./updater";
 export * from "./window";
 export * from "./window-core";

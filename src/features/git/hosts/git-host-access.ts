@@ -46,7 +46,7 @@ export function accessSummary(situation: GitAccessSituation): string {
   if (storesCredentials(situation.helpers)) {
     return `Git stores credentials for ${situation.host} in your system's keychain, but has none yet.`;
   }
-  return `No credential helper serves ${situation.host}. Git asks every time, and Cogno keeps nothing.`;
+  return `No credential helper serves ${situation.host}. What you enter in Cogno is remembered for an hour.`;
 }
 
 // The provider's CLI
@@ -163,9 +163,7 @@ function storesCredentials(helpers: ReadonlyArray<string>): boolean {
 function tokenOption(token: string, situation: GitAccessSituation): GitAccessOption {
   const kept = storesCredentials(situation.helpers)
     ? "Git stores it in your system's keychain."
-    : situation.platform === "windows"
-      ? "Git asks again next time."
-      : "Git remembers it for an hour.";
+    : "Cogno remembers it for an hour.";
   return {
     title: "Enter a token",
     detail: `${token}. Run the command in Cogno again and enter your username and the token as the password. ${kept}`,

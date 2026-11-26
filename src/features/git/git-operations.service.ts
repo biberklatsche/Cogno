@@ -1,8 +1,8 @@
 import { Injectable, signal } from "@angular/core";
 import { CommandRunnerResultContract } from "@cogno/core/api/command-runner-port";
 import { NotificationCenterPort } from "@cogno/core/api/notification-center-port";
-import { isWslShellContext } from "@cogno/shared/domain";
 import { GitProcessPromptService, GitRunPrompts } from "./git-process-prompt.service";
+import { GitRemoteAccessService } from "./git-remote-access.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { localBranchOf } from "./model/git-branch-sort";
 import { GitConflictSide } from "./model/git-conflict";
@@ -38,7 +38,6 @@ export type GitBusy = {
  */
 const LOCAL_TIMEOUT_MS = 30_000;
 const NETWORK_TIMEOUT_MS = 300_000;
-const CREDENTIAL_CACHE_SECONDS = 3600;
 
 /**
  * Git never gets a terminal here, so nothing may wait for an editor: `--continue`
@@ -77,6 +76,7 @@ export class GitOperationsService {
     private readonly repository: GitRepositoryService,
     private readonly notifications: NotificationCenterPort,
     private readonly prompts: GitProcessPromptService,
+    private readonly access: GitRemoteAccessService,
   ) {}
 
   // Working tree
@@ -551,7 +551,6 @@ export class GitOperationsService {
       this.git(
         [
           ...(parent.trim() ? ["-C", parent.trim()] : []),
-          ...this.credentialCacheArgs(),
           "clone",
           "--progress",
           url,
@@ -580,28 +579,12 @@ export class GitOperationsService {
     options: Pick<RunOptions, "refused" | "machineOutput"> = {},
   ): Promise<GitOperationOutcome> {
     return this.withBusy(busy, () =>
-      this.git([...this.credentialCacheArgs(), ...args], errorHeader, {
+      this.git(args, errorHeader, {
         ...options,
         timeoutMs: NETWORK_TIMEOUT_MS,
         success,
       }),
     );
-  }
-
-  /**
-   * On macOS, Linux and in WSL git's cache helper keeps credentials the user
-   * typed into the prompt for an hour, so one push does not ask for every
-   * fetch. It comes after the user's own helpers, and git forgets an entry
-   * the remote rejects. Windows itself has the Git Credential Manager for
-   * this; a WSL distro has it only when the user wired it up, and then it
-   * answers first.
-   */
-  private credentialCacheArgs(): string[] {
-    const session = this.repository.currentSession();
-    if (!session) return [];
-    const { shellContext } = session;
-    if (shellContext.backendOs === "windows" && !isWslShellContext(shellContext)) return [];
-    return ["-c", `credential.helper=cache --timeout=${CREDENTIAL_CACHE_SECONDS}`];
   }
 
   private async withBusy(
@@ -624,8 +607,8 @@ export class GitOperationsService {
     const timeoutMs = options.timeoutMs ?? LOCAL_TIMEOUT_MS;
     const prompts = this.prompts.forRun();
     const result = options.inCwd
-      ? await this.repository.runInCwd(args, timeoutMs, options.stdin, prompts.handler)
-      : await this.repository.run(args, timeoutMs, options.stdin, prompts.handler);
+      ? await this.repository.runInCwd(args, timeoutMs, options.stdin, prompts.answers)
+      : await this.repository.run(args, timeoutMs, options.stdin, prompts.answers);
     if (options.refused && result && result.exitCode !== 0 && options.refused(result)) {
       await this.repository.refresh();
       return "rejected";
@@ -648,8 +631,15 @@ export class GitOperationsService {
       return false;
     }
     if (result.exitCode !== 0) {
-      // The person refused the prompt and is looking at the access dialog now.
+      // The person dismissed the credential request: they know why it failed.
       if (prompts?.refused()) return false;
+      // Git reported the credential it used as rejected: the ways in say more
+      // than git's message, and no text has to be read to know.
+      const rejectedFor = prompts?.rejectedFor();
+      if (rejectedFor) {
+        void this.access.open(rejectedFor, { rejected: true });
+        return false;
+      }
       const body =
         result.exitCode === 124
           ? "Git went silent for too long and was ended. If it waits for a login in the browser or for credentials, run the command in the terminal once."

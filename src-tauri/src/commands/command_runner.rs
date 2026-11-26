@@ -1,4 +1,4 @@
-use crate::commands::askpass::{AskpassState, SESSION_ENV};
+use crate::commands::run_questions::{RunQuestions, SESSION_ENV};
 use crate::http_server::HttpServerState;
 use serde::Serialize;
 use std::io::{Read, Write};
@@ -37,8 +37,10 @@ pub struct CommandRunnerResult {
 /// thread that drives the UI. `stdin`, when given, is written to the process
 /// and closed. The process gets no terminal; whatever it would ask on one
 /// (git credentials, an ssh passphrase, a host key) reaches the window that
-/// started it through the askpass helper instead, tagged with the caller's
-/// `prompt_session` so the window knows which run is asking. `timeout_ms`
+/// started it through a helper instead, tagged with the caller's
+/// `prompt_session` so the window knows which run is asking. `answers`
+/// names the kinds of question that run has somebody for
+/// (`run_questions.rs`); any other gets no answer. `timeout_ms`
 /// is idle time: the process is ended once it has neither produced output
 /// nor had a prompt open for that long, so a transfer that reports progress
 /// may take as long as it takes.
@@ -54,6 +56,7 @@ pub async fn command_runner_execute(
     timeout_ms: Option<u64>,
     stdin: Option<String>,
     prompt_session: String,
+    answers: Vec<String>,
 ) -> Result<CommandRunnerResult, String> {
     let mut command = Command::new(program);
     command.current_dir(cwd).args(args);
@@ -62,24 +65,24 @@ pub async fn command_runner_execute(
     command.creation_flags(CREATE_NO_WINDOW);
 
     let session_id = prompt_session;
-    let askpass_token = app
-        .state::<AskpassState>()
-        .open_session(&session_id, window.label());
+    let session_token =
+        app.state::<RunQuestions>()
+            .open_session(&session_id, window.label(), answers);
     // Bounded like the shell spawn: the login shell is normally captured long
     // before the first run; if it hangs, run with the process PATH instead.
     let login_path = super::login_environment::get_login_environment(Duration::from_secs(2)).path;
     apply_runner_environment(&mut command, login_path);
-    apply_prompt_environment(&mut command, &app, &session_id, &askpass_token);
+    apply_prompt_environment(&mut command, &app, &session_id, &session_token);
 
     let pending = {
         let app = app.clone();
         let session_id = session_id.clone();
-        move || app.state::<AskpassState>().has_pending(&session_id)
+        move || app.state::<RunQuestions>().has_pending(&session_id)
     };
     let result =
         tauri::async_runtime::spawn_blocking(move || run(command, timeout_ms, stdin, &pending))
             .await;
-    app.state::<AskpassState>().close_session(&app, &session_id);
+    app.state::<RunQuestions>().close_session(&app, &session_id);
 
     result
         .map_err(|error| error.to_string())?
@@ -101,13 +104,13 @@ fn apply_runner_environment(command: &mut Command, login_path: Option<String>) {
 
 /// Git and ssh ask through this binary instead of a terminal. The variables
 /// also reach a WSL distro, with the helper path translated (`WSLENV` `/p`).
-/// `COGNO_TOKEN` is the run's askpass token, not the launch token: hooks and
-/// helpers git starts inherit this environment (`askpass.rs`).
+/// `COGNO_TOKEN` is the run's own token, not the launch token: hooks and
+/// helpers git starts inherit this environment (`run_questions.rs`).
 fn apply_prompt_environment(
     command: &mut Command,
     app: &AppHandle,
     session_id: &str,
-    askpass_token: &str,
+    session_token: &str,
 ) {
     command.env("GIT_TERMINAL_PROMPT", "0");
     let http = app.state::<HttpServerState>();
@@ -120,7 +123,15 @@ fn apply_prompt_environment(
     command.env("SSH_ASKPASS_REQUIRE", "force");
     command.env(SESSION_ENV, session_id);
     command.env("COGNO_PORT", http.port().to_string());
-    command.env("COGNO_TOKEN", askpass_token);
+    command.env("COGNO_TOKEN", session_token);
+    // Git asks this binary for credentials too (sign_ins/git_config.rs).
+    let credential_environment = crate::sign_ins::git_config::environment_for(
+        app,
+        std::env::var("GIT_CONFIG_COUNT").ok().as_deref(),
+    );
+    for (key, value) in &credential_environment {
+        command.env(key, value);
+    }
     let shared = [
         "GIT_ASKPASS/p",
         "SSH_ASKPASS/p",
@@ -131,6 +142,10 @@ fn apply_prompt_environment(
         "COGNO_PORT",
         "COGNO_TOKEN",
     ]
+    .into_iter()
+    .map(str::to_string)
+    .chain(crate::sign_ins::git_config::wslenv(&credential_environment))
+    .collect::<Vec<_>>()
     .join(":");
     let wslenv = match std::env::var("WSLENV") {
         Ok(existing) if !existing.is_empty() => format!("{existing}:{shared}"),

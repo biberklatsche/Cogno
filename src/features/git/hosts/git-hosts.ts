@@ -1,3 +1,5 @@
+import { SignInProvider } from "@cogno/platform";
+
 /**
  * What the access dialog knows about a git host: one definition per provider,
  * read by the one engine in `git-host-access.ts`. A definition holds only what
@@ -51,11 +53,51 @@ export type GitHostDefinition = {
   readonly cli?: GitHostCli;
   /** Whether the Git Credential Manager signs in to `host` in the browser. */
   readonly manager: (host: string) => boolean;
+  /**
+   * How Cogno signs in to `host` in the browser; null where it cannot. An
+   * OAuth app is registered per server, so this answers for the provider's
+   * own host only, never for an instance somebody runs themselves.
+   */
+  readonly signIn?: (host: string) => SignInProvider | null;
   /** What to create and enter as the password; one sentence, no trailing period. */
   readonly token: string;
   /** How the public key gets to the host, after `ssh-keygen`. */
   readonly sshKeyRegistration: (host: string) => GitAccessStep;
 };
+
+/**
+ * The OAuth apps registered for Cogno, one per provider, each with the
+ * redirect `http://127.0.0.1/`. They stand in the source because a desktop
+ * app cannot keep them secret: it is a public client (RFC 6749, 2.1), and
+ * GitHub's client secret, which GitHub demands even with PKCE, is public with
+ * it. Use these apps for the desktop sign-in only.
+ */
+const GITHUB_CLIENT = {
+  id: "Ov23lifwVrvPaz1sNTa1",
+  secret: "1fda487eb9c0b7cef90deb8270c715e18a6ac787",
+};
+const GITLAB_CLIENT = {
+  id: "52fa17ce970582500b1550a0f5896f55d8cd96c1939a2a3308cd2bae25dadcf3",
+};
+const CODEBERG_CLIENT = { id: "71b465da-7972-4b27-9557-5bf4848f32ec" };
+
+/** The sign-in for the one host an app is registered on. */
+function signInOn(
+  home: string,
+  client: { readonly id: string; readonly secret?: string },
+  provider: Omit<SignInProvider, "clientId" | "clientSecret" | "username">,
+): (host: string) => SignInProvider | null {
+  return (host) =>
+    host === home
+      ? {
+          ...provider,
+          clientId: client.id,
+          ...(client.secret ? { clientSecret: client.secret } : {}),
+          // What the providers expect next to an OAuth token.
+          username: "oauth2",
+        }
+      : null;
+}
 
 /** Shows the public key for pasting it where the host keeps keys. */
 function pastePublicKeyStep(where: string): GitAccessStep {
@@ -78,6 +120,12 @@ const GITHUB_HOST: GitHostDefinition = {
     setupHelper: (host) => `gh auth setup-git${host === "github.com" ? "" : ` --hostname ${host}`}`,
   },
   manager: () => true,
+  // `workflow` lets a push change files under .github/workflows.
+  signIn: signInOn("github.com", GITHUB_CLIENT, {
+    authorizeUrl: "https://github.com/login/oauth/authorize",
+    tokenUrl: "https://github.com/login/oauth/access_token",
+    scopes: ["repo", "workflow"],
+  }),
   token:
     "GitHub does not accept your account password; create a personal access token with the repo scope",
   sshKeyRegistration: () => ({
@@ -104,6 +152,11 @@ const GITLAB_HOST: GitHostDefinition = {
       `git config --global credential.https://${host}.helper '!glab auth git-credential'`,
   },
   manager: (host) => host === "gitlab.com",
+  signIn: signInOn("gitlab.com", GITLAB_CLIENT, {
+    authorizeUrl: "https://gitlab.com/oauth/authorize",
+    tokenUrl: "https://gitlab.com/oauth/token",
+    scopes: ["read_repository", "write_repository"],
+  }),
   token: "Create a personal access token with the write_repository scope",
   sshKeyRegistration: () => ({
     title: "Register the key",
@@ -118,6 +171,11 @@ const CODEBERG_HOST: GitHostDefinition = {
   label: "Codeberg",
   owns: (host) => host === "codeberg.org",
   manager: () => true,
+  signIn: signInOn("codeberg.org", CODEBERG_CLIENT, {
+    authorizeUrl: "https://codeberg.org/login/oauth/authorize",
+    tokenUrl: "https://codeberg.org/login/oauth/access_token",
+    scopes: ["write:repository"],
+  }),
   token: "Create an access token under Settings → Applications, with write access to repositories",
   sshKeyRegistration: () => pastePublicKeyStep("under Settings → SSH / GPG Keys"),
 };
@@ -159,6 +217,17 @@ export function gitHost(id: GitHostId): GitHostDefinition {
 /** The provider that owns a host outright; null when the person has to say. */
 export function knownGitHost(host: string): GitHostDefinition | null {
   return GIT_HOSTS.find((definition) => definition.owns(host)) ?? null;
+}
+
+/**
+ * The provider behind `host`: the one that owns it outright, else what the
+ * person said it is (`remembered`, by host), else nobody's.
+ */
+export function gitHostFor(
+  host: string,
+  remembered: Readonly<Record<string, GitHostId>>,
+): GitHostDefinition {
+  return knownGitHost(host) ?? gitHost(remembered[host] ?? "other");
 }
 
 export function isGitHostId(value: string): value is GitHostId {

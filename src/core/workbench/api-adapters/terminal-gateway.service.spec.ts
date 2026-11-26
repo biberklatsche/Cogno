@@ -191,27 +191,44 @@ describe("TerminalGatewayService", () => {
       expect(commandRunner.run).not.toHaveBeenCalled();
     });
 
-    it("hands prompts of a run without a handler to the workbench dialog", async () => {
+    it("hands prompts of a run that answers none to the workbench dialog", async () => {
       bindWith({});
 
       await service.run({ executable: "git", args: ["push"], contextRevision: 3 }, identity);
 
       const request = vi.mocked(commandRunner.run).mock.calls[0]?.[0];
       const prompt = { text: "Password: ", closed: new AbortController().signal };
-      await request?.onPrompt?.(prompt);
+      await request?.answers?.prompt?.(prompt);
       expect(processPrompts.ask).toHaveBeenCalledWith(prompt);
+      expect(request?.answers?.credential).toBeUndefined();
     });
 
-    it("hands prompts to the run's own handler when it has one", async () => {
+    it("hands the run's questions to whoever the run names for them", async () => {
       bindWith({});
-      const onPrompt = vi.fn().mockResolvedValue("x");
+      const answers = { prompt: vi.fn(), credential: vi.fn() };
 
       await service.run(
-        { executable: "git", args: ["push"], contextRevision: 3, onPrompt },
+        { executable: "git", args: ["push"], contextRevision: 3, answers },
         identity,
       );
 
-      expect(vi.mocked(commandRunner.run).mock.calls[0]?.[0].onPrompt).toBe(onPrompt);
+      expect(vi.mocked(commandRunner.run).mock.calls[0]?.[0].answers).toEqual(answers);
+    });
+
+    it("keeps the workbench dialog for prompts of a run that answers only credentials", async () => {
+      bindWith({});
+      const credential = vi.fn();
+
+      await service.run(
+        { executable: "git", args: ["push"], contextRevision: 3, answers: { credential } },
+        identity,
+      );
+
+      const answers = vi.mocked(commandRunner.run).mock.calls[0]?.[0].answers;
+      const prompt = { text: "Passphrase: ", closed: new AbortController().signal };
+      await answers?.prompt?.(prompt);
+      expect(processPrompts.ask).toHaveBeenCalledWith(prompt);
+      expect(answers?.credential).toBe(credential);
     });
 
     it("rejects when the identity is no longer the bound session", async () => {
