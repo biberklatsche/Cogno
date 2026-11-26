@@ -3,6 +3,7 @@ import type { NotificationCenterPort } from "@cogno/core/api/notification-center
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GitOperationsService } from "./git-operations.service";
 import type { GitProcessPromptService } from "./git-process-prompt.service";
+import type { GitRemoteAccessService } from "./git-remote-access.service";
 import type { GitRepositoryService } from "./git-repository.service";
 
 describe("GitOperationsService", () => {
@@ -14,15 +15,13 @@ describe("GitOperationsService", () => {
   let backendOs: "linux" | "windows";
   let wslDistroName: string | undefined;
   let service: GitOperationsService;
-  /** The prompt handler every operation hands git. */
-  const onPrompt = vi.fn();
+  /** The handlers every operation hands git. */
+  const handlers = { onPrompt: vi.fn(), onCredential: vi.fn() };
+  let openAccess: ReturnType<typeof vi.fn>;
   /** Whether the person refused a prompt during the run. */
   let refused: boolean;
   /** The stages `ls-files -u` reports for a conflicted path. */
   let stages: Map<1 | 2 | 3, { mode: string; blob: string }>;
-
-  /** The cache helper every network command on macOS and Linux starts with. */
-  const CACHE = ["-c", "credential.helper=cache --timeout=3600"];
 
   beforeEach(() => {
     answer = { stdout: "", stderr: "", exitCode: 0 };
@@ -30,6 +29,7 @@ describe("GitOperationsService", () => {
     runInCwd = vi.fn(() => Promise.resolve(answer));
     refresh = vi.fn(() => Promise.resolve());
     dispatch = vi.fn();
+    openAccess = vi.fn();
     backendOs = "linux";
     wslDistroName = undefined;
     refused = false;
@@ -56,8 +56,9 @@ describe("GitOperationsService", () => {
       repository,
       { dispatch } as unknown as NotificationCenterPort,
       {
-        forRun: () => ({ handler: onPrompt, refused: () => refused }),
+        forRun: () => ({ handlers, refused: () => refused }),
       } as unknown as GitProcessPromptService,
+      { open: openAccess } as unknown as GitRemoteAccessService,
     );
   });
 
@@ -155,7 +156,6 @@ describe("GitOperationsService", () => {
     await service.push("feature", "origin", "feature", { setUpstream: true, force: false });
 
     expect(argsOfLastRun()).toEqual([
-      ...CACHE,
       "push",
       "--progress",
       "--porcelain",
@@ -326,7 +326,6 @@ describe("GitOperationsService", () => {
     });
 
     expect(argsOfLastRun()).toEqual([
-      ...CACHE,
       "fetch",
       "--progress",
       "origin",
@@ -337,15 +336,7 @@ describe("GitOperationsService", () => {
   it("deletes several remote branches in one push", async () => {
     await service.deleteRemoteBranches("origin", ["a", "b"]);
 
-    expect(argsOfLastRun()).toEqual([
-      ...CACHE,
-      "push",
-      "--progress",
-      "origin",
-      "--delete",
-      "a",
-      "b",
-    ]);
+    expect(argsOfLastRun()).toEqual(["push", "--progress", "origin", "--delete", "a", "b"]);
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "success", header: "Deleted 2 branches on origin" }),
     );
@@ -390,10 +381,10 @@ describe("GitOperationsService", () => {
     await service.clone("https://x/y.git", "", "y");
 
     expect(runInCwd).toHaveBeenCalledWith(
-      [...CACHE, "clone", "--progress", "https://x/y.git", "y"],
+      ["clone", "--progress", "https://x/y.git", "y"],
       300_000,
       undefined,
-      onPrompt,
+      handlers,
     );
     expect(run).not.toHaveBeenCalled();
   });
@@ -404,29 +395,11 @@ describe("GitOperationsService", () => {
     expect(runInCwd.mock.calls[0]?.[0]).toEqual([
       "-C",
       "/home/me/projects",
-      ...CACHE,
       "clone",
       "--progress",
       "https://x/y.git",
       "y",
     ]);
-  });
-
-  it("leaves credential caching to the Git Credential Manager on Windows", async () => {
-    backendOs = "windows";
-
-    await service.fetch("origin");
-
-    expect(argsOfLastRun()).toEqual(["fetch", "--progress", "--prune", "origin"]);
-  });
-
-  it("caches credentials in a WSL shell, which has no credential manager", async () => {
-    backendOs = "windows";
-    wslDistroName = "Ubuntu";
-
-    await service.fetch("origin");
-
-    expect(argsOfLastRun()).toEqual([...CACHE, "fetch", "--progress", "--prune", "origin"]);
   });
 
   it("hands a patch to git apply on stdin", async () => {
@@ -436,7 +409,7 @@ describe("GitOperationsService", () => {
       ["apply", "--cached", "--reverse", "--whitespace=nowarn", "--recount", "-"],
       30_000,
       "diff --git a/x b/x\n",
-      onPrompt,
+      handlers,
     );
   });
 
@@ -468,8 +441,21 @@ describe("GitOperationsService", () => {
     expect(await service.worktreeHasChanges("C:/app-x")).toBe(true);
   });
 
-  it("shows no error for a run whose prompt the person refused", async () => {
-    answer = ran("", 128, "fatal: could not read Username for 'https://github.com'");
+  it("shows the ways in, not git's message, when git reports its credential as rejected", async () => {
+    answer = {
+      ...ran("", 128, "remote: HTTP Basic: Access denied.\nfatal: Authentication failed"),
+      credentialRejectedFor: "https://gitlab.com",
+    };
+
+    const outcome = await service.fetch("origin");
+
+    expect(outcome).toBe("failed");
+    expect(openAccess).toHaveBeenCalledWith("https://gitlab.com", { rejected: true });
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("shows no error for a run whose credential request the person dismissed", async () => {
+    answer = ran("", 128, "fatal: credential helper told us to quit");
     refused = true;
 
     const outcome = await service.fetch("origin");

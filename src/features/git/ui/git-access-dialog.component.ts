@@ -7,7 +7,7 @@ import {
   signal,
   WritableSignal,
 } from "@angular/core";
-import { ClipboardAccess, Opener } from "@cogno/platform";
+import { ClipboardAccess, Opener, SignInProvider } from "@cogno/platform";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
 import { accessOptions, accessSummary } from "../hosts/git-host-access";
 import {
@@ -15,11 +15,17 @@ import {
   GitAccessOption,
   GitAccessSituation,
   GitHostId,
+  gitHost,
   isGitHostId,
 } from "../hosts/git-hosts";
+import { GitSignInComponent } from "./git-sign-in.component";
 
 export type GitAccessDialogData = {
   readonly situation: GitAccessSituation;
+  /** The origin git keys credentials for this host by. */
+  readonly origin: string;
+  /** Git just reported the credential it used for the host as rejected. */
+  readonly rejected: boolean;
   /** The host is nobody's: the person says what is behind it, and it is remembered. */
   readonly askProvider: boolean;
   readonly onProvider: (provider: GitHostId) => void;
@@ -35,6 +41,7 @@ export type GitAccessDialogData = {
 @Component({
   selector: "app-git-access-dialog",
   standalone: true,
+  imports: [GitSignInComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="access">
@@ -48,7 +55,25 @@ export type GitAccessDialogData = {
           </select>
         </label>
       }
-      <p class="summary">{{ summary() }}</p>
+      @if (data.rejected) {
+        <p class="refusal">{{ situation().host }} rejected the credentials git used.</p>
+      }
+      @if (signInProvider(); as provider) {
+        <section class="option">
+          <h3 class="title">Sign in in the browser</h3>
+          <p class="detail">
+            Cogno signs in to {{ hostLabel() }}, keeps the token in your system's keychain and hands
+            it to git - in this panel and in the terminal alike.
+          </p>
+          <app-git-sign-in
+            [origin]="data.origin"
+            [label]="hostLabel()"
+            [provider]="provider"
+          ></app-git-sign-in>
+        </section>
+      } @else {
+        <p class="summary">{{ summary() }}</p>
+      }
       @for (option of options(); track option.title) {
         <section class="option">
           <h3 class="title">{{ option.title }}</h3>
@@ -170,6 +195,9 @@ export class GitAccessDialogComponent {
   readonly situation: WritableSignal<GitAccessSituation>;
   readonly summary: Signal<string>;
   readonly options: Signal<ReadonlyArray<GitAccessOption>>;
+  /** How Cogno signs in to this host itself; null over ssh and where it cannot. */
+  readonly signInProvider: Signal<SignInProvider | null>;
+  readonly hostLabel: Signal<string>;
   /** Why the last command did not reach the terminal. */
   readonly refusal = signal<string | null>(null);
 
@@ -182,6 +210,11 @@ export class GitAccessDialogComponent {
     this.situation = signal(data.situation);
     this.summary = computed(() => accessSummary(this.situation()));
     this.options = computed(() => accessOptions(this.situation()));
+    this.signInProvider = computed(() => {
+      const { ssh, provider, host } = this.situation();
+      return ssh ? null : (gitHost(provider).signIn?.(host) ?? null);
+    });
+    this.hostLabel = computed(() => gitHost(this.situation().provider).label);
   }
 
   chooseProvider(value: string): void {

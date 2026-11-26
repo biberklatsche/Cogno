@@ -3,23 +3,33 @@ import {
   CommandRunner as CommandRunnerPort,
   CommandRunnerRequestContract,
   CommandRunnerResultContract,
+  ProcessCredentialHandler,
   ProcessPromptHandler,
 } from "@cogno/core/api/command-runner-port";
-import { AskpassRequest, AskpassRequests } from "@cogno/platform/askpass";
+import {
+  AskpassRequest,
+  AskpassRequests,
+  CredentialAnswer,
+  CredentialRequest,
+} from "@cogno/platform/askpass";
 import { CommandRunner } from "@cogno/platform/command-runner";
 import { createPathAdapter } from "../shells/shell-definitions";
 
 /**
- * Runs commands in the backend and hands each prompt a process raises (git
- * credentials, an ssh passphrase, a host key - ARCHITECTURE.md 2.1) to the
- * handler of the run that caused it. A run without a handler refuses its
- * prompts: the process sees a failed read instead of a dialog nobody asked for.
+ * Runs commands in the backend and hands each prompt a process raises (an
+ * ssh passphrase, a host key - ARCHITECTURE.md 2.1) and each credential
+ * request of git to the handler of the run that caused it. A run without a
+ * prompt handler refuses its prompts: the process sees a failed read instead
+ * of a dialog nobody asked for. A run without a credential handler passes:
+ * git goes on to its own prompt.
  */
 @Injectable({ providedIn: "root" })
 export class CommandRunnerHostService extends CommandRunnerPort {
   /** Prompt session of a running command -> its handler. */
   private readonly handlers = new Map<string, ProcessPromptHandler>();
-  /** Open prompts, so the process ending can close them. */
+  /** Prompt session of a running command -> who answers its credential requests. */
+  private readonly credentialHandlers = new Map<string, ProcessCredentialHandler>();
+  /** Open prompts and credential requests, so the process ending can close them. */
   private readonly open = new Map<string, AbortController>();
 
   constructor(
@@ -32,6 +42,9 @@ export class CommandRunnerHostService extends CommandRunnerPort {
       .onRequest((request) => void this.answer(request))
       .then((unlisten) => destroyRef.onDestroy(unlisten));
     void askpass
+      .onCredentialRequest((request) => void this.answerCredential(request))
+      .then((unlisten) => destroyRef.onDestroy(unlisten));
+    void askpass
       .onClosed((requestId) => this.open.get(requestId)?.abort())
       .then((unlisten) => destroyRef.onDestroy(unlisten));
   }
@@ -39,6 +52,7 @@ export class CommandRunnerHostService extends CommandRunnerPort {
   async run(request: CommandRunnerRequestContract): Promise<CommandRunnerResultContract> {
     const promptSession = crypto.randomUUID();
     if (request.onPrompt) this.handlers.set(promptSession, request.onPrompt);
+    if (request.onCredential) this.credentialHandlers.set(promptSession, request.onCredential);
     try {
       const adapter = createPathAdapter(request.shellContext);
       const normalizedCwd = adapter.normalize(request.cwd);
@@ -63,7 +77,27 @@ export class CommandRunnerHostService extends CommandRunnerPort {
       };
     } finally {
       this.handlers.delete(promptSession);
+      this.credentialHandlers.delete(promptSession);
     }
+  }
+
+  private async answerCredential(request: CredentialRequest): Promise<void> {
+    const handler = this.credentialHandlers.get(request.sessionId);
+    if (!handler) {
+      await this.askpass.answerCredential(request.requestId, { kind: "pass" });
+      return;
+    }
+    const closed = new AbortController();
+    this.open.set(request.requestId, closed);
+    let answer: CredentialAnswer | null = null;
+    try {
+      answer = await handler({ origin: request.origin, closed: closed.signal });
+    } catch {
+      answer = null;
+    } finally {
+      this.open.delete(request.requestId);
+    }
+    if (!closed.signal.aborted) await this.askpass.answerCredential(request.requestId, answer);
   }
 
   private async answer(request: AskpassRequest): Promise<void> {

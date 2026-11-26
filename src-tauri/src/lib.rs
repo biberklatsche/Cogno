@@ -7,6 +7,7 @@ mod db;
 mod endpoint;
 mod http_server;
 mod shell_bootstrap_logs;
+pub mod sign_ins;
 mod updater;
 
 use app_identity::LOG_FILE_STEM;
@@ -120,6 +121,11 @@ pub fn run(cli: Cli) {
             crate::db::commands::db_batch,
             crate::commands::command_runner::command_runner_execute,
             crate::commands::askpass::askpass_answer,
+            crate::commands::askpass::credential_answer,
+            crate::sign_ins::commands::sign_ins_sign_in,
+            crate::sign_ins::commands::sign_ins_cancel,
+            crate::sign_ins::commands::sign_ins_sign_out,
+            crate::sign_ins::commands::sign_ins_list,
             crate::commands::config::get_default_config,
             crate::commands::shells::list_shells,
             crate::commands::keyboard::get_keyboard_layout,
@@ -152,6 +158,7 @@ pub fn run(cli: Cli) {
         ])
         .setup(move |app| {
             crate::updater::manage(app.handle());
+            crate::sign_ins::manage(app.handle());
             std::thread::spawn(crate::commands::clipboard_image::remove_leftover_paste_files);
             crate::shell_bootstrap_logs::manage(app.handle());
 

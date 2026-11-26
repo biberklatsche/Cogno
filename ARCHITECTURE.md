@@ -289,8 +289,8 @@ Event trägt sie, und so
 landet der Prompt beim **Lauf, der ihn ausgelöst hat**: `run` nimmt einen
 `onPrompt`-Handler, und das Feature, das git gestartet hat, beantwortet die
 Frage mit seinem eigenen Dialog und seinem eigenen Wissen (das Git-Feature
-liest aus dem Prompt-Text, ob Name, Passwort, Passphrase oder Host-Key
-gefragt ist). Core kennt keinen dieser Prompts: für einen Lauf ohne Handler
+liest aus dem Prompt-Text, ob Passphrase oder Host-Key gefragt ist). Core
+kennt keinen dieser Prompts: für einen Lauf ohne Handler
 zeigt die Workbench nur den Text und ein maskiertes Feld
 (`core/workbench/external/process-prompt.service.ts`); ein Lauf, der nicht
 über die gebundene Sitzung kam (Autocomplete), lehnt jeden Prompt ab. Die
@@ -298,9 +298,97 @@ Antwort geht per `askpass_answer` zurück. Abbrechen heißt „keine Antwort",
 git meldet dann einen fehlgeschlagenen Lesevorgang; endet der Prozess vorher,
 feuert das `closed`-Signal des Prompts und der Dialog geht zu. Solange ein
 Prompt offen ist, läuft der Timeout des Befehls nicht. Für eine WSL-Distro
-übersetzt `WSLENV` die Pfade. Speichern tut Cogno nichts: das ist Sache der
-Credential-Helper, die git selbst nach einem erfolgreichen Zugriff ruft; das
-Git-Feature erklärt nur, wie man einen einrichtet.
+übersetzt `WSLENV` die Pfade. Über Askpass kommt nur, was `ssh` fragt;
+Zugangsdaten für HTTPS fragt git strukturiert beim Credential-Helper ab.
+
+**Anmeldungen: Cogno ist gits Credential-Helper.** GitHub, GitLab und
+Codeberg nehmen über HTTPS kein Kontopasswort an, nur ein Token. Statt es
+tippen zu lassen, meldet Cogno im Browser an (OAuth, Authorization Code mit
+PKCE) und gibt git das Token. Das zerfällt in drei Teile mit je einem
+Besitzer:
+
+- **Das Backend besitzt die Anmeldungen** (`src-tauri/src/sign_ins/`). Es
+  öffnet den Browser, nimmt den Rücksprung auf einem eigenen Listener an
+  `127.0.0.1` mit zufälligem Port entgegen (einer je Anmeldung, mit Timeout
+  und abbrechbar; der lokale HTTP-Server taugt dafür nicht, der Browser
+  kennt dessen Token nicht), tauscht den Code und erneuert Tokens. Es gibt
+  genau diesen einen Ort, weil Refresh-Tokens Einmal-Tokens sind: zwei
+  Fenster, die gleichzeitig erneuern, verlören die Anmeldung. Je Origin
+  (`https://host[:port]`) läuft alles hintereinander, und das neue Paar ist
+  gespeichert, bevor git seine Antwort bekommt. Die Anmeldung läuft immer
+  auf dem Rechner des Nutzers, auch wenn git in einer WSL-Distro läuft.
+- **Tokens liegen im Schlüsselbund des Systems** (macOS Keychain, Windows
+  Credential Manager, Secret Service unter Linux), Access- und Refresh-Token
+  als getrennte Einträge (Windows fasst 2560 Bytes je Eintrag), unter einem
+  Dienstnamen je Build, damit eine Dev-Instanz die Anmeldungen der
+  Release-Instanz nicht anfasst. Nie in der Config, im localStorage, in
+  einem Log oder in der Webview: das Fenster erfährt, **dass** ein Origin
+  angemeldet ist, nie das Token. Was kein Geheimnis ist (Endpunkte,
+  Client-ID, Scopes, Ablaufzeit), steht in `~/.cogno/sign-ins.json`; ein
+  Eintrag dort ohne seinen Schlüsselbund-Eintrag gilt als abgemeldet und
+  wird beim Lesen entfernt. Nimmt der Schlüsselbund die Anmeldung nicht
+  (Linux ohne Secret Service), hält das Backend die Tokens nur bis zum
+  Beenden, schreibt sie nicht in den Index und sagt das im Dialog.
+- **Das Git-Feature besitzt das Wissen über die Anbieter**
+  (`features/git/hosts/`): Endpunkte, Client-ID, Scopes und der Name, den
+  git als Benutzer nennt. Es reicht sie beim Anmelden an
+  `platform/sign-ins.ts`; Backend und Core kennen keinen Anbieter. Die
+  Client-ID steht im Quelltext, bei GitHub auch das Client-Secret: GitHub
+  verlangt es selbst mit PKCE, und in einer Desktop-App ist es kein
+  Geheimnis (RFC 6749 §2.1). Browser-Anmeldung gibt es für github.com,
+  gitlab.com und codeberg.org; Azure DevOps, Bitbucket und selbst betriebene
+  Instanzen bleiben beim Token, weil sie eine je Instanz registrierte App
+  oder einen vertraulichen Client verlangen.
+
+Git erreicht das über eine Datei, die allein das Backend schreibt:
+`~/.cogno/git-credentials.gitconfig`. Sie trägt das Cogno-Binary als
+Credential-Helper für alle Hosts ein (git hängt ihn hinter die Helper des
+Nutzers) und setzt ihn für jeden angemeldeten Origin als **einzigen**
+Helper. Der Runner und jede Shell bekommen sie über
+`GIT_CONFIG_COUNT`/`include.path` mit; die Config des Nutzers wird nie
+angefasst. Daraus folgen die Regeln:
+
+1. **Ein angemeldeter Origin wird nur von Cogno bedient.** Kein anderer
+   Helper bekommt `get`, `store` oder `erase` dafür, also liegt nirgends
+   eine Kopie des Tokens, die ihre Ablaufzeit verliert und später einen
+   Push scheitern lässt.
+2. **Jeder andere Origin läuft über die Helper des Nutzers** (`gh`, `glab`,
+   Keychain, Credential Manager), Cogno zuletzt.
+3. **Der Helper ist das Binary selbst** (`cogno git-credential
+   get|store|erase`), wie bei Askpass, und fragt `POST /credential` des
+   lokalen Servers. Ist der Origin angemeldet, antwortet das Backend
+   selbst, ohne Fenster. Sonst entscheidet, wer fragt. Ein Lauf des Runners
+   (Lauf-Token) reicht die Anfrage an den **Lauf, der sie ausgelöst hat**:
+   `run` nimmt neben `onPrompt` einen `onCredential`-Handler. Das
+   Git-Feature zeigt seinen Dialog: im Browser anmelden, dann antwortet das
+   Backend mit dem neuen Token, oder Name und Token tippen, dann reicht das
+   Feature beides durch. Lehnt der Nutzer ab, sagt der Helper git `quit`,
+   und git fragt nicht weiter. Ein Lauf ohne `onCredential` passt: git geht
+   weiter zu seinem eigenen Prompt, der über Askpass bei `onPrompt` landet.
+   Ein `git push`, das der Nutzer im Terminal tippt (Launch-Token), bekommt
+   nur für angemeldete Origins eine Antwort: sonst fragt git im Terminal,
+   wo es hingehört.
+4. **Getipptes merkt sich das Backend eine Stunde im Speicher**, damit ein
+   Push nicht für jeden Fetch danach neu fragt. Länger speichern die Helper
+   des Nutzers, die git nach einem erfolgreichen Zugriff selbst ruft; Cogno
+   ignoriert `store`.
+5. **Ein abgelehntes Token meldet git mit `erase`.** Das Backend erneuert
+   einmal; gelingt das nicht, ist der Origin abgemeldet, die Datei neu
+   geschrieben und die Fenster benachrichtigt (`sign-ins-changed`). Kommt
+   bei der Erneuerung keine Antwort (offline), bleibt die Anmeldung. `erase`
+   ist zugleich das Signal, dass ein Lauf an den Zugangsdaten gescheitert
+   ist: das Ergebnis des Laufs nennt den Origin (`credentialRejectedFor`),
+   und das Feature öffnet den Zugangsdialog statt gits Meldung zu zeigen,
+   ohne deren Text zu lesen.
+
+Wer in einer Cogno-Shell läuft, kann sich über den Helper das Token eines
+angemeldeten Origins geben lassen. Das ist dieselbe Grenze wie beim
+Launch-Token (oben) und wie bei jedem Keychain-Helper, den `git credential
+fill` befragt. `include.path` aus der Umgebung braucht git 2.31; ein älteres
+git sieht die Datei nicht und fragt über Askpass. Ist der lokale Server aus
+(`http_server.enabled`), gibt es weder Askpass noch Helper, und eine
+Anmeldung wird abgelehnt statt gespeichert. Eine Shell in einer WSL-Distro
+bekommt die Datei noch nicht mit (der Runner dort schon, über `WSLENV`).
 
 Jeder Kontexteintrag der Zeitachse hat eine **Revision**; `run` und jede
 schreibende API-Operation nennen die Revision, mit der sie geplant wurden,
@@ -1221,7 +1309,12 @@ selbst in `try/catch` rufen.
 | Command-Log langsam oder Schreibfehler | ✅ begrenzte Queue, Verlustzähler, Backoff, einmalige Meldung (`session-command-log.ts`, `command-log.health.ts`) |
 | Gefälschte `COGNO:*`-Sequenz aus Programmausgabe | ✅ `COGNO_SESSION_TOKEN`-Prüfung mit Zähler (`session-model.ts`) |
 | Shell-Kontext wechselt (ssh/wsl/su) ohne Handshake | ✅ unbekannter Kontext in der Kontext-Zeitachse (`session-model.ts`) |
-| Prozess ohne Terminal fragt nach Zugangsdaten (git, ssh) | ✅ Prompt geht an den `onPrompt`-Handler des Laufs, sonst an den nackten Workbench-Dialog; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`askpass.rs`, `command-runner-host.service.ts`, `process-prompt.service.ts`) |
+| Prozess ohne Terminal fragt (ssh: Passphrase, Host-Key) | ✅ Prompt geht an den `onPrompt`-Handler des Laufs, sonst an den nackten Workbench-Dialog; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`askpass.rs`, `command-runner-host.service.ts`, `process-prompt.service.ts`) |
+| git braucht Zugangsdaten für einen Origin ohne Anmeldung | ✅ Anfrage geht an den `onCredential`-Handler des Laufs; ohne Handler passt der Helper und git fragt über Askpass; Ablehnen = `quit` (`http_server.rs`, `command-runner-host.service.ts`, `git-process-prompt.service.ts`) |
+| Refresh-Token abgelehnt oder Schlüsselbund-Eintrag fehlt | ✅ Origin gilt als abgemeldet, der nächste Lauf fragt neu (`sign_ins/mod.rs`, `sign_ins/store.rs`) |
+| Anbieter beim Erneuern nicht erreichbar | ✅ Anmeldung bleibt, der Lauf bekommt kein Token (`sign_ins/mod.rs`) |
+| Kein Schlüsselbund (Linux ohne Secret Service) | ✅ Anmeldung nur bis zum Beenden, im Dialog gesagt (`sign_ins/store.rs`) |
+| git älter als 2.31 oder lokaler Server aus | ✅ kein Helper; Fragen kommen über Askpass bzw. gar nicht, eine Anmeldung wird abgelehnt |
 
 ### 4.2 Testen
 
@@ -1640,6 +1733,7 @@ erreicht, ohne sie zu importieren.
 
 | Was | Umfang |
 |---|---|
+| Anmeldungen in WSL-Shells und auf Windows (2.1) | Der Helper ist unter macOS mit echtem git geprüft; Windows, WSL und Linux brauchen einen echten Durchlauf. Eine Shell in einer WSL-Distro bekommt `git-credentials.gitconfig` noch nicht mit. |
 | Deaktivierungstest je Feature (4.2) | fehlt für `git` und `process-info` |
 | **Fenster, TS-Seite (Abschnitt 2.6)** | Rust routet über `WindowRegistry`; auf der TS-Seite fehlen `windowId` in Identität, Notification-Ziel, `side_menu_state` und Workspace-Zustand sowie `window.reveal(windowId, target)` in `platform/`. |
 | `platform`-Quellen zu injectable Klassen (3.1) | `keyboard-layout.loader.spec.ts` ersetzt `@cogno/platform/keyboard-layout` noch per `vi.mock`. |

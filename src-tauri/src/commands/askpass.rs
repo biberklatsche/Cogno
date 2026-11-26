@@ -9,6 +9,10 @@
 //! environment (hooks in the repository, remote helpers, the credential
 //! helper); with the launch token in there, a hook could drive the agent
 //! endpoints. With the session token it can at most ask its own run's window.
+//!
+//! Git's credential helper asks the same way (`sign_ins/helper.rs`, `POST
+//! /credential`): a question for an origin nobody is signed in to goes to the
+//! window of the run, with the origin instead of a prompt text.
 
 use serde::Serialize;
 use std::collections::HashMap;
@@ -20,6 +24,8 @@ use tokio::sync::oneshot;
 pub const SESSION_ENV: &str = "COGNO_ASKPASS_SESSION";
 /// Event to the window: show a prompt.
 pub const REQUEST_EVENT: &str = "askpass-request";
+/// Event to the window: git needs credentials for an origin.
+pub const CREDENTIAL_EVENT: &str = "credential-request";
 /// Event to the window: the command ended, the prompt is moot.
 pub const CLOSED_EVENT: &str = "askpass-closed";
 
@@ -34,6 +40,42 @@ pub struct AskpassRequest {
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct CredentialRequest {
+    pub request_id: String,
+    pub session_id: String,
+    /// `https://host[:port]`, as git names it.
+    pub origin: String,
+}
+
+/// What a run asks its window.
+pub enum Question {
+    /// What the process would have printed on a terminal.
+    Prompt(String),
+    /// Credentials for an origin.
+    Credential(String),
+}
+
+/// What the window says.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum CredentialAnswer {
+    /// The person signed in in the browser; the backend holds the token.
+    SignedIn,
+    /// Typed by hand, handed to git as it is.
+    Typed { username: String, password: String },
+    /// The run has nobody to ask about credentials: git goes on as if this
+    /// helper were not there.
+    Pass,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Answer {
+    Text(String),
+    Credential(CredentialAnswer),
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AskpassClosed {
     pub request_id: String,
 }
@@ -41,7 +83,7 @@ pub struct AskpassClosed {
 struct Pending {
     session_id: String,
     window: String,
-    answer: oneshot::Sender<Option<String>>,
+    answer: oneshot::Sender<Option<Answer>>,
 }
 
 struct Session {
@@ -49,6 +91,8 @@ struct Session {
     window: String,
     /// What the run's processes present on `/askpass`.
     token: String,
+    /// The origin git reported a rejected credential for, if it did.
+    credential_rejected_for: Option<String>,
 }
 
 #[derive(Default)]
@@ -71,6 +115,7 @@ impl AskpassState {
             Session {
                 window: window.to_string(),
                 token: token.clone(),
+                credential_rejected_for: None,
             },
         );
         token
@@ -85,9 +130,23 @@ impl AskpassState {
             .is_some_and(|session| session.token == token)
     }
 
-    /// The command ended: prompts still open get no answer and the window closes their dialog.
-    pub fn close_session(&self, app: &AppHandle, session_id: &str) {
-        self.sessions.lock().unwrap().remove(session_id);
+    /// Git told its helpers the credential for `origin` was rejected: the run
+    /// failed on its access, whoever the credential came from.
+    pub fn note_credential_rejected(&self, session_id: &str, origin: &str) {
+        if let Some(session) = self.sessions.lock().unwrap().get_mut(session_id) {
+            session.credential_rejected_for = Some(origin.to_string());
+        }
+    }
+
+    /// The command ended: prompts still open get no answer and the window
+    /// closes their dialog. Returns the origin whose credential git rejected.
+    pub fn close_session(&self, app: &AppHandle, session_id: &str) -> Option<String> {
+        let rejected = self
+            .sessions
+            .lock()
+            .unwrap()
+            .remove(session_id)
+            .and_then(|session| session.credential_rejected_for);
         let closed: Vec<(String, Pending)> = {
             let mut pending = self.pending.lock().unwrap();
             let ids: Vec<String> = pending
@@ -107,6 +166,7 @@ impl AskpassState {
                 AskpassClosed { request_id },
             );
         }
+        rejected
     }
 
     /// Whether a prompt of this session waits for the user - the runner's timeout pauses then.
@@ -126,8 +186,8 @@ impl AskpassState {
         &self,
         app: &AppHandle,
         session_id: &str,
-        prompt: String,
-    ) -> Option<(String, oneshot::Receiver<Option<String>>)> {
+        question: Question,
+    ) -> Option<(String, oneshot::Receiver<Option<Answer>>)> {
         let window = self
             .sessions
             .lock()
@@ -149,15 +209,26 @@ impl AskpassState {
                 answer: sender,
             },
         );
-        let _ = app.emit_to(
-            window.as_str(),
-            REQUEST_EVENT,
-            AskpassRequest {
-                request_id: request_id.clone(),
-                session_id: session_id.to_string(),
-                prompt,
-            },
-        );
+        let _ = match question {
+            Question::Prompt(prompt) => app.emit_to(
+                window.as_str(),
+                REQUEST_EVENT,
+                AskpassRequest {
+                    request_id: request_id.clone(),
+                    session_id: session_id.to_string(),
+                    prompt,
+                },
+            ),
+            Question::Credential(origin) => app.emit_to(
+                window.as_str(),
+                CREDENTIAL_EVENT,
+                CredentialRequest {
+                    request_id: request_id.clone(),
+                    session_id: session_id.to_string(),
+                    origin,
+                },
+            ),
+        };
         Some((request_id, receiver))
     }
 
@@ -179,7 +250,7 @@ impl AskpassState {
         self.pending.lock().unwrap().remove(request_id)
     }
 
-    fn answer(&self, request_id: &str, answer: Option<String>) -> bool {
+    fn answer(&self, request_id: &str, answer: Option<Answer>) -> bool {
         match self.forget(request_id) {
             Some(entry) => entry.answer.send(answer).is_ok(),
             None => false,
@@ -194,7 +265,17 @@ pub fn askpass_answer(
     request_id: String,
     answer: Option<String>,
 ) -> bool {
-    state.answer(&request_id, answer)
+    state.answer(&request_id, answer.map(Answer::Text))
+}
+
+/// The window answers a credential request; `None` refuses it, and git stops asking.
+#[tauri::command]
+pub fn credential_answer(
+    state: State<'_, AskpassState>,
+    request_id: String,
+    answer: Option<CredentialAnswer>,
+) -> bool {
+    state.answer(&request_id, answer.map(Answer::Credential))
 }
 
 /// The helper side: runs in the process git or ssh started, asks the running
@@ -241,7 +322,7 @@ mod tests {
     #[test]
     fn an_answer_for_an_unknown_request_is_refused() {
         let state = AskpassState::new();
-        assert!(!state.answer("nope", Some("x".into())));
+        assert!(!state.answer("nope", Some(Answer::Text("x".into()))));
     }
 
     #[test]
@@ -274,7 +355,7 @@ mod tests {
         assert!(state.forget("r1").is_some());
 
         assert!(!state.has_pending("s1"));
-        assert!(!state.answer("r1", Some("late".into())));
+        assert!(!state.answer("r1", Some(Answer::Text("late".into()))));
     }
 
     #[test]
@@ -293,7 +374,7 @@ mod tests {
             },
         );
         assert!(state.has_pending(&session));
-        assert!(state.answer("r1", Some("secret".into())));
+        assert!(state.answer("r1", Some(Answer::Text("secret".into()))));
         assert!(!state.has_pending(&session));
     }
 }

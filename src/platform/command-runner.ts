@@ -5,6 +5,8 @@ export type CommandRunnerExecuteResult = {
   stdout: string;
   stderr: string;
   exitCode: number;
+  /** The origin whose credential git reported as rejected during the run. */
+  credentialRejectedFor?: string;
 };
 
 @Injectable({ providedIn: "root" })

@@ -1,5 +1,6 @@
 import {
   CommandRunnerResultContract,
+  ProcessCredentialHandler,
   ProcessPromptHandler,
 } from "@cogno/core/api/command-runner-port";
 
@@ -23,6 +24,8 @@ export interface SessionRunRequest {
    * that knows nothing about the process.
    */
   readonly onPrompt?: ProcessPromptHandler;
+  /** Answers git's credential requests; without one git goes on to its own prompt. */
+  readonly onCredential?: ProcessCredentialHandler;
 }
 
 export type SessionRunRejection =

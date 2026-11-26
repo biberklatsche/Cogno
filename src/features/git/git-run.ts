@@ -1,5 +1,6 @@
 import {
   CommandRunnerResultContract,
+  ProcessCredentialHandler,
   ProcessPromptHandler,
 } from "@cogno/core/api/command-runner-port";
 import { SessionHandle } from "@cogno/core/api/session-api";
@@ -30,6 +31,12 @@ const TIMEOUT_EXIT_CODE = 124;
  */
 export const READ_TIMEOUT_MS = 60_000;
 
+/** Who answers what a git run asks: ssh's prompts and git's credential requests. */
+export type GitRunHandlers = {
+  readonly onPrompt: ProcessPromptHandler;
+  readonly onCredential: ProcessCredentialHandler;
+};
+
 /** What `runGit` needs of a session: the bound handle and a directory handle both have it. */
 export type GitSession = Pick<SessionHandle, "contextRevision" | "run">;
 
@@ -39,7 +46,7 @@ export async function runGit(
   args: ReadonlyArray<string>,
   timeoutMs: number,
   stdin?: string,
-  onPrompt?: ProcessPromptHandler,
+  handlers?: GitRunHandlers,
 ): Promise<CommandRunnerResultContract | null> {
   const outcome = await session.run({
     executable: "git",
@@ -47,7 +54,7 @@ export async function runGit(
     contextRevision: session.contextRevision,
     timeoutMs,
     ...(stdin === undefined ? {} : { stdin }),
-    ...(onPrompt === undefined ? {} : { onPrompt }),
+    ...(handlers ?? {}),
   });
   return outcome.status === "ran" ? outcome.result : null;
 }

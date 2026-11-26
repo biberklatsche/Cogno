@@ -1,4 +1,4 @@
-import { AskpassRequest, AskpassRequests } from "@cogno/platform/askpass";
+import { AskpassRequest, AskpassRequests, CredentialRequest } from "@cogno/platform/askpass";
 import { CommandRunner } from "@cogno/platform/command-runner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CommandRunnerHostService } from "./command-runner-host.service";
@@ -10,11 +10,14 @@ describe("CommandRunnerHostService", () => {
   let answer: ReturnType<typeof vi.fn>;
   let request: (prompt: AskpassRequest) => void;
   let closed: (requestId: string) => void;
+  let credentialRequest: (request: CredentialRequest) => void;
+  let answerCredential: ReturnType<typeof vi.fn>;
   let service: CommandRunnerHostService;
 
   beforeEach(() => {
     execute = vi.fn();
     answer = vi.fn().mockResolvedValue(true);
+    answerCredential = vi.fn().mockResolvedValue(true);
     const askpass = {
       onRequest: vi.fn((listener) => {
         request = listener;
@@ -24,7 +27,12 @@ describe("CommandRunnerHostService", () => {
         closed = listener;
         return Promise.resolve(() => undefined);
       }),
+      onCredentialRequest: vi.fn((listener) => {
+        credentialRequest = listener;
+        return Promise.resolve(() => undefined);
+      }),
       answer,
+      answerCredential,
     } as unknown as AskpassRequests;
     service = new CommandRunnerHostService({ execute } as unknown as CommandRunner, askpass, {
       onDestroy: vi.fn(),
@@ -122,5 +130,63 @@ describe("CommandRunnerHostService", () => {
 
     expect(aborted).toBe(true);
     expect(answer).not.toHaveBeenCalled();
+  });
+
+  it("hands a credential request to the handler of the run that raised it", async () => {
+    let finish!: (result: unknown) => void;
+    execute.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    const onCredential = vi.fn().mockResolvedValue({ kind: "signed_in" });
+
+    const running = service.run({ cwd: "/r", shellContext, program: "git", onCredential });
+    await Promise.resolve();
+    credentialRequest({
+      requestId: "c1",
+      sessionId: promptSession(),
+      origin: "https://gitlab.com",
+    });
+    await vi.waitFor(() =>
+      expect(answerCredential).toHaveBeenCalledWith("c1", { kind: "signed_in" }),
+    );
+    expect(onCredential).toHaveBeenCalledWith(
+      expect.objectContaining({ origin: "https://gitlab.com", closed: expect.any(AbortSignal) }),
+    );
+
+    finish({ stdout: "", stderr: "", exitCode: 0 });
+    await running;
+  });
+
+  it("refuses a credential request its handler dismissed", async () => {
+    let finish!: (result: unknown) => void;
+    execute.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    const onCredential = vi.fn().mockResolvedValue(null);
+
+    const running = service.run({ cwd: "/r", shellContext, program: "git", onCredential });
+    await Promise.resolve();
+    credentialRequest({
+      requestId: "c1",
+      sessionId: promptSession(),
+      origin: "https://gitlab.com",
+    });
+    await vi.waitFor(() => expect(answerCredential).toHaveBeenCalledWith("c1", null));
+
+    finish({ stdout: "", stderr: "", exitCode: 1 });
+    await running;
+  });
+
+  it("passes a credential request of a run nobody answers for, so git asks on", async () => {
+    let finish!: (result: unknown) => void;
+    execute.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+
+    const running = service.run({ cwd: "/r", shellContext, program: "git" });
+    await Promise.resolve();
+    credentialRequest({
+      requestId: "c1",
+      sessionId: promptSession(),
+      origin: "https://gitlab.com",
+    });
+    await vi.waitFor(() => expect(answerCredential).toHaveBeenCalledWith("c1", { kind: "pass" }));
+
+    finish({ stdout: "", stderr: "", exitCode: 0 });
+    await running;
   });
 });

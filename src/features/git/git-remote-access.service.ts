@@ -25,8 +25,12 @@ export class GitRemoteAccessService {
     private readonly navigator: TerminalNavigator,
   ) {}
 
-  /** The dialog for the host `url` names; nothing for a local path. */
-  async open(url: string): Promise<void> {
+  /**
+   * The dialog for the host `url` names - a remote's url or an origin; nothing
+   * for a local path. `rejected`: git just reported the credential it used
+   * there as rejected.
+   */
+  async open(url: string, why: { readonly rejected?: boolean } = {}): Promise<void> {
     const host = hostOf(url);
     const session = this.repository.currentSession();
     if (!host || !session) return;
@@ -41,6 +45,8 @@ export class GitRemoteAccessService {
     };
     const data: GitAccessDialogData = {
       situation,
+      origin: credentialUrlOf(url) ?? `https://${host}`,
+      rejected: why.rejected === true,
       askProvider: known === null,
       onProvider: (provider) => this.view.hosts.update((hosts) => ({ ...hosts, [host]: provider })),
       onInsert: (command) => this.insert(command),

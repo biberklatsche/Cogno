@@ -8,6 +8,15 @@ use std::collections::HashMap;
 use std::fs;
 
 fn main() {
+    // Started by git as its credential helper (see sign_ins/helper.rs). This
+    // comes first: a run of the command runner has the askpass session in its
+    // environment as well.
+    let mut arguments = std::env::args().skip(1);
+    if arguments.next().as_deref() == Some(cogno_lib::sign_ins::git_config::SUBCOMMAND) {
+        let operation = arguments.next().unwrap_or_default();
+        std::process::exit(cogno_lib::sign_ins::helper::run_helper(&operation));
+    }
+
     // Started by git or ssh as the askpass helper (see commands/askpass.rs):
     // the arguments are the prompt, not a Cogno command line.
     if let Ok(session_id) = std::env::var(cogno_lib::commands::askpass::SESSION_ENV) {

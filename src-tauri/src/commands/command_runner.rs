@@ -31,6 +31,10 @@ pub struct CommandRunnerResult {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: i32,
+    /// The origin whose credential git reported as rejected during the run:
+    /// the run failed on its access, and no message has to be read to know.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_rejected_for: Option<String>,
 }
 
 /// Runs on a blocking worker: a slow `git status` must never hold up the
@@ -79,11 +83,15 @@ pub async fn command_runner_execute(
     let result =
         tauri::async_runtime::spawn_blocking(move || run(command, timeout_ms, stdin, &pending))
             .await;
-    app.state::<AskpassState>().close_session(&app, &session_id);
+    let credential_rejected_for = app.state::<AskpassState>().close_session(&app, &session_id);
 
-    result
+    let result = result
         .map_err(|error| error.to_string())?
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    Ok(CommandRunnerResult {
+        credential_rejected_for,
+        ..result
+    })
 }
 
 /// What every run gets. The login PATH: a GUI process started by launchd or
@@ -121,6 +129,15 @@ fn apply_prompt_environment(
     command.env(SESSION_ENV, session_id);
     command.env("COGNO_PORT", http.port().to_string());
     command.env("COGNO_TOKEN", askpass_token);
+    // Git asks this binary for credentials too (sign_ins/git_config.rs).
+    let credential_environment = crate::sign_ins::git_config::environment(
+        app.state::<crate::sign_ins::SignIns>().cogno_home(),
+        &helper,
+        std::env::var("GIT_CONFIG_COUNT").ok().as_deref(),
+    );
+    for (key, value) in &credential_environment {
+        command.env(key, value);
+    }
     let shared = [
         "GIT_ASKPASS/p",
         "SSH_ASKPASS/p",
@@ -131,6 +148,10 @@ fn apply_prompt_environment(
         "COGNO_PORT",
         "COGNO_TOKEN",
     ]
+    .into_iter()
+    .map(str::to_string)
+    .chain(crate::sign_ins::git_config::wslenv(&credential_environment))
+    .collect::<Vec<_>>()
     .join(":");
     let wslenv = match std::env::var("WSLENV") {
         Ok(existing) if !existing.is_empty() => format!("{existing}:{shared}"),
@@ -224,6 +245,7 @@ fn run(
             stdout,
             stderr,
             exit_code: status.code().unwrap_or(1),
+            credential_rejected_for: None,
         },
         None => CommandRunnerResult {
             stdout,
@@ -236,6 +258,7 @@ fn run(
                 stderr
             },
             exit_code: 124,
+            credential_rejected_for: None,
         },
     })
 }

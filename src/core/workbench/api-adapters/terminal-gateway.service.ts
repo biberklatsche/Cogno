@@ -313,6 +313,7 @@ export class TerminalGatewayService implements SessionApi {
       timeoutMs: request.timeoutMs,
       stdin: request.stdin,
       onPrompt: request.onPrompt ?? ((prompt) => this.processPrompts.ask(prompt)),
+      onCredential: request.onCredential,
     });
     return { status: "ran", result };
   }

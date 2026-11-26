@@ -14,6 +14,25 @@ export interface AskpassRequest {
   readonly prompt: string;
 }
 
+/**
+ * Git's credential helper asks for an origin nobody is signed in to: the run
+ * that started git says who answers.
+ */
+export interface CredentialRequest {
+  readonly requestId: string;
+  readonly sessionId: string;
+  /** `https://host[:port]`, as git names it. */
+  readonly origin: string;
+}
+
+export type CredentialAnswer =
+  /** The person signed in in the browser; the backend hands git the token. */
+  | { readonly kind: "signed_in" }
+  /** Typed by hand; git gets it as it is. */
+  | { readonly kind: "typed"; readonly username: string; readonly password: string }
+  /** Nobody here answers credential requests: git goes on to its own prompt. */
+  | { readonly kind: "pass" };
+
 @Injectable({ providedIn: "root" })
 export class AskpassRequests {
   /** Prompts for this window; the process waits until `answer` is called. */
@@ -21,7 +40,12 @@ export class AskpassRequests {
     return listen<AskpassRequest>("askpass-request", ({ payload }) => listener(payload));
   }
 
-  /** The process ended before its prompt was answered. */
+  /** Credential requests for this window; git waits until `answerCredential` is called. */
+  onCredentialRequest(listener: (request: CredentialRequest) => void): Promise<UnlistenFn> {
+    return listen<CredentialRequest>("credential-request", ({ payload }) => listener(payload));
+  }
+
+  /** The process ended before its prompt or credential request was answered. */
   onClosed(listener: (requestId: string) => void): Promise<UnlistenFn> {
     return listen<{ requestId: string }>("askpass-closed", ({ payload }) =>
       listener(payload.requestId),
@@ -31,5 +55,10 @@ export class AskpassRequests {
   /** `null` refuses the prompt; the process sees a failed read. */
   answer(requestId: string, answer: string | null): Promise<boolean> {
     return invoke<boolean>("askpass_answer", { requestId, answer });
+  }
+
+  /** `null` refuses the request; git fails without asking any further. */
+  answerCredential(requestId: string, answer: CredentialAnswer | null): Promise<boolean> {
+    return invoke<boolean>("credential_answer", { requestId, answer });
   }
 }

@@ -19,6 +19,7 @@ export * from "./os";
 export * from "./path";
 export * from "./pty";
 export * from "./shells";
+export * from "./sign-ins";
 export * from "./updater";
 export * from "./window";
 export * from "./window-core";

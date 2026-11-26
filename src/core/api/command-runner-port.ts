@@ -14,6 +14,27 @@ export interface ProcessPromptRequest {
 /** Answers a prompt; `null` refuses it and the process sees a failed read. */
 export type ProcessPromptHandler = (prompt: ProcessPromptRequest) => Promise<string | null>;
 
+/**
+ * Git needs credentials for `origin` (`https://host[:port]`) and no credential
+ * helper had any. `closed` fires when the process ended before it got an
+ * answer.
+ */
+export interface ProcessCredentialRequest {
+  readonly origin: string;
+  readonly closed: AbortSignal;
+}
+
+export type ProcessCredentialAnswer =
+  /** The person signed in to the origin (`platform/sign-ins`); the backend hands git the token. */
+  | { readonly kind: "signed_in" }
+  /** Typed by hand; git gets it as it is. */
+  | { readonly kind: "typed"; readonly username: string; readonly password: string };
+
+/** Answers a credential request; `null` refuses it and git fails without asking further. */
+export type ProcessCredentialHandler = (
+  request: ProcessCredentialRequest,
+) => Promise<ProcessCredentialAnswer | null>;
+
 export interface CommandRunnerRequestContract {
   readonly cwd: string;
   readonly shellContext: ShellContextContract;
@@ -29,12 +50,22 @@ export interface CommandRunnerRequestContract {
   readonly stdin?: string;
   /** Answers the prompts of this run; without one every prompt is refused. */
   readonly onPrompt?: ProcessPromptHandler;
+  /**
+   * Answers git's credential requests of this run; without one git goes on to
+   * its own prompt, which reaches `onPrompt`.
+   */
+  readonly onCredential?: ProcessCredentialHandler;
 }
 
 export interface CommandRunnerResultContract {
   readonly stdout: string;
   readonly stderr: string;
   readonly exitCode: number;
+  /**
+   * The origin whose credential git reported as rejected: the run failed on
+   * its access, whoever the credential came from.
+   */
+  readonly credentialRejectedFor?: string;
 }
 
 export abstract class CommandRunner {
