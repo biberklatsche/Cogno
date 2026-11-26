@@ -92,7 +92,7 @@ describe("WorkspaceHostApplicationService", () => {
       workspaceRepository,
       gridListService,
       tabListService,
-      { config: { terminal: { restore: restoreSettings } } } as unknown as ConfigService,
+      { config: { general: { session_restore: restoreSettings } } } as unknown as ConfigService,
       {
         persistWorkspace: persistWorkspaceSnapshots,
         loadPendingSnapshots: vi.fn().mockResolvedValue(undefined),

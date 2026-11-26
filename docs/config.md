@@ -9,11 +9,31 @@ brackets.
 
 ## General
 
-### `enable_watch_config`
+What holds for the whole app.
+
+### `general.enable_watch_config`
 
 Reload the config automatically when the file changes on disk.
 
 **Type:** boolean · **Default:** `true`
+
+### `general.session_restore.enabled`
+
+Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.
+
+**Type:** boolean · **Default:** `true`
+
+### `general.session_restore.scrollback`
+
+Bring back what the terminals showed, above a separator line. Off restores the layout with empty terminals.
+
+**Type:** boolean · **Default:** `true`
+
+### `general.session_restore.max_lines`
+
+How many lines of output are kept per terminal for the next start; 0 keeps none.
+
+**Type:** integer ≥ 0 · **Default:** `1000`
 
 ## Font
 
@@ -760,24 +780,6 @@ Fill an empty history from your shell's own history file the first time Cogno st
 Run a command as soon as you pick it from the history. Off puts it on the input line and waits for Enter.
 
 **Type:** boolean · **Default:** `false`
-
-### `terminal.restore.enabled`
-
-Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.restore.scrollback`
-
-Bring back what the terminals showed, above a separator line. Off restores the layout with empty terminals.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.restore.max_lines`
-
-How many lines of output are kept per terminal for the next start; 0 keeps none.
-
-**Type:** integer ≥ 0 · **Default:** `1000`
 
 ## Autocomplete
 

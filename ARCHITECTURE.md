@@ -800,8 +800,8 @@ Workbench gespeichert, nicht interpretiert) trägt nur die Darstellung:
 - **`scrollback`** — der Puffer als Text mit SGR-Farben, serialisiert von
   `scrollback-serializer.ts` (nicht vom SerializeAddon: dessen
   Cursor-Restore-Schluss hat die Live-Sitzung beim Abspielen beschädigt), ohne
-  Alt-Screen-Inhalt, auf `terminal.restore.max_lines` (Default 1000) begrenzt;
-  entfällt bei `terminal.restore.scrollback = off` (Config, global) oder wenn
+  Alt-Screen-Inhalt, auf `general.session_restore.max_lines` (Default 1000) begrenzt;
+  entfällt bei `general.session_restore.scrollback = off` (Config, global) oder wenn
   das Terminal per Aktion `exclude_from_restore` ausgenommen ist. Die
   verdeckten Marker-Zeilen (`^^#<id>`) bleiben erhalten — ihre ids in einen
   Bereich verschoben, den die neue Sitzung nie vergibt — und werden samt den

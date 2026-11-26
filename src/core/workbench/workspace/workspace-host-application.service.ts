@@ -214,7 +214,7 @@ export class WorkspaceHostApplicationService {
   }
 
   private get isRestoreEnabled(): boolean {
-    return this.configService.config.terminal?.restore?.enabled !== false;
+    return this.configService.config.general?.session_restore?.enabled !== false;
   }
 
   /**

@@ -365,7 +365,7 @@ export class RealConfigService extends ConfigService {
     // Only a read that got this far replaces the watcher; a failing one keeps it.
     this._unwatch?.unsubscribe();
     this._unwatch = undefined;
-    if (config.enable_watch_config) {
+    if (config.general?.enable_watch_config) {
       await this.watch();
     }
 

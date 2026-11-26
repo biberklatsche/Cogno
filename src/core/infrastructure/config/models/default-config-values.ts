@@ -3,7 +3,14 @@
 // Values are raw config strings (ConfigMapper types/transforms them at load).
 
 export const defaultSettings = {
-  enable_watch_config: "true",
+  general: {
+    enable_watch_config: "true",
+    session_restore: {
+      enabled: "true",
+      scrollback: "true",
+      max_lines: "1000",
+    },
+  },
   font: {
     enable_ligatures: "false",
     family: "monospace",
@@ -168,11 +175,6 @@ export const defaultSettings = {
       ignore_commands_with_leading_space: "false",
       import_shell_history: "false",
       auto_execute: "false",
-    },
-    restore: {
-      enabled: "true",
-      scrollback: "true",
-      max_lines: "1000",
     },
     decoration: {
       color: {

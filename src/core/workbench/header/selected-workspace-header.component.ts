@@ -154,7 +154,7 @@ export class SelectedWorkspaceHeaderComponent {
     configService.config$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((config) =>
-        this.restoreEnabledSignal.set(config.terminal?.restore?.enabled ?? true),
+        this.restoreEnabledSignal.set(config.general?.session_restore?.enabled ?? true),
       );
     this.workspaceEntries = this.workspaces.workspaceEntries;
     this.activeWorkspace = computed(() => {

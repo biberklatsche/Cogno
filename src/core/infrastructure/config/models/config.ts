@@ -4,6 +4,7 @@ import { ClipboardConfigSchema } from "./clipboard-config";
 import { Color, ColorSchema } from "./color-config";
 import { CursorSchema } from "./cursor-config";
 import { FontSchema } from "./font-config";
+import { GeneralConfigSchema } from "./general-config";
 import { ImageSchema } from "./image-config";
 import { KeybindsSchema } from "./keybind-config";
 import { MenuSchema } from "./menu-config";
@@ -38,10 +39,7 @@ const HttpServerSchema = z.strictObject({
  * share "General". The description is what the reference prints under it.
  */
 export const baseConfigSchemaShape = {
-  enable_watch_config: z
-    .boolean()
-    .optional()
-    .describe("Reload the config automatically when the file changes on disk."),
+  general: GeneralConfigSchema.optional().describe("What holds for the whole app."),
   font: FontSchema.optional().describe("Terminal and app fonts."),
   color: ColorSchema.optional().describe(
     "Terminal color palette. Colors are hex without `#`; 8 digits add alpha.",

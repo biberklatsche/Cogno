@@ -290,7 +290,7 @@ export class WorkspaceSideComponent implements OnDestroy {
     configService.config$
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((config) =>
-        this.restoreEnabledSignal.set(config.terminal?.restore?.enabled ?? true),
+        this.restoreEnabledSignal.set(config.general?.session_restore?.enabled ?? true),
       );
     this.workspaceEntries = this.workspaceService.workspaceEntries;
     this.workspaceService.registerColumnCount(this.columnCount);

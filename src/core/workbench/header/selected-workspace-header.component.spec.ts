@@ -50,7 +50,7 @@ describe("SelectedWorkspaceHeaderComponent", () => {
     };
 
     const configService = new ConfigServiceMock();
-    configService.setConfig({ terminal: { restore: { enabled: true } } } as never);
+    configService.setConfig({ general: { session_restore: { enabled: true } } } as never);
 
     component = new SelectedWorkspaceHeaderComponent(
       workspaceHostPort,
