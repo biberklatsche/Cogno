@@ -70,8 +70,7 @@ export type GitHostDefinition = {
  * redirect `http://127.0.0.1/`. They stand in the source because a desktop
  * app cannot keep them secret: it is a public client (RFC 6749, 2.1), and
  * GitHub's client secret, which GitHub demands even with PKCE, is public with
- * it. Use these apps for the desktop sign-in only. An empty id would mean the
- * app is not registered, and the sign-in is not offered.
+ * it. Use these apps for the desktop sign-in only.
  */
 const GITHUB_CLIENT = {
   id: "Ov23lifwVrvPaz1sNTa1",
@@ -83,13 +82,13 @@ const GITLAB_CLIENT = {
 const CODEBERG_CLIENT = { id: "71b465da-7972-4b27-9557-5bf4848f32ec" };
 
 /** The sign-in for the one host an app is registered on. */
-export function signInOn(
+function signInOn(
   home: string,
   client: { readonly id: string; readonly secret?: string },
   provider: Omit<SignInProvider, "clientId" | "clientSecret" | "username">,
 ): (host: string) => SignInProvider | null {
   return (host) =>
-    host === home && client.id
+    host === home
       ? {
           ...provider,
           clientId: client.id,
@@ -218,6 +217,17 @@ export function gitHost(id: GitHostId): GitHostDefinition {
 /** The provider that owns a host outright; null when the person has to say. */
 export function knownGitHost(host: string): GitHostDefinition | null {
   return GIT_HOSTS.find((definition) => definition.owns(host)) ?? null;
+}
+
+/**
+ * The provider behind `host`: the one that owns it outright, else what the
+ * person said it is (`remembered`, by host), else nobody's.
+ */
+export function gitHostFor(
+  host: string,
+  remembered: Readonly<Record<string, GitHostId>>,
+): GitHostDefinition {
+  return knownGitHost(host) ?? gitHost(remembered[host] ?? "other");
 }
 
 export function isGitHostId(value: string): value is GitHostId {

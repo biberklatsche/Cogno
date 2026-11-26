@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, Signal, signal } from "@angular/core";
+import { DestroyRef, Injectable, signal } from "@angular/core";
 import { SignInProvider, SignInStatus, SignIns } from "@cogno/platform";
 
 /**
@@ -8,18 +8,17 @@ import { SignInProvider, SignInStatus, SignIns } from "@cogno/platform";
  */
 @Injectable({ providedIn: "root" })
 export class GitSignIns {
-  private readonly statusesSignal = signal<ReadonlyArray<SignInStatus>>([]);
-  readonly statuses: Signal<ReadonlyArray<SignInStatus>> = this.statusesSignal.asReadonly();
+  private readonly statuses = signal<ReadonlyArray<SignInStatus>>([]);
 
   constructor(
     private readonly signIns: SignIns,
     destroyRef: DestroyRef,
   ) {
     void signIns
-      .onChanged((statuses) => this.statusesSignal.set(statuses))
+      .onChanged((statuses) => this.statuses.set(statuses))
       .then((unlisten) => destroyRef.onDestroy(unlisten));
     void signIns.list().then(
-      (statuses) => this.statusesSignal.set(statuses),
+      (statuses) => this.statuses.set(statuses),
       () => undefined,
     );
   }
@@ -28,10 +27,11 @@ export class GitSignIns {
     return this.statuses().find((status) => status.origin === origin) ?? null;
   }
 
-  /** Opens the browser; the reason as text when the sign-in did not happen. */
-  async signIn(origin: string, provider: SignInProvider): Promise<SignInStatus | string> {
+  /** Opens the browser; null once the sign-in is stored, else why it did not happen. */
+  async signIn(origin: string, provider: SignInProvider): Promise<string | null> {
     try {
-      return await this.signIns.signIn(origin, provider);
+      await this.signIns.signIn(origin, provider);
+      return null;
     } catch (error) {
       return error instanceof Error ? error.message : String(error);
     }

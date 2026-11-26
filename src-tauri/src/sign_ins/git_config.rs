@@ -44,9 +44,19 @@ pub fn write(cogno_home: &Path, origins: &[String]) -> io::Result<()> {
     super::store::write_private(&path(cogno_home), &render(origins))
 }
 
-/// What a process needs in its environment for git to read the file. `count`
-/// is the `GIT_CONFIG_COUNT` already there, whose entries stay in place.
-pub fn environment(cogno_home: &Path, helper: &Path, count: Option<&str>) -> Vec<(String, String)> {
+/// What a process Cogno starts needs in its environment for git to read the
+/// file. `count` is the `GIT_CONFIG_COUNT` the process already gets, whose
+/// entries stay in place. Empty when this binary cannot be named.
+pub fn environment_for(app: &tauri::AppHandle, count: Option<&str>) -> Vec<(String, String)> {
+    use tauri::Manager;
+
+    let Ok(helper) = std::env::current_exe() else {
+        return Vec::new();
+    };
+    environment(app.state::<super::SignIns>().cogno_home(), &helper, count)
+}
+
+fn environment(cogno_home: &Path, helper: &Path, count: Option<&str>) -> Vec<(String, String)> {
     let index = count
         .and_then(|value| value.parse::<u32>().ok())
         .unwrap_or(0);

@@ -42,8 +42,8 @@ export class SignIns {
     return invoke<void>("sign_ins_cancel", { origin });
   }
 
-  signOut(origin: string): Promise<boolean> {
-    return invoke<boolean>("sign_ins_sign_out", { origin });
+  signOut(origin: string): Promise<void> {
+    return invoke<void>("sign_ins_sign_out", { origin });
   }
 
   list(): Promise<ReadonlyArray<SignInStatus>> {

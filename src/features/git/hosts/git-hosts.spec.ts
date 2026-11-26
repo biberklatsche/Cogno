@@ -1,32 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { signInOn } from "./git-hosts";
+import { gitHost, gitHostFor, knownGitHost } from "./git-hosts";
 
-const endpoints = {
-  authorizeUrl: "https://gitlab.com/oauth/authorize",
-  tokenUrl: "https://gitlab.com/oauth/token",
-  scopes: ["write_repository"],
-};
-
-describe("signInOn", () => {
-  it("signs in on the host the app is registered on, as a public client", () => {
-    expect(signInOn("gitlab.com", { id: "client" }, endpoints)("gitlab.com")).toEqual({
-      ...endpoints,
-      clientId: "client",
+describe("signing in in the browser", () => {
+  it("is offered on the provider's own host, as a public client", () => {
+    expect(knownGitHost("gitlab.com")?.signIn?.("gitlab.com")).toEqual({
+      authorizeUrl: "https://gitlab.com/oauth/authorize",
+      tokenUrl: "https://gitlab.com/oauth/token",
+      scopes: ["read_repository", "write_repository"],
+      clientId: expect.any(String),
       username: "oauth2",
     });
+    expect(knownGitHost("codeberg.org")?.signIn?.("codeberg.org")).not.toBeNull();
   });
 
-  it("carries the secret a provider demands", () => {
-    const provider = signInOn("github.com", { id: "client", secret: "public" }, endpoints);
-
-    expect(provider("github.com")?.clientSecret).toBe("public");
+  it("carries the secret GitHub demands", () => {
+    expect(knownGitHost("github.com")?.signIn?.("github.com")?.clientSecret).toEqual(
+      expect.any(String),
+    );
   });
 
-  it("offers nothing on an instance somebody runs themselves", () => {
-    expect(signInOn("gitlab.com", { id: "client" }, endpoints)("gitlab.firma.de")).toBeNull();
+  it("is not offered on an instance somebody runs themselves", () => {
+    expect(gitHost("gitlab").signIn?.("gitlab.firma.de")).toBeNull();
+    expect(gitHost("github").signIn?.("github.firma.de")).toBeNull();
   });
 
-  it("offers nothing while the app is not registered", () => {
-    expect(signInOn("gitlab.com", { id: "" }, endpoints)("gitlab.com")).toBeNull();
+  it("is not offered where no app can be registered", () => {
+    expect(gitHost("azure").signIn).toBeUndefined();
+    expect(gitHost("other").signIn).toBeUndefined();
+  });
+});
+
+describe("gitHostFor", () => {
+  it("takes a host for its owner, then for what the person said, then for nobody's", () => {
+    const remembered = { "git.firma.de": "gitlab", "gitlab.com": "github" } as const;
+
+    expect(gitHostFor("gitlab.com", remembered).id).toBe("gitlab");
+    expect(gitHostFor("git.firma.de", remembered).id).toBe("gitlab");
+    expect(gitHostFor("example.org", remembered).id).toBe("other");
   });
 });

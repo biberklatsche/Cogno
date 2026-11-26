@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Inject, signal } from "@angular/core";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
-import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
+import { GitPrompt } from "../model/git-process-prompt";
 
 /**
  * The dialog git or ssh gets instead of a terminal prompt. Confirming answers
@@ -14,11 +14,11 @@ import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
   template: `
     <form class="prompt" (submit)="$event.preventDefault(); confirm()">
       <pre class="message">{{ data.message }}</pre>
-      @if (data.kind !== "confirm") {
+      @if (!data.confirm) {
         <input
           #field
           class="field"
-          [type]="secret ? 'password' : 'text'"
+          type="password"
           spellcheck="false"
           autocomplete="off"
           autocapitalize="off"
@@ -27,7 +27,7 @@ import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
         />
       }
       <div class="actions">
-        @if (data.kind === "confirm") {
+        @if (data.confirm) {
           <button type="button" class="button" (click)="dialogRef.close('no')">No</button>
           <button type="submit" class="button primary">Yes</button>
         } @else {
@@ -74,19 +74,17 @@ import { GitPrompt, isSecretPrompt } from "../model/git-process-prompt";
 })
 export class GitProcessPromptDialogComponent {
   readonly value = signal("");
-  readonly secret: boolean;
 
   constructor(
     readonly dialogRef: DialogRef<string>,
     @Inject(DIALOG_DATA) readonly data: GitPrompt,
   ) {
-    this.secret = isSecretPrompt(data.kind);
     queueMicrotask(() =>
       document.querySelector<HTMLInputElement>("app-git-process-prompt-dialog .field")?.focus(),
     );
   }
 
   confirm(): void {
-    this.dialogRef.close(this.data.kind === "confirm" ? "yes" : this.value());
+    this.dialogRef.close(this.data.confirm ? "yes" : this.value());
   }
 }

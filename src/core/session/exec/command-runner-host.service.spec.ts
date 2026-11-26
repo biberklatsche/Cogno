@@ -59,6 +59,7 @@ describe("CommandRunnerHostService", () => {
       ["tag", "--list"],
       "C:\\repo\\project",
       expect.any(String),
+      false,
       undefined,
       undefined,
     );
@@ -173,20 +174,12 @@ describe("CommandRunnerHostService", () => {
     await running;
   });
 
-  it("passes a credential request of a run nobody answers for, so git asks on", async () => {
-    let finish!: (result: unknown) => void;
-    execute.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+  it("starts a run saying whether somebody answers its credential requests", async () => {
+    execute.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 });
 
-    const running = service.run({ cwd: "/r", shellContext, program: "git" });
-    await Promise.resolve();
-    credentialRequest({
-      requestId: "c1",
-      sessionId: promptSession(),
-      origin: "https://gitlab.com",
-    });
-    await vi.waitFor(() => expect(answerCredential).toHaveBeenCalledWith("c1", { kind: "pass" }));
+    await service.run({ cwd: "/r", shellContext, program: "git" });
+    await service.run({ cwd: "/r", shellContext, program: "git", onCredential: vi.fn() });
 
-    finish({ stdout: "", stderr: "", exitCode: 0 });
-    await running;
+    expect(execute.mock.calls.map((call) => call[4])).toEqual([false, true]);
   });
 });

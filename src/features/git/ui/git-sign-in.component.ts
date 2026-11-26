@@ -80,12 +80,9 @@ export class GitSignInComponent {
   async signIn(): Promise<void> {
     this.failure.set(null);
     this.waiting.set(true);
-    const outcome = await this.signIns.signIn(this.origin(), this.provider());
+    const failure = await this.signIns.signIn(this.origin(), this.provider());
     this.waiting.set(false);
-    if (typeof outcome === "string") {
-      this.failure.set(outcome);
-      return;
-    }
-    this.signedIn.emit();
+    this.failure.set(failure);
+    if (failure === null) this.signedIn.emit();
   }
 }

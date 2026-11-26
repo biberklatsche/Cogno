@@ -363,8 +363,10 @@ angefasst. Daraus folgen die Regeln:
    Git-Feature zeigt seinen Dialog: im Browser anmelden, dann antwortet das
    Backend mit dem neuen Token, oder Name und Token tippen, dann reicht das
    Feature beides durch. Lehnt der Nutzer ab, sagt der Helper git `quit`,
-   und git fragt nicht weiter. Ein Lauf ohne `onCredential` passt: git geht
-   weiter zu seinem eigenen Prompt, der über Askpass bei `onPrompt` landet.
+   und git fragt nicht weiter. Ein Lauf ohne `onCredential` sagt das beim
+   Start: der Helper antwortet ihm nichts, kein Fenster wird gefragt, und git
+   geht weiter zu seinem eigenen Prompt, der über Askpass bei `onPrompt`
+   landet.
    Ein `git push`, das der Nutzer im Terminal tippt (Launch-Token), bekommt
    nur für angemeldete Origins eine Antwort: sonst fragt git im Terminal,
    wo es hingehört.
@@ -1310,7 +1312,7 @@ selbst in `try/catch` rufen.
 | Gefälschte `COGNO:*`-Sequenz aus Programmausgabe | ✅ `COGNO_SESSION_TOKEN`-Prüfung mit Zähler (`session-model.ts`) |
 | Shell-Kontext wechselt (ssh/wsl/su) ohne Handshake | ✅ unbekannter Kontext in der Kontext-Zeitachse (`session-model.ts`) |
 | Prozess ohne Terminal fragt (ssh: Passphrase, Host-Key) | ✅ Prompt geht an den `onPrompt`-Handler des Laufs, sonst an den nackten Workbench-Dialog; Abbruch = fehlgeschlagener Lesevorgang, Prozessende schließt den Dialog (`askpass.rs`, `command-runner-host.service.ts`, `process-prompt.service.ts`) |
-| git braucht Zugangsdaten für einen Origin ohne Anmeldung | ✅ Anfrage geht an den `onCredential`-Handler des Laufs; ohne Handler passt der Helper und git fragt über Askpass; Ablehnen = `quit` (`http_server.rs`, `command-runner-host.service.ts`, `git-process-prompt.service.ts`) |
+| git braucht Zugangsdaten für einen Origin ohne Anmeldung | ✅ Anfrage geht an den `onCredential`-Handler des Laufs; ohne Handler antwortet der Helper nichts und git fragt über Askpass; Ablehnen = `quit` (`sign_ins/helper.rs`, `command-runner-host.service.ts`, `git-process-prompt.service.ts`) |
 | Refresh-Token abgelehnt oder Schlüsselbund-Eintrag fehlt | ✅ Origin gilt als abgemeldet, der nächste Lauf fragt neu (`sign_ins/mod.rs`, `sign_ins/store.rs`) |
 | Anbieter beim Erneuern nicht erreichbar | ✅ Anmeldung bleibt, der Lauf bekommt kein Token (`sign_ins/mod.rs`) |
 | Kein Schlüsselbund (Linux ohne Secret Service) | ✅ Anmeldung nur bis zum Beenden, im Dialog gesagt (`sign_ins/store.rs`) |

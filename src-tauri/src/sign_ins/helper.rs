@@ -1,12 +1,160 @@
-//! The helper side: this binary as git's credential helper, started by git as
-//! `cogno git-credential get|store|erase` (gitcredentials(7)). It reads what
-//! git asks on stdin, asks the running Cogno over the local server and prints
-//! the answer. It holds no token itself and exits 0 whatever happens: a
-//! helper that says nothing is one git simply moves past.
+//! Cogno as git's credential helper (gitcredentials(7)), both ends of it.
+//!
+//! The helper side: git starts this binary as `cogno git-credential
+//! get|store|erase`. It reads what git asks on stdin, asks the running Cogno
+//! over the local server and prints the answer. It holds no token itself and
+//! exits 0 whatever happens: a helper that says nothing is one git simply
+//! moves past.
+//!
+//! The server side (`answer`) decides what git gets. An origin signed in here
+//! gets its token from the backend alone. Any other origin is the business of
+//! the run that asked: its window signs in or takes a typed credential. Git
+//! typed in a terminal gets no answer for such an origin and asks there
+//! itself.
 
-use crate::commands::askpass::SESSION_ENV;
+use super::{git_config, now, Credential, SignIns};
+use crate::commands::askpass::{
+    ask_running_cogno, Answer, AskpassState, CredentialAnswer, Question, SESSION_ENV,
+};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Read;
+use std::sync::Mutex;
+use tauri::{AppHandle, Manager};
+
+/// How long a credential typed by hand is handed out again: one push must not
+/// ask for every fetch that follows.
+const TYPED_SECONDS: u64 = 60 * 60;
+
+/// What the helper asks the running Cogno.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Request {
+    /// The runner session; absent for git typed in a terminal.
+    pub session: Option<String>,
+    pub operation: String,
+    pub protocol: Option<String>,
+    pub host: Option<String>,
+    /// The credential git reports as rejected (`erase`).
+    pub password: Option<String>,
+}
+
+/// What git gets back.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum Reply {
+    Credential {
+        username: String,
+        password: String,
+    },
+    /// Git goes on as if this helper were not there: to the next helper, then
+    /// to its own prompt.
+    Nothing,
+    /// The person refused: git must not go on to ask through askpass.
+    Quit,
+}
+
+impl From<Credential> for Reply {
+    fn from(credential: Credential) -> Self {
+        Reply::Credential {
+            username: credential.username,
+            password: credential.password,
+        }
+    }
+}
+
+/// Credentials typed by hand, with the second they are forgotten at. Kept in
+/// memory only: whether one is stored for longer is up to the user's own
+/// helpers, which git calls after a successful access.
+#[derive(Default)]
+pub struct Typed(Mutex<HashMap<String, (Credential, u64)>>);
+
+impl Typed {
+    fn remember(&self, origin: &str, credential: Credential) {
+        self.0
+            .lock()
+            .unwrap()
+            .insert(origin.to_string(), (credential, now() + TYPED_SECONDS));
+    }
+
+    fn get(&self, origin: &str) -> Option<Credential> {
+        let mut typed = self.0.lock().unwrap();
+        match typed.get(origin) {
+            Some((credential, until)) if *until > now() => Some(credential.clone()),
+            Some(_) => {
+                typed.remove(origin);
+                None
+            }
+            None => None,
+        }
+    }
+
+    /// Git reported `password` as rejected for `origin`.
+    fn forget(&self, origin: &str, password: &str) {
+        let mut typed = self.0.lock().unwrap();
+        if typed
+            .get(origin)
+            .is_some_and(|(credential, _)| credential.password == password)
+        {
+            typed.remove(origin);
+        }
+    }
+}
+
+/// Answers the helper.
+pub async fn answer(app: &AppHandle, request: Request) -> Reply {
+    let (Some(protocol), Some(host)) = (&request.protocol, &request.host) else {
+        return Reply::Nothing;
+    };
+    let Some(origin) = git_config::origin_of(protocol, host) else {
+        return Reply::Nothing;
+    };
+    let sign_ins = app.state::<SignIns>();
+    let typed = app.state::<Typed>();
+    let askpass = app.state::<AskpassState>();
+
+    if request.operation == "erase" {
+        if let Some(session) = &request.session {
+            askpass.note_credential_rejected(session, &origin);
+        }
+        if let Some(password) = &request.password {
+            typed.forget(&origin, password);
+            sign_ins.rejected(&origin, password).await;
+        }
+        return Reply::Nothing;
+    }
+
+    if let Some(credential) = sign_ins.credential(&origin).await {
+        return credential.into();
+    }
+    if let Some(credential) = typed.get(&origin) {
+        return credential.into();
+    }
+    let Some(session) = request
+        .session
+        .filter(|session| askpass.answers_credentials(session))
+    else {
+        return Reply::Nothing;
+    };
+    match askpass
+        .ask(app, &session, Question::Credential(origin.clone()))
+        .await
+    {
+        // The run is over or its window is gone: nobody to ask.
+        None => Reply::Nothing,
+        Some(Some(Answer::Credential(CredentialAnswer::SignedIn))) => {
+            match sign_ins.credential(&origin).await {
+                Some(credential) => credential.into(),
+                None => Reply::Quit,
+            }
+        }
+        Some(Some(Answer::Credential(CredentialAnswer::Typed { username, password }))) => {
+            let credential = Credential { username, password };
+            typed.remember(&origin, credential.clone());
+            credential.into()
+        }
+        Some(_) => Reply::Quit,
+    }
+}
 
 /// What git wrote: `key=value` lines up to an empty one.
 fn parse(input: &str) -> HashMap<String, String> {
@@ -20,21 +168,16 @@ fn parse(input: &str) -> HashMap<String, String> {
 
 /// What git reads back. A value with a line break could smuggle a second
 /// attribute in, so such an answer is not given at all.
-fn render(answer: &serde_json::Value) -> String {
-    let mut output = String::new();
-    for key in ["username", "password"] {
-        if let Some(value) = answer.get(key).and_then(|value| value.as_str()) {
-            if value.contains(['\n', '\r', '\0']) {
-                return String::new();
-            }
-            output.push_str(&format!("{key}={value}\n"));
+fn render(reply: &Reply) -> String {
+    match reply {
+        Reply::Credential { username, password }
+            if !format!("{username}{password}").contains(['\n', '\r', '\0']) =>
+        {
+            format!("username={username}\npassword={password}\n")
         }
+        Reply::Credential { .. } | Reply::Nothing => String::new(),
+        Reply::Quit => "quit=1\n".to_string(),
     }
-    // The person refused: git must not go on to ask through askpass.
-    if answer.get("quit").and_then(|value| value.as_bool()) == Some(true) {
-        output.push_str("quit=1\n");
-    }
-    output
 }
 
 pub fn run_helper(operation: &str) -> i32 {
@@ -44,42 +187,38 @@ pub fn run_helper(operation: &str) -> i32 {
     if operation != "get" && operation != "erase" {
         return 0;
     }
-    let Ok(port) = std::env::var("COGNO_PORT") else {
-        return 0;
+    let mut asked = parse(&input);
+    let request = Request {
+        session: std::env::var(SESSION_ENV).ok(),
+        operation: operation.to_string(),
+        protocol: asked.remove("protocol"),
+        host: asked.remove("host"),
+        password: asked.remove("password"),
     };
-    let token = std::env::var("COGNO_TOKEN").unwrap_or_default();
-    let asked = parse(&input);
-    let body = serde_json::json!({
-        // A run of the command runner; absent for git typed in a terminal.
-        "session": std::env::var(SESSION_ENV).ok(),
-        "operation": operation,
-        "protocol": asked.get("protocol"),
-        "host": asked.get("host"),
-        "password": asked.get("password"),
-    });
-    let Ok(client) = reqwest::blocking::Client::builder()
-        // A sign-in in the browser may take a while.
-        .timeout(std::time::Duration::from_secs(60 * 60))
-        .build()
-    else {
+    // A rejection matters to the run it happened in, or by the credential
+    // that was rejected; with neither there is nothing to tell.
+    if operation == "erase" && request.session.is_none() && request.password.is_none() {
         return 0;
-    };
-    let Ok(response) = client
-        .post(format!("http://127.0.0.1:{port}/credential"))
-        .header(crate::http_server::TOKEN_HEADER, token)
-        .json(&body)
-        .send()
-    else {
-        return 0;
-    };
-    let answer: serde_json::Value = response.json().unwrap_or_default();
-    print!("{}", render(&answer));
+    }
+    let reply = ask_running_cogno("credential", &serde_json::json!(request))
+        .and_then(|answer| serde_json::from_value::<Reply>(answer).ok())
+        .unwrap_or(Reply::Nothing);
+    print!("{}", render(&reply));
     0
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const ORIGIN: &str = "https://gitlab.com";
+
+    fn credential(password: &str) -> Credential {
+        Credential {
+            username: "me".into(),
+            password: password.into(),
+        }
+    }
 
     #[test]
     fn reads_gits_attributes_up_to_the_empty_line() {
@@ -102,18 +241,53 @@ mod tests {
     #[test]
     fn prints_what_git_reads_back() {
         assert_eq!(
-            render(&serde_json::json!({ "username": "oauth2", "password": "token" })),
-            "username=oauth2\npassword=token\n"
+            render(&Reply::from(credential("token"))),
+            "username=me\npassword=token\n"
         );
-        assert_eq!(render(&serde_json::json!({})), "");
-        assert_eq!(render(&serde_json::json!({ "quit": true })), "quit=1\n");
+        assert_eq!(render(&Reply::Nothing), "");
+        assert_eq!(render(&Reply::Quit), "quit=1\n");
     }
 
     #[test]
     fn an_answer_that_would_add_a_line_is_not_given() {
-        assert_eq!(
-            render(&serde_json::json!({ "username": "me\nquit=1", "password": "x" })),
-            ""
-        );
+        assert_eq!(render(&Reply::from(credential("x\nquit=1"))), "");
+    }
+
+    #[test]
+    fn a_reply_reads_the_same_on_both_ends() {
+        for reply in [
+            Reply::from(credential("token")),
+            Reply::Nothing,
+            Reply::Quit,
+        ] {
+            let wire = serde_json::json!(reply);
+            assert_eq!(serde_json::from_value::<Reply>(wire).unwrap(), reply);
+        }
+    }
+
+    #[test]
+    fn a_typed_credential_is_handed_out_until_git_reports_it_rejected() {
+        let typed = Typed::default();
+        typed.remember(ORIGIN, credential("token"));
+
+        assert_eq!(typed.get(ORIGIN), Some(credential("token")));
+        typed.forget(ORIGIN, "another");
+        assert_eq!(typed.get(ORIGIN), Some(credential("token")));
+
+        typed.forget(ORIGIN, "token");
+        assert_eq!(typed.get(ORIGIN), None);
+    }
+
+    #[test]
+    fn a_typed_credential_is_forgotten_when_its_time_is_up() {
+        let typed = Typed::default();
+        typed
+            .0
+            .lock()
+            .unwrap()
+            .insert(ORIGIN.to_string(), (credential("token"), now() - 1));
+
+        assert_eq!(typed.get(ORIGIN), None);
+        assert!(typed.0.lock().unwrap().is_empty());
     }
 }

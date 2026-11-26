@@ -7,7 +7,7 @@ import { DialogService } from "@cogno/shared/ui";
 import { GitRemoteAccessService } from "./git-remote-access.service";
 import { GitRunHandlers } from "./git-run";
 import { GitViewState } from "./git-view-state.service";
-import { gitHost, knownGitHost } from "./hosts/git-hosts";
+import { gitHostFor } from "./hosts/git-hosts";
 import { classifyGitPrompt, GitPrompt } from "./model/git-process-prompt";
 import { hostOf } from "./model/git-remote-url";
 import {
@@ -65,8 +65,7 @@ export class GitProcessPromptService {
     request: ProcessCredentialRequest,
   ): Promise<ProcessCredentialAnswer | "other" | undefined> {
     const host = hostOf(request.origin) ?? request.origin;
-    // A host nobody owns outright is what the person said it is, once they did.
-    const definition = knownGitHost(host) ?? gitHost(this.view.hosts()[host] ?? "other");
+    const definition = gitHostFor(host, this.view.hosts());
     const ref = this.dialogs.open<GitCredentialDialogData, GitCredentialDialogResult>(
       GitCredentialDialogComponent,
       {

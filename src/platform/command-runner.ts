@@ -13,13 +13,16 @@ export type CommandRunnerExecuteResult = {
 export class CommandRunner {
   /**
    * `stdin`, when given, is written to the process and closed. Prompts the
-   * process raises (see `AskpassRequests`) carry `promptSession`.
+   * process raises (see `AskpassRequests`) carry `promptSession`;
+   * `answersCredentials` says whether somebody answers its credential
+   * requests - without, git goes on to its own prompt.
    */
   execute(
     program: string,
     args: readonly string[],
     cwd: string,
     promptSession: string,
+    answersCredentials: boolean,
     timeoutMs?: number,
     stdin?: string,
   ): Promise<CommandRunnerExecuteResult> {
@@ -28,6 +31,7 @@ export class CommandRunner {
       args: [...args],
       cwd,
       promptSession,
+      answersCredentials,
       timeoutMs,
       stdin,
     });

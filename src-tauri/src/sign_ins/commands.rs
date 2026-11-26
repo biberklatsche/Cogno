@@ -37,11 +37,9 @@ pub fn sign_ins_cancel(sign_ins: State<'_, SignIns>, origin: String) {
 }
 
 #[tauri::command]
-pub async fn sign_ins_sign_out(
-    sign_ins: State<'_, SignIns>,
-    origin: String,
-) -> Result<bool, String> {
-    Ok(sign_ins.sign_out(&origin).await)
+pub async fn sign_ins_sign_out(sign_ins: State<'_, SignIns>, origin: String) -> Result<(), String> {
+    sign_ins.sign_out(&origin).await;
+    Ok(())
 }
 
 #[tauri::command]

@@ -110,7 +110,7 @@ describe("GitProcessPromptService", () => {
     expect(await answered).toBe("secret");
     expect(open).toHaveBeenCalledWith(
       GitProcessPromptDialogComponent,
-      expect.objectContaining({ data: expect.objectContaining({ kind: "passphrase" }) }),
+      expect.objectContaining({ data: expect.objectContaining({ confirm: false }) }),
     );
   });
 });

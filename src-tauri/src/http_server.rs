@@ -180,21 +180,6 @@ pub struct AskpassPayload {
     pub prompt: String,
 }
 
-/// What git's credential helper asks (`sign_ins/helper.rs`).
-#[derive(Debug, Clone, Deserialize)]
-pub struct CredentialPayload {
-    /// The runner session; absent for git typed in a terminal.
-    pub session: Option<String>,
-    pub operation: String,
-    pub protocol: Option<String>,
-    pub host: Option<String>,
-    /// The credential git reports as rejected (`erase`).
-    pub password: Option<String>,
-}
-
-/// How long a prompt may stay open before the helper gives up.
-const ASKPASS_WAIT: std::time::Duration = std::time::Duration::from_secs(30 * 60);
-
 /// The header every request carries the launch token in.
 pub const TOKEN_HEADER: &str = "x-cogno-token";
 
@@ -394,20 +379,13 @@ pub fn start_http_server(
                             return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
                         }
                         let question = crate::commands::askpass::Question::Prompt(payload.prompt);
-                        let Some((request_id, receiver)) = askpass.request(&app, &payload.session, question) else {
+                        let Some(answered) = askpass.ask(&app, &payload.session, question).await else {
                             log::warn!(target: "http_server", "POST /askpass: unknown session or closed window");
                             return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "unknown session" })));
                         };
-                        // The user may take a while; the helper waits, and the runner's timeout pauses.
-                        let answer = match tokio::time::timeout(ASKPASS_WAIT, receiver).await {
-                            Ok(received) => match received.ok().flatten() {
-                                Some(crate::commands::askpass::Answer::Text(text)) => Some(text),
-                                _ => None,
-                            },
-                            Err(_) => {
-                                askpass.expire(&app, &request_id);
-                                None
-                            }
+                        let answer = match answered {
+                            Some(crate::commands::askpass::Answer::Text(text)) => Some(text),
+                            _ => None,
                         };
                         (StatusCode::OK, Json(serde_json::json!({ "answer": answer })))
                     }
@@ -415,7 +393,7 @@ pub fn start_http_server(
             )
             .route(
                 "/credential",
-                post(move |headers: axum::http::HeaderMap, result: Result<Json<CredentialPayload>, JsonRejection>| {
+                post(move |headers: axum::http::HeaderMap, result: Result<Json<crate::sign_ins::helper::Request>, JsonRejection>| {
                     let app = app_credential.clone();
                     let launch_authorized = is_authorized(&headers, &token_for_credential, actual_port);
                     async move {
@@ -437,8 +415,8 @@ pub fn start_http_server(
                             log::warn!(target: "http_server", "POST /credential rejected: missing or wrong token");
                             return (StatusCode::FORBIDDEN, Json(serde_json::json!({ "error": "forbidden" })));
                         }
-                        let answer = answer_credential(&app, payload).await;
-                        (StatusCode::OK, Json(answer))
+                        let reply = crate::sign_ins::helper::answer(&app, payload).await;
+                        (StatusCode::OK, Json(serde_json::json!(reply)))
                     }
                 }),
             );
@@ -453,71 +431,6 @@ pub fn start_http_server(
     });
 
     Ok(actual_port)
-}
-
-/// Answers git's credential helper. An origin signed in here gets its token
-/// from the backend alone. Any other origin is the business of the run that
-/// asked: its window signs in or takes a typed credential. Git typed in a
-/// terminal gets no answer for such an origin and asks there itself.
-async fn answer_credential(app: &AppHandle, payload: CredentialPayload) -> serde_json::Value {
-    use crate::commands::askpass::{Answer, AskpassState, CredentialAnswer, Question};
-    use crate::sign_ins::{git_config, SignIns};
-
-    let nothing = serde_json::json!({});
-    let (Some(protocol), Some(host)) = (&payload.protocol, &payload.host) else {
-        return nothing;
-    };
-    let Some(origin) = git_config::origin_of(protocol, host) else {
-        return nothing;
-    };
-    let sign_ins = app.state::<SignIns>();
-    let askpass = app.state::<AskpassState>();
-    let credential = |credential: crate::sign_ins::Credential| serde_json::json!({ "username": credential.username, "password": credential.password });
-
-    if payload.operation == "erase" {
-        if let Some(session) = &payload.session {
-            askpass.note_credential_rejected(session, &origin);
-        }
-        if let Some(password) = &payload.password {
-            sign_ins.rejected(&origin, password).await;
-        }
-        return nothing;
-    }
-
-    if let Some(found) = sign_ins.credential(&origin).await {
-        return credential(found);
-    }
-    let Some(session) = &payload.session else {
-        return nothing;
-    };
-    let Some((request_id, receiver)) =
-        askpass.request(app, session, Question::Credential(origin.clone()))
-    else {
-        return nothing;
-    };
-    let answer = match tokio::time::timeout(ASKPASS_WAIT, receiver).await {
-        Ok(received) => received.ok().flatten(),
-        Err(_) => {
-            askpass.expire(app, &request_id);
-            None
-        }
-    };
-    match answer {
-        Some(Answer::Credential(CredentialAnswer::SignedIn)) => {
-            match sign_ins.credential(&origin).await {
-                Some(found) => credential(found),
-                None => serde_json::json!({ "quit": true }),
-            }
-        }
-        Some(Answer::Credential(CredentialAnswer::Typed { username, password })) => {
-            let typed = crate::sign_ins::Credential { username, password };
-            sign_ins.remember_typed(&origin, typed.clone());
-            credential(typed)
-        }
-        Some(Answer::Credential(CredentialAnswer::Pass)) => nothing,
-        // Refused or never answered: git must not go on to ask through askpass.
-        _ => serde_json::json!({ "quit": true }),
-    }
 }
 
 /// Binds and records the port. Every failure hands the claim back, so the

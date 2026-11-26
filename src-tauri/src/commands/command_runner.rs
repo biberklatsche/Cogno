@@ -42,7 +42,9 @@ pub struct CommandRunnerResult {
 /// and closed. The process gets no terminal; whatever it would ask on one
 /// (git credentials, an ssh passphrase, a host key) reaches the window that
 /// started it through the askpass helper instead, tagged with the caller's
-/// `prompt_session` so the window knows which run is asking. `timeout_ms`
+/// `prompt_session` so the window knows which run is asking.
+/// `answers_credentials` says whether that run has somebody for git's
+/// credential requests; without, git goes on to its own prompt. `timeout_ms`
 /// is idle time: the process is ended once it has neither produced output
 /// nor had a prompt open for that long, so a transfer that reports progress
 /// may take as long as it takes.
@@ -58,6 +60,7 @@ pub async fn command_runner_execute(
     timeout_ms: Option<u64>,
     stdin: Option<String>,
     prompt_session: String,
+    answers_credentials: bool,
 ) -> Result<CommandRunnerResult, String> {
     let mut command = Command::new(program);
     command.current_dir(cwd).args(args);
@@ -66,9 +69,9 @@ pub async fn command_runner_execute(
     command.creation_flags(CREATE_NO_WINDOW);
 
     let session_id = prompt_session;
-    let askpass_token = app
-        .state::<AskpassState>()
-        .open_session(&session_id, window.label());
+    let askpass_token =
+        app.state::<AskpassState>()
+            .open_session(&session_id, window.label(), answers_credentials);
     // Bounded like the shell spawn: the login shell is normally captured long
     // before the first run; if it hangs, run with the process PATH instead.
     let login_path = super::login_environment::get_login_environment(Duration::from_secs(2)).path;
@@ -130,9 +133,8 @@ fn apply_prompt_environment(
     command.env("COGNO_PORT", http.port().to_string());
     command.env("COGNO_TOKEN", askpass_token);
     // Git asks this binary for credentials too (sign_ins/git_config.rs).
-    let credential_environment = crate::sign_ins::git_config::environment(
-        app.state::<crate::sign_ins::SignIns>().cogno_home(),
-        &helper,
+    let credential_environment = crate::sign_ins::git_config::environment_for(
+        app,
         std::env::var("GIT_CONFIG_COUNT").ok().as_deref(),
     );
     for (key, value) in &credential_environment {

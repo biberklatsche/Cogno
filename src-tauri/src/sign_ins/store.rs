@@ -10,7 +10,7 @@
 //! held in memory until Cogno exits and never reaches the index.
 
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
@@ -96,37 +96,16 @@ impl Secrets for Keychain {
     }
 }
 
-#[derive(Default)]
-struct Memory(Mutex<HashMap<String, String>>);
-
-impl Secrets for Memory {
-    fn get(&self, key: &str) -> Result<Option<String>, String> {
-        Ok(self.0.lock().unwrap().get(key).cloned())
-    }
-
-    fn set(&self, key: &str, value: &str) -> Result<(), String> {
-        self.0
-            .lock()
-            .unwrap()
-            .insert(key.to_string(), value.to_string());
-        Ok(())
-    }
-
-    fn delete(&self, key: &str) {
-        self.0.lock().unwrap().remove(key);
-    }
-}
-
 struct Held {
     sign_in: SignIn,
-    /// In the keychain and the index; `false` for one held until Cogno exits.
-    persistent: bool,
+    /// The tokens, when the keychain did not take them: the sign-in then
+    /// lasts until Cogno exits. `None` for one in the keychain and the index.
+    in_memory: Option<Tokens>,
 }
 
 pub struct Store {
     index_path: PathBuf,
     keychain: Box<dyn Secrets>,
-    memory: Memory,
     held: Mutex<BTreeMap<String, Held>>,
 }
 
@@ -153,7 +132,7 @@ impl Store {
                     origin,
                     Held {
                         sign_in,
-                        persistent: true,
+                        in_memory: None,
                     },
                 )
             })
@@ -161,7 +140,6 @@ impl Store {
         Self {
             index_path,
             keychain,
-            memory: Memory::default(),
             held: Mutex::new(held),
         }
     }
@@ -172,61 +150,58 @@ impl Store {
             .lock()
             .unwrap()
             .iter()
-            .map(|(origin, held)| (origin.clone(), held.persistent))
+            .map(|(origin, held)| (origin.clone(), held.in_memory.is_none()))
             .collect()
+    }
+
+    /// Whether anybody is signed in to `origin`, without asking the keychain.
+    pub fn contains(&self, origin: &str) -> bool {
+        self.held.lock().unwrap().contains_key(origin)
     }
 
     /// Keeps a sign-in, replacing the one before. Returns whether the keychain
     /// took it; if not, it is held in memory until Cogno exits.
     pub fn put(&self, origin: &str, sign_in: SignIn, tokens: &Tokens) -> bool {
-        self.forget_secrets(origin);
-        let persistent = self.write(self.keychain.as_ref(), origin, tokens).is_ok();
+        let persistent = self.write(origin, tokens).is_ok();
         if !persistent {
             // A half-written pair must not look like a sign-in on the next start.
-            self.keychain.delete(&access_key(origin));
-            self.keychain.delete(&refresh_key(origin));
-            let _ = self.write(&self.memory, origin, tokens);
+            self.forget_secrets(origin);
         }
         self.held.lock().unwrap().insert(
             origin.to_string(),
             Held {
                 sign_in,
-                persistent,
+                in_memory: (!persistent).then(|| tokens.clone()),
             },
         );
         self.save_index();
         persistent
     }
 
-    fn write(&self, secrets: &dyn Secrets, origin: &str, tokens: &Tokens) -> Result<(), String> {
-        secrets.set(&access_key(origin), &tokens.access)?;
+    fn write(&self, origin: &str, tokens: &Tokens) -> Result<(), String> {
+        self.keychain.set(&access_key(origin), &tokens.access)?;
         match &tokens.refresh {
-            Some(refresh) => secrets.set(&refresh_key(origin), refresh),
+            Some(refresh) => self.keychain.set(&refresh_key(origin), refresh),
             None => {
-                secrets.delete(&refresh_key(origin));
+                self.keychain.delete(&refresh_key(origin));
                 Ok(())
             }
         }
     }
 
-    /// The sign-in of an origin with its tokens. An origin whose access token
-    /// is gone from the keychain is signed out here.
-    pub fn get(&self, origin: &str) -> Option<(SignIn, Tokens)> {
-        let (sign_in, persistent) = {
+    /// The sign-in of an origin with its access token. An origin whose access
+    /// token is gone from the keychain is signed out here.
+    pub fn get(&self, origin: &str) -> Option<(SignIn, String)> {
+        let (sign_in, in_memory) = {
             let held = self.held.lock().unwrap();
             let entry = held.get(origin)?;
-            (entry.sign_in.clone(), entry.persistent)
+            (entry.sign_in.clone(), entry.in_memory.clone())
         };
-        let secrets: &dyn Secrets = if persistent {
-            self.keychain.as_ref()
-        } else {
-            &self.memory
-        };
-        match secrets.get(&access_key(origin)) {
-            Ok(Some(access)) => {
-                let refresh = secrets.get(&refresh_key(origin)).ok().flatten();
-                Some((sign_in, Tokens { access, refresh }))
-            }
+        if let Some(tokens) = in_memory {
+            return Some((sign_in, tokens.access));
+        }
+        match self.keychain.get(&access_key(origin)) {
+            Ok(Some(access)) => Some((sign_in, access)),
             Ok(None) => {
                 self.remove(origin);
                 None
@@ -237,6 +212,15 @@ impl Store {
                 log::warn!(target: "sign_ins", "keychain read for {origin} failed: {error}");
                 None
             }
+        }
+    }
+
+    /// The refresh token of an origin; read only when a token is renewed.
+    pub fn refresh_token(&self, origin: &str) -> Option<String> {
+        let in_memory = self.held.lock().unwrap().get(origin)?.in_memory.clone();
+        match in_memory {
+            Some(tokens) => tokens.refresh,
+            None => self.keychain.get(&refresh_key(origin)).ok().flatten(),
         }
     }
 
@@ -251,10 +235,8 @@ impl Store {
     }
 
     fn forget_secrets(&self, origin: &str) {
-        for key in [access_key(origin), refresh_key(origin)] {
-            self.keychain.delete(&key);
-            self.memory.delete(&key);
-        }
+        self.keychain.delete(&access_key(origin));
+        self.keychain.delete(&refresh_key(origin));
     }
 
     fn save_index(&self) {
@@ -263,7 +245,7 @@ impl Store {
             .lock()
             .unwrap()
             .iter()
-            .filter(|(_, held)| held.persistent)
+            .filter(|(_, held)| held.in_memory.is_none())
             .map(|(origin, held)| (origin.clone(), held.sign_in.clone()))
             .collect();
         if let Err(error) = write_private(
@@ -293,6 +275,7 @@ pub fn write_private(path: &std::path::Path, content: &str) -> io::Result<()> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use std::collections::HashMap;
     use std::sync::Arc;
 
     /// A keychain that can be told to refuse, and that outlives a store.
@@ -365,7 +348,11 @@ pub mod tests {
         let index = fs::read_to_string(home.join(INDEX_FILE)).unwrap();
         assert!(!index.contains("access\"") && !index.contains("refresh\""));
         let reopened = Store::open(home.clone(), Box::new(keychain));
-        assert_eq!(reopened.get(ORIGIN), Some((sign_in(), tokens())));
+        assert_eq!(
+            reopened.get(ORIGIN),
+            Some((sign_in(), "access".to_string()))
+        );
+        assert_eq!(reopened.refresh_token(ORIGIN), Some("refresh".to_string()));
         fs::remove_dir_all(home).unwrap();
     }
 
@@ -395,7 +382,9 @@ pub mod tests {
 
         assert!(!store.put(ORIGIN, sign_in(), &tokens()));
 
-        assert_eq!(store.get(ORIGIN), Some((sign_in(), tokens())));
+        assert_eq!(store.get(ORIGIN), Some((sign_in(), "access".to_string())));
+        assert_eq!(store.refresh_token(ORIGIN), Some("refresh".to_string()));
+        assert!(keychain.entries.lock().unwrap().is_empty());
         assert_eq!(store.origins(), vec![(ORIGIN.to_string(), false)]);
         assert!(Store::open(home.clone(), Box::new(keychain))
             .origins()
@@ -433,7 +422,8 @@ pub mod tests {
             },
         );
 
-        assert_eq!(store.get(ORIGIN).unwrap().1.refresh, None);
+        assert_eq!(store.get(ORIGIN).unwrap().1, "next");
+        assert_eq!(store.refresh_token(ORIGIN), None);
         fs::remove_dir_all(home).unwrap();
     }
 }

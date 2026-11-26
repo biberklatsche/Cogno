@@ -3,6 +3,7 @@ import { ProcessCredentialAnswer } from "@cogno/core/api/command-runner-port";
 import { SignInProvider } from "@cogno/platform";
 import { DIALOG_DATA, DialogRef } from "@cogno/shared/ui";
 import { GitSignInComponent } from "./git-sign-in.component";
+import { GIT_SHARED_STYLES } from "./git-styles";
 
 export type GitCredentialDialogData = {
   /** `https://host[:port]`, as git asked for it. */
@@ -46,7 +47,7 @@ export type GitCredentialDialogResult = ProcessCredentialAnswer | "other";
           <span>Username</span>
           <input
             #username
-            class="field"
+            class="text-input"
             type="text"
             spellcheck="false"
             autocomplete="off"
@@ -59,7 +60,7 @@ export type GitCredentialDialogResult = ProcessCredentialAnswer | "other";
           <span>Token</span>
           <input
             #password
-            class="field"
+            class="text-input"
             type="password"
             autocomplete="off"
             [value]="secret()"
@@ -78,6 +79,7 @@ export type GitCredentialDialogResult = ProcessCredentialAnswer | "other";
     </div>
   `,
   styles: [
+    GIT_SHARED_STYLES,
     `
       .credential,
       .typed {
@@ -95,25 +97,13 @@ export type GitCredentialDialogResult = ProcessCredentialAnswer | "other";
       }
       .or {
         padding-top: 0.75rem;
-        border-top: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
+        border-top: 1px solid var(--git-border);
         color: color-mix(in srgb, var(--foreground-color) var(--opacity-strong), transparent);
       }
       label {
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
-      }
-      .field {
-        background: var(--background-color);
-        color: var(--foreground-color);
-        border: 1px solid color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-2)), var(--background-color));
-        border-radius: var(--button-border-radius);
-        padding: 0.4rem 0.5rem;
-        font: inherit;
-      }
-      .field:focus {
-        outline: none;
-        border-color: var(--highlight-color);
       }
       .actions {
         display: flex;

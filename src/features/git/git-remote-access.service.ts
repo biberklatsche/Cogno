@@ -4,7 +4,7 @@ import { isWslShellContext } from "@cogno/shared/domain";
 import { DialogService } from "@cogno/shared/ui";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitViewState } from "./git-view-state.service";
-import { GitAccessPlatform, GitAccessSituation, knownGitHost } from "./hosts/git-hosts";
+import { GitAccessPlatform, GitAccessSituation, gitHostFor, knownGitHost } from "./hosts/git-hosts";
 import { credentialUrlOf, hostOf, isSshUrl } from "./model/git-remote-url";
 import { GitAccessDialogComponent, GitAccessDialogData } from "./ui/git-access-dialog.component";
 
@@ -34,20 +34,19 @@ export class GitRemoteAccessService {
     const host = hostOf(url);
     const session = this.repository.currentSession();
     if (!host || !session) return;
-    const known = knownGitHost(host);
-    const remembered = this.view.hosts()[host];
+    const origin = credentialUrlOf(url) ?? `https://${host}`;
     const situation: GitAccessSituation = {
       host,
-      provider: known?.id ?? remembered ?? "other",
+      provider: gitHostFor(host, this.view.hosts()).id,
       platform: platformOf(session.shellContext),
       ssh: isSshUrl(url),
-      helpers: await this.helpersFor(credentialUrlOf(url) ?? `https://${host}`),
+      helpers: await this.helpersFor(origin),
     };
     const data: GitAccessDialogData = {
       situation,
-      origin: credentialUrlOf(url) ?? `https://${host}`,
+      origin,
       rejected: why.rejected === true,
-      askProvider: known === null,
+      askProvider: knownGitHost(host) === null,
       onProvider: (provider) => this.view.hosts.update((hosts) => ({ ...hosts, [host]: provider })),
       onInsert: (command) => this.insert(command),
     };

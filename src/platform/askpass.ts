@@ -15,8 +15,8 @@ export interface AskpassRequest {
 }
 
 /**
- * Git's credential helper asks for an origin nobody is signed in to: the run
- * that started git says who answers.
+ * Git's credential helper asks for an origin nobody is signed in to. Only a
+ * run that said it answers credential requests is asked.
  */
 export interface CredentialRequest {
   readonly requestId: string;
@@ -29,9 +29,7 @@ export type CredentialAnswer =
   /** The person signed in in the browser; the backend hands git the token. */
   | { readonly kind: "signed_in" }
   /** Typed by hand; git gets it as it is. */
-  | { readonly kind: "typed"; readonly username: string; readonly password: string }
-  /** Nobody here answers credential requests: git goes on to its own prompt. */
-  | { readonly kind: "pass" };
+  | { readonly kind: "typed"; readonly username: string; readonly password: string };
 
 @Injectable({ providedIn: "root" })
 export class AskpassRequests {

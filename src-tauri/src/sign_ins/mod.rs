@@ -30,9 +30,6 @@ use tokio::sync::oneshot;
 pub const CHANGED_EVENT: &str = "sign-ins-changed";
 /// How long the browser may take before a sign-in gives up.
 const BROWSER_WAIT: Duration = Duration::from_secs(10 * 60);
-/// How long a credential typed by hand is handed out again: one push must not
-/// ask for every fetch that follows. Kept in memory only.
-const TYPED_SECONDS: u64 = 60 * 60;
 /// A token this close to running out is refreshed before git gets it: a push
 /// must not start with a token that expires while it runs.
 const REFRESH_MARGIN_SECONDS: u64 = 120;
@@ -61,12 +58,10 @@ pub struct SignIns {
     locks: Mutex<HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
     /// Sign-ins waiting for the browser; sending ends the wait.
     waiting: Mutex<HashMap<String, oneshot::Sender<()>>>,
-    /// Credentials typed by hand, with the second they are forgotten at.
-    typed: Mutex<HashMap<String, (Credential, u64)>>,
     on_change: ChangeListener,
 }
 
-fn now() -> u64 {
+pub(crate) fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|elapsed| elapsed.as_secs())
@@ -93,6 +88,7 @@ pub fn manage(app: &tauri::AppHandle) {
         .unwrap_or_else(|_| std::env::temp_dir().join("cogno"));
     let store = Store::open(cogno_home.clone(), Box::new(store::Keychain::new(dev_mode)));
     let windows = app.clone();
+    app.manage(helper::Typed::default());
     app.manage(SignIns::open(
         cogno_home,
         store,
@@ -110,14 +106,13 @@ impl SignIns {
             store: Arc::new(store),
             locks: Mutex::new(HashMap::new()),
             waiting: Mutex::new(HashMap::new()),
-            typed: Mutex::new(HashMap::new()),
             on_change,
         };
         sign_ins.write_git_config();
         sign_ins
     }
 
-    pub fn cogno_home(&self) -> &std::path::Path {
+    pub(crate) fn cogno_home(&self) -> &std::path::Path {
         &self.cogno_home
     }
 
@@ -188,14 +183,20 @@ impl SignIns {
         ))
     }
 
-    async fn drop_sign_in(&self, origin: &str) -> bool {
+    async fn drop_sign_in(&self, origin: &str) {
         let store = self.store.clone();
         let key = origin.to_string();
-        let removed = blocking(move || store.remove(&key)).await.unwrap_or(false);
-        if removed {
+        if blocking(move || store.remove(&key)).await == Some(true) {
             self.changed();
         }
-        removed
+    }
+
+    /// The sign-in of `origin` with its access token, read off the runtime's
+    /// threads: the keychain may take its time.
+    async fn stored(&self, origin: &str) -> Option<(SignIn, String)> {
+        let store = self.store.clone();
+        let key = origin.to_string();
+        blocking(move || store.get(&key)).await?
     }
 
     /// Signs in to `origin` in the browser. `open` shows the page; the wait
@@ -259,83 +260,58 @@ impl SignIns {
         }
     }
 
-    pub async fn sign_out(&self, origin: &str) -> bool {
+    pub async fn sign_out(&self, origin: &str) {
         let Some(origin) = git_config::normalize_origin(origin) else {
-            return false;
+            return;
         };
         let lock = self.lock_of(&origin);
         let _one_at_a_time = lock.lock().await;
-        self.drop_sign_in(&origin).await
-    }
-
-    /// A credential the person typed for `origin` is handed out again for a
-    /// while. Whether it is stored for longer is up to the user's own helpers,
-    /// which git calls after a successful access.
-    pub fn remember_typed(&self, origin: &str, credential: Credential) {
-        self.typed
-            .lock()
-            .unwrap()
-            .insert(origin.to_string(), (credential, now() + TYPED_SECONDS));
-    }
-
-    fn typed_for(&self, origin: &str) -> Option<Credential> {
-        let mut typed = self.typed.lock().unwrap();
-        match typed.get(origin) {
-            Some((credential, until)) if *until > now() => Some(credential.clone()),
-            Some(_) => {
-                typed.remove(origin);
-                None
-            }
-            None => None,
-        }
+        self.drop_sign_in(&origin).await;
     }
 
     /// What git gets for `origin`: the token, refreshed first when it is about
-    /// to run out, or what the person typed a moment ago. `None` when nobody
-    /// is signed in there, or not any more.
+    /// to run out. `None` when nobody is signed in there, or not any more.
     pub async fn credential(&self, origin: &str) -> Option<Credential> {
+        // Git asks for every host no other helper knows: most are not ours,
+        // and those need neither the lock nor the keychain.
+        if !self.store.contains(origin) {
+            return None;
+        }
         let lock = self.lock_of(origin);
         let _one_at_a_time = lock.lock().await;
-        let store = self.store.clone();
-        let key = origin.to_string();
-        let Some((sign_in, tokens)) = blocking(move || store.get(&key)).await? else {
-            return self.typed_for(origin);
-        };
+        let (sign_in, access) = self.stored(origin).await?;
         if !expires_soon(&sign_in) {
             return Some(Credential {
                 username: sign_in.provider.username,
-                password: tokens.access,
+                password: access,
             });
         }
-        self.renew(origin, sign_in, tokens).await
+        self.renew(origin, sign_in).await
     }
 
     /// Git reports the credential it used for `origin` as rejected. If that is
     /// the token handed out here, it is renewed once; an origin that cannot be
     /// renewed is signed out.
     pub async fn rejected(&self, origin: &str, password: &str) {
+        if !self.store.contains(origin) {
+            return;
+        }
         let lock = self.lock_of(origin);
         let _one_at_a_time = lock.lock().await;
-        self.typed
-            .lock()
-            .unwrap()
-            .retain(|typed_origin, (credential, _)| {
-                typed_origin != origin || credential.password != password
-            });
-        let store = self.store.clone();
-        let key = origin.to_string();
-        let Some(Some((sign_in, tokens))) = blocking(move || store.get(&key)).await else {
+        let Some((sign_in, access)) = self.stored(origin).await else {
             return;
         };
         // A token replaced in the meantime: the rejection is about the old one.
-        if tokens.access != password {
+        if access != password {
             return;
         }
-        self.renew(origin, sign_in, tokens).await;
+        self.renew(origin, sign_in).await;
     }
 
-    async fn renew(&self, origin: &str, sign_in: SignIn, tokens: Tokens) -> Option<Credential> {
-        let Some(refresh) = tokens.refresh else {
+    async fn renew(&self, origin: &str, sign_in: SignIn) -> Option<Credential> {
+        let store = self.store.clone();
+        let key = origin.to_string();
+        let Some(refresh) = blocking(move || store.refresh_token(&key)).await? else {
             log::info!(target: "sign_ins", "{origin}: the token is spent and cannot be renewed; signed out");
             self.drop_sign_in(origin).await;
             return None;
@@ -638,39 +614,6 @@ mod tests {
         assert_eq!(
             fixture.sign_ins.credential(ORIGIN).await.unwrap().password,
             "granted"
-        );
-    }
-
-    #[tokio::test]
-    async fn a_typed_credential_is_handed_out_until_git_reports_it_rejected() {
-        let fixture = fixture();
-        let typed = Credential {
-            username: "me".into(),
-            password: "token".into(),
-        };
-        fixture.sign_ins.remember_typed(ORIGIN, typed.clone());
-
-        assert_eq!(fixture.sign_ins.credential(ORIGIN).await, Some(typed));
-
-        fixture.sign_ins.rejected(ORIGIN, "token").await;
-        assert_eq!(fixture.sign_ins.credential(ORIGIN).await, None);
-    }
-
-    #[tokio::test]
-    async fn a_sign_in_comes_before_what_was_typed() {
-        let fixture = fixture();
-        fixture.sign_ins.remember_typed(
-            ORIGIN,
-            Credential {
-                username: "me".into(),
-                password: "typed".into(),
-            },
-        );
-        signed_in(&fixture, "http://127.0.0.1:1/unused", None, None).await;
-
-        assert_eq!(
-            fixture.sign_ins.credential(ORIGIN).await.unwrap().password,
-            "first"
         );
     }
 

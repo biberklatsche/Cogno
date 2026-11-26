@@ -48,11 +48,11 @@ describe("GitSignIns", () => {
     expect(await service.signIn("https://gitlab.com", provider)).toBe("The sign-in was cancelled.");
   });
 
-  it("hands a sign-in back as its status", async () => {
+  it("reports a stored sign-in as no failure", async () => {
     const { service, platform } = setup();
     platform.signIn.mockResolvedValue(gitlab);
 
-    expect(await service.signIn("https://gitlab.com", provider)).toEqual(gitlab);
+    expect(await service.signIn("https://gitlab.com", provider)).toBeNull();
     expect(platform.signIn).toHaveBeenCalledWith("https://gitlab.com", provider);
   });
 });

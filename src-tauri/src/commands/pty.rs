@@ -323,16 +323,10 @@ pub async fn pty_spawn(
         cmd.env("COGNO_TOKEN", http_server.token());
         // A `git push` typed here uses a sign-in made in Cogno: git includes
         // Cogno's config file and asks this binary (sign_ins/git_config.rs).
-        if let Ok(helper) = std::env::current_exe() {
-            let existing =
-                profile_git_config_count.or_else(|| std::env::var("GIT_CONFIG_COUNT").ok());
-            for (key, value) in crate::sign_ins::git_config::environment(
-                app.state::<crate::sign_ins::SignIns>().cogno_home(),
-                &helper,
-                existing.as_deref(),
-            ) {
-                cmd.env(key, value);
-            }
+        let existing = profile_git_config_count.or_else(|| std::env::var("GIT_CONFIG_COUNT").ok());
+        for (key, value) in crate::sign_ins::git_config::environment_for(&app, existing.as_deref())
+        {
+            cmd.env(key, value);
         }
     }
     cmd.env("COGNO_TERMINAL_ID", &terminal_id);
