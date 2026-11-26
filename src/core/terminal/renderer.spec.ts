@@ -26,13 +26,15 @@ vi.mock("@xterm/addon-fit", () => ({ FitAddon: vi.fn() }));
 vi.mock("@xterm/addon-search", () => ({ SearchAddon: vi.fn() }));
 vi.mock("@xterm/addon-unicode11", () => ({ Unicode11Addon: vi.fn() }));
 let webglUnavailable = false;
+let webglAddonOptions: unknown;
 
 vi.mock("@xterm/addon-webgl", () => ({
   WebglAddon: class WebglAddonMock {
     dispose = vi.fn();
 
-    constructor() {
+    constructor(options: unknown) {
       if (webglUnavailable) throw new Error("WebGL2 not supported");
+      webglAddonOptions = options;
       webglAddonDisposeSpy = this.dispose;
       webglContextLossDisposable = { dispose: vi.fn() };
     }
@@ -91,6 +93,10 @@ describe("Renderer", () => {
       expect.objectContaining({
         scrollback: 1000,
         tabStopWidth: 8,
+        scrollbar: {
+          width: 10,
+          overviewRuler: { showBottomBorder: false, showTopBorder: false },
+        },
       }),
     );
   });
@@ -168,6 +174,13 @@ describe("Renderer", () => {
       vi.mocked(Terminal).mock.results[vi.mocked(Terminal).mock.results.length - 1].value;
     expect(webglContextLossDisposable).toBeDefined();
     expect(terminalInstance.loadAddon).toHaveBeenCalled();
+  });
+
+  it("hands the custom glyphs option to the WebGL addon, which draws them", () => {
+    mockOptions = { ...mockOptions, webgl: true, customGlyphs: false };
+    renderer = new Renderer(mockOptions, "linux", new WebglContextPool());
+    renderer.setVisible(true);
+    expect(webglAddonOptions).toEqual({ customGlyphs: false });
   });
 
   it("should dispose WebGL addon on context loss", () => {

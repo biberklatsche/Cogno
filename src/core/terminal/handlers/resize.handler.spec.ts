@@ -52,6 +52,9 @@ describe("ResizeHandler", () => {
     } as unknown as IPty;
 
     container = document.createElement("div");
+    // happy-dom lays nothing out; the handler only fits a container that has a box.
+    Object.defineProperty(container, "clientWidth", { configurable: true, value: 800 });
+    Object.defineProperty(container, "clientHeight", { configurable: true, value: 480 });
 
     mockFitAddon = {
       proposeDimensions: vi.fn(),
@@ -191,6 +194,20 @@ describe("ResizeHandler", () => {
       expect(mockFitAddon.fit).not.toHaveBeenCalled();
       expect(stateManager.dimensions!.cols).toBe(80);
       expect(stateManager.dimensions!.rows).toBe(24);
+    });
+
+    it("fits nothing while the container has no box, whatever the fit addon proposes", () => {
+      Object.defineProperty(container, "clientHeight", { configurable: true, value: 0 });
+      vi.mocked(mockFitAddon.proposeDimensions).mockReturnValue({ cols: 2, rows: 1 });
+
+      handler.registerFitAddon(mockFitAddon);
+      handler.registerTerminal(mockTerminal);
+
+      handler.resize();
+      handler.fitTerminalWithoutPty();
+
+      expect(mockFitAddon.fit).not.toHaveBeenCalled();
+      expect(mockPty.resize).not.toHaveBeenCalled();
     });
 
     it("should throw error if terminal does not match proposed dimensions after fit", () => {
