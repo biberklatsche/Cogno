@@ -10,6 +10,7 @@ import { KeybindService } from "@cogno/core/workbench/keybindings/keybind.servic
 import { TauriMenu, TauriMenuItemHandle } from "@cogno/platform/native-menu";
 import { OsPlatform } from "@cogno/platform/os";
 import { AppWindow } from "@cogno/platform/window";
+import { fromEvent } from "rxjs";
 import { readFeatureConfig } from "../feature-host/feature-config";
 
 @Injectable({
@@ -38,6 +39,16 @@ export class NativeMenuService {
           await this.buildMenu();
         }
       });
+      // Edit > Paste clicked while a terminal has the keyboard would paste
+      // natively, past the session: it becomes Cogno's paste instead.
+      fromEvent(document, "paste", { capture: true })
+        .pipe(takeUntilDestroyed(ref))
+        .subscribe((event) => {
+          if (!(event.target instanceof Element && event.target.closest(".terminal.xterm"))) return;
+          event.preventDefault();
+          event.stopPropagation();
+          this.fire("paste");
+        });
     }
   }
 
@@ -73,6 +84,18 @@ export class NativeMenuService {
       ],
     });
 
+    // The system's own entries: without them macOS routes no Cmd+V, Cmd+C, Cmd+X,
+    // Cmd+A or Cmd+Z to a text field, so nothing could be pasted into a dialog.
+    // In the terminal these keys never get here: KeybindService keeps them.
+    const editSubmenu = await this.tauriMenu.newSubmenu({
+      text: "Edit",
+      items: await Promise.all(
+        (["Undo", "Redo", "Separator", "Cut", "Copy", "Paste", "SelectAll"] as const).map((item) =>
+          this.tauriMenu.newPredefinedItem({ item }),
+        ),
+      ),
+    });
+
     const sideMenuFeatureDefinitions = this.featureHost.getSideMenuFeatureDefinitions();
     const sortedSideMenuFeatureDefinitions = [...sideMenuFeatureDefinitions].sort(
       (firstFeatureDefinition, secondFeatureDefinition) =>
@@ -100,7 +123,7 @@ export class NativeMenuService {
     });
 
     const menu = await this.tauriMenu.new({
-      items: [appSubmenu, fileSubmenu, viewSubmenu, helpSubmenu],
+      items: [appSubmenu, fileSubmenu, editSubmenu, viewSubmenu, helpSubmenu],
     });
     await menu.setAsAppMenu();
   }
@@ -116,11 +139,13 @@ export class NativeMenuService {
       text,
       enabled,
       accelerator: this.keybindService.getKeybinding(actionName),
-      action: () => {
-        const actionDef = this.keybindService.getActionDefinition(actionName);
-        this.bus.publish(ActionFired.create(actionName, actionDef?.trigger, actionDef?.args));
-      },
+      action: () => this.fire(actionName),
     });
+  }
+
+  private fire(actionName: ActionName): void {
+    const actionDef = this.keybindService.getActionDefinition(actionName);
+    this.bus.publish(ActionFired.create(actionName, actionDef?.trigger, actionDef?.args));
   }
 
   /** A feature's entry is enabled unless its config says "off". */

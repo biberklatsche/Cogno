@@ -12,6 +12,9 @@ import { TerminalKeybindingContextService } from "./terminal-keybinding-context.
 
 type Key = string;
 
+/** With the primary modifier: select all, copy, paste, cut, undo (and redo, with Shift). */
+const NATIVE_EDIT_KEYS = ["a", "c", "v", "x", "z"];
+
 interface KeyListener {
   readonly id: string;
   readonly handler: (e: KeyboardEvent) => void;
@@ -68,6 +71,15 @@ export class KeybindService {
         if (ActionFiredEvent.event.trigger?.performable && !result.performed) return;
         e.preventDefault();
         e.stopPropagation();
+      },
+      { capture: true },
+    );
+    // In the terminal only Cogno's keybindings count: a key they left alone
+    // must not fall through to the macOS Edit menu and paste or undo there.
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (this.isEditMenuKeyInTerminal(e)) e.preventDefault();
       },
       { capture: true },
     );
@@ -141,6 +153,14 @@ export class KeybindService {
     return editableElement !== null;
   }
 
+  /** The keys the macOS Edit menu would otherwise take, pressed in a terminal. */
+  private isEditMenuKeyInTerminal(event: KeyboardEvent): boolean {
+    if (!event.metaKey || event.ctrlKey || event.altKey) return false;
+    if (!NATIVE_EDIT_KEYS.includes(event.key.toLowerCase())) return false;
+    if (this.os.platform() !== "macos") return false;
+    return this.isEventInsideTerminalEditableSurface(event);
+  }
+
   private isEventInsideTerminalEditableSurface(event: KeyboardEvent): boolean {
     const eventTarget = event.target;
     if (!(eventTarget instanceof Element)) {
@@ -194,7 +214,7 @@ export class KeybindService {
     const isMac = this.os.platform() === "macos";
     const primaryModifierPressed = isMac ? event.metaKey : event.ctrlKey;
     if (primaryModifierPressed) {
-      if (["a", "c", "v", "x", "z"].includes(lowerKey)) {
+      if (NATIVE_EDIT_KEYS.includes(lowerKey)) {
         return true;
       }
 
