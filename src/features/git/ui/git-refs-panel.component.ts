@@ -66,7 +66,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
         @for (branch of branches(); track branch.name) {
           <div class="row ref" [class.selected]="branch.name === head().branch"
                [class.marked]="view.localMarks.names().has(branch.name)"
-               (click)="clickBranch($event, branch)" (dblclick)="checkout(branch)"
+               (click)="clickBranch($event, branch)" (dblclick)="actions.goToBranch(branch)"
                (contextmenu)="openBranchMenu($event, branch)">
             @if (branch.name === head().branch) {
               <app-icon class="small-icon head-icon" name="mdiEyeOutline" appTooltip="Checked out"></app-icon>
@@ -120,7 +120,7 @@ const SORT_BUTTONS: Readonly<Record<GitBranchSort, { icon: Icon; label: string }
           @if (!collapsedRemotes().has(remote.name)) {
             @for (remoteBranch of remoteBranchesOf(remote.name); track remoteBranch.name) {
               <div class="row ref nested" [class.marked]="view.remoteMarks.names().has(remoteBranch.name)"
-                   (click)="clickRemoteBranch($event, remoteBranch)" (dblclick)="actions.checkoutRemote(remoteBranch)"
+                   (click)="clickRemoteBranch($event, remoteBranch)" (dblclick)="actions.goToRemoteBranch(remoteBranch)"
                    (contextmenu)="openRemoteBranchMenu($event, remoteBranch)">
                 <app-icon class="small-icon subtle" name="mdiSourceBranch"></app-icon>
                 <span class="ellipsis grow" [appTooltip]="remoteBranch.name">{{ remoteBranch.shortName }}</span>
@@ -432,12 +432,6 @@ export class GitRefsPanelComponent implements OnDestroy {
   isStashSelected(sha: string): boolean {
     const selection = this.view.selection();
     return selection.kind === "stash" && selection.sha === sha;
-  }
-
-  /** Another worktree's branch stays where it is: git would refuse it here. */
-  checkout(branch: GitBranch): void {
-    if (branch.name === this.head().branch || branch.worktree) return;
-    void this.operations.checkoutBranch(branch.name);
   }
 
   revealWorktree(worktree: GitWorktree): void {

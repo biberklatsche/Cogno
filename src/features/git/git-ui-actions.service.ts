@@ -237,29 +237,37 @@ export class GitUiActions {
     ]);
   }
 
+  // Double clicks: go to a branch
+
   /**
-   * Check out the branch a graph label stands for, as a double click does in
-   * GitKraken: a remote branch through a local one tracking it. A tag, the
-   * checked-out branch and one another worktree has checked out (git would
-   * refuse it) are left alone.
+   * Go to the branch a graph label stands for, as a double click does in
+   * GitKraken. A tag is left alone.
    */
-  checkoutLabel(label: GitRefLabel): void {
-    const refs = this.repository.refs();
-    if (label.kind === "branch" && !label.isHead && !label.worktree) {
-      void this.operations.checkoutBranch(label.name);
+  goToLabel(label: GitRefLabel): void {
+    if (label.kind === "branch") {
+      this.goToBranch(label);
     } else if (label.kind === "remote") {
-      const remoteBranch = refs.remoteBranches.find((b) => b.name === label.name);
-      if (remoteBranch) this.checkoutRemote(remoteBranch);
+      const remoteBranch = this.repository.refs().remoteBranches.find((b) => b.name === label.name);
+      if (remoteBranch) this.goToRemoteBranch(remoteBranch);
     }
   }
 
   /**
-   * Check out a remote branch through its local one, as a double click does;
-   * left alone when that local branch is checked out in another worktree.
+   * Go to a local branch: check it out here, or - git has a branch in one
+   * worktree only - open a tab in the worktree that has it checked out. The
+   * branch checked out here is left alone.
    */
-  checkoutRemote(remoteBranch: GitRemoteBranch): void {
-    if (this.worktreeOfLocal(remoteBranch)) return;
-    void this.operations.checkoutRemoteBranch(remoteBranch);
+  goToBranch(branch: { readonly name: string; readonly worktree?: string }): void {
+    if (branch.name === this.repository.head().branch) return;
+    if (branch.worktree) this.openWorktreeTab(branch.worktree);
+    else void this.operations.checkoutBranch(branch.name);
+  }
+
+  /** Go to a remote branch through the local one tracking it. */
+  goToRemoteBranch(remoteBranch: GitRemoteBranch): void {
+    const worktree = this.worktreeOfLocal(remoteBranch);
+    if (worktree) this.openWorktreeTab(worktree);
+    else void this.operations.checkoutRemoteBranch(remoteBranch);
   }
 
   // Context menus
