@@ -79,7 +79,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
             type="button"
             class="section"
             [class.active]="!view().searching && section.title === activeSection()"
-            (click)="activeSection.set(section.title); query.set('')"
+            (click)="showSection(section.title, rowsElement)"
           >
             <span>{{ section.title }}</span>
             @if (view().searching) {
@@ -88,13 +88,13 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
           </button>
         }
       </nav>
-      <select class="sections-select" (change)="activeSection.set(select.value); query.set('')" #select>
+      <select class="sections-select" (change)="showSection(select.value, rowsElement)" #select>
         @for (section of view().sections; track section.title) {
           <option [value]="section.title" [selected]="section.title === activeSection()">{{ section.title }}</option>
         }
       </select>
 
-      <div class="rows">
+      <div class="rows" #rowsElement>
         @if (!view().searching) {
           <h2 class="title">{{ activeSection() }}</h2>
         }
@@ -103,7 +103,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         }
         @for (block of view().blocks; track block.key) {
           @for (heading of block.headings; track heading.key) {
-            <h3 [class]="'group level-' + heading.level">{{ heading.title }}</h3>
+            <h3 [class]="'group level-' + heading.level" [attr.data-section]="heading.level === 0 ? heading.title : null">{{ heading.title }}</h3>
             @if (heading.description) {
               <p class="group-description">{{ heading.description }}</p>
             }
@@ -521,6 +521,18 @@ export class SettingsPanelComponent {
     this.view = computed(() =>
       buildSettingsView(rows(), { section: this.activeSection(), query: this.query() }),
     );
+  }
+
+  /**
+   * Shows a section. While searching the hits of every section are already
+   * there, so the search stays and the list moves to this section's hits.
+   */
+  showSection(title: string, rows: HTMLElement): void {
+    this.activeSection.set(title);
+    if (!this.view().searching) return;
+    Array.from(rows.querySelectorAll<HTMLElement>("[data-section]"))
+      .find((heading) => heading.dataset["section"] === title)
+      ?.scrollIntoView({ block: "start" });
   }
 
   write(row: SettingRow, text: string): void {
