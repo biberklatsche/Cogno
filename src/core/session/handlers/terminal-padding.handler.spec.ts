@@ -46,7 +46,7 @@ describe("TerminalPaddingHandler", () => {
     model.facts$.subscribe((fact) => facts.push(fact));
     mockConfig = new ConfigServiceMock();
     mockConfig.setConfig({
-      scrollbar: { scrollback_lines: 1000 },
+      terminal: { scrollback_lines: 1000 },
       font: { size: 12, family: "monospace", weight: "normal", weight_bold: "bold" },
       color: {
         foreground: "ffffff",

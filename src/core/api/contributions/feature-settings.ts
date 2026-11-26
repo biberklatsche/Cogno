@@ -41,14 +41,9 @@ export const FeatureWorkspaceSchema = z.strictObject({
 export const FeatureNotificationOverviewSchema = z.strictObject({
   mode: featureModeSchema.optional().describe(featureModeDescription),
   order: featureOrderSchema,
-  overview: z
-    .strictObject({
-      max_items: limitSchema
-        .optional()
-        .describe("How many notifications the overview keeps, or `unlimited`."),
-    })
+  max_items: limitSchema
     .optional()
-    .describe("The notification overview panel."),
+    .describe("How many notifications the overview keeps, or `unlimited`."),
 });
 
 export const FeatureSearchSchema = z.strictObject({

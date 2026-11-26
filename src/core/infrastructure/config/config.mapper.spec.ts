@@ -10,7 +10,7 @@ type FeatureSettings = {
   git?: { mode?: string };
   coding_agents?: { mode?: string };
   workspace?: { mode?: string };
-  notification_overview?: { overview?: { max_items?: number } };
+  notification_overview?: { max_items?: number };
 };
 
 const schema = createConfigSchema([featureSettingsExtensionFixture], notificationSourcesFixture);
@@ -31,7 +31,7 @@ describe("ConfigMapper", () => {
       # comment
       ; another comment
       terminal.webgl=true
-      scrollbar.scrollback_lines=12345
+      terminal.scrollback_lines=12345
       cursor.blink=false
       shell.default=default
       shell.profiles.default.shell_type=Bash
@@ -44,7 +44,7 @@ describe("ConfigMapper", () => {
 
     // Basic values
     expect(parsed.terminal?.webgl).toBe(true);
-    expect(parsed.scrollbar?.scrollback_lines).toBe(12345);
+    expect(parsed.terminal?.scrollback_lines).toBe(12345);
     expect(parsed.cursor?.blink).toBe(false);
 
     // Array parsing (non-keybind arrays are replaced)
@@ -67,18 +67,18 @@ describe("ConfigMapper", () => {
     expect(settings.terminal?.webgl).toBe(true);
 
     // Defaults from default file are present
-    expect(settings.scrollbar?.scrollback_lines).toBe(100000);
+    expect(settings.terminal?.scrollback_lines).toBe(100000);
     expect(settings.font?.size).toBe(14);
   });
 
   it("collects errors on invalid values (e.g., negative scrollback_lines) and ignores them", () => {
     const text = `
-      scrollbar.scrollback_lines=-1
+      terminal.scrollback_lines=-1
     `;
     const result = read(text);
     expect(result.diagnostics.length).toBeGreaterThan(0);
     expect(result.diagnostics.some((d) => d.level === "error")).toBe(true);
-    expect(result.config.scrollbar?.scrollback_lines).toBe(100000);
+    expect(result.config.terminal?.scrollback_lines).toBe(100000);
   });
 
   it("ignores unknown settings and reports warnings", () => {
@@ -112,7 +112,7 @@ describe("ConfigMapper", () => {
   it("reads `unlimited` and plain numbers for a limit setting", () => {
     const text = `
       notification.channel.app.duration_seconds=unlimited
-      feature.notification_overview.overview.max_items=0
+      feature.notification_overview.max_items=0
       terminal.history.max_entries=200
     `;
     const result = read(text);
@@ -120,8 +120,7 @@ describe("ConfigMapper", () => {
     expect(result.diagnostics).toEqual([]);
     expect(result.config.notification?.channel?.app?.duration_seconds).toBe("unlimited");
     expect(
-      (result.config["feature"] as FeatureSettings | undefined)?.notification_overview?.overview
-        ?.max_items,
+      (result.config["feature"] as FeatureSettings | undefined)?.notification_overview?.max_items,
     ).toBe(0);
     expect(result.config.terminal?.history?.max_entries).toBe(200);
     expect(DEFAULTS.terminal?.history?.max_entries).toBe("unlimited");
@@ -213,7 +212,7 @@ describe("ConfigMapper", () => {
       notification.channel.badge.enabled=false
       notification.source.terminal.long_running_command.enabled=true
       notification.source.terminal.long_running_command.minimum_duration_seconds=15
-      feature.notification_overview.overview.max_items=42
+      feature.notification_overview.max_items=42
     `;
     const result = read(text);
 
@@ -227,8 +226,7 @@ describe("ConfigMapper", () => {
       minimum_duration_seconds: 15,
     });
     expect(
-      (result.config["feature"] as FeatureSettings | undefined)?.notification_overview?.overview
-        ?.max_items,
+      (result.config["feature"] as FeatureSettings | undefined)?.notification_overview?.max_items,
     ).toBe(42);
   });
 

@@ -68,7 +68,7 @@ export class UpdaterService {
   /** `background` until the config is loaded; a check may run before it is. */
   private installMode(): InstallMode {
     try {
-      return this.config.config.updater?.install ?? "background";
+      return this.config.config.general?.update_install ?? "background";
     } catch {
       return "background";
     }

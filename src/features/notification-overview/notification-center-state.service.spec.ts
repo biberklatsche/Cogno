@@ -20,7 +20,7 @@ describe("NotificationCenterStateService", () => {
     } as NotificationCenterPort;
     const configPort = {
       getConfiguration: () => ({
-        feature: { notification_overview: { overview: { max_items: overviewMaxItems } } },
+        feature: { notification_overview: { max_items: overviewMaxItems } },
       }),
     } as unknown as ApplicationConfigurationPort;
 

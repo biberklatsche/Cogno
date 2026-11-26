@@ -12,7 +12,7 @@ const DEFAULT_MAX_LINES = 1000;
 /**
  * Persists a workspace's terminal snapshots for session restore:
  * collects every terminal's scrollback snapshot synchronously, then writes them
- * in one transaction (no await inside). Gated by terminal.restore.
+ * in one transaction (no await inside). Gated by general.session_restore.
  */
 @Injectable({ providedIn: "root" })
 export class SessionPersistenceService {
@@ -31,7 +31,7 @@ export class SessionPersistenceService {
    * scrollback. No-op when restore is off.
    */
   async loadPendingSnapshots(workspaceIds: ReadonlyArray<string>): Promise<void> {
-    if (this.configService.config.terminal?.restore?.enabled === false) {
+    if (this.configService.config.general?.session_restore?.enabled === false) {
       return;
     }
     for (const workspaceId of workspaceIds) {
@@ -64,7 +64,7 @@ export class SessionPersistenceService {
   }
 
   async persistWorkspace(workspaceId: string): Promise<void> {
-    const restore = this.configService.config.terminal?.restore;
+    const restore = this.configService.config.general?.session_restore;
     if (restore?.enabled === false) {
       return;
     }

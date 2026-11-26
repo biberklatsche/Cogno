@@ -9,11 +9,37 @@ brackets.
 
 ## General
 
-### `enable_watch_config`
+Settings that apply to the whole app.
 
-Reload the config automatically when the file changes on disk.
+### `general.enable_watch_config`
+
+Apply changes to the settings file as soon as it is saved.
 
 **Type:** boolean · **Default:** `true`
+
+### `general.update_install`
+
+How Cogno keeps itself up to date: `background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
+
+**Type:** `background` | `ask` · **Default:** `background`
+
+### `general.session_restore.enabled`
+
+Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.
+
+**Type:** boolean · **Default:** `true`
+
+### `general.session_restore.scrollback`
+
+Bring back what the terminals showed, above a separator line. Off restores the layout with empty terminals.
+
+**Type:** boolean · **Default:** `true`
+
+### `general.session_restore.max_lines`
+
+How many lines of output are kept per terminal for the next start; 0 keeps none.
+
+**Type:** integer ≥ 0 · **Default:** `1000`
 
 ## Font
 
@@ -33,7 +59,7 @@ Terminal font size in pixels.
 
 ### `font.enable_ligatures`
 
-Render programming ligatures (needs a font that has them).
+Join character pairs such as `->` and `!=` into one symbol (needs a font with ligatures).
 
 **Type:** boolean · **Default:** `false`
 
@@ -57,7 +83,7 @@ Draw box-drawing and block characters instead of taking them from the font.
 
 ### `font.draw_bold_text_in_bright_colors`
 
-Render bold text in the bright ANSI color variant.
+Show bold text in the bright variant of its color.
 
 **Type:** boolean · **Default:** `false`
 
@@ -321,7 +347,7 @@ Scrollbar width in pixels; 0 hides it.
 
 ### `scrollbar.overview_ruler_border_color`
 
-Border color of the overview ruler next to the scrollbar.
+Border color of the strip beside the scrollbar that marks search matches.
 
 **Type:** hex color · **Default:** `0e192500`
 
@@ -363,15 +389,9 @@ Duration of smooth scrolling in milliseconds; 0 disables it.
 
 ### `scrollbar.fast_scroll_sensitivity`
 
-Scroll multiplier while the fast-scroll modifier is held.
+How many times faster the terminal scrolls while you hold Alt.
 
 **Type:** integer ≥ 0 · **Default:** `2`
-
-### `scrollbar.scrollback_lines`
-
-How many lines of scrollback the terminal keeps.
-
-**Type:** integer ≥ 100 · **Default:** `100000`
 
 ## Selection
 
@@ -641,39 +661,45 @@ Draw the terminal with the graphics card, which is faster. Turn it off if text l
 
 **Type:** boolean · **Default:** `true` (linux: `false`)
 
+### `terminal.scrollback_lines`
+
+How many lines of earlier output a terminal keeps for scrolling back.
+
+**Type:** integer ≥ 100 · **Default:** `100000`
+
 ### `terminal.decoration.color.background`
 
-Fill color of the decoration.
+Fill color of a match.
 
 **Type:** hex color · **Default:** `2f8fda55`
 
 ### `terminal.decoration.color.border`
 
-Border color of the decoration.
+Border color of a match.
 
 **Type:** hex color · **Default:** `2f8fda`
 
 ### `terminal.decoration.color.overview_ruler`
 
-Marker color in the overview ruler beside the scrollbar.
+Color of the mark a match gets in the strip beside the scrollbar.
 
 **Type:** hex color · **Default:** `2f8fda`
 
 ### `terminal.decoration.active_color.background`
 
-Fill color of the decoration.
+Fill color of a match.
 
 **Type:** hex color · **Default:** `f5e66399`
 
 ### `terminal.decoration.active_color.border`
 
-Border color of the decoration.
+Border color of a match.
 
 **Type:** hex color · **Default:** `f5e663`
 
 ### `terminal.decoration.active_color.overview_ruler`
 
-Marker color in the overview ruler beside the scrollbar.
+Color of the mark a match gets in the strip beside the scrollbar.
 
 **Type:** hex color · **Default:** `f5e663`
 
@@ -760,24 +786,6 @@ Fill an empty history from your shell's own history file the first time Cogno st
 Run a command as soon as you pick it from the history. Off puts it on the input line and waits for Enter.
 
 **Type:** boolean · **Default:** `false`
-
-### `terminal.restore.enabled`
-
-Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.restore.scrollback`
-
-Bring back what the terminals showed, above a separator line. Off restores the layout with empty terminals.
-
-**Type:** boolean · **Default:** `true`
-
-### `terminal.restore.max_lines`
-
-How many lines of output are kept per terminal for the next start; 0 keeps none.
-
-**Type:** integer ≥ 0 · **Default:** `1000`
 
 ## Autocomplete
 
@@ -905,16 +913,6 @@ If the port is taken, try the next free one instead of failing.
 
 **Type:** boolean · **Default:** `true`
 
-## Updater
-
-How Cogno keeps itself up to date.
-
-### `updater.install`
-
-`background` downloads a new version as soon as it is found and offers a restart; `ask` only announces it and downloads when you choose to update.
-
-**Type:** `background` | `ask` · **Default:** `background`
-
 ## Feature
 
 Each feature can be switched off entirely and ordered in the side menu.
@@ -943,7 +941,7 @@ Position in the side menu; lower numbers come first.
 
 **Type:** integer · **Default:** `70`
 
-### `feature.notification_overview.overview.max_items`
+### `feature.notification_overview.max_items`
 
 How many notifications the overview keeps, or `unlimited`.
 

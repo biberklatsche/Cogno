@@ -20,7 +20,9 @@ describe("SessionPersistenceService", () => {
     } as unknown as GridListService;
     saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
     const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
-    const config = { config: { terminal: { restore } } } as unknown as ConfigService;
+    const config = {
+      config: { general: { session_restore: restore } },
+    } as unknown as ConfigService;
     return new SessionPersistenceService(factory, gridList, repo, config, {
       set: vi.fn(),
       take: vi.fn(),
@@ -52,7 +54,9 @@ describe("SessionPersistenceService", () => {
     const gridList = { terminalIdsForWorkspace: () => ["t1", "t2"] } as unknown as GridListService;
     saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
     const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
-    const config = { config: { terminal: { restore } } } as unknown as ConfigService;
+    const config = {
+      config: { general: { session_restore: restore } },
+    } as unknown as ConfigService;
     await new SessionPersistenceService(factory, gridList, repo, config, {
       set: vi.fn(),
       take: vi.fn(),
@@ -75,7 +79,9 @@ describe("SessionPersistenceService", () => {
         { terminalId: "t3", sessionData: "not json" },
       ]),
     } as unknown as WorkspaceRepository;
-    const config = { config: { terminal: { restore } } } as unknown as ConfigService;
+    const config = {
+      config: { general: { session_restore: restore } },
+    } as unknown as ConfigService;
     await new SessionPersistenceService({} as never, {} as never, repo, config, {
       set,
       take: vi.fn(),
@@ -99,7 +105,9 @@ describe("SessionPersistenceService", () => {
     const gridList = { terminalIdsForWorkspace: () => ["t1"] } as unknown as GridListService;
     saveTerminalSessions = vi.fn().mockResolvedValue(undefined);
     const repo = { saveTerminalSessions } as unknown as WorkspaceRepository;
-    const config = { config: { terminal: { restore } } } as unknown as ConfigService;
+    const config = {
+      config: { general: { session_restore: restore } },
+    } as unknown as ConfigService;
     await new SessionPersistenceService(factory, gridList, repo, config, {
       set: vi.fn(),
       take: vi.fn(),

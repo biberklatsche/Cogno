@@ -3,7 +3,15 @@
 // Values are raw config strings (ConfigMapper types/transforms them at load).
 
 export const defaultSettings = {
-  enable_watch_config: "true",
+  general: {
+    enable_watch_config: "true",
+    update_install: "background",
+    session_restore: {
+      enabled: "true",
+      scrollback: "true",
+      max_lines: "1000",
+    },
+  },
   font: {
     enable_ligatures: "false",
     family: "monospace",
@@ -48,7 +56,6 @@ export const defaultSettings = {
     sensitivity: "1",
     scroll_on_user_input: "true",
     smooth_scroll_duration: "0",
-    scrollback_lines: "100000",
     fast_scroll_sensitivity: "2",
   },
   cursor: {
@@ -149,6 +156,7 @@ export const defaultSettings = {
   },
   terminal: {
     webgl: "true",
+    scrollback_lines: "100000",
     inactive_overlay_opacity: "30",
     ignore_bracketed_paste_mode: "false",
     minimum_contrast_ratio: "4",
@@ -168,11 +176,6 @@ export const defaultSettings = {
       ignore_commands_with_leading_space: "false",
       import_shell_history: "false",
       auto_execute: "false",
-    },
-    restore: {
-      enabled: "true",
-      scrollback: "true",
-      max_lines: "1000",
     },
     decoration: {
       color: {
@@ -215,9 +218,7 @@ export const defaultSettings = {
     notification_overview: {
       mode: "on",
       order: "70",
-      overview: {
-        max_items: "30",
-      },
+      max_items: "30",
     },
     command_palette: {
       mode: "on",
@@ -239,9 +240,6 @@ export const defaultSettings = {
       mode: "on",
       order: "20",
     },
-  },
-  updater: {
-    install: "background",
   },
   clipboard: {
     read: "ask",

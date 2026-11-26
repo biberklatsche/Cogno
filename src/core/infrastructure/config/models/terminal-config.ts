@@ -2,11 +2,11 @@ import { hexColorSchema, limitSchema } from "@cogno/core/api/contributions";
 import { z } from "zod";
 
 const decorationColorSchema = z.strictObject({
-  background: hexColorSchema.optional().describe("Fill color of the decoration."),
-  border: hexColorSchema.optional().describe("Border color of the decoration."),
+  background: hexColorSchema.optional().describe("Fill color of a match."),
+  border: hexColorSchema.optional().describe("Border color of a match."),
   overview_ruler: hexColorSchema
     .optional()
-    .describe("Marker color in the overview ruler beside the scrollbar."),
+    .describe("Color of the mark a match gets in the strip beside the scrollbar."),
 });
 
 export const TerminalConfigSchema = z.strictObject({
@@ -16,17 +16,23 @@ export const TerminalConfigSchema = z.strictObject({
     .describe(
       "Draw the terminal with the graphics card, which is faster. Turn it off if text looks broken.",
     ),
+  scrollback_lines: z
+    .number()
+    .int()
+    .min(100, "Scrollback lines must be at least 100")
+    .optional()
+    .describe("How many lines of earlier output a terminal keeps for scrolling back."),
   decoration: z
     .strictObject({
       color: decorationColorSchema
         .optional()
-        .describe("Highlight colors for decorated terminal content, e.g. search matches."),
+        .describe("Colors of the matches a search finds in the terminal."),
       active_color: decorationColorSchema
         .optional()
-        .describe("Highlight colors for the currently active decorated item."),
+        .describe("Colors of the match the search currently stands on."),
     })
     .optional()
-    .describe("Colors of decorated buffer content such as search matches."),
+    .describe("Colors of search matches in the terminal."),
   inactive_overlay_opacity: z
     .number()
     .int()
@@ -109,29 +115,4 @@ export const TerminalConfigSchema = z.strictObject({
     })
     .optional()
     .describe("The recorded command history behind autocomplete and the history panel."),
-  restore: z
-    .strictObject({
-      enabled: z
-        .boolean()
-        .optional()
-        .describe(
-          "Bring back your workspaces, tabs, panes and terminal output when Cogno starts. Off starts fresh each time; you save workspaces by hand instead.",
-        ),
-      scrollback: z
-        .boolean()
-        .optional()
-        .describe(
-          "Bring back what the terminals showed, above a separator line. Off restores the layout with empty terminals.",
-        ),
-      max_lines: z
-        .number()
-        .int()
-        .min(0)
-        .optional()
-        .describe(
-          "How many lines of output are kept per terminal for the next start; 0 keeps none.",
-        ),
-    })
-    .optional()
-    .describe("Session restore: bring workspaces, tabs and scrollback back on the next launch."),
 });

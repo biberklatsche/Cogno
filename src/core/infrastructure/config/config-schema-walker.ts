@@ -62,7 +62,7 @@ export type SettingSection = {
   readonly description?: string;
 };
 
-/** Top-level keys that are a single value (`enable_watch_config`) share this section. */
+/** Top-level keys that are a single value share this section with the `general` group. */
 export const GENERAL_SECTION = "General";
 
 /**

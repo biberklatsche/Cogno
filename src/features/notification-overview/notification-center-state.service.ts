@@ -101,9 +101,9 @@ export class NotificationCenterStateService {
   /** How many notifications the overview keeps, from the feature's own settings. */
   private overviewMaxItems(): number {
     const config = this.configPort.getConfiguration() as
-      | { feature?: { notification_overview?: { overview?: { max_items?: Limit } } } }
+      | { feature?: { notification_overview?: { max_items?: Limit } } }
       | undefined;
-    return resolveLimit(config?.feature?.notification_overview?.overview?.max_items, 30);
+    return resolveLimit(config?.feature?.notification_overview?.max_items, 30);
   }
 }
 

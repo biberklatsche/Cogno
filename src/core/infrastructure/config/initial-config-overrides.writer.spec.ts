@@ -22,8 +22,7 @@ describe("InitialConfigOverridesWriter", () => {
   it("renders plain key = value lines without comments", () => {
     const curr: Config = JSON.parse(JSON.stringify(DEFAULTS));
     curr.terminal = { ...(curr.terminal ?? {}), webgl: true };
-    if (!curr.scrollbar) curr.scrollbar = {};
-    curr.scrollbar.scrollback_lines = 1234;
+    curr.terminal.scrollback_lines = 1234;
 
     const text = InitialConfigOverridesWriter.toDotString(curr, {} as Config);
     const lines = text.trimEnd().split("\n");
@@ -33,7 +32,7 @@ describe("InitialConfigOverridesWriter", () => {
 
     // Contains some expected values
     expect(lines).toContain("terminal.webgl = true");
-    expect(lines).toContain("scrollbar.scrollback_lines = 1234");
+    expect(lines).toContain("terminal.scrollback_lines = 1234");
 
     // trailing newline is present according to implementation
     expect(text.endsWith("\n")).toBe(true);
@@ -41,7 +40,7 @@ describe("InitialConfigOverridesWriter", () => {
 
   it("writes only overrides compared to defaults", () => {
     const currentConfig: Config = JSON.parse(JSON.stringify(DEFAULTS));
-    currentConfig.scrollbar = { ...(currentConfig.scrollbar ?? {}), scrollback_lines: 1234 };
+    currentConfig.terminal = { ...(currentConfig.terminal ?? {}), scrollback_lines: 1234 };
     currentConfig.shell = {
       ...(currentConfig.shell ?? {}),
       default: "zsh",
@@ -62,7 +61,7 @@ describe("InitialConfigOverridesWriter", () => {
 
     const text = InitialConfigOverridesWriter.toDotString(currentConfig, DEFAULTS);
 
-    expect(text).toContain("scrollbar.scrollback_lines = 1234");
+    expect(text).toContain("terminal.scrollback_lines = 1234");
     expect(text).toContain("shell.default = zsh");
     expect(text).not.toContain("font.family");
   });
