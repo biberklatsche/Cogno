@@ -58,6 +58,13 @@ export interface IPty extends IDisposable {
    */
   attach(terminalId: string, onData: PtyChunkListener): Promise<void>;
   /**
+   * The shell under `terminalId` runs but is shown elsewhere (`by`), and is
+   * not opened here: the PTY stands as after a takeover. It hears when the
+   * shell is handed back or ends, and a shell of this machine ends with its
+   * terminal.
+   */
+  watchShownElsewhere(terminalId: string, by?: string): Promise<void>;
+  /**
    * Another Cogno took the shell over: it runs on, but not here any more.
    * A listener that subscribes afterwards is told at once.
    */
@@ -189,14 +196,7 @@ export class Pty implements IPty {
     this._unlisten = undefined;
     // Listen before the shell exists: a shell that dies at once emits its
     // exit before the call even returns, and a takeover can cross an attach.
-    const unlistens = await Promise.all([
-      this._transport.onExit(terminalId, (exit) => this.notifyExit(exit)),
-      this._transport.onTakenOver(terminalId, (by) => this.notifyTakenOver(terminalId, by)),
-      this._transport.onHandedBack(terminalId, () => this.notifyHandedBack(terminalId)),
-    ]);
-    const unlisten = () => {
-      for (const stop of unlistens) stop();
-    };
+    const unlisten = await this.listen(terminalId);
     if (!this.isOpening(terminalId)) {
       unlisten();
       throw new Error("The PTY was closed while it opened.");
@@ -224,6 +224,38 @@ export class Pty implements IPty {
     }
     this.state = { kind: "live", terminalId, output };
     this.flushPendingResize();
+  }
+
+  async watchShownElsewhere(terminalId: string, by?: string): Promise<void> {
+    if (this.state.kind !== "idle") return;
+    this.state = { kind: "takenOver", terminalId, by };
+    const unlisten = await this.listen(terminalId);
+    // Disposed or opened meanwhile: that owns the listeners now, or nobody.
+    if (!this.waitsFor(terminalId) || this._unlisten !== undefined) {
+      unlisten();
+      return;
+    }
+    this._unlisten = unlisten;
+  }
+
+  /** Whether the shell of `terminalId` is shown elsewhere and waited for here. */
+  private waitsFor(terminalId: string): boolean {
+    const state = this.state;
+    return (
+      (state.kind === "takenOver" || state.kind === "handedBack") && state.terminalId === terminalId
+    );
+  }
+
+  /** Hears what the host says about the shell; the result stops listening. */
+  private async listen(terminalId: string): Promise<() => void> {
+    const unlistens = await Promise.all([
+      this._transport.onExit(terminalId, (exit) => this.notifyExit(exit)),
+      this._transport.onTakenOver(terminalId, (by) => this.notifyTakenOver(terminalId, by)),
+      this._transport.onHandedBack(terminalId, () => this.notifyHandedBack(terminalId)),
+    ]);
+    return () => {
+      for (const stop of unlistens) stop();
+    };
   }
 
   /** The terminal whose output is open, and that output: the host knows it, answered or not. */

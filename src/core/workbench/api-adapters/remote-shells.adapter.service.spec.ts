@@ -218,7 +218,7 @@ describe("RemoteShellsAdapterService", () => {
 
       await adapter.show("office", "t1");
 
-      expect(takeBack).toHaveBeenCalledWith("t1");
+      expect(takeBack).toHaveBeenCalledWith("t1", true);
       expect(navigate).not.toHaveBeenCalled();
       expect(publish).not.toHaveBeenCalled();
     });

@@ -152,6 +152,22 @@ describe("PtyHandler", () => {
       expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[0], [2]]);
     });
 
+    it("acks the new shell's output after a restart, whatever is parsed of the old one's late", async () => {
+      const ofOldShell = await registerAndGetDataCallback();
+      ofOldShell(chunk(5000, 100));
+
+      handler.restart("spawn");
+      await vi.waitFor(() => expect(mockPty.spawn).toHaveBeenCalledTimes(2));
+      const ofNewShell = vi.mocked(mockPty.spawn).mock.calls[1][3];
+      // xterm gets to the old shell's backlog only now.
+      completeWrite(0);
+      ofNewShell(chunk(0, 100));
+      completeWrite(1);
+      await flushMicrotasks();
+
+      expect(vi.mocked(mockPty.ack).mock.calls).toEqual([[0]]);
+    });
+
     it("should coalesce the acks of chunks parsed in one slice into a single ack", async () => {
       const onPtyData = await registerAndGetDataCallback();
       onPtyData(chunk(0, 10));

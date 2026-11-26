@@ -111,6 +111,9 @@ pub fn run(cli: Cli) {
                 app.state::<crate::commands::window::QuitState>()
                     .cancel_window(window.label());
                 app.state::<HostState>().window_closed(window.label());
+                if let Some(pairing) = app.try_state::<crate::commands::pairing::PairingState>() {
+                    pairing.window_closed(window.label());
+                }
                 app.state::<WindowRegistry>().on_destroyed(window.label());
             }
             _ => {}

@@ -499,6 +499,51 @@ describe("Pty", () => {
       expect(transport.paneClosed).toHaveBeenCalledWith(terminalId);
     });
 
+    it("hears that a shell shown elsewhere from the start was handed back or ended", async () => {
+      const handedBack = vi.fn();
+      const ended = vi.fn();
+      pty.onHandedBack(handedBack);
+      pty.onExit(ended);
+
+      await pty.watchShownElsewhere(terminalId, "laptop");
+      handedBackListener()();
+      const exit = { terminalId, reason: { kind: "exited", code: 0 } };
+      (vi.mocked(transport.onExit).mock.calls[0][1] as (exit: unknown) => void)(exit);
+
+      expect(handedBack).toHaveBeenCalledOnce();
+      expect(ended).toHaveBeenCalledExactlyOnceWith(exit);
+      expect(transport.attach).not.toHaveBeenCalled();
+    });
+
+    it("ends a shell of this machine that is shown elsewhere when its terminal goes for good", async () => {
+      await pty.watchShownElsewhere(terminalId, "laptop");
+
+      pty.dispose();
+
+      expect(transport.paneClosed).toHaveBeenCalledWith(terminalId);
+    });
+
+    it("leaves a shell of another machine that is shown elsewhere alone", async () => {
+      const remote = ptyWith({ host: "office" });
+      await remote.watchShownElsewhere(terminalId, "laptop");
+
+      remote.dispose();
+
+      expect(transport.detach).not.toHaveBeenCalled();
+      expect(transport.paneClosed).not.toHaveBeenCalled();
+    });
+
+    it("stops listening for a shell shown elsewhere that was disposed while it began to", async () => {
+      const stop = vi.fn();
+      vi.mocked(transport.onHandedBack).mockResolvedValueOnce(stop);
+
+      const watching = pty.watchShownElsewhere(terminalId);
+      pty.release();
+      await watching;
+
+      expect(stop).toHaveBeenCalled();
+    });
+
     it("leaves the shell running when released to another session of its terminal", async () => {
       await pty.spawn(terminalId, shellConfig, dimensions, noopListener);
       const handle = vi.mocked(transport.spawn).mock.results[0].value;

@@ -40,6 +40,7 @@ vi.mock("@cogno/core/terminal/pty", () => {
     onTakenOver = vi.fn().mockReturnValue({ dispose: vi.fn() });
     onHandedBack = vi.fn().mockReturnValue({ dispose: vi.fn() });
     attach = vi.fn().mockResolvedValue(undefined);
+    watchShownElsewhere = vi.fn().mockResolvedValue(undefined);
     isLive = true;
     faults$ = new Subject();
   }
@@ -333,6 +334,7 @@ function ptyOf(host: SessionHost) {
         onExit: ReturnType<typeof vi.fn>;
         onTakenOver: ReturnType<typeof vi.fn>;
         onHandedBack: ReturnType<typeof vi.fn>;
+        watchShownElsewhere: ReturnType<typeof vi.fn>;
       };
     }
   ).pty;
@@ -558,6 +560,24 @@ describe("SessionHost lifecycle (ARCHITECTURE.md 2.3)", () => {
     expect(host.runtime).toEqual({ status: "takenOver", takenBy: "laptop" });
     expect(ptyOf(host).spawn).not.toHaveBeenCalled();
     expect(ptyOf(host).attach).not.toHaveBeenCalled();
+    expect(ptyOf(host).watchShownElsewhere).toHaveBeenCalledWith("terminal-1", "laptop");
+  });
+
+  it("hears that a shell shown elsewhere from its start was let go, or ended", async () => {
+    const host = createHost();
+    host.initialize("terminal-1", bashProfile);
+    host.showRunning("token");
+    host.startShownElsewhere("laptop");
+    const facts: string[] = [];
+    host.facts$.subscribe((fact) => facts.push(fact.type));
+
+    (ptyOf(host).onHandedBack.mock.calls[0][0] as () => void)();
+    expect(facts).toEqual(["handedBack"]);
+
+    const exit = { kind: "exited", code: 0 };
+    (ptyOf(host).onExit.mock.calls[0][0] as (event: unknown) => void)({ reason: exit });
+    expect(host.runtime).toEqual({ status: "exited", exit });
+    expect(facts).toContain("exited");
   });
 
   it("close detaches, ends the machine and is final", async () => {

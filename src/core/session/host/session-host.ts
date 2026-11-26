@@ -825,8 +825,27 @@ export class SessionHost {
    * Taking the shell is the user's to decide; a new session does that.
    */
   startShownElsewhere(by: string | undefined): void {
+    const terminalId = this._terminalId;
+    if (!terminalId) throw new Error("SessionHost must be initialized before start");
     if (this.runtime.status !== "allocated") return;
     this.setRuntime({ status: "takenOver", takenBy: by });
+    // No shell is opened, so nothing listens yet: the session hears like one
+    // whose shell was taken over that it came back, or that it ended.
+    this.pty.onHandedBack(() => {
+      if (this.runtime.status === "takenOver") this.hostFacts.next({ type: "handedBack" });
+    });
+    this.pty.onExit(({ reason }) => {
+      this.setRuntime({ status: "exited", exit: reason });
+      this.hostFacts.next({ type: "exited", exit: reason });
+    });
+    this.pty.watchShownElsewhere(terminalId, by).catch((error) =>
+      ErrorReporter.reportException({
+        error,
+        handled: true,
+        source: "SessionHost",
+        context: { operation: "watchShownElsewhere", terminalId },
+      }),
+    );
   }
 
   /**

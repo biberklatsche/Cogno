@@ -157,7 +157,7 @@ export class RemoteShellsAdapterService extends RemoteShellsPort {
   }
 
   async show(host: string, terminalId: TerminalId): Promise<void> {
-    if (await this.paneSessionManager.takeBack(terminalId)) return;
+    if (await this.paneSessionManager.takeBack(terminalId, true)) return;
     if (this.gridList.findTabIdByTerminalId(terminalId)) {
       await this.navigator.navigateToTerminal(terminalId);
       return;

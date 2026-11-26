@@ -33,6 +33,8 @@ const MAX_OSC_LEN: usize = 4096;
 
 const ESC: u8 = 0x1b;
 const BEL: u8 = 0x07;
+const CAN: u8 = 0x18;
+const SUB: u8 = 0x1a;
 /// How the shell integration's handshake begins (`ARCHITECTURE.md` 2.1).
 const HANDSHAKE_PREFIX: &[u8] = b"\x1b]733;COGNO:CAPS;";
 
@@ -165,9 +167,7 @@ impl KeptOutput {
                         // sequence this module does not read.
                         ESC => {
                             self.pending.pop();
-                            self.pass_pending();
-                            self.pending.push(ESC);
-                            self.parser = Parser::Escape;
+                            self.start_over();
                         }
                         _ => self.pass_pending(),
                     }
@@ -175,21 +175,46 @@ impl KeptOutput {
                 Parser::Csi => {
                     let byte = output[0];
                     output = &output[1..];
-                    self.pending.push(byte);
-                    // Parameters and intermediates are 0x20-0x3f; the first
-                    // byte from 0x40 on ends the sequence.
-                    if (0x40..=0x7e).contains(&byte) {
-                        self.end_csi(byte);
-                    } else if !(0x20..=0x3f).contains(&byte)
-                        || self.pending.len() > MAX_SEQUENCE_LEN
-                    {
-                        self.pass_pending();
+                    match byte {
+                        // A terminal gives up the sequence it was reading
+                        // and begins the next one.
+                        ESC => self.start_over(),
+                        // CAN and SUB end the sequence without a new one.
+                        CAN | SUB => {
+                            self.pending.push(byte);
+                            self.pass_pending();
+                        }
+                        // Any other control character is carried out at once
+                        // and the sequence goes on behind it.
+                        0x00..=0x1f => self.keep(&[byte]),
+                        // The first byte from 0x40 on ends the sequence.
+                        0x40..=0x7e => {
+                            self.pending.push(byte);
+                            self.end_csi(byte);
+                        }
+                        // Parameters and intermediates are 0x20-0x3f;
+                        // anything else is no sequence this module reads.
+                        _ => {
+                            self.pending.push(byte);
+                            if !(0x20..=0x3f).contains(&byte)
+                                || self.pending.len() > MAX_SEQUENCE_LEN
+                            {
+                                self.pass_pending();
+                            }
+                        }
                     }
                 }
                 Parser::Osc => {
                     let byte = output[0];
-                    output = &output[1..];
                     let after_escape = self.pending.last() == Some(&ESC);
+                    if after_escape && byte != b'\\' {
+                        // The ESC did not end the command, it began the next
+                        // sequence; this byte is read again as part of that.
+                        self.pending.pop();
+                        self.start_over();
+                        continue;
+                    }
+                    output = &output[1..];
                     self.pending.push(byte);
                     if byte == BEL || (byte == b'\\' && after_escape) {
                         self.end_osc();
@@ -280,6 +305,15 @@ impl KeptOutput {
     /// screen out, so it has to draw again for a client that attaches.
     pub(crate) fn in_alternate_screen(&self) -> bool {
         self.alternate_screen
+    }
+
+    /// An ESC inside a sequence: what was read so far is ordinary output, and
+    /// the next sequence begins. A terminal does the same, so a mode switched
+    /// right behind a sequence that was cut short is not missed.
+    fn start_over(&mut self) {
+        self.pass_pending();
+        self.pending.push(ESC);
+        self.parser = Parser::Escape;
     }
 
     /// The pending bytes turned out to be ordinary output.
@@ -430,6 +464,25 @@ mod tests {
             replay,
             "\x1b[?2004h\x1b[?1h\x1b[?25l\x1b=$ \x1b[!p\x1b[?2004h"
         );
+    }
+
+    #[test]
+    fn a_sequence_cut_short_does_not_hide_the_switch_behind_it() {
+        // An interrupted program left `ESC [ 3` behind; vim starts right after.
+        let replay = replay_of(&[b"$ \x1b[3\x1b[?1049h\x1b[2Jfile content"]);
+        assert_eq!(replay, "$ \x1b[3\x1b[?1049h");
+    }
+
+    #[test]
+    fn a_command_cut_short_does_not_hide_the_switch_behind_it() {
+        let replay = replay_of(&[b"$ \x1b]0;title\x1b[?2004h"]);
+        assert_eq!(replay, "$ \x1b]0;title\x1b[?2004h\x1b[?2004h");
+    }
+
+    #[test]
+    fn a_control_character_inside_a_sequence_does_not_end_it() {
+        let replay = replay_of(&[b"\x1b[?20\r04h$ "]);
+        assert_eq!(replay, "\r\x1b[?2004h$ \x1b[?2004h");
     }
 
     #[test]

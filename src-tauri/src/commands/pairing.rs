@@ -4,7 +4,8 @@
 //! removes. A request of another machine reaches the last focused window;
 //! on both machines the user says whether the check number is the same.
 
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
 
 use tauri::ipc::Channel;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -21,8 +22,26 @@ const PAIRING_REQUEST_ENDED_EVENT: &str = "pairing-request-ended";
 /// What `pairing_state` returns changed; to every window.
 const PAIRING_CHANGED_EVENT: &str = "pairing-changed";
 
-/// Pairing, when this machine's host is open.
-pub struct PairingState(Option<Pairing>);
+/// Pairing, when this machine's host is open, and the windows that have it
+/// open. The pair form of every window opens pairing while it is shown;
+/// pairing itself is open for as long as any of them does.
+pub struct PairingState(Option<Pairing>, Mutex<Openers>);
+
+/// The windows that have pairing open, by label.
+#[derive(Default)]
+struct Openers(HashSet<String>);
+
+impl Openers {
+    /// Notes what the window did; returns whether any window has it open now.
+    fn set(&mut self, label: &str, open: bool) -> bool {
+        if open {
+            self.0.insert(label.to_string());
+        } else {
+            self.0.remove(label);
+        }
+        !self.0.is_empty()
+    }
+}
 
 impl PairingState {
     /// Call after the app manages its `HostState`.
@@ -33,7 +52,28 @@ impl PairingState {
             let events = Arc::new(WebviewPairingEvents { app: app.clone() });
             Pairing::new(&home, host, events)
         });
-        Self(pairing)
+        Self(pairing, Mutex::new(Openers::default()))
+    }
+
+    /// The window with `label` opened or closed pairing.
+    fn set_open(&self, label: &str, open: bool) -> CommandResult<()> {
+        let pairing = self.pairing()?;
+        let mut openers = self
+            .1
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let result = pairing.set_open(openers.set(label, open));
+        if result.is_err() && open {
+            // Not open after all: the window must not hold it open later.
+            openers.set(label, false);
+        }
+        result.map_err(CommandError::from)
+    }
+
+    /// A window is gone, and with it the pair form it may have shown.
+    pub fn window_closed(&self, label: &str) {
+        // Pairing that is off has nothing open to close.
+        let _ = self.set_open(label, false);
     }
 
     pub(crate) fn pairing(&self) -> CommandResult<&Pairing> {
@@ -100,11 +140,16 @@ pub async fn pairing_disable(state: State<'_, PairingState>) -> CommandResult<()
     Ok(())
 }
 
-/// The user opened or closed pairing: while it is open, this machine is
-/// seen by the machines nearby and takes their requests to pair.
+/// The user opened or closed pairing in the calling window. While any window
+/// has it open, this machine is seen by the machines nearby and takes their
+/// requests to pair.
 #[tauri::command]
-pub fn pairing_set_open(state: State<'_, PairingState>, open: bool) -> CommandResult<()> {
-    state.pairing()?.set_open(open).map_err(CommandError::from)
+pub fn pairing_set_open(
+    window: tauri::Window,
+    state: State<'_, PairingState>,
+    open: bool,
+) -> CommandResult<()> {
+    state.set_open(window.label(), open)
 }
 
 /// Asks the machine with `id` to pair: one nearby, or one whose invitation
@@ -160,4 +205,27 @@ pub async fn pairing_remove(state: State<'_, PairingState>, id: String) -> Comma
         .remove(&id)
         .await
         .map_err(CommandError::from)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Openers;
+
+    #[test]
+    fn pairing_stays_open_until_the_last_window_closes_it() {
+        let mut openers = Openers::default();
+
+        assert!(openers.set("main", true));
+        assert!(openers.set("second", true));
+        assert!(openers.set("main", false));
+        assert!(!openers.set("second", false));
+    }
+
+    #[test]
+    fn a_window_that_never_opened_it_closes_nothing() {
+        let mut openers = Openers::default();
+        openers.set("main", true);
+
+        assert!(openers.set("second", false));
+    }
 }

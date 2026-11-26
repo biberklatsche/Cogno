@@ -105,7 +105,7 @@ export class PtyHandler implements ITerminalHandler {
     this._lastParsedSeq = -1;
     this._lastAckedSeq = -1;
     this._unparsedBytes = 0;
-    const onData = (chunk: PtyChunkContract) => this.onPtyChunk(terminal, chunk);
+    const onData = (chunk: PtyChunkContract) => this.onPtyChunk(terminal, chunk, start);
     try {
       if (mode === "attach") {
         await this._pty.attach(this._terminalId, onData);
@@ -129,12 +129,19 @@ export class PtyHandler implements ITerminalHandler {
     return !this._disposed && start === this._starts;
   }
 
-  private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract): void {
+  /**
+   * `start` is the start whose stream the chunk belongs to. What xterm parses
+   * of an earlier stream after a restart counts for nothing: its sequence
+   * numbers would stand above the new stream's, which starts at 0 again, and
+   * no chunk of the new shell would ever be acknowledged.
+   */
+  private onPtyChunk(terminal: Terminal, chunk: PtyChunkContract, start: number): void {
     if (this._disposed) return;
     this._listener.onOutput?.();
     const bytes = chunk.data.byteLength;
     this._unparsedBytes += bytes;
     terminal.write(chunk.data, () => {
+      if (start !== this._starts) return;
       this._unparsedBytes -= bytes;
       this.parsed(chunk.seq);
     });

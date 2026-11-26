@@ -124,9 +124,10 @@ export class SessionScopeBuilder {
     // A saved scrollback is stashed before start(), so the host defers the
     // shell's start: the replay happens on the first attach, into an open,
     // final-sized terminal. A shell that runs has its host play back what it
-    // kept instead, which is newer.
-    const snapshot = this.pendingSnapshots.take(terminalId);
+    // kept instead, which is newer; the snapshot stays where it is, for the
+    // shell started in its place should that one turn out to be gone.
     if (start.kind === "spawn") {
+      const snapshot = this.pendingSnapshots.take(terminalId);
       if (snapshot) session.restore(snapshot);
     } else {
       session.showRunning(start.shell.sessionToken);

@@ -206,6 +206,24 @@ describe("PaneSessionManager", () => {
       expect(opened[0]?.start).toMatchObject({ kind: "shownElsewhere", by: "laptop" });
     });
 
+    it("starts a shell after all when the one said to be shown elsewhere is gone by now", async () => {
+      claimed = shownByLaptop("t1");
+      session.mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
+      paneSessionManager.ensureSession(localPane);
+      runtimeOf("t1", "takenOver");
+      await settle();
+
+      expect(opened.map((open) => open.start.kind)).toEqual(["shownElsewhere", "spawn"]);
+    });
+
+    it("shows the shell said to be shown elsewhere when nobody shows it any more", async () => {
+      claimed = shownByLaptop("t1");
+      paneSessionManager.ensureSession(localPane);
+      await settle();
+
+      expect(opened.map((open) => open.start.kind)).toEqual(["shownElsewhere", "showRunning"]);
+    });
+
     it("does not take the shell its start found running when another Cogno shows it", async () => {
       session.mockResolvedValueOnce(shownByLaptop("t1"));
       paneSessionManager.ensureSession(localPane);
@@ -308,7 +326,7 @@ describe("PaneSessionManager", () => {
       runtimeOf("t2", "takenOver");
       session.mockRejectedValueOnce(new HostError("notConnected", "not connected"));
 
-      await expect(paneSessionManager.takeBack("t2")).resolves.toBe(true);
+      await expect(paneSessionManager.takeBack("t2", true)).resolves.toBe(true);
       expect(waitingPanes.wait).toHaveBeenCalledTimes(2);
 
       // Found again: the user asked for it, so it is taken from whoever shows it.
@@ -340,7 +358,7 @@ describe("PaneSessionManager", () => {
     it("is shown here again when the user asks, with what its host says of it now", async () => {
       session.mockResolvedValueOnce(shownByLaptop("t1"));
 
-      await expect(paneSessionManager.takeBack("t1")).resolves.toBe(true);
+      await expect(paneSessionManager.takeBack("t1", true)).resolves.toBe(true);
 
       expect(session).toHaveBeenCalledExactlyOnceWith(undefined, "t1");
       expect(opened[1]?.start.kind).toBe("showRunning");
@@ -353,6 +371,22 @@ describe("PaneSessionManager", () => {
       expect(opened).toHaveLength(2);
     });
 
+    it("is not taken from yet another Cogno that shows it by the time it was let go", async () => {
+      session.mockResolvedValueOnce(shownByLaptop("t1"));
+      facts.next({ terminalId: "t1", fact: { type: "handedBack" } });
+      await settle();
+
+      expect(opened[1]?.start.kind).toBe("shownElsewhere");
+    });
+
+    it("is taken from whoever shows it when the user asks for it", async () => {
+      session.mockResolvedValueOnce(shownByLaptop("t1"));
+      reattachments.next({ type: "ReattachTerminal", payload: "t1" });
+      await settle();
+
+      expect(opened[1]?.start.kind).toBe("showRunning");
+    });
+
     it("comes back when a pane asks for it on the bus", async () => {
       reattachments.next({ type: "ReattachTerminal", payload: "t1" });
       await settle();
@@ -363,14 +397,14 @@ describe("PaneSessionManager", () => {
     it("is not taken back while it runs here", async () => {
       runtimeOf("t1", "running");
 
-      await expect(paneSessionManager.takeBack("t1")).resolves.toBe(false);
+      await expect(paneSessionManager.takeBack("t1", true)).resolves.toBe(false);
       expect(session).not.toHaveBeenCalled();
     });
 
     it("starts a new shell here when it ended meanwhile", async () => {
       session.mockRejectedValueOnce(new HostError("sessionNotFound", "gone"));
 
-      await expect(paneSessionManager.takeBack("t1")).resolves.toBe(false);
+      await expect(paneSessionManager.takeBack("t1", true)).resolves.toBe(false);
 
       expect(opened[1]?.start.kind).toBe("spawn");
     });

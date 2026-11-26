@@ -66,12 +66,13 @@ export class PaneSessionManager {
   ) {
     const reopenings = this.bus
       .on$("ReattachTerminal")
-      .subscribe((action) => action.payload && void this.takeBack(action.payload));
+      .subscribe((action) => action.payload && void this.takeBack(action.payload, true));
     reopenings.add(
       this.sessionRegistry.facts$.subscribe(({ terminalId, fact }) => {
         // A shell that another Cogno took and let go again comes back by
-        // itself, into the pane that still says where it went.
-        if (fact.type === "handedBack") void this.takeBack(terminalId);
+        // itself, into the pane that still says where it went - unless yet
+        // another Cogno shows it by now: taking it from there is the user's.
+        if (fact.type === "handedBack") void this.takeBack(terminalId, false);
         // A shell already ran when the pane wanted to start one - Cogno did
         // not know it was there: it is shown instead.
         if (fact.type === "shellAlreadyRuns") void this.showRunningShell(terminalId);
@@ -106,7 +107,12 @@ export class PaneSessionManager {
     const start: SessionStart = running
       ? this.showing(pane, running, this.takingOver.delete(terminalId))
       : { kind: "spawn", profile: this.configuredProfile(pane) };
-    return this.open(terminalId, pane, backend, start);
+    const entry = this.open(terminalId, pane, backend, start);
+    // What the window found at its start is as old as the window. A shell
+    // said to be shown elsewhere is never attached to, so nothing would tell
+    // that it ended or is free since: it is asked for once more.
+    if (start.kind === "shownElsewhere") void this.reopenShowingRunning(terminalId, entry, false);
+    return entry;
   }
 
   /**
@@ -148,13 +154,14 @@ export class PaneSessionManager {
 
   /**
    * Shows the shell of a pane whose session lost it to another Cogno again
-   * here: the user asked for it, or that Cogno let it go. Resolves to whether
-   * the pane shows it now.
+   * here. `byUser`: the user asked for it, so the shell is taken from whoever
+   * shows it; a shell that was let go is only shown while nobody else does.
+   * Resolves to whether the pane's session was replaced.
    */
-  async takeBack(terminalId: TerminalId): Promise<boolean> {
+  async takeBack(terminalId: TerminalId, byUser: boolean): Promise<boolean> {
     const entry = this.sessions.get(terminalId);
     if (entry?.session.runtime.status !== "takenOver") return false;
-    return this.reopenShowingRunning(terminalId, entry, true);
+    return this.reopenShowingRunning(terminalId, entry, byUser);
   }
 
   /**
