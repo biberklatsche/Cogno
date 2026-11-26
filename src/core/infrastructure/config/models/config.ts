@@ -38,7 +38,7 @@ const HttpServerSchema = z.strictObject({
  * share "General". The description is what the reference prints under it.
  */
 export const baseConfigSchemaShape = {
-  general: GeneralConfigSchema.optional().describe("What holds for the whole app."),
+  general: GeneralConfigSchema.optional().describe("Settings that apply to the whole app."),
   font: FontSchema.optional().describe("Terminal and app fonts."),
   color: ColorSchema.optional().describe(
     "Terminal color palette. Colors are hex without `#`; 8 digits add alpha.",

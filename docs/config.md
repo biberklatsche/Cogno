@@ -9,11 +9,11 @@ brackets.
 
 ## General
 
-What holds for the whole app.
+Settings that apply to the whole app.
 
 ### `general.enable_watch_config`
 
-Reload the config automatically when the file changes on disk.
+Apply changes to the settings file as soon as it is saved.
 
 **Type:** boolean · **Default:** `true`
 
@@ -59,7 +59,7 @@ Terminal font size in pixels.
 
 ### `font.enable_ligatures`
 
-Render programming ligatures (needs a font that has them).
+Join character pairs such as `->` and `!=` into one symbol (needs a font with ligatures).
 
 **Type:** boolean · **Default:** `false`
 
@@ -83,7 +83,7 @@ Draw box-drawing and block characters instead of taking them from the font.
 
 ### `font.draw_bold_text_in_bright_colors`
 
-Render bold text in the bright ANSI color variant.
+Show bold text in the bright variant of its color.
 
 **Type:** boolean · **Default:** `false`
 
@@ -347,7 +347,7 @@ Scrollbar width in pixels; 0 hides it.
 
 ### `scrollbar.overview_ruler_border_color`
 
-Border color of the overview ruler next to the scrollbar.
+Border color of the strip beside the scrollbar that marks search matches.
 
 **Type:** hex color · **Default:** `0e192500`
 
@@ -389,7 +389,7 @@ Duration of smooth scrolling in milliseconds; 0 disables it.
 
 ### `scrollbar.fast_scroll_sensitivity`
 
-Scroll multiplier while the fast-scroll modifier is held.
+How many times faster the terminal scrolls while you hold Alt.
 
 **Type:** integer ≥ 0 · **Default:** `2`
 
@@ -663,43 +663,43 @@ Draw the terminal with the graphics card, which is faster. Turn it off if text l
 
 ### `terminal.scrollback_lines`
 
-How many lines of scrollback the terminal keeps.
+How many lines of earlier output a terminal keeps for scrolling back.
 
 **Type:** integer ≥ 100 · **Default:** `100000`
 
 ### `terminal.decoration.color.background`
 
-Fill color of the decoration.
+Fill color of a match.
 
 **Type:** hex color · **Default:** `2f8fda55`
 
 ### `terminal.decoration.color.border`
 
-Border color of the decoration.
+Border color of a match.
 
 **Type:** hex color · **Default:** `2f8fda`
 
 ### `terminal.decoration.color.overview_ruler`
 
-Marker color in the overview ruler beside the scrollbar.
+Color of the mark a match gets in the strip beside the scrollbar.
 
 **Type:** hex color · **Default:** `2f8fda`
 
 ### `terminal.decoration.active_color.background`
 
-Fill color of the decoration.
+Fill color of a match.
 
 **Type:** hex color · **Default:** `f5e66399`
 
 ### `terminal.decoration.active_color.border`
 
-Border color of the decoration.
+Border color of a match.
 
 **Type:** hex color · **Default:** `f5e663`
 
 ### `terminal.decoration.active_color.overview_ruler`
 
-Marker color in the overview ruler beside the scrollbar.
+Color of the mark a match gets in the strip beside the scrollbar.
 
 **Type:** hex color · **Default:** `f5e663`
 

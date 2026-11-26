@@ -46,7 +46,9 @@ export const FontSchema = z.strictObject({
   enable_ligatures: z
     .boolean()
     .optional()
-    .describe("Render programming ligatures (needs a font that has them)."),
+    .describe(
+      "Join character pairs such as `->` and `!=` into one symbol (needs a font with ligatures).",
+    ),
   weight: FontWeightSchema.optional().describe("Weight of normal terminal text."),
   weight_bold: FontWeightSchema.optional().describe("Weight of bold terminal text."),
   custom_glyphs: z
@@ -56,7 +58,7 @@ export const FontSchema = z.strictObject({
   draw_bold_text_in_bright_colors: z
     .boolean()
     .optional()
-    .describe("Render bold text in the bright ANSI color variant."),
+    .describe("Show bold text in the bright variant of its color."),
   rescale_overlapping_glyphs: z
     .boolean()
     .optional()

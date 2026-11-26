@@ -4,7 +4,7 @@ export const GeneralConfigSchema = z.strictObject({
   enable_watch_config: z
     .boolean()
     .optional()
-    .describe("Reload the config automatically when the file changes on disk."),
+    .describe("Apply changes to the settings file as soon as it is saved."),
   update_install: z
     .enum(["background", "ask"])
     .optional()

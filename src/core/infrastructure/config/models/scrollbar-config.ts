@@ -10,7 +10,7 @@ export const ScrollbarSchema = z.strictObject({
     .describe("Scrollbar width in pixels; 0 hides it."),
   overview_ruler_border_color: hexColorSchema
     .optional()
-    .describe("Border color of the overview ruler next to the scrollbar."),
+    .describe("Border color of the strip beside the scrollbar that marks search matches."),
   slider_color: hexColorSchema.optional().describe("Scrollbar slider color."),
   slider_hover_color: hexColorSchema.optional().describe("Scrollbar slider color while hovered."),
   slider_active_color: hexColorSchema
@@ -37,7 +37,7 @@ export const ScrollbarSchema = z.strictObject({
     .int()
     .min(0, "Scrollbar smooth scroll duration must be at least 0")
     .optional()
-    .describe("Scroll multiplier while the fast-scroll modifier is held."),
+    .describe("How many times faster the terminal scrolls while you hold Alt."),
 });
 
 export type Scrollbar = z.infer<typeof ScrollbarSchema>;
