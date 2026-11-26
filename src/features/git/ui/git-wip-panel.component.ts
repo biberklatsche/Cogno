@@ -5,12 +5,14 @@ import {
   effect,
   signal,
   untracked,
+  viewChildren,
 } from "@angular/core";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitOperationsService } from "../git-operations.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState, GitWipFileGroup } from "../git-view-state.service";
+import { nextStop } from "../model/git-list-walk";
 import { GitFile, GitOperation } from "../model/git-model";
 import { GitFileListComponent } from "./git-file-list.component";
 import { toggled } from "./git-format";
@@ -225,6 +227,9 @@ const OPERATION_NAMES: Record<GitOperation, string> = {
   ],
 })
 export class GitWipPanelComponent {
+  /** The open lists, top to bottom. */
+  private readonly fileLists = viewChildren(GitFileListComponent);
+
   readonly status = this.repository.status;
   readonly unstaged = computed(() => [...this.status().unstaged, ...this.status().untracked]);
 
@@ -288,6 +293,21 @@ export class GitWipPanelComponent {
 
   openDiff(file: GitFile, kind: GitWipFileGroup): void {
     this.actions.showDiff({ kind, file });
+  }
+
+  /** As in a commit's files; the open lists are walked as one, top to bottom. */
+  stepFile(step: 1 | -1): void {
+    const files = this.fileLists().flatMap((list) => {
+      const group = list.kind();
+      // Never the case here; said for the types.
+      return group === "commit" ? [] : list.stops().map((file) => ({ file, group }));
+    });
+    const next = nextStop(
+      files,
+      files.findIndex(({ file, group }) => this.selectedPath(group) === file.path),
+      step,
+    );
+    if (next) this.openDiff(next.file, next.group);
   }
 
   markAllResolved(): Promise<void> {

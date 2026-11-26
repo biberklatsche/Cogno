@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from "@angular/common";
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  effect,
+  input,
+  output,
+  signal,
+} from "@angular/core";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitFileListMode } from "../git-view-state.service";
 import { buildFileTree, GitFileTreeRow } from "../model/git-file-tree";
@@ -104,6 +113,27 @@ export class GitFileListComponent {
 
   readonly collapsed = signal<ReadonlySet<string>>(new Set());
   readonly treeRows = computed(() => buildFileTree(this.files(), this.collapsed()));
+  /**
+   * The files the arrow keys walk, top to bottom as shown: no folders, nothing
+   * a collapsed folder hides, and no directory, which has no diff to open.
+   */
+  readonly stops = computed<ReadonlyArray<GitFile>>(() => {
+    const shown =
+      this.mode() === "tree"
+        ? this.treeRows().flatMap((row) => (row.kind === "file" ? [row.file] : []))
+        : this.files();
+    return shown.filter((file) => !file.isDirectory);
+  });
+
+  constructor(host: ElementRef<HTMLElement>) {
+    // A file selected with the keyboard may be outside the scrolled part.
+    effect(() => {
+      if (this.selectedPath() === null) return;
+      requestAnimationFrame(() =>
+        host.nativeElement.querySelector(".row.selected")?.scrollIntoView({ block: "nearest" }),
+      );
+    });
+  }
 
   toggleFolder(path: string): void {
     this.collapsed.update((collapsed) => toggled(collapsed, path));

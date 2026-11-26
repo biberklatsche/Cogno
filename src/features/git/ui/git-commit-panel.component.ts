@@ -1,14 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  signal,
+  viewChild,
+} from "@angular/core";
 import { ClipboardAccess } from "@cogno/platform";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { GitAvatarService } from "../git-avatar.service";
 import { GitRepositoryService } from "../git-repository.service";
 import { GitUiActions } from "../git-ui-actions.service";
 import { GitViewState } from "../git-view-state.service";
+import { nextStop } from "../model/git-list-walk";
 import { GitCommitDetail, GitFile } from "../model/git-model";
 import { GitFileListComponent } from "./git-file-list.component";
 import { authorInitials, formatCommitTime } from "./git-format";
 import { GIT_SHARED_STYLES } from "./git-styles";
+import { PacedLoad } from "./paced-load";
 
 /** A commit or stash: its message, author, parents and the files it changed. */
 @Component({
@@ -149,6 +159,9 @@ export class GitCommitPanelComponent {
   /** Set for a stash: its ref, shown instead of "commit". */
   readonly stashRef = input<string | null>(null);
 
+  private readonly fileList = viewChild(GitFileListComponent);
+  private readonly paced = new PacedLoad();
+
   readonly detail = signal<GitCommitDetail | null>(null);
   readonly loading = signal(false);
 
@@ -178,8 +191,14 @@ export class GitCommitPanelComponent {
     readonly view: GitViewState,
     readonly clipboard: ClipboardAccess,
   ) {
-    effect(() => {
-      void this.load(this.sha());
+    effect((onCleanup) => {
+      const sha = this.sha();
+      // What is shown belongs to the commit before; the new one is read once
+      // the selection rests.
+      this.loading.set(true);
+      this.detail.set(null);
+      this.paced.start(() => void this.load(sha));
+      onCleanup(() => this.paced.cancel());
     });
   }
 
@@ -197,6 +216,20 @@ export class GitCommitPanelComponent {
     });
   }
 
+  /** An arrow key in the files: the diff of the file above or below the open one, or of the first. */
+  stepFile(step: 1 | -1): void {
+    const commit = this.detail();
+    if (!commit) return;
+    const files = this.fileList()?.stops() ?? [];
+    const open = this.selectedPath();
+    const file = nextStop(
+      files,
+      files.findIndex((candidate) => candidate.path === open),
+      step,
+    );
+    if (file) this.openDiff(file, commit);
+  }
+
   initials(name: string): string {
     return authorInitials(name);
   }
@@ -206,8 +239,6 @@ export class GitCommitPanelComponent {
   }
 
   private async load(sha: string): Promise<void> {
-    this.loading.set(true);
-    this.detail.set(null);
     try {
       const detail = await this.repository.loadCommitDetail(sha);
       // A newer selection replaced this one while git was running.

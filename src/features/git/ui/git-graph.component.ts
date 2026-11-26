@@ -577,6 +577,30 @@ export class GitGraphComponent {
       };
       requestAnimationFrame(focus);
     });
+    // The selected row stays in view: it moves with the arrow keys, and a tree
+    // that takes a diff's place again starts where the selection is. Scrolls
+    // just far enough, and not at all for a row that is seen.
+    effect(() => {
+      const selection = this.view.selection();
+      const viewport = this.viewport();
+      if (!viewport) return;
+      // Once the viewport knows its size, which it does not while it is created.
+      requestAnimationFrame(() => {
+        const index = this.items().findIndex((item) =>
+          item.kind === "commit"
+            ? selection.kind !== "wip" && item.commit.sha === selection.sha
+            : item.kind === "wip" && selection.kind === "wip",
+        );
+        if (index === -1) return;
+        const top = index * this.rowHeight;
+        const visibleTop = viewport.measureScrollOffset("top");
+        const visibleHeight = viewport.getViewportSize();
+        if (top < visibleTop) viewport.scrollToOffset(top);
+        else if (top + this.rowHeight > visibleTop + visibleHeight) {
+          viewport.scrollToOffset(top + this.rowHeight - visibleHeight);
+        }
+      });
+    });
     effect(() => {
       const sha = this.view.reveal();
       const items = this.items();

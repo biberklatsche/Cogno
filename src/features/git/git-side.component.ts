@@ -5,6 +5,7 @@ import {
   ElementRef,
   OnDestroy,
   signal,
+  viewChild,
 } from "@angular/core";
 import { IconComponent } from "@cogno/shared/ui";
 import { GitOperationsService } from "./git-operations.service";
@@ -27,6 +28,8 @@ const NARROW_WIDTH_PX = 760;
 const MIN_PANEL_WIDTH = 160;
 /** What the graph in the middle keeps at least while a side panel is dragged wider. */
 const MIN_CENTER_WIDTH = 240;
+/** Where the person types or chooses: there the arrow keys are the field's. */
+const TEXT_ENTRY = 'input, textarea, select, [contenteditable=""], [contenteditable="true"]';
 const PANEL_SELECTORS: Record<GitSidePanel, string> = {
   refs: ".refs",
   detail: ".detail",
@@ -80,8 +83,8 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
         </div>
       }
 
-      <div class="body" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()"
-           [class.with-repositories]="!narrow()">
+      <div class="body" tabindex="0" [class.narrow]="narrow()" [class.with-refs]="view.refsVisible()"
+           [class.with-repositories]="!narrow()" (keydown)="onKey($event)">
         @if (view.refsVisible()) {
           <app-git-refs-panel class="refs"></app-git-refs-panel>
         }
@@ -211,6 +214,7 @@ const PANEL_SELECTORS: Record<GitSidePanel, string> = {
         grid-template-columns: var(--refs-width) minmax(0, 1fr) var(--detail-width) var(--repositories-width);
         grid-template-areas: "refs center detail repositories";
       }
+      .body:focus { outline: none; }
       .refs { grid-area: refs; min-height: 0; border-right: 1px solid var(--git-border); }
       .center { grid-area: center; min-height: 0; min-width: 0; }
       .detail { grid-area: detail; min-height: 0; min-width: 0; border-left: 1px solid var(--git-border); }
@@ -305,6 +309,9 @@ export class GitSideComponent implements OnDestroy {
       : `${what} - resolved, ready to continue`;
   });
 
+  private readonly commitPanel = viewChild(GitCommitPanelComponent);
+  private readonly wipPanel = viewChild(GitWipPanelComponent);
+
   private readonly resizeObserver: ResizeObserver;
   private readonly resizing = new PointerResize<GitSidePanel>();
   /** How wide the dragged panel may get before the middle falls below its minimum. */
@@ -329,6 +336,38 @@ export class GitSideComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.resizeObserver.disconnect();
+  }
+
+  /**
+   * The arrow keys walk the panel: up and down through the tree, right into
+   * the files of what is selected, up and down through those, left back. "In
+   * the files" is the open diff, which stands where the tree was. Handled
+   * here and not as a registered keybind, which would take the keys away
+   * from the panel's text fields too.
+   */
+  onKey(event: KeyboardEvent): void {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (event.target instanceof Element && event.target.closest(TEXT_ENTRY) !== null) return;
+    const inFiles = this.view.diff() !== null;
+    const files = this.commitPanel() ?? this.wipPanel();
+    switch (event.key) {
+      case "ArrowUp":
+      case "ArrowDown": {
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        if (inFiles) files?.stepFile(step);
+        else this.view.stepSelection(step);
+        break;
+      }
+      case "ArrowRight":
+        if (!inFiles) files?.stepFile(1);
+        break;
+      case "ArrowLeft":
+        this.view.closeDiff();
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
   }
 
   /** The work in progress with the first conflicted file open for resolving. */

@@ -2,6 +2,7 @@ import { computed, effect, Injectable, signal } from "@angular/core";
 import { GitDiffSource } from "./git-diff.service";
 import { GitRepositoryService } from "./git-repository.service";
 import { GitHostId } from "./hosts/git-hosts";
+import { nextStop } from "./model/git-list-walk";
 import { GitPullMode } from "./model/git-model";
 import { GitRowMarks } from "./ui/git-row-marks";
 
@@ -115,6 +116,26 @@ export class GitViewState {
   select(selection: GitSelection): void {
     this.chosen.set(selection);
     this.diff.set(null);
+  }
+
+  /**
+   * An arrow key in the tree: selects the row above or below the selected
+   * one, in the order listed - the work in progress while it is shown, then
+   * the commits.
+   */
+  stepSelection(step: 1 | -1): void {
+    const rows: GitSelection[] = [
+      ...(this.wipVisible() ? [{ kind: "wip" as const }] : []),
+      ...this.repository.commits().map((commit) => ({ kind: "commit" as const, sha: commit.sha })),
+    ];
+    const selection = this.selection();
+    const current = rows.findIndex((row) =>
+      row.kind === "commit"
+        ? selection.kind !== "wip" && row.sha === selection.sha
+        : selection.kind === "wip",
+    );
+    const next = nextStop(rows, current, step);
+    if (next) this.select(next);
   }
 
   /** Select a commit and bring it into view in the graph. */

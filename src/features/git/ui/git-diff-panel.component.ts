@@ -19,6 +19,7 @@ import { GitDiffViewComponent } from "./git-diff-view.component";
 import { fileStatusClass, fileStatusIcon } from "./git-format";
 import { GitHunkActions, GitHunkViewComponent } from "./git-hunk-view.component";
 import { GIT_SHARED_STYLES } from "./git-styles";
+import { PacedLoad } from "./paced-load";
 
 /**
  * A file's diff in the middle of the panel, in place of the graph: hunk by
@@ -119,6 +120,7 @@ export class GitDiffPanelComponent {
   readonly content = signal<GitDiffContent | null>(null);
   readonly patch = signal<GitPatch | null>(null);
   private loadedKey: string | null = null;
+  private readonly paced = new PacedLoad();
   private readonly sourceKey = computed(() => {
     const source = this.view.diff();
     if (!source) return null;
@@ -137,13 +139,22 @@ export class GitDiffPanelComponent {
     // Load when another file is opened or the view switches between hunks and
     // text, and reload a working-tree diff whenever the repository was re-read
     // (the file may have changed on disk).
-    effect(() => {
+    effect((onCleanup) => {
       const key = this.sourceKey();
       const hunks = this.view.diffMode() === "hunks";
       const source = untracked(() => this.view.diff());
       if (source?.kind !== "commit") this.repository.status();
       if (!key || !source || source.kind === "conflicted") return;
-      untracked(() => void this.load(source, key, hunks));
+      untracked(() => {
+        // What is shown belongs to the file before; the new one is read once
+        // the selection rests.
+        if (key !== this.loadedKey) {
+          this.patch.set(null);
+          this.content.set(null);
+        }
+        this.paced.start(() => void this.load(source, key, hunks));
+      });
+      onCleanup(() => this.paced.cancel());
     });
 
     // A file moves between the lists (staged, unstaged, resolved); the panel
@@ -205,10 +216,6 @@ export class GitDiffPanelComponent {
   }
 
   private async load(source: GitTextSource, key: string, hunks: boolean): Promise<void> {
-    if (key !== this.loadedKey) {
-      this.patch.set(null);
-      this.content.set(null);
-    }
     if (hunks) {
       const patch = await this.diffs.loadPatch(source);
       if (!this.stillShowing(key, hunks)) return;

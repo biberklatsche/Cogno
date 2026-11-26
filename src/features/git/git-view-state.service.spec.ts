@@ -10,11 +10,12 @@ TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 describe("GitViewState", () => {
   let changeCount: ReturnType<typeof signal<number>>;
   let head: ReturnType<typeof signal<{ sha: string | null; branch: string | null }>>;
+  const commits = signal([{ sha: "abc123" }, { sha: "def456" }]);
   let view: GitViewState;
 
   const create = () =>
     TestBed.runInInjectionContext(
-      () => new GitViewState({ changeCount, head } as unknown as GitRepositoryService),
+      () => new GitViewState({ changeCount, head, commits } as unknown as GitRepositoryService),
     );
 
   /** What a restart finds in storage: the last arrangement, written once the effect ran. */
@@ -48,6 +49,37 @@ describe("GitViewState", () => {
     changeCount.set(1);
 
     expect(view.selection()).toEqual({ kind: "wip" });
+  });
+
+  it("steps with the arrow keys from the work in progress down through the commits", () => {
+    view.stepSelection(1);
+    expect(view.selection()).toEqual({ kind: "commit", sha: "abc123" });
+    view.stepSelection(1);
+    expect(view.selection()).toEqual({ kind: "commit", sha: "def456" });
+    // The last row: nowhere further down.
+    view.stepSelection(1);
+    expect(view.selection()).toEqual({ kind: "commit", sha: "def456" });
+
+    view.stepSelection(-1);
+    view.stepSelection(-1);
+    expect(view.selection()).toEqual({ kind: "wip" });
+  });
+
+  it("steps from HEAD while the work in progress row is hidden", () => {
+    changeCount.set(0);
+
+    view.stepSelection(-1);
+    expect(view.selection()).toEqual({ kind: "commit", sha: "abc123" });
+    view.stepSelection(1);
+    expect(view.selection()).toEqual({ kind: "commit", sha: "def456" });
+  });
+
+  it("closes an open diff when the selection steps on", () => {
+    view.openDiff({ kind: "unstaged", file: { path: "a.ts" } } as never);
+
+    view.stepSelection(1);
+
+    expect(view.diff()).toBeNull();
   });
 
   it("keeps the row in an empty repository without a commit to show", () => {
