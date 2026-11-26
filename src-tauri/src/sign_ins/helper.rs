@@ -20,6 +20,13 @@ use std::io::Read;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager};
 
+/// The server's route the helper asks on.
+pub const ROUTE: &str = "/credential";
+/// Git's operations (gitcredentials(7)) this helper acts on; `store` is not
+/// among them, since a sign-in is stored when it is made.
+const GET: &str = "get";
+const ERASE: &str = "erase";
+
 /// The kind of question a credential request is; the payload names the origin.
 const CREDENTIAL_KIND: &str = "credential";
 /// The kind that tells the run git reported its credential for an origin as
@@ -133,7 +140,7 @@ pub async fn answer(app: &AppHandle, request: Request) -> Reply {
     let questions = app.state::<RunQuestions>();
     let about_origin = serde_json::json!({ "origin": origin });
 
-    if request.operation == "erase" {
+    if request.operation == ERASE {
         if let Some(password) = &request.password {
             typed.forget(&origin, password);
             sign_ins.rejected(&origin, password).await;
@@ -207,8 +214,7 @@ fn render(reply: &Reply) -> String {
 pub fn run_helper(operation: &str) -> i32 {
     let mut input = String::new();
     let _ = std::io::stdin().read_to_string(&mut input);
-    // Cogno keeps nothing git hands it: a sign-in is stored when it is made.
-    if operation != "get" && operation != "erase" {
+    if operation != GET && operation != ERASE {
         return 0;
     }
     let mut asked = parse(&input);
@@ -222,10 +228,10 @@ pub fn run_helper(operation: &str) -> i32 {
     };
     // A rejection matters to the run it happened in, or by the credential
     // that was rejected; with neither there is nothing to tell.
-    if operation == "erase" && request.session.is_none() && request.password.is_none() {
+    if operation == ERASE && request.session.is_none() && request.password.is_none() {
         return 0;
     }
-    let reply = ask_running_cogno("credential", &serde_json::json!(request))
+    let reply = ask_running_cogno(ROUTE, &serde_json::json!(request))
         .and_then(|answer| serde_json::from_value::<Reply>(answer).ok())
         .unwrap_or(Reply::Nothing);
     print!("{}", render(&reply));

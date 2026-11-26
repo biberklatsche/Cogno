@@ -8,6 +8,8 @@
 use super::run_questions::{ask_running_cogno, Asked, RunQuestions};
 use tauri::{AppHandle, Manager};
 
+/// The server's route the helper asks on.
+pub const ROUTE: &str = "/askpass";
 /// The kind of question a prompt text is.
 const KIND: &str = "prompt";
 
@@ -27,7 +29,7 @@ pub async fn answer(app: &AppHandle, session_id: &str, prompt: String) -> Option
 pub fn run_helper(session_id: &str, prompt_args: &[String]) -> i32 {
     let prompt = prompt_args.join(" ");
     let body = serde_json::json!({ "session": session_id, "prompt": prompt });
-    let answer = ask_running_cogno("askpass", &body);
+    let answer = ask_running_cogno(ROUTE, &body);
     match answer
         .as_ref()
         .and_then(|payload| payload.get("answer"))

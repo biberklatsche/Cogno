@@ -33,6 +33,9 @@ const CLOSED_EVENT: &str = "run-question-closed";
 /// How long a question may stay open before the helper gets no answer. The
 /// person may take a while; the runner's timeout pauses meanwhile.
 const WAIT: std::time::Duration = std::time::Duration::from_secs(30 * 60);
+/// How long a helper waits for the server: longer than any question stays
+/// open, so the server ends the wait and not the helper.
+const HELPER_WAIT: std::time::Duration = std::time::Duration::from_secs(60 * 60);
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -248,18 +251,17 @@ pub fn run_question_answer(
 /// How a helper process reaches the Cogno that started its run: one request
 /// to the local server, with the token from its environment. `None` when
 /// there is no server to ask or it gave no answer.
-pub fn ask_running_cogno(path: &str, body: &Value) -> Option<Value> {
+pub fn ask_running_cogno(route: &str, body: &Value) -> Option<Value> {
     let port = std::env::var("COGNO_PORT").ok()?;
     let token = std::env::var("COGNO_TOKEN").unwrap_or_default();
     let client = reqwest::blocking::Client::builder()
-        // A dialog or a sign-in in the browser may take a while.
-        .timeout(std::time::Duration::from_secs(60 * 60))
+        .timeout(HELPER_WAIT)
         // The server is on this machine; no proxy has a say.
         .no_proxy()
         .build()
         .ok()?;
     client
-        .post(format!("http://127.0.0.1:{port}/{path}"))
+        .post(format!("http://127.0.0.1:{port}{route}"))
         .header(crate::http_server::TOKEN_HEADER, token)
         .json(body)
         .send()

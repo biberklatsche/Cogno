@@ -359,7 +359,7 @@ pub fn start_http_server(
                 }),
             )
             .route(
-                "/askpass",
+                crate::commands::askpass::ROUTE,
                 post(move |headers: axum::http::HeaderMap, result: Result<Json<AskpassPayload>, JsonRejection>| {
                     let app = app_askpass.clone();
                     async move {
@@ -384,7 +384,7 @@ pub fn start_http_server(
                 }),
             )
             .route(
-                "/credential",
+                crate::sign_ins::helper::ROUTE,
                 post(move |headers: axum::http::HeaderMap, result: Result<Json<crate::sign_ins::helper::Request>, JsonRejection>| {
                     let app = app_credential.clone();
                     let launch_authorized = is_authorized(&headers, &token_for_credential, actual_port);
