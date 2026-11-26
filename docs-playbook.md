@@ -64,7 +64,7 @@ The pages live in `src/content/docs/` (configuration pages in `config/`); the
 `slug` sets the URL and must match the sidebar entry (e.g. `config.md` →
 `slug: docs/config`, `config/prompt.md` → `slug: docs/config/prompt`).
 
-`getting-started.md`, `logging.md` and `index.md` are maintained by hand and not
+`getting-started.md`, `troubleshooting.md` and `index.md` are maintained by hand and not
 generated. When a page is added or removed, update the link lists in
 `index.md` and at the end of `getting-started.md` as well.
 

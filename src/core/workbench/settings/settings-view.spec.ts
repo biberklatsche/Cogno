@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildSettingRows,
   buildSettingsView,
+  markHits,
   parseInput,
   renderValue,
   SettingRowsInput,
@@ -53,8 +54,10 @@ const input = {
   query: "",
 };
 
-const view = (input: SettingRowsInput & SettingsViewFilter) =>
-  buildSettingsView(buildSettingRows(input), input);
+const view = (input: SettingRowsInput & SettingsViewFilter) => {
+  const shown = buildSettingsView(buildSettingRows(input), input);
+  return { ...shown, rows: shown.blocks.flatMap((block) => block.rows) };
+};
 
 describe("buildSettingsView", () => {
   it("shows the chosen section with values, platform defaults and what the user set", () => {
@@ -106,66 +109,77 @@ describe("buildSettingsView", () => {
   });
 });
 
-describe("headings", () => {
+describe("blocks", () => {
   const group = (key: string) => ({
     key,
     title: key.split(".").at(-1)?.toUpperCase() ?? key,
     description: `${key} described`,
   });
+  const setting = (key: string) => {
+    const parts = key.split(".");
+    return descriptor({
+      key,
+      section: "Notifications",
+      groups: parts.slice(0, -1).map((_, index) => group(parts.slice(0, index + 1).join("."))),
+    });
+  };
   const notifications = (query: string) =>
     view({
       descriptors: [
-        descriptor({
-          key: "n.source.agents.working.enabled",
-          section: "Notifications",
-          groups: [
-            group("n"),
-            group("n.source"),
-            group("n.source.agents"),
-            group("n.source.agents.working"),
-          ],
-        }),
-        descriptor({
-          key: "n.source.agents.ready.enabled",
-          section: "Notifications",
-          groups: [
-            group("n"),
-            group("n.source"),
-            group("n.source.agents"),
-            group("n.source.agents.ready"),
-          ],
-        }),
-        descriptor({
-          key: "n.source.errors.handled.enabled",
-          section: "Notifications",
-          groups: [
-            group("n"),
-            group("n.source"),
-            group("n.source.errors"),
-            group("n.source.errors.handled"),
-          ],
-        }),
+        setting("n.channel.app.enabled"),
+        setting("n.channel.app.duration"),
+        setting("n.channel.os.enabled"),
+        setting("n.channel.badge.enabled"),
+        setting("n.source.agents.working.enabled"),
+        setting("n.source.agents.ready.enabled"),
       ],
       configuration: {},
       userKeys: new Set(),
       platform: "linux",
       section: "Notifications",
       query,
-    }).rows;
+    }).blocks.map((block) => ({ ...block, rows: block.rows.map((row) => row.key) }));
 
-  it("opens the groups a row enters, stepped by depth, and skips groups of one setting", () => {
-    const rows = notifications("");
-    expect(rows[0]?.headings).toEqual([
-      { key: "n.source", title: "SOURCE", description: "n.source described", level: 1 },
-      {
-        key: "n.source.agents",
-        title: "AGENTS",
-        description: "n.source.agents described",
-        level: 2,
-      },
+  it("puts the rows of the innermost group with several settings into one titled block", () => {
+    expect(notifications("")[0]).toEqual({
+      key: "n.channel.app.enabled",
+      headings: [
+        { key: "n.channel", title: "CHANNEL", description: "n.channel described", level: 1 },
+      ],
+      grouped: true,
+      groupKey: "n.channel.app",
+      title: "APP",
+      description: "n.channel.app described",
+      rows: ["n.channel.app.enabled", "n.channel.app.duration"],
+    });
+  });
+
+  it("keeps settings that stand alone in their group out of the block before them", () => {
+    expect(notifications("")[1]).toEqual({
+      key: "n.channel.os.enabled",
+      headings: [],
+      grouped: true,
+      groupKey: "n.channel",
+      rows: ["n.channel.os.enabled", "n.channel.badge.enabled"],
+    });
+  });
+
+  it("opens the next group of groups with its own heading", () => {
+    expect(notifications("")[2]).toEqual({
+      key: "n.source.agents.working.enabled",
+      headings: [{ key: "n.source", title: "SOURCE", description: "n.source described", level: 1 }],
+      grouped: true,
+      groupKey: "n.source.agents",
+      title: "AGENTS",
+      description: "n.source.agents described",
+      rows: ["n.source.agents.working.enabled", "n.source.agents.ready.enabled"],
+    });
+  });
+
+  it("leaves rows in no named group ungrouped", () => {
+    expect(view(input).blocks).toEqual([
+      expect.objectContaining({ key: "terminal.webgl", grouped: false, headings: [] }),
     ]);
-    expect(rows[1]?.headings).toEqual([]);
-    expect(rows[2]?.headings).toEqual([]);
   });
 
   it("names the section first while searching", () => {
@@ -174,6 +188,27 @@ describe("headings", () => {
       title: "Notifications",
       level: 0,
     });
+  });
+});
+
+describe("markHits", () => {
+  it("cuts a text at every term, whatever its case, and joins hits that touch", () => {
+    expect(markHits("Font size of the Terminal font", ["font", "term", "minal"])).toEqual([
+      { text: "Font", hit: true },
+      { text: " size of the ", hit: false },
+      { text: "Terminal", hit: true },
+      { text: " ", hit: false },
+      { text: "font", hit: true },
+    ]);
+  });
+
+  it("leaves a text without a hit whole, and an empty one out", () => {
+    expect(markHits("cursor", [])).toEqual([{ text: "cursor", hit: false }]);
+    expect(markHits("", ["a"])).toEqual([]);
+  });
+
+  it("hands the query's words to the view, lowercased", () => {
+    expect(view({ ...input, query: " WebGL  on " }).terms).toEqual(["webgl", "on"]);
   });
 });
 

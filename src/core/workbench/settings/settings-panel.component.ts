@@ -24,6 +24,7 @@ import {
   ToggleSwitchComponent,
   TooltipDirective,
 } from "@cogno/shared/ui";
+import { MarkedTextComponent } from "./marked-text.component";
 import { SettingsNavigation } from "./settings-navigation";
 import {
   buildSettingRows,
@@ -53,6 +54,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
   imports: [
     ColorFieldComponent,
     IconComponent,
+    MarkedTextComponent,
     SideMenuSearchInputComponent,
     ToggleSwitchComponent,
     TooltipDirective,
@@ -66,7 +68,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         [value]="query()"
         (query)="query.set($event)"
       ></app-side-menu-search-input>
-      <button type="button" class="button small file-link" (click)="openConfigFile()">
+      <button type="button" class="file-link" (click)="openConfigFile()">
         <app-icon name="mdiOpenInNew"></app-icon>
         Edit in settings file
       </button>
@@ -79,7 +81,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
             type="button"
             class="section"
             [class.active]="!view().searching && section.title === activeSection()"
-            (click)="activeSection.set(section.title); query.set('')"
+            (click)="showSection(section.title, rowsElement)"
           >
             <span>{{ section.title }}</span>
             @if (view().searching) {
@@ -88,31 +90,48 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
           </button>
         }
       </nav>
-      <select class="sections-select" [value]="activeSection()" (change)="activeSection.set(select.value); query.set('')" #select>
+      <select class="sections-select" (change)="showSection(select.value, rowsElement)" #select>
         @for (section of view().sections; track section.title) {
-          <option [value]="section.title">{{ section.title }}</option>
+          <option [value]="section.title" [selected]="section.title === activeSection()">{{ section.title }}</option>
         }
       </select>
 
-      <div class="rows">
+      <div class="rows" #rowsElement>
         @if (!view().searching) {
           <h2 class="title">{{ activeSection() }}</h2>
         }
-        @if (view().rows.length === 0) {
+        @if (view().blocks.length === 0) {
           <p class="empty">No setting matches.</p>
         }
-        @for (row of view().rows; track row.key) {
-          @for (heading of row.headings; track heading.key) {
-            <h3 [class]="'group level-' + heading.level">{{ heading.title }}</h3>
+        @for (block of view().blocks; track block.key) {
+          @for (heading of block.headings; track heading.key) {
+            <h3 [class]="'group level-' + heading.level" [attr.data-section]="heading.level === 0 ? heading.title : null">
+              <!-- A section's name is searched, a group's is not. -->
+              @if (heading.level === 0) {
+                <app-marked-text [text]="heading.title" [terms]="view().terms" />
+              } @else {
+                {{ heading.title }}
+              }
+            </h3>
             @if (heading.description) {
-              <p class="group-description">{{ heading.description }}</p>
+              <p class="group-description"><app-marked-text [text]="heading.description" [terms]="view().terms" /></p>
             }
           }
+          <div class="block" [class.grouped]="block.grouped">
+          @if (block.title) {
+            <header class="block-head">
+              <h4>{{ block.title }}</h4>
+              @if (block.description) {
+                <p><app-marked-text [text]="block.description" [terms]="view().terms" /></p>
+              }
+            </header>
+          }
+          @for (row of block.rows; track row.key) {
           <!-- A short control stands beside the text; one that takes text gets the line below it. -->
           <section class="row" [class.wide]="isWide(row)">
             <div class="text">
               <header class="row-head">
-                <code class="key">{{ row.key }}</code>
+                <code class="key"><app-marked-text [text]="row.key" [terms]="view().terms" /></code>
                 <!-- Always in the layout, so a row never changes height when it becomes modified. -->
                 <button
                   type="button"
@@ -127,7 +146,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
                 </button>
               </header>
               <!-- On one line: a line break between the parts would show as a space around every code span. -->
-              <p class="description">@for (part of row.descriptionParts; track $index) {@if (part.code) {<code>{{ part.text }}</code>} @else {<span>{{ part.text }}</span>}}</p>
+              <p class="description">@for (part of row.descriptionParts; track $index) {@if (part.code) {<code><app-marked-text [text]="part.text" [terms]="view().terms" /></code>} @else {<app-marked-text [text]="part.text" [terms]="view().terms" />}}</p>
               @if (errors()[row.key]; as error) {
                 <p class="error">{{ error }}</p>
               } @else if (row.modified && row.default !== undefined) {
@@ -149,9 +168,9 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
                   </button>
                 }
                 @case ("enum") {
-                  <select [value]="row.value" (change)="write(row, enumSelect.value)" #enumSelect>
+                  <select (change)="write(row, enumSelect.value)" #enumSelect>
                     @for (option of row.control.values; track option) {
-                      <option [value]="option">{{ option }}</option>
+                      <option [value]="option" [selected]="option === row.value">{{ option }}</option>
                     }
                   </select>
                 }
@@ -186,7 +205,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
                   }
                 }
                 @case ("file-only") {
-                  <button type="button" class="button small" (click)="openConfigFile()">
+                  <button type="button" class="file-link" (click)="openConfigFile()">
                     <app-icon name="mdiOpenInNew"></app-icon>
                     Edit in settings file
                   </button>
@@ -205,6 +224,8 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
               }
             </div>
           </section>
+          }
+          </div>
         }
       </div>
     </div>
@@ -231,9 +252,23 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         flex: 1 1 auto;
         min-width: 0;
       }
+      /* Opens the settings file, outside the panel: a link, in the colour that marks one. */
       .file-link {
         flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--highlight-color);
+        font: inherit;
+        font-size: 0.9rem;
         white-space: nowrap;
+        text-underline-offset: 2px;
+      }
+      .file-link:hover {
+        text-decoration: underline;
       }
       .body {
         flex: 1 1 auto;
@@ -308,41 +343,47 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
       .group.level-0 {
         margin-top: 2rem;
       }
-      /* A group is named in the terminal's font, quietly, above a rule that opens its rows. */
+      /* A group that holds groups heads them: its name, then what it is about. */
       .group {
-        margin: 1.75rem 0 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--settings-rule);
-        font-family: var(--terminal-font-family, monospace);
-        font-size: 0.9em;
-        font-weight: 400;
+        margin: 2rem 0 0;
+        font-size: 1.05em;
+        font-weight: 600;
         line-height: 1.3;
-        opacity: 0.65;
-      }
-      .group.level-0 {
-        padding-bottom: 0;
-        border-bottom: 0;
-        font-family: inherit;
-        opacity: 1;
-      }
-      /* Deeper groups step in instead of growing quieter. */
-      .group.level-2 {
-        margin-top: 1.25rem;
-      }
-      .group.level-3,
-      .group.level-4,
-      .group.level-5 {
-        margin-top: 1rem;
-        padding-left: 0.6rem;
       }
       .rows > .group:first-child {
         margin-top: 0;
       }
       .group-description {
-        margin: 0.5rem 0 0;
+        margin: 0.2rem 0 0;
         font-size: 0.9em;
         line-height: 1.45;
         opacity: 0.65;
+      }
+      /* The rows of one group stand on one surface, mixed from the theme like every other. */
+      .block.grouped {
+        margin-top: 0.75rem;
+        padding: 0 1rem;
+        border: 1px solid var(--settings-rule);
+        border-radius: var(--button-border-radius);
+        background: color-mix(in srgb, color-mix(in srgb, var(--theme-lighten-color) calc(var(--background-mix-unit) * var(--mix-step-1)), var(--background-color)) var(--menu-opacity-ct2), transparent);
+      }
+      .block-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.1rem 0.75rem;
+        padding: 0.7rem 0 0.6rem;
+        border-bottom: 1px solid var(--settings-rule);
+      }
+      .block-head h4 {
+        margin: 0;
+        font-size: 0.95em;
+        font-weight: 600;
+      }
+      .block-head p {
+        margin: 0;
+        font-size: 0.88em;
+        opacity: 0.6;
       }
       .row {
         display: grid;
@@ -351,7 +392,7 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         gap: 0.5rem 1.5rem;
         padding: 1rem 0;
       }
-      /* A rule between two rows; a heading already draws the one above its first row. */
+      /* A rule between two rows of a block. */
       .row + .row {
         border-top: 1px solid var(--settings-rule);
       }
@@ -446,11 +487,6 @@ const descriptorsBySchema = new WeakMap<object, ReadonlyArray<SettingDescriptor>
         opacity: 1;
         color: var(--color-red, inherit);
       }
-      .button.small {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-      }
     `,
   ],
 })
@@ -505,6 +541,18 @@ export class SettingsPanelComponent {
     );
   }
 
+  /**
+   * Shows a section. While searching the hits of every section are already
+   * there, so the search stays and the list moves to this section's hits.
+   */
+  showSection(title: string, rows: HTMLElement): void {
+    this.activeSection.set(title);
+    if (!this.view().searching) return;
+    Array.from(rows.querySelectorAll<HTMLElement>("[data-section]"))
+      .find((heading) => heading.dataset["section"] === title)
+      ?.scrollIntoView({ block: "start" });
+  }
+
   write(row: SettingRow, text: string): void {
     const parsed = parseInput(row.control, text);
     if ("error" in parsed) {
@@ -522,10 +570,10 @@ export class SettingsPanelComponent {
       );
   }
 
-  /** A control that takes text needs the row's width; a switch, a choice or a number does not. */
+  /** A control that takes text needs the row's width; a switch, a choice, a number or a link to the file does not. */
   isWide(row: SettingRow): boolean {
     const kind = row.control.kind;
-    return kind !== "boolean" && kind !== "enum" && kind !== "number";
+    return kind !== "boolean" && kind !== "enum" && kind !== "number" && kind !== "file-only";
   }
 
   /** Takes the key out of the file; the default applies again. */

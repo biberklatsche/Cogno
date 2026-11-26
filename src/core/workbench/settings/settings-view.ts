@@ -34,15 +34,33 @@ export type SettingRow = {
 
 export type DescriptionPart = { readonly text: string; readonly code: boolean };
 
-/** A row as the panel shows it, with the headings it opens. */
-export type ShownSettingRow = SettingRow & { readonly headings: ReadonlyArray<SettingHeading> };
+/**
+ * Rows that stand together: those of the innermost named group they share, or
+ * the rows that stand in no named group.
+ */
+export type SettingBlock = {
+  /** The key of its first row. */
+  readonly key: string;
+  /** Above the block: the section while searching, then each group of groups it opens. */
+  readonly headings: ReadonlyArray<SettingHeading>;
+  /** The rows share a named group; the panel draws them as one surface. */
+  readonly grouped: boolean;
+  /** The group's name; absent when the group already stands above as a heading. */
+  readonly title?: string;
+  readonly description?: string;
+  readonly rows: ReadonlyArray<SettingRow>;
+};
 
 export type SettingsView = {
   readonly sections: ReadonlyArray<{ readonly title: string; readonly count: number }>;
-  readonly rows: ReadonlyArray<ShownSettingRow>;
+  readonly blocks: ReadonlyArray<SettingBlock>;
   /** A query is set: the rows come from every section, each headed by its section. */
   readonly searching: boolean;
+  /** The query's words, lowercased: what the panel marks in the rows it shows. */
+  readonly terms: ReadonlyArray<string>;
 };
+
+export type TextPiece = { readonly text: string; readonly hit: boolean };
 
 export type SettingHeading = {
   readonly key: string;
@@ -95,7 +113,26 @@ export function buildSettingsView(
   for (const row of matching) counts.set(row.section, (counts.get(row.section) ?? 0) + 1);
   const sections = [...counts].map(([title, count]) => ({ title, count }));
   const shown = searching ? matching : matching.filter((row) => row.section === filter.section);
-  return { sections, rows: withHeadings(shown, searching), searching };
+  return { sections, blocks: toBlocks(shown, searching), searching, terms };
+}
+
+/** A text cut where it holds one of the lowercased terms, whatever its own case. */
+export function markHits(text: string, terms: ReadonlyArray<string>): TextPiece[] {
+  const lower = text.toLowerCase();
+  const hit = new Array<boolean>(text.length).fill(false);
+  for (const term of terms) {
+    for (let at = lower.indexOf(term); at !== -1; at = lower.indexOf(term, at + term.length)) {
+      hit.fill(true, at, at + term.length);
+    }
+  }
+  const pieces: TextPiece[] = [];
+  let start = 0;
+  for (let index = 1; index <= text.length; index++) {
+    if (index < text.length && hit[index] === hit[start]) continue;
+    pieces.push({ text: text.slice(start, index), hit: hit[start] === true });
+    start = index;
+  }
+  return pieces;
 }
 
 /**
@@ -179,37 +216,63 @@ function sameSpelling(value: string, fallback: string | undefined): boolean {
 }
 
 /**
- * The headings each row opens, in order: its section while searching, then
- * every group it enters that the previous row was not in. A group with a
- * single shown setting gets no heading of its own - the setting says it all.
+ * The rows as blocks. A group inside the section is named when it has more
+ * than one shown setting - a single setting says it all. The innermost named
+ * group of a row is its block; a named group that holds another one is a
+ * heading above its blocks instead, and the rows directly in it form a block
+ * without a title, so they never read as part of the block before them.
  */
-function withHeadings(rows: ReadonlyArray<SettingRow>, searching: boolean): ShownSettingRow[] {
+function toBlocks(rows: ReadonlyArray<SettingRow>, searching: boolean): SettingBlock[] {
   const settingsPerGroup = new Map<string, number>();
   for (const row of rows) {
     for (const group of row.groups) {
       settingsPerGroup.set(group.key, (settingsPerGroup.get(group.key) ?? 0) + 1);
     }
   }
-  return rows.map((row, index) => {
+  // The outermost group is the section itself; its name is already on the left.
+  const namedGroups = (row: SettingRow) =>
+    row.groups.filter((group, depth) => depth > 0 && (settingsPerGroup.get(group.key) ?? 0) >= 2);
+  const parents = new Set<string>();
+  for (const row of rows) {
+    for (const group of namedGroups(row).slice(0, -1)) parents.add(group.key);
+  }
+
+  const blocks: Array<SettingBlock & { readonly groupKey?: string; readonly rows: SettingRow[] }> =
+    [];
+  rows.forEach((row, index) => {
     const previous = rows[index - 1];
     const newSection = row.section !== previous?.section;
+    const named = namedGroups(row);
+    const innermost = named.at(-1);
+    const last = blocks.at(-1);
+    if (last && !newSection && last.groupKey === innermost?.key) {
+      last.rows.push(row);
+      return;
+    }
     const headings: SettingHeading[] = [];
     if (searching && newSection) headings.push({ key: "", title: row.section, level: 0 });
-    const previousKeys = new Set((previous?.groups ?? []).map((group) => group.key));
-    row.groups.forEach((group, depth) => {
-      // The outermost group is the section itself; its name is already on the left.
-      if (depth === 0) return;
-      if (!newSection && previousKeys.has(group.key)) return;
-      if ((settingsPerGroup.get(group.key) ?? 0) < 2) return;
+    const previousKeys = new Set(newSection ? [] : previous?.groups.map((group) => group.key));
+    for (const group of named) {
+      if (!parents.has(group.key) || previousKeys.has(group.key)) continue;
       headings.push({
         key: group.key,
         title: group.title,
         ...(group.description ? { description: group.description } : {}),
-        level: depth,
+        level: row.groups.indexOf(group),
       });
+    }
+    const titled = innermost && !parents.has(innermost.key) ? innermost : undefined;
+    blocks.push({
+      key: row.key,
+      headings,
+      grouped: innermost !== undefined,
+      ...(innermost ? { groupKey: innermost.key } : {}),
+      ...(titled ? { title: titled.title } : {}),
+      ...(titled?.description ? { description: titled.description } : {}),
+      rows: [row],
     });
-    return { ...row, headings };
   });
+  return blocks;
 }
 
 /** A value the way the file spells it: `true`, `14`, `a,b` for a list. */
