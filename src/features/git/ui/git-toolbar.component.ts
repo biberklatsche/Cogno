@@ -93,7 +93,8 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         display: flex;
         align-items: center;
         gap: 0.3rem;
-        flex: 1 1 auto;
+        /* As wide as its text and no wider: the tooltip opens only over it. */
+        flex: 0 1 auto;
         min-width: 4rem;
       }
       .actions { display: flex; align-items: center; gap: 2px; }
