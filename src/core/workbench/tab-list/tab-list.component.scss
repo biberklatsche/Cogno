@@ -321,20 +321,20 @@
 // The member count, in the stack's colour; it is the head's mark.
 .stack-count {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 16px;
+  height: 14px;
   font-size: 0.65rem;
-  line-height: 1;
-  padding: 2px 5px;
+  padding: 0 5px;
   border-radius: 8px;
-  text-align: center;
   color: var(--foreground-color);
   background: color-mix(in srgb, var(--stack-color) 35%, transparent);
 
-  // A digit fills its line only from the baseline up, so it stands above the
-  // pill's middle. The line is cut to the digit's own height where that works.
-  @supports (text-box: trim-both cap alphabetic) {
+  // Trims the text to cap height and baseline, so the digits sit in the optical centre whatever the font.
+  > span {
     text-box: trim-both cap alphabetic;
-    padding-block: 3.5px;
   }
 }
 

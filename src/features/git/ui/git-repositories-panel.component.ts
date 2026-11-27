@@ -77,7 +77,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                     [tooltip]="tabsTooltip(tile)"
                   ></app-tab-chip>
                   @if (tile.tabs.length > 1) {
-                    <app-icon class="small-icon more" name="mdiChevronDown"></app-icon>
+                    <app-icon class="small-icon subtle" name="mdiChevronDown"></app-icon>
                   }
                 </span>
               }
@@ -128,7 +128,6 @@ import { GIT_SHARED_STYLES } from "./git-styles";
         font-size: var(--git-font-small);
       }
       .tab { min-width: 0; }
-      .more { flex-shrink: 0; color: var(--git-subtle); }
     `,
   ],
 })

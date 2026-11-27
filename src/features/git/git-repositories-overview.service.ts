@@ -257,22 +257,22 @@ function mergeSameRepository(repositories: ReadonlyArray<TerminalRepository>): G
   for (const { terminalId, ...repository } of inTabOrder) {
     const key = `${repository.placement?.workspaceId ?? ""}\0${repository.root}`;
     const tile = byKey.get(key);
-    const placement = repository.placement;
+    const tab = repository.placement && { ...repository.placement, terminalId };
     if (!tile) {
       byKey.set(key, {
         ...repository,
         terminalIds: [terminalId],
-        tabs: placement ? [{ ...placement, terminalId }] : [],
+        tabs: tab ? [tab] : [],
       });
       continue;
     }
     // A tab's index is its own within the workspace, a stack's members included, and the
     // tile is the workspace's: the index tells the tabs apart.
-    const newTab = placement && !tile.tabs.some((tab) => tab.tabIndex === placement.tabIndex);
+    const isNew = tab && !tile.tabs.some((known) => known.tabIndex === tab.tabIndex);
     byKey.set(key, {
       ...tile,
       terminalIds: [...tile.terminalIds, terminalId],
-      tabs: newTab ? [...tile.tabs, { ...placement, terminalId }] : tile.tabs,
+      tabs: isNew ? [...tile.tabs, tab] : tile.tabs,
     });
   }
   return [...byKey.values()];

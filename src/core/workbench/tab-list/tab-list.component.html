@@ -42,7 +42,7 @@
                             (keyup.enter)="$event.stopPropagation(); commitRename(renameInput.value);"
                             (blur)="commitRename(renameInput.value);">
                     } @else {
-                        <span class="stack-count">{{ slot.tabs.length }}</span>
+                        <span class="stack-count"><span>{{ slot.tabs.length }}</span></span>
                         <span class="title" [appStartEllipsis]="slot.name"></span>
                         <span
                                 class="stack-chevron"
