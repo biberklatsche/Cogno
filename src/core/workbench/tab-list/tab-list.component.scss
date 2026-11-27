@@ -327,6 +327,8 @@
   min-width: 16px;
   height: 14px;
   font-size: 0.65rem;
+  // Where the text is not trimmed, its line is at least no taller than the text.
+  line-height: 1;
   padding: 0 5px;
   border-radius: 8px;
   color: var(--foreground-color);

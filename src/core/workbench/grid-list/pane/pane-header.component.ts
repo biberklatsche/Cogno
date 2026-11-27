@@ -8,7 +8,6 @@ import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-prev
 import { trackPointerDrag } from "@cogno/core/workbench/drag-preview/pointer-drag";
 import { IconComponent, TooltipDirective } from "@cogno/shared/ui";
 import { switchMap } from "rxjs";
-import { TerminalFullscreenService } from "../../terminal/terminal-fullscreen.service";
 import { GridListService } from "../+state/grid-list.service";
 
 @Component({
@@ -53,10 +52,6 @@ import { GridListService } from "../+state/grid-list.service";
       padding: 2px 48px;
       background: transparent;
       height: 24px;
-
-      &:hover .icon-button {
-        opacity: 1;
-      }
     }
 
     .title {
@@ -93,28 +88,17 @@ import { GridListService } from "../+state/grid-list.service";
       gap: 2px;
     }
 
-    /* The side panels' header buttons have the same size (side-menu.component). */
-    .icon-button {
-      padding: 2px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 2px;
+    /* The side panels' header buttons have the same size and, both being the
+       theme's icon button, the same colours (side-menu.component). */
+    .button.icon-button {
       width: 20px;
       height: 20px;
+      padding: 2px;
       cursor: default;
-      transition: opacity 120ms ease;
-      border: none;
-      opacity: 0.5;
-      background-color: rgba(0,0,0,0);
-
-      &:hover {
-        opacity: 1 !important;
-      }
 
       /* The way back from a maximized pane stays in sight. */
       &.maximized {
-        opacity: 0.8;
+        color: var(--foreground-color);
       }
     }
   `,
@@ -125,17 +109,18 @@ export class PaneHeaderComponent implements OnDestroy {
   title = input.required<string>();
   terminalId = input.required<string>();
 
-  private readonly activeGridIsSplit = toSignal(this.gridListService.activeGridIsSplit$, {
+  /**
+   * A pane of a split grid has its header, also while a full-screen program
+   * runs in it: it is the only place to close or maximize the pane with the
+   * mouse, and a header that comes and goes would resize the program.
+   */
+  readonly shouldShow = toSignal(this.gridListService.activeGridIsSplit$, {
     initialValue: false,
   });
-  private readonly isInFullScreenMode = computed(() =>
-    this.terminalFullscreenService.isTerminalFullScreen(this.terminalId()),
-  );
   private readonly maximizedTerminalId = toSignal(this.gridListService.maximizedTerminalId$, {
     initialValue: undefined,
   });
   readonly isMaximized = computed(() => this.maximizedTerminalId() === this.terminalId());
-  shouldShow = computed(() => this.activeGridIsSplit() && !this.isInFullScreenMode());
 
   private readonly busyRegistrations = toSignal(
     toObservable(this.terminalId).pipe(
@@ -147,7 +132,6 @@ export class PaneHeaderComponent implements OnDestroy {
 
   constructor(
     private gridListService: GridListService,
-    private terminalFullscreenService: TerminalFullscreenService,
     private dragPreviewService: DragPreviewService,
     private readonly busyIndicatorService: BusyIndicatorService,
     @Inject(DOCUMENT) private readonly document: Document,

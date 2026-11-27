@@ -43,7 +43,8 @@ import { GIT_SHARED_STYLES } from "./git-styles";
       <span class="ellipsis grow">Repositories</span>
       <span class="count">{{ overview.tiles().length }}</span>
     </header>
-    <div class="list">
+    <!-- A tile's tab menu stands where its chip was: it goes when the list moves. -->
+    <div class="list" (scroll)="contextMenu.close()">
       @if (overview.tiles().length === 0) {
         <div class="empty">No open repositories</div>
       }
@@ -141,7 +142,7 @@ export class GitRepositoriesPanelComponent {
   constructor(
     readonly overview: GitRepositoriesOverviewService,
     private readonly navigator: TerminalNavigator,
-    private readonly contextMenu: ContextMenuOverlayService,
+    readonly contextMenu: ContextMenuOverlayService,
     sessionApi: SessionApi,
     destroyRef: DestroyRef,
   ) {

@@ -5,7 +5,6 @@ import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
 import { Observable, of } from "rxjs";
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { PaneHeaderComponent } from "./pane-header.component";
@@ -132,7 +131,6 @@ describe("PaneHeaderComponent drag interaction", () => {
     component = TestBed.runInInjectionContext(() => {
       const created = new PaneHeaderComponent(
         gridListService as unknown as GridListService,
-        { isTerminalFullScreen: () => false } as unknown as TerminalFullscreenService,
         dragPreview as unknown as DragPreviewService,
         { forTerminal$: () => of([]) } as unknown as BusyIndicatorService,
         document,

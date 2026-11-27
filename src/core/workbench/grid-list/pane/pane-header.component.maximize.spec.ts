@@ -5,7 +5,6 @@ import { BrowserTestingModule, platformBrowserTesting } from "@angular/platform-
 import { BusyIndicatorService } from "@cogno/core/workbench/busy-indicator/busy-indicator.service";
 import { DragPreviewService } from "@cogno/core/workbench/drag-preview/drag-preview.service";
 import { GridListService } from "@cogno/core/workbench/grid-list/+state/grid-list.service";
-import { TerminalFullscreenService } from "@cogno/core/workbench/terminal/terminal-fullscreen.service";
 import { BehaviorSubject, Observable, of } from "rxjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PaneHeaderComponent } from "./pane-header.component";
@@ -42,7 +41,6 @@ describe("PaneHeaderComponent maximize button", () => {
     component = TestBed.runInInjectionContext(() => {
       const created = new PaneHeaderComponent(
         gridListService as unknown as GridListService,
-        { isTerminalFullScreen: () => false } as unknown as TerminalFullscreenService,
         { stopDragPreview: vi.fn() } as unknown as DragPreviewService,
         { forTerminal$: () => of([]) } as unknown as BusyIndicatorService,
         document,
