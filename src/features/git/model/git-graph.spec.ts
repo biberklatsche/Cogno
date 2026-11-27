@@ -173,7 +173,7 @@ describe("layoutWips", () => {
   it("puts a worktree's row above a branch tip in the tip's lane", () => {
     const layout = layoutWips(rows, null, [0]);
 
-    expect(layout.slots).toEqual([{ lane: 1, through: [], passing: [] }]);
+    expect(layout.slots).toEqual([{ lane: 1, through: [], passing: [], linked: true }]);
     expect(layout.inCommitRows).toEqual([[{ from: 1, to: 1, end: true }], [], []]);
   });
 
@@ -188,9 +188,39 @@ describe("layoutWips", () => {
           { lane: 1, color: 1 },
         ],
         passing: [],
+        linked: true,
       },
     ]);
     expect(layout.inCommitRows[2]).toEqual([{ from: 2, to: 0, end: true }]);
+  });
+
+  it("lets the own line pass a worktree's row above HEAD, and not one below", () => {
+    const layout = layoutWips(rows, 1, [0, 2]);
+
+    expect(layout.slots[0]).toEqual({ lane: 1, through: [], passing: [0], linked: true });
+    expect(layout.slots[1]?.passing).toEqual([]);
+  });
+
+  it("takes the closest free lane, on the left when the right one is taken", () => {
+    // HEAD is b; above it c2 runs in lane 1 below its tip c, and the tip d in lane 2.
+    const wide = layoutGraph(
+      [commit("c", "c2"), commit("d", "a"), commit("c2", "a"), commit("b", "a"), commit("a")],
+      "b",
+    );
+
+    // Beside c2 lane 2 is taken, and lane 0 is empty above HEAD.
+    expect(layoutWips(wide, null, [2]).slots[0]?.lane).toBe(0);
+    // With the own line in lane 0 only the right side is left.
+    expect(layoutWips(wide, 3, [2]).slots[0]?.lane).toBe(3);
+  });
+
+  it("lets a worktree whose commit is not loaded wait beside the own line, without a line", () => {
+    expect(layoutWips(rows, 1, [null]).slots).toEqual([
+      { lane: 1, through: [], passing: [0], linked: false },
+    ]);
+    expect(layoutWips(rows, null, [null]).slots).toEqual([
+      { lane: 0, through: [], passing: [], linked: false },
+    ]);
   });
 
   it("keeps a worktree's row out of the own line and of the rows of the same commit", () => {
@@ -198,8 +228,8 @@ describe("layoutWips", () => {
     const layout = layoutWips(rows, 1, [1, 1]);
 
     expect(layout.slots).toEqual([
-      { lane: 2, through: [{ lane: 1, color: 1 }], passing: [0] },
-      { lane: 3, through: [{ lane: 1, color: 1 }], passing: [0, 2] },
+      { lane: 2, through: [{ lane: 1, color: 1 }], passing: [0], linked: true },
+      { lane: 3, through: [{ lane: 1, color: 1 }], passing: [0, 2], linked: true },
     ]);
     expect(layout.inCommitRows[1]).toEqual([
       { from: 0, to: 0, end: true },

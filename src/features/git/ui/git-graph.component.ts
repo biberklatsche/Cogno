@@ -54,21 +54,18 @@ type GraphItem = {
   readonly wipLinks: ReadonlyArray<WipLink>;
 };
 
-/** What a work in progress row draws: its slot, and whether a line runs down from its node. */
-type WipGraph = WipSlot & { readonly linked: boolean };
-
 /**
  * A row of the tree: a commit, the own work in progress, or another
  * worktree's with how many files differ there.
  */
 type TreeRow =
   | GraphItem
-  | { readonly kind: "wip"; readonly graph: WipGraph }
+  | { readonly kind: "wip"; readonly graph: WipSlot }
   | {
       readonly kind: "worktree-wip";
       readonly worktree: GitWorktree;
       readonly changes: number;
-      readonly graph: WipGraph;
+      readonly graph: WipSlot;
     };
 
 /**
@@ -511,57 +508,37 @@ export class GitGraphComponent {
         ? []
         : [{ worktree, changes: count, commitIndex: indexOf(worktree.head) }];
     });
-    const placed = worktreeWips.flatMap((wip) =>
-      wip.commitIndex === null ? [] : [{ ...wip, commitIndex: wip.commitIndex }],
-    );
     const layout = layoutWips(
       rows,
       headIndex,
-      placed.map((wip) => wip.commitIndex),
+      worktreeWips.map((wip) => wip.commitIndex),
     );
 
-    // The own line passes the rows waiting on top; their nodes stand beside it.
-    const ownLine = headLane === undefined ? [] : [headLane];
-    const top: TreeRow[] = [
-      ...(this.view.wipVisible()
-        ? [
-            {
-              kind: "wip" as const,
-              graph: {
-                lane: headLane ?? 0,
-                through: [],
-                passing: [],
-                linked: headLane !== undefined,
-              },
+    const top: TreeRow[] = this.view.wipVisible()
+      ? [
+          {
+            kind: "wip",
+            graph: {
+              lane: headLane ?? 0,
+              through: [],
+              passing: [],
+              linked: headLane !== undefined,
             },
-          ]
-        : []),
-      ...worktreeWips
-        .filter((wip) => wip.commitIndex === null)
-        .map((wip) => ({
-          kind: "worktree-wip" as const,
-          worktree: wip.worktree,
-          changes: wip.changes,
-          graph: {
-            lane: headLane === undefined ? 0 : headLane + 1,
-            through: [],
-            passing: ownLine,
-            linked: false,
           },
-        })),
-    ];
+        ]
+      : [];
     const above = new Map<number, TreeRow[]>();
-    placed.forEach((wip, index) => {
-      const slot = layout.slots[index];
-      if (!slot) return;
-      const list = above.get(wip.commitIndex) ?? [];
-      list.push({
+    worktreeWips.forEach((wip, index) => {
+      const graph = layout.slots[index];
+      if (!graph) return;
+      const row: TreeRow = {
         kind: "worktree-wip",
         worktree: wip.worktree,
         changes: wip.changes,
-        graph: { ...slot, linked: true },
-      });
-      above.set(wip.commitIndex, list);
+        graph,
+      };
+      if (wip.commitIndex === null) top.push(row);
+      else above.set(wip.commitIndex, [...(above.get(wip.commitIndex) ?? []), row]);
     });
     return [
       ...top,

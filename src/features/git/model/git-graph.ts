@@ -29,10 +29,12 @@ type GraphCommit = { readonly sha: string; readonly parents: ReadonlyArray<strin
  */
 export type WipLink = { readonly from: number; readonly to: number; readonly end: boolean };
 
-/** Another worktree's work in progress row, right above the commit it hangs from. */
+/** What a work in progress row draws in the graph. */
 export type WipSlot = {
-  /** The lane of its node: the commit's when nothing runs there, else the next free one beside it. */
+  /** The lane of its node: the commit's when nothing runs there, else the closest free one beside it. */
   readonly lane: number;
+  /** Whether a dashed line runs down from the node to its commit. */
+  readonly linked: boolean;
   /** The graph's lines running through the row to the commits below. */
   readonly through: ReadonlyArray<{ readonly lane: number; readonly color: number }>;
   /** The lanes of the dashed lines passing by: the own row's from the top, and those of the rows above for the same commit. */
@@ -47,13 +49,14 @@ const NO_LINKS: ReadonlyArray<WipLink> = [];
  * is not loaded) by a dashed line down that commit's lane. Each other
  * worktree's (`worktreeIndexes`: the commit row it hangs from) is a row right
  * above its commit; several of one commit stand side by side, in their order.
- * Returns their slots, as `worktreeIndexes` lists them, and per commit row
- * the dashed lines in it.
+ * One whose commit is not loaded (null) waits on top below the own row,
+ * beside the own line and without one of its own. Returns their slots, as
+ * `worktreeIndexes` lists them, and per commit row the dashed lines in it.
  */
 export function layoutWips(
   rows: ReadonlyArray<GraphRow>,
   headIndex: number | null,
-  worktreeIndexes: ReadonlyArray<number>,
+  worktreeIndexes: ReadonlyArray<number | null>,
 ): {
   readonly slots: ReadonlyArray<WipSlot>;
   readonly inCommitRows: ReadonlyArray<ReadonlyArray<WipLink>>;
@@ -71,25 +74,42 @@ export function layoutWips(
     }
   }
 
+  const ownLine = headIndex !== null && headLane !== undefined ? [headLane] : [];
   const lanesAbove = new Map<number, number[]>();
   const slots = worktreeIndexes.map((commitIndex): WipSlot => {
+    if (commitIndex === null) {
+      const lane = freeLaneNear(0, new Set(ownLine));
+      return { lane, through: [], passing: ownLine, linked: false };
+    }
     const row = rows[commitIndex];
     if (!row) throw new Error(`No commit row ${commitIndex} for a work in progress row`);
     const through = row.segments
       .filter((segment) => segment.half === "top")
       .map((segment) => ({ lane: segment.from, color: segment.color }));
     const above = lanesAbove.get(commitIndex) ?? [];
-    const ownLinePasses = headIndex !== null && headLane !== undefined && commitIndex <= headIndex;
-    const passing = [...(ownLinePasses ? [headLane] : []), ...above];
-    const occupied = new Set([...through.map((line) => line.lane), ...passing]);
-    let lane = row.lane;
-    while (occupied.has(lane)) lane++;
+    const ownLinePasses = headIndex !== null && commitIndex <= headIndex;
+    const passing = [...(ownLinePasses ? ownLine : []), ...above];
+    const lane = freeLaneNear(row.lane, new Set([...through.map((line) => line.lane), ...passing]));
     lanesAbove.set(commitIndex, [...above, lane]);
     addLink(commitIndex, { from: lane, to: row.lane, end: true });
-    return { lane, through, passing };
+    return { lane, through, passing, linked: true };
   });
 
   return { slots, inCommitRows };
+}
+
+/**
+ * The free lane closest to `lane`, itself first, then the right one before
+ * the left one: a node stays near its commit, so its line crosses as few
+ * others as possible and it is not pushed out of the column while there is
+ * room on the left.
+ */
+function freeLaneNear(lane: number, occupied: ReadonlySet<number>): number {
+  if (!occupied.has(lane)) return lane;
+  for (let distance = 1; ; distance++) {
+    if (!occupied.has(lane + distance)) return lane + distance;
+    if (lane - distance >= 0 && !occupied.has(lane - distance)) return lane - distance;
+  }
 }
 
 /**
