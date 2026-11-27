@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GraphRow, layoutGraph, wipLinks } from "./git-graph";
+import { GraphRow, layoutGraph, layoutWips } from "./git-graph";
 
 const commit = (sha: string, ...parents: string[]) => ({ sha, parents });
 
@@ -155,33 +155,56 @@ describe("layoutGraph", () => {
   });
 });
 
-describe("wipLinks", () => {
-  it("runs each work in progress line down its lane to its commit", () => {
-    // The own work in progress hangs from commit 0 in lane 0, another worktree's from commit 2 in lane 1.
-    const links = wipLinks(
-      [
-        { commitIndex: 0, lane: 0 },
-        { commitIndex: 2, lane: 1 },
-      ],
-      4,
-    );
+describe("layoutWips", () => {
+  // HEAD is b in lane 0; the branch tip c stands above it in lane 1, both on a.
+  const rows = layoutGraph([commit("c", "a"), commit("b", "a"), commit("a")], "b");
 
-    expect(links.inWipRows).toEqual([[], [{ lane: 0, end: false }]]);
-    expect(links.inCommitRows).toEqual([
-      [
-        { lane: 0, end: true },
-        { lane: 1, end: false },
-      ],
-      [{ lane: 1, end: false }],
-      [{ lane: 1, end: true }],
+  it("runs the own line from the top down the lane of HEAD", () => {
+    const layout = layoutWips(rows, 1, []);
+
+    expect(layout.slots).toEqual([]);
+    expect(layout.inCommitRows).toEqual([
+      [{ from: 0, to: 0, end: false }],
+      [{ from: 0, to: 0, end: true }],
       [],
     ]);
   });
 
-  it("draws no line for a row whose commit is not loaded", () => {
-    const links = wipLinks([null, { commitIndex: 0, lane: 2 }], 1);
+  it("puts a worktree's row above a branch tip in the tip's lane", () => {
+    const layout = layoutWips(rows, null, [0]);
 
-    expect(links.inWipRows).toEqual([[], []]);
-    expect(links.inCommitRows).toEqual([[{ lane: 2, end: true }]]);
+    expect(layout.slots).toEqual([{ lane: 1, through: [], passing: [] }]);
+    expect(layout.inCommitRows).toEqual([[{ from: 1, to: 1, end: true }], [], []]);
+  });
+
+  it("puts a worktree's row beside the lines that run into its commit", () => {
+    const layout = layoutWips(rows, null, [2]);
+
+    expect(layout.slots).toEqual([
+      {
+        lane: 2,
+        through: [
+          { lane: 0, color: 0 },
+          { lane: 1, color: 1 },
+        ],
+        passing: [],
+      },
+    ]);
+    expect(layout.inCommitRows[2]).toEqual([{ from: 2, to: 0, end: true }]);
+  });
+
+  it("keeps a worktree's row out of the own line and of the rows of the same commit", () => {
+    // Two worktrees stand on HEAD itself, which the own line runs down to.
+    const layout = layoutWips(rows, 1, [1, 1]);
+
+    expect(layout.slots).toEqual([
+      { lane: 2, through: [{ lane: 1, color: 1 }], passing: [0] },
+      { lane: 3, through: [{ lane: 1, color: 1 }], passing: [0, 2] },
+    ]);
+    expect(layout.inCommitRows[1]).toEqual([
+      { from: 0, to: 0, end: true },
+      { from: 2, to: 0, end: true },
+      { from: 3, to: 0, end: true },
+    ]);
   });
 });
