@@ -329,6 +329,13 @@
   text-align: center;
   color: var(--foreground-color);
   background: color-mix(in srgb, var(--stack-color) 35%, transparent);
+
+  // A digit fills its line only from the baseline up, so it stands above the
+  // pill's middle. The line is cut to the digit's own height where that works.
+  @supports (text-box: trim-both cap alphabetic) {
+    text-box: trim-both cap alphabetic;
+    padding-block: 3.5px;
+  }
 }
 
 // The one control that shows or hides the members; a press on it never drags or selects.

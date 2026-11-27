@@ -2,7 +2,7 @@
     @for (slot of slots(); track slot.id) {
         @if (isStack(slot)) {
             @let isExpanded = slot.isExpanded;
-            @let stackBusy = (getStackBusy$(slot) | async) ?? { count: 0, tabId: undefined };
+            @let busyTabId = getStackBusyTab$(slot) | async;
             <div
                     class="stack"
                     [class.is-expanded]="isExpanded"
@@ -16,7 +16,7 @@
                 <button
                         type="button"
                         class="tab stack-head"
-                        [class.is-busy]="stackBusy.count > 0"
+                        [class.is-busy]="!!busyTabId"
                         [appTooltip]="slot.name"
                         [appTooltipSecondary]="getTabShortcutActionName($index) | actionkeybinding"
                         [attr.data-slot-id]="slot.id"
@@ -25,12 +25,9 @@
                         (mouseleave)="clearStackTarget()"
                         (contextmenu)="buildStackContextMenu($event, slot.id)"
                 >
-                    @if (stackBusy.tabId) {
+                    @if (busyTabId) {
                         <span class="busy-indicator">
-                            <app-busy-indicator targetKind="tab" [targetId]="stackBusy.tabId"></app-busy-indicator>
-                            @if (stackBusy.count > 1) {
-                                <span class="busy-count">{{ stackBusy.count }}</span>
-                            }
+                            <app-busy-indicator targetKind="tab" [targetId]="busyTabId"></app-busy-indicator>
                         </span>
                     }
                     @if (showRename() === slot.id) {

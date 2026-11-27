@@ -49,9 +49,6 @@ export type DragTarget =
   | { kind: "slot"; id: TabId | StackId }
   | { kind: "segment"; id: TabId; stackId: StackId };
 
-/** How busy a stack is and which member's animation stands for it. */
-export type StackBusy = { count: number; tabId: TabId | undefined };
-
 /** The share of a slot's width on each side that reorders; the middle stacks. */
 const REORDER_EDGE_SHARE = 0.25;
 
@@ -76,7 +73,7 @@ export class TabListComponent implements OnDestroy {
   private static readonly tabLeaveAnimationFallbackMs = 150;
 
   private readonly animationCountCache = new Map<string, Observable<number>>();
-  private readonly stackBusyCache = new Map<string, Observable<StackBusy>>();
+  private readonly stackBusyCache = new Map<string, Observable<TabId | undefined>>();
 
   readonly slots: Signal<TabList>;
   readonly showRename: Signal<TabId | StackId | undefined>;
@@ -212,11 +209,11 @@ export class TabListComponent implements OnDestroy {
   }
 
   /**
-   * The members' counts added up, and the member whose animation the head
-   * plays: the current one while it is busy, else the first busy one - so a
-   * busy member shows on the collapsed head even when another one is in front.
+   * The member whose animation the head plays, undefined while none is busy:
+   * the current one while it is busy, else the first busy one - so a busy
+   * member shows on the collapsed head even when another one is in front.
    */
-  getStackBusy$(stack: TabStack): Observable<StackBusy> {
+  getStackBusyTab$(stack: TabStack): Observable<TabId | undefined> {
     const key = this.stackAnimationKey(stack);
     let obs = this.stackBusyCache.get(key);
     if (!obs) {
@@ -224,7 +221,7 @@ export class TabListComponent implements OnDestroy {
         map((counts) => {
           const busyTabIds = stack.tabs.filter((_tab, index) => counts[index] > 0);
           const shown = busyTabIds.find((tab) => tab.id === stack.currentTabId) ?? busyTabIds[0];
-          return { count: counts.reduce((sum, count) => sum + count, 0), tabId: shown?.id };
+          return shown?.id;
         }),
       );
       this.stackBusyCache.set(key, obs);
