@@ -160,7 +160,11 @@ describe("GitRepositoriesOverviewService", () => {
     await flush();
 
     expect(service.tiles()[0]?.terminalIds).toEqual(["t1", "t2", "t3"]);
-    expect(service.tiles()[0]?.tabs.map((tab) => tab.tabTitle)).toEqual(["split", "other"]);
+    // Each tab with the first of its terminals, the one a choice of the tab goes to.
+    expect(service.tiles()[0]?.tabs.map((tab) => [tab.tabTitle, tab.terminalId])).toEqual([
+      ["split", "t1"],
+      ["other", "t3"],
+    ]);
   });
 
   it("does nothing while the panel is closed, and drops the tile of a session that ended", async () => {

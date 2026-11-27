@@ -31,8 +31,11 @@ type TerminalRepository = {
 export type GitRepositoryTile = Omit<TerminalRepository, "terminalId"> & {
   readonly terminalIds: ReadonlyArray<TerminalId>;
   /** The tabs these terminals stand in, each once, in tab order. */
-  readonly tabs: ReadonlyArray<TerminalPlacement>;
+  readonly tabs: ReadonlyArray<GitRepositoryTab>;
 };
+
+/** A tab of a tile, and the first of the tile's terminals in it: the one to go to. */
+export type GitRepositoryTab = TerminalPlacement & { readonly terminalId: TerminalId };
 
 /** A refresh of one terminal that is running; a request meanwhile makes it run once more. */
 type Refresh = { pending: boolean; readonly done: Promise<void> };
@@ -259,7 +262,7 @@ function mergeSameRepository(repositories: ReadonlyArray<TerminalRepository>): G
       byKey.set(key, {
         ...repository,
         terminalIds: [terminalId],
-        tabs: placement ? [placement] : [],
+        tabs: placement ? [{ ...placement, terminalId }] : [],
       });
       continue;
     }
@@ -269,7 +272,7 @@ function mergeSameRepository(repositories: ReadonlyArray<TerminalRepository>): G
     byKey.set(key, {
       ...tile,
       terminalIds: [...tile.terminalIds, terminalId],
-      tabs: newTab ? [...tile.tabs, placement] : tile.tabs,
+      tabs: newTab ? [...tile.tabs, { ...placement, terminalId }] : tile.tabs,
     });
   }
   return [...byKey.values()];

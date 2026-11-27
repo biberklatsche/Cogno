@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, signal } from
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { SessionApi } from "@cogno/core/api/session-api";
 import { TerminalNavigator } from "@cogno/core/api/terminal-navigator-port";
-import { groupByWorkspace, TerminalPlacement } from "@cogno/shared/domain";
+import { groupByWorkspace, TerminalId, TerminalPlacement } from "@cogno/shared/domain";
 import {
+  ContextMenuOverlayService,
   IconComponent,
   TabChipComponent,
   TileComponent,
@@ -20,10 +21,11 @@ import { GIT_SHARED_STYLES } from "./git-styles";
  * The repositories of all open terminals, grouped by workspace in tab order;
  * terminals of one workspace in the same repository share a tile. A tile names
  * the repository, the branch, how many files are new, changed and gone, and
- * bottom right the tab, as the coding agent cards do: the first, with "+N"
- * and all of them in the tooltip when there are more; clicking
- * it focuses its first terminal (or keeps the focused one, if it is among
- * them), and the panel follows the focus to that repository.
+ * bottom right the tab, as the coding agent cards do: the first, with all of
+ * them in the tooltip and an arrow beside it when there are more; a click
+ * there then opens a menu to go to one. Clicking the tile focuses its first terminal
+ * (or keeps the focused one, if it is among them), and the panel follows the
+ * focus to that repository.
  */
 @Component({
   selector: "app-git-repositories-panel",
@@ -67,7 +69,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                 <span class="status-removed" [class.none]="tile.counts.deleted === 0">−{{ tile.counts.deleted }}</span>
               </span>
               @if (tile.tabs[0]; as first) {
-                <span class="tabs">
+                <span class="tabs" (click)="chooseTab($event, tile)">
                   <app-tab-chip
                     class="tab"
                     [title]="tabTitle(first)"
@@ -75,7 +77,7 @@ import { GIT_SHARED_STYLES } from "./git-styles";
                     [tooltip]="tabsTooltip(tile)"
                   ></app-tab-chip>
                   @if (tile.tabs.length > 1) {
-                    <span class="more" [appTooltip]="tabsTooltip(tile)">+{{ tile.tabs.length - 1 }}</span>
+                    <app-icon class="small-icon more" name="mdiChevronDown"></app-icon>
                   }
                 </span>
               }
@@ -140,6 +142,7 @@ export class GitRepositoriesPanelComponent {
   constructor(
     readonly overview: GitRepositoriesOverviewService,
     private readonly navigator: TerminalNavigator,
+    private readonly contextMenu: ContextMenuOverlayService,
     sessionApi: SessionApi,
     destroyRef: DestroyRef,
   ) {
@@ -178,8 +181,26 @@ export class GitRepositoriesPanelComponent {
 
   open(tile: GitRepositoryTile): void {
     const target = this.isFocused(tile) ? this.focusedTerminalId() : tile.terminalIds[0];
-    if (!target) return;
-    this.navigator.navigateToTerminal(target).catch((error: unknown) => {
+    if (target) this.goTo(target);
+  }
+
+  /**
+   * A click on the tabs of a tile that has several: a menu of them under the
+   * chip, to go to one. With a single tab the click is the tile's.
+   */
+  chooseTab(event: MouseEvent, tile: GitRepositoryTile): void {
+    if (tile.tabs.length < 2) return;
+    event.stopPropagation();
+    this.contextMenu.openAtElement(event.currentTarget as HTMLElement, {
+      items: tile.tabs.map((tab) => ({
+        label: this.tabTitle(tab),
+        action: () => this.goTo(tab.terminalId),
+      })),
+    });
+  }
+
+  private goTo(terminalId: TerminalId): void {
+    this.navigator.navigateToTerminal(terminalId).catch((error: unknown) => {
       console.error("[git-repositories] Failed to navigate to terminal:", error);
     });
   }
